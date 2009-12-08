@@ -466,8 +466,28 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     }
 }
 
+void CGeneSelectorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    arg_desc->AddDefaultKey("intergenic","intergenic","Minimum intergenic distance",CArgDescriptions::eInteger,"20");
+    arg_desc->AddDefaultKey("altfrac","altfrac","The score of the principal model in the gene is multiplied by this fraction. Alt variants with the score above "
+                            "this score are included in gene",CArgDescriptions::eDouble,"80.0");
+    arg_desc->AddDefaultKey("composite","composite","Maximal composite number in alts",CArgDescriptions::eInteger,"1");
+    arg_desc->AddFlag("opposite","Allow overlap of complete multiexon genes with opposite strands");
+    arg_desc->AddFlag("partialalts","Allows partial alternative variants. In combination with -nognomon will allow partial genes");
+}
+
+void CGeneSelectorArgUtil::ReadArgs(CGeneSelector* selector, const CArgs& args)
+{
+    selector->minIntergenic = args["intergenic"].AsInteger();
+    selector->altfrac = args["altfrac"].AsDouble();
+    selector->composite = args["composite"].AsInteger();
+    selector->allow_opposite_strand = args["opposite"];
+    selector->allow_partialalts = args["partialalts"];
+}
+
 void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
+    arg_desc->AddFlag("nognomon","Skips ab initio prediction and ab initio extension of partial chains.");
     arg_desc->AddKey("param", "param",
                      "Organism specific parameters",
                      CArgDescriptions::eInputFile);
@@ -489,6 +509,7 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
     annot->mpp = args["mpp"].AsDouble();
     bool nonconsens = args["nonconsens"];
     annot->nonconsensp = (nonconsens ? -args["ncsp"].AsDouble() : BadScore());
+    annot->do_gnomon = !args["nognomon"];
 }
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

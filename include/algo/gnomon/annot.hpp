@@ -53,45 +53,55 @@ BEGIN_SCOPE(gnomon)
 
 class CAltSplice;
 
-class NCBI_XALGOGNOMON_EXPORT CGeneSelector {
+class NCBI_XALGOGNOMON_EXPORT CModelFilters {
 public:
-    CGeneSelector();
+    CModelFilters();
+
     void FilterOutSingleExonEST(TGeneModelList& chains);
     void FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns);
     void FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns);
     void FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns);
+    void FilterOutPartialModels(TGeneModelList&cls, TGeneModelList& bad_aligns);
+};
 
-    TGeneModelList SelectCompleteModels(TGeneModelList& chains,
-                              int minIntergenic, double altfrac,
-                              int composite, bool opposite,
-                              bool allow_partialalts, bool allow_partialgenes, TGeneModelList& bad_aligns);
+class NCBI_XALGOGNOMON_EXPORT CGeneSelector {
+public:
+    CGeneSelector();
+    bool IsPartialAltsAllowed() const { return allow_partialalts; }
+
+    TGeneModelList SelectGenes(TGeneModelList& chains, TGeneModelList& bad_aligns);
+    void ReselectGenes(TGeneModelList& models, TGeneModelList& bad_aligns);
+    void RenumGenes(TGeneModelList& models, int& gennum, int geninc);
 
 private:
 
     void FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
-                        int minIntergenic, double altfrac, int composite,
-                        bool allow_opposite_strand, bool allow_partialalts,
                         list<const CGeneModel*>& possibly_alternative, TGeneModelList& rejected);
     void FindGenesPass2(const list<const CGeneModel*>& possibly_alternative, list<CAltSplice>& alts,
-                        int minIntergenic, double altfrac, int composite,
-                        bool allow_opposite_strand, bool allow_partialalts,
                         TGeneModelList& bad_aligns);
     void FindGenesPass3(const TGeneModelList& rejected, list<CAltSplice>& alts,
-                        int minIntergenic, double altfrac, int composite,
-                        bool allow_opposite_strand, bool allow_partialalts,
                         TGeneModelList& bad_aligns);
     enum ECompat { eNotCompatible, eAlternative, eNested, eExternal, eOtherGene };
-    ECompat CheckCompatibility(const CAltSplice& gene, const CGeneModel& algn, int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts);
+    ECompat CheckCompatibility(const CAltSplice& gene, const CGeneModel& algn);
 
     void FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts,
-                                int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts,
                                 TGeneModelList& bad_aligns);
+
+    int minIntergenic;
+    double altfrac;
+    int composite;
+    bool allow_opposite_strand;
+    bool allow_partialalts;
+
+    friend class CGeneSelectorArgUtil;
 };
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator : public CGnomonAnnotator_Base {
 public:
     CGnomonAnnotator();
     ~CGnomonAnnotator();
+
+    bool GnomonNeeded() const { return do_gnomon; }
 
     void Predict(TGeneModelList& models,
                  TGeneModelList& bad_aligns);
@@ -114,6 +124,7 @@ private:
                                             bool leftwall, bool rightwall, bool leftanchor, bool rightanchor);
     double ExtendJustThisChain(CGeneModel& chain, TSignedSeqPos left, TSignedSeqPos right);
     
+    bool do_gnomon;
     int window;
     int margin;
     bool wall;
