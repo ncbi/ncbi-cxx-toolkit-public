@@ -48,6 +48,7 @@ blast_advprot_options \
 version \
 dust_filter \
 rps_aux \
+search_strategy \
 setup_factory \
 prelim_stage \
 traceback_stage \
