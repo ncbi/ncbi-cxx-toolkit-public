@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>     // for CObjMgr_QueryFactory
 #include <algo/blast/api/blast_options_builder.hpp>
+#include <algo/blast/api/search_strategy.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
@@ -429,52 +430,28 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                    "Failed to read search strategy");
     }
 
-    if (b4req->CanGetBody() && !b4req->GetBody().IsQueue_search() ) {
-        ERR_POST(Fatal << "Cannot recover search strategy: "
-                 << "invalid request type");
-    }
+    CImportStrategy strategy(b4req);
 
-    const CBlast4_queue_search_request& req(b4req->GetBody().GetQueue_search());
-    // N.B.: Make this both as we don't know whether the search will be remote
-    // or not
-    CBlastOptionsBuilder opts_builder(req.GetProgram(), req.GetService(),
-                                      CBlastOptions::eBoth);
-
-    // Create the BLAST options
-    CRef<blast::CBlastOptionsHandle> opts_hndl;
-    {{
-        const CBlast4_parameters* algo_opts(0);
-        const CBlast4_parameters* prog_opts(0);
-
-        if (req.CanGetAlgorithm_options()) {
-            algo_opts = &req.GetAlgorithm_options();
-        } 
-        if (req.CanGetProgram_options()) {
-            prog_opts = &req.GetProgram_options();
-        }
-
-        string task;
-        opts_hndl = opts_builder.GetSearchOptions(algo_opts, prog_opts, &task);
-        cmdline_args->SetTask(task);
-    }}
-    _ASSERT(opts_hndl.NotEmpty());
+    CRef<blast::CBlastOptionsHandle> opts_hndl = strategy.GetOptionsHandle();
     cmdline_args->SetOptionsHandle(opts_hndl);
     const EBlastProgramType prog = opts_hndl->GetOptions().GetProgramType();
+    cmdline_args->SetTask(strategy.GetTask());
 
     // Get the subject
     if (override_subject) {
         ERR_POST(Warning << "Overriding database/subject in saved strategy");
     } else {
         CRef<blast::CBlastDatabaseArgs> db_args;
-        const CBlast4_subject& subj = req.GetSubject();
-		const bool subject_is_protein = Blast_SubjectIsProtein(prog) 
-			? true : false;
+        CRef<CBlast4_subject> subj = strategy.GetSubject();
+	const bool subject_is_protein = Blast_SubjectIsProtein(prog) ? true : false;
 
-        if (subj.IsDatabase()) {
-            db_args = s_ImportDatabase(subj, opts_builder, subject_is_protein,
+        if (subj->IsDatabase()) {
+            CBlastOptionsBuilder bob(strategy.GetProgram(), strategy.GetService(), CBlastOptions::eBoth);
+            bob.GetSearchOptions(&strategy.GetAlgoOptions(), &strategy.GetProgramOptions());
+            db_args = s_ImportDatabase(*subj, bob, subject_is_protein,
                                        is_remote_search);
         } else {
-            db_args = s_ImportSubjects(subj, subject_is_protein);
+            db_args = s_ImportSubjects(*subj, subject_is_protein);
         }
         _ASSERT(db_args.NotEmpty());
         cmdline_args->SetBlastDatabaseArgs(db_args);
@@ -484,14 +461,14 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     if (override_query) {
         ERR_POST(Warning << "Overriding query in saved strategy");
     } else {
-        const CBlast4_queries& queries = req.GetQueries();
-        if (queries.IsPssm()) {
-            s_ImportPssm(queries, opts_hndl, cmdline_args);
+        CRef<CBlast4_queries> queries = strategy.GetQueries();
+        if (queries->IsPssm()) {
+            s_ImportPssm(*queries, opts_hndl, cmdline_args);
         } else {
-            s_ImportQueries(queries, opts_hndl, cmdline_args);
+            s_ImportQueries(*queries, opts_hndl, cmdline_args);
         }
         // Set the range restriction for the query, if applicable
-        const TSeqRange query_range = opts_builder.GetRestrictedQueryRange();
+        const TSeqRange query_range = strategy.GetQueryRange();
         if (query_range != TSeqRange::GetEmpty()) {
             cmdline_args->GetQueryOptionsArgs()->SetRange(query_range);
         }

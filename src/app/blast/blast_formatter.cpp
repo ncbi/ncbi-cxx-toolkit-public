@@ -43,7 +43,9 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include "blast_app_util.hpp"
+
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -103,9 +105,12 @@ void CBlastFormatterApp::Init()
                   + CBlastVersion().Print());
 
     arg_desc->SetCurrentGroup("Input options");
-    arg_desc->AddKey("rid", "BLAST_RID", "BLAST Request ID (RID)", 
-                     CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("rid", "BLAST_RID", "BLAST Request ID (RID), not compatiable with archive arg.", 
+                     CArgDescriptions::eString, "");
+
     // add input file for seq-align here?
+    arg_desc->AddOptionalKey("archive", "ArchiveFile", "Archive file of results, not compatiable with rid arg.", 
+                     CArgDescriptions::eInputFile);
 
     CFormattingArgs fmt_args;
     fmt_args.SetArgumentDescriptions(*arg_desc);
@@ -202,6 +207,26 @@ CBlastFormatterApp::x_ExtractQueries(bool query_is_protein)
     return retval;
 }
 
+/// FIXME 
+/// Converts a list of Bioseqs into a TSeqLocVector. All Bioseqs are added to
+/// the same CScope object
+/// @param subjects Bioseqs to convert
+static TSeqLocVector
+s_ConvertBioseqs2TSeqLocVector(const list<CRef<CBioseq> > subjects)
+{
+    TSeqLocVector retval;
+    CRef<CScope> subj_scope(new CScope(*CObjectManager::GetInstance()));
+    ITERATE(list<CRef<CBioseq> >, bioseq, subjects) {
+        subj_scope->AddBioseq(**bioseq);
+        CRef<CSeq_id> seqid = FindBestChoice((*bioseq)->GetId(),
+                                             CSeq_id::BestRank);
+        const TSeqPos length = (*bioseq)->GetInst().GetLength();
+        CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length-1));
+        retval.push_back(SSeqLoc(sl, subj_scope));
+    }
+    return retval;
+}
+
 int CBlastFormatterApp::PrintFormattedOutput(void)
 {
     int retval = 0;
@@ -227,25 +252,33 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     CRef<CScope> scope = queries->GetScope(0);
     _ASSERT(queries);
 
-    CRef<CBlast4_database> db = m_RmtBlast->GetDatabases();
-    _ASSERT(db);
-    int filtering_algorithm = m_RmtBlast->GetDbFilteringAlgorithmId();
+    CRef<CBlastDatabaseArgs> db_args(new CBlastDatabaseArgs());  // FIXME, what about rpsblast?
+    int filtering_algorithm = -1;
+    if (m_RmtBlast->IsDbSearch())
+    {
+        CRef<CBlast4_database> db = m_RmtBlast->GetDatabases();
+        _ASSERT(db);
+        filtering_algorithm = m_RmtBlast->GetDbFilteringAlgorithmId();
+        CRef<CSearchDatabase> search_db(new CSearchDatabase(db->GetName(), db->IsProtein()
+                              ? CSearchDatabase::eBlastDbIsProtein
+                              : CSearchDatabase::eBlastDbIsNucleotide));
+        db_args->SetSearchDatabase(search_db);
+    }
+    else
+    {
+        TSeqLocVector subjects =
+            s_ConvertBioseqs2TSeqLocVector(m_RmtBlast->GetSubjectSequences());
+        CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(subjects));
+        CRef<CScope> subj_scope = subjects.front().scope;
+        db_args->SetSubjects(subject_factory, subj_scope, Blast_SubjectIsProtein(p));
+    }
+
+    CRef<CLocalDbAdapter> db_adapter;
+    InitializeSubject(db_args, opts_handle, true, db_adapter, scope);
 
     const string kTask = m_RmtBlast->GetTask();
 
-    SDataLoaderConfig dlconfig(db->GetName(), db->IsProtein());
-    dlconfig.OptimizeForWholeLargeSequenceRetrieval(false);
-    CBlastScopeSource scope_source(dlconfig);
-    CRef<CScope> subj_scope = scope_source.NewScope();
-    scope->AddScope(*subj_scope,
-                    CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
-
-    const CSearchDatabase search_db(db->GetName(), db->IsProtein()
-                              ? CSearchDatabase::eBlastDbIsProtein
-                              : CSearchDatabase::eBlastDbIsNucleotide);
-    CLocalDbAdapter db_adapter(search_db);
-
-    CBlastFormat formatter(opts, db_adapter,
+    CBlastFormat formatter(opts, *db_adapter,
                            fmt_args.GetFormattedOutputChoice(),
                            static_cast<bool>(args[kArgParseDeflines]),
                            out,
@@ -283,6 +316,13 @@ int CBlastFormatterApp::Run(void)
 
     try {
         const string& kRid = args["rid"].AsString();
+
+        if (kRid == "")
+        {
+    		m_RmtBlast.Reset(new CRemoteBlast(args["archive"].AsInputFile()));
+            	status = PrintFormattedOutput();
+    		return status;
+        }
 
         m_RmtBlast.Reset(new CRemoteBlast(kRid));
         {{
