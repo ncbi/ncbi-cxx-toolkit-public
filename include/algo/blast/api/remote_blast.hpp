@@ -94,6 +94,11 @@ class NCBI_XBLAST_EXPORT CRemoteBlast : public CObject
 public:
     /// Use the specified RID to get results for an existing search.
     CRemoteBlast(const string & RID);
+
+    /// Uses the file to populate results.
+    /// The file may be text or binary ASN.1 or XML. type is automatically detected.
+    ///@param f istream to archive file
+    CRemoteBlast(CNcbiIstream& f);
     
     /// Create a search using any kind of options handle.
     CRemoteBlast(CBlastOptionsHandle * any_opts);
@@ -373,6 +378,11 @@ public:
     /// Defines a std::vector of CRef<CSeq_data>
     typedef vector< CRef<objects::CSeq_data> > TSeqDataVector;
 
+    /// Return values states whether GetDatabases or GetSubjectSequences
+    /// call should be used.
+    /// @return true indicates that GetDatabases should be used.
+    bool IsDbSearch();
+
     /// Get the database used by the search.
     ///
     /// An object is returned, describing the name and type of
@@ -380,7 +390,11 @@ public:
     ///
     /// @return An object describing the searched database(s).
     CRef<objects::CBlast4_database> GetDatabases();
-    
+
+    /// Returns subject sequences if "bl2seq" mode used.
+    /// @return a list of bioseqs
+    list< CRef<objects::CBioseq> > GetSubjectSequences();
+
     /// Get the program used for this search.
     /// @return The value of the program parameter.
     string GetProgram();
@@ -438,6 +452,9 @@ private:
     /// Retrieve the request body for a search submission
     CRef<objects::CBlast4_request_body> x_GetBlast4SearchRequestBody();
 
+    /// Sets a subset (only m_Dbs) of what the public SetDatabase sets.
+    ///@param x name of database.
+    void x_SetDatabase(const string & x);
 
     /// Value list.
     typedef list< CRef<objects::CBlast4_parameter> > TValueList;
@@ -481,6 +498,11 @@ private:
     
     /// The default timeout is 3.5 hours.
     const int x_DefaultTimeout(void);
+
+    /// Uses the file to populate results.
+    /// The file may be text or binary ASN.1 or XML. type is automatically detected.
+    ///@param f istream to archive file
+    void x_Init(CNcbiIstream& f);
     
     /// Called by new search constructors: initialize a new search.
     void x_Init(CBlastOptionsHandle * algo_opts,
@@ -565,6 +587,10 @@ private:
     
     /// Fetch the request info (wait for completion if necessary).
     void x_GetRequestInfo();
+    /// Fetch the requested info from splitd.
+    void x_GetRequestInfoFromRID();
+    /// Fetch the requested info from an archive file.
+    void x_GetRequestInfoFromFile();
 
     /// Extract the query IDs from the CBlast4_queries for a given search
     /// @param query_ids the query IDs to be returned [in|out]
@@ -634,6 +660,12 @@ private:
     
     /// Results of BLAST search.
     CRef<objects::CBlast4_reply>                m_Reply;
+    
+    /// Archive of BLAST search and results.
+    CRef<objects::CBlast4_archive>                m_Archive;
+
+    /// true if a CBlast4_archive should be read in.
+    bool m_ReadFile;
     
     /// List of errors encountered.
     vector<string> m_Errs;
