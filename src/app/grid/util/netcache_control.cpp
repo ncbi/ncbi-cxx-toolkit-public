@@ -92,14 +92,10 @@ void CNetCacheControl::Init()
     arg_desc->AddFlag("getconf",       "Server config");
     arg_desc->AddFlag("health",        "Server health");
     arg_desc->AddFlag("stat",          "Server statistics");
-    arg_desc->AddFlag("dropstat",      "Drop server statistics");
     arg_desc->AddFlag("monitor",       "Monitor server");
 
     arg_desc->AddOptionalKey("fetch", "key",
         "Retrieve data by key", CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("log", "server_logging",
-        "Switch server side logging", CArgDescriptions::eBoolean);
 
     arg_desc->AddOptionalKey("owner", "owner",
         "Get BLOB's owner", CArgDescriptions::eString);
@@ -151,13 +147,6 @@ int CNetCacheControl::Run()
         return 0;
     }
 
-    if (args["log"]) {  // logging control
-        bool on_off = args["log"].AsBoolean();
-        admin.Logging(on_off);
-        NcbiCout << "Logging turned " 
-                 << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
-    }
-
     if (args["owner"])
         NcbiCout << "BLOB belongs to: [" <<
             nc_client.GetOwner(args["owner"].AsString()) << "]" << NcbiEndl;
@@ -177,12 +166,6 @@ int CNetCacheControl::Run()
 
     if (args["stat"])
         admin.PrintStat(NcbiCout);
-
-    if (args["dropstat"]) {
-        admin.DropStat();
-        NcbiCout <<
-            "Drop statistics request has been sent to server" << NcbiEndl;
-    }
 
     if (args["ver"])
         admin.GetServerVersion(NcbiCout);

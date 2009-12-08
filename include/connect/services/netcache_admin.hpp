@@ -61,10 +61,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     ///  Protected to avoid a temptation to call it from time to time. :)
     void ShutdownServer();
 
-    /// Turn server-side logging on(off)
-    ///
-    void Logging(bool on_off) const;
-
     /// Print contents of the configuration file
     void PrintConfig(CNcbiOstream& output_stream) const;
 
@@ -73,9 +69,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
 
     // Print server health information
     void PrintHealth(CNcbiOstream& output_stream) const;
-
-    /// Reinitialize server-side statistics collector
-    void DropStat() const;
 
     void Monitor(CNcbiOstream & out) const;
 

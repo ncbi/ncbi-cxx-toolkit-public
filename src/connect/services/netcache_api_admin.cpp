@@ -52,12 +52,6 @@ void CNetCacheAdmin::ShutdownServer()
         ExecWithRetry(s_MkCmd("SHUTDOWN"));
 }
 
-void CNetCacheAdmin::Logging(bool on_off) const
-{
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
-        ExecWithRetry(s_MkCmd(on_off ? "LOG ON" : "LOG OFF"));
-}
-
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("GETCONF"),
@@ -80,12 +74,6 @@ void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("VERSION"),
         output_stream, CNetService::eSingleLineOutput);
-}
-
-void CNetCacheAdmin::DropStat() const
-{
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
-        ExecWithRetry(s_MkCmd("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream& out) const
