@@ -100,9 +100,7 @@ private:
     const CProjectItemsTree*    m_CurrentBuildTree;
     const CProjectItemsTree*    m_IncompleteBuildTree;
 
-    set<string>  m_ProjectTags;
-    set<string>  m_AllowedTags;
-    set<string>  m_DisallowedTags;
+    set<string>  m_RegisteredProjectTags;
     bool m_ScanningWholeTree;
     int m_ExitCode;
     set<CProjKey> m_SuspiciousProj;

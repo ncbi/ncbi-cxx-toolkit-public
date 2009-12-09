@@ -43,6 +43,7 @@
 #include "proj_projects.hpp"
 #include "ptb_err_codes.hpp"
 #include <corelib/ncbitime.hpp>
+#include <corelib/expr.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -397,7 +398,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,2,0) );
+    SetVersion( CVersionInfo(2,3,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -480,7 +481,8 @@ void CProjBulderApp::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("projtag", "project_tag",
-                             "Include projects that have this tags only.",
+                             "Expression. Include only projects that match."\
+                             " Example: \"core && (test || !demo)\"",
                              CArgDescriptions::eString);
 
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
@@ -1561,27 +1563,6 @@ void CProjBulderApp::VerifyArguments(void)
 {
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
 
-    list<string> values;
-    NStr::Split(m_ProjTags, LIST_SEPARATOR, values);
-    ITERATE(list<string>, n, values) {
-        string value(*n);
-        if (!value.empty()) {
-            if (NStr::StartsWith(value,"-")) {
-                value = value.substr(1);
-                if (!value.empty()) {
-                    m_DisallowedTags.insert(value);
-                }
-            } else {
-                if (value.find('*') == NPOS) {
-                    m_AllowedTags.insert(value);
-                }
-            }
-        }
-    }
-    if (m_AllowedTags.empty()) {
-        m_AllowedTags.insert("*");
-    }
-
     m_IncDir = GetProjectTreeInfo().m_Compilers;
     m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
@@ -1886,36 +1867,28 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
 bool CProjBulderApp::IsAllowedProjectTag(
     const list<string>& tags, string& unmet) const
 {
-    if (tags.empty()) {
-        return m_AllowedTags.find("*") != m_AllowedTags.end();
-    }
-    list<string>::const_iterator i;
     // verify that all project tags are registered
+    list<string>::const_iterator i;
     for (i = tags.begin(); i != tags.end(); ++i) {
-        if (m_ProjectTags.find(*i) == m_ProjectTags.end()) {
+        if (m_RegisteredProjectTags.find(*i) == m_RegisteredProjectTags.end()) {
             NCBI_THROW(CProjBulderAppException, eUnknownProjectTag, *i);
             return false;
         }
     }
-    // for each tag see if it is not prohibited explicitly
-    if (!m_DisallowedTags.empty()) {
-        for (i = tags.begin(); i != tags.end(); ++i) {
-            if (m_DisallowedTags.find(*i) != m_DisallowedTags.end()) {
-                unmet = *i;
-                return false;
-            }
-        }
-    }
-    if (m_AllowedTags.find("*") != m_AllowedTags.end()) {
+
+    // no filter - everything is allowed
+    if (m_ProjTags.empty() || m_ProjTags == "*") {
         return true;
     }
-    for (i = tags.begin(); i != tags.end(); ++i) {
-        if (m_AllowedTags.find(*i) != m_AllowedTags.end()) {
-            return true;
-        }
+
+    CExprParser parser;
+    ITERATE( set<string>, p, m_RegisteredProjectTags) {
+    	parser.AddSymbol(p->c_str(),
+    	    find( tags.begin(), tags.end(), *p) != tags.end());
     }
+    parser.Parse(m_ProjTags.c_str());
     unmet = NStr::Join(tags,",");
-    return false;
+    return parser.GetResult().GetBool();
 }
 
 void CProjBulderApp::LoadProjectTags(const string& filename)
@@ -1927,7 +1900,7 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
             list<string> values;
             NStr::Split(line, LIST_SEPARATOR, values);
             ITERATE(list<string>,v,values) {
-                m_ProjectTags.insert(*v);
+                m_RegisteredProjectTags.insert(*v);
             }
         }
     }
