@@ -2112,7 +2112,7 @@ public:
     {
         CObjectEx* object = dynamic_cast<CObjectEx*>(ptr);
         if (!object) {
-            CPtrToObjectExProxy::ReportIncompatibleType(typeid(*object));
+            CPtrToObjectExProxy::ReportIncompatibleType(typeid(*ptr));
         }
         return object->GetPtrProxy();
     }
