@@ -288,9 +288,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             m_ArgsParser.setRoot(jTextFieldRoot.getText());
             m_ArgsParser.setSubtree(jTextFieldLst.getText());
             m_ArgsParser.setSolutionFile(jTextFieldSolution.getText());
-            if (!jTextFieldTags.getText().equals("*")) {
-                m_ArgsParser.setProjTag(jTextFieldTags.getText());
-            }
+            m_ArgsParser.setProjTag(jTextFieldTags.getText());
 
             m_ArgsParser.setArch(jTextFieldArch.getText());
             m_ArgsParser.setDll(jRadioButtonDLL.isSelected(), false);
@@ -1526,7 +1524,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 0.8");
+        jLabel13.setText("  version 0.9");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());

@@ -240,20 +240,20 @@ public class ArgsParser {
         return (m_Ptb != null && m_Ptb.length() > 0) ? m_Ptb : m_Undef;
     }
     public void setPtb(String ptb) {
-        m_Ptb = ptb;
+        m_Ptb = ptb.trim();
     }
     public String getRoot() {
         return (m_Root != null && m_Root.length() > 0) ? m_Root : m_Undef;
     }
     public void setRoot(String root) {
-        m_Root = root;
+        m_Root = root.trim();
     }
     public String getSubtree() {
         return (m_Subtree != null && m_Subtree.length() > 0) ?
             m_Subtree : m_Undef;
     }
     public void setSubtree(String subtree) {
-        m_Subtree = subtree;
+        m_Subtree = subtree.trim();
     }
     public String getBuildRoot() {
         return (m_BuildRoot != null) ? m_BuildRoot : m_Undef;
@@ -300,19 +300,20 @@ public class ArgsParser {
             m_SolutionFile : m_Undef;
     }
     public void setSolutionFile(String solution) {
-        m_SolutionFile = solution;
+        m_SolutionFile = solution.trim();
     }
     public String getExtRoot() {
         return m_extroot != null ? m_extroot : "";
     }
     public void setExtRoot(String exroot) {
-        m_extroot = exroot;
+        m_extroot = exroot.trim();
     }
     public String getProjTag() {
-        return m_projtag != null ? m_projtag : "*";
+        return (m_projtag != null && m_projtag.length() != 0) ? m_projtag : "*";
     }
     public void setProjTag(String tag) {
-        m_projtag = tag;
+        String t = tag.trim();
+        m_projtag = t.equals("*") ? "" : tag;
     }
     public String getIde() {
         return m_ide != null ? m_ide : "";
@@ -321,10 +322,15 @@ public class ArgsParser {
         return m_arch != null ? m_arch : "";
     }
     public void setArch(String arch) {
-        m_arch = arch;
+        m_arch = arch.trim();
     }
     public void setArgsFile(String args) {
-        m_ArgsFile = existsPath(args) ? args : "" ;
+        if (args == null) {
+            m_ArgsFile = "";
+        } else {
+            String t = args.trim();
+            m_ArgsFile = existsPath(t) ? t : "" ;
+        }
     }
     public String getArgsFile() {
         return (m_ArgsFile != null && existsPath(m_ArgsFile)) ? m_ArgsFile : "";
