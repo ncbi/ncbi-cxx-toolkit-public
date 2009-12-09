@@ -147,6 +147,12 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
     seq_annot->AddName("Gnomon models");
     seq_annot->SetTitle("Gnomon models");
+    CRef<CAnnotdesc> desc(new CAnnotdesc());
+    CRef<CSeq_loc> genomic_seqloc(new CSeq_loc());
+    genomic_seqloc->SetWhole(*contig_sid);
+    desc->SetRegion(*genomic_seqloc);
+    seq_annot->SetDesc().Set().push_back(desc);
+
     bioseq_set.SetAnnot().push_back(seq_annot);
     feature_table = &seq_annot->SetData().SetFtable();
 
