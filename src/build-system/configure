@@ -33484,7 +33484,7 @@ echo "$as_me: error: incompatible options: --without-flat-makefile but --with-co
    { (exit 1); exit 1; }; }
    fi
    with_flat_makefile=yes
-elif test "${with_saved_settings-no}" != no; then
+elif test "${with_saved_settings:-no}" != no; then
    if test "$with_flat_makefile" = no; then
       { { echo "$as_me:$LINENO: error: incompatible options: --without-flat-makefile but --with-saved-settings." >&5
 echo "$as_me: error: incompatible options: --without-flat-makefile but --with-saved-settings." >&2;}

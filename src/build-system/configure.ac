@@ -6484,7 +6484,7 @@ if test "$with_configure_dialog" = yes; then
       AC_MSG_ERROR([incompatible options: --without-flat-makefile but --with-configure-dialog.])
    fi
    with_flat_makefile=yes
-elif test "${with_saved_settings-no}" != no; then
+elif test "${with_saved_settings:-no}" != no; then
    if test "$with_flat_makefile" = no; then
       AC_MSG_ERROR([incompatible options: --without-flat-makefile but --with-saved-settings.])
    fi
