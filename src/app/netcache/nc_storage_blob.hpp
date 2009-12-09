@@ -216,10 +216,19 @@ public:
     // For internal use only
 
     /// Create holder of blob lock bound to the given NetCache storage.
-    /// Lock holder is yet not usable after construction until AcquireLock()
-    /// is called.
+    /// Lock holder is yet not usable after construction until PrepareLock()
+    /// and InitializeLock() are called.
     CNCBlobLockHolder(CNCBlobStorage* storage);
-    /// Acquire lock for the blob identified by key, subkey and version.
+    /// Add holder to the list with provided head
+    void AddToList(CNCBlobLockHolder*& list_head);
+    /// Remove holder from the list with provided head
+    void RemoveFromList(CNCBlobLockHolder*& list_head);
+    /// Get next holder in the list this holder belongs to
+    CNCBlobLockHolder* GetNextInList(void);
+
+    /// Prepare lock for the blob identified by key, subkey and version.
+    /// Method only initializes necessary variables, actual acquiring of the
+    /// lock happens in InitializeLock() method.
     /// If access is eRead and storage's IsChangeTimeOnRead() returns TRUE
     /// then holder will change blob's access time when lock is released. If
     /// access is eWrite or eCreate then blob will be automatically deleted
@@ -233,11 +242,13 @@ public:
     ///   Version of the blob
     /// @param access
     ///   Required access to the blob
-    void AcquireLock(const string&   key,
+    void PrepareLock(const string&   key,
                      const string&   subkey,
                      int             version,
                      ENCBlobAccess   access);
-    /// Acquire lock for the blob identified by database part id and blob id.
+    /// Prepare lock for the blob identified by database part id, volume id
+    /// and blob id. Method only initializes necessary variables, actual
+    /// acquiring of the lock happens in InitializeLock() method.
     /// If access is eWrite or eCreate then blob will be automatically deleted
     /// when lock is released if blob wasn't properly finalized.
     ///
@@ -249,10 +260,15 @@ public:
     ///   Id of the blob
     /// @param access
     ///   Required access to the blob
-    void AcquireLock(TNCDBPartId   part_id,
+    void PrepareLock(TNCDBPartId   part_id,
                      TNCDBVolumeId volume_id,
                      TNCBlobId     blob_id,
                      ENCBlobAccess access);
+    /// Initialize and acquire the lock.
+    /// Should be called only after PrepareLock().
+    void InitializeLock(void);
+    /// Check if lock was initialized and process of lock acquiring was started
+    bool IsLockInitialized(void) const;
 
 private:
     CNCBlobLockHolder(const CNCBlobLockHolder&);
@@ -269,9 +285,6 @@ private:
     /// CNCBlobLockHolder objects inside storage.
     virtual void DeleteThis(void) const;
 
-    /// Initialize object's variables and acquire lock.
-    /// Called only from AcquireLock().
-    void x_InitLock(void);
     /// Utility procedure that should be executed after lock is considered
     /// valid (can happen in several places).
     void x_OnLockValidated(void);
@@ -315,6 +328,10 @@ private:
 
     /// NetCache storage created the holder
     CNCBlobStorage*          m_Storage;
+    /// Next holder in double-linked list of holders
+    CNCBlobLockHolder*       m_NextInList;
+    /// Previous holder in double-linked list of holders
+    CNCBlobLockHolder*       m_PrevInList;
     /// Full meta-information about locked blob. If blob doesn't exist then
     /// only part of identity information will be valid.
     mutable SNCBlobInfo      m_BlobInfo;
@@ -341,6 +358,9 @@ private:
     /// Timer to measure time while lock was waited for and while lock
     /// persisted before releasing
     CStopWatch               m_LockTimer;
+    /// Flag showing if InitializeLock() was called and ReleaseLock() last
+    /// reference to the holder wasn't removed after that.
+    bool                     m_LockInitialized;
     /// Flag if the fact that lock is acquired is already known by the holder
     bool                     m_LockKnown;
     /// Flag if lock acquired by id lock holder is valid and can be presented
@@ -352,12 +372,8 @@ private:
     mutable CSpinLock        m_LockAcqMutex;
 };
 
-/// Pool of CNCBlobLockHolder objects
-typedef CObjFactory_NewParam<CNCBlobLockHolder,
-                             CNCBlobStorage*>            TNCBlobLockFactory;
-typedef CObjPool<CNCBlobLockHolder, TNCBlobLockFactory>  TNCBlobLockObjPool;
 /// Type that should be always used to store pointers to CNCBlobLockHolder
-typedef CRef<CNCBlobLockHolder> TNCBlobLockHolderRef;
+typedef CRef<CNCBlobLockHolder>    TNCBlobLockHolderRef;
 
 
 
@@ -384,15 +400,55 @@ CNCBlob::IsFinalized(void) const
 inline
 CNCBlobLockHolder::CNCBlobLockHolder(CNCBlobStorage* storage)
     : m_Storage(storage),
+      m_NextInList(NULL),
+      m_PrevInList(NULL),
       m_Blob(NULL),
+      m_LockInitialized(false),
       m_LockKnown(false),
       m_LockValid(false)
 {}
 
+inline void
+CNCBlobLockHolder::AddToList(CNCBlobLockHolder*& list_head)
+{
+    m_NextInList = list_head;
+    if (list_head)
+        list_head->m_PrevInList = this;
+    list_head = this;
+}
+
+inline void
+CNCBlobLockHolder::RemoveFromList(CNCBlobLockHolder*& list_head)
+{
+    if (m_PrevInList) {
+        m_PrevInList->m_NextInList = m_NextInList;
+    }
+    else {
+        _ASSERT(list_head == this);
+        list_head = m_NextInList;
+    }
+    if (m_NextInList) {
+        m_NextInList->m_PrevInList = m_PrevInList;
+    }
+    m_NextInList = m_PrevInList = NULL;
+}
+
+inline CNCBlobLockHolder*
+CNCBlobLockHolder::GetNextInList(void)
+{
+    return m_NextInList;
+}
+
+inline bool
+CNCBlobLockHolder::IsLockInitialized(void) const
+{
+    return m_LockInitialized;
+}
+
 inline bool
 CNCBlobLockHolder::IsLockAcquired(void) const
 {
-    return m_LockKnown  &&  m_LockValid;
+    return m_LockInitialized  &&  m_LockKnown  &&  m_LockValid;
 }
 
 inline bool

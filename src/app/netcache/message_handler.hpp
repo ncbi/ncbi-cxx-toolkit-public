@@ -180,6 +180,14 @@ private:
 };
 
 
+/// Type of access to storage each NetCache command can have
+enum ENCStorageAccess {
+    eNoStorage    = 0,  ///< No access to storage is necessary
+    eNoBlobLock   = 1,  ///< Storage existence is a must but no blob lock is
+                        ///< necessary
+    eWithBlobLock = 2   ///< Command must obtain lock on blob before execution
+};
+
 /// Handler of all NetCache incoming requests.
 /// Handler written to be reusable object so that if one connection to
 /// NetCache is closed then handler from it can go to serve for another newly
@@ -191,10 +199,13 @@ private:
 class CNCMessageHandler
 {
 public:
+
+#ifdef _DEBUG
     /// Get name of handler state. Method needed for logging and statistics
     ///
     /// @sa EStates
     static string GetStateName(int state);
+#endif
 
     /// Create handler for the given NetCache server object
     CNCMessageHandler(CNetCacheServer* server);
@@ -228,13 +239,13 @@ public:
     /// Extra information about each NetCache command
     struct SCommandExtra {
         /// Which method will process the command
-        TProcessor    processor;
+        TProcessor       processor;
         /// Command name to present to user in statistics
-        const char*   cmd_name;
-        /// Does command need to lock some blob
-        bool          need_blob_lock;
+        const char*      cmd_name;
+        /// Type of access to storage command should have
+        ENCStorageAccess storage_access;
         /// What access to the blob command should receive
-        ENCBlobAccess blob_access;
+        ENCBlobAccess    blob_access;
     };
     /// Type definitions for NetCache protocol parser
     typedef SNSProtoCmdDef<SCommandExtra>      SCommandDef;
@@ -250,6 +261,10 @@ public:
     bool x_DoCmd_Version(void);
     bool x_DoCmd_GetConfig(void);
     bool x_DoCmd_GetServerStats(void);
+    bool x_DoCmd_Reinit(void);
+    bool x_DoCmd_ReinitImpl(void);
+    bool x_DoCmd_Reconf(void);
+    bool x_DoCmd_ReconfImpl(void);
     bool x_DoCmd_Put2(void);
     bool x_DoCmd_Put3(void);
     bool x_DoCmd_Get(void);
@@ -278,6 +293,10 @@ private:
         eCommandReceived,      ///< Command received but not parsed yet
         eWaitForBlobLock,      ///< Locking of blob needed for command is in
                                ///< progress
+        eWaitForStorageBlock,  ///< Locking of storage needed for command is
+                               ///< in progress
+        eWaitForServerBlock,   ///< Locking of all storages in the server is
+                               ///< in progress
         eReadBlobSignature,    ///< Reading of signature in blob transfer
                                ///< protocol
         eReadBlobChunkLength,  ///< Reading chunk length in blob transfer
@@ -324,8 +343,6 @@ private:
     void    x_SetState(EStates state);
     /// Get machine state
     EStates x_GetState(void) const;
-    /// Clean array of times spent in each state
-    void    x_CleanStateSpans(void);
 
     /// Set additional machine state flag
     void x_SetFlag  (EFlags  flag);
@@ -340,6 +357,9 @@ private:
     void x_ManageCmdPipeline(void);
     /// Read authentication message from client
     bool x_ReadAuthMessage(void);
+    /// Check whether current client name is administrative client, throw
+    /// exception if not.
+    void x_CheckAdminClient(void);
     /// Read command and start it if it's available
     bool x_ReadCommand(void);
     /// Process current command
@@ -347,6 +367,10 @@ private:
     /// Process "waiting" for blob locking. In fact just shift to next state
     /// if lock is acquired and just return if not.
     bool x_WaitForBlobLock(void);
+    /// Process "waiting" for storage blocking
+    bool x_WaitForStorageBlock(void);
+    /// Process "waiting" for blocking of all storages in the server
+    bool x_WaitForServerBlock(void);
     /// Read signature in blob transfer protocol
     bool x_ReadBlobSignature(void);
     /// Read length of chunk in blob transfer protocol
@@ -436,12 +460,6 @@ private:
     /// Maximum time when command should finish execution or it will be
     /// timed out
     CTime                     m_MaxCmdTime;
-    /*
-    /// Array of times spent in each handler state
-    vector<double>            m_StateSpanStats;
-    /// Timer to measure time spent in current state
-    CStopWatch                m_StateSpanTimer;
-    */
 
     /// Storage to execute current command on
     CNCBlobStorage*           m_Storage;
@@ -679,28 +697,7 @@ CNCMessageHandler::x_GetState(void) const
 inline void
 CNCMessageHandler::x_SetState(EStates new_state)
 {
-    /*
-    int old_state = x_GetState();
-    if (m_StateSpanStats.size() <= size_t(old_state)) {
-        m_StateSpanStats.resize(size_t(old_state + 1), 0);
-    }
-    m_StateSpanStats[old_state] += m_StateSpanTimer.Elapsed();
-
-    m_State = m_State - old_state + new_state;
-    m_StateSpanTimer.Start();
-    */
     m_State = (m_State & eAllFlagsMask) + new_state;
-}
-
-inline void
-CNCMessageHandler::x_CleanStateSpans(void)
-{
-    /*
-    for (size_t i = 0; i < m_StateSpanStats.size(); ++i) {
-        m_StateSpanStats[i] = 0;
-    }
-    m_StateSpanTimer.Start();
-    */
 }
 
 inline void
@@ -727,25 +724,6 @@ inline void
 CNCMessageHandler::x_CloseConnection(void)
 {
     m_Server->CloseConnection(m_Socket);
-}
-
-inline string
-CNCMessageHandler::GetStateName(int state)
-{
-    switch (EStates(state))
-    {
-    case ePreAuthenticated:    return "ePreAuthenticated";
-    case eReadyForCommand:     return "eReadyForCommand";
-    case eCommandReceived:     return "eCommandReceived";
-    case eWaitForBlobLock:     return "eWaitForBlobLock";
-    case eReadBlobSignature:   return "eReadBlobSignature";
-    case eReadBlobChunkLength: return "eReadBlobChunkLength";
-    case eReadBlobChunk:       return "eReadBlobChunk";
-    case eWriteBlobData:       return "eWriteBlobData";
-    case eSocketClosed:        return "eSocketClosed";
-    }
-
-    return "Unknown state";
 }
 
 inline void

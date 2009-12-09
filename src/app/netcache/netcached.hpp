@@ -52,6 +52,11 @@ class CNetCacheDApp;
 class CNCMessageHandler;
 
 
+/// Name of the cache that can be used in CNetCacheServer::GetBlobStorage()
+/// to acquire instance used for NetCache (as opposed to ICache instances).
+static const string kNCDefCacheName = "nccache";
+
+
 struct SConstCharCompare
 {
     bool operator() (const char* left, const char* right) const;
@@ -148,6 +153,13 @@ private:
     static CNCServerStat        sm_Instances[kNCMaxThreadsCnt];
 };
 
+/// Types of "request-start" and "request-stop" messages logging
+enum ENCLogCmdsType {
+    eLogAllCmds,    ///< Always log these messages
+    eNoLogHasb,     ///< Log these messages only if command is not HASB
+    eNoLogCmds      ///< Never log these messages
+};
+
 /// Netcache server 
 class CNetCacheServer : public CServer
 {
@@ -185,8 +197,23 @@ public:
     unsigned GetInactivityTimeout(void) const;
     /// Get timeout for each executed command
     unsigned GetCmdTimeout(void) const;
+    /// Get type of logging all commands starting and stopping
+    ENCLogCmdsType GetLogCmdsType(void) const;
+    /// Get name of client that should be used for administrative commands
+    const string& GetAdminClient(void) const;
     /// Create CTime object in fast way (via CFastTime)
     CTime GetFastTime(void);
+
+    /// Block all storages available in the server
+    void BlockAllStorages(void);
+    /// Unblock all storages available in the server
+    void UnblockAllStorages(void);
+    /// Check if server is ready for re-reading of the configuration.
+    /// The server is ready when all storages are blocked and all operations in
+    /// them are stopped.
+    bool CanReconfigure(void);
+    /// Re-read configuration of the server and all storages
+    void Reconfigure(void);
 
     /// Print full server statistics into stream
     void PrintServerStats(CNcbiIostream* ios);
@@ -205,19 +232,27 @@ private:
                            const char*      value_name,
                            const string&    def_value);
 
-    /// Create all blob storage instances
+    /// Read server parameters from application's configuration file
+    void x_ReadServerParams(void);
+    /// Remove all old storages (that can be left from previous
+    /// re-configuration) and check if some active ones were removed from
+    /// list of sections in application's configuration file.
+    void x_CleanExistingStorages(const list<string>& ini_sections);
+    /// Read storages configuration from registry and adjust list of active
+    /// storages accordingly.
     ///
     /// @param reg
     ///   Registry to read configuration for storages
     /// @param do_reinit
     ///   Flag if all storages should be forced to reinitialize
-    void x_CreateStorages(const IRegistry& reg, bool do_reinit);
+    void x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit);
 
     /// Print full server statistics into stream or diagnostics
     void x_PrintServerStats(CPrintTextProxy& proxy);
 
 
-    typedef map<string, AutoPtr<CNCBlobStorage> >     TStorageMap;
+    typedef map<string, AutoPtr<CNCBlobStorage> >   TStorageMap;
+    typedef list< AutoPtr<CNCBlobStorage> >         TStorageList;
 
 
     /// Host name where server runs
@@ -236,10 +271,22 @@ private:
     unsigned                       m_InactivityTimeout;
     /// Maximum time span which each command can work in
     unsigned                       m_CmdTimeout;
+    /// Type of logging all commands starting and stopping
+    ENCLogCmdsType                 m_LogCmdsType;
+    /// Flag showing if server runs as a daemon application
+    bool                           m_IsDaemon;
+    /// Flag showing if configuration parameter to reinitialize broken storages
+    /// was set.
+    bool                           m_IsReinitBadDB;
+    /// Name of client that should be used for administrative commands
+    string                         m_AdminClient;
     /// Quick local timer
     CFastLocalTime                 m_FastTime;
     /// Map of strings to blob storages
     TStorageMap                    m_StorageMap;
+    /// List of storages that were excluded from configuration file and that
+    /// will be deleted on next re-configuration attempt.
+    TStorageList                   m_OldStorages;
     /// Counter for blob id
     CAtomicCounter                 m_BlobIdCounter;
     /// Server monitor
@@ -396,6 +443,18 @@ inline unsigned int
 CNetCacheServer::GetInactivityTimeout(void) const
 {
     return m_InactivityTimeout;
+}
+
+inline ENCLogCmdsType
+CNetCacheServer::GetLogCmdsType(void) const
+{
+    return m_LogCmdsType;
+}
+
+inline const string&
+CNetCacheServer::GetAdminClient(void) const
+{
+    return m_AdminClient;
 }
 
 inline CTime

@@ -70,20 +70,23 @@ BEGIN_NCBI_SCOPE
 #define NCBI_USE_ERRCODE_X  NetCache_Main
 
 
-static const char* kNCReg_ServerSection      = "server";
-static const char* kNCReg_DefCacheSection    = "bdb";
-static const char* kNCReg_CacheSectionPrefix = "icache";
-static const char* kNCReg_Daemon             = "daemon";
-static const char* kNCReg_Port               = "port";
-static const char* kNCReg_NetworkTimeout     = "network_timeout";
-static const char* kNCReg_CommandTimeout     = "request_timeout";
-static const char* kNCReg_UseHostname        = "use_hostname";
-static const char* kNCReg_MaxConnections     = "max_connections";
-static const char* kNCReg_MaxThreads         = "max_threads";
-static const char* kNCReg_InitThreads        = "init_threads";
-static const char* kNCReg_DropBadDB          = "drop_db";
-static const char* kNCReg_MemLimit           = "memory_limit";
-static const char* kNCReg_MemAlert           = "memory_alert";
+static const char* kNCReg_ServerSection       = "server";
+static const char* kNCReg_DefCacheSection     = "nccache";
+static const char* kNCReg_OldCacheSection     = "bdb";
+static const char* kNCReg_ICacheSectionPrefix = "icache";
+static const char* kNCReg_Daemon              = "daemon";
+static const char* kNCReg_Port                = "port";
+static const char* kNCReg_NetworkTimeout      = "network_timeout";
+static const char* kNCReg_CommandTimeout      = "request_timeout";
+static const char* kNCReg_UseHostname         = "use_hostname";
+static const char* kNCReg_MaxConnections      = "max_connections";
+static const char* kNCReg_MaxThreads          = "max_threads";
+static const char* kNCReg_ReinitBadDB         = "drop_db";
+static const char* kNCReg_LogCmds             = "log_requests";
+static const char* kNCReg_AdminClient         = "admin_client_name";
+static const char* kNCReg_DefAdminClient      = "netcache_control";
+static const char* kNCReg_MemLimit            = "memory_limit";
+static const char* kNCReg_MemAlert            = "memory_alert";
 
 
 CNCServerStat_Getter  CNCServerStat::sm_Getter;
@@ -220,70 +223,11 @@ CNetCacheServer::x_RegReadString(const IRegistry& reg,
     return reg.GetString(kNCReg_ServerSection, value_name, def_value);
 }
 
-inline void
-CNetCacheServer::x_CreateStorages(const IRegistry& reg, bool do_reinit)
-{
-    CNCBlobStorage::EReinitMode reinit = CNCBlobStorage::eNoReinit;
-    if (do_reinit) {
-        reinit = CNCBlobStorage::eForceReinit;
-    }
-    else if (x_RegReadBool(reg, kNCReg_DropBadDB, false)) {
-        reinit = CNCBlobStorage::eReinitBad;
-    }
-
-    CNCBlobStorage* storage = new CNCBlobStorage(reg, kNCReg_DefCacheSection,
-                                                 reinit);
-    storage->SetMonitor(&m_Monitor);
-    m_StorageMap[""] = storage;
-
-    list<string> sections;
-    reg.EnumerateSections(&sections);
-
-    ITERATE(list<string>, it, sections) {
-        const string& section_name = *it;
-        string tmp, cache_name;
-
-        NStr::SplitInTwo(section_name, "_", tmp, cache_name);
-        if (NStr::CompareNocase(tmp, kNCReg_CacheSectionPrefix) != 0) {
-            continue;
-        }
-        NStr::ToLower(cache_name);
-
-        storage = new CNCBlobStorage(reg, section_name, reinit);
-        storage->SetMonitor(&m_Monitor);
-        m_StorageMap[cache_name] = storage;
-    }
-}
-
-CNetCacheServer::CNetCacheServer(bool do_reinit)
-    : m_Shutdown(false),
-      m_Signal(0)
+void
+CNetCacheServer::x_ReadServerParams(void)
 {
     const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
 
-#if defined(NCBI_OS_UNIX)
-    bool is_daemon = x_RegReadBool(reg, kNCReg_Daemon, false);
-    if (is_daemon) {
-        LOG_POST_X(1, "Entering UNIX daemon mode...");
-        // Here's workaround for SQLite3 bug: if stdin is closed in forked
-        // process then 0 file descriptor is returned to SQLite after open().
-        // But there's assert there which prevents fd to be equal to 0. So
-        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
-        // just in case somebody will try to write to them.
-        bool is_good = CProcess::Daemonize(kEmptyCStr,
-                               CProcess::fDontChroot | CProcess::fKeepStdin
-                                                     | CProcess::fKeepStdout);
-        if (!is_good) {
-            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
-        }
-    }
-
-    // attempt to get server gracefully shutdown on signal
-    signal(SIGINT,  NCSignalHandler);
-    signal(SIGTERM, NCSignalHandler);
-#endif
-
-    m_Port              = x_RegReadInt(reg, kNCReg_Port,           9000);
     m_CmdTimeout        = x_RegReadInt(reg, kNCReg_CommandTimeout, 600);
     m_InactivityTimeout = x_RegReadInt(reg, kNCReg_NetworkTimeout, 10);
     if (m_InactivityTimeout <= 0) {
@@ -307,6 +251,23 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
         m_Host = ipaddr;
     }
 
+    string log_cmds = x_RegReadString(reg, kNCReg_LogCmds, "all");
+    if (log_cmds == "no") {
+        m_LogCmdsType = eNoLogCmds;
+    }
+    else if (log_cmds == "not_hasb") {
+        m_LogCmdsType = eNoLogHasb;
+    }
+    else {
+        if (log_cmds != "all") {
+            ERR_POST_X(15, "Incorrect value of '" << kNCReg_LogCmds
+                           << "' parameter: '" << log_cmds << "'");
+        }
+        m_LogCmdsType = eLogAllCmds;
+    }
+    m_AdminClient = x_RegReadString(reg, kNCReg_AdminClient,
+                                    kNCReg_DefAdminClient);
+
     SServer_Parameters params;
     params.max_connections = x_RegReadInt(reg, kNCReg_MaxConnections, 100);
     params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     20);
@@ -318,19 +279,13 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
                             "maximum number given - " << params.max_threads
                          << ".");
     }
-    params.init_threads = x_RegReadInt(reg, kNCReg_InitThreads, 1);
-    if (params.init_threads > params.max_threads) {
-        params.init_threads = params.max_threads;
+    if (params.max_threads < 1) {
+        params.max_threads = 1;
     }
-    // Accept timeout
-    m_ServerAcceptTimeout.sec = 1;
-    m_ServerAcceptTimeout.usec = 0;
+    params.init_threads = 1;
     params.accept_timeout = &m_ServerAcceptTimeout;
-
     SetParameters(params);
-    AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
 
-    CNCMemManager::InitializeApp();
     try {
         size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(
                                   x_RegReadString(reg, kNCReg_MemLimit, "1Gb")));
@@ -342,11 +297,121 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
         ERR_POST_X(14, "Error in " << kNCReg_MemLimit
                          << " or " << kNCReg_MemAlert << " parameter: " << ex);
     }
+}
 
-    CSQLITE_Global::Initialize();
-    CSQLITE_Global::EnableSharedCache();
-    CNCFileSystem ::Initialize();
-    x_CreateStorages(reg, do_reinit);
+inline void
+CNetCacheServer::x_CleanExistingStorages(const list<string>& ini_sections)
+{
+    // A little feature: with second reconfigure storage will go away
+    // completely, so re-configuration should be used carefully.
+    m_OldStorages.clear();
+    ERASE_ITERATE(TStorageMap, it_stor, m_StorageMap) {
+        string section_name(kNCReg_ICacheSectionPrefix);
+        section_name += "_";
+        section_name += it_stor->first;
+        bool is_main = it_stor->first == kNCDefCacheName;
+        bool sec_found = false;
+        ITERATE(list<string>, it_sec, ini_sections) {
+            if (is_main
+                &&  (NStr::CompareNocase(*it_sec, kNCReg_DefCacheSection) == 0
+                     ||  NStr::CompareNocase(*it_sec, kNCReg_OldCacheSection) == 0)
+                ||  !is_main 
+                    &&  NStr::CompareNocase(*it_sec, section_name) == 0)
+            {
+                sec_found = true;
+                break;
+            }
+        }
+        if (!sec_found) {
+            m_OldStorages.push_back(it_stor->second);
+            m_StorageMap.erase(it_stor);
+        }
+    }
+}
+
+inline void
+CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
+{
+    CNCBlobStorage::EReinitMode reinit = CNCBlobStorage::eNoReinit;
+    if (do_reinit) {
+        reinit = CNCBlobStorage::eForceReinit;
+    }
+    else if (m_IsReinitBadDB) {
+        reinit = CNCBlobStorage::eReinitBad;
+    }
+
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+    x_CleanExistingStorages(sections);
+
+    ITERATE(list<string>, it, sections) {
+        const string& section_name = *it;
+        string cache_name;
+
+        if (NStr::CompareNocase(section_name, kNCReg_DefCacheSection) == 0
+            ||  NStr::CompareNocase(section_name, kNCReg_OldCacheSection) == 0)
+        {
+            cache_name = kNCDefCacheName;
+        }
+        else {
+            string sec_prefix;
+            NStr::SplitInTwo(section_name, "_", sec_prefix, cache_name);
+            if (NStr::CompareNocase(sec_prefix, kNCReg_ICacheSectionPrefix) != 0)
+            {
+                continue;
+            }
+            NStr::ToLower(cache_name);
+        }
+        TStorageMap::iterator it_stor = m_StorageMap.find(cache_name);
+        if (it_stor == m_StorageMap.end()) {
+            CNCBlobStorage* storage
+                              = new CNCBlobStorage(reg, section_name, reinit);
+            storage->SetMonitor(&m_Monitor);
+            m_StorageMap[cache_name] = storage;
+        }
+        else {
+            it_stor->second->Reconfigure(reg, section_name);
+        }
+    }
+}
+
+CNetCacheServer::CNetCacheServer(bool do_reinit)
+    : m_Shutdown(false),
+      m_Signal(0)
+{
+    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    m_IsDaemon      = x_RegReadBool(reg, kNCReg_Daemon,      false);
+    m_Port          = x_RegReadInt (reg, kNCReg_Port,        9000);
+    m_IsReinitBadDB = x_RegReadBool(reg, kNCReg_ReinitBadDB, false);
+
+#if defined(NCBI_OS_UNIX)
+    if (m_IsDaemon) {
+        LOG_POST_X(1, "Entering UNIX daemon mode...");
+        // Here's workaround for SQLite3 bug: if stdin is closed in forked
+        // process then 0 file descriptor is returned to SQLite after open().
+        // But there's assert there which prevents fd to be equal to 0. So
+        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+        // just in case somebody will try to write to them.
+        bool is_good = CProcess::Daemonize(kEmptyCStr,
+                               CProcess::fDontChroot | CProcess::fKeepStdin
+                                                     | CProcess::fKeepStdout);
+        if (!is_good) {
+            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
+        }
+    }
+
+    // attempt to get server gracefully shutdown on signal
+    signal(SIGINT,  NCSignalHandler);
+    signal(SIGTERM, NCSignalHandler);
+#endif
+
+    // Accept timeout
+    m_ServerAcceptTimeout.sec = 1;
+    m_ServerAcceptTimeout.usec = 0;
+    x_ReadServerParams();
+    AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
+
+    x_ConfigureStorages(reg, do_reinit);
     CNCFileSystem::SetDiskInitialized();
 
     m_BlobIdCounter.Set(0);
@@ -361,6 +426,60 @@ CNetCacheServer::~CNetCacheServer()
     CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
     LOG_POST_X(13, "NetCache server is stopping. Usage statistics:");
     x_PrintServerStats(proxy);
+}
+
+void
+CNetCacheServer::BlockAllStorages(void)
+{
+    ITERATE(TStorageMap, it, m_StorageMap) {
+        it->second->Block();
+    }
+}
+
+void
+CNetCacheServer::UnblockAllStorages(void)
+{
+    ITERATE(TStorageMap, it, m_StorageMap) {
+        if (it->second->IsBlocked())
+            it->second->Unblock();
+    }
+    ITERATE(TStorageList, it, m_OldStorages) {
+        (*it)->Unblock();
+    }
+}
+
+bool
+CNetCacheServer::CanReconfigure(void)
+{
+    ITERATE(TStorageMap, it, m_StorageMap) {
+        if (!it->second->CanDoExclusive())
+            return false;
+    }
+    return true;
+}
+
+void
+CNetCacheServer::Reconfigure(void)
+{
+    CNcbiApplication::Instance()->ReloadConfig();
+    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    // Non-changeable parameters
+    reg.Set(kNCReg_ServerSection, kNCReg_Daemon,
+            NStr::BoolToString(m_IsDaemon),
+            IRegistry::fPersistent | IRegistry::fOverride,
+            reg.GetComment(kNCReg_ServerSection, kNCReg_Daemon));
+    reg.Set(kNCReg_ServerSection, kNCReg_Port,
+            NStr::IntToString(m_Port),
+            IRegistry::fPersistent | IRegistry::fOverride,
+            reg.GetComment(kNCReg_ServerSection, kNCReg_Port));
+    reg.Set(kNCReg_ServerSection, kNCReg_ReinitBadDB,
+            NStr::BoolToString(m_IsReinitBadDB),
+            IRegistry::fPersistent | IRegistry::fOverride,
+            reg.GetComment(kNCReg_ServerSection, kNCReg_ReinitBadDB));
+
+    // Change all others
+    x_ReadServerParams();
+    x_ConfigureStorages(reg, false);
 }
 
 void
@@ -420,7 +539,11 @@ CNetCacheDApp::Run(void)
     }
     LOG_POST_X(8, NETCACHED_FULL_VERSION);
 
-    {{
+    CNCMemManager::InitializeApp();
+    CSQLITE_Global::Initialize();
+    CSQLITE_Global::EnableSharedCache();
+    CNCFileSystem ::Initialize();
+    try {
         AutoPtr<CNetCacheServer> server(new CNetCacheServer(args["reinit"]));
 
         LOG_POST_X(9, "Running server on port " << server->GetPort());
@@ -430,7 +553,13 @@ CNetCacheDApp::Run(void)
             LOG_POST_X(10, "Server got "
                            << server->GetSignalCode() << " signal.");
         }
-    }}
+    }
+    catch (...) {
+        CNCFileSystem ::Finalize();
+        CSQLITE_Global::Finalize();
+        CNCMemManager ::FinalizeApp();
+        throw;
+    }
     CNCFileSystem ::Finalize();
     CSQLITE_Global::Finalize();
     CNCMemManager ::FinalizeApp();

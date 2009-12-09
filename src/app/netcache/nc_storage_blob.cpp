@@ -257,7 +257,7 @@ CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
 }
 
 void
-CNCBlobLockHolder::AcquireLock(TNCDBPartId   part_id,
+CNCBlobLockHolder::PrepareLock(TNCDBPartId   part_id,
                                TNCDBVolumeId volume_id,
                                TNCBlobId     blob_id,
                                ENCBlobAccess access)
@@ -273,12 +273,10 @@ CNCBlobLockHolder::AcquireLock(TNCDBPartId   part_id,
     m_BlobAccess         = access;
     m_SaveInfoOnRelease  = false;
     m_DeleteNotFinalized = false;
-
-    x_InitLock();
 }
 
 void
-CNCBlobLockHolder::AcquireLock(const string& key,
+CNCBlobLockHolder::PrepareLock(const string& key,
                                const string& subkey,
                                int           version,
                                ENCBlobAccess access)
@@ -293,49 +291,42 @@ CNCBlobLockHolder::AcquireLock(const string& key,
     m_DeleteNotFinalized = access == eCreate;
     m_SaveInfoOnRelease  = access != eRead
                            ||  m_Storage->IsChangeTimeOnRead();
-
-    x_InitLock();
 }
 
 void
-CNCBlobLockHolder::x_InitLock(void)
+CNCBlobLockHolder::InitializeLock(void)
 {
     m_Blob = NULL;
     m_LockKnown = m_LockValid = m_BlobExists = false;
+    m_LockInitialized = true;
 
     m_Storage->GetStat()->AddLockRequest();
     m_LockTimer.Start();
 
-    try {
-        if (m_BlobAccess == eCreate) {
-            _ASSERT(m_BlobInfo.blob_id == 0);
+    if (m_BlobAccess == eCreate) {
+        _ASSERT(m_BlobInfo.blob_id == 0);
 
-            // Assume that in majority of cases "Create" means new blob, thus
-            // optimize performance for this case.
-            m_Storage->GetNextBlobCoords(&m_CreateCoords);
-            m_CreateHolder = m_Storage->LockBlobId(m_CreateCoords.blob_id,
-                                                   eCreate);
-            _ASSERT(m_CreateHolder->IsLockAcquired());
-            m_BlobInfo.AssignCoords(m_CreateCoords);
-            m_RWHolder = m_CreateHolder;
+        // Assume that in majority of cases "Create" means new blob, thus
+        // optimize performance for this case.
+        m_Storage->GetNextBlobCoords(&m_CreateCoords);
+        m_CreateHolder = m_Storage->LockBlobId(m_CreateCoords.blob_id,
+                                               eCreate);
+        _ASSERT(m_CreateHolder->IsLockAcquired());
+        m_BlobInfo.AssignCoords(m_CreateCoords);
+        m_RWHolder = m_CreateHolder;
 
-            x_RetakeCreateLock();
-        }
-        else if (m_BlobInfo.blob_id == 0
-                 &&  !m_Storage->ReadBlobCoords(&m_BlobInfo))
-        {
-            // There's no such blob
-            m_LockKnown = true;
-            x_OnLockValidated();
-        }
-        else {
-            // Standard way of read/write locking
-            x_LockAndValidate(m_BlobInfo);
-        }
+        x_RetakeCreateLock();
     }
-    catch (...) {
-        x_ReleaseLock();
-        throw;
+    else if (m_BlobInfo.blob_id == 0
+             &&  !m_Storage->ReadBlobCoords(&m_BlobInfo))
+    {
+        // There's no such blob
+        m_LockKnown = true;
+        x_OnLockValidated();
+    }
+    else {
+        // Standard way of read/write locking
+        x_LockAndValidate(m_BlobInfo);
     }
 }
 
@@ -488,6 +479,7 @@ CNCBlobLockHolder::DeleteThis(void) const
     nc_this->ReleaseLock();
     CleanWeakRefs();
     m_Storage->ReturnLockHolder(nc_this);
+    nc_this->m_LockInitialized = false;
 }
 
 CNCBlobLockHolder::~CNCBlobLockHolder(void)

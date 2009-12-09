@@ -57,8 +57,10 @@ public:
         eReadOnlyAccess,  ///< Operation is prohibited because of read-only
                           ///< access to the storage
         eCorruptedDB,     ///< Detected corruption of the database
-        eTooBigBlob       ///< Attempt to write blob larger than maximum blob
+        eTooBigBlob,      ///< Attempt to write blob larger than maximum blob
                           ///< size
+        eWrongBlock       ///< Block() method is called when it cannot be
+                          ///< executed
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CNCBlobStorageException, CException);
@@ -119,12 +121,20 @@ public:
     /// @param reinit_mode
     ///   Flag for necessary reinitialization of the database
     CNCBlobStorage(const IRegistry& reg,
-                   CTempString      section,
+                   const string&    section,
                    EReinitMode      reinit_mode);
     ~CNCBlobStorage(void);
 
     /// Set object to monitor storage activity
     void SetMonitor(CServer_Monitor* monitor);
+    /// Re-read configuration of the storage
+    ///
+    /// @param reg
+    ///   Registry to read object configuration. All parameters that cannot be
+    ///   changed on the fly are set to old values in the registry.
+    /// @param section
+    ///   Section name inside registry to read configuration from
+    void Reconfigure(CNcbiRegistry& reg, const string& section);
 
     /// Check if storage is in read-only mode
     bool IsReadOnly        (void) const;
@@ -149,6 +159,25 @@ public:
     /// Check if blob with given key and (optionally) subkey exists
     /// in database.
     bool IsBlobExists(CTempString key, CTempString subkey = kEmptyStr);
+
+    /// Block all operations on the storage.
+    /// Work with all blobs that are blocked already will be finished as usual,
+    /// all future requests for locking of blobs will be suspended until
+    /// Unblock() is called. Method will return immediately and will not wait
+    /// for already locked blobs to be unlocked - CanDoExclusive() call should
+    /// be used to understand if all operations on the storage are freezed.
+    void Block(void);
+    /// Unblock the storage and allow it to continue work as usual.
+    void Unblock(void);
+    /// Check if blocking of storage is requested
+    bool IsBlocked(void);
+    /// Check if storage blocking is completed and all operations with storage
+    /// are stopped.
+    bool CanDoExclusive(void);
+    /// Reinitialize storage database.
+    /// Method can be called only when storage is completely blocked and all
+    /// operations with it are finished.
+    void Reinitialize(void);
 
 public:
     // For internal use only
@@ -330,7 +359,10 @@ private:
     void x_DoBackgroundWork(void);
 
     /// Read all storage parameters from registry
-    void x_ReadStorageParams(const IRegistry& reg, CTempString section);
+    void x_ReadStorageParams(const IRegistry& reg, const string& section);
+    /// Read from registry only those parameters that can be changed on the
+    /// fly, without re-starting the application.
+    void x_ReadVariableParams(const IRegistry& reg, const string& section);
     /// Parse value of 'timestamp' parameter from registry
     void x_ParseTimestampParam(const string& timestamp);
     /// Make name of the index file in the storage
@@ -388,10 +420,18 @@ private:
     void x_CheckDBInitialized(bool        guard_existed,
                               EReinitMode reinit_mode,
                               bool        reinit_dirty);
+    /// Reinitialize database cleaning all data from it.
+    /// Only database is cleaned, internal cache is left intact.
+    void x_CleanDatabase(void);
     /// Read value of last blob coordinates which will be used to generate ids
     /// for inserted blobs.
     void x_ReadLastBlobCoords(void);
 
+    /// Get lock holder available for new blob lock.
+    /// need_initialize will be set to TRUE if initialization of holder can be
+    /// made (storage is not blocked) and FALSE if initialization of holder
+    /// will be executed later on storage unblocking.
+    CNCBlobLockHolder* x_GetLockHolder(bool* need_initialize);
     /// Acquire access to the blob identified by its coordinates
     ///
     /// @param access
@@ -476,6 +516,8 @@ private:
     bool x_ReadBlobKeyFromCache(SNCBlobIdentity* identity);
     /// Delete blob identified by its coordinates from the internal cache.
     void x_DeleteBlobFromCache(const SNCBlobCoords& coords);
+    /// Clean all blobs from internal cache without cleaning the database
+    void x_CleanCache(void);
     /// Get list of blob ids with given key from internal cache. Method
     /// call have any sense only when all caching process is finished.
     void x_FillBlobIdsFromCache(const string& key, TNCIdsList* id_list);
@@ -488,6 +530,9 @@ private:
     /// Fill internal cache data with information from given database part.
     void x_FillCacheFromDBPart(TNCDBPartId part_id);
 
+    /// Wait while garbage collector is working.
+    /// Method should be called only when storage is blocked.
+    void x_WaitForGC(void);
     /// Delete expired blob from internal cache. Expiration time is checked
     /// in database. Method assumes that it's called only from garbage
     /// collector.
@@ -627,8 +672,14 @@ private:
     TFilesMap                m_DBFiles;
     /// Current size of storage database. Kept here for printing statistics.
     Int8                     m_CurDBSize;
-    /// Pool of CNCBlobLockHolder objects
-    TNCBlobLockObjPool       m_LockHoldersPool;
+    /// Mutex to control work with pool of lock holders
+    CSpinLock                m_HoldersPoolLock;
+    /// List of holders available for acquiring new blob locks
+    CNCBlobLockHolder*       m_FreeHolders;
+    /// List of holders already acquired (or waiting to acquire) a blob lock
+    CNCBlobLockHolder*       m_UsedHolders;
+    /// Number of lock holders in use
+    unsigned int             m_CntUsedHolders;
     /// Pool of CNCBlob objects
     TNCBlobsPool             m_BlobsPool;
     /// Mutex to work with m_LastBlob
@@ -643,6 +694,13 @@ private:
     TId2LocksMap             m_IdLocks;
     /// CYieldingRWLock objects that are not used by anybody at the moment
     TLocksList               m_FreeLocks;
+    /// Flag showing that garbage collector is working at the moment
+    volatile bool            m_GCInWork;
+    /// Flag showing that storage block is requested
+    volatile bool            m_Blocked;
+    /// Number of blob locks that should be released before all operations on
+    /// the storage will be completely stopped.
+    unsigned int             m_CntLocksToWait;
 };
 
 
@@ -810,12 +868,6 @@ CNCBlobStorage::ReturnFile(TNCDBPartId   part_id,
 }
 
 inline void
-CNCBlobStorage::ReturnLockHolder(CNCBlobLockHolder* holder)
-{
-    m_LockHoldersPool.Return(holder);
-}
-
-inline void
 CNCBlobStorage::ReadBlobInfo(SNCBlobInfo* info)
 {
     _ASSERT(info->part_id != 0  &&  info->blob_id != 0);
@@ -879,6 +931,37 @@ CNCBlobStorage::DeleteAllChunks(const SNCBlobCoords& coords)
     metafile->DeleteAllChunks(coords.blob_id);
 }
 
+inline CNCBlobLockHolder*
+CNCBlobStorage::x_GetLockHolder(bool* need_initialize)
+{
+    CSpinGuard guard(m_HoldersPoolLock);
+
+    CNCBlobLockHolder* holder = m_FreeHolders;
+    if (holder) {
+        holder->RemoveFromList(m_FreeHolders);
+    }
+    else {
+        holder = new CNCBlobLockHolder(this);
+    }
+    holder->AddToList(m_UsedHolders);
+    ++m_CntUsedHolders;
+
+    *need_initialize = !m_Blocked;
+    return holder;
+}
+
+inline void
+CNCBlobStorage::ReturnLockHolder(CNCBlobLockHolder* holder)
+{
+    CSpinGuard guard(m_HoldersPoolLock);
+
+    holder->RemoveFromList(m_UsedHolders);
+    holder->AddToList(m_FreeHolders);
+    --m_CntUsedHolders;
+    if (m_Blocked  &&  holder->IsLockInitialized())
+        --m_CntLocksToWait;
+}
+
 inline TNCBlobLockHolderRef
 CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
                               const string& key,
@@ -887,8 +970,11 @@ CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
 {
     x_CheckReadOnly(access);
 
-    TNCBlobLockHolderRef holder(m_LockHoldersPool.Get());
-    holder->AcquireLock(key, subkey, version, access);
+    bool need_initialize;
+    TNCBlobLockHolderRef holder(x_GetLockHolder(&need_initialize));
+    holder->PrepareLock(key, subkey, version, access);
+    if (need_initialize)
+        holder->InitializeLock();
     return holder;
 }
 
@@ -900,9 +986,25 @@ CNCBlobStorage::x_GetBlobAccess(ENCBlobAccess access,
 {
     x_CheckReadOnly(access);
 
-    TNCBlobLockHolderRef holder(m_LockHoldersPool.Get());
-    holder->AcquireLock(part_id, volume_id, blob_id, access);
+    bool need_initialize;
+    TNCBlobLockHolderRef holder(x_GetLockHolder(&need_initialize));
+    holder->PrepareLock(part_id, volume_id, blob_id, access);
+    if (need_initialize)
+        holder->InitializeLock();
     return holder;
+}
+
+inline bool
+CNCBlobStorage::IsBlocked(void)
+{
+    return m_Blocked;
+}
+
+inline bool
+CNCBlobStorage::CanDoExclusive(void)
+{
+    _ASSERT(IsBlocked());
+    return m_CntLocksToWait == 0;
 }
 
 END_NCBI_SCOPE
