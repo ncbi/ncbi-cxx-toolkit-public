@@ -46,7 +46,7 @@
 #include <sstream>
 
 #include <objects/general/Object_id.hpp>
-
+#include <objmgr/feat_ci.hpp>
 
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
@@ -1815,78 +1815,97 @@ double InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos ri
 }
 
 struct ProjectCDS : public TransformFunction {
-    ProjectCDS(double _mininframefrac, const CResidueVec& _seq, const map<string, TSignedSeqRange>& _mrnaCDS)
-        : mininframefrac(_mininframefrac), seq(_seq), mrnaCDS(_mrnaCDS) {}
+    ProjectCDS(double _mininframefrac, const CResidueVec& _seq, CScope* _scope, const map<string, TSignedSeqRange>& _mrnaCDS)
+        : mininframefrac(_mininframefrac), seq(_seq), scope(_scope), mrnaCDS(_mrnaCDS) {}
 
     double mininframefrac;
     const CResidueVec& seq;
+    CScope* scope;
     const map<string, TSignedSeqRange>& mrnaCDS;
     virtual void operator()(CAlignModel& align);
 };
 
 void ProjectCDS::operator()(CAlignModel& align)
 {
-    if ((align.Type()&CAlignModel::eProt)!=0)
+    if ((align.Type()&CAlignModel::emRNA)==0 || (align.Status()&CAlignModel::eReversed)!=0)
         return;
-    
-    if ((align.Type()&CAlignModel::emRNA)!=0 && (align.Status()&CAlignModel::eReversed)==0) {
+
+    TSignedSeqRange cds_on_mrna;
+
+    if (scope != NULL) {
+        SAnnotSelector sel;
+        sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+        CSeq_loc mrna;
+        CRef<CSeq_id> target_id(new CSeq_id);
+        target_id->Assign(*align.GetTargetId());
+        mrna.SetWhole(*target_id);
+        CFeat_CI feat_ci(*scope, mrna, sel);
+        if (feat_ci && !feat_ci->IsSetPartial()) {
+            TSeqRange feat_range = feat_ci->GetRange();
+            cds_on_mrna = TSignedSeqRange(feat_range.GetFrom(), feat_range.GetTo());
+        }
+    } else {
         string accession = align.TargetAccession();
         map<string,TSignedSeqRange>::const_iterator pos = mrnaCDS.find(accession);
         if(pos != mrnaCDS.end()) {
-            TSignedSeqRange cds_on_mrna = pos->second;
-            CAlignMap alignmap(align.GetAlignMap());
-            TSignedSeqPos left = alignmap.MapEditedToOrig(cds_on_mrna.GetFrom());
-            TSignedSeqPos right = alignmap.MapEditedToOrig(cds_on_mrna.GetTo());
-            if(align.Strand() == eMinus) {
-                swap(left,right);
-            }
-            
-            CGeneModel a = align;
-            align.FrameShifts().clear();
-            
-            if(left < 0 || right < 0)     // start or stop cannot be projected  
-                return;
-            if(left < align.Limits().GetFrom() || right >  align.Limits().GetTo())    // cds is clipped
-                return;
-            
-            a.Clip(TSignedSeqRange(left,right),CGeneModel::eRemoveExons);
-
-            //            ITERATE(TInDels, fs, a.FrameShifts()) {
-            //                if(fs->Len()%3 != 0) return;          // there is a frameshift    
-            //            }
-
-            if (InframeFraction(a, left, right) < mininframefrac)
-                return;
-            
-            a.FrameShifts().clear();                       // clear notshifted indels   
-            CAlignMap cdsmap(a.GetAlignMap());
-            CResidueVec cds;
-            cdsmap.EditedSequence(seq, cds);
-            unsigned int length = cds.size();
-            
-            if(length%3 != 0)
-                return;
-            
-            if(!IsStartCodon(&cds[0]) || !IsStopCodon(&cds[length-3]) )   // start or stop on genome is not right
-                return;
-
-            for(unsigned int i = 0; i < length-3; i += 3) {
-                if(IsStopCodon(&cds[i])) return;                // premature stop on genome
-            }
-            
-            TSignedSeqRange reading_frame = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(3,length-4));
-            TSignedSeqRange start = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(0,2));
-            TSignedSeqRange stop = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(length-3,length-1));
-
-            CCDSInfo cdsinfo;
-            cdsinfo.SetReadingFrame(reading_frame,true);
-            cdsinfo.SetStart(start,true);
-            cdsinfo.SetStop(stop,true);
-            align.SetCdsInfo(cdsinfo);
-            
-            return;
+            cds_on_mrna = pos->second;
         }
     }
+
+    if (cds_on_mrna.Empty())
+        return;
+
+    CAlignMap alignmap(align.GetAlignMap());
+    TSignedSeqPos left = alignmap.MapEditedToOrig(cds_on_mrna.GetFrom());
+    TSignedSeqPos right = alignmap.MapEditedToOrig(cds_on_mrna.GetTo());
+    if(align.Strand() == eMinus) {
+        swap(left,right);
+    }
+    
+    CGeneModel a = align;
+    
+    if(left < 0 || right < 0)     // start or stop cannot be projected  
+        return;
+    if(left < align.Limits().GetFrom() || right >  align.Limits().GetTo())    // cds is clipped
+        return;
+    
+    a.Clip(TSignedSeqRange(left,right),CGeneModel::eRemoveExons);
+    
+    //            ITERATE(TInDels, fs, a.FrameShifts()) {
+    //                if(fs->Len()%3 != 0) return;          // there is a frameshift    
+    //            }
+    
+    if (InframeFraction(a, left, right) < mininframefrac)
+        return;
+    
+    a.FrameShifts().clear();                       // clear notshifted indels   
+    CAlignMap cdsmap(a.GetAlignMap());
+    CResidueVec cds;
+    cdsmap.EditedSequence(seq, cds);
+    unsigned int length = cds.size();
+    
+    if(length%3 != 0)
+        return;
+    
+    if(!IsStartCodon(&cds[0]) || !IsStopCodon(&cds[length-3]) )   // start or stop on genome is not right
+        return;
+    
+    for(unsigned int i = 0; i < length-3; i += 3) {
+        if(IsStopCodon(&cds[i]))
+            return;                // premature stop on genome
+    }
+    
+    TSignedSeqRange reading_frame = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(3,length-4));
+    TSignedSeqRange start = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(0,2));
+    TSignedSeqRange stop = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(length-3,length-1));
+    
+    CCDSInfo cdsinfo;
+    cdsinfo.SetReadingFrame(reading_frame,true);
+    cdsinfo.SetStart(start,true);
+    cdsinfo.SetStop(stop,true);
+
+    align.FrameShifts().clear();
+    align.SetCdsInfo(cdsinfo);
 }
 
 void CChainer::CChainerImpl::FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains)
@@ -1921,10 +1940,8 @@ void CChainer::CChainerImpl::FilterOutBadScoreChainsHavingBetterCompatibles(TGen
 
 struct TrimAlignment : public TransformFunction {
 public:
-    TrimAlignment(int a_trim, const CResidueVec& a_seq, const map<string,TSignedSeqRange>& a_mrnaCDS) : trim(a_trim), seq(a_seq), mrnaCDS(a_mrnaCDS)  {}
+    TrimAlignment(int a_trim) : trim(a_trim)  {}
     int trim;
-    const CResidueVec& seq;
-    const map<string,TSignedSeqRange>& mrnaCDS;
 
     TSignedSeqPos TrimCodingExonLeft(const CAlignModel& align, const CModelExon& e, int trim)
     {
@@ -2006,29 +2023,18 @@ public:
                 b -= trim;
         }
         
-        TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-        _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-        
-        string accession = align.TargetAccession();
-        map<string,TSignedSeqRange>::const_iterator pos = mrnaCDS.find(accession);
-        if(pos != mrnaCDS.end() && alignmap.MapEditedToOrig(pos->second.GetFrom()) >= 0 && alignmap.MapEditedToOrig(pos->second.GetTo()) >= 0) {  // avoid trimming confirmed CDSes
-            TSignedSeqRange cds_on_mrna = pos->second;
-            CResidueVec mrna;
-            alignmap.EditedSequence(seq, mrna, true);
-            if(IsStartCodon(&mrna[cds_on_mrna.GetFrom()]) && IsStopCodon(&mrna[cds_on_mrna.GetTo()-2]) )  {  // start and stop on genome are right
-                TSignedSeqRange cds_on_genome = alignmap.MapRangeEditedToOrig(cds_on_mrna, false);
-                if(cds_on_genome.GetFrom() < newlimits.GetFrom()) {
-                    a = align.Limits().GetFrom();
-                    newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-                    _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-                }
-                if(cds_on_genome.GetTo() > newlimits.GetTo()) {
-                    b = align.Limits().GetTo();
-                    newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-                    _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-                }
+        if(!align.ReadingFrame().Empty()) {  // avoid trimming confirmed CDSes
+            TSignedSeqRange cds_on_genome = align.RealCdsLimits();
+            if(cds_on_genome.GetFrom() < a) {
+                a = align.Limits().GetFrom();
+            }
+            if(b < cds_on_genome.GetTo()) {
+                b = align.Limits().GetTo();
             }
         }
+        
+        TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
+        _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
         
         if(newlimits != align.Limits()) {
             align.Clip(newlimits,CAlignModel::eDontRemoveExons);    // Clip doesn't change AlignMap
@@ -2038,7 +2044,7 @@ public:
 
 TransformFunction* CChainer::TrimAlignment()
 {
-    return new gnomon::TrimAlignment(m_data->trim, m_gnomon->GetSeq(), m_data->mrnaCDS);
+    return new gnomon::TrimAlignment(m_data->trim);
 }
 
 struct DoNotBelieveShortPolyATail : public TransformFunction {
@@ -2079,7 +2085,9 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
 
 TransformFunction* CChainer::ProjectCDS()
 {
-    return new gnomon::ProjectCDS(m_data->mininframefrac, m_gnomon->GetSeq(), m_data->mrnaCDS);
+    return new gnomon::ProjectCDS(m_data->mininframefrac, m_gnomon->GetSeq(),
+                                  m_data->mrnaCDS.find("use_objmgr")!=m_data->mrnaCDS.end() ? m_scope.GetPointer() : NULL,
+                                  m_data->mrnaCDS);
 }
 
 struct DoNotBelieveFrameShiftsWithoutCdsEvidence : public TransformFunction {
@@ -2298,14 +2306,18 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
 
     map<string,TSignedSeqRange>& mrnaCDS = chainer->SetMrnaCDS();
     if(args["mrnaCDS"]) {
-        CNcbiIstream& cdsfile = args["mrnaCDS"].AsInputFile();
-        string accession, tmp;
-        int a, b;
-        while(cdsfile >> accession >> a >> b) {
-            _ASSERT(a > 0 && b > 0 && b > a);
-            getline(cdsfile,tmp);
-            accession = CIdHandler::ToString(*cidh.ToCanonical(*CIdHandler::ToSeq_id(accession)));
-            mrnaCDS[accession] = TSignedSeqRange(a-1,b-1);
+        if (args["mrnaCDS"].AsString()=="use_objmgr") {
+            mrnaCDS[args["mrnaCDS"].AsString()] = TSignedSeqRange();
+        } else {
+            CNcbiIstream& cdsfile = args["mrnaCDS"].AsInputFile();
+            string accession, tmp;
+            int a, b;
+            while(cdsfile >> accession >> a >> b) {
+                _ASSERT(a > 0 && b > 0 && b > a);
+                getline(cdsfile,tmp);
+                accession = CIdHandler::ToString(*cidh.ToCanonical(*CIdHandler::ToSeq_id(accession)));
+                mrnaCDS[accession] = TSignedSeqRange(a-1,b-1);
+            }
         }
     }
 
