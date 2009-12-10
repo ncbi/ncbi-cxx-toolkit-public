@@ -1138,7 +1138,7 @@ CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
       // Without races 1 is enough here
       m_TrigNotEmpty(0, kMax_Int),
       m_TrigNotFull (0, kMax_Int),
-      m_CurGuardTID(kThreadID_None)
+      m_CurGuardTID(TThreadSystemID(kThreadSystemID_None))
 {
     if (max_size == 0) {
         NCBI_THROW(CSyncQueueException, eWrongMaxSize,
