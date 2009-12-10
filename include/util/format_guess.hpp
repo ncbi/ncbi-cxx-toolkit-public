@@ -257,6 +257,8 @@ private:
 
     // data:
 protected:
+    static int s_CheckOrder[];
+    
     static const streamsize s_iTestBufferSize = 1024;
 
     CNcbiIstream& m_Stream;

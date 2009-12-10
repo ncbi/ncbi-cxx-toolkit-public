@@ -123,6 +123,36 @@ static void init_symbol_type_table(void)
     }
 }
 
+//  ----------------------------------------------------------------------------
+int
+CFormatGuess::s_CheckOrder[] =
+//  ----------------------------------------------------------------------------
+{
+    //  must list all EFormats except eUnknown and eFormat_max. Will cause
+    //  assertion if violated!
+    //
+    eRmo,
+    eGtf,
+    eGlimmer3,
+    eAgp,
+    eXml,
+    eWiggle,
+    eBed,
+    eBed15,
+    eNewick,
+    eAlignment,
+    eDistanceMatrix,
+    eFlatFileSequence,
+    eFiveColFeatureTable,
+    eSnpMarkers,
+    eFasta,
+    eTextASN,
+    eTaxplot,
+    ePhrapAce,
+    eTable,
+    eBinaryASN,
+};
+
 
 //  ============================================================================
 //  Old style class interface:
@@ -233,21 +263,23 @@ CFormatGuess::GuessFormat(
         return eUnknown;
     }
     EMode mode = eQuick;
+    unsigned int uFormatCount = sizeof( s_CheckOrder ) / sizeof( int );
 
     // First, try to use hints
     if ( !m_Hints.IsEmpty() ) {
-        for (int f = 1 /* skip eUnknown */; f < eFormat_max; ++f) {
-            EFormat fmt = EFormat(f);
+        for (unsigned int f = 0; f < uFormatCount; ++f) {
+            EFormat fmt = EFormat( s_CheckOrder[ f ] );
             if (m_Hints.IsPreferred(fmt)  &&  x_TestFormat(fmt, mode)) {
                 return fmt;
             }
         }
     }
 
-    // Check other formats
-    for (int f = 1 /* skip eUnknown */; f < eFormat_max; ++f) {
-        if ( x_TestFormat(EFormat(f), mode) ) {
-            return EFormat(f);
+    // Check other formats, skip the ones that are disabled through hints
+    for (unsigned int f = 0; f < uFormatCount; ++f) {
+        EFormat fmt = EFormat( s_CheckOrder[ f ] );
+        if ( ! m_Hints.IsDisabled(fmt)  &&  x_TestFormat(fmt, mode) ) {
+            return fmt;
         }
     }
     return eUnknown;
@@ -334,6 +366,10 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
 void
 CFormatGuess::Initialize()
 {
+    NCBI_ASSERT(eFormat_max-1 == sizeof( s_CheckOrder ) / sizeof( int ),
+        "Indices in s_CheckOrder do not match format count ---"
+        "update s_CheckOrder to list all formats" 
+    );
     m_pTestBuffer = 0;
 
     m_bStatsAreValid = false;
