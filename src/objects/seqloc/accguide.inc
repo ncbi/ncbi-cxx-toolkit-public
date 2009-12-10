@@ -303,7 +303,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  FS  ddbj_est",
     "2+6  FT  ddbj_gss",
     "2+6  FU  ddbj_patent",
-    "2+6  FV  ddbj_other_nuc",
+    "2+6  FV  ddbj_patent",
     "2+6  FW  ddbj_other_nuc",
     "2+6  FX  ddbj_other_nuc",
     "2+6  FY  ddbj_other_nuc",
