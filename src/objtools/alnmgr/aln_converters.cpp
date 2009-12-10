@@ -456,7 +456,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                            "Invalid frame");
             }
         } else {
-            exon.GetProduct_start().GetNucpos();
+            product_start = exon.GetProduct_start().GetNucpos();
         }
         TSeqPos product_end;
         if (prot) {
@@ -476,7 +476,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                            "Invalid frame");
             }
         } else {
-            exon.GetProduct_end().GetNucpos();
+            product_end = exon.GetProduct_end().GetNucpos();
         }
         TSeqPos product_pos = prot ? 
             product_start : 
