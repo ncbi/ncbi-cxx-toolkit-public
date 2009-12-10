@@ -171,9 +171,14 @@ class CSyncQueue_AccessGuard;
 /// long time for some bulk operations. This can be achieved by
 /// CSyncQueue::T*AccessGuard classes.
 ///
-/// When using CSyncQueue object with access
-/// guardian it is mandatory to use it only in the threads created by
-/// C++ Toolkit (using CThread class or some of its wrappers).
+/// CSyncQueue can be used with C++ Toolkit threads as well as with any kind
+/// of native threads. The only difference between these cases is passing
+/// NULL as timeout in methods Push(), Pop() and Clear(). When C++ Toolkit
+/// CThread class is used to create application's threads then NULL value will
+/// mean indefinite timeout (as stated in comments to those methods). But if
+/// all threads in the application (if any) were created by some native
+/// function without using CThread class then NULL value will mean 0 timeout
+/// and it's impossible to set indefinite timeout in this case.
 ///
 /// Full description and examples of using look here:
 /// @ref CSyncQueueDescription.
@@ -473,6 +478,12 @@ private:
     TNativeIter x_Erase(TNativeIter from_iter, TNativeIter to_iter);
 
 
+    enum {
+        /// Value of thread system id that cannot be equal to any thread's id.
+        kThreadSystemID_None = 0
+    };
+
+
     /// Underlying container to store queue elements
     Container m_Store;
 
@@ -500,7 +511,7 @@ private:
     mutable CAtomicCounter_WithAutoInit m_CntWaitNotFull;
 
     /// ID of the thread in which the queue has been locked by a guardian
-    mutable CThread::TID m_CurGuardTID;
+    mutable TThreadSystemID m_CurGuardTID;
 
     /// Number of lockings of this queue with access guardians in one thread
     mutable int m_LockCount;
@@ -1221,14 +1232,14 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
 {
     auto_ptr<CTimeSpan> real_timeout;
 
-    // If we are in single-thread mode or we didn't run other threads
-    // then we will wait forever. Avoid it and let's think that timeout
-    // was ran over.
-    if (CThread::GetThreadsCount() == 0) {
-        real_timeout.reset(new CTimeSpan(0.0));
-    }
-    else if (full_tmo) {
+    if (full_tmo) {
         real_timeout.reset(new CTimeSpan(*full_tmo));
+    }
+    else if (CThread::GetThreadsCount() == 0) {
+        // If we are in single-thread mode or we didn't run other threads
+        // then we will wait forever. Avoid it and let's think that timeout
+        // was ran over.
+        real_timeout.reset(new CTimeSpan(0.0));
     }
 
     if (real_timeout.get()) {
@@ -1326,7 +1337,7 @@ void CSyncQueue<Type, Container>::x_GuardedLock(const CTimeSpan* timeout) const
             ThrowSyncQueueTimeout();
         }
 
-        m_CurGuardTID = CThread::GetSelf();
+        CThread::GetSystemID(&m_CurGuardTID);
         m_LockCount = 1;
     }
 }
@@ -1340,7 +1351,7 @@ void CSyncQueue<Type, Container>::x_GuardedUnlock(void) const
 
     --m_LockCount;
     if (0 == m_LockCount) {
-        m_CurGuardTID = kThreadID_None;
+        m_CurGuardTID = TThreadSystemID(kThreadSystemID_None);
         x_Unlock();
     }
 }
@@ -1350,9 +1361,12 @@ template <class Type, class Container>
 inline
 bool CSyncQueue<Type, Container>::x_IsGuarded(void) const
 {
-    return
-        m_CurGuardTID != kThreadID_None  &&
-        m_CurGuardTID == CThread::GetSelf();
+    if (m_CurGuardTID == TThreadSystemID(kThreadSystemID_None))
+        return false;
+
+    TThreadSystemID thread_id;
+    CThread::GetSystemID(&thread_id);
+    return m_CurGuardTID == thread_id;
 }
 
 
