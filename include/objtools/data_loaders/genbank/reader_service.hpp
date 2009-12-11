@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 
 class CReader;
 
-class NCBI_XREADER_EXPORT CReaderServiceConnector : CConnIniter
+class NCBI_XREADER_EXPORT CReaderServiceConnector : private CConnIniter
 {
 public:
     CReaderServiceConnector(void);
