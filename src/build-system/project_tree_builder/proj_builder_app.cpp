@@ -1415,6 +1415,9 @@ void CProjBulderApp::ParseArguments(void)
         }
         if ( const CArgValue& t = args["projtag"] ) {
             m_ProjTags = t.AsString();
+        } else {
+            m_ProjTags = CProjectsLstFileFilter::GetAllowedTagsInfo(
+                CDirEntry::ConcatPath(m_Root, m_Subtree));
         }
 #if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
         const CArgValue& ide = args["ide"];
@@ -1480,7 +1483,7 @@ void CProjBulderApp::ParseArguments(void)
             }
         }
     }
-    if (m_ProjTags.empty()) {
+    if (m_ProjTags.empty() || m_ProjTags == "\"\"") {
         m_ProjTags = "*";
     }
 

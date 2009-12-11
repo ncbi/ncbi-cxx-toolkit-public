@@ -117,6 +117,10 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
                 CDirEntry d(file_full_path);
                 InitFromFile( CDirEntry::ConcatPathEx( d.GetDir(), name) );
             }
+        } else if ( NStr::StartsWith(strline, "#") ) {
+            continue;
+        } else if ( NStr::StartsWith(strline, "/*") ) {
+            continue;
         } else {
             if ( NStr::StartsWith(strline, "-") ) {
                 strline.erase(0,1);
@@ -128,6 +132,27 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
             }
         }
     }
+}
+
+string CProjectsLstFileFilter::GetAllowedTagsInfo(const string& file_full_path)
+{
+    CNcbiIfstream ifs(file_full_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if (!ifs) {
+        return kEmptyStr;
+    }
+    string strline;
+    string key("#define TAGS");
+    while ( NcbiGetlineEOL(ifs, strline) ) {
+        NStr::TruncateSpacesInPlace(strline);
+        if ( NStr::StartsWith(strline, key) ) {
+            NStr::ReplaceInPlace(strline,key,kEmptyStr);
+            NStr::ReplaceInPlace(strline,"[",kEmptyStr);
+            NStr::ReplaceInPlace(strline,"]",kEmptyStr);
+            NStr::TruncateSpacesInPlace(strline);
+            return strline;
+        }
+    }
+    return kEmptyStr;
 }
 
 bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* weak) const

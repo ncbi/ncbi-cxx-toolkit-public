@@ -60,6 +60,7 @@ public:
     {
         m_ExcludePotential = excl;
     }
+    static string GetAllowedTagsInfo(const string& file_full_path);
 
     typedef list<string> TPath;
 private:
