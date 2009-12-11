@@ -158,6 +158,7 @@ public class PtbguiMain extends javax.swing.JFrame {
 //        jRadioButtonStatic.setEnabled(false);
         adjustArch();
         initKnownTags();
+        initTagsFromSubtree();
     }
     private void adjustArch() {
         File build_root = new File(m_ArgsParser.getBuildRoot());
@@ -241,12 +242,33 @@ public class PtbguiMain extends javax.swing.JFrame {
             System.err.println(e.toString());
             e.printStackTrace();
         }
-        String tags = new String();
-        for (int i=0; i<m_KnownTags.size(); ++i) {
-            if (i != 0) {
-                tags += ", ";
+    }
+    private void initTagsFromSubtree() {
+        String lst = m_ArgsParser.getRoot() +
+            File.separatorChar + m_ArgsParser.getSubtree();
+        File f = new File(nativeFileSeparator(lst));
+        if (f.isFile()) {
+            try {
+                BufferedReader r = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(f)));
+                String key = "#define TAGS";
+                String line;
+                while ((line = r.readLine()) != null) {
+                    line = line.trim();
+                    if (line.startsWith(key)) {
+                        line = line.replaceAll(key,"");
+                        line = line.replaceAll("\\[","");
+                        line = line.replaceAll("\\]","");
+                        line = line.trim();
+                        m_ArgsParser.setProjTagFromLst(line);
+                        jTextFieldTags.setText(m_ArgsParser.getProjTag());
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println(e.toString());
+                e.printStackTrace();
             }
-            tags += m_KnownTags.get(i);
         }
     }
     private void updateData() {
@@ -396,7 +418,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             System.err.println(e.toString());
             e.printStackTrace();
         }
-        if (m_State == eState.gotProjects) {
+        if (m_State == eState.gotProjects || m_State == eState.got3rdparty) {
             processDone(m_Ptb.exitValue());
             return;
         }

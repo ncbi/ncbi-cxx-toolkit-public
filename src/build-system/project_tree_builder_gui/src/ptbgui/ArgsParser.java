@@ -44,6 +44,7 @@ public class ArgsParser {
     private String m_Unknown;
     private boolean m_dll;
     public boolean m_nobuildptb, m_ext, m_nws, m_i;
+    private boolean m_projtagFromLst;
     private String m_ArgsFile;
 
     public ArgsParser() {
@@ -53,6 +54,7 @@ public class ArgsParser {
         m_nCmd = 0;
     }
     public void init(String args[]) {
+        m_projtagFromLst = false;
         m_nCmd = args.length;
         eArg dest = eArg.undefined;
         int iPositional = 0;
@@ -180,6 +182,9 @@ public class ArgsParser {
             if (m_projtag != null && m_projtag.length() != 0) {
                 vcmd.add("-" + eArg.projtag.toString());
                 vcmd.add(m_projtag);
+            } else if (m_projtagFromLst) {
+                vcmd.add("-" + eArg.projtag.toString());
+                vcmd.add("\"\"");
             }
             if (m_ide != null && m_ide.length() != 0) {
                 vcmd.add("-" + eArg.ide.toString());
@@ -314,6 +319,11 @@ public class ArgsParser {
     public void setProjTag(String tag) {
         String t = tag.trim();
         m_projtag = t.equals("*") ? "" : tag;
+    }
+    public void setProjTagFromLst(String tag) {
+        String t = tag.trim();
+        m_projtag = t.equals("*") ? "" : tag;
+        m_projtagFromLst = true;
     }
     public String getIde() {
         return m_ide != null ? m_ide : "";
