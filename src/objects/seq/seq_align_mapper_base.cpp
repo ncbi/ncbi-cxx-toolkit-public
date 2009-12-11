@@ -427,7 +427,8 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 }
             }
         }
-        seglens.push_back(maxlen == 0 ? minlen : maxlen);
+        // -1 indicates unknown sequence type or equal lengths for all rows
+        seglens.push_back(maxlen == 0 ? -1/*minlen*/ : maxlen);
     }
     // By this point all possible sequence types should be detected and
     // stored in the loc-mapper.
@@ -494,9 +495,16 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 strand = loc.GetStrand();
             }
             if (len > 0  &&  len != seg_len) {
-                // In fact this should have been checked during the first pass
-                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                if (seg_len == -1  &&  seg.m_Len == -1) {
+                    // Segment length could not be calculated or is equal for
+                    // all rows - safe to use any row's length.
+                    seg_len = len;
+                    seg.m_Len = len;
+                }
+                else {
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Rows have different lengths in std-seg");
+                }
             }
             seg.AddRow(row_idx++, *id, start, m_HaveStrands, strand);
         }
