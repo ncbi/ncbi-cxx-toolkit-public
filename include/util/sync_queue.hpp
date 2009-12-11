@@ -480,7 +480,7 @@ private:
 
     enum {
         /// Value of thread system id that cannot be equal to any thread's id.
-        kThreadSystemID_None = 0
+        kThreadSystemID_None = 0xFFFFFFFF
     };
 
 
