@@ -2068,6 +2068,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HEND	s	Henderson State University, Biology Department",
 "HENNU	s	Henan Normal University",
 "HENU	s	Henan Normal University, Biology Department",
+"HEP	c	Hokkaido Forest Products Research Institute",
 "HEPH	s	Jardim Botanico de Brasilia",
 "HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses",
 "HER<ZAF>	s	Hermanus Botanical Society",
