@@ -112,6 +112,9 @@ public:
     void SetCounts(int num_ident, int length, int gaps, int gap_opens, 
                    int positives =0, int query_frame = 1, 
                    int subject_frame = 1);
+    /// Sets the Blast-traceback-operations string.
+    /// @param btop_string string for blast traceback operations [in]
+    void SetBTOP(string btop_string);
     /// Set all member fields, given a Seq-align
     /// @param sal Seq-align to get data from [in]
     /// @param scope Scope for Bioseq retrieval [in]
@@ -236,6 +239,7 @@ protected:
     void x_PrintFrames();
     void x_PrintQueryFrame();
     void x_PrintSubjectFrame();
+    void x_PrintBTOP();
 
 private:
 
@@ -265,6 +269,7 @@ private:
     char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
     /// Should the query deflines be parsed for local IDs?
     bool m_ParseLocalIds;
+    string m_BTOP;            /// Blast-traceback-operations.
 };
 
 inline void CBlastTabularInfo::x_PrintQuerySeq(void)
@@ -346,6 +351,10 @@ inline void CBlastTabularInfo::x_PrintSubjectFrame(void)
     m_Ostream << m_SubjectFrame;
 }
 
+inline void CBlastTabularInfo::x_PrintBTOP(void)
+{
+    m_Ostream << m_BTOP;
+}
 
 inline void CBlastTabularInfo::x_PrintNumIdentical(void)
 {

@@ -109,6 +109,7 @@ enum ETabularField {
     eFrames,               ///< Query and subject frames separated by a '/'
     eQueryFrame,           ///< Query frame
     eSubjFrame,            ///< Subject frame
+    eBTOP,                 ///< BLAST traceback operations.
     eMaxTabularField       ///< Sentinel value
 };
 
