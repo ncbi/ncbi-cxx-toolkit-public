@@ -35,6 +35,7 @@
 
 #include "splign_util.hpp"
 #include "messages.hpp"
+
 #include <algo/align/util/hit_comparator.hpp>
 #include <algo/align/util/compartment_finder.hpp>
 #include <algo/align/nw/nw_band_aligner.hpp>
@@ -68,6 +69,9 @@
 BEGIN_NCBI_SCOPE
 
 namespace {
+
+    // the library's version object
+    CRef<CVersion> kVersion (new CVersion(CVersionInfo(1, 39, 5)));
 
     // define cut-off strategy at the terminii:
     
@@ -110,6 +114,11 @@ CSplign::~CSplign()
 {
 }
 
+
+CRef<CVersion> CSplign::s_GetVersion(void)
+{
+    return kVersion;
+}
 
 CRef<CSplign::TAligner>& CSplign::SetAligner( void ) {
     return m_aligner;

@@ -58,15 +58,15 @@ public:
                    CConstRef<objects::CSeq_id> id2);
 
     enum ETextFlags {
-        eTF_None = 0,
-        eTF_NoExonScores = 0x0001,
-        eTF_UseFastaStyleIds = 0x0002
+        eTF_None                 = 0,
+        eTF_NoExonScores         = 0x0001,
+        eTF_UseFastaStyleIds     = 0x0002
     };
 
     enum EAsnFlags {
-        eAF_Disc,
-        eAF_SplicedSegNoParts,
-        eAF_SplicedSegWithParts
+        eAF_Disc                 = 0x0000,
+        eAF_SplicedSegNoParts    = 0x0001,
+        eAF_SplicedSegWithParts  = 0x0003
     };
 
     // formatters

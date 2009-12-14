@@ -615,14 +615,9 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
    EAsnFlags flag)
 const
 {
-    if(flag != eAF_Disc && flag != eAF_SplicedSegNoParts
-       && flag != eAF_SplicedSegWithParts)
-    {
-        NCBI_THROW(CAlgoAlignException,
-                   eBadParameter,
-                   "Incorrect flag passed to CSplignFormatter::AsSeqAlignSet()");
-    }
-    
+    const bool spliced_seg (flag & 0x0001);
+    const bool with_parts (flag & 0x0002);
+
     if(results == 0) {
         results = &(m_splign_results);
     }
@@ -634,7 +629,7 @@ const
     
         if(ii->m_Status != CSplign::SAlignedCompartment::eStatus_Ok) continue;
 
-        if(flag != eAF_Disc) {
+        if(spliced_seg) {
 
             CRef<CSeq_align> sa (new CSeq_align);
             sa->SetType(CSeq_align::eType_global);
@@ -732,7 +727,7 @@ const
                         exon->SetDonor_after_exon().SetBases(dnr);
                     }
 
-                    if(flag == eAF_SplicedSegWithParts) {
+                    if(with_parts) {
 
                         // add parts
                         CSpliced_exon::TParts & parts (exon->SetParts());
@@ -766,6 +761,9 @@ const
             data.push_back(sa);
         }
         else {
+
+            // format into a dense-seg
+
             vector<size_t> boxes;
             vector<string> transcripts;
             vector<float>  scores;

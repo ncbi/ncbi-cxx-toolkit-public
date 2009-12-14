@@ -79,13 +79,16 @@ namespace {
 
 BEGIN_NCBI_SCOPE
 
-CSplignApp::CSplignApp(void):
-    m_AppName("Splign v.1.39")
+CSplignApp::CSplignApp(void)
 {
-    SetVersion(CVersionInfo(1, 39, 0, "Splign"));
+    CRef<CVersion> version (CSplign::s_GetVersion());
+    SetFullVersion(version);
+    m_AppName = version->Print("Splign");
+
 #ifdef GENOME_PIPELINE
-    m_AppName += 'p';
+    m_AppName += "(gpipe)";
 #endif
+
 }
 
 

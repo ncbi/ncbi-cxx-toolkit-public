@@ -34,8 +34,10 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/version.hpp>
 
 #include <objmgr/scope.hpp>
+
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 
@@ -61,7 +63,12 @@ public:
     CSplign(void);
     ~CSplign();
 
-    // setters and getters
+    /// Retrieve the library's version object
+
+    static CRef<CVersion> s_GetVersion(void);
+
+    /// Access to parameters and subj-objects
+
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
     static CRef<CSplicedAligner> s_CreateDefaultAligner(bool low_query_quality);
@@ -111,11 +118,12 @@ public:
         return m_model_id + 1;
     }
 
-    void SetMaxCompsPerQuery(size_t m);
+    void   SetMaxCompsPerQuery(size_t m);
     size_t GetMaxCompsPerQuery(void) const;
     
     typedef CNWFormatter::SSegment   TSegment;
     typedef vector<TSegment>         TSegments;
+
 
     // aligned compartment representation 
     struct NCBI_XALGOALIGN_EXPORT SAlignedCompartment {
