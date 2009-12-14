@@ -109,15 +109,15 @@ int CTestICClient::Run(void)
 
     const string& cache_name  = args["cache"].AsString();
 
-    auto_ptr<CNetICacheClient> cl;
+    CNetICacheClient cl;
 
     if (args["service"].HasValue()) {
-        cl.reset(new CNetICacheClient(args["service"].AsString(),
-            cache_name, "test_icache"));
+        cl = CNetICacheClient(args["service"].AsString(),
+            cache_name, "test_icache");
     } else if (args["hostname"].HasValue()) {
-        cl.reset(new CNetICacheClient(args["hostname"].AsString(),
+        cl = CNetICacheClient(args["hostname"].AsString(),
             args["port"].AsInteger(),
-            cache_name, "test_icache"));
+            cache_name, "test_icache");
     } else {
         NcbiCerr << "Either -service or -hostname argument must be specified.";
         return 1;
@@ -125,7 +125,7 @@ int CTestICClient::Run(void)
 
     const char test_data[] = "The quick brown fox jumps over the lazy dog.";
 
-    bool b = cl->IsOpen();
+    bool b = cl.IsOpen();
     assert(b == true);
 
     string uid = GetDiagContext().GetStringUID();
@@ -137,36 +137,36 @@ int CTestICClient::Run(void)
     {{
     size_t data_size = strlen(test_data) + 1;
 
-    cl->Store(key1, version, subkey, test_data, data_size);
+    cl.Store(key1, version, subkey, test_data, data_size);
     SleepMilliSec(700);
 
-    bool hb = cl->HasBlobs(key1, subkey);
+    bool hb = cl.HasBlobs(key1, subkey);
     assert(hb);
 
-    size_t sz = cl->GetSize(key1, version, subkey);
+    size_t sz = cl.GetSize(key1, version, subkey);
     assert(sz == data_size);
 
     string owner;
-    cl->GetBlobOwner(key1, version, subkey, &owner);
+    cl.GetBlobOwner(key1, version, subkey, &owner);
 
     char buf[1024] = {0,};
-    cl->Read(key1, version, subkey, buf, sizeof(buf));
+    cl.Read(key1, version, subkey, buf, sizeof(buf));
 
     assert(strcmp(buf, test_data) == 0);
 
     memset(buf, 0, sizeof(buf));
-    cl->Read(key1, version, subkey, buf, sizeof(buf));
+    cl.Read(key1, version, subkey, buf, sizeof(buf));
 
     assert(strcmp(buf, test_data) == 0);
 
 
-    sz = cl->GetSize(key1, version, subkey);
+    sz = cl.GetSize(key1, version, subkey);
     assert(sz == data_size);
-    hb = cl->HasBlobs(key1, subkey);
+    hb = cl.HasBlobs(key1, subkey);
     assert(hb);
 
-    cl->Remove(key1);
-    hb = cl->HasBlobs(key1, subkey);
+    cl.Remove(key1);
+    hb = cl.HasBlobs(key1, subkey);
     assert(!hb);
 
     }}
@@ -178,18 +178,18 @@ int CTestICClient::Run(void)
         test_buf[i] = 127;
     }
 
-    cl->Store(key2, version, subkey, test_buf, test_size);
+    cl.Store(key2, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 0;
     }
     SleepMilliSec(700);
 
-    size_t sz = cl->GetSize(key2, version, subkey);
+    size_t sz = cl.GetSize(key2, version, subkey);
     assert(sz == test_size);
 
 
-    cl->Read(key2, version, subkey, test_buf, test_size);
+    cl.Read(key2, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         if (test_buf[i] != 127) {
@@ -197,11 +197,11 @@ int CTestICClient::Run(void)
         }
     }
 
-    sz = cl->GetSize(key2, version, subkey);
+    sz = cl.GetSize(key2, version, subkey);
     assert(sz == test_size);
 
-    cl->Remove(key2);
-    bool hb = cl->HasBlobs(key2, subkey);
+    cl.Remove(key2);
+    bool hb = cl.HasBlobs(key2, subkey);
     assert(!hb);
     }}
 
@@ -214,24 +214,24 @@ int CTestICClient::Run(void)
     size_t test_size = sizeof(test_buf);
     for (int i = 0; i < 100; ++i) {
         string key = "TEST_IC_CLIENT_KEY_" + NStr::IntToString(i) + "_" + uid;
-        cl->Store(key, 0, subkey, test_buf, test_size);
-        cl->Remove(key);
+        cl.Store(key, 0, subkey, test_buf, test_size);
+        cl.Remove(key);
     }
     }}
 
     NcbiCout << "check reader/writer" << NcbiEndl;
     {{
         {
-        auto_ptr<IWriter> writer1(cl->GetWriteStream(key1, version, subkey));
+        auto_ptr<IWriter> writer1(cl.GetWriteStream(key1, version, subkey));
         string str = "qwerty";
         writer1->Write(str.c_str(), str.size());
         }
-        int size = cl->GetSize(key1, version, subkey);
+        int size = cl.GetSize(key1, version, subkey);
         vector<unsigned char> test_buf(1000);
-        cl->Read(key1, version, subkey, &test_buf[0], test_buf.size());
+        cl.Read(key1, version, subkey, &test_buf[0], test_buf.size());
         cout << size << endl << string((char*)&test_buf[0],
             test_buf.size()) << endl;
-        cl->Remove(key1);
+        cl.Remove(key1);
     }}
 
     return 0;
