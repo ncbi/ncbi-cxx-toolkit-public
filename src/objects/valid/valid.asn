@@ -33,7 +33,8 @@ Field-set ::= SET OF Field-rule
 Dependent-field-rule ::= SEQUENCE {
     match-name VisibleString ,
     value-constraint VisibleString OPTIONAL ,
-    other-fields Field-set
+    other-fields Field-set OPTIONAL ,
+    disallowed-fields Field-set OPTIONAL
 }
 
 Dependent-field-set ::= SET OF Dependent-field-rule    
@@ -42,6 +43,8 @@ Comment-rule ::= SEQUENCE {
     prefix VisibleString ,
     updated BOOLEAN DEFAULT FALSE ,
     fields Field-set ,
+    require-order BOOLEAN DEFAULT TRUE ,
+    allow-unlisted BOOLEAN DEFAULT FALSE ,
     dependent-rules Dependent-field-set OPTIONAL
 }
 
