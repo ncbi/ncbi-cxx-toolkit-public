@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/reader_params.h>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
@@ -45,7 +46,17 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Reader
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(7);
+
 BEGIN_SCOPE(objects)
+
+#define DEFAULT_RETRY_COUNT 5
+#define DEFAULT_WAIT_TIME_ERRORS 2
+#define DEFAULT_WAIT_TIME 1
+#define DEFAULT_WAIT_TIME_MULTIPLIER 1.5
+#define DEFAULT_WAIT_TIME_INCREASE 1
+#define DEFAULT_WAIT_TIME_MAX 30
 
 CReader::CReader(void)
     : m_Dispatcher(0),
@@ -54,15 +65,54 @@ CReader::CReader(void)
       m_NextNewConnection(0),
       m_NumFreeConnections(0, 1000),
       m_MaximumRetryCount(3),
-      m_CurrentFailCount(0),
-      m_InitialConnectWaitSeconds(1),
-      m_MaximumConnectWaitSeconds(60)
+      m_ConnectFailCount(0),
+      m_WaitTimeErrors(DEFAULT_WAIT_TIME_ERRORS),
+      m_WaitTime(DEFAULT_WAIT_TIME,
+                 DEFAULT_WAIT_TIME_MAX,
+                 DEFAULT_WAIT_TIME_MULTIPLIER,
+                 DEFAULT_WAIT_TIME_INCREASE)
+      
+{
+}
+
+CReader::~CReader(void)
 {
 }
 
 
-CReader::~CReader(void)
+void CReader::InitParams(CConfig& conf,
+                         const string& driver_name,
+                         int default_max_conn)
 {
+    int retry_count =
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_PARAM_RETRY_COUNT,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_RETRY_COUNT);
+    SetMaximumRetryCount(retry_count);
+    bool open_initial_connection =
+        conf.GetBool(driver_name,
+                     NCBI_GBLOADER_READER_PARAM_PREOPEN,
+                     CConfig::eErr_NoThrow,
+                     true);
+    SetPreopenConnection(open_initial_connection);
+    m_WaitTimeErrors =
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_ERRORS,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_WAIT_TIME_ERRORS);
+    m_WaitTime.Init(conf, driver_name,
+                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME,
+                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MAX,
+                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_MULTIPLIER,
+                    NCBI_GBLOADER_READER_PARAM_WAIT_TIME_INCREMENT);
+
+    TConn max_connections =
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_PARAM_NUM_CONN,
+                    CConfig::eErr_NoThrow,
+                    default_max_conn);
+    SetMaximumConnections(max_connections, default_max_conn);
 }
 
 
@@ -72,13 +122,7 @@ void CReader::OpenInitialConnection(bool force)
         for ( int attempt = 1; ; ++attempt ) {
             try {
                 TConn conn = x_AllocConnection();
-                try {
-                    x_ConnectAtSlot(conn);
-                }
-                catch ( ... ) {
-                    x_AbortConnection(conn);
-                    throw;
-                }
+                OpenConnection(conn);
                 x_ReleaseConnection(conn);
                 return;
             }
@@ -118,6 +162,15 @@ void CReader::SetPreopenConnection(bool preopen)
 bool CReader::GetPreopenConnection(void) const
 {
     return m_PreopenConnection;
+}
+
+
+void CReader::SetMaximumConnections(int max, int default_max_conn)
+{
+    if ( max == 0 ) {
+        max = default_max_conn;
+    }
+    SetMaximumConnections(max);
 }
 
 
@@ -171,19 +224,24 @@ void CReader::WaitBeforeNewConnection(TConn /*conn*/)
     if ( !m_NextConnectTime.IsEmpty() ) {
         double wait_seconds =
             m_NextConnectTime.DiffNanoSecond(CTime(CTime::eCurrent))*1e-9;
-        m_NextConnectTime.Clear();
         if ( wait_seconds > 0 ) {
+            LOG_POST_X(6, Warning << "CReader: waiting "<<
+                       wait_seconds<<"s before new connection");
             _TRACE("CReader: waiting "<<wait_seconds<<
                    "s before new connection");
             SleepMicroSec((unsigned long)(wait_seconds*1e6));
             return;
         }
+        else {
+            m_NextConnectTime.Clear();
+            return;
+        }
     }
-    else if ( m_CurrentFailCount > 1 ) {
-        double wait_seconds =
-            min(m_MaximumConnectWaitSeconds,
-                m_InitialConnectWaitSeconds*pow(2., m_CurrentFailCount-2.));
+    else if ( m_ConnectFailCount >= 2 ) {
+        double wait_seconds = m_WaitTime.GetTime(m_ConnectFailCount-2);
         if ( wait_seconds > 0 ) {
+            LOG_POST_X(7, Warning << "CReader: waiting "<<
+                       wait_seconds<<"s before new connection");
             _TRACE("CReader: waiting "<<wait_seconds<<
                    "s before new connection");
             SleepMicroSec((unsigned long)(wait_seconds*1e6));
@@ -192,16 +250,16 @@ void CReader::WaitBeforeNewConnection(TConn /*conn*/)
 }
 
 
-void CReader::RequestSucceeds(TConn /*conn*/)
+void CReader::ConnectSucceeds(TConn /*conn*/)
 {
-    m_CurrentFailCount = 0;
+    m_ConnectFailCount = 0;
 }
 
 
-void CReader::RequestFailed(TConn /*conn*/)
+void CReader::ConnectFailed(TConn /*conn*/)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    ++m_CurrentFailCount;
+    ++m_ConnectFailCount;
     m_LastTimeFailed = CTime(CTime::eCurrent);
 }
 
@@ -211,6 +269,20 @@ void CReader::SetNewConnectionDelayMicroSec(unsigned long micro_sec)
     CMutexGuard guard(m_ConnectionsMutex);
     CTime curr(CTime::eCurrent);
     m_NextConnectTime = curr.AddTimeSpan(CTimeSpan(micro_sec*1e-6));
+}
+
+
+void CReader::OpenConnection(TConn conn)
+{
+    WaitBeforeNewConnection(conn);
+    try {
+        x_ConnectAtSlot(conn);
+    }
+    catch ( exception& /*rethrown*/ ) {
+        ConnectFailed(conn);
+        throw;
+    }
+    ConnectSucceeds(conn);
 }
 
 
@@ -272,17 +344,17 @@ void CReader::x_ReleaseConnection(TConn conn, bool oldest)
 }
 
 
-void CReader::x_AbortConnection(TConn conn)
+void CReader::x_AbortConnection(TConn conn, bool failed)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    RequestFailed(conn);
     try {
-        x_DisconnectAtSlot(conn);
+        x_DisconnectAtSlot(conn, failed);
         x_ReleaseConnection(conn, true);
         return;
     }
     catch ( exception& exc ) {
-        ERR_POST_X(4, "CReader("<<conn<<"): cannot reuse connection: "<<exc.what());
+        ERR_POST_X(4, "CReader("<<conn<<"): "
+                   "cannot reuse connection: "<<exc.what());
     }
     // cannot reuse connection number, allocate new one
     try {
@@ -297,10 +369,11 @@ void CReader::x_AbortConnection(TConn conn)
 }
 
 
-void CReader::x_DisconnectAtSlot(TConn conn)
+void CReader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
     LOG_POST_X(5, Warning << "CReader("<<conn<<"): "
-               "GenBank connection failed: reconnecting...");
+               " GenBank connection "<<(failed? "failed": "too old")<<
+               ": reconnecting...");
     x_RemoveConnectionSlot(conn);
     x_AddConnectionSlot(conn);
 }
@@ -742,7 +815,7 @@ CReaderCacheManager::SReaderCacheInfo::~SReaderCacheInfo(void)
 /////////////////////////////////////////////////////////////////////////////
 
 CReaderAllocatedConnection::CReaderAllocatedConnection(CReaderRequestResult& result, CReader* reader)
-    : m_Result(0), m_Reader(0), m_Conn(0)
+    : m_Result(0), m_Reader(0), m_Conn(0), m_Restart(false)
 {
     if ( !reader ) {
         return;
@@ -779,8 +852,14 @@ CReaderAllocatedConnection::~CReaderAllocatedConnection(void)
         _ASSERT(m_Reader);
         m_Result->ReleaseNotLoadedBlobs();
         m_Result->m_AllocatedConnection = 0;
-        m_Reader->x_AbortConnection(m_Conn);
+        m_Reader->x_AbortConnection(m_Conn, !m_Restart);
     }
+}
+
+
+void CReaderAllocatedConnection::Restart(void)
+{
+    m_Restart = true;
 }
 
 

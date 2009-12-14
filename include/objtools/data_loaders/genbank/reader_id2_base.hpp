@@ -166,14 +166,15 @@ protected:
                          const SAnnotSelector* sel);
 
     enum EErrorFlags {
-        fError_warning          = 1 << 0,
-        fError_no_data          = 1 << 1,
-        fError_bad_command      = 1 << 2,
-        fError_bad_connection   = 1 << 3,
-        fError_warning_dead     = 1 << 4,
-        fError_restricted       = 1 << 5,
-        fError_withdrawn        = 1 << 6,
-        fError_warning_suppressed = 1<<7
+        fError_warning              = 1 << 0,
+        fError_no_data              = 1 << 1,
+        fError_bad_command          = 1 << 2,
+        fError_bad_connection       = 1 << 3,
+        fError_warning_dead         = 1 << 4,
+        fError_restricted           = 1 << 5,
+        fError_withdrawn            = 1 << 6,
+        fError_warning_suppressed   = 1 << 7,
+        fError_inactivity_timeout   = 1 << 8
     };
     typedef int TErrorFlags;
     TErrorFlags x_GetError(const CID2_Error& error);

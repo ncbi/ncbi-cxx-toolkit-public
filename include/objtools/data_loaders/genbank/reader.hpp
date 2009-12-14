@@ -34,6 +34,7 @@
 #include <corelib/ncbitime.hpp>
 #include <util/cache/icache.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/incr_time.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -55,6 +56,9 @@ class NCBI_XREADER_EXPORT CReader : public CObject
 public:
     CReader(void);
     virtual ~CReader(void);
+
+    void InitParams(CConfig& conf, const string& driver_name,
+                    int default_max_conn);
 
     typedef unsigned TConn;
     typedef CBlob_id TBlobId;
@@ -162,6 +166,7 @@ public:
     typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
 
     int SetMaximumConnections(int max);
+    void SetMaximumConnections(int max, int default_max);
     int GetMaximumConnections(void) const;
     virtual int GetMaximumConnectionsLimit(void) const;
 
@@ -187,9 +192,10 @@ public:
                                  const TPluginManagerParamTree* params);
     virtual void ResetCache(void);
 
+    virtual void OpenConnection(TConn conn);
     virtual void WaitBeforeNewConnection(TConn conn);
-    virtual void RequestSucceeds(TConn conn);
-    virtual void RequestFailed(TConn conn);
+    virtual void ConnectSucceeds(TConn conn);
+    virtual void ConnectFailed(TConn conn);
     virtual void SetNewConnectionDelayMicroSec(unsigned long micro_sec);
 
 protected:
@@ -202,7 +208,7 @@ protected:
     // disconnect and remove connection slot with key 'conn'
     virtual void x_RemoveConnectionSlot(TConn conn) = 0;
     // disconnect at connection slot with key 'conn'
-    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed);
     // force connection at connection slot with key 'conn'
     virtual void x_ConnectAtSlot(TConn conn) = 0;
 
@@ -211,7 +217,7 @@ private:
     
     TConn x_AllocConnection(bool oldest = false);
     void x_ReleaseConnection(TConn conn, bool oldest = false);
-    void x_AbortConnection(TConn conn);
+    void x_AbortConnection(TConn conn, bool failed);
 
     void x_AddConnection(void);
     void x_RemoveConnection(void);
@@ -227,11 +233,11 @@ private:
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;
     int              m_MaximumRetryCount;
-    int              m_CurrentFailCount;
+    int              m_ConnectFailCount;
     CTime            m_LastTimeFailed;
     CTime            m_NextConnectTime;
-    double           m_InitialConnectWaitSeconds;
-    double           m_MaximumConnectWaitSeconds;
+    int              m_WaitTimeErrors;
+    CIncreasingTime  m_WaitTime;
 };
 
 
@@ -249,6 +255,7 @@ public:
     ~CReaderAllocatedConnection(void);
     
     void Release(void);
+    void Restart(void);
     
     operator TConn(void) const
         {
@@ -259,6 +266,7 @@ private:
     CReaderRequestResult* m_Result;
     CReader* m_Reader;
     TConn m_Conn;
+    bool m_Restart;
     
 private:
     CReaderAllocatedConnection(const CReaderAllocatedConnection&);

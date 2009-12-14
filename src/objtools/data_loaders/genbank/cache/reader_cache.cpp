@@ -227,7 +227,7 @@ void CCacheReader::x_RemoveConnectionSlot(TConn /*conn*/)
 }
 
 
-void CCacheReader::x_DisconnectAtSlot(TConn /*conn*/)
+void CCacheReader::x_DisconnectAtSlot(TConn /*conn*/, bool /*failed*/)
 {
 }
 

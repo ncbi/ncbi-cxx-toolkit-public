@@ -92,11 +92,10 @@ public:
 protected:
     void x_AddConnectionSlot(TConn conn);
     void x_RemoveConnectionSlot(TConn conn);
-    void x_DisconnectAtSlot(TConn conn);
+    void x_DisconnectAtSlot(TConn conn, bool failed);
     void x_ConnectAtSlot(TConn conn);
 
     CDB_Connection* x_GetConnection(TConn conn);
-    CDB_Connection* x_NewConnection(TConn conn);
 
     I_BaseCmd* x_SendRequest(const CBlob_id& blob_id,
                              CDB_Connection* db_conn,

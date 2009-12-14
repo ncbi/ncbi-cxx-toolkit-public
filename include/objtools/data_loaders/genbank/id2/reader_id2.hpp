@@ -57,7 +57,7 @@ public:
 protected:
     virtual void x_AddConnectionSlot(TConn conn);
     virtual void x_RemoveConnectionSlot(TConn conn);
-    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed);
     virtual void x_ConnectAtSlot(TConn conn);
     virtual string x_ConnDescription(TConn conn) const;
 
@@ -67,7 +67,6 @@ protected:
     string x_ConnDescription(CConn_IOStream& stream) const;
     CConn_IOStream* x_GetCurrentConnection(TConn conn) const;
     CConn_IOStream* x_GetConnection(TConn conn);
-    CReaderServiceConnector::SConnInfo x_NewConnection(TConn conn);
     void x_InitConnection(CConn_IOStream& stream, TConn conn);
 
 protected:

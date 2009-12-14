@@ -85,12 +85,11 @@ public:
 protected:
     virtual void x_AddConnectionSlot(TConn conn);
     virtual void x_RemoveConnectionSlot(TConn conn);
-    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed);
     virtual void x_ConnectAtSlot(TConn conn);
 
     string x_ConnDescription(CConn_IOStream& stream) const;
     CConn_IOStream* x_GetConnection(TConn conn);
-    CReaderServiceConnector::SConnInfo x_NewConnection(TConn conn);
 
     // returns error blob state parsed from ID1server-back.error
     TBlobState x_ResolveId(CReaderRequestResult& result,

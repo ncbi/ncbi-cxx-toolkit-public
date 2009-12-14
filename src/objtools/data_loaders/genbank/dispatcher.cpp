@@ -43,6 +43,9 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Disp
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(10);
+
 BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -862,7 +865,14 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                 LogStat(command, r);
             }
             catch ( CLoaderException& exc ) {
-                if ( exc.GetErrCode() == exc.eNoConnection ) {
+                if ( exc.GetErrCode() == exc.eRepeatAgain ) {
+                    // no actual error, just restart
+                    --retry_count;
+                    LOG_POST_X(10, Info<<
+                               "CReadDispatcher: connection reopened "
+                               "due to inactivity timeout");
+                }
+                else if ( exc.GetErrCode() == exc.eNoConnection ) {
                     LOG_POST_X(1, Warning<<
                                "CReadDispatcher: Exception: "<<exc);
                     retry_count = kMax_Int;
@@ -1075,7 +1085,7 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
         if ( idh ) {
             descr = descr + " for " + idh.AsString();
         }
-        LOG_POST_X(6, setw(result.GetRecursionLevel()) << "" <<
+        LOG_POST_X(8, setw(result.GetRecursionLevel()) << "" <<
                    "Dispatcher: read " <<
                    descr << " in " <<
                    setiosflags(ios::fixed) <<
@@ -1098,7 +1108,7 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
         if ( idh ) {
             descr = descr + " for " + idh.AsString();
         }
-        LOG_POST_X(7, setw(result.GetRecursionLevel()) << "" <<
+        LOG_POST_X(9, setw(result.GetRecursionLevel()) << "" <<
                    descr << " in " <<
                    setiosflags(ios::fixed) <<
                    setprecision(3) <<

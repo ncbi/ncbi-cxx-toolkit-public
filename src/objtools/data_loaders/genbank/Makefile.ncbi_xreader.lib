@@ -2,7 +2,7 @@
 
 SRC = dispatcher reader writer processors \
     reader_snp seqref blob_id split_parser request_result \
-    reader_id1_base reader_id2_base reader_service
+    reader_id1_base reader_id2_base reader_service incr_time
 
 ASN_DEP = id1 id2 seqsplit seqset seq general
 

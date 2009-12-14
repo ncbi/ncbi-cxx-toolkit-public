@@ -68,9 +68,8 @@
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
 #define DEFAULT_DB_DRIVER   "ftds;ctlib"
-#define MAX_MT_CONN         5
 #define DEFAULT_NUM_CONN    2
-#define DEFAULT_RETRY_COUNT 3
+#define MAX_MT_CONN         5
 #define DEFAULT_ALLOW_GZIP  true
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq
@@ -113,9 +112,6 @@ CPubseqReader::CPubseqReader(int max_connections,
       m_DbapiDriver(dbapi_driver),
       m_Context(0), m_AllowGzip(false)
 {
-    if ( max_connections == 0 ) {
-        max_connections = DEFAULT_NUM_CONN;
-    }
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
     }
@@ -137,8 +133,7 @@ CPubseqReader::CPubseqReader(int max_connections,
                    "without MT-safe DB library");
     }
 #endif
-
-    SetMaximumConnections(max_connections);
+    SetMaximumConnections(max_connections, DEFAULT_NUM_CONN);
 }
 
 
@@ -184,24 +179,7 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
     }
 #endif
 
-    TConn max_connections = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN,
-        CConfig::eErr_NoThrow,
-        DEFAULT_NUM_CONN);
-    SetMaximumConnections(max_connections);
-    int retry_count = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_PUBSEQ_PARAM_RETRY_COUNT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_RETRY_COUNT);
-    SetMaximumRetryCount(retry_count);
-    bool open_initial_connection = conf.GetBool(
-        driver_name,
-        NCBI_GBLOADER_READER_PUBSEQ_PARAM_PREOPEN,
-        CConfig::eErr_NoThrow,
-        true);
-    SetPreopenConnection(open_initial_connection);
+    CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
 
@@ -236,21 +214,16 @@ void CPubseqReader::x_RemoveConnectionSlot(TConn conn)
 }
 
 
-void CPubseqReader::x_DisconnectAtSlot(TConn conn)
+void CPubseqReader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
     if ( stream ) {
-        LOG_POST_X(1, Warning << "CPubseqReader: PubSeqOS"
-                   " GenBank connection failed: reconnecting...");
+        LOG_POST_X(1, Warning << "CPubseqReader("<<conn<<"): PubSeqOS"
+                   " GenBank connection "<<(failed? "failed": "too old")<<
+                   ": reconnecting...");
         stream.reset();
     }
-}
-
-
-void CPubseqReader::x_ConnectAtSlot(TConn conn)
-{
-    x_GetConnection(conn);
 }
 
 
@@ -258,17 +231,16 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
-    if ( !stream.get() ) {
-        stream.reset(x_NewConnection(conn));
+    if ( stream.get() ) {
+        return stream.get();
     }
-    return stream.get();
+    OpenConnection(conn);
+    return m_Connections[conn].get();
 }
 
 
-CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
+void CPubseqReader::x_ConnectAtSlot(TConn conn_)
 {
-    WaitBeforeNewConnection(conn_);
-
     if ( !m_Context ) {
         DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
@@ -324,9 +296,8 @@ CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
         }
     }
 #endif
-
-    RequestSucceeds(conn_);
-    return conn.release();
+    
+    m_Connections[conn_].reset(conn.release());
 }
 
 

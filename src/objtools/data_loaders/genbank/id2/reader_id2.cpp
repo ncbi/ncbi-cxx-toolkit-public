@@ -30,6 +30,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_system.hpp> // for SleepSec
 
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
@@ -77,9 +78,6 @@ BEGIN_SCOPE(objects)
 
 #define DEFAULT_SERVICE  "ID2"
 #define DEFAULT_NUM_CONN 3
-#define DEFAULT_RETRY_COUNT 5
-#define DEFAULT_TIMEOUT  20
-#define DEFAULT_OPEN_TIMEOUT  5
 #define MAX_MT_CONN      5
 
 //#define GENBANK_ID2_RANDOM_FAILS 1
@@ -131,14 +129,9 @@ NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
                   eParam_NoThread, GENBANK_SERVICE_NAME_ID2);
 
 CId2Reader::CId2Reader(int max_connections)
-    : m_Connector(DEFAULT_SERVICE,
-                  DEFAULT_OPEN_TIMEOUT,
-                  DEFAULT_TIMEOUT)
+    : m_Connector(DEFAULT_SERVICE)
 {
-    if ( max_connections == 0 ) {
-        max_connections = DEFAULT_NUM_CONN;
-    }
-    SetMaximumConnections(max_connections);
+    SetMaximumConnections(max_connections, DEFAULT_NUM_CONN);
 }
 
 
@@ -161,34 +154,8 @@ CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
         service_name = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID2)::GetDefault();
     }
     m_Connector.SetServiceName(service_name);
-    m_Connector.SetTimeout(
-        conf.GetInt(driver_name,
-                    NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT,
-                    CConfig::eErr_NoThrow,
-                    DEFAULT_TIMEOUT));
-    m_Connector.SetOpenTimeout(
-        conf.GetInt(driver_name,
-                    NCBI_GBLOADER_READER_ID2_PARAM_OPEN_TIMEOUT,
-                    CConfig::eErr_NoThrow,
-                    DEFAULT_OPEN_TIMEOUT));
-    TConn max_connections = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID2_PARAM_NUM_CONN,
-        CConfig::eErr_NoThrow,
-        DEFAULT_NUM_CONN);
-    SetMaximumConnections(max_connections);
-    int retry_count = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID2_PARAM_RETRY_COUNT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_RETRY_COUNT);
-    SetMaximumRetryCount(retry_count);
-    bool open_initial_connection = conf.GetBool(
-        driver_name,
-        NCBI_GBLOADER_READER_ID2_PARAM_PREOPEN,
-        CConfig::eErr_NoThrow,
-        true);
-    SetPreopenConnection(open_initial_connection);
+    m_Connector.InitTimeouts(conf, driver_name);
+    CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
 
@@ -220,22 +187,17 @@ void CId2Reader::x_RemoveConnectionSlot(TConn conn)
 }
 
 
-void CId2Reader::x_DisconnectAtSlot(TConn conn)
+void CId2Reader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
     _ASSERT(m_Connections.count(conn));
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
     m_Connector.RememberIfBad(conn_info);
     if ( conn_info.m_Stream ) {
-        LOG_POST_X(1, Warning << "CId2Reader("<<conn<<"): "
-                   "ID2 connection failed: reconnecting...");
+        LOG_POST_X(1, Warning << "CId2Reader("<<conn<<"): ID2"
+                   " GenBank connection "<<(failed? "failed": "too old")<<
+                   ": reconnecting...");
         conn_info.m_Stream.reset();
     }
-}
-
-
-void CId2Reader::x_ConnectAtSlot(TConn conn)
-{
-    x_GetConnection(conn);
 }
 
 
@@ -243,10 +205,11 @@ CConn_IOStream* CId2Reader::x_GetConnection(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
-    if ( !conn_info.m_Stream.get() ) {
-        conn_info = x_NewConnection(conn);
+    if ( conn_info.m_Stream.get() ) {
+        return conn_info.m_Stream.get();
     }
-    return conn_info.m_Stream.get();
+    OpenConnection(conn);
+    return m_Connections[conn].m_Stream.get();
 }
 
 
@@ -270,10 +233,8 @@ string CId2Reader::x_ConnDescription(TConn conn) const
 }
 
 
-CReaderServiceConnector::SConnInfo CId2Reader::x_NewConnection(TConn conn)
+void CId2Reader::x_ConnectAtSlot(TConn conn)
 {
-    WaitBeforeNewConnection(conn);
-
     if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn, "CId2Reader");
         s << "New connection to " << m_Connector.GetServiceName() << "...";
@@ -311,12 +272,10 @@ CReaderServiceConnector::SConnInfo CId2Reader::x_NewConnection(TConn conn)
     conn_info.MarkAsGood();
 
     STimeout tmout;
-    tmout.sec = m_Connector.GetTimeout();
-    tmout.usec = 0;
+    m_Connector.SetTimeoutTo(&tmout);
     CONN_SetTimeout(stream.GetCONN(), eIO_ReadWrite, &tmout);
-
-    RequestSucceeds(conn);
-    return conn_info;
+   
+    m_Connections[conn] = conn_info;
 }
 
 

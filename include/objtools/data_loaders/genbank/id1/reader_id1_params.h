@@ -37,17 +37,7 @@
 /* Name of ID1 reader driver */
 #define NCBI_GBLOADER_READER_ID1_DRIVER_NAME "id1"
 
-/* Maximum number of simultaneous connection to id1 server */
-#define NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN "no_conn"
-/* Whether to open first connection immediately or not (default: true) */
-#define NCBI_GBLOADER_READER_ID1_PARAM_PREOPEN  "preopen"
 /* NCBI service name to connect to */
 #define NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME "service"
-/* Timeout of network connections in seconds */
-#define NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT "timeout"
-/* Timeout of network connections in seconds while opening and initializing */
-#define NCBI_GBLOADER_READER_ID1_PARAM_OPEN_TIMEOUT "open_timeout"
-/* Number of retries on errors */
-#define NCBI_GBLOADER_READER_ID1_PARAM_RETRY_COUNT "retry"
 
 #endif

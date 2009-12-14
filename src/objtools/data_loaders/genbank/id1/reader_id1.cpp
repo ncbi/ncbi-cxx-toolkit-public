@@ -72,9 +72,6 @@ BEGIN_SCOPE(objects)
 
 #define DEFAULT_SERVICE  "ID1"
 #define DEFAULT_NUM_CONN 3
-#define DEFAULT_RETRY_COUNT 5
-#define DEFAULT_TIMEOUT  20
-#define DEFAULT_OPEN_TIMEOUT  5
 #define MAX_MT_CONN      5
 
 //#define GENBANK_ID1_RANDOM_FAILS 1
@@ -153,14 +150,9 @@ enum EDebugLevel
 
 
 CId1Reader::CId1Reader(int max_connections)
-    : m_Connector(DEFAULT_SERVICE,
-                  DEFAULT_OPEN_TIMEOUT,
-                  DEFAULT_TIMEOUT)
+    : m_Connector(DEFAULT_SERVICE)
 {
-    if ( max_connections == 0 ) {
-        max_connections = DEFAULT_NUM_CONN;
-    }
-    SetMaximumConnections(max_connections);
+    SetMaximumConnections(max_connections, DEFAULT_NUM_CONN);
 }
 
 
@@ -180,34 +172,8 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
         service_name = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID1)::GetDefault();
     }
     m_Connector.SetServiceName(service_name);
-    m_Connector.SetTimeout(
-        conf.GetInt(driver_name,
-                    NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
-                    CConfig::eErr_NoThrow,
-                    DEFAULT_TIMEOUT));
-    m_Connector.SetOpenTimeout(
-        conf.GetInt(driver_name,
-                    NCBI_GBLOADER_READER_ID1_PARAM_OPEN_TIMEOUT,
-                    CConfig::eErr_NoThrow,
-                    DEFAULT_OPEN_TIMEOUT));
-    TConn max_connections = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
-        CConfig::eErr_NoThrow,
-        DEFAULT_NUM_CONN);
-    SetMaximumConnections(max_connections);
-    int retry_count = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_RETRY_COUNT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_RETRY_COUNT);
-    SetMaximumRetryCount(retry_count);
-    bool open_initial_connection = conf.GetBool(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_PREOPEN,
-        CConfig::eErr_NoThrow,
-        true);
-    SetPreopenConnection(open_initial_connection);
+    m_Connector.InitTimeouts(conf, driver_name);
+    CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
 
@@ -239,22 +205,17 @@ void CId1Reader::x_RemoveConnectionSlot(TConn conn)
 }
 
 
-void CId1Reader::x_DisconnectAtSlot(TConn conn)
+void CId1Reader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
     _ASSERT(m_Connections.count(conn));
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
     m_Connector.RememberIfBad(conn_info);
     if ( conn_info.m_Stream ) {
-        LOG_POST_X(2, Warning << "CId1Reader: ID1"
-                   " GenBank connection failed: reconnecting...");
+        LOG_POST_X(2, Warning << "CId1Reader("<<conn<<"): ID1"
+                   " GenBank connection "<<(failed? "failed": "too old")<<
+                   ": reconnecting...");
         conn_info.m_Stream.reset();
     }
-}
-
-
-void CId1Reader::x_ConnectAtSlot(TConn conn)
-{
-    x_GetConnection(conn);
 }
 
 
@@ -262,10 +223,11 @@ CConn_IOStream* CId1Reader::x_GetConnection(TConn conn)
 {
     _VERIFY(m_Connections.count(conn));
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
-    if ( !conn_info.m_Stream.get() ) {
-        conn_info = x_NewConnection(conn);
+    if ( conn_info.m_Stream.get() ) {
+        return conn_info.m_Stream.get();
     }
-    return conn_info.m_Stream.get();
+    OpenConnection(conn);
+    return m_Connections[conn].m_Stream.get();
 }
 
 
@@ -275,9 +237,8 @@ string CId1Reader::x_ConnDescription(CConn_IOStream& stream) const
 }
 
 
-CReaderServiceConnector::SConnInfo CId1Reader::x_NewConnection(TConn conn)
+void CId1Reader::x_ConnectAtSlot(TConn conn)
 {
-    WaitBeforeNewConnection(conn);
     CReaderServiceConnector::SConnInfo conn_info = m_Connector.Connect();
 
     CConn_IOStream& stream = *conn_info.m_Stream;
@@ -296,12 +257,10 @@ CReaderServiceConnector::SConnInfo CId1Reader::x_NewConnection(TConn conn)
     }
 
     STimeout tmout;
-    tmout.sec = m_Connector.GetTimeout();
-    tmout.usec = 0;
+    m_Connector.SetTimeoutTo(&tmout);
     CONN_SetTimeout(stream.GetCONN(), eIO_ReadWrite, &tmout);
 
-    RequestSucceeds(conn);
-    return conn_info;
+    m_Connections[conn] = conn_info;
 }
 
 

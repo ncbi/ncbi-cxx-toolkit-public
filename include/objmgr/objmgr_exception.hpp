@@ -129,7 +129,8 @@ public:
         eCompressionError,
         eLoaderFailed,
         eNoConnection,
-        eOtherError
+        eOtherError,
+        eRepeatAgain
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);

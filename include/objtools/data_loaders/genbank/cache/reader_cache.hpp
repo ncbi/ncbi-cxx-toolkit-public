@@ -171,7 +171,7 @@ public:
 protected:
     void x_AddConnectionSlot(TConn conn);
     void x_RemoveConnectionSlot(TConn conn);
-    void x_DisconnectAtSlot(TConn conn);
+    void x_DisconnectAtSlot(TConn conn, bool failed);
     void x_ConnectAtSlot(TConn conn);
 };
 

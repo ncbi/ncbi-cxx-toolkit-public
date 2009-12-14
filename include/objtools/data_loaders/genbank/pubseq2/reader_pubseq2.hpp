@@ -62,7 +62,7 @@ public:
 protected:
     virtual void x_AddConnectionSlot(TConn conn);
     virtual void x_RemoveConnectionSlot(TConn conn);
-    virtual void x_DisconnectAtSlot(TConn conn);
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed);
     virtual void x_ConnectAtSlot(TConn conn);
     virtual string x_ConnDescription(TConn conn) const;
 
@@ -71,7 +71,6 @@ protected:
     virtual void x_EndOfPacket(TConn conn);
 
     CDB_Connection& x_GetConnection(TConn conn);
-    CDB_Connection* x_NewConnection(TConn conn);
     void x_InitConnection(CDB_Connection& db_conn, TConn conn);
     AutoPtr<CObjectIStream> x_SendPacket(CDB_Connection& db_conn,
                                          TConn conn,

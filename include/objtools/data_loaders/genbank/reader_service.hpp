@@ -31,6 +31,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/data_loaders/genbank/incr_time.hpp>
+#include <connect/ncbi_types.h>
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_conn_stream.hpp>
 #include <vector>
@@ -38,18 +40,17 @@
 BEGIN_NCBI_SCOPE
 
 class CConn_IOStream;
+class CConfig;
 
 BEGIN_SCOPE(objects)
 
 class CReader;
 
-class NCBI_XREADER_EXPORT CReaderServiceConnector : private CConnIniter
+class NCBI_XREADER_EXPORT CReaderServiceConnector : protected CConnIniter
 {
 public:
     CReaderServiceConnector(void);
-    CReaderServiceConnector(const string& service_name,
-                            int open_timeout,
-                            int timeout);
+    CReaderServiceConnector(const string& service_name);
     ~CReaderServiceConnector(void);
 
     struct SConnInfo {
@@ -67,17 +68,18 @@ public:
     const string& GetServiceName(void) const {
         return m_ServiceName;
     }
-    int GetTimeout(void) const {
-        return m_Timeout;
-    }
-    int GetOpenTimeout(void) const {
-        return m_OpenTimeout;
-    }
-    void SetServiceName(const string& service_name);
-    void SetTimeout(int timeout);
-    void SetOpenTimeout(int open_timeout);
 
-    SConnInfo Connect(void);
+    void SetTimeoutTo(STimeout* tmout) const {
+        x_SetTimeoutTo(tmout, m_Timeout);
+    }
+    void SetOpenTimeoutTo(STimeout* tmout, int error_count) const {
+        x_SetTimeoutTo(tmout, m_OpenTimeout.GetTime(error_count));
+    }
+
+    void SetServiceName(const string& service_name);
+    void InitTimeouts(CConfig& conf, const string& driver_name);
+
+    SConnInfo Connect(int error_count = 0);
 
     string GetConnDescription(CConn_IOStream& stream) const;
 
@@ -86,8 +88,11 @@ public:
 protected:
     typedef vector< AutoPtr<SSERV_Info, CDeleter<SSERV_Info> > > TSkipServers;
 
+    static void x_SetTimeoutTo(STimeout* tmout, double timeout);
+
     string m_ServiceName;
-    int    m_OpenTimeout, m_Timeout;
+    int m_Timeout;
+    CIncreasingTime m_OpenTimeout;
 
     TSkipServers   m_SkipServers;
 

@@ -1,5 +1,5 @@
-#ifndef GBLOADER_ID2_PARAMS__HPP_INCLUDED
-#define GBLOADER_ID2_PARAMS__HPP_INCLUDED
+#ifndef GBLOADER_ID2_PARAMS__H_INCLUDED
+#define GBLOADER_ID2_PARAMS__H_INCLUDED
 
 /*  $Id$
 * ===========================================================================
@@ -34,20 +34,12 @@
 * ===========================================================================
 */
 
+#include <objtools/data_loaders/genbank/reader_service_params.h>
+
 /* Name of ID2 reader driver */
 #define NCBI_GBLOADER_READER_ID2_DRIVER_NAME "id2"
 
-/* Maximum number of simultaneous connection to id2 server */
-#define NCBI_GBLOADER_READER_ID2_PARAM_NUM_CONN "no_conn"
-/* Whether to open first connection immediately or not (default: true) */
-#define NCBI_GBLOADER_READER_ID2_PARAM_PREOPEN "preopen"
 /* NCBI service name to connect to */
 #define NCBI_GBLOADER_READER_ID2_PARAM_SERVICE_NAME "service"
-/* Timeout of network connections in seconds */
-#define NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT "timeout"
-/* Timeout of network connections in seconds while opening and initializing */
-#define NCBI_GBLOADER_READER_ID2_PARAM_OPEN_TIMEOUT "open_timeout"
-/* Number of retries on errors */
-#define NCBI_GBLOADER_READER_ID2_PARAM_RETRY_COUNT "retry"
 
 #endif

@@ -28,13 +28,20 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_config.hpp>
 #include <objtools/data_loaders/genbank/reader_service.hpp>
-#include <connect/ncbi_conn_stream.hpp>
+#include <objtools/data_loaders/genbank/reader_service_params.h>
 #include <corelib/ncbitime.hpp>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#define DEFAULT_TIMEOUT  20
+#define DEFAULT_OPEN_TIMEOUT  5
+#define DEFAULT_OPEN_TIMEOUT_MAX  30
+#define DEFAULT_OPEN_TIMEOUT_MULTIPLIER  1.5
+#define DEFAULT_OPEN_TIMEOUT_INCREMENT  0
 
 struct ConnInfoDeleter2
 {
@@ -116,13 +123,13 @@ static const SSERV_Info* s_ScanInfoGetNextInfo(SERV_ITER iter, void* data)
 }
 
 
-CReaderServiceConnector::SConnInfo CReaderServiceConnector::Connect(void)
+CReaderServiceConnector::SConnInfo
+CReaderServiceConnector::Connect(int error_count)
 {
     SConnInfo info;
     
     STimeout tmout;
-    tmout.sec = m_OpenTimeout;
-    tmout.usec = 0;
+    SetOpenTimeoutTo(&tmout, error_count);
     
     SServerScanInfo* scan_info = 0;
 
@@ -182,18 +189,22 @@ string CReaderServiceConnector::GetConnDescription(CConn_IOStream& stream) const
 
 
 CReaderServiceConnector::CReaderServiceConnector(void)
-    : m_OpenTimeout(0),
-      m_Timeout(0)
+    : m_Timeout(DEFAULT_TIMEOUT),
+      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT,
+                    DEFAULT_OPEN_TIMEOUT_MAX,
+                    DEFAULT_OPEN_TIMEOUT_MULTIPLIER,
+                    DEFAULT_OPEN_TIMEOUT_INCREMENT)
 {
 }
 
 
-CReaderServiceConnector::CReaderServiceConnector(const string& service_name,
-                                                 int open_timeout,
-                                                 int timeout)
+CReaderServiceConnector::CReaderServiceConnector(const string& service_name)
     : m_ServiceName(service_name),
-      m_OpenTimeout(open_timeout),
-      m_Timeout(timeout)
+      m_Timeout(DEFAULT_TIMEOUT),
+      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT,
+                    DEFAULT_OPEN_TIMEOUT_MAX,
+                    DEFAULT_OPEN_TIMEOUT_MULTIPLIER,
+                    DEFAULT_OPEN_TIMEOUT_INCREMENT)
 {
 }
 
@@ -210,18 +221,18 @@ void CReaderServiceConnector::SetServiceName(const string& service_name)
 }
 
 
-void CReaderServiceConnector::SetTimeout(int timeout)
+void CReaderServiceConnector::InitTimeouts(CConfig& conf,
+                                           const string& driver_name)
 {
-    m_Timeout = timeout;
-    if ( !m_OpenTimeout ) {
-        m_OpenTimeout = timeout;
-    }
-}
-
-
-void CReaderServiceConnector::SetOpenTimeout(int open_timeout)
-{
-    m_OpenTimeout = open_timeout;
+    m_Timeout = conf.GetInt(driver_name,
+                            NCBI_GBLOADER_READER_PARAM_TIMEOUT,
+                            CConfig::eErr_NoThrow,
+                            DEFAULT_TIMEOUT);
+    m_OpenTimeout.Init(conf, driver_name,
+                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT,
+                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MAX,
+                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_MULTIPLIER,
+                       NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT_INCREMENT);
 }
 
 
@@ -232,6 +243,14 @@ void CReaderServiceConnector::RememberIfBad(SConnInfo& conn_info)
         m_SkipServers.push_back(SERV_CopyInfo(conn_info.m_ServerInfo));
         conn_info.m_ServerInfo = 0;
     }
+}
+
+
+void CReaderServiceConnector::x_SetTimeoutTo(STimeout* tmout,
+                                             double timeout)
+{
+    tmout->sec = unsigned(timeout);
+    tmout->usec = unsigned((timeout-tmout->sec)*1e9);
 }
 
 

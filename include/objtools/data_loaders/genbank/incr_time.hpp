@@ -1,5 +1,6 @@
-#ifndef READER_INTERFACE__HPP_INCLUDED
-#define READER_INTERFACE__HPP_INCLUDED
+#ifndef INCR_TIME__HPP_INCLUDED
+#define INCR_TIME__HPP_INCLUDED
+
 /*  $Id$
 * ===========================================================================
 *                            PUBLIC DOMAIN NOTICE
@@ -25,38 +26,53 @@
 *
 *  Author:  Eugene Vasilchenko
 *
-*  File Description: Base data reader interface
+*  File Description: Support for configurable increasing timeout
 *
 */
 
-#include <corelib/plugin_manager.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CConfig;
+
 BEGIN_SCOPE(objects)
 
-class CReader;
-
-END_SCOPE(objects)
-
-NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "xreader", 4, 5, 0);
-
-template<>
-class CDllResolver_Getter<objects::CReader>
+class NCBI_XREADER_EXPORT CIncreasingTime
 {
 public:
-    CPluginManager_DllResolver* operator()(void)
-    {
-        CPluginManager_DllResolver* resolver =
-            new CPluginManager_DllResolver
-            (CInterfaceVersion<objects::CReader>::GetName(),
-             kEmptyStr,
-             CVersionInfo::kAny,
-             CDll::eAutoUnload);
-        resolver->SetDllNamePrefix("ncbi");
-        return resolver;
-    }
+    CIncreasingTime(double init_time,
+                    double max_time,
+                    double multiplier,
+                    double increment)
+        : m_InitTime(init_time),
+          m_MaxTime(max_time),
+          m_Multiplier(multiplier),
+          m_Increment(increment)
+        {
+        }
+
+    void Init(CConfig& conf,
+              const string& driver_name,
+              const char* init_param,
+              const char* max_param,
+              const char* mul_param,
+              const char* incr_param);
+
+    double GetTime(int step) const;
+
+protected:
+    static double x_GetDoubleParam(CConfig& conf,
+                                   const string& driver_name,
+                                   const char* param_name,
+                                   double default_value);
+    
+private:
+    double m_InitTime, m_MaxTime, m_Multiplier, m_Increment;
 };
 
+
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif//READER_INTERFACE__HPP_INCLUDED
+#endif // INCR_TIME__HPP_INCLUDED

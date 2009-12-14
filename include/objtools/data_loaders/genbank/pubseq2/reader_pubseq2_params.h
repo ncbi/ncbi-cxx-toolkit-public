@@ -37,10 +37,6 @@
 /* Name of PUBSEQ2 reader driver */
 #define NCBI_GBLOADER_READER_PUBSEQ2_DRIVER_NAME "pubseqos2"
 
-/* Maximum number of simultaneous connection to PUBSEQ_OS server */
-#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_NUM_CONN "no_conn"
-/* Whether to open first connection immediately or not (default: true) */
-#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_PREOPEN  "preopen"
 /* PUBSEQ_OS server name */
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_SERVER   "server"
 /* PUBSEQ_OS login name */
@@ -49,7 +45,5 @@
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_PASSWORD "password"
 /* DBAPI driver name */
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_DRIVER   "driver"
-/* Number of retries on errors */
-#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_RETRY_COUNT "retry"
 
 #endif
