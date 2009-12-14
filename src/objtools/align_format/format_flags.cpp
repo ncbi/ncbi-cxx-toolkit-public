@@ -40,7 +40,7 @@ const string kDfltArgTabularOutputFmt =
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 
-const size_t kNumTabularOutputFormatSpecifiers = 31;
+const size_t kNumTabularOutputFormatSpecifiers = 32;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qseqid",   
                 "Query Seq-id",
@@ -134,7 +134,10 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
                 eQueryFrame),
     SFormatSpec("sframe",   
                 "Subject frame", 
-                eSubjFrame)
+                eSubjFrame),
+    SFormatSpec("btop",   
+                "Blast traceback operations (BTOP)", 
+                eBTOP)
 };
 
 string DescribeTabularOutputFormatSpecifiers()

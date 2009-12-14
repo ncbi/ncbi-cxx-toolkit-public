@@ -108,6 +108,7 @@ void CBlastTabularInfo::x_ResetFields()
     m_Evalue = NcbiEmptyString;
     m_QuerySeq = NcbiEmptyString;
     m_SubjectSeq = NcbiEmptyString;
+    m_BTOP = NcbiEmptyString;
 }
 
 void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
@@ -399,7 +400,10 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // Do not trust the number of identities saved in the Seq-align.
     // Recalculate it again.
     num_ident = 0;
+    int num_matches = 0;
     int num_positives = 0;
+    string btop_string = "";
+    
     // The query and subject sequence strings must be the same size in a correct
     // alignment, but if alignment extends beyond the end of sequence because of
     // a bug, one of the sequence strings may be truncated, hence it is 
@@ -410,11 +414,23 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         if (m_QuerySeq[i] == m_SubjectSeq[i]) {
             ++num_ident;
             ++num_positives;
-        } else if (matrix && !matrix->GetData().empty() &&
+            ++num_matches;
+        } else {
+            if(num_matches > 0) {
+                btop_string +=  NStr::Int8ToString(num_matches);
+                num_matches=0; 
+            }
+            btop_string += m_QuerySeq[i];
+            btop_string += m_SubjectSeq[i];
+            if (matrix && !matrix->GetData().empty() &&
                    (*matrix)(m_QuerySeq[i], m_SubjectSeq[i]) > 0) {
-            ++num_positives;
+                ++num_positives;
+            }
         }
     }
+
+    if (num_matches > 0)
+         btop_string +=  NStr::Int8ToString(num_matches);
 
    
     int q_start, q_end, s_start, s_end;
@@ -454,6 +470,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     }
     SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives,
               query_frame, subject_frame);
+
+    SetBTOP(btop_string);
 
     SetEndpoints(q_start, q_end, s_start, s_end);
 
@@ -542,6 +560,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "query frame"; break; 
         case eSubjFrame:
             m_Ostream << "sbjct frame"; break; 
+        case eBTOP:
+            m_Ostream << "BTOP"; break;        
         default:
             break;
         }
@@ -619,6 +639,12 @@ CBlastTabularInfo::SetEndpoints(int q_start, int q_end, int s_start, int s_end)
     m_QueryEnd = q_end;
     m_SubjectStart = s_start;
     m_SubjectEnd = s_end;    
+}
+
+void 
+CBlastTabularInfo::SetBTOP(string BTOP)
+{
+    m_BTOP = BTOP;
 }
 
 void 
@@ -742,6 +768,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintQueryFrame(); break;
     case eSubjFrame:
         x_PrintSubjectFrame(); break;        
+    case eBTOP:
+        x_PrintBTOP(); break;        
     default:
         _ASSERT(false);
         break;
