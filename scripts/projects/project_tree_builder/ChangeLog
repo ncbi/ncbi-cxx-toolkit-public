@@ -82,3 +82,6 @@ December 01, 2009
 version 2.2.0
 Added possibility to use previously saved configuration settings
 
+December 14, 2009
+version 2.3.0
+Added support of logical expressions when specifying project tags filter
