@@ -39,13 +39,14 @@
 BEGIN_NCBI_SCOPE
 
 enum ESymbolType {
-    fDNA_Alphabet       = 1<<0,
-    fProtein_Alphabet   = 1<<1,
-    fLineEnd            = 1<<2,
-    fAlpha              = 1<<3,
-    fDigit              = 1<<4,
-    fSpace              = 1<<5,
-    fInvalid            = 1<<6
+    fDNA_Main_Alphabet  = 1<<0, ///< Just ACGTUN-.
+    fDNA_Ambig_Alphabet = 1<<1, ///< Anything else representable in ncbi4na.
+    fProtein_Alphabet   = 1<<2, ///< Allows BZX*-, but not JOU.
+    fLineEnd            = 1<<3,
+    fAlpha              = 1<<4,
+    fDigit              = 1<<5,
+    fSpace              = 1<<6,
+    fInvalid            = 1<<7
 };
 
 enum EConfidence {
@@ -95,11 +96,17 @@ static bool s_IsTokenDouble(
 static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
-        for ( const char* s = "ATGCN"; *s; ++s ) {
+        for ( const char* s = "ACGNTU"; *s; ++s ) {
             unsigned char c = *s;
-            symbol_type_table[c] |= fDNA_Alphabet;
+            symbol_type_table[c] |= fDNA_Main_Alphabet;
             c = tolower(c);
-            symbol_type_table[c] |= fDNA_Alphabet;
+            symbol_type_table[c] |= fDNA_Main_Alphabet;
+        }
+        for ( const char* s = "BDHKMRSVWY"; *s; ++s ) {
+            unsigned char c = *s;
+            symbol_type_table[c] |= fDNA_Ambig_Alphabet;
+            c = tolower(c);
+            symbol_type_table[c] |= fDNA_Ambig_Alphabet;
         }
         for ( const char* s = "ACDEFGHIKLMNPQRSTVWYBZX"; *s; ++s ) {
             unsigned char c = *s;
@@ -107,6 +114,9 @@ static void init_symbol_type_table(void)
             c = tolower(c);
             symbol_type_table[c] |= fProtein_Alphabet;
         }
+        symbol_type_table[(unsigned char)'-']
+            |= fDNA_Main_Alphabet | fProtein_Alphabet;
+        symbol_type_table[(unsigned char)'*'] |= fProtein_Alphabet;
         for ( const char* s = "\r\n"; *s; ++s ) {
             unsigned char c = *s;
             symbol_type_table[c] |= fLineEnd;
@@ -166,29 +176,37 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
         length = (unsigned)::strlen(str);
 
     init_symbol_type_table();
-    unsigned ATGC_content = 0;
-    unsigned amino_acid_content = 0;
+    unsigned int main_nuc_content = 0, ambig_content = 0, bad_nuc_content = 0,
+         amino_acid_content = 0, bad_aa_content = 0;
 
     for (unsigned i = 0; i < length; ++i) {
         unsigned char c = str[i];
         unsigned char type = symbol_type_table[c];
-        if ( type & fDNA_Alphabet ) {
-            ++ATGC_content;
+        if ( type & fDNA_Main_Alphabet ) {
+            ++main_nuc_content;
+        } else if ( type & fDNA_Ambig_Alphabet ) {
+            ++ambig_content;
+        } else if ( !(type & (fSpace | fDigit)) ) {
+            ++bad_nuc_content;
         }
+
         if ( type & fProtein_Alphabet ) {
             ++amino_acid_content;
+        } else if ( !(type & (fSpace | fDigit)) ) {
+            ++bad_aa_content;
         }
     }
 
-    double dna_content = (double)ATGC_content / (double)length;
-    double prot_content = (double)amino_acid_content / (double)length;
-
-    if (dna_content > 0.7) {
+    if (bad_nuc_content + ambig_content <= main_nuc_content / 9
+        ||  (bad_nuc_content + ambig_content <= main_nuc_content / 3
+             &&  bad_nuc_content <= (main_nuc_content + ambig_content) / 19)) {
+        // >=90% main alphabet (ACGTUN-) or >=75% main and >=95% 4na-encodable
         return eNucleotide;
-    }
-    if (prot_content > 0.7) {
+    } else if (bad_aa_content <= amino_acid_content / 9) {
+        // >=90% relatively standard protein residues.  (O and J don't count.)
         return eProtein;
     }
+
     return eUndefined;
 }
 
@@ -447,7 +465,7 @@ CFormatGuess::EnsureStats()
             if ( !is_header ) {
                 ++m_iStatsCountData;
 
-                if ( type & fDNA_Alphabet ) {
+                if ( type & fDNA_Main_Alphabet ) {
                     ++m_iStatsCountDnaChars;
                 }
                 if ( type & fProtein_Alphabet ) {
