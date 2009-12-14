@@ -127,6 +127,8 @@ public class PtbguiMain extends javax.swing.JFrame {
         setPathText(jTextFieldLst,
                 m_ArgsParser.getRoot(), m_ArgsParser.getSubtree());
         setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
+        jTextFieldTags.setToolTipText(
+            "Expression. For example:  (core || web) && !test");
 
         if (m_ArgsParser.getArgsFile().length() > 0) {
             initData(m_ArgsParser.getArgsFile(), true);
