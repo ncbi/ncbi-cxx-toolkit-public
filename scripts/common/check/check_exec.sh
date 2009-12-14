@@ -48,9 +48,17 @@ $script_dir/check_exec_guard.sh $timeout $pid &
 wait $pid > /dev/null 2>&1
 status=$?
 
-# Special check for core file on Darwin
-if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
-   core_files=`find /cores/core.* -newer $timestamp_file 2>/dev/null`
+# Special checks for core files on some platforms
+if [ $status > 128  -a  ! -f core ]; then
+   if [ `uname -s` = "Darwin" -a -d "/cores" ]; then
+     core_files=`find /cores/core.* -newer $timestamp_file 2>/dev/null`
+   elif [ `uname -s` = "Linux" ]; then
+     if [ -f core.$pid ]; then
+       core_files=core.$pid
+     else
+       core_files=`find core.* -newer $timestamp_file 2>/dev/null`
+     fi
+   fi
    for core in $core_files ; do
       if [ -O "$core" ]; then
          # Move the core file to current directory with name "core"
