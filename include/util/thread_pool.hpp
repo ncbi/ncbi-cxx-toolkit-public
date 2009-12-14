@@ -539,7 +539,7 @@ protected:
     /// class it is recommended to use this very mutex. But NB: it's assumed
     /// everywhere that this mutex is locked on the small periods of time. So
     /// be carefull and implement the same pattern.
-    CMutex& GetMainPoolMutex(void) const;
+    CMutex& GetMainPoolMutex(CThreadPool* pool) const;
 
     /// Ensure that constraints of minimum and maximum count of threads in pool
     /// are met. Start new threads or finish overflow threads if needed.
