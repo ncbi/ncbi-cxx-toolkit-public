@@ -149,12 +149,12 @@ CTimeSpan
 CThreadPool_Controller_PID::GetSafeSleepTime(void) const
 {
     double last_err = 0, last_time = 0, integr_err = 0;
+    CThreadPool* pool = GetPool();
+    if (!pool) {
+        return CTimeSpan(0, 0);
+    }
     {{
-        CMutexGuard guard(GetMainPoolMutex());
-
-        if (! GetPool()) {
-            return CTimeSpan(0, 0);
-        }
+        CMutexGuard guard(GetMainPoolMutex(pool));
 
         if (m_ErrHistory.size() == 0) {
             return CThreadPool_Controller::GetSafeSleepTime();
@@ -165,7 +165,7 @@ CThreadPool_Controller_PID::GetSafeSleepTime(void) const
         integr_err = m_IntegrErr;
     }}
 
-    unsigned int threads_cnt = GetPool()->GetThreadsCount();
+    unsigned int threads_cnt = pool->GetThreadsCount();
     if (last_err == 0
         ||  last_err > 0  &&  threads_cnt == GetMaxThreads()
         ||  last_err < 0  &&  threads_cnt == GetMinThreads())

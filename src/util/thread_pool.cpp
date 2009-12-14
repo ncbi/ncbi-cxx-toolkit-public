@@ -1857,7 +1857,7 @@ CThreadPool_Impl::Abort(const CTimeSpan* timeout)
     m_AbortWait.Post();
 
     // This assigning can destroy the controller. If some threads are not
-    // finished yet and at this very moment will call controller it can crush.
+    // finished yet and at this very moment will call controller it can crash.
     //m_Controller = NULL;
 }
 
@@ -1884,15 +1884,15 @@ CThreadPool_Controller::GetPool(void) const
 }
 
 CMutex&
-CThreadPool_Controller::GetMainPoolMutex(void) const
+CThreadPool_Controller::GetMainPoolMutex(CThreadPool* pool) const
 {
-    CThreadPool_Impl* pool = m_Pool;
-    if (!pool) {
+    CThreadPool_Impl* impl = CThreadPool_Impl::s_GetImplPointer(pool);
+    if (!impl) {
         NCBI_THROW(CThreadPoolException, eInactive,
                    "Cannot do active work when not attached "
                    "to some ThreadPool");
     }
-    return pool->GetMainPoolMutex();
+    return impl->GetMainPoolMutex();
 }
 
 void
