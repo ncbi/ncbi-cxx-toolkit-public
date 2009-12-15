@@ -1083,20 +1083,20 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
         }
     }
 
-    // CPU and heap limitations
+    // CPU and memory limitations
 
     // [NCBI.HeapSizeLimit]
     if ( !reg->Get("NCBI", "HeapSizeLimit").empty() ) {
-        int heap_size_limit = reg->GetInt("NCBI", "HeapSizeLimit", 0);
-        if (heap_size_limit < 0) {
+        int mem_size_limit = reg->GetInt("NCBI", "HeapSizeLimit", 0);
+        if (mem_size_limit < 0) {
             NCBI_THROW(CAppException, eLoadConfig,
                        "Configuration file error:  [NCBI.HeapSizeLimit] < 0");
         }
-        heap_size_limit *= 1024 * 1024;
-        if ( !SetHeapLimit(heap_size_limit) ) {
+        mem_size_limit *= 1024 * 1024;
+        if ( !SetMemoryLimit(mem_size_limit) ) {
             ERR_POST_X(13, Warning
-                           << "Failed to set the heap size limit to "
-                           << heap_size_limit
+                           << "Failed to set memory size limit to "
+                           << mem_size_limit
                            << "Mb (as per the config param [NCBI.HeapSizeLimit])");
         }
     }

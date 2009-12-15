@@ -89,13 +89,13 @@ static void PrintHandler (ELimitsExitCode code, size_t limit, CTime& time,
 
 static void Test_MemLimit(void)
 {
-    LOG_POST("\nHeap limit test\n");
+    LOG_POST("\nMemory limit test\n");
 
-    const size_t kHeapLimit = 100000;
+    const size_t kMemLimit = 100000;
 
-    assert( SetHeapLimit(kHeapLimit, PrintHandler, &s_PrintParameter) );
+    assert( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
     
-    for (size_t i = 0;  i <= kHeapLimit/10;  i++) {
+    for (size_t i = 0;  i <= kMemLimit/10;  i++) {
         s_PrintParameter++;
         int* pi = new int[10];
         assert(pi);

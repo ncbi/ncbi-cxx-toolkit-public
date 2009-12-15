@@ -54,7 +54,7 @@
 #  if defined(NCBI_OS_IRIX)
 #    include <sys/sysmp.h>
 #  endif //NCBI_OS_IRIX
-#  define USE_SETHEAPLIMIT
+#  define USE_SETMEMLIMIT
 #  define USE_SETCPULIMIT
 #endif //NCBI_OS_UNIX
 
@@ -115,7 +115,7 @@ DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
 static bool                  s_ExitHandlerIsSet  = false;
 static ELimitsExitCode       s_ExitCode          = eLEC_None;
 static CSafeStaticPtr<CTime> s_TimeSet;
-static size_t                s_HeapLimit         = 0;
+static size_t                s_MemoryLimit       = 0;
 static size_t                s_CpuTimeLimit      = 0;
 static char*                 s_ReserveMemory     = 0;
 static TLimitsPrintHandler   s_PrintHandler      = 0;
@@ -145,7 +145,7 @@ static void s_ExitHandler(void)
 
         switch ( s_ExitCode ) {
         case eLEC_Memory: {
-            limit_size = s_HeapLimit;
+            limit_size = s_MemoryLimit;
             break;
         }
         case eLEC_Cpu: {
@@ -167,7 +167,7 @@ static void s_ExitHandler(void)
     case eLEC_Memory:
         {
             ERR_POST_X(1, "Memory heap limit exceeded in allocating memory " \
-                          "by operator new (" << s_HeapLimit << " bytes)");
+                          "by operator new (" << s_MemoryLimit << " bytes)");
             break;
         }
         
@@ -248,7 +248,7 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 // SetHeapLimit
 //
 
-#ifdef USE_SETHEAPLIMIT
+#ifdef USE_SETMEMLIMIT
 
 // Handler for operator new
 static void s_NewHandler(void)
@@ -258,11 +258,11 @@ static void s_NewHandler(void)
 }
 
 
-bool SetHeapLimit(size_t max_heap_size,
-                  TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter)
+bool SetMemoryLimit(size_t max_size,
+                    TLimitsPrintHandler handler, 
+                    TLimitsPrintParameter parameter)
 {
-    if (s_HeapLimit == max_heap_size) 
+    if (s_MemoryLimit == max_size) 
         return true;
     
     if ( !s_SetExitHandler(handler, parameter) )
@@ -270,10 +270,11 @@ bool SetHeapLimit(size_t max_heap_size,
 
     // Set new heap limit
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+    
     rlimit rl;
-    if ( max_heap_size ) {
+    if ( max_size ) {
         set_new_handler(s_NewHandler);
-        rl.rlim_cur = rl.rlim_max = max_heap_size;
+        rl.rlim_cur = rl.rlim_max = max_size;
     }
     else {
         // Set off heap limit
@@ -282,22 +283,40 @@ bool SetHeapLimit(size_t max_heap_size,
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) 
         return false;
+    if (setrlimit(RLIMIT_AS, &rl) != 0) 
+        return false;
 
-    s_HeapLimit = max_heap_size;
-
+    s_MemoryLimit = max_size;
     return true;
 }
 
+
+// deprecated
+bool SetHeapLimit(size_t max_size,
+                  TLimitsPrintHandler handler, 
+                  TLimitsPrintParameter parameter)
+{
+    return SetMemoryLimit(max_size, handler, parameter);
+}
+
+
 #else
 
-bool SetHeapLimit(size_t max_heap_size, 
+bool SetMemoryLimit(size_t max_size, 
+                    TLimitsPrintHandler handler, 
+                    TLimitsPrintParameter parameter)
+{
+  return false;
+}
+
+bool SetHeapLimit(size_t max_size, 
                   TLimitsPrintHandler handler, 
                   TLimitsPrintParameter parameter)
 {
   return false;
 }
 
-#endif //USE_SETHEAPLIMIT
+#endif //USE_SETMEMLIMIT
 
 
 

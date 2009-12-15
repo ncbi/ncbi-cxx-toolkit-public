@@ -76,21 +76,42 @@ typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrin
 /// Set the limit for the size of dynamic memory (heap) allocated
 /// by the process. 
 /// 
-/// @param max_heap_size
-///   The maximal amount of dynamic memory can be allocated by the process
-///   in any `operator new' (but not malloc, etc.!).
-///   The 0 value lift off the heap restrictions.
-/// @param handler
-///   Pointer to a print handler used for dump output.
-///   Use default handler if passed as NULL.
-/// @param parameter
-///   Parameter carried into the print handler. Can be passed as NULL.
-/// @return 
-///   Completion status.
+/// @sa SetMemoryLimit
+/// @deprecated
+NCBI_DEPRECATED
 NCBI_XNCBI_EXPORT
-extern bool SetHeapLimit(size_t max_heap_size, 
+extern bool SetHeapLimit(size_t max_size, 
                          TLimitsPrintHandler handler = 0, 
                          TLimitsPrintParameter parameter = 0);
+
+
+/// [UNIX only]  Set memory limit.
+///
+/// Set the limit for the size of used memory allocated by the process.
+/// 
+/// @param max_size
+///   The maximal amount of memory in bytes that can be allocated by
+///   the process. Use the same limits for process's data segment
+///   (including heap) and virtual memory (address space).
+///   On 32-bit systems limit is at most 2 GiB, or this resource is unlimited.
+///   The 0 value lift off the heap restrictions.
+/// @param handler
+///   Pointer to a print handler used for dump output in the case of reaching
+///   memory limit. Use default handler if passed as NULL.
+/// @param parameter
+///   Parameter carried into the print handler. Can be passed as NULL.
+///   Usefull if singular handler is used for setting some limits.
+///   See also SetCpuTimeLimit().
+/// @return 
+///   Completion status.
+/// @note
+///   Setting limits may not work on some systems, depends on OS, compilation
+///   options and etc. Some systems enforce memory limits, other didn't.
+/// @sa SetCpuTimeLimit, TLimitsPrintHandler
+NCBI_XNCBI_EXPORT
+extern bool SetMemoryLimit(size_t max_size, 
+                           TLimitsPrintHandler handler = 0, 
+                           TLimitsPrintParameter parameter = 0);
 
 
 /// [UNIX only]  Set CPU usage limit.
@@ -101,8 +122,8 @@ extern bool SetHeapLimit(size_t max_heap_size,
 ///   The maximal amount of seconds of CPU time can be consumed by the process.
 ///   The 0 value lift off the CPU time restrictions.
 /// @param handler
-///   Pointer to a print handler used for dump output.
-///   Use default handler if passed as NULL.
+///   Pointer to a print handler used for dump output in the case of reaching
+///   CPU usage limit. Use default handler if passed as NULL.
 /// @param parameter
 ///   Parameter carried into the print handler. Can be passed as NULL.
 /// @terminate_time
@@ -111,6 +132,7 @@ extern bool SetHeapLimit(size_t max_heap_size,
 ///   can be killed by OS.
 /// @return 
 ///   Completion status.
+/// @sa SetMemoryLimit, TLimitsPrintHandler
 NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(size_t                max_cpu_time,
                             TLimitsPrintHandler   handler = 0, 
