@@ -18,6 +18,7 @@ REQUIRES = objects Boost.Test.Included
 CHECK_REQUIRES = MT
 CHECK_CMD = bdbloader_unit_test
 CHECK_COPY = data
-CHECK_AUTHORS = blastsoft
 CHECK_TIMEOUT = 600
 
+
+WATCHERS = camacho

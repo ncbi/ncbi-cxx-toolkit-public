@@ -14,3 +14,5 @@ REQUIRES = objects
 
 CHECK_CMD = seqalign_unit_test
 CHECK_COPY = data
+
+WATCHERS = camacho

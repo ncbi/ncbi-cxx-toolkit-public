@@ -34,5 +34,6 @@ LDFLAGS = $(FAST_LDFLAGS)
 CHECK_REQUIRES = MT
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini data
-CHECK_AUTHORS = blastsoft
 CHECK_TIMEOUT = 750
+
+WATCHERS = camacho

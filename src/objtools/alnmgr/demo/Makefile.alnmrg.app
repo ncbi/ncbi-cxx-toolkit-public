@@ -10,4 +10,5 @@ LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = run_sybase_app.sh alnmrg.sh /CHECK_NAME=alnmrg.sh
 CHECK_COPY = alnmrg.sh data
-CHECK_AUTHORS = todorov
+
+WATCHERS = todorov

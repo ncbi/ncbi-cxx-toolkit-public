@@ -14,5 +14,6 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = gene_info_writer_unit_test
 CHECK_COPY = data
-CHECK_AUTHORS = blastsoft
 
+
+WATCHERS = avagyanv

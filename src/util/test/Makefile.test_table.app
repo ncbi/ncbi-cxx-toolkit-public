@@ -6,3 +6,5 @@ SRC = test_table
 LIB = xutil xncbi
 
 CHECK_CMD =
+
+WATCHERS = kuznets

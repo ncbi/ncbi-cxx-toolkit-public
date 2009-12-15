@@ -18,3 +18,5 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 #CHECK_CMD = test_biotree
 #CHECK_TIMEOUT = 500
+
+WATCHERS = kuznets

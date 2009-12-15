@@ -16,4 +16,5 @@ CHECK_COPY = seqdb_unit_test.ini data
 REQUIRES = Boost.Test.Included
 
 CHECK_TIMEOUT = 300
-CHECK_AUTHORS = blastsoft
+
+WATCHERS = camacho

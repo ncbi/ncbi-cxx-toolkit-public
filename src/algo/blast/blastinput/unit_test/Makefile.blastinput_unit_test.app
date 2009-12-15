@@ -19,4 +19,5 @@ REQUIRES = objects Boost.Test.Included
 
 CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data blastinput_unit_test.ini
-CHECK_AUTHORS = blastsoft
+
+WATCHERS = camacho

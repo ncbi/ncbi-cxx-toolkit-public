@@ -17,4 +17,5 @@ CHECK_COPY = data
 
 REQUIRES = Boost.Test.Included
 
-CHECK_AUTHORS = blastsoft
+
+WATCHERS = camacho

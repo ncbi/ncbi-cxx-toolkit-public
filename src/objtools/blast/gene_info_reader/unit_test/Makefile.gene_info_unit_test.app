@@ -13,5 +13,6 @@ LIBS = $(ORIG_LIBS)
 
 CHECK_CMD     = gene_info_unit_test
 CHECK_COPY    = data
-CHECK_AUTHORS = blastsoft
 CHECK_REQUIRES = Linux
+
+WATCHERS = avagyanv

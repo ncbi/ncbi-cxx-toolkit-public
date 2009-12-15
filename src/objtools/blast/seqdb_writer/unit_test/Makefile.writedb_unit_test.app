@@ -13,5 +13,6 @@ LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = writedb_unit_test
-CHECK_AUTHORS = blastsoft
 CHECK_COPY = writedb_unit_test.ini data
+
+WATCHERS = maning

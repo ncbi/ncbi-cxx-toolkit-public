@@ -6,3 +6,5 @@ SRC = test_uttp
 LIB = xutil xncbi
 
 CHECK_CMD =
+
+WATCHERS = kazimird
