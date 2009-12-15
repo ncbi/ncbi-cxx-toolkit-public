@@ -256,6 +256,10 @@ string CCddBookRefToString(const CCdd_book_ref& bookRef)
         subelementid = (bookRef.IsSetSubelementid() || bookRef.IsSetCsubelementid()) ?
                 (bookRef.IsSetSubelementid() ? NStr::IntToString(bookRef.GetSubelementid()) : bookRef.GetCsubelementid()) : kEmptyStr;
 
+        //  trim any whitespace on elements/sub-elements
+        NStr::TruncateSpacesInPlace(elementid);
+        NStr::TruncateSpacesInPlace(subelementid);
+
         char buf[2048];
 
         //  Make sure don't have overflow; 15 > length of the longest string in elementStringMap + 1.
