@@ -151,6 +151,10 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("AACN011056789")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("ABCD1234567890")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD12345678901")));
+
+    CSeq_id::EAccessionInfo ai = CSeq_id::IdentifyAccession("DAAA02000001");
+    BOOST_CHECK_EQUAL(ai, CSeq_id::eAcc_gb_tpa_wgs_nuc);
+    BOOST_CHECK_EQUAL(ai & CSeq_id::eAcc_division_mask, CSeq_id::eAcc_wgs);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
