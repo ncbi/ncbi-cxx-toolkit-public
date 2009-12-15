@@ -706,6 +706,13 @@ void SAccGuide::AddRule(const CTempString& rule)
             if (tokens[1].find_first_of("?*") == NPOS) {
                 rules[fmt].prefixes[tokens[1]] = value;
             } else {
+                // Account for possible refinements of fallback definitions
+                NON_CONST_ITERATE (TPairs, wit, rules[fmt].wildcards) {
+                    if (wit->first == tokens[1]) {
+                        wit->second = value;
+                        return;
+                    }
+                }
                 rules[fmt].wildcards.push_back(TPair(tokens[1], value));
             }
         }
