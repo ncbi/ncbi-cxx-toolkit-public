@@ -572,7 +572,10 @@ void CGenbankFormatter::FormatFeature
         // before the start of the value (in /translation, e.g.)
         NStr::Wrap(value, GetWidth(), l_new, SetWrapFlags(), GetFeatIndent(),
             GetFeatIndent() + qual);
-
+        if ( l_new.size() > 1  &&  NStr::TruncateSpaces( l_new.back() ) == "\"" ) {
+            l_new.pop_back();
+            l_new.back() += "\"";
+        }
         // Values of qualifiers coming down this path do not carry additional
         // internal format (at least, they aren't supposed to). So we strip extra
         // blanks from both the begin and the end of qualifier lines.
