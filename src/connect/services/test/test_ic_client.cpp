@@ -109,7 +109,7 @@ int CTestICClient::Run(void)
 
     const string& cache_name  = args["cache"].AsString();
 
-    CNetICacheClient cl;
+    CNetICacheClient cl(eVoid);
 
     if (args["service"].HasValue()) {
         cl = CNetICacheClient(args["service"].AsString(),
