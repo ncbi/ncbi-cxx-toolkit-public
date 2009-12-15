@@ -76,21 +76,35 @@ CUsedTlsBases::CUsedTlsBases(void)
 
 CUsedTlsBases::~CUsedTlsBases(void)
 {
-    ClearAll();
 }
 
 
 void CUsedTlsBases::ClearAll(void)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    // Prevent double-destruction
+    CTlsBase* used_tls = NULL;
     NON_CONST_ITERATE(TTlsSet, it, m_UsedTls) {
         CTlsBase* tls = *it;
+        // Do not cleanup it now - this will cause infinit recursion
+        if (tls == &sm_UsedTlsBases.Get()) {
+            used_tls = tls;
+            continue;
+        }
+        // Prevent double-destruction
         tls->x_DeleteTlsData();
-        if (tls->m_AutoDestroy) {
+        if (tls->m_AutoDestroy  &&  tls->Referenced()) {
             tls->RemoveReference();
         }
     }
     m_UsedTls.clear();
+
+    if (used_tls) {
+        used_tls->x_DeleteTlsData();
+        if (used_tls->m_AutoDestroy  &&  used_tls->Referenced()) {
+            used_tls->RemoveReference();
+        }
+    }
 }
 
 
@@ -114,8 +128,60 @@ void CUsedTlsBases::Deregister(CTlsBase* tls)
 }
 
 
-static CSafeStaticPtr<CUsedTlsBases> s_MainUsedTls;
+void s_CleanupUsedTlsBases(CUsedTlsBases* tls, void*)
+{
+    delete tls;
+}
 
+void s_CleanupMainUsedTlsBases(void* ptr)
+{
+    CUsedTlsBases* tls = static_cast<CUsedTlsBases*>(ptr);
+    if (tls) {
+        tls->ClearAll();
+    }
+}
+
+// Storage for used TLS sets
+CStaticTls<CUsedTlsBases> CUsedTlsBases::sm_UsedTlsBases;
+// Main thread needs a usual safe-static-ref for proper cleanup --
+// there's no thread which can do it on destruction.
+static CSafeStaticPtr<CUsedTlsBases>
+s_MainUsedTlsBases(s_CleanupMainUsedTlsBases);
+
+CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
+{
+    if ( !CThread::GetSelf() )
+    {
+        return *s_MainUsedTlsBases;
+    }
+
+    CUsedTlsBases* tls = sm_UsedTlsBases.GetValue();
+    if ( !tls )
+    {
+        tls = new CUsedTlsBases();
+        sm_UsedTlsBases.SetValue(tls, s_CleanupUsedTlsBases);
+    }
+    return *tls;
+}
+
+
+void CTlsBase::CleanupTlsData(void* data)
+{
+    if (!data) return;
+    STlsData* tls_data = static_cast<STlsData*>(data);
+    if (tls_data->m_Value  &&  tls_data->m_CleanupFunc) {
+        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
+    }
+}
+
+
+#if defined(NCBI_POSIX_THREADS)
+// pthread can handle automatic cleanup
+extern "C" void s_PosixTlsCleanup(void* ptr)
+{
+    CTlsBase::CleanupTlsData(ptr);
+}
+#endif
 
 void CTlsBase::x_Init(void)
 {
@@ -123,7 +189,7 @@ void CTlsBase::x_Init(void)
 #if defined(NCBI_WIN32_THREADS)
     xncbi_Verify((m_Key = TlsAlloc()) != DWORD(-1));
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Verify(pthread_key_create(&m_Key, 0) == 0);
+    xncbi_Verify(pthread_key_create(&m_Key, s_PosixTlsCleanup) == 0);
     // pthread_key_create does not reset the value to 0 if the key has been
     // used and deleted.
     xncbi_Verify(pthread_setspecific(m_Key, 0) == 0);
@@ -198,8 +264,8 @@ void CTlsBase::x_SetValue(void*        value,
     }
 
     // Cleanup
-    if (tls_data->m_CleanupFunc  &&  tls_data->m_Value != value) {
-        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
+    if (tls_data->m_Value != value) {
+        CleanupTlsData(tls_data);
     }
 
     // Store the values
@@ -212,7 +278,7 @@ void CTlsBase::x_SetValue(void*        value,
                   "CTlsBase::x_SetValue() -- error setting value");
 
     // Add to the used TLS list to cleanup data in the thread Exit()
-    CThread::GetUsedTlsBases().Register(this);
+    CUsedTlsBases::GetUsedTlsBases().Register(this);
 }
 
 
@@ -229,9 +295,7 @@ bool CTlsBase::x_DeleteTlsData(void)
     }
 
     // Cleanup & destroy
-    if ( tls_data->m_CleanupFunc ) {
-        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
-    }
+    CleanupTlsData(tls_data);
     delete tls_data;
 
     // Store NULL in the TLS
@@ -242,15 +306,13 @@ bool CTlsBase::x_DeleteTlsData(void)
 }
 
 
-
 void CTlsBase::x_Reset(void)
 {
     if ( x_DeleteTlsData() ) {
         // Deregister this TLS from the current thread
-        CThread::GetUsedTlsBases().Deregister(this);
+        CUsedTlsBases::GetUsedTlsBases().Deregister(this);
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -339,7 +401,7 @@ unsigned int CThread::sm_ThreadsCount = 0;
 
 
 // Internal storage for thread objects and related variables/functions
-CStaticTls<CThread>* CThread::sm_ThreadsTls;
+CStaticTls<CThread::SThreadInfo>* CThread::sm_ThreadsTls;
 
 
 void s_CleanupThreadsTls(void* /* ptr */)
@@ -350,7 +412,7 @@ void s_CleanupThreadsTls(void* /* ptr */)
 
 void CThread::CreateThreadsTls(void)
 {
-    static CStaticTls<CThread> s_ThreadsTls(s_CleanupThreadsTls);
+    static CStaticTls<SThreadInfo> s_ThreadsTls(s_CleanupThreadsTls);
 
     sm_ThreadsTls = &s_ThreadsTls;
 }
@@ -361,18 +423,10 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     // Get thread object and self ID
     CThread* thread_obj = static_cast<CThread*>(arg);
 
-    // Set Toolkit thread ID. Otherwise no mutexes will work!
-    {{
-        CFastMutexGuard guard(s_ThreadMutex);
-
-        static int s_ThreadCount = 0;
-        s_ThreadCount++;
-
-        thread_obj->m_ID = s_ThreadCount;
-        xncbi_Validate(thread_obj->m_ID != 0,
-                       "CThread::Wrapper() -- error assigning thread ID");
-        GetThreadsTls().SetValue(thread_obj);
-    }}
+    // Set Toolkit thread ID.
+    SThreadInfo* info = sx_InitThreadInfo(thread_obj);
+    xncbi_Validate(info->thread_id != 0,
+                   "CThread::Wrapper() -- error assigning thread ID");
 
 #if defined NCBI_THREAD_PID_WORKAROUND
     // Store this thread's PID. Changed PID means forking of the thread.
@@ -414,7 +468,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
 #endif
 
     // Cleanup local storages used by this thread
-    thread_obj->m_UsedTls.ClearAll();
+    CUsedTlsBases::GetUsedTlsBases().ClearAll();
 
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
@@ -725,15 +779,39 @@ void CThread::OnExit(void)
 }
 
 
-CUsedTlsBases& CThread::GetUsedTlsBases(void)
+int CThread::sx_GetNextThreadId(void)
 {
-    CThread* thread = CThread::GetCurrentThread();
-    if ( thread ) {
-        return thread->m_UsedTls;
-    }
-    else {
-        return *s_MainUsedTls;
-    }
+    CFastMutexGuard guard(s_ThreadMutex);
+    static int s_ThreadCount = 0;
+    return ++s_ThreadCount;
+}
+
+
+void CThread::sx_CleanupThreadInfo(SThreadInfo* info, void* /*cleanup_data*/)
+{
+    delete info;
+}
+
+
+CThread::SThreadInfo* CThread::sx_InitThreadInfo(CThread* thread_obj)
+{
+    SThreadInfo* info = new SThreadInfo;
+    info->thread_ptr = thread_obj;
+    info->thread_id = sx_GetNextThreadId();
+    GetThreadsTls().SetValue(info, sx_CleanupThreadInfo, 0);
+    return info;
+}
+
+
+bool CThread::sm_MainThreadIdInitialized = false;
+
+void CThread::InitializeMainThreadId(void)
+{
+    SThreadInfo* info = new SThreadInfo;
+    info->thread_ptr = 0;
+    info->thread_id = 0;
+    GetThreadsTls().SetValue(info, sx_CleanupThreadInfo, 0);
+    sm_MainThreadIdInitialized = true;
 }
 
 

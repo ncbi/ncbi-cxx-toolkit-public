@@ -46,6 +46,9 @@
 USING_NCBI_SCOPE;
 
 
+//#define USE_NATIVE_THREADS
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Globals
 
@@ -159,91 +162,8 @@ void CSharedResource::EndWrite(int ID)
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-// Test thread
-
-
-class CTestThread : public CThread
-{
-public:
-    CTestThread(int index, CTls<int>* tls, CRWLock* rw, CSharedResource* res);
-
-protected:
-    ~CTestThread(void);
-    virtual void* Main(void);
-    virtual void  OnExit(void);
-
-private:
-    int              m_Index;        // Thread sequential index
-    CTls<int>*       m_Tls;          // Test TLS object
-    int              m_CheckValue;   // Value to compare with the TLS data
-    CRWLock*         m_RW;           // Test RWLock object
-    CSharedResource* m_Res;         // Shared resource imitation
-};
-
-
-// Thread states checked by the main thread
-enum   TTestThreadState {
-    eNull,          // Initial value
-    eCreated,       // Set by CTestThread::CTestThread()
-    eRunning,       // Set by CTestThread::Main()
-    eTerminated,    // Set by CTestThread::OnExit()
-    eDestroyed      // Set by CTestThread::~CTestThread()
-};
-
-
-// Pointers to all threads and corresponding states
-CTestThread*        thr[cNumThreadsMax];
-TTestThreadState    states[cNumThreadsMax];
-
-
 // Prevent threads from termination before Detach() or Join()
 CMutex*             exit_locks[cNumThreadsMax];
-
-
-CTestThread::CTestThread(int index,
-                         CTls<int>* tls,
-                         CRWLock* rw,
-                         CSharedResource* res)
-    : m_Index(index),
-      m_Tls(tls),
-      m_CheckValue(15),
-      m_RW(rw),
-      m_Res(res)
-{
-    CFastMutexGuard guard(s_GlobalLock);
-    states[m_Index] = eCreated;
-}
-
-
-CTestThread::~CTestThread(void)
-{
-    CFastMutexGuard guard(s_GlobalLock);
-    assert(m_CheckValue == 15);
-    states[m_Index] = eDestroyed;
-}
-
-void CTestThread::OnExit(void)
-{
-    CFastMutexGuard guard(s_GlobalLock);
-    states[m_Index] = eTerminated;
-}
-
-
-bool Test_CThreadExit(void)
-{
-    DEFINE_STATIC_FAST_MUTEX(s_Exit_Mutex);
-    CFastMutexGuard guard(s_Exit_Mutex);
-    // The mutex must be unlocked after call to CThread::Exit()
-    try {
-        CThread::Exit(reinterpret_cast<void*>(-1));
-    }
-    catch (...) {
-        throw;
-    }
-    return false;   // this line should never be executed
-}
 
 template<int N>
 struct SValue
@@ -333,6 +253,116 @@ void test_static_tlss(int idx, bool init = true)
     STestStaticTlss<N, CNT> t;
     t.do_test(idx, init);
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Test thread
+
+
+#ifndef USE_NATIVE_THREADS
+class CTestThread : public CThread
+#else
+class CTestThread : public CObject
+#endif
+{
+public:
+    CTestThread(int index, CTls<int>* tls, CRWLock* rw, CSharedResource* res);
+    ~CTestThread(void);
+
+protected:
+    virtual void* Main(void);
+    virtual void  OnExit(void);
+
+private:
+    int              m_Index;        // Thread sequential index
+    CTls<int>*       m_Tls;          // Test TLS object
+    int              m_CheckValue;   // Value to compare with the TLS data
+    CRWLock*         m_RW;           // Test RWLock object
+    CSharedResource* m_Res;         // Shared resource imitation
+
+#ifdef USE_NATIVE_THREADS
+    friend void NativeWrapperCallerImpl(TWrapperArg arg);
+
+    volatile bool    m_IsDetached;
+    volatile bool    m_IsFinished;
+    volatile bool    m_IsValid;
+    TThreadHandle    m_Handle;
+
+public:
+    bool Run(CThread::TRunMode flags = CThread::fRunDefault);
+    void Join(void** result = 0);
+    void Detach(void);
+    void Discard(void);
+    bool IsDetached(void) { return m_IsDetached; }
+#endif
+};
+
+
+// Thread states checked by the main thread
+enum   TTestThreadState {
+    eNull,          // Initial value
+    eCreated,       // Set by CTestThread::CTestThread()
+    eRunning,       // Set by CTestThread::Main()
+    eTerminated,    // Set by CTestThread::OnExit()
+    eDestroyed      // Set by CTestThread::~CTestThread()
+};
+
+
+// Pointers to all threads and corresponding states
+CTestThread*        thr[cNumThreadsMax];
+TTestThreadState    states[cNumThreadsMax];
+
+
+CTestThread::CTestThread(int index,
+                         CTls<int>* tls,
+                         CRWLock* rw,
+                         CSharedResource* res)
+    : m_Index(index),
+      m_Tls(tls),
+      m_CheckValue(15),
+      m_RW(rw),
+      m_Res(res)
+#ifdef USE_NATIVE_THREADS
+      ,
+      m_IsDetached(false),
+      m_IsFinished(false),
+      m_IsValid(false)
+#endif
+{
+    CFastMutexGuard guard(s_GlobalLock);
+    states[m_Index] = eCreated;
+}
+
+
+CTestThread::~CTestThread(void)
+{
+    CFastMutexGuard guard(s_GlobalLock);
+    assert(m_CheckValue == 15);
+    states[m_Index] = eDestroyed;
+}
+
+void CTestThread::OnExit(void)
+{
+    CFastMutexGuard guard(s_GlobalLock);
+    states[m_Index] = eTerminated;
+}
+
+
+bool Test_CThreadExit(void)
+{
+    DEFINE_STATIC_FAST_MUTEX(s_Exit_Mutex);
+    CFastMutexGuard guard(s_Exit_Mutex);
+    // The mutex must be unlocked after call to CThread::Exit()
+    try {
+        CThread::Exit(reinterpret_cast<void*>(-1));
+    }
+    catch (...) {
+        throw;
+    }
+    return false;   // this line should never be executed
+}
+
 
 void* CTestThread::Main(void)
 {
@@ -541,20 +571,175 @@ void* CTestThread::Main(void)
         delay(10); // Provide delay for join-before-exit
     }
 
+#ifndef USE_NATIVE_THREADS
     if (m_Index % 3 == 0)
     {
         // Never verified, since CThread::Exit() terminates the thread
         // inside Test_CThreadExit().
         assert(Test_CThreadExit());
     }
+#endif
 
     return reinterpret_cast<void*>(-1);
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Use native threads rather than CThread to run the tests.
+
+#ifdef USE_NATIVE_THREADS
+
+void CTestThread::Join(void** result)
+{
+    // Join (wait for) and destroy
+    if (m_IsValid) {
+#if defined(NCBI_WIN32_THREADS)
+        _ASSERT(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0);
+        DWORD status;
+        _ASSERT(GetExitCodeThread(m_Handle, &status));
+        _ASSERT(status != DWORD(STILL_ACTIVE));
+        _ASSERT(CloseHandle(m_Handle));
+#elif defined(NCBI_POSIX_THREADS)
+        _ASSERT(pthread_join(m_Handle, 0) == 0);
+#endif
+        m_IsValid = false;
+    }
+    if (result) {
+        *result = this;
+    }
+    delete this;
+}
+
+
+void CTestThread::Detach(void)
+{
+    m_IsDetached = true;
+    if (m_IsFinished) {
+        delete this;
+        return;
+    }
+    if (m_IsValid) {
+#if defined(NCBI_WIN32_THREADS)
+        _ASSERT(CloseHandle(m_Handle));
+#elif defined(NCBI_POSIX_THREADS)
+        _ASSERT(pthread_detach(m_Handle) == 0);
+#endif
+        m_IsValid = false;
+    }
+}
+
+
+void CTestThread::Discard(void)
+{
+    delete this;
+    return;
+}
+
+
+void NativeWrapperCallerImpl(TWrapperArg arg)
+{
+    CTestThread* thread_obj = static_cast<CTestThread*>(arg);
+    thread_obj->Main();
+    thread_obj->OnExit();
+    // If detached - delete it
+    thread_obj->m_IsFinished = true;
+    CUsedTlsBases::GetUsedTlsBases().ClearAll();
+    if (thread_obj->IsDetached()) {
+        delete thread_obj;
+    }
+}
+
+
+#if defined(NCBI_WIN32_THREADS)
+extern "C" {
+    typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
+
+    static TWrapperRes WINAPI NativeWrapperCaller(TWrapperArg arg) {
+        NativeWrapperCallerImpl(arg);
+        return 0;
+    }
+}
+#elif defined(NCBI_POSIX_THREADS)
+extern "C" {
+    typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
+
+    static TWrapperRes NativeWrapperCaller(TWrapperArg arg) {
+        NativeWrapperCallerImpl(arg);
+        return 0;
+    }
+}
+#endif
+
+
+bool CTestThread::Run(CThread::TRunMode flags)
+{
+    // Run as the platform native thread rather than CThread
+    // Not all functionality will work in this mode. E.g. TLS
+    // cleanup can not be done automatically.
+#if defined(NCBI_WIN32_THREADS)
+    // We need this parameter in WinNT - can not use NULL instead!
+    DWORD thread_id;
+    // Suspend thread to adjust its priority
+    DWORD creation_flags = (flags & CThread::fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
+    m_Handle = CreateThread(NULL, 0, NativeWrapperCaller,
+        this, creation_flags, &thread_id);
+    _ASSERT(m_Handle != NULL);
+    m_IsValid = true;
+    if (flags & CThread::fRunNice) {
+        // Adjust priority and resume the thread
+        SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
+        ResumeThread(m_Handle);
+    }
+    if ((flags & CThread::fRunDetached) != 0) {
+        CloseHandle(m_Handle);
+        m_IsValid = false;
+    }
+    else {
+        // duplicate handle to adjust security attributes
+        HANDLE oldHandle = m_Handle;
+        _ASSERT(DuplicateHandle(GetCurrentProcess(), oldHandle,
+            GetCurrentProcess(), &m_Handle,
+            0, FALSE, DUPLICATE_SAME_ACCESS));
+        _ASSERT(CloseHandle(oldHandle));
+    }
+#elif defined(NCBI_POSIX_THREADS)
+        pthread_attr_t attr;
+        _ASSERT(pthread_attr_init (&attr) == 0);
+        if ( ! (flags & CThread::fRunUnbound) ) {
+#if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)  ||  defined(NCBI_OS_IRIX)
+            _ASSERT(pthread_attr_setscope(&attr,
+                                          PTHREAD_SCOPE_PROCESS) == 0);
+#else
+            _ASSERT(pthread_attr_setscope(&attr,
+                                          PTHREAD_SCOPE_SYSTEM) == 0);
+#endif
+        }
+        if ( flags & CThread::fRunDetached ) {
+            _ASSERT(pthread_attr_setdetachstate(&attr,
+                                                PTHREAD_CREATE_DETACHED) == 0);
+        }
+        _ASSERT(pthread_create(&m_Handle, &attr,
+                               NativeWrapperCaller, this) == 0);
+
+        _ASSERT(pthread_attr_destroy(&attr) == 0);
+        m_IsValid = true;
+#else
+        if (flags & fRunAllowST) {
+            Wrapper(this);
+        }
+        else {
+            _ASSERT(0);
+        }
+#endif
+    return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
+
+#endif // USE_NATIVE_THREADS
+
 
 class CThreadedApp : public CNcbiApplication
 {
@@ -641,10 +826,14 @@ int CThreadedApp::Run(void)
     NcbiCout << "\tR-cycles          " << sRCycles << NcbiEndl;
     NcbiCout << "\tW-cycles          " << sWCycles << NcbiEndl;
     NcbiCout << "\tRW-lock flags     0x" << NStr::IntToString(rwflags, 0, 16)
-             << NcbiEndl << NcbiEndl;
+             << NcbiEndl;
+#ifdef USE_NATIVE_THREADS
+    NcbiCout << "\tUsing native threads" << NcbiEndl;
+#endif
+    NcbiCout << NcbiEndl;
 
     // Redirect error log to hide messages sent by delay()
-    SetDiagStream(0);
+    //SetDiagStream(0);
 
     // Test CBaseTls::Discard()
     NcbiCout << "Creating/discarding TLS test...";
@@ -875,6 +1064,7 @@ int CThreadedApp::Run(void)
 
 int main(int argc, const char* argv[]) 
 {
+    CThread::InitializeMainThreadId();
     CThreadedApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default, 0);
+    return app.AppMain(argc, argv, 0, eDS_Default);
 }

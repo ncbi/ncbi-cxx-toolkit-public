@@ -127,6 +127,9 @@ private:
     /// Deletes STlsData* structure and managed pointer
     /// Returns true if CTlsBase must be deregistered from current thread
     bool x_DeleteTlsData(void);
+
+public:
+    static void CleanupTlsData(void *data);
 };
 
 
@@ -228,6 +231,8 @@ public:
     void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0){
         TParent::Get().SetValue(value, cleanup, cleanup_data);
     }
+
+    friend class CUsedTlsBases;
 };
 
 #else // !NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
@@ -355,14 +360,23 @@ public:
     CUsedTlsBases(void);
     ~CUsedTlsBases(void);
 
+    /// The function must be called before thread termination when
+    /// using native threads instead of CThread. Otherwise any data
+    /// allocated by the thread and put into TLS will not be destroyed
+    /// and will cause memory leaks.
     void ClearAll(void);
 
     void Register(CTlsBase* tls);
     void Deregister(CTlsBase* tls);
 
+    /// Get the list of used TLS-es for the current thread
+    static CUsedTlsBases& GetUsedTlsBases(void);
+
 private:
     typedef set<CTlsBase*> TTlsSet;
     TTlsSet m_UsedTls;
+
+    static CStaticTls<CUsedTlsBases> sm_UsedTlsBases;
 
 private:
     CUsedTlsBases(const CUsedTlsBases&);
@@ -457,6 +471,12 @@ public:
     /// This amount does not contain main thread.
     static unsigned int GetThreadsCount();
 
+    /// Initialize main thread's TID.
+    /// The function must be called from the main thread if the application
+    /// is using non-toolkit threads. Otherwise getting thread id of a
+    /// native thread will return zero.
+    static void InitializeMainThreadId(void);
+
 protected:
     /// Derived (user-created) class must provide a real thread function.
     virtual void* Main(void) = 0;
@@ -474,7 +494,6 @@ protected:
     TThreadHandle GetThreadHandle();
 
 private:
-    TID           m_ID;            ///< thread ID
     TThreadHandle m_Handle;        ///< platform-dependent thread handle
     bool          m_IsRun;         ///< if Run() was called for the thread
     bool          m_IsDetached;    ///< if the thread is detached
@@ -497,10 +516,17 @@ private:
     static TWrapperRes Wrapper(TWrapperArg arg);
     friend TWrapperRes ThreadWrapperCaller(TWrapperArg arg);
 
+    struct SThreadInfo {
+        CThread* thread_ptr;
+        TID      thread_id;
+    };
+
     /// To store "CThread" object related to the current (running) thread
-    static CStaticTls<CThread>* sm_ThreadsTls;
+    static CStaticTls<SThreadInfo>* sm_ThreadsTls;
+    static bool sm_MainThreadIdInitialized;
+
     /// Safe access to "sm_ThreadsTls"
-    static CStaticTls<CThread>& GetThreadsTls(void)
+    static CStaticTls<SThreadInfo>& GetThreadsTls(void)
     {
         if ( !sm_ThreadsTls ) {
             CreateThreadsTls();
@@ -508,14 +534,13 @@ private:
         return *sm_ThreadsTls;
     }
 
+    static void sx_CleanupThreadInfo(SThreadInfo* info, void* cleanup_data);
+    static SThreadInfo* sx_InitThreadInfo(CThread* thread_obj);
+    static int sx_GetNextThreadId(void);
+
     /// sm_ThreadsTls initialization and cleanup functions
     static void CreateThreadsTls(void);
     friend void s_CleanupThreadsTls(void* /* ptr */);
-
-    /// Keep all TLS references to clean them up in Exit()
-    CUsedTlsBases m_UsedTls;
-
-    static CUsedTlsBases& GetUsedTlsBases(void);
 
     /// Prohibit copying and assigning
     CThread(const CThread&);
@@ -613,11 +638,14 @@ void CStaticTls<TValue>::x_SafeInit(void)
 inline
 CThread::TID CThread::GetSelf(void)
 {
-    // Get pointer to the current thread object
-    CThread* thread_ptr = GetCurrentThread();
-
+    SThreadInfo* info = GetThreadsTls().GetValue();
+    if (!info  &&  sm_MainThreadIdInitialized) {
+        // Info has not been set - this is a native thread,
+        // need to assign an ID.
+        info = sx_InitThreadInfo(0);
+    }
     // If zero, it is main thread which has no CThread object
-    return thread_ptr ? thread_ptr->m_ID : 0/*main thread*/;
+    return info ? info->thread_id : 0;
 }
 
 
@@ -625,7 +653,8 @@ inline
 CThread* CThread::GetCurrentThread(void)
 {
     // Get pointer to the current thread object
-    return GetThreadsTls().GetValue();
+    SThreadInfo* info = GetThreadsTls().GetValue();
+    return info ? info->thread_ptr : 0;
 }
 
 
