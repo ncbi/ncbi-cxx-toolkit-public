@@ -296,7 +296,30 @@ bool SetHeapLimit(size_t max_size,
                   TLimitsPrintHandler handler, 
                   TLimitsPrintParameter parameter)
 {
-    return SetMemoryLimit(max_size, handler, parameter);
+    if (s_MemoryLimit == max_size) 
+        return true;
+    
+    if ( !s_SetExitHandler(handler, parameter) )
+        return false;
+
+    // Set new heap limit
+    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+    
+    rlimit rl;
+    if ( max_size ) {
+        set_new_handler(s_NewHandler);
+        rl.rlim_cur = rl.rlim_max = max_size;
+    }
+    else {
+        // Set off heap limit
+        set_new_handler(0);
+        rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
+    }
+    if (setrlimit(RLIMIT_DATA, &rl) != 0) 
+        return false;
+
+    s_MemoryLimit = max_size;
+    return true;
 }
 
 

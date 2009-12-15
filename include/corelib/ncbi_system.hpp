@@ -75,7 +75,26 @@ typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrin
 ///
 /// Set the limit for the size of dynamic memory (heap) allocated
 /// by the process. 
+///
+/// @note 
+///   The implementation of malloc() can be different. Some systems use 
+///   sbrk()-based implementation, other use mmap() system call to allocate
+///   memory, ignoring data segment. In the second case SetHeapLimit() 
+///   don't work at all. Usually don't know about how exactly malloc()
+///   is implemented. We added another function - SetMemoryLimit(), that
+///   supports mmap()-based memory allocation, please use it instead.
 /// 
+/// @param max_heap_size
+///   The maximal amount of dynamic memory can be allocated by the process.
+///   (including heap)
+///   The 0 value lift off the heap restrictions.
+/// @param handler
+///   Pointer to a print handler used for dump output.
+///   Use default handler if passed as NULL.
+/// @param parameter
+///   Parameter carried into the print handler. Can be passed as NULL.
+/// @return 
+///   Completion status.
 /// @sa SetMemoryLimit
 /// @deprecated
 NCBI_DEPRECATED

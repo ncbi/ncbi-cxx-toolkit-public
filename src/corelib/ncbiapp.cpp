@@ -1087,6 +1087,9 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 
     // [NCBI.HeapSizeLimit]
     if ( !reg->Get("NCBI", "HeapSizeLimit").empty() ) {
+        ERR_POST_X(13, Warning
+                       << "Config param [NCBI.HeapSizeLimit] is deprecated,"
+                       << "please use [NCBI.MemorySizeLimit] instead.");
         int mem_size_limit = reg->GetInt("NCBI", "HeapSizeLimit", 0);
         if (mem_size_limit < 0) {
             NCBI_THROW(CAppException, eLoadConfig,
@@ -1098,6 +1101,21 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                            << "Failed to set memory size limit to "
                            << mem_size_limit
                            << "Mb (as per the config param [NCBI.HeapSizeLimit])");
+        }
+    }
+    // [NCBI.MemorySizeLimit]
+    if ( !reg->Get("NCBI", "MemorySizeLimit").empty() ) {
+        int mem_size_limit = reg->GetInt("NCBI", "MemorySizeLimit", 0);
+        if (mem_size_limit < 0) {
+            NCBI_THROW(CAppException, eLoadConfig,
+                       "Configuration file error:  [NCBI.MemorySizeLimit] < 0");
+        }
+        mem_size_limit *= 1024 * 1024;
+        if ( !SetMemoryLimit(mem_size_limit) ) {
+            ERR_POST_X(13, Warning
+                           << "Failed to set memory size limit to "
+                           << mem_size_limit
+                           << "Mb (as per the config param [NCBI.MemorySizeLimit])");
         }
     }
 
