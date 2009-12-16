@@ -134,6 +134,13 @@ private:
     friend class CGnomonAnnotatorArgUtil;
 };
 
+struct RemoveTrailingNs : public TransformFunction {
+    RemoveTrailingNs(const CResidueVec& seq);
+    virtual void operator()(CGeneModel& a);
+private:
+    const CResidueVec& seq;
+};
+
 class CModelCompare {
 public:
     static bool CanBeConnectedIntoOne(const CGeneModel& a, const CGeneModel& b);

@@ -466,6 +466,49 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     }
 }
 
+RemoveTrailingNs::RemoveTrailingNs(const CResidueVec& _seq)
+    : seq(_seq)
+{
+}
+
+void RemoveTrailingNs::operator()(CGeneModel& m)
+{
+        CAlignMap mrnamap(m.GetAlignMap());
+        CResidueVec vec;
+        mrnamap.EditedSequence(seq, vec);
+
+        int five_p, three_p;
+        for(five_p=0; five_p < (int)vec.size() && vec[five_p] == 'N'; ++five_p);
+        for(three_p=0; three_p < (int)vec.size() && vec[(int)vec.size()-1-three_p] == 'N'; ++three_p);
+
+        if(five_p > 0 || three_p > 0) {
+            if(five_p%3 != 0) 
+                five_p += 3-five_p%3; 
+            if(three_p%3 != 0) 
+                three_p += 3-three_p%3; 
+            int left = five_p;
+            int right = three_p;
+            if(m.Strand() == eMinus)
+                swap(left,right);
+
+            TSignedSeqRange new_lim(m.Limits());
+            if(left > 0) {
+                _ASSERT(m.Exons().front().Limits().GetLength() > left);
+                new_lim.SetFrom(new_lim.GetFrom()+left);
+            }
+            if(right > 0) {
+                _ASSERT(m.Exons().back().Limits().GetLength() > right);
+                new_lim.SetTo(new_lim.GetTo()-right);
+            }
+
+            double score = m.Score();
+            m.Clip(new_lim,CAlignModel::eDontRemoveExons);
+            CCDSInfo cds_info = m.GetCdsInfo();
+            cds_info.SetScore(score, false);
+            m.SetCdsInfo(cds_info);
+        }
+}
+
 void CGeneSelectorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     arg_desc->AddDefaultKey("intergenic","intergenic","Minimum intergenic distance",CArgDescriptions::eInteger,"20");
