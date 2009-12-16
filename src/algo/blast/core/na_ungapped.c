@@ -42,6 +42,103 @@ static char const rcsid[] =
 #include "index_ungapped.h"
 #include "masksubj.inl"
 
+/** Check to see if an index->q_pos pair exists in MB lookup table 
+ * @param lookup_wrap The lookup table wrap structure [in]
+ * @param index The index to the lookup table [in]
+ * @param q_pos The offset of query to be looked up [in]
+ * @return TRUE if the pair is found to exist in the lookup table 
+ */
+static Boolean
+s_MBLookup(const LookupTableWrap *lookup_wrap,
+           Int4                   index,
+           Int4                   q_pos)
+{
+    BlastMBLookupTable* mb_lt = (BlastMBLookupTable *) lookup_wrap->lut;
+    PV_ARRAY_TYPE *pv = mb_lt->pv_array;
+    Int4 q_off;
+
+    index &= (mb_lt->hashsize-1);
+    ++q_pos;
+
+    if (! PV_TEST(pv, index, mb_lt->pv_array_bts)) {
+        return FALSE;
+    }
+
+    q_off = mb_lt->hashtable[index];
+    while (q_off) {
+        if (q_off == q_pos) return TRUE;
+        q_off = mb_lt->next_pos[q_off];
+    }
+
+    return FALSE;
+}
+
+/** Check to see if an index->q_pos pair exists in SmallNa lookup table
+ * @param lookup_wrap The lookup table wrap structure [in]
+ * @param index The index to the lookup table [in]
+ * @param q_pos The offset of query to be looked up [in]
+ * @return TRUE if the pair is found to exist in the lookup table 
+ */
+static Boolean
+s_SmallNaLookup(const LookupTableWrap *lookup_wrap,
+                Int4                   index,
+                Int4                   q_pos)
+{
+    BlastSmallNaLookupTable* lookup = 
+                         (BlastSmallNaLookupTable *) lookup_wrap->lut;
+    Int2 *overflow = lookup->overflow;
+    Int4 src_off;
+
+    index = lookup->final_backbone[index & lookup->mask];
+
+    if (index == q_pos) return TRUE;
+    if (index == -1 || index >= 0) return FALSE;
+
+    src_off = -index;
+    index = overflow[src_off++];
+    do {
+        if (index == q_pos) return TRUE;
+        index = overflow[src_off++];
+    } while (index >=0);
+
+    return FALSE;
+}
+        
+/** Check to see if an index->q_pos pair exists in Na lookup table 
+ * @param lookup_wrap The lookup table wrap structure [in]
+ * @param index The index to the lookup table [in]
+ * @param q_pos The offset of query to be looked up [in]
+ * @return TRUE if the pair is found to exist in the lookup table 
+ */
+static Boolean
+s_NaLookup(const LookupTableWrap *lookup_wrap,
+           Int4                   index,
+           Int4                   q_pos)
+{
+    BlastNaLookupTable* lookup = (BlastNaLookupTable *) lookup_wrap->lut;
+    PV_ARRAY_TYPE *pv = lookup->pv;
+    Int4 num_hits, i;
+    Int4 *lookup_pos;
+
+    index &= (lookup->mask);
+
+    if (! PV_TEST(pv, index, PV_ARRAY_BTS)) {
+        return FALSE;
+    }
+
+    num_hits = lookup->thick_backbone[index].num_used;
+
+    lookup_pos = (num_hits <= NA_HITS_PER_CELL) ?
+                 lookup->thick_backbone[index].payload.entries :
+                 lookup->overflow + lookup->thick_backbone[index].payload.overflow_cursor;
+
+    for (i=0; i<num_hits; ++i) {
+        if (lookup_pos[i] == q_pos) return TRUE;
+    }
+        
+    return FALSE;
+}    
+
 /** Perform ungapped extension of a word hit, using a score
  *  matrix and extending one base at a time
  * @param query The query sequence [in]
@@ -345,6 +442,26 @@ static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
     return 1;
 }
 
+/** Test to see if seed->q_off exists in lookup table
+ * @param lookup_wrap The lookup table wrap structure [in]
+ * @param subject Subject sequence data [in]
+ * @s_off The starting offset of the seed [in]
+ * @lut_word_length The length of the lookup word [in]
+ */
+static NCBI_INLINE Boolean
+s_IsSeedMasked(const LookupTableWrap   * lookup_wrap,
+               const BLAST_SequenceBlk * subject,
+               Int4                      s_off,
+               Int4                      lut_word_length,
+               Int4                      q_pos)
+{
+    Uint1 *s  = subject->sequence + s_off / COMPRESSION_RATIO;
+    Int4 shift = 2* (16 - s_off % COMPRESSION_RATIO - lut_word_length);
+    Int4 index = (s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3]) >> shift;
+    return !(((T_Lookup_Callback)(lookup_wrap->lookup_callback))
+                                         (lookup_wrap, index, q_pos));
+}
+
 /** Check the mini-extended word against masked query regions, and do right
  * extension if necessary.
  * @param query Query sequence data [in]
@@ -357,7 +474,7 @@ static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
  * @param word_length length of word [in]
  * @param lut_word_length length of lookup table word [in]
  * @param check_double check to see if it is a double word [in]
- * @param extended actual bases extended [out]
+ * @param extended if successful, the actual bases extended [out]
  * @return 0,1,2  for non-word, single word, and double word
  */
 static Int4
@@ -369,73 +486,103 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
              Uint4 s_range,
              Uint4 word_length,
              Uint4 lut_word_length,
+             const LookupTableWrap* lookup_wrap,
              Boolean check_double,
              Int4 * extended)
 {
-    Int4 new_off, q_range, ext_to, ext_max, context;
-    Uint1 *q, *s;
+    Int4 context, q_start, q_range; 
+    Int4 ext_to, ext_max;
     Int4 q_end = *q_off + word_length;
     Int4 s_end = *s_off + word_length;
+    Int4 s_pos, q_pos;
 
     *extended = 0;
 
     /* check subject mask */
     if (s_end > s_range) return 0;
+
+    /* No need to check if mini-extension is not performed.
+       It turns out that we may skip checking for double-hit in 2-hit 
+       algo case as well -- they will come in as 2 hits naturally*/
     if (word_length == lut_word_length) return 1;
 
-    /* check query mask */
+    /* check query context boundary; reposition q_off */
     context = BSearchContextInfo(q_end, query_info);
     if (context > query_info->last_context) return 0;
-    new_off = query_info->contexts[context].query_offset;
-    q_range = new_off + query_info->contexts[context].query_length;
+    q_start = query_info->contexts[context].query_offset;
+    q_range = q_start + query_info->contexts[context].query_length;
+    if (context != BSearchContextInfo(*q_off, query_info)) {
+        *s_off += q_start - (*q_off);
+        *q_off = q_start;
+    } 
 
-    while (locations && locations->ssr->right < new_off) {
-        locations = locations->next;
-    }
+    /* check query mask at two ends */
+    if (locations) {
+        /* check for right end first */
+        if (s_IsSeedMasked(lookup_wrap, subject, 
+                           s_end - lut_word_length, 
+                           lut_word_length, 
+                           q_end - lut_word_length)) return 0;
 
-    while (locations && locations->ssr->left < q_end) {
-        new_off = locations->ssr->right + 1; /* right bound is inclusive*/
-        locations = locations->next;
-    }
-
-    if (q_end < new_off) return 0;
-
-    /* if we get here, q_end and s_end should be free from mask */
-    if (locations) q_range = locations->ssr->left;
-
-    ext_max = MIN(q_range - q_end, s_range - s_end);
-    ext_to = MAX(new_off - *q_off, 0);
-
-    if (ext_to > ext_max) return 0;
-
-    q = query->sequence + q_end;
-    s = subject->sequence + s_end / COMPRESSION_RATIO;
-
-    /* do right extension to single word */
-    if (ext_to) {
-        *s_off += ext_to;
-        *q_off += ext_to;
-
-        for (; *extended < ext_to; (*extended)++, q++) {
-            if (((Uint1) (*s << (2 * (s_end % COMPRESSION_RATIO))) >> 6) != *q)
-                return 0;
-            s_end++;
-            if (s_end % COMPRESSION_RATIO == 0) s++;
+        /* search for valid left end and reposition q_off */
+        for (; TRUE; ++(*s_off), ++(*q_off)) {
+            if (!s_IsSeedMasked(lookup_wrap, subject,
+                                *s_off, lut_word_length, *q_off)) break;
         }
     }
 
+    ext_to = word_length - (q_end - (*q_off));
+    ext_max = MIN(q_range - q_end, s_range - s_end);
+
+    /* shift to the right, and check query mask inside */
+    if (ext_to || locations) {
+
+        if (ext_to > ext_max) return 0;
+        q_end += ext_to;
+        s_end += ext_to;
+
+        for (s_pos = s_end - lut_word_length, 
+             q_pos = q_end - lut_word_length;
+             s_pos > *s_off; 
+             s_pos -= lut_word_length,
+             q_pos -= lut_word_length) {
+             if (s_IsSeedMasked(lookup_wrap, subject,
+                           s_pos, lut_word_length, q_pos)) return 0;
+        }
+
+        (*extended) = ext_to;
+    }
+
+    /* if we get here, single word check is passed */
     if (!check_double) return 1;
 
-    /* do right extension to double word */
+    /* do right extension to double word
+       Note: unlike the single word check, here we need to determine the 
+       precise value of maximal possible *extend */
     ext_to += word_length;
     ext_max = MIN(ext_max, ext_to);
 
-    for (; *extended < ext_max; (*extended)++, q++) {
-        if (((Uint1) (*s << (2 * (s_end % COMPRESSION_RATIO))) >> 6) != *q)
-            return 1;
-        s_end++;
-        if (s_end % COMPRESSION_RATIO == 0) s++;
+    /* try seed by seed */
+    for (s_pos = s_end, q_pos = q_end; 
+         *extended + lut_word_length <= ext_max; 
+         s_pos += lut_word_length, 
+         q_pos += lut_word_length,
+         (*extended) += lut_word_length) {
+         if (s_IsSeedMasked(lookup_wrap, subject, s_pos, 
+                            lut_word_length, q_pos)) break;
     }
+
+    /* try base by base */
+    s_pos -= (lut_word_length - 1);
+    q_pos -= (lut_word_length - 1);
+    while (*extended < ext_max) {
+        if (s_IsSeedMasked(lookup_wrap, subject, s_pos,
+                               lut_word_length, q_pos)) return 1;
+        (*extended)++;
+        ++s_pos;
+        ++q_pos;
+    }
+        
     return ((ext_max == ext_to) ? 2 : 1);
 }
 
@@ -469,6 +616,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
                              BlastQueryInfo * query_info,
                              Int4 s_range,
                              Int4 word_length, Int4 lut_word_length,
+                             const LookupTableWrap * lut,
                              const BlastInitialWordParameters * word_params,
                              Int4 ** matrix, 
                              BLAST_DiagTable * diag_table,
@@ -508,7 +656,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
            first hit qualifies for a double-word */
         word_type = s_TypeOfWord(query, subject, &q_off, &s_off,
                                  query_mask, query_info, s_range, 
-                                 word_length, lut_word_length, TRUE, &extended);
+                                 word_length, lut_word_length, lut, TRUE, &extended);
         if (!word_type) return 0;
         /* update the right end*/
         s_end += extended;
@@ -551,7 +699,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
         /* check the masks for the word */
         if(!s_TypeOfWord(query, subject, &q_off, &s_off,
                         query_mask, query_info, s_range, 
-                        word_length, lut_word_length, FALSE, &extended)) return 0;
+                        word_length, lut_word_length, lut, FALSE, &extended)) return 0;
         /* update the right end*/
         s_end += extended;
         s_end_pos += extended;
@@ -621,6 +769,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                BlastQueryInfo * query_info,
                                Int4 s_range,
                                Int4 word_length, Int4 lut_word_length,
+                               const LookupTableWrap * lut,
                                const BlastInitialWordParameters * word_params,
                                Int4 ** matrix,
                                BLAST_DiagHash * hash_table,
@@ -659,7 +808,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
            first hit qualifies for a double-hit */
         word_type = s_TypeOfWord(query, subject, &q_off, &s_off,
                                  query_mask, query_info, s_range,
-                                 word_length, lut_word_length, TRUE, &extended);
+                                 word_length, lut_word_length, lut, TRUE, &extended);
         if (!word_type) return 0;
         /* update the right end*/
         s_end += extended;
@@ -704,7 +853,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
         /* check the masks for the word */
         if (!s_TypeOfWord(query, subject, &q_off, &s_off,
                           query_mask, query_info, s_range,
-                          word_length, lut_word_length, FALSE, &extended)) return 0;
+                          word_length, lut_word_length, lut, FALSE, &extended)) return 0;
         /* update the right end*/
         s_end += extended;
         s_end_pos += extended;
@@ -801,6 +950,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 NULL,
                                                 query_info, range, 
                                                 word_length, word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
                                                 init_hitlist);
@@ -816,6 +966,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 NULL,
                                                 query_info, range, 
                                                 word_length, word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
                                                 init_hitlist);
@@ -943,6 +1094,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
                                                 init_hitlist);
@@ -952,6 +1104,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
                                                 init_hitlist);
@@ -1085,6 +1238,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
                                                 init_hitlist);
@@ -1094,6 +1248,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
                                                 init_hitlist);
@@ -1213,6 +1368,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                                 lut->masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
                                                 init_hitlist);
@@ -1223,6 +1379,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                                 lut->masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
                                                 init_hitlist);
@@ -1336,6 +1493,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lut->masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
                                                 init_hitlist);
@@ -1345,6 +1503,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lut->masked_locations, 
                                                 query_info, range, 
                                                 word_length, lut_word_length,
+                                                lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
                                                 init_hitlist);
@@ -1533,6 +1692,7 @@ Int2 MB_IndexedWordFinder(
 void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
 {
     if (lookup_wrap->lut_type == eMBLookupTable) {
+        lookup_wrap->lookup_callback = (void *)s_MBLookup;
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
 
         if (lut->lut_word_length == lut->word_length || lut->discontiguous)
@@ -1544,6 +1704,7 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
             lut->extend_callback = (void *)s_BlastNaExtend;
     } 
     else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
+        lookup_wrap->lookup_callback = (void *)s_SmallNaLookup;
         BlastSmallNaLookupTable *lut = 
                              (BlastSmallNaLookupTable *) lookup_wrap->lut;
 
@@ -1557,6 +1718,7 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
             lut->extend_callback = (void *)s_BlastSmallNaExtend;
     }
     else {
+        lookup_wrap->lookup_callback = (void *)s_NaLookup;
         BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
 
         if (lut->lut_word_length == lut->word_length)

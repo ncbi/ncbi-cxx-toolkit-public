@@ -50,7 +50,12 @@ typedef struct LookupTableWrap {
    void* lut; /**< Pointer to the actual lookup table structure */
    void* read_indexed_db; /**< function used to retrieve hits
                               from an indexed database */
+   void* lookup_callback;    /**< function used to look up an
+                                  index->q_off pair */
 } LookupTableWrap;
+
+/** Function pointer type to check the presence of index->q_off pair */
+typedef Boolean (*T_Lookup_Callback)(const LookupTableWrap *, Int4, Int4);
 
 /** Create the lookup table for all query words.
  * @param query The query sequence [in]

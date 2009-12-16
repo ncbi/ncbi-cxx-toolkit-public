@@ -72,7 +72,7 @@ typedef struct BlastSmallNaLookupTable {
     Int2 * overflow;       /**< the overflow array for the compacted 
                                 lookup table */
     Int4  overflow_size;   /**< Number of elements in the overflow array */
-    void *scansub_callback;  /**< function for scanning subject sequences */
+    void *scansub_callback; /**< function for scanning subject sequences */
     void *extend_callback;  /**< function for extending hits */
     BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 } BlastSmallNaLookupTable;
@@ -148,7 +148,7 @@ typedef struct BlastNaLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
-    void *scansub_callback;  /**< function for scanning subject sequences */
+    void *scansub_callback; /**< function for scanning subject sequences */
     void *extend_callback;  /**< function for extending hits */
     BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 } BlastNaLookupTable;
@@ -234,33 +234,33 @@ typedef enum {
 
 /** The lookup table structure used for Mega BLAST */
 typedef struct BlastMBLookupTable {
-   Int4 word_length;      /**< number of exact letter matches that will trigger
-                             an ungapped extension */
-   Int4 lut_word_length;  /**< number of letters in a lookup table word */
-   Int4 hashsize;       /**< = 4^(lut_word_length) */ 
-   Boolean discontiguous; /**< Are discontiguous words used? */
-   Int4 template_length; /**< Length of the discontiguous word template */
-   EDiscTemplateType template_type; /**< Type of the discontiguous 
-                                        word template */
-   Boolean two_templates; /**< Use two templates simultaneously */
-   EDiscTemplateType second_template_type; /**< Type of the second 
-                                               discontiguous word template */
-   Int4 scan_step;     /**< Step size for scanning the database */
-   Int4* hashtable;   /**< Array of positions              */
-   Int4* hashtable2;  /**< Array of positions for second template */
-   Int4* next_pos;    /**< Extra positions stored here     */
-   Int4* next_pos2;   /**< Extra positions for the second template */
-   PV_ARRAY_TYPE *pv_array;/**< Presence vector, used for quick presence 
-                              check */
-   Int4 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
-                          the backbone */
-   Int4 longest_chain; /**< Largest number of query positions for a given 
-                          word */
-   void *scansub_callback;  /**< function for scanning subject sequences */
-   void *extend_callback;  /**< function for extending hits */
+    Int4 word_length;      /**< number of exact letter matches that will trigger
+                              an ungapped extension */
+    Int4 lut_word_length;  /**< number of letters in a lookup table word */
+    Int4 hashsize;       /**< = 4^(lut_word_length) */ 
+    Boolean discontiguous; /**< Are discontiguous words used? */
+    Int4 template_length; /**< Length of the discontiguous word template */
+    EDiscTemplateType template_type; /**< Type of the discontiguous 
+                                         word template */
+    Boolean two_templates; /**< Use two templates simultaneously */
+    EDiscTemplateType second_template_type; /**< Type of the second 
+                                                discontiguous word template */
+    Int4 scan_step;     /**< Step size for scanning the database */
+    Int4* hashtable;   /**< Array of positions              */
+    Int4* hashtable2;  /**< Array of positions for second template */
+    Int4* next_pos;    /**< Extra positions stored here     */
+    Int4* next_pos2;   /**< Extra positions for the second template */
+    PV_ARRAY_TYPE *pv_array;/**< Presence vector, used for quick presence 
+                               check */
+    Int4 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
+                           the backbone */
+    Int4 longest_chain; /**< Largest number of query positions for a given 
+                           word */
+    void *scansub_callback; /**< function for scanning subject sequences */
+    void *extend_callback;  /**< function for extending hits */
 
-   Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
-   Int4 num_words_added; /**< Number of words added to the l.t. */
+    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
+    Int4 num_words_added; /**< Number of words added to the l.t. */
     BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 
 } BlastMBLookupTable;
