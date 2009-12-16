@@ -209,9 +209,9 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.m_DBPartsIdsSpan.GetAverage() << " avg diff, "
                         << data.m_DBPartsIdsSpan.GetMaximum() << " max diff" << endl;
     proxy << "Locks    - "
-                               << data.m_LockRequests << " requested ("
+                               << data.m_LockRequests << " requested (+"
                                << data.m_GCLockRequests << " GC), "
-                               << data.m_LocksAcquired << " acquired ("
+                               << data.m_LocksAcquired << " acquired (+"
                                << data.m_GCLocksAcquired << " GC)" << endl
           << "I/O      - "
                         << data.CalcTimePercent(data.m_TotalDbTime) << "% (db), "

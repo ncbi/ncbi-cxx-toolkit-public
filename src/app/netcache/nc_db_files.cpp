@@ -203,21 +203,9 @@ CNCDBFile::CreateMetaDatabase(void)
     sql.Clear();
     sql << "create table " << kNCBlobKeys_Table
         << "(" << kNCBlobKeys_BlobIdCol  << " integer primary key,"
-               << kNCBlobKeys_KeyCol     << " varchar not null,"
-               << kNCBlobKeys_SubkeyCol  << " varchar not null,"
-               << kNCBlobKeys_VersionCol << " int not null,"
-               // This index plays significant role at the start of NetCache.
-               // And although start time seems very small and rare and at all
-               // other times index only slows inserts it's still necessary
-               // because without it starting time becomes intolerably bad.
-               << "unique(" << kNCBlobKeys_KeyCol    << ","
-                            << kNCBlobKeys_SubkeyCol << ","
-                            << kNCBlobKeys_VersionCol /* << ","
-               // id should not be in the unique because we rely on it if we
-               // need to change id for the blob when it is re-created.
-                            << kNCBlobKeys_BlobIdCol */
-               <<       ")"
-        << ")";
+               << kNCBlobKeys_KeyCol     << " varchar not null,";
+    AddSubkeyColsDef(sql);
+    sql << ")";
     stmt.SetSql(sql);
     stmt.Execute();
 
@@ -289,66 +277,11 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                 << " where " << kNCDBIndex_DBIdCol << "=?1";
             break;
         case eStmt_GetBlobId:
-            sql << "select a." << kNCBlobKeys_BlobIdCol
-                <<  " from " << kNCBlobKeys_Table << " a,"
-                             << kNCBlobInfo_Table << " b"
-                << " where a." << kNCBlobKeys_KeyCol     << "=?1"
-                <<   " and a." << kNCBlobKeys_SubkeyCol  << "=?2"
-                <<   " and a." << kNCBlobKeys_VersionCol << "=?3"
-                <<   " and b." << kNCBlobInfo_BlobIdCol
-                <<                             "=a." << kNCBlobKeys_BlobIdCol
-                <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?4";
-            break;
-        case eStmt_GetKeyIds:
-            sql << "select a." << kNCBlobKeys_BlobIdCol
-                <<  " from " << kNCBlobKeys_Table << " a,"
-                             << kNCBlobInfo_Table << " b"
-                << " where a." << kNCBlobKeys_KeyCol << "=?1"
-                <<   " and b." << kNCBlobInfo_BlobIdCol
-                <<                             "=a." << kNCBlobKeys_BlobIdCol
-                <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?2";
-            break;
+        case eStmt_BlobFamilyExists:
         case eStmt_BlobExists:
-            sql << "select count(*)"
-                <<  " from " << kNCBlobKeys_Table << " a,"
-                             << kNCBlobInfo_Table << " b"
-                << " where a." << kNCBlobKeys_KeyCol    << "=?1"
-                <<   " and a." << kNCBlobKeys_SubkeyCol << "=?2"
-                <<   " and b." << kNCBlobInfo_BlobIdCol
-                <<                             "=a." << kNCBlobKeys_BlobIdCol
-                <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?3";
-            break;
         case eStmt_CreateBlobKey:
-            // Replace - in case if blob was recently deleted and now it's
-            // created again when record in database is still exists.
-            sql << "insert or replace into " << kNCBlobKeys_Table
-                << "(" << kNCBlobKeys_BlobIdCol << ","
-                       << kNCBlobKeys_KeyCol    << ","
-                       << kNCBlobKeys_SubkeyCol << ","
-                       << kNCBlobKeys_VersionCol
-                << ")values(?1,?2,?3,?4)";
-            break;
-        case eStmt_ReadBlobKey:
-            sql << "select a." << kNCBlobKeys_KeyCol    << ","
-                <<        "a." << kNCBlobKeys_SubkeyCol << ","
-                <<        "a." << kNCBlobKeys_VersionCol
-                <<  " from " << kNCBlobKeys_Table << " a,"
-                             << kNCBlobInfo_Table << " b"
-                << " where a." << kNCBlobKeys_BlobIdCol << "=?1"
-                <<   " and b." << kNCBlobInfo_BlobIdCol
-                <<                             "=a." << kNCBlobKeys_BlobIdCol
-                <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?2";
-            break;
-        case eStmt_GetBlobIdsList:
-            sql << "select " << kNCBlobInfo_BlobIdCol << ","
-                             << kNCBlobInfo_DeadTimeCol
-                <<  " from " << kNCBlobInfo_Table
-                << " where " << kNCBlobInfo_DeadTimeCol << ">=?1"
-                <<   " and " << kNCBlobInfo_DeadTimeCol << "<?3"
-                <<   " and (" << kNCBlobInfo_DeadTimeCol << ">?1"
-                <<        " or " << kNCBlobInfo_BlobIdCol << ">?2)"
-                << " order by 2,1"
-                << " limit ?4";
+        case eStmt_GetBlobsList:
+            GetSpecificStatement(typ, sql);
             break;
         case eStmt_WriteBlobInfo:
             sql << "insert or replace into " << kNCBlobInfo_Table
@@ -497,10 +430,9 @@ CNCDBFile::ReadBlobId(SNCBlobIdentity* identity, int dead_after)
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobId));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
 
-    stmt->Bind(1, identity->key.data(), identity->key.size());
-    stmt->Bind(2, identity->subkey.data(), identity->subkey.size());
-    stmt->Bind(3, identity->version);
-    stmt->Bind(4, dead_after);
+    stmt->Bind(1,  identity->key.data(), identity->key.size());
+    BindBlobSubkey(stmt, *identity);
+    stmt->Bind(20, dead_after);
     if (stmt->Step()) {
         identity->blob_id = stmt->GetInt8(0);
         return true;
@@ -508,34 +440,35 @@ CNCDBFile::ReadBlobId(SNCBlobIdentity* identity, int dead_after)
     return false;
 }
 
-void
-CNCDBFile::FillBlobIds(const string& key,
-                       int           dead_after,
-                       TNCIdsList*   id_list)
+bool
+CNCDBFile::IsBlobFamilyExists(const string& key,
+                              const string& subkey,
+                              int           dead_after)
 {
-    _ASSERT(id_list);
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_BlobFamilyExists));
+    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetKeyIds));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
+    stmt->Bind(1,  key.data(), key.size());
+    BindBlobSubkey(stmt, subkey);
+    stmt->Bind(20, dead_after);
+    _VERIFY(stmt->Step());
 
-    stmt->Bind(1, key.data(), key.size());
-    stmt->Bind(2, dead_after);
-    while (stmt->Step()) {
-        id_list->push_back(stmt->GetInt8(0));
-    }
+    return stmt->GetInt8(0) > 0;
 }
 
 bool
-CNCDBFile::IsBlobExists(const string& key,
-                        const string& subkey,
-                        int           dead_after)
+CNCDBFile::IsBlobExists(const SNCBlobIdentity& identity,
+                        int                    dead_after)
 {
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_BlobExists));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
-    stmt->Bind(1, key.data(), key.size());
-    stmt->Bind(2, subkey.data(), subkey.size());
-    stmt->Bind(3, dead_after);
+    // For now we don't allow for moved blob to keep its blob_id, so for exact
+    // existence we need to check it too.
+    stmt->Bind(1,  identity.blob_id);
+    stmt->Bind(2,  identity.key.data(), identity.key.size());
+    BindBlobSubkey(stmt, identity);
+    stmt->Bind(20, dead_after);
     _VERIFY(stmt->Step());
 
     return stmt->GetInt8(0) > 0;
@@ -547,42 +480,24 @@ CNCDBFile::CreateBlobKey(const SNCBlobIdentity& identity)
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateBlobKey));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
-    stmt->Bind(1, identity.blob_id);
-    stmt->Bind(2, identity.key   .data(), identity.key   .size());
-    stmt->Bind(3, identity.subkey.data(), identity.subkey.size());
-    stmt->Bind(4, identity.version);
+    stmt->Bind(1,  identity.blob_id);
+    stmt->Bind(2,  identity.key.data(), identity.key.size());
+    BindBlobSubkey(stmt, identity);
 
     stmt->Execute();
 }
 
-bool
-CNCDBFile::ReadBlobKey(SNCBlobIdentity* identity, int dead_after)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_ReadBlobKey));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
-
-    stmt->Bind(1, identity->blob_id);
-    stmt->Bind(2, dead_after);
-    if (stmt->Step()) {
-        identity->key     = stmt->GetString(0);
-        identity->subkey  = stmt->GetString(1);
-        identity->version = stmt->GetInt   (2);
-        return true;
-    }
-    return false;
-}
-
 void
-CNCDBFile::GetBlobIdsList(int&        dead_after,
-                          TNCBlobId&  id_after,
-                          int         dead_before,
-                          int         max_count,
-                          TNCIdsList* id_list)
+CNCDBFile::GetBlobsList(int&          dead_after,
+                        TNCBlobId&    id_after,
+                        int           dead_before,
+                        int           max_count,
+                        TNCBlobsList* blobs_list)
 {
-    _ASSERT(id_list);
-    id_list->clear();
+    _ASSERT(blobs_list);
+    blobs_list->clear();
 
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobIdsList));
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobsList));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
     stmt->Bind(1, dead_after);
@@ -590,9 +505,12 @@ CNCDBFile::GetBlobIdsList(int&        dead_after,
     stmt->Bind(3, dead_before);
     stmt->Bind(4, max_count);
     while (stmt->Step()) {
-        id_after = stmt->GetInt8(0);
-        id_list->push_back(id_after);
-        dead_after = stmt->GetInt(1);
+        AutoPtr<SNCBlobIdentity> identity = new SNCBlobIdentity();
+        identity->blob_id = id_after = stmt->GetInt8  (0);
+        dead_after                   = stmt->GetInt   (1);
+        identity->key                = stmt->GetString(2);
+        ReadBlobSubkey(stmt, 3, identity.get());
+        blobs_list->push_back(identity);
     }
 }
 
@@ -623,7 +541,7 @@ CNCDBFile::SetBlobDeadTime(TNCBlobId blob_id, int dead_time)
     stmt->Execute();
 }
 
-void
+bool
 CNCDBFile::ReadBlobInfo(SNCBlobInfo* blob_info)
 {
     _ASSERT(blob_info);
@@ -632,16 +550,19 @@ CNCDBFile::ReadBlobInfo(SNCBlobInfo* blob_info)
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
 
     stmt->Bind(1, blob_info->blob_id);
-    _VERIFY(stmt->Step());
-    blob_info->access_time = stmt->GetInt   (0);
-    blob_info->expired     = stmt->GetInt   (1) <= int(time(NULL));
-    blob_info->owner       = stmt->GetString(2);
-    blob_info->ttl         = stmt->GetInt   (3);
-    blob_info->size        = stmt->GetInt   (4);
+    if (stmt->Step()) {
+        blob_info->access_time = stmt->GetInt   (0);
+        blob_info->expired     = stmt->GetInt   (1) <= int(time(NULL));
+        blob_info->owner       = stmt->GetString(2);
+        blob_info->ttl         = stmt->GetInt   (3);
+        blob_info->size        = stmt->GetInt   (4);
+        return true;
+    }
+    return false;
 }
 
 void
-CNCDBFile::GetChunkIds(TNCBlobId blob_id, TNCIdsList* id_list)
+CNCDBFile::GetChunkIds(TNCBlobId blob_id, TNCChunksList* id_list)
 {
     _ASSERT(id_list);
     id_list->clear();
@@ -717,6 +638,261 @@ CNCDBFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
         return true;
     }
     return false;
+}
+
+CNCDBFile::~CNCDBFile(void)
+{
+    m_Stmts.clear();
+}
+
+void
+CNCDBFile::AddSubkeyColsDef(CQuickStrStream&)
+{}
+
+void
+CNCDBFile::GetSpecificStatement(ENCStmtType, CQuickStrStream&)
+{}
+
+void
+CNCDBFile::BindBlobSubkey(CSQLITE_Statement*, const SNCBlobIdentity&)
+{}
+
+void
+CNCDBFile::BindBlobSubkey(CSQLITE_Statement*, const string&)
+{}
+
+void
+CNCDBFile::ReadBlobSubkey(CSQLITE_Statement*, int, SNCBlobIdentity*)
+{}
+
+
+CNCDBIndexFile::~CNCDBIndexFile(void)
+{}
+
+
+CNCDBMetaFile::~CNCDBMetaFile(void)
+{}
+
+
+CNCDBMetaFile_ICache::~CNCDBMetaFile_ICache(void)
+{}
+
+void
+CNCDBMetaFile_ICache::AddSubkeyColsDef(CQuickStrStream& sql)
+{
+    sql << kNCBlobKeys_SubkeyCol  << " varchar not null,"
+        << kNCBlobKeys_VersionCol << " int not null,"
+        // This index plays significant role at the start of NetCache.
+        // And although start time seems very small and rare and at all
+        // other times index only slows inserts it's still necessary
+        // because without it starting time becomes intolerably bad.
+        << "unique(" << kNCBlobKeys_KeyCol    << ","
+                     << kNCBlobKeys_SubkeyCol << ","
+                     << kNCBlobKeys_VersionCol
+        // id should not be in the unique because we rely on it if we
+        // need to change id for the blob when it is re-created.
+        <<       ")";
+}
+
+void
+CNCDBMetaFile_ICache::GetSpecificStatement(ENCStmtType      typ,
+                                           CQuickStrStream& sql)
+{
+    switch (typ) {
+    case eStmt_GetBlobId:
+        sql << "select a." << kNCBlobKeys_BlobIdCol
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_KeyCol     << "=?1"
+            <<   " and a." << kNCBlobKeys_SubkeyCol  << "=?10"
+            <<   " and a." << kNCBlobKeys_VersionCol << "=?11"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_BlobFamilyExists:
+        sql << "select count(*)"
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_KeyCol    << "=?1"
+            <<   " and a." << kNCBlobKeys_SubkeyCol << "=?10"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_BlobExists:
+        sql << "select count(*)"
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_BlobIdCol  << "=?1"
+            <<   " and a." << kNCBlobKeys_KeyCol     << "=?2"
+            <<   " and a." << kNCBlobKeys_SubkeyCol  << "=?10"
+            <<   " and a." << kNCBlobKeys_VersionCol << "=?11"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_CreateBlobKey:
+        // Replace - in case if blob was recently deleted and now it's
+        // created again when record in database is still exists.
+        sql << "insert or replace into " << kNCBlobKeys_Table
+            << "(" << kNCBlobKeys_BlobIdCol << ","
+                   << kNCBlobKeys_KeyCol    << ","
+                   << kNCBlobKeys_SubkeyCol << ","
+                   << kNCBlobKeys_VersionCol
+            << ")values(?1,?2,?10,?20)";
+        break;
+    case eStmt_GetBlobsList:
+        sql << "select a." << kNCBlobInfo_BlobIdCol   << ","
+            <<        "a." << kNCBlobInfo_DeadTimeCol << ","
+            <<        "b." << kNCBlobKeys_KeyCol      << ","
+            <<        "b." << kNCBlobKeys_SubkeyCol   << ","
+            <<        "b." << kNCBlobKeys_VersionCol
+            <<  " from " << kNCBlobInfo_Table << " a,"
+                         << kNCBlobKeys_Table << " b"
+            << " where a."  << kNCBlobInfo_DeadTimeCol  << ">=?1"
+            <<   " and a."  << kNCBlobInfo_DeadTimeCol  << "<?3"
+            <<   " and (a." << kNCBlobInfo_DeadTimeCol  << ">?1"
+            <<        " or a." << kNCBlobInfo_BlobIdCol << ">?2)"
+            <<   " and b." << kNCBlobKeys_BlobIdCol
+            <<                             "=a." << kNCBlobInfo_BlobIdCol
+            << " order by 2,1"
+            << " limit ?4";
+        break;
+    default:
+        NCBI_TROUBLE("Unknown statement type");
+    }
+}
+
+void
+CNCDBMetaFile_ICache::BindBlobSubkey(CSQLITE_Statement*     stmt,
+                                     const SNCBlobIdentity& identity)
+{
+    stmt->Bind(10, identity.subkey.data(), identity.subkey.size());
+    stmt->Bind(20, identity.version);
+}
+
+void
+CNCDBMetaFile_ICache::BindBlobSubkey(CSQLITE_Statement* stmt,
+                                     const string&      subkey)
+{
+    stmt->Bind(10, subkey.data(), subkey.size());
+}
+
+void
+CNCDBMetaFile_ICache::ReadBlobSubkey(CSQLITE_Statement* stmt,
+                                     int                col_num,
+                                     SNCBlobIdentity*   identity)
+{
+    identity->subkey  = stmt->GetString(col_num);
+    identity->version = stmt->GetInt   (col_num + 1);
+}
+
+
+CNCDBMetaFile_NCCache::~CNCDBMetaFile_NCCache(void)
+{}
+
+void
+CNCDBMetaFile_NCCache::AddSubkeyColsDef(CQuickStrStream& sql)
+{
+    sql // This index plays significant role at the start of NetCache.
+        // And although start time seems very small and rare and at all
+        // other times index only slows inserts it's still necessary
+        // because without it starting time becomes intolerably bad.
+        << "unique(" << kNCBlobKeys_KeyCol
+        // id should not be in the unique because we rely on it if we
+        // need to change id for the blob when it is re-created.
+        <<       ")";
+}
+
+void
+CNCDBMetaFile_NCCache::GetSpecificStatement(ENCStmtType      typ,
+                                            CQuickStrStream& sql)
+{
+    switch (typ) {
+    case eStmt_GetBlobId:
+        sql << "select a." << kNCBlobKeys_BlobIdCol
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_KeyCol     << "=?1"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_BlobFamilyExists:
+        sql << "select count(*)"
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_KeyCol    << "=?1"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_BlobExists:
+        sql << "select count(*)"
+            <<  " from " << kNCBlobKeys_Table << " a,"
+                         << kNCBlobInfo_Table << " b"
+            << " where a." << kNCBlobKeys_BlobIdCol  << "=?1"
+            <<   " and a." << kNCBlobKeys_KeyCol     << "=?2"
+            <<   " and b." << kNCBlobInfo_BlobIdCol
+            <<                             "=a." << kNCBlobKeys_BlobIdCol
+            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
+        break;
+    case eStmt_CreateBlobKey:
+        // Replace - in case if blob was recently deleted and now it's
+        // created again when record in database is still exists.
+        sql << "insert or replace into " << kNCBlobKeys_Table
+            << "(" << kNCBlobKeys_BlobIdCol << ","
+                   << kNCBlobKeys_KeyCol
+            << ")values(?1,?2)";
+        break;
+    case eStmt_GetBlobsList:
+        sql << "select a." << kNCBlobInfo_BlobIdCol   << ","
+            <<        "a." << kNCBlobInfo_DeadTimeCol << ","
+            <<        "b." << kNCBlobKeys_KeyCol
+            <<  " from " << kNCBlobInfo_Table << " a,"
+                         << kNCBlobKeys_Table << " b"
+            << " where a."  << kNCBlobInfo_DeadTimeCol  << ">=?1"
+            <<   " and a."  << kNCBlobInfo_DeadTimeCol  << "<?3"
+            <<   " and (a." << kNCBlobInfo_DeadTimeCol  << ">?1"
+            <<        " or a." << kNCBlobInfo_BlobIdCol << ">?2)"
+            <<   " and b." << kNCBlobKeys_BlobIdCol
+            <<                             "=a." << kNCBlobInfo_BlobIdCol
+            << " order by 2,1"
+            << " limit ?4";
+        break;
+    default:
+        NCBI_TROUBLE("Unknown statement type");
+    }
+}
+
+
+CNCDBDataFile::~CNCDBDataFile(void)
+{}
+
+
+
+CNCDBFilesPool::~CNCDBFilesPool(void)
+{}
+
+
+CNCDBFilesPool_ICache::~CNCDBFilesPool_ICache(void)
+{}
+
+void
+CNCDBFilesPool_ICache::GetFile(CNCDBMetaFile** file_ptr)
+{
+    *file_ptr = m_Metas.GetObjPtr();
+}
+
+
+CNCDBFilesPool_NCCache::~CNCDBFilesPool_NCCache(void)
+{}
+
+void
+CNCDBFilesPool_NCCache::GetFile(CNCDBMetaFile** file_ptr)
+{
+    *file_ptr = m_Metas.GetObjPtr();
 }
 
 
@@ -1161,7 +1337,6 @@ CNCFSVirtFile::Unlock(int lock_type)
 inline bool
 CNCFSVirtFile::IsReserved(void)
 {
-    _ASSERT(!m_WriteFile);
     int result;
     m_ReadFile->pMethods->xCheckReservedLock(m_ReadFile, &result);
     return result != 0;

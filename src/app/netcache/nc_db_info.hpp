@@ -44,8 +44,8 @@ typedef Int8                             TNCChunkId;
 typedef Int8                             TNCDBPartId;
 /// Type of volume id inside a database part
 typedef unsigned int                     TNCDBVolumeId;
-/// Universal type of list of ids
-typedef list<Int8>                       TNCIdsList;
+/// List of chunk ids
+typedef list<TNCChunkId>                 TNCChunksList;
 /// Type of buffer used for reading/writing blobs
 typedef CSimpleBufferT<char>             TNCBlobBuffer;
 
@@ -61,7 +61,7 @@ struct SNCBlobCoords
     SNCBlobCoords(TNCDBPartId   _part_id,
                   TNCDBVolumeId _volume_id,
                   TNCBlobId     _blob_id);
-    /// Clear the coordinates (set both ids to 0)
+    /// Clear the coordinates (set all ids to 0)
     void Clear(void);
     /// Copy coordinates from another structure
     void AssignCoords(const SNCBlobCoords& coords);
@@ -69,38 +69,41 @@ struct SNCBlobCoords
     bool operator==  (const SNCBlobCoords& coords) const;
 };
 
-/// Full identifying information about blob: coordinates, key, subkey
-/// and version.
-struct SNCBlobIdentity : public SNCBlobCoords
+/// Keys-related "coordinates" of blob inside NetCache
+struct SNCBlobKeys
 {
     string key;          ///< Blob key
     string subkey;       ///< Blob subkey
     int    version;      ///< Blob version
 
+    SNCBlobKeys(void);
+    SNCBlobKeys(const string& _key, const string& _subkey, int _version);
+    /// Clear the coordinates
+    void Clear(void);
+    /// Copy coordinates from another structure
+    void AssignKeys(const SNCBlobKeys& keys);
+    /// Check whether this coordinates are equal to other ones
+    bool operator==(const SNCBlobKeys& keys) const;
+
+    /// Special transformation of the structure to pointer to it necessary
+    /// for implementation of CNCBlobStorage_Specific.
+    operator const SNCBlobKeys* (void) const;
+    /// Special transformation of the structure to string necessary
+    /// for implementation of CNCBlobStorage_Specific. Returns value of the
+    /// key.
+    operator const string& (void) const;
+};
+
+/// Full identifying information about blob: coordinates, key, subkey
+/// and version.
+struct SNCBlobIdentity : public SNCBlobCoords, public SNCBlobKeys
+{
     SNCBlobIdentity(void);
-    /// Create identity with empty key information
-    SNCBlobIdentity(const SNCBlobCoords& coords);
-    /// Create identity with empty coordinates and empty subkey and version
-    SNCBlobIdentity(const string& _key);
-    /// Create identity with empty coordinates
-    SNCBlobIdentity(const string& _key, const string& _subkey, int _version);
     /// Clear all identity information
     void Clear(void);
 };
 
-/// Comparator for sorting blob identities by key information
-struct SNCBlobCompareKeys
-{
-    bool operator() (const SNCBlobIdentity* left,
-                     const SNCBlobIdentity* right) const;
-};
-
-/// Comparator for sorting blob identities by blob ids
-struct SNCBlobCompareIds
-{
-    bool operator() (const SNCBlobIdentity* left,
-                     const SNCBlobIdentity* right) const;
-};
+typedef list< AutoPtr<SNCBlobIdentity> >   TNCBlobsList;
 
 /// Full information about NetCache blob
 struct SNCBlobInfo : public SNCBlobIdentity
@@ -179,65 +182,67 @@ SNCBlobCoords::operator== (const SNCBlobCoords& coords) const
 
 
 inline void
-SNCBlobIdentity::Clear(void)
+SNCBlobKeys::Clear(void)
 {
-    SNCBlobCoords::Clear();
     key.clear();
     subkey.clear();
     version = 0;
 }
 
 inline
-SNCBlobIdentity::SNCBlobIdentity(void)
+SNCBlobKeys::SNCBlobKeys(void)
 {
     Clear();
 }
 
 inline
-SNCBlobIdentity::SNCBlobIdentity(const SNCBlobCoords& coords)
-    : SNCBlobCoords(coords),
-      version(0)
-{}
-
-inline
-SNCBlobIdentity::SNCBlobIdentity(const string& _key)
-    : key(_key),
-      version(0)
-{}
-
-inline
-SNCBlobIdentity::SNCBlobIdentity(const string& _key,
-                                 const string& _subkey,
-                                 int           _version)
+SNCBlobKeys::SNCBlobKeys(const string& _key,
+                         const string& _subkey,
+                         int           _version)
     : key(_key),
       subkey(_subkey),
       version(_version)
 {}
 
+inline void
+SNCBlobKeys::AssignKeys(const SNCBlobKeys& keys)
+{
+    key     = keys.key;
+    subkey  = keys.subkey;
+    version = keys.version;
+}
 
 inline bool
-SNCBlobCompareKeys::operator() (const SNCBlobIdentity* left,
-                                const SNCBlobIdentity* right) const
+SNCBlobKeys::operator== (const SNCBlobKeys& keys) const
 {
-    if (left->key.size() != right->key.size())
-        return left->key.size() < right->key.size();
-    int ret = left->key.compare(right->key);
-    if (ret != 0)
-        return ret < 0;
-    if (left->subkey.size() != right->subkey.size())
-        return left->subkey.size() < right->subkey.size();
-    ret = left->subkey.compare(right->subkey);
-    if (ret != 0)
-        return ret < 0;
-    return left->version < right->version;
+    return key == keys.key  &&  subkey == keys.subkey
+           &&  version == keys.version;
+}
+
+inline
+SNCBlobKeys::operator const SNCBlobKeys*(void) const
+{
+    return this;
+}
+
+inline
+SNCBlobKeys::operator const string& (void) const
+{
+    return key;
 }
 
 
-inline bool
-SNCBlobCompareIds::operator() (const SNCBlobIdentity* left,
-                               const SNCBlobIdentity* right) const
+inline void
+SNCBlobIdentity::Clear(void)
 {
-    return left->blob_id < right->blob_id;
+    SNCBlobCoords::Clear();
+    SNCBlobKeys::Clear();
+}
+
+inline
+SNCBlobIdentity::SNCBlobIdentity(void)
+{
+    Clear();
 }
 
 

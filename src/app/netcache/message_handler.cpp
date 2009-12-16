@@ -1286,7 +1286,7 @@ CNCMessageHandler::x_DoCmd_GetOwner(void)
 bool
 CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
-    bool hb = m_Storage->IsBlobExists(m_BlobKey, m_BlobSubkey);
+    bool hb = m_Storage->IsBlobFamilyExists(m_BlobKey, m_BlobSubkey);
     m_SockBuffer.WriteMessage("OK:", NStr::IntToString((int)hb));
     return true;
 }

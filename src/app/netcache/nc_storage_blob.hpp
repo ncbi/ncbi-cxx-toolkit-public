@@ -106,30 +106,27 @@ private:
 
     /// Write data of the current blob chunk to database
     void x_FlushCurChunk(void);
-    /// Do common operations when detected database corruption (mark blob as
-    /// necessary to delete and throw exception).
-    void x_CorruptedDatabase(void);
 
 
     /// Storage object which this object is bound to
-    CNCBlobStorage*       m_Storage;
+    CNCBlobStorage*         m_Storage;
     /// Meta-information about blob currently working with
-    SNCBlobInfo*          m_BlobInfo;
+    SNCBlobInfo*            m_BlobInfo;
     /// Blob buffer used for temporary caching data written or read from blob
-    TNCBlobBuffer         m_Buffer;
+    TNCBlobBuffer           m_Buffer;
     /// Current position of reading/writing inside the whole blob
-    size_t                m_Position;
+    size_t                  m_Position;
     /// Current position of reading/writing inside blob's chunk
-    size_t                m_ChunkPos;
+    size_t                  m_ChunkPos;
     /// List of ids of all chunks blob consists of
-    TNCIdsList            m_AllRowIds;
+    TNCChunksList           m_AllRowIds;
     /// "Pointer" to chunk id that will be read/written next
-    TNCIdsList::iterator  m_NextRowIdIt;
+    TNCChunksList::iterator m_NextRowIdIt;
     /// TRUE - object can only write to the blob, FALSE - object can only
     /// read from the blob
-    bool                  m_CanWrite;
+    bool                    m_CanWrite;
     /// Flag if Finalize() method was called
-    bool                  m_Finalized;
+    bool                    m_Finalized;
 };
 
 /// Pool of CNCBlob objects
@@ -231,7 +228,7 @@ public:
     /// lock happens in InitializeLock() method.
     /// If access is eRead and storage's IsChangeTimeOnRead() returns TRUE
     /// then holder will change blob's access time when lock is released. If
-    /// access is eWrite or eCreate then blob will be automatically deleted
+    /// access is eCreate then blob will be automatically deleted
     /// when lock is released if blob wasn't properly finalized.
     ///
     /// @param key
@@ -246,24 +243,17 @@ public:
                      const string&   subkey,
                      int             version,
                      ENCBlobAccess   access);
-    /// Prepare lock for the blob identified by database part id, volume id
-    /// and blob id. Method only initializes necessary variables, actual
-    /// acquiring of the lock happens in InitializeLock() method.
-    /// If access is eWrite or eCreate then blob will be automatically deleted
-    /// when lock is released if blob wasn't properly finalized.
+    /// Prepare lock for the blob identified by full coordinates information
+    /// (including keys). Method only initializes necessary variables, actual
+    /// acquiring of the lock happens in InitializeLock() method. Method
+    /// assumes that it's called only from storage's background thread
+    /// (garbage collector).
     ///
-    /// @param part_id
-    ///   Database part id.
-    /// @param volume_id
-    ///   Id of volume in the database part.
-    /// @param blob_id
-    ///   Id of the blob
+    /// @param identity
+    ///   Identifying information about blob
     /// @param access
     ///   Required access to the blob
-    void PrepareLock(TNCDBPartId   part_id,
-                     TNCDBVolumeId volume_id,
-                     TNCBlobId     blob_id,
-                     ENCBlobAccess access);
+    void PrepareLock(const SNCBlobIdentity& identity, ENCBlobAccess access);
     /// Initialize and acquire the lock.
     /// Should be called only after PrepareLock().
     void InitializeLock(void);
@@ -343,6 +333,10 @@ private:
     /// Flag if blob should be deleted in database when lock is released if it
     /// wasn't properly finalized.
     mutable bool             m_DeleteNotFinalized;
+    /// Flag showing that lock was requested from garbage collector
+    /// (PrepareLock() with identity as parameter was called). Flag is
+    /// necessary only for different statistics calculation.
+    bool                     m_LockFromGC;
     /// Object used to read/write to the blob
     mutable CNCBlob*         m_Blob;
     /// Holder of blob id lock

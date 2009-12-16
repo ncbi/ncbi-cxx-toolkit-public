@@ -360,12 +360,20 @@ CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
             {
                 continue;
             }
+            if (NStr::CompareNocase(cache_name, kNCDefCacheName) == 0) {
+                NCBI_THROW(CUtilException, eWrongData,
+                           "ICache cache name cannot be equal to 'nccache'");
+            }
             NStr::ToLower(cache_name);
         }
         TStorageMap::iterator it_stor = m_StorageMap.find(cache_name);
         if (it_stor == m_StorageMap.end()) {
-            CNCBlobStorage* storage
-                              = new CNCBlobStorage(reg, section_name, reinit);
+            CNCBlobStorage* storage;
+            if (cache_name == kNCDefCacheName)
+                storage = new CNCBlobStorage_NCCache();
+            else
+                storage = new CNCBlobStorage_ICache();
+            storage->Initialize(reg, section_name, reinit);
             storage->SetMonitor(&m_Monitor);
             m_StorageMap[cache_name] = storage;
         }
@@ -491,7 +499,6 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
     proxy << "Time - " << CTime(CTime::eCurrent)
                        << ", started at " << m_StartTime << endl
           << "Env  - " << CThread::GetThreadsCount() << " (cur thr), "
-                       << params.init_threads << " (init thr), "
                        << params.max_threads << " (max thr), "
                        << params.max_connections << " (max conns), "
                        << m_CmdTimeout << " (cmd t/o)" << endl

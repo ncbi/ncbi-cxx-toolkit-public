@@ -45,6 +45,19 @@ BEGIN_NCBI_SCOPE
 static const size_t kNCMaxBlobChunkSize = 2000000;
 
 
+/// Do common operations when detected database corruption (mark blob as
+/// necessary to delete and throw exception).
+inline static void
+s_CorruptedDatabase(SNCBlobInfo& blob_info)
+{
+    blob_info.corrupted = true;
+    NCBI_THROW(CNCBlobStorageException, eCorruptedDB,
+               "Database information about blob is corrupted. "
+               "Blob will be deleted");
+}
+
+
+
 CNCBlob::CNCBlob(CNCBlobStorage* storage)
     : m_Storage(storage)
 {
@@ -62,15 +75,6 @@ CNCBlob::x_FlushCurChunk(void)
 
     m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
     m_Buffer.resize(0);
-}
-
-inline void
-CNCBlob::x_CorruptedDatabase(void)
-{
-    m_BlobInfo->corrupted = true;
-    NCBI_THROW(CNCBlobStorageException, eCorruptedDB,
-               "Database information about blob is corrupted. "
-               "Blob will be deleted");
 }
 
 void
@@ -93,10 +97,16 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
     }
     else {
         m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
-        size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
-        size_t min_size = max_size - kNCMaxBlobChunkSize;
-        if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
-            x_CorruptedDatabase();
+        if (m_AllRowIds.size() == 0) {
+            if (m_BlobInfo->size != 0)
+                s_CorruptedDatabase(*m_BlobInfo);
+        }
+        else {
+            size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
+            size_t min_size = max_size - kNCMaxBlobChunkSize;
+            if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
+                s_CorruptedDatabase(*m_BlobInfo);
+        }
         m_NextRowIdIt = m_AllRowIds.begin();
     }
 
@@ -136,14 +146,14 @@ CNCBlob::Read(void* buffer, size_t size)
         if (m_NextRowIdIt == m_AllRowIds.end())
             return 0;
         if (!m_Storage->ReadChunkValue(*m_BlobInfo, *m_NextRowIdIt, &m_Buffer))
-            x_CorruptedDatabase();
+            s_CorruptedDatabase(*m_BlobInfo);
         ++m_NextRowIdIt;
         if (m_NextRowIdIt != m_AllRowIds.end()
                 &&  m_Buffer.size() != kNCMaxBlobChunkSize
             ||  m_NextRowIdIt == m_AllRowIds.end()
                 &&  m_Position + m_Buffer.size() != m_BlobInfo->size)
         {
-            x_CorruptedDatabase();
+            s_CorruptedDatabase(*m_BlobInfo);
         }
     }
 
@@ -203,8 +213,10 @@ CNCBlobLockHolder::x_EnsureBlobInfoRead(void) const
     _ASSERT(IsLockAcquired());
 
     // ttl will be equal to 0 if blob exists only when info was not read yet
-    if (m_BlobInfo.ttl == 0  &&  m_BlobExists) {
-        m_Storage->ReadBlobInfo(&m_BlobInfo);
+    if (m_BlobInfo.ttl == 0  &&  m_BlobExists
+        &&  !m_Storage->ReadBlobInfo(&m_BlobInfo))
+    {
+        s_CorruptedDatabase(m_BlobInfo);
     }
 }
 
@@ -216,7 +228,10 @@ CNCBlobLockHolder::x_OnLockValidated(void)
         m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
         m_Storage->GetStat()->AddNotExistBlobLock();
     }
-    m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
+    if (m_LockFromGC)
+        m_Storage->GetStat()->AddGCLockAcquired();
+    else
+        m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
 }
 
 inline void
@@ -234,45 +249,51 @@ CNCBlobLockHolder::x_ReleaseLock(void)
 inline bool
 CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
 {
-    m_BlobExists = m_Storage->ReadBlobKey(&m_BlobInfo);
-    if (!m_BlobExists  &&  !m_BlobInfo.key.empty()) {
-        SNCBlobIdentity new_ident(m_BlobInfo);
-        if (m_Storage->ReadBlobCoords(&new_ident)) {
-            new_coords->AssignCoords(new_ident);
-            return false;
-        }
+    CNCBlobStorage::EExistsOrMoved moved
+                            = m_Storage->IsBlobExists(m_BlobInfo, new_coords);
+    if (moved == CNCBlobStorage::eBlobMoved) {
+        // Blob is moved, we need to re-acquire the lock
+        return false;
     }
-    // If there's no need to create then we're valid anyway
-    if (m_BlobExists  ||  m_BlobAccess != eCreate) {
-        if (m_BlobAccess == eCreate  &&  m_BlobExists
-            &&  m_Storage->MoveBlobIfNeeded(m_BlobInfo, m_CreateCoords))
-        {
-            x_ReleaseLock();
-            m_BlobInfo.AssignCoords(m_CreateCoords);
-            m_RWHolder.Swap(m_CreateHolder);
+    m_BlobExists = moved == CNCBlobStorage::eBlobExists;
+    if (m_BlobExists) {
+        if (m_BlobAccess == eCreate) {
+            // This would be a marker showing that meta-information about blob
+            // shouldn't be read from database - it isn't needed and will be
+            // re-written anyway (and it even will be impossible to read if 
+            // we move blob into different part below).
+            m_BlobInfo.ttl = m_Storage->GetDefBlobTTL();
+
+            if (m_Storage->MoveBlobIfNeeded(m_BlobInfo, m_CreateCoords)) {
+                x_ReleaseLock();
+                m_BlobInfo.AssignCoords(m_CreateCoords);
+                m_RWHolder.Swap(m_CreateHolder);
+            }
         }
+        x_OnLockValidated();
+    }
+    else if (m_BlobAccess != eCreate) {
+        // If there's no need to create then we're valid anyway
         x_OnLockValidated();
     }
     return m_LockValid;
 }
 
 void
-CNCBlobLockHolder::PrepareLock(TNCDBPartId   part_id,
-                               TNCDBVolumeId volume_id,
-                               TNCBlobId     blob_id,
-                               ENCBlobAccess access)
+CNCBlobLockHolder::PrepareLock(const SNCBlobIdentity& identity,
+                               ENCBlobAccess          access)
 {
-    _ASSERT(blob_id > 0);
-    _ASSERT(part_id >= 0);
     _ASSERT(access != eCreate);
 
-    m_BlobInfo.Clear();
-    m_BlobInfo.part_id   = part_id;
-    m_BlobInfo.volume_id = volume_id;
-    m_BlobInfo.blob_id   = blob_id;
+    m_BlobInfo.AssignCoords(identity);
+    m_BlobInfo.AssignKeys(identity);
     m_BlobAccess         = access;
     m_SaveInfoOnRelease  = false;
     m_DeleteNotFinalized = false;
+    m_LockInitialized    = false;
+    m_LockFromGC         = true;
+
+    m_Storage->GetStat()->AddGCLockRequest();
 }
 
 void
@@ -291,6 +312,10 @@ CNCBlobLockHolder::PrepareLock(const string& key,
     m_DeleteNotFinalized = access == eCreate;
     m_SaveInfoOnRelease  = access != eRead
                            ||  m_Storage->IsChangeTimeOnRead();
+    m_LockInitialized    = false;
+    m_LockFromGC         = false;
+
+    m_Storage->GetStat()->AddLockRequest();
 }
 
 void
@@ -300,8 +325,8 @@ CNCBlobLockHolder::InitializeLock(void)
     m_LockKnown = m_LockValid = m_BlobExists = false;
     m_LockInitialized = true;
 
-    m_Storage->GetStat()->AddLockRequest();
-    m_LockTimer.Start();
+    if (m_LockFromGC)
+        m_LockTimer.Start();
 
     if (m_BlobAccess == eCreate) {
         _ASSERT(m_BlobInfo.blob_id == 0);
@@ -418,7 +443,8 @@ CNCBlobLockHolder::ReleaseLock(void)
             _ASSERT(m_BlobInfo.ttl != 0);
             m_Storage->WriteBlobInfo(m_BlobInfo);
         }
-        m_Storage->GetStat()->AddTotalLockTime(m_LockTimer.Elapsed());
+        if (!m_LockFromGC)
+            m_Storage->GetStat()->AddTotalLockTime(m_LockTimer.Elapsed());
     }
 
     CSpinGuard guard(m_LockAcqMutex);
@@ -479,7 +505,6 @@ CNCBlobLockHolder::DeleteThis(void) const
     nc_this->ReleaseLock();
     CleanWeakRefs();
     m_Storage->ReturnLockHolder(nc_this);
-    nc_this->m_LockInitialized = false;
 }
 
 CNCBlobLockHolder::~CNCBlobLockHolder(void)
