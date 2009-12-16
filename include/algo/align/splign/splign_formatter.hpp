@@ -66,7 +66,8 @@ public:
     enum EAsnFlags {
         eAF_Disc                 = 0x0000,
         eAF_SplicedSegNoParts    = 0x0001,
-        eAF_SplicedSegWithParts  = 0x0003
+        eAF_SplicedSegWithParts  = 0x0003,
+        eAF_EmbedVersion         = 0x0004
     };
 
     // formatters
@@ -103,7 +104,7 @@ public:
     ///   Formatted alignment as a seq-align-set reference.
     CRef<objects::CSeq_align_set> AsSeqAlignSet(
         const CSplign::TResults* results = 0,
-        EAsnFlags asn_flags  = eAF_SplicedSegWithParts)
+        EAsnFlags flags  = eAF_SplicedSegWithParts)
         const;
 
 private:

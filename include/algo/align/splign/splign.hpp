@@ -54,6 +54,10 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 
+/// CSplign is the central library object for computing spliced
+/// cDNA-to-genomic alignments.
+
+
 class NCBI_XALGOALIGN_EXPORT CSplign: public CObject
 {
 public:
@@ -67,15 +71,28 @@ public:
 
     static CRef<CVersion> s_GetVersion(void);
 
-    /// Access to parameters and subj-objects
+    /// Access the spliced aligner core object.
 
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
     static CRef<CSplicedAligner> s_CreateDefaultAligner(bool low_query_quality);
 
+    /// Access the scope object that the library will use to retrieve the sequences
+
     CRef<objects::CScope>  GetScope(void) const;
     CRef<objects::CScope>& SetScope(void);
-    void   PreserveScope(bool preserve_scope = true);
+
+    /// Controls whether to clean the scope object's cache on a new sequence.
+    ///
+    /// @param preserve
+    ///    When true, the sequences previsouly loaded into the scope will not
+    ///    be deleted, which is feasible when working with a fixed number
+    ///    of sequences e.g. in an interactive application. When false,
+    ///    transcript sequences will always be cleared from the scope, and
+    ///    genomic sequences will be cleared unless the requested sequence
+    ///    is the same as the last one.
+
+    void   PreserveScope(bool preserve = true);
 
     void   SetEndGapDetection(bool on);
     bool   GetEndGapDetection(void) const;
@@ -273,78 +290,81 @@ public:
 protected:
 
     // the spliced alignment computing object
-    CRef<TAligner> m_aligner;
+    CRef<TAligner>        m_aligner;
 
     // access to sequence data
     CRef<objects::CScope> m_Scope;
     bool                  m_CanResetHistory;
 
     // alignment pattern
-    vector<size_t> m_pattern;
+    vector<size_t>        m_pattern;
 
     // min exon idty - others will be marked as gaps
-    double m_MinExonIdty;
+    double                m_MinExonIdty;
 
     // compartment penalty as a per cent of the query (mRna) length
-    double m_CompartmentPenalty;
+    double                m_CompartmentPenalty;
 
     // min compartment idty - others will be skipped
-    double m_MinCompartmentIdty;
+    double                m_MinCompartmentIdty;
 
     // min single compartment idty (per subject per strand) as a fraction of
     // the query length and as an absolute value.
     // The final value for the parameter is computed
     // as min(m_MinSingletonIdty * query_length, m_MinSingletonIdtyBps)
-    double m_MinSingletonIdty;
+    double                m_MinSingletonIdty;
 
-    size_t m_MinSingletonIdtyBps;
+    size_t                m_MinSingletonIdtyBps;
 
 
     // mandatory end gap detection flag
-    bool m_endgaps;
+    bool                  m_endgaps;
 
     // alignment map
     struct SAlnMapElem {
         size_t m_box [4];
         int    m_pattern_start, m_pattern_end;
     };
-    vector<SAlnMapElem> m_alnmap;
+    vector<SAlnMapElem>   m_alnmap;
 
     typedef map<string,TOrfPair>  TStrIdToOrfs;
-    TStrIdToOrfs  m_OrfMap;
+    TStrIdToOrfs          m_OrfMap;
 
     // query sequence
-    vector<char> m_mrna;
-    bool         m_strand;
-    size_t       m_polya_start;
-    bool         m_nopolya;
+    vector<char>          m_mrna;
+    bool                  m_strand;
+    size_t                m_polya_start;
+    bool                  m_nopolya;
 
-    size_t       m_cds_start; // in antisense, these are computed based on a reverse-
-    size_t       m_cds_stop;  // complimentary sequence, so start still less than stop
+    // in antisense, these are computed based on a reverse-
+    // complimentary sequence, so start still less than stop
+    size_t                m_cds_start; 
+    size_t                m_cds_stop;  
 
     // genomic sequence
-    vector<char> m_genomic;
+    vector<char>          m_genomic;
 
     // max space to look beyond end hits
-    size_t       m_max_genomic_ext;
+    size_t                m_max_genomic_ext;
 
     // max intron length
-    size_t       m_MaxIntron;
+    size_t                m_MaxIntron;
 
     // The limiting range as defined by the compartment hits,
     // if the max compartment hit identity is less than a cut-off.
-    pair<size_t, size_t> m_BoundingRange;
+    pair<size_t, size_t>  m_BoundingRange;
 
     // output per compartment
-    TSegments    m_segments;
+    TSegments             m_segments;
   
     // all compartments
-    size_t       m_model_id;
-    TResults     m_result;
+    size_t                m_model_id;
+    TResults              m_result;
 
-    size_t       m_MaxCompsPerQuery;
+    size_t                m_MaxCompsPerQuery;
+    size_t                m_MinPatternHitLength;
 
-    size_t       m_MinPatternHitLength;
+
 
     SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,

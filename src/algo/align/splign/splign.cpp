@@ -93,21 +93,24 @@ namespace {
 }
 
 
-CSplign::CSplign( void )
+CSplign::CSplign(void):
+    m_CanResetHistory (true),
+    m_MinExonIdty(s_GetDefaultMinExonIdty()),
+    m_CompartmentPenalty(s_GetDefaultCompartmentPenalty()),
+    m_MinCompartmentIdty(s_GetDefaultMinCompartmentIdty()),
+    m_MinSingletonIdty(s_GetDefaultMinCompartmentIdty()),
+    m_MinSingletonIdtyBps(numeric_limits<size_t>::max()),
+    m_endgaps (true),
+    m_strand (true),
+    m_nopolya (false),
+    m_cds_start (0),
+    m_cds_stop (0),
+    m_max_genomic_ext (s_GetDefaultMaxGenomicExtent()),
+    m_MaxIntron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron()),
+    m_model_id (0),
+    m_MaxCompsPerQuery (0),
+    m_MinPatternHitLength (13)
 {
-    m_CompartmentPenalty = s_GetDefaultCompartmentPenalty();
-    m_MinExonIdty = s_GetDefaultMinExonIdty();
-    m_MinSingletonIdty = m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
-    m_MinSingletonIdtyBps = numeric_limits<size_t>::max();
-    m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
-    m_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
-    m_endgaps = true;
-    m_strand = true;
-    m_nopolya = false;
-    m_cds_start = m_cds_stop = 0;
-    m_model_id = 0;
-    m_MaxCompsPerQuery = 0;
-    m_MinPatternHitLength = 13;
 }
 
 CSplign::~CSplign()
@@ -120,9 +123,11 @@ CRef<CVersion> CSplign::s_GetVersion(void)
     return kVersion;
 }
 
+
 CRef<CSplign::TAligner>& CSplign::SetAligner( void ) {
     return m_aligner;
 }
+
 
 CConstRef<CSplign::TAligner> CSplign::GetAligner( void ) const {
     return m_aligner;
@@ -341,16 +346,17 @@ void CSplign::x_LoadSequence(vector<char>* seq,
             NCBI_THROW(CAlgoAlignException, eInternal, "Splign scope not set");
         }
 
-        CBioseq_Handle bh = m_Scope->GetBioseqHandle(seqid);
+        CBioseq_Handle bh (m_Scope->GetBioseqHandle(seqid));
 
         if(retain && m_CanResetHistory) {
-            m_Scope->ResetHistory();
+            m_Scope->ResetHistory(); // this does not remove the sequence
+                                     // referenced to by 'bh'
         }
 
         if(bh) {
 
-            CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-            const TSeqPos dim = sv.size();
+            CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+            const TSeqPos dim (sv.size());
             if(dim == 0) {
                 NCBI_THROW(CAlgoAlignException,
                            eNoSeqData, 
@@ -380,7 +386,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                        string("ID not found: ") + seqid.AsFastaString());
         }
         
-        if(retain == false && m_CanResetHistory) {
+        if(!retain && m_CanResetHistory) {
             m_Scope->RemoveFromHistory(bh);
         }       
     }

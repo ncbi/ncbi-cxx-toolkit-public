@@ -46,7 +46,10 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
+
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -615,8 +618,9 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
    EAsnFlags flag)
 const
 {
-    const bool spliced_seg (flag & 0x0001);
-    const bool with_parts (flag & 0x0002);
+    const bool spliced_seg  (flag & 0x0001);
+    const bool with_parts   (flag & 0x0002);
+    const bool with_version (flag & eAF_EmbedVersion);
 
     if(results == 0) {
         results = &(m_splign_results);
@@ -758,6 +762,26 @@ const
                 }
             }
             
+            if(with_version) {
+
+                CSeq_align::TExt& ext (sa->SetExt());
+                CRef<CUser_object> uo (new CUser_object);
+                ext.push_back(uo);
+
+                uo->SetType().SetStr("origin");
+                CRef<CUser_field> uf (new CUser_field);
+                uo->SetData().push_back(uf);
+
+                CRef<CObject_id> oid (new CObject_id);
+                oid->SetStr("algo");
+                uf->SetLabel(*oid);
+                string verstr (CSplign::s_GetVersion()->Print("splign"));
+                size_t idx (verstr.size());
+                while(idx && !isalnum(verstr[idx-1])) --idx;
+                verstr.resize(idx);
+                uf->SetData().SetStr(verstr);
+            }
+
             data.push_back(sa);
         }
         else {
