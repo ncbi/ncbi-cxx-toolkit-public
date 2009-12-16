@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(String2Enum_PSITblastn) {
 
 /********* ncbi::blast::FindMatrixPath() **************/
 BOOST_AUTO_TEST_CASE(FindMatrixPathSuccess) {
-    TAutoCharPtr input = strdup("blosum100");
+    TAutoCharPtr input = strdup("blosum62");
     char* matrix_path = BlastFindMatrixPath(input.get(), true);
     BOOST_REQUIRE((matrix_path != NULL) && (strlen(matrix_path) > 0));
     sfree(matrix_path);
