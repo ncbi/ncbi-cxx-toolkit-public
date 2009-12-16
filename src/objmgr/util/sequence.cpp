@@ -58,6 +58,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -2711,6 +2712,237 @@ void x_Translate(const Container& seq,
         }
         prot.resize(sz);
     }
+}
+
+
+CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
+                                                   CScope& scope)
+{
+    const CGenetic_code* code = NULL;
+    int frame = 0;
+    if (cds.GetData().IsCdregion()) {
+        const CCdregion& cdr = cds.GetData().GetCdregion();
+        if (cdr.IsSetFrame ()) {
+            switch (cdr.GetFrame ()) {
+            case CCdregion::eFrame_two :
+                frame = 1;
+                break;
+            case CCdregion::eFrame_three :
+                frame = 2;
+                break;
+            default :
+                break;
+            }
+        }
+        if (cdr.IsSetCode()) {
+            code = &cdr.GetCode();
+        }
+    }
+    bool is_5prime_complete = !cds.GetLocation().IsPartialStart(eExtreme_Biological);
+
+    CSeqVector seq(cds.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
+    CConstRef<CSeqMap> map;
+    map.Reset(&seq.GetSeqMap());
+
+    CRef<CBioseq> prot(new CBioseq());
+
+    prot->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    prot->SetInst().SetMol(CSeq_inst::eMol_aa);
+    prot->SetInst().SetLength(0);
+
+    CRef<CDelta_seq> seg(new CDelta_seq());
+    seg->SetLiteral().SetLength(0);
+    prot->SetInst().SetExt().SetDelta().Set().push_back(seg);
+
+    // reserve our space
+    const size_t usable_size = seq.size() - frame;
+    const size_t mod = usable_size % 3;
+
+    // get appropriate translation table
+    const CTrans_table & tbl =
+        (code ? CGen_code_table::GetTransTable(*code) :
+                CGen_code_table::GetTransTable(1));
+
+    // main loop through bases
+    CSeqVector::const_iterator start = seq.begin();
+    for (int i = 0;  i < frame;  ++i) {
+        ++start;
+    }
+
+    size_t i;
+    size_t k;
+    size_t state = 0;
+    size_t start_state = 0;
+    size_t length = usable_size / 3;
+    bool check_start = (is_5prime_complete && frame == 0);
+    bool first_time = true;
+
+    for (i = 0;  i < length;  ++i) {
+        bool is_gap = true;
+        bool unknown_length = false;
+        size_t pos = (i * 3) + frame;
+
+        // loop through one codon at a time
+        for (k = 0;  k < 3;  ++k, ++start) {
+            state = tbl.NextCodonState(state, *start);
+            if (seq.IsInGap(pos + k )) {
+                if (is_gap && !unknown_length) {
+                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                    if (map_iter.GetType() == CSeqMap::eSeqGap
+                        && map_iter.IsUnknownLength()) {
+                        unknown_length = true;
+                    }
+                }
+            } else {
+                is_gap = false;
+            }
+        }
+
+        if (first_time) {
+            start_state = state;
+        }
+
+        CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
+        if (is_gap) {
+            if ((!last->SetLiteral().IsSetSeq_data()
+                 || last->SetLiteral().GetSeq_data().IsGap())
+                && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
+                    || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
+                // ok, already creating gap segment with correct fuzz
+                size_t len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
+                prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(len + 1);
+            } else {
+                // create new segment for gap
+                CRef<CDelta_seq> new_seg(new CDelta_seq());
+                new_seg->SetLiteral().SetSeq_data().SetGap();
+                new_seg->SetLiteral().SetLength(1);
+                if (unknown_length) {
+                    new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                }
+                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+            }
+        } else {
+            if ((!last->SetLiteral().IsSetSeq_data() || last->SetLiteral().GetSeq_data().IsGap())
+                && last->SetLiteral().GetLength() > 0) {
+                // transitioning from gap to non-gap, need new seg
+                CRef<CDelta_seq> new_seg(new CDelta_seq());
+                new_seg->SetLiteral().SetLength(0);
+                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+                last = prot->SetInst().SetExt().SetDelta().Set().back();
+            }
+
+            // save translated amino acid
+            if (first_time  &&  check_start) { 
+                last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetStartResidue(state));
+            } else {
+                last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetCodonResidue(state));
+            }
+            size_t len = last->GetLiteral().GetLength();
+            last->SetLiteral().SetLength(len + 1);
+        }
+
+        prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+        first_time = false;
+    }
+
+    if (mod) {
+        LOG_POST_X(7, Warning <<
+                   "translation of sequence whose length "
+                   "is not an even number of codons");
+        bool is_gap = true;
+        bool unknown_length = false;
+        size_t pos = (length * 3) + frame;
+        for (k = 0;  k < mod;  ++k, ++start) {
+            state = tbl.NextCodonState(state, *start);
+            if (seq.IsInGap(pos + k)) {
+                if (is_gap && !unknown_length) {
+                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                        if (map_iter.IsUnknownLength()) {
+                            unknown_length = true;
+                        }
+                    }
+                }
+            } else {
+                is_gap = false;
+            }
+        }
+
+        CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
+        if (is_gap) {
+            if ((!last->SetLiteral().IsSetSeq_data() || last->GetLiteral().GetSeq_data().IsGap())
+                && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
+                    || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
+                // ok, already creating gap segment with correct fuzz
+                size_t len = last->GetLiteral().GetLength();
+                last->SetLiteral().SetLength(len + 1);
+            } else {
+                // create new segment for gap
+                CRef<CDelta_seq> new_seg(new CDelta_seq());
+                new_seg->SetLiteral().SetSeq_data().SetGap();
+                new_seg->SetLiteral().SetLength(1);
+                if (unknown_length) {
+                    new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                }
+                prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+            }
+            prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+        } else {
+            for ( ;  k < 3;  ++k) {
+                state = tbl.NextCodonState(state, 'N');
+            }
+
+            if (first_time) {
+                start_state = state;
+            }
+
+            // save translated amino acid
+            char c = tbl.GetCodonResidue(state);
+            if (c != 'X') {
+                if ((!last->SetLiteral().IsSetSeq_data() || last->GetLiteral().GetSeq_data().IsGap())
+                    && last->SetLiteral().GetLength() > 0) {
+                    // transitioning from gap to non-gap, need new seg
+                    CRef<CDelta_seq> new_seg(new CDelta_seq());
+                    prot->SetInst().SetExt().SetDelta().Set().push_back(new_seg);
+                    last = prot->SetInst().SetExt().SetDelta().Set().back();
+                }
+                if (first_time  &&  check_start) {
+                    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetStartResidue(state));
+                } else {
+                    // if padding was needed, trim ambiguous last residue
+                    last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, tbl.GetCodonResidue(state));
+                }
+                size_t len = last->GetLiteral().GetLength();
+                last->SetLiteral().SetLength(len + 1);
+                prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+            }
+        }
+    }
+
+    // remove stop codon from end
+    CRef<CDelta_seq> end = prot->SetInst().SetExt().SetDelta().Set().back();
+    if (end->IsLiteral() && end->GetLiteral().IsSetSeq_data() && end->GetLiteral().GetSeq_data().IsIupacaa()) {
+        string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
+        if (NStr::EndsWith(last_seg, "*")) {
+            last_seg = last_seg.substr(0, last_seg.length() - 1);
+            end->SetLiteral().SetLength(last_seg.length());
+            prot->SetInst().SetLength(prot->SetInst().SetLength() + 1);
+        }
+    }
+
+    if (prot->SetInst().SetExt().SetDelta().Set().size() == 1
+        && prot->SetInst().SetExt().SetDelta().Set().front()->IsLiteral()
+        && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().IsSetSeq_data()
+        && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().IsIupacaa()) {
+        // only one segment, should be raw rather than delta
+
+        string data = prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().GetSeq_data().GetIupacaa().Get();
+        prot->SetInst().ResetExt();
+        prot->SetInst().SetSeq_data().SetIupacaa().Set(data);
+        prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    }
+
+    return prot;
 }
 
 

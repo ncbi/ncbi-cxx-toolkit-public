@@ -889,6 +889,10 @@ public:
                           bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = 0);
+
+    static CRef<CBioseq> TranslateToProtein(const CSeq_feat& cds,
+                                              CScope& scope);
+
 };
 
 
