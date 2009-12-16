@@ -7,37 +7,37 @@ USING_OLIGOFAR_SCOPES;
 
 bool CAligner::AlignDiag( const char * q, const char * Q, const char * s, const char * S, bool reverseStrand )
 {
-// Since this is NOT extension of an alignment, no m_extentionPenaltyDropoff should be used here
-m_algoX0all++;
+    // Since this is NOT extension of an alignment, no m_extentionPenaltyDropoff should be used here
+    m_algoX0all++;
 
-////////////////////////////////////////////////////////////////////////
-// 1. Adjust positions to the beginning and to the end of the read
+    ////////////////////////////////////////////////////////////////////////
+    // 1. Adjust positions to the beginning and to the end of the read
 
-int qhead = m_anchorQ1;
-int qtail = m_qryLength - m_anchorQ2 - 1;
+    int qhead = m_anchorQ1;
+    int qtail = m_qryLength - m_anchorQ2 - 1;
 
-q -= qhead * m_qryInc;
-Q += qtail * m_qryInc;
-m_posQ1 = 0;
-m_posQ2 = m_qryLength - 1;
+    q -= qhead * m_qryInc;
+    Q += qtail * m_qryInc;
+    m_posQ1 = 0;
+    m_posQ2 = m_qryLength - 1;
 
-if( !reverseStrand ) {
-    s -= qhead;
-    S += qtail;
-    m_posS1 = m_anchorS1 - qhead;
-    m_posS2 = m_anchorS2 + qtail;
-} else {
-    s += qhead;
-    S -= qtail;
-    m_posS2 = m_anchorS1 + qhead;
-    m_posS1 = m_anchorS2 - qtail;
-}
+    if( !reverseStrand ) {
+        s -= qhead;
+        S += qtail;
+        m_posS1 = m_anchorS1 - qhead;
+        m_posS2 = m_anchorS2 + qtail;
+    } else {
+        s += qhead;
+        S -= qtail;
+        m_posS2 = m_anchorS1 + qhead;
+        m_posS1 = m_anchorS2 - qtail;
+    }
 
-////////////////////////////////////////////////////////////////////////
-// 1.5. Check subject boundaries and adjust them if necessary (TODO: check this mess!!)
-ASSERT( m_posS1 < m_posS2 );
-if( !reverseStrand ) {
-    if( m_posS1 < 0 ) { 
+    ////////////////////////////////////////////////////////////////////////
+    // 1.5. Check subject boundaries and adjust them if necessary (TODO: check this mess!!)
+    ASSERT( m_posS1 < m_posS2 );
+    if( !reverseStrand ) {
+        if( m_posS1 < 0 ) { 
             int d = -m_posS1; 
             m_posS1 += d;
             m_posQ1 += d;
