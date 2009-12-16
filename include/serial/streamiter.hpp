@@ -85,6 +85,10 @@ public:
         if (!m_Stop && !m_In.EndOfData()) {
             m_Resume.Post();
             m_Ready.Wait();
+            if (m_Obj == (const TObject*)1) {
+                NCBI_THROW(CSerialException,eFail,
+                             "invalid data object received");
+            }
         }
     }
     // Request stop: thread is no longer needed
@@ -142,9 +146,14 @@ protected:
     {
         this->m_Resume.Wait();
         // Enumerate objects of requested type
-        Serial_FilterObjects< TRoot >( this->m_In,
-            new CIStreamObjectHook< TRoot, TObject >(*this));
-        this->SetObject(0);
+        try {
+            Serial_FilterObjects< TRoot >( this->m_In,
+                new CIStreamObjectHook< TRoot, TObject >(*this));
+            this->SetObject(0);
+        } catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("In CIStreamObjectIteratorThread",e);
+            this->SetObject((const TObject*)1);
+        }
         return 0;
     }
 };
@@ -167,9 +176,14 @@ protected:
     {
         this->m_Resume.Wait();
         // Enumerate objects of requested type
-        Serial_FilterStdObjects< TRoot >( this->m_In,
-            new CIStreamObjectHook< TRoot, TObject >(*this));
-        this->SetObject(0);
+        try {
+            Serial_FilterStdObjects< TRoot >( this->m_In,
+                new CIStreamObjectHook< TRoot, TObject >(*this));
+            this->SetObject(0);
+        } catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("In CIStreamStdIteratorThread",e);
+            this->SetObject((const TObject*)1);
+        }
         return 0;
     }
 };
@@ -255,7 +269,7 @@ public:
     }
 };
 
-/// Stream iterator for stadard type objects
+/// Stream iterator for standard type objects
 ///
 /// Usage:
 ///    CObjectIStream* is = CObjectIStream::Open(...);
