@@ -159,13 +159,14 @@ int CTaxIdExtractor::ExtractTaxID(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
     int retval = CBlastDBSeqId::kInvalid;
-    map<int, int> gi2taxid;
-
-    blastdb.GetTaxIDs(kOid, gi2taxid);
     if (id.IsGi()) {
+        map<int, int> gi2taxid;
+        blastdb.GetTaxIDs(kOid, gi2taxid);
         retval = gi2taxid[id.GetGi()];
     } else {
-        retval = gi2taxid.begin()->second;
+        vector<int> taxids;
+        blastdb.GetTaxIDs(kOid, taxids);
+        retval = taxids.front();
     }
     return retval;
 }
