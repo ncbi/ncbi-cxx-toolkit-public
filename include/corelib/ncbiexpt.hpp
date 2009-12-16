@@ -543,9 +543,21 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define NCBI_THROW(exception_class, err_code, message) \
     NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code, message))
 
+/// Throw a quick-and-dirty runtime exception of type 'CException' with
+/// the given error message and error code 'eUnknown'.
+/// This macro is intended for use only in stand-alone applications.
+/// Library APIs should properly declare their specific exception types.
+#define NCBI_USER_THROW(exception_class, err_code, message) \
+    NCBI_THROW(CException, eUnknown, message)
+
 /// The same as NCBI_THROW but with message processed as output to ostream.
 #define NCBI_THROW_FMT(exception_class, err_code, message)  \
     NCBI_THROW(exception_class, err_code, FORMAT(message))
+
+/// Throw a "user exception" with message processed as output to ostream.
+/// See NCBI_USER_THROW for details.
+#define NCBI_USER_THROW_FMT(message)  \
+    NCBI_THROW_FMT(CException, eUnknown, message)
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
