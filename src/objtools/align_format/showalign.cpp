@@ -206,12 +206,12 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     _ASSERT(!mtx.GetData().empty());
 
     m_Matrix = new int*[mtx.GetRows()];
-    for(int i = 0; i<mtx.GetRows(); ++i) {
+    for(size_t i = 0; i<mtx.GetRows(); ++i) {
         m_Matrix[i] = new int[mtx.GetCols()];
     }
     // copy data from matrix
-    for(int i = 0; i<mtx.GetRows(); ++i) {
-        for (int j = 0; j < mtx.GetCols(); j++) {
+    for(size_t i = 0; i<mtx.GetRows(); ++i) {
+        for (size_t j = 0; j < mtx.GetCols(); j++) {
             m_Matrix[i][j] = mtx(i, j);
         }
     }
@@ -721,7 +721,7 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
         ce->Select(CGenetic_code::C_E::e_Id);
         ce->SetId(genetic_code);
         gc.Set().push_back(ce);
-        CSeqTranslator::Translate(isolated_loc, handle,
+        CSeqTranslator::Translate(isolated_loc, handle.GetScope(),
                                   raw_cdr_product, &gc);
       
     }

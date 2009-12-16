@@ -65,8 +65,9 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
-struct CBlastSetupTestFixture
+class CBlastSetupTestFixture
 {
+public:
     CTestObjMgr* m_Om;
 
     CBlastSetupTestFixture() {
@@ -329,7 +330,7 @@ BOOST_AUTO_TEST_CASE(String2Enum_PSITblastn) {
 BOOST_AUTO_TEST_CASE(FindMatrixPathSuccess) {
     TAutoCharPtr input = strdup("blosum100");
     char* matrix_path = BlastFindMatrixPath(input.get(), true);
-    BOOST_REQUIRE(matrix_path != "");
+    BOOST_REQUIRE((matrix_path != NULL) && (strlen(matrix_path) > 0));
     sfree(matrix_path);
 }
 
@@ -702,7 +703,19 @@ BOOST_AUTO_TEST_CASE(GetSequenceProteinWithSelenocysteine) {
     if ( !in ) {
         throw runtime_error("Failed to open " + kFile);
     }
-    if ( !(seq_entry = ReadFasta(in))) {
+    
+    CFastaReader reader(in);
+    bool read_failed = false;
+    try
+    {
+        seq_entry = reader.ReadSet();
+    }
+    catch (...)
+    {
+        read_failed = true;
+    }
+
+    if ( read_failed || !seq_entry ) {
         throw runtime_error("Failed to read sequence from " + kFile);
     }
     scope->AddTopLevelSeqEntry(*seq_entry);

@@ -643,8 +643,8 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
     string serial_xml_start, serial_xml_end;
     if( incremental_output ) {
     //bool add_dtd_reference = false, add_xml_version = false;	
-        bool split_res = s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
-		serial_xml_start, serial_xml_end); 
+        s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
+                               serial_xml_start, serial_xml_end); 
         *out_stream << serial_xml_start << "\n<Iteration_hits>\n"; // PART BEFORE HITS
     }
     
@@ -791,7 +791,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
     string serial_xml_start, serial_xml_end;
     if( incremental_output ) {
 	bool add_dtd_reference = true, add_xml_version = true;
-	bool dummy_res = s_SerializeAndSplitBy( bxmlout, "</BlastOutput_param>", 
+	s_SerializeAndSplitBy( bxmlout, "</BlastOutput_param>", 
 		serial_xml_start, serial_xml_end,
 		add_dtd_reference, add_xml_version );
 	// incremental_output	
