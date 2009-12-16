@@ -202,6 +202,8 @@ int CQueryHash::x_AddQuery( CQuery * query, int component, int off, int maxWinCn
         if( offset < 0 ) continue;
 
         offset += off;
+        if( offset >= CHashAtom::GetMaxOffset() ) break;
+        off = offset; // restart from this place - we don't know how far we should travel
         
         CHashPopulator populator( m_windowSize, m_wordSize, m_strideSize, query, 
                                   m_strands, offset, component, CHashAtom::eConvEq, 
