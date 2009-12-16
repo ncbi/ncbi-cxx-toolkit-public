@@ -80,7 +80,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-NCBI_PARAM_DEF(bool, READ_FASTA, USE_NEW_IMPLEMENTATION, false);
+NCBI_PARAM_DEF(bool, READ_FASTA, USE_NEW_IMPLEMENTATION, true);
 
 static
 CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
@@ -1537,13 +1537,12 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
                 }
             }
 
-            if (inst.GetMol() == CSeq_inst::eMol_not_set) {
-                s_GuessMol(inst.SetMol(), residues, flags, in);
-            }
-            
             if (res_count) {
                 // Add the accumulated data...
                 residues.resize(res_count);
+                if (inst.GetMol() == CSeq_inst::eMol_not_set) {
+                    s_GuessMol(inst.SetMol(), residues, flags, in);
+                }            
                 s_AddData(inst, residues);
             }
         }
