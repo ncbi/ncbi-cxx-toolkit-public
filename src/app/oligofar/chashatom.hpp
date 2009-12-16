@@ -55,7 +55,7 @@ public:
              m_gapIsInsertion( t & 1 & (gaps > 0) ), m_mismCnt( mism ), m_gapsCnt( gaps ),
              m_flags( flags ) {}
 
-    static int GetMaxOffset() { return (1 << 6) - 1; }
+    static int GetMaxOffset() { return ((1 << 6) - 1); }
     
     Uint2 GetSubkey() const { return m_subkey; }
     CQuery * GetQuery() const { return m_query; }
