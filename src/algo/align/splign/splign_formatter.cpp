@@ -620,7 +620,7 @@ const
 {
     const bool spliced_seg  (flag & 0x0001);
     const bool with_parts   (flag & 0x0002);
-    const bool with_version (flag & eAF_EmbedVersion);
+    const bool no_version   (flag & eAF_NoVersion);
 
     if(results == 0) {
         results = &(m_splign_results);
@@ -762,7 +762,7 @@ const
                 }
             }
             
-            if(with_version) {
+            if(!no_version) {
 
                 CSeq_align::TExt& ext (sa->SetExt());
                 CRef<CUser_object> uo (new CUser_object);

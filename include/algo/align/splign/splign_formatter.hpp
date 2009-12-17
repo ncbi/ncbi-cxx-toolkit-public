@@ -67,7 +67,7 @@ public:
         eAF_Disc                 = 0x0000,
         eAF_SplicedSegNoParts    = 0x0001,
         eAF_SplicedSegWithParts  = 0x0003,
-        eAF_EmbedVersion         = 0x0004
+        eAF_NoVersion            = 0x0004
     };
 
     // formatters
