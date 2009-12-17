@@ -83,7 +83,8 @@ namespace but = boost::unit_test;
 
 BEGIN_NCBI_SCOPE
 
-const char* kTestConfigSectionName = "UNITTESTS_DISABLE";
+const char* kTestsDisableSectionName = "UNITTESTS_DISABLE";
+const char* kTestsToFixSectionName = "UNITTESTS_TOFIX";
 const char* kTestConfigGlobalValue = "GLOBAL";
 
 #define DUMMY_TEST_FUNCTION_NAME  DummyTestFunction
@@ -95,6 +96,7 @@ const char* kTestResultTimeout     = "timeout";
 const char* kTestResultAborted     = "aborted";
 const char* kTestResultSkipped     = "skipped";
 const char* kTestResultDisabled    = "disabled";
+const char* kTestResultToFix       = "tofix";
 
 
 typedef but::results_reporter::format   TBoostRepFormatter;
@@ -357,61 +359,50 @@ public:
     /// Add user function
     void AddUserFunction(TNcbiTestUserFunction func,
                          ETestUserFuncType     func_type);
-
     /// Add dependency for test unit
     void AddTestDependsOn(but::test_unit* tu, but::test_unit* dep_tu);
-
     /// Set test as disabled by user
     void SetTestDisabled(but::test_unit* tu);
-
     /// Set flag that all tests globally disabled
     void SetGloballyDisabled(void);
-
     /// Set flag that all tests globally skipped
     void SetGloballySkipped(void);
 
     /// Initialize this application, main test suite and all test framework
     but::test_suite* InitTestFramework(int argc, char* argv[]);
-
     /// Get object with argument descriptions.
     /// Return NULL if it is not right time to fill in descriptions.
     CArgDescriptions* GetArgDescrs(void);
-
     /// Get parser evaluating configuration conditions.
     /// Return NULL if it is not right time to deal with the parser.
     CExprParser* GetIniParser(void);
 
     /// Save test unit in the collection of all tests.
     void CollectTestUnit(but::test_unit* tu);
-
     /// Get pointer to test case or test suite by its name.
     but::test_unit* GetTestUnit(CTempString test_name);
-
     /// Initialize already prepared test suite before running tests
     void InitTestsBeforeRun(void);
-
     /// Finalize test suite after running tests
     void FiniTestsAfterRun(void);
-
     /// Enable all necessary tests after execution but before printing report
     void ReEnableAllTests(void);
-
     /// Check the correct setting for unit timeout and check overall
     /// test timeout.
     void AdjustTestTimeout(but::test_unit* tu);
-
     /// Mark test case as failed due to hit of the timeout
     void SetTestTimedOut(but::test_case* tc);
+    /// Check if given test is marked as requiring fixing in the future
+    bool IsTestToFix(const but::test_unit* tu);
 
     /// Get number of actually executed tests
     int GetRanTestsCount(void);
-
+    /// Get number of tests that were failed but are marked to be fixed
+    int GetToFixTestsCount(void);
     /// Get string representation of result of test execution
     string GetTestResultString(but::test_unit* tu);
-
     /// Get pointer to empty test case added to Boost for internal purposes
     but::test_case* GetDummyTest(void);
-
     /// Check if user initialization functions failed
     bool IsInitFailed(void);
 
@@ -421,46 +412,35 @@ private:
 
     /// Setup our own reporter for Boost.Test
     void x_SetupBoostReporters(void);
-
     /// Call all user functions. Return TRUE if functions execution is
     /// successful and FALSE if come function thrown exception.
     bool x_CallUserFuncs(ETestUserFuncType func_type);
-
     /// Ensure that all dependencies stand earlier in tests tree than their
     /// dependents.
     void x_EnsureAllDeps(void);
-
     /// Set up real Boost.Test dependencies based on ones made by
     /// AddTestDependsOn().
     ///
     /// @sa AddTestDependsOn()
     void x_ActualizeDeps(void);
-
     /// Enable / disable tests based on application configuration file
     bool x_ReadConfiguration(void);
-
     /// Get number of tests which Boost will execute
     int x_GetEnabledTestsCount(void);
-
     /// Add empty test necesary for internal purposes
     void x_AddDummyTest(void);
-
     /// Initialize common for all tests parser variables
     /// (OS*, COMPILER* and DLL_BUILD)
     void x_InitCommonParserVars(void);
-
     /// Apply standard trimmings to test name and return resultant test name
     /// which will identify test inside the framework.
     string x_GetTrimmedTestName(const string& test_name);
-
     /// Enable / disable all tests known to application
     void x_EnableAllTests(bool enable);
-
     /// Collect names and pointers to all tests existing in master test suite
     void x_CollectAllTests();
-
     /// Calculate the value from configuration file
-    bool x_CalcConfigValue(const string& value_name);
+    bool x_CalcConfigValue(const string& value);
 
 
     /// Mode of running testing application
@@ -493,6 +473,8 @@ private:
     TUnitsSet                 m_DisabledTests;
     /// List of all tests which result is a timeout
     TUnitsSet                 m_TimedOutTests;
+    /// List of all tests marked as in need of fixing in the future
+    TUnitsSet                 m_ToFixTests;
     /// List of all dependencies for each test having dependencies
     TUnitToManyMap            m_TestDeps;
     /// Observer to make test dependencies and look for unit's timeouts
@@ -1008,10 +990,8 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
 }
 
 inline bool
-CNcbiTestApplication::x_CalcConfigValue(const string& value_name)
+CNcbiTestApplication::x_CalcConfigValue(const string& value)
 {
-    const IRegistry& registry = s_GetTestApp().GetConfig();
-    const string& value = registry.Get(kTestConfigSectionName, value_name);
     m_IniParser->Parse(value.c_str());
     const CExprValue& expr_res = m_IniParser->GetResult();
 
@@ -1074,14 +1054,15 @@ CNcbiTestApplication::x_ReadConfiguration(void)
 
     const IRegistry& registry = s_GetTestApp().GetConfig();
     list<string> reg_entries;
-    registry.EnumerateEntries(kTestConfigSectionName, &reg_entries);
+    registry.EnumerateEntries(kTestsDisableSectionName, &reg_entries);
 
     // Disable tests ...
     ITERATE(list<string>, it, reg_entries) {
         const string& test_name = *it;
+        string reg_value = registry.Get(kTestsDisableSectionName, test_name);
 
         if (test_name == kTestConfigGlobalValue) {
-            if (x_CalcConfigValue(test_name)) {
+            if (x_CalcConfigValue(reg_value)) {
                 SetGloballyDisabled();
             }
             continue;
@@ -1089,9 +1070,27 @@ CNcbiTestApplication::x_ReadConfiguration(void)
 
         but::test_unit* tu = GetTestUnit(test_name);
         if (tu) {
-            if (x_CalcConfigValue(test_name))
-            {
+            if (x_CalcConfigValue(reg_value)) {
                 SetTestDisabled(tu);
+            }
+        }
+        else {
+            ERR_POST_X(2, Warning << "Invalid test case name: '"
+                                  << test_name << "'");
+        }
+    }
+
+    reg_entries.clear();
+    registry.EnumerateEntries(kTestsToFixSectionName, &reg_entries);
+    // Put tests into "to-fix" list
+    ITERATE(list<string>, it, reg_entries) {
+        const string& test_name = *it;
+        string reg_value = registry.Get(kTestsToFixSectionName, test_name);
+
+        but::test_unit* tu = GetTestUnit(test_name);
+        if (tu) {
+            if (x_CalcConfigValue(reg_value)) {
+                m_ToFixTests.insert(tu);
             }
         }
         else {
@@ -1204,12 +1203,14 @@ inline string
 CNcbiTestApplication::GetTestResultString(but::test_unit* tu)
 {
     string result;
-    but::test_results const& tr = but::results_collector.results(tu->p_id);
+    const but::test_results& tr = but::results_collector.results(tu->p_id);
 
     if (m_DisabledTests.count(tu) != 0  ||  (m_RunMode & fDisabled))
         result = kTestResultDisabled;
     else if (m_TimedOutTests.count(tu) != 0)
         result = kTestResultTimeout;
+    else if (!tr.passed()  &&  m_ToFixTests.find(tu) != m_ToFixTests.end())
+        result = kTestResultToFix;
     else if (tr.p_aborted)
         result = kTestResultAborted;
     else if (tr.p_assertions_failed.get() > tr.p_expected_failures.get()
@@ -1242,6 +1243,24 @@ CNcbiTestApplication::GetRanTestsCount(void)
             ++result;
     }
     return result;
+}
+
+int
+CNcbiTestApplication::GetToFixTestsCount(void)
+{
+    int result = 0;
+    ITERATE(TUnitsSet, it, m_ToFixTests) {
+        if (!but::results_collector.results((*it)->p_id).passed())
+            ++result;
+    }
+    return result;
+}
+
+inline bool
+CNcbiTestApplication::IsTestToFix(const but::test_unit* tu)
+{
+    return m_ToFixTests.find(const_cast<but::test_unit*>(tu))
+                                                        != m_ToFixTests.end();
 }
 
 inline void
@@ -1434,6 +1453,16 @@ CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
                boost::execution_exception::timeout_error, "Timeout exceeded");
         but::framework::exception_caught(ex);
     }
+
+    but::test_results& tr = but::s_rc_impl().m_results_store[tu.p_id];
+    if (!tr.passed()  &&  s_GetTestApp().IsTestToFix(&tu)) {
+        static_cast<but::readwrite_property<bool>& >(
+            static_cast<but::class_property<bool>& >(
+                                            tr.p_skipped)).set(true);
+        static_cast<but::readwrite_property<but::counter_t>& >(
+            static_cast<but::class_property<but::counter_t>& >(
+                                            tr.p_assertions_failed)).set(0);
+    }
 }
 
 void
@@ -1522,7 +1551,12 @@ CNcbiBoostLogger::log_finish(ostream& ostr)
     m_Upper->log_finish(ostr);
     if (!m_IsXML) {
         ostr << "Executed " << s_GetTestApp().GetRanTestsCount()
-             << " test cases." << endl;
+             << " test cases";
+        int to_fix = s_GetTestApp().GetToFixTestsCount();
+        if (to_fix != 0) {
+            ostr << " (" << to_fix << " to fix)";
+        }
+        ostr << "." << endl;
     }
 }
 
