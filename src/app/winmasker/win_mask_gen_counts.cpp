@@ -117,6 +117,7 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 
     while( (entry = reader.GetNextSequence()).NotEmpty() )
     {
+        if( entry->Which() == CSeq_entry::e_not_set ) continue;
         CScope scope(*om);
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -257,6 +258,8 @@ void CWinMaskCountsGenerator::operator()()
         suffix_size = unit_size;
     }
 
+    cerr << "prefix size " << (int)prefix_size << endl;
+
     ustat->setUnitSize( unit_size );
 
     // Now process for each prefix.
@@ -327,8 +330,9 @@ void CWinMaskCountsGenerator::operator()()
 
         cerr << "Pass " << passno << flush;
 
-        for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
+        for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix ) {
             process( prefix, prefix_size, file_list, true );
+        }
 
         cerr << endl;
 
@@ -404,6 +408,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
+            if( entry->Which() == CSeq_entry::e_not_set ) continue;
             CScope scope(*om);
             CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 

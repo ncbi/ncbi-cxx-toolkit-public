@@ -572,6 +572,7 @@ void CheckDuplicates( const vector< string > & input,
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
+            if( entry->Which() == CSeq_entry::e_not_set ) continue;
             CScope scope(*om);
             CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
