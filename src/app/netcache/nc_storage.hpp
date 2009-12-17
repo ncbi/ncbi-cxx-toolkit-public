@@ -721,7 +721,7 @@ struct SNCStorageKeyTraits
     static bool IsFamilyEqual(const C& left, const C& right);
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
-    bool operator() (const C& left, const C& right);
+    bool operator() (const C& left, const C& right) const;
 };
 
 /// Specific implementation of blob storage.
@@ -817,7 +817,8 @@ struct SNCStorageKeyTraits<const SNCBlobKeys*>
     }
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
-    bool operator() (const SNCBlobKeys* left, const SNCBlobKeys* right) {
+    bool operator() (const SNCBlobKeys* left, const SNCBlobKeys* right) const
+    {
         if (left->key.size() != right->key.size())
             return left->key.size() < right->key.size();
         int ret = left->key.compare(right->key);
@@ -851,7 +852,7 @@ struct SNCStorageKeyTraits<string>
     }
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container
-    bool operator() (const string& left, const string& right) {
+    bool operator() (const string& left, const string& right) const {
         if (left.size() != right.size())
             return left.size() < right.size();
         return left < right;
