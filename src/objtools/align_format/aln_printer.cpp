@@ -163,7 +163,7 @@ void CMultiAlnPrinter::x_PrintPhylipSequential(CNcbiOstream& ostr)
 void CMultiAlnPrinter::x_PrintPhylipInterleaved(CNcbiOstream& ostr)
 {
     int num_sequences = m_AlnVec->GetNumRows();
-    int aln_width = m_AlnVec->GetAlnStop();
+    int aln_width = m_AlnVec->GetAlnStop() + 1;
     // sequence title must be up to 10 characters long
     const unsigned int kSeqTitleWidth = 10;
     
