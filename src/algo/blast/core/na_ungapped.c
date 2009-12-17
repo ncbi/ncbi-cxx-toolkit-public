@@ -1692,8 +1692,9 @@ Int2 MB_IndexedWordFinder(
 void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
 {
     if (lookup_wrap->lut_type == eMBLookupTable) {
+        BlastMBLookupTable *lut;
         lookup_wrap->lookup_callback = (void *)s_MBLookup;
-        BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
+        lut = (BlastMBLookupTable *) lookup_wrap->lut;
 
         if (lut->lut_word_length == lut->word_length || lut->discontiguous)
             lut->extend_callback = (void *)s_BlastNaExtendDirect;
@@ -1704,9 +1705,9 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
             lut->extend_callback = (void *)s_BlastNaExtend;
     } 
     else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
+        BlastSmallNaLookupTable *lut;
         lookup_wrap->lookup_callback = (void *)s_SmallNaLookup;
-        BlastSmallNaLookupTable *lut = 
-                             (BlastSmallNaLookupTable *) lookup_wrap->lut;
+        lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
 
         if (lut->lut_word_length == lut->word_length)
             lut->extend_callback = (void *)s_BlastNaExtendDirect;
@@ -1718,8 +1719,9 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
             lut->extend_callback = (void *)s_BlastSmallNaExtend;
     }
     else {
+        BlastNaLookupTable *lut;
         lookup_wrap->lookup_callback = (void *)s_NaLookup;
-        BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
+        lut = (BlastNaLookupTable *) lookup_wrap->lut;
 
         if (lut->lut_word_length == lut->word_length)
             lut->extend_callback = (void *)s_BlastNaExtendDirect;
