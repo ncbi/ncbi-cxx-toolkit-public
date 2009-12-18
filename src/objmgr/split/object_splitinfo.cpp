@@ -36,15 +36,8 @@
 
 #include <serial/serial.hpp>
 
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Annot_id.hpp>
-#include <objects/seq/Textannot_id.hpp>
-
+#include <objects/general/general__.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -52,10 +45,19 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqtable/Seq_table.hpp>
 
+#include <objmgr/error_codes.hpp>
+
 #include <objmgr/split/asn_sizer.hpp>
 
+#define NCBI_USE_ERRCODE_X   ObjMgr_ObjSplitInfo
+
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(10);
+
 BEGIN_SCOPE(objects)
+
+#define ZOOM_LEVEL_SUFFIX "@@"
 
 static CAsnSizer s_Sizer; // for size estimation
 
@@ -103,30 +105,16 @@ CNcbiOstream& CLocObjects_SplitInfo::Print(CNcbiOstream& out) const
 
 
 CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(void)
-    : m_TopPriority(eAnnotPriority_max)
+    : m_TopPriority(eAnnotPriority_max),
+      m_NamePriority(eAnnotPriority_max)
 {
-}
-
-
-CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
-                                           EAnnotPriority priority)
-    : m_Src_annot(base.m_Src_annot),
-      m_Name(base.m_Name),
-      m_TopPriority(priority),
-      m_Objects(priority+1)
-{
-    _ASSERT(unsigned(priority) < base.m_Objects.size());
-    _ASSERT(base.m_Objects[priority]);
-    const CLocObjects_SplitInfo& objs = *base.m_Objects[priority];
-    m_Objects[priority] = new CLocObjects_SplitInfo(objs);
-    m_Size = objs.m_Size;
-    m_Location = objs.m_Location;
 }
 
 
 CAnnotName CSeq_annot_SplitInfo::GetName(const CSeq_annot& annot)
 {
-    CAnnotName ret;
+    string name;
+    int version = -1;
     if ( annot.IsSetId() ) {
         const CSeq_annot::TId& ids = annot.GetId();
         ITERATE ( CSeq_annot::TId, it, ids ) {
@@ -134,29 +122,120 @@ CAnnotName CSeq_annot_SplitInfo::GetName(const CSeq_annot& annot)
             if ( id.IsOther() ) {
                 const CTextannot_id& text_id = id.GetOther();
                 if ( text_id.IsSetAccession() ) {
-                    ret.SetNamed(text_id.GetAccession());
-                    return ret;
+                    const string& acc = text_id.GetAccession();
+                    if ( acc.empty() ) {
+                        ERR_POST_X(1, "Empty named annot accession");
+                    }
+                    else if ( name.empty() ) {
+                        name = acc;
+                    }
+                    else if ( name != acc ) {
+                        ERR_POST_X(2, "Conflicting named annot accessions: "<<
+                                   name<<" & "<<acc);
+                    }
+                }
+                if ( text_id.IsSetVersion() ) {
+                    int ver = text_id.GetVersion();
+                    if ( ver < 0 ) {
+                        ERR_POST_X(3, "Negative version: "<<ver);
+                    }
+                    else if ( version < 0 ) {
+                        version = ver;
+                    }
+                    else if ( version != ver ) {
+                        ERR_POST_X(4, "Conflicting named annot versions: "<<
+                                   name<<": "<<version<<" & "<<ver);
+                    }
                 }
             }
         }
     }
+    int zoom_level = -1;
     if ( annot.IsSetDesc() ) {
         const CSeq_annot::TDesc::Tdata& descs = annot.GetDesc().Get();
         ITERATE( CSeq_annot::TDesc::Tdata, it, descs ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
-                ret.SetNamed(desc.GetName());
-                return ret;
+                const string& s = desc.GetName();
+                if ( s.empty() ) {
+                    ERR_POST_X(5, "Empty annot name");
+                }
+                else if ( name.empty() ) {
+                    name = s;
+                }
+                else if ( name != s ) {
+                    ERR_POST_X(6, "Conflicting annot names: "<<
+                               name<<" & "<<s);
+                }
+            }
+            else if ( desc.Which() == CAnnotdesc::e_User ) {
+                const CUser_object& user = desc.GetUser();
+                const CObject_id& type = user.GetType();
+                if ( !type.IsStr() || type.GetStr() != "AnnotationTrack" ) {
+                    continue;
+                }
+                CConstRef<CUser_field> field = user.GetFieldRef("ZoomLevel");
+                if ( field && field->GetData().IsInt() ) {
+                    int level = field->GetData().GetInt();
+                    if ( level < 0 ) {
+                        ERR_POST_X(7, "Negative zoom level");
+                    }
+                    else if ( zoom_level < 0 ) {
+                        zoom_level = level;
+                    }
+                    else if ( zoom_level != level ) {
+                        ERR_POST_X(8, "Conflicting named annot zoom levels: "<<
+                                   name<<": "<<zoom_level<<" & "<<level);
+                    }
+                }
             }
         }
     }
-    return ret;
+    if ( version >= 0 ) {
+        if ( name.empty() ) {
+            ERR_POST_X(9, "Named annot version with empty name");
+        }
+        else {
+            name += "."+NStr::IntToString(version);
+        }
+    }
+    if ( zoom_level >= 0 ) {
+        if ( name.empty() ) {
+            ERR_POST_X(10, "Named annot zoom level with empty name");
+        }
+        else {
+            name += ZOOM_LEVEL_SUFFIX+NStr::IntToString(zoom_level);
+        }
+    }
+    if ( name.empty() ) {
+        return CAnnotName();
+    }
+    else {
+        return CAnnotName(name);
+    }
 }
 
 
-EAnnotPriority CSeq_annot_SplitInfo::GetPriority(void) const
+TAnnotPriority CSeq_annot_SplitInfo::GetPriority(void) const
 {
-    return m_TopPriority;
+    if ( m_NamePriority != eAnnotPriority_max ) {
+        return m_NamePriority;
+    }
+    else {
+        return m_TopPriority;
+    }
+}
+
+
+TAnnotPriority
+CSeq_annot_SplitInfo::GetPriority(const CAnnotObject_SplitInfo& obj) const
+{
+    if ( m_NamePriority != eAnnotPriority_max ) {
+        return m_NamePriority;
+    }
+    else {
+        return obj.GetPriority();
+    }
 }
 
 
@@ -206,12 +285,26 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
     default:
         _ASSERT("bad annot type" && 0);
     }
+    if ( m_Name.IsNamed() ) {
+        // named annotation should have at most regular priority
+        m_NamePriority = max(m_TopPriority,
+                             TAnnotPriority(eAnnotPriority_regular));
+        // zoomed annotation have fixed priority
+        SIZE_TYPE p = m_Name.GetName().find(ZOOM_LEVEL_SUFFIX);
+        if ( p != NPOS ) {
+            SIZE_TYPE pl = p+strlen(ZOOM_LEVEL_SUFFIX);
+            int zoom_level = NStr::StringToInt(m_Name.GetName().substr(pl));
+            if ( zoom_level > 0 ) {
+                m_NamePriority = eAnnotPriority_zoomed + zoom_level;
+            }
+        }
+    }
 }
 
 
 void CSeq_annot_SplitInfo::Add(const CAnnotObject_SplitInfo& obj)
 {
-    EAnnotPriority index = obj.GetPriority();
+    TAnnotPriority index = obj.GetPriority();
     m_TopPriority = min(m_TopPriority, index);
     m_Objects.resize(max(m_Objects.size(), index + size_t(1)));
     if ( !m_Objects[index] ) {
@@ -279,7 +372,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
 }
 
 
-EAnnotPriority CAnnotObject_SplitInfo::GetPriority(void) const
+TAnnotPriority CAnnotObject_SplitInfo::GetPriority(void) const
 {
     if ( m_ObjectType != CSeq_annot::C_Data::e_Ftable ) {
         return eAnnotPriority_regular;
@@ -364,7 +457,7 @@ CBioseq_SplitInfo::CBioseq_SplitInfo(const CBioseq& seq,
 }
 
 
-EAnnotPriority CBioseq_SplitInfo::GetPriority(void) const
+TAnnotPriority CBioseq_SplitInfo::GetPriority(void) const
 {
     return m_Priority;
 }
@@ -410,7 +503,7 @@ CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
 }
 
 
-EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
+TAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
 {
     return m_Priority;
 }
@@ -472,7 +565,7 @@ CSeq_hist_SplitInfo::CSeq_hist_SplitInfo(const CPlaceId& place_id,
 }
 
 
-EAnnotPriority CSeq_hist_SplitInfo::GetPriority(void) const
+TAnnotPriority CSeq_hist_SplitInfo::GetPriority(void) const
 {
     return m_Priority;
 }
@@ -509,7 +602,7 @@ CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
 }
 
 
-EAnnotPriority CSeq_data_SplitInfo::GetPriority(void) const
+TAnnotPriority CSeq_data_SplitInfo::GetPriority(void) const
 {
     return m_Priority;
 }

@@ -53,9 +53,9 @@ NCBI_DEFINE_ERRCODE_X(ObjMgr_AnnotCollect, 1208,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_Sniffer,      1209,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqUtil,      1210,  9);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_IdRange,      1211,  0);
-NCBI_DEFINE_ERRCODE_X(ObjMgr_BlobSplit,    1212, 12);
+NCBI_DEFINE_ERRCODE_X(ObjMgr_BlobSplit,    1212,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqTable,     1213,  0);
-
+NCBI_DEFINE_ERRCODE_X(ObjMgr_ObjSplitInfo, 1214,  0);
 
 END_NCBI_SCOPE
 

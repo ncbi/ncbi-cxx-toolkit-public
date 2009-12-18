@@ -83,13 +83,15 @@ struct SSplitterParams;
 
 enum EAnnotPriority
 {
-    eAnnotPriority_skeleton,
+    eAnnotPriority_skeleton = 0,
     eAnnotPriority_landmark,
     eAnnotPriority_regular,
     eAnnotPriority_low,
     eAnnotPriority_lowest,
-    eAnnotPriority_max
+    eAnnotPriority_zoomed,
+    eAnnotPriority_max = kMax_Int
 };
+typedef unsigned TAnnotPriority;
 
 
 class CAnnotObject_SplitInfo
@@ -103,15 +105,15 @@ public:
     CAnnotObject_SplitInfo(const CSeq_align& obj, double ratio);
     CAnnotObject_SplitInfo(const CSeq_graph& obj, double ratio);
 
-    EAnnotPriority GetPriority(void) const;
-    EAnnotPriority CalcPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
+    TAnnotPriority CalcPriority(void) const;
 
     int Compare(const CAnnotObject_SplitInfo& other) const;
 
     int         m_ObjectType;
     CConstRef<CObject> m_Object;
 
-    EAnnotPriority m_Priority;
+    TAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -170,8 +172,6 @@ public:
     typedef vector< CRef<CLocObjects_SplitInfo> > TObjects;
 
     CSeq_annot_SplitInfo(void);
-    CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
-                         EAnnotPriority priority);
 
     void SetSeq_annot(const CSeq_annot& annot,
                       const SSplitterParams& params);
@@ -182,12 +182,14 @@ public:
     static CAnnotName GetName(const CSeq_annot& annot);
     static size_t CountAnnotObjects(const CSeq_annot& annot);
 
-    EAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(const CAnnotObject_SplitInfo& obj) const;
 
     CConstRef<CSeq_annot> m_Src_annot;
     CAnnotName      m_Name;
 
-    EAnnotPriority  m_TopPriority;
+    TAnnotPriority  m_TopPriority;
+    TAnnotPriority  m_NamePriority;
     TObjects        m_Objects;
 
     CSize           m_Size;
@@ -210,13 +212,13 @@ public:
                          const CSeq_descr& descr,
                          const SSplitterParams& params);
 
-    EAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
 
     int Compare(const CSeq_descr_SplitInfo& other) const;
 
     CConstRef<CSeq_descr> m_Descr;
 
-    EAnnotPriority m_Priority;
+    TAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -233,12 +235,12 @@ public:
                         const CSeq_align& align,
                         const SSplitterParams& params);
 
-    EAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
 
     typedef CSeq_hist::TAssembly TAssembly;
 
     TAssembly      m_Assembly;
-    EAnnotPriority m_Priority;
+    TAnnotPriority m_Priority;
     CSize          m_Size;
     CSeqsRange     m_Location;
 };
@@ -253,13 +255,13 @@ public:
                      const CSeq_data& data,
                      const SSplitterParams& params);
 
-    EAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
 
     TRange GetRange(void) const;
 
     CConstRef<CSeq_data> m_Data;
 
-    EAnnotPriority m_Priority;
+    TAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -285,11 +287,11 @@ public:
     CBioseq_SplitInfo(const CBioseq& bioseq, const SSplitterParams& params);
     
     bool CanSplit(void) const;
-    EAnnotPriority GetPriority(void) const;
+    TAnnotPriority GetPriority(void) const;
 
     CConstRef<CBioseq> m_Bioseq;
 
-    EAnnotPriority m_Priority;
+    TAnnotPriority m_Priority;
 
     CSize              m_Size;
     CSeqsRange         m_Location;

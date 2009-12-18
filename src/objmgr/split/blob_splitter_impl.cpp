@@ -51,6 +51,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_BlobSplit
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(12);
+
 BEGIN_SCOPE(objects)
 
 template<class C>
@@ -95,22 +98,26 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
     // collect annot pieces separating annotations with different priorities
     CollectPieces();
 
-    if ( m_Pieces.size() <= eAnnotPriority_skeleton ) {
+    if ( m_Pieces.size() <= eAnnotPriority_skeleton+1 ) {
+        // only skeleton -> no-split
         return false;
     }
 
-    size_t total_size = 0;
-    ITERATE( TPieces, pi, m_Pieces ) {
-        if ( !(*pi) ) {
-            continue;
+    if ( m_Pieces.size() <= eAnnotPriority_zoomed+1 ) {
+        // check if all non-zoomed annotations fit in one chunk
+        size_t total_size = 0;
+        ITERATE( TPieces, pi, m_Pieces ) {
+            if ( !(*pi) ) {
+                continue;
+            }
+            ITERATE( CAnnotPieces, i, **pi ) {
+                const SIdAnnotPieces& id_pieces = i->second;
+                total_size += id_pieces.m_Size.GetAsnSize();
+            }
         }
-        ITERATE( CAnnotPieces, i, **pi ) {
-            const SIdAnnotPieces& id_pieces = i->second;
-            total_size += id_pieces.m_Size.GetAsnSize();
+        if (total_size <= m_Params.m_MaxChunkSize) {
+            return false;
         }
-    }
-    if (total_size <= m_Params.m_MaxChunkSize) {
-        return false;
     }
 
     // split pieces in chunks
@@ -188,13 +195,8 @@ void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
 void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
                                       const CSeq_annot_SplitInfo& info)
 {
-    size_t max_size = info.m_Name.IsNamed()? 100: 10;
-    size_t size = 0;
-    ITERATE ( CSeq_annot_SplitInfo::TObjects, i, info.m_Objects ) {
-        if ( *i ) {
-            size += (*i)->size();
-        }
-    }
+    size_t max_size = info.m_Name.IsNamed()? 5000: 500;
+    size_t size = info.m_Size.GetAsnSize();
     bool add_as_whole = size <= max_size;
     if ( add_as_whole ) {
         // add whole Seq-annot as one piece because header overhead is too big
@@ -214,7 +216,7 @@ void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
 }
 
 
-EAnnotPriority GetSeqdescPriority(const CSeqdesc& desc)
+TAnnotPriority GetSeqdescPriority(const CSeqdesc& desc)
 {
     switch ( desc.Which() ) {
     case CSeqdesc::e_Source:
@@ -284,7 +286,7 @@ void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
 
 void CBlobSplitterImpl::Add(const SAnnotPiece& piece)
 {
-    EAnnotPriority priority = piece.m_Priority;
+    TAnnotPriority priority = piece.m_Priority;
     m_Pieces.resize(max(m_Pieces.size(), priority + size_t(1)));
     if ( !m_Pieces[priority] ) {
         m_Pieces[priority] = new CAnnotPieces;
@@ -323,7 +325,7 @@ void CBlobSplitterImpl::SplitPieces(void)
         if ( !*prit ) {
             continue;
         }
-        EAnnotPriority priority = EAnnotPriority(prit-m_Pieces.begin());
+        TAnnotPriority priority = EAnnotPriority(prit-m_Pieces.begin());
         if ( priority == eAnnotPriority_skeleton ) {
             AddToSkeleton(**prit);
         }

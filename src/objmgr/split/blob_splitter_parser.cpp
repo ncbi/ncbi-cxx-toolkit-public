@@ -70,6 +70,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_BlobSplit
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(12);
+
 BEGIN_SCOPE(objects)
 
 template<class C>

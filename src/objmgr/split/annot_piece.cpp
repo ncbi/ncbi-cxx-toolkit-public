@@ -70,7 +70,7 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
     : m_PlaceId(place_id),
       m_ObjectType(annot_object),
       m_AnnotObject(&obj),
-      m_Priority(obj.GetPriority()),
+      m_Priority(annot.GetPriority(obj)),
       m_Size(obj.m_Size),
       m_Location(obj.m_Location),
       m_IdRange(TRange::GetEmpty())
@@ -79,7 +79,8 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
 }
 
 
-SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_annot_SplitInfo& annot)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_annot_SplitInfo& annot)
     : m_PlaceId(place_id),
       m_ObjectType(seq_annot),
       m_AnnotObject(0),
@@ -92,7 +93,8 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_annot_SplitInfo& a
 }
 
 
-SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_data_SplitInfo& data)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_data_SplitInfo& data)
     : m_PlaceId(place_id),
       m_ObjectType(seq_data),
       m_AnnotObject(0),
@@ -105,7 +107,8 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_data_SplitInfo& da
 }
 
 
-SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_descr_SplitInfo& descr)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_descr_SplitInfo& descr)
     : m_PlaceId(place_id),
       m_ObjectType(seq_descr),
       m_AnnotObject(0),
@@ -118,7 +121,8 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_descr_SplitInfo& d
 }
 
 
-SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_hist_SplitInfo& hist)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
+                         const CSeq_hist_SplitInfo& hist)
     : m_PlaceId(place_id),
       m_ObjectType(hist_assembly),
       m_AnnotObject(0),
@@ -131,7 +135,8 @@ SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CSeq_hist_SplitInfo& hi
 }
 
 
-SAnnotPiece::SAnnotPiece(const CPlaceId& place_id, const CBioseq_SplitInfo& seq)
+SAnnotPiece::SAnnotPiece(const CPlaceId& place_id,
+                         const CBioseq_SplitInfo& seq)
     : m_PlaceId(place_id),
       m_ObjectType(bioseq),
       m_AnnotObject(0),

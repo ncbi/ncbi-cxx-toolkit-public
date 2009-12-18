@@ -109,7 +109,7 @@ struct SAnnotPiece
     };
     const CAnnotObject_SplitInfo*   m_AnnotObject;
 
-    EAnnotPriority  m_Priority;
+    TAnnotPriority  m_Priority;
 
     CSize           m_Size;
     CSeqsRange      m_Location;
