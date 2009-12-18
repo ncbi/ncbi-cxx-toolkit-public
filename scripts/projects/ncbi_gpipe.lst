@@ -33,7 +33,8 @@ objmgr
 objtools
 serial
 util
--algo.*/demo
+-algo/align/contig_assembly/demo
+-algo/align/prosplign/demo
 -algo.*/test
 -algo.*/unit_test
 -app.*/demo
