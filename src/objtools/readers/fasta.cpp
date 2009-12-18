@@ -515,7 +515,7 @@ void CFastaReader::ParseTitle(const TStr& s)
 bool CFastaReader::IsValidLocalID(const string& s)
 {
     static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*";
     return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
 }
 
