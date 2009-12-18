@@ -12,4 +12,4 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = blast_dataloader_unit_test
 
-WATCHERS = camacho
+WATCHERS = blastsoft

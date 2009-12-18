@@ -20,5 +20,5 @@ CHECK_COPY = data
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = avagyanv
-CHECK_TIMEOUT = 300
+WATCHERS = blastsoft
+CHECK_TIMEOUT = 600

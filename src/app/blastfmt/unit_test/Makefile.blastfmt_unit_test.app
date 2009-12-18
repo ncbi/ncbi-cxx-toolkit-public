@@ -21,4 +21,4 @@ LIBS = $(OSMESA_LIBS) $(WXWIDGETS_LIBS) $(IMAGE_LIBS) \
 CHECK_CMD = blastfmt_unit_test
 CHECK_COPY = data
 
-WATCHERS = camacho
+WATCHERS = blastsoft

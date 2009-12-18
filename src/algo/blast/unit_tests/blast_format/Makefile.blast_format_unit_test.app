@@ -21,4 +21,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_TIMEOUT = 300
 
-WATCHERS = camacho
+WATCHERS = blastsoft
