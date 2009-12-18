@@ -233,8 +233,8 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
         s_PrintHandler = handler;
         s_PrintHandlerParam = parameter;
 
-        // Reserve some memory (10Kb)
-        s_ReserveMemory = new char[10000];
+        // Reserve some memory (64Kb)
+        s_ReserveMemory = new char[64*1024];
     }
     return true;
 }
