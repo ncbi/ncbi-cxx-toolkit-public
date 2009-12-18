@@ -213,6 +213,10 @@ void CSplitCacheApp::Init(void)
     arg_desc->AddOptionalKey("id_list", "SeqIdList",
                              "file with list of Seq-ids to process",
                              CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("in", "FileIn",
+                             "file with the Seq-entry to process",
+                             CArgDescriptions::eInputFile,
+                             CArgDescriptions::fBinary);
     arg_desc->AddFlag("all",
                       "process all entries in cache");
     arg_desc->AddFlag("recurse",
@@ -226,7 +230,7 @@ void CSplitCacheApp::Init(void)
     arg_desc->AddDefaultKey("cache_dir", "CacheDir",
                             "directory of GenBank cache",
                             CArgDescriptions::eInputFile,
-                            ".genbank_cache");
+                            "");
 
     // split parameters
     arg_desc->AddDefaultKey
@@ -298,23 +302,20 @@ void CSplitCacheApp::SetupCache(void)
         else {
             cache_dir = reg.GetString("LOCAL_CACHE", "Path", cache_dir);
         }
-        if ( cache_dir.empty() ) {
-            ERR_POST_X(1, Fatal << "empty cache directory name");
-        }
     }}
 
-    {{ // create cache directory
+    if ( !cache_dir.empty() ) {
+        // create cache directory
         LINE("cache directory is \"" << cache_dir << "\"");
-        {{
-            // make sure our cache directory exists first
-            CDir dir(cache_dir);
-            if ( !dir.Exists() ) {
-                dir.Create();
-            }
-        }}
-    }}
+        // make sure our cache directory exists first
+        CDir dir(cache_dir);
+        if ( !dir.Exists() ) {
+            dir.Create();
+        }
+    }
 
-    {{ // blob cache
+    if ( !cache_dir.empty() ) {
+        // blob cache
         CBDB_Cache* cache;
         m_Cache.reset(cache = new CBDB_Cache());
 
@@ -347,9 +348,10 @@ void CSplitCacheApp::SetupCache(void)
 
         WAIT_LINE << "Purging cache...";
         cache->Purge(age);
-    }}
+    }
 
-    {{ // set cache id age
+    if ( !cache_dir.empty() ) {
+        // set cache id age
         CBDB_Cache* cache;
         m_IdCache.reset(cache = new CBDB_Cache());
 
@@ -369,15 +371,24 @@ void CSplitCacheApp::SetupCache(void)
         cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
 
         cache->Open(cache_dir.c_str(), "ids");
-    }}
+    }
 
     {{ // create object manager
         m_ObjMgr = CObjectManager::GetInstance();
     }}
 
     {{ // create loader
+        string readers;
+        if ( cache_dir.empty() ) {
+            readers = "id1";
+        }
+        else {
+            GetConfig().Set("genbank/cache/id_cache/bdb", "path", cache_dir);
+            GetConfig().Set("genbank/cache/blob_cache/bdb", "path", cache_dir);
+            readers = "cache;id1";
+        }
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
-            *m_ObjMgr, "cache;id1").GetLoader());
+            *m_ObjMgr, readers).GetLoader());
     }}
 
     {{ // Create scope
@@ -518,6 +529,11 @@ void CSplitCacheApp::Process(void)
             CSeq_id id(id_name);
             ProcessSeqId(id);
         }
+    }
+    if ( args["in"] ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        args["in"].AsInputFile() >> MSerial_AsnText >> *entry;
+        ProcessEntry(*entry);
     }
 }
 
@@ -720,25 +736,27 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
     PrintVersion(version);
 
     string key = SCacheInfo::GetBlobKey(blob_id);
-    if ( m_Resplit ) {
-        if ( m_Cache->GetSize(key, version,
-                              SCacheInfo::GetBlobSubkey(0)) ||
-             m_Cache->GetSize(key, version,
-                              SCacheInfo::GetBlobSubkey(-1) )) {
-            WAIT_LINE << "Removing old cache data...";
-            m_Cache->Remove(key, version,
-                            SCacheInfo::GetBlobSubkey(0));
-            m_Cache->Remove(key, version,
-                            SCacheInfo::GetBlobSubkey(-1));
+    if ( m_Cache.get() ) {
+        if ( m_Resplit ) {
+            if ( m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(0)) ||
+                 m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(-1) )) {
+                WAIT_LINE << "Removing old cache data...";
+                m_Cache->Remove(key, version,
+                                SCacheInfo::GetBlobSubkey(0));
+                m_Cache->Remove(key, version,
+                                SCacheInfo::GetBlobSubkey(-1));
+            }
         }
-    }
-    else {
-        if ( m_Cache->GetSize(key, version,
-                              SCacheInfo::GetBlobSubkey(0)) &&
-             m_Cache->GetSize(key, version,
-                              SCacheInfo::GetBlobSubkey(-1)) ) {
-            LINE("Already split: skipping");
-            return;
+        else {
+            if ( m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(0)) &&
+                 m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(-1)) ) {
+                LINE("Already split: skipping");
+                return;
+            }
         }
     }
 
@@ -819,7 +837,8 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                      CID2_Reply_Data::eData_type_id2s_chunk, key, suffix);
         }
     }
-    {{ // storing split data into cache
+    if ( m_Cache.get() ) {
+        // storing split data into cache
         {{
             WAIT_LINE << "Removing old split data...";
             m_Cache->Remove(key);
@@ -847,13 +866,14 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         {{
             const CProcessor_ID2AndSkel& proc_skel =
                 dynamic_cast<const CProcessor_ID2AndSkel&>(
-                disp.GetProcessor(CProcessor::eType_ID2AndSkel));
+                    disp.GetProcessor(CProcessor::eType_ID2AndSkel));
             CSplitDataMaker split_data(GetParams(),
-                CID2_Reply_Data::eData_type_id2s_split_info);
+                                       CID2_Reply_Data::eData_type_id2s_split_info);
             split_data << blob.GetSplitInfo();
             CSplitDataMaker skel_data(GetParams(),
-                CID2_Reply_Data::eData_type_seq_entry);
+                                      CID2_Reply_Data::eData_type_seq_entry);
             skel_data << blob.GetMainBlob();
+            WAIT_LINE << "Storing skeleton";
             proc_skel.SaveDataAndSkel(result,
                                       blob_id,
                                       0,
@@ -869,8 +889,9 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                 disp.GetProcessor(CProcessor::eType_ID2));
             ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
                 CSplitDataMaker data(GetParams(),
-                    CID2_Reply_Data::eData_type_id2s_chunk);
+                                     CID2_Reply_Data::eData_type_id2s_chunk);
                 data << *it->second;
+                WAIT_LINE << "Storing chunk "<<it->first;
                 proc.SaveData(result,
                               blob_id,
                               0,
@@ -879,7 +900,162 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                               data.GetData());
             }
         }}
-    }}
+    }
+}
+
+
+void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry)
+{
+    CSeq_id_Handle idh;
+    CSeq_entry_Handle tse = m_Scope->AddTopLevelSeqEntry(entry);
+
+    // check old data
+    CBlob_id blob_id;
+    CDataLoader::TBlobVersion version = 0;
+
+    if ( !m_ProcessedBlobs.insert(blob_id).second ) {
+        // already processed
+        LINE("Already processed");
+        return;
+    }
+
+    LINE("Processing blob "<< blob_id);
+    CLevelGuard level(m_RecursionLevel);
+    PrintVersion(version);
+
+    string key = SCacheInfo::GetBlobKey(blob_id);
+    if ( m_Cache.get() ) {
+        if ( m_Resplit ) {
+            if ( m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(0)) ||
+                 m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(-1) )) {
+                WAIT_LINE << "Removing old cache data...";
+                m_Cache->Remove(key, version,
+                                SCacheInfo::GetBlobSubkey(0));
+                m_Cache->Remove(key, version,
+                                SCacheInfo::GetBlobSubkey(-1));
+            }
+        }
+        else {
+            if ( m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(0)) &&
+                 m_Cache->GetSize(key, version,
+                                  SCacheInfo::GetBlobSubkey(-1)) ) {
+                LINE("Already split: skipping");
+                return;
+            }
+        }
+    }
+
+    CConstRef<CSeq_entry> seq_entry = tse.GetCompleteSeq_entry();
+
+    if ( m_DumpAsnText ) {
+        Dump(this, *seq_entry, eSerial_AsnText, key);
+    }
+    if ( m_DumpAsnBinary ) {
+        Dump(this, *seq_entry, eSerial_AsnBinary, key);
+    }
+
+    CBlobSplitter splitter(m_SplitterParams);
+    if ( !splitter.Split(*seq_entry) ) {
+        LINE("Skipping: no chunks after splitting");
+        return;
+    }
+
+    const CSplitBlob& blob = splitter.GetBlob();
+    if ( m_DumpAsnText ) {
+        Dump(this, blob.GetMainBlob(), eSerial_AsnText, key, "-main");
+        Dump(this, blob.GetSplitInfo(), eSerial_AsnText, key, "-split");
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
+            string suffix = "-chunk-" + NStr::IntToString(it->first);
+            Dump(this, *it->second, eSerial_AsnText, key, suffix);
+        }
+    }
+    if ( m_DumpAsnBinary ) {
+        Dump(this, blob.GetMainBlob(), eSerial_AsnBinary, key, "-main");
+        Dump(this, blob.GetSplitInfo(), eSerial_AsnBinary, key, "-split");
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
+            string suffix = "-chunk-" + NStr::IntToString(it->first);
+            Dump(this, *it->second, eSerial_AsnBinary, key, suffix);
+        }
+    }
+    if ( m_DumpAsnText || m_DumpAsnBinary ) {
+        // storing split data
+        DumpData(this, blob.GetMainBlob(),
+                 CID2_Reply_Data::eData_type_seq_entry, key, "-main");
+        DumpData(this, blob.GetSplitInfo(),
+                 CID2_Reply_Data::eData_type_id2s_split_info, key, "-split");
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
+            string suffix = "-chunk-" + NStr::IntToString(it->first);
+            DumpData(this, *it->second,
+                     CID2_Reply_Data::eData_type_id2s_chunk, key, suffix);
+        }
+    }
+    if ( m_Cache.get() ) {
+        // storing split data into cache
+        {{
+            WAIT_LINE << "Removing old split data...";
+            m_Cache->Remove(key);
+        }}
+
+        // Remember which data has been split to check loading later
+        CRef<CSplitContentIndex>& content_index = m_ContentMap[idh];
+        _ASSERT( !content_index );
+        content_index.Reset(new CSplitContentIndex);
+        ITERATE(CID2S_Split_Info::TChunks, ch, blob.GetSplitInfo().GetChunks()) {
+            ITERATE(CID2S_Chunk_Info::TContent, it, (*ch)->GetContent()) {
+                content_index->IndexChunkContent((*ch)->GetId().Get(), **it);
+            }
+        }
+        pair<size_t, size_t> desc_counts =
+            CollectDescriptors(*seq_entry, false);
+        content_index->SetSeqDescCount(desc_counts.first);
+        content_index->SetSetDescCount(desc_counts.second);
+
+        CReadDispatcher& disp = m_Loader->GetDispatcher();
+        CStandaloneRequestResult result(idh);
+        result.SetLevel(1);
+        CLoadLockBlob blob_lock(result, blob_id);
+        blob_lock.SetBlobVersion(version);
+        {{
+            const CProcessor_ID2AndSkel& proc_skel =
+                dynamic_cast<const CProcessor_ID2AndSkel&>(
+                    disp.GetProcessor(CProcessor::eType_ID2AndSkel));
+            CSplitDataMaker split_data(GetParams(),
+                                       CID2_Reply_Data::eData_type_id2s_split_info);
+            split_data << blob.GetSplitInfo();
+            CSplitDataMaker skel_data(GetParams(),
+                                      CID2_Reply_Data::eData_type_seq_entry);
+            skel_data << blob.GetMainBlob();
+            WAIT_LINE << "Storing skeleton";
+            proc_skel.SaveDataAndSkel(result,
+                                      blob_id,
+                                      0,
+                                      CProcessor::kMain_ChunkId,
+                                      disp.GetWriter(result,
+                                                     CWriter::eBlobWriter),
+                                      1,
+                                      split_data.GetData(),
+                                      skel_data.GetData());
+        }}
+        {{
+            const CProcessor_ID2& proc = dynamic_cast<const CProcessor_ID2&>(
+                disp.GetProcessor(CProcessor::eType_ID2));
+            ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
+                CSplitDataMaker data(GetParams(),
+                                     CID2_Reply_Data::eData_type_id2s_chunk);
+                data << *it->second;
+                WAIT_LINE << "Storing chunk "<<it->first;
+                proc.SaveData(result,
+                              blob_id,
+                              0,
+                              it->first,
+                              disp.GetWriter(result, CWriter::eBlobWriter),
+                              data.GetData());
+            }
+        }}
+    }
 }
 
 

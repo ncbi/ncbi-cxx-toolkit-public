@@ -206,6 +206,7 @@ public:
     void ProcessSeqId(const CSeq_id& seq_id);
     void ProcessGi(int gi);
     void ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
+    void ProcessEntry(const CSeq_entry& entry);
 
     void TestSplitBlob(CSeq_id_Handle id, const CSplitContentIndex& content);
     void TestSplitBioseq(CSeq_entry_Handle seh);
