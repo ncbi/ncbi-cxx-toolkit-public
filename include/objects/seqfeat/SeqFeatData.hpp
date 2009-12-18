@@ -204,6 +204,7 @@ public:
         eSubtype_biosrc,
         eSubtype_ncRNA,
         eSubtype_tmRNA,
+        eSubtype_clone,
         eSubtype_max,
         eSubtype_any = 255
     };

@@ -286,6 +286,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal        ),
     TFeatKey ( "CDS",                CSeqFeatData::eSubtype_cdregion           ),
     TFeatKey ( "Cit",                CSeqFeatData::eSubtype_pub                ),
+    TFeatKey ( "CloneRef",           CSeqFeatData::eSubtype_clone              ),
     TFeatKey ( "Comment",            CSeqFeatData::eSubtype_comment            ),
     TFeatKey ( "conflict",           CSeqFeatData::eSubtype_conflict           ),
     TFeatKey ( "D-loop",             CSeqFeatData::eSubtype_D_loop             ),

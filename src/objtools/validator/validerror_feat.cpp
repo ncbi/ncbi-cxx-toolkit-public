@@ -451,6 +451,7 @@ void CValidError_feat::ValidateSeqFeatData
     case CSeqFeatData::e_Psec_str:
     case CSeqFeatData::e_Non_std_residue:
     case CSeqFeatData::e_Het:
+    case CSeqFeatData::e_Clone:
         break;
 
     default:

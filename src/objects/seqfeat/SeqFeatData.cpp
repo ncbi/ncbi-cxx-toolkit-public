@@ -88,6 +88,7 @@ static const SImportEntry kImportTable[] = {
     { "V_segment",           CSeqFeatData::eSubtype_V_segment },
     { "allele",              CSeqFeatData::eSubtype_allele },
     { "attenuator",          CSeqFeatData::eSubtype_attenuator },
+    { "clone",               CSeqFeatData::eSubtype_clone },
     { "conflict",            CSeqFeatData::eSubtype_conflict },
     { "enhancer",            CSeqFeatData::eSubtype_enhancer },
     { "exon",                CSeqFeatData::eSubtype_exon },
@@ -156,7 +157,8 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "misc_feature"),
     FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
     FEAT_INFO_PAIR(Het, het, "Het", "misc_binding"),
-    FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source")
+    FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
+    FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature")
 };
 
 typedef CStaticArrayMap<CSeqFeatData::E_Choice,
@@ -439,6 +441,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     table[eSubtype_non_std_residue] = e_Non_std_residue;
     table[eSubtype_het] = e_Het;
     table[eSubtype_biosrc] = e_Biosrc;
+    table[eSubtype_clone] = e_Clone;
     for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
         table[ESubtype(sub)] = e_Prot;
     }
@@ -2216,6 +2219,9 @@ END_SUBTYPE
 //START_SUBTYPE(biosrc)
 //END_SUBTYPE
 
+//START_SUBTYPE(clone)
+//END_SUBTYPE
+
 #undef START_SUBTYPE
 #undef ADD_QUAL
 #undef END_SYBTYPE
@@ -2494,6 +2500,7 @@ static CFeatListItem sc_ConfigItemInit[] = {
     CFeatListItem( CSeqFeatData::e_Non_std_residue,     CSeqFeatData::eSubtype_non_std_residue,    "non_std_residue",     "non_std_residue" ),
     CFeatListItem( CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het" ),
     CFeatListItem( CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc" ),
+    CFeatListItem( CSeqFeatData::e_Clone,    CSeqFeatData::eSubtype_clone,     "clone",      "clone" ),
 };
 
 
