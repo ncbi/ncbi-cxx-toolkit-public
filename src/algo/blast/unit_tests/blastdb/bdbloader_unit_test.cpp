@@ -333,6 +333,7 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Remote)
 BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeChromosomeWithTimeOut_Remote, 330);
 #endif /* _DEBUG */
 
+#if 0 /* Boost doesn't support MT unit tests */
 #ifdef NCBI_THREADS
 class CGiFinderThread : public CThread
 {
@@ -412,6 +413,7 @@ BOOST_AUTO_TEST_CASE(MultiThreadedAccess_Remote)
     MultiThreadedAccess(true);
 }
 #endif  /* NCBI_THREADS */
+#endif 
 
 void TestDataNotFound(bool is_remote)
 {
