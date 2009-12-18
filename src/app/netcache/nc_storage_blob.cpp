@@ -285,6 +285,7 @@ CNCBlobLockHolder::PrepareLock(const SNCBlobIdentity& identity,
 {
     _ASSERT(access != eCreate);
 
+    m_BlobInfo.Clear();
     m_BlobInfo.AssignCoords(identity);
     m_BlobInfo.AssignKeys(identity);
     m_BlobAccess         = access;
@@ -325,7 +326,7 @@ CNCBlobLockHolder::InitializeLock(void)
     m_LockKnown = m_LockValid = m_BlobExists = false;
     m_LockInitialized = true;
 
-    if (m_LockFromGC)
+    if (!m_LockFromGC)
         m_LockTimer.Start();
 
     if (m_BlobAccess == eCreate) {
