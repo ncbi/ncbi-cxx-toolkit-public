@@ -95,7 +95,10 @@ void CNetCacheControl::Init()
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache control.");
 
-    arg_desc->AddDefaultPositional("service",
+    arg_desc->AddDefaultPositional("service_name",
+        "NetCache service name.", CArgDescriptions::eString, kEmptyStr);
+
+    arg_desc->AddDefaultKey("service", "service_name",
         "NetCache service name.", CArgDescriptions::eString, kEmptyStr);
 
     arg_desc->AddOptionalKey("auth", "name",
@@ -117,8 +120,8 @@ void CNetCacheControl::Init()
     arg_desc->AddOptionalKey("outputfile", "file_name",
         "Send output to a file instead of stdout", CArgDescriptions::eString);
 
-    arg_desc->AddDefaultKey("store", "key",
-        "Store data in NetCache", CArgDescriptions::eString, kEmptyStr);
+    arg_desc->AddOptionalKey("store", "key",
+        "Store data in NetCache", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("inputfile", "file_name",
         "Read input from a file instead of stdin", CArgDescriptions::eString);
@@ -153,7 +156,8 @@ void CNetCacheControl::ParseICacheBlobAddress(
 int CNetCacheControl::Run()
 {
     const CArgs& args = GetArgs();
-    const string& service  = args["service"].AsString();
+    const string service(args["service"].HasValue() ?
+        args["service"].AsString() : args["service_name"].AsString());
 
     bool icache_mode = args["icache"].HasValue();
 
@@ -219,13 +223,13 @@ int CNetCacheControl::Run()
             return 1;
         }
     } else if (args["store"]) {
-        string key;
+        string key(args["store"].AsString());
         auto_ptr<IWriter> writer;
         if (!icache_mode)
             writer.reset(nc_client.PutData(&key));
         else {
             SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(args["store"].AsString(), &blob_address);
+            ParseICacheBlobAddress(key, &blob_address);
             writer.reset(icache_client.GetWriteStream(blob_address.key,
                 blob_address.version, blob_address.subkey));
         }
