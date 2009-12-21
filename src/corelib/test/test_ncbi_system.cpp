@@ -91,13 +91,13 @@ static void Test_MemLimit(void)
 {
     LOG_POST("\nMemory limit test\n");
 
-    const size_t kMemLimit = 100000;
+    const size_t kMemLimit = 500*1024;
 
     assert( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
     
-    for (size_t i = 0;  i <= kMemLimit/10;  i++) {
+    for (size_t i = 0;  i <= kMemLimit/1024;  i++) {
         s_PrintParameter++;
-        int* pi = new int[10];
+        int* pi = new int[1024];
         assert(pi);
     }
 }

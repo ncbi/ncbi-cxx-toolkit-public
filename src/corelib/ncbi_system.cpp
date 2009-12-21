@@ -233,8 +233,8 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
         s_PrintHandler = handler;
         s_PrintHandlerParam = parameter;
 
-        // Reserve some memory (64Kb)
-        s_ReserveMemory = new char[64*1024];
+        // Reserve some memory (10Kb)
+        s_ReserveMemory = new char[10*1024];
     }
     return true;
 }
@@ -283,8 +283,10 @@ bool SetMemoryLimit(size_t max_size,
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) 
         return false;
+#  if !defined(NCBI_OS_SOLARIS)
     if (setrlimit(RLIMIT_AS, &rl) != 0) 
         return false;
+#  endif //NCBI_OS_SOLARIS
 
     s_MemoryLimit = max_size;
     return true;
