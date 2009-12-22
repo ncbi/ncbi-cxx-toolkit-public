@@ -163,7 +163,7 @@ AC_ARG_WITH(caution2,
 AC_ARG_WITH(ccache,
    [ --without-ccache        do not automatically use ccache if available])
 AC_ARG_WITH(distcc,
-   [ --with-distcc           use distcc if available])
+   [ --without-distcc        do not automatically use distcc if available])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,

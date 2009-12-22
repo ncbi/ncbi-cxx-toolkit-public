@@ -908,7 +908,7 @@ Optional Packages:
  --with-caution          cancel configuration unconditionally when in doubt
  --without-caution       proceed without asking when in doubt
  --without-ccache        do not automatically use ccache if available
- --with-distcc           use distcc if available
+ --without-distcc        do not automatically use distcc if available
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
