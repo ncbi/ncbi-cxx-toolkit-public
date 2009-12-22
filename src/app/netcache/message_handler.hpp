@@ -182,10 +182,14 @@ private:
 
 /// Type of access to storage each NetCache command can have
 enum ENCStorageAccess {
-    eNoStorage    = 0,  ///< No access to storage is necessary
-    eNoBlobLock   = 1,  ///< Storage existence is a must but no blob lock is
-                        ///< necessary
-    eWithBlobLock = 2   ///< Command must obtain lock on blob before execution
+    eNoStorage       = 0,  ///< No access to storage is necessary
+    eNoBlobLock      = 1,  ///< Storage existence is a must but no blob lock is
+                           ///< necessary
+    eWithBlobLock    = 2,  ///< Command must obtain lock on blob before
+                           ///< execution, but doesn't need to generate blob
+                           ///< key if it's empty
+    eWithAutoBlobKey = 3   ///< Command needs lock on blob and needs to
+                           ///< generate blob key if none provided
 };
 
 /// Handler of all NetCache incoming requests.
@@ -386,8 +390,13 @@ private:
     /// Assign command parameters returned by protocol parser to handler
     /// member variables
     void x_AssignCmdParams(const map<string, string>& params);
+    /// Print "request_start" message into diagnostics with all parameters of
+    /// the current command.
+    void x_PrintRequestStart(const SParsedCmd& cmd);
+    /// Automatically generate blob key for PUT commands
+    void x_GenerateBlobKey(void);
     /// Start command returned by protocol parser
-    void x_StartCommand(const SParsedCmd& cmd);
+    void x_StartCommand(SParsedCmd& cmd);
     /// Command execution is finished, do cleanup work
     void x_FinishCommand(void);
     /// Start reading blob from socket

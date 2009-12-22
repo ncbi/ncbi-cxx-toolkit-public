@@ -57,7 +57,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "VERSION"} },
     { "PUT3",
         {&CNCMessageHandler::x_DoCmd_Put3,
-            "PUT3",          eWithBlobLock, eCreate},
+            "PUT3",          eWithAutoBlobKey, eCreate},
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "key_ver", eNSPT_Int,  eNSPA_Optional, "1" },
@@ -149,7 +149,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "HEALTH", {&CNCMessageHandler::x_DoCmd_Health, "HEALTH"} },
     { "PUT2",
         {&CNCMessageHandler::x_DoCmd_Put2,
-            "PUT2",          eWithBlobLock, eCreate},
+            "PUT2",          eWithAutoBlobKey, eCreate},
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
@@ -320,7 +320,7 @@ CBufferedSockReaderWriter::Read(void)
     case eIO_Timeout:
         break;
     case eIO_Closed:
-        return false;
+        return m_ReadDataPos < m_ReadBuff.size();
     default:
         NCBI_IO_CHECK(status);
     }
@@ -643,17 +643,11 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
 }
 
 inline void
-CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
+CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd)
 {
-    x_SetFlag(fCommandStarted);
-
-    const SCommandExtra& cmd_extra = cmd.command->extra;
-    m_CmdProcessor = cmd_extra.processor;
-    m_CurCmd       = cmd_extra.cmd_name;
-
     ENCLogCmdsType log_type = m_Server->GetLogCmdsType();
     if (log_type == eLogAllCmds  ||  log_type == eNoLogHasb
-                    &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_HasBlob)
+        &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_HasBlob)
     {
         CDiagContext_Extra diag_extra = GetDiagContext().PrintRequestStart();
         diag_extra.Print("cmd",  cmd.command->cmd);
@@ -666,25 +660,65 @@ CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
 
         x_SetFlag(fCommandPrinted);
     }
-    // PrintRequestStart() resets status value, so setting default status
-    // should go here, though more logical is in x_ReadCommand()
-    m_DiagContext->SetRequestStatus(eStatus_OK);
+}
+
+inline void
+CNCMessageHandler::x_GenerateBlobKey(void)
+{
+    const string& host = m_Server->GetHost();
+    unsigned int  port = m_Server->GetPort();
+    do {
+        CNetCacheKey::GenerateBlobKey(&m_BlobKey,
+                                      m_Server->GetNextBlobId(),
+                                      host, port, m_KeyVersion);
+    }
+    while (m_KeyVersion == 2
+           &&  m_Storage->IsBlobFamilyExists(m_BlobKey, kEmptyStr));
+}
+
+inline void
+CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
+{
+    x_SetFlag(fCommandStarted);
+
+    const SCommandExtra& cmd_extra = cmd.command->extra;
+    m_CmdProcessor = cmd_extra.processor;
+    m_CurCmd       = cmd_extra.cmd_name;
 
     m_MaxCmdTime = m_CmdStartTime = m_Server->GetFastTime();
     m_MaxCmdTime.AddSecond(m_Server->GetCmdTimeout(), CTime::eIgnoreDaylight);
 
-    if (cmd_extra.storage_access != eNoStorage  &&  !m_Storage) {
-        NCBI_THROW(CNSProtoParserException, eWrongParams,
-                   "Cache unknown: '" + cmd.params.find("cache")->second + "'");
-    }
-    if (cmd_extra.storage_access == eWithBlobLock) {
-        if (m_BlobKey.empty()) {
-            CNetCacheKey::GenerateBlobKey(&m_BlobKey,
-                                          m_Server->GetNextBlobId(),
-                                          m_Server->GetHost(),
-                                          m_Server->GetPort(),
-                                          m_KeyVersion);
+    try {
+        if (cmd_extra.storage_access != eNoStorage  &&  !m_Storage) {
+            NCBI_THROW_FMT(CNSProtoParserException, eWrongParams,
+                           "Cache unknown: '"
+                           << cmd.params.find("cache")->second << "'");
         }
+        if (cmd_extra.storage_access == eWithAutoBlobKey
+            &&  m_BlobKey.empty())
+        {
+            x_GenerateBlobKey();
+            // Because of this PrintRequestStart is postponed and placed
+            // below.
+            cmd.params["gen_key"] = m_BlobKey;
+        }
+    }
+    catch (exception&) {
+        // If some error happened in the above block request_start should be
+        // in logs anyway.
+        x_PrintRequestStart(cmd);
+        m_DiagContext->SetRequestStatus(eStatus_OK);
+        throw;
+    }
+
+    x_PrintRequestStart(cmd);
+    // PrintRequestStart() resets status value, so setting default status
+    // should go here, though more logical is in x_ReadCommand()
+    m_DiagContext->SetRequestStatus(eStatus_OK);
+
+    if (cmd_extra.storage_access == eWithBlobLock
+        ||  cmd_extra.storage_access == eWithAutoBlobKey)
+    {
         m_BlobLock = m_Storage->GetBlobAccess(cmd_extra.blob_access,
                                               m_BlobKey,
                                               m_BlobSubkey,
