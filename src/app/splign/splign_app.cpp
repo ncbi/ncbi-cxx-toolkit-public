@@ -1002,9 +1002,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     if(m_AsnOut) {
 
         const CSplignFormatter::EAsnFlags flags 
-            (CSplignFormatter::EAsnFlags
-             (CSplignFormatter::eAF_SplicedSegWithParts | 
-              CSplignFormatter::eAF_EmbedVersion));
+            (CSplignFormatter::EAsnFlags(CSplignFormatter::eAF_SplicedSegWithParts));
 
         CRef<CSeq_align_set> sas (m_Formatter->AsSeqAlignSet(&splign_results,
                                                              flags));
