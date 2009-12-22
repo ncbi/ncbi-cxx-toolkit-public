@@ -1413,8 +1413,14 @@ case "$compiler:$compiler_version:$with_bin_release" in
         dir=`dirname "$path"`
         abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
-            *:/lib | *:/usr/lib ) break ;; # no rpath needed
-            /*                  ) found=true; break ;;
+            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 ) 
+               # no rpath needed
+               break
+               ;;
+            /* )
+               found=true
+               break
+               ;;
         esac
     done
     if test "$found" = "true" -a -n "$CONF_f_runpath"; then
