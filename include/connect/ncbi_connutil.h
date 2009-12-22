@@ -118,7 +118,7 @@ typedef enum {
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
- * NOTE:       Not all fields are fully user throughout the library.
+ * NOTE:       Some fields may not be fully used throughout the library.
  */
 typedef struct {
     char           client_host[256]; /* effective client hostname ('\0'=def) */
@@ -396,7 +396,10 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteUserHeader
  );
 
 
-/* Parse URL into "*info", using (service-specific, if any) defaults.
+/* Parse URL into "*info", using defaults provided via "*info".
+ * In case of a relative URL, only those URL elements provided in it,
+ * will get replaced in the resultant "*info".
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
 (SConnNetInfo* info,
