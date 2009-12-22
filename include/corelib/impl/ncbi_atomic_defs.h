@@ -191,6 +191,8 @@ extern "C" {
 #  ifdef __cplusplus
 }
 #  endif
+#elif defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_GCC)  &&  defined(__ppc__)  &&  defined(__OPTIMIZE__)  &&  NCBI_COMPILER_VERSION >= 420  &&  NCBI_COMPILER_VERSION < 430
+/* Work around a compiler bug by forcing use of AddAtomic. */
 #elif (defined(NCBI_COMPILER_GCC) && defined(__cplusplus)) || defined(__GLIBCPP__) || defined(__GLIBCXX__)
 #  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514 /* 4.2 */
 #    include <ext/atomicity.h>
