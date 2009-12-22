@@ -126,8 +126,10 @@ void COutputFormatter::FormatQueryHits( const CQuery * query )
 {
     if( query == 0 ) return;
     if( int count = FormatQueryHits( query, 3, m_topCount ) ) {
-        FormatQueryHits( query, 1, count );
-        FormatQueryHits( query, 2, count );
+        if( (m_flags & fReportPairesOnly) == 0 ) {
+            FormatQueryHits( query, 1, count );
+            FormatQueryHits( query, 2, count );
+        }
     }
     delete query;
 }
@@ -146,13 +148,18 @@ int COutputFormatter::FormatQueryHits( const CQuery * query, int mask, int topCo
             query->GetTopHit( 3 )  ? query->GetTopHit( 3 ) ->GetComponentScores(mask) : 0 ,
             query->GetTopHit(mask) ? query->GetTopHit(mask)->GetComponentScores(mask) : 0 ) 
             * m_topPct/100;
+        double ocutoff=  cutoff;
+        if( (m_flags & fReportRawScore) == 0 ) {
+            ocutoff /= ((mask & 1 ? query->GetBestScore(0) : 0) + (mask & 2 ? query->GetBestScore(1) : 0 ));
+            if( mask == 3 ) ocutoff*=2;
+        }
 
         unsigned rank = 0;
         double lastScore = hit->GetTotalScore();
         for( int tt = 0 ; topCount > 0 && hit ; ++rank, ++tt ) {
             if( hit->IsNull() ) { 
                 if( m_flags & fReportTerminator ) 
-                    m_out << (rank) << "\tno_more\t" << query->GetId() << "\t-\t" << mask << "\t" << cutoff << "+\t-\t-\t0\t-\t-\t0\t*\t-\t-\t-\t-\n";
+                    m_out << (rank) << "\tno_more\t" << query->GetId() << "\t-\t" << mask << "\t" << ocutoff << "+\t-\t-\t0\t-\t-\t0\t*\t-\t-\t-\t-\n";
                 m_out << QuerySeparator(); 
                 return topCount; 
             }

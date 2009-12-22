@@ -273,7 +273,9 @@ void COligoFarApp::Help( const char * arg )
             << "     d   report differences between query and subject\n"
             << "     e   print empty line after all hits of the read are reported\n"
             << "     r   print raw scores rather then relative scores\n"
-            << "     z   output in SAM 0.1.1 format (other flags are unsupported in this format)\n"
+            << "     z   output in SAM 1.2 format (other flags are unsupported in this format)\n"
+            << "     Z   output in native format\n"
+            << "     p   print unpaired hits only if there are no paired\n"
             << "Read file data options may be used only in combinations:\n"
             << "     1. with column file:\n"
             << "        -q0 -i input.col -c no \n"
@@ -429,7 +431,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
 //    case 'x': m_guideFilemaxMismatch = strtol( arg, 0, 10 ); break;
     case 'p': m_minPctid = NStr::StringToDouble( arg ); break;
     case 'u': m_topCnt = strtol( arg, 0, 10 ); break;
-    case 't': m_topPct = NStr::StringToDouble( arg ); break;
+    case 't': m_topPct = max( 0.0, min( 99.99999, NStr::StringToDouble( arg ) ) ); break;
     case '1': m_read1qualityFile = arg; break;
     case '2': m_read2qualityFile = arg; break;
     case 'q': m_qualityChannels = NStr::StringToInt( arg ); break;
@@ -532,9 +534,10 @@ int COligoFarApp::GetOutputFlags()
 {
     int oflags = 0;
     for( const char * f = m_outputFlags.c_str(); *f; ++f ) {
-        switch( tolower(*f) ) {
-        case '-': oflags = 0; break;
+        switch( *f ) {
+        case '-': oflags = 0; m_outputSam = false; break;
         case 'z': m_outputSam = true; break;
+        case 'Z': m_outputSam = false; break;
         case 'e': oflags |= COutputFormatter::fReportEmptyLines; break;
         case 'u': oflags |= COutputFormatter::fReportUnmapped; break;
         case 'm': oflags |= COutputFormatter::fReportMany; break;
@@ -543,6 +546,7 @@ int COligoFarApp::GetOutputFlags()
         case 'd': oflags |= COutputFormatter::fReportDifferences; break;
         case 'h': oflags |= COutputFormatter::fReportAllHits; break;
         case 'r': oflags |= COutputFormatter::fReportRawScore; break;
+        case 'p': oflags |= COutputFormatter::fReportPairesOnly; break;
         default: cerr << "[" << GetProgramBasename() << "] Warning: unknown format flag `" << *f << "'\n"; break;
         }
     }
@@ -640,7 +644,7 @@ int COligoFarApp::ProcessData()
 
     auto_ptr<AOutputFormatter> formatter( 0 );
     int oflags = GetOutputFlags();
-    if( m_outputSam ) formatter.reset( new CSamFormatter( o, seqIds ) );
+    if( m_outputSam ) formatter.reset( new CSamFormatter( o, seqIds, !(oflags & COutputFormatter::fReportPairesOnly) ) );
     else {
         COutputFormatter * of = new COutputFormatter( o, seqIds );
         formatter.reset( of );
@@ -754,6 +758,8 @@ int COligoFarApp::ProcessData()
     cerr << "Memory usage:\n"
          << "  hits  left: " << CHit::GetCount() << "\n"
          << "queries left: " << CQuery::GetCount() << "\n";
+
+    aligner.PrintStatistics( cerr );
 
     return 0;
 }

@@ -1,3 +1,3 @@
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.101.1" 
+#define OLIGOFAR_VERSION "3.101.2" 
 #endif

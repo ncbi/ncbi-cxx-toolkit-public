@@ -123,6 +123,8 @@ bool CAligner::AlignTail( int size, int qdir, const char * qseq, const char * ss
 
     double bestSscore = 0; // last computed
 
+    int goodpos = (int)(size - pm/m_scoreParam->GetIdentityScore()); // TODO: check rounding
+
     ////////////////////////////////////////////////////////////////////////
     // Compute matrix
     for( int q = 0; q < qlen; ++q, (qpos += qdir) ) {
@@ -219,12 +221,12 @@ bool CAligner::AlignTail( int size, int qdir, const char * qseq, const char * ss
                 bestSq = s;
             }
         }
-        if( pq > pm ) return false; // no need to compute anything else
+        if( q < goodpos && pq > pm ) return false; // no need to compute anything else
         dm = min( dm, int( (pm - pq - go)/ge ) );
         if( pq > m_extentionPenaltyDropoff ) break; // stop alignment extension
     }
     m_penalty += endScore - lastaq;
-    m_penalty -= (qlen - 1 - qe)*(mm); // this penalizes dovetail
+    m_penalty -= (qlen - 1 - qe)*(mm); // this corrects dovetail penalty
     if( m_penalty < m_penaltyLimit ) return false;
     ////////////////////////////////////////////////////////////////////////
     // here we reconstruct transcript

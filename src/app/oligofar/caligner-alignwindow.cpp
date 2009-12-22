@@ -102,6 +102,10 @@ bool CAligner::AlignWindow( const char * & q, const char * & Q, const char * & s
 
     int distance = 0;
 
+    // TODO: THIS CODE! TODO: THIS CODE! TODO: THIS CODE! TODO: THIS CODE!
+    int left = q1 - s1;
+    int right = 0; 
+
     ////////////////////////////////////////////////////////////////////////
     // Actually, this procedure should work for indel cases no splice as 
     // well, but should not be used if there ase quality scores

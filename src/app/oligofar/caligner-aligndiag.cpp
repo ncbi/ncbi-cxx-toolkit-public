@@ -71,21 +71,27 @@ bool CAligner::AlignDiag( const char * q, const char * Q, const char * s, const 
     double id = m_scoreParam->GetIdentityScore();
     double mi = m_scoreParam->GetMismatchPenalty();
 
-    m_transcript.reserve( size_t( -m_penaltyLimit / (id + mi) + 1 ) );
+    m_transcript.reserve( size_t( -m_penaltyLimit / (id/* + mi*/) + 1 ) );
     CDiagonalScores scores( id );
 
     ////////////////////////////////////////////////////////////////////////
     // 2. Walk along the main diagonal only
+    int prefix = (Q - q)/m_qryInc;
+    int suffix = prefix;
     if( !reverseStrand ) {
-        for( ; q <= Q ; (q += m_qryInc), (s += m_sbjInc) ) {
+        for( int left = 0, right = suffix; q <= Q ; (q += m_qryInc), (s += m_sbjInc), ++left, --right ) {
             ++m_queryBasesChecked;
-            if( scores.Add( Score( q, s ) ).ExceedsPenalty( -m_penaltyLimit ) ) return false;
+            double score = Score( q, s );
+            if( score > 0 ) { prefix = min( prefix, left ); suffix = right; }
+            if( scores.Add( score ).ExceedsPenalty( -m_penaltyLimit + (prefix + suffix)*mi ) ) return false;
             AppendTranscriptItem( scores.GetLastEvent() );
         }
     } else { 
-        for( ; q <= Q ; (Q -= m_qryInc), (S -= m_sbjInc) ) {
+        for( int left = prefix, right = 0; q <= Q ; (Q -= m_qryInc), (S -= m_sbjInc), ++right, --left ) {
             ++m_queryBasesChecked;
-            if( scores.Add( Score( Q, S ) ).ExceedsPenalty( -m_penaltyLimit ) ) return false;
+            double score = Score( Q, S );
+            if( score > 0 ) { suffix = min( right, suffix ); prefix = left; }
+            if( scores.Add( score ).ExceedsPenalty( -m_penaltyLimit + (prefix + suffix)*mi ) ) return false;
             AppendTranscriptItem( scores.GetLastEvent() );
         }
     }
@@ -107,10 +113,10 @@ bool CAligner::AlignDiag( const char * q, const char * Q, const char * s, const 
 
     ////////////////////////////////////////////////////////////////////////
     // 4. Get correct score
-    m_penalty = -scores.GetAccumulatedPenalty();
+    m_penalty = -scores.GetAccumulatedPenalty() + (prefix + suffix)*mi;
     ++m_successAligns;
 
-    return true;
+    return m_penalty >= m_penaltyLimit;
 }
 
 

@@ -13,15 +13,17 @@ class CGuideFile;
 class CSamFormatter : public AOutputFormatter, public CSamBase
 {
 public:
-    CSamFormatter( ostream& out, const CSeqIds& seqIds ) : 
-        AOutputFormatter( out, seqIds ), m_headerPrinted( false ) {}
+    CSamFormatter( ostream& out, const CSeqIds& seqIds, bool formatUnpaired = true ) : 
+        AOutputFormatter( out, seqIds ), m_headerPrinted( false ), m_formatUnpaired( formatUnpaired ) {}
     void FormatQueryHits( const CQuery * query );
     void FormatHit( const CHit * hit );
     bool ShouldFormatAllHits()  const { return false; }
     void FormatHeader( const string& version = "*" );
+    void SetFormatUnpaired( bool yes ) { m_formatUnpaired = yes; }
 protected:
     void FormatHit( int rank, int rankSize, const CHit * hit, int pairmate );
     bool m_headerPrinted;
+    bool m_formatUnpaired;
 };
 
 END_OLIGOFAR_SCOPES

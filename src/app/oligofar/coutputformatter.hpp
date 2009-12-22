@@ -22,6 +22,7 @@ public:
 //        fReportAlignment = 0x040,
         fReportAllHits = 0x080,
         fReportRawScore = 0x100,
+        fReportPairesOnly = 0x200,
         fDefault = 0x0f
     };
     // comment

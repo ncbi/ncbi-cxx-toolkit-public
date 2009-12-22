@@ -9,7 +9,7 @@
 USING_OLIGOFAR_SCOPES;
 
 const double kHundredPct = 100.000000001;
-const int kUnlimitedRankSize = 1000000;
+const int kUnlimitedRankSize = 10000000;
 // enum EFlags {
 //     fFlag_readIsPaired = 0x01,
 //     fFlag_hitIsPaired = 0x02,
@@ -66,7 +66,7 @@ void CSamFormatter::FormatQueryHits( const CQuery* query )
             TRankedHits rankedHits;
             for( ; hit; ) {
                 if( hit->IsNull() ) { 
-                    rankedHits.back().first = true; 
+                    rankedHits.back().first = true; // previous rank hit count is known
                     break;
                 }
                 rankedHits.push_back( make_pair( false, THitList() ) );
@@ -85,7 +85,7 @@ void CSamFormatter::FormatQueryHits( const CQuery* query )
                 }
                 ++rank;
             }
-            if( mask == 3 ) break; // If we have paired reads - ignore unpaired
+            if( ( !m_formatUnpaired ) && ( mask == 3 ) ) break; // If we have paired reads - ignore unpaired
         } else {
             // format empty hit here
         }

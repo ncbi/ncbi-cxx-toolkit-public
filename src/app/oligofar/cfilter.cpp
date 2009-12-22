@@ -78,7 +78,7 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
      * Determine worst score allowed and penalty limit
      *========================================================================*/
 
-    // this is the value below which there is no reason to continue alignment
+    // this is the value for which and below there is no reason to continue alignment
     double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
     double penaltyLimit = ComputePenaltyLimit( m, bestScore );
 
@@ -331,11 +331,12 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
             } else {
                 delete hit; return; // chain was not changed - leave
             }
-        } else if( topscore < hitscore ) {
+        } else if( topscore <= hitscore ) { 
+            // NB: it HAS to be <=, otherwise else brunch should be rewritten to take special care of `=' case, otherwise NULL will not be deleted when it should
             CHit::C_NextCtl( hit ).SetNext( top );
             q->SetTopHit( hit );
             cutscore = ( topscore = hitscore ) * m_topPct/100;
-        } else { // top >= hitscore
+        } else { // topscore > hitscore
             // trying to insert hit somewhere in the list
             bool weak = true;
             for( ; weak && top->GetNextHit() && topcnt > 0; (top = top->GetNextHit()), --topcnt ) {

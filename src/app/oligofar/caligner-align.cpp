@@ -258,7 +258,7 @@ bool CAligner::Align()
     }
     
     ++m_successAligns;
-    return true;
+    return m_penalty >= m_penaltyLimit;
 }
 
 void CAligner::x_ColorspaceUpdatePenalty() 

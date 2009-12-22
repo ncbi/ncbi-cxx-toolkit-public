@@ -15,6 +15,7 @@ bool CAligner::AlignTailDiag( int size, int qdir, double pm, const char * qseq, 
     double lastpenalty = 0;
     double lastmatchpenalty = 0;
     int lastmatchpos = 0;
+    int goodpos = (int)(size - pm/m_scoreParam->GetIdentityScore()); // TODO: check rounding
 
     int I = size;
     do {
@@ -22,11 +23,13 @@ bool CAligner::AlignTailDiag( int size, int qdir, double pm, const char * qseq, 
         int slen = (send - sseq)/si;
         I = min( I, slen );
     } while(0);
+    if( I < goodpos ) return false; // anyway tail will be too long for good penalty
     
     for( int i = 0; i < I; ++i, (qseq += qi), (sseq += si) ) {
         ++m_queryBasesChecked;
         double score = Score( qseq, sseq );
-        if( scores.Add( score ).ExceedsPenalty( pm ) ) return false;
+        scores.Add( score );
+        if( i < goodpos && scores.ExceedsPenalty( pm ) ) return false;
         if( scores.ExceedsPenalty( m_extentionPenaltyDropoff ) ) { I = i; break; }
         lastpenalty = scores.GetAccumulatedPenalty();
         if( score > 0 ) {
@@ -53,7 +56,7 @@ bool CAligner::AlignTailDiag( int size, int qdir, double pm, const char * qseq, 
         t.AppendItem( eEvent_SoftMask, size - I );
     }
     reverse( t.begin(), t.end() );
-    return true;
+    return m_penalty >= m_penaltyLimit;
 }
 
 
