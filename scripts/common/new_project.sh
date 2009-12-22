@@ -335,7 +335,8 @@ EOF
   fi >> "$makefile_name.in"
 
   touch -t 197607040000 "$makefile_name.out"
-  (cd `dirname $makefile_name`  &&  make -f $makefile_name Makefile.out)
+  (cd `dirname $makefile_name`  &&  \
+     make -f $makefile_name Makefile.out >/dev/null 2>&1)
 }
 
 
