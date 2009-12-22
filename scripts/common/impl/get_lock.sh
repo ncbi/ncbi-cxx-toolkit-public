@@ -3,6 +3,7 @@ dir=$1.lock
 
 user=$REMOTE_USER
 [ -z "$user" ] && user=$USER
+[ -z "$user" ] && user=$LOGNAME
 [ -z "$user" ] && user=`whoami`
 
 # XXX - try to detect and clean stale locks, either once or every iteration?
