@@ -328,11 +328,12 @@ public:
     /// @return This string's length.
     int Size() const
     {
-        for(int i = 0; i<STR_SIZE; i++) {
+        int i;
+        for(i = 0; i<STR_SIZE; i++) {
             if (! m_Data[i])
                 break;
         }
-        return STR_SIZE;
+        return i;
     }
     
 private:
