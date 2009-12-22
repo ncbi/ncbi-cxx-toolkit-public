@@ -88,7 +88,6 @@ static const SImportEntry kImportTable[] = {
     { "V_segment",           CSeqFeatData::eSubtype_V_segment },
     { "allele",              CSeqFeatData::eSubtype_allele },
     { "attenuator",          CSeqFeatData::eSubtype_attenuator },
-    { "clone",               CSeqFeatData::eSubtype_clone },
     { "conflict",            CSeqFeatData::eSubtype_conflict },
     { "enhancer",            CSeqFeatData::eSubtype_enhancer },
     { "exon",                CSeqFeatData::eSubtype_exon },
