@@ -1,6 +1,4 @@
 # $Id$
-#################################
-# Build demo "hfilter"
 
 APP = hfilter
 SRC = hitfilter_app

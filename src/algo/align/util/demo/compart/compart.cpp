@@ -79,7 +79,13 @@ void CCompartApp::Init()
                             "Minimal identity for singleton compartments "
                             "in base pairs. Default = parameter disabled.",
                             CArgDescriptions::eInteger, "9999999");
-    
+
+    argdescr->AddDefaultKey ("max_intron", "max_intron", 
+                             "Maximum intron length (in base pairs)",
+                             CArgDescriptions::eInteger,
+                             NStr::IntToString
+                             (CCompartmentFinder<THit>::s_GetDefaultMaxIntron()));
+
     argdescr->AddDefaultKey("dropoff", "dropoff", 
                             "Max score drop-off during hit extension.",
                             CArgDescriptions::eInteger,
@@ -94,7 +100,7 @@ void CCompartApp::Init()
                             "Minimum length for reported hits in hits-only mode. "
                             "No effect in compartments mode.",
                             CArgDescriptions::eInteger, "16");
-  
+   
     argdescr->AddDefaultKey ("maxvol", "maxvol", 
                              "Maximum index volume size in MB (approximate)",
                              CArgDescriptions::eInteger,
@@ -202,6 +208,7 @@ int CCompartApp::Run()
     m_min_singleton_idty       = args["min_singleton_idty"].AsDouble();
     m_min_singleton_idty_bps   = args["min_singleton_idty_bps"].AsInteger();
     m_min_query_len            = args["min_query_len"].AsInteger();
+    m_max_intron               = args["max_intron"].AsInteger();
 
     int rv (0);
     if(!is_qdb) {
@@ -228,6 +235,7 @@ int CCompartApp::Run()
         matcher->SetPenalty(m_penalty);
         matcher->SetMinIdty(m_min_idty);
         matcher->SetMinSingletonIdty(m_min_singleton_idty);
+        matcher->SetMaxIntron(m_max_intron);
 
         matcher->SetHitsOnly(args["ho"]);
         matcher->SetMinHitLength(args["min_hit_len"].AsInteger());
@@ -359,11 +367,9 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
     const TCoord msm2        (m_min_singleton_idty_bps);
     const TCoord min_singleton_matches (min(msm1, msm2));
 
-    TAccessor ca (hitrefs.begin(), hitrefs.end(),
-                  penalty_bps,
-                  min_matches,
-                  min_singleton_matches,
-                  !m_NoXF);
+    TAccessor ca (penalty_bps, min_matches, min_singleton_matches, !m_NoXF);
+    ca.SetMaxIntron(m_max_intron);
+    ca.Run(hitrefs.begin(), hitrefs.end());
 
     THitRefs comp;
     for(bool b0 (ca.GetFirst(comp)); b0 ; b0 = ca.GetNext(comp)) {

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/align/splign/splign.hpp>
+#include <algo/align/splign/splign_formatter.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -67,7 +68,17 @@ public:
 
     const CSplign::TResults&  Run(void);
 
-    CRef<objects::CSeq_align_set> GetResultsAsAln(void) const;
+
+
+    /// Format the resulting alignment as a seq-align-set.
+    ///
+    /// @param flags
+    ///   A bitwise combination of EAsnFlags.
+    /// @return
+    ///   Formatted alignment as a seq-align-set reference.
+
+    CRef<objects::CSeq_align_set> GetResultsAsAln
+        (CSplignFormatter::EAsnFlags flags = CSplignFormatter::eAF_Disc) const;
 
 protected:
 

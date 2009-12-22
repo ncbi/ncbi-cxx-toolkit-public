@@ -1000,10 +1000,14 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     cout << m_Formatter->AsExonTable(&splign_results, flags);
 
     if(m_AsnOut) {
-        CRef<CSeq_align_set> sas (
-            m_Formatter-> AsSeqAlignSet(&splign_results,
-                                        CSplignFormatter::
-                                        eAF_SplicedSegWithParts));
+
+        const CSplignFormatter::EAsnFlags flags 
+            (CSplignFormatter::EAsnFlags
+             (CSplignFormatter::eAF_SplicedSegWithParts | 
+              CSplignFormatter::eAF_EmbedVersion));
+
+        CRef<CSeq_align_set> sas (m_Formatter->AsSeqAlignSet(&splign_results,
+                                                             flags));
         *m_AsnOut << MSerial_AsnText  << *sas << endl;
     }
     

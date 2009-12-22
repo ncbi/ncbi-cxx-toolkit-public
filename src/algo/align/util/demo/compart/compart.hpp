@@ -114,6 +114,7 @@ private:
     double                 m_min_singleton_idty;
     size_t                 m_min_singleton_idty_bps;
     size_t                 m_min_query_len;
+    size_t                 m_max_intron;
 
     size_t                 m_MaxCompsPerQuery;
 

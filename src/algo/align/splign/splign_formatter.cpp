@@ -595,6 +595,11 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 }
 
 
+bool PIsSpace(char c) {
+    return isspace(c);
+}
+
+
 
 CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
 {
@@ -775,10 +780,9 @@ const
                 CRef<CObject_id> oid (new CObject_id);
                 oid->SetStr("algo");
                 uf->SetLabel(*oid);
-                string verstr (CSplign::s_GetVersion()->Print("splign"));
-                size_t idx (verstr.size());
-                while(idx && !isalnum(verstr[idx-1])) --idx;
-                verstr.resize(idx);
+                string verstr (CSplign::s_GetVersion()->Print("Splign"));
+                verstr.erase(remove_if(verstr.begin(), verstr.end(), PIsSpace), 
+                             verstr.end());
                 uf->SetData().SetStr(verstr);
             }
 

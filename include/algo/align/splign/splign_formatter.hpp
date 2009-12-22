@@ -98,8 +98,8 @@ public:
     /// @param results
     ///   Splign results for formatting. If not specified, the results
     ///   will be read from the object used to construct the formatter.
-    /// @param asn_flags
-    ///   Must be one of the eAF_* flags specifying seq-align content.
+    /// @param flags
+    ///   A bitwise combination of EAsnFlags.
     /// @return
     ///   Formatted alignment as a seq-align-set reference.
     CRef<objects::CSeq_align_set> AsSeqAlignSet(

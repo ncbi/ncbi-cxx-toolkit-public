@@ -1636,6 +1636,7 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
                                        min_matches1,
                                        min_matches2,
                                        true);
+        ca.SetMaxIntron(m_MaxIntron);
         ca.Run(hitrefs.begin(), hitrefs.end());
 
         // remap and print individual compartments
@@ -1736,6 +1737,7 @@ void CElementaryMatching::x_InitBasic(void)
 
     m_Penalty = 0.55;
     m_MinSingletonIdty = m_MinCompartmentIdty = .75;
+    m_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
     m_HitsOnly = false;
     m_MaxVolSize = 512 * 1024 * 1024;
 

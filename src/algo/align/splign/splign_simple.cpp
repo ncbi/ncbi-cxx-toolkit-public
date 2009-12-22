@@ -112,11 +112,11 @@ const CSplign::TResults& CSplignSimple::Run(void)
         if((*ii)->IsSet()) {
             const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
             ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
-                    CSplign::THitRef hitref (new CSplign::THit(**sa_iter));
-                    if(hitref->GetQueryStrand() == false) {
-                        hitref->FlipStrands();
-                    }
-                    hitrefs.push_back(hitref);
+                CSplign::THitRef hitref (new CSplign::THit(**sa_iter));
+                if(hitref->GetQueryStrand() == false) {
+                    hitref->FlipStrands();
+                }
+                hitrefs.push_back(hitref);
             }
         }
     }
@@ -131,11 +131,12 @@ const CSplign::TResults& CSplignSimple::Run(void)
 /*---------------------------------------------------------------------------*/
 // PRE : splign run
 // POST: splign results (if any) as Seq_align_set/Dense_seg
-CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
+CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln
+                                    (CSplignFormatter::EAsnFlags flags) const
 {
     CSplignFormatter sf (*m_Splign);
     sf.SetSeqIds(m_TranscriptId, m_GenomicId);
-    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(0, CSplignFormatter::eAF_Disc));
+    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(0, flags));
 
     return sas;
 }
