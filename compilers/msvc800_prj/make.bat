@@ -51,7 +51,7 @@ SET CFG=%5%
 SET COMPILER=msvc8
 IF _%SRV_NAME% == _ SET SRV_NAME=%COMPUTERNAME%
 
-IF _%CMD% == _      GOTO USAGE
+IF _%CMD% == _      GOTO NOARGS
 IF _%SOLUTION% == _ GOTO USAGE
 IF _%LIBDLL% == _   GOTO USAGE
 IF _%ARCH% == _     GOTO USAGE
@@ -59,6 +59,12 @@ IF _%CFG% == _      GOTO BUILDALL
 IF _%CFG% == _ALL   GOTO BUILDALL
 GOTO CHECKCMD
 
+:NOARGS
+if exist configure_make.bat (
+  configure_make.bat
+) else (
+  goto USAGE
+)
 
 :USAGE
 
@@ -177,10 +183,10 @@ REM ###########################################################################
 
 :ABORT
 ECHO INFO: %CMD% failed.
-EXIT 1
+EXIT /b 1
 
 :COMPLETE
 ECHO INFO: %CMD% complete.
 
 :EXIT
-EXIT %ERRORLEVEL%
+EXIT /b %ERRORLEVEL%
