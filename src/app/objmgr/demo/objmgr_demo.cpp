@@ -253,6 +253,7 @@ void CDemoApp::Init(void)
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
     arg_desc->AddFlag("adaptive", "Use adaptive depth of segments");
+    arg_desc->AddFlag("no-feat-policy", "Ignore feature fetch policy");
     arg_desc->AddFlag("exact_depth", "Use exact depth of segments");
     arg_desc->AddFlag("unnamed",
                       "include features from unnamed Seq-annots");
@@ -284,6 +285,8 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("feat_id", "FeatId",
                              "Feat-id of features to search",
                              CArgDescriptions::eInteger);
+    arg_desc->AddFlag("make_tree", "make feature tree");
+    arg_desc->AddFlag("print_tree", "print feature tree");
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
     arg_desc->AddFlag("modify", "try to modify Bioseq object");
@@ -427,6 +430,7 @@ int CDemoApp::Run(void)
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
     bool adaptive = args["adaptive"];
+    bool no_feat_policy = args["no-feat-policy"];
     bool exact_depth = args["exact_depth"];
     CSeqFeatData::E_Choice feat_type =
         GetVariant<CSeqFeatData>(args["feat_type"]);
@@ -443,6 +447,8 @@ int CDemoApp::Run(void)
     bool get_synonyms = false;
     bool get_ids = args["get_ids"];
     bool get_blob_id = true;
+    bool make_tree = args["make_tree"];
+    bool print_tree = args["print_tree"];
     list<string> include_named;
     if ( args["named"] ) {
         NStr::Split(args["named"].AsString(), ",", include_named);
@@ -885,6 +891,10 @@ int CDemoApp::Run(void)
             .SetAdaptiveDepth(adaptive)
             .SetExactDepth(exact_depth)
             .SetUnresolvedFlag(missing);
+        if ( no_feat_policy ) {
+            base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()|
+                                           SAnnotSelector::fAdaptive_IgnorePolicy);
+        }
         if ( labels ) {
             base_sel.SetFeatComparator(new feature::CFeatComparatorByLabel());
         }
@@ -1052,8 +1062,49 @@ int CDemoApp::Run(void)
                     it->GetLocation();
                 if ( get_original_feature )
                     it->GetOriginalFeature();
-                if ( get_mapped_feature )
+                if ( get_mapped_feature ) {
+                    if ( it->IsSetId() )
+                        NcbiCout << MSerial_AsnText << it->GetId();
+                    NcbiCout << MSerial_AsnText << it->GetData();
+                    if ( it->IsSetPartial() )
+                        NcbiCout << "Partial: " << it->GetPartial() << '\n';
+                    if ( it->IsSetExcept() )
+                        NcbiCout << "Except: " << it->GetExcept() << '\n';
+                    if ( it->IsSetComment() )
+                        NcbiCout << "Commend: " << it->GetComment() << '\n';
+                    if ( it->IsSetProduct() )
+                        NcbiCout << MSerial_AsnText << it->GetProduct();
+                    NcbiCout << MSerial_AsnText << it->GetLocation();
+                    if ( it->IsSetQual() )
+                        ITERATE ( CSeq_feat::TQual, it2, it->GetQual() )
+                            NcbiCout << MSerial_AsnText << **it2;
+                    if ( it->IsSetTitle() )
+                        NcbiCout << "Title: " << it->GetTitle() << '\n';
+                    if ( it->IsSetExt() )
+                        NcbiCout << MSerial_AsnText << it->GetExt();
+                    //if ( it->IsSetCit() ) NcbiCout << MSerial_AsnText << it->GetCit();
+                    if ( it->IsSetExp_ev() )
+                        NcbiCout << "Exp-ev: " << it->GetExp_ev() << '\n';
+                    if ( it->IsSetXref() )
+                        ITERATE ( CSeq_feat::TXref, it2, it->GetXref() )
+                            NcbiCout << MSerial_AsnText << **it2;
+                    if ( it->IsSetDbxref() )
+                        ITERATE ( CSeq_feat::TDbxref, it2, it->GetDbxref() )
+                            NcbiCout << MSerial_AsnText << **it2;
+                    if ( it->IsSetPseudo() )
+                        NcbiCout << "Pseudo: " << it->GetPseudo() << '\n';
+                    if ( it->IsSetExcept_text() )
+                        NcbiCout << "Except-text: "<< it->GetExcept_text() << '\n';
+                    /*
+                      if ( it->IsSetIds() )
+                      ITERATE ( CSeq_feat::TIds, it2, it->GetIds() )
+                      NcbiCout << MSerial_AsnText << **it2;
+                      if ( it->IsSetExts() )
+                      ITERATE ( CSeq_feat::TExts, it2, it->GetExts() )
+                      NcbiCout << MSerial_AsnText << **it2;
+                    */
                     it->GetMappedFeature();
+                }
 
                 if ( table_field.get() &&
                      it->GetSeq_feat_Handle().IsTableFeat() ) {
@@ -1186,6 +1237,12 @@ int CDemoApp::Run(void)
                                  << NcbiEndl;
                     }
                 }
+                if ( 0 ) {
+                    CMappedFeat mf1 = *it;
+                    CMappedFeat mf2 =
+                        feature::MapSeq_feat(mf1.GetSeq_feat_Handle(), handle);
+                    _ASSERT(mf1 == mf2);
+                }
             }
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << NcbiEndl;
@@ -1213,6 +1270,59 @@ int CDemoApp::Run(void)
                             setw(10) << CSeqFeatData::SelectionName(type) <<
                             " : " << *it << NcbiEndl;
                     }
+                }
+            }
+            if ( make_tree ) {
+                feature::CFeatTree feat_tree;
+                {{
+                    CFeat_CI it(scope, *range_loc, base_sel);
+                    feat_tree.AddFeatures(it);
+                    NcbiCout << "Added "<<it.GetSize()<<" features."
+                             << NcbiEndl;
+                }}
+                NcbiCout << " Root features: "
+                         << feat_tree.GetChildren(CMappedFeat()).size()
+                         << NcbiEndl;
+                if ( print_tree ) {
+                    typedef pair<string, CMappedFeat> TFeatureKey;
+                    typedef set<TFeatureKey> TOrderedFeatures;
+                    typedef map<CMappedFeat, TOrderedFeatures> TOrderedTree;
+                    TOrderedTree tree;
+                    TOrderedFeatures all;
+                    list<CMappedFeat> q;
+                    q.push_back(CMappedFeat());
+                    ITERATE ( list<CMappedFeat>, pit, q ) {
+                        CMappedFeat parent = *pit;
+                        vector<CMappedFeat> cc = 
+                            feat_tree.GetChildren(parent);
+                        TOrderedFeatures& dst = tree[parent];
+                        ITERATE ( vector<CMappedFeat>, cit, cc ) {
+                            CMappedFeat child = *cit;
+                            CNcbiOstrstream str;
+                            str << MSerial_AsnText << child.GetMappedFeature();
+                            string s = CNcbiOstrstreamToString(str);
+                            dst.insert(make_pair(s, child));
+                            all.insert(make_pair(s, child));
+                            q.push_back(child);
+                        }
+                    }
+                    size_t cnt = 0;
+                    map<TFeatureKey, size_t> index;
+                    ITERATE ( TOrderedFeatures, fit, all ) {
+                        index[*fit] = cnt;
+                        NcbiCout << "Feature "<<cnt<<": " << fit->first;
+                        ++cnt;
+                    }
+                    NcbiCout << "Tree:\n";
+                    ITERATE ( TOrderedFeatures, fit, all ) {
+                        NcbiCout << "Children of "<<index[*fit] << ": ";
+                        const TOrderedFeatures& cc = tree[fit->second];
+                        ITERATE ( TOrderedFeatures, cit, cc ) {
+                            NcbiCout << " " << index[*cit];
+                        }
+                        NcbiCout << "\n";
+                    }
+                    NcbiCout << NcbiEndl;
                 }
             }
         }}
@@ -1338,6 +1448,9 @@ int CDemoApp::Run(void)
                     }
                     if ( print_alignments ) {
                         NcbiCout << MSerial_AsnText << *it;
+                        NcbiCout << "Original Seq-align: "
+                                 << MSerial_AsnText 
+                                 << it.GetOriginalSeq_align();
                     }
                 }
                 NcbiCout << "Align count (loc range):\t" <<count<<NcbiEndl;
