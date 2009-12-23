@@ -108,11 +108,17 @@ private:
 };
 
 CGnomonAnnotator_Base::CGnomonAnnotator_Base()
+    : m_masking(false)
 {
 }
 
 CGnomonAnnotator_Base::~CGnomonAnnotator_Base()
 {
+}
+
+void CGnomonAnnotator_Base::EnableSeqMasking()
+{
+    m_masking = true;
 }
 
 CChainer::CChainer()
@@ -2341,6 +2347,16 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig)
     const size_t length (sv.size());
     string seq_txt;
     sv.GetSeqData(0, length, seq_txt);
+
+    if (m_masking) {
+        SAnnotSelector sel;
+        sel.SetResolveAll().IncludeFeatSubtype(CSeqFeatData::eSubtype_repeat_region);
+        for (CFeat_CI it(bh, sel);  it;  ++it) {
+            TSeqRange range = it->GetLocation().GetTotalRange();
+            for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i)
+                seq_txt[i] = tolower(seq_txt[i]);
+        }
+    }
 
     CResidueVec seq(seq_txt.size());
     copy(seq_txt.begin(), seq_txt.end(), seq.begin());

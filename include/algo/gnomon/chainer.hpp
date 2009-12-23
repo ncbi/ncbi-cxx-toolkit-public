@@ -104,10 +104,12 @@ public:
 
     void SetHMMParameters(CHMMParameters* params);
     CRef<objects::CScope>& SetScope();
+    void EnableSeqMasking();
     void SetGenomic(const CSeq_id& seqid);
     CGnomonEngine& GetGnomon();
 
 protected:
+    bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
     CRef<CScope> m_scope;
     auto_ptr<CGnomonEngine> m_gnomon;

@@ -541,6 +541,15 @@ void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddFlag("nonconsens","Allows to accept nonconsensus splices starts/stops to complete partial alignmet. If not allowed some partial alignments "
                       "may be rejected if there is no way to complete them.");
     arg_desc->AddDefaultKey("ncsp","ncsp","Nonconsensus penalty",CArgDescriptions::eDouble,"25");
+
+    arg_desc->AddFlag("norep","DO NOT mask lower case letters");
+    arg_desc->AddDefaultKey("mincont","mincont","Contigs shorter than that will be skipped unless they have alignments.",CArgDescriptions::eInteger,"1000");
+
+    arg_desc->SetCurrentGroup("Prediction tuning");
+    arg_desc->AddFlag("singlest","Allow single exon EST chains as evidence");
+    arg_desc->AddDefaultKey("tolerance","tolerance","if models exon boundary differ only this much only one model will survive",CArgDescriptions::eInteger,"5");
+    arg_desc->AddDefaultKey("minsupport","minsupport","Minimal number of support lines for short CDS or noncoding models",CArgDescriptions::eInteger,"5");
+    arg_desc->AddDefaultKey("minlen","minlen","Minimal CDS length to be excluded from the above rule.",CArgDescriptions::eInteger,"300");
 }
 
 void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& args)
@@ -553,6 +562,14 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
     bool nonconsens = args["nonconsens"];
     annot->nonconsensp = (nonconsens ? -args["ncsp"].AsDouble() : BadScore());
     annot->do_gnomon = !args["nognomon"];
+
+    annot->mincontig = args["mincont"].AsInteger();
+    annot->tolerance = args["tolerance"].AsInteger();
+
+    annot->minCdsLen = args["minlen"].AsInteger();
+    annot->minsupport = args["minsupport"].AsInteger();
+    if (!args["norep"])
+        annot->EnableSeqMasking();
 }
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

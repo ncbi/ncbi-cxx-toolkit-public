@@ -106,6 +106,12 @@ public:
     void Predict(TGeneModelList& models,
                  TGeneModelList& bad_aligns);
 
+public:
+    int mincontig;
+    int tolerance;
+
+    int minCdsLen;
+    int minsupport;
 
 private:
     void RemoveShortHolesAndRescore(TGeneModelList chains);
