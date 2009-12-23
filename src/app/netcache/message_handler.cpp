@@ -690,9 +690,11 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
 
     try {
         if (cmd_extra.storage_access != eNoStorage  &&  !m_Storage) {
+            map<string, string>::const_iterator it = cmd.params.find("cache");
+            string cache_name = (it == cmd.params.end()? kNCDefCacheName
+                                                       : it->second);
             NCBI_THROW_FMT(CNSProtoParserException, eWrongParams,
-                           "Cache unknown: '"
-                           << cmd.params.find("cache")->second << "'");
+                           "Cache unknown: '" << cache_name << "'");
         }
         if (cmd_extra.storage_access == eWithAutoBlobKey
             &&  m_BlobKey.empty())
