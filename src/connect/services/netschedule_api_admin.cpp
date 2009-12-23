@@ -233,6 +233,12 @@ void CNetScheduleAdmin::GetWorkerNodes(
     }
 }
 
+void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
+{
+    m_Impl->m_API->m_Service.PrintCmdOutput("GETC",
+        output_stream, CNetService::eMultilineOutput);
+}
+
 void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
     EStatisticsOptions opt) const
 {

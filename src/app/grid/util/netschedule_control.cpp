@@ -45,7 +45,7 @@
 #include <common/ncbi_package_ver.h>
 
 #define NETSCHEDULE_CONTROL_VERSION_MAJOR 1
-#define NETSCHEDULE_CONTROL_VERSION_MINOR 0
+#define NETSCHEDULE_CONTROL_VERSION_MINOR 1
 #define NETSCHEDULE_CONTROL_VERSION_PATCH 0
 
 USING_NCBI_SCOPE;
@@ -174,6 +174,7 @@ void CNetScheduleControl::Init(void)
                              "NetSchedule job id.",
                              CArgDescriptions::eString);
 
+    arg_desc->AddFlag("getconf", "Print queue configuration");
 
     arg_desc->AddFlag("shutdown", "Shutdown server");
     arg_desc->AddFlag("shutdown_now", "Shutdown server IMMIDIATE");
@@ -448,6 +449,10 @@ int CNetScheduleControl::Run(void)
             st = CNetScheduleAdmin::eStatisticsAll;
         ctl = x_CreateNewClient(true);
         ctl.GetAdmin().PrintServerStatistics(os, st);
+    }
+    else if (args["getconf"]) {
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().PrintConf(os);
     }
     else if (args["qprint"]) {
         string sstatus = args["qprint"].AsString();

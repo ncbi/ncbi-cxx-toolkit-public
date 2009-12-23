@@ -696,6 +696,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes) const;
 
+    void PrintConf(CNcbiOstream& output_stream);
+
     enum EStatisticsOptions
     {
         eStatisticsAll,
