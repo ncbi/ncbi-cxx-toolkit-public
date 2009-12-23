@@ -284,9 +284,8 @@ private:
 #ifdef USE_NATIVE_THREADS
     friend void NativeWrapperCallerImpl(TWrapperArg arg);
 
-    volatile bool    m_IsDetached;
-    volatile bool    m_IsFinished;
-    volatile bool    m_IsValid;
+    CAtomicCounter_WithAutoInit m_IsFinished;
+    CAtomicCounter_WithAutoInit m_IsValid;
     TThreadHandle    m_Handle;
 
 public:
@@ -294,7 +293,6 @@ public:
     void Join(void** result = 0);
     void Detach(void);
     void Discard(void);
-    bool IsDetached(void) { return m_IsDetached; }
 #endif
 };
 
@@ -325,9 +323,8 @@ CTestThread::CTestThread(int index,
       m_Res(res)
 #ifdef USE_NATIVE_THREADS
       ,
-      m_IsDetached(false),
-      m_IsFinished(false),
-      m_IsValid(false)
+      m_IsFinished(0),
+      m_IsValid(0)
 #endif
 {
     CFastMutexGuard guard(s_GlobalLock);
@@ -592,7 +589,8 @@ void* CTestThread::Main(void)
 void CTestThread::Join(void** result)
 {
     // Join (wait for) and destroy
-    if (m_IsValid) {
+    bool valid = m_IsValid.Add(-1) == 0;
+    if (valid) {
 #if defined(NCBI_WIN32_THREADS)
         _ASSERT(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0);
         DWORD status;
@@ -602,7 +600,6 @@ void CTestThread::Join(void** result)
 #elif defined(NCBI_POSIX_THREADS)
         _ASSERT(pthread_join(m_Handle, 0) == 0);
 #endif
-        m_IsValid = false;
     }
     if (result) {
         *result = this;
@@ -613,18 +610,18 @@ void CTestThread::Join(void** result)
 
 void CTestThread::Detach(void)
 {
-    m_IsDetached = true;
-    if (m_IsFinished) {
+    // The second who increments this can delete the object
+    if (m_IsFinished.Add(1) == 2) {
         delete this;
         return;
     }
-    if (m_IsValid) {
+    bool valid = m_IsValid.Add(-1) == 0;
+    if (valid) {
 #if defined(NCBI_WIN32_THREADS)
         _ASSERT(CloseHandle(m_Handle));
 #elif defined(NCBI_POSIX_THREADS)
         _ASSERT(pthread_detach(m_Handle) == 0);
 #endif
-        m_IsValid = false;
     }
 }
 
@@ -641,10 +638,9 @@ void NativeWrapperCallerImpl(TWrapperArg arg)
     CTestThread* thread_obj = static_cast<CTestThread*>(arg);
     thread_obj->Main();
     thread_obj->OnExit();
-    // If detached - delete it
-    thread_obj->m_IsFinished = true;
     CUsedTlsBases::GetUsedTlsBases().ClearAll();
-    if (thread_obj->IsDetached()) {
+    // The first who increments this can delete the object
+    if (thread_obj->m_IsFinished.Add(1) == 2) {
         delete thread_obj;
     }
 }
@@ -684,7 +680,7 @@ bool CTestThread::Run(CThread::TRunMode flags)
     m_Handle = CreateThread(NULL, 0, NativeWrapperCaller,
         this, creation_flags, &thread_id);
     _ASSERT(m_Handle != NULL);
-    m_IsValid = true;
+    m_IsValid.Set(1);
     if (flags & CThread::fRunNice) {
         // Adjust priority and resume the thread
         SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
@@ -692,7 +688,7 @@ bool CTestThread::Run(CThread::TRunMode flags)
     }
     if ((flags & CThread::fRunDetached) != 0) {
         CloseHandle(m_Handle);
-        m_IsValid = false;
+        m_IsValid.Set(0);
     }
     else {
         // duplicate handle to adjust security attributes
@@ -722,7 +718,7 @@ bool CTestThread::Run(CThread::TRunMode flags)
                                NativeWrapperCaller, this) == 0);
 
         _ASSERT(pthread_attr_destroy(&attr) == 0);
-        m_IsValid = true;
+        m_IsValid.Set(1);
 #else
         if (flags & fRunAllowST) {
             Wrapper(this);
@@ -1056,7 +1052,6 @@ int CThreadedApp::Run(void)
 
     return 0;
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
