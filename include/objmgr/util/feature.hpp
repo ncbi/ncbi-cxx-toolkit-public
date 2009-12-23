@@ -159,6 +159,7 @@ public:
         CRange<TSeqPos> m_MasterRange;
         bool m_IsSetParent, m_IsSetChildren;
         CFeatInfo* m_Parent;
+        Int8 m_ParentOverlap;
         TChildren m_Children;
     };
     typedef vector<CFeatInfo*> TFeatArray;
@@ -187,7 +188,7 @@ protected:
                               CSeqFeatData::ESubtype parent_type);
     void x_AssignParentsByOverlap(TFeatArray& features,
                                   bool by_product,
-                                  const TFeatArray& parents);
+                                  TFeatArray& parents);
     void x_CollectNeeded(TParentInfoMap& pinfo_map);
 
     void x_SetParent(CFeatInfo& info, CFeatInfo& parent);

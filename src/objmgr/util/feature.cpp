@@ -40,6 +40,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -1102,15 +1103,15 @@ CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
 
 
 namespace {
-    struct SParentInfo {
+    struct SFeatRangeInfo {
         CSeq_id_Handle m_Id;
         CRange<TSeqPos> m_Range;
         CFeatTree::CFeatInfo* m_Info;
         
         // min start coordinate for all entries after this
-        mutable TSeqPos m_MinFrom;
+        TSeqPos m_MinFrom;
 
-        SParentInfo(CFeatTree::CFeatInfo& info, bool by_product)
+        SFeatRangeInfo(CFeatTree::CFeatInfo& info, bool by_product = false)
             : m_Info(&info)
             {
                 if ( by_product ) {
@@ -1126,36 +1127,44 @@ namespace {
                     }
                 }
             }
-
-        // sort first by end coordinate, then by start coordinate
-        bool operator<(const SParentInfo& b) const
+        SFeatRangeInfo(CFeatTree::CFeatInfo& info,
+                       CHandleRangeMap::const_iterator it)
+            : m_Id(it->first),
+              m_Range(it->second.GetOverlappingRange()),
+              m_Info(&info)
             {
-                return m_Id < b.m_Id || m_Id == b.m_Id &&
-                    (m_Range.GetToOpen() < b.m_Range.GetToOpen() ||
-                     m_Range.GetToOpen() == b.m_Range.GetToOpen() &&
-                     m_Range.GetFrom() < b.m_Range.GetFrom());
             }
     };
-    struct SChildInfo {
-        CSeq_id_Handle m_Id;
-        CRange<TSeqPos> m_Range;
-        CFeatTree::CFeatInfo* m_Info;
-
-        SChildInfo(CFeatTree::CFeatInfo& info)
-            : m_Info(&info)
-            {
-                m_Id = info.m_Feat.GetLocationId();
-                if ( m_Id ) {
-                    m_Range = info.m_Feat.GetLocationTotalRange();
-                }
-            }
-
+    struct PLessByStart {
         // sort first by start coordinate, then by end coordinate
-        bool operator<(const SChildInfo& b) const
+        bool operator()(const SFeatRangeInfo& a, const SFeatRangeInfo& b) const
             {
-                return m_Id < b.m_Id || m_Id == b.m_Id && m_Range < b.m_Range;
+                return a.m_Id < b.m_Id || a.m_Id == b.m_Id &&
+                    a.m_Range < b.m_Range;
             }
     };
+    struct PLessByEnd {
+        // sort first by end coordinate, then by start coordinate
+        bool operator()(const SFeatRangeInfo& a, const SFeatRangeInfo& b) const
+            {
+                return a.m_Id < b.m_Id || a.m_Id == b.m_Id &&
+                    (a.m_Range.GetToOpen() < b.m_Range.GetToOpen() ||
+                     a.m_Range.GetToOpen() == b.m_Range.GetToOpen() &&
+                     a.m_Range.GetFrom() < b.m_Range.GetFrom());
+            }
+    };
+
+    void s_AddRanges(vector<SFeatRangeInfo>& rr,
+                     CFeatTree::CFeatInfo& info,
+                     const CSeq_loc& loc)
+    {
+        CHandleRangeMap hrmap;
+        hrmap.AddLocation(loc);
+        ITERATE ( CHandleRangeMap, it, hrmap ) {
+            SFeatRangeInfo range_info(info, it);
+            rr.push_back(range_info);
+        }
+    }
 }
 
 
@@ -1257,130 +1266,149 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
 
 void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                                          bool by_product,
-                                         const TFeatArray& parents)
+                                         TFeatArray& parents)
 {
     if ( features.empty() || parents.empty() ) {
         return;
     }
 
+    typedef vector<SFeatRangeInfo> TRangeArray;
+    TRangeArray pp, cc;
+
     // collect parents parameters
-    typedef vector<SParentInfo> TParentArray;
-    TParentArray pp;
     ITERATE ( TFeatArray, it, parents ) {
-        pp.push_back(SParentInfo(**it, by_product));
+        CFeatInfo& feat_info = **it;
+        SFeatRangeInfo range_info(feat_info, by_product);
+        if ( range_info.m_Id ) {
+            pp.push_back(range_info);
+        }
+        else {
+            s_AddRanges(pp, feat_info,
+                        by_product?
+                        feat_info.m_Feat.GetProduct():
+                        feat_info.m_Feat.GetLocation());
+        }
     }
-    sort(pp.begin(), pp.end());
+    sort(pp.begin(), pp.end(), PLessByEnd());
 
     // collect children parameters
-    typedef vector<SChildInfo> TChildArray;
-    TChildArray cc;
     ITERATE ( TFeatArray, it, features ) {
-        cc.push_back(SChildInfo(**it));
+        CFeatInfo& feat_info = **it;
+        SFeatRangeInfo range_info(feat_info);
+        if ( range_info.m_Id ) {
+            cc.push_back(range_info);
+        }
+        else {
+            s_AddRanges(cc, feat_info, feat_info.m_Feat.GetLocation());
+        }
     }
-    sort(cc.begin(), cc.end());
+    sort(cc.begin(), cc.end(), PLessByStart());
 
-    features.clear();
     CSeqFeatData::ESubtype parent_type = parents[0]->m_Feat.GetFeatSubtype();
     // assign parents in single scan over both lists
-    TParentArray::const_iterator pi = pp.begin();
-    TChildArray::const_iterator ci = cc.begin();
-    for ( ; ci != cc.end(); ) {
-        // skip all parents with Seq-ids smaller than first child
-        while ( pi != pp.end() && pi->m_Id < ci->m_Id ) {
-            ++pi;
-        }
-        if ( pi == pp.end() ) { // no more parents
-            break;
-        }
-        const CSeq_id_Handle& cur_id = pi->m_Id;
-        if ( ci->m_Id < cur_id || !ci->m_Id ) {
-            // skip all children with Seq-ids smaller than first parent
-            do {
-                features.push_back(ci->m_Info);
-                ++ci;
-            } while ( ci != cc.end() && (ci->m_Id < cur_id || !ci->m_Id) );
-            continue;
-        }
-
-        // find end of Seq-id parents
-        TParentArray::const_iterator pe = pi;
-        while ( pe != pp.end() && pe->m_Id == cur_id ) {
-            ++pe;
-        }
-
-        {{
-            // update parents' m_MinFrom on the Seq-id
-            TParentArray::const_iterator i = pe;
-            TSeqPos min_from = (--i)->m_Range.GetFrom();
-            i->m_MinFrom = min_from;
-            while ( i != pi ) {
-                min_from = min(min_from, (--i)->m_Range.GetFrom());
-                i->m_MinFrom = min_from;
-            }
-        }}
-
-        // scan all Seq-id children
-        for ( ; ci != cc.end() && pi != pe && ci->m_Id == cur_id; ++ci ) {
-            // child parameters
-            CFeatInfo& info = *ci->m_Info;
-            const CSeq_loc& c_loc = info.m_Feat.GetLocation();
-            EOverlapType overlap_type = eOverlap_Contained;
-            if ( parent_type == CSeqFeatData::eSubtype_gene &&
-                 sx_IsIrregularLocation(c_loc) ) {
-                // LOCATION_SUBSET if bad order or mixed strand
-                // otherwise CONTAINED_WITHIN
-                overlap_type = eOverlap_Subset;
-            }
-
-            // skip non-overlapping parents
-            while ( pi != pe &&
-                    pi->m_Range.GetToOpen() < ci->m_Range.GetFrom() ) {
+    {{
+        TRangeArray::iterator pi = pp.begin();
+        TRangeArray::iterator ci = cc.begin();
+        for ( ; ci != cc.end(); ) {
+            // skip all parents with Seq-ids smaller than first child
+            while ( pi != pp.end() && pi->m_Id < ci->m_Id ) {
                 ++pi;
             }
-            
-            // scan parent candidates
-            CFeatInfo* best_parent = 0;
-            Int8 best_overlap = kMax_I8;
-            for ( TParentArray::const_iterator pc = pi;
-                  pc != pe && pc->m_MinFrom < ci->m_Range.GetToOpen();
-                  ++pc ) {
-                if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
-                    continue;
-                }
-                const CMappedFeat& p_feat = pc->m_Info->m_Feat;
-                const CSeq_loc& p_loc =
-                    by_product?
-                    p_feat.GetProduct():
-                    p_feat.GetLocation();
-                Int8 overlap = TestForOverlap64(p_loc,
-                                                c_loc,
-                                                overlap_type,
-                                                kInvalidSeqPos,
-                                                &p_feat.GetScope());
-                if ( overlap >= 0 && overlap < best_overlap ) {
-                    best_parent = pc->m_Info;
-                    best_overlap = overlap;
-                }
+            if ( pi == pp.end() ) { // no more parents
+                break;
+            }
+            const CSeq_id_Handle& cur_id = pi->m_Id;
+            if ( ci->m_Id < cur_id || !ci->m_Id ) {
+                // skip all children with Seq-ids smaller than first parent
+                do {
+                    ++ci;
+                } while ( ci != cc.end() && (ci->m_Id < cur_id || !ci->m_Id) );
+                continue;
             }
 
-            // assign best parent
-            if ( best_parent ) {
-                x_SetParent(info, *best_parent);
+            // find end of Seq-id parents
+            TRangeArray::iterator pe = pi;
+            while ( pe != pp.end() && pe->m_Id == cur_id ) {
+                ++pe;
+            }
+
+            {{
+                // update parents' m_MinFrom on the Seq-id
+                TRangeArray::iterator i = pe;
+                TSeqPos min_from = (--i)->m_Range.GetFrom();
+                i->m_MinFrom = min_from;
+                while ( i != pi ) {
+                    min_from = min(min_from, (--i)->m_Range.GetFrom());
+                    i->m_MinFrom = min_from;
+                }
+            }}
+
+            // scan all Seq-id children
+            for ( ; ci != cc.end() && pi != pe && ci->m_Id == cur_id; ++ci ) {
+                // child parameters
+                CFeatInfo& info = *ci->m_Info;
+                const CSeq_loc& c_loc = info.m_Feat.GetLocation();
+                EOverlapType overlap_type = eOverlap_Contained;
+                if ( parent_type == CSeqFeatData::eSubtype_gene &&
+                     sx_IsIrregularLocation(c_loc) ) {
+                    // LOCATION_SUBSET if bad order or mixed strand
+                    // otherwise CONTAINED_WITHIN
+                    overlap_type = eOverlap_Subset;
+                }
+
+                // skip non-overlapping parents
+                while ( pi != pe &&
+                        pi->m_Range.GetToOpen() < ci->m_Range.GetFrom() ) {
+                    ++pi;
+                }
+            
+                // scan parent candidates
+                for ( TRangeArray::iterator pc = pi;
+                      pc != pe && pc->m_MinFrom < ci->m_Range.GetToOpen();
+                      ++pc ) {
+                    if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
+                        continue;
+                    }
+                    const CMappedFeat& p_feat = pc->m_Info->m_Feat;
+                    const CSeq_loc& p_loc =
+                        by_product?
+                        p_feat.GetProduct():
+                        p_feat.GetLocation();
+                    Int8 overlap = TestForOverlap64(p_loc,
+                                                    c_loc,
+                                                    overlap_type,
+                                                    kInvalidSeqPos,
+                                                    &p_feat.GetScope());
+                    if ( overlap >= 0 && overlap < info.m_ParentOverlap ) {
+                        info.m_ParentOverlap = overlap;
+                        info.m_Parent = pc->m_Info;
+                    }
+                }
+            }
+            // skip remaining Seq-id children
+            for ( ; ci != cc.end() && ci->m_Id == cur_id; ++ci ) {
+            }
+        }
+    }}
+    // assign found parents
+    TFeatArray::iterator dst = features.begin();
+    ITERATE ( TFeatArray, it, features ) {
+        CFeatInfo& info = **it;
+        if ( !info.IsSetParent() ) {
+            if ( info.m_Parent && info.m_ParentOverlap < kMax_I8 ) {
+                // assign best parent
+                CFeatInfo* p_info = info.m_Parent;
+                info.m_Parent = 0;
+                x_SetParent(info, *p_info);
             }
             else {
-                features.push_back(&info);
+                // store for future processing
+                *dst++ = &info;
             }
         }
-        // scan remaining Seq-id children
-        for ( ; ci != cc.end() && ci->m_Id == cur_id; ++ci ){
-            CFeatInfo& info = *ci->m_Info;
-            features.push_back(&info);
-        }
     }
-    for ( ; ci != cc.end(); ++ci ) {
-        CFeatInfo& info = *ci->m_Info;
-        features.push_back(&info);
-    }
+    // remove all features with assigned parents
+    features.erase(dst, features.end());
 }
 
 
@@ -1565,7 +1593,8 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
 CFeatTree::CFeatInfo::CFeatInfo(void)
     : m_IsSetParent(false),
       m_IsSetChildren(false),
-      m_Parent(0)
+      m_Parent(0),
+      m_ParentOverlap(kMax_I8)
 {
 }
 
