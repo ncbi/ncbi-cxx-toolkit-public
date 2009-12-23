@@ -1286,8 +1286,6 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
         bool exact_depth = selector.GetExactDepth() && depth_is_set;
         int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
-        bool ignore_policy =
-            (adaptive_flags & SAnnotSelector::fAdaptive_IgnorePolicy) != 0;
         adaptive_flags &=
             SAnnotSelector::fAdaptive_ByTriggers |
             SAnnotSelector::fAdaptive_BySubtypes;
