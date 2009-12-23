@@ -1572,10 +1572,10 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     if (subject->num_seq_ranges) {
         scansub = (TNaScanSubjectFunction) 
                   BlastChooseNucleotideScanSubjectAny(lookup_wrap);
-        if (extend != s_BlastNaExtendDirect) {
+        if (extend != (TNaExtendFunction)s_BlastNaExtendDirect) {
              extend = (lookup_wrap->lut_type == eSmallNaLookupTable) 
-                    ? s_BlastSmallNaExtend
-                    : s_BlastNaExtend;
+                    ? (TNaExtendFunction)s_BlastSmallNaExtend
+                    : (TNaExtendFunction)s_BlastNaExtend;
         }
         /* generic scanner permits any (non-aligned) starting offset */
         scan_range[1] = word_length - lut_word_length;
