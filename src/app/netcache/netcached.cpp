@@ -344,6 +344,7 @@ CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
     reg.EnumerateSections(&sections);
     x_CleanExistingStorages(sections);
 
+    bool found_main_cache = false;
     ITERATE(list<string>, it, sections) {
         const string& section_name = *it;
         string cache_name;
@@ -352,6 +353,13 @@ CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
             ||  NStr::CompareNocase(section_name, kNCReg_OldCacheSection) == 0)
         {
             cache_name = kNCDefCacheName;
+            if (found_main_cache) {
+                NCBI_THROW_FMT(CUtilException, eWrongData,
+                               "Cannot have both '" << kNCReg_DefCacheSection
+                               << "' and '" << kNCReg_OldCacheSection
+                               << "' sections in the configuration.");
+            }
+            found_main_cache = true;
         }
         else {
             string sec_prefix;
