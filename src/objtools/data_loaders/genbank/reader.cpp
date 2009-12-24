@@ -120,13 +120,14 @@ void CReader::OpenInitialConnection(bool force)
 {
     if ( GetMaximumConnections() > 0 && (force || GetPreopenConnection()) ) {
         for ( int attempt = 1; ; ++attempt ) {
+            TConn conn = x_AllocConnection();
             try {
-                TConn conn = x_AllocConnection();
                 OpenConnection(conn);
                 x_ReleaseConnection(conn);
                 return;
             }
             catch ( CLoaderException& exc ) {
+                x_ReleaseConnection(conn);
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
                     // no connection can be opened
                     throw;
@@ -140,6 +141,7 @@ void CReader::OpenInitialConnection(bool force)
                 }
             }
             catch ( CException& exc ) {
+                x_ReleaseConnection(conn);
                 LOG_POST_X(2, Warning<<"CReader: "
                            "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
