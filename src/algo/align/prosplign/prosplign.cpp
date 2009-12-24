@@ -216,14 +216,14 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          "postprocessing: any full or partial exon in the output won't have lower percentage of identity",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_min_exon_id));
-    arg_desc->SetConstraint("min_positives", new CArgAllow_Integers(0, 100));
+    arg_desc->SetConstraint("min_exon_ident", new CArgAllow_Integers(0, 100));
     arg_desc->AddDefaultKey
         ("min_exon_positives",
          "pct",
          "postprocessing: any full or partial exon in the output won't have lower percentage of positives",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_min_exon_pos));
-    arg_desc->SetConstraint("min_positives", new CArgAllow_Integers(0, 100));
+    arg_desc->SetConstraint("min_exon_positives", new CArgAllow_Integers(0, 100));
 
     arg_desc->AddDefaultKey
         ("min_flanking_exon_len",
