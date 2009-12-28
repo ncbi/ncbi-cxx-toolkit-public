@@ -719,6 +719,8 @@ struct SNCStorageKeyTraits
     /// Check if two objects are from the same "family" (not necessarily fully
     /// equal).
     static bool IsFamilyEqual(const C& left, const C& right);
+    /// Check if two objects are exactly the same (fully equal).
+    static bool IsEqual(const C& left, const C& right);
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
     bool operator() (const C& left, const C& right) const;
@@ -812,8 +814,14 @@ struct SNCStorageKeyTraits<const SNCBlobKeys*>
     }
     /// Check if two keys objects are from the same "family", i.e. key and
     /// subkey are equal but version can be different.
-    static bool IsFamilyEqual(const SNCBlobKeys* left, const SNCBlobKeys* right) {
+    static bool IsFamilyEqual(const SNCBlobKeys* left, const SNCBlobKeys* right)
+    {
         return left->key == right->key  &&  left->subkey == right->subkey;
+    }
+    /// Check if two objects are exactly the same (fully equal).
+    static bool IsEqual(const SNCBlobKeys* left, const SNCBlobKeys* right)
+    {
+        return *left == *right;
     }
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
@@ -848,6 +856,10 @@ struct SNCStorageKeyTraits<string>
     /// Check if two objects are from the same "family" - for strings it's a
     /// simple equality comparison.
     static bool IsFamilyEqual(const string& left, const string& right) {
+        return left == right;
+    }
+    /// Check if two objects are exactly the same (fully equal).
+    static bool IsEqual(const string& left, const string& right) {
         return left == right;
     }
     /// Check if left object is less than right.
@@ -1173,7 +1185,9 @@ CNCBlobStorage::CNCBlobStorage(void)
       m_BlobsPool(TNCBlobsFactory(this)),
       m_Blocked(false),
       m_CntLocksToWait(0)
-{}
+{
+    m_CntBlobs.Set(0);
+}
 
 
 template <class TFilesPool, class TCacheKey>
@@ -1225,7 +1239,8 @@ CNCBlobStorage_Specific<TFilesPool, TCacheKey>
     CFastWriteGuard guard(m_KeysCacheLock);
 
     typename TKeyIdMap::iterator it = m_KeysCache.lower_bound(cache_key);
-    if (it != m_KeysCache.end()  &&  it->first == cache_key) {
+    if (it != m_KeysCache.end()  &&  TKeyTraits::IsEqual(it->first, cache_key))
+    {
         TKeyTraits::Delete(cache_key);
         delete cache_coords;
         new_coords->AssignCoords(*it->second);

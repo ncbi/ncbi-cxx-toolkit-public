@@ -740,7 +740,7 @@ CNCDBMetaFile_ICache::GetSpecificStatement(ENCStmtType      typ,
                    << kNCBlobKeys_KeyCol    << ","
                    << kNCBlobKeys_SubkeyCol << ","
                    << kNCBlobKeys_VersionCol
-            << ")values(?1,?2,?10,?20)";
+            << ")values(?1,?2,?10,?11)";
         break;
     case eStmt_GetBlobsList:
         sql << "select a." << kNCBlobInfo_BlobIdCol   << ","
@@ -769,7 +769,7 @@ CNCDBMetaFile_ICache::BindBlobSubkey(CSQLITE_Statement*     stmt,
                                      const SNCBlobIdentity& identity)
 {
     stmt->Bind(10, identity.subkey.data(), identity.subkey.size());
-    stmt->Bind(20, identity.version);
+    stmt->Bind(11, identity.version);
 }
 
 void
