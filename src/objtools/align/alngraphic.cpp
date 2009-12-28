@@ -472,6 +472,7 @@ void CAlnGraphic::x_PrintTop (CNCBINode* center, CHTML_table* tbl_box, CHTML_tc*
     tbl->SetCellSpacing(1)->SetCellPadding(0)->SetAttribute("border", "0");
     CRef<CHTML_img> score_margin_img(new CHTML_img(m_ImagePath + kGifWhite,
                                                    kScoreMargin, m_BarHeight));
+    score_margin_img->SetAttribute("alt","");
  
     tc = tbl->InsertAt(0, 0, score_margin_img);
     tc->SetAttribute("align", "LEFT");
@@ -479,6 +480,7 @@ void CAlnGraphic::x_PrintTop (CNCBINode* center, CHTML_table* tbl_box, CHTML_tc*
 
     CRef<CHTML_img> score(new CHTML_img(m_ImagePath + kGifScore, kScoreLength,
                                         kScoreHeight));
+    score->SetAttribute("alt","");
     tc = tbl->InsertAt(0, 1, score);
     tc->SetAttribute("align", "LEFT");
     tc->SetAttribute("valign", "CENTER");
@@ -494,6 +496,7 @@ void CAlnGraphic::x_PrintTop (CNCBINode* center, CHTML_table* tbl_box, CHTML_tc*
     CRef<CHTML_img> master(new CHTML_img(m_ImagePath + kGifMaster,
                                          kMasterBarLength, kMasterHeight));
     
+    master->SetAttribute("alt","");
     tc = tbl->InsertAt(0, 0, master);
     tc->SetAttribute("align", "LEFT");
     tc->SetAttribute("valign", "CENTER");
@@ -511,12 +514,14 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     int column = 0;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
     image = new CHTML_img(m_ImagePath + kGifWhite, kScoreMargin + kScaleMarginAdj, m_BarHeight);
+    image->SetAttribute("alt","");
     tc = tbl->InsertAt(0, column, image);
     tc->SetAttribute("align", "LEFT");
     tc->SetAttribute("valign", "CENTER");
     column ++;
     //first scale 
     image = new CHTML_img(m_ImagePath + kGifScale, kScaleWidth, kScaleHeight);
+    image->SetAttribute("alt","");
     tc = tbl->InsertAt(0, column, image);
     tc->SetAttribute("align", "LEFT");
     tc->SetAttribute("valign", "CENTER");
@@ -531,11 +536,13 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     for (int i = 1; i*round_number <= master_len; i++) {
         spacer_length = (int)(pixel_factor*round_number) - kScaleWidth;
         image = new CHTML_img(m_ImagePath + kGifWhite, spacer_length, m_BarHeight);
+        image->SetAttribute("alt","");
         tc = tbl->InsertAt(0, column, image);
         tc->SetAttribute("align", "LEFT");
         tc->SetAttribute("valign", "CENTER");
         column ++;  
         image = new CHTML_img(m_ImagePath + kGifScale, kScaleWidth, kScaleHeight);
+        image->SetAttribute("alt","");
         tc = tbl->InsertAt(0, column, image);
         tc->SetAttribute("align", "LEFT");
         tc->SetAttribute("valign", "CENTER");
@@ -556,6 +563,7 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
                           kScoreMargin - 
                           kDigitWidth*((int)(first_digit_str.size()/2)),
                           m_BarHeight);
+    image->SetAttribute("alt","");
     tbl = new CHTML_table;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
     tc = tbl->InsertAt(0, column, image);
@@ -568,7 +576,8 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
         string one_digit(1, first_digit_str[j]); 
         int digit = NStr::StringToInt(one_digit);
         image = new CHTML_img(m_ImagePath + kDigitGif[digit], kDigitWidth, 
-                              kDigitHeight);
+            kDigitHeight,NStr::IntToString(digit));
+        image->SetAttribute("alt","");
         tc = tbl->InsertAt(0, column, image);
         tc->SetAttribute("align", "LEFT");
         tc->SetAttribute("valign", "CENTER");
@@ -592,6 +601,7 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
         previous_digitstr = digit_str;
 
         image = new CHTML_img(m_ImagePath + kGifWhite, spacer_length, m_BarHeight);
+        image->SetAttribute("alt","");
         tc = tbl->InsertAt(0, column, image);
         tc->SetAttribute("align", "LEFT");
         tc->SetAttribute("valign", "CENTER");
@@ -601,7 +611,8 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
             string one_digit(1, digit_str[j]); 
             int digit = NStr::StringToInt(one_digit);
             image = new CHTML_img(m_ImagePath + kDigitGif[digit], kDigitWidth, 
-                                  kDigitHeight);
+                                  kDigitHeight,NStr::IntToString(digit));
+            image->SetAttribute("alt","");
             tc = tbl->InsertAt(0, column, image);
             tc->SetAttribute("align", "LEFT");
             tc->SetAttribute("valign", "CENTER");
@@ -641,6 +652,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             tbl = new CHTML_table;
             tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");  
             image = new CHTML_img(m_ImagePath + kGifWhite, kScoreMargin, m_BarHeight);
+            image->SetAttribute("alt","");
             tc = tbl->InsertAt(0, column, image);
             column ++;
             tc->SetAttribute("align", "LEFT");
@@ -716,6 +728,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                     image = new CHTML_img(m_ImagePath + kGifWhite, front_margin,
                                           m_BarHeight);
                 }
+                image->SetAttribute("alt","");
                 tc = tbl->InsertAt(0, column, image);
                 column ++;
                 tc->SetAttribute("align", "LEFT");
@@ -728,7 +741,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             if(bar_length > 0){
                 is_first_segment = false;
                 image = new CHTML_img(m_ImagePath + s_GetGif((int)(*iter2)->bits), 
-                                      bar_length, m_BarHeight);
+                    bar_length, m_BarHeight,"score " + NStr::IntToString((int)(*iter2)->bits));
                 image->SetAttribute("border", 0);
                 if(m_View & eMouseOverInfo){
                     image->SetAttribute("ONMouseOver", m_MouseOverFormName 
@@ -760,6 +773,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             tbl = new CHTML_table;
             image = new CHTML_img(m_ImagePath + kGifWhite, kScoreMargin 
                                   + kScoreLength, kBlankBarHeight);
+            image->SetAttribute("alt","");
             tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");  
             tbl->InsertAt(0, 0, image);
             tbl_box_tc->AppendChild(&(*tbl));
