@@ -490,7 +490,7 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
              Boolean check_double,
              Int4 * extended)
 {
-    Int4 context, q_start, q_range; 
+    Int4 context, q_range;
     Int4 ext_to, ext_max;
     Int4 q_end = *q_off + word_length;
     Int4 s_end = *s_off + word_length;
@@ -498,23 +498,15 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
 
     *extended = 0;
 
-    /* check subject mask */
-    if (s_end > s_range) return 0;
-
     /* No need to check if mini-extension is not performed.
        It turns out that we may skip checking for double-hit in 2-hit 
        algo case as well -- they will come in as 2 hits naturally*/
     if (word_length == lut_word_length) return 1;
 
-    /* check query context boundary; reposition q_off */
+    /* Find the query context boundary */
     context = BSearchContextInfo(q_end, query_info);
-    if (context > query_info->last_context) return 0;
-    q_start = query_info->contexts[context].query_offset;
-    q_range = q_start + query_info->contexts[context].query_length;
-    if (context != BSearchContextInfo(*q_off, query_info)) {
-        *s_off += q_start - (*q_off);
-        *q_off = q_start;
-    } 
+    q_range = query_info->contexts[context].query_offset 
+            + query_info->contexts[context].query_length;
 
     /* check query mask at two ends */
     if (locations) {
@@ -907,7 +899,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range [in]
+ * @param s_range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -919,7 +911,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                       BlastQueryInfo * query_info,
                       Blast_ExtendWord * ewp,
                       BlastInitHitList * init_hitlist,
-                      Uint4 range)
+                      Uint4 s_range)
 {
     Int4 index = 0;
     Int4 hits_extended = 0;
@@ -948,7 +940,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 NULL,
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -964,7 +956,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 NULL,
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -991,7 +983,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range [in]
+ * @param s_range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -1003,7 +995,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 BlastQueryInfo * query_info,
                 Blast_ExtendWord * ewp,
                 BlastInitHitList * init_hitlist,
-                Uint4 range)
+                Uint4 s_range)
 {
     Int4 index = 0;
     Int4 hits_extended = 0;
@@ -1064,6 +1056,8 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         if (ext_left < ext_to) {
             Int4 ext_right = 0;
             s_off = s_offset + lut_word_length;
+            if (s_off + ext_to - ext_left > s_range) 
+                continue;
             q = query->sequence + q_offset + lut_word_length;
             s = subject->sequence + s_off / COMPRESSION_RATIO;
 
@@ -1092,7 +1086,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1102,7 +1096,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1129,7 +1123,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range [in]
+ * @param s_range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -1140,7 +1134,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                        Int4 ** matrix, BlastQueryInfo * query_info,
                        Blast_ExtendWord * ewp,
                        BlastInitHitList * init_hitlist,
-                       Uint4 range)
+                       Uint4 s_range)
 {
     Int4 index = 0;
     Int4 hits_extended = 0;
@@ -1205,6 +1199,8 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         if (ext_left < ext_to) {
             Int4 ext_right = 0;
             ext_max = ext_to -ext_left;
+            if (s_offset + lut_word_length + ext_max > s_range) 
+                continue;
             q = query->sequence + q_offset + lut_word_length;
             s = subject->sequence + (s_offset + lut_word_length) / COMPRESSION_RATIO;
 
@@ -1236,7 +1232,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1246,7 +1242,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1308,7 +1304,7 @@ static const Uint1 s_ExactMatchExtendRight[256] = {
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range [in]
+ * @param s_range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -1320,7 +1316,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                        Int4 ** matrix, BlastQueryInfo * query_info,
                        Blast_ExtendWord * ewp,
                        BlastInitHitList * init_hitlist,
-                       Uint4 range)
+                       Uint4 s_range)
 {
     Int4 index = 0;
     Int4 hits_extended = 0;
@@ -1336,6 +1332,10 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
         Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
         Int4 ext_left = 0;
 
+        Int4 context = BSearchContextInfo(q_offset, query_info);
+        Int4 q_start = query_info->contexts[context].query_offset;
+        Int4 q_range = q_start + query_info->contexts[context].query_length;
+
         /* the seed is assumed to start on a multiple of 4 bases
            in the subject sequence. Look for up to 4 exact matches
            to the left. The index into q[] below can
@@ -1346,7 +1346,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             Uint1 q_byte = q[q_offset - 4];
             Uint1 s_byte = s[s_offset / COMPRESSION_RATIO - 1];
             ext_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
-            ext_left = MIN(ext_left, ext_to);
+            ext_left = MIN(MIN(ext_left, ext_to), q_offset - q_start);
         }
 
         /* look for up to 4 exact matches to the right of the seed */
@@ -1355,6 +1355,8 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             Uint1 q_byte = q[q_offset + lut_word_length];
             Uint1 s_byte = s[(s_offset + lut_word_length) / COMPRESSION_RATIO];
             Int4 ext_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
+            ext_right = MIN(MIN(ext_right, s_range - (s_offset + lut_word_length)), 
+                                           q_range - (q_offset + lut_word_length));
             if (ext_left + ext_right < ext_to)
                 continue;
         }
@@ -1366,7 +1368,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject,
                                                 q_offset, s_offset,  
                                                 lut->masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1377,7 +1379,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 lut->masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1405,7 +1407,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range [in]
+ * @param s_range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -1417,7 +1419,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                      BlastQueryInfo * query_info,
                      Blast_ExtendWord * ewp,
                      BlastInitHitList * init_hitlist,
-                     Uint4 range)
+                     Uint4 s_range)
 {
     Int4 index = 0;
     Int4 hits_extended = 0;
@@ -1434,7 +1436,10 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         Int4 q_off;
         Int4 ext_left = 0;
         Int4 ext_right = 0;
-        Int4 ext_max = MIN(word_length - lut_word_length, s_offset);
+        Int4 context = BSearchContextInfo(q_offset, query_info);
+        Int4 q_start = query_info->contexts[context].query_offset;
+        Int4 q_range = q_start + query_info->contexts[context].query_length;
+        Int4 ext_max = MIN(MIN(word_length - lut_word_length, s_offset), q_offset - q_start);
 
         /* Start the extension at the first multiple of 4 bases in
            the subject sequence to the right of the seed.
@@ -1447,8 +1452,8 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         Int4 rsdl = COMPRESSION_RATIO - (s_offset % COMPRESSION_RATIO);
         s_offset += rsdl;
         q_offset += rsdl;
+        ext_max  += rsdl;
 
-        ext_max += rsdl;
         s_off = s_offset;
         q_off = q_offset;
 
@@ -1467,9 +1472,9 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         /* extend to the right. The extension begins at the first
            base not examined by the left extension */
 
-        ext_max = word_length - ext_left;
         s_off = s_offset;
         q_off = q_offset;
+        ext_max = MIN(MIN(word_length - ext_left, s_range - s_off), q_range - q_off);
         while (ext_right < ext_max) {
             Uint1 q_byte = q[q_off];
             Uint1 s_byte = s[s_off / COMPRESSION_RATIO];
@@ -1480,6 +1485,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             q_off += 4;
             s_off += 4;
         }
+        ext_right = MIN(ext_right, ext_max);
 
         if (ext_left + ext_right < word_length)
             continue;
@@ -1491,7 +1497,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 lut->masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
@@ -1501,7 +1507,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
                                                 lut->masked_locations, 
-                                                query_info, range, 
+                                                query_info, s_range, 
                                                 word_length, lut_word_length,
                                                 lookup_wrap,
                                                 word_params, matrix,
