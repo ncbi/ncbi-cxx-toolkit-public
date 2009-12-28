@@ -482,6 +482,15 @@ CNCMessageHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
         break;
     }
 
+    // Hack-ish fix to make cursed PUT2 command to work - it uses connection
+    // closing as legal end-of-blob signal.
+    if (x_GetState() == eReadBlobChunkLength
+        &&  NStr::strcmp(m_CurCmd, "PUT2") == 0)
+    {
+        _ASSERT(m_CurBlob  &&  !m_CurBlob->IsFinalized()  &&  m_DiagContext);
+        m_DiagContext->SetRequestStatus(eStatus_OK);
+        x_FinishReadingBlob();
+    }
     x_FinishCommand();
 
     if (x_GetState() == ePreAuthenticated) {
@@ -861,7 +870,7 @@ CNCMessageHandler::x_StartReadingBlob(void)
     x_SetState(eReadBlobSignature);
 }
 
-inline void
+void
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
     if (x_IsFlagSet(fReadExactBlobSize)
