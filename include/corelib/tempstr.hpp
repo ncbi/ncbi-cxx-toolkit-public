@@ -136,8 +136,17 @@ public:
                    size_type pos = 0) const;
 
     /// Find the first instance of a given character string within the
-    /// current string, beginning at an optional offset.
+    /// current string in a backward direction, beginning at an optional offset.
     size_type find(char match, size_type pos = 0) const;
+
+    /// Find the first instance of the entire matching string within the
+    /// current string in a backward direction, beginning at an optional offset.
+    size_type rfind(const CTempString& match,
+                    size_type pos = npos) const;
+
+    /// Find the first instance of a given character string within the
+    /// current string, beginning at an optional offset.
+    size_type rfind(char match, size_type pos = npos) const;
 
     /// Find the first occurrence of any character in the matching string
     /// within the current string, beginning at an optional offset.
@@ -148,6 +157,16 @@ public:
     /// within the current string, beginning at an optional offset.
     size_type find_first_not_of(const CTempString& match,
                                 size_type pos = 0) const;
+
+    /// Find the last occurrence of any character in the matching string
+    /// within the current string, beginning at an optional offset.
+    size_type find_last_of(const CTempString& match,
+                           size_type pos = npos) const;
+
+    /// Find the last occurrence of any character not in the matching string
+    /// within the current string, beginning at an optional offset.
+    size_type find_last_not_of(const CTempString& match,
+                               size_type pos = npos) const;
 
     /// Obtain a substring from this string, beginning at a given offset
     CTempString substr(size_type pos) const;
@@ -470,7 +489,6 @@ CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
     if (match.length()  &&  pos < length()) {
         const_iterator it = begin() + pos;
         const_iterator end_it = end();
-
         const_iterator match_begin = match.begin();
         const_iterator match_end   = match.end();
         for ( ;  it != end_it;  ++it) {
@@ -492,6 +510,81 @@ CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
 
 
 inline
+CTempString::size_type CTempString::find_last_of(const CTempString& match,
+                                                 size_type pos) const
+{
+    if (match.length()  &&  match.length() <= length() ) {
+        if (pos >= length()) {
+            pos = length() - match.length();
+        }
+        const_iterator it = begin() + pos;
+        const_iterator end_it = begin();
+        const_iterator match_begin = match.begin();
+        const_iterator match_end   = match.end();
+        for ( ;  it >= end_it;  --it) {
+            bool found = false;
+            for (const_iterator match_it = match_begin;
+                 match_it != match_end;  ++match_it) {
+                if (*it == *match_it) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( found ) {
+                return it - begin();
+            }
+        }
+    }
+    return npos;
+}
+
+
+inline
+CTempString::size_type CTempString::find_last_not_of(const CTempString& match,
+                                                     size_type pos) const
+{
+    if (match.length()  &&  match.length() <= length() ) {
+        if (pos >= length()) {
+            pos = length() - match.length();
+        }
+        const_iterator it = begin() + pos;
+        const_iterator end_it = begin();
+        const_iterator match_begin = match.begin();
+        const_iterator match_end   = match.end();
+        for ( ;  it != end_it;  --it) {
+            bool found = false;
+            for (const_iterator match_it = match_begin;
+                 match_it != match_end;  ++match_it) {
+                if (*it == *match_it) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) {
+                return it - begin();
+            }
+        }
+    }
+    return npos;
+}
+
+
+inline
+CTempString::size_type CTempString::find(char match, size_type pos) const
+{
+    if (pos + 1 > length()) {
+        return npos;
+    }
+    for (size_type i = pos;  i < length();  ++i) {
+        if (m_String[i] == match) {
+            return i;
+        }
+    }
+    return npos;
+}
+
+
+inline
 CTempString::size_type CTempString::find(const CTempString& match,
                                          size_type pos) const
 {
@@ -501,14 +594,12 @@ CTempString::size_type CTempString::find(const CTempString& match,
     if (match.length() == 0) {
         return pos;
     }
-
     size_type length_limit = length() - match.length();
     while ( (pos = find_first_of(CTempString(match, 0, 1), pos)) !=
             string::npos) {
         if (pos > length_limit) {
             return npos;
         }
-
         int res = memcmp(begin() + pos + 1,
                          match.begin() + 1,
                          match.length() - 1);
@@ -522,20 +613,53 @@ CTempString::size_type CTempString::find(const CTempString& match,
 
 
 inline
-CTempString::size_type CTempString::find(char match, size_type pos) const
+CTempString::size_type CTempString::rfind(char match, size_type pos) const
 {
-    if (pos + 1 > length()) {
-        return npos;
+    if (pos >= length()) {
+        pos = length() - 1;
     }
-
-    for (size_type i = pos;  i < length();  ++i) {
+    for (size_type i = pos;;) {
         if (m_String[i] == match) {
             return i;
         }
+        if (!i) {
+            break;
+        }
+        --i;
     }
-
     return npos;
 }
+
+
+inline
+CTempString::size_type CTempString::rfind(const CTempString& match,
+                                          size_type pos) const
+{
+    if (match.length() > length()) {
+        return npos;
+    }
+    if (match.length() == 0) {
+        return length();
+    }
+    if (pos >= length()) {
+        pos = length() - match.length();
+    }
+    while ( (pos = find_last_of(CTempString(match, 0, 1), pos)) !=
+            string::npos) {
+        int res = memcmp(begin() + pos + 1,
+                         match.begin() + 1,
+                         match.length() - 1);
+        if (res == 0) {
+            return pos;
+        }
+        if (!pos) {
+            break;
+        }
+        --pos;
+    }
+    return npos;
+}
+
 
 inline
 CTempString& CTempString::assign(const char* src, size_type len)
