@@ -234,11 +234,11 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static double StringToDouble(const CTempStringEx& str,
-                                 TStringToNumFlags  flags = 0);
+                                 TStringToNumFlags    flags = 0);
 
     /// This version accepts zero-terminated string
     static double StringToDoubleEx(const char* str, size_t size,
-                                   TStringToNumFlags  flags = 0);
+                                   TStringToNumFlags flags = 0);
 
     /// Convert string to Int8.
     ///
@@ -303,7 +303,7 @@ public:
     ///   String to be converted.
     /// @return
     ///   Pointer value corresponding to its string representation.
-    static const void* StringToPtr(const string& str);
+    static const void* StringToPtr(const CTempStringEx& str);
 
     /// Convert character to integer.
     ///
@@ -357,7 +357,7 @@ public:
     ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
-    static string UIntToString(unsigned long value,
+    static string UIntToString(unsigned long     value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
 
@@ -536,7 +536,7 @@ public:
     ///   for TRUE; and  'false', 'f', 'no', 'n' for FALSE.
     /// @return
     ///   TRUE or FALSE.
-    static bool StringToBool(const string& str);
+    static bool StringToBool(const CTempString& str);
 
 
     /// Handle an arbitrary printf-style format string.
@@ -584,8 +584,8 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
-    ///   types: char* vs. string&
-    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+    ///   types: char* vs. CTempString[Ex]&
+    static int CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                            const char* pattern);
 
     /// Case-sensitive compare of a substring with a pattern.
@@ -597,16 +597,16 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @return
     ///   - 0, if str[pos:pos+n) == pattern.   
     ///   - Negative integer, if str[pos:pos+n) <  pattern.   
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
-    ///   types: char* vs. string&
-    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const string& pattern);
+    ///   types: char* vs. CTempString[Ex]&
+    static int CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const CTempString& pattern);
 
     /// Case-sensitive compare of two strings -- char* version.
     ///
@@ -622,7 +622,7 @@ public:
     ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const char* s1, const char* s2);
 
-    /// Case-sensitive compare of two strings -- string& version.
+    /// Case-sensitive compare of two strings -- CTempStringEx& version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -634,7 +634,7 @@ public:
     ///   - Positive integer, if s1 > s2.   
     /// @sa
     ///   CompareNocase(), Compare() versions with same argument types.
-    static int CompareCase(const string& s1, const string& s2);
+    static int CompareCase(const CTempStringEx& s1, const CTempStringEx& s2);
 
     /// Case-insensitive compare of a substring with a pattern.
     ///
@@ -654,9 +654,9 @@ public:
     ///     compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
-    ///   argument types: char* vs. string&
-    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const char* pattern);
+    ///   argument types: char* vs. CTempString[Ex]&
+    static int CompareNocase(const CTempString& str, 
+                             SIZE_TYPE pos, SIZE_TYPE n, const char* pattern);
 
     /// Case-insensitive compare of a substring with a pattern.
     ///
@@ -667,7 +667,7 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @return
     ///   - 0, if str[pos:pos+n) == pattern (case-insensitive compare).   
     ///   - Negative integer, if str[pos:pos+n) <  pattern (case-insensitive
@@ -676,9 +676,10 @@ public:
     ///     compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
-    ///   argument types: char* vs. string&
-    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const string& pattern);
+    ///   argument types: char* vs. CTempString[Ex]&
+    static int CompareNocase(const CTempString& str, 
+                             SIZE_TYPE pos, SIZE_TYPE n,
+                             const CTempString& pattern);
 
     /// Case-insensitive compare of two strings -- char* version.
     ///
@@ -694,7 +695,7 @@ public:
     ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const char* s1, const char* s2);
 
-    /// Case-insensitive compare of two strings -- string& version.
+    /// Case-insensitive compare of two strings -- CTempStringEx& version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -706,7 +707,7 @@ public:
     ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
     /// @sa
     ///   CompareCase(), Compare() versions with same argument types.
-    static int CompareNocase(const string& s1, const string& s2);
+    static int CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2);
 
     /// Compare of a substring with a pattern.
     ///
@@ -727,8 +728,8 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. string&
-    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+    ///   types: char* vs. CTempString[Ex]&
+    static int Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern, ECase use_case = eCase);
 
     /// Compare of a substring with a pattern.
@@ -740,7 +741,7 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase).
@@ -750,9 +751,9 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. string&
-    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const string& pattern, ECase use_case = eCase);
+    ///   types: char* vs. CTempString[Ex]&
+    static int Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const CTempString& pattern, ECase use_case = eCase);
 
     /// Compare two strings -- char* version.
     ///
@@ -768,29 +769,13 @@ public:
     ///   - Negative integer, if s1 < s2.   
     ///   - Positive integer, if s1 > s2.   
     /// @sa
-    ///   CompareNocase(), Compare() versions with similar argument types.
+    ///   Other forms of overloaded Compare() with differences in argument
+    ///   types: char* vs. CTempString[Ex]&
     static int Compare(const char* s1, const char* s2,
                        ECase use_case = eCase);
 
-    /// Compare two strings -- string&, char* version.
-    ///
-    /// @param s1
-    ///   String to be compared -- operand 1.
-    /// @param s2
-    ///   String to be compared -- operand 2.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
-    /// @sa
-    ///   CompareNocase(), Compare() versions with similar argument types.
-    static int Compare(const string& s1, const char* s2,
-                       ECase use_case = eCase);
 
-    /// Compare two strings -- char*, string& version.
+    /// Compare two strings -- CTempStringEx& version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -804,26 +789,9 @@ public:
     ///   - Negative integer, if s1 < s2.   
     ///   - Positive integer, if s1 > s2.   
     /// @sa
-    ///   CompareNocase(), Compare() versions with similar argument types.
-    static int Compare(const char* s1, const string& s2,
-                       ECase use_case = eCase);
-
-    /// Compare two strings -- string& version.
-    ///
-    /// @param s1
-    ///   String to be compared -- operand 1.
-    /// @param s2
-    ///   String to be compared -- operand 2.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return
-    ///   - 0, if s1 == s2.   
-    ///   - Negative integer, if s1 < s2.   
-    ///   - Positive integer, if s1 > s2.   
-    /// @sa
-    ///   CompareNocase(), Compare() versions with similar argument types.
-    static int Compare(const string& s1, const string& s2,
+    ///   Other forms of overloaded Compare() with differences in argument
+    ///   types: char* vs. CTempString[Ex]&
+    static int Compare(const CTempStringEx& s1, const CTempStringEx& s2,
                        ECase use_case = eCase);
 
     /// Case-sensitive equality of a substring with a pattern.
@@ -841,9 +809,9 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
-    ///   types: char* vs. string&
-    static bool EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const char* pattern);
+    ///   types: char* vs. CTempString[Ex]&
+    static bool EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                          const char* pattern);
 
     /// Case-sensitive equality of a substring with a pattern.
     ///
@@ -854,15 +822,15 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @return
     ///   - true, if str[pos:pos+n) equals pattern.   
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
-    ///   types: char* vs. string&
-    static bool EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const string& pattern);
+    ///   types: char* vs. CTempString[Ex]&
+    static bool EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                          const CTempString& pattern);
 
     /// Case-sensitive equality of two strings -- char* version.
     ///
@@ -877,7 +845,7 @@ public:
     ///   EqualCase(), Equal() versions with same argument types.
     static bool EqualCase(const char* s1, const char* s2);
 
-    /// Case-sensitive equality of two strings -- string& version.
+    /// Case-sensitive equality of two strings.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -888,7 +856,7 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
-    static bool EqualCase(const string& s1, const string& s2);
+    static bool EqualCase(const CTempString& s1, const CTempString& s2);
 
     /// Case-insensitive equality of a substring with a pattern.
     ///
@@ -905,9 +873,10 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
-    ///   argument types: char* vs. string&
-    static bool EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const char* pattern);
+    ///   argument types: char* vs. CTempString[Ex]&
+    static bool EqualNocase(const CTempString& str,
+                            SIZE_TYPE pos, SIZE_TYPE n,
+                            const char* pattern);
 
     /// Case-insensitive equality of a substring with a pattern.
     ///
@@ -918,15 +887,15 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @return
     ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
-    ///   argument types: char* vs. string&
-    static bool EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const string& pattern);
+    ///   argument types: char* vs. CTempString[Ex]&
+    static bool EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                            const CTempString& pattern);
 
     /// Case-insensitive equality of two strings -- char* version.
     ///
@@ -941,7 +910,7 @@ public:
     ///   EqualCase(), Equal() versions with same argument types.
     static bool EqualNocase(const char* s1, const char* s2);
 
-    /// Case-insensitive equality of two strings -- string& version.
+    /// Case-insensitive equality of two strings.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -952,7 +921,7 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
-    static bool EqualNocase(const string& s1, const string& s2);
+    static bool EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2);
 
     /// Test for equality of a substring with a pattern.
     ///
@@ -972,9 +941,9 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
-    ///   types: char* vs. string&
-    static bool Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern, ECase use_case = eCase);
+    ///   types: char* vs. CTempString[Ex]&
+    static bool Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const char* pattern, ECase use_case = eCase);
 
     /// Test for equality of a substring with a pattern.
     ///
@@ -985,7 +954,7 @@ public:
     /// @param n
     ///   Number of characters in substring to be compared.
     /// @param pattern
-    ///   String pattern (string&) to be compared with substring.
+    ///   String pattern to be compared with substring.
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase).
@@ -995,9 +964,9 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
-    ///   types: char* vs. string&
-    static bool Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const string& pattern, ECase use_case = eCase);
+    ///   types: char* vs. CTempString[Ex]&
+    static bool Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString& pattern, ECase use_case = eCase);
 
     /// Test for equality of two strings -- char* version.
     ///
@@ -1015,9 +984,9 @@ public:
     /// @sa
     ///   EqualNocase(), Equal() versions with similar argument types.
     static bool Equal(const char* s1, const char* s2,
-                       ECase use_case = eCase);
+                      ECase use_case = eCase);
 
-    /// Test for equality of two strings -- string&, char* version.
+    /// Test for equality of two strings.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1031,42 +1000,8 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   EqualNocase(), Equal() versions with similar argument types.
-    static bool Equal(const string& s1, const char* s2,
-                       ECase use_case = eCase);
-
-    /// Test for equality of two strings -- char*, string& version.
-    ///
-    /// @param s1
-    ///   String to be compared -- operand 1.
-    /// @param s2
-    ///   String to be compared -- operand 2.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return
-    ///   - true, if s1 equals s2.   
-    ///   - false, otherwise.
-    /// @sa
-    ///   EqualNocase(), Equal() versions with similar argument types.
-    static bool Equal(const char* s1, const string& s2,
-                       ECase use_case = eCase);
-
-    /// Test for equality of two strings -- string& version.
-    ///
-    /// @param s1
-    ///   String to be compared -- operand 1.
-    /// @param s2
-    ///   String to be compared -- operand 2.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return
-    ///   - true, if s1 equals s2.   
-    ///   - false, otherwise.
-    /// @sa
-    ///   EqualNocase(), Equal() versions with similar argument types.
-    static bool Equal(const string& s1, const string& s2,
-                       ECase use_case = eCase);
+    static bool Equal(const CTempStringEx& s1, const CTempStringEx& s2,
+                      ECase use_case = eCase);
 
     // NOTE.  On some platforms, "strn[case]cmp()" can work faster than their
     //        "Compare***()" counterparts.
@@ -1171,8 +1106,8 @@ public:
     ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
     /// @sa
     ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(const string& str, const string& mask,
-                            ECase use_case = eCase);
+    static bool MatchesMask(const CTempStringEx& str, 
+                            const CTempStringEx& mask, ECase use_case = eCase);
 
     // The following 4 methods change the passed string, then return it
 
@@ -1190,7 +1125,7 @@ public:
     ///   String to be converted.
     /// @return
     ///   Lower cased string.
-    static char* ToLower(char*   str);
+    static char* ToLower(char* str);
 
     /// Convert string to upper case -- string& version.
     /// 
@@ -1206,7 +1141,7 @@ public:
     ///   String to be converted.
     /// @return
     ///   Upper cased string.
-    static char* ToUpper(char*   str);
+    static char* ToUpper(char* str);
 
 private:
     /// Privatized ToLower() with const char* parameter to prevent passing of 
@@ -1227,19 +1162,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool StartsWith(const string& str, const string& start,
-                           ECase use_case = eCase);
-
-    /// Check if a string starts with a specified prefix value.
-    ///
-    /// @param str
-    ///   String to check.
-    /// @param start
-    ///   Prefix value to check for.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
-    ///   case-insensitive compare (eNocase) while checking.
-    static bool StartsWith(const string& str, const char* start,
+    static bool StartsWith(const CTempString& str, const CTempString& start,
                            ECase use_case = eCase);
 
     /// Check if a string starts with a specified character value.
@@ -1251,7 +1174,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool StartsWith(const string& str, char start,
+    static bool StartsWith(const CTempString& str, char start,
                            ECase use_case = eCase);
 
     /// Check if a string ends with a specified suffix value.
@@ -1263,7 +1186,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool EndsWith(const string& str, const string& end,
+    static bool EndsWith(const CTempString& str, const CTempString& end,
                          ECase use_case = eCase);
 
     /// Check if a string ends with a specified character value.
@@ -1275,7 +1198,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool EndsWith(const string& str, char end,
+    static bool EndsWith(const CTempString& str, char end,
                          ECase use_case = eCase);
 
     /// Check if a string is blank (has no text).
@@ -1284,7 +1207,7 @@ public:
     ///   String to check.
     /// @param pos
     ///   starting position (default 0)
-    static bool IsBlank(const string& str, SIZE_TYPE pos = 0);
+    static bool IsBlank(const CTempString& str, SIZE_TYPE pos = 0);
 
     /// Whether it is the first or last occurrence.
     enum EOccurrence {
@@ -1316,7 +1239,8 @@ public:
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
-    static SIZE_TYPE Find(const string& str, const string& pattern,
+    static SIZE_TYPE Find(const CTempString& str,
+                          const CTempString& pattern,
                           SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                           EOccurrence which = eFirst,
                           ECase use_case = eCase);
@@ -1343,7 +1267,8 @@ public:
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
-    static SIZE_TYPE FindCase  (const string& str, const string& pattern,
+    static SIZE_TYPE FindCase  (const CTempString& str, 
+                                const CTempString& pattern,
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
@@ -1369,26 +1294,32 @@ public:
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
-    static SIZE_TYPE FindNoCase(const string& str, const string& pattern,
+    static SIZE_TYPE FindNoCase(const CTempString& str,
+                                const CTempString& pattern,
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
     /// Test for presence of a given string in a list or vector of strings
 
-    static const string* Find(const list<string>& lst, const string& val,
-                               ECase use_case = eCase);
+    static const string* Find      (const list<string>& lst,
+                                    const CTempString& val,
+                                    ECase use_case = eCase);
 
-    static const string* FindCase(const list<string>& lst, const string& val);
+    static const string* FindCase  (const list<string>& lst,
+                                    const CTempString& val);
 
-    static const string* FindNoCase(const list<string>& lst, const string& val);
+    static const string* FindNoCase(const list<string>& lst, 
+                                    const CTempString& val);
 
-    static const string* Find(const vector<string>& vec, const string& val,
-                              ECase use_case = eCase);
+    static const string* Find      (const vector<string>& vec, 
+                                    const CTempString& val,
+                                    ECase use_case = eCase);
 
-    static const string* FindCase(const vector<string>& vec, const string& val);
+    static const string* FindCase  (const vector<string>& vec,
+                                    const CTempString& val);
 
     static const string* FindNoCase(const vector<string>& vec,
-                                    const string& val);
+                                    const CTempString& val);
 
 
     /// Which end to truncate a string.
@@ -1405,11 +1336,12 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
-    static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
+    static string      TruncateSpaces(const string& str,
+                                      ETrunc where = eTrunc_Both);
     static CTempString TruncateSpaces(const CTempString& str,
-                                      ETrunc where=eTrunc_Both);
+                                      ETrunc where = eTrunc_Both);
     static CTempString TruncateSpaces(const char* str,
-                                      ETrunc where=eTrunc_Both);
+                                      ETrunc where = eTrunc_Both);
 
     /// Truncate spaces in a string (in-place)
     ///
@@ -1418,7 +1350,7 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
-    static void TruncateSpacesInPlace(string& str, ETrunc where=eTrunc_Both);
+    static void TruncateSpacesInPlace(string& str, ETrunc where = eTrunc_Both);
     
     /// Replace occurrences of a substring within a string.
     ///
@@ -1586,8 +1518,8 @@ public:
     /// @sa
     ///   Split, Tokenize
     static
-    vector<string>& TokenizePattern(const string&      str,
-                                    const string&      delim,
+    vector<string>& TokenizePattern(const CTempString& str,
+                                    const CTempString& delim,
                                     vector<string>&    arr,
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
@@ -1613,10 +1545,10 @@ public:
     ///   the very last character was the first delimiter.
     /// @sa
     ///   Split, Tokenoze, TokenizePattern
-    static bool SplitInTwo(const string& str, 
-                           const string& delim,
-                           string&       str1,
-                           string&       str2);
+    static bool SplitInTwo(const CTempString& str, 
+                           const CTempString& delim,
+                           string&            str1,
+                           string&            str2);
                          
 
     /// Join strings using the specified delimiter.
@@ -1630,6 +1562,7 @@ public:
     ///   with "delim".
     static string Join(const list<string>& arr,   const string& delim);
     static string Join(const vector<string>& arr, const string& delim);
+
 
     /// How to display printable strings.
     ///
@@ -1665,40 +1598,34 @@ public:
     ///   Return a printable version of "str".
     /// @sa
     ///   ParseEscapes
-    static string PrintableString(const string&  str,
+    static string PrintableString(const CTempString&  str,
                                   TPrintableMode mode = eNewLine_Quote);
 
-    /// Parse C-style escape sequences in the specified string, including
-    /// all those produced by PrintableString.
-    static string ParseEscapes(const string& str);
-
-    /// How to wrap the words in a string to a new line.
-    enum EWrapFlags {
-        fWrap_Hyphenate  = 0x1, ///< Add a hyphen when breaking words?
-        fWrap_HTMLPre    = 0x2, ///< Wrap as preformatted HTML?
-        fWrap_FlatFile   = 0x4  ///< Wrap for flat file use.
-    };
-    typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
+    /// Parse C-style escape sequences in the specified string.
+    ///
+    /// Parse escape sequences including all those produced by PrintableString.
+    /// @sa PrintableString
+    static string ParseEscapes(const CTempString& str);
 
     /// Encode a string for C/C++.
     ///
     /// Synonym for PrintableString().
     /// @sa PrintableString
-    static string CEncode(const string& str);
+    static string CEncode(const CTempString& str);
 
     /// Encode a string for JavaScript.
     ///
     /// Like to CEncode(), but process some symbols in different way.
     /// @sa PrintableString, CEncode
-    static string JavaScriptEncode(const string& str);
+    static string JavaScriptEncode(const CTempString& str);
 
     /// Encode a string for XML.
     ///
     /// Replace relevant characters by predefined entities.
-    static string XmlEncode(const string& str);
+    static string XmlEncode(const CTempString& str);
 
     /// Encode a string for JSON.
-    static string JsonEncode(const string& str);
+    static string JsonEncode(const CTempString& str);
 
     /// URL-encode flags
     enum EUrlEncode {
@@ -1726,7 +1653,7 @@ public:
         eUrlDec_Percent           ///< Decode only %XX
     };
     /// URL-encode string
-    static string URLEncode(const string& str,
+    static string URLEncode(const CTempString& str,
                             EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// SQL-encode string
@@ -1747,20 +1674,28 @@ public:
     static CStringUTF8 SQLEncode(const CStringUTF8& str);
 
     /// URL-decode string
-    static string URLDecode(const string& str,
+    static string URLDecode(const CTempString& str,
                             EUrlDecode flag = eUrlDec_All);
     /// URL-decode string to itself
     static void URLDecodeInPlace(string& str,
                                  EUrlDecode flag = eUrlDec_All);
     /// Check if the string needs the reqested URL-encoding
-    static bool NeedsURLEncoding(const string& str,
+    static bool NeedsURLEncoding(const CTempStringEx& str,
                                 EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// Check if the string contains a valid IP address
-    static bool IsIPAddress(const string& ip);
+    static bool IsIPAddress(const CTempStringEx& ip);
 
-    /// Wrap the specified string into lines of a specified width -- prefix,
-    /// prefix1 default version.
+
+    /// How to wrap the words in a string to a new line.
+    enum EWrapFlags {
+        fWrap_Hyphenate  = 0x1, ///< Add a hyphen when breaking words?
+        fWrap_HTMLPre    = 0x2, ///< Wrap as preformatted HTML?
+        fWrap_FlatFile   = 0x4  ///< Wrap for flat file use.
+    };
+    typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
+
+    /// Wrap the specified string into lines of a specified width.
     ///
     /// Split string "str" into lines of width "width" and add the
     /// resulting lines to the list "arr". Normally, all
@@ -1793,74 +1728,18 @@ public:
                               const string* prefix = 0,
                               const string* prefix1 = 0);
 
-    /// Wrap the specified string into lines of a specified width -- prefix1
-    /// default version.
-    ///
-    /// Split string "str" into lines of width "width" and add the
-    /// resulting lines to the list "arr". Normally, all
-    /// lines will begin with "prefix" (counted against "width"),
-    /// but the first line will instead begin with "prefix1" if
-    /// you supply it.
-    ///
-    /// @param str
-    ///   String to be split into wrapped lines.
-    /// @param width
-    ///   Width of each wrapped line.
-    /// @param arr
-    ///   List of strings containing wrapped lines.
-    /// @param flags
-    ///   How to wrap the words to a new line. See EWrapFlags documentation.
-    /// @param prefix
-    ///   The prefix string added to each wrapped line, except the first line,
-    ///   unless "prefix1" is set.
-    ///   If "prefix" is set to 0, do not add a prefix string to the wrapped
-    ///   lines.
-    /// @param prefix1
-    ///   The prefix string for the first line. Use this for the first line
-    ///   instead of "prefix".
-    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
-    ///   first line.
-    /// @return
-    ///   Return "arr", the list of wrapped lines.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags,
-                              const string& prefix, const string* prefix1 = 0);
+                              const string& prefix,
+                              const string* prefix1 = 0);
 
-    /// Wrap the specified string into lines of a specified width.
-    ///
-    /// Split string "str" into lines of width "width" and add the
-    /// resulting lines to the list "arr". Normally, all
-    /// lines will begin with "prefix" (counted against "width"),
-    /// but the first line will instead begin with "prefix1" if
-    /// you supply it.
-    ///
-    /// @param str
-    ///   String to be split into wrapped lines.
-    /// @param width
-    ///   Width of each wrapped line.
-    /// @param arr
-    ///   List of strings containing wrapped lines.
-    /// @param flags
-    ///   How to wrap the words to a new line. See EWrapFlags documentation.
-    /// @param prefix
-    ///   The prefix string added to each wrapped line, except the first line,
-    ///   unless "prefix1" is set.
-    ///   If "prefix" is set to 0, do not add a prefix string to the wrapped
-    ///   lines.
-    /// @param prefix1
-    ///   The prefix string for the first line. Use this for the first line
-    ///   instead of "prefix".
-    ///   If "prefix1" is set to 0, do not add a prefix string to the first
-    ///   line.
-    /// @return
-    ///   Return "arr", the list of wrapped lines.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags,
-                              const string& prefix, const string& prefix1);
+                              const string& prefix,
+                              const string& prefix1);
 
 
-    /// Wrap the list using the specified criteria -- default prefix, 
-    /// prefix1 version.
+    /// Wrap the list using the specified criteria.
     ///
     /// WrapList() is similar to Wrap(), but tries to avoid splitting any
     /// elements of the list to be wrapped. Also, the "delim" only applies
@@ -1895,72 +1774,16 @@ public:
                                   const string* prefix = 0,
                                   const string* prefix1 = 0);
 
-    /// Wrap the list using the specified criteria -- default prefix1 version.
-    ///
-    /// WrapList() is similar to Wrap(), but tries to avoid splitting any
-    /// elements of the list to be wrapped. Also, the "delim" only applies
-    /// between elements on the same line; if you want everything to end with
-    /// commas or such, you should add them first.
-    ///
-    /// @param l
-    ///   The list to be wrapped.
-    /// @param width
-    ///   Width of each wrapped line.
-    /// @param delim
-    ///   Delimiters used to split elements on the same line.
-    /// @param arr
-    ///   List containing the wrapped list result.
-    /// @param flags
-    ///   How to wrap the words to a new line. See EWrapFlags documentation.
-    /// @param prefix
-    ///   The prefix string added to each wrapped line, except the first line,
-    ///   unless "prefix1" is set.
-    ///   If "prefix" is set to 0, do not add a prefix string to the
-    ///   wrapped lines.
-    /// @param prefix1
-    ///   The prefix string for the first line. Use this for the first line
-    ///   instead of "prefix".
-    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
-    ///   first line.
-    /// @return
-    ///   Return "arr", the wrappe list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
-                                  TWrapFlags flags, const string& prefix,
+                                  TWrapFlags flags,
+                                  const string& prefix,
                                   const string* prefix1 = 0);
         
-    /// Wrap the list using the specified criteria.
-    ///
-    /// WrapList() is similar to Wrap(), but tries to avoid splitting any
-    /// elements of the list to be wrapped. Also, the "delim" only applies
-    /// between elements on the same line; if you want everything to end with
-    /// commas or such, you should add them first.
-    ///
-    /// @param l
-    ///   The list to be wrapped.
-    /// @param width
-    ///   Width of each wrapped line.
-    /// @param delim
-    ///   Delimiters used to split elements on the same line.
-    /// @param arr
-    ///   List containing the wrapped list result.
-    /// @param flags
-    ///   How to wrap the words to a new line. See EWrapFlags documentation.
-    /// @param prefix
-    ///   The prefix string added to each wrapped line, except the first line,
-    ///   unless "prefix1" is set.
-    ///   If "prefix" is set to 0, do not add a prefix string to the
-    ///   wrapped lines.
-    /// @param prefix1
-    ///   The prefix string for the first line. Use this for the first line
-    ///   instead of "prefix".
-    ///   If "prefix1" is set to 0, do not add a prefix string to the
-    ///   first line.
-    /// @return
-    ///   Return "arr", the wrapped list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
-                                  TWrapFlags flags, const string& prefix,
+                                  TWrapFlags flags,
+                                  const string& prefix,
                                   const string& prefix1);
 
     /// Search for a field
@@ -3221,6 +3044,33 @@ string NStr::UIntToString(unsigned long value,
 }
 
 inline
+string NStr::Int8ToString(Int8 value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    NStr::Int8ToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::UInt8ToString(Uint8 value,
+                           TNumToStringFlags flags, int base)
+{
+    string ret;
+    NStr::UInt8ToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::DoubleToString(double value, int precision,
+                            TNumToStringFlags flags)
+{
+    string str;
+    DoubleToString(str, value, precision, flags);
+    return str;
+}
+
+inline
 int NStr::HexChar(char ch)
 {
     unsigned int rc = ch - '0';
@@ -3233,9 +3083,12 @@ int NStr::HexChar(char ch)
 }
 
 inline
-bool NStr::MatchesMask(const string& str, const string& mask, ECase use_case)
+bool NStr::MatchesMask(const CTempStringEx& str, 
+                       const CTempStringEx& mask, ECase use_case)
 {
-    return MatchesMask(str.c_str(), mask.c_str(), use_case);
+    return MatchesMask(str.HasZeroAtEnd()  ? str.data()  : string(str).c_str(),
+                       mask.HasZeroAtEnd() ? mask.data() : string(mask).c_str(),
+                       use_case);
 }
 
 inline
@@ -3321,25 +3174,16 @@ size_t NStr::strftime(char* s, size_t maxsize, const char* format,
 
 
 inline
-int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const char* pattern, ECase use_case)
-{
-    return use_case == eCase ?
-        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
-}
-
-inline
-int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const string& pattern, ECase use_case)
-{
-    return use_case == eCase ?
-        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
-}
-
-inline
 int NStr::CompareCase(const char* s1, const char* s2)
 {
     return NStr::strcmp(s1, s2);
+}
+
+inline
+int NStr::CompareCase(const CTempStringEx& s1, const CTempStringEx& s2)
+{
+    return CompareCase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
+                       s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
 }
 
 inline
@@ -3349,55 +3193,54 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 }
 
 inline
+int NStr::CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2)
+{
+    return CompareNocase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
+                         s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
+}
+
+inline
+int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const char* pattern, ECase use_case)
+{
+    return use_case == eCase ?
+        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
+}
+
+inline
+int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const CTempString& pattern, ECase use_case)
+{
+    return use_case == eCase ?
+        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
+}
+
+inline
 int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 {
     return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
 }
 
 inline
-int NStr::Compare(const string& s1, const char* s2, ECase use_case)
+int NStr::Compare(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
 {
-    return Compare(s1.c_str(), s2, use_case);
+    return Compare(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
+                   s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str(),
+                   use_case);
 }
 
 inline
-int NStr::Compare(const char* s1, const string& s2, ECase use_case)
+bool NStr::EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                     const char* pattern)
 {
-    return Compare(s1, s2.c_str(), use_case);
+    return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
 
 inline
-int NStr::Compare(const string& s1, const string& s2, ECase use_case)
+bool NStr::EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                     const CTempString& pattern)
 {
-    return Compare(s1.c_str(), s2.c_str(), use_case);
-}
-
-inline
-int NStr::CompareCase(const string& s1, const string& s2)
-{
-    return CompareCase(s1.c_str(), s2.c_str());
-}
-
-inline
-int NStr::CompareNocase(const string& s1, const string& s2)
-{
-    return CompareNocase(s1.c_str(), s2.c_str());
-}
-
-inline
-bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const char* pattern, ECase use_case)
-{
-    return use_case == eCase ?
-        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
-}
-
-inline
-bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const string& pattern, ECase use_case)
-{
-    return use_case == eCase ?
-        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
+    return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
 
 inline
@@ -3407,23 +3250,52 @@ bool NStr::EqualCase(const char* s1, const char* s2)
 }
 
 inline
+bool NStr::EqualCase(const CTempString& s1, const CTempString& s2)
+{
+    return s1 == s2;
+}
+
+inline
+bool NStr::EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const char* pattern)
+{
+    return CompareNocase(str, pos, n, pattern) == 0;
+}
+
+inline
+bool NStr::EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const CTempString& pattern)
+{
+    return CompareNocase(str, pos, n, pattern) == 0;
+}
+
+inline
 bool NStr::EqualNocase(const char* s1, const char* s2)
 {
     return NStr::strcasecmp(s1, s2) == 0;
 }
 
 inline
-bool NStr::EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                     const char* pattern)
+bool NStr::EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2)
 {
-    return NStr::CompareCase(str, pos, n, pattern) == 0;
+    return EqualNocase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
+                       s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
 }
 
 inline
-bool NStr::EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                     const string& pattern)
+bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                 const char* pattern, ECase use_case)
 {
-    return NStr::CompareCase(str, pos, n, pattern) == 0;
+    return use_case == eCase ?
+        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
+}
+
+inline
+bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                 const CTempString& pattern, ECase use_case)
+{
+    return use_case == eCase ?
+        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
 }
 
 inline
@@ -3432,68 +3304,24 @@ bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
     return (use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2));
 }
 
+
 inline
-bool NStr::Equal(const string& s1, const char* s2, ECase use_case)
+bool NStr::Equal(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
 {
-    return Equal(s1.c_str(), s2, use_case);
+    return Equal(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
+                 s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str(),
+                 use_case);
 }
 
 inline
-bool NStr::Equal(const char* s1, const string& s2, ECase use_case)
-{
-    return Equal(s1, s2.c_str(), use_case);
-}
-
-inline
-bool NStr::Equal(const string& s1, const string& s2, ECase use_case)
-{
-    return Equal(s1.c_str(), s2.c_str(), use_case);
-}
-
-inline
-bool NStr::EqualCase(const string& s1, const string& s2)
-{
-    // return EqualCase(s1.c_str(), s2.c_str());
-    return s1 == s2;
-}
-
-inline
-bool NStr::EqualNocase(const string& s1, const string& s2)
-{
-    return EqualNocase(s1.c_str(), s2.c_str());
-}
-
-inline
-bool NStr::EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const char* pattern)
-{
-    return CompareNocase(str, pos, n, pattern) == 0;
-}
-
-inline
-bool NStr::EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                             const string& pattern)
-{
-    return CompareNocase(str, pos, n, pattern) == 0;
-}
-
-inline
-bool NStr::StartsWith(const string& str, const string& start, ECase use_case)
+bool NStr::StartsWith(const CTempString& str, const CTempString& start, ECase use_case)
 {
     return str.size() >= start.size()  &&
         Compare(str, 0, start.size(), start, use_case) == 0;
 }
 
 inline
-bool NStr::StartsWith(const string& str, const char* start, ECase use_case)
-{
-    size_t start_size = strlen(start);
-    return str.size() >= start_size  &&
-        Compare(str, 0, start_size, start, use_case) == 0;
-}
-
-inline
-bool NStr::StartsWith(const string& str, char start, ECase use_case)
+bool NStr::StartsWith(const CTempString& str, char start, ECase use_case)
 {
     return !str.empty()  &&
         ((use_case == eCase) ? (str[0] == start) :
@@ -3502,14 +3330,14 @@ bool NStr::StartsWith(const string& str, char start, ECase use_case)
 }
 
 inline
-bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
+bool NStr::EndsWith(const CTempString& str, const CTempString& end, ECase use_case)
 {
     return str.size() >= end.size()  &&
         Compare(str, str.size() - end.size(), end.size(), end, use_case) == 0;
 }
 
 inline
-bool NStr::EndsWith(const string& str, char end, ECase use_case)
+bool NStr::EndsWith(const CTempString& str, char end, ECase use_case)
 {
     if (!str.empty()) {
         char last = str[str.length() - 1];
@@ -3521,16 +3349,16 @@ bool NStr::EndsWith(const string& str, char end, ECase use_case)
 }
 
 inline
-SIZE_TYPE NStr::Find(const string& str, const string& pattern,
+SIZE_TYPE NStr::Find(const CTempString& str, const CTempString& pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
     return use_case == eCase ? FindCase(str, pattern, start, end, where)
-        : FindNoCase(str, pattern, start, end, where);
+                             : FindNoCase(str, pattern, start, end, where);
 }
 
 inline
-SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
+SIZE_TYPE NStr::FindCase(const CTempString& str, const CTempString& pattern,
                          SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
     if (where == eFirst) {
@@ -3543,32 +3371,32 @@ SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
 }
 
 inline
-const string* NStr::FindCase(const list<string>& lst, const string& val)
+const string* NStr::FindCase(const list<string>& lst, const CTempString& val)
 {
     return Find(lst, val, eCase);
 }
 
 inline
-const string* NStr::FindNoCase(const list <string>& lst, const string& val)
+const string* NStr::FindNoCase(const list <string>& lst, const CTempString& val)
 {
     return Find(lst, val, eNocase);
 }
 
 inline
-const string* NStr::FindCase(const vector <string>& vec, const string& val)
+const string* NStr::FindCase(const vector <string>& vec, const CTempString& val)
 {
     return Find(vec, val, eCase);
 }
 
 inline
-const string* NStr::FindNoCase(const vector <string>& vec, const string& val)
+const string* NStr::FindNoCase(const vector <string>& vec, const CTempString& val)
 {
     return Find(vec, val, eNocase);
 }
 
 
 inline
-string NStr::CEncode(const string& str)
+string NStr::CEncode(const CTempString& str)
 {
     return PrintableString(str);
 }

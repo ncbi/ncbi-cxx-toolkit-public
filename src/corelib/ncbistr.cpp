@@ -82,7 +82,7 @@ const string& CNcbiEmptyString::FirstGet(void) {
 #endif
 
 
-bool NStr::IsBlank(const string& str, SIZE_TYPE pos)
+bool NStr::IsBlank(const CTempString& str, SIZE_TYPE pos)
 {
     SIZE_TYPE len = str.length();
     for (SIZE_TYPE idx = pos; idx < len; ++idx) {
@@ -94,7 +94,7 @@ bool NStr::IsBlank(const string& str, SIZE_TYPE pos)
 }
 
 
-int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
@@ -121,37 +121,9 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                        const char* pattern)
-{
-    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
-        return *pattern ? -1 : 0;
-    }
-    if ( !*pattern ) {
-        return 1;
-    }
 
-    if (n == NPOS  ||  n > str.length() - pos) {
-        n = str.length() - pos;
-    }
-
-    const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&
-           tolower((unsigned char)(*s)) == 
-           tolower((unsigned char)(*pattern))) {
-        s++;  pattern++;  n--;
-    }
-
-    if (n == 0) {
-        return *pattern ? -1 : 0;
-    }
-
-    return tolower((unsigned char)(*s)) - tolower((unsigned char)(*pattern));
-}
-
-
-int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const string& pattern)
+int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString& pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
@@ -184,8 +156,37 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                        const string& pattern)
+int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                        const char* pattern)
+{
+    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
+        return *pattern ? -1 : 0;
+    }
+    if ( !*pattern ) {
+        return 1;
+    }
+
+    if (n == NPOS  ||  n > str.length() - pos) {
+        n = str.length() - pos;
+    }
+
+    const char* s = str.data() + pos;
+    while (n  &&  *pattern  &&
+           tolower((unsigned char)(*s)) == 
+           tolower((unsigned char)(*pattern))) {
+        s++;  pattern++;  n--;
+    }
+
+    if (n == 0) {
+        return *pattern ? -1 : 0;
+    }
+
+    return tolower((unsigned char)(*s)) - tolower((unsigned char)(*pattern));
+}
+
+
+int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+                        const CTempString& pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
@@ -745,7 +746,7 @@ double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
 {
     size_t size = str.size();
     if ( str.HasZeroAtEnd() ) {
-        // string has zer at the end already
+        // string has zero at the end already
         return StringToDoubleEx(str.data(), size, flags);
     }
     char buf[256]; // small temporary buffer in stack for appending zero char
@@ -1004,13 +1005,6 @@ void NStr::UIntToString(string&           out_str,
 }
 
 
-string NStr::Int8ToString(Int8 value, TNumToStringFlags flags, int base)
-{
-    string ret;
-    NStr::Int8ToString(ret, value, flags, base);
-    return ret;
-}
-
 
 // On some platforms division of Int8 is very slow,
 // so will try to optimize it working with chunks.
@@ -1146,14 +1140,6 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
 }
 
 
-string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags, int base)
-{
-    string ret;
-    NStr::UInt8ToString(ret, value, flags, base);
-    return ret;
-}
-
-
 void NStr::UInt8ToString(string& out_str, Uint8 value,
                          TNumToStringFlags flags, int base)
 {
@@ -1183,15 +1169,6 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
 const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
-
-
-string NStr::DoubleToString(double value, int precision,
-                            TNumToStringFlags flags)
-{
-    string str;
-    DoubleToString(str, value, precision, flags);
-    return str;
-}
 
 
 void NStr::DoubleToString(string& out_str, double value,
@@ -1267,10 +1244,10 @@ void NStr::PtrToString(string& out_str, const void* value)
 }
 
 
-const void* NStr::StringToPtr(const string& str)
+const void* NStr::StringToPtr(const CTempStringEx& str)
 {
     void *ptr = NULL;
-    ::sscanf(str.c_str(), "%p", &ptr);
+    ::sscanf(str.HasZeroAtEnd() ? str.data() : string(str).c_str(), "%p", &ptr);
     return ptr;
 }
 
@@ -1291,7 +1268,7 @@ const string NStr::BoolToString(bool value)
 }
 
 
-bool NStr::StringToBool(const string& str)
+bool NStr::StringToBool(const CTempString& str)
 {
     if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
@@ -1360,7 +1337,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
 }
 
 
-SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
+SIZE_TYPE NStr::FindNoCase(const CTempString& str, const CTempString& pattern,
                            SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
     string    pat(pattern, 0, 1);
@@ -1391,31 +1368,27 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 }
 
 
-const string* NStr::Find(const list <string>& lst, const string& val,
+const string* NStr::Find(const list <string>& lst, const CTempString& val,
                          ECase use_case)
 {
    if (lst.empty()) return NULL;
-
    ITERATE (list<string>, st_itr, lst) {
        if (Equal(*st_itr, val, use_case)) {
            return &*st_itr;
        }
    }
-
    return NULL;
 }
 
-const string* NStr::Find(const vector <string>& vec, const string& val,
+const string* NStr::Find(const vector <string>& vec, const CTempString& val,
                          ECase use_case)
 {
    if (vec.empty()) return NULL;
-
    ITERATE (vector<string>, st_itr, vec) {
        if (Equal(*st_itr, val, use_case)) {
            return &*st_itr;
        }
    }
-
    return NULL;
 }
 
@@ -1460,7 +1433,6 @@ TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
         return str;
     }
 }
-
 
 string NStr::TruncateSpaces(const string& str, ETrunc where)
 {
@@ -1534,7 +1506,6 @@ string& NStr::Replace(const string& src,
         NCBI_THROW2(CStringException, eBadArgs,
                     "NStr::Replace():  source and destination are the same",0);
     }
-
     dst = src;
 
     if ( start_pos + search.size() > src.size() ||
@@ -1660,7 +1631,7 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
     typedef CStrTokenize<string, TContainer, 
                         TPosArray,
                         CStringTokenCount,
-                        TReserve>                            TSplitter;
+                        TReserve>                           TSplitter;
     TPosArray token_pos_proxy(token_pos);
     TSplitter::Do(str, delim, arr, 
                   (CStrTokenizeBase::EMergeDelims)merge,
@@ -1736,16 +1707,20 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
 }
 
 
-vector<string>& NStr::TokenizePattern(const string& str,
-                                      const string& pattern,
-                                      vector<string>& arr, EMergeDelims merge,
+vector<string>& NStr::TokenizePattern(const CTempString& str,
+                                      const CTempString& pattern,
+                                      vector<string>&    arr,
+                                      EMergeDelims       merge,
                                       vector<SIZE_TYPE>* token_pos)
 {
     // Special cases
     if (str.empty()) {
         return arr;
     } else if (pattern.empty()) {
-        arr.push_back(str);
+        // Avoid using temporary objects
+        //~ arr.push_back(str);
+        arr.push_back(kEmptyStr);
+        arr.back().assign(str.data(), str.length());
         if (token_pos)
             token_pos->push_back(0);
         return arr;
@@ -1787,7 +1762,7 @@ vector<string>& NStr::TokenizePattern(const string& str,
                     // Avoid using temporary objects
                     // ~ arr.push_back(str.substr(prev_pos));
                     arr.push_back(kEmptyStr);
-                    arr.back().assign(str, prev_pos,
+                    arr.back().assign(str.data(), prev_pos,
                                       str.length() - prev_pos);
                     if (token_pos)
                         token_pos->push_back(prev_pos);
@@ -1797,7 +1772,7 @@ vector<string>& NStr::TokenizePattern(const string& str,
             // Avoid using temporary objects
             // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
             arr.push_back(kEmptyStr);
-            arr.back().assign(str, prev_pos, pos - prev_pos);
+            arr.back().assign(str.data(), prev_pos, pos - prev_pos);
             if (token_pos)
                 token_pos->push_back(prev_pos);
         }
@@ -1807,7 +1782,8 @@ vector<string>& NStr::TokenizePattern(const string& str,
 }
 
 
-bool NStr::SplitInTwo(const string& str, const string& delim,
+bool NStr::SplitInTwo(const CTempString& str, 
+                      const CTempString& delim,
                       string& str1, string& str2)
 {
     SIZE_TYPE delim_pos = str.find_first_of(delim);
@@ -1816,9 +1792,9 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
         str2 = kEmptyStr;
         return false;
     }
-    str1.assign(str, 0, delim_pos);
+    str1.assign(str.data(), 0, delim_pos);
     // skip only one delimiter character.
-    str2.assign(str, delim_pos + 1, str.length() - delim_pos - 1);
+    str2.assign(str.data(), delim_pos + 1, str.length() - delim_pos - 1);
     
     return true;
 }
@@ -1876,7 +1852,7 @@ static inline bool s_IsQuoted(char c, ELanguage lang)
 }
 
 
-static string s_PrintableString(const string&        str,
+static string s_PrintableString(const CTempString&   str,
                                 NStr::TPrintableMode mode,
                                 ELanguage            lang)
 {
@@ -1972,19 +1948,19 @@ static string s_PrintableString(const string&        str,
 }
 
         
-string NStr::PrintableString(const string&        str,
+string NStr::PrintableString(const CTempString&   str,
                              NStr::TPrintableMode mode)
 {
     return s_PrintableString(str, mode, eLanguage_C);
 }
 
 
-string NStr::JavaScriptEncode(const string& str)
+string NStr::JavaScriptEncode(const CTempString& str)
 {
     return s_PrintableString(str, eNewLine_Quote, eLanguage_Javascript);
 }
 
-string NStr::XmlEncode(const string& str)
+string NStr::XmlEncode(const CTempString& str)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
     string result;
@@ -2027,7 +2003,7 @@ string NStr::XmlEncode(const string& str)
     return result;
 }
 
-string NStr::JsonEncode(const string& str)
+string NStr::JsonEncode(const CTempString& str)
 // http://www.json.org/
 {
     string result;
@@ -2060,7 +2036,7 @@ string NStr::JsonEncode(const string& str)
 }
 
 
-string NStr::ParseEscapes(const string& str)
+string NStr::ParseEscapes(const CTempString& str)
 {
     string out;
     out.reserve(str.size()); // can only be smaller
@@ -2069,10 +2045,14 @@ string NStr::ParseEscapes(const string& str)
     while (pos < str.size()) {
         SIZE_TYPE pos2 = str.find('\\', pos);
         if (pos2 == NPOS) {
-            out += str.substr(pos);
+            //~ out += str.substr(pos);
+            CTempString sub(str, pos);
+            out += sub;
             break;
         }
-        out += str.substr(pos, pos2 - pos);
+        //~ out += str.substr(pos, pos2 - pos);
+        CTempString sub(str, pos, pos2-pos);
+        out += sub;
         if (++pos2 == str.size()) {
             NCBI_THROW2(CStringException, eFormat,
                         "Unterminated escape sequence", pos2);
@@ -2093,8 +2073,10 @@ string NStr::ParseEscapes(const string& str)
                     pos++;
                 }
                 if (pos > pos2) {
+                    //~ out += static_cast<char>
+                        //~     (StringToUInt(str.substr(pos2, pos - pos2), 0, 16));
                     out += static_cast<char>
-                        (StringToUInt(str.substr(pos2, pos - pos2), 0, 16));
+                        (StringToUInt(CTempString(str, pos2, pos - pos2), 0, 16));
                 } else {
                     NCBI_THROW2(CStringException, eFormat,
                                 "\\x followed by no hexadecimal digits", pos);
@@ -2380,7 +2362,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
 
 list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              const string& delim, list<string>& arr,
-                             NStr::TWrapFlags flags, const string* prefix,
+                             NStr::TWrapFlags flags,
+                             const string* prefix,
                              const string* prefix1)
 {
     if (l.empty()) {
@@ -2424,7 +2407,6 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
             --it;
         }
     }
-
     arr.push_back(s);
     return arr;
 }
@@ -2828,13 +2810,12 @@ static const char s_EncodeURIFragment[256][4] = {
     "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
 };
 
-string NStr::URLEncode(const string& str, EUrlEncode flag)
+string NStr::URLEncode(const CTempString& str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len ) {
         return kEmptyStr;
     }
-
     const char (*encode_table)[4];
     switch (flag) {
     case eUrlEnc_SkipMarkChars:
@@ -2881,7 +2862,7 @@ string NStr::URLEncode(const string& str, EUrlEncode flag)
     string dst;
     SIZE_TYPE pos;
     SIZE_TYPE dst_len = len;
-    const unsigned char* cstr = (const unsigned char*)str.c_str();
+    const unsigned char* cstr = (const unsigned char*)str.data();
     for (pos = 0;  pos < len;  pos++) {
         if (encode_table[cstr[pos]][0] == '%')
             dst_len += 2;
@@ -2900,7 +2881,6 @@ string NStr::URLEncode(const string& str, EUrlEncode flag)
             dst[++p] = *(++subst);
         }
     }
-
     _ASSERT( p == dst_len );
     dst[dst_len] = '\0';
     return dst;
@@ -2925,7 +2905,7 @@ CStringUTF8 NStr::SQLEncode(const CStringUTF8& str) {
 }
 
 
-void s_URLDecode(const string& src, string& dst, NStr::EUrlDecode flag)
+void s_URLDecode(const CTempString& src, string& dst, NStr::EUrlDecode flag)
 {
     SIZE_TYPE len = src.length();
     if ( !len ) {
@@ -2973,7 +2953,7 @@ void s_URLDecode(const string& src, string& dst, NStr::EUrlDecode flag)
 }
 
 
-string NStr::URLDecode(const string& str, EUrlDecode flag)
+string NStr::URLDecode(const CTempString& str, EUrlDecode flag)
 {
     string dst;
     s_URLDecode(str, dst, flag);
@@ -2987,13 +2967,12 @@ void NStr::URLDecodeInPlace(string& str, EUrlDecode flag)
 }
 
 
-bool NStr::NeedsURLEncoding(const string& str, EUrlEncode flag)
+bool NStr::NeedsURLEncoding(const CTempStringEx& str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len ) {
         return false;
     }
-
     const char (*encode_table)[4];
     switch (flag) {
     case eUrlEnc_SkipMarkChars:
@@ -3015,22 +2994,21 @@ bool NStr::NeedsURLEncoding(const string& str, EUrlEncode flag)
         // To keep off compiler warning
         encode_table = 0;
     }
+    const unsigned char* cstr = (const unsigned char*)(str.HasZeroAtEnd() ? str.data() : string(str).c_str());
 
-    const unsigned char* cstr = (const unsigned char*)str.c_str();
     for (SIZE_TYPE pos = 0;  pos < len;  pos++) {
         const char* subst = encode_table[cstr[pos]];
         if (*subst != cstr[pos]) {
             return true;
         }
     }
-
     return false;
 }
 
 
-bool NStr::IsIPAddress(const string& ip)
+bool NStr::IsIPAddress(const CTempStringEx& ip)
 {
-    const char* start = ip.c_str();
+    const char* start = ip.HasZeroAtEnd() ? ip.data() : string(ip).c_str();
     const char* c = start;
     unsigned long val;
     int dots = 0;
@@ -3668,6 +3646,7 @@ CTempString::CTempString(const string& str, size_type len)
     : m_String(str.data()), m_Length(min(len, str.size()))
 {
 } // NCBI_FAKE_WARNING
+
 
 
 END_NCBI_SCOPE

@@ -1708,4 +1708,3 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
 
     BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), CStringUTF8(expected) );
 }
-
