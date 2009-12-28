@@ -996,8 +996,8 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::const_iterator seq1_start_it_i =
                     starts2_i->second->m_StartIts.find(seq1);
-                const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                 if (seq1_start_it_i != starts2_i->second->m_StartIts.end()) {
+                    const TSeqPos& existing_start1 = seq1_start_it_i->second->first;
                     if (match->m_StrandsDiffer) {
                         // x---..- x---..--)
                         // (---..- (--x..--x
