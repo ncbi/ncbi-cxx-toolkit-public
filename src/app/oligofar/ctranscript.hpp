@@ -2,6 +2,7 @@
 #define OLIGOFAR_CTRANSCRIPT__HPP
 
 #include "debug.hpp"
+#include "defs.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
@@ -53,7 +54,8 @@ public:
     CTrItemPacked( const CTrItemPacked& other, unsigned cnt ) : m_event( other.GetEvent() ), m_count( cnt ) { ASSERT( cnt <= GetMaxCount() ); }
     CTrItemPacked( const CTrItemPacked& other ) : m_event( other.GetEvent() ), m_count( other.GetCount() ) {}
     template<class TOther>
-    CTrItemPacked( const TOther& other ) : m_event( other.GetEvent() ), m_count( other.GetCount() ) { ASSERT( other.GetCount() <= (int)GetMaxCount() ); }
+    CTrItemPacked( const TOther& other ) : m_event( other.GetEvent() ), m_count( other.GetCount() ) { 
+        if( other.GetCount() > (int)GetMaxCount() ) { THROW( logic_error, "Event count limit exceeded: " << other.GetCount() << " > " << (int)GetMaxCount() << " for event " << Event2Char( other.GetEvent() ) ); } }
     int AddCount( int count ) {
         unsigned ncnt = count + GetCount();
         if( ncnt > GetMaxCount() ) {
@@ -73,7 +75,7 @@ public:
     void SetEvent( EEvent ev ) { m_event = ev; }
     EEvent GetEvent() const { return EEvent( m_event ); }
     int GetCount() const { return m_count; }
-    static size_t GetMaxCount() { return (~size_t(0)) << bitsc; }
+    static size_t GetMaxCount() { return ~((~size_t(0)) << bitsc); }
     static char GetCigar( EEvent t ) { return Event2Char( t ); } // considering that NULL can be at the end only
     char GetCigar() const { return GetCigar( GetEvent() ); }
     CTrItemPacked<bitst,bitsc>& DecrCount() { if( m_count == 0 ) THROW( logic_error, "Attempt to decrement count below 0" ); --m_count; return *this; }

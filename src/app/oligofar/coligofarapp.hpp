@@ -37,8 +37,9 @@ public:
         kLongOpt_maxInsertion = kLongOptBase + 0x07,
         kLongOpt_maxDeletion = kLongOptBase + 0x08,
         kLongOpt_addSplice = kLongOptBase + 0x09,
-        kLongOpt_hashBitMask = kLongOptBase + 0x10,
-        kLongOpt_batchRange = kLongOptBase + 0x11,
+        kLongOpt_hashBitMask = kLongOptBase + 0x0a,
+        kLongOpt_batchRange = kLongOptBase + 0x0b,
+        kLongOpt_printStatistics = kLongOptBase + 0x0c,
         kLongOptEnd
     };
     typedef CHashParam::TSkipPositions TSkipPositions;
@@ -106,6 +107,7 @@ protected:
     bool     m_colorSpace;
     bool     m_sodiumBisulfiteCuration;
     bool     m_outputSam;
+    bool     m_printStatistics;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;

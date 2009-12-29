@@ -1,6 +1,7 @@
 #include <ncbi_pch.hpp>
 #include "oligofar-version.hpp"
 #include "csamformatter.hpp"
+#include "csammdformatter.hpp"
 #include "cguidefile.hpp"
 #include "ialigner.hpp"
 #include "chit.hpp"
@@ -10,42 +11,6 @@ USING_OLIGOFAR_SCOPES;
 
 const double kHundredPct = 100.000000001;
 const int kUnlimitedRankSize = 10000000;
-// enum EFlags {
-//     fFlag_readIsPaired = 0x01,
-//     fFlag_hitIsPaired = 0x02,
-//     fFlag_readIsUnmapped = 0x04,
-//     fFlag_mateIsUnmapped = 0x08,
-//     fFlag_readIsReversed = 0x10,
-//     fFlag_mateIsReversed = 0x20,
-//     fFlag_readIsTheFirst = 0x40,
-//     fFlag_mateIsTheFirst = 0x80,
-//     fFlag_hitIsNotTheBest = 0x100,
-//     fFlag_readFailsPlatformChecks = 0x200,
-//     fFlag_readIsPcrOrOpticalDupe = 0x400
-// };
-
-namespace {
-class CMdFormatter
-{
-public:
-    // queryS is query on the subject strand
-    CMdFormatter( const char * target, const char * queryS, const TTrSequence& cigar ) :
-        m_target( target ), m_query( queryS ), m_cigar( cigar ), m_keepCount(0) {}
-    const string& GetString() const { return m_data; }
-    bool Format();
-    bool Ok() const { return m_data.length(); }
-protected:
-    void FormatAligned( const char * s, const char * t, int cnt );
-    void FormatInsertion( const char * s, int cnt );
-    void FormatDeletion( const char * t, int cnt );
-    void FormatTerminal();
-protected:
-    string m_data;
-    const char * m_target;
-    const char * m_query;
-    const TTrSequence& m_cigar;
-    int m_keepCount;
-};
 
 void CSamFormatter::FormatHeader( const string& version )
 {
@@ -65,10 +30,12 @@ void CSamFormatter::FormatQueryHits( const CQuery* query )
             typedef vector<pair<bool, THitList> > TRankedHits;
             TRankedHits rankedHits;
             for( ; hit; ) {
-                if( hit->IsNull() ) { 
-                    rankedHits.back().first = true; // previous rank hit count is known
-                    break;
-                }
+                //if( hit->IsNull() ) { 
+                    if( rankedHits.size() ) 
+                        rankedHits.back().first = true; // previous rank hit count is known
+                    if( hit->IsNull() ) break;
+                //    break;
+                //}
                 rankedHits.push_back( make_pair( false, THitList() ) );
                 rankedHits.back().second.push_back( hit );
                 CHit * next = hit->GetNextHit();
@@ -91,92 +58,6 @@ void CSamFormatter::FormatQueryHits( const CQuery* query )
         }
     }
     delete query;
-}
-
-bool CMdFormatter::Format()
-{
-    if( m_target == 0 || m_target[0] == 0 || m_target[1] == 0 ) return false; // tgt == "\xf" is possible
-
-    const char * s = m_query;
-    const char * t = m_target;
-    const TTrSequence& tr = m_cigar;
-    TTrSequence::const_iterator x = tr.begin();
-    if( x != tr.end() ) {
-        switch( x->GetEvent() ) {
-        case CTrBase::eEvent_SoftMask: s += x->GetCount();
-        case CTrBase::eEvent_HardMask: ++x; 
-        default: break;
-        }
-    }
-    for( ; x != tr.end(); ++x ) {
-        switch( x->GetEvent() ) {
-        case CTrBase::eEvent_Replaced:
-        case CTrBase::eEvent_Changed:
-        case CTrBase::eEvent_Match: 
-            FormatAligned( s, t, x->GetCount() ); 
-            s += x->GetCount(); 
-            t += x->GetCount();
-        case CTrBase::eEvent_SoftMask:
-        case CTrBase::eEvent_HardMask:
-        case CTrBase::eEvent_Padding: continue;
-        default: break;
-        case CTrBase::eEvent_Splice:
-        case CTrBase::eEvent_Overlap: m_data.clear(); return false; // MD can't be produced
-        }
-        // Here we have I or D
-        switch( x->GetEvent() ) {
-            case CTrBase::eEvent_Insertion:
-                FormatInsertion( s, x->GetCount() );
-                s += x->GetCount();
-                break;
-            case CTrBase::eEvent_Deletion: 
-                FormatDeletion( t, x->GetCount() );
-                t += x->GetCount();
-                break;
-            default: THROW( logic_error, "Unexpected event " << x->GetEvent() << " @ " << __FILE__ << ":" << __LINE__ );
-        }
-    }
-    FormatTerminal();
-    return m_data.length() > 0;
-}
-
-void CMdFormatter::FormatAligned( const char * s, const char * t, int count )
-{
-    while( count-- ) {
-        char query = *s++;
-        char subj = CIupacnaBase( CNcbi8naBase( t++ ) );
-        if( query == subj ) { ++m_keepCount; }
-        else {
-            FormatTerminal();
-            switch( subj ) {
-            case 'A': case 'C': case 'G': case 'T': m_data += subj; break;
-            default: m_data += 'N';
-            }
-        }
-    }
-}
-
-void CMdFormatter::FormatTerminal()
-{
-    if( m_keepCount ) { m_data += NStr::IntToString( m_keepCount ); m_keepCount = 0; }
-}
-
-void CMdFormatter::FormatInsertion( const char * s, int count )
-{
-    // Nothing. At all.
-}
-
-void CMdFormatter::FormatDeletion( const char * t, int count ) 
-{
-    FormatTerminal();
-    m_data += "^";
-    while( count-- ) {
-        char ref = CIupacnaBase( CNcbi8naBase( t++ ) );
-        switch( ref ) {
-        case 'A': case 'C': case 'G': case 'T': m_data += ref; break;
-        default: m_data += 'N';
-        }
-    }
 }
 
 void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pairmate )
@@ -214,7 +95,7 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
     query->PrintIupac( iupac, pairmate, hit->GetStrand( pairmate ) );
     string iupacS = iupac.str();
 
-    CMdFormatter md( hit->GetTarget( pairmate ), iupacS.c_str(), hit->GetTranscript( pairmate ) );
+    CSamMdFormatter md( hit->GetTarget( pairmate ), iupacS.c_str(), hit->GetTranscript( pairmate ) );
 
     m_out 
         << query->GetId() << "\t"
@@ -235,6 +116,8 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
     // TODO: NM tag generation
     m_out 
 		<< "AS:i:" << int( 0.5 + hit->GetScore( pairmate ) ) << "\t"
-        << "XR:i:" << rank << "\t" << "XN:i:" << rankSize << "\n";
+        << "XR:i:" << rank;
+    if( rankSize != kUnlimitedRankSize ) m_out << "\t" << "XN:i:" << rankSize;
+    m_out << "\n";
 }
-}
+// END

@@ -727,7 +727,9 @@ void CQueryHash::ForEach2int( Uint8 hash, Callback& callback, Uint1 mask, Uint1 
             if( CHashAtom::LessQueryCoiterate( *a, *b ) ) { ++a; continue; }
             if( CHashAtom::LessQueryCoiterate( *b, *a ) ) { ++b; continue; }
 
-            callback( a->GetStrandId() == CHashAtom::fFlag_strandFwd ? *b : *a ); // one time is enough
+            //callback( a->GetStrandId() == CHashAtom::fFlag_strandFwd ? *b : *a ); // one time is enough
+            CHashAtom w( *a, *b );
+            callback( w );
 
             TMatchSet::const_iterator x = a; 
 

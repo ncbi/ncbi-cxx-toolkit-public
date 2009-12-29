@@ -101,6 +101,7 @@ bool CAligner::Align()
     if( !m_guideTranscript.size() ) {
         if( ! AlignWindow( firstMatchQ, lastMatchQ, firstMatchS, lastMatchS, tm ) ) return false;
     } else {
+        /// Guided alignment
         const char * qq = reverseStrand ? Q : q, * ss = reverseStrand ? S : s;
         int si = abs( m_sbjInc );// transcript is in reverse coord
         int qi = m_qryInc * m_sbjInc / si;
@@ -201,6 +202,10 @@ bool CAligner::Align()
     double deltaPf = tm.size() > 0 && tm.front().GetEvent() == eEvent_Deletion ? go : 0;
     double deltaPb = tm.size() > 1 && tm.back ().GetEvent() == eEvent_Deletion ? go : 0;
     m_penalty += deltaPb + deltaPf; // to avoid extra deletion of hits
+
+    ////////////////////////////////////////////////////////////////////////
+    // After all score adjustments check if we have to proceed
+    if( m_penalty < m_penaltyLimit ) return false;
 
     ////////////////////////////////////////////////////////////////////////
     // Align floppy parts

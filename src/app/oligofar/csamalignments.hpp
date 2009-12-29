@@ -2,6 +2,7 @@
 #define OLIGOFAR_CSAMALIGNMENTS__HPP
 
 #include "ialignmentmap.hpp"
+#include "cseqcoding.hpp"
 #include "csam.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
@@ -62,13 +63,17 @@ public:
     ~CContig() { if( m_owns ) delete[] m_data; --s_count; }
     CContig( const string& name );
     CContig( const CContig& ctg );
-    void SetSequenceData( char * data, size_t length, CSeqCoding::ECoding coding = CSeqCoding::eCoding_ncbi8na, bool owns = false ) { 
+    void SetSequenceData( const char * data, int length, int offset = 0, CSeqCoding::ECoding coding = CSeqCoding::eCoding_ncbi8na, bool owns = false ) { 
         if( m_owns ) delete[] m_data;
-        m_data = data; m_size = length; m_coding = coding; m_owns = owns; 
+        m_data = const_cast<char*>( data );  // if we own it - we can do anything, otherwise we don't touch
+        m_size = length; m_coding = coding; m_owns = owns; 
+        m_offset = offset;
     }
+    CRange<int> GetAvailableRange() const { return CRange<int>( m_offset, m_size - 1 ); }
     virtual const char * GetId() const { return m_id.c_str(); }
-    virtual const char * GetSequenceData() const { return m_data; } //&m_data[0]; }
+    virtual const char * GetSequenceData() const { return m_data - m_offset; } //&m_data[0]; }
     virtual int GetSequenceLength() const { return m_size; } // m_data.size(); }
+    virtual int GetSequenceOffset() const { return m_offset; }
     virtual CSeqCoding::ECoding GetSequenceCoding() const { return m_coding; } //CSeqCoding::eCoding_ncbi8na; }
 
     static int GetCount() { return s_count; }
@@ -77,7 +82,8 @@ private:
 protected:
     string m_id;
     char * m_data;
-    size_t m_size;
+    int m_size;
+    int m_offset;
     CSeqCoding::ECoding m_coding;
     bool m_owns;
 
@@ -99,6 +105,9 @@ public:
     virtual const TTrSequence GetCigar() const { return m_cigar; }
     virtual bool IsReverseComplement() const { return m_qlength < 0; }
     virtual const IMappedAlignment * GetMate() const { return m_mate; }
+    CSRead * SetQuery() { return m_query; }
+    CContig * SetSubject() { return m_subject; }
+    CSeqCoding::EStrand GetStrand() const { return IsReverseComplement() ? CSeqCoding::eStrand_neg : CSeqCoding::eStrand_pos; }
     void SetMate( CMappedAlignment * other );
     void WriteAsSam( ostream& out ) const;
     void SetFlags( int flags, bool on = true ) { if( on ) m_flags |= flags; else m_flags &= ~flags; }
@@ -123,7 +132,7 @@ public:
     const TTags& GetTags() const { static TTags notags; if( m_tags ) return *m_tags; else return notags; }
     CMappedAlignment * MakeExtended( IAligner * aligner ) const;
     CMappedAlignment * Clone() const { return new CMappedAlignment( *this ); }
-    CMappedAlignment( const CSRead * query, const CContig * subject, int from, const TTrVector& cigar, CSeqCoding::EStrand strand, int flags = 0, TTags * tags = 0 );
+    CMappedAlignment( CSRead * query, CContig * subject, int from, const TTrVector& cigar, CSeqCoding::EStrand strand, int flags = 0, TTags * tags = 0 );
     ~CMappedAlignment() { if( m_flags & fOwnQuery ) delete m_query; if( m_flags & fOwnSubject ) delete m_subject; delete m_tags; --s_count; }
     void PrintDebug( ostream& out ) const {
         out << m_cigar.ToString() << DISPLAY( m_sstart ) << DISPLAY( m_slength ) << DISPLAY( m_qstart ) << DISPLAY( m_qlength ) << hex << DISPLAY( m_flags ) << dec;
@@ -139,7 +148,6 @@ public:
     }
     bool operator != ( const CMappedAlignment& other ) const { return !operator == ( other ); }
 
-
     static int GetCount() { return s_count; }
 
     double ScoreAlignment( double id = 1, double mm = -1, double go = -3, double ge = -1.5 ) const;
@@ -153,8 +161,8 @@ protected:
     //int x_AdjustCigar( int advanceFrontBy, EAdjustMode );
     CMappedAlignment( const CMappedAlignment& a );
 protected:
-    const CSRead * m_query;
-    const CContig * m_subject;
+    CSRead * m_query;
+    CContig * m_subject;
     const CMappedAlignment * m_mate;
     Int4 m_sstart;
     Int2 m_slength;

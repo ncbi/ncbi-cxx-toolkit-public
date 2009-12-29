@@ -126,7 +126,7 @@ void COutputFormatter::FormatQueryHits( const CQuery * query )
 {
     if( query == 0 ) return;
     if( int count = FormatQueryHits( query, 3, m_topCount ) ) {
-        if( (m_flags & fReportPairesOnly) == 0 ) {
+        if( (m_flags & fReportPairesOnly) == 0 || count == m_topCount ) {
             FormatQueryHits( query, 1, count );
             FormatQueryHits( query, 2, count );
         }

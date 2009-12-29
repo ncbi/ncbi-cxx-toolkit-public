@@ -103,17 +103,24 @@ bool CAligner::AlignWindow( const char * & q, const char * & Q, const char * & s
     int distance = 0;
 
     // TODO: THIS CODE! TODO: THIS CODE! TODO: THIS CODE! TODO: THIS CODE!
-    int left = q1 - s1;
-    int right = 0; 
+    int left = 0;
+    int right = ql + 1; // should not be numeric_limit since later it is used to 
+                        // estimate error, which would work wrong if first comparison 
+                        // is mismatch
+    double xs = id + m_scoreParam->GetMismatchPenalty();
 
     ////////////////////////////////////////////////////////////////////////
     // Actually, this procedure should work for indel cases no splice as 
     // well, but should not be used if there ase quality scores
-    for( ; s0 != s1 && q0 != q1 ; ( s1 -= m_sbjInc ), ( q1 -= m_qryInc ) ) {
+    for( int i = 0; s0 != s1 && q0 != q1 ; ( s1 -= m_sbjInc ), ( q1 -= m_qryInc ), ++i ) {
         ++m_queryBasesChecked;
         bs += id;
         double sc = Score( q1, s1 );
         EEvent ev = sc > 0 ? eEvent_Match : eEvent_Replaced;
+        if( sc > 0 ) {
+            right = min( right, i );
+            left = ql - i;
+        }
         if( du ) {
             sc0 += sc;
             sc1 += (sc = Score( q1 - qoff, s1 - soff ));
@@ -133,13 +140,13 @@ bool CAligner::AlignWindow( const char * & q, const char * & Q, const char * & s
                 m_penalty = - bs + sc1;
             }
             if( distance > m_wordDistance ) return false;
-            if( m_penalty + gap < m_penaltyLimit ) return false;
+            if( m_penalty + gap + (left + right)*xs < m_penaltyLimit ) return false;
         } else {
             if( ev != eEvent_Match ) ++distance;
             tw.AppendItem( ev, 1 );
             m_penalty -= id - sc;
             if( distance > m_wordDistance ) return false;
-            if( m_penalty + gap < m_penaltyLimit ) return false;
+            if( m_penalty + gap + (left + right)*xs < m_penaltyLimit ) return false;
         }
     }
 
@@ -148,11 +155,35 @@ bool CAligner::AlignWindow( const char * & q, const char * & Q, const char * & s
     q = q1 + m_qryInc;
     s = s1 + m_sbjInc;
 
-//    AdjustWindowBoundary( q, Q, s, S, tw );
-
-    return m_penalty >= m_penaltyLimit;
+    // Addustment of positions and score happens in the calling function (Align())
+    return true;
+    // cerr << DISPLAY( left ) << DISPLAY( right ) << DISPLAY( xs ) << DISPLAY( m_penalty ) << DISPLAY( m_penaltyLimit ) << endl;
+    // AdjustWindowBoundary( q, Q, s, S, tw ); // to handle cases like 1S35M or 17S18M or 5M2R9M1R15M2S for -n1 -w16 -f16 -N2
+    // return m_penalty >= m_penaltyLimit;
 }
 
+void CAligner::AdjustWindowBoundary( const char * & q, const char * & Q, const char * & s, const char * & S, TTranscript& tw )
+{
+    //bool reverse = (m_qryInc * m_sbjInc) < 1;
+    //ASSERT( m_scoreParam->GetMismatchPenalty() > 0 );
+    while( tw.front().GetEvent() == CTrBase::eEvent_Replaced ) {
+        int k = tw.front().GetCount();
+        //if( !reverse ) q += m_qryInc * k; else Q -= m_qryInc * k;
+        Q -= m_qryInc * k;
+        S -= m_sbjInc * k; 
+        m_penalty += k * (m_scoreParam->GetIdentityScore() + m_scoreParam->GetMismatchPenalty()); 
+        tw.erase( tw.begin(), tw.begin() + 1 );
+    }
+
+    while( tw.back().GetEvent() == CTrBase::eEvent_Replaced ) {
+        int k = tw.back().GetCount();
+        //if(  reverse ) q += m_qryInc * k; else Q -= m_qryInc * k;
+        q += m_qryInc * k; 
+        s += m_sbjInc * k; 
+        m_penalty += k * (m_scoreParam->GetIdentityScore() + m_scoreParam->GetMismatchPenalty()); 
+        tw.resize( tw.size() - 1 );
+    }
+}
 }
 /*
 void CAligner::AdjustWindowBoundary( const char * & q, const char * & Q, const char * & s, const char * & S, TTranscript& tw ) const

@@ -55,6 +55,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_colorSpace( false ),
     m_sodiumBisulfiteCuration( false ),
     m_outputSam( true ),
+    m_printStatistics( false ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
     m_outputFile( "con:" ),
@@ -292,6 +293,7 @@ void COligoFarApp::Help( const char * arg )
     if( flags & fExtended ) 
         cout << "\nExtended options:\n"
              << "   --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
+             << "   --print-statistics         Print statistics upon completion (for debugging and profiling purposes) [" << (m_printStatistics?"on":"off") << "]\n"
              ;
 }
 
@@ -361,6 +363,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"pass0", 0, 0, kLongOpt_pass0},
         {"pass1", 0, 0, kLongOpt_pass1},
         {"min-block-length", 1, 0, kLongOpt_min_block_length },
+        {"print-statistics", 0, 0, kLongOpt_printStatistics },
         {0,0,0,0}
     };
     return opt;
@@ -376,6 +379,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     switch( opt ) {
     case kLongOpt_hashBitMask: m_hashBitMask = arg; break;
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
+    case kLongOpt_printStatistics: m_printStatistics = true; break;
     case kLongOpt_NaHSO3: m_sodiumBisulfiteCuration = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
     case kLongOpt_pass0: m_hashPass = 0; break;
     case kLongOpt_pass1: if( m_passParam.size() < 2 ) m_passParam.push_back( m_passParam.back() ); m_hashPass = 1; break;
@@ -755,11 +759,13 @@ int COligoFarApp::ProcessData()
     batch.SetReadProgressIndicator( 0 );
     p.Summary();
     cerr << "Queries processed: " << queriesTotal << " (" << entriesTotal << " hash entries)\n";
-    cerr << "Memory usage:\n"
-         << "  hits  left: " << CHit::GetCount() << "\n"
-         << "queries left: " << CQuery::GetCount() << "\n";
+    if( m_printStatistics ) {
+        cerr << "Memory usage:\n"
+             << "  hits  left: " << CHit::GetCount() << "\n"
+             << "queries left: " << CQuery::GetCount() << "\n";
 
-    aligner.PrintStatistics( cerr );
+        aligner.PrintStatistics( cerr );
+    }
 
     return 0;
 }

@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
 #include "csamalignments.hpp"
+#include "csammdformatter.hpp"
 #include "cprogressindicator.hpp"
 #include "string-util.hpp"
 #include "ialigner.hpp"
@@ -96,18 +97,18 @@ void CSRead::SetMate( CSRead * other )
 }
 
 CContig::CContig( const string& name ) : 
-    m_id( name ), m_data( 0 ), m_size( 0 ), m_coding( CSeqCoding::eCoding_ncbi8na ), m_owns( false ) 
+    m_id( name ), m_data( 0 ), m_size( 0 ), m_offset( 0 ), m_coding( CSeqCoding::eCoding_ncbi8na ), m_owns( false ) 
 { 
     ++s_count; 
 }
 
 CContig::CContig( const CContig& other ) :
-    m_id( other.m_id ), m_data( 0 ), m_size( other.m_size ), m_owns( other.m_owns )
+    m_id( other.m_id ), m_data( 0 ), m_size( other.m_size ), m_offset( other.m_offset ), m_coding( other.m_coding ), m_owns( other.m_owns )
 {
     ++s_count;
     if( other.m_owns ) {
-        m_data = new char[ other.m_size ];
-        memcpy( m_data, other.m_data, other.m_size );
+        m_data = new char[ other.m_size - other.m_offset ];
+        memcpy( m_data, other.m_data, other.m_size - other.m_offset );
     } else {
         m_data = other.m_data;
     }
@@ -118,7 +119,7 @@ int CContig::s_count = 0;
 int CMappedAlignment::s_count = 0;
 bool CMappedAlignment::s_validate_consistency = true;
 
-CMappedAlignment::CMappedAlignment( const CSRead * query, const CContig * subject, int from, const TTrVector& cigar, CSeqCoding::EStrand strand, int flags, TTags * tags ) : 
+CMappedAlignment::CMappedAlignment( CSRead * query, CContig * subject, int from, const TTrVector& cigar, CSeqCoding::EStrand strand, int flags, TTags * tags ) : 
     m_mate(0), m_flags( flags ), m_tags( tags )
 {
     ++s_count;
@@ -528,6 +529,15 @@ void CMappedAlignment::WriteAsSam( ostream& out ) const
     CSeqCoding::EStrand strand = IsReverseComplement() ? CSeqCoding::eStrand_neg : CSeqCoding::eStrand_pos;
     int flags = IsReverseComplement() ? CSamBase::fSeqReverse : 0;
     string iupac = m_query->GetIupacna( strand );
+    TTags * tt = m_tags;
+    if( GetSubject()->GetSequenceData() != 0 && GetSubject()->GetSequenceCoding() == CSeqCoding::eCoding_ncbi8na ) {
+        CSamMdFormatter md(  GetSubject()->GetSequenceData() + GetSubjectBounding().GetFrom(), iupac.c_str(), GetCigar() );
+        if( md.Format() ) {
+            tt = new TTags();
+            if( m_tags ) copy( m_tags->begin(), m_tags->end(), inserter( *tt, tt->end() ) );
+            tt->insert( make_pair( "MD:Z", md.GetString() ) );
+        }
+    }
     out 
         << GetQuery()->GetId() << "\t"
         << flags << "\t"
@@ -536,10 +546,11 @@ void CMappedAlignment::WriteAsSam( ostream& out ) const
         << 255 << "\t"
         << GetCigar().ToString() << "\t"
         << "*\t0\t0\t" << iupac << "\t*";
-    if( m_tags ) {
-        ITERATE( TTags, tag, (*m_tags) ) {
+    if( tt ) {
+        ITERATE( TTags, tag, (*tt) ) {
             out << "\t" << tag->first << ":" << tag->second;
         }
+        if( tt != m_tags ) delete tt;
     }
     out << "\n";
 }

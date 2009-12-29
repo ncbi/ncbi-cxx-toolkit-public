@@ -90,7 +90,8 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
     if( m_prefilter && m.HasDiffs() ) {
         const CScoreParam * sp = m_scoringFactory->GetScoreParam();
         double wordPenalty = 
-            - ( m.GetMismatches() * ( sp->GetMismatchPenalty() + sp->GetIdentityScore() ) )
+            /// Following line is removed for purpose: it would unnecessarily filter away "weak" mismatches (MismScore) and dovetails (IdntScore)
+            /// - ( m.GetMismatches() * ( sp->GetMismatchPenalty() + sp->GetIdentityScore() ) ) 
             - ( m.GetInsertions() ? ( sp->GetGapBasePenalty() + m.GetInsertions() * ( sp->GetGapExtentionPenalty() ) ) : 0 )
             - ( m.GetDeletions()  ? ( sp->GetGapBasePenalty() + m.GetDeletions()  * ( sp->GetGapExtentionPenalty() + sp->GetIdentityScore() ) ) : 0 )
             ;

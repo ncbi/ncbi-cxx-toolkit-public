@@ -151,6 +151,7 @@ protected:
     bool AlignTailDiag( int qlen, int qdir, double pmax, const char * qseq, const char * sseq, int& ge, int& se, TTranscript& t, int qpos );
 
     void AdjustMatrixSize();
+    void AdjustWindowBoundary( const char * & q, const char * & Q, const char * & s, const char * & S, TTranscript& tw );
     const CCell& GetMatrix( int q, int s ) const;
     const CCell& SetMatrix( int q, int s, double v, CCell::EEvent e, int c = 1 );
 

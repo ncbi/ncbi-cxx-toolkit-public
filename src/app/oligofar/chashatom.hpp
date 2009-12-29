@@ -55,6 +55,8 @@ public:
              m_gapIsInsertion( t & 1 & (gaps > 0) ), m_mismCnt( mism ), m_gapsCnt( gaps ),
              m_flags( flags ) {}
 
+    CHashAtom( const CHashAtom& a, const CHashAtom& b ); // is used in cqueryhash for correct configuration of data to call an aligner
+
     static int GetMaxOffset() { return ((1 << 6) - 1); }
     
     Uint2 GetSubkey() const { return m_subkey; }
@@ -145,6 +147,13 @@ protected:
     Uint1 m_gapsCnt:2;
     Uint1 m_flags:5;
 };
+
+inline CHashAtom::CHashAtom( const CHashAtom& a, const CHashAtom& b ) 
+{
+    if( a.GetStrandId() == CHashAtom::fFlag_strandFwd ) *this = b; else *this = a; 
+    m_mismCnt = max( b.m_mismCnt, a.m_mismCnt );
+    m_gapsCnt = max( b.m_gapsCnt, a.m_gapsCnt );
+}
 
 inline void CHashAtom::PrintDebug( ostream& o ) const
 {

@@ -14,6 +14,8 @@ bool CAligner::AlignWinTwoDiag(
 
     ++m_algoSWwin; 
 
+   // THROW( logic_error, __PRETTY_FUNCTION__ << " should be fixed first!" );
+
     const char * qq = q;
     const char * ss = s;
 
@@ -72,22 +74,19 @@ bool CAligner::AlignWinTwoDiag(
 
     bool indelFound = false;
 
-    int prefix = (ql - q0)/m_qryInc;
-    int suffix = prefix;
     for( int qi = q0, si = s0; qi < ql && si < sl; ++dd, ++qi, ++si, (qq += m_qryInc), (ss += m_sbjInc) ) {
         double sc = Score( qq, ss );
         double sa = wqs + sc;
         double sb = dd == splice ? 
             (GetMatrix( qi, qi ).GetScore() - splicePenalty) : 
             (GetMatrix( dd, dd ).GetScore() - gap);
-        if( sc > 0 ) { prefix = min( prefix, qi ); suffix = ql - qi; }
         aq += id;
         EEvent ev = eEvent_NULL;
         if( sa > sb ) {
-            if( m_penalty + sa - aq < m_penaltyLimit - (prefix + suffix)*mm ) return false;
+            if( m_penalty + sa - aq < m_penaltyLimit - (m_wordDistance)*mm ) return false;
             SetMatrix( qi, si, wqs = sa, ev = sc > 0 ? eEvent_Match : eEvent_Replaced, 1 );
         } else {
-            if( m_penalty + sb - aq < m_penaltyLimit - (prefix + suffix)*mm ) return false;
+            if( m_penalty + sb - aq < m_penaltyLimit - (m_wordDistance)*mm ) return false;
             SetMatrix( qi, si, wqs = sb, ev = (dd == splice ? evSplice : evGap), du );
             indelFound = true;
         }
@@ -128,7 +127,7 @@ bool CAligner::AlignWinTwoDiag(
         m_penalty = shifted - aq;
     }
 
-    if( m_penalty < m_penaltyLimit - (prefix + suffix)*mm ) return false;
+    if( m_penalty < m_penaltyLimit - (m_wordDistance)*mm ) return false;
 
     int distance = 0;
     while( qe >= qb || se >= sb ) {
@@ -150,6 +149,9 @@ bool CAligner::AlignWinTwoDiag(
         }
     }
 
+    // Adjustment happens in the calling function (Align())
     return true;
+    // AdjustWindowBoundary( q, Q, s, S, tw ); // to handle cases like 1S35M or 17S18M or 5M2R9M1R15M2S for -n1 -w16 -f16 -N2 
+    // return m_penalty >= m_penaltyLimit;                                                                                                                                   
 }
 

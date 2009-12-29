@@ -194,11 +194,17 @@ void CBatch::Purge()
         CProgressIndicator p( "Purging " + NStr::Int8ToString( CHit::GetCount() ) + " hits for " + NStr::Int8ToString( CQuery::GetCount() ) + " entries" );
         ITERATE( TInputChunk, i, m_inputChunk ) {
             m_formatter->FormatQueryHits( *i );
+        //    delete *i;
             p.Increment();
         }
         p.Summary();
     } else {
-        cerr << "* Skipping batch " << m_batchOrdinal << "\n";
+        //cerr << "* Skipping batch " << m_batchOrdinal << "\n";
+        CProgressIndicator pp( "Skipping batch " + NStr::IntToString( m_batchOrdinal ) );
+        ITERATE( TInputChunk, i, m_inputChunk ) {
+            delete *i;
+        }
+        pp.Summary();
     }
     m_inputChunk.clear();
     m_hashedReads = 0;
