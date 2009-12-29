@@ -1382,37 +1382,59 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     "Can not construct spliced-seg with more than two rows");
         }
 
-        gen_id = gen_row.m_Id;
-        prod_id = prod_row.m_Id;
-        _ASSERT(m_LocMapper.GetSeqTypeById(gen_id) !=
-            CSeq_loc_Mapper_Base::eSeq_prot);
-        CSeq_loc_Mapper_Base::ESeqType prod_type =
-            m_LocMapper.GetSeqTypeById(prod_id);
-        bool part_protein = prod_type == CSeq_loc_Mapper_Base::eSeq_prot;
-        if ( spliced.IsSetProduct_type() ) {
-            if (part_protein != aln_protein) {
-                // Make sure types are consistent
-                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+        int gstart = gen_row.GetSegStart();
+        int pstart = prod_row.GetSegStart();
+        if (gstart >= 0) {
+            if (gen_id) {
+                if (gen_id != gen_row.m_Id) {
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                        "Can not construct spliced-seg -- "
+                        "exon parts have different genomic seq-ids");
+                }
+            }
+            else {
+                gen_id = gen_row.m_Id;
+                exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
+            }
+            _ASSERT(m_LocMapper.GetSeqTypeById(gen_id) !=
+                CSeq_loc_Mapper_Base::eSeq_prot);
+        }
+        if (pstart >= 0) {
+            if (prod_id) {
+                if (prod_id != prod_row.m_Id) {
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                        "Can not construct spliced-seg -- "
+                        "exon parts have different product seq-ids");
+                }
+            }
+            else {
+                prod_id = prod_row.m_Id;
+                exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
+            }
+            CSeq_loc_Mapper_Base::ESeqType prod_type =
+                m_LocMapper.GetSeqTypeById(prod_id);
+            bool part_protein = prod_type == CSeq_loc_Mapper_Base::eSeq_prot;
+            if ( spliced.IsSetProduct_type() ) {
+                if (part_protein != aln_protein) {
+                    // Make sure types are consistent
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Can not construct spliced-seg -- "
                         "exons have different product types");
+                }
+            }
+            else {
+                aln_protein = part_protein;
+                spliced.SetProduct_type(part_protein ?
+                    CSpliced_seg::eProduct_type_protein
+                    : CSpliced_seg::eProduct_type_transcript);
             }
         }
-        else {
-            aln_protein = part_protein;
-            spliced.SetProduct_type(part_protein ?
-                CSpliced_seg::eProduct_type_protein
-                : CSpliced_seg::eProduct_type_transcript);
-        }
 
-        exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
-        exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
         CSpliced_exon_chunk::E_Choice ptype = seg->m_PartType;
         if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
             ptype != CSpliced_exon_chunk::e_Product_ins) {
             have_non_gaps = true;
         }
-        int gstart = gen_row.GetSegStart();
-        int pstart = prod_row.GetSegStart();
 
         // Check strands consistency
         bool gen_reverse = false;
@@ -1575,41 +1597,74 @@ x_GetDstExon(CSpliced_seg&              spliced,
 }
 
 
-bool SegByFirstRow_Less(const SAlignment_Segment& seg1,
-                        const SAlignment_Segment& seg2)
+class SegByFirstRow_Less
 {
-    // Used only for spliced segs, all segments must have two rows
-    const SAlignment_Segment::SAlignment_Row& r1 = seg1.m_Rows[0];
-    const SAlignment_Segment::SAlignment_Row& r2 = seg2.m_Rows[0];
-    if (r1.m_Id != r2.m_Id) {
-        return r1.m_Id < r2.m_Id;
+public:
+    SegByFirstRow_Less(bool gen_rev, bool prod_rev)
+        : m_GenRev(gen_rev), m_ProdRev(gen_rev != prod_rev) {}
+
+    bool operator()(const SAlignment_Segment& seg1,
+                    const SAlignment_Segment& seg2) const
+    {
+        // Used only for spliced segs, all segments must have two rows
+        const SAlignment_Segment::SAlignment_Row& r1 = seg1.m_Rows[0];
+        const SAlignment_Segment::SAlignment_Row& r2 = seg2.m_Rows[0];
+        // Check if it's a genomic insertion
+        if (r1.m_Start != kInvalidSeqPos  &&  r2.m_Start != kInvalidSeqPos) {
+            if (r1.m_Id != r2.m_Id) {
+                return r1.m_Id < r2.m_Id;
+            }
+            return m_GenRev ?
+                r1.m_Start > r2.m_Start : r1.m_Start < r2.m_Start;
+        }
+        // Use product coords in case of genomic insertion
+        const SAlignment_Segment::SAlignment_Row& pr1 = seg1.m_Rows[1];
+        const SAlignment_Segment::SAlignment_Row& pr2 = seg2.m_Rows[1];
+        if (pr1.m_Id != pr2.m_Id) {
+            return pr1.m_Id < pr2.m_Id;
+        }
+        return m_ProdRev ?
+            pr1.m_Start > pr2.m_Start : pr1.m_Start < pr2.m_Start;
     }
-    return r1.m_Start < r2.m_Start;
-}
+
+private:
+    bool m_GenRev;
+    bool m_ProdRev; // Product orientation is relative to genetic strand
+};
 
 
 void CSeq_align_Mapper_Base::x_SortSegs(void) const
 {
     // Check the strand firts
-    bool reverse = false;
-    bool found_strand = false;
+    bool gen_reverse = false;
+    bool prod_reverse = false;
+    bool found_gen_strand = false;
+    bool found_prod_strand = false;
     ITERATE(TSegments, seg, m_Segs) {
         const SAlignment_Segment::SAlignment_Row& r = seg->m_Rows[0];
         if ( r.m_IsSetStrand ) {
-            bool row_rev = IsReverse(r.m_Strand);
-            if ( !found_strand ) {
-                reverse = row_rev;
-                found_strand = true;
+            bool gen_row_rev = IsReverse(r.m_Strand);
+            if ( !found_gen_strand ) {
+                gen_reverse = gen_row_rev;
+                found_gen_strand = true;
             }
-            else if (reverse != row_rev) {
-                reverse = false; // for mixed strands use direct order
+            else if (gen_reverse != gen_row_rev) {
+                gen_reverse = false; // for mixed strands use direct order
+            }
+        }
+        const SAlignment_Segment::SAlignment_Row& pr = seg->m_Rows[1];
+        if ( pr.m_IsSetStrand ) {
+            bool prod_row_rev = IsReverse(pr.m_Strand);
+            if ( !found_prod_strand ) {
+                prod_reverse = prod_row_rev;
+                found_prod_strand = true;
+            }
+            else if (prod_reverse != prod_row_rev) {
+                prod_reverse = false; // for mixed strands use direct order
             }
         }
     }
-    m_Segs.sort(SegByFirstRow_Less);
-    if ( reverse ) {
-        m_Segs.reverse();
-    }
+    m_Segs.sort(SegByFirstRow_Less(gen_reverse, prod_reverse));
 }
 
 
