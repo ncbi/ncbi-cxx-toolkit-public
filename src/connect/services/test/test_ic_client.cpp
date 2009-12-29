@@ -165,7 +165,7 @@ int CTestICClient::Run(void)
     hb = cl.HasBlobs(key1, subkey);
     assert(hb);
 
-    cl.Remove(key1);
+    cl.Remove(key1, version, subkey);
     hb = cl.HasBlobs(key1, subkey);
     assert(!hb);
 
@@ -200,7 +200,7 @@ int CTestICClient::Run(void)
     sz = cl.GetSize(key2, version, subkey);
     assert(sz == test_size);
 
-    cl.Remove(key2);
+    cl.Remove(key2, version, subkey);
     bool hb = cl.HasBlobs(key2, subkey);
     assert(!hb);
     }}
@@ -215,7 +215,7 @@ int CTestICClient::Run(void)
     for (int i = 0; i < 100; ++i) {
         string key = "TEST_IC_CLIENT_KEY_" + NStr::IntToString(i) + "_" + uid;
         cl.Store(key, 0, subkey, test_buf, test_size);
-        cl.Remove(key);
+        cl.Remove(key, 0, subkey);
     }
     }}
 
@@ -231,7 +231,7 @@ int CTestICClient::Run(void)
         cl.Read(key1, version, subkey, &test_buf[0], test_buf.size());
         cout << size << endl << string((char*)&test_buf[0],
             test_buf.size()) << endl;
-        cl.Remove(key1);
+        cl.Remove(key1, version, subkey);
     }}
 
     return 0;
