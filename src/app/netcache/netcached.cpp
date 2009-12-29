@@ -74,7 +74,6 @@ static const char* kNCReg_ServerSection       = "server";
 static const char* kNCReg_DefCacheSection     = "nccache";
 static const char* kNCReg_OldCacheSection     = "bdb";
 static const char* kNCReg_ICacheSectionPrefix = "icache";
-static const char* kNCReg_Daemon              = "daemon";
 static const char* kNCReg_Port                = "port";
 static const char* kNCReg_NetworkTimeout      = "network_timeout";
 static const char* kNCReg_CommandTimeout      = "request_timeout";
@@ -396,26 +395,10 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
       m_Signal(0)
 {
     CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    m_IsDaemon      = x_RegReadBool(reg, kNCReg_Daemon,      false);
     m_Port          = x_RegReadInt (reg, kNCReg_Port,        9000);
     m_IsReinitBadDB = x_RegReadBool(reg, kNCReg_ReinitBadDB, false);
 
 #if defined(NCBI_OS_UNIX)
-    if (m_IsDaemon) {
-        LOG_POST_X(1, "Entering UNIX daemon mode...");
-        // Here's workaround for SQLite3 bug: if stdin is closed in forked
-        // process then 0 file descriptor is returned to SQLite after open().
-        // But there's assert there which prevents fd to be equal to 0. So
-        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
-        // just in case somebody will try to write to them.
-        bool is_good = CProcess::Daemonize(kEmptyCStr,
-                               CProcess::fDontChroot | CProcess::fKeepStdin
-                                                     | CProcess::fKeepStdout);
-        if (!is_good) {
-            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
-        }
-    }
-
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  NCSignalHandler);
     signal(SIGTERM, NCSignalHandler);
@@ -480,10 +463,6 @@ CNetCacheServer::Reconfigure(void)
     CNcbiApplication::Instance()->ReloadConfig();
     CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
     // Non-changeable parameters
-    reg.Set(kNCReg_ServerSection, kNCReg_Daemon,
-            NStr::BoolToString(m_IsDaemon),
-            IRegistry::fPersistent | IRegistry::fOverride,
-            reg.GetComment(kNCReg_ServerSection, kNCReg_Daemon));
     reg.Set(kNCReg_ServerSection, kNCReg_Port,
             NStr::IntToString(m_Port),
             IRegistry::fPersistent | IRegistry::fOverride,

@@ -273,8 +273,6 @@ private:
     unsigned                       m_CmdTimeout;
     /// Type of logging all commands starting and stopping
     ENCLogCmdsType                 m_LogCmdsType;
-    /// Flag showing if server runs as a daemon application
-    bool                           m_IsDaemon;
     /// Flag showing if configuration parameter to reinitialize broken storages
     /// was set.
     bool                           m_IsReinitBadDB;
