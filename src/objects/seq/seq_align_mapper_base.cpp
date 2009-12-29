@@ -1664,7 +1664,25 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
             }
         }
     }
+#if defined(NCBI_COMPILER_WORKSHOP)
+    // Workshop' STL implementation can not sort lists using functors.
+    // This will probably not be fixed in the future due to binaries
+    // compatibility. The only way to sort is to use a temporary vector.
+    typedef vector<SAlignment_Segment> TSegmentsVector;
+    TSegmentsVector tmp;
+    tmp.reserve(m_Segs.size());
+    ITERATE(TSegments, it, m_Segs) {
+        tmp.push_back(*it);
+    }
+    sort(tmp.begin(), tmp.end(),
+         SegByFirstRow_Less(gen_reverse, prod_reverse));
+    m_Segs.clear();
+    ITERATE(TSegmentsVector, it, tmp) {
+        m_Segs.push_back(*it);
+    }
+#else
     m_Segs.sort(SegByFirstRow_Less(gen_reverse, prod_reverse));
+#endif
 }
 
 
