@@ -354,7 +354,6 @@ int CTestQParse::Run(void)
 {
     {{
     const char* queries[] = {       
-/*   
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -394,7 +393,7 @@ int CTestQParse::Run(void)
          "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")",         
          "binding id NOT     IN   (1, 20)",
          "vitamin C issue not between 1 and 10",
-*/         
+        
          "drug NOT LIKE aspirin",                  
          "db not in (pubmed, gene)",
          "SELECT aaa FROM table1",
@@ -402,6 +401,10 @@ int CTestQParse::Run(void)
          "SELECT aaa,bbbb,cccc,dddd FROM table1 WHERE fld1=10 OR fld2=12",         
          "SELECT f1,f2,f22 FROM t1,t2 WHERE aaa=1 OR fld2 IN ( SELECT f31,f41 FROM t3 WHERE v=10 )",
          "referrer like \"entrez/query.fcgi?db=Genome\" AND  db=genomeprj",
+
+         "SELECT aaa, bbb FROM X",
+         "SELECT MAX(a,b,c) FROM Y",
+         "SELECT MAX(a || d,b,c) FROM Y",
          "SELECT MAX(aaa, bbb),f23, AVG(aaa) FROM Table WHERE AVG(1,2,3) == 2",
          "MAX(aaa, bbb) = AVG(1,2,MAX(2,3))"
     };    

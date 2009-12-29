@@ -181,7 +181,7 @@ opt_where :
 ;
 
 functional:
-    FUNCTION '(' scalar_list ')'
+    FUNCTION '(' exp_list ')'
     {
         $$ = $1;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -225,7 +225,7 @@ scalar_value :
     }
     | functional
     {
-        $$ = $1;         
+        $$ = $1;  
     }
 ;
 
@@ -235,6 +235,18 @@ scalar_list:
         $$ = $1;
     }    
     | scalar_list ',' scalar_value
+    {
+        $$ = $1;    
+        AddFunc_Arg(parm, $3);
+    }    
+;
+
+exp_list:
+    exp
+    {
+        $$ = $1;
+    }    
+    | exp_list ',' exp
     {
         $$ = $1;    
         AddFunc_Arg(parm, $3);
@@ -397,10 +409,6 @@ exp :
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }
-    | '(' exp ')'
-    { 
-        $$ = $2;
-    } 
     /* NOT
     | exp NOT exp
     {
