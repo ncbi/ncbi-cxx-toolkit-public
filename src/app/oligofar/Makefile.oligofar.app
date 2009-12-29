@@ -33,6 +33,7 @@ SRC = \
         aoutputformatter \
         coutputformatter \
         csamformatter \
+        csammdformatter \
         cseqcoding \
         cpermutator8b \
         cprogressindicator
