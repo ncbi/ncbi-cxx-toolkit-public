@@ -201,7 +201,11 @@ static void s_MakeFrom(char* buf, size_t size)
         *buf++ = '@';
         if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
             &&  SOCK_gethostname(buf, size) != 0) {
-            *--buf = '\0';
+            const char* host = getenv("HOSTNAME");
+            if (!host  &&  !(host = getenv("HOST")))
+                *--buf = '\0';
+            else
+                strncpy0(buf, host, size - 1);
         }
     }
 }
