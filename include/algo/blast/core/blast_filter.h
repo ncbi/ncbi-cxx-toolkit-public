@@ -160,6 +160,22 @@ BlastMaskLoc* BlastMaskLocDup(const BlastMaskLoc* mask_loc);
 NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 
+/** Given a BlastMaskLoc with an array of lists of DNA mask locations, 
+ * substitutes that array by a new array of per-protein-frame mask location 
+ * lists.
+ * @param mask_loc Mask locations structure. This structure can have either
+ * masks for all frames in nucleotide coordinates (e.g.: the results of
+ * translating protein masks to nucleotide) or a single mask per query
+ * (i.e.:location NUM_FRAMES*query_index). In the latter case, this mask will 
+ * be used for all frames. [in|out]
+ * @param query_info Query information structure, containing contexts data [in]
+ * @note This function does NOT take into consideration the strands requested
+ * to be searched, which is INCONSISTENT with what the C++ API does.
+ */
+NCBI_XBLAST_EXPORT
+Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info);
+
 /** Given a BlastMaskLoc with an array of lists of mask locations per protein
  * frame, recalculates all mask offsets in terms of the DNA sequence. 
  * @param mask_loc Mask locations structure [in|out]

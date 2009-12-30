@@ -1191,9 +1191,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgDb);
     database_args.push_back(kArgGiList);
     database_args.push_back(kArgNegativeGiList);
-    if (m_SupportsDatabaseMasking) {
-        database_args.push_back(kArgDbSoftMask);
-    }
+    database_args.push_back(kArgDbSoftMask);
 
     // DB size
     arg_desc.SetCurrentGroup("Statistical options");
@@ -1231,13 +1229,12 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Masking of database
-    if (m_SupportsDatabaseMasking) {
-        arg_desc.AddOptionalKey(kArgDbSoftMask, 
+
+    arg_desc.AddOptionalKey(kArgDbSoftMask, 
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as soft "
                 "masking",
                 CArgDescriptions::eInteger);
-    }
 #endif
 
     // There is no RPS-BLAST 2 sequences

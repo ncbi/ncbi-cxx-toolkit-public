@@ -796,6 +796,92 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
    return NULL;
 }
 
+Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info)
+{
+    Uint4 seq_index;
+    BlastSeqLoc* dna_seqlocs[NUM_FRAMES];
+
+    if (!mask_loc)
+        return 0;
+
+    /* Check that the array size in BlastMaskLoc corresponds to the number
+       of contexts in BlastQueryInfo. */
+    ASSERT(mask_loc->total_size == query_info->last_context + 1);
+
+    /* Loop over multiple DNA sequences */
+    for (seq_index = 0; seq_index < (Uint4)query_info->num_queries; 
+         ++seq_index) { 
+        const Uint4 ctx_idx = NUM_FRAMES * seq_index;
+        const Int4 dna_length = BlastQueryInfoGetQueryLength(query_info,
+                                                             eBlastTypeBlastx,
+                                                             seq_index);
+        Int4 context;
+
+        /* Save the DNA masking locations, as they'll be freed and overwritten
+         * by their translations */
+        memset((void*) &dna_seqlocs, 0, sizeof(dna_seqlocs));
+        memcpy((void*) &dna_seqlocs, 
+               (void*) &mask_loc->seqloc_array[ctx_idx], 
+               sizeof(dna_seqlocs));
+        memset((void*) &mask_loc->seqloc_array[ctx_idx], 0, sizeof(dna_seqlocs));
+
+        /* Reproduce this mask for all 6 frames, with translated coordinates */
+        for (context = 0; context < NUM_FRAMES; ++context) {
+            const Int2 frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
+            BlastSeqLoc* frame_seqloc = dna_seqlocs[context];
+            BlastSeqLoc* prot_tail = NULL;
+            BlastSeqLoc* itr = NULL;
+
+            /* If no masks were provided for some frames, use the first one */
+            if (frame_seqloc == NULL && dna_seqlocs[0]) {
+                frame_seqloc = dna_seqlocs[0];
+            }
+            for (itr = frame_seqloc; itr; itr = itr->next) {
+                Int4 from, to;
+                SSeqRange* seq_range = itr->ssr;
+                /* masks should be 0-offset */
+                ASSERT(seq_range->right < dna_length);
+                ASSERT(seq_range->left  >= 0);
+                if (frame < 0) {
+                    from = (dna_length + frame - seq_range->right)/CODON_LENGTH;
+                    to = (dna_length + frame - seq_range->left)/CODON_LENGTH;
+                } else {
+                    from = (seq_range->left - frame + 1)/CODON_LENGTH;
+                    to = (seq_range->right - frame + 1)/CODON_LENGTH;
+                }
+
+                if (from < 0)
+                    from = 0;
+                if (to   < 0)
+                    to   = 0;
+                if (from >= query_info->contexts[ctx_idx+context].query_length)
+                    from = query_info->contexts[ctx_idx+context].query_length - 1;
+                if (to >= query_info->contexts[ctx_idx+context].query_length)
+                    to = query_info->contexts[ctx_idx+context].query_length - 1;
+
+                ASSERT(from >= 0);
+                ASSERT(to   >= 0);
+                ASSERT(from < query_info->contexts[ctx_idx+context].query_length);
+                ASSERT(to   < query_info->contexts[ctx_idx+context].query_length);
+
+                /* Cache the tail of the list to avoid the overhead of
+                 * traversing the list when appending to it */
+                prot_tail = BlastSeqLocNew((prot_tail 
+                            ? & prot_tail 
+                            : & mask_loc->seqloc_array[ctx_idx+context]), 
+                            from, to);
+            }
+        }
+        for (context = 0; context < NUM_FRAMES; ++context) {
+            BlastSeqLocFree(dna_seqlocs[context]);
+        }
+    }
+
+    return 0;
+}
+
+
 Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc, 
                               const BlastQueryInfo* query_info)
 {

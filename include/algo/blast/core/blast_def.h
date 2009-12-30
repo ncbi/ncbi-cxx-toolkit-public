@@ -207,6 +207,7 @@ typedef struct BlastMaskLoc {
      translated query searches, these locations must be provided in protein 
      coordinates to BLAST_MainSetUp.
      @sa BLAST_GetNumberOfContexts 
+     @sa BlastMaskLocDNAToProtein
     */
    Int4 total_size; 
 
