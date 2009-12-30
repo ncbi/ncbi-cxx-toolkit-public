@@ -4673,7 +4673,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RBCM	s	Rouyal British Columbia Museum",
 "RBE	s	Universidade Federal Rural do Rio de Janeiro",
 "RBF	c	Raiffeisen Bioforschung",
-"RBINS	s	Royal Belgian Institute of natural sciences",
+"RBINS	s	Royal Belgian Institute of Natural Sciences",
 "RBR	s	Universidade Federal Rural do Rio de Janeiro, Departamento de Botanica",
 "RBS	s	Royal Botanic Society",
 "RBY	s	East Divisional Library",
