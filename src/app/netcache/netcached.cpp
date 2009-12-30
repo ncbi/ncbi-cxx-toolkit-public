@@ -516,7 +516,10 @@ CNetCacheDApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "netcached");
 
-    arg_desc->AddFlag("reinit", "Recreate the storage directory.");
+    arg_desc->AddFlag("reinit", "Recreate the storage database.");
+#ifdef NCBI_OS_UNIX
+    arg_desc->AddFlag("daemon", "Force NetCache to daemonize at the start.");
+#endif
     arg_desc->AddFlag("version-full", "Version");
 
     SetupArgDescriptions(arg_desc.release());
@@ -532,6 +535,23 @@ CNetCacheDApp::Run(void)
         return 0;
     }
     LOG_POST_X(8, NETCACHED_FULL_VERSION);
+
+#ifdef NCBI_OS_UNIX
+    if (args["daemon"]) {
+        LOG_POST_X(1, "Entering UNIX daemon mode...");
+        // Here's workaround for SQLite3 bug: if stdin is closed in forked
+        // process then 0 file descriptor is returned to SQLite after open().
+        // But there's assert there which prevents fd to be equal to 0. So
+        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+        // just in case somebody will try to write to them.
+        bool is_good = CProcess::Daemonize(kEmptyCStr,
+                               CProcess::fDontChroot | CProcess::fKeepStdin
+                                                     | CProcess::fKeepStdout);
+        if (!is_good) {
+            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
+        }
+    }
+#endif
 
     CNCMemManager::InitializeApp();
     CSQLITE_Global::Initialize();
