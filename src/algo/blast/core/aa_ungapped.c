@@ -473,6 +473,7 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     BlastUngappedCutoffs *cutoffs;
     BLAST_DiagTable * diag = ewp->diag_table;
     TAaScanSubjectFunction scansub;
+    Int4 scan_range[3];
 
     ASSERT(diag != NULL);
 
@@ -499,10 +500,14 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     }
     last_offset = subject->length - wordsize;
 
+    scan_range[0] = 0;
+    scan_range[1] = first_offset;
+    scan_range[2] = last_offset;
+
     while (first_offset <= last_offset) {
         /* scan the subject sequence for hits */
         hits = scansub(lookup_wrap, subject, &first_offset,
-                                  offset_pairs, array_size);
+                                  offset_pairs, array_size, scan_range);
 
         totalhits += hits;
         /* for each hit, */
@@ -723,6 +728,7 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 hits_extended = 0;
     BLAST_DiagTable * diag = ewp->diag_table;
     TAaScanSubjectFunction scansub;
+    Int4 scan_range[3];
 
     ASSERT(diag != NULL);
 
@@ -747,10 +753,14 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     }
     last_offset = subject->length - wordsize;
 
+    scan_range[0] = 0;
+    scan_range[1] = first_offset;
+    scan_range[2] = last_offset;
+
     while (first_offset <= last_offset) {
         /* scan the subject sequence for hits */
         hits = scansub(lookup_wrap, subject, &first_offset,
-                       offset_pairs, array_size);
+                       offset_pairs, array_size, scan_range);
 
         totalhits += hits;
         /* for each hit, */

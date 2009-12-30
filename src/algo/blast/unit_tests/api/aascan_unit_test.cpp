@@ -248,6 +248,7 @@ BOOST_AUTO_TEST_CASE(ScanOffsetTest)
     Int4 offset_now;
     Int4 hits;
     Uint4 s_off;
+    Int4 scan_range[3];
 
     offset_now = 0;
     s_off = 0;
@@ -258,13 +259,18 @@ BOOST_AUTO_TEST_CASE(ScanOffsetTest)
                     (TAaScanSubjectFunction)(lut->scansub_callback);
     BOOST_REQUIRE(scansub != NULL);
 
+    scan_range[0] = 0;
+    scan_range[1] = 0; 
+    scan_range[2] = subject_blk->length - lut->word_length;
+
     while (offset_now < (subject_length - 2)) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
                 &offset_now,
                 offset_pairs,
-                GetOffsetArraySize(lookup_wrap_ptr));
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
 
         // check number of reported hits
         BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
@@ -324,6 +330,7 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
     Int4 offset_now;
     Int4 hits, found_hits, expected_hits;
     Int4 new_max_size;
+    Int4 scan_range[3];
 
     offset_now = found_hits = expected_hits = 0;
 
@@ -336,18 +343,27 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
     // Verify that the number of collected hits does
     // not change if the hit list size changes
 
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
+
     while (offset_now < (subject_length - 2)) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
                 &offset_now,
                 offset_pairs,
-                GetOffsetArraySize(lookup_wrap_ptr));
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
+
         BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
         expected_hits += hits;
     }
 
     offset_now = 0;
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
     new_max_size = MAX(GetOffsetArraySize(lookup_wrap_ptr)/3,
             ((BlastAaLookupTable *)(lookup_wrap_ptr->lut))->longest_chain);
 
@@ -357,7 +373,8 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
                 subject_blk,
                 &offset_now,
                 offset_pairs,
-                new_max_size);
+                new_max_size,
+                scan_range);
         BOOST_REQUIRE(hits <= new_max_size);
         found_hits += hits;
     }
@@ -371,6 +388,7 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
     Int4 offset_now;
     Int4 hits;
     Int4 found_hits, expected_hits;
+    Int4 scan_range[3];
 
     offset_now = found_hits = expected_hits = 0;
 
@@ -384,13 +402,18 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
     const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
     BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
 
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
+
     while (offset_now < 999) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
                 &offset_now,
                 offset_pairs,
-                GetOffsetArraySize(lookup_wrap_ptr));
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
 
         BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
         found_hits += hits;
@@ -417,6 +440,7 @@ BOOST_AUTO_TEST_CASE(ScanCheckScores)
     Int4 offset_now;
     Int4 hits;
     Int4 found_hits, expected_hits;
+    Int4 scan_range[3];
 
     offset_now = found_hits = expected_hits = 0;
 
@@ -429,13 +453,18 @@ BOOST_AUTO_TEST_CASE(ScanCheckScores)
     // verify the list does not contain any query-subject
     // pairs which do not belong there. 
 
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
+
     while (offset_now < (subject_length - 2)) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
                 &offset_now,
                 offset_pairs,
-                GetOffsetArraySize(lookup_wrap_ptr));
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
 
         BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
         found_hits += hits;
