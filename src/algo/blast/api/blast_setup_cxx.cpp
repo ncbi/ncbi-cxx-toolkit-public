@@ -1519,9 +1519,6 @@ void CBlastQueryFilteredFrames::Release(int frame)
     m_SeqlocTails.erase((ETranslationFrame)frame);
 }
 
-// some of the logic in this function is shamelessly copied from
-// BlastMaskLocDNAToProtein, which should have been used instead of creating
-// this class (which I presume was added ignoring the former function)
 void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
 {
     if (m_TranslateCoords) {
