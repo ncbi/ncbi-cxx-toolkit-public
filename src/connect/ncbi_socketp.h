@@ -184,7 +184,7 @@ typedef struct LSOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
-    unsigned short   n_log;     /* MSWIN: run-away connect warning counter   */
+    unsigned short   away;      /* MSWIN: run-away connect warning counter   */
     unsigned short   port;      /* port on which listening (host byte order) */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
