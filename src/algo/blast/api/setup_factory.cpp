@@ -146,14 +146,20 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   &BlastFindMatrixPath);
 
     Blast_Message2TSearchMessages(blast_msg.Get(), query_info, search_messages);
-    if (status != 0) {
-        string msg;
-        if (search_messages.HasMessages()) {
-            msg = search_messages.ToString();
-        } else {
-            msg = "BLAST_MainSetUp failed (" + NStr::IntToString(status) + 
-            " error code)";
-        }
+    if (status != 0 && 
+        (!(blast_msg.Get()) || (blast_msg.Get() && blast_msg.Get()->severity == eBlastSevError)))
+    {
+        	string msg;
+        	if (search_messages.HasMessages()) {
+            		msg = search_messages.ToString();
+        	} else {
+            		msg = "BLAST_MainSetUp failed (" + NStr::IntToString(status) + 
+            			" error code)";
+                }
+                // Clean up leaks before we throw
+                retval = BlastScoreBlkFree(retval);
+                *lookup_segments =  BlastSeqLocFree(*lookup_segments);
+                NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
     if (masked_query_regions) {
