@@ -80,6 +80,10 @@ private:
     CRef<objects::CSeq_align_set>
     x_MergeAlignments(CQuerySet& QueryAligns, objects::CScope& Scope);
 
+    CRef<objects::CSeq_align_set>
+    x_MergeSeqAlignSet(objects::CSeq_align_set& InAligns, objects::CScope& Scope);
+
+
     int m_Threshold;
 };
 

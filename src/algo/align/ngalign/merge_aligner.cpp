@@ -91,7 +91,7 @@ TAlignResultsRef CMergeAligner::GenerateAlignments(objects::CScope& Scope,
 CRef<CSeq_align_set>
 CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
 {
-    CRef<CSeq_align_set> Instances(new CSeq_align_set);
+    CRef<CSeq_align_set> Merged(new CSeq_align_set);
     CAlignCleanup Cleaner(Scope);
     Cleaner.FillUnaligned(true);
 
@@ -99,45 +99,81 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
                       QueryAligns.Get()) {
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
-        list<CConstRef<CSeq_align> > In;
+
+        CRef<CSeq_align_set> Pluses(new CSeq_align_set),
+                             Minuses(new CSeq_align_set);
+
         ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
-            CConstRef<CSeq_align> Align(*AlignIter);
-            In.push_back(Align);
+            if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_plus)
+                Pluses->Set().push_back(*AlignIter);
+            else if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_minus)
+                Minuses->Set().push_back(*AlignIter);
         }
 
-        CRef<CSeq_align_set> Out(new CSeq_align_set);
+        CRef<CSeq_align_set> PlusOut, MinusOut;
 
-        try {
-            Cleaner.Cleanup(In, Out->Set());
-        } catch(CException& e) {
-            ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
-            continue;
+        if(!Pluses->Set().empty())
+            PlusOut = x_MergeSeqAlignSet(*Pluses, Scope);
+        if(!Minuses->Set().empty())
+            MinusOut = x_MergeSeqAlignSet(*Minuses, Scope);
+
+        if(!PlusOut.IsNull())
+        ITERATE(CSeq_align_set::Tdata, AlignIter, PlusOut->Set()) {
+            Merged->Set().push_back(*AlignIter);
         }
-
-        NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            CRef<CSeq_align> Align(*AlignIter);
-            CDense_seg& Denseg = Align->SetSegs().SetDenseg();
-
-            if(!Denseg.CanGetStrands() || Denseg.GetStrands().empty()) {
-                Denseg.SetStrands().resize(Denseg.GetDim()*Denseg.GetNumseg(), eNa_strand_plus);
-            }
-
-            if(Denseg.GetSeqStrand(1) != eNa_strand_plus) {
-                Denseg.Reverse();
-            }
-            CRef<CDense_seg> Filled = Denseg.FillUnaligned();
-            Denseg.Assign(*Filled);
-
-            Align->SetNamedScore("merged_alignment", 1);
-        }
-
-        ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            Instances->Set().push_back(*AlignIter);
+        if(!MinusOut.IsNull())
+        ITERATE(CSeq_align_set::Tdata, AlignIter, MinusOut->Set()) {
+            Merged->Set().push_back(*AlignIter);
         }
     }
 
-    return Instances;
+    return Merged;
 }
+
+
+CRef<objects::CSeq_align_set>
+CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Scope)
+{
+    list<CConstRef<CSeq_align> > In;
+    ITERATE(CSeq_align_set::Tdata, AlignIter, InAligns.Get()) {
+        CConstRef<CSeq_align> Align(*AlignIter);
+        In.push_back(Align);
+    }
+
+    CRef<CSeq_align_set> Out(new CSeq_align_set);
+
+    try {
+        CAlignCleanup Cleaner(Scope);
+        Cleaner.FillUnaligned(true);
+        Cleaner.Cleanup(In, Out->Set());
+    } catch(CException& e) {
+        ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
+        return CRef<CSeq_align_set>();
+    }
+
+    NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
+        CRef<CSeq_align> Align(*AlignIter);
+        CDense_seg& Denseg = Align->SetSegs().SetDenseg();
+
+        if(!Denseg.CanGetStrands() || Denseg.GetStrands().empty()) {
+            Denseg.SetStrands().resize(Denseg.GetDim()*Denseg.GetNumseg(), eNa_strand_plus);
+        }
+
+        if(Denseg.GetSeqStrand(1) != eNa_strand_plus) {
+            Denseg.Reverse();
+        }
+
+        CRef<CDense_seg> Filled = Denseg.FillUnaligned();
+        Denseg.Assign(*Filled);
+
+        Align->SetNamedScore("merged_alignment", 1);
+    }
+
+    if(Out->Set().empty())
+        return CRef<CSeq_align_set>();
+    return Out;
+}
+
 
 
 
