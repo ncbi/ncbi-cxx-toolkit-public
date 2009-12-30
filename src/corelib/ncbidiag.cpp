@@ -3002,11 +3002,11 @@ bool x_IsEncodableChar(char c)
 class CExtraDecoder : public IStringDecoder
 {
 public:
-    virtual string Decode(const string& src, EStringType stype) const;
+    virtual string Decode(const CTempString& src, EStringType stype) const;
 };
 
 
-string CExtraDecoder::Decode(const string& src, EStringType stype) const
+string CExtraDecoder::Decode(const CTempString& src, EStringType stype) const
 {
     string str = src; // NStr::TruncateSpaces(src);
     size_t len = str.length();
@@ -3621,26 +3621,26 @@ string SDiagMessage::x_GetModule(void) const
 class CExtraEncoder : public IStringEncoder
 {
 public:
-    virtual string Encode(const string& src, EStringType stype) const;
+    virtual string Encode(const CTempString& src, EStringType stype) const;
 };
 
 
-string CExtraEncoder::Encode(const string& src, EStringType stype) const
+string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
 {
     if (stype == eName) {
         // Just check the source string, it may contain only valid chars
-        ITERATE(string, c, src) {
+        ITERATE(CTempString, c, src) {
             const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
             if (enc[1] != 0  ||  enc[0] != *c) {
                 NCBI_THROW(CCoreException, eInvalidArg,
-                    "Invalid char in extra args name: " + src);
+                    "Invalid char in extra args name: " + string(src));
             }
         }
         return src;
     }
     // Encode value
     string dst;
-    ITERATE(string, c, src) {
+    ITERATE(CTempString, c, src) {
         dst += s_ExtraEncodeChars[(unsigned char)(*c)];
     }
     return dst;

@@ -3581,7 +3581,7 @@ CStringDecoder_Url::CStringDecoder_Url(NStr::EUrlDecode flag)
 }
 
 
-string CStringDecoder_Url::Decode(const string& src,
+string CStringDecoder_Url::Decode(const CTempString& src,
                                   EStringType ) const
 {
     return NStr::URLDecode(src, m_Flag);
@@ -3594,7 +3594,7 @@ CStringEncoder_Url::CStringEncoder_Url(NStr::EUrlEncode flag)
 }
 
 
-string CStringEncoder_Url::Encode(const string& src,
+string CStringEncoder_Url::Encode(const CTempString& src,
                                   EStringType ) const
 {
     return NStr::URLEncode(src, m_Flag);
@@ -3604,14 +3604,14 @@ string CStringEncoder_Url::Encode(const string& src,
 /////////////////////////////////////////////////////////////////////////////
 // CEncodedString --
 
-CEncodedString::CEncodedString(const string& s,
+CEncodedString::CEncodedString(const CTempString& s,
                                NStr::EUrlEncode flag)
 {
     SetString(s, flag);
 }
 
 
-void CEncodedString::SetString(const string& s,
+void CEncodedString::SetString(const CTempString& s,
                                NStr::EUrlEncode flag)
 {
     m_Original = s;

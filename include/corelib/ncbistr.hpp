@@ -2551,7 +2551,7 @@ public:
     };
     /// Decode the string. Must throw CStringException if the source string
     /// is not valid.
-    virtual string Decode(const string& src, EStringType stype) const = 0;
+    virtual string Decode(const CTempString& src, EStringType stype) const = 0;
     virtual ~IStringDecoder(void) {}
 };
 
@@ -2566,7 +2566,7 @@ public:
         eValue
     };
     /// Encode the string.
-    virtual string Encode(const string& src, EStringType stype) const = 0;
+    virtual string Encode(const CTempString& src, EStringType stype) const = 0;
     virtual ~IStringEncoder(void) {}
 };
 
@@ -2577,7 +2577,7 @@ class NCBI_XNCBI_EXPORT CStringDecoder_Url : public IStringDecoder
 public:
     CStringDecoder_Url(NStr::EUrlDecode flag = NStr::eUrlDec_All);
 
-    virtual string Decode(const string& src, EStringType stype) const;
+    virtual string Decode(const CTempString& src, EStringType stype) const;
 
 private:
     NStr::EUrlDecode m_Flag;
@@ -2590,7 +2590,7 @@ class NCBI_XNCBI_EXPORT CStringEncoder_Url : public IStringEncoder
 public:
     CStringEncoder_Url(NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
-    virtual string Encode(const string& src, EStringType stype) const;
+    virtual string Encode(const CTempString& src, EStringType stype) const;
 
 private:
     NStr::EUrlEncode m_Flag;
@@ -2644,12 +2644,12 @@ public:
     ///   String encoder (Url, Xml etc.)
     /// @param own_encoder
     ///   Encoder ownership flag
-    CStringPairs(const string&   arg_sep,
-                 const string&   val_sep,
-                 IStringDecoder* decoder = NULL,
-                 EOwnership      own_decoder = eTakeOwnership,
-                 IStringEncoder* encoder = NULL,
-                 EOwnership      own_encoder = eTakeOwnership)
+    CStringPairs(const CTempString& arg_sep,
+                 const CTempString& val_sep,
+                 IStringDecoder*    decoder = NULL,
+                 EOwnership         own_decoder = eTakeOwnership,
+                 IStringEncoder*    encoder = NULL,
+                 EOwnership         own_encoder = eTakeOwnership)
         : m_ArgSep(arg_sep),
           m_ValSep(val_sep),
           m_Decoder(decoder, own_decoder),
@@ -2731,8 +2731,8 @@ public:
     ///   are merged to prevent pairs where both name and value are empty.
     static void Parse(TStrPairs&         pairs,
                       const CTempString& str,
-                      const string&      arg_sep,
-                      const string&      val_sep,
+                      const CTempString& arg_sep,
+                      const CTempString& val_sep,
                       IStringDecoder*    decoder = NULL,
                       EOwnership         own = eTakeOwnership,
                       NStr::EMergeDelims merge_argsep = NStr::eMergeDelims)
@@ -2780,11 +2780,11 @@ public:
     ///   String encoder (Url, Xml etc.)
     /// @param own
     ///   Flag indicating if the encoder must be deleted by the function.
-    static string Merge(const TStrPairs&      pairs,
-                        const string&         arg_sep,
-                        const string&         val_sep,
-                        IStringEncoder*       encoder = NULL,
-                        EOwnership            own = eTakeOwnership)
+    static string Merge(const TStrPairs& pairs,
+                        const string&    arg_sep,
+                        const string&    val_sep,
+                        IStringEncoder*  encoder = NULL,
+                        EOwnership       own = eTakeOwnership)
     {
         AutoPtr<IStringEncoder> encoder_guard(encoder, own);
         string ret;
@@ -2834,11 +2834,11 @@ class NCBI_XNCBI_EXPORT CEncodedString
 {
 public:
     CEncodedString(void) {}
-    CEncodedString(const string& s,
+    CEncodedString(const CTempString& s,
                    NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
     /// Set new original string
-    void SetString(const string& s,
+    void SetString(const CTempString& s,
                    NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
     /// Check if the original string was encoded.
