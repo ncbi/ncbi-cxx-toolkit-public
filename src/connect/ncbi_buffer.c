@@ -104,12 +104,13 @@ extern size_t BUF_Size(BUF buf)
 
 
 /* Create a new chunk.
- * Allocate at least "chunk_size" bytes, but no less than "size" bytes.
- * Special case: "size" == 0 results in no data storage allocation.
+ * Allocate at least "chunk_size" bytes, but no less than "data_size" bytes.
+ * Special case: "data_size" == 0 results in no data storage allocation.
  */
-static SBufChunk* s_AllocChunk(size_t size, size_t chunk_size)
+static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
 {
-    size_t alloc_size = ((size + chunk_size - 1) / chunk_size) * chunk_size;
+    size_t alloc_size = ((data_size + chunk_size - 1)
+                         / chunk_size) * chunk_size;
     SBufChunk* pChunk = (SBufChunk*) malloc(sizeof(*pChunk) + alloc_size);
     if ( !pChunk )
         return 0;
@@ -123,7 +124,8 @@ static SBufChunk* s_AllocChunk(size_t size, size_t chunk_size)
 }
 
 
-extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
+extern int/*bool*/ BUF_AppendEx(BUF* pBuf, void* data,
+                                size_t size, size_t alloc_size)
 {
     SBufChunk* pChunk;
     if ( !size )
@@ -137,8 +139,8 @@ extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
         return 0/*false*/;
 
     assert( !pChunk->data );
-    pChunk->alloc_size = size;
     pChunk->size       = size;
+    pChunk->alloc_size = alloc_size;
     pChunk->data       = (char*) data;
     pChunk->next       = 0;
 
@@ -152,12 +154,19 @@ extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
 }
 
 
-extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
+extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
+{
+    return BUF_AppendEx(pBuf, (void*) data, size, 0);
+}
+
+
+extern int/*bool*/ BUF_PrependEx(BUF* pBuf, void* data,
+                                 size_t size, size_t alloc_size)
 {
     SBufChunk* pChunk;
     if ( !size )
         return 1/*true*/;
-
+    
     /* init the buffer internals, if not init'd yet */
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
         return 0/*false*/;
@@ -166,14 +175,20 @@ extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
         return 0/*false*/;
 
     assert( !pChunk->data );
-    pChunk->alloc_size = size;
     pChunk->size       = size;
+    pChunk->alloc_size = alloc_size;
     pChunk->data       = (char*) data;
     pChunk->next       = (*pBuf)->list;
 
     (*pBuf)->list  = pChunk;
     (*pBuf)->size += size;
     return 1/*true*/;
+}
+
+
+extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
+{
+    return BUF_PrependEx(pBuf, (void*) data, size, 0);
 }
 
 
