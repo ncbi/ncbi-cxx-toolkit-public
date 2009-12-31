@@ -316,8 +316,8 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
             int num_ident = 0;
             if (align.GetNamedScore("num_ident", num_ident)) {
                 size_t len     = s_GetAlignmentLength(align, true);
-                *identities = num_ident;
-                *mismatches = (len - num_ident);
+                *identities += num_ident;
+                *mismatches += (len - num_ident);
                 break;
             }
 
