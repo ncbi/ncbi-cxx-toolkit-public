@@ -109,6 +109,7 @@ private:
     CRef<objects::CSeq_align_set>
     x_MergeSeqAlignSet(const objects::CSeq_align_set& InAligns, objects::CScope& Scope);
 
+    bool x_IsAllGap(const objects::CDense_seg& Denseg);
 };
 
 

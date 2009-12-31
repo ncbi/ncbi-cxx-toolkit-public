@@ -59,7 +59,7 @@
 BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
 
-
+#define MARKLINE  cerr << __FILE__ << ":" << __LINE__ << endl
 
 TAlignResultsRef
 CInversionMergeAligner::GenerateAlignments(objects::CScope& Scope,
@@ -264,34 +264,8 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
     CDense_seg& DomSeg = DomRef->SetSegs().SetDenseg();
     CDense_seg& NonSeg = NonRef->SetSegs().SetDenseg();
 
-// Find dupes
-    int DomIndex = 0, NonIndex = 0;
-    for(DomIndex = 0; DomIndex < DomSeg.GetNumseg(); DomIndex++) {
-
-        if(DomSeg.GetStarts()[DomIndex*DomSeg.GetDim()] == -1)
-            continue;
-
-        CRange<TSeqPos> DomRange(DomSeg.GetStarts()[DomIndex*DomSeg.GetDim()],
-                                 DomSeg.GetStarts()[DomIndex*DomSeg.GetDim()]+
-                                 DomSeg.GetLens()[DomIndex]-1);
-
-        for(NonIndex = 0; NonIndex < NonSeg.GetNumseg(); NonIndex++) {
-
-            if(NonSeg.GetStarts()[NonIndex*NonSeg.GetDim()] == -1)
-                continue;
-
-            CRange<TSeqPos> NonRange(NonSeg.GetStarts()[NonIndex*NonSeg.GetDim()],
-                                     NonSeg.GetStarts()[NonIndex*NonSeg.GetDim()]+
-                                     NonSeg.GetLens()[NonIndex]-1);
-
-            if(DomRange.IntersectingWith(NonRange)) {
-                ;
-            }
-        }
-    }
-
 // Find data in gaps
-    DomIndex = 0, NonIndex = 0;
+    int DomIndex = 0, NonIndex = 0;
     for(DomIndex = 0; DomIndex < DomSeg.GetNumseg(); DomIndex++) {
 
         CRange<TSeqPos> DomRange;
@@ -323,8 +297,14 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
 
     NonSeg.RemovePureGapSegs();
     NonSeg.Compact();
+    if(x_IsAllGap(NonSeg))
+        return CRef<CSeq_align>();
     NonSeg.TrimEndGaps();
-    NonSeg.Assign(*NonSeg.FillUnaligned());
+
+    CRef<CDense_seg> FillUnaligned = NonSeg.FillUnaligned();
+    if(!FillUnaligned.IsNull()) {
+        NonSeg.Assign(*FillUnaligned);
+    }
 
 
     Disc->SetSegs().SetDisc().Set().push_back(DomRef);
@@ -380,6 +360,16 @@ CInversionMergeAligner::x_MergeSeqAlignSet(const CSeq_align_set& InAligns, objec
 }
 
 
+bool CInversionMergeAligner::x_IsAllGap(const CDense_seg& Denseg)
+{
+    for(int Index = 0; Index < Denseg.GetNumseg(); Index++) {
+        if( Denseg.GetStarts()[Index*Denseg.GetDim()] != -1 &&
+            Denseg.GetStarts()[(Index*Denseg.GetDim())+1] != -1) {
+            return false;
+        }
+    }
+    return true;
+}
 
 
 END_SCOPE(ncbi)
