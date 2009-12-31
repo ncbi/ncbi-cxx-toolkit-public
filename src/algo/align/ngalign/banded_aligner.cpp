@@ -363,18 +363,42 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
         return;
     }
 
-
+    ERR_POST(Info << " Instance Count: " << Instances.size());
     TSeqPos LongestInstance = 0;
     ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
         const CInstance& Inst = **InstIter;
+
+        double Ratio = (Inst.Subject.GetLength() / double(Inst.Query.GetLength()));
+        if(Ratio > m_MaxRatio)
+            continue;
+
         TSeqPos CurrLength = (Inst.Query.GetTo() - Inst.Query.GetFrom());
         LongestInstance = max(CurrLength, LongestInstance);
+
+
+
+        /*ERR_POST(Info << " Aligning " << Inst.Query.GetId().AsFastaString() << " to "
+                                     << Inst.Subject.GetId().AsFastaString());
+        ERR_POST(Info << "  q:" << Inst.Query.GetFrom() << ":"
+                                << Inst.Query.GetTo() << ":"
+                                << (Inst.Query.GetStrand() == eNa_strand_plus ? "+" : "-")
+                      << " and s: " << Inst.Subject.GetFrom() << ":"
+                                    << Inst.Subject.GetTo() << ":"
+                                    << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-") );
+        ERR_POST(Info << "  ql: " << Inst.Query.GetLength() << " to "
+                      << "  sl: " << Inst.Subject.GetLength()*/
+        //ERR_POST(Info              << "  ratio: " << (Inst.Subject.GetLength()/double(Inst.Query.GetLength())));
     }
 
     CRef<CSeq_align> Result(new CSeq_align);
     ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
 
         const CInstance& Inst = **InstIter;
+
+        double Ratio = (Inst.Subject.GetLength() / double(Inst.Query.GetLength()));
+        if(Ratio >= m_MaxRatio) {
+            continue;
+        }
 
         if( (Inst.Query.GetTo() - Inst.Query.GetFrom()) <= (LongestInstance*0.005)) {
             continue;
@@ -387,7 +411,8 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
                                 << (Inst.Query.GetStrand() == eNa_strand_plus ? "+" : "-")
                       << " and s: " << Inst.Subject.GetFrom() << ":"
                                     << Inst.Subject.GetTo() << ":"
-                                    << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-"));
+                                    << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-")
+                      << "  ratio: " << Ratio);
 
         CRef<CDense_seg> GlobalDs;
         try {
@@ -535,15 +560,7 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
     CSeqVector QueryVec, SubjectVec;
     QueryVec = QueryHandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, VecStrand);
     SubjectVec = SubjectHandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-/*
-    int Wiggle = 0;
 
-    QueryStart = ( QueryStart > Wiggle ? QueryStart-Wiggle : 0);
-    QueryStop = ( QueryStop + Wiggle < QueryVec.size() ? QueryStop+Wiggle : QueryVec.size()-1);
-
-    SubjectStart = ( SubjectStart > Wiggle ? SubjectStart-Wiggle : 0);
-    SubjectStop = ( SubjectStop + Wiggle < SubjectVec.size() ? SubjectStop+Wiggle : SubjectVec.size()-1);
-*/
 
     // CSeqVector, when making a minus vector, not only compliments the bases,
     // flips the order to. But the start and stops provided are in Plus space.
@@ -667,11 +684,33 @@ void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Sc
         CRef<CSeq_align_set> Set = SubjectIter->second;
         CRef<CSeq_align_set> Out;
 
-        Out = x_RunCleanup(*Set, Scope);
+        CRef<CSeq_align_set> Pluses(new CSeq_align_set),
+                             Minuses(new CSeq_align_set);
 
-        ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            CRef<CInstance> Inst(new CInstance(*AlignIter));
-            Instances.push_back(Inst);
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+            if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_plus)
+                Pluses->Set().push_back(*AlignIter);
+            else if( (*AlignIter)->GetSeqStrand(0) == eNa_strand_minus)
+                Minuses->Set().push_back(*AlignIter);
+        }
+
+        if(!Pluses->Set().empty()) {
+            Out = x_RunCleanup(*Pluses, Scope);
+            if(!Out.IsNull()) {
+                ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
+                    CRef<CInstance> Inst(new CInstance(*AlignIter));
+                    Instances.push_back(Inst);
+                }
+            }
+        }
+        if(!Minuses->Set().empty()) {
+            Out = x_RunCleanup(*Minuses, Scope);
+            if(!Out.IsNull()) {
+                ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
+                    CRef<CInstance> Inst(new CInstance(*AlignIter));
+                    Instances.push_back(Inst);
+                }
+            }
         }
     }
 

@@ -124,8 +124,8 @@ class CInstancedAligner : public IAlignmentFactory
 {
 public:
 
-    CInstancedAligner(int TimeOutSeconds, int Threshold)
-        : m_TimeOutSeconds(TimeOutSeconds), m_Threshold(Threshold),
+    CInstancedAligner(int TimeOutSeconds, float MaxRatio, int Threshold)
+        : m_TimeOutSeconds(TimeOutSeconds), m_MaxRatio(MaxRatio), m_Threshold(Threshold),
           m_Match(2), m_Mismatch(-3), m_GapOpen(-100), m_GapExtend(-1) { ; }
 
     // Defaults to +2, -3, -100, -1
@@ -148,6 +148,7 @@ protected:
 private:
 
     int m_TimeOutSeconds;
+    float m_MaxRatio;
     int m_Threshold;
 
     int m_Match, m_Mismatch, m_GapOpen, m_GapExtend;
