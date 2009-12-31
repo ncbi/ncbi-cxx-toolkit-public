@@ -1412,7 +1412,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
 
             // format feature
-            item.Reset( new CFeatureItem(original_feat, ctx, feat_loc) );
+            item.Reset( x_NewFeatureItem(original_feat, ctx, feat_loc) );
             out << item;
 
             // Add more features depending on user preferences
@@ -1473,7 +1473,7 @@ void CFlatGatherer::x_CopyCDSFromCDNA
         CRef<CSeq_loc> cds_loc = mapper.Map(cds->GetLocation());
 
         CConstRef<IFlatItem> item( 
-            new CFeatureItem(cds->GetOriginalFeature(), ctx, cds_loc,
+            x_NewFeatureItem(cds->GetOriginalFeature(), ctx, cds_loc,
                 CFeatureItem::eMapped_from_cdna) );
         *m_ItemOS << item;
     }
@@ -1505,7 +1505,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->SetWhole(*ctx.GetPrimaryId());
                 item.Reset( 
-                    new CFeatureItem(*gene, ctx, loc, CFeatureItem::eMapped_from_genomic) );
+                    x_NewFeatureItem(*gene, ctx, loc, CFeatureItem::eMapped_from_genomic) );
                 out << item;
             }
         }
@@ -1550,7 +1550,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
         const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
             item.Reset(
-                new CFeatureItem(*cds, ctx, &cds->GetProduct(), 
+                x_NewFeatureItem(*cds, ctx, &cds->GetProduct(), 
                     CFeatureItem::eMapped_from_cdna) );
             out << item;
         }
@@ -1564,7 +1564,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
             prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
             for (CFeat_CI it(ctx.GetHandle(), prod_sel); it; ++it) {  
                 item.Reset( 
-                    new CFeatureItem(it->GetOriginalFeature(),
+                    x_NewFeatureItem(it->GetOriginalFeature(),
                                         ctx,
                                         &it->GetProduct(),
                                         CFeatureItem::eMapped_from_prot) );
@@ -1683,7 +1683,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
             }
         }
                     
-        CConstRef<IFlatItem> item( new CFeatureItem(*curr.GetSeq_feat(), ctx, 
+        CConstRef<IFlatItem> item( x_NewFeatureItem(*curr.GetSeq_feat(), ctx, 
             loc, CFeatureItem::eMapped_from_prot) );
         *m_ItemOS << item;
 

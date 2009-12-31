@@ -2109,7 +2109,7 @@ void CFeatureItem::x_AddQualsRegion(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    _ASSERT( m_Feat->GetData().IsRegion() );
+    assert( m_Feat->GetData().IsRegion() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const string& region = data.GetRegion();
@@ -2131,7 +2131,7 @@ void CFeatureItem::x_AddQualsBond(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    _ASSERT( m_Feat->GetData().IsBond() );
+    assert( m_Feat->GetData().IsBond() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const string& bond = s_GetBondName( data.GetBond() );
@@ -2166,7 +2166,7 @@ void CFeatureItem::x_AddQualsSite(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    _ASSERT( m_Feat->GetData().IsSite() );
+    assert( m_Feat->GetData().IsSite() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     CSeqFeatData::TSite site = data.GetSite();
@@ -2343,7 +2343,7 @@ void CFeatureItem::x_AddQualsProt(
     bool pseudo)
 //  ----------------------------------------------------------------------------
 {
-    _ASSERT( m_Feat->GetData().IsProt() );
+    assert( m_Feat->GetData().IsProt() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const CProt_ref& pref = data.GetProt();
@@ -4391,6 +4391,125 @@ void CSourceFeatureItem::SetLoc(const CSeq_loc& loc)
     m_Loc.Reset(&loc);
 }
 
+
+//  ----------------------------------------------------------------------------
+void CFeatureItemGff::x_AddQualsRna(
+    const CSeq_feat& feat,
+    CBioseqContext& ctx,
+    bool pseudo )
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+    const CRNA_ref& rna = feat.GetData().GetRna();
+    const CFlatFileConfig& cfg = ctx.Config();
+    CScope& scope = ctx.GetScope();
+
+    CRNA_ref::TType rna_type = rna.CanGetType() ?
+        rna.GetType() : CRNA_ref::eType_unknown;
+    switch ( rna_type ) {
+    case CRNA_ref::eType_tRNA:
+    {
+        if (rna.IsSetExt()) {
+            const CRNA_ref::C_Ext& ext = rna.GetExt();
+            switch (ext.Which()) {
+            case CRNA_ref::C_Ext::e_Name:
+            {
+                // amino acid could not be parsed into structured form
+                if (!cfg.DropIllegalQuals()) {
+                    x_AddQual(eFQ_product,
+                        new CFlatStringQVal(ext.GetName()));
+                } else {
+                    x_AddQual(eFQ_product,
+                        new CFlatStringQVal("tRNA-OTHER"));
+                }
+                break;
+            }
+            case CRNA_ref::C_Ext::e_TRNA:
+            {
+                const CTrna_ext& trna = ext.GetTRNA();
+                int aa = 0;
+                if ( trna.CanGetAa()  &&  trna.GetAa().IsNcbieaa() ) {
+                    aa = trna.GetAa().GetNcbieaa();
+                } else {
+                    // !!!
+                    return;
+                }
+/*                if (aa == 'U') {
+                    if ( ctx.Config().SelenocysteineToNote() ) {
+                        x_AddQual(eFQ_selenocysteine_note,
+                            new CFlatStringQVal("selenocysteine"));
+                    } else {
+                        x_AddQual(eFQ_selenocysteine, new CFlatBoolQVal(true));
+                    }
+                }
+*/                if ( cfg.IupacaaOnly() ) {
+                    aa = s_ToIupacaa(aa);
+                }
+                const string& aa_str = s_AaName(aa);
+                if ( !aa_str.empty() ) {
+                    x_AddQual(eFQ_product, new CFlatStringQVal(aa_str));
+                    if ( trna.CanGetAnticodon()  &&  !aa_str.empty() ) {
+                        x_AddQual(eFQ_anticodon,
+                            new CFlatAnticodonQVal(trna.GetAnticodon(),
+                                                   aa_str.substr(5, NPOS)));
+                    }
+                }
+                if ( trna.IsSetCodon() ) {
+                    const string& comment =
+                        m_Feat->IsSetComment() ? m_Feat->GetComment() : kEmptyStr;
+                    x_AddQual(eFQ_trna_codons, new CFlatTrnaCodonsQVal(trna, comment));
+                }
+                break;
+            }
+            default:
+                break;
+            } // end of internal switch
+        }
+        break;
+    }
+    case CRNA_ref::eType_mRNA:
+    {
+        if ( !pseudo  &&  cfg.ShowTranscript() ) {
+            CSeqVector vec(feat.GetLocation(), scope);
+            vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+            string transcription;
+            vec.GetSeqData(0, vec.size(), transcription);
+            x_AddQual(eFQ_transcription, new CFlatStringQVal(transcription));
+        }
+        // intentional fall through
+    }
+    default:
+        switch ( subtype ) {
+
+        case CSeqFeatData::eSubtype_ncRNA:
+        case CSeqFeatData::eSubtype_tmRNA:
+            break;
+        case CSeqFeatData::eSubtype_misc_RNA:
+        case CSeqFeatData::eSubtype_otherRNA:
+            if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
+                string strName = rna.GetExt().GetName();
+                if ( strName != "misc_RNA" ) {
+                    x_AddQual( eFQ_product, new CFlatStringQVal( strName ) );
+                }
+            }
+            break;
+        default:
+            if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
+                x_AddQual( eFQ_product, new CFlatStringQVal( rna.GetExt().GetName() ) );
+            }
+            break;
+        }
+    } // end of switch
+
+    try {
+        if (feat.IsSetProduct()) {
+            CConstRef<CSeq_id> sip(feat.GetProduct().GetId());
+            if (sip && sip->IsGi() ) {
+                x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
+            }
+        }
+    } catch (CObjmgrUtilException&) {}
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

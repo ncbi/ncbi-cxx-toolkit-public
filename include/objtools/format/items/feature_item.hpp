@@ -50,7 +50,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_FORMAT_EXPORT CFeatHeaderItem : public CFlatItem
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CFeatHeaderItem : 
+    public CFlatItem
+//  ============================================================================
 {
 public:
     CFeatHeaderItem(CBioseqContext& ctx);
@@ -69,7 +72,10 @@ private:
 };
 
 
-class NCBI_FORMAT_EXPORT CFlatFeature : public CObject
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CFlatFeature : 
+    public CObject
+//  ============================================================================
 {
 public:
     CFlatFeature(const string& key, const CFlatSeqLoc& loc, const CSeq_feat& feat)
@@ -92,7 +98,10 @@ private:
 };
 
 
-class NCBI_FORMAT_EXPORT CFeatureItemBase : public CFlatItem
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CFeatureItemBase: 
+    public CFlatItem
+//  ============================================================================
 {
 public:
     CConstRef<CFlatFeature> Format(void) const;
@@ -123,7 +132,10 @@ protected:
 };
 
 
-class NCBI_FORMAT_EXPORT CFeatureItem : public CFeatureItemBase
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CFeatureItem: 
+    public CFeatureItemBase
+//  ============================================================================
 {
 public:
     enum EMapped
@@ -138,6 +150,8 @@ public:
     CFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
         const CSeq_loc* loc, EMapped mapped = eMapped_not_mapped);
 
+    virtual ~CFeatureItem() {};
+
     // fetaure key (name)
     string GetKey(void) const;
 
@@ -147,7 +161,7 @@ public:
     bool IsMappedFromCDNA   (void) const { return m_Mapped == eMapped_from_cdna;    }
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
-private:
+protected:
     typedef CGene_ref::TSyn TGeneSyn;
 
     void x_GatherInfo(CBioseqContext& ctx);
@@ -193,9 +207,9 @@ private:
     // qualifier collection
     void x_AddQualsCdregion(const CSeq_feat& cds, CBioseqContext& ctx,
         bool pseudo);
-    void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
+    virtual void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
          bool pseudo);
-   void x_AddQualsExt( const CSeq_feat::TExt& );
+    void x_AddQualsExt( const CSeq_feat::TExt& );
     void x_AddQualsBond( CBioseqContext& );
     void x_AddQualsSite( CBioseqContext& );
     void x_AddQualsRegion( CBioseqContext& );
@@ -274,8 +288,79 @@ private:
     mutable string                         m_Gene;
 };
 
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualDb(
+    const CGene_ref* gene_ref )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! gene_ref || ! gene_ref->CanGetDb() ) {
+        return;
+    }
+    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
+}
+    
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualCitation()
+//  ----------------------------------------------------------------------------
+{
+    if ( ! m_Feat->IsSetCit() ) {
+        return;
+    }
+    x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat->GetCit() ) );
+}
 
-class NCBI_FORMAT_EXPORT CSourceFeatureItem : public CFeatureItemBase
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualDbXref()
+//  ----------------------------------------------------------------------------
+{
+    if ( ! m_Feat->IsSetDbxref() ) {
+        return;
+    }
+    x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
+}
+
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualsGb( 
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    if (m_Feat->IsSetQual()) {
+        x_ImportQuals(ctx);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualExt()
+//  ----------------------------------------------------------------------------
+{
+    if ( m_Feat->IsSetExt() ) {
+        x_AddQualsExt( m_Feat->GetExt() );
+    }
+}
+
+//	=============================================================================
+class CFeatureItemGff: public CFeatureItem
+//	=============================================================================
+{
+public:
+    CFeatureItemGff::CFeatureItemGff(
+        const CSeq_feat& feat,
+        CBioseqContext& ctx,
+        const CSeq_loc* loc,
+        EMapped mapped )
+        : CFeatureItem( feat, ctx, loc, mapped ) {};
+
+    virtual ~CFeatureItemGff() {};
+
+protected:
+    virtual void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
+         bool pseudo);
+};
+
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CSourceFeatureItem: 
+    public CFeatureItemBase
+//  ============================================================================
 {
 public:
     typedef CRange<TSeqPos> TRange;
@@ -331,56 +416,6 @@ private:
     bool           m_IsFocus;
     bool           m_IsSynthetic;
 };
-
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualDb(
-    const CGene_ref* gene_ref )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! gene_ref || ! gene_ref->CanGetDb() ) {
-        return;
-    }
-    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
-}
-    
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualCitation()
-//  ----------------------------------------------------------------------------
-{
-    if ( ! m_Feat->IsSetCit() ) {
-        return;
-    }
-    x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat->GetCit() ) );
-}
-
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualDbXref()
-//  ----------------------------------------------------------------------------
-{
-    if ( ! m_Feat->IsSetDbxref() ) {
-        return;
-    }
-    x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
-}
-
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualsGb( 
-    CBioseqContext& ctx )
-//  ----------------------------------------------------------------------------
-{
-    if (m_Feat->IsSetQual()) {
-        x_ImportQuals(ctx);
-    }
-}
-
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualExt()
-//  ----------------------------------------------------------------------------
-{
-    if ( m_Feat->IsSetExt() ) {
-        x_AddQualsExt( m_Feat->GetExt() );
-    }
-}
 
 
 END_SCOPE(objects)

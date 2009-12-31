@@ -42,17 +42,20 @@
 #include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/items/feature_item.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-CGFFGatherer::CGFFGatherer(void)
+//  ============================================================================
+CGFFGatherer::CGFFGatherer()
+//  ============================================================================
 {
 }
 
-
-void CGFFGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
+//  ============================================================================
+void CGFFGatherer::Gather(
+    CFlatFileContext& ctx, 
+    CFlatItemOStream& os ) const
+//  ============================================================================
 {
     const CSeq_entry_Handle& seh = ctx.GetEntry();
     
@@ -67,8 +70,10 @@ void CGFFGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
     os << item;
 }
 
-
-void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
+//  ============================================================================
+void CGFFGatherer::x_DoSingleSection(
+    CBioseqContext& ctx ) const
+//  ============================================================================
 {
     CConstRef<IFlatItem> item;
 
@@ -94,8 +99,6 @@ void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     item.Reset( new CEndSectionItem(ctx) );
     ItemOS() << item;
 }
-
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

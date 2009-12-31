@@ -75,6 +75,15 @@ protected:
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
+    virtual CFeatureItem* x_NewFeatureItem(
+        const CSeq_feat& feat,
+        CBioseqContext& ctx,
+        const CSeq_loc* loc,
+        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped ) const
+    {
+        return new CFeatureItem( feat, ctx, loc, mapped );
+    };
+
     // references
     typedef CBioseqContext::TReferences TReferences;
     void x_GatherReferences(void) const;
@@ -86,7 +95,7 @@ protected:
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx) const;
     void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
-    void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
+    virtual void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
 
     // source features

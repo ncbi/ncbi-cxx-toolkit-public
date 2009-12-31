@@ -35,26 +35,38 @@
 #include <corelib/ncbistd.hpp>
 #include <objtools/format/gather_items.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+//class CBioseq;
 
-class CBioseq;
-
-
-class NCBI_FORMAT_EXPORT CGFFGatherer : public CFlatGatherer
+//  ============================================================================
+class NCBI_FORMAT_EXPORT CGFFGatherer : 
+    public CFlatGatherer
+//  ============================================================================
 {
 public:
-    CGFFGatherer(void);
+    CGFFGatherer();
 
-    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
+    virtual void Gather(
+        CFlatFileContext& ctx, 
+        CFlatItemOStream& os ) const;
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
+    virtual void x_DoSingleSection(
+        CBioseqContext& ctx ) const;
+
+protected:
+    virtual CFeatureItem* x_NewFeatureItem(
+        const CSeq_feat& feat,
+        CBioseqContext& ctx,
+        const CSeq_loc* loc,
+        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped ) const
+    {
+        return new CFeatureItemGff( feat, ctx, loc, mapped );
+    };
 
 private:
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
