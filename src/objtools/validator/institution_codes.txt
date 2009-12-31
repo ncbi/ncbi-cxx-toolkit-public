@@ -985,7 +985,7 @@ CMN:Annelid	s	Canadian Museum of Nature, Annelid Collection
 CMN:Bird	s	Canadian Museum of Nature, Bird Collection
 CMN:Crustacean	s	Canadian Museum of Nature, Crustacean Collection
 CMN:Fish	s	Canadian Museum of Nature, Fish Collection
-CMN:GenInvert		Canadian Museum of Nature, General Invertebrate Collextion
+CMN:GenInvert	s	Canadian Museum of Nature, General Invertebrate Collextion
 CMN:Herp	s	Canadian Museum of Nature, Amphibian and Reptile Collection
 CMN:Insect	s	Canadian Museum of Nature, Insect Collection
 CMN:Mammal	s	Canadian Museum of Nature, Mammal Collection
@@ -1095,7 +1095,8 @@ CRBK	s	Cranbrook School
 CRBY	s	Crosby Library
 CRCA	s	Instituto dos Cereais
 CRCM	s	Washington State University, Charles R. Conner Museum
-CRCM:Bird		Washington State University, Charles R. Conner Museum, bird collection
+CRCM:Bird	s	Washington State University, Charles R. Conner Museum, bird collection
+CRCM:Mammal	s	Washington State University, Charles R. Conner Museum, Mammal Collection
 CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)
 CRE<CRI>	s	Costa Rica Expeditions
 CRE<USA-CA>	s	University of Southern California
@@ -3833,8 +3834,8 @@ NBNM	s	National Park Service
 NBPC	s	National Birds of Prey Centre
 NBRC	c	NITE Biological Resource Center
 NBSB	s	National Biomonitoring Specimen Bank, U.S. Geological Survey
-NBSB:Bird		National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection
-NBSB:Mamm		National Biomonitoring Specimen Bank, U.S. Geological Survey, mammal tissue collection
+NBSB:Bird	s	National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection
+NBSB:Mamm	s	National Biomonitoring Specimen Bank, U.S. Geological Survey, mammal tissue collection
 NBSI	s	Biologische Station Neusiedler See
 NBV	s	Koninklijke Nederlandse Botanische Vereniging
 NBY	s	Newbury District Museum
@@ -4038,6 +4039,18 @@ NMNK	s	National Museum of Nepal
 NMNS	s	National Museum of Natural Science
 NMNW	s	National Museum of Namibia
 NMNZ	s	National Museum of New Zealand
+NMNZ:AI	s	National Museum of New Zealand, Insects
+NMNZ:AM	s	National Museum of New Zealand, Amphibians
+NMNZ:AS	s	National Museum of New Zealand, Spiders
+NMNZ:CR	s	National Museum of New Zealand, Crustacea
+NMNZ:M	s	National Museum of New Zealand, Molluscs
+NMNZ:MM	s	National Museum of New Zealand, Marine Mammals
+NMNZ:OR	s	National Museum of New Zealand, Birds
+NMNZ:P	s	National Museum of New Zealand, Fish
+NMNZ:RE	s	National Museum of New Zealand, Reptiles
+NMNZ:S	s	National Museum of New Zealand, Fossil Vertebrates
+NMNZ:TS	s	National Museum of New Zealand, Tissue Collection
+NMNZ:TSA	s	National Museum of New Zealand, Tissue Collection
 NMP	s	Natal Museum
 NMP<CZE>	s	Narodni Museum Praha
 NMPC	s	National Museum Prague
@@ -4528,7 +4541,7 @@ PSS<GBR>	s	Philosophical Society of Southampton
 PSS<MNG>	s	Paleontology and Stratigraphic Section of the Geological Institute of the Mongolian Academy of Sciences
 PSU<THA>	s	Prince of Songkla University, Biology Department
 PSU<USA-OR>	s	Portland State University, Vertebrate Biology Museum
-PSU<USA-OR>:Mamm		Portland State University, Vertebrate Biology Museum, Mammal Collection
+PSU<USA-OR>:Mamm	s	Portland State University, Vertebrate Biology Museum, Mammal Collection
 PSU<USA-PA>	s	Pennsylvania State University
 PSUB	s	University of Botswana
 PSUC	s	Frost Entomological Museum
@@ -4724,7 +4737,7 @@ RMNH:COEL	s	Nationaal Natuurhistorisch Museum, Coelomate collection
 RMNH:CRUS	s	Nationaal Natuurhistorisch Museum, crustacean collection
 RMNH:CRUS.D	s	Nationaal Natuurhistorisch Museum, decapod collection
 RMNH:INS	s	Nationaal Natuurhistorisch Museum, Insect collection
-RMNH:MOL		Nationaal Natuurhistorisch Museum, mollusc collection
+RMNH:MOL	s	Nationaal Natuurhistorisch Museum, mollusc collection
 RMNH:PISC	s	Nationaal Natuurhistorisch Museum, fish collection
 RMNH:POR	s	Nationaal Natuurhistorisch Museum, poriferan collection
 RMNP	s	Riding Mountain National Park
@@ -6340,6 +6353,7 @@ YELLO	s	Yellowstone National Park
 YEO	s	Yeovil Museum
 YF	s	Yanbei Forestry Institute
 YFS	s	Yunnan Forestry School
+YFTC	s	Yale Fish Tissue Collection
 YH	s	Lutheran College
 YIM	s	Yunnan Institute of Pharmacology
 YK	s	Bootham School
