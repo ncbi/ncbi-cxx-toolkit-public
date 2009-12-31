@@ -5029,6 +5029,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SH	s	Academia Sinica",
 "SHB	s	Shanghai Baptist College",
 "SHC	s	Sacred Heart College",
+"SHCP	s	Southern Highlands Conservation Programme",
 "SHCT	s	Shanghai Teachers College of Technology, Biology Department",
 "SHD	s	University of Sheffield, Botany Department",
 "SHDC	s	Shanghai Institute for Drug Control",
