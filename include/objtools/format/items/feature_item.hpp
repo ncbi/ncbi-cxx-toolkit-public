@@ -343,7 +343,7 @@ class CFeatureItemGff: public CFeatureItem
 //	=============================================================================
 {
 public:
-    CFeatureItemGff::CFeatureItemGff(
+    CFeatureItemGff(
         const CSeq_feat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
