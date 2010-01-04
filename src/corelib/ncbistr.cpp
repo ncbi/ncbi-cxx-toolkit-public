@@ -2994,7 +2994,7 @@ bool NStr::NeedsURLEncoding(const CTempStringEx& str, EUrlEncode flag)
         // To keep off compiler warning
         encode_table = 0;
     }
-    const unsigned char* cstr = (const unsigned char*)(str.HasZeroAtEnd() ? str.data() : string(str).c_str());
+    const unsigned char* cstr = (const unsigned char*)str.data();
 
     for (SIZE_TYPE pos = 0;  pos < len;  pos++) {
         const char* subst = encode_table[cstr[pos]];
