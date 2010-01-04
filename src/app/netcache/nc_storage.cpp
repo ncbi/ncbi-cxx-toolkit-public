@@ -158,7 +158,7 @@ CNCBlobStorage::x_ReadStorageParams(const IRegistry& reg,
     m_Name = reg.Get(section, kNCStorage_FileNameParam);
     if (m_Path.empty()  ||  m_Name.empty()) {
         NCBI_THROW(CNCBlobStorageException, eWrongFileName,
-                   "Incorrect parameters for file name in '"
+                   "Incorrect parameters for path and name in '"
                    + string(section) + "' section: path='" + m_Path
                    + "', name='" + m_Name + "'");
     }
@@ -792,7 +792,8 @@ CNCBlobStorage::Initialize(const IRegistry& reg,
     m_BGThread->Run();
 }
 
-CNCBlobStorage::~CNCBlobStorage(void)
+void
+CNCBlobStorage::Deinitialize(void)
 {
     m_Stopped = true;
     // To be on a safe side let's post 100
@@ -810,6 +811,9 @@ CNCBlobStorage::~CNCBlobStorage(void)
     x_FreeBlobIdLocks();
     x_UnlockInstanceGuard();
 }
+
+CNCBlobStorage::~CNCBlobStorage(void)
+{}
 
 inline void
 CNCBlobStorage::x_WaitForGC(void)

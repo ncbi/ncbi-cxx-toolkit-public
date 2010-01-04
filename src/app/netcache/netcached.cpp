@@ -358,6 +358,14 @@ CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
                                << "' and '" << kNCReg_OldCacheSection
                                << "' sections in the configuration.");
             }
+            if (NStr::CompareNocase(section_name, kNCReg_OldCacheSection) == 0)
+            {
+                ERR_POST(Warning << "Old section name '"
+                         << kNCReg_OldCacheSection
+                         << "' is used in configuration. "
+                            "It should be changed to '"
+                         << kNCReg_DefCacheSection << "'.");
+            }
             found_main_cache = true;
         }
         else {
@@ -395,7 +403,12 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
       m_Signal(0)
 {
     CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    m_Port          = x_RegReadInt (reg, kNCReg_Port,        9000);
+    m_Port          = x_RegReadInt (reg, kNCReg_Port,        0);
+    if (m_Port == 0) {
+        NCBI_THROW_FMT(CUtilException, eWrongData,
+                       "'" << kNCReg_Port
+                       << "' setting is mandatory in configuration file.");
+    }
     m_IsReinitBadDB = x_RegReadBool(reg, kNCReg_ReinitBadDB, false);
 
 #if defined(NCBI_OS_UNIX)
@@ -411,6 +424,13 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
 
     x_ConfigureStorages(reg, do_reinit);
+    if (m_StorageMap.size() == 0) {
+        NCBI_THROW_FMT(CUtilException, eWrongData,
+                       "No storages exist in configuration. Either '"
+                       << kNCReg_DefCacheSection << "' or '"
+                       << kNCReg_ICacheSectionPrefix
+                       << "_*' sections should exist.");
+    }
     CNCFileSystem::SetDiskInitialized();
 
     m_BlobIdCounter.Set(0);

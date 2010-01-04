@@ -325,6 +325,9 @@ public:
     void ReturnLockHolder(CNCBlobLockHolder* holder);
 
 protected:
+    /// Deinitilize storage and prepare for deletion.
+    void Deinitialize(void);
+
     /// Create pool that will provide objects to work with database files
     virtual CNCDBFilesPool* CreateFilesPool(const string& meta_name,
                                             const string& data_name) = 0;
@@ -1200,7 +1203,10 @@ template <class TFilesPool, class TCacheKey>
 inline
 CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::~CNCBlobStorage_Specific(void)
-{}
+{
+    Deinitialize();
+    m_KeysCache.clear();
+}
 
 template <class TFilesPool, class TCacheKey>
 inline CNCDBFilesPool*
