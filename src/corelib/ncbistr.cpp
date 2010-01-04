@@ -2967,7 +2967,7 @@ void NStr::URLDecodeInPlace(string& str, EUrlDecode flag)
 }
 
 
-bool NStr::NeedsURLEncoding(const CTempStringEx& str, EUrlEncode flag)
+bool NStr::NeedsURLEncoding(const CTempString& str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len ) {

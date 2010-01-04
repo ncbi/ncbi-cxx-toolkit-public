@@ -1680,7 +1680,7 @@ public:
     static void URLDecodeInPlace(string& str,
                                  EUrlDecode flag = eUrlDec_All);
     /// Check if the string needs the reqested URL-encoding
-    static bool NeedsURLEncoding(const CTempStringEx& str,
+    static bool NeedsURLEncoding(const CTempString& str,
                                 EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// Check if the string contains a valid IP address
