@@ -2109,7 +2109,7 @@ void CFeatureItem::x_AddQualsRegion(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    assert( m_Feat->GetData().IsRegion() );
+    _ASSERT( m_Feat->GetData().IsRegion() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const string& region = data.GetRegion();
@@ -2131,7 +2131,7 @@ void CFeatureItem::x_AddQualsBond(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    assert( m_Feat->GetData().IsBond() );
+    _ASSERT( m_Feat->GetData().IsBond() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const string& bond = s_GetBondName( data.GetBond() );
@@ -2166,7 +2166,7 @@ void CFeatureItem::x_AddQualsSite(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    assert( m_Feat->GetData().IsSite() );
+    _ASSERT( m_Feat->GetData().IsSite() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     CSeqFeatData::TSite site = data.GetSite();
@@ -2343,7 +2343,7 @@ void CFeatureItem::x_AddQualsProt(
     bool pseudo)
 //  ----------------------------------------------------------------------------
 {
-    assert( m_Feat->GetData().IsProt() );
+    _ASSERT( m_Feat->GetData().IsProt() );
 
     const CSeqFeatData& data = m_Feat->GetData();
     const CProt_ref& pref = data.GetProt();
