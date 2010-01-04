@@ -10,4 +10,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_netcache_api -repeat 1 NC_UnitTest
 CHECK_TIMEOUT = 400
 
-WATCHERS = kazimird
+WATCHERS = kazimird ivanovp
