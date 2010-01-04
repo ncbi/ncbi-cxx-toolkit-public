@@ -54,7 +54,8 @@
 #include <algo/align/ngalign/blast_aligner.hpp>
 #include <algo/align/ngalign/banded_aligner.hpp>
 #include <algo/align/ngalign/merge_aligner.hpp>
-#include <algo/align/ngalign/messy_aligner.hpp>
+#include <algo/align/ngalign/inversion_merge_aligner.hpp>
+
 #include <algo/align/ngalign/alignment_scorer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -182,15 +183,15 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
-    CRef<CMessyAligner> MessyAligner(new CMessyAligner(600, 1));
+//    CRef<CMessyAligner> MessyAligner(new CMessyAligner(600, 1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
-    CRef<CTailsScorer> TailsScorer(new CTailsScorer);
+   // CRef<CTailsScorer> TailsScorer(new CTailsScorer);
 
 
     Query->SetIdList().push_back(QueryId);
@@ -216,13 +217,12 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     }
     Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
-//    Aligner.AddAligner(MessyAligner.GetPointer());
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctCoverageScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(CommonComponentScorer.GetPointer()));
-    Aligner.AddScorer(TailsScorer.GetPointer());
+  //  Aligner.AddScorer(TailsScorer.GetPointer());
 
     CRef<CSeq_align_set> AlignSet;
     AlignSet = Aligner.Align();
@@ -295,8 +295,9 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
+    CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
@@ -328,6 +329,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
+    Aligner.AddAligner(InversionMergeAligner.GetPointer());
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
@@ -404,9 +406,10 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(600, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(180, 3.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
-    CRef<CMessyAligner> MessyAligner(new CMessyAligner(600, 1));
+    CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
+
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
@@ -456,9 +459,9 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         }
         Aligner.AddAligner(&**BlastIter);
     }
-//    Aligner.AddAligner(InstancedAligner.GetPointer());
+    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
-    Aligner.AddAligner(MessyAligner.GetPointer());
+    Aligner.AddAligner(InversionMergeAligner.GetPointer());
 
     Aligner.AddScorer(BlastScorer.GetPointer());
     Aligner.AddScorer(PctIdentScorer.GetPointer());

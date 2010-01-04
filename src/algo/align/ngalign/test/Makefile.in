@@ -16,7 +16,7 @@
 
 ## Applications to be built as usual.
 # APP_PROJ =
-EXPENDABLE_APP_PROJ = ngalign_test
+APP_PROJ = ngalign_test
 
 ## Subdirectories to traverse.
 # SUB_PROJ =
