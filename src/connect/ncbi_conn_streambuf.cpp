@@ -53,7 +53,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
                                  bool            tie,
                                  CT_CHAR_TYPE*   ptr,
                                  size_t          size)
-    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie),
+    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
+      m_Tie(tie), m_Close(true), m_CbValid(false),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if ( !connector ) {
@@ -65,10 +66,39 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
         return;
     }
     _ASSERT(m_Conn != 0);
-    CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
-    CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
-    CONN_SetTimeout(m_Conn, eIO_Write, timeout);
-    CONN_SetTimeout(m_Conn, eIO_Close, timeout);
+    x_Init(true, timeout, buf_size, ptr, size);
+}
+
+
+CConn_Streambuf::CConn_Streambuf(CONN            conn,
+                                 bool            close,
+                                 const STimeout* timeout,
+                                 streamsize      buf_size,
+                                 bool            tie,
+                                 CT_CHAR_TYPE*   ptr,
+                                 size_t          size)
+    : m_Conn(conn), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
+      m_Tie(tie), m_Close(close), m_CbValid(false),
+      x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
+{
+    if ( !m_Conn ) {
+        ERR_POST_X(4, "CConn_Streambuf::CConn_Streambuf(): NULL connection");
+        return;
+    }
+    x_Init(close, timeout, buf_size, ptr, size);
+}
+
+
+void CConn_Streambuf::x_Init(bool close, const STimeout* timeout,
+                             streamsize buf_size,
+                             CT_CHAR_TYPE* ptr, size_t size)
+{
+    if (timeout != kDefaultTimeout) {
+        CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
+        CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
+        CONN_SetTimeout(m_Conn, eIO_Write, timeout);
+        CONN_SetTimeout(m_Conn, eIO_Close, timeout);
+    }
 
     m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
     m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
@@ -82,39 +112,40 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
     SCONN_Callback cb;
     cb.func = x_OnClose;
     cb.data = this;
-    CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, 0);
+    CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
+    m_CbValid = true;
 }
 
 
-CConn_Streambuf::~CConn_Streambuf()
-{
-    x_Cleanup(true);
-    delete[] m_WriteBuf;
-}
-
-
-void CConn_Streambuf::x_Cleanup(bool if_close)
+void CConn_Streambuf::x_Close(bool close)
 {
     if (!m_Conn)
         return;
 
     // Flush only if data pending
-    if (pbase()  &&  pptr() > pbase()) {
+    if (pbase()  &&  pptr() > pbase())
         sync();
-    }
+
     setg(0, 0, 0);
     setp(0, 0);
 
     CONN c = m_Conn;
-    m_Conn = 0;
-    if (if_close) {
-        // Close only if not called from close callback
-        EIO_Status status = CONN_Close(c);
-        if (status != eIO_Success) {
-            _TRACE("CConn_Streambuf::x_Cleanup(): "
-                   "CONN_Close() failed (" << IO_StatusStr(status) << ")");
+    m_Conn = 0;  // NB: no re-entry
+
+    if (close) {
+        if (m_CbValid)
+            CONN_SetCallback(c, eCONN_OnClose, &m_Cb, 0);
+
+        if (m_Close) {
+            // Close only if not called from close callback
+            EIO_Status status = CONN_Close(c);
+            if (status != eIO_Success) {
+                _TRACE("CConn_Streambuf::x_Cleanup(): "
+                       "CONN_Close() failed (" << IO_StatusStr(status) << ")");
+            }
         }
-    }
+    } else if (m_CbValid  &&  m_Cb.func)
+        m_Cb.func(c, eCONN_OnClose, m_Cb.data);
 }
 
 
@@ -126,7 +157,7 @@ void CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
 
     _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
     _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
-    sb->x_Cleanup(false);
+    sb->x_Close(false);
 }
 
 

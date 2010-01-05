@@ -64,9 +64,25 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 }
 
 
+CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
+                               streamsize buf_size, bool do_tie,
+                               CT_CHAR_TYPE* ptr, size_t size) :
+    CNcbiIostream(0), m_CSb(0)
+{
+    if (conn) {
+        auto_ptr<CConn_Streambuf>
+            csb(new CConn_Streambuf(conn, close, timeout, buf_size, do_tie,
+                                    ptr, size));
+        init(csb.get());
+        m_CSb = csb.release();
+    } else
+        init(0);
+}
+
+
 CConn_IOStream::~CConn_IOStream()
 {
-    Cleanup();
+    x_Cleanup();
 }
 
 
@@ -83,7 +99,7 @@ void CConn_IOStream::Close(void)
 }
 
 
-void CConn_IOStream::Cleanup(void)
+void CConn_IOStream::x_Cleanup(void)
 {
     streambuf* sb = rdbuf();
     delete sb;
@@ -171,8 +187,8 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
                                         THCC_Flags           flags,
                                         const STimeout*      timeout)
 {
-    SConnNetInfo* net_info = a_net_info ?
-        ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = a_net_info
+        ? ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
     if (!net_info)
         return 0;
     if (url  &&  !ConnNetInfo_ParseURL(net_info, url))
@@ -379,7 +395,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
-    Cleanup();
+    x_Cleanup();
 #ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif // AUTOMATIC_STREAMBUF_DESTRUCTION
@@ -459,7 +475,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 CConn_PipeStream::~CConn_PipeStream()
 {
     // Explicitly call Cleanup() to avoid using dead m_Pipe otherwise.
-    Cleanup();
+    x_Cleanup();
 #ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif // AUTOMATIC_STREAMBUF_DESTRUCTION

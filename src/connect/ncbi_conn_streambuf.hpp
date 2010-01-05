@@ -55,9 +55,12 @@ public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                     streamsize buf_size, bool tie,
                     CT_CHAR_TYPE* ptr, size_t size);
-    virtual ~CConn_Streambuf();
-    CONN    GetCONN(void) const { return m_Conn;   }
-    void    Close(void)         { x_Cleanup(true); }
+    CConn_Streambuf(CONN conn, bool close, const STimeout* timeout,
+                    streamsize buf_size, bool tie,
+                    CT_CHAR_TYPE* ptr, size_t size);
+    virtual ~CConn_Streambuf()  { Close();  delete[] m_WriteBuf; }
+    CONN    GetCONN(void) const { return m_Conn; }
+    void    Close(void)         { x_Close(true); }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -84,18 +87,26 @@ private:
     streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
 
     bool                m_Tie;       // always flush before reading
+    bool                m_Close;     // if to actually close CONN in dtor
+    bool                m_CbValid;   // if m_Cb is in valid state
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
 
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
-    void                x_Cleanup(bool if_close);
+    void                x_Init(bool close, const STimeout* timeout,
+                               streamsize buf_size,
+                               CT_CHAR_TYPE* ptr, size_t size);
+
+    void                x_Close(bool close);
 
     static void         x_OnClose(CONN conn, ECONN_Callback type, void* data);
 
     static EIO_Status   x_LogIfError(const CDiagCompileInfo& diag_info,
                                      int err_subcode,
                                      EIO_Status status, const string& msg);
+
+    SCONN_Callback      m_Cb;
 };
 
 
