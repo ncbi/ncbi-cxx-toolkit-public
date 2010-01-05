@@ -617,9 +617,9 @@ int CDemoApp::Run(void)
     }
     // Check if the handle is valid
     if ( !handle ) {
-        ERR_POST(Fatal << "Bioseq not found.");
+        ERR_POST(Error << "Bioseq not found.");
     }
-    if ( get_synonyms ) {
+    if ( handle && get_synonyms ) {
         NcbiCout << "Synonyms:" << NcbiEndl;
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
@@ -628,14 +628,14 @@ int CDemoApp::Run(void)
         }
     }
 
-    if ( print_tse ) {
+    if ( handle && print_tse ) {
         CConstRef<CSeq_entry> entry =
             handle.GetTopLevelEntry().GetCompleteSeq_entry();
         NcbiCout << "-------------------- TSE --------------------\n";
         NcbiCout << MSerial_AsnText << *entry << '\n';
         NcbiCout << "-------------------- END --------------------\n";
     }
-    if ( print_seq ) {
+    if ( handle && print_seq ) {
         NcbiCout << "-------------------- SEQ --------------------\n";
         NcbiCout << MSerial_AsnText << *handle.GetCompleteObject() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
@@ -659,7 +659,7 @@ int CDemoApp::Run(void)
             range_to = args["range_to"].AsInteger();
         }
         else {
-            range_to = handle.GetBioseqLength()-1;
+            range_to = handle? handle.GetBioseqLength()-1: kInvalidSeqPos;
         }
         range_loc.Reset(new CSeq_loc);
         range_loc->SetInt().SetId(*search_id);
@@ -700,11 +700,11 @@ int CDemoApp::Run(void)
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
         if ( !handle ) {
-            ERR_POST("Cannot resolve "<<idh.AsString());
-            continue;
+            ERR_POST(Error << "Cannot resolve "<<idh.AsString());
+            //continue;
         }
 
-        if ( get_seg_labels ) {
+        if ( handle && get_seg_labels ) {
             TSeqPos range_length =
                 range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
             CSeqMap::TFlags flags = CSeqMap::fDefaultFlags;
@@ -730,7 +730,7 @@ int CDemoApp::Run(void)
 
         string sout;
         int count;
-        if ( !only_features ) {
+        if ( handle && !only_features ) {
             // List other sequences in the same TSE
             if ( whole_tse ) {
                 NcbiCout << "TSE sequences:" << NcbiEndl;
@@ -892,13 +892,13 @@ int CDemoApp::Run(void)
             .SetExactDepth(exact_depth)
             .SetUnresolvedFlag(missing);
         if ( no_feat_policy ) {
-            base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()|
-                                           SAnnotSelector::fAdaptive_IgnorePolicy);
+            base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()&
+                                           ~SAnnotSelector::fAdaptive_ByPolicy);
         }
         if ( labels ) {
             base_sel.SetFeatComparator(new feature::CFeatComparatorByLabel());
         }
-        if ( externals_only ) {
+        if ( handle && externals_only ) {
             base_sel.SetSearchExternal(handle);
         }
         if ( limit_tse ) {
@@ -908,7 +908,7 @@ int CDemoApp::Run(void)
             else if ( added_entry ) {
                 base_sel.SetLimitSeqEntry(added_entry);
             }
-            else {
+            else if ( handle ) {
                 base_sel.SetLimitTSE(handle.GetTopLevelEntry());
             }
         }
@@ -1008,11 +1008,11 @@ int CDemoApp::Run(void)
                 subtypes_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
             }
             CRef<CSeq_loc_Mapper> mapper;
-            if ( print_features && print_mapper ) {
+            if ( handle && print_features && print_mapper ) {
                 mapper.Reset(new CSeq_loc_Mapper(handle,
                                                  CSeq_loc_Mapper::eSeqMap_Up));
             }
-            if ( args["feat_id"] ) {
+            if ( handle && args["feat_id"] ) {
                 int feat_id = args["feat_id"].AsInteger();
                 vector<CSeq_feat_Handle> feats;
                 CTSE_Handle tse = handle.GetTSE_Handle();
@@ -1155,7 +1155,7 @@ int CDemoApp::Run(void)
                 if ( modify ) {
                     it.GetAnnot().GetEditHandle();
                 }
-                if ( print_features &&
+                if ( handle && print_features &&
                      it->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA &&
                      it->IsSetProduct() ) {
                     using namespace sequence;
@@ -1409,7 +1409,7 @@ int CDemoApp::Run(void)
                  << count << NcbiEndl;
 
         if ( !only_features ) {
-            if ( whole_tse ) {
+            if ( handle && whole_tse ) {
                 count = 0;
                 for (CFeat_CI it(handle.GetTopLevelEntry(), base_sel);
                      it; ++it) {
@@ -1483,7 +1483,7 @@ int CDemoApp::Run(void)
             }
         }
 
-        if ( scan_seq_map ) {
+        if ( handle && scan_seq_map ) {
             TSeqPos range_length =
                 range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
             TSeqPos actual_end =
@@ -1578,7 +1578,7 @@ int CDemoApp::Run(void)
             _ASSERT(total_length == handle.GetBioseqLength());
         }
 
-        if ( modify ) {
+        if ( handle && modify ) {
             //CTSE_Handle tse = handle.GetTSE_Handle();
             //CBioseq_EditHandle ebh = handle.GetEditHandle();
             CRef<CBioseq> newseq(new CBioseq);
