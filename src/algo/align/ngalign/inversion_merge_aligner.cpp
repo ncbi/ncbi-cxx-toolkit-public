@@ -297,8 +297,9 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
 
     NonSeg.RemovePureGapSegs();
     NonSeg.Compact();
-    if(x_IsAllGap(NonSeg))
+    if(x_IsAllGap(NonSeg)) {
         return CRef<CSeq_align>();
+    }
     NonSeg.TrimEndGaps();
 
     CRef<CDense_seg> FillUnaligned = NonSeg.FillUnaligned();
@@ -306,6 +307,11 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
         NonSeg.Assign(*FillUnaligned);
     }
 
+    // Non segment is too short to live
+    if(DomSeg.GetSeqRange(0).GetLength() < 16 ||
+       NonSeg.GetSeqRange(0).GetLength() < 16) {
+        return CRef<CSeq_align>();
+    }
 
     Disc->SetSegs().SetDisc().Set().push_back(DomRef);
     Disc->SetSegs().SetDisc().Set().push_back(NonRef);

@@ -83,6 +83,7 @@ private:
     CRef<objects::CSeq_align_set>
     x_MergeSeqAlignSet(objects::CSeq_align_set& InAligns, objects::CScope& Scope);
 
+     void x_SortAlignSet(objects::CSeq_align_set& AlignSet);
 
     int m_Threshold;
 };

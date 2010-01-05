@@ -459,7 +459,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         }
         Aligner.AddAligner(&**BlastIter);
     }
-    Aligner.AddAligner(InstancedAligner.GetPointer());
+//    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
     Aligner.AddAligner(InversionMergeAligner.GetPointer());
 

@@ -134,10 +134,15 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
                             CScope& Scope)
 {
     auto_ptr<CSeqMasker::TMaskList> Masks, DustMasks;
+    CBioseq_Handle Handle;
+    CSeqVector Vector;
 
-    CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
-    CSeqVector Vector = Handle.GetSeqVector(Handle.eCoding_Iupac, Handle.eStrand_Plus);
-
+    try {
+        Handle = Scope.GetBioseqHandle(Id);
+        Vector = Handle.GetSeqVector(Handle.eCoding_Iupac, Handle.eStrand_Plus);
+    } catch(...) {
+        return CRef<CSeq_loc>();
+    }
 
     CSymDustMasker DustMasker;
 

@@ -112,10 +112,14 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
 
         CRef<CSeq_align_set> PlusOut, MinusOut;
 
-        if(!Pluses->Set().empty())
+        if(!Pluses->Set().empty()) {
+            x_SortAlignSet(*Pluses);
             PlusOut = x_MergeSeqAlignSet(*Pluses, Scope);
-        if(!Minuses->Set().empty())
+        }
+        if(!Minuses->Set().empty()) {
+            x_SortAlignSet(*Minuses);
             MinusOut = x_MergeSeqAlignSet(*Minuses, Scope);
+        }
 
         if(!PlusOut.IsNull())
         ITERATE(CSeq_align_set::Tdata, AlignIter, PlusOut->Set()) {
@@ -175,6 +179,29 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
 }
 
 
+
+static bool s_SortByAlignedLength(const CRef<objects::CSeq_align>& A,
+                                  const CRef<objects::CSeq_align>& B)
+{
+    CScoreBuilder Scorer;
+    TSeqPos Lengths[2];
+    Lengths[0] = Scorer.GetAlignLength(*A);
+    Lengths[1] = Scorer.GetAlignLength(*B);
+    return (Lengths[0] >= Lengths[1]);
+}
+
+
+void CMergeAligner::x_SortAlignSet(CSeq_align_set& AlignSet)
+{
+    vector<CRef<CSeq_align> > TempVec;
+    TempVec.reserve(AlignSet.Set().size());
+    TempVec.resize(AlignSet.Set().size());
+    copy(AlignSet.Set().begin(), AlignSet.Set().end(), TempVec.begin());
+    sort(TempVec.begin(), TempVec.end(), s_SortByAlignedLength);
+    AlignSet.Set().clear();
+    copy(TempVec.begin(), TempVec.end(),
+        insert_iterator<CSeq_align_set::Tdata>(AlignSet.Set(), AlignSet.Set().end()));
+}
 
 
 END_SCOPE(ncbi)

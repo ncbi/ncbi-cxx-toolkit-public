@@ -87,17 +87,24 @@ void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
 
                 CRef<CSeq_align> Curr(*Iter);
 
+                if(Curr->GetSegs().Which() == CSeq_align::C_Segs::e_Disc)
+                    continue;
+
                 double DummyScore;
-                if(!Curr->GetNamedScore(CSeq_align::eScore_Score, DummyScore))
+                if(!Curr->GetNamedScore(CSeq_align::eScore_Score, DummyScore)) {
                     Scorer.AddScore(Scope, *Curr, CScoreBuilder::eScore_Blast);
-                if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore))
+                }
+
+                if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore)) {
                     Scorer.AddScore(Scope, *Curr, CScoreBuilder::eScore_Blast_BitScore);
-                if(!Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, DummyScore))
+                }
+
+                if(!Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, DummyScore)) {
                     Scorer.AddScore(Scope, *Curr, CScoreBuilder::eScore_IdentityCount);
+                }
             }
         }
     }
-
 }
 
 

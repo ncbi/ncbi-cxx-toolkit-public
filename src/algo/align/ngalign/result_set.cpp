@@ -83,6 +83,7 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
 {
     CRef<CSeq_align_set> Out(new CSeq_align_set);
     int BestRank = GetBestRank();
+    ERR_POST(Info << "Best Rank: " << BestRank << " for " << m_QueryId->GetSeqIdString(true));
     if(BestRank == -1) {
         return CRef<CSeq_align_set>();
     }
@@ -152,7 +153,8 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
         if( (*AlignIter)->GetSeqStart(0) == New.GetSeqStart(0) &&
             (*AlignIter)->GetSeqStop(0) == New.GetSeqStop(0) &&
             (*AlignIter)->GetSeqStart(1) == New.GetSeqStart(1) &&
-            (*AlignIter)->GetSeqStop(1) == New.GetSeqStop(1)) {
+            (*AlignIter)->GetSeqStop(1) == New.GetSeqStop(1) &&
+            (*AlignIter)->GetSegs().Which() == New.GetSegs().Which()) {
             return true;
         } else if( (*AlignIter)->GetSegs().Equals(New.GetSegs())) {
             return true;

@@ -79,6 +79,9 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
                 } else {
                     (*AlignIter)->SetNamedScore(KFILTER_SCORE, m_Rank);
                 }
+                //if((*AlignIter)->GetType() == CSeq_align::eType_disc) {
+                //    cerr << MSerial_AsnText << (**AlignIter);
+                //}
             }
 
             CRef<CQuerySet> FilteredResults(new CQuerySet(*Filtered));

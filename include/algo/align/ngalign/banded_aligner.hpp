@@ -115,10 +115,14 @@ public:
     bool IsAlignmentContained(const objects::CSeq_align& Align) const;
     int GapDistance(const objects::CSeq_align& Align) const;
 
+    double SubjToQueryRatio() const;
+    TSeqPos QueryLength() const;
+
     objects::CSeq_interval  Query;
     objects::CSeq_interval  Subject;
     objects::CSeq_align_set Alignments;
 };
+
 
 class CInstancedAligner : public IAlignmentFactory
 {
@@ -174,6 +178,8 @@ private:
                         vector<CRef<CInstance> >& Instances);
     void x_GetDistanceInstances(CQuerySet& QueryAligns, objects::CScope& Scope,
                         vector<CRef<CInstance> >& Instances);
+
+    void x_FilterInstances(vector<CRef<CInstance> >& Instances, double MaxRatio);
 };
 
 

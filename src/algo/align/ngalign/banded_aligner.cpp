@@ -348,7 +348,6 @@ TAlignResultsRef CInstancedAligner::GenerateAlignments(objects::CScope& Scope,
 
 
 
-
 void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
                                      CQuerySet& QueryAligns,
                                      TAlignResultsRef Results)
@@ -358,51 +357,18 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
     vector<CRef<CInstance> > Instances;
     x_GetCleanupInstances(QueryAligns, Scope, Instances);
     x_GetDistanceInstances(QueryAligns, Scope, Instances);
+    x_FilterInstances(Instances, m_MaxRatio);
     if(Instances.empty()) {
         ERR_POST(Info << " No instances of " << QueryAligns.GetQueryId()->AsFastaString() << " found.");
         return;
     }
-
     ERR_POST(Info << " Instance Count: " << Instances.size());
-    TSeqPos LongestInstance = 0;
-    ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
-        const CInstance& Inst = **InstIter;
 
-        double Ratio = (Inst.Subject.GetLength() / double(Inst.Query.GetLength()));
-        if(Ratio > m_MaxRatio)
-            continue;
-
-        TSeqPos CurrLength = (Inst.Query.GetTo() - Inst.Query.GetFrom());
-        LongestInstance = max(CurrLength, LongestInstance);
-
-
-
-        /*ERR_POST(Info << " Aligning " << Inst.Query.GetId().AsFastaString() << " to "
-                                     << Inst.Subject.GetId().AsFastaString());
-        ERR_POST(Info << "  q:" << Inst.Query.GetFrom() << ":"
-                                << Inst.Query.GetTo() << ":"
-                                << (Inst.Query.GetStrand() == eNa_strand_plus ? "+" : "-")
-                      << " and s: " << Inst.Subject.GetFrom() << ":"
-                                    << Inst.Subject.GetTo() << ":"
-                                    << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-") );
-        ERR_POST(Info << "  ql: " << Inst.Query.GetLength() << " to "
-                      << "  sl: " << Inst.Subject.GetLength()*/
-        //ERR_POST(Info              << "  ratio: " << (Inst.Subject.GetLength()/double(Inst.Query.GetLength())));
-    }
 
     CRef<CSeq_align> Result(new CSeq_align);
     ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
 
         const CInstance& Inst = **InstIter;
-
-        double Ratio = (Inst.Subject.GetLength() / double(Inst.Query.GetLength()));
-        if(Ratio >= m_MaxRatio) {
-            continue;
-        }
-
-        if( (Inst.Query.GetTo() - Inst.Query.GetFrom()) <= (LongestInstance*0.005)) {
-            continue;
-        }
 
         ERR_POST(Info << " Aligning " << Inst.Query.GetId().AsFastaString() << " to "
                                      << Inst.Subject.GetId().AsFastaString());
@@ -412,7 +378,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
                       << " and s: " << Inst.Subject.GetFrom() << ":"
                                     << Inst.Subject.GetTo() << ":"
                                     << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-")
-                      << "  ratio: " << Ratio);
+                      << "  ratio: " << Inst.SubjToQueryRatio());
 
         CRef<CDense_seg> GlobalDs;
         try {
@@ -735,6 +701,7 @@ CInstance::CInstance(CRef<CSeq_align> Align)
     Alignments.Set().push_back(Align);
 }
 
+
 CInstance::CInstance(const CSeq_align_set& AlignSet)
 {
     Query.SetId().Assign(AlignSet.Get().front()->GetSeq_id(0));
@@ -786,6 +753,18 @@ int CInstance::GapDistance(const CSeq_align& Align) const
     LongestGap = max((int)Subject.GetFrom()-(int)Align.GetSeqStop(1), LongestGap);
    // cerr << "Longest Gap: " << LongestGap << endl;
     return LongestGap;
+}
+
+
+double CInstance::SubjToQueryRatio() const
+{
+    return (Subject.GetLength() / double(Query.GetLength()));
+}
+
+
+TSeqPos CInstance::QueryLength() const
+{
+    return Query.GetLength();
 }
 
 
@@ -920,7 +899,35 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
 }
 
 
+void CInstancedAligner::x_FilterInstances(vector<CRef<CInstance> >& Instances, double MaxRatio)
+{
+    // Filters out Instances of overly lopsided ratios
+    vector<CRef<CInstance> >::iterator Curr;
+    Curr = Instances.begin();
+    for(Curr = Instances.begin(); Curr != Instances.end(); ) {
+        if( (*Curr)->SubjToQueryRatio() > MaxRatio ||
+            (*Curr)->SubjToQueryRatio() < 0.10 )
+            Curr = Instances.erase(Curr);
+        else
+            ++Curr;
+    }
 
+    // Find the longest instance now
+    TSeqPos LongestInstance = 0;
+    for(Curr = Instances.begin(); Curr != Instances.end(); ++Curr) {
+        TSeqPos CurrLength = (*Curr)->QueryLength();
+        LongestInstance = max(CurrLength, LongestInstance);
+    }
+
+    // Filters out instances that are too tiny to both with
+    for(Curr = Instances.begin(); Curr != Instances.end(); ) {
+        if( (*Curr)->QueryLength() <= (LongestInstance*0.05))
+            Curr = Instances.erase(Curr);
+        else
+            ++Curr;
+    }
+
+}
 
 
 END_SCOPE(ncbi)
