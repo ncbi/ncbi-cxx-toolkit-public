@@ -65,6 +65,8 @@ void XSDParser::BeginDocumentTree(void)
 
 void XSDParser::BuildDocumentTree(CDataTypeModule& module)
 {
+    size_t lexerStackSize = m_StackLexer.size();
+    bool skipEof = false;
     ParseHeader();
     CopyComments(module.Comments());
 
@@ -92,9 +94,17 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case K_ATTPAIR:
             break;
         case T_EOF:
+            if (skipEof) {
+                skipEof = false;
+                break;
+            }
             ParseError("Unexpected end-of-file", "keyword");
             return;
         case K_ENDOFTAG:
+            if (m_StackLexer.size() > lexerStackSize) {
+                skipEof = true;
+                break;
+            }
             if (m_SrcType == eSchema) {
                 ProcessNamedTypes();
             }
