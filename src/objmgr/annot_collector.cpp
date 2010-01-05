@@ -1213,8 +1213,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
         bool exact_depth = selector.GetExactDepth() && depth_is_set;
         int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
-        bool ignore_policy =
-            (adaptive_flags & SAnnotSelector::fAdaptive_IgnorePolicy) != 0;
+        int by_policy = adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy;
         adaptive_flags &=
             SAnnotSelector::fAdaptive_ByTriggers |
             SAnnotSelector::fAdaptive_BySubtypes;
@@ -1229,7 +1228,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
             deeper = depth > 0 &&
                 selector.GetResolveMethod() != selector.eResolve_None;
         }
-        if ( deeper && !ignore_policy ) {
+        if ( deeper && by_policy ) {
             deeper =
                 bh.GetFeatureFetchPolicy() != bh.eFeatureFetchPolicy_only_near;
         }
@@ -1450,8 +1449,12 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
     if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
         sel.SetLimitTSE(bh.GetTSE_Handle());
     }
-    if ( !(m_Selector->GetAdaptiveDepthFlags() &
-           SAnnotSelector::fAdaptive_IgnorePolicy) ) {
+    
+    int depth = m_Selector->GetResolveDepth();
+    bool depth_is_set = depth >= 0 && depth < kMax_Int;
+    bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+    int adaptive_flags = exact_depth? 0: m_Selector->GetAdaptiveDepthFlags();
+    if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
         sel.SetByFeaturePolicy();
     }
 
@@ -1529,8 +1532,12 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
         if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
             sel.SetLimitTSE(bh.GetTSE_Handle());
         }
-        if ( !(m_Selector->GetAdaptiveDepthFlags() &
-               SAnnotSelector::fAdaptive_IgnorePolicy) ) {
+        
+        int depth = m_Selector->GetResolveDepth();
+        bool depth_is_set = depth >= 0 && depth < kMax_Int;
+        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+        int adaptive_flags = exact_depth?0:m_Selector->GetAdaptiveDepthFlags();
+        if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
             sel.SetByFeaturePolicy();
         }
 
