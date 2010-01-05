@@ -407,10 +407,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             }
             if (t  &&  ulen) {
                 /* take pass only if user non-empty */
-                len = (size_t)(a - ++t);
-                if (len < sizeof(info->pass)) {
-                    memcpy(info->pass, t, len);
-                    info->pass[len] = '\0';
+                ulen = (size_t)(a - ++t);
+                if (ulen < sizeof(info->pass)) {
+                    memcpy(info->pass, t, ulen);
+                    info->pass[ulen] = '\0';
                 } else {
                     memcpy(info->pass, t, sizeof(info->pass) - 1);
                     info->pass[sizeof(info->pass) - 1] = '\0';
@@ -1072,7 +1072,10 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
         s_SaveKeyval(s, "client_host",     "<default>");
     s_SaveString    (s, "scheme",          s_SchemeStr(info->scheme, scheme));
     s_SaveString    (s, "user",            info->user);
-    s_SaveString    (s, "pass",            info->pass);
+    if (*info->pass)
+        s_SaveKeyval(s, "pass",           *info->user ? "<set>" : "<ignored>");
+    else
+        s_SaveString(s, "pass",            info->pass);
     s_SaveString    (s, "host",            info->host);
     s_SaveKeyval    (s, "port",            s_PortStr(info->port, port));
     s_SaveString    (s, "path",            info->path);
@@ -1128,15 +1131,19 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         return 0;
     }
 
-    len = strlen(scheme) + 3/*"://"*/ + strlen(info->host) +
-        (info->port                ? 6/*:port*/ : 0) +
-        (info->http_proxy_adjusted ? 2 : 0) +
-        strlen(info->path) + 1 +
-        (*info->args ? strlen(info->args) + 2 : 1);
+    len = strlen(scheme) + 3/*"://"*/ + strlen(info->host)
+        + (*info->user ? strlen(info->user) + strlen(info->pass) + 2 : 0)
+        + (info->port ? 6/*:port*/ : 0)
+        + (info->http_proxy_adjusted ? 2 : 0)
+        + strlen(info->path)
+        + (*info->args ? strlen(info->args) + 3 : 2);
     url = (char*) malloc(len);
 
     if (url) {
-        len = (size_t) sprintf(url, "%s://%s", scheme, info->host);
+        len = (size_t) sprintf(url, "%s://%s", scheme,
+                               *info->user ? info->user : info->host);
+        if (*info->user)
+            len += sprintf(url + len, ":%s@%s", info->pass, info->host);
         if (info->port)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s%s", info->http_proxy_adjusted
@@ -1174,7 +1181,7 @@ extern EIO_Status URL_ConnectEx
  const char*     args,
  EReqMethod      req_method,
  size_t          content_length,
- const STimeout* c_timeout,
+ const STimeout* o_timeout,
  const STimeout* rw_timeout,
  const char*     user_hdr,
  int/*bool*/     encode_args,
@@ -1306,15 +1313,16 @@ extern EIO_Status URL_ConnectEx
     BUF_Destroy(buf);
 
     /* connect to HTTPD */
-    st = SOCK_CreateEx(host, port, c_timeout, sock, header, hdrsize, flags);
+    st = SOCK_CreateEx(host, port, o_timeout, sock, header, hdrsize, flags);
     free(header);
+
     if (st != eIO_Success) {
         char temp[80];
         assert(!*sock);
-        if (st == eIO_Timeout  &&  c_timeout) {
+        if (st == eIO_Timeout  &&  o_timeout) {
             sprintf(temp, "[%u.%06u]",
-                    (unsigned int)(c_timeout->sec + c_timeout->usec/1000000),
-                    (unsigned int)                 (c_timeout->usec%1000000));
+                    (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
+                    (unsigned int)                 (o_timeout->usec%1000000));
         } else
             *temp = '\0';
         CORE_LOGF_X(7, eLOG_Error,
