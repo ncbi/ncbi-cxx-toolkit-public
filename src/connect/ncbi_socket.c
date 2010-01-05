@@ -3694,7 +3694,7 @@ static EIO_Status s_CreateListening(const char*    path,
     /* statistics & logging */
     if ((*lsock)->log == eOn  ||  ((*lsock)->log == eDefault && s_Log == eOn)){
         CORE_LOGF_X(115, eLOG_Trace,
-                    ("%sListening", s_ID((SOCK) lsock, _id)));
+                    ("%sListening", s_ID((SOCK)(*lsock), _id)));
     }
 
     return eIO_Success;
