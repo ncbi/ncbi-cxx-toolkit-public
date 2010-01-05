@@ -177,7 +177,9 @@ public:
         eNone,
         
         /// The array is sorted by GI.
-        eGi
+        eOrder
+
+        /// TODO should we define eTi and eSeqId?
     };
     
     /// Constructor
@@ -367,6 +369,8 @@ public:
     
     /// Get the ti list
     void GetTiList(vector<Int8>& tis) const;
+
+    /// TODO Get the seqid list?
     
     /// Add a new GI to the list.
     void AddGi(int gi)
@@ -380,6 +384,12 @@ public:
         m_TisOids.push_back(ti);
     }
     
+    /// Add a new SeqId to the list.
+    void AddSeqId(const char *si)
+    {
+        m_SeqIdsOids.push_back(new CSeq_id(si));
+    }
+
     /// Reserve space for GIs.
     void ReserveGis(size_t n)
     {
@@ -392,6 +402,7 @@ public:
         m_TisOids.reserve(n);
     }
     
+    /// TODO Reserve space for seqids?
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
@@ -564,11 +575,12 @@ public:
     /// Sort list if not already sorted.
     void InsureOrder()
     {
-        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size())) {
+        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size() +m_SeqIds.size())) {
             std::sort(m_Gis.begin(), m_Gis.end());
             std::sort(m_Tis.begin(), m_Tis.end());
+            std::sort(m_SeqIds.begin(), m_SeqIds.end());
             
-            m_LastSortSize = m_Gis.size() + m_Tis.size();
+            m_LastSortSize = m_Gis.size() + m_Tis.size() + m_SeqIds.size();
         }
     }
     
@@ -584,12 +596,21 @@ public:
         m_Tis.push_back(ti);
     }
     
+    /// Add a new SeqId to the list.
+    void AddSeqId(const string &si)
+    {
+        m_SeqIds.push_back(CRef<CSeq_id> (new CSeq_id(si)));
+    }
+
     /// Test for existence of a GI.
     bool FindGi(int gi);
     
     /// Test for existence of a TI.
     bool FindTi(Int8 ti);
     
+    /// Test for existence of a SeqId.
+    /// bool FindSeqId(const CSeq_id & seqid);
+
     /// Test for existence of a TI or GI here and report whether the
     /// ID was one of those types.
     /// 
@@ -623,6 +644,14 @@ public:
         return m_Tis[index];
     }
     
+    /// Access an element of the SeqId array.
+    /// @param index The index of the element to access. [in]
+    /// @return The TI for that index.
+    const CRef<CSeq_id> GetSeqId(int index) const
+    {
+        return m_SeqIds[index];
+    }
+
     /// Get the number of GIs in the array.
     int GetNumGis() const
     {
@@ -635,10 +664,16 @@ public:
         return (int) m_Tis.size();
     }
     
+    /// Get the number of SeqIds in the array.
+    int GetNumSeqIds() const
+    {
+        return (int) m_SeqIds.size();
+    }
+    
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumTis());
+        return ! (GetNumGis() || GetNumTis() || GetNumSeqIds());
     }
     
     /// Return true if there are elements present.
@@ -729,6 +764,9 @@ protected:
     /// TIs to exclude from the SeqDB instance.
     vector<Int8> m_Tis;
     
+    /// SeqIds to exclude from the SeqDB instance.
+    vector< CRef<CSeq_id> > m_SeqIds;
+    
 private:
     /// Prevent copy constructor.
     CSeqDBNegativeList(const CSeqDBNegativeList & other);
@@ -791,6 +829,25 @@ void SeqDB_ReadMemoryTiList(const char                   * fbeginp,
                             const char                   * fendp,
                             vector<CSeqDBGiList::STiOid> & tis,
                             bool                         * in_order = 0);
+
+/// Read a text SeqID list from an area of memory.
+///
+/// The Seqids in a memory region are read into the provided SSeqIdOid
+/// vector.  The SeqId half of each element of the vector is assigned,
+/// but the OID half will be left as -1.  If the in_order parameter is
+/// not null, the function will test the SeqIds for orderedness.  It will
+/// set the bool to which in_order points to true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the SeqId list. [in]
+/// @param fendp   The end of the memory region holding the SeqId list. [in]
+/// @param seqids  The SeqId returned by this function. [out]
+/// @param in_order If non-null, returns true iff the seqids were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMemorySeqIdList(const char                      * fbeginp,
+                               const char                      * fendp,
+                               vector<CSeqDBGiList::SSeqIdOid> & sis,
+                               bool                            * in_order = 0);
 
 /// Combine and quote a list of database names.
 ///
@@ -868,6 +925,23 @@ void SeqDB_ReadTiList(const string                 & fname,
                       vector<CSeqDBGiList::STiOid> & tis,
                       bool                         * in_order = 0);
 
+/// Read a text SeqId list from a file.
+///
+/// The Seqids in a file are read into the provided SSeqIdOid vector.  The
+/// SeqId half of each element of the vector is assigned, but the OID
+/// half will be left as -1.  If the in_order parameter is not null,
+/// the function will test the SeqIds for orderedness.  It will set the
+/// bool to which in_order points to true if so, false if not.
+///
+/// @param fname    The name of the SeqId list file. [in]
+/// @param sis      The SeqIds returned by this function. [out]
+/// @param in_order If non-null, returns true iff the SeqIds were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadSeqIdList(const string                   & fname,
+                        vector<CSeqDBGiList::SSeqIdOid> & sis,
+                        bool                            * in_order = 0);
+
 /// Read a text or binary GI list from a file.
 ///
 /// The GIs in a file are read into the provided vector<int>.  If the
@@ -884,6 +958,22 @@ void SeqDB_ReadGiList(const string  & fname,
                       vector<int>   & gis,
                       bool          * in_order = 0);
 
+/// Read a text or binary SeqId list from a file.
+///
+/// The SeqIds in a file are read into the provided vector<string>.  If the
+/// in_order parameter is not null, the function will test the SeqIds for
+/// orderedness.  It will set the bool to which in_order points to
+/// true if so, false if not.
+///
+/// @param fname    The name of the SeqId list file. [in]
+/// @param sis      The SeqIds returned by this function. [out]
+/// @param in_order If non-null, returns true iff the SeqIds were in order. [out]
+
+///NCBI_XOBJREAD_EXPORT
+///void SeqDB_ReadSeqIdList(const string     & fname,
+///                         vector<string>   & sis,
+///                         bool             * in_order = 0);
+
 /// Returns true if the file name passed contains a binary gi list
 ///
 /// @param fname    The name of the GI list file. [in]
@@ -899,8 +989,14 @@ bool SeqDB_IsBinaryGiList(const string  & fname);
 
 class NCBI_XOBJREAD_EXPORT CSeqDBFileGiList : public CSeqDBGiList {
 public:
+    enum EIdType {
+        eGi,
+        eTi,
+        eSeqId
+    };
+
     /// Build a GI list from a file.
-    CSeqDBFileGiList(const string & fname);
+    CSeqDBFileGiList(const string & fname, EIdType idtype=eGi);
 };
 
 

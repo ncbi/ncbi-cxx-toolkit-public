@@ -1190,8 +1190,11 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     vector<string> database_args;
     database_args.push_back(kArgDb);
     database_args.push_back(kArgGiList);
+    database_args.push_back(kArgSeqIdList);
     database_args.push_back(kArgNegativeGiList);
-    database_args.push_back(kArgDbSoftMask);
+    if (m_SupportsDatabaseMasking) {
+        database_args.push_back(kArgDbSoftMask);
+    }
 
     // DB size
     arg_desc.SetCurrentGroup("Statistical options");
@@ -1204,11 +1207,19 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey(kArgGiList, "filename", 
                             "Restrict search of database to list of GI's",
                             CArgDescriptions::eString);
+    // SeqId list
+    arg_desc.AddOptionalKey(kArgSeqIdList, "filename", 
+                            "Restrict search of database to list of SeqId's",
+                            CArgDescriptions::eString);
     // Negative GI list
     arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
         "Restrict search of database to everything except the listed GIs",
         CArgDescriptions::eString);
     arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                           kArgNegativeGiList);
+    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                           kArgSeqIdList);
+    arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                            kArgNegativeGiList);
     // Entrez Query
     arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
@@ -1218,6 +1229,8 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // For now, disable pairing -remote with either -gilist or
     // -negative_gilist as this is not implemented in the BLAST server
     arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                           kArgRemote);
+    arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                            kArgRemote);
     arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
                            kArgRemote);
@@ -1229,12 +1242,13 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Masking of database
-
-    arg_desc.AddOptionalKey(kArgDbSoftMask, 
+    if (m_SupportsDatabaseMasking) {
+        arg_desc.AddOptionalKey(kArgDbSoftMask, 
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as soft "
                 "masking",
                 CArgDescriptions::eInteger);
+    }
 #endif
 
     // There is no RPS-BLAST 2 sequences
@@ -1320,6 +1334,12 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                 m_NegativeGiListFileName, gis);
         if ( !gis.empty() ) 
             m_SearchDb->SetNegativeGiListLimitation(gis);
+
+        if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
+            CRef<CSeqDBGiList> gilist(new CSeqDBFileGiList(args[kArgSeqIdList].AsString(), 
+                                          CSeqDBFileGiList::eSeqId));
+            m_SearchDb->SetSeqIdList(gilist);
+        }
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
             m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());

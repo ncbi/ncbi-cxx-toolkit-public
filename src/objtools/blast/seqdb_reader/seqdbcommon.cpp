@@ -582,7 +582,7 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
         case eNone:
             break;
             
-        case eGi:
+        case eOrder:
             s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
             s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
             s_InsureOrder<CSeqDB_SortSeqIdLessThan>(m_SeqIdsOids);
@@ -615,7 +615,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid)
 
 bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 {
-    InsureOrder(eGi);  // would assert be better?
+    InsureOrder(eOrder);  // would assert be better?
     
     int b(0), e((int)m_GisOids.size());
     
@@ -655,7 +655,7 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid)
 
 bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
 {
-    InsureOrder(eGi);  // would assert be better?
+    InsureOrder(eOrder);  // would assert be better?
     
     int b(0), e((int)m_TisOids.size());
     
@@ -695,7 +695,7 @@ bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid)
 
 bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid, int & index)
 {
-    InsureOrder(eGi);
+    InsureOrder(eOrder);
     
     int b(0), e((int)m_SeqIdsOids.size());
     
@@ -1154,6 +1154,34 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
     }
 }
 
+void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
+                               const char * fendp,
+                               vector<CSeqDBGiList::SSeqIdOid> & sis,
+                               bool * in_order)
+{
+    Int8 file_size = fendp - fbeginp;
+    
+    // We would prefer to do only one allocation, so assume
+    // average seqid is 6 digits plus newline.  A few extra will be
+    // allocated, but this is preferable to letting the vector
+    // double itself (which it still will do if needed).
+        
+    sis.reserve(int(file_size / 7));
+       
+    const char * p = fbeginp;
+    const char * head;
+    while ( p < fendp) {
+        // find the head of the seqid
+        while (p< fendp && (*p=='>' || *p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) ++p;
+        head = p;
+        while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
+        if (p > head) {
+            // TODO should we validate the string first?
+            sis.push_back(new CSeq_id(string(head, p-head)));
+        }
+    }
+}
+
 bool SeqDB_IsBinaryGiList(const string  & fname)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
@@ -1189,6 +1217,16 @@ void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, 
     SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
 
+void SeqDB_ReadSeqIdList(const string & fname, vector<CSeqDBGiList::SSeqIdOid> & sis, bool * in_order) 
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+
+    Int8 file_size = mfile.GetSize();
+    const char *fbeginp = (char*) mfile.GetPtr();
+    const char *fendp   = fbeginp + (int) file_size;
+
+    SeqDB_ReadMemorySeqIdList(fbeginp, fendp, sis, in_order);
+}
 
 void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
 {
@@ -1204,6 +1242,14 @@ void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
     }
 }
 
+/*
+void SeqDB_ReadSeqIdList(const string & fname, vector<string> & sis, bool * in_order)
+{
+    typedef vector<CSeqDBGiList::SSeqIdOid> TPairList;
+
+    TPairList pairs;
+    cout << "SeqDB_ReadSeqIdList has not been implemented" << endl;
+}*/
 
 bool CSeqDBNegativeList::FindGi(int gi)
 {
@@ -1249,6 +1295,14 @@ bool CSeqDBNegativeList::FindTi(Int8 ti)
     
     return false;
 }
+
+/*
+bool CSeqDBNegativeList::FindSeqId(const CSeq_id & seqid)
+{
+    // TODO not implemented yet.
+    cout << "CSeqDBNegativeList::FindSeqId not implemented yet" << endl;
+    return false;
+}*/
 
 
 bool CSeqDBNegativeList::FindId(const CSeq_id & id)
@@ -1302,11 +1356,21 @@ bool CSeqDBGiList::FindId(const CSeq_id & id)
 }
 
 
-CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
+CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
 {
     bool in_order = false;
-    SeqDB_ReadGiList(fname, m_GisOids, & in_order);
-    m_CurrentOrder = in_order ? eGi : eNone;
+    switch(idtype) {
+        case eGi:
+            SeqDB_ReadGiList(fname, m_GisOids, & in_order);
+            break;
+        case eTi:
+            SeqDB_ReadTiList(fname, m_TisOids, & in_order);
+            break;
+        case eSeqId:
+            SeqDB_ReadSeqIdList(fname, m_SeqIdsOids, & in_order);
+            break;
+    }
+    m_CurrentOrder = in_order ? eOrder : eNone;
 }
 
 
@@ -1404,7 +1468,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
 {
     _ASSERT(this != & gilist);
     
-    gilist.InsureOrder(CSeqDBGiList::eGi);
+    gilist.InsureOrder(CSeqDBGiList::eOrder);
     sort(gis.begin(), gis.end());
     
     int list_i = 0;
@@ -1432,7 +1496,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
         gis_i++;
     }
     
-    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
+    m_CurrentOrder = m_GisOids.size() ? eOrder : eNone;
 }
 
 
@@ -1470,7 +1534,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
         m_GisOids.push_back(gis[gis_i++]);
     }
     
-    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
+    m_CurrentOrder = m_GisOids.size() ? eOrder : eNone;
 }
 
 

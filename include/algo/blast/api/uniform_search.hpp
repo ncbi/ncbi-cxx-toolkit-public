@@ -40,6 +40,7 @@
 #include <algo/blast/api/blast_results.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -172,6 +173,14 @@ public:
     /// Accessor for the gi list
     const TGiList& GetGiListLimitation() const;
 
+    /// Mutator for the seqid list
+    /// @param gilist list of seqids [in]
+    void SetSeqIdList(CRef<CSeqDBGiList> &seqidlist);
+    /// Mutator for the seqid list
+    CRef<CSeqDBGiList>& SetSeqIdList();
+    /// Accessor for the seqid list
+    const CRef<CSeqDBGiList>& GetSeqIdList() const;
+    
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm_id filtering algorithm ID [in]
     void SetFilteringAlgorithm(int filt_algorithm_id);
@@ -193,6 +202,7 @@ private:
     // N.B.: only one of the 2 below should be specified
     TGiList         m_GiListLimitation;         ///< gi list
     TGiList         m_NegativeGiListLimitation; ///< negative gi list
+    CRef<CSeqDBGiList> m_SeqIdList;             ///< seqid list
     /// filtering to apply to database sequences
     int             m_FilteringAlgorithmId;       
 };

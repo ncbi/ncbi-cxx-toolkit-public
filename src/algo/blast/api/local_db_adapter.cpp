@@ -175,6 +175,8 @@ CLocalDbAdapter::x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo)
     if ( !dbinfo->GetGiListLimitation().empty() ) {
         CSeqDBIdSet idset(dbinfo->GetGiListLimitation(), CSeqDBIdSet::eGi);
         gi_list = idset.GetPositiveList();
+    } else if ( !(dbinfo->GetSeqIdList()->Empty())) {
+        gi_list = dbinfo->GetSeqIdList();
     }
 
     // FIXME: refactor code in SplitDB/LibEntrezCacheEx.cpp ?

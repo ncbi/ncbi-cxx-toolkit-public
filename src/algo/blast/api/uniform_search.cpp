@@ -132,6 +132,24 @@ CSearchDatabase::GetGiListLimitation() const
 }
 
 void 
+CSearchDatabase::SetSeqIdList(CRef<CSeqDBGiList> & gilist) 
+{
+    m_SeqIdList.Reset(gilist); 
+}
+
+CRef<CSeqDBGiList> & 
+CSearchDatabase::SetSeqIdList()
+{ 
+    return m_SeqIdList; 
+}
+
+const CRef<CSeqDBGiList> &
+CSearchDatabase::GetSeqIdList() const 
+{ 
+    return m_SeqIdList; 
+}
+
+void 
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
 {
     m_FilteringAlgorithmId = filt_algorithm_id;

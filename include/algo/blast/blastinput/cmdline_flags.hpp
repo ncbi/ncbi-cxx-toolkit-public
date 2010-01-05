@@ -64,6 +64,10 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgDbType;
 
 /// gi list file name to restrict BLAST database
 NCBI_BLASTINPUT_EXPORT extern const string kArgGiList;
+
+/// seqid list file name to restrict BLAST database
+NCBI_BLASTINPUT_EXPORT extern const string kArgSeqIdList;
+
 /// argument for gi list to exclude from a BLAST database search
 NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeGiList;
 
