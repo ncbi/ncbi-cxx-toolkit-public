@@ -43,7 +43,11 @@ string Identifier(const string& typeName, bool capitalize)
     s.reserve(typeName.size());
     string::const_iterator i = typeName.begin();
     if ( i != typeName.end() ) {
-        s += capitalize? toupper((unsigned char)(*i)): *i;
+        if (isalnum((unsigned char)(*i))) {
+            s += capitalize? toupper((unsigned char)(*i)): *i;
+        } else {
+            s += '_';
+        }
         while ( ++i != typeName.end() ) {
             char c = *i;
             if ( c == ':' ) {
