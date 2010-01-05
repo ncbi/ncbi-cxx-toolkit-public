@@ -230,7 +230,7 @@ user {
 
         const CUser_object& User = Desc.GetUser();
         string TypeString;
-        if(User.CanGetType())
+        if(User.CanGetType()  &&  User.GetType().IsStr())
             TypeString = User.GetType().GetStr();
         if(TypeString == "RefGeneTracking" && User.HasField("Assembly")) {
 
