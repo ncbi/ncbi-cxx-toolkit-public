@@ -582,7 +582,7 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
         case eNone:
             break;
             
-        case eOrder:
+        case eGi:
             s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
             s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
             s_InsureOrder<CSeqDB_SortSeqIdLessThan>(m_SeqIdsOids);
@@ -615,7 +615,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid)
 
 bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 {
-    InsureOrder(eOrder);  // would assert be better?
+    InsureOrder(eGi);  // would assert be better?
     
     int b(0), e((int)m_GisOids.size());
     
@@ -655,7 +655,7 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid)
 
 bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
 {
-    InsureOrder(eOrder);  // would assert be better?
+    InsureOrder(eGi);  // would assert be better?
     
     int b(0), e((int)m_TisOids.size());
     
@@ -695,7 +695,7 @@ bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid)
 
 bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid, int & index)
 {
-    InsureOrder(eOrder);
+    InsureOrder(eGi);
     
     int b(0), e((int)m_SeqIdsOids.size());
     
@@ -1360,17 +1360,17 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
 {
     bool in_order = false;
     switch(idtype) {
-        case eGi:
+        case eGiList:
             SeqDB_ReadGiList(fname, m_GisOids, & in_order);
             break;
-        case eTi:
+        case eTiList:
             SeqDB_ReadTiList(fname, m_TisOids, & in_order);
             break;
-        case eSeqId:
+        case eSeqIdList:
             SeqDB_ReadSeqIdList(fname, m_SeqIdsOids, & in_order);
             break;
     }
-    m_CurrentOrder = in_order ? eOrder : eNone;
+    m_CurrentOrder = in_order ? eGi : eNone;
 }
 
 
@@ -1468,7 +1468,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
 {
     _ASSERT(this != & gilist);
     
-    gilist.InsureOrder(CSeqDBGiList::eOrder);
+    gilist.InsureOrder(CSeqDBGiList::eGi);
     sort(gis.begin(), gis.end());
     
     int list_i = 0;
@@ -1496,7 +1496,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
         gis_i++;
     }
     
-    m_CurrentOrder = m_GisOids.size() ? eOrder : eNone;
+    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
 
@@ -1534,7 +1534,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
         m_GisOids.push_back(gis[gis_i++]);
     }
     
-    m_CurrentOrder = m_GisOids.size() ? eOrder : eNone;
+    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
 

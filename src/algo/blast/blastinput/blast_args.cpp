@@ -1337,7 +1337,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
             CRef<CSeqDBGiList> gilist(new CSeqDBFileGiList(args[kArgSeqIdList].AsString(), 
-                                          CSeqDBFileGiList::eSeqId));
+                                          CSeqDBFileGiList::eSeqIdList));
             m_SearchDb->SetSeqIdList(gilist);
         }
 

@@ -91,7 +91,7 @@ public:
         }
         
         // An empty vector is always sorted, right?
-        m_CurrentOrder = eOrder;
+        m_CurrentOrder = eGi;
     }
     
     /// Append a GI.
@@ -101,7 +101,7 @@ public:
     /// @param gi A sequence identifier.
     void AppendGi(int gi, int oid = -1)
     {
-        if (m_CurrentOrder == eOrder) {
+        if (m_CurrentOrder == eGi) {
             if (m_Last > gi) {
                 m_CurrentOrder = eNone;
             } else if (m_Last == gi) {

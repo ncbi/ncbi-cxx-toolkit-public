@@ -177,7 +177,7 @@ public:
         eNone,
         
         /// The array is sorted by GI.
-        eOrder
+        eGi
 
         /// TODO should we define eTi and eSeqId?
     };
@@ -990,13 +990,13 @@ bool SeqDB_IsBinaryGiList(const string  & fname);
 class NCBI_XOBJREAD_EXPORT CSeqDBFileGiList : public CSeqDBGiList {
 public:
     enum EIdType {
-        eGi,
-        eTi,
-        eSeqId
+        eGiList,
+        eTiList,
+        eSeqIdList
     };
 
     /// Build a GI list from a file.
-    CSeqDBFileGiList(const string & fname, EIdType idtype=eGi);
+    CSeqDBFileGiList(const string & fname, EIdType idtype=eGiList);
 };
 
 

@@ -112,7 +112,7 @@ public:
             }
             
             if (in_order) {
-                m_CurrentOrder = eOrder;
+                m_CurrentOrder = eGi;
             }
         }
         catch(...) {
@@ -280,8 +280,8 @@ void CSeqDBGiListSet::x_TranslateGisFromUserList(CSeqDBGiList & gilist)
     CSeqDBGiList & source = *m_UserList;
     CSeqDBGiList & target = gilist;
     
-    source.InsureOrder(CSeqDBGiList::eOrder);
-    target.InsureOrder(CSeqDBGiList::eOrder);
+    source.InsureOrder(CSeqDBGiList::eGi);
+    target.InsureOrder(CSeqDBGiList::eGi);
     
     int source_num = source.GetNumGis();
     int target_num = target.GetNumGis();
@@ -334,8 +334,8 @@ void CSeqDBGiListSet::x_TranslateTisFromUserList(CSeqDBGiList & gilist)
     CSeqDBGiList & source = *m_UserList;
     CSeqDBGiList & target = gilist;
     
-    source.InsureOrder(CSeqDBGiList::eOrder);
-    target.InsureOrder(CSeqDBGiList::eOrder);
+    source.InsureOrder(CSeqDBGiList::eGi);
+    target.InsureOrder(CSeqDBGiList::eGi);
     
     int source_num = source.GetNumTis();
     int target_num = target.GetNumTis();

@@ -1990,7 +1990,7 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
     _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
     
     m_Atlas.Lock(locked);
-    ids.InsureOrder(CSeqDBGiList::eOrder);
+    ids.InsureOrder(CSeqDBGiList::eGi);
     
     if ((m_IdentType == eGiId) && ids.GetNumGis()) {
         x_SearchIndexNumericMulti(vol_start,
