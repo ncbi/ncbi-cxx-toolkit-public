@@ -110,14 +110,42 @@ const streamsize kConn_DefaultBufSize = 4096;
 class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
                                             public CNcbiIostream
 {
+public:
+    /// Create a stream based on a CONN, which is to be closed upon
+    /// stream dtor only if "close" parameter is passed as "true".
+    ///
+    /// @param conn
+    ///  A C object of type CONN (ncbi_connection.h) on top of which
+    ///  the stream is being constructed.  May not be NULL.
+    /// @param close
+    ///  True if to close CONN automatically (otherwise CONN remains open)
+    /// @param timeout
+    ///  Default I/O timeout
+    /// @param buf_size
+    ///  Default size of underlying stream buffer's I/O arena
+    /// @param do_tie
+    ///  Specifies whether to tie output to input -- a tied stream flushes
+    ///  all pending output prior to doing any input.
+    /// @sa
+    ///  CONN, ncbi_connection.h
+    ///
+    CConn_IOStream
+    (CONN            conn,
+     bool            close    = false,
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize,
+     bool            do_tie   = true,
+     CT_CHAR_TYPE*   ptr      = 0,
+     size_t          size     = 0);
+
 protected:
-    /// Create a stream based on a CONNECTOR -- for internal use only
-    /// in derived classes.
+    /// Create a stream based on a CONNECTOR --
+    /// only for internal use in derived classes.
     ///
     /// @param connector
     ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which
     ///  the stream is being constructed.  Used internally by individual
-    /// ctors of specialized streams in this header.  May not be NULL.
+    ///  ctors of specialized streams in this header.  May not be NULL.
     /// @param timeout
     ///  Default I/O timeout
     /// @param buf_size
@@ -150,7 +178,7 @@ public:
 
 protected:
     CConn_IOStream(CConn_Streambuf* sb);
-    void Cleanup(void);
+    void x_Cleanup(void);
 
 private:
     CConn_Streambuf* m_CSb;
