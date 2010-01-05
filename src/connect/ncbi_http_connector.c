@@ -194,7 +194,6 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         }
     } else {
         const char* msg;
-
         uuu->minor_fault = 0;
         /* we're here because something is going wrong */
         if (++uuu->major_fault >= uuu->net_info->max_try) {
