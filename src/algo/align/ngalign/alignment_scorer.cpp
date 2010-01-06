@@ -217,9 +217,9 @@ user {
                   fields {
                     {
                       label
-                        str "accession" ,
+                        str "gi" ,
                       data
-                        str "AC092423.5" } } } } } } } ,
+                        int 123456 } } } } } } } ,
 */
 
     const CSeq_descr& Descr = Handle.GetDescr();
@@ -240,8 +240,15 @@ user {
                 ITERATE(CUser_field::C_Data::TFields, FieldIter, MiddleField.GetData().GetFields()) {
 
                     const CUser_field& LastField = **FieldIter;
-                    string Accession = LastField.GetData().GetStr();
-                    CRef<CSeq_id> Id(new CSeq_id(Accession));
+                    string IdStr;
+                    if(LastField.GetData().IsStr())
+                        IdStr = LastField.GetData().GetStr();
+                    else if(LastField.GetData().IsInt())
+                        IdStr = NStr::IntToString(LastField.GetData().GetInt());
+                    else
+                        continue;
+
+                    CRef<CSeq_id> Id(new CSeq_id(IdStr));
 
                     CSeq_id_Handle CanonicalId;
                     CanonicalId = sequence::GetId(*Id, Handle.GetScope(),
@@ -371,9 +378,9 @@ void CCommonComponentScorer::x_GetCompList(const CSeq_id& Id,
 {
     CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
 
-    x_GetUserCompList(Handle, CompIds);
+    x_GetDeltaExtCompList(Handle, Start, Stop, CompIds);
     if(CompIds.empty())
-        x_GetDeltaExtCompList(Handle, Start, Stop, CompIds);
+        x_GetUserCompList(Handle, CompIds);
     if(CompIds.empty())
         x_GetSeqHistCompList(Handle, Start, Stop, CompIds);
 }
