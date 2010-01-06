@@ -973,7 +973,8 @@ void XSDParser::ParseUnion(DTDElement& node)
     node.SetType(DTDElement::eString);
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
-        ParseContent(node);
+//        ParseContent(node);
+        SkipContent();
     }
     m_ExpectLastComment = true;
 }
@@ -986,7 +987,8 @@ void XSDParser::ParseList(DTDElement& node)
     node.SetType(DTDElement::eString);
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
-        ParseContent(node);
+//        ParseContent(node);
+        SkipContent();
     }
     m_ExpectLastComment = true;
 }
@@ -1132,7 +1134,8 @@ void XSDParser::ParseUnion(DTDAttribute& att)
     att.SetType(DTDAttribute::eString);
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
-        ParseContent(att);
+//        ParseContent(att);
+        SkipContent();
     }
 }
 
@@ -1144,7 +1147,8 @@ void XSDParser::ParseList(DTDAttribute& att)
     att.SetType(DTDAttribute::eString);
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
-        ParseContent(att);
+//        ParseContent(att);
+        SkipContent();
     }
 }
 
