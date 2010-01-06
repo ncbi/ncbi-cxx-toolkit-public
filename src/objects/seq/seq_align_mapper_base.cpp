@@ -1344,7 +1344,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
              CSeq_id_Handle&            prod_id,
              ENa_strand&                gen_strand,
              ENa_strand&                prod_strand,
-             bool&                      partial) const
+             bool&                      partial,
+             const CSeq_id_Handle&      last_gen_id,
+             const CSeq_id_Handle&      last_prod_id) const
 {
     CRef<CSpliced_exon> exon(new CSpliced_exon);
     if (seg != m_Segs.begin()) {
@@ -1566,6 +1568,14 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 m_OrigExon->GetDonor_after_exon());
         }
     }
+    if (!gen_id  &&  last_gen_id) {
+        gen_id = last_gen_id;
+        exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
+    }
+    if (!prod_id  &&  last_prod_id) {
+        prod_id = last_prod_id;
+        exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
+    }
     exon->SetGenomic_start(gen_start);
     exon->SetGenomic_end(gen_end - 1);
     if (gen_strand != eNa_strand_unknown) {
@@ -1691,6 +1701,8 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     CSpliced_seg& spliced = dst->SetSegs().SetSpliced();
     CSeq_id_Handle gen_id;
     CSeq_id_Handle prod_id;
+    CSeq_id_Handle last_gen_id;
+    CSeq_id_Handle last_prod_id;
     ENa_strand gen_strand = eNa_strand_unknown;
     ENa_strand prod_strand = eNa_strand_unknown;
     bool single_gen_id = true;
@@ -1709,18 +1721,24 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
             ENa_strand ex_gen_strand = eNa_strand_unknown;
             ENa_strand ex_prod_strand = eNa_strand_unknown;
             (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
-                ex_gen_strand, ex_prod_strand, partial);
-            if ( !gen_id ) {
-                gen_id = ex_gen_id;
+                ex_gen_strand, ex_prod_strand, partial,
+                last_gen_id, last_prod_id);
+            if (ex_gen_id) {
+                last_gen_id = ex_gen_id;
+                if ( !gen_id ) {
+                    gen_id = ex_gen_id;
+                }
+                else {
+                    single_gen_id &= gen_id == ex_gen_id;
+                }
             }
-            else {
-                single_gen_id &= gen_id == ex_gen_id;
-            }
-            if ( !prod_id ) {
-                prod_id = ex_prod_id;
-            }
-            else {
-                single_prod_id &= prod_id == ex_prod_id;
+            if (ex_prod_id) {
+                if ( !prod_id ) {
+                    prod_id = ex_prod_id;
+                }
+                else {
+                    single_prod_id &= prod_id == ex_prod_id;
+                }
             }
             if (ex_gen_strand != eNa_strand_unknown) {
                 single_gen_str &= (gen_strand == eNa_strand_unknown) ||
@@ -1754,21 +1772,27 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         spliced.SetProduct_strand(prod_strand);
     }
 
-    // Reset local values where possible
-    if (single_gen_id || single_prod_id || single_gen_str || single_prod_str) {
-        NON_CONST_ITERATE(CSpliced_seg::TExons, it, spliced.SetExons()) {
-            if ( single_gen_id ) {
-                (*it)->ResetGenomic_id();
-            }
-            if ( single_prod_id ) {
-                (*it)->ResetProduct_id();
-            }
-            if ( single_gen_str ) {
-                (*it)->ResetGenomic_strand();
-            }
-            if ( single_prod_str ) {
-                (*it)->ResetProduct_strand();
-            }
+    // Reset local values where possible, fill ids in gaps
+    NON_CONST_ITERATE(CSpliced_seg::TExons, it, spliced.SetExons()) {
+        if ( single_gen_id ) {
+            (*it)->ResetGenomic_id();
+        }
+        else if ( gen_id  &&  !(*it)->IsSetGenomic_id() ) {
+            // Use the first known genomic id to fill gaps
+            (*it)->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
+        }
+        if ( single_prod_id ) {
+            (*it)->ResetProduct_id();
+        }
+        else if ( prod_id  &&  !(*it)->IsSetProduct_id() ) {
+            // Use the first known product id to fill gaps
+            (*it)->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
+        }
+        if ( single_gen_str ) {
+            (*it)->ResetGenomic_strand();
+        }
+        if ( single_prod_str ) {
+            (*it)->ResetProduct_strand();
         }
     }
 

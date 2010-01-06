@@ -178,7 +178,9 @@ private:
                       CSeq_id_Handle&            prod_id,
                       ENa_strand&                gen_strand,
                       ENa_strand&                prod_strand,
-                      bool&                      partial) const;
+                      bool&                      partial,
+                      const CSeq_id_Handle&      last_gen_id,
+                      const CSeq_id_Handle&      last_prod_id) const;
     void x_PushExonPart(CRef<CSpliced_exon_chunk>&    last_part,
                         CSpliced_exon_chunk::E_Choice part_type,
                         int                           part_len,
