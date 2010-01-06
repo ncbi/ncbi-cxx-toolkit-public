@@ -1,20 +1,20 @@
 #!/bin/sh
 # $Id$
 
-command=
+base=
 logfile=
 
 while :; do
     case "$1" in
-        -base ) command=$2; shift 2 ;;
+        -base ) base=$2; shift 2 ;;
         -log  ) logfile=$2; shift 2 ;;
         *     ) break ;;
     esac
 done
-: ${command:=`basename "$1"`}
+: ${base:=`basename "$1"`}
 
 clean_up () {
-    rm -rf "$command.lock"
+    rm -rf "$base.lock"
 }
 
 case $0 in
@@ -22,10 +22,10 @@ case $0 in
     *) get_lock=get_lock.sh ;;
 esac
 
-if "$get_lock" "$command" $$; then
+if "$get_lock" "$base" $$; then
     trap 'clean_up' 1 2 15
     if [ -n "$logfile" ]; then
-        status_file=$command.lock/status
+        status_file=$base.lock/status
         ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile"
         if [ -s "$status_file" ]; then
             status=`cat "$status_file"`
