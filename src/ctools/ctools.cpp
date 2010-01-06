@@ -106,7 +106,7 @@ USING_NCBI_SCOPE;
 static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
 {
     try {
-        CNcbiDiag diag(CTOOLS_CToCxxSeverity(err->severity), eDPF_Default);
+        CNcbiDiag diag(CTOOLS_CToCxxSeverity(err->severity));
         if (*err->srcfile)
             diag.SetFile(err->srcfile);
         if (err->srcline)
@@ -114,14 +114,26 @@ static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
         if (*err->module)
             diag.SetModule(err->module);
         diag.SetErrorCode(err->errcode, err->subcode);
+        bool first = true;
         if (*err->codestr)
-            diag << err->codestr << ' ';
-        for (const ValNode* node = err->userstr; node; node = node->next) {
-            if (node->data.ptrvalue)
-                diag << (char*) node->data.ptrvalue << ' ';
+            diag << err->codestr;
+        for (const ValNode* node = err->userstr;  node;  node = node->next) {
+            if (node->data.ptrvalue) {
+                if (!first) {
+                    diag << ' ';
+                    first = false;
+                }
+                diag << (const char*) node->data.ptrvalue;
+            }
         }
-        if (*err->errtext)
+        if (*err->errtext) {
+            if (!first) {
+                diag << ' ';
+                first = false;
+            }
             diag << err->errtext;
+        }
+        diag << Endm;
     } catch (...) {
         _ASSERT(0);
         return ANS_NONE;
