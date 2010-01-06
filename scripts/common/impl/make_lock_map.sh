@@ -11,7 +11,7 @@ test=test
 common=_`basename $PWD`_common
 
 [ -d "$cache_dir" ]  ||  mkdir "$cache_dir"
-test Makefile.in -ef Makefile.in  ||  test=/usr/bin/test
+(test Makefile.in -ef Makefile.in) 2>/dev/null  ||  test=/usr/bin/test
 
 for x in $files; do
     if [ "x$x" = "x$files" ]; then
