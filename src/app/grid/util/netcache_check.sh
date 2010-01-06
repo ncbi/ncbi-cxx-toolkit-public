@@ -35,7 +35,7 @@ if test "$1" = "--nagios"; then
       exit 1
    fi
    for service in $services ; do
-      $stable_client $service > $res_file 2>&1
+      $stable_client -delay 0 $service > $res_file 2>&1
       code=$?
 # Format of information:
 #    <host_name>[tab]<svc_descr>[tab]<ret_code>[tab]<output>[newline]
@@ -54,27 +54,10 @@ n_ok=0
 n_err=0
 sum_list=''
 
-os=`env | grep "OS=" | grep -i "Windows"`
-if test $? -ne 0; then
-    service_machines="service0 service1 service2 service3"
-    mask="NC_.*"
-    for s in $service_machines ; do
-       list=`$lbsmc -g $s 0 2>&1 | tail +7 | cut -f1 -d' ' | sed '/-/{x;q;}' | grep -s "$mask"`
-       test -n list  ||  list=""
-       wholelist=`echo $wholelist $list` 
-    done
-    wholelist=`for s in $wholelist; do echo $s; done | sort | uniq`
-
-    for s in $wholelist; do
-        echo " $services " | grep " $s " 2>&1 >/dev/null
-        test $? -ne 0 && missing_services=`echo $missing_services $s`
-    done 
-fi
-
 for service in `echo $services $hosts`; do
    echo "-------------------------------------------------------"
    printf '%-40s' "Testing service '$service'"
-   $CHECK_EXEC netcache_check $service > $res_file 2>&1
+   $CHECK_EXEC netcache_check -delay 0 $service > $res_file 2>&1
    if test $? -eq 0 ; then
       echo ":OK"
       n_ok=`expr $n_ok + 1`
