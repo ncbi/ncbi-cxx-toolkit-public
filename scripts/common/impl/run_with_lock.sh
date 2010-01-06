@@ -5,6 +5,9 @@ base=
 logfile=
 map=
 
+ignored=".*make\[[0-9]+\]: )?(Nothing to be done for \`.*'|\`.*' is updated"
+ignored="$ignored|dmake: defaulting to parallel mode|See the man page dmake.*"
+
 while :; do
     case "$1" in
         -base ) base=$2; shift 2 ;;
@@ -38,7 +41,13 @@ if "$get_lock" "$base" $$; then
     trap 'clean_up' 1 2 15
     if [ -n "$logfile" ]; then
         status_file=$base.lock/status
-        ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile"
+        ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile.new"
+        # Emulate egrep -q to avoid having to move from under scripts.
+        if [ ! -f "$logfile" ]  ||  \
+         awk "BEGIN { s=1 } !/^($ignored)\\.\$/ { s=0; exit } END { exit s }" \
+          "$logfile.new"; then
+            mv "$logfile.new" "$logfile"
+        fi
         if [ -s "$status_file" ]; then
             status=`cat "$status_file"`
         else
