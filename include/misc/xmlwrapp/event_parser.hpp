@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -69,10 +69,10 @@ struct epimpl; // forward declaration of private implementation
 class event_parser {
 public:
     typedef std::map<std::string, std::string> attrs_type;  ///< a type for holding XML node attributes
-    typedef std::size_t size_type;			    ///< size type
+    typedef std::size_t size_type;                          ///< size type
 
     //####################################################################
-    /** 
+    /**
      * xml::event_parser class constructor.
      *
      * @author Peter Jones
@@ -81,7 +81,7 @@ public:
     event_parser (void);
 
     //####################################################################
-    /** 
+    /**
      * xml::event_parser class destructor.
      *
      * @author Peter Jones
@@ -90,7 +90,7 @@ public:
     virtual ~event_parser (void);
 
     //####################################################################
-    /** 
+    /**
      * Call this member function to parse the given file.
      *
      * @param filename The name of the file to parse.
@@ -101,7 +101,7 @@ public:
     bool parse_file (const char *filename);
 
     //####################################################################
-    /** 
+    /**
      * Parse what ever data that can be read from the given stream.
      *
      * @param stream The stream to read data from.
@@ -112,7 +112,7 @@ public:
     bool parse_stream (std::istream &stream);
 
     //####################################################################
-    /** 
+    /**
      * Call this function to parse a chunk of xml data. When you are done
      * feeding the parser chucks of data you need to call the parse_finish
      * member function.
@@ -126,7 +126,7 @@ public:
     bool parse_chunk (const char *chunk, size_type length);
 
     //####################################################################
-    /** 
+    /**
      * Finish parsing chunked data. You only need to call this member
      * function is you were parsing chunked xml data via the parse_chunk
      * member function.
@@ -138,7 +138,7 @@ public:
     bool parse_finish (void);
 
     //####################################################################
-    /** 
+    /**
      * If there was an error parsing the XML data, (indicated by one of the
      * parsing functions returning false), you can call this function to get
      * a message describing the error.
@@ -151,7 +151,7 @@ public:
 
 protected:
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the start_document message.
      * This member function is called when the document start is being
      * processed.
@@ -162,7 +162,7 @@ protected:
     //####################################################################
     virtual bool start_document ();
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the start_document message.
      * This member function is called when the document end has been
      * detected.
@@ -173,7 +173,7 @@ protected:
     //####################################################################
     virtual bool end_document ();
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the start_element message.
      * This member function is called when the parser encounters an xml
      * element.
@@ -185,9 +185,9 @@ protected:
     **/
     //####################################################################
     virtual bool start_element (const std::string &name, const attrs_type &attrs) = 0;
-    
+
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the end_element message.
      * This member function is called when the parser encounters the closing
      * of an element.
@@ -212,7 +212,7 @@ protected:
     virtual bool text (const std::string &contents) = 0;
 
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the cdata mesage. This
      * member function is called when the parser encounters a <![CDATA[]]>
      * section in the XML data.
@@ -229,7 +229,7 @@ protected:
     virtual bool cdata (const std::string &contents);
 
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the procesing_instruction
      * message. This member function will be called when the XML parser
      * encounters a processing instruction <?target data?>.
@@ -247,7 +247,7 @@ protected:
     virtual bool processing_instruction (const std::string &target, const std::string &data);
 
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the comment message. This
      * member function will be called when the XML parser encounters a
      * comment <!-- contents -->.
@@ -263,7 +263,7 @@ protected:
     virtual bool comment (const std::string &contents);
 
     //####################################################################
-    /** 
+    /**
      * Override this memeber function to receive parser warnings. The
      * default behaviour is to ignore warnings.
      *
@@ -276,7 +276,25 @@ protected:
     virtual bool warning (const std::string &message);
 
     //####################################################################
-    /** 
+    /**
+     * Override this memeber function to receive the notation declaration
+     * message. This member function will be called when the XML parser
+     * encounters <!NOTATION ...> declaration.
+     *
+     * @param name The name of the notation.
+     * @param public_id The public ID of the entity.
+     * @param system_id The system ID of the entity.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool notation_declaration (const std::string &name,
+                                       const std::string &public_id,
+                                       const std::string &system_id);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber

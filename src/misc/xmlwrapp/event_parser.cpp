@@ -98,6 +98,9 @@ public:
     void event_pi (const xmlChar *target, const xmlChar *data);
     void event_comment (const xmlChar *text);
     void event_cdata (const xmlChar *text, int length);
+    void event_notation_declaration (const xmlChar *name,
+                                     const xmlChar *public_id,
+                                     const xmlChar *system_id);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -133,6 +136,13 @@ extern "C"
     //####################################################################
     static void cb_cdata (void *parser, const xmlChar *text, int length)
     { static_cast<epimpl*>(parser)->event_cdata(text, length); }
+    //####################################################################
+    static void cb_notation_declaration (void *parser, const xmlChar *name,
+                                         const xmlChar *public_id,
+                                         const xmlChar *system_id)
+    { static_cast<epimpl*>(parser)->event_notation_declaration(name,
+                                                               public_id,
+                                                               system_id); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -224,6 +234,12 @@ bool xml::event_parser::cdata (const std::string &contents) {
     return text(contents);
 }
 //####################################################################
+bool xml::event_parser::notation_declaration (const std::string &name,
+                                              const std::string &public_id,
+                                              const std::string &system_id) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::warning (const std::string&) {
     return true;
 }
@@ -256,6 +272,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.warning                = cb_warning;
     sax_handler_.error                  = cb_error;
     sax_handler_.fatalError             = cb_error;
+    sax_handler_.notationDecl           = cb_notation_declaration;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -277,9 +294,9 @@ void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
 	event_parser::attrs_type attrs;
 	const xmlChar **attrp;
 
-	for (attrp = props; attrp && *attrp; attrp += 2) {       
+	for (attrp = props; attrp && *attrp; attrp += 2) {
 	    attrs[reinterpret_cast<const char*>(*attrp)] = reinterpret_cast<const char*>(*(attrp+1));
-	}       
+	}
 
 	std::string name = reinterpret_cast<const char*>(tag);
 	parser_status_ = parent_.start_element(name, attrs);
@@ -367,6 +384,23 @@ void epimpl::event_cdata (const xmlChar *text, int length) {
 	std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
 	parser_status_ = parent_.cdata(contents);
 
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_notation_declaration (const xmlChar *name,
+                                         const xmlChar *public_id,
+                                         const xmlChar *system_id) {
+    if (!parser_status_) return;
+
+    try {
+
+        std::string     notation_name( name ? reinterpret_cast<const char*>(name) : "" );
+        std::string     notation_public_id( public_id ? reinterpret_cast<const char*>(public_id) : "" );
+        std::string     notation_system_id( system_id ? reinterpret_cast<const char*>(system_id) : "" );
+        parser_status_ = parent_.notation_declaration(notation_name,
+                                                      notation_public_id,
+                                                      notation_system_id);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
