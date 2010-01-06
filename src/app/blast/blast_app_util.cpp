@@ -148,7 +148,9 @@ CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args)
         CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
         retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type,
                                 idset));
-    } else if ( !(db_args->GetSearchDatabase()->GetSeqIdList()->Empty())) {
+    } else if ( (!db_args->GetSearchDatabase().Empty()) &&
+        (!db_args->GetSearchDatabase()->GetSeqIdList().Empty()) &&
+        (!db_args->GetSearchDatabase()->GetSeqIdList()->Empty())) {
         CRef<CSeqDBGiList> gi_list = db_args->GetSearchDatabase()->GetSeqIdList();
         retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type, gi_list));
     } else {
