@@ -132,7 +132,8 @@ LIBP_BRA = \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
-        $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_LIB)
+        $(RWL) -base "make_$$i" -log "make_$$i.log" -map $(srcdir)/.\#lock-map \
+           $(MAKE_LIB)
 LIBP_KET = && continue ; \
         $(MAKE_LIB) $(deactivate) ; \
         $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
@@ -154,7 +155,8 @@ APPP_BRA = \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements ; then \
-        $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_APP)
+        $(RWL) -base "make_$$i" -log "make_$$i.log" -map $(srcdir)/.\#lock-map \
+           $(MAKE_APP)
 APPP_KET = && continue ; \
         $(MAKE_APP) unlink ; \
         $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.app" ; \
@@ -191,6 +193,7 @@ purge:     purge.needs-reqs
 check:     check.needs-reqs
 check_add: check_add.needs-reqs
 
+MAKE_LOCK_MAP = $(RWL) $(top_srcdir)/scripts/common/impl/make_lock_map.sh
 
 all.real: all.usr
 	@$(MAKE) $(MFLAGS_NR) all.nonusr
@@ -203,6 +206,7 @@ all.usr: configurables
 all.nonusr:
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
+	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
@@ -217,6 +221,7 @@ clean.usr:
 	@$(USRP_BRA) clean $(USRP_KET)
 clean.nonusr:
 	@-rm -f .building .built .built_r
+	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
 #	@$(DTDP_BRA) clean_sources $(DTDP_KET)
 #	@$(XSDP_BRA) clean_sources $(XSDP_KET)
@@ -229,6 +234,7 @@ purge.usr:
 	@$(USRP_BRA) purge $(USRP_KET)
 purge.nonusr:
 	@-rm -f .building .built .built_r
+	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
 #	@$(DTDP_BRA) purge_sources $(DTDP_KET)
 #	@$(XSDP_BRA) purge_sources $(XSDP_KET)
@@ -265,9 +271,9 @@ requirements: $(reqs)
 	case "$*:$$skip" in \
 	    *:true ) ;; \
 	    check* ) $(RWL) -base $* $(MAKE) $(MFLAGS_NR) $*.real ;; \
-	    *_?:*  ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.real ;; \
-	    *      ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.usr  && \
-	             $(RWL) $(MAKE) $(MFLAGS_NR) $*.nonusr \
+	    *_?:*  ) $(MAKE) $(MFLAGS_NR) $*.real ;; \
+	    *      ) $(MAKE) $(MFLAGS_NR) $*.usr  && \
+	             $(MAKE) $(MFLAGS_NR) $*.nonusr \
 	                 APP_PROJ='$(APP_PROJ)' LIB_PROJ='$(LIB_PROJ)' ;; \
 	esac
 
