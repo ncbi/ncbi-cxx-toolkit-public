@@ -3,11 +3,13 @@
 
 base=
 logfile=
+map=
 
 while :; do
     case "$1" in
         -base ) base=$2; shift 2 ;;
         -log  ) logfile=$2; shift 2 ;;
+        -map  ) map=$2; shift 2 ;;
         *     ) break ;;
     esac
 done
@@ -21,6 +23,16 @@ case $0 in
     */*) get_lock="`dirname $0`/get_lock.sh" ;;
     *) get_lock=get_lock.sh ;;
 esac
+
+if [ -f "$map" ]; then
+    while read old new; do
+        if [ "x$base" = "xmake_$old" ]; then
+            echo "$0: adjusting base from $base to make_$new per $map."
+            base=make_$new
+            break
+        fi
+    done < "$map"
+fi
 
 if "$get_lock" "$base" $$; then
     trap 'clean_up' 1 2 15
