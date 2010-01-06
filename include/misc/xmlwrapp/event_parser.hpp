@@ -152,6 +152,28 @@ public:
 protected:
     //####################################################################
     /** 
+     * Override this member function to receive the start_document message.
+     * This member function is called when the document start is being
+     * processed.
+     *
+     * @return You should return true to continue parsing; false to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool start_document ();
+    //####################################################################
+    /** 
+     * Override this member function to receive the start_document message.
+     * This member function is called when the document end has been
+     * detected.
+     *
+     * @return You should return true to continue parsing; false to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool end_document ();
+    //####################################################################
+    /** 
      * Override this member function to receive the start_element message.
      * This member function is called when the parser encounters an xml
      * element.

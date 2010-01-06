@@ -90,6 +90,8 @@ public:
     bool parser_status_;
     std::string last_error_message_;
 
+    void event_start_document (void);
+    void event_end_document (void);
     void event_start_element (const xmlChar *tag, const xmlChar **props);
     void event_end_element (const xmlChar *tag);
     void event_text (const xmlChar *text, int length);
@@ -107,6 +109,12 @@ private:
 
 extern "C"
 {
+    //####################################################################
+    static void cb_start_document (void *parser)
+    { static_cast<epimpl*>(parser)->event_start_document(); }
+    //####################################################################
+    static void cb_end_document (void *parser)
+    { static_cast<epimpl*>(parser)->event_end_document(); }
     //####################################################################
     static void cb_start_element (void *parser, const xmlChar *tag, const xmlChar **props)
     { static_cast<epimpl*>(parser)->event_start_element(tag, props); }
@@ -192,8 +200,16 @@ bool xml::event_parser::parse_chunk (const char *chunk, size_type length) {
 }
 //####################################################################
 bool xml::event_parser::parse_finish (void) {
-    xmlParseChunk(pimpl_->parser_context_, 0, 0, 0);
+    xmlParseChunk(pimpl_->parser_context_, 0, 0, 1);
     return pimpl_->parser_status_;
+}
+//####################################################################
+bool xml::event_parser::start_document () {
+    return true;
+}
+//####################################################################
+bool xml::event_parser::end_document () {
+    return true;
 }
 //####################################################################
 bool xml::event_parser::processing_instruction (const std::string&, const std::string&) {
@@ -229,15 +245,17 @@ epimpl::epimpl (event_parser &parent)
 {
     std::memset(&sax_handler_, 0, sizeof(sax_handler_));
 
-    sax_handler_.startElement		= cb_start_element;
-    sax_handler_.endElement		= cb_end_element;
-    sax_handler_.characters		= cb_text;
-    sax_handler_.processingInstruction	= cb_pi;
-    sax_handler_.comment		= cb_comment;
-    sax_handler_.cdataBlock		= cb_cdata;
-    sax_handler_.warning		= cb_warning;
-    sax_handler_.error			= cb_error;
-    sax_handler_.fatalError		= cb_error;
+    sax_handler_.startDocument          = cb_start_document;
+    sax_handler_.endDocument            = cb_end_document;
+    sax_handler_.startElement           = cb_start_element;
+    sax_handler_.endElement             = cb_end_element;
+    sax_handler_.characters             = cb_text;
+    sax_handler_.processingInstruction  = cb_pi;
+    sax_handler_.comment                = cb_comment;
+    sax_handler_.cdataBlock             = cb_cdata;
+    sax_handler_.warning                = cb_warning;
+    sax_handler_.error                  = cb_error;
+    sax_handler_.fatalError             = cb_error;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -289,6 +307,28 @@ void epimpl::event_text (const xmlChar *text, int length) {
 
 	std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
 	parser_status_ = parent_.text(contents);
+
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_start_document () {
+    if (!parser_status_) return;
+
+    try {
+
+        parser_status_ = parent_.start_document();
+
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_end_document () {
+    if (!parser_status_) return;
+
+    try {
+
+        parser_status_ = parent_.end_document();
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
