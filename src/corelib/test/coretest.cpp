@@ -78,6 +78,20 @@ static void TestIostream(void)
 
     str = "0 1 2 3 4 5\n6 7 8 9";
     NcbiCout << "String output: "  << str << NcbiEndl;
+
+    const char kNullDev[] =
+#ifdef NCBI_OS_MSWIN
+        "NUL"
+#else
+        "/dev/null"
+#endif /*NCBI_OS_MSWIN*/
+        ;
+    CNcbiOfstream ofs(kNullDev);
+    CNcbiIfstream ifs(kNullDev);
+
+    assert(NcbiStreamCopy(ofs, ifs));
+
+    NcbiCout << "NcbiStreamCopy() test passed" << NcbiEndl;
 }
 
 

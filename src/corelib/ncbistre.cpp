@@ -183,6 +183,8 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
     if (!is.good())
         return false;
 #ifndef NCBI_COMPILER_GCC
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
+        return is.eof() ? true : false;
     os << is.rdbuf();
 #elif   NCBI_COMPILER_VERSION <= 330
     // GCC stdlib++ version <= 3.3.0 has a bug in implementation of streamcopy,
@@ -200,6 +202,8 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
             break;
     } while (is.good());
 #else
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
+        return is.eof() ? true : false;
     os << is.rdbuf();
 #endif
     if (!os.good())
