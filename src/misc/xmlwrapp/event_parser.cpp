@@ -61,6 +61,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 using namespace xml;
 using namespace xml::impl;
@@ -101,6 +102,11 @@ public:
     void event_notation_declaration (const xmlChar *name,
                                      const xmlChar *public_id,
                                      const xmlChar *system_id);
+    void event_entity_declaration (const xmlChar * name,
+                                   int type,
+                                   const xmlChar * publicId,
+                                   const xmlChar * systemId,
+                                   xmlChar * content);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -143,6 +149,16 @@ extern "C"
     { static_cast<epimpl*>(parser)->event_notation_declaration(name,
                                                                public_id,
                                                                system_id); }
+    //####################################################################
+    static void cb_entity_declaration (void *parser, const xmlChar *name,
+                                       int type, const xmlChar *public_id,
+                                       const xmlChar *system_id,
+                                       xmlChar *content)
+    { static_cast<epimpl*>(parser)->event_entity_declaration(name,
+                                                             type,
+                                                             public_id,
+                                                             system_id,
+                                                             content); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -240,6 +256,14 @@ bool xml::event_parser::notation_declaration (const std::string &name,
     return true;
 }
 //####################################################################
+bool xml::event_parser::entity_declaration (const std::string &name,
+                                            entity_type        type,
+                                            const std::string &public_id,
+                                            const std::string &system_id,
+                                            const std::string &content) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::warning (const std::string&) {
     return true;
 }
@@ -254,6 +278,19 @@ const std::string& xml::event_parser::get_error_message (void) const {
 //####################################################################
 void xml::event_parser::set_error_message (const char *message) {
     pimpl_->last_error_message_ = message;
+}
+//####################################################################
+xml::event_parser::entity_type xml::event_parser::get_entity_type (int type) {
+    switch (type) {
+        case XML_INTERNAL_GENERAL_ENTITY:           return type_internal_general_entity;
+        case XML_EXTERNAL_GENERAL_PARSED_ENTITY:    return type_external_general_parsed_entity;
+        case XML_EXTERNAL_GENERAL_UNPARSED_ENTITY:  return type_external_general_unparsed_entity;
+        case XML_INTERNAL_PARAMETER_ENTITY:         return type_internal_parameter_entity;
+        case XML_EXTERNAL_PARAMETER_ENTITY:         return type_external_parameter_entity;
+        case XML_INTERNAL_PREDEFINED_ENTITY:        return type_internal_predefined_entity;
+        default: ;
+    }
+    throw std::runtime_error("Unknown entity type");
 }
 //####################################################################
 epimpl::epimpl (event_parser &parent)
@@ -273,6 +310,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.error                  = cb_error;
     sax_handler_.fatalError             = cb_error;
     sax_handler_.notationDecl           = cb_notation_declaration;
+    sax_handler_.entityDecl             = cb_entity_declaration;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -401,6 +439,25 @@ void epimpl::event_notation_declaration (const xmlChar *name,
         parser_status_ = parent_.notation_declaration(notation_name,
                                                       notation_public_id,
                                                       notation_system_id);
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_entity_declaration (const xmlChar * name,
+                                       int type,
+                                       const xmlChar * public_id,
+                                       const xmlChar * system_id,
+                                       xmlChar * content) {
+    if (!parser_status_) return;
+
+    try {
+        std::string     entity_name( name ? reinterpret_cast<const char*>(name) : "" );
+        std::string     entity_public_id( public_id ? reinterpret_cast<const char*>(public_id) : "" );
+        std::string     entity_system_id( system_id ? reinterpret_cast<const char*>(system_id) : "" );
+        std::string     entity_content( content ? reinterpret_cast<const char*>(content) : "" );
+        parser_status_ = parent_.entity_declaration(entity_name, parent_.get_entity_type(type),
+                                                    entity_public_id, entity_system_id,
+                                                    entity_content);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }

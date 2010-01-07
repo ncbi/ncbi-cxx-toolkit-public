@@ -150,6 +150,16 @@ public:
     const std::string& get_error_message (void) const;
 
 protected:
+    /// enum for different types of XML entities
+    enum entity_type {
+        type_internal_general_entity,
+        type_external_general_parsed_entity,
+        type_external_general_unparsed_entity,
+        type_internal_parameter_entity,
+        type_external_parameter_entity,
+        type_internal_predefined_entity
+    };
+
     //####################################################################
     /**
      * Override this member function to receive the start_document message.
@@ -295,6 +305,28 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the entity declaration
+     * message. This member function will be called when the XML parser
+     * encounters <!ENTITY ...> declaration.
+     *
+     * @param name The name of the entity.
+     * @param type The type of the entity.
+     * @param public_id The public ID of the entity.
+     * @param system_id The system ID of the entity.
+     * @param content The entity value.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool entity_declaration (const std::string &name,
+                                     entity_type        type,
+                                     const std::string &public_id,
+                                     const std::string &system_id,
+                                     const std::string &content);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber
@@ -308,6 +340,8 @@ protected:
 private:
     friend struct impl::epimpl;
     impl::epimpl *pimpl_; // private implementation
+
+    entity_type get_entity_type (int);
 
     /*
      * Don't allow anyone to copy construct an event_parser or to call the
