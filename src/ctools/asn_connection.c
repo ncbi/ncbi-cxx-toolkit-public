@@ -122,7 +122,7 @@ AsnIoPtr CreateAsnConn(CONN               conn,
 
     switch (direction) {
     case eAsnConn_Input:
-        aip = AsnIoNew(type | ASNIO_IN, 0, (void*) conn, s_AsnRead, 0);
+        aip = AsnIoNew(type | ASNIO_IN,  0, (void*) conn, s_AsnRead, 0);
         break;
     case eAsnConn_Output:
         aip = AsnIoNew(type | ASNIO_OUT, 0, (void*) conn, 0, s_AsnWrite);
@@ -148,12 +148,12 @@ CONN CreateAsnConn_ServiceEx(const char*           service,
 {
     CONN conn;
     CONNECTOR c = SERVICE_CreateConnectorEx(service, type, net_info, params);
-    if (!c || CONN_Create(c, &conn) != eIO_Success)
+    if (!c  ||  CONN_Create(c, &conn) != eIO_Success)
         return 0/*failed*/;
     assert(conn);
 
     if (input)
-        *input = CreateAsnConn(conn, eAsnConn_Input, input_fmt);
+        *input  = CreateAsnConn(conn, eAsnConn_Input,  input_fmt);
 
     if (output)
         *output = CreateAsnConn(conn, eAsnConn_Output, output_fmt);

@@ -68,7 +68,7 @@ typedef enum {
  * Return ASN stream pointer on success, or 0 on error.
  * NOTE: Returned stream is valid while the underlying conn exists. After call
  *       to CONN_Close() the stream becomes invalid, and should not be used.
- *       Don't destroy the ASN stream explicitly using AsnIoFree or AsnIoFree!
+ *       Don't destroy the ASN stream explicitly using AsnIoClose or AsnIoFree!
  */
 AsnIoPtr CreateAsnConn
 (CONN               conn,
