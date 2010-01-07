@@ -246,7 +246,7 @@ int CAgpconvertApplication::Run(void)
             CRef<CSubmit_block> submit_block(new CSubmit_block);
             istr.seekg(0);
             istr >> MSerial_AsnText >> *submit_block;
-            
+
             // Build a Seq-submit containing this plus a bogus Seq-entry
             submit_templ->SetSub(*submit_block);
             CRef<CSeq_entry> ent(new CSeq_entry);
@@ -336,7 +336,7 @@ int CAgpconvertApplication::Run(void)
         }
     }
 
-    // if requested, load a file of mappings of 
+    // if requested, load a file of mappings of
     // object identifiers to chromsome names
     map<string, string> chr_names;
     if (args["chromosomes"]) {
@@ -394,7 +394,7 @@ int CAgpconvertApplication::Run(void)
         ent_templ.SetSeq().SetDescr().Set().push_back(title_desc);
     }
     if (args["nt"] || args["on"] || args["sn"] || args["cm"]
-        || args["cn"] || args["cl"] || args["sc"] 
+        || args["cn"] || args["cl"] || args["sc"]
         || args["ht"] || args["sex"]) {
         // consistency checks
         ITERATE (CSeq_descr::Tdata, desc,
@@ -643,12 +643,12 @@ int CAgpconvertApplication::Run(void)
                          new_entry.GetSeq().GetInst()
                          .GetExt().GetDelta().Get()) {
                     if ((*delta)->IsLoc()) {
-                        string comp_id_str = 
+                        string comp_id_str =
                             (*delta)->GetLoc().GetInt().GetId().AsFastaString();
                         if (comp_lengths.find(comp_id_str)
                             == comp_lengths.end()) {
                             failure = true;
-                            cout << "** Component " << comp_id_str << 
+                            cout << "** Component " << comp_id_str <<
                                 " of entry " << id_str << " not found" << endl;
                         } else {
                             TSeqPos to = (*delta)->GetLoc().GetInt().GetTo();
@@ -657,7 +657,7 @@ int CAgpconvertApplication::Run(void)
                                 cout << "** Component " << comp_id_str <<
                                     " of entry " << id_str << " not long enough"
                                      << endl;
-                                cout << "** Length is " << 
+                                cout << "** Length is " <<
                                     comp_lengths[comp_id_str] <<
                                     "; requested \"to\" is " << to << endl;
                             }
@@ -693,7 +693,7 @@ int CAgpconvertApplication::Run(void)
                 CSeqdesc& source_desc = *source_descs[0];
                 source_desc.SetSource().SetSubtype().push_back(sub_source);
             }
-        
+
             // set create and update dates to today
             CRef<CDate> date(new CDate);
             date->SetToTime(CurrentTime(), CDate::ePrecision_day);
@@ -740,7 +740,7 @@ int CAgpconvertApplication::Run(void)
                         + outfpath + "\"";
                     cout << cmd << endl;
                     CExec::SpawnLP(CExec::eWait, "asnval", "-Q", "2",
-                                   "-o", "stdout", "-i", outfpath.c_str(), 0);
+                                   "-o", "stdout", "-i", outfpath.c_str(), NULL);
                 }
             } else {
                 // write_stdout
