@@ -206,7 +206,7 @@ all.usr: configurables
 all.nonusr:
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
-	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
+	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
@@ -221,7 +221,7 @@ clean.usr:
 	@$(USRP_BRA) clean $(USRP_KET)
 clean.nonusr:
 	@-rm -f .building .built .built_r
-	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
+	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
 #	@$(DTDP_BRA) clean_sources $(DTDP_KET)
 #	@$(XSDP_BRA) clean_sources $(XSDP_KET)
@@ -234,7 +234,7 @@ purge.usr:
 	@$(USRP_BRA) purge $(USRP_KET)
 purge.nonusr:
 	@-rm -f .building .built .built_r
-	@cd $(srcdir)  &&  $(MAKE_LOCK_MAP)
+	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
 #	@$(DTDP_BRA) purge_sources $(DTDP_KET)
 #	@$(XSDP_BRA) purge_sources $(XSDP_KET)
