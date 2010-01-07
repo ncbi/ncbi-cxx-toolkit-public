@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -40,32 +40,32 @@
 
 #ifdef __cplusplus
 extern "C" {
-    static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len);
-    static Int2 LIBCALLBACK s_AsnWrite(Pointer p, CharPtr buff, Uint2 len);
+    static Int2 LIBCALLBACK s_AsnRead (Pointer conn, CharPtr buf, Uint2 len);
+    static Int2 LIBCALLBACK s_AsnWrite(Pointer conn, CharPtr buf, Uint2 len);
     static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data);
 }
 #endif
 
 
-static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len)
+static Int2 LIBCALLBACK s_AsnRead(Pointer conn, CharPtr buf, Uint2 len)
 {
     size_t n_read;
-    CONN_Read((CONN) p, buff, len, &n_read, eIO_ReadPlain);
+    CONN_Read((CONN) conn, buf, len, &n_read, eIO_ReadPlain);
     return (Int2) n_read;
 }
 
 
-static Int2 LIBCALLBACK s_AsnWrite(Pointer p, CharPtr buff, Uint2 len)
+static Int2 LIBCALLBACK s_AsnWrite(Pointer conn, CharPtr buf, Uint2 len)
 {
     size_t n_written;
-    CONN_Write((CONN) p, buff, len, &n_written, eIO_WritePersist);
+    CONN_Write((CONN) conn, buf, len, &n_written, eIO_WritePersist);
     return (Int2) n_written;
 }
 
 
 struct SAsnConn_Cbdata {
     SCONN_Callback cb;
-    AsnIoPtr       ptr;
+    AsnIoPtr       aip;
 };
 
 
@@ -73,30 +73,31 @@ static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data)
 {
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*) data;
 
-    assert(type == eCONN_OnClose && cbdata && cbdata->ptr);
+    assert(type == eCONN_OnClose && cbdata && cbdata->aip);
     CONN_SetCallback(conn, type, &cbdata->cb, 0);
-    AsnIoFree(cbdata->ptr, 0/*not a file - don't close*/);
+    AsnIoFree(cbdata->aip, FALSE/*not a file - don't close*/);
     if ( cbdata->cb.func )
         (*cbdata->cb.func)(conn, type, cbdata->cb.data);
     free(cbdata);
 }
 
 
-static void s_SetAsnConn_CloseCb(CONN conn, AsnIoPtr ptr)
+static void s_SetAsnConn_CloseCb(CONN conn, AsnIoPtr aip)
 {
-    struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*)
-        malloc(sizeof(*cbdata));
+    struct SAsnConn_Cbdata* cbdata =
+        (struct SAsnConn_Cbdata*) malloc(sizeof(*cbdata));
 
-    assert( ptr );
+    assert( aip );
     if ( cbdata ) {
         SCONN_Callback cb;
-        cbdata->ptr = ptr;
-        cb.func = s_CloseAsnConn;
-        cb.data = cbdata;
+        cbdata->aip = aip;
+        cb.func     = s_CloseAsnConn;
+        cb.data     = cbdata;
         CONN_SetCallback(conn, eCONN_OnClose, &cb, &cbdata->cb);
-    } else
+    } else {
         CORE_LOG_X(1, eLOG_Error,
                    "Cannot create cleanup callback for ASN conn-based stream");
+    }
 }
 
 
@@ -104,15 +105,16 @@ AsnIoPtr CreateAsnConn(CONN               conn,
                        EAsnConn_Direction direction,
                        EAsnConn_Format    fmt)
 {
-    AsnIoPtr ptr;
-    int flags;
+    /* NB: Do not use ASNIO_{TEXT|BIN}_{IN|OUT} because they subsume FILE */
+    AsnIoPtr aip;
+    int type;
 
     switch (fmt) {
     case eAsnConn_Binary:
-        flags = ASNIO_BIN;
+        type = ASNIO_BIN;
         break;
     case eAsnConn_Text:
-        flags = ASNIO_TEXT;
+        type = ASNIO_TEXT;
         break;
     default:
         return 0;
@@ -120,18 +122,18 @@ AsnIoPtr CreateAsnConn(CONN               conn,
 
     switch (direction) {
     case eAsnConn_Input:
-        ptr = AsnIoNew(flags | ASNIO_IN, 0, (void*) conn, s_AsnRead, 0);
+        aip = AsnIoNew(type | ASNIO_IN, 0, (void*) conn, s_AsnRead, 0);
         break;
     case eAsnConn_Output:
-        ptr = AsnIoNew(flags | ASNIO_OUT, 0, (void*) conn, 0, s_AsnWrite);
+        aip = AsnIoNew(type | ASNIO_OUT, 0, (void*) conn, 0, s_AsnWrite);
         break;
     default:
         return 0;
     }
 
-    if (ptr)
-        s_SetAsnConn_CloseCb(conn, ptr);
-    return ptr;
+    if (aip)
+        s_SetAsnConn_CloseCb(conn, aip);
+    return aip;
 }
 
 
