@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <util/regexp.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Cdd_book_ref.hpp>
@@ -113,7 +114,7 @@ CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog 
     if (enum2str.Size() == 0) {
         enum2str.Associate(CCdd_book_ref::eTextelement_unassigned, "unassigned");
         enum2str.Associate(CCdd_book_ref::eTextelement_section, "section");
-        enum2str.Associate(CCdd_book_ref::eTextelement_figgrp, "figgrp");
+        enum2str.Associate(CCdd_book_ref::eTextelement_figgrp, "figure");
         enum2str.Associate(CCdd_book_ref::eTextelement_table, "table");
         enum2str.Associate(CCdd_book_ref::eTextelement_chapter, "chapter");
         enum2str.Associate(CCdd_book_ref::eTextelement_biblist, "biblist");
@@ -168,6 +169,72 @@ void CDDBookRefDialog::OnCloseWindow(wxCloseEvent& event)
     Destroy();
 }
 
+//  The return value is a string used in "DTD2" style URLs based on br.fcgi.
+//  However, note that the CCdd_book_ref could have been encoded based
+//  on URLs from either br.fcgi or bv.fcgi and there's no way to deduce
+//  from which service the data originated.
+static wxString MakeParameterString(const CCdd_book_ref& bref)
+{
+    wxString paramStr;
+
+    if (!bref.IsSetElementid() && !bref.IsSetCelementid())
+        ERRORMSG("MakeParameterString() failed - neither elementid nor celementid is set");
+
+    else if (bref.IsSetElementid() && bref.IsSetCelementid())
+        ERRORMSG("MakeParameterString() failed - both elementid and celementid are set");
+
+    else if (bref.IsSetSubelementid() && bref.IsSetCsubelementid())
+        ERRORMSG("MakeParameterString() failed - both subelementid and csubelementid are set");
+
+    else {
+        CCdd_book_ref::ETextelement elementType;
+        string part, id, rendertype;
+        
+        //  Numerical element ids need to be prefixed by 'A' in br.fcgi URLs.
+        if (bref.IsSetElementid()) {
+            part = "A" + NStr::IntToString(bref.GetElementid());
+        } else {
+            part = bref.GetCelementid();
+        }
+
+        if (bref.IsSetSubelementid() || bref.IsSetCsubelementid()) {
+            //  Numerical subelement ids need to be prefixed by 'A' in br.fcgi URLs.
+            if (bref.IsSetSubelementid()) {
+                id = "A" + NStr::IntToString(bref.GetSubelementid());
+            } else {
+                id = bref.GetCsubelementid();
+            }
+        } else {
+            id = kEmptyStr;
+        }
+
+        //  For br.fcgi, 'chapter' and 'section' are treated equivalently.
+        //  Expect anything else to be a 'figure' or 'table', but if not
+        //  the parameter string will be constructed as if it were a 'section'.
+        elementType = bref.GetTextelement();
+        if (elementType == CCdd_book_ref::eTextelement_figgrp || elementType == CCdd_book_ref::eTextelement_table) {
+            rendertype = *(enum2str.Find(elementType));
+            if (id.length() == 0) {
+                id = part;
+            }
+            paramStr.Printf("%s&part=%s&rendertype=%s&id=%s",
+                bref.GetBookname().c_str(), part.c_str(), rendertype.c_str(), id.c_str());
+//        } else if (elementType == CCdd_book_ref::eTextelement_section || elementType == CCdd_book_ref::eTextelement_chapter) {
+        } else {
+            if (id.size() > 0)
+                paramStr.Printf("%s&part=%s#%s",
+                    bref.GetBookname().c_str(), part.c_str(), id.c_str());
+            else
+                paramStr.Printf("%s&part=%s",
+                    bref.GetBookname().c_str(), part.c_str());
+        }
+
+    }
+
+    return paramStr;
+}
+
+//  The 'rid' parameter is used in old "DTD1" style URLs based on bv.fcgi
 static wxString MakeRID(const CCdd_book_ref& bref)
 {
     wxString rid;
@@ -209,7 +276,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
     for (d=descrSet->Set().begin(); d!=de; ++d) {
         if ((*d)->IsBook_ref()) {
             // make client data of menu item a pointer to the CRef containing the CCdd_descr object
-            wxString rid = MakeRID((*d)->GetBook_ref());
+            wxString rid = MakeParameterString((*d)->GetBook_ref());
             if (rid.size() > 0)
                 listbox->Append(rid, &(*d));
         }
@@ -228,6 +295,11 @@ void CDDBookRefDialog::SetWidgetStates(void)
             (*(reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem))))->GetBook_ref();
         tName->SetValue(bref.GetBookname().c_str());
         cType->SetStringSelection(enum2str.Find(bref.GetTextelement())->c_str());
+
+        //  Just display what's in the object, rather than prepend
+        //  the 'A' to make everything look like a new br.fcgi URL
+        //  (this way, it's obvious a numeric value corresponds to
+        //   and book reference recorded prior to these changes).
         wxString s;
         if (bref.IsSetElementid())
             s.Printf("%i", bref.GetElementid());
@@ -244,7 +316,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
         tSubaddress->SetValue(s);
     } else {
         tName->Clear();
-        cType->SetSelection(0);
+        cType->SetSelection(1);  // default is 'section'
         tAddress->Clear();
         tSubaddress->Clear();
     }
@@ -269,9 +341,9 @@ void CDDBookRefDialog::SetWidgetStates(void)
     bDown->Enable(!readOnly && !editOn && selectedItem < (int) listbox->GetCount() - 1);
     bEdit->Enable(!readOnly && !editOn && selectedItem >= 0 && selectedItem < (int) listbox->GetCount());
     bSave->Enable(!readOnly && editOn);
-    bNew->Enable(!readOnly && !editOn);
+    bNew->Enable(false);  //    bNew->Enable(!readOnly && !editOn);  //  see if anyone yells
     bDelete->Enable(!readOnly && selectedItem >= 0 && selectedItem < (int) listbox->GetCount());
-    bLaunch->Enable(!editOn);
+    bLaunch->Enable(!editOn && (int) listbox->GetCount() > 0);
     bPaste->Enable(!readOnly && !editOn);
 }
 
@@ -297,10 +369,141 @@ static void InsertAfter(int selectedItem, CCdd_descr_set *descrSet, CCdd_descr *
     ERRORMSG("InsertAfter() - selectedItem = " << selectedItem << " but there aren't that many book refs");
 }
 
+//  Break up URLs formatted as per bv.fcgi conventions.
+//  True if the book reference was created and added.
+bool BvURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
+{
+    bool result = false;
+    wxStringTokenizer sharp(data.GetText().Strip(wxString::both), "#", wxTOKEN_STRTOK);
+    if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
+        bool haveSubaddr = (sharp.CountTokens() == 2);
+        wxStringTokenizer dot(sharp.GetNextToken(), ".", wxTOKEN_STRTOK);
+        if (dot.CountTokens() == 3) {
+//            CRef < CCdd_descr > descr(new CCdd_descr);
+            descr->SetBook_ref().SetBookname(dot.GetNextToken().c_str());
+            const CCdd_book_ref::ETextelement *type = enum2str.Find(string(dot.GetNextToken().c_str()));
+            wxString addrStr = dot.GetNextToken();
+            wxString subaddrStr;
+            if (haveSubaddr)
+                subaddrStr = sharp.GetNextToken();
+            if (type) {
+                descr->SetBook_ref().SetTextelement(*type);
+                long address, subaddress;
+                if (addrStr.ToLong(&address))
+                    descr->SetBook_ref().SetElementid((int) address);
+                else
+                    descr->SetBook_ref().SetCelementid(addrStr.c_str());
+                if (haveSubaddr) {
+                    if (subaddrStr.ToLong(&subaddress))
+                        descr->SetBook_ref().SetSubelementid((int) subaddress);
+                    else
+                        descr->SetBook_ref().SetCsubelementid(subaddrStr.c_str());
+                }
+                /*
+                InsertAfter(selectedItem, descrSet, descr.GetPointer());
+                ++selectedItem;
+                sSet->SetDataChanged(StructureSet::eCDDData);
+                isNew = false;
+                */
+                result = true;
+            }
+        }
+    }
+
+    if (!result) {
+        descr.Reset();
+    }
+    return result;
+}
+
+//  Break up URLs formatted as per br.fcgi conventions;
+//  allow use of the entire URL.
+//  
+//  section/chapter:
+//  book=<bookname>&part=<address>[#<subaddress>]
+//
+//  table/figure:
+//  book=<bookname>&part=<address>&rendertype=<some_enum2strValue>&id=<subaddress>
+//
+//  For XML validation reasons, <address> and <subaddress> have a prepended 'A'
+//  if the string would have otherwise been numeric.  However, for parsing br.fcgi 
+//  URLs it is fine to leave the string intact w/o stripping off the initial 'A'
+//  (i.e., all br.fcgi derived book references will use Celementid and Csubelementid
+//   exclusively).
+bool BrURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
+{
+    bool result = false;
+    string bookname, address, subaddress, typeStr, firstTokenStr;
+    CRegexp regexpCommon("book=(.*)&part=(.*)");
+    CRegexp regexpRendertype("&part=(.*)&rendertype=(.*)&id=(.*)");
+    wxStringTokenizer sharp(data.GetText().Strip(wxString::both), "#", wxTOKEN_STRTOK);
+
+    if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
+        bool haveSubaddr = (sharp.CountTokens() == 2);
+        wxString firstToken = sharp.GetNextToken();
+//        wxStringTokenizer ampersand(firstToken, "&", wxTOKEN_STRTOK);
+        
+        //  All URLs have 'book' and 'part' parameters.
+        firstTokenStr = firstToken.c_str();
+        regexpCommon.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
+        if (regexpCommon.NumFound() == 3) {  //  i.e., found full pattern + two subpatterns
+
+            bookname = regexpCommon.GetSub(firstTokenStr, 1);
+
+            regexpRendertype.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
+            if (regexpRendertype.NumFound() == 4) {  //  i.e., expecting a table or figure, but allow others
+                address = regexpRendertype.GetSub(firstTokenStr, 1);
+                typeStr = regexpRendertype.GetSub(firstTokenStr, 2);
+                if (enum2str.Find(typeStr) == NULL) {  
+                    typeStr = kEmptyStr;  //  problem if we don't have a known type
+                } else {
+                    subaddress = regexpRendertype.GetSub(firstTokenStr, 3);
+                }
+            } else {  //  treat this as a 'section'
+                address = regexpCommon.GetSub(firstTokenStr, 2);
+                typeStr = *(enum2str.Find(CCdd_book_ref::eTextelement_section));
+
+                //  If there's something after the '#', if it's an old-style
+                //  URL it could be numeric -> prepend 'A' in that case.
+                if (haveSubaddr) {
+                    subaddress = sharp.GetNextToken().c_str();
+                    if (NStr::StringToULong(subaddress, NStr::fConvErr_NoThrow) != 0) {
+                        subaddress = "A" + subaddress;
+                    }
+                }
+            }
+        }
+
+        if (typeStr.length() > 0) {
+            const CCdd_book_ref::ETextelement *type = enum2str.Find(typeStr);
+            if (type) {
+                descr->SetBook_ref().SetBookname(bookname);
+                descr->SetBook_ref().SetTextelement(*type);
+                descr->SetBook_ref().SetCelementid(address);
+                if (subaddress.length() > 0) {
+                    descr->SetBook_ref().SetCsubelementid(subaddress);
+                }
+                result = true;
+            }
+        }
+    }
+
+    if (!result) {
+        descr.Reset();
+    }
+    return result;
+}
+
 void CDDBookRefDialog::OnClick(wxCommandEvent& event)
 {
+    int eventId = event.GetId();
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(listbox, ID_LISTBOX, wxListBox)
-    CRef < CCdd_descr > *selDescr = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
+    CRef < CCdd_descr > *selDescr = NULL;
+
+    //  Avoid some unnecessary warning in debug-mode
+    if ((eventId != ID_B_PASTE) && (eventId != ID_B_DONE) && (eventId != ID_B_EDIT) && (eventId != ID_B_NEW) && (eventId != ID_LISTBOX)) {
+        selDescr = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
+    }
 
     if (event.GetId() == ID_B_DONE) {
         Close(false);
@@ -310,8 +513,10 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
     else if (event.GetId() == ID_B_LAUNCH) {
         if (selDescr) {
             wxString url;
-            url.Printf("http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=%s",
-                MakeRID((*selDescr)->GetBook_ref()).c_str());
+            url.Printf("http://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
+                MakeParameterString((*selDescr)->GetBook_ref()).c_str());
+//            url.Printf("http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=%s",
+//                MakeRID((*selDescr)->GetBook_ref()).c_str());
             LaunchWebPage(url.c_str());
         }
     }
@@ -395,40 +600,21 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
     else if (event.GetId() == ID_B_PASTE) {
         if (wxTheClipboard->Open()) {
             if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
+                CRef < CCdd_descr > descr(new CCdd_descr);
                 wxTextDataObject data;
                 wxTheClipboard->GetData(data);
-                wxStringTokenizer sharp(data.GetText().Strip(wxString::both), "#", wxTOKEN_STRTOK);
-                if (sharp.CountTokens() == 1 || sharp.CountTokens() == 2) {
-                    bool haveSubaddr = (sharp.CountTokens() == 2);
-                    wxStringTokenizer dot(sharp.GetNextToken(), ".", wxTOKEN_STRTOK);
-                    if (dot.CountTokens() == 3) {
-                        CRef < CCdd_descr > descr(new CCdd_descr);
-                        descr->SetBook_ref().SetBookname(dot.GetNextToken().c_str());
-                        const CCdd_book_ref::ETextelement *type = enum2str.Find(string(dot.GetNextToken().c_str()));
-                        wxString addrStr = dot.GetNextToken();
-                        wxString subaddrStr;
-                        if (haveSubaddr)
-                            subaddrStr = sharp.GetNextToken();
-                        if (type) {
-                            descr->SetBook_ref().SetTextelement(*type);
-                            long address, subaddress;
-                            if (addrStr.ToLong(&address))
-                                descr->SetBook_ref().SetElementid((int) address);
-                            else
-                                descr->SetBook_ref().SetCelementid(addrStr.c_str());
-                            if (haveSubaddr) {
-                                if (subaddrStr.ToLong(&subaddress))
-                                    descr->SetBook_ref().SetSubelementid((int) subaddress);
-                                else
-                                    descr->SetBook_ref().SetCsubelementid(subaddrStr.c_str());
-                            }
-                            InsertAfter(selectedItem, descrSet, descr.GetPointer());
-                            ++selectedItem;
-                            sSet->SetDataChanged(StructureSet::eCDDData);
-                            isNew = false;
-                        }
-                    }
+
+                //  This is the *old* method of parsing strings from a bv.fcgi URL.
+                //bool madeBookRef = BvURLToBookRef(data, descr);
+
+                bool madeBookRef = BrURLToBookRef(data, descr);
+                if (madeBookRef) {
+                    InsertAfter(selectedItem, descrSet, descr.GetPointer());
+                    ++selectedItem;
+                    sSet->SetDataChanged(StructureSet::eCDDData);
+                    isNew = false;
                 }
+
             }
             wxTheClipboard->Close();
         }
@@ -523,7 +709,7 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     {
         wxT("unassigned"),
         wxT("section"),
-        wxT("figgrp"),
+        wxT("figure"),
         wxT("table"),
         wxT("chapter"),
         wxT("biblist"),
