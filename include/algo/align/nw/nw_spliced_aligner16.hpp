@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const size_t splice_type_count_16 (4);
+const size_t splice_type_count_16 = 4;
 
 class NCBI_XALGOALIGN_EXPORT CSplicedAligner16: public CSplicedAligner
 {

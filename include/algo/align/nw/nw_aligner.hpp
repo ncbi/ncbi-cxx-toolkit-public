@@ -380,8 +380,8 @@ namespace {
 
     const char g_nwaligner_nucleotides [] = "AGTCBDHKMNRSVWY";
 
-    const CNWAligner::TScore kInfMinus ( -(numeric_limits<CNWAligner::TScore>::
-                                            max() / 2) );
+    const CNWAligner::TScore kInfMinus = -(numeric_limits<CNWAligner::TScore>::
+                                           max() / 2);
 }
 
 END_NCBI_SCOPE
