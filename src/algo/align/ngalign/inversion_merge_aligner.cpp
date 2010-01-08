@@ -96,7 +96,7 @@ bool CInversionMergeAligner::s_SortByPctCoverage(const CRef<CSeq_align>& A,
     if(!PctCovExists[0] || !PctCovExists[1])
         return true;
 
-    return ( PctCovs[0] >= PctCovs[1] );
+    return ( PctCovs[0] > PctCovs[1] );
 }
 
 

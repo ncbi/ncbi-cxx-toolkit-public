@@ -187,7 +187,7 @@ static bool s_SortByAlignedLength(const CRef<objects::CSeq_align>& A,
     TSeqPos Lengths[2];
     Lengths[0] = Scorer.GetAlignLength(*A);
     Lengths[1] = Scorer.GetAlignLength(*B);
-    return (Lengths[0] >= Lengths[1]);
+    return (Lengths[0] > Lengths[1]);
 }
 
 
@@ -195,8 +195,8 @@ void CMergeAligner::x_SortAlignSet(CSeq_align_set& AlignSet)
 {
     vector<CRef<CSeq_align> > TempVec;
     TempVec.reserve(AlignSet.Set().size());
-    TempVec.resize(AlignSet.Set().size());
-    copy(AlignSet.Set().begin(), AlignSet.Set().end(), TempVec.begin());
+    copy(AlignSet.Set().begin(), AlignSet.Set().end(),
+            insert_iterator<vector<CRef<CSeq_align> > >(TempVec, TempVec.end()));
     sort(TempVec.begin(), TempVec.end(), s_SortByAlignedLength);
     AlignSet.Set().clear();
     copy(TempVec.begin(), TempVec.end(),
