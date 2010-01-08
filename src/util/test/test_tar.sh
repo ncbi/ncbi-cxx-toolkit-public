@@ -226,7 +226,7 @@ if [ "`uname`" = "Linux" ]; then
   else
     real="`expr $size - $spabs`"
     nseek="`expr $real / 512 '*' 512`"
-    cmp -l -i "$nseek" $test_base.{1,2}/newdir/sparse-file                                              ||  exit 1
+    cmp -l -i ${nseek}:0 $test_base.{1,2}/newdir/sparse-file                                            ||  exit 1
   fi
 
   if $okay ; then
