@@ -224,6 +224,11 @@ bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
 
 string CCddBookRefToString(const CCdd_book_ref& bookRef)
 {
+    return CCddBookRefToBvString(bookRef);
+}
+
+string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
+{
     static map<CCdd_book_ref::ETextelement, string> elementStringMap;
     if (elementStringMap.size() == 0) {
         elementStringMap[CCdd_book_ref::eTextelement_unassigned] = "unassigned";
@@ -272,6 +277,79 @@ string CCddBookRefToString(const CCdd_book_ref& bookRef)
         result = string(buf);
     }
     
+    return result;
+}
+
+string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
+{
+    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
+    if (elementStringMap.size() == 0) {
+        elementStringMap[CCdd_book_ref::eTextelement_unassigned] = "unassigned";
+        elementStringMap[CCdd_book_ref::eTextelement_section]    = "section";
+        elementStringMap[CCdd_book_ref::eTextelement_figgrp]     = "figure";
+        elementStringMap[CCdd_book_ref::eTextelement_table]      = "table";
+        elementStringMap[CCdd_book_ref::eTextelement_chapter]    = "chapter";
+        elementStringMap[CCdd_book_ref::eTextelement_biblist]    = "biblist";
+        elementStringMap[CCdd_book_ref::eTextelement_box]        = "box";
+        elementStringMap[CCdd_book_ref::eTextelement_glossary]   = "glossary";
+        elementStringMap[CCdd_book_ref::eTextelement_appendix]   = "appendix";
+        elementStringMap[CCdd_book_ref::eTextelement_other]      = "other";
+    }
+
+    string result;
+    string elementid, subelementid;
+    string bookname = bookRef.GetBookname();
+
+    if (!bookRef.IsSetElementid() && !bookRef.IsSetCelementid())
+        result = "unexpected book_ref format:  neither elementid nor celementid is set";
+
+    else if (bookRef.IsSetElementid() && bookRef.IsSetCelementid())
+        result = "unexpected book_ref format:  both elementid and celementid are set";
+
+    else if (bookRef.IsSetSubelementid() && bookRef.IsSetCsubelementid())
+        result = "unexpected book_ref format:  both subelementid and csubelementid are set";
+
+    else {
+
+        CCdd_book_ref::ETextelement elementType;
+        string part, id, rendertype;
+        
+        //  Numerical element ids need to be prefixed by 'A' in br.fcgi URLs.
+        if (bookRef.IsSetElementid()) {
+            part = "A" + NStr::IntToString(bookRef.GetElementid());
+        } else {
+            part = bookRef.GetCelementid();
+        }
+
+        if (bookRef.IsSetSubelementid() || bookRef.IsSetCsubelementid()) {
+            //  Numerical subelement ids need to be prefixed by 'A' in br.fcgi URLs.
+            if (bookRef.IsSetSubelementid()) {
+                id = "A" + NStr::IntToString(bookRef.GetSubelementid());
+            } else {
+                id = bookRef.GetCsubelementid();
+            }
+        } else {
+            id = kEmptyStr;
+        }
+
+        //  For br.fcgi, 'chapter' and 'section' are treated equivalently.
+        //  Expect anything else to be a 'figure' or 'table', but if not
+        //  the parameter string will be constructed as if it were a 'section'.
+        elementType = bookRef.GetTextelement();
+        if (elementType == CCdd_book_ref::eTextelement_figgrp || elementType == CCdd_book_ref::eTextelement_table) {
+            rendertype = elementStringMap[elementType];
+            if (id.length() == 0) {
+                id = part;
+            }
+            result = bookname + "&part=" + part + "&rendertype=" + rendertype + "&id=" + id;
+        } else {
+            result = bookname + "&part=" + part;
+            if (id.size() > 0)
+                result += "#" + id;
+        }
+
+    }
+
     return result;
 }
 
