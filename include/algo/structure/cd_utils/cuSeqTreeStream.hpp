@@ -49,7 +49,7 @@ public:
 	static bool readFromFile(std::ifstream& ifs, SeqTree& seqTree);
 	static bool writeToFile(std::ofstream&ofs, const SeqTree& seqTree);
 
-    const static int NESTED_INDENT;
+    static const int NESTED_INDENT;
 
 	static void fromString(const std::string& strTree, SeqTree& seqTree);
 	static std::string toString(const SeqTree& seqTree);
