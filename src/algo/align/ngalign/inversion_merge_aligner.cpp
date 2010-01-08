@@ -93,9 +93,15 @@ bool CInversionMergeAligner::s_SortByPctCoverage(const CRef<CSeq_align>& A,
     PctCovExists[0] = A->GetNamedScore("pct_coverage", PctCovs[0]);
     PctCovExists[1] = B->GetNamedScore("pct_coverage", PctCovs[1]);
 
-    if(!PctCovExists[0] || !PctCovExists[1])
-        return true;
+    // first come elements with pct_coverage
+    if(PctCovExists[0] != PctCovExists[1])
+         return PctCovExists[0];
 
+    // if both are without pct_coverage then elements are unordered
+    if (!PctCovExists[0])
+         return false;
+
+    // if both are with pct_coverage order them by the coverage value
     return ( PctCovs[0] > PctCovs[1] );
 }
 
