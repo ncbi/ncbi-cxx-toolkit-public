@@ -228,7 +228,8 @@ private:
 
     // current state
     TConn            m_NextNewConnection;
-    typedef list<TConn> TFreeConnections;
+    typedef pair<TConn, CTime> TConnSlot;
+    typedef list<TConnSlot> TFreeConnections;
     TFreeConnections m_FreeConnections;
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;

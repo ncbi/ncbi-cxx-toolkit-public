@@ -127,7 +127,7 @@ void CReader::OpenInitialConnection(bool force)
                 return;
             }
             catch ( CLoaderException& exc ) {
-                x_ReleaseConnection(conn);
+                x_ReleaseConnection(conn, true);
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
                     // no connection can be opened
                     throw;
@@ -141,7 +141,7 @@ void CReader::OpenInitialConnection(bool force)
                 }
             }
             catch ( CException& exc ) {
-                x_ReleaseConnection(conn);
+                x_ReleaseConnection(conn, true);
                 LOG_POST_X(2, Warning<<"CReader: "
                            "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
@@ -316,31 +316,34 @@ CReader::TConn CReader::x_AllocConnection(bool oldest)
     }
     m_NumFreeConnections.Wait();
     CMutexGuard guard(m_ConnectionsMutex);
-    TConn conn;
+    TConnSlot slot;
     if ( oldest ) {
-        conn =  m_FreeConnections.back();
+        slot =  m_FreeConnections.back();
         m_FreeConnections.pop_back();
     }
     else {
-        conn =  m_FreeConnections.front();
+        slot =  m_FreeConnections.front();
         m_FreeConnections.pop_front();
     }
-    _ASSERT(find(m_FreeConnections.begin(), m_FreeConnections.end(), conn) ==
-            m_FreeConnections.end());
-    return conn;
+    if ( !slot.second.IsEmpty() ) {
+        double age = CTime(CTime::eCurrent).DiffNanoSecond(slot.second)*1e-9;
+        if ( age > 60 ) {
+            // too old, disconnect
+            x_DisconnectAtSlot(slot.first, false);
+        }
+    }
+    return slot.first;
 }
 
 
 void CReader::x_ReleaseConnection(TConn conn, bool oldest)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    _ASSERT(find(m_FreeConnections.begin(), m_FreeConnections.end(), conn) ==
-            m_FreeConnections.end());
     if ( oldest ) {
-        m_FreeConnections.push_back(conn);
+        m_FreeConnections.push_back(TConnSlot(conn, CTime()));
     }
     else {
-        m_FreeConnections.push_front(conn);
+        m_FreeConnections.push_front(TConnSlot(conn, CTime(CTime::eCurrent)));
     }
     m_NumFreeConnections.Post(1);
 }
