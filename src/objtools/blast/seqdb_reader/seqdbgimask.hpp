@@ -67,7 +67,10 @@ public:
     
     /// Destructor.
     ~CSeqDBGiMask() {
+        m_IndexLease.Clear();
+        m_OffsetLease.Clear();
         for (unsigned int i=0; i<m_DataFile.size(); i++) {
+            m_DataLease[i]->Clear();
             delete m_DataFile[i];
             delete m_DataLease[i];
         }

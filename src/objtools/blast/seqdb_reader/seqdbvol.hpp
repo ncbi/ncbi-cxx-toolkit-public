@@ -66,6 +66,11 @@ public:
           m_Fname    (dbname + '.' + prot_nucl + "xg"),
           m_NumOIDs  (0) { }
 
+    ~CSeqDBGiIndex()
+    {
+        m_Lease.Clear();
+    }
+
     static bool IndexExists(const string & name,
                             const char     prot_nucl)
     {
