@@ -1056,16 +1056,20 @@ x_IterateExonParts(const CSpliced_exon::TParts& parts,
         if ( part.IsMatch() || part.IsMismatch() || part.IsDiag() ) {
             TSeqPos pgen_len = plen;
             TSeqPos pprod_len = plen;
+            TSeqPos pgen_start = rev_gen ?
+                gen_start + gen_len - pgen_len : gen_start;
+            TSeqPos pprod_start = rev_prod ?
+                prod_start + prod_len - pprod_len : prod_start;
             if (to_row == 1) {
                 x_NextMappingRange(
-                    gen_id, gen_start, pgen_len, gen_strand,
-                    prod_id, prod_start, pprod_len, prod_strand,
+                    gen_id, pgen_start, pgen_len, gen_strand,
+                    prod_id, pprod_start, pprod_len, prod_strand,
                     0, 0);
             }
             else {
                 x_NextMappingRange(
-                    prod_id, prod_start, pprod_len, prod_strand,
-                    gen_id, gen_start, pgen_len, gen_strand,
+                    prod_id, pprod_start, pprod_len, prod_strand,
+                    gen_id, pgen_start, pgen_len, gen_strand,
                     0, 0);
             }
             _ASSERT(pgen_len == 0  && pprod_len == 0);
