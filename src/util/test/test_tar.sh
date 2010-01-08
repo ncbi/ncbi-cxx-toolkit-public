@@ -55,7 +55,7 @@ test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
-#trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
+trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
 cp -rp . $test_base.1/ 2>/dev/null
 if [ -f test_tar${exe} ]; then
