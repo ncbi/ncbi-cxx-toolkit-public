@@ -111,6 +111,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AFGMC	s	Alaska Department of Fish and Game",
 "AFS	s	University of Michigan",
 "AFSDU	s	Suleyman Demirel University, Agricultural Faculty",
+"AFTC	s	Alaska Frozen Tissue Collection",
 "AGRITEC	b	AGRITEC, Ltd.",
 "AGRL	s	Lethbridge Research Station",
 "AGUAT	s	Universidad de San Carlos",
