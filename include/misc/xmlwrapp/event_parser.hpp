@@ -327,6 +327,25 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the unparsed entity
+     * declaration message.
+     *
+     * @param name The name of the entity.
+     * @param public_id The public ID of the entity.
+     * @param system_id The system ID of the entity.
+     * @param notation_name The notation name.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool unparsed_entity_declaration (const std::string &name,
+                                              const std::string &public_id,
+                                              const std::string &system_id,
+                                              const std::string &notation_name);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber

@@ -107,6 +107,10 @@ public:
                                    const xmlChar * publicId,
                                    const xmlChar * systemId,
                                    xmlChar * content);
+    void event_unparsed_entity_declaration (const xmlChar *name,
+                                            const xmlChar *public_id,
+                                            const xmlChar *system_id,
+                                            const xmlChar *notation_name);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -159,6 +163,16 @@ extern "C"
                                                              public_id,
                                                              system_id,
                                                              content); }
+    //####################################################################
+    static void cb_unparsed_entity_declaration (void *parser,
+                                                const xmlChar *name,
+                                                const xmlChar *public_id,
+                                                const xmlChar *system_id,
+                                                const xmlChar *notation_name)
+    { static_cast<epimpl*>(parser)->event_unparsed_entity_declaration(name,
+                                                                      public_id,
+                                                                      system_id,
+                                                                      notation_name); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -256,6 +270,13 @@ bool xml::event_parser::notation_declaration (const std::string &name,
     return true;
 }
 //####################################################################
+bool xml::event_parser::unparsed_entity_declaration (const std::string &name,
+                                                     const std::string &public_id,
+                                                     const std::string &system_id,
+                                                     const std::string &notation_name) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::entity_declaration (const std::string &name,
                                             entity_type        type,
                                             const std::string &public_id,
@@ -311,6 +332,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.fatalError             = cb_error;
     sax_handler_.notationDecl           = cb_notation_declaration;
     sax_handler_.entityDecl             = cb_entity_declaration;
+    sax_handler_.unparsedEntityDecl     = cb_unparsed_entity_declaration;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -443,10 +465,10 @@ void epimpl::event_notation_declaration (const xmlChar *name,
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
-void epimpl::event_entity_declaration (const xmlChar * name,
+void epimpl::event_entity_declaration (const xmlChar *name,
                                        int type,
-                                       const xmlChar * public_id,
-                                       const xmlChar * system_id,
+                                       const xmlChar *public_id,
+                                       const xmlChar *system_id,
                                        xmlChar * content) {
     if (!parser_status_) return;
 
@@ -458,6 +480,24 @@ void epimpl::event_entity_declaration (const xmlChar * name,
         parser_status_ = parent_.entity_declaration(entity_name, parent_.get_entity_type(type),
                                                     entity_public_id, entity_system_id,
                                                     entity_content);
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_unparsed_entity_declaration (const xmlChar *name,
+                                                const xmlChar *public_id,
+                                                const xmlChar *system_id,
+                                                const xmlChar *notation_name) {
+    if (!parser_status_) return;
+
+    try {
+        std::string     entity_name( name ? reinterpret_cast<const char*>(name) : "" );
+        std::string     entity_public_id( public_id ? reinterpret_cast<const char*>(public_id) : "" );
+        std::string     entity_system_id( system_id ? reinterpret_cast<const char*>(system_id) : "" );
+        std::string     entity_notation_name( notation_name ? reinterpret_cast<const char*>(notation_name) : "" );
+        parser_status_ = parent_.unparsed_entity_declaration(entity_name,
+                                                             entity_public_id, entity_system_id,
+                                                             entity_notation_name);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
