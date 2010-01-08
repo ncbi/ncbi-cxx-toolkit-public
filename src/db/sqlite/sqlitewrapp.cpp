@@ -408,7 +408,9 @@ CSQLITE_HandleFactory::DeleteObject(sqlite3* handle)
                          "Cannot close connection");
 
         while (ret == SQLITE_BUSY  ||  ret == SQLITE_LOCKED
+#ifdef HAVE_SQLITE3_UNLOCK_NOTIFY
                ||  ret == SQLITE_LOCKED_SHAREDCACHE
+#endif
               )
         {
             sqlite3_stmt *stmt;
