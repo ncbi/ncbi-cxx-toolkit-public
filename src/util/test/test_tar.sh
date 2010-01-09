@@ -182,7 +182,7 @@ echo
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1   ||  exit 1
 head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                          ||  exit 1
 cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                     > $test_base.out.2   ||  exit 1
-cmp -l $test_base.out.{1,2}                                                                             ||  exit 1
+cmp -l $test_base.out.1 $test_base.out.2                                                                ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
   # Note that at least tar 1.15.1 suffers from the following shortcoming:
@@ -222,11 +222,11 @@ if [ "`uname`" = "Linux" ]; then
 
   if [ "`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`" = "$real" ]; then
     echo "--- Looks like the sparse file format is not being used, checking plain"
-    cmp $test_base.{1,2}/newdir/sparse-file                                                             ||  exit 1
+    cmp -l               $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
   else
     real="`expr $size - $spabs`"
     nseek="`expr $real / 512 '*' 512`"
-    cmp -l -i ${nseek}:0 $test_base.{1,2}/newdir/sparse-file                                            ||  exit 1
+    cmp -l -i ${nseek}:0 $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
   fi
 
   if $okay ; then
