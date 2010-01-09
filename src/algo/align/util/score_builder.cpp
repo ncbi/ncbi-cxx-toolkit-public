@@ -168,21 +168,22 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
     case CSeq_align::TSegs::e_Denseg:
         {{
             const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                //int this_len = ds.GetLens()[i];
-                CDense_seg::TDim count_gapped = 0;
-                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    //int start = ds.GetStarts()[i * ds.GetDim() + j];
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                        ++count_gapped;
+            if (ungapped) {
+                for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                    bool is_gap_seg = false;
+                    for (CDense_seg::TDim j = 0;
+                         !is_gap_seg  &&  j < ds.GetDim();  ++j) {
+                        //int start = ds.GetStarts()[i * ds.GetDim() + j];
+                        if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                            is_gap_seg = true;
+                        }
                     }
-                }
-                if (ungapped) {
-                    if (count_gapped == 0) {
+                    if ( !is_gap_seg ) {
                         len += ds.GetLens()[i];
                     }
-                } else if (ds.GetDim() - count_gapped > 1) {
-                    /// we have at least one row of sequence
+                }
+            } else {
+                for (size_t i = 0;  i < ds.GetLens().size();  ++i) {
                     len += ds.GetLens()[i];
                 }
             }
@@ -259,10 +260,16 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                         break;
 
                     case CSpliced_exon_chunk::e_Product_ins:
-                        len += chunk.GetProduct_ins();
+                        if ( !ungapped ) {
+                            len += chunk.GetProduct_ins();
+                        }
                         break;
 
-                        /// genomic-ins is not handled explicitly
+                    case CSpliced_exon_chunk::e_Genomic_ins:
+                        if ( !ungapped ) {
+                            len += chunk.GetGenomic_ins();
+                        }
+                        break;
 
                     default:
                         break;
@@ -621,6 +628,12 @@ void CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align,
 }
 
 
+int CScoreBuilder::GetGapBaseCount(const CSeq_align& align)
+{
+    return align.GetTotalGapCount();
+}
+
+
 int CScoreBuilder::GetGapCount(const CSeq_align& align)
 {
     return align.GetNumGapOpenings();
@@ -642,7 +655,8 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
 {
     if ( !align.GetSegs().IsDenseg() ) {
         NCBI_THROW(CException, eUnknown,
-            "CScoreBuilder::AddScore(): only dense-seg alignments are supported");
+            "CScoreBuilder::GetBlastScore(): "
+            "only dense-seg alignments are supported");
     }
 
     if (m_ScoreBlk == 0) {

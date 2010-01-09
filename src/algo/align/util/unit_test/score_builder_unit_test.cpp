@@ -78,7 +78,7 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Dense_seg)
+BOOST_AUTO_TEST_CASE(Test_Score_Builder)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -98,6 +98,25 @@ BOOST_AUTO_TEST_CASE(Test_Dense_seg)
             break;
         }
 
+        switch (alignment.GetSegs().Which()) {
+        case CSeq_align::TSegs::e_Denseg:
+            LOG_POST(Error << "checking alignment: Dense-seg");
+            break;
+        case CSeq_align::TSegs::e_Disc:
+            LOG_POST(Error << "checking alignment: Disc");
+            break;
+        case CSeq_align::TSegs::e_Std:
+            LOG_POST(Error << "checking alignment: Std-seg");
+            break;
+        case CSeq_align::TSegs::e_Spliced:
+            LOG_POST(Error << "checking alignment: Spliced-seg");
+            break;
+
+        default:
+            LOG_POST(Error << "checking alignment: unknown");
+            break;
+        }
+
         ///
         /// we test several distinct scores
         ///
@@ -109,6 +128,18 @@ BOOST_AUTO_TEST_CASE(Test_Dense_seg)
         int kExpectedMismatches = 0;
         alignment.GetNamedScore(CSeq_align::eScore_MismatchCount,
                                 kExpectedMismatches);
+
+        int kExpectedGapOpen = 0;
+        alignment.GetNamedScore("gapopen",
+                                kExpectedGapOpen);
+
+        int kExpectedGaps = 0;
+        alignment.GetNamedScore("gap_bases",
+                                kExpectedGaps);
+
+        int kExpectedLength = 0;
+        alignment.GetNamedScore("length",
+                                kExpectedLength);
 
         int kExpectedScore = 0;
         alignment.GetNamedScore(CSeq_align::eScore_Score,
@@ -124,6 +155,15 @@ BOOST_AUTO_TEST_CASE(Test_Dense_seg)
 
         /// reset scores to avoid any taint in score generation
         alignment.ResetScore();
+
+        /// check alignment length
+        {{
+             int actual =
+                 score_builder.GetAlignLength(alignment);
+             LOG_POST(Error << "Verifying score: length: "
+                      << kExpectedLength << " == " << actual);
+             BOOST_CHECK_EQUAL(kExpectedLength, actual);
+         }}
 
         /// check identity count
         {{
@@ -141,6 +181,24 @@ BOOST_AUTO_TEST_CASE(Test_Dense_seg)
              LOG_POST(Error << "Verifying score: num_mismatch: "
                       << kExpectedMismatches << " == " << actual);
              BOOST_CHECK_EQUAL(kExpectedMismatches, actual);
+         }}
+
+        /// check gap count (= gap openings)
+        {{
+             int actual =
+                 score_builder.GetGapCount(alignment);
+             LOG_POST(Error << "Verifying score: gapopen: "
+                      << kExpectedGapOpen << " == " << actual);
+             BOOST_CHECK_EQUAL(kExpectedGapOpen, actual);
+         }}
+
+        /// check gap base length (= sum of lengths of all gaps)
+        {{
+             int actual =
+                 score_builder.GetGapBaseCount(alignment);
+             LOG_POST(Error << "Verifying score: gap_bases: "
+                      << kExpectedGaps << " == " << actual);
+             BOOST_CHECK_EQUAL(kExpectedGaps, actual);
          }}
 
         /// check percent identity
@@ -172,7 +230,7 @@ BOOST_AUTO_TEST_CASE(Test_Dense_seg)
              LOG_POST(Error << "Verifying score: pct_coverage: "
                       << kExpectedPctCoverage << " == " << actual);
 
-             /// machine precision is a problme here
+             /// machine precision is a problem here
              /// we verify to 12 digits of precision
              Uint8 int_pct_coverage_expected = kExpectedPctCoverage * 1e12;
              Uint8 int_pct_coverage_actual = actual * 1e12;

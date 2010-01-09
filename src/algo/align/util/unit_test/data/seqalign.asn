@@ -3,6 +3,18 @@ Seq-align ::= {
   dim 2,
   score {
     {
+      id str "length",
+      value int 37507
+    },
+    {
+      id str "gap_bases",
+      value int 156
+    },
+    {
+      id str "gapopen",
+      value int 16
+    },
+    {
       id str "num_ident",
       value int 37325
     },
@@ -207,6 +219,18 @@ Seq-align ::= {
   type disc,
   dim 2,
   score {
+    {
+      id str "length",
+      value int 3094
+    },
+    {
+      id str "gap_bases",
+      value int 0
+    },
+    {
+      id str "gapopen",
+      value int 0
+    },
     {
       id str "num_ident",
       value int 3094
@@ -903,6 +927,18 @@ Seq-align ::= {
   type global,
   dim 2,
   score {
+    {
+      id str "length",
+      value int 5391
+    },
+    {
+      id str "gap_bases",
+      value int 9
+    },
+    {
+      id str "gapopen",
+      value int 1
+    },
     {
       id str "num_ident",
       value int 5382
@@ -2011,6 +2047,18 @@ Seq-align ::= {
   type global,
   dim 2,
   score {
+    {
+      id str "length",
+      value int 561
+    },
+    {
+      id str "gap_bases",
+      value int 0
+    },
+    {
+      id str "gapopen",
+      value int 0
+    },
     {
       id str "matches",
       value int 559

@@ -100,14 +100,32 @@ public:
     /// Compute percent coverage of the query (sequence 0) (range 0-100)
     double GetPercentCoverage(CScope& scope, const CSeq_align& align);
 
+    /// Compute the number of identities in the alignment
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);
+
+    /// Compute the number of mismatches in the alignment
     int GetMismatchCount  (CScope& scope, const CSeq_align& align);
     void GetMismatchCount  (CScope& scope, const CSeq_align& align,
                             int& identities, int& mismatches);
+
+    /// Compute the BLAST score of the alignment
     int GetBlastScore     (CScope& scope, const CSeq_align& align);
+
+    /// Compute the BLAST bit score
     double GetBlastBitScore(CScope& scope, const CSeq_align& align);
+
+    /// Compute the BLAST e-value
     double GetBlastEValue (CScope& scope, const CSeq_align& align);
+
+    /// Compute the number of gaps in the alignment
     int GetGapCount       (const CSeq_align& align);
+
+    /// Compute the number of gap bases in the alignment (= length of all gap
+    /// segments)
+    int GetGapBaseCount   (const CSeq_align& align);
+
+    /// Compute the length of the alignment (= length of all segments, gaps +
+    /// aligned)
     TSeqPos GetAlignLength(const CSeq_align& align);
 
     /// @}
