@@ -1163,8 +1163,13 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
                         const CSpliced_exon_chunk& chunk = **it;
                         switch (chunk.Which()) {
                         case CSpliced_exon_chunk::e_Product_ins:
+                            retval +=
+                                (get_total_count ? chunk.GetProduct_ins() : 1);
+                            break;
+
                         case CSpliced_exon_chunk::e_Genomic_ins:
-                            ++retval;
+                            retval +=
+                                (get_total_count ? chunk.GetGenomic_ins() : 1);
                             break;
 
                         default:
