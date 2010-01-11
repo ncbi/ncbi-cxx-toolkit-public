@@ -339,8 +339,8 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 /// Return "true" if the operation was successful, "is"
 /// was read entirely, and all its contents reached "os";
 /// "false" if either extraction from "is" or insertion
-/// into "os" failed.
-/// Note that upon successful completion, is.eof() is always true.
+/// into "os" had failed.
+/// Note that upon successful completion, is.eof() may not always be true.
 /// The call may throw exceptions only if they are enabled on
 /// respective stream(s).
 /// Note that the call is an extension to the standard

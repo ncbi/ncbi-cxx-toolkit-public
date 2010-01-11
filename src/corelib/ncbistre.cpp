@@ -184,7 +184,7 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
         return false;
 #ifndef NCBI_COMPILER_GCC
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
-        return is.eof() ? true : false;
+        return true; // NB: Workshop doesn't set eofbit (C++ Std 27.6.1.3.27)
     os << is.rdbuf();
 #elif   NCBI_COMPILER_VERSION <= 330
     // GCC stdlib++ version <= 3.3.0 has a bug in implementation of streamcopy,
@@ -202,8 +202,13 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
             break;
     } while (is.good());
 #else
-    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
-        return is.eof() ? true : false;
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
+#  ifdef __GLIBCXX__
+        return is.eof() ? true : false; // NB: GLIBC++ sets eofbit
+#  else
+        return true; // The C++ Std does not say about eofbit (27.6.1.3.27)
+#  endif
+    }
     os << is.rdbuf();
 #endif
     if (!os.good())
