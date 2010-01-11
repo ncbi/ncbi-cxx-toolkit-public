@@ -111,6 +111,9 @@ public:
                                             const xmlChar *public_id,
                                             const xmlChar *system_id,
                                             const xmlChar *notation_name);
+    void event_external_subset_declaration (const xmlChar *name,
+                                            const xmlChar *external_id,
+                                            const xmlChar *system_id);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -173,6 +176,14 @@ extern "C"
                                                                       public_id,
                                                                       system_id,
                                                                       notation_name); }
+    //####################################################################
+    static void cb_external_subset_declaration (void *parser,
+                                                const xmlChar *name,
+                                                const xmlChar *external_id,
+                                                const xmlChar *system_id)
+    { static_cast<epimpl*>(parser)->event_external_subset_declaration(name,
+                                                                      external_id,
+                                                                      system_id); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -277,6 +288,12 @@ bool xml::event_parser::unparsed_entity_declaration (const std::string &name,
     return true;
 }
 //####################################################################
+bool xml::event_parser::external_subset_declaration (const std::string &name,
+                                                     const std::string &external_id,
+                                                     const std::string &system_id) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::entity_declaration (const std::string &name,
                                             entity_type        type,
                                             const std::string &public_id,
@@ -333,6 +350,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.notationDecl           = cb_notation_declaration;
     sax_handler_.entityDecl             = cb_entity_declaration;
     sax_handler_.unparsedEntityDecl     = cb_unparsed_entity_declaration;
+    sax_handler_.externalSubset         = cb_external_subset_declaration;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -498,6 +516,22 @@ void epimpl::event_unparsed_entity_declaration (const xmlChar *name,
         parser_status_ = parent_.unparsed_entity_declaration(entity_name,
                                                              entity_public_id, entity_system_id,
                                                              entity_notation_name);
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_external_subset_declaration (const xmlChar *name,
+                                                const xmlChar *external_id,
+                                                const xmlChar *system_id) {
+    if (!parser_status_) return;
+
+    try {
+        std::string     root_element_name( name ? reinterpret_cast<const char*>(name) : "" );
+        std::string     ext_id( external_id ? reinterpret_cast<const char*>(external_id) : "" );
+        std::string     sys_id( system_id ? reinterpret_cast<const char*>(system_id) : "" );
+        parser_status_ = parent_.external_subset_declaration(root_element_name,
+                                                             ext_id,
+                                                             sys_id);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }

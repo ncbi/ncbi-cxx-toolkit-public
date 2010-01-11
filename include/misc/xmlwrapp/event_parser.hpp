@@ -346,6 +346,23 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the external subset
+     * declaration message.
+     *
+     * @param name The root element name.
+     * @param external_id The external ID.
+     * @param public_id The public ID.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool external_subset_declaration (const std::string &name,
+                                              const std::string &external_id,
+                                              const std::string &system_id);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber
