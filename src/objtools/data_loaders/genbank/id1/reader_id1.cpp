@@ -259,7 +259,7 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
     STimeout tmout;
     m_Connector.SetTimeoutTo(&tmout);
     CONN_SetTimeout(stream.GetCONN(), eIO_ReadWrite, &tmout);
-    tmout.sec = tmout.usec = 0; // no wait on close
+    tmout.sec = 0; tmout.usec = 1; // no wait on close
     CONN_SetTimeout(stream.GetCONN(), eIO_Close, &tmout);
 
     m_Connections[conn] = conn_info;
