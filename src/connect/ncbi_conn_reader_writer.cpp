@@ -39,20 +39,21 @@ BEGIN_NCBI_SCOPE
 
 ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
 {
+    static const STimeout kZero = {0, 0};
     if (!m_Sock) {
         return eRW_Error;
     }
-    STimeout zero = {0, 0}, tmo;
     const STimeout* tmp = m_Sock->GetTimeout(eIO_Read);
+    STimeout tmo;
     if (tmp) {
         tmo = *tmp;
         tmp = &tmo;
     }
-    if (m_Sock->SetTimeout(eIO_Read, &zero) != eIO_Success) {
+    if (m_Sock->SetTimeout(eIO_Read, &kZero) != eIO_Success) {
         return eRW_Error;
     }
     EIO_Status status = m_Sock->Read(0, 1, count, eIO_ReadPeek);
-    if (m_Sock->SetTimeout(eIO_Read, tmp) != eIO_Success) {
+    if (m_Sock->SetTimeout(eIO_Read, tmp)    != eIO_Success) {
         return eRW_Error;
     }
     return status == eIO_Success  ||  status == eIO_Timeout
