@@ -8858,6 +8858,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_CollidingSerialNumbers)
 }
 
 
+#if 0
 BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -8911,7 +8912,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 
     CLEAR_ERRORS
 }
-
+#endif
 
 
 static string MakeWrongCap (const string& str)
