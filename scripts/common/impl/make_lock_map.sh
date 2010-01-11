@@ -26,7 +26,7 @@ for x in $files; do
                     sub("^[ 	]*", "", src)
                 }
                 print src
-            }' $x | fmt -w1 | sort -u > "$cache_dir/$x"
+            }' $x | fmt -w 1 | sort -u > "$cache_dir/$x"
         act=true
     fi
 done
