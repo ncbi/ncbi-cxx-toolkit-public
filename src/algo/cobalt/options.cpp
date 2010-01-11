@@ -85,8 +85,8 @@ bool CMultiAlignerOptions::Validate(void)
 
     // Check query clustering params
     if (m_UseQueryClusters) {
-        if ((int)m_KmerAlphabet < (int)TKMethods::eRegular
-            || (int)m_KmerAlphabet > (int)TKMethods::eSE_B15) {
+        if ((int)m_KmerAlphabet < 0
+            || (int)m_KmerAlphabet > (int)TKMethods::eLastAlphabet) {
 
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Invalid alphabet for query clustering");

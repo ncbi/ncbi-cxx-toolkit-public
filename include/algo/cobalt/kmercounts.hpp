@@ -52,14 +52,6 @@ BEGIN_SCOPE(cobalt)
 
 // TODO: Implement binary k-mer counts vector
 
-// Compressed alphabets taken from 
-// Shiryev et al.(2007),  Bioinformatics, 23:2949-2951
-// 23-to-10 letter compressed alphabet. Based on SE-V(10)
-static const string kAlphabet10("IJLMV AST BDENZ KQR G FY P H C W");
-// 23-to-15 letter compressed alphabet. Based on SE_B(14) 
-static const string kAlphabet15("ST IJV LM KR EQZ A G BD P N F Y H C W");
-
-
 /// Kmer counts for alignment free sequence similarity computation
 /// implemented as a sparse vector
 ///
@@ -270,34 +262,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CKmerCountsException, CException);
 };
 
-
-/// Creates translation table for compressed alphabets
-/// @param trans_string String with groupped letters [in]
-/// @param trans_table Translation table [out]
-/// @param alphabet_len Number of letters in compressed alphabet
-///
-static void BuildCompressedTranslation(const string& trans_string,
-                       vector<Uint1>& trans_table,
-                       unsigned alphabet_len)
-{
-    Uint4 compressed_letter = 1; // this allows for gaps
-    trans_table.clear();
-    trans_table.resize(alphabet_len + 1, 0);
-    for (Uint4 i = 0; i < trans_string.length();i++) {
-        if (isspace(trans_string[i])) {
-            compressed_letter++;
-        }
-        else if (isalpha(trans_string[i])) {
-            Uint1 aa_letter = AMINOACID_TO_NCBISTDAA[(int)trans_string[i]];
-
-            _ASSERT(aa_letter < trans_table.size());
-
-            trans_table[aa_letter] = compressed_letter;
-        }
-    }
-}
-
-
 /// Interface for computing and manipulating k-mer counts vectors that allows
 /// for different implementations of K-mer counts vectors
 ///
@@ -306,7 +270,9 @@ class TKmerMethods
 {
 public:
     enum ECompressedAlphabet {
-        eRegular, eSE_V10, eSE_B15
+        eSE_V10 = 0, eSE_B15, eRegular,
+        eNumCompressed = eRegular,
+        eLastAlphabet = eRegular
     };
 
     enum EDistMeasures {
@@ -330,6 +296,45 @@ public:
         TKmerCounts::SetUseCompressed(false);
     }
 
+    /// Creates translation table for compressed alphabets
+    /// @param trans_string String with groupped letters [in]
+    /// @param trans_table Translation table [out]
+    /// @param alphabet_len Number of letters in compressed alphabet
+    ///
+    static void BuildCompressedTranslation(ECompressedAlphabet alph_index,
+                                           vector<Uint1>& trans_table,
+                                           unsigned alphabet_len)
+        
+    {
+        // Compressed alphabets taken from 
+        // Shiryev et al.(2007),  Bioinformatics, 23:2949-2951
+        const char* kCompAlphabets[] = {
+            // 23-to-10 letter compressed alphabet. Based on SE-V(10)
+            "IJLMV AST BDENZ KQR G FY P H C W",
+            // 23-to-15 letter compressed alphabet. Based on SE_B(14) 
+            "ST IJV LM KR EQZ A G BD P N F Y H C W"
+        };
+
+        _ASSERT(alph_index < eNumCompressed);
+        const char* trans_string = kCompAlphabets[alph_index];
+
+        Uint4 compressed_letter = 1; // this allows for gaps
+        trans_table.clear();
+        trans_table.resize(alphabet_len + 1, 0);
+        for (Uint4 i = 0; i < strlen(trans_string);i++) {
+            if (isspace(trans_string[i])) {
+                compressed_letter++;
+            }
+            else if (isalpha(trans_string[i])) {
+                Uint1 aa_letter = AMINOACID_TO_NCBISTDAA[(int)trans_string[i]];
+
+                _ASSERT(aa_letter < trans_table.size());
+
+                trans_table[aa_letter] = compressed_letter;
+            }
+        }
+    }
+
     /// Set default counts vector parameters for use with compressed alphabet
     /// @param kmer_len K-mer length [in]
     /// @param alph Compressed alphabet to use [in]
@@ -342,7 +347,7 @@ public:
         case eSE_V10:
             len = 28;
             compressed_len = 11; //including gap
-            BuildCompressedTranslation(kAlphabet10, 
+            BuildCompressedTranslation(eSE_V10,
                                        TKmerCounts::SetTransTable(), 
                                        len);
             TKmerCounts::SetAlphabetSize(compressed_len);
@@ -352,7 +357,7 @@ public:
         case eSE_B15:
             len = 28;
             compressed_len = 16; //including gap
-            BuildCompressedTranslation(kAlphabet15,
+            BuildCompressedTranslation(eSE_B15,
                                        TKmerCounts::SetTransTable(),
                                        len);
             TKmerCounts::SetAlphabetSize(compressed_len);
