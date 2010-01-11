@@ -4,8 +4,6 @@
 act=false
 cache_dir='.#SRC-cache'
 files=Makefile.*.[la][ip][bp]
-sed_range='/^[ 	]*\(UNIX_\)*SRC[ 	]*=/,/[^\\]$/'
-sed_action='{ s/^[^=]*=//; s/^[ 	]*//; t0; :0; s/\\$//; p; t; q }'
 test=test
 
 common=_`basename $PWD`_common
@@ -18,8 +16,17 @@ for x in $files; do
         # echo "No application or library makefiles found in $PWD."
         exit 0
     elif $test \! -f "$cache_dir/$x" -o "$cache_dir/$x" -ot "$x"; then
-        sed -ne "s/#.*//; $sed_range $sed_action" $x | fmt -w1 | sort -u \
-            > "$cache_dir/$x"
+        awk -F= '{ sub("#.*", "") }
+            /^[ 	]*(UNIX_)?SRC[ 	]*=.*/ {
+                src = $2
+                sub("^[ 	]*", "", src)
+                while (sub("\\\\$", "", src)) {
+                    print src
+                    getline src
+                    sub("^[ 	]*", "", src)
+                }
+                print src
+            }' $x | fmt -w1 | sort -u > "$cache_dir/$x"
         act=true
     fi
 done
