@@ -512,11 +512,11 @@ MUPARSER_LIBS    = @MUPARSER_LIBS@
 HDF5_INCLUDE = @HDF5_INCLUDE@
 HDF5_LIBS    = @HDF5_LIBS@
 
-#SQLite 2.x
+# SQLite 2.x
 SQLITE_INCLUDE = @SQLITE_INCLUDE@
 SQLITE_LIBS    = @SQLITE_LIBS@
 
-#SQLite 3.x
+# SQLite 3.x
 SQLITE3_INCLUDE     = @SQLITE3_INCLUDE@
 SQLITE3_LIBS        = @SQLITE3_LIBS@
 SQLITE3_STATIC_LIBS = @SQLITE3_STATIC_LIBS@
@@ -546,11 +546,12 @@ SRA_INCLUDE = -I$(includedir)/../src/internal/sra/sdk/inc \
               -I$(top_srcdir)/src/internal/sra/sdk/inc \
               -I$(top_srcdir)/src/internal/sra/sdk/itf
 
-#################################
-# Useful sets of object libraries
+# Compress
 COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
 
+#################################
+# Useful sets of object libraries
 GENBANK_LDEP = \
     ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
     $(GENBANK_READER_PUBSEQOS_LIBS)
