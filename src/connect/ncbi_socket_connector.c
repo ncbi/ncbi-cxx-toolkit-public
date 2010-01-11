@@ -222,7 +222,7 @@ static EIO_Status s_VT_Close
     EIO_Status status = eIO_Success;
 
     if (xxx->sock) {
-        SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
+        SOCK_SetTimeout(xxx->sock, eIO_Close, timeout);
         status = SOCK_Close(xxx->sock);
         xxx->sock = 0;
     }
