@@ -671,6 +671,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             throw string("Named pipe SOCK_CreateUNIX() failed: ")
                 + IO_StatusStr(status);
         }
+        SOCK_SetTimeout(m_IoSocket, eIO_Close, timeout);
 
         m_PipeBufSize = pipebufsize;
 
