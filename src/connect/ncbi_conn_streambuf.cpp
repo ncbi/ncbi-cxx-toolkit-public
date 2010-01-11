@@ -94,10 +94,9 @@ void CConn_Streambuf::x_Init(bool close, const STimeout* timeout,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
     if (timeout != kDefaultTimeout) {
-        CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
-        CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
-        CONN_SetTimeout(m_Conn, eIO_Write, timeout);
-        CONN_SetTimeout(m_Conn, eIO_Close, timeout);
+        CONN_SetTimeout(m_Conn, eIO_Open,      timeout);
+        CONN_SetTimeout(m_Conn, eIO_ReadWrite, timeout);
+        CONN_SetTimeout(m_Conn, eIO_Close,     timeout);
     }
 
     m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
