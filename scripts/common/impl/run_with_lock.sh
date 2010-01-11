@@ -6,7 +6,7 @@ logfile=
 map=
 
 ignored=".*make\[[0-9]+\]: )?(Nothing to be done for \`.*'|\`.*' is updated"
-ignored="$ignored|dmake: defaulting to parallel mode|See the man page dmake.*"
+ignored2="dmake: defaulting to parallel mode|See the man page dmake.*"
 
 while :; do
     case "$1" in
@@ -44,7 +44,9 @@ if "$get_lock" "$base" $$; then
         ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile.new"
         # Emulate egrep -q to avoid having to move from under scripts.
         if [ ! -f "$logfile" ]  ||  \
-         awk "BEGIN { s=1 } !/^($ignored)\\.\$/ { s=0; exit } END { exit s }" \
+         awk "BEGIN { s=1 }
+              (!/^($ignored)\\.\$/ && !/^($ignored2)\\.\$/) { s=0; exit }
+              END { exit s }" \
           "$logfile.new"; then
             mv "$logfile.new" "$logfile"
         fi
