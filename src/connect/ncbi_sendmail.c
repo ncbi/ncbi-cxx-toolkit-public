@@ -376,6 +376,7 @@ const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN(8, "Cannot connect to sendmail");
     }
     SOCK_SetTimeout(sock, eIO_ReadWrite, &info->mx_timeout);
+    SOCK_SetTimeout(sock, eIO_Close,     &info->mx_timeout);
 
     /* Follow the protocol conversation, RFC821 */
     if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
