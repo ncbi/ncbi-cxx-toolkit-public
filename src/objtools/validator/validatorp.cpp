@@ -1975,8 +1975,8 @@ static bool s_SeqLocHasGI (const CSeq_loc& loc)
 
 
 static bool s_FieldRuleCompare (
-    const CField_rule* p1,
-    const CField_rule* p2
+    const CRef<CField_rule>& p1,
+    const CRef<CField_rule>& p2
 )
 
 {
