@@ -990,6 +990,9 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
                                          const CSeq_id&      to_id)
 {
+    // For spliced-segs the default begavior should be to merge mapped
+    // ranges by exon.
+    SetMergeBySeg();
     // Assume the same ID can not be used in both genomic and product rows,
     // try find the correct row.
     if (spliced.IsSetGenomic_id()  &&  spliced.GetGenomic_id().Equals(to_id)) {

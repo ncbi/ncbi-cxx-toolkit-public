@@ -258,12 +258,18 @@ public:
     /// target row of the alignment. Any other ID is mapped to the
     /// target one. Only the first row matching target ID is used,
     /// all other rows are considered source.
+    /// If the alignment is a spliced-seg, the merging is set to
+    /// 'merge by segment' automatically.
+    /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          const CSeq_id&    to_id,
                          TMapOptions       opts = 0);
     /// Sparse alignments require special row indexing since each
     /// row contains two seq-ids. Use options to specify mapping
     /// direction.
+    /// If the alignment is a spliced-seg, the merging is set to
+    /// 'merge by segment' automatically.
+    /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          size_t            to_row,
                          TMapOptions       opts = 0);
