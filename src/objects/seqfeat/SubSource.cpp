@@ -493,7 +493,6 @@ const string CCountries::sm_Countries[] = {
     "Sao Tome and Principe",
     "Saudi Arabia",
     "Senegal",
-    "Serbia and Montenegro",
     "Serbia",
     "Seychelles",
     "Sierra Leone",
@@ -545,7 +544,6 @@ const string CCountries::sm_Countries[] = {
     "West Bank",
     "Western Sahara",
     "Yemen",
-    "Yugoslavia",
     "Zambia",
     "Zimbabwe"
 };

@@ -165,16 +165,16 @@ static bool s_UnbalancedParentheses (string str)
 
 
 const string sm_ValidSexQualifierValues[] = {
-  "female",
-  "male",
-  "hermaphrodite",
-  "unisexual",
-  "bisexual",
   "asexual",
-  "monoecious",
-  "monecious",
-  "dioecious",
+  "bisexual",
   "diecious",
+  "dioecious",
+  "female",
+  "hermaphrodite",
+  "male",
+  "monecious",
+  "monoecious",
+  "unisexual",
 };
 
 static bool s_IsValidSexQualifierValue (string str)
@@ -400,8 +400,7 @@ bool CValidError_imp::IsSyntheticConstruct (const CBioSource& src)
 bool CValidError_imp::IsArtificial (const CBioSource& src) 
 {
     if (src.IsSetOrigin() 
-        && (src.GetOrigin() == CBioSource::eOrigin_artificial
-            || src.GetOrigin() == CBioSource::eOrigin_synthetic)) {
+        && (src.GetOrigin() == CBioSource::eOrigin_artificial)) {
         return true;
     }
     return false;
@@ -635,7 +634,10 @@ void CValidError_imp::ValidateBioSource
 			sex = true;
 			if (isAnimal || isPlant) {
 				// always use /sex, do not check values at this time
-			} else if (isViral || isBacteria || isArchaea || isFungal) {
+            } else if (isViral) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Virus has unexpected sex qualifier", obj, ctx);
+            } else if (isBacteria || isArchaea || isFungal) {
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
 					"Unexpected use of /sex qualifier", obj, ctx);
 			} else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
@@ -816,11 +818,15 @@ void CValidError_imp::ValidateBioSource
 					if (lat_lon_map.HaveLatLonForCountry(test_country)
 						&& !lat_lon_map.IsCountryInLatLon(test_country, lat_value, lon_value)
 						&& !CCountryLatLonMap::DoesStringContainBodyOfWater(test_country)) {
-						string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);
+						string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);                        
 						if (NStr::IsBlank(guess)) {
 							PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
 									  "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country + "'",
 									  obj, ctx);
+                        } else if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
+						    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
+                                        "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
+                                        obj, ctx);
 						} else {
 							PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
 									  "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country 
@@ -850,12 +856,20 @@ void CValidError_imp::ValidateBioSource
 							"Longitude should be set to W (western hemisphere)",
 									obj, ctx);
 					}
+                } else if (lat_lon_map.IsCountryInLatLon(test_country, lon_value, lat_value)) {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+						"Latitude and longitude values appear to be exchanged",
+								obj, ctx);
 				} else if (!CCountryLatLonMap::DoesStringContainBodyOfWater(test_country)) {
 					string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);
 					if (NStr::IsBlank(guess)) {
 						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
 								  "Lat_lon '" + lat_lon + "' does not map to '" + test_country + "'",
 								  obj, ctx);
+                    } else if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
+						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
+                                    "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
+                                    obj, ctx);
 					} else {
 						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
 								  "Lat_lon '" + lat_lon + "' does not map to '" + test_country 
@@ -870,7 +884,7 @@ void CValidError_imp::ValidateBioSource
 	// validates orgref in the context of lineage
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
-         orgref.GetOrgname().GetLineage().empty() ) {
+         NStr::IsBlank(orgref.GetOrgname().GetLineage())) {
         EDiagSev sev = eDiag_Error;
 
         if (IsRefSeq()) {
@@ -1009,7 +1023,7 @@ void CValidError_imp::ValidateSubSource
 			if (!format_correct) {
 				size_t pos = NStr::Find(lat_lon, ",");
 				if (pos != string::npos) {
-					s_IsCorrectLatLonFormat (lat_lon.substr(0, pos - 1), format_correct, lat_in_range, lon_in_range, lat_value, lon_value);
+					s_IsCorrectLatLonFormat (lat_lon.substr(0, pos), format_correct, lat_in_range, lon_in_range, lat_value, lon_value);
 					if (format_correct) {
 						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
 							       "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format",
@@ -1483,7 +1497,7 @@ void CValidError_imp::ValidateOrgName
 			if ( omd.IsSetSubname()) {
 				const string& subname = omd.GetSubname();
 
-				if (s_UnbalancedParentheses(subname)) {
+                if (subtype != COrgMod::eSubtype_old_name && s_UnbalancedParentheses(subname)) {
 					PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
 							   "Unbalanced parentheses in orgmod '" + subname + "'",
 							   obj, ctx);
@@ -1601,7 +1615,7 @@ void CValidError_imp::ValidateBioSourceForSeq
     }
     if ( source.CanGetOrigin()  &&  
          source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
-        if ( !IsOtherDNA(bsh) ) {
+        if ( !IsOtherDNA(bsh) && !bsh.IsAa()) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
                 "Molinfo-biomol other should be used if "
                 "Biosource-location is synthetic", obj, ctx);
@@ -1785,7 +1799,7 @@ void CValidError_imp::ValidateBioSourceForSeq
 							    if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
 									if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
 										PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-											        "Negative-strand virus with nonfunctional minus strand misc_feature should be mRNA or cRNA",
+											        "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
 													obj, ctx);
 									}
 								} else {
@@ -1861,19 +1875,23 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
     "genotype:",
     "germline:",
     "group:",
+    "haplogroup:",
     "haplotype:",
     "identified_by:",
     "insertion_seq_name:",
     "isolate:",
     "isolation_source:",
     "lab_host:",
-    "lat_lon:"
+    "lat_lon:",
     "left_primer:",
+    "linkage_group:",
     "map:",
+    "mating_type:",
     "metagenome_source:",
     "metagenomic:",
     "nat_host:",
     "pathovar:",
+    "placement:",
     "plasmid_name:",
     "plastid_name:",
     "pop_variant:",
@@ -2179,7 +2197,7 @@ void CValidError_imp::ValidateSpecificHost
                         string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
 					    if (!NStr::EqualCase(match, host)) {
 						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									    "Specific host value is incorrectly capitalized:  " + host,
+									    "Specific host value is incorrectly capitalized: " + host,
 									    **desc_it, *ctx_it);
 					    }
 				    } else {
@@ -2223,7 +2241,7 @@ void CValidError_imp::ValidateSpecificHost
                         string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
 					    if (!NStr::EqualCase(match, host)) {
 						    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									    "Specific host value is incorrectly capitalized:  " + host,
+									    "Specific host value is incorrectly capitalized: " + host,
 									    **feat_it);
 					    }
 				    } else {
@@ -2474,7 +2492,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                     string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
 					if (!NStr::EqualCase(match, host)) {
 						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									"Specific host value is incorrectly capitalized:  " + host, org);
+									"Specific host value is incorrectly capitalized: " + host, org);
 					}
 				} else {
 					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
@@ -2523,7 +2541,7 @@ void CPCRSetList::AddFwdName (string name)
 		NStr::Tokenize(name, ",", mult_names);
 		int name_num = 0;
 		while (name_num < mult_names.size()) {
-			while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
+			while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
 				pcr_num++;
 			}
 			if (pcr_num == m_SetList.size()) {
@@ -2534,7 +2552,7 @@ void CPCRSetList::AddFwdName (string name)
 			pcr_num++;
 		}
 	} else {
-		while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
+		while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
 			pcr_num++;
 		}
 		if (pcr_num == m_SetList.size()) {
@@ -2554,7 +2572,7 @@ void CPCRSetList::AddRevName (string name)
 		NStr::Tokenize(name, ",", mult_names);
 		int name_num = 0;
 		while (name_num < mult_names.size()) {
-			while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
+			while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
 				pcr_num++;
 			}
 			if (pcr_num == m_SetList.size()) {
@@ -2565,7 +2583,7 @@ void CPCRSetList::AddRevName (string name)
 			pcr_num++;
 		}
 	} else {
-		while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
+		while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
 			pcr_num++;
 		}
 		if (pcr_num == m_SetList.size()) {
@@ -2585,7 +2603,7 @@ void CPCRSetList::AddFwdSeq (string name)
 		NStr::Tokenize(name, ",", mult_names);
 		int name_num = 0;
 		while (name_num < mult_names.size()) {
-			while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
+			while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
 				pcr_num++;
 			}
 			if (pcr_num == m_SetList.size()) {
@@ -2596,7 +2614,7 @@ void CPCRSetList::AddFwdSeq (string name)
 			pcr_num++;
 		}
 	} else {
-		while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
+		while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
 			pcr_num++;
 		}
 		if (pcr_num == m_SetList.size()) {
@@ -2616,7 +2634,7 @@ void CPCRSetList::AddRevSeq (string name)
 		NStr::Tokenize(name, ",", mult_names);
 		int name_num = 0;
 		while (name_num < mult_names.size()) {
-			while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
+			while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
 				pcr_num++;
 			}
 			if (pcr_num == m_SetList.size()) {
@@ -2627,7 +2645,7 @@ void CPCRSetList::AddRevSeq (string name)
 			pcr_num++;
 		}
 	} else {
-		while (pcr_num < m_SetList.size() && NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
+		while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
 			pcr_num++;
 		}
 		if (pcr_num == m_SetList.size()) {
@@ -2720,6 +2738,21 @@ bool CCountryBlock::IsLatLonInCountryBlock (double x, double y)
 	} else {
 		return false;
 	}
+}
+
+
+bool CCountryBlock::DoesOverlap(const CCountryBlock* other_block) const
+{
+    if (!other_block) {
+        return false;
+    } else if (m_MaxX >= other_block->GetMinX()
+        && m_MaxX <= other_block->GetMaxX()
+        && m_MaxY >= other_block->GetMinY()
+        && m_MinY <= other_block->GetMaxY()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -2821,11 +2854,10 @@ bool CCountryLatLonMap::IsCountryInLatLon (string country, double x, double y)
 string CCountryLatLonMap::GuessCountryForLatLon(double x, double y)
 {
 	// note - if we need more speed later, create x then y index
-    size_t i;
-
-	for (i = 0; i < m_CountryBlockList.size(); i++) {
-		if (m_CountryBlockList[i]->IsLatLonInCountryBlock(x, y)) {
-			return m_CountryBlockList[i]->GetCountry();
+    // also note - search list backwards.  This way subregions will be found before countries
+    for (TCountryBlockList_iter i = m_CountryBlockList.begin(); i != m_CountryBlockList.end(); i++) {
+		if ((*i)->IsLatLonInCountryBlock(x, y)) {
+			return (*i)->GetCountry();
 		}
 	}
 	return "";
@@ -2890,6 +2922,33 @@ bool CCountryLatLonMap::DoesStringContainBodyOfWater(const string& country)
 }
 
 
+bool CCountryLatLonMap::DoCountryBoxesOverlap (string country1, string country2)
+{
+    size_t i, j;
+    vector<size_t> country1_indices;
+    vector<size_t> country2_indices;
+    bool rval = false;
+
+	for (i = 0; i < m_CountryBlockList.size(); i++) {
+        if (NStr::Equal(country1, m_CountryBlockList[i]->GetCountry())) {
+            country1_indices.push_back(i);
+        } else if (NStr::Equal(country2, m_CountryBlockList[i]->GetCountry())) {
+            country2_indices.push_back(i);
+		}
+	}
+	
+    for (i = 0; i < country1_indices.size() && !rval; i++) {
+        for (j = 0; j < country2_indices.size() && !rval; j++) {
+            if (m_CountryBlockList[country1_indices[i]]->DoesOverlap(m_CountryBlockList[country2_indices[j]])) {
+                rval = true;
+            }
+        }
+    }
+
+    return rval;
+}
+
+
 // ===== for validating instituation and collection codes in specimen-voucher, ================
 // ===== biomaterial, and culture-collection BioSource subsource modifiers     ================
 
@@ -2923,7 +2982,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 				break;
 			default:
 				ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
-						   << "; unrecognixed subtype (" << tokens[1] << "); disregarding");
+						   << "; unrecognized subtype (" << tokens[1] << "); disregarding");
 				break;
 		}
 		s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
@@ -3035,7 +3094,7 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
 			}
 			return;
 		} else if (NStr::EqualNocase(it->first, inst_coll)) {
-			PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, 
+			PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
 				        "Institution code " + inst_coll + " exists, but correct capitalization is " + it->first,
 						obj, ctx);
 			return;

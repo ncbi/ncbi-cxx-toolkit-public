@@ -174,108 +174,46 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateSeqIds
-(const CBioseq& seq)
+// validation for individual Seq-id
+void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 {
-    // Ensure that CBioseq has at least one CSeq_id
-    if ( !seq.IsSetId() || seq.GetId().empty() ) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_NoIdOnBioseq,
-                 "No ids on a Bioseq", seq);
-        return;
-    }
+    bool is_tp = false;
 
-    CSeq_inst::ERepr repr = seq.GetInst().GetRepr();
-
-    // Loop thru CSeq_ids for this CBioseq. Determine if seq has
-    // gi, NT, or NC. Check that the same CSeq_id not included more
-    // than once.
-    bool has_gi = false;
-    bool is_lrg = false;
-    bool has_ng = false;
-    FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
-        if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb() && NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
-            is_lrg = true;
-        } else if ((*i)->IsOther() && (*i)->GetOther().IsSetAccession() && NStr::StartsWith((*i)->GetOther().GetAccession(), "NG_")) {
-            has_ng = true;
-        }
-
-        // Check that no two CSeq_ids for same CBioseq are same type
-        CBioseq::TId::const_iterator j;
-        for (j = i, ++j; j != seq.GetId().end(); ++j) {
-            if ((**i).Compare(**j) != CSeq_id::e_DIFF) {
-                CNcbiOstrstream os;
-                os << "Conflicting ids on a Bioseq: (";
-                (**i).WriteAsFasta(os);
-                os << " - ";
-                (**j).WriteAsFasta(os);
-                os << ")";
-                PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingIdsOnBioseq,
-                    CNcbiOstrstreamToString (os) /* os.str() */, seq);
-            }
-        }
-
-#if 0 
-        // disabled for now
-        if (!IsNCBIFILESeqId(**i)) {
-            string label;
-            (*i)->GetLabel(&label);
-            if (label.length() > 40) {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, 
-                         "Sequence ID is unusually long (" + 
-                         NStr::IntToString(label.length()) + "): " + label,
-                         seq);
-            }
-        }
-#endif
-
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(**i);
-        if (bsh) {
-            CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(**i).GetBioseqCore();
-            if ( !core ) {
-                if ( !m_Imp.IsPatent() ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
-                        "BioseqFind (" + (*i)->AsFastaString() + 
-                        ") unable to find itself - possible internal error", seq);
-                }
-            } else if ( core.GetPointer() != &seq ) {
+    // see if ID can be used to find ctx
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(id);
+    if (bsh) {
+        CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(id).GetBioseqCore();
+        if ( !core ) {
+            if ( !m_Imp.IsPatent() ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
-                    "SeqID " + (*i)->AsFastaString() + 
-                    " is present on multiple Bioseqs in record", seq);
+                    "BioseqFind (" + id.AsFastaString() + 
+                    ") unable to find itself - possible internal error", ctx);
             }
-        } else {
+        } else if ( core.GetPointer() != &ctx ) {
             PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
-                "BioseqFind (" + (*i)->AsFastaString() + 
-                ") unable to find itself - possible internal error", seq);
+                "SeqID " + id.AsFastaString() + 
+                " is present on multiple Bioseqs in record", ctx);
         }
-
-        if ( (*i)->IsGi() ) {
-            has_gi = true;
-        }
-    }
-    if (is_lrg && !has_ng) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_ConflictingIdsOnBioseq,
-            "LRG sequence needs NG_ accession", seq);
+    } else {
+        PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
+            "BioseqFind (" + id.AsFastaString() + 
+            ") unable to find itself - possible internal error", ctx);
     }
 
+    //check formatting
+    const CTextseq_id* tsid = id.GetTextseq_Id();
 
-    // Loop thru CSeq_ids to check formatting
-    bool is_wgs = false;
-    bool is_gb_embl_ddbj = false;
-	bool is_nc = false;
-    unsigned int gi_count = 0;
-    unsigned int accn_count = 0;
-    FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
-        const CTextseq_id* tsid = (*k)->GetTextseq_Id();
-        switch ((**k).Which()) {
+    switch (id.Which()) {
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
-            if ( IsHistAssemblyMissing(seq)  &&  seq.IsNa() ) {
+            if ( IsHistAssemblyMissing(ctx)  &&  ctx.IsNa() ) {
                 PostErr(eDiag_Info, eErr_SEQ_INST_HistAssemblyMissing,
-                    "TPA record " + (*k)->AsFastaString() +
+                    "TPA record " + id.AsFastaString() +
                     " should have Seq-hist.assembly for PRIMARY block", 
-                    seq);
+                    ctx);
             }
+            is_tp = true;
         // Fall thru 
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
@@ -287,8 +225,6 @@ void CValidError_bioseq::ValidateSeqIds
                 bool letter_after_digit = false;
                 bool bad_id_chars = false;       
                     
-                is_wgs = acc.length() == 12  ||  acc.length() == 13;
-
                 ITERATE(string, s, acc) {
                     if (isupper((unsigned char)(*s))) {
                         num_letters++;
@@ -301,38 +237,26 @@ void CValidError_bioseq::ValidateSeqIds
                         bad_id_chars = true;
                     }
                 }
-                is_gb_embl_ddbj = 
-                    (**k).IsGenbank()  ||  (**k).IsEmbl()  ||  (**k).IsDdbj();
 
                 if ( letter_after_digit || bad_id_chars ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                        "Bad accession " + acc, seq);
-                } else if (num_letters == 1 && num_digits == 5 && seq.IsNa()) {
-                } else if (num_letters == 2 && num_digits == 6 && seq.IsNa()) {
-                } else if (num_letters == 3 && num_digits == 5 && seq.IsAa()) {
-                } else if (num_letters == 2 && num_digits == 6 && seq.IsAa() &&
-                    repr == CSeq_inst::eRepr_seg) {
+                        "Bad accession " + acc, ctx);
+                } else if (num_letters == 1 && num_digits == 5 && ctx.IsNa()) {
+                } else if (num_letters == 2 && num_digits == 6 && ctx.IsNa()) {
+                } else if (num_letters == 3 && num_digits == 5 && ctx.IsAa()) {
+                } else if (num_letters == 2 && num_digits == 6 && ctx.IsAa() &&
+                    ctx.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
                 } else if ( num_letters == 4  && 
                             (num_digits == 8  ||  num_digits == 9)  && 
-                            seq.IsNa()  &&
-                            is_gb_embl_ddbj ) {
+                            ctx.IsNa()  &&
+                            !is_tp ) {
                 } else {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                        "Bad accession " + acc, seq);
+                        "Bad accession " + acc, ctx);
                 }
-                    
                 // Check for secondary conflicts
-                if ( seq.GetFirstId() ) {
-                    ValidateSecondaryAccConflict(acc, seq, CSeqdesc::e_Genbank);
-                    ValidateSecondaryAccConflict(acc, seq, CSeqdesc::e_Embl);
-                }
-
-                if ( has_gi ) {
-                    if ( !tsid->IsSetVersion()  ||  tsid->GetVersion() == 0 ) {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Accession " + acc + " has 0 version", seq);
-                    }
-                }
+                ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Genbank);
+                ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
             }
         // Fall thru
         case CSeq_id::e_Other:
@@ -344,13 +268,13 @@ void CValidError_bioseq::ValidateSeqIds
                             PostErr(eDiag_Critical,
                                 eErr_SEQ_INST_SeqIdNameHasSpace,
                                 "Seq-id.name '" + name + "' should be a single "
-                                "word without any spaces", seq);
+                                "word without any spaces", ctx);
                             break;
                         }
                     }
                 }
 
-                if ( tsid->IsSetAccession()  &&  (*k)->IsOther() ) {					
+                if ( tsid->IsSetAccession()  &&  id.IsOther() ) {					
                     const string& acc = tsid->GetAccession();
                     size_t num_letters = 0;
                     size_t num_digits = 0;
@@ -359,10 +283,6 @@ void CValidError_bioseq::ValidateSeqIds
                     bool is_NZ = (NStr::CompareNocase(acc, 0, 3, "NZ_") == 0);
                     size_t i = is_NZ ? 3 : 0;
                     bool letter_after_digit = false;
-
-					if (NStr::StartsWith(acc, "NC")) {
-						is_nc = true;
-					}
 
                     for ( ; i < acc.length(); ++i ) {
                         if ( isupper((unsigned char) acc[i]) ) {
@@ -381,7 +301,7 @@ void CValidError_bioseq::ValidateSeqIds
 
                     if ( letter_after_digit  ||  bad_id_chars ) {
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad accession " + acc, seq);
+                            "Bad accession " + acc, ctx);
                     } else if ( is_NZ  &&  num_letters == 4  && 
                         num_digits == 8  &&  num_underscores == 0 ) {
                         // valid accession - do nothing!
@@ -391,9 +311,165 @@ void CValidError_bioseq::ValidateSeqIds
                         // valid accession - do nothing!
                     } else {
                         PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad accession " + acc, seq);
+                            "Bad accession " + acc, ctx);
                     }
                 }
+            }
+        // Fall thru
+        case CSeq_id::e_Pir:
+        case CSeq_id::e_Swissprot:
+        case CSeq_id::e_Prf:
+            if ( tsid ) {
+                if ( ctx.IsNa()  &&  
+                     (!tsid->IsSetAccession() || tsid->GetAccession().empty())) {
+                    if ( ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg  ||
+                        m_Imp.IsGI()) {
+                        if (!id.IsDdbj()  ||
+                            ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
+                            string msg = "Missing accession for " + id.AsFastaString();
+                            PostErr(eDiag_Error,
+                                eErr_SEQ_INST_BadSeqIdFormat,
+                                msg, ctx);
+                        }
+                    }
+                }
+            } else {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                    "Seq-id type not handled", ctx);
+            }
+            break;
+        case CSeq_id::e_Gi:
+            if (id.GetGi() <= 0) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
+                         "Invalid GI number", ctx);
+            }
+            break;
+        default:
+            break;
+    }
+
+#if 0 
+        // disabled for now
+        if (!IsNCBIFILESeqId(**i)) {
+            string label;
+            (*i)->GetLabel(&label);
+            if (label.length() > 40) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, 
+                         "Sequence ID is unusually long (" + 
+                         NStr::IntToString(label.length()) + "): " + label,
+                         seq);
+            }
+        }
+#endif
+
+}
+
+
+void CValidError_bioseq::ValidateSeqIds
+(const CBioseq& seq)
+{
+    // Ensure that CBioseq has at least one CSeq_id
+    if ( !seq.IsSetId() || seq.GetId().empty() ) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_NoIdOnBioseq,
+                 "No ids on a Bioseq", seq);
+        return;
+    }
+
+    CSeq_inst::ERepr repr = seq.GetInst().GetRepr();
+
+    // Loop thru CSeq_ids for this CBioseq. Determine if seq has
+    // gi, NG, or NC. Check that the same CSeq_id not included more
+    // than once.
+    bool has_gi = false;
+    bool is_lrg = false;
+    bool has_ng = false;
+	bool is_nc = false;
+    bool wgs_tech_needs_wgs_accession = false;
+    bool is_segset_accession = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
+        // first, do standalone validation
+        ValidateSeqId (**i, seq);
+
+        if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb() && NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
+            is_lrg = true;
+        } else if ((*i)->IsOther() && (*i)->GetOther().IsSetAccession()) {
+            const string& acc = (*i)->GetOther().GetAccession();
+            if (NStr::StartsWith(acc, "NG_")) {
+                has_ng = true;
+                wgs_tech_needs_wgs_accession = true;
+            } else if (NStr::StartsWith(acc, "NC_")) {
+                is_nc = true;
+            } else if (NStr::StartsWith(acc, "NM_")
+                        || NStr::StartsWith(acc, "NP_")
+                        || NStr::StartsWith(acc, "NR_")) {
+                wgs_tech_needs_wgs_accession = true;
+            }
+        }
+
+        // Check that no two CSeq_ids for same CBioseq are same type
+        CBioseq::TId::const_iterator j;
+        for (j = i, ++j; j != seq.GetId().end(); ++j) {
+            if ((**i).Compare(**j) != CSeq_id::e_DIFF) {
+                CNcbiOstrstream os;
+                os << "Conflicting ids on a Bioseq: (";
+                (**i).WriteAsFasta(os);
+                os << " - ";
+                (**j).WriteAsFasta(os);
+                os << ")";
+                PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingIdsOnBioseq,
+                    CNcbiOstrstreamToString (os) /* os.str() */, seq);
+            }
+        }
+
+        if ( (*i)->IsGenbank()  ||  (*i)->IsEmbl()  ||  (*i)->IsDdbj() ) {
+            wgs_tech_needs_wgs_accession = true;
+        } 
+
+        if ( (*i)->IsGi() ) {
+            has_gi = true;
+        }
+
+        if ( (*i)->IdentifyAccession() == CSeq_id::eAcc_segset) {
+            is_segset_accession = true;
+        }
+
+    }
+    if (is_lrg && !has_ng) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ConflictingIdsOnBioseq,
+            "LRG sequence needs NG_ accession", seq);
+    }
+
+
+    // Loop thru CSeq_ids to check formatting
+    bool is_wgs = false;
+    unsigned int gi_count = 0;
+    unsigned int accn_count = 0;
+    FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
+        const CTextseq_id* tsid = (*k)->GetTextseq_Id();
+        switch ((**k).Which()) {
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+            if ( tsid  &&  tsid->IsSetAccession() ) {
+                const string& acc = tsid->GetAccession();
+                    
+                is_wgs |= acc.length() == 12  ||  acc.length() == 13;
+
+
+                if ( has_gi ) {
+                    if ( !tsid->IsSetVersion()  ||  tsid->GetVersion() == 0 ) {
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                            "Accession " + acc + " has 0 version", seq);
+                    }
+                }
+            }
+        // Fall thru
+        case CSeq_id::e_Other:
+            if ( tsid ) {
 
                 if ( has_gi && !tsid->IsSetAccession() && tsid->IsSetName() ) {
                     EDiagSev sev = eDiag_Critical;
@@ -411,39 +487,14 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Swissprot:
         case CSeq_id::e_Prf:
             if ( tsid ) {
-                if ( seq.IsNa()  &&  
-                     (!tsid->IsSetAccession() || tsid->GetAccession().empty())) {
-                    if ( repr != CSeq_inst::eRepr_seg  ||
-                        m_Imp.IsGI()) {
-                        if (!(**k).IsDdbj()  ||
-                            repr != CSeq_inst::eRepr_seg) {
-                            string msg = "Missing accession for " + (**k).AsFastaString();
-                            PostErr(eDiag_Error,
-                                eErr_SEQ_INST_BadSeqIdFormat,
-                                msg, seq);
-                        }
-                    }
-                }
                 accn_count++;
-            } else {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                    "Seq-id type not handled", seq);
             }
             break;
         
-        case CSeq_id::e_Patent:
-            break;
-        case CSeq_id::e_Pdb:
-            break;
         case CSeq_id::e_Gi:
-            if ((*k)->GetGi() <= 0) {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
-                         "Invalid GI number", seq);
-            }
             gi_count++;
             break;
-        case CSeq_id::e_General:
-            break;
+
         default:
             break;
         }
@@ -451,13 +502,15 @@ void CValidError_bioseq::ValidateSeqIds
 
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
     if ( is_wgs ) {
-        if ( !mi  ||  !mi->CanGetTech()  ||  
+        if ( !mi  ||  !mi->IsSetTech()  ||  
             mi->GetTech() != CMolInfo::eTech_wgs ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
                 "WGS accession should have Mol-info.tech of wgs", seq);
         }
-    } else if ( mi  &&  mi->CanGetTech()  &&  
-                mi->GetTech() == CMolInfo::eTech_wgs  &&  is_gb_embl_ddbj ) {
+    } else if ( mi  &&  mi->IsSetTech()  &&  
+                mi->GetTech() == CMolInfo::eTech_wgs  &&
+                wgs_tech_needs_wgs_accession &&
+                !is_segset_accession) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
             "Mol-info.tech of wgs should have WGS accession", seq);
     }
@@ -4842,6 +4895,32 @@ static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq)
 }
 
 
+static string GetDateString (const CDate& date)
+{
+    string val = "";
+
+    if (date.IsStr()) {
+        val = date.GetStr();
+    } else if (date.IsStd()) {
+        if (date.GetStd().IsSetYear()) {
+            date.GetDate(&val, "%{%N %{%2D, %}%}%Y");
+            NStr::ReplaceInPlace(val, "January", "Jan");
+            NStr::ReplaceInPlace(val, "February", "Feb");
+            NStr::ReplaceInPlace(val, "March", "Mar");
+            NStr::ReplaceInPlace(val, "April", "Apr");
+            NStr::ReplaceInPlace(val, "June", "Jun");
+            NStr::ReplaceInPlace(val, "July", "Jul");
+            NStr::ReplaceInPlace(val, "August", "Aug");
+            NStr::ReplaceInPlace(val, "September", "Sep");
+            NStr::ReplaceInPlace(val, "October", "Oct");
+            NStr::ReplaceInPlace(val, "November", "Nov");
+            NStr::ReplaceInPlace(val, "December", "Dec");
+        }
+    }
+    return val;
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -4915,15 +4994,14 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             const CDate& current = desc.GetCreate_date();
             if ( create_date ) {
                 if ( create_date->Compare(current) != CDate::eCompare_same ) {
-                    string current_str;
-                    current.GetDate(&current_str);
+                    string current_str = GetDateString(current);
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
                         "Inconsistent create_dates [" + current_str +
                         "] and [" + create_str + "]", ctx, desc);
                 }
             } else {
                 create_date = &(desc.GetCreate_date());
-                create_date->GetDate(&create_str);
+                create_str = GetDateString(*create_date);
             }
 
             if ( update_date ) {
@@ -5011,21 +5089,12 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record " + id_str + " should not have TpaAssembly object", seq);
                 }
-                if (IsRefGeneTrackingObject(desc.GetUser())) {
-					if (!CValidError_imp::IsWGSIntermediate(seq)) {
-						bool is_refseq = false;
-						FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-							if ((*id_it)->IsOther()) {
-								is_refseq = true;
-								break;
-							}
-						}
-						if (!is_refseq) {
-							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
-									"RefGeneTracking object should only be in RefSeq record", 
-									ctx, desc);
-						}
-					}
+                if (IsRefGeneTrackingObject(desc.GetUser())
+                    && !CValidError_imp::IsWGSIntermediate(seq) 
+                    && !m_Imp.IsRefSeq()) {
+					PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
+							"RefGeneTracking object should only be in RefSeq record", 
+							ctx, desc);
 				}
             }
             break;
@@ -5074,7 +5143,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
                     CSeqdesc_CI src_i(bsh, CSeqdesc::e_Source);
                     if (src_i && src_i->GetSource().IsSetOrg() && src_i->GetSource().GetOrg().IsSetTaxname()) {
-                        string taxname = src_i->GetSource().GetOrg().GetTaxname();
+                        taxname = src_i->GetSource().GetOrg().GetTaxname();
                     }
                     if (seq.IsAa()) {
                         CConstRef<CSeq_feat> cds = m_Imp.GetCDSGivenProduct(*(bsh.GetCompleteBioseq()));
@@ -5654,9 +5723,9 @@ void CValidError_bioseq::ValidateUpdateDateContext
  const CSeqdesc& desc)
 {
     if ( update.Compare(create) == CDate::eCompare_before ) {
-        string create_str, update_str;
-        update.GetDate(&update_str);
-        create.GetDate(&create_str);
+        string create_str = GetDateString(create);
+        string update_str = GetDateString(update);
+
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
             "Inconsistent create_date [" + create_str + 
             "] and update_date [" + update_str + "]",

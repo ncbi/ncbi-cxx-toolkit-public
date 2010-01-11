@@ -55,9 +55,11 @@
 #include <corelib/test_boost.hpp>
 
 #include <objects/biblio/Id_pat.hpp>
+#include <objects/biblio/Title.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/medline/Medline_entry.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
@@ -188,15 +190,171 @@ static void CheckErrors (const CValidError& eval, vector< CExpectedError* >& exp
 }
 
 
+#define CLEAR_ERRORS \
+    while (expected_errors.size() > 0) { \
+        if (expected_errors[expected_errors.size() - 1] != NULL) { \
+            delete expected_errors[expected_errors.size() - 1]; \
+        } \
+        expected_errors.pop_back(); \
+    }
+
+#define STANDARD_SETUP \
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
+    CScope scope(*objmgr); \
+    scope.AddDefaults(); \
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
+    CConstRef<CValidError> eval; \
+    CValidator validator(*objmgr); \
+    unsigned int options = CValidator::eVal_need_isojta \
+                          | CValidator::eVal_far_fetch_mrna_products \
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+	                      | CValidator::eVal_use_entrez; \
+    vector< CExpectedError *> expected_errors;
+
+#define STANDARD_SETUP_NAME(entry_name) \
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
+    CScope scope(*objmgr); \
+    scope.AddDefaults(); \
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry_name); \
+    CConstRef<CValidError> eval; \
+    CValidator validator(*objmgr); \
+    unsigned int options = CValidator::eVal_need_isojta \
+                          | CValidator::eVal_far_fetch_mrna_products \
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+	                      | CValidator::eVal_use_entrez; \
+    vector< CExpectedError *> expected_errors;
+
+
+
+static void SetDbxref (CBioSource& src, string db, size_t id)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetId(id);
+    src.SetOrg().SetDb().push_back(dbtag);
+}
+
+
+static void RemoveDbxref (CBioSource& src, string db, size_t id)
+{
+    if (src.IsSetOrg()) {
+        EDIT_EACH_DBXREF_ON_ORGREF(it, src.SetOrg()) {            
+            if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
+                if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+                    ERASE_DBXREF_ON_ORGREF(it, src.SetOrg());
+                }
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_entry> entry, string db, size_t id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void RemoveDbxref (CRef<CSeq_entry> entry, string db, size_t id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                RemoveDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                RemoveDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_feat> feat, string db, size_t id)
+{
+    if (!feat) {
+        return;
+    }
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetId(id);
+    feat->SetDbxref().push_back(dbtag);
+}
+
+
+static void RemoveDbxref (CRef<CSeq_feat> feat, string db, size_t id)
+{
+    if (!feat) {
+        return;
+    }
+    EDIT_EACH_DBXREF_ON_SEQFEAT(it, *feat) {            
+        if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
+            if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+                ERASE_DBXREF_ON_SEQFEAT(it, *feat);
+            }
+        }
+    }
+}
+
+
+static void SetTaxon (CBioSource& src, size_t taxon)
+{
+    if (taxon == 0) {
+        RemoveDbxref (src, "taxon", 0);
+    } else {
+        SetDbxref(src, "taxon", taxon);
+    }
+}
+
+
+static void SetTaxon (CRef<CSeq_entry> entry, size_t taxon)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetTaxon((*it)->SetSource(), taxon);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetTaxon((*it)->SetSource(), taxon);
+            }
+        }
+    }
+}
+
+
 static void AddGoodSource (CRef<CSeq_entry> entry)
 {
     CRef<CSeqdesc> odesc(new CSeqdesc());
     odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
     odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
-    CRef<CDbtag> taxon_id(new CDbtag());
-    taxon_id->SetDb("taxon");
-    taxon_id->SetTag().SetId(592768);
-    odesc->SetSource().SetOrg().SetDb().push_back(taxon_id);
+    SetTaxon(odesc->SetSource(), 592768);
     CRef<CSubSource> subsrc(new CSubSource());
     subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
     subsrc->SetName("1");
@@ -207,6 +365,50 @@ static void AddGoodSource (CRef<CSeq_entry> entry)
     } else if (entry->IsSet()) {
         entry->SetSet().SetDescr().Set().push_back(odesc);
     }
+}
+
+
+static void AddFeatAnnotToSeqEntry (CRef<CSeq_annot> annot, CRef<CSeq_entry> entry)
+{
+    if (!entry || !annot) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetAnnot().push_back(annot);
+    } else if (entry->IsSet()) {
+        if (entry->GetSet().IsSetSeq_set()) {
+            AddFeatAnnotToSeqEntry (annot, entry->SetSet().SetSeq_set().front());
+        }
+    }
+}
+
+
+static void AddGoodSourceFeature(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
+    SetTaxon (feat->SetData().SetBiosrc(), 127582);
+    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    AddFeatAnnotToSeqEntry (annot, entry);
+}
+
+
+static CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(10);
+    feat->SetData().SetImp().SetKey("misc_feature");
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    AddFeatAnnotToSeqEntry (annot, entry);
+    return feat;
 }
 
 
@@ -291,6 +493,56 @@ static void SetLineage (CRef<CSeq_entry> entry, string lineage)
                 } else {
                     (*it)->SetSource().SetOrg().SetOrgname().SetLineage(lineage);
                 }
+            }
+        }
+    }
+}
+
+
+static void SetDiv (CRef<CSeq_entry> entry, string div)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                if (NStr::IsBlank(div)) {
+                    (*it)->SetSource().SetOrg().SetOrgname().ResetDiv();
+                } else {
+                    (*it)->SetSource().SetOrg().SetOrgname().SetDiv(div);
+                }
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                if (NStr::IsBlank(div)) {
+                    (*it)->SetSource().SetOrg().SetOrgname().ResetDiv();
+                } else {
+                    (*it)->SetSource().SetOrg().SetOrgname().SetDiv(div);
+                }
+            }
+        }
+    }
+}
+
+
+static void SetOrigin (CRef<CSeq_entry> entry, CBioSource::TOrigin origin)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrigin(origin);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrigin(origin);
             }
         }
     }
@@ -391,6 +643,9 @@ static void SetSubSource (CBioSource& src, CSubSource::TSubtype subtype, string 
         }
     } else {
         CRef<CSubSource> sub(new CSubSource(subtype, val));
+        if (NStr::EqualNocase(val, "true")) {
+            sub->SetName("");
+        }
         src.SetSubtype().push_back(sub);
     }
 }
@@ -525,46 +780,6 @@ static void SetTransgenic (CRef<CSeq_entry> entry, bool do_set)
 }
 
 
-static void SetTaxon (CBioSource& src, size_t taxon)
-{
-    if (taxon == 0) {
-        if (src.IsSetOrg()) {
-            EDIT_EACH_DBXREF_ON_ORGREF(it, src.SetOrg()) {
-                if ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), "taxon")) {
-                    ERASE_DBXREF_ON_ORGREF(it, src.SetOrg());
-                }
-            }
-        }
-    } else {
-        CRef<CDbtag> dbtag(new CDbtag());
-        dbtag->SetDb("taxon");
-        dbtag->SetTag().SetId(taxon);
-        src.SetOrg().SetDb().push_back(dbtag);
-    }
-}
-
-
-static void SetTaxon (CRef<CSeq_entry> entry, size_t taxon)
-{
-    if (!entry) {
-        return;
-    }
-    if (entry->IsSeq()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsSource()) {
-                SetTaxon((*it)->SetSource(), taxon);
-            }
-        }
-    } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
-            if ((*it)->IsSource()) {
-                SetTaxon((*it)->SetSource(), taxon);
-            }
-        }
-    }
-}
-
-
 static void SetOrgMod (CBioSource& src, COrgMod::TSubtype subtype, string val)
 {
     if (NStr::IsBlank(val)) {
@@ -601,18 +816,73 @@ static void SetOrgMod (CRef<CSeq_entry> entry, COrgMod::TSubtype subtype, string
 }
 
 
-static void AddGoodPub (CRef<CSeq_entry> entry)
+static CRef<CSeqdesc> BuildGoodPubSeqdesc()
 {
     CRef<CSeqdesc> pdesc(new CSeqdesc());
     CRef<CPub> pub(new CPub());
     pub->SetPmid((CPub::TPmid)1);
     pdesc->SetPub().SetPub().Set().push_back(pub);
 
+    return pdesc;
+}
+
+
+static void AddGoodPub (CRef<CSeq_entry> entry)
+{
+    CRef<CSeqdesc> pdesc = BuildGoodPubSeqdesc();
+
     if (entry->IsSeq()) {
         entry->SetSeq().SetDescr().Set().push_back(pdesc);
     } else if (entry->IsSet()) {
         entry->SetSet().SetDescr().Set().push_back(pdesc);
     }
+}
+
+
+static CRef<CAuthor> BuildGoodAuthor()
+{
+    CRef<CAuthor> author(new CAuthor());
+    author->SetName().SetName().SetLast("Last");
+    author->SetName().SetName().SetFirst("First");
+    author->SetName().SetName().SetMiddle("M");
+    return author;
+}
+
+
+static CRef<CPub> BuildGoodArticlePub()
+{
+    CRef<CPub> pub(new CPub());
+
+    CRef<CCit_art::TTitle::C_E> art_title(new CCit_art::TTitle::C_E());
+    art_title->SetName("article title");
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    CRef<CCit_jour::TTitle::C_E> journal_title(new CCit_jour::TTitle::C_E());
+    journal_title->SetName("journal_title");
+    pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(journal_title);
+    CRef<CCit_jour::TTitle::C_E> iso_jta(new CCit_jour::TTitle::C_E());   
+    iso_jta->SetIso_jta("abbr");
+    pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(iso_jta);
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(BuildGoodAuthor());
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-32");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(2009);
+    return pub;
+}
+
+
+static CRef<CPub> BuildGoodCitGenPub(CRef<CAuthor> author, int serial_number)
+{
+    CRef<CPub> pub(new CPub());
+    if (!author) {
+        author = BuildGoodAuthor();
+    }
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    if (serial_number > -1) {
+        pub->SetGen().SetSerial_number(serial_number);
+    }
+    return pub;
 }
 
 
@@ -641,6 +911,55 @@ static CRef<CSeq_entry> BuildGoodSeq(void)
 }
 
 
+static void MakeSeqLong(CBioseq& seq)
+{
+    if (seq.SetInst().IsSetSeq_data()) {
+        if (seq.GetInst().GetSeq_data().IsIupacna()) {
+            seq.SetInst().SetSeq_data().SetIupacna().Set().clear();
+            for (int i = 0; i < 100; i++) {
+                seq.SetInst().SetSeq_data().SetIupacna().Set().append(
+                    "AAAAATTTTTGGGGGCCCCCTTTTTAAAAATTTTTGGGGGCCCCCTTTTTAAAAATTTTTGGGGGCCCCCTTTTTAAAAATTTTTGGGGGCCCCCTTTTT");
+            }
+            seq.SetInst().SetLength(10000);
+        } else if (seq.GetInst().GetSeq_data().IsIupacaa()) {
+            seq.SetInst().SetSeq_data().SetIupacaa().Set().clear();
+            for (int i = 0; i < 100; i++) {
+                seq.SetInst().SetSeq_data().SetIupacaa().Set().append(
+                    "MPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSLMPRKTEINSL");
+            }
+            seq.SetInst().SetLength(10000);
+        }
+    }
+}
+
+
+static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_annot> annot;
+
+    if (entry->IsSeq()) {
+        if (!entry->GetSeq().IsSetAnnot() 
+            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSeq().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSeq().SetAnnot().front();
+        }
+    } else if (entry->IsSet()) {
+        if (!entry->GetSet().IsSetAnnot() 
+            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSet().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSet().SetAnnot().front();
+        }
+    }
+    annot->SetData().SetFtable().push_back(feat);
+}
+
+
 static CRef<CSeq_entry> BuildGoodProtSeq(void)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -659,9 +978,7 @@ static CRef<CSeq_entry> BuildGoodProtSeq(void)
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     feat->SetLocation().SetInt().SetFrom(0);
     feat->SetLocation().SetInt().SetTo(6);
-    CRef<CSeq_annot> annot(new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    entry->SetSeq().SetAnnot().push_back(annot);
+    AddFeat (feat, entry);
 
     return entry;
 }
@@ -707,19 +1024,21 @@ static CRef<CSeq_entry> BuildGoodNucProtSet(void)
     mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);    
     pseq->SetDescr().Set().push_back(mpdesc);
 
+    CRef<CSeq_entry> pentry(new CSeq_entry());
+    pentry->SetSeq(*pseq);
+
     CRef<CSeq_feat> feat (new CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
     feat->SetLocation().SetInt().SetFrom(0);
     feat->SetLocation().SetInt().SetTo(7);
-    CRef<CSeq_annot> annot(new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    pseq->SetAnnot().push_back(annot);
+    AddFeat (feat, pentry);
 
-    CRef<CSeq_entry> pentry(new CSeq_entry());
-    pentry->SetSeq(*pseq);
 
     set->SetSeq_set().push_back(pentry);
+
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet(*set);
 
     CRef<CSeq_feat> cds (new CSeq_feat());
     cds->SetData().SetCdregion();
@@ -727,15 +1046,82 @@ static CRef<CSeq_entry> BuildGoodNucProtSet(void)
     cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc");
     cds->SetLocation().SetInt().SetFrom(0);
     cds->SetLocation().SetInt().SetTo(26);
-    CRef<CSeq_annot> set_annot(new CSeq_annot());
-    set_annot->SetData().SetFtable().push_back(cds);
-    set->SetAnnot().push_back(set_annot);
+    AddFeat (cds, set_entry);
 
-    CRef<CSeq_entry> set_entry(new CSeq_entry());
-    set_entry->SetSet(*set);
     AddGoodSource (set_entry);
     AddGoodPub(set_entry);
     return set_entry;
+}
+
+
+static void RevComp (CBioseq& bioseq)
+{
+    if (!bioseq.IsNa() || !bioseq.IsSetInst()
+        || !bioseq.GetInst().IsSetSeq_data()
+        || !bioseq.GetInst().GetSeq_data().IsIupacna()) {
+        return;
+    }
+    string seq = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
+    string new_seq = "";
+    string::iterator sit = seq.end();
+    while (sit != seq.begin()) {
+        --sit;
+        string new_ch = "";
+        new_ch += *sit;
+        if (NStr::Equal(new_ch, "A")) {
+            new_ch = "T";
+        } else if (NStr::Equal(new_ch, "T")) {
+            new_ch = "A";
+        } else if (NStr::Equal(new_ch, "G")) {
+            new_ch = "C";
+        } else if (NStr::Equal(new_ch, "C")) {
+            new_ch = "G";
+        }
+        new_seq.append(new_ch);
+    }
+
+    bioseq.SetInst().SetSeq_data().SetIupacna().Set(new_seq);
+    size_t len = bioseq.GetLength();
+    if (bioseq.IsSetAnnot()) {
+        EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(bioseq.SetAnnot().front())) {
+            TSeqPos new_from = len - (*feat_it)->GetLocation().GetInt().GetTo() - 1;
+            TSeqPos new_to = len - (*feat_it)->GetLocation().GetInt().GetFrom() - 1;
+            (*feat_it)->SetLocation().SetInt().SetFrom(new_from);
+            (*feat_it)->SetLocation().SetInt().SetTo(new_to);
+            if ((*feat_it)->GetLocation().GetInt().IsSetStrand()
+                && (*feat_it)->GetLocation().GetInt().GetStrand() == eNa_strand_minus) {
+                (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+            } else {
+                (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+            }
+        }
+    }
+}
+
+
+static void RevComp (CRef<CSeq_entry> entry)
+{
+    if (entry->IsSeq()) {
+        RevComp(entry->SetSeq());
+    } else if (entry->IsSet()) {
+        if (entry->GetSet().IsSetClass()
+            && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+            RevComp(entry->SetSet().SetSeq_set().front());
+            size_t len = entry->GetSet().GetSeq_set().front()->GetSeq().GetLength();
+            EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(entry->SetSet().SetAnnot().front())) {
+                TSeqPos new_from = len - (*feat_it)->GetLocation().GetInt().GetTo() - 1;
+                TSeqPos new_to = len - (*feat_it)->GetLocation().GetInt().GetFrom() - 1;
+                (*feat_it)->SetLocation().SetInt().SetFrom(new_from);
+                (*feat_it)->SetLocation().SetInt().SetTo(new_to);
+                if ((*feat_it)->GetLocation().GetInt().IsSetStrand()
+                    && (*feat_it)->GetLocation().GetInt().GetStrand() == eNa_strand_minus) {
+                    (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+                } else {
+                    (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+                }
+            }
+        }
+    }
 }
 
 
@@ -918,28 +1304,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ExtNotAllowed", "Bioseq-ext not allowed on virtual Bioseq"));
 
     // repr = virtual
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_virtual);
     entry->SetSeq().SetInst().ResetSeq_data();
     entry->SetSeq().SetInst().SetExt().SetDelta();
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // repr = raw
@@ -1061,12 +1434,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // free errors
-    for (size_t i = 0; i < expected_errors.size(); i++) {
-        if (expected_errors[i]) {
-            delete expected_errors[i];
-        }
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -1074,25 +1442,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ReprInvalid)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "ReprInvalid", "Invalid Bioseq->repr = 0"));
 
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     expected_errors[0]->SetErrMsg("Invalid Bioseq->repr = 255");
@@ -1105,8 +1459,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ReprInvalid)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 }
 
 
@@ -1147,12 +1500,7 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     CConstRef<CValidError> eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // free errors
-    for (size_t i = 0; i < expected_errors.size(); i++) {
-        if (expected_errors[i]) {
-            delete expected_errors[i];
-        }
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -1248,28 +1596,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_CircularProtein)
 {
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "CircularProtein", "Non-linear topology set on protein"));
 
     SetCompleteness (entry, CMolInfo::eCompleteness_complete);
 
-
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_tandem);
@@ -1281,8 +1615,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_CircularProtein)
     CheckErrors (*eval, expected_errors);
 
     // should be no error for not set or linear
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
+
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_not_set);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -1297,25 +1631,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DSProtein)
 {
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DSProtein", "Protein not single stranded"));
 
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ds);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_mixed);
@@ -1327,8 +1648,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DSProtein)
     CheckErrors (*eval, expected_errors);
 
     // no errors expected for not set or single strand
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_not_set);
     eval = validator.Validate(seh, options);
@@ -1344,25 +1664,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNotSet)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MolNotSet", "Bioseq.mol is 0"));
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_not_set);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     expected_errors[0]->SetErrCode("MolOther");
@@ -1377,8 +1684,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNotSet)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 
 }
 
@@ -1387,25 +1693,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_FuzzyLen)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "FuzzyLen", "Fuzzy length on raw Bioseq"));
 
     entry->SetSeq().SetInst().SetFuzz();
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     expected_errors[0]->SetErrMsg("Fuzzy length on const Bioseq");
@@ -1421,8 +1714,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_FuzzyLen)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 }
 
 
@@ -1492,8 +1784,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidAlphabet)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 }
 
 
@@ -1501,21 +1792,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(251);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(251);
@@ -1565,7 +1843,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [254] at position [62]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "More than 10 invalid residues. Checking stopped"));
 
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // now repeat test, but with mRNA - this time Us should not be reported
@@ -1604,9 +1882,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     feat->SetLocation().SetInt().SetFrom(0);
     feat->SetLocation().SetInt().SetTo(64);
-    CRef<CSeq_annot> annot(new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    entry->SetSeq().SetAnnot().push_back(annot);
+    AddFeat(feat, entry);
     scope.RemoveEntry (*entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -1619,12 +1895,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // now look for lowercase characters
     scope.RemoveEntry (*entry);
@@ -1644,12 +1915,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     CheckErrors (*eval, expected_errors);
 
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // now try delta sequence
     scope.RemoveEntry (*entry);
@@ -1688,12 +1954,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // try protein delta sequence
     scope.RemoveEntry (*entry);
@@ -1718,12 +1979,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -1731,31 +1987,19 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+    STANDARD_SETUP
 
     entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MP*K*E*N");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("GTGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept(true);
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept_text("unclassified translation discrepancy");
     // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept();
@@ -1774,12 +2018,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -1787,18 +2026,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartialInconsistent)
 {
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+    STANDARD_SETUP
 
     entry->SetSeq().SetInst().ResetSeq_data();
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
@@ -1810,13 +2038,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartialInconsistent)
     entry->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc2);
 
     // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "PartialInconsistent", "Partial segmented sequence without MolInfo partial"));
 
     // not-set
     loc1->SetPartialStart(true, eExtreme_Biological);
     loc2->SetPartialStop(true, eExtreme_Biological);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     loc1->SetPartialStart(true, eExtreme_Biological);
     loc2->SetPartialStop(false, eExtreme_Biological);
@@ -1919,12 +2146,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartialInconsistent)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -1932,22 +2154,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
 {
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
-    expected_errors.clear();
+    STANDARD_SETUP
 
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPR");
     entry->SetSeq().SetInst().SetLength(3);
@@ -1960,7 +2167,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetPdb(*pdb_id);
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // don't report if partial
@@ -2011,12 +2218,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     
     // don't report if pdb
     entry->SetSeq().SetId().front()->SetPdb(*pdb_id);
@@ -2025,12 +2227,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2085,7 +2282,39 @@ static void AddRefGeneTrackingUserObject(CRef<CSeq_entry> entry)
     field->SetLabel().SetStr("Status");
     field->SetData().SetStr("Inferred");
     desc->SetUser().SetData().push_back(field);
-    entry->SetSeq().SetDescr().Set().push_back(desc);
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetDescr().Set().push_back(desc);
+    } else if (entry->IsSet()) {
+        entry->SetSet().SetDescr().Set().push_back(desc);
+    }
+}
+
+
+static bool IsRefGeneTrackingUserObject (const CUser_object& user)
+{
+    if (user.IsSetType() && user.GetType().IsStr() && NStr::Equal(user.GetType().GetStr(), "RefGeneTracking")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+static void SetRefGeneTrackingStatus(CRef<CSeq_entry> entry, string status)
+{
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsUser() && IsRefGeneTrackingUserObject((*it)->GetUser())) {
+                (*it)->SetUser().SetData().front()->SetData().SetStr(status);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsUser() && IsRefGeneTrackingUserObject((*it)->GetUser())) {
+                (*it)->SetUser().SetData().front()->SetData().SetStr(status);
+            }
+        }
+    }
 }
 
 
@@ -2093,13 +2322,17 @@ static void SetTitle(CRef<CSeq_entry> entry, string title)
 {
     bool found = false;
 
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+    EDIT_EACH_DESCRIPTOR_ON_SEQENTRY (it, *entry) {
         if ((*it)->IsTitle()) {
-            (*it)->SetTitle(title);
+            if (NStr::IsBlank((*it)->GetTitle())) {
+                ERASE_DESCRIPTOR_ON_SEQENTRY (it, *entry);
+            } else {
+                (*it)->SetTitle(title);
+            }
             found = true;
         }
     }
-    if (!found) {
+    if (!found && !NStr::IsBlank(title)) {
         CRef<CSeqdesc> desc(new CSeqdesc());
         desc->SetTitle(title);
         entry->SetSeq().SetDescr().Set().push_back(desc);
@@ -2129,21 +2362,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
 {
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsMolinfo()) {
@@ -2155,7 +2374,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
     scope.RemoveTopLevelSeqEntry(seh);
@@ -2240,12 +2459,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
          }
     }   
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     CRef<CDelta_seq> start_gap_seg(new CDelta_seq());
     start_gap_seg->SetLiteral().SetLength(10);
@@ -2272,12 +2486,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2285,21 +2494,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (lcl|good - lcl|bad)"));
 
     // local IDs
@@ -2308,7 +2504,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetLocal().SetStr("bad");
     entry->SetSeq().SetId().push_back(id2);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // GIBBSQ
@@ -2352,16 +2548,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetGiim().SetId(2);
     id2->SetGiim().SetDb("foo");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("1");
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gim|1 - gim|2)");
+    CLEAR_ERRORS
+
     expected_errors.push_back(new CExpectedError("1", eDiag_Error, "IdOnMultipleBioseqs", "BioseqFind (gim|1) unable to find itself - possible internal error"));
+    expected_errors.push_back(new CExpectedError("1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gim|1 - gim|2)"));
     expected_errors.push_back(new CExpectedError("1", eDiag_Error, "IdOnMultipleBioseqs", "BioseqFind (gim|2) unable to find itself - possible internal error"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    delete expected_errors[1];
-    delete expected_errors[2];
-    expected_errors.pop_back();
-    expected_errors.pop_back();
+    CLEAR_ERRORS
 
     // patent
     scope.RemoveTopLevelSeqEntry(seh);
@@ -2372,8 +2566,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetPatent().SetCit().SetCountry("USA");
     id2->SetPatent().SetCit().SetId().SetNumber("2");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("USA|1|1");
-    expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (pat|USA|1|1 - pat|USA|2|2)");
+    expected_errors.push_back(new CExpectedError("USA|1|1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (pat|USA|1|1 - pat|USA|2|2)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2422,12 +2615,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetGenbank().SetAccession("AY123456");
     id2->SetGenbank().SetVersion(2);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456| - gb|AY123456.2|)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2436,12 +2624,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     scope.RemoveTopLevelSeqEntry(seh);
     id2->SetGpipe().SetAccession("AY123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456| - gpp|AY123456|)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2460,23 +2643,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     scope.RemoveTopLevelSeqEntry(seh);
     id2->SetOther().SetAccession("NG_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
    
-
-
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2484,33 +2655,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNuclAcid)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MolNuclAcid", "Bioseq.mol is type na"));
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2518,22 +2671,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
-    CConstRef<CValidError> eval;
+    STANDARD_SETUP
 
     // allowed tech values
     vector<CMolInfo::TTech> genomic_list;
@@ -2582,20 +2720,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
             eval = validator.Validate(seh, options);
             CheckErrors (*eval, expected_errors);
         }
-        while (expected_errors.size() > 0) {
-            if (expected_errors[expected_errors.size() - 1] != NULL) {
-                delete expected_errors[expected_errors.size() - 1];
-            }
-            expected_errors.pop_back();
-        }
+        CLEAR_ERRORS
     }
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2605,33 +2733,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqIdNameHasSpace)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     entry->SetSeq().SetId().front()->SetOther().SetName("good one");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Critical, "SeqIdNameHasSpace", "Seq-id.name 'good one' should be a single word without any spaces"));
-    CConstRef<CValidError> eval;
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2682,12 +2791,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -2709,34 +2813,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
     cds_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
     cds_feat->SetPartial(true);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "TrailingX", "Sequence ends in 2 trailing Xs"));
-    CConstRef<CValidError> eval;
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // if stop codon present, do not report trailing X in protein
     scope.RemoveTopLevelSeqEntry(seh);
@@ -2764,23 +2849,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CRef<CSeq_entry> prot_entry = BuildGoodProtSeq();
     CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*prot_entry);
+    STANDARD_SETUP_NAME(prot_entry)
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("",eDiag_Error, "BadSeqIdFormat", "Bad accession"));
 
     vector<string> bad_ids;
@@ -2900,12 +2970,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         CheckErrors (*eval, expected_errors);
     }
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // good for both
     for (vector<string>::iterator id_it = good_ids.begin();
@@ -2950,12 +3015,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
                                                    "Accession AY123456 has 0 version"));
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
+
     nuc_entry->SetSeq().SetId().pop_back();
 
     // id that is too long
@@ -2965,12 +3026,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // shouldn't report if ncbifile ID
     scope.RemoveTopLevelSeqEntry(seh);
@@ -2991,23 +3047,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     CRef<CSeq_entry> entry = BuildGoodSegSet();
     CRef<CSeq_entry> master_seg = entry->SetSet().SetSeq_set().front();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     CRef<CSeq_loc> loc4(new CSeq_loc());
     loc4->SetWhole().SetLocal().SetStr("part1");
@@ -3019,12 +3059,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
@@ -3067,12 +3102,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3080,23 +3110,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     CRef<CSeqdesc> gbdesc (new CSeqdesc());
     gbdesc->SetGenbank().SetExtra_accessions().push_back("AY123456");
@@ -3110,12 +3125,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3123,35 +3133,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ZeroGiNumber)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGi(0);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("0", eDiag_Critical, "ZeroGiNumber", "Invalid GI number"));
     expected_errors.push_back(new CExpectedError("0", eDiag_Error, "GiWithoutAccession", "No accession on sequence with gi number"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3163,23 +3153,8 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
     CRef<CSeq_id> gi_id(new CSeq_id());
     gi_id->SetGi(21914627);
     entry->SetSeq().SetId().push_back(gi_id);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     CRef<CSeq_id> hist_id(new CSeq_id());
     hist_id->SetGi(21914627);
@@ -3197,12 +3172,7 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // should not generate errors if date has not been set
     entry->SetSeq().SetInst().SetHist().ResetReplaces();
@@ -3223,34 +3193,14 @@ BOOST_AUTO_TEST_CASE(Test_GiWithoutAccession)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGi(123456);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("123456", eDiag_Error, "GiWithoutAccession", "No accession on sequence with gi number"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3266,23 +3216,8 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetGenbank().SetAccession("AY123457");
     other_acc->SetGenbank().SetVersion(1);
     entry->SetSeq().SetId().push_back(other_acc);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     // genbank, ddbj, embl, tpg, tpe, tpd, other, pir, swissprot, and prf all count as accessionts
     // genbank
@@ -3372,12 +3307,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // other
     scope.RemoveTopLevelSeqEntry(seh);
@@ -3390,12 +3320,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3413,23 +3338,7 @@ BOOST_AUTO_TEST_CASE(Test_HistAssemblyMissing)
     tpd_entry->SetSeq().SetId().front()->SetTpd().SetAccession("AY123456");
     tpd_entry->SetSeq().SetId().front()->SetTpd().SetVersion(1);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*tpg_entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP_NAME(tpg_entry)
 
     // tpg
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Info, "HistAssemblyMissing", "TPA record tpg|AY123456.1| should have Seq-hist.assembly for PRIMARY block"));
@@ -3451,12 +3360,7 @@ BOOST_AUTO_TEST_CASE(Test_HistAssemblyMissing)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // error suppressed if keyword present
     CRef<CSeqdesc> block(new CSeqdesc());
@@ -3477,23 +3381,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNN");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TerminalNs", "N at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TerminalNs", "N at end of sequence"));
@@ -3585,12 +3474,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3602,23 +3486,9 @@ BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
     CRef<CSeq_id> gi_id(new CSeq_id());
     gi_id->SetGi(21914627);
     entry->SetSeq().SetId().push_back(gi_id);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("AY123457", eDiag_Warning, "UnexpectedIdentifierChange", "New accession (gb|AY123457.1|) does not match one in NCBI sequence repository (gb|AY123456.1|) on gi (21914627)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3635,12 +3505,7 @@ BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
 
     // TODO - try to instigate other errors
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3649,23 +3514,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
     AddToDeltaSeq(entry, "ANNNNNNNNNNNNNNNNNNNNG");
     SetTech(entry, CMolInfo::eTech_wgs);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalNsInSeqLit", "Run of 20 Ns in delta component 5 that starts at base 45"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3690,12 +3541,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3705,23 +3551,9 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     CRef<CDelta_seq> delta_seq(new CDelta_seq());
     delta_seq->SetLiteral().SetLength(0);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     eval = validator.Validate(seh, options);
@@ -3768,12 +3600,7 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3798,23 +3625,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     AddTpaAssemblyUserObject(member2);
     entry->SetSet().SetSeq_set().push_back(member2);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     // two Tpa sequences, but neither has assembly and neither has GI, so no errors expected
     eval = validator.Validate(seh, options);
@@ -3841,12 +3652,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3859,33 +3665,13 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(9);
     entry->SetSeq().SetInst().SetLength(32);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLocLength", "Short length (10) on seq-loc (gb|AY123456|:1-10) of delta seq_ext"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // if length 11, should not be a problem
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(10);
@@ -3902,23 +3688,7 @@ BOOST_AUTO_TEST_CASE(Test_MissingGaps)
     // remove gaps
     RemoveDeltaSeqGaps (entry);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     // only report errors for specific molinfo tech values
     eval = validator.Validate(seh, options);
@@ -3963,12 +3733,7 @@ BOOST_AUTO_TEST_CASE(Test_MissingGaps)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -3979,35 +3744,16 @@ BOOST_AUTO_TEST_CASE(Test_CompleteTitleProblem)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     SetTitle(entry, "Foo complete genome");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "CompleteTitleProblem", "Complete genome in title without complete flag set"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-    // should be no error if complete
+    CLEAR_ERRORS
+
+        // should be no error if complete
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
 
     eval = validator.Validate(seh, options);
@@ -4022,34 +3768,14 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CompleteCircleProblem", "Circular topology without complete flag set"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
@@ -4060,13 +3786,7 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4077,23 +3797,7 @@ BOOST_AUTO_TEST_CASE(Test_BadHTGSeq)
     // remove gaps
     RemoveDeltaSeqGaps (delta_entry);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*delta_entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP_NAME(delta_entry)
 
     SetTech(delta_entry, CMolInfo::eTech_htgs_2);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingGaps", "HTGS delta seq should have gaps between all sequence runs"));
@@ -4109,12 +3813,7 @@ BOOST_AUTO_TEST_CASE(Test_BadHTGSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_entry> raw_entry = BuildGoodSeq();
@@ -4124,12 +3823,7 @@ BOOST_AUTO_TEST_CASE(Test_BadHTGSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // HTGS_ACTIVEFIN keyword disables error
     AddGenbankKeyword(raw_entry, "HTGS_ACTIVEFIN");
@@ -4158,12 +3852,7 @@ BOOST_AUTO_TEST_CASE(Test_BadHTGSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4173,33 +3862,13 @@ BOOST_AUTO_TEST_CASE(Test_GapInProtein_and_BadProteinStart)
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
     entry->SetSeq().SetInst().SetSeq_data().SetNcbieaa().Set("PRK-EIN");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GapInProtein", "[1] internal gap symbols in protein sequence (gene? - fake protein name)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     entry->SetSeq().SetInst().SetSeq_data().SetNcbieaa().Set("-RKTEIN");
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadProteinStart", "gap symbol at start of protein sequence (gene? - fake protein name)"));
@@ -4211,12 +3880,7 @@ BOOST_AUTO_TEST_CASE(Test_GapInProtein_and_BadProteinStart)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4232,23 +3896,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(last_seg);
     entry->SetSeq().SetInst().SetLength(entry->SetSeq().SetInst().GetLength() + 18);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
@@ -4299,12 +3947,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4321,35 +3964,14 @@ BOOST_AUTO_TEST_CASE(Test_OverlappingDeltaRange)
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*seqid, 25, 35);
     entry->SetSeq().SetInst().SetLength(44);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 6-16 and 1-11 on a Bioseq gb|AY123456"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 26-36 and 21-31 on a Bioseq gb|AY123456"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4359,34 +3981,13 @@ BOOST_AUTO_TEST_CASE(Test_LeadingX)
     CRef<CSeq_entry> entry = BuildGoodProtSeq();
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("XROTEIN");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LeadingX", "Sequence starts with leading X"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4397,34 +3998,13 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNTTTTT");
     entry->SetSeq().SetInst().SetLength(110);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 100 Ns in raw sequence starting at base 6"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // expect no error
     scope.RemoveTopLevelSeqEntry(seh);
@@ -4440,12 +4020,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4455,23 +4030,8 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("ATGATGATGNNN");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNATGATGATG");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 13"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 23"));
@@ -4479,13 +4039,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4496,36 +4050,15 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGi(0);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4534,23 +4067,8 @@ BOOST_AUTO_TEST_CASE(Test_InternalGapsInSeqRaw)
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGG-CAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue '-' at position [27]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalGapsInSeqRaw", "Raw nucleotide should not contain gap characters"));
@@ -4558,13 +4076,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalGapsInSeqRaw)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4575,23 +4087,8 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetLocal().SetStr("good");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "SelfReferentialSequence", "Self-referential delta sequence"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating multi-interval genes."));
@@ -4605,13 +4102,7 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4621,36 +4112,15 @@ BOOST_AUTO_TEST_CASE(Test_WholeComponent)
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetWhole().SetGenbank().SetAccession("AY123456");
     entry->SetSeq().SetInst().SetLength(507);
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WholeComponent", "Delta seq component should not be of type whole"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4663,23 +4133,7 @@ BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetDb("a");
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetTag().SetStr("b");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     // no error unless part of nuc-prot set
     eval = validator.Validate(seh, options);
@@ -4700,13 +4154,7 @@ BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4718,23 +4166,7 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     entry->SetSeq().SetInst().SetLength(100);
     SetTech (entry, CMolInfo::eTech_tsa);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 11 percent Ns"));
     eval = validator.Validate(seh, options);
@@ -4748,12 +4180,8 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAANNNNNGGGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCNNNNNAAAAA");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -4762,13 +4190,7 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4784,35 +4206,13 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitDataLength0)
 
     entry->SetSeq().SetInst().SetLength(24);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitDataLength0", "Seq-lit of length 0 in delta chain"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -4824,23 +4224,7 @@ BOOST_AUTO_TEST_CASE(Test_DSmRNA)
     SetBiomol(entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ds);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     // double strand
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DSmRNA", "mRNA not single stranded"));
@@ -4857,12 +4241,7 @@ BOOST_AUTO_TEST_CASE(Test_DSmRNA)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // these should not produce errors
 
@@ -4889,23 +4268,7 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
     RemoveDescriptorType (entry, CSeqdesc::e_Source);
     AddGoodSource (entry->SetSet().SetSeq_set().front());
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BioSourceMissing", "Nuc-prot set does not contain expected BioSource descriptor"));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "NoOrgFound", "No organism name has been applied to this Bioseq.  Other qualifiers may exist."));
@@ -4913,12 +4276,7 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -4951,23 +4309,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     AddTpaAssemblyUserObject (entry);
    
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
                               "Nucleic acid with protein sequence method"));
@@ -4984,12 +4326,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
@@ -5031,12 +4368,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
     
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodProtSeq();
@@ -5091,12 +4423,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
  
     // invalid modif
     desc->SetModif().push_back(eGIBB_mod_dna);
@@ -5110,12 +4437,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
@@ -5127,20 +4449,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     seh = scope.AddTopLevelSeqEntry(*entry);
     // if biomol not other, should generate error
     expected_errors.push_back(new CExpectedError ("good", eDiag_Warning, "InvalidForType",
-                                                  "artificial origin should have other-genetic"));
-    expected_errors.push_back(new CExpectedError ("good", eDiag_Warning, "InvalidForType",
                                                   "Molinfo-biomol other should be used if Biosource-location is synthetic"));
-    expected_errors.push_back(new CExpectedError ("good", eDiag_Warning, "InvalidForType",
-                                                  "artificial origin should have other-genetic and synthetic construct"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsSource()) {
@@ -5242,12 +4555,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
@@ -5260,12 +4568,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
+
     SetTaxname(entry, "Sebaea microphylla");
 
     SetTech(entry, CMolInfo::eTech_concept_trans);
@@ -5345,12 +4649,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
+
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadHTGSeq",
                                                  "HTGS 2 raw seq has no gaps and no graphs"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
@@ -5362,12 +4662,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
                                                  "Molinfo.tech barcode without BARCODE keyword"));
@@ -5378,13 +4673,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -5396,23 +4685,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Unknown)
     desc->SetModif().push_back(eGIBB_mod_other);
     entry->SetDescr().Set().push_back(desc);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
                               "Modif descriptor is obsolete"));
@@ -5422,12 +4695,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Unknown)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -5446,35 +4714,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     RemoveDescriptorType (entry, CSeqdesc::e_Pub);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("", eDiag_Error, "NoPubFound",
                               "No publications anywhere on this entire record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
+
     // make gpipe - should suppress error
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_id> id_suppress(new CSeq_id());
@@ -5504,12 +4752,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // only one has pub
     scope.RemoveTopLevelSeqEntry(seh);
@@ -5523,12 +4766,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // noncurated refseq should suppress
     scope.RemoveTopLevelSeqEntry(seh);
@@ -5547,12 +4785,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }    
+    CLEAR_ERRORS
 }
 
 
@@ -5562,23 +4795,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     RemoveDescriptorType (entry, CSeqdesc::e_Source);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BioSourceMissing",
                               "Nuc-prot set does not contain expected BioSource descriptor"));
@@ -5623,12 +4840,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // if there is a source descriptor but no tax name, still produce error
     AddGoodSource(entry->SetSet().SetSeq_set().back());
@@ -5642,12 +4854,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -5657,35 +4864,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleBioSources)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     AddGoodSource (entry);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleBioSources",
                               "Undesired multiple source descriptors"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+
+    CLEAR_ERRORS
 }
 
 
@@ -5695,35 +4882,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoMolInfoFound)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     RemoveDescriptorType (entry, CSeqdesc::e_Molinfo);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoMolInfoFound",
                               "No Mol-info applies to this Bioseq"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+
+    CLEAR_ERRORS
 }
 
 
@@ -5733,35 +4900,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxon(entry, 0);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
                               "BioSource is missing taxon ID"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -5780,23 +4926,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
     SetTaxon(second, 127582);
     entry->SetSet().SetSeq_set().push_back(second);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good2", eDiag_Error, "InconsistentBioSources",
                               "Population set contains inconsistent organisms."));
 
@@ -5828,12 +4959,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // no error if not pop-set
     SetTaxname(first, "");
@@ -5857,23 +4983,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     ResetOrgname(entry);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingLineage",
                               "No lineage for this BioSource."));
 
@@ -5920,13 +5031,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -5938,36 +5043,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_SerialInComment)
     comment->SetComment("blah blah [123456]");
     entry->SetSeq().SetDescr().Set().push_back(comment);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "SerialInComment",
                               "Comment may refer to reference by serial number - attach reference specific comments to the reference REMARK instead."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
-
+    CLEAR_ERRORS
 }
 
 
@@ -5975,46 +5059,17 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsFocus)
 {
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
-    CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
-    SetTaxon (feat->SetData().SetBiosrc(), 127582);
-    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(5);
-    CRef<CSeq_annot> annot(new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    entry->SetSeq().SetAnnot().push_back(annot);
+    AddGoodSourceFeature (entry);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceNeedsFocus",
                               "BioSource descriptor must have focus or transgenic when BioSource feature with different taxname is present."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 
     // error goes away if focus is set on descriptor
     SetFocus(entry);
@@ -6036,23 +5091,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetGenome (entry, CBioSource::eGenome_kinetoplast);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
                               "Only Kinetoplastida have kinetoplasts"));
 
@@ -6066,12 +5106,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -6081,23 +5116,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleChromosomes)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetChromosome (entry, "1");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleChromosomes",
                               "Multiple identical chromosome qualifiers"));
 
@@ -6109,12 +5129,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleChromosomes)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -6124,35 +5139,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSubSource)
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetSubSource (entry, 0, "foo");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "BadSubSource",
                               "Unknown subsource subtype 0"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -6169,23 +5164,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     SetCommon (entry, "some common name");
     SetOrgMod (entry, COrgMod::eSubtype_common, "some common name");
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "BadOrgMod",
                               "Unknown orgmod subtype 0"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "BadOrgMod",
@@ -6204,12 +5184,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
 
@@ -6221,38 +5196,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
     desc->SetTitle("Not the correct title");
     entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "InconsistentProteinTitle",
                               "Instantiated protein title does not match automatically generated title"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
-    }
+    CLEAR_ERRORS
 }
 
-#if 0
+
 BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 {
     // prepare entry
@@ -6275,7 +5230,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     entry->SetSeq().SetDescr().Set().push_back(desc3);
 
     CRef<CSeqdesc> desc_gb1(new CSeqdesc());
-    desc_gb1->SetGenbank();
+    desc_gb1->SetGenbank().SetKeywords().push_back("TPA:experimental");
+    desc_gb1->SetGenbank().SetKeywords().push_back("TPA:inferential");
     entry->SetSeq().SetDescr().Set().push_back(desc_gb1);
     CRef<CSeqdesc> desc_gb2(new CSeqdesc());
     desc_gb2->SetGenbank();
@@ -6288,85 +5244,3971 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     desc_embl2->SetEmbl();
     entry->SetSeq().SetDescr().Set().push_back(desc_embl2);
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    CRef<CSeqdesc> desc_pir1(new CSeqdesc());
+    desc_pir1->SetPir();
+    entry->SetSeq().SetDescr().Set().push_back(desc_pir1);
+    CRef<CSeqdesc> desc_pir2(new CSeqdesc());
+    desc_pir2->SetPir();
+    entry->SetSeq().SetDescr().Set().push_back(desc_pir2);
 
-    CConstRef<CValidError> eval;
+    CRef<CSeqdesc> desc_sp1(new CSeqdesc());
+    desc_sp1->SetSp();
+    entry->SetSeq().SetDescr().Set().push_back(desc_sp1);
+    CRef<CSeqdesc> desc_sp2(new CSeqdesc());
+    desc_sp2->SetSp();
+    entry->SetSeq().SetDescr().Set().push_back(desc_sp2);
 
-    CValidator validator(*objmgr);
+    CRef<CSeqdesc> desc_pdb1(new CSeqdesc());
+    desc_pdb1->SetPdb();
+    entry->SetSeq().SetDescr().Set().push_back(desc_pdb1);
+    CRef<CSeqdesc> desc_pdb2(new CSeqdesc());
+    desc_pdb2->SetPdb();
+    entry->SetSeq().SetDescr().Set().push_back(desc_pdb2);
 
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
+    CRef<CSeqdesc> desc_prf1(new CSeqdesc());
+    desc_prf1->SetPrf();
+    entry->SetSeq().SetDescr().Set().push_back(desc_prf1);
+    CRef<CSeqdesc> desc_prf2(new CSeqdesc());
+    desc_prf2->SetPrf();
+    entry->SetSeq().SetDescr().Set().push_back(desc_prf2);
 
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
+    CRef<CSeqdesc> desc_create1(new CSeqdesc());
+    desc_create1->SetCreate_date().SetStd().SetYear(2009);
+    desc_create1->SetCreate_date().SetStd().SetMonth(4);
+    entry->SetSeq().SetDescr().Set().push_back(desc_create1);
+    CRef<CSeqdesc> desc_create2(new CSeqdesc());
+    desc_create2->SetCreate_date().SetStd().SetYear(2009);
+    desc_create2->SetCreate_date().SetStd().SetMonth(3);
+    entry->SetSeq().SetDescr().Set().push_back(desc_create2);
+    CRef<CSeqdesc> desc_update(new CSeqdesc());
+    desc_update->SetUpdate_date().SetStd().SetYear(2009);
+    desc_update->SetUpdate_date().SetStd().SetMonth(2);
+    entry->SetSeq().SetDescr().Set().push_back(desc_update);
+
+    CRef<CSeqdesc> src_desc(new CSeqdesc());
+    src_desc->SetSource().SetOrg().SetTaxname("Trichechus manatus");
+    SetTaxon (src_desc->SetSource(), 127582);
+    src_desc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
+    entry->SetSeq().SetDescr().Set().push_back(src_desc);
+
+    SetTech(entry, CMolInfo::eTech_genemap);
+    SetCompleteness (entry, CMolInfo::eCompleteness_no_left);
+    CRef<CSeqdesc> m_desc(new CSeqdesc());
+    m_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_cRNA);
+    m_desc->SetMolinfo().SetTech(CMolInfo::eTech_fli_cdna);
+    m_desc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
+    entry->SetSeq().SetDescr().Set().push_back(m_desc);
+
+    STANDARD_SETUP
+
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
-                              "Inconsistent GIBB-mol [1] and [2]"));
+                              "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Inconsistent",
+                              "Inconsistent create_dates [Mar 2009] and [Apr 2009]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Inconsistent",
+                              "Inconsistent create_date [Apr 2009] and update_date [Feb 2009]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Inconsistent taxnames [Trichechus manatus] and [Sebaea microphylla]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Inconsistent Molinfo-biomol [1] and [11]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Inconsistent Molinfo-tech [5] and [17]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Inconsistent Molinfo-completeness [3] and [4]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple GenBank blocks"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple EMBL blocks"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple PIR blocks"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple PDB blocks"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple PRF blocks"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Multiple SWISS-PROT blocks"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent GIBB-mod [0] and [1]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent GIBB-mod [4] and [7]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
+                              "Inconsistent GIBB-mod [11] and [10]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent GIBB-mod [11] and [16]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent GIBB-mod [11] and [17]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
-                              "Multiple GenBank blocks"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
-                              "Multiple EMBL blocks"));
+                              "Inconsistent GIBB-mol [1] and [2]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
+                              "MolType descriptor is obsolete"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
+                              "MolType descriptor is obsolete"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
+                              "Modif descriptor is obsolete"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
+                              "Create date has error - BAD_DAY"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
+                              "Create date has error - BAD_DAY"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
+                              "Update date has error - BAD_DAY"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleBioSources",
+                              "Undesired multiple source descriptors"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    while (expected_errors.size() > 0) {
-        if (expected_errors[expected_errors.size() - 1] != NULL) {
-            delete expected_errors[expected_errors.size() - 1];
-        }
-        expected_errors.pop_back();
+    CLEAR_ERRORS
+
+    // try different WGS-style accessions, check for wgs_tech
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("ABCD12345678");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("ABCD12345678", eDiag_Error, "Inconsistent",
+                              "WGS accession should have Mol-info.tech of wgs"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("ABCD12345678");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetDdbj().SetAccession("ABCD12345678");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // look for correct accession if WGS tech present
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    SetTech(entry, CMolInfo::eTech_wgs);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "Inconsistent",
+                              "Mol-info.tech of wgs should have WGS accession"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetDdbj().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NM_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NM_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NP_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NP_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NG_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NG_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NR_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NR_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no tech warning if other but not one of four starts
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NX_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // skip warning if segset accession
+    vector<string> segset_accession_prefixes;
+    segset_accession_prefixes.push_back("AH");
+    segset_accession_prefixes.push_back("CH");
+    segset_accession_prefixes.push_back("CM");
+    segset_accession_prefixes.push_back("DS");
+    segset_accession_prefixes.push_back("EM");
+    segset_accession_prefixes.push_back("EN");
+    segset_accession_prefixes.push_back("EP");
+    segset_accession_prefixes.push_back("EQ");
+    segset_accession_prefixes.push_back("FA");
+    segset_accession_prefixes.push_back("GG");
+    segset_accession_prefixes.push_back("GL");
+
+    for (vector<string>::iterator it = segset_accession_prefixes.begin();
+         it != segset_accession_prefixes.end();
+         ++it) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        entry->SetSeq().SetId().front()->SetOther().SetAccession(*it + "_123456");
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+    
+    // biomol on NC should be genomic or cRNA
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    SetTech(entry, CMolInfo::eTech_unknown);
+    SetBiomol(entry, CMolInfo::eBiomol_genomic);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // no error expected
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    // no error expected
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // expect errors
+    SetBiomol(entry, CMolInfo::eBiomol_genomic_mRNA);
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "Inconsistent",
+                              "NC nucleotide should be genomic or cRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_ncRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_pre_RNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_rRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_rRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_scRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_snoRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_snRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_tmRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_transcribed_RNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol(entry, CMolInfo::eBiomol_tRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_ObsoleteSourceLocation)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetGenome (entry, CBioSource::eGenome_transposon);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ObsoleteSourceLocation",
+                              "Transposon and insertion sequence are no longer legal locations"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetGenome (entry, CBioSource::eGenome_insertion_seq);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_ObsoleteSourceQual)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_transposon_name, "a");
+    SetSubSource(entry, CSubSource::eSubtype_insertion_seq_name, "b");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ObsoleteSourceQual",
+                              "Transposon name and insertion sequence name are no longer legal qualifiers"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ObsoleteSourceQual",
+                              "Transposon name and insertion sequence name are no longer legal qualifiers"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_StructuredSourceNote)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "StructuredSourceNote",
+                              "Source note has structured tag '"));
+
+    vector<string> tag_prefixes;
+    tag_prefixes.push_back("acronym:");
+    tag_prefixes.push_back("anamorph:");
+    tag_prefixes.push_back("authority:");
+    tag_prefixes.push_back("biotype:");
+    tag_prefixes.push_back("biovar:");
+    tag_prefixes.push_back("bio_material:");
+    tag_prefixes.push_back("breed:");
+    tag_prefixes.push_back("cell_line:");
+    tag_prefixes.push_back("cell_type:");
+    tag_prefixes.push_back("chemovar:");
+    tag_prefixes.push_back("chromosome:");
+    tag_prefixes.push_back("clone:");
+    tag_prefixes.push_back("clone_lib:");
+    tag_prefixes.push_back("collected_by:");
+    tag_prefixes.push_back("collection_date:");
+    tag_prefixes.push_back("common:");
+    tag_prefixes.push_back("country:");
+    tag_prefixes.push_back("cultivar:");
+    tag_prefixes.push_back("culture_collection:");
+    tag_prefixes.push_back("dev_stage:");
+    tag_prefixes.push_back("dosage:");
+    tag_prefixes.push_back("ecotype:");
+    tag_prefixes.push_back("endogenous_virus_name:");
+    tag_prefixes.push_back("environmental_sample:");
+    tag_prefixes.push_back("forma:");
+    tag_prefixes.push_back("forma_specialis:");
+    tag_prefixes.push_back("frequency:");
+    tag_prefixes.push_back("fwd_pcr_primer_name");
+    tag_prefixes.push_back("fwd_pcr_primer_seq");
+    tag_prefixes.push_back("fwd_primer_name");
+    tag_prefixes.push_back("fwd_primer_seq");
+    tag_prefixes.push_back("genotype:");
+    tag_prefixes.push_back("germline:");
+    tag_prefixes.push_back("group:");
+    tag_prefixes.push_back("haplogroup:");
+    tag_prefixes.push_back("haplotype:");
+    tag_prefixes.push_back("identified_by:");
+    tag_prefixes.push_back("insertion_seq_name:");
+    tag_prefixes.push_back("isolate:");
+    tag_prefixes.push_back("isolation_source:");
+    tag_prefixes.push_back("lab_host:");
+    tag_prefixes.push_back("lat_lon:");
+    tag_prefixes.push_back("left_primer:");
+    tag_prefixes.push_back("linkage_group:");
+    tag_prefixes.push_back("map:");
+    tag_prefixes.push_back("mating_type:");
+    tag_prefixes.push_back("metagenome_source:");
+    tag_prefixes.push_back("metagenomic:");
+    tag_prefixes.push_back("nat_host:");
+    tag_prefixes.push_back("pathovar:");
+    tag_prefixes.push_back("placement:");
+    tag_prefixes.push_back("plasmid_name:");
+    tag_prefixes.push_back("plastid_name:");
+    tag_prefixes.push_back("pop_variant:");
+    tag_prefixes.push_back("rearranged:");
+    tag_prefixes.push_back("rev_pcr_primer_name");
+    tag_prefixes.push_back("rev_pcr_primer_seq");
+    tag_prefixes.push_back("rev_primer_name");
+    tag_prefixes.push_back("rev_primer_seq");
+    tag_prefixes.push_back("right_primer:");
+    tag_prefixes.push_back("segment:");
+    tag_prefixes.push_back("serogroup:");
+    tag_prefixes.push_back("serotype:");
+    tag_prefixes.push_back("serovar:");
+    tag_prefixes.push_back("sex:");
+    tag_prefixes.push_back("specimen_voucher:");
+    tag_prefixes.push_back("strain:");
+    tag_prefixes.push_back("subclone:");
+    tag_prefixes.push_back("subgroup:");
+    tag_prefixes.push_back("substrain:");
+    tag_prefixes.push_back("subtype:");
+    tag_prefixes.push_back("sub_species:");
+    tag_prefixes.push_back("synonym:");
+    tag_prefixes.push_back("taxon:");
+    tag_prefixes.push_back("teleomorph:");
+    tag_prefixes.push_back("tissue_lib:");
+    tag_prefixes.push_back("tissue_type:");
+    tag_prefixes.push_back("transgenic:");
+    tag_prefixes.push_back("transposon_name:");
+    tag_prefixes.push_back("type:");
+    tag_prefixes.push_back("variety:");
+
+    for (vector<string>::iterator it = tag_prefixes.begin();
+         it != tag_prefixes.end();
+         ++it) {
+        expected_errors[0]->SetErrMsg("Source note has structured tag '" + *it + "'");
+        SetSubSource(entry, CSubSource::eSubtype_other, *it + "a");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetSubSource(entry, CSubSource::eSubtype_other, "");
+        SetOrgMod(entry, COrgMod::eSubtype_other, *it + "a");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, CSubSource::eSubtype_other, "");
+    }
+
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_UnnecessaryBioSourceFocus)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetFocus(entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnnecessaryBioSourceFocus",
+                              "BioSource descriptor has focus, but no BioSource feature"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingWithoutStatus)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().SetType().SetStr("RefGeneTracking");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "RefGeneTrackingWithoutStatus",
+                              "RefGeneTracking object needs to have Status set"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_UnwantedCompleteFlag)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    SetTitle(entry, "a title without the word");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // tech of HTGS3 lowers to warning
+    SetTech(entry, CMolInfo::eTech_htgs_3);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // only for genbank records
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_CollidingPublications)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> pub1 = BuildGoodPubSeqdesc();
+    CRef<CAuthor> auth1 = BuildGoodAuthor();
+    CRef<CPub> otherpub1(new CPub());
+    otherpub1->SetArticle().SetAuthors().SetNames().SetStd().push_back(auth1);
+    CRef<CCit_art::TTitle::C_E> title1(new CCit_art::TTitle::C_E());
+    title1->SetName("First title");
+    otherpub1->SetArticle().SetTitle().Set().push_back(title1);
+    pub1->SetPub().SetPub().Set().push_back(otherpub1);
+    entry->SetSeq().SetDescr().Set().push_back(pub1);
+    CRef<CSeqdesc> pub2 = BuildGoodPubSeqdesc();
+    CRef<CPub> otherpub2(new CPub());
+    CRef<CAuthor> auth2 = BuildGoodAuthor();
+    otherpub2->SetArticle().SetAuthors().SetNames().SetStd().push_back(auth1);
+    CRef<CCit_art::TTitle::C_E> title2(new CCit_art::TTitle::C_E());
+    title2->SetName("Second title");
+    otherpub2->SetArticle().SetTitle().Set().push_back(title2);
+    pub2->SetPub().SetPub().Set().push_back(otherpub2);
+    entry->SetSeq().SetDescr().Set().push_back(pub2);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CollidingPublications",
+                              "Multiple publications with same identifier"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // should also report muid collisions
+    pub1->SetPub().SetPub().Set().front()->SetMuid(2);
+    pub2->SetPub().SetPub().Set().front()->SetMuid(2);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // look for same pub twice
+    title2->SetName("First title");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CollidingPublications",
+        "Multiple equivalent publications annotated on this sequence [Last|Ft; Last]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    // look for multiple IDs on same pub
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetDescr().Set().pop_back();
+    CRef<CPub> extra_id(new CPub());
+    extra_id->SetMuid(3);
+    pub1->SetPub().SetPub().Set().push_back(extra_id);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Multiple conflicting muids in a single publication");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    extra_id->SetMuid(2);
+    expected_errors[0]->SetErrMsg("Multiple redundant muids in a single publication");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    pub1->SetPub().SetPub().Set().front()->SetPmid((CPub::TPmid)2);
+    extra_id->SetPmid((CPub::TPmid)3);
+    expected_errors[0]->SetErrMsg("Multiple conflicting pmids in a single publication");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    extra_id->SetPmid((CPub::TPmid)2);
+    expected_errors[0]->SetErrMsg("Multiple redundant pmids in a single publication");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_TransgenicProblem)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_transgenic, "true");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TransgenicProblem",
+                              "Transgenic source descriptor requires presence of source feature"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    // adding source feature turns off warning
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
+    SetTaxon (feat->SetData().SetBiosrc(), 127582);
+    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+    AddFeat(feat, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTaxname(entry, "Not valid");
+    SetTaxon(entry, 0);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+                              "BioSource is missing taxon ID"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+                              "Taxonomy lookup failed with message 'Organism not found'"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetTaxname(entry, "Poeciliinae");
+    expected_errors[1]->SetErrMsg("Taxonomy lookup reports is_species_level FALSE");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetTaxname(entry, "Anabaena circinalis");
+    expected_errors[1]->SetErrMsg("Taxonomy lookup reports taxonomy consultation needed");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    SetTaxname(entry, "Homo sapiens");
+    SetGenome(entry, CBioSource::eGenome_nucleomorph);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
+                              "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+                              "BioSource is missing taxon ID"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+                              "Taxonomy lookup does not have expected nucleomorph flag"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MultipleTitles)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    SetTitle(entry, "First title");
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetTitle("Second title");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleTitles",
+                              "Undesired multiple title descriptors"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingOnNonRefSeq)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    CRef<CSeq_entry> firstseq = BuildGoodSeq();
+    AddRefGeneTrackingUserObject (firstseq);
+    entry->SetSet().SetSeq_set().push_back(firstseq);
+
+    CRef<CSeq_entry> secondseq = BuildGoodSeq();
+    secondseq->SetSeq().SetId().front()->SetLocal().SetStr("good2");
+    entry->SetSet().SetSeq_set().push_back(secondseq);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "RefGeneTrackingOnNonRefSeq",
+                              "RefGeneTracking object should only be in RefSeq record"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no error if any bioseq in record is RefSeq
+    scope.RemoveTopLevelSeqEntry(seh);
+    secondseq->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTaxname(entry, "Arabidopsis thaliana");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 3702);
+    SetLineage(entry, "Cyanobacteria");
+    SetOrgMod(entry, COrgMod::eSubtype_variety, "foo");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Variety value specified is not found in taxname"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+   
+    SetOrgMod(entry, COrgMod::eSubtype_variety, "");
+    SetOrgMod(entry, COrgMod::eSubtype_forma, "foo");
+    expected_errors[0]->SetErrMsg("Forma value specified is not found in taxname");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_forma, "");
+    SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "foo");
+    expected_errors[0]->SetErrMsg("Forma specialis value specified is not found in taxname");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "");
+    SetOrgMod(entry, COrgMod::eSubtype_sub_species, "foo");
+    expected_errors[0]->SetErrMsg("Subspecies value specified is not found in taxname");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // some don't produce errors
+    SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
+    SetOrgMod(entry, COrgMod::eSubtype_biovar, "foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_biovar, "");
+    SetOrgMod(entry, COrgMod::eSubtype_pathovar, "foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // HIV location problems
+    SetOrgMod(entry, COrgMod::eSubtype_pathovar, "");
+    SetTaxname(entry, "Human immunodeficiency virus");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 12721);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "HIV with moltype DNA should be proviral"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetGenome(entry, CBioSource::eGenome_apicoplast);
+    expected_errors[0]->SetErrMsg("HIV with moltype RNA should have source location unset or set to genomic (on genomic RNA sequence)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // descriptive text in non-text qualifiers
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetTaxname(entry, "Arabidopsis thaliana");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 3702);
+    SetSubSource(entry, CSubSource::eSubtype_germline, "a");
+    SetSubSource(entry, CSubSource::eSubtype_rearranged, "a");
+    SetSubSource(entry, CSubSource::eSubtype_transgenic, "a");
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "a");
+    SetSubSource(entry, CSubSource::eSubtype_metagenomic, "a");
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
+    SetTaxon (feat->SetData().SetBiosrc(), 127582);
+    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+    AddFeat (feat, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Germline qualifier should not have descriptive text"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Rearranged qualifier should not have descriptive text"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Transgenic qualifier should not have descriptive text"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Environmental_sample qualifier should not have descriptive text"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Metagenomic qualifier should not have descriptive text"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Germline and rearranged should not both be present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Transgenic and environmental sample should not both be present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Environmental sample should also have isolation source or specific host annotated"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+ 
+    // unexpected sex qualifier
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    SetLineage(entry, "Viruses; foo");
+    SetSubSource(entry, CSubSource::eSubtype_sex, "a");
+    SetLineage(entry, "Bacteria; foo");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Unexpected use of /sex qualifier"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "Archaea; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "Eukaryota; Fungi; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingLineage",
+                              "No lineage for this BioSource."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingLineage",
+                              "No lineage for this BioSource."));
+
+    // no error if acceptable value
+    vector<string> ok_sex_vals;
+    ok_sex_vals.push_back("female");
+    ok_sex_vals.push_back("male");
+    ok_sex_vals.push_back("hermaphrodite");
+    ok_sex_vals.push_back("unisexual");
+    ok_sex_vals.push_back("bisexual");
+    ok_sex_vals.push_back("asexual");
+    ok_sex_vals.push_back("monoecious");
+    ok_sex_vals.push_back("monecious");
+    ok_sex_vals.push_back("dioecious");
+    ok_sex_vals.push_back("diecious");
+
+    for (vector<string>::iterator it = ok_sex_vals.begin();
+         it != ok_sex_vals.end();
+         ++it) {
+        SetSubSource(entry, CSubSource::eSubtype_sex, "");
+        SetSubSource(entry, CSubSource::eSubtype_sex, *it);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    CLEAR_ERRORS
+
+    SetSubSource(entry, CSubSource::eSubtype_sex, "");
+    // mating-type error for animal
+    SetLineage(entry, "Eukaryota; Metazoa; foo");
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "a");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Unexpected use of /mating_type qualifier"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // mating-type error for 3 plant lineages
+    SetLineage(entry, "Eukaryota; Viridiplantae; Streptophyta; Embryophyta; foo");
+    eval = validator.Validate(seh, options);
+    SetLineage(entry, "Eukaryota; Rhodophyta; foo");
+    eval = validator.Validate(seh, options);
+    SetLineage(entry, "Eukaryota; stramenopiles; Phaeophyceae; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // mating-type error for virus
+    SetLineage(entry, "Viruses; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // for other lineages, error if sex value
+    SetLineage(entry, "Eukaryota; Fungi; foo");
+    for (vector<string>::iterator it = ok_sex_vals.begin();
+         it != ok_sex_vals.end();
+         ++it) {
+        SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
+        SetSubSource(entry, CSubSource::eSubtype_mating_type, *it);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+    CLEAR_ERRORS
+
+    // no error if not valid sex value
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "a");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // plasmid
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
+    SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "foo");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Plasmid subsource but not plasmid location"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // error goes away if plasmid genome
+    CLEAR_ERRORS
+
+    SetGenome (entry, CBioSource::eGenome_plasmid);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // plastid-name
+    vector<string> plastid_vals;
+    plastid_vals.push_back("chloroplast");
+    plastid_vals.push_back("chromoplast");
+    plastid_vals.push_back("kinetoplast");
+    plastid_vals.push_back("plastid");
+    plastid_vals.push_back("apicoplast");
+    plastid_vals.push_back("leucoplast");
+    plastid_vals.push_back("proplastid");
+
+    SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Plastid name subsource chloroplast but not chloroplast location"));
+    for (vector<string>::iterator it = plastid_vals.begin();
+         it != plastid_vals.end();
+         ++it) {
+        SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
+        SetSubSource(entry, CSubSource::eSubtype_plastid_name, *it);
+        expected_errors[0]->SetErrMsg("Plastid name subsource " + *it + " but not " + *it + " location");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
+    SetSubSource(entry, CSubSource::eSubtype_plastid_name, "unrecognized");
+    expected_errors[0]->SetErrMsg("Plastid name subsource contains unrecognized value");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
+    //frequency
+    SetSubSource(entry, CSubSource::eSubtype_frequency, "1");
+    expected_errors[0]->SetSeverity(eDiag_Info);
+    expected_errors[0]->SetErrMsg("bad frequency qualifier value 1");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_frequency, "");
+    SetSubSource(entry, CSubSource::eSubtype_frequency, "abc");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("bad frequency qualifier value abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_frequency, "");
+
+    // unexpected qualifiers for viruses
+    SetLineage(entry, "Viruses; foo");
+    SetGenome(entry, CBioSource::eGenome_unknown);
+    SetSubSource(entry, CSubSource::eSubtype_sex, ok_sex_vals[0]);
+    expected_errors[0]->SetErrMsg("Virus has unexpected sex qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_sex, "");
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, "foo");
+    expected_errors[0]->SetErrMsg("Virus has unexpected cell_line qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, "");
+    SetSubSource(entry, CSubSource::eSubtype_cell_type, "foo");
+    expected_errors[0]->SetErrMsg("Virus has unexpected cell_type qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_cell_type, "");
+    SetSubSource(entry, CSubSource::eSubtype_tissue_type, "foo");
+    expected_errors[0]->SetErrMsg("Virus has unexpected tissue_type qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_tissue_type, "");
+
+    SetSubSource(entry, CSubSource::eSubtype_germline, "true");
+    SetSubSource(entry, CSubSource::eSubtype_rearranged, "true");
+    expected_errors[0]->SetErrMsg("Germline and rearranged should not both be present");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_germline, "");
+    SetSubSource(entry, CSubSource::eSubtype_rearranged, "");
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetSubSource(entry, CSubSource::eSubtype_transgenic, "true");
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
+    SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
+    SetFocus(entry);
+    AddGoodSourceFeature (entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Transgenic and environmental sample should not both be present"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_transgenic, "");
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
+    SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
+    SetSubSource(entry, CSubSource::eSubtype_metagenomic, "true");
+    expected_errors[0]->SetErrMsg("Metagenomic should also have environmental sample annotated");
+    expected_errors[0]->SetSeverity(eDiag_Critical);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
+    SetLineage(entry, "Eukaryota; foo");
+    SetSubSource(entry, CSubSource::eSubtype_sex, "monecious");
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "A");
+    expected_errors[0]->SetErrMsg("Sex and mating type should not both be present");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_sex, "");
+    SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
+    SetLineage(entry, "Eukaryota; metagenomes");
+    expected_errors[0]->SetErrMsg("If metagenomes appears in lineage, BioSource should have metagenomic qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    SetTaxname (entry, "uncultured bacterium");
+    SetLineage (entry, "Bacteria; foo");
+    expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    scope.RemoveTopLevelSeqEntry(seh);
+    MakeSeqLong(entry->SetSeq());
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
+    SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Uncultured bacterium sequence length is suspiciously high");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Environmental sample should also have isolation source or specific host annotated");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
+    SetDiv(entry, "BCT");
+    SetGenome(entry, CBioSource::eGenome_apicoplast);
+    expected_errors[0]->SetErrMsg("Bacterial source should not have organelle location");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetDiv(entry, "ENV");
+    SetGenome(entry, CBioSource::eGenome_unknown);
+    expected_errors[0]->SetErrMsg("BioSource with ENV division is missing environmental sample subsource");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetDiv(entry, "");
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
+    SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
+    SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
+    expected_errors[0]->SetErrMsg("Strain should not be present in an environmental sample");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
+    SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
+    SetOrgMod(entry, COrgMod::eSubtype_strain, "");
+    SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "foo");
+    expected_errors[0]->SetErrMsg("Metagenome source should also have metagenomic qualifier");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "");
+    SetOrgMod(entry, COrgMod::eSubtype_synonym, "synonym value");
+    SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "synonym value");
+    expected_errors[0]->SetErrMsg("OrgMod synonym is identical to OrgMod gb_synonym");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_synonym, "");
+    SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "");
+    SetOrgMod(entry, COrgMod::eSubtype_other, "cRNA");
+    expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    expected_errors[0]->SetErrMsg("cRNA note redundant with molecule type");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_other, "");
+    SetBiomol(entry, CMolInfo::eBiomol_genomic);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    SetLineage (entry, "Viruses; no DNA stage");
+    expected_errors[0]->SetErrMsg("Genomic DNA viral lineage indicates no DNA stage");
+
+    SetLineage (entry, "Bacteria; foo");
+    SetSubSource (entry, CSubSource::eSubtype_other, "cRNA");
+    expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    expected_errors[0]->SetErrMsg("cRNA note redundant with molecule type");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    SetLineage(entry, "Viruses; negative-strand viruses");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("nuc");
+    expected_errors[0]->SetErrMsg("Negative-strand virus with plus strand CDS should be mRNA or cRNA");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // error goes away if mRNA or cRNA or ambisense or synthetic
+    CLEAR_ERRORS
+
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+    SetLineage (entry, "Viruses; negative-strand viruses; Arenavirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Tospovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Tenuivirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "Viruses; negative-strand viruses");
+    SetOrigin (entry, CBioSource::eOrigin_synthetic);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+    SetDiv(entry, "VRL");
+    SetOrigin (entry, CBioSource::eOrigin_mut);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrigin (entry, CBioSource::eOrigin_artificial);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other_genetic);
+    SetTaxname(entry, "synthetic construct");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrigin (entry, CBioSource::eOrigin_synthetic);
+    SetTaxname (entry, "Sebaea microphylla");
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrigin(entry, CBioSource::eOrigin_unknown);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // still no error if genomic
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error if not genomic
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BioSourceInconsistency",
+                                                "Negative-strand virus with minus strand CDS should be genomic")); 
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    SetLineage(entry, "Viruses; negative-strand viruses");
+    CRef<CSeq_feat> misc_feat = AddMiscFeature (entry);
+    misc_feat->SetComment("nonfunctional");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetErrMsg("Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error goes away if mRNA or cRNA or ambisense or synthetic
+    CLEAR_ERRORS
+
+    SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry, CMolInfo::eBiomol_cRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry, CMolInfo::eBiomol_genomic);
+    SetLineage (entry, "Viruses; negative-strand viruses; Arenavirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Tospovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Viruses; negative-strand viruses; Tenuivirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // still no error if genomic
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error if not genomic
+    SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                                                "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic")); 
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_FastaBracketTitle)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTitle (entry, "[a=b]");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FastaBracketTitle",
+                              "Title may have unparsed [...=...] construct"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no error if TMSMART or BankIt
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetGeneral().SetDb("TMSMART");
+    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("good");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetGeneral().SetDb("BankIt");
+    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("good");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MissingText)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetComment();
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    // comment
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingText",
+                              "Comment descriptor needs text"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // title
+    scope.RemoveTopLevelSeqEntry(seh);
+    desc->SetTitle();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Title descriptor needs text");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // name
+    scope.RemoveTopLevelSeqEntry(seh);
+    desc->SetName();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Name descriptor needs text");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // region
+    scope.RemoveTopLevelSeqEntry(seh);
+    desc->SetRegion();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Region descriptor needs text");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource (entry, CSubSource::eSubtype_collection_date, "May 1, 2010");
+
+    STANDARD_SETUP
+
+    // bad format
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCollectionDate",
+                              "Collection_date format is not in DD-Mmm-YYYY format"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // still bad format
+    SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    SetSubSource (entry, CSubSource::eSubtype_collection_date, "1-05-2010");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+   
+    SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    SetSubSource (entry, CSubSource::eSubtype_collection_date, "31-Dec-2099");
+    expected_errors[0]->SetErrMsg("Collection_date is in the future");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "May 1, 2010");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerSequence",
+                              "PCR forward primer sequence format is incorrect, first bad character is '?'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerSequence",
+                              "PCR primer does not have both sequences"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "01-May-2010");
+    expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is '0'");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "AAATQAA");
+    expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is 'q'");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "AAATGAA;AA");
+    expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is '?'");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "(AAATGAA,WW)");
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATGAA,W:W)");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadPunctuation)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetTitle("abc.");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    // end with period
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPunctuation",
+                              "Title descriptor ends in bad punctuation"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // end with comma
+    desc->SetTitle("abc,");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // end with semicolon
+    desc->SetTitle("abc;");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // end with colon
+    desc->SetTitle("abc:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerName)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_name, "(AAATGAA,WW)");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerName",
+                              "PCR primer name appears to be a sequence"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_name, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "(AAATGAA,W:W)");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no error if invalid sequence
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "AAATQAA");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceOnProtein)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    AddGoodSource (entry->SetSet().SetSeq_set().back());
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BioSourceOnProtein",
+                              "Nuc-prot set has 1 protein with a BioSource descriptor"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceDbTagConflict)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetDbxref (entry, "AFTOL", 12345);
+    SetDbxref (entry, "AFTOL", 12346);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceDbTagConflict",
+                              "BioSource uses db AFTOL multiple times"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_DuplicatePCRPrimerSequence)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATTTGGGCCC,AAATTTGGGCCC)");
+    SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "(CCCTTTGGGCCC,CCCTTTGGGCCC)");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "DuplicatePCRPrimerSequence",
+                              "PCR primer sequence has duplicates"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MultipleNames)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> d1(new CSeqdesc());
+    d1->SetName("name #1");
+    entry->SetSeq().SetDescr().Set().push_back(d1);
+    CRef<CSeqdesc> d2(new CSeqdesc());
+    d2->SetName("name #1");
+    entry->SetSeq().SetDescr().Set().push_back(d2);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleNames",
+                              "Undesired multiple name descriptors, identical text"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    d2->SetName("name #2");
+    expected_errors[0]->SetErrMsg("Undesired multiple name descriptors, different text");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MultipleComments)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> d1(new CSeqdesc());
+    d1->SetComment("name #1");
+    entry->SetSeq().SetDescr().Set().push_back(d1);
+    CRef<CSeqdesc> d2(new CSeqdesc());
+    d2->SetComment("name #1");
+    entry->SetSeq().SetDescr().Set().push_back(d2);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleComments",
+                              "Undesired multiple comment descriptors, identical text"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // ok if different
+    d2->SetComment("name #2");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonProblem)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "40 N 50 E");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "50 N 40 E");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonProblem",
+                              "Multiple lat_lon on BioSource"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
+                              "Multiple lat_lon qualifiers present"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonFormat)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "40 N 50 E, abc");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonFormat",
+                              "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "40 E 50 N");
+    expected_errors[0]->SetErrMsg("lat_lon format is incorrect - should be dd.dd N|S ddd.dd E|W");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonRange)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "90.1 N 181 E");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonRange",
+                              "latitude value is out of range - should be between 90.00 N and 90.00 S"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonRange",
+                              "longitude value is out of range - should be between 180.00 E and 180.00 W"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "90.1 S 181 W");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 S 80 W");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
+                              "Latitude should be set to N (northern hemisphere)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 80 E");
+    expected_errors[0]->SetErrMsg("Longitude should be set to W (western hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_country, "");
+    SetSubSource(entry, CSubSource::eSubtype_country, "Madagascar");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 N 47 E");
+    expected_errors[0]->SetErrMsg("Latitude should be set to S (southern hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 S 47 W");
+    expected_errors[0]->SetErrMsg("Longitude should be set to E (eastern hemisphere)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 N 47 E");
+    SetSubSource(entry, CSubSource::eSubtype_country, "");
+    SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
+                              "Latitude and longitude values appear to be exchanged"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "46.5 N 20 E");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonCountry",
+                              "Lat_lon '46.5 N 20 E' MIGHT be in 'Hungary' instead of 'Romania'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "34 N 65 E");
+    expected_errors[0]->SetErrMsg("Lat_lon '34 N 65 E' does not map to 'Romania', but may be in 'Afghanistan'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 E");
+    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 E' does not map to 'Romania', but may be in 'Austria'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 W");
+    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 W' does not map to 'Romania'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonState)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA: South Carolina");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "36 N 80 W");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "LatLonState",
+                              "Lat_lon '36 N 80 W' MIGHT be in 'USA' instead of 'USA: South Carolina'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Metapone madagascaria");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadSpecificHost",
+                              "Specific host value is misspelled: Metapone madagascaria"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Homo Sapiens");
+    expected_errors[0]->SetErrMsg("Specific host value is incorrectly capitalized: Homo Sapiens");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Homo nonrecognizedus");
+    expected_errors[0]->SetErrMsg("Invalid value for specific host: Homo nonrecognizedus");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Aedes");
+    expected_errors[0]->SetErrMsg("Specific host value is ambiguous: Aedes");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingIllegalStatus)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    AddRefGeneTrackingUserObject(entry);
+    SetRefGeneTrackingStatus(entry, "unknown");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "RefGeneTrackingIllegalStatus",
+                              "RefGeneTracking object has illegal Status 'unknown'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    vector<string> old_countries;
+    old_countries.push_back("Belgian Congo");
+    old_countries.push_back("British Guiana");
+    old_countries.push_back("Burma");
+    old_countries.push_back("Czechoslovakia");
+    old_countries.push_back("Korea");
+    old_countries.push_back("Serbia and Montenegro");
+    old_countries.push_back("Siam");
+    old_countries.push_back("USSR");
+    old_countries.push_back("Yugoslavia");
+    old_countries.push_back("Zaire");
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ReplacedCountryCode",
+                              ""));
+
+    ITERATE (vector<string>, it, old_countries) {
+        SetSubSource(entry, CSubSource::eSubtype_country, *it);
+        expected_errors[0]->SetErrMsg("Replaced country name [" + *it + "]");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetSubSource(entry, CSubSource::eSubtype_country, "");
+    }
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadInstitutionCode",
+                              "Voucher is missing institution code"));
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, ":foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, ":foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, ":foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    // codes that need disambiguating country
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    vector<string> ambig;
+    // specimen voucher codes
+    ambig.push_back("BAH");
+    ambig.push_back("ACE");
+    ambig.push_back("SLU");
+    ambig.push_back("UAB");
+    ambig.push_back("CAIM");
+    ambig.push_back("HER");
+    ambig.push_back("DSC");
+    ambig.push_back("NMW");
+    ambig.push_back("DNHM");
+    ambig.push_back("BNHM");
+    ambig.push_back("UI");
+    ambig.push_back("KMK");
+    ambig.push_back("MZUT");
+    ambig.push_back("MT");
+    ambig.push_back("MP");
+    ambig.push_back("NCCB");
+    ambig.push_back("NASC");
+    ambig.push_back("IZAC");
+    ambig.push_back("CCG");
+    ambig.push_back("PIN");
+    ambig.push_back("NMB");
+    ambig.push_back("UB");
+    ambig.push_back("ARC");
+    ambig.push_back("HSU");
+    ambig.push_back("CAUP");
+    ambig.push_back("ISU");
+    ambig.push_back("SDSU");
+    ambig.push_back("GC");
+    ambig.push_back("UNL");
+    ambig.push_back("NCIP");
+    ambig.push_back("MZUP");
+    ambig.push_back("MG");
+    ambig.push_back("ACM");
+    ambig.push_back("HNHM");
+    ambig.push_back("PMS");
+    ambig.push_back("BMBN");
+    ambig.push_back("LE");
+    ambig.push_back("GCM");
+    ambig.push_back("BNA");
+    ambig.push_back("SU");
+    ambig.push_back("TMP");
+    ambig.push_back("DMNH");
+    ambig.push_back("SDNH");
+    ambig.push_back("ZMUH");
+    ambig.push_back("NTM");
+    ambig.push_back("UMO");
+    ambig.push_back("SMF");
+    ambig.push_back("CDC");
+    ambig.push_back("ZSP");
+    ambig.push_back("TAU");
+    ambig.push_back("MJG");
+    ambig.push_back("DUM");
+    ambig.push_back("ANU");
+    ambig.push_back("CPAP");
+    ambig.push_back("CSU");
+    ambig.push_back("WACA");
+    ambig.push_back("MMNH");
+    ambig.push_back("ALA");
+    ambig.push_back("RV");
+    ambig.push_back("ABS");
+    ambig.push_back("FM");
+    ambig.push_back("HNU");
+    ambig.push_back("PO");
+    ambig.push_back("UNR");
+    ambig.push_back("GAM");
+    ambig.push_back("MCM");
+    ambig.push_back("LU");
+    ambig.push_back("SDM");
+    ambig.push_back("PMK");
+    ambig.push_back("VI");
+    ambig.push_back("IMM");
+    ambig.push_back("R");
+    ambig.push_back("CHM");
+    ambig.push_back("CMC");
+    ambig.push_back("JSPC");
+    ambig.push_back("YU");
+    ambig.push_back("STM");
+    ambig.push_back("RSM");
+    ambig.push_back("BB");
+    ambig.push_back("BHM");
+    ambig.push_back("CBU");
+    ambig.push_back("MCCM");
+    ambig.push_back("SBM");
+    ambig.push_back("MHNC");
+    ambig.push_back("NMSU");
+    ambig.push_back("OTM");
+    ambig.push_back("LP");
+    ambig.push_back("SME");
+    ambig.push_back("OSU");
+    ambig.push_back("PEM");
+    ambig.push_back("UMF");
+    ambig.push_back("CIS");
+    ambig.push_back("LBG");
+    ambig.push_back("CCAC");
+    ambig.push_back("SNP");
+    ambig.push_back("UT");
+    ambig.push_back("IBA");
+    ambig.push_back("UNCC");
+    ambig.push_back("NHMC");
+    ambig.push_back("BAC");
+    ambig.push_back("PMG");
+    ambig.push_back("MRC");
+    ambig.push_back("ETH");
+    ambig.push_back("OMC");
+    ambig.push_back("NMV");
+    ambig.push_back("MLS");
+    ambig.push_back("NJM");
+    ambig.push_back("P");
+    ambig.push_back("INA");
+    ambig.push_back("BCM");
+    ambig.push_back("YM");
+    ambig.push_back("CAM");
+    ambig.push_back("UA");
+    ambig.push_back("OSM");
+    ambig.push_back("CPS");
+    ambig.push_back("POKM");
+    ambig.push_back("VSM");
+    ambig.push_back("ZMG");
+    ambig.push_back("IO");
+    ambig.push_back("USM");
+    ambig.push_back("CIP");
+    ambig.push_back("UCS");
+    ambig.push_back("CN");
+    ambig.push_back("PCM");
+    ambig.push_back("MB");
+    ambig.push_back("MU");
+    ambig.push_back("ISC");
+    ambig.push_back("CIB");
+    ambig.push_back("GML");
+    ambig.push_back("NU");
+    ambig.push_back("NCSC");
+    ambig.push_back("MHNN");
+    ambig.push_back("SMW");
+    ambig.push_back("NCC");
+    ambig.push_back("MSM");
+    ambig.push_back("NMBA");
+    ambig.push_back("AS");
+    ambig.push_back("RM");
+    ambig.push_back("MBM");
+    ambig.push_back("BM");
+    ambig.push_back("UPM");
+    ambig.push_back("CCM");
+    ambig.push_back("MSU");
+    ambig.push_back("PI");
+    ambig.push_back("CENA");
+    ambig.push_back("IBRP");
+    ambig.push_back("UW");
+    ambig.push_back("CUMZ");
+    ambig.push_back("CRE");
+    ambig.push_back("FSC");
+    ambig.push_back("CHAS");
+    ambig.push_back("ENCB");
+    ambig.push_back("BAS");
+    ambig.push_back("GOE");
+    ambig.push_back("PSS");
+    ambig.push_back("NHMB");
+    ambig.push_back("CCB");
+    ambig.push_back("SMNH");
+    ambig.push_back("SUM");
+    ambig.push_back("NMPG");
+    ambig.push_back("USP");
+    ambig.push_back("IPB");
+    ambig.push_back("BCC");
+    ambig.push_back("FNU");
+    ambig.push_back("SHM");
+    ambig.push_back("UM");
+    ambig.push_back("SMP");
+    ambig.push_back("TNSC");
+    ambig.push_back("LS");
+    ambig.push_back("TMC");
+    ambig.push_back("HUT");
+    ambig.push_back("ZMUO");
+    ambig.push_back("ALM");
+    ambig.push_back("ITCC");
+    ambig.push_back("TM");
+    ambig.push_back("IAM");
+    ambig.push_back("WB");
+    ambig.push_back("UK");
+    ambig.push_back("ZMK");
+    ambig.push_back("LBM");
+    ambig.push_back("NI");
+    ambig.push_back("TF");
+    ambig.push_back("CB");
+    ambig.push_back("AMP");
+    ambig.push_back("OMNH");
+    ambig.push_back("MM");
+    ambig.push_back("PMU");
+    ambig.push_back("DM");
+    ambig.push_back("RIVE");
+    ambig.push_back("TARI");
+    ambig.push_back("NMNH");
+    ambig.push_back("CSCS");
+    ambig.push_back("BPI");
+    ambig.push_back("PSU");
+    ambig.push_back("IMT");
+    ambig.push_back("MZV");
+    ambig.push_back("SZE");
+    ambig.push_back("NSMC");
+    ambig.push_back("CUVC");
+    ambig.push_back("LMJ");
+    ambig.push_back("UC");
+    ambig.push_back("ZIUS");
+    ambig.push_back("FRI");
+    ambig.push_back("CDA");
+    ambig.push_back("ZMUA");
+    ambig.push_back("MZUC");
+    ambig.push_back("UCR");
+    ambig.push_back("CS");
+    ambig.push_back("BR");
+    ambig.push_back("UG");
+    ambig.push_back("MDH");
+    ambig.push_back("USD");
+    ambig.push_back("MNHM");
+    ambig.push_back("MAD");
+    ambig.push_back("PMA");
+    ambig.push_back("ICN");
+    ambig.push_back("TU");
+    ambig.push_back("PMNH");
+    ambig.push_back("SAU");
+    ambig.push_back("UKMS");
+    ambig.push_back("KM");
+    ambig.push_back("MCP");
+    ambig.push_back("GMNH");
+    ambig.push_back("MAFF");
+    ambig.push_back("SSM");
+    ambig.push_back("MZ");
+    ambig.push_back("WSU");
+    ambig.push_back("CUP");
+    ambig.push_back("CIAN");
+    ambig.push_back("ZMT");
+    ambig.push_back("IMS");
+    ambig.push_back("TCDU");
+    ambig.push_back("SIAC");
+    ambig.push_back("DFEC");
+    ambig.push_back("CBD");
+    ambig.push_back("SWC");
+    ambig.push_back("MD");
+    ambig.push_back("FU");
+    ambig.push_back("UV");
+    ambig.push_back("URM");
+    ambig.push_back("JNU");
+    ambig.push_back("IZ");
+    ambig.push_back("UCM");
+    ambig.push_back("SM");
+    ambig.push_back("UCL");
+    ambig.push_back("UAIC");
+    ambig.push_back("LEB");
+    ambig.push_back("MCSN");
+    ambig.push_back("UU");
+    ambig.push_back("PUC");
+    ambig.push_back("OS");
+    ambig.push_back("SNM");
+    ambig.push_back("AKU");
+    ambig.push_back("MH");
+    ambig.push_back("MOR");
+    ambig.push_back("IM");
+    ambig.push_back("MSNT");
+    ambig.push_back("IGM");
+    ambig.push_back("NAP");
+    ambig.push_back("NHMR");
+    ambig.push_back("MW");
+    ambig.push_back("PPCC");
+    ambig.push_back("CNHM");
+    ambig.push_back("NSM");
+    ambig.push_back("IAL");
+    ambig.push_back("IBL");
+    ambig.push_back("PCU");
+    ambig.push_back("HM");
+
+    ITERATE (vector<string>, it, ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
+        SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, *it + ":foo");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+    }
+
+    // bio-material
+    ambig.clear();
+    ambig.push_back("NASC");
+    ambig.push_back("TCDU");
+    ambig.push_back("CIP");
+
+    ITERATE (vector<string>, it, ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
+        SetOrgMod(entry, COrgMod::eSubtype_bio_material, *it + ":foo");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    }
+
+    // culture-collection
+    ambig.clear();
+    ambig.push_back("CAIM");
+    ambig.push_back("STM");
+    ambig.push_back("HER");
+    ambig.push_back("FSC");
+    ambig.push_back("MDH");
+    ambig.push_back("DSC");
+    ambig.push_back("IFM");
+    ambig.push_back("MCCM");
+    ambig.push_back("CCB");
+    ambig.push_back("NCCB");
+    ambig.push_back("MAFF");
+    ambig.push_back("LBG");
+    ambig.push_back("BCC");
+    ambig.push_back("CCAC");
+    ambig.push_back("CCF");
+    ambig.push_back("IBA");
+    ambig.push_back("CAUP");
+    ambig.push_back("MRC");
+    ambig.push_back("ETH");
+    ambig.push_back("TMC");
+    ambig.push_back("CBD");
+    ambig.push_back("HUT");
+    ambig.push_back("URM");
+    ambig.push_back("NJM");
+    ambig.push_back("INA");
+    ambig.push_back("BTCC");
+    ambig.push_back("ACM");
+    ambig.push_back("YM");
+    ambig.push_back("UCM");
+    ambig.push_back("IZ");
+    ambig.push_back("ITCC");
+    ambig.push_back("IAM");
+    ambig.push_back("WB");
+    ambig.push_back("LE");
+    ambig.push_back("BNA");
+    ambig.push_back("UCL");
+    ambig.push_back("LCC");
+    ambig.push_back("LBM");
+    ambig.push_back("NI");
+    ambig.push_back("CB");
+    ambig.push_back("AMP");
+    ambig.push_back("CDC");
+    ambig.push_back("RIVE");
+    ambig.push_back("CIP");
+    ambig.push_back("DUM");
+    ambig.push_back("AKU");
+    ambig.push_back("CN");
+    ambig.push_back("CCDM");
+    ambig.push_back("PCM");
+    ambig.push_back("MU");
+    ambig.push_back("CISM");
+    ambig.push_back("ISC");
+    ambig.push_back("IMT");
+    ambig.push_back("NU");
+    ambig.push_back("RV");
+    ambig.push_back("UC");
+    ambig.push_back("NCSC");
+    ambig.push_back("CCY");
+    ambig.push_back("NCC");
+    ambig.push_back("FRI");
+    ambig.push_back("GAM");
+    ambig.push_back("RM");
+    ambig.push_back("MCM");
+    ambig.push_back("PPCC");
+    ambig.push_back("CDA");
+    ambig.push_back("IAL");
+    ambig.push_back("IBL");
+    ambig.push_back("VI");
+    ambig.push_back("CS");
+    ambig.push_back("PCU");
+    ambig.push_back("CVCC");
+    ambig.push_back("BR");
+    ambig.push_back("CCM");
+    ambig.push_back("MSU");
+    ITERATE (vector<string>, it, ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
+        SetOrgMod(entry, COrgMod::eSubtype_culture_collection, *it + ":foo");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+    }
+
+    expected_errors[0]->SetErrMsg("Institution code zzz is not in list");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "zzz:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "zzz:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "zzz:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    expected_errors[0]->SetErrMsg("Institution code abrc exists, but correct capitalization is ABRC");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "abrc:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+
+    expected_errors[0]->SetErrMsg("Institution code a exists, but correct capitalization is A");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "a:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+
+    expected_errors[0]->SetErrMsg("Institution code abkmi exists, but correct capitalization is ABKMI");
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "abkmi:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionCode)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCollectionCode",
+                              "Institution code ABRC exists, but collection ABRC:bar is not in list"));
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:bar:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+
+    expected_errors[0]->SetErrMsg("Institution code A exists, but collection A:bar is not in list");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "A:bar:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+
+    expected_errors[0]->SetErrMsg("Institution code ABKMI exists, but collection ABKMI:bar is not in list");
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ABKMI:bar:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    CLEAR_ERRORS
+
+    // DNA is ok for biomaterial
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:DNA:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadVoucherID)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadVoucherID",
+                              "Voucher is missing specific identifier"));
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "AAPI:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ABKMI:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_UnstructuredVoucher)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnstructuredVoucher",
+                              "Culture_collection should be structured, but is not"));
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ABKMI");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_ChromosomeLocation)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ChromosomeLocation",
+                              "INDEXER_ONLY - BioSource location is chromosome"));
+    SetGenome(entry, CBioSource::eGenome_chromosome);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceQualifiers)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCountryCode",
+                              "Multiple country names on BioSource"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
+                              "Multiple country qualifiers present"));
+    SetSubSource(entry, CSubSource::eSubtype_country, "USA");
+    SetSubSource(entry, CSubSource::eSubtype_country, "Zimbabwe");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_country, "");
+
+    expected_errors[0]->SetErrMsg("Multiple lat_lon on BioSource");
+    expected_errors[0]->SetErrCode("LatLonProblem");
+    expected_errors[1]->SetErrMsg("Multiple lat_lon qualifiers present");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 50 W");
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "50 N 35 W");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+
+    expected_errors[0]->SetErrMsg("Multiple fwd_primer_seq qualifiers present");
+    expected_errors[0]->SetErrCode("MultipleSourceQualifiers");
+    expected_errors[1]->SetErrMsg("Multiple rev_primer_seq qualifiers present");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
+                              "Multiple fwd_primer_name qualifiers present"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceQualifiers",
+                              "Multiple rev_primer_name qualifiers present"));
+    SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "AATTGGCC");
+    SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "CCTTAAAA");
+    SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "AATTGGCC");
+    SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "CCTTAAAA");
+    SetSubSource(entry, CSubSource::eSubtype_fwd_primer_name, "fwd1");
+    SetSubSource(entry, CSubSource::eSubtype_fwd_primer_name, "fwd2");
+    SetSubSource(entry, CSubSource::eSubtype_rev_primer_name, "rev1");
+    SetSubSource(entry, CSubSource::eSubtype_rev_primer_name, "rev2");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+static bool SubSourceHasOtherRules (CSubSource::TSubtype subtype) 
+{
+    if (subtype == CSubSource::eSubtype_sex
+        || subtype == CSubSource::eSubtype_frequency
+        || subtype == CSubSource::eSubtype_plasmid_name
+        || subtype == CSubSource::eSubtype_transposon_name
+        || subtype == CSubSource::eSubtype_insertion_seq_name
+        || subtype == CSubSource::eSubtype_plastid_name
+        || subtype == CSubSource::eSubtype_country
+        || subtype == CSubSource::eSubtype_lat_lon
+        || subtype == CSubSource::eSubtype_collection_date
+        || subtype == CSubSource::eSubtype_fwd_primer_name
+        || subtype == CSubSource::eSubtype_fwd_primer_seq
+        || subtype == CSubSource::eSubtype_rev_primer_name
+        || subtype == CSubSource::eSubtype_rev_primer_seq
+        || subtype == CSubSource::eSubtype_country) {
+        return true;
+    } else {
+        return false;
     }
 }
-#endif
+
+
+static bool OrgModHasOtherRules (COrgMod::TSubtype subtype) 
+{
+    if (subtype == COrgMod::eSubtype_variety
+        || subtype == COrgMod::eSubtype_sub_species
+        || subtype == COrgMod::eSubtype_forma
+        || subtype == COrgMod::eSubtype_forma_specialis
+        || subtype == COrgMod::eSubtype_culture_collection
+        || subtype == COrgMod::eSubtype_bio_material
+        || subtype == COrgMod::eSubtype_specimen_voucher
+        || subtype == COrgMod::eSubtype_metagenome_source) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnbalancedParentheses",
+                              "Unbalanced parentheses in taxname 'Malio malefi (abc'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+                              "Taxonomy lookup failed with message 'Organism not found'"));
+    SetTaxname(entry, "Malio malefi (abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in taxname 'Malio malefi )abc'");
+    SetTaxname(entry, "Malio malefi )abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetTaxname(entry, "Sebaea microphylla");
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    for (CSubSource::TSubtype subtype = CSubSource::eSubtype_chromosome;
+         subtype <= CSubSource::eSubtype_haplogroup;
+         subtype++) {
+        if (subtype != CSubSource::eSubtype_germline
+            && subtype != CSubSource::eSubtype_rearranged
+            && subtype != CSubSource::eSubtype_transgenic
+            && subtype != CSubSource::eSubtype_environmental_sample
+            && subtype != CSubSource::eSubtype_metagenomic) {
+            if (SubSourceHasOtherRules(subtype)) {
+                continue;
+            }
+
+            SetSubSource(entry, subtype, "");
+            SetSubSource(entry, subtype, "no left (abc");
+            expected_errors[0]->SetErrMsg("Unbalanced parentheses in subsource 'no left (abc'");
+            eval = validator.Validate(seh, options);
+            CheckErrors (*eval, expected_errors);
+            SetSubSource(entry, subtype, "");
+            expected_errors[0]->SetErrMsg("Unbalanced parentheses in subsource 'no right )abc'");
+            SetSubSource(entry, subtype, "no right )abc");
+            eval = validator.Validate(seh, options);
+            CheckErrors (*eval, expected_errors);
+            SetSubSource(entry, subtype, "");
+            if (subtype == CSubSource::eSubtype_chromosome) {
+                SetSubSource(entry, subtype, "1");
+            }
+        }
+    }
+    // also check other
+    SetSubSource(entry, CSubSource::eSubtype_other, "no left (abc");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in subsource 'no left (abc'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_other, "");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in subsource 'no right )abc'");
+    SetSubSource(entry, CSubSource::eSubtype_other, "no right )abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_other, "");
+
+    for (COrgMod::TSubtype subtype = COrgMod::eSubtype_strain;
+         subtype <= COrgMod::eSubtype_metagenome_source;
+         subtype++) {
+        if (OrgModHasOtherRules(subtype)) {
+            continue;
+        }
+        SetOrgMod(entry, subtype, "no left (abc");
+        expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no left (abc'");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, subtype, "");
+        expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no right )abc'");
+        SetOrgMod(entry, subtype, "no right )abc");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetOrgMod(entry, subtype, "");
+    }
+    // also check old_lineage and other
+    SetOrgMod(entry, COrgMod::eSubtype_old_lineage, "no left (abc");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no left (abc'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_old_lineage, "");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no right )abc'");
+    SetOrgMod(entry, COrgMod::eSubtype_old_lineage, "no right )abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_old_lineage, "");
+
+    SetOrgMod(entry, COrgMod::eSubtype_other, "no left (abc");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no left (abc'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_other, "");
+    expected_errors[0]->SetErrMsg("Unbalanced parentheses in orgmod 'no right )abc'");
+    SetOrgMod(entry, COrgMod::eSubtype_other, "no right )abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_other, "");
+
+    CLEAR_ERRORS
+    // should get no error for unbalanced parentheses in old name
+    SetOrgMod(entry, COrgMod::eSubtype_old_name, "no left (abc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceVouchers)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    // no errors if different institutions
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:foo");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "AGRITEC:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // no errors if collection is DNA
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:DNA:foo");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:DNA:bar");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // errors if same institition:collection
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MultipleSourceVouchers",
+        "Multiple vouchers with same institution:collection"));
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "USDA:CFRA:foo");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "USDA:CFRA:bar");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // errors if same institition:collection
+    expected_errors[0]->SetErrMsg("Multiple vouchers with same institution");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "USDA:CFRA:foo");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "USDA:GRIN:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadCountryCapitalization)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCountryCapitalization",
+        "Bad country capitalization [saint pierre and miquelon]"));
+    SetSubSource(entry, CSubSource::eSubtype_country, "saint pierre and miquelon");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_WrongVoucherType)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "WrongVoucherType",
+        "Institution code ABRC should be bio_material"));
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ABRC:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "ABRC:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+
+    expected_errors[0]->SetErrMsg("Institution code ABKMI should be culture_collection");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABKMI:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "ABKMI:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
+
+    expected_errors[0]->SetErrMsg("Institution code AA should be specimen_voucher");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "AA:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "AA:foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_TitleHasPMID)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTitle (entry, "foo bar something something (PMID 1)");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TitleHasPMID",
+                              "Title descriptor has internal PMID"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadKeyword)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetGenbank().SetKeywords().push_back("BARCODE");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadKeyword",
+                              "BARCODE keyword without Molinfo.tech barcode"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetDescr().Set().pop_back();
+    SetTech (entry, CMolInfo::eTech_barcode);
+    expected_errors[0]->SetSeverity(eDiag_Info);
+    expected_errors[0]->SetErrMsg("Molinfo.tech barcode without BARCODE keyword");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_NoOrganismInTitle)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    SetTitle(entry, "Something that does not start with organism");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "NoOrganismInTitle",
+                              "RefSeq nucleotide title does not start with organism name"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodProtSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NP_123456");
+    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetOther().SetAccession("NP_123456");
+    SetTitle(entry, "Something that does not end with organism");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NP_123456");
+    expected_errors[0]->SetErrMsg("RefSeq protein title does not end with organism name");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    SetSubSource(entry, CSubSource::eSubtype_chromosome, "");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MissingChromosome",
+                              "Missing chromosome qualifier on NC or AC RefSeq record"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("AC_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("AC_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // error is suppressed if prokaryote or organelle
+    SetLineage (entry, "Viruses; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Bacteria; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "Archaea; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage (entry, "some lineage");
+    SetDiv(entry, "BCT");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetDiv(entry, "VRL");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetDiv(entry, "");
+
+    // error is suppressed if organelle
+    SetGenome (entry, CBioSource::eGenome_chloroplast);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_chromoplast);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_kinetoplast);
+    SetLineage(entry, "some lineage; Kinetoplastida");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_mitochondrion);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_cyanelle);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_nucleomorph);
+    SetTaxname(entry, "Bigelowiella natans");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 227086);
+    SetLineage(entry, "some lineage; Chlorarachniophyceae");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_apicoplast);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_leucoplast);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_proplastid);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetGenome (entry, CBioSource::eGenome_hydrogenosome);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().SetType().SetStr("StructuredComment");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    // no prefix only empty errors
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UserObjectProblem",
+                                                 "Structured Comment user object descriptor is empty"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // unrecognized prefix, should be no errors
+    CRef<CUser_field> prefix_field(new CUser_field());
+    prefix_field->SetLabel().SetStr("StructuredCommentPrefix");
+    prefix_field->SetData().SetStr("Unknown prefix");
+    desc->SetUser().SetData().push_back(prefix_field);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // should complain about missing required fields
+    prefix_field->SetData().SetStr("##Genome-Assembly-Data-START##");
+    vector<string> required_fields;
+    required_fields.push_back("Finishing Goal");
+    required_fields.push_back("Current Finishing Status");
+    required_fields.push_back("Assembly Method");
+    required_fields.push_back("Genome Coverage");
+    required_fields.push_back("Sequencing Technology");
+
+    ITERATE(vector<string>, it, required_fields) {
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+                                  "Required field " + *it + " is missing"));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // add fields in wrong order, with bad values where appropriate
+    REVERSE_ITERATE(vector<string>, it, required_fields) {
+        CRef<CUser_field> field(new CUser_field());
+        field->SetLabel().SetStr(*it);
+        field->SetData().SetStr("bad value");
+        desc->SetUser().SetData().push_back(field);
+    }
+
+    size_t pos = 0;
+    ITERATE(vector<string>, it, required_fields) {
+        if (pos < required_fields.size() - 1) {
+            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+                                      *it + " field is out of order"));
+        }
+        if (!NStr::Equal(*it, "Genome Coverage") && !NStr::Equal(*it, "Sequencing Technology")) {
+            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+                                      "bad value is not a valid value for " + *it));
+        }
+        ++pos;
+    }
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    prefix_field->SetData().SetStr("##MIGS-Data-START##");
+    required_fields.clear();
+    required_fields.push_back("alt_elev");
+    required_fields.push_back("assembly");
+    required_fields.push_back("collection_date");
+    required_fields.push_back("country");
+    required_fields.push_back("depth");
+    required_fields.push_back("environment");
+    required_fields.push_back("investigation_type");
+    required_fields.push_back("isol_growth_condt");
+    required_fields.push_back("lat_lon");
+    required_fields.push_back("project_name");
+    required_fields.push_back("sequencing_meth");
+
+    ITERATE(vector<string>, it, required_fields) {
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+                                  "Required field " + *it + " is missing"));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_NonAsciiAsn)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr); 
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    CConstRef<CValidError> eval;
+    CValidator validator(*objmgr);
+    unsigned int options = CValidator::eVal_need_isojta 
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez
+                          | CValidator::eVal_non_ascii;
+    vector< CExpectedError *> expected_errors;
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NonAsciiAsn",
+                              "Non-ascii chars in input ASN.1 strings"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error should only appear once
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("nuc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CAuthor> author(new CAuthor());
+    author->SetName().SetName().SetLast("et al.");
+    CRef<CPub> pub(new CPub());
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+    CRef<CCit_art::TTitle::C_E> art_title(new CCit_art::TTitle::C_E());
+    art_title->SetName("article title");
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "AuthorListHasEtAl",
+                              "Author list ends in et al."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    CRef<CCit_book::TTitle::C_E> book_title(new CCit_book::TTitle::C_E());
+    book_title->SetName("book title");
+    pub->SetMan().SetCit().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetProc().SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // try as pub feature
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetDescr().Set().pop_back();
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(10);
+    feat->SetData().SetPub().SetPub().Set().push_back(pub);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry->SetSeq().SetAnnot().push_back(annot);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetMan().SetCit().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetProc().SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // look for contains instead of ends with
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetAnnot().pop_back();
+    entry->SetDescr().Set().push_back(desc);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("Author list contains et al.");
+    CRef<CAuthor> author2 = BuildGoodAuthor();
+
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetMan().SetCit().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetProc().SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // try as pub feature
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetDescr().Set().pop_back();
+    entry->SetSeq().SetAnnot().push_back(annot);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetArticle().SetTitle().Set().push_back(art_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetMan().SetCit().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetMan().SetCit().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetBook().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetProc().SetBook().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetProc().SetBook().SetTitle().Set().push_back(book_title);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author2);
+    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
+{
+    // validate cit-sub
+    CRef<CSeq_submit> submit(new CSeq_submit());
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    submit->SetData().SetEntrys().push_back(entry);
+    CRef<CAuthor> author = BuildGoodAuthor();
+    submit->SetSub().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
+    
+    STANDARD_SETUP
+
+    vector<string> ids;
+    ids.push_back("good");
+    ids.push_back("NC_123456");
+
+    ITERATE(vector<string>, id_it, ids) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        if (NStr::StartsWith(*id_it, "NC_")) {
+            entry->SetSeq().SetId().front()->SetOther().SetAccession(*id_it);
+        } else {
+            entry->SetSeq().SetId().front()->SetLocal().SetStr(*id_it);
+        }
+        seh = scope.AddTopLevelSeqEntry(*entry);
+
+        submit->SetSub().SetCit().SetAuthors().ResetAffil();
+        submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
+        submit->SetSub().ResetContact();
+        expected_errors.push_back(new CExpectedError("", eDiag_Warning, "MissingPubInfo",
+                                  "Submission citation affiliation has no country"));
+        eval = validator.Validate(*submit, &scope, options);
+        CheckErrors (*eval, expected_errors);
+
+        submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetCountry("USA");
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        eval = validator.Validate(*submit, &scope, options);
+        CheckErrors (*eval, expected_errors);
+
+        submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetSub("VA");
+        submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetAffil("some affiliation");
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no country");
+        eval = validator.Validate(*submit, &scope, options);
+        CheckErrors (*eval, expected_errors);
+
+        submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetCountry("USA");
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        eval = validator.Validate(*submit, &scope, options);
+        CheckErrors (*eval, expected_errors);
+
+        scope.RemoveTopLevelSeqEntry(seh);
+        CRef<CPub> pub(new CPub());
+        CRef<CSeqdesc> desc(new CSeqdesc());
+        desc->SetPub().SetPub().Set().push_back(pub);
+        entry->SetDescr().Set().push_back(desc);
+        pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+        pub->SetSub().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
+        seh = scope.AddTopLevelSeqEntry(*entry);
+
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no country");
+        expected_errors[0]->SetAccession(*id_it);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetSub().SetAuthors().SetAffil().SetStd().SetCountry("USA");
+        expected_errors[0]->SetErrMsg("Submission citation affiliation has no state");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetSub().SetAuthors().SetAffil().SetStd().SetSub("VA");
+        pub->SetSub().SetAuthors().SetNames().SetStd().pop_back();
+
+        expected_errors[0]->SetSeverity(eDiag_Error);
+        expected_errors[0]->SetErrMsg("Submission citation has no author names");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+        pub->SetSub().SetAuthors().SetAffil().SetStd().ResetCountry();
+        pub->SetSub().SetAuthors().SetAffil().SetStd().ResetSub();
+        pub->SetSub().SetAuthors().SetAffil().SetStd().ResetAffil();
+        expected_errors[0]->SetErrMsg("Submission citation has no affiliation");
+        if (NStr::StartsWith(*id_it, "NC_")) {
+            expected_errors[0]->SetSeverity(eDiag_Warning);
+        }
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        
+        pub->SetSub().SetAuthors().ResetAffil();
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        SetTech(entry, CMolInfo::eTech_htgs_0);
+        expected_errors[0]->SetSeverity(eDiag_Warning);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetTech(entry, CMolInfo::eTech_htgs_1);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetTech(entry, CMolInfo::eTech_htgs_3);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetTech(entry, CMolInfo::eTech_unknown);
+
+        pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+        pub->SetGen().SetCit("Does not start with expected text");
+        expected_errors[0]->SetSeverity(eDiag_Error);
+        expected_errors[0]->SetErrMsg("Unpublished citation text invalid");
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPubInfo", 
+                                  "Publication date missing"));
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        delete expected_errors[1];
+        expected_errors.pop_back();
+
+        pub->SetGen().SetCit("submitted starts with expected text");
+        pub->SetGen().SetDate().SetStr("?");
+        expected_errors[0]->SetErrMsg("Publication date marked as '?'");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetGen().SetDate().SetStd().SetYear(0);
+        expected_errors[0]->SetErrMsg("Publication date not set");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetGen().ResetDate();
+        pub->SetGen().SetAuthors().SetNames().SetStd().pop_back();
+        if (!NStr::StartsWith(*id_it, "NC_")) {
+            expected_errors[0]->SetSeverity(eDiag_Error);
+        }
+        expected_errors[0]->SetErrMsg("Publication has no author names");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+        expected_errors[0]->SetSeverity(eDiag_Error);
+        expected_errors[0]->SetErrMsg("Publication has no title");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        CRef<CCit_art::TTitle::C_E> art_title(new CCit_art::TTitle::C_E());
+        art_title->SetName("article title");
+        pub->SetArticle().SetTitle().Set().push_back(art_title);
+        pub->SetArticle().SetAuthors().SetNames().SetStd().pop_back();
+        expected_errors[0]->SetErrMsg("Publication has no author names");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(author);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-32");
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(2009);
+        expected_errors[0]->SetErrMsg("Journal title missing");
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPubInfo",
+                                  "ISO journal title abbreviation missing"));
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        CRef<CCit_jour::TTitle::C_E> journal_title(new CCit_jour::TTitle::C_E());
+        journal_title->SetName("journal_title");
+        pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(journal_title);
+        delete expected_errors[0];
+        expected_errors[0] = NULL;
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
+
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Error, "MissingPubInfo",
+                                  "Journal volume and pages missing"));
+        if (NStr::StartsWith(*id_it, "NC_")) {
+            expected_errors[0]->SetSeverity(eDiag_Warning);
+        }
+        CRef<CCit_jour::TTitle::C_E> iso_jta(new CCit_jour::TTitle::C_E());   
+        iso_jta->SetIso_jta("abbr");
+        pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(iso_jta);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().ResetVolume();
+        pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPages();
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
+        expected_errors[0]->SetErrMsg("Journal pages missing");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().ResetVolume();
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-32");
+        expected_errors[0]->SetErrMsg("Journal volume missing");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
+        pub->SetArticle().SetFrom().SetJournal().SetImp().ResetDate();
+        expected_errors[0]->SetErrMsg("Publication date missing");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStr("?");
+        expected_errors[0]->SetErrMsg("Publication date marked as '?'");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(0);
+        expected_errors[0]->SetErrMsg("Publication date not set");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        CLEAR_ERRORS
+        //suppress ISOJTA warning if electronic journal
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(2009);
+        pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().pop_back();
+        journal_title->SetName("(er) Journal Title");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        journal_title->SetName("(journal title");
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_epublish);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
+        pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        entry->SetDescr().Set().pop_back();
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_UnnecessaryPubEquiv)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CPub> pub(new CPub());
+    pub->SetEquiv();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryPubEquiv",
+                              "Publication has unexpected internal Pub-equiv"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_BadPageNumbering)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CPub> pub = BuildGoodArticlePub();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("0-32");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPageNumbering",
+                              "Page numbering has zero value"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-0");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Page numbering has negative value");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14--32");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Page numbering out of order");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("32-14");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Page numbering greater than 50");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-65");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Page numbering stop looks strange");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-A");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Page numbering start looks strange");
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages(".14-32");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_MedlineEntryPub)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CPub> pub(new CPub());
+    pub->SetMedline();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MedlineEntryPub",
+                              "Publication is medline entry"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+static void MakeBadSeasonDate(CDate& date)
+{
+    date.SetStd().SetYear(2009);
+    date.SetStd().SetMonth(12);
+    date.SetStd().SetDay(31);
+    date.SetStd().SetSeason("1");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_BadDate)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CAuthor> author = BuildGoodAuthor();
+    CRef<CPub> pub(new CPub());
+    pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    pub->SetSub().SetDate().SetStr("?");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
+                              "Submission citation date has error - BAD_STR"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetDate().SetStd().SetYear(0);
+    expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_YEAR");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(13);
+    expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_MONTH");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(12);
+    pub->SetSub().SetDate().SetStd().SetDay(32);
+    expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_DAY");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    MakeBadSeasonDate(pub->SetSub().SetDate());
+    expected_errors[0]->SetErrMsg("Submission citation date has error - BAD_SEASON");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
+    pub->SetGen().SetTitle("gen title");
+    MakeBadSeasonDate(pub->SetGen().SetDate());
+    expected_errors[0]->SetErrMsg("Publication date has error - BAD_SEASON");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    desc->SetPub().SetPub().Set().pop_back();
+    pub = BuildGoodArticlePub();
+    desc->SetPub().SetPub().Set().push_back(pub);
+    MakeBadSeasonDate(pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate());
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    MakeBadSeasonDate(desc->SetCreate_date());
+    expected_errors[0]->SetErrMsg("Create date has error - BAD_SEASON");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    MakeBadSeasonDate(desc->SetUpdate_date());
+    expected_errors[0]->SetErrMsg("Update date has error - BAD_SEASON");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_StructuredCitGenCit)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CPub> pub(new CPub());
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(BuildGoodAuthor());
+    pub->SetGen().SetTitle("gen title");
+    pub->SetGen().SetDate().SetStd().SetYear(2009);
+    pub->SetGen().SetCit("submitted something Title=foo");
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "StructuredCitGenCit",
+                              "Unpublished citation has embedded Title"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetGen().SetCit("submitted something Journal=bar");
+    expected_errors[0]->SetErrMsg("Unpublished citation has embedded Journal");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_CollidingSerialNumbers)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CAuthor> blank;
+
+    CRef<CPub> pub = BuildGoodCitGenPub(blank, 1234);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(15);
+    feat->SetData().SetPub().SetPub().Set().push_back(BuildGoodCitGenPub(blank, 1234));
+    AddFeat(feat, entry);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "CollidingSerialNumbers",
+                              "Multiple publications have serial number 1234"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CAuthor> author = BuildGoodAuthor();
+    author->SetName().SetName().SetLast("foo<script");
+
+    CRef<CPub> pub = BuildGoodCitGenPub(author, -1);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetDescr().Set().push_back(desc);
+
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "EmbeddedScript",
+                              "Script tag found in item"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    author->SetName().SetName().SetLast("Last");
+    feat->SetComment("<object");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->ResetComment();
+
+    SetTaxname(entry, "<applet");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetTaxname(entry, "Sebaea microphylla");
+
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, "<embed");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, "");
+
+    SetOrgMod(entry, COrgMod::eSubtype_acronym, "<form");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_acronym, "");
+
+    pub->SetGen().SetTitle("javascript:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    pub->SetGen().SetTitle("good title");
+
+    SetLineage(entry, "vbscript:");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "");
+
+    CLEAR_ERRORS
+}
+
+
+
+static string MakeWrongCap (const string& str)
+{
+    string bad = "";
+    char add[2];
+    add[1] = 0;
+
+    ITERATE(string, it, str) {
+        add[0] = *it;
+        if (isupper (*it)) {
+            add[0] = tolower(*it);
+        } else if (islower(*it)) {
+            add[0] = toupper(*it);
+        }
+        bad.append(add);
+    }
+    return bad;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    STANDARD_SETUP
+
+    vector<string> legal_strings;
+    legal_strings.push_back ("AceView/WormGenes");
+    legal_strings.push_back ("AFTOL");
+    legal_strings.push_back ("AntWeb");
+    legal_strings.push_back ("APHIDBASE");
+    legal_strings.push_back ("ApiDB");
+    legal_strings.push_back ("ApiDB_CryptoDB");
+    legal_strings.push_back ("ApiDB_PlasmoDB");
+    legal_strings.push_back ("ApiDB_ToxoDB");
+    legal_strings.push_back ("ASAP");
+    legal_strings.push_back ("ATCC");
+    legal_strings.push_back ("ATCC(in host)");
+    legal_strings.push_back ("ATCC(dna)");
+    legal_strings.push_back ("Axeldb");
+    legal_strings.push_back ("BDGP_EST");
+    legal_strings.push_back ("BDGP_INS");
+    legal_strings.push_back ("BEETLEBASE");
+    legal_strings.push_back ("BOLD");
+    legal_strings.push_back ("CDD");
+    legal_strings.push_back ("CK");
+    legal_strings.push_back ("COG");
+    legal_strings.push_back ("dbClone");
+    legal_strings.push_back ("dbCloneLib");
+    legal_strings.push_back ("dbEST");
+    legal_strings.push_back ("dbProbe");
+    legal_strings.push_back ("dbSNP");
+    legal_strings.push_back ("dbSTS");
+    legal_strings.push_back ("dictyBase");
+    legal_strings.push_back ("EcoGene");
+    legal_strings.push_back ("ENSEMBL");
+    legal_strings.push_back ("ERIC");
+    legal_strings.push_back ("ESTLIB");
+    legal_strings.push_back ("FANTOM_DB");
+    legal_strings.push_back ("FLYBASE");
+    legal_strings.push_back ("GABI");
+    legal_strings.push_back ("GDB");
+    legal_strings.push_back ("GeneDB");
+    legal_strings.push_back ("GeneID");
+    legal_strings.push_back ("GO");
+    legal_strings.push_back ("GOA");
+    legal_strings.push_back ("Greengenes");
+    legal_strings.push_back ("GRIN");
+    legal_strings.push_back ("H-InvDB");
+    legal_strings.push_back ("HGNC");
+    legal_strings.push_back ("HMP");
+    legal_strings.push_back ("HOMD");
+    legal_strings.push_back ("HSSP");
+    legal_strings.push_back ("IMGT/GENE-DB");
+    legal_strings.push_back ("IMGT/HLA");
+    legal_strings.push_back ("IMGT/LIGM");
+    legal_strings.push_back ("InterimID");
+    legal_strings.push_back ("InterPro");
+    legal_strings.push_back ("IRD");
+    legal_strings.push_back ("ISD");
+    legal_strings.push_back ("ISFinder");
+    legal_strings.push_back ("JCM");
+    legal_strings.push_back ("JGIDB");
+    legal_strings.push_back ("LocusID");
+    legal_strings.push_back ("MaizeGDB");
+    legal_strings.push_back ("MGI");
+    legal_strings.push_back ("MIM");
+    legal_strings.push_back ("MycoBank");
+    legal_strings.push_back ("NBRC");
+    legal_strings.push_back ("NextDB");
+    legal_strings.push_back ("niaEST");
+    legal_strings.push_back ("NMPDR");
+    legal_strings.push_back ("NRESTdb");
+    legal_strings.push_back ("Osa1");
+    legal_strings.push_back ("Pathema");
+    legal_strings.push_back ("PBmice");
+    legal_strings.push_back ("PDB");
+    legal_strings.push_back ("PFAM");
+    legal_strings.push_back ("PGN");
+    legal_strings.push_back ("PIR");
+    legal_strings.push_back ("PSEUDO");
+    legal_strings.push_back ("PseudoCap");
+    legal_strings.push_back ("RAP-DB");
+    legal_strings.push_back ("RATMAP");
+    legal_strings.push_back ("RFAM");
+    legal_strings.push_back ("RGD");
+    legal_strings.push_back ("RiceGenes");
+    legal_strings.push_back ("RZPD");
+    legal_strings.push_back ("SEED");
+    legal_strings.push_back ("SGD");
+    legal_strings.push_back ("SGN");
+    legal_strings.push_back ("SoyBase");
+    legal_strings.push_back ("SubtiList");
+    legal_strings.push_back ("taxon");
+    legal_strings.push_back ("TIGRFAM");
+    legal_strings.push_back ("UniGene");
+    legal_strings.push_back ("UNILIB");
+    legal_strings.push_back ("UniProtKB/Swiss-Prot");
+    legal_strings.push_back ("UniProtKB/TrEMBL");
+    legal_strings.push_back ("UniSTS");
+    legal_strings.push_back ("UNITE");
+    legal_strings.push_back ("VBASE2");
+    legal_strings.push_back ("VectorBase");
+    legal_strings.push_back ("WorfDB");
+    legal_strings.push_back ("WormBase");
+    legal_strings.push_back ("Xenbase");
+    legal_strings.push_back ("ZFIN");
+    legal_strings.push_back ("GI");
+    vector<string> src_strings;
+    src_strings.push_back ("AFTOL");
+    src_strings.push_back ("AntWeb");
+    src_strings.push_back ("ATCC");
+    src_strings.push_back ("ATCC(dna)");
+    src_strings.push_back ("ATCC(in host)");
+    src_strings.push_back ("BOLD");
+    src_strings.push_back ("FANTOM_DB");
+    src_strings.push_back ("FLYBASE");
+    src_strings.push_back ("GRIN");
+    src_strings.push_back ("HMP");
+    src_strings.push_back ("HOMD");
+    src_strings.push_back ("IMGT/HLA");
+    src_strings.push_back ("IMGT/LIGM");
+    src_strings.push_back ("JCM");
+    src_strings.push_back ("MGI");
+    src_strings.push_back ("MycoBank");
+    src_strings.push_back ("NBRC");
+    src_strings.push_back ("RZPD");
+    src_strings.push_back ("taxon");
+    src_strings.push_back ("UNILIB");
+    src_strings.push_back ("UNITE");
+    vector<string> refseq_strings;
+    refseq_strings.push_back ("CCDS");
+    refseq_strings.push_back ("CGNC");
+    refseq_strings.push_back ("CloneID");
+    refseq_strings.push_back ("ECOCYC");
+    refseq_strings.push_back ("HPRD");
+    refseq_strings.push_back ("LRG");
+    refseq_strings.push_back ("miRBase");
+    refseq_strings.push_back ("PBR");
+    refseq_strings.push_back ("REBASE");
+    refseq_strings.push_back ("SK-FST");
+    refseq_strings.push_back ("TAIR");
+    refseq_strings.push_back ("VBRC");
+    refseq_strings.push_back ("EMBL");
+    refseq_strings.push_back ("GenBank");
+    refseq_strings.push_back ("DDBJ");
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
+                                         "db_xref type %s should not used on an OrgRef"));
+
+    string bad;
+    ITERATE (vector<string>, sit, src_strings) {
+        if (NStr::Equal(*sit, "taxon")) {
+            RemoveDbxref (entry, *sit, 0);
+        }
+        bad = MakeWrongCap(*sit);
+        SetDbxref (entry, bad, 1234);
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (entry, bad, 0);
+        if (NStr::Equal(*sit, "taxon")) {
+            SetTaxon(entry, 592768);
+        }
+    }
+
+    ITERATE (vector<string>, sit, legal_strings) {
+        bool found = false;
+        ITERATE (vector<string>, ss, src_strings) {
+            if (NStr::Equal(*ss, *sit)) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            continue;
+        }
+        bad = MakeWrongCap(*sit);
+        SetDbxref (entry, bad, 1234);
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit
+                                      + ", but should not be used on an OrgRef");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (entry, bad, 0);
+
+        SetDbxref (entry, *sit, 1234);
+        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " should not used on an OrgRef");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (entry, *sit, 0);
+    }
+
+    ITERATE (vector<string>, sit, refseq_strings) {
+        SetDbxref (entry, *sit, 1234);
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not used on a non-RefSeq OrgRef");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (entry, *sit, 0);
+    }
+
+    SetDbxref (entry, "unrecognized", 1234);
+    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (entry, "unrecognized", 0);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NC_123456");
+    ITERATE (vector<string>, sit, refseq_strings) {
+        SetDbxref (entry, *sit, 1234);
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not used on an OrgRef");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (entry, *sit, 0);
+    }
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetLocal().SetStr("good");
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    
+    ITERATE (vector<string>, sit, legal_strings) {
+        bad = MakeWrongCap(*sit);
+        SetDbxref (feat, bad, 1234);
+        if (NStr::Equal(*sit, "taxon")) {
+            expected_errors[0]->SetErrMsg("Illegal db_xref type TAXON, legal capitalization is taxon, but should only be used on an OrgRef");
+        } else {
+            expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit);
+        }
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (feat, bad, 0);
+    }
+    
+    ITERATE (vector<string>, sit, refseq_strings) {
+        SetDbxref (feat, *sit, 1234);
+        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " is only legal for RefSeq");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        RemoveDbxref (feat, *sit, 0);
+    }
+
+    SetDbxref(feat, "taxon", 1234);
+    expected_errors[0]->SetErrMsg("db_xref type taxon should only be used on an OrgRef");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (feat, "taxon", 0);
+
+    SetDbxref (feat, "unrecognized", 1234);
+    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (feat, "unrecognized", 0);
+
+    CLEAR_ERRORS
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    STANDARD_SETUP
 
-    CValidator validator(*objmgr);
-
-    // Set validator options
-    unsigned int options = CValidator::eVal_need_isojta
-                          | CValidator::eVal_far_fetch_mrna_products
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-	                      | CValidator::eVal_use_entrez;
-
-    // list of expected errors
-    vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ExceptionProblem", "Exception explanation text is also found in feature comment"));
 
-    CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetData().SetImp().SetKey("misc_feature");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(10);
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    CRef<CSeq_feat> feat = AddMiscFeature(entry);
     feat->SetExcept();
-    CRef<CSeq_annot> annot (new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    entry->SetSeq().SetAnnot().push_back(annot);
 
     // look for exception in comment
     feat->SetExcept_text("RNA editing");
     feat->SetComment("RNA editing");
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // look for one exception in comment
@@ -6416,10 +9258,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
-
-
+    CLEAR_ERRORS
 }
 
 

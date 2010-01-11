@@ -62,6 +62,8 @@ bool CField_rule::DoesStringMatchRuleExpression(string str) const
     // because C Toolkit pattern match needs to escape '|' but C++ Toolkit does not
     string match = GetMatch_expression();
     NStr::ReplaceInPlace(match, "\\|", "|");
+    NStr::ReplaceInPlace(match, "\\(", "(");
+    NStr::ReplaceInPlace(match, "\\)", ")");
 
     CRegexp r(match);
 

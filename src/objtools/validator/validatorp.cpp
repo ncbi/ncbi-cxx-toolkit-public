@@ -107,6 +107,13 @@
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
 
+#include <objects/valid/Comment_set.hpp>
+#include <objects/valid/Comment_rule.hpp>
+#include <objects/valid/Field_set.hpp>
+#include <objects/valid/Field_rule.hpp>
+#include <objects/valid/Dependent_field_set.hpp>
+#include <objects/valid/Dependent_field_rule.hpp>
+
 #include <objtools/error_codes.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
@@ -271,6 +278,11 @@ void CValidError_imp::PostErr
     const CPubdesc* pd = dynamic_cast < const CPubdesc* > (&obj);
     if (pd != 0) {
         PostErr (sv, et, msg, *pd);
+        return;
+    }
+    const CSeq_submit* ss = dynamic_cast < const CSeq_submit* > (&obj);
+    if (ss != 0) {
+        PostErr (sv, et, msg, *ss);
         return;
     }
 }
@@ -606,6 +618,16 @@ void CValidError_imp::PostErr
 }
 
 
+void CValidError_imp::PostErr
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ const CSeq_submit& ss)
+{
+    string desc = "Seq-submit: ";
+    
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ss, "");
+}
 
 
 void CValidError_imp::PostObjErr 
@@ -774,7 +796,7 @@ bool CValidError_imp::Validate
     // by Validate. Note, Validate is not doing anything other than
     // reporting an error if m_NonASCII is true;
     if (m_NonASCII) {
-        PostErr(eDiag_Critical, eErr_GENERIC_NonAsciiAsn,
+        PostErr(eDiag_Error, eErr_GENERIC_NonAsciiAsn,
                   "Non-ascii chars in input ASN.1 strings", *seq);
         // Only report the error once
         m_NonASCII = false;
@@ -996,6 +1018,11 @@ bool CValidError_imp::Validate
 	if (m_UseEntrez) {
 		ValidateTaxonomy(*(seh.GetCompleteSeq_entry()));
 	}
+
+    // validate cit-sub
+    if (cs) {
+        ValidateCitSub (*cs, *(seh.GetCompleteSeq_entry()), seh.GetCompleteSeq_entry());
+    }
 
     return true;
 }
@@ -1947,6 +1974,16 @@ static bool s_SeqLocHasGI (const CSeq_loc& loc)
 }
 
 
+static bool s_FieldRuleCompare (
+    const CField_rule* p1,
+    const CField_rule* p2
+)
+
+{
+	return NStr::Compare(p1->GetField_name(), p2->GetField_name()) < 0;
+}
+
+
 CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
 {
     if (m_StructuredCommentRules) {
@@ -1973,7 +2010,16 @@ CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
         string header = in->ReadFileHeader();
 
         m_StructuredCommentRules.Reset(new CComment_set());
-        in->Read(ObjectInfo(*m_StructuredCommentRules), CObjectIStream::eNoFileHeader);
+        in->Read(ObjectInfo(*m_StructuredCommentRules), CObjectIStream::eNoFileHeader);        
+        if (m_StructuredCommentRules->IsSet()) {
+            NON_CONST_ITERATE(CComment_set::Tdata, it, m_StructuredCommentRules->Set()) {
+                if (!(*it)->GetRequire_order() && (*it)->IsSetFields()) {
+                    CField_set& fields = (*it)->SetFields();
+                    fields.Set().sort(s_FieldRuleCompare);
+                }
+            }
+        }
+        
     }
 
     return m_StructuredCommentRules;

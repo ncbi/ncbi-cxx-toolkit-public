@@ -700,6 +700,10 @@ static string s_GetAuthorsString (const CAuth_list& auth_list)
         }
     }
 
+    if (name_list.size() == 0) {
+        return auth_str;
+    }
+
     auth_str = name_list.back();
     name_list.pop_back();
     if (name_list.size() > 0) {

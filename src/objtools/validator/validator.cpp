@@ -101,6 +101,12 @@ CConstRef<CValidError> CValidator::Validate
     CRef<CValidError> errors(new CValidError(&ss));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(ss, scope);
+    if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
+        && ss.GetSub().GetContact().GetContact().IsSetAffil()
+        && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {
+        imp.ValidateSubAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
+                             ss, 0);
+    }
     return errors;
 }
 

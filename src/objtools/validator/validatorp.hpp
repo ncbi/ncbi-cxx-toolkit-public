@@ -113,7 +113,12 @@ public:
 	~CCountryBlock (void);
 
 	string GetCountry(void)            const { return m_CountryName; }
+    double GetMinX(void)               const { return m_MinX; }
+    double GetMinY(void)               const { return m_MinY; }
+    double GetMaxX(void)               const { return m_MaxX; }
+    double GetMaxY(void)               const { return m_MaxY; }
 	bool IsLatLonInCountryBlock (double x, double y);
+    bool DoesOverlap(const CCountryBlock* other_block) const;
 
 private:
 	string m_CountryName;
@@ -136,9 +141,14 @@ public:
 	string GuessCountryForLatLon(double x, double y);
 	bool HaveLatLonForCountry (string country);
 	static bool DoesStringContainBodyOfWater(const string& country);
+    bool DoCountryBoxesOverlap (string country1, string country2);
 
 private:
-    vector <CCountryBlock *> m_CountryBlockList;
+    typedef vector <CCountryBlock *> TCountryBlockList;
+    typedef TCountryBlockList::const_iterator TCountryBlockList_iter; 
+
+    TCountryBlockList m_CountryBlockList;
+
 	static const string sm_BodiesOfWater[];
 };
 
@@ -169,6 +179,7 @@ public:
 	void Validate(const CSeq_feat& feat);
 	void Validate(const CBioSource& src);
 	void Validate(const CPubdesc& pubdesc);
+    void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
     void SetProgressCallback(CValidator::TProgressCallback callback,
         void* user_data);
@@ -209,6 +220,7 @@ public:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CBioSource& src);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const COrg_ref& org);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CPubdesc& src);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, const CSeq_submit& ss);
     void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
@@ -362,7 +374,6 @@ private:
     void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateArticleHasJournal(const CCit_art& art, const CSerialObject& obj, const CSeq_entry *ctx = 0);
         
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
@@ -763,6 +774,7 @@ private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
     void ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc);
+    void ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
 
@@ -797,6 +809,7 @@ public:
 
     void ValidateBioseq(const CBioseq& seq);
     void ValidateSeqIds(const CBioseq& seq);
+    void ValidateSeqId(const CSeq_id& id, const CBioseq& ctx);
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
