@@ -304,14 +304,6 @@ extern EIO_Status CONN_SetTimeout
         } else
             conn->o_timeout  = timeout;
         break;
-    case eIO_Close:
-        if (timeout  &&  timeout != kDefaultTimeout) {
-            if (&conn->cc_timeout != timeout)
-                conn->cc_timeout = *timeout;
-            conn->c_timeout  = &conn->cc_timeout;
-        } else
-            conn->c_timeout  = timeout;
-        break;
     case eIO_Read:
     case eIO_ReadWrite:
         if (timeout  &&  timeout != kDefaultTimeout) {
@@ -330,6 +322,14 @@ extern EIO_Status CONN_SetTimeout
             conn->w_timeout  = &conn->ww_timeout;
         } else
             conn->w_timeout  = timeout;
+        break;
+    case eIO_Close:
+        if (timeout  &&  timeout != kDefaultTimeout) {
+            if (&conn->cc_timeout != timeout)
+                conn->cc_timeout = *timeout;
+            conn->c_timeout  = &conn->cc_timeout;
+        } else
+            conn->c_timeout  = timeout;
         break;
     default:
         sprintf(errbuf, "Unknown event #%d to set timeout for", (int) event);
