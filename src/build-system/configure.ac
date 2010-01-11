@@ -3463,7 +3463,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
  -lcrypto)
 
 OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
-for d in `echo " $OPENSSL_LIBS" | fmt -w1 | sed -ne 's/^-L//p'` \
+for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
    /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
    if test -f $d/libssl.a -a -f $d/libcrypto.a; then
       OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
