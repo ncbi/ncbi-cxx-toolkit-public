@@ -54,11 +54,11 @@ BEGIN_SCOPE(align_refine)
 #define ERRORMSG(stream) ERR_POST(ncbi::Error << stream)
 #define FATALMSG(stream) ERR_POST(ncbi::Fatal << stream)
 
-static const wxString phaseOrderStrings[] = {"Shift blocks first", "Expand/shrink blocks first"};
+  static const wxString phaseOrderStrings[] = {wxT("Shift blocks first"), wxT("Expand/shrink blocks first")};
 //  These listed in order of enum RefinerRowSelectorCode
-static const wxString looSelectionOrderStrings[] = {"Random order", "Worst-to-best self-hit", "Best-to-worst self-hit"};
+static const wxString looSelectionOrderStrings[] = {wxT("Random order"), wxT("Worst-to-best self-hit"), wxT("Best-to-worst self-hit")};
 //  These listed in order of enum BlockBoundaryAlgorithmMethod
-static const wxString blockEditAlgStrings[] = {"No", "Only expand", "Only shrink", "Expand and shrink"};
+static const wxString blockEditAlgStrings[] = {wxT("No"), wxT("Only expand"), wxT("Only shrink"), wxT("Expand and shrink")};
 
 bool BMARefinerOptionsDialog::SetRefinerOptionsViaDialog(wxWindow* parent, BMARefinerInterface& interface)
 {
@@ -106,7 +106,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     const LeaveOneOutParams& current_loo,
     const BlockEditingParams& current_be,
     const vector < string >& titles) :
-        wxDialog(parent, -1, "Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+  wxDialog(parent, -1, wxT("Alignment Refiner Options"), wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
         rowTitles(titles)
 {
     wxBoxSizer *hSizer;
@@ -632,10 +632,10 @@ void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
                     choice2row[choices.GetCount()] = i;
                     if (!VectorContains(rowsToExclude, i))
                         selected.Add(choices.GetCount());
-                    choices.Add(rowTitles[i].c_str());
+                    choices.Add(wxString(rowTitles[i].c_str(),wxConvUTF8));
                 }
             }
-            wxMultiChoiceDialog dialog(this, "Choose unstructured rows to align:", "Row Selection", choices,
+            wxMultiChoiceDialog dialog(this, wxT("Choose unstructured rows to align:"), wxT("Row Selection"), choices,
                 wxCAPTION | wxOK | wxCENTRE);
             dialog.SetSelections(selected);
             while (dialog.ShowModal() == wxID_OK) {

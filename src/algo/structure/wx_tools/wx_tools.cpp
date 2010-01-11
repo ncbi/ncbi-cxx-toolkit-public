@@ -127,7 +127,7 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
         minVal(min), maxVal(max), incrVal(increment)
 {
-    iTextCtrl = new IntegerTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
+    iTextCtrl = new IntegerTextCtrl(parent, -1, wxT(""), textCtrlPos, textCtrlSize, textCtrlStyle);
     iTextCtrl->SetAllowedRange(min, max, increment);
 
     spinButton = new NotifyingSpinButton(this,
@@ -146,7 +146,7 @@ bool IntegerSpinCtrl::SetInteger(int value)
     if (value < minVal || value > maxVal) return false;
 
     wxString strVal;
-    strVal.Printf("%i", value);
+    strVal.Printf(wxT("%i"), value);
     iTextCtrl->SetValue(strVal);
     spinButton->SetValue(0);
     return true;
@@ -243,7 +243,7 @@ FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
         minVal(min), maxVal(max), incrVal(increment)
 {
-    fpTextCtrl = new FloatingPointTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
+    fpTextCtrl = new FloatingPointTextCtrl(parent, -1, wxT(""), textCtrlPos, textCtrlSize, textCtrlStyle);
     fpTextCtrl->SetAllowedRange(min, max);
 
     spinButton = new NotifyingSpinButton(this,
@@ -262,7 +262,7 @@ bool FloatingPointSpinCtrl::SetDouble(double value)
     if (value < minVal || value > maxVal) return false;
 
     wxString strVal;
-    strVal.Printf("%g", value);
+    strVal.Printf(wxT("%g"), value);
     fpTextCtrl->SetValue(strVal);
     spinButton->SetValue(0);
     return true;
@@ -314,7 +314,7 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     wxFlexGridSizer *grid = new wxFlexGridSizer(1, 0, 0, 0);
     grid->AddGrowableCol(1);
 
-    buttonOK = new wxButton(panel, -1, "OK", wxDefaultPosition, wxDefaultSize, 0);
+    buttonOK = new wxButton(panel, -1, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(buttonOK, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxRIGHT, 5);
 
     fpSpinCtrl = new FloatingPointSpinCtrl(panel,
