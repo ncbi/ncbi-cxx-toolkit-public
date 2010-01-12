@@ -508,6 +508,7 @@ END_SUBTYPE
 START_SUBTYPE(cdregion)
     ADD_QUAL(EC_number);
     ADD_QUAL(allele);
+    ADD_QUAL(artificial_location);
     ADD_QUAL(citation);
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
@@ -669,6 +670,7 @@ END_SUBTYPE
 
 START_SUBTYPE(mRNA)
     ADD_QUAL(allele);
+    ADD_QUAL(artificial_location);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -939,6 +941,7 @@ END_SUBTYPE
 START_SUBTYPE(Imp_CDS)
     ADD_QUAL(EC_number);
     ADD_QUAL(allele);
+    ADD_QUAL(artificial_location);
     ADD_QUAL(citation);
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
@@ -1699,6 +1702,7 @@ START_SUBTYPE(source)
     ADD_QUAL(focus);
     ADD_QUAL(frequency);
     ADD_QUAL(germline);
+    ADD_QUAL(haplogroup);
     ADD_QUAL(haplotype);
     ADD_QUAL(host);
     ADD_QUAL(identified_by);
@@ -2275,6 +2279,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_bad, "bad"),
     TQualPair(CSeqFeatData::eQual_allele, "allele"),
     TQualPair(CSeqFeatData::eQual_anticodon, "anticodon"),
+    TQualPair(CSeqFeatData::eQual_artificial_location, "artificial_location"),
     TQualPair(CSeqFeatData::eQual_bio_material, "bio_material"),
     TQualPair(CSeqFeatData::eQual_bound_moiety, "bound_moiety"),
     TQualPair(CSeqFeatData::eQual_cell_line, "cell_line"),
@@ -2312,6 +2317,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_gene, "gene"),
     TQualPair(CSeqFeatData::eQual_gene_synonym, "gene_synonym"),
     TQualPair(CSeqFeatData::eQual_germline, "germline"),
+    TQualPair(CSeqFeatData::eQual_haplogroup, "haplogroup"),
     TQualPair(CSeqFeatData::eQual_haplotype, "haplotype"),
     TQualPair(CSeqFeatData::eQual_host, "host"),
     TQualPair(CSeqFeatData::eQual_identified_by, "identified_by"),
@@ -2379,6 +2385,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_transl_except, "transl_except"),
     TQualPair(CSeqFeatData::eQual_transl_table, "transl_table"),
     TQualPair(CSeqFeatData::eQual_transposon, "transposon"),
+    TQualPair(CSeqFeatData::eQual_UniProtKB_evidence, "UniProtKB_evidence"),
     TQualPair(CSeqFeatData::eQual_usedin, "usedin"),
     TQualPair(CSeqFeatData::eQual_variety, "variety"),
     TQualPair(CSeqFeatData::eQual_virion, "virion")

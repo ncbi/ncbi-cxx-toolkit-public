@@ -224,6 +224,7 @@ public:
         eQual_bad = 0,
         eQual_allele,
         eQual_anticodon,
+        eQual_artificial_location,
         eQual_bio_material,
         eQual_bound_moiety,
         eQual_cell_line,
@@ -261,6 +262,7 @@ public:
         eQual_gene,
         eQual_gene_synonym,
         eQual_germline,
+        eQual_haplogroup,
         eQual_haplotype,
         eQual_host,
         eQual_identified_by,
@@ -328,6 +330,7 @@ public:
         eQual_transl_except,
         eQual_transl_table,
         eQual_transposon,
+        eQual_UniProtKB_evidence,
         eQual_usedin,
         eQual_variety,
         eQual_virion
