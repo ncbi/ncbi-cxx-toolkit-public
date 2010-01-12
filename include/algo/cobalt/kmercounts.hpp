@@ -270,9 +270,9 @@ class TKmerMethods
 {
 public:
     enum ECompressedAlphabet {
-        eSE_V10 = 0, eSE_B15, eRegular,
-        eNumCompressed = eRegular,
-        eLastAlphabet = eRegular
+        eRegular = 0, eSE_V10, eSE_B15,
+        eFirstCompressed = eSE_V10,
+        eLastAlphabet = eSE_B15
     };
 
     enum EDistMeasures {
@@ -315,8 +315,9 @@ public:
             "ST IJV LM KR EQZ A G BD P N F Y H C W"
         };
 
-        _ASSERT(alph_index < eNumCompressed);
-        const char* trans_string = kCompAlphabets[alph_index];
+        _ASSERT(alph_index >= eFirstCompressed && alph_index < eNumAlphabets);
+        const char* trans_string = kCompAlphabets[alph_index
+                                                  - (int)eFirstCompressed];
 
         Uint4 compressed_letter = 1; // this allows for gaps
         trans_table.clear();
