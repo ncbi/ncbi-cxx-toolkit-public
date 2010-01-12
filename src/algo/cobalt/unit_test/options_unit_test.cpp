@@ -35,9 +35,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
-
-#include <algo/cobalt/options.hpp>
-#include <algo/cobalt/exception.hpp>
+#include <algo/cobalt/cobalt.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
@@ -152,5 +150,16 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
     opts->SetKmerLength(1);
     BOOST_CHECK(!opts->Validate());
     BOOST_CHECK(opts->GetMessages().size() > 0);
+
+    // Make sure that all alhapeths are accepted
+    opts.Reset(new CMultiAlignerOptions());
+    opts->SetKmerAlphabet(CMultiAligner::TKMethods::eRegular);
+    BOOST_CHECK(opts->Validate());
+
+    opts->SetKmerAlphabet(CMultiAligner::TKMethods::eSE_V10);
+    BOOST_CHECK(opts->Validate());
+
+    opts->SetKmerAlphabet(CMultiAligner::TKMethods::eSE_B15);
+    BOOST_CHECK(opts->Validate());
 }
 
