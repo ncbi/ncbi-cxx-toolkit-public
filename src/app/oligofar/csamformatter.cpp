@@ -69,15 +69,16 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
     if( ( hit->GetComponentFlags() & (CHit::fComponent_1 << pairmate) ) == 0 ) return; // don't output unmapped pair mates
     const CQuery * query = hit->GetQuery();
     int flags = 0;
-    if( hit->IsReverseStrand( pairmate ) ) flags |= fSeqReverse;
-    if( rank ) flags |= fHitSuboptimal;
+    if( hit->IsReverseStrand( pairmate ) ) { flags |= fSeqReverse; }
+    if( rank ) { flags |= fHitSuboptimal; }
     if( query->GetLength( !pairmate ) ) {
-        flags |= fPairedQuery;
+        flags |= fPairedQuery; 
         flags |= pairmate ? fSeqIsSecond : fSeqIsFirst;
-        if( hit->GetComponentFlags() == 3 ) {
+        if( hit->GetComponentMask() == 3 ) {
             flags |= fPairedHit;
-            if( hit->IsReverseStrand( !pairmate ) ) 
+            if( hit->IsReverseStrand( !pairmate ) ) {
                 flags |= fMateReverse;
+            }
         } else {
             flags |= fMateUnmapped;
         }
@@ -110,7 +111,6 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
         << iupacS << "\t"
         << "*\t"; // TODO: replace with sequence and quality data
     if( md.Format() ) m_out << "MD:Z:" << md.GetString() << "\t";
-    // TODO: MD tag generation
     // TODO: CS tag generation
     // TODO: IH tag generation
     // TODO: NM tag generation
