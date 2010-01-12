@@ -52,6 +52,7 @@
 #include <string>
 #include <iosfwd>
 #include <map>
+#include <vector>
 
 namespace xml {
 
@@ -70,6 +71,7 @@ class event_parser {
 public:
     typedef std::map<std::string, std::string> attrs_type;  ///< a type for holding XML node attributes
     typedef std::size_t size_type;                          ///< size type
+    typedef std::vector<std::string> values_type;           ///< a type for holding attribute declaration values
 
     //####################################################################
     /**
@@ -158,6 +160,28 @@ protected:
         type_internal_parameter_entity,
         type_external_parameter_entity,
         type_internal_predefined_entity
+    };
+
+    /// enum for different types of XML attributes
+    enum attribute_type {
+        type_attribute_cdata,
+        type_attribute_id,
+        type_attribute_idref,
+        type_attribute_idrefs,
+        type_attribute_entity,
+        type_attribute_entities,
+        type_attribute_nmtoken,
+        type_attribute_nmtokens,
+        type_attribute_enumeration,
+        type_attribute_notation
+    };
+
+    /// enum for different default attribute definition
+    enum attribute_default_type {
+        type_attribute_none,
+        type_attribute_required,
+        type_attribute_implied,
+        type_attribute_fixed
     };
 
     //####################################################################
@@ -363,6 +387,29 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the attribute
+     * declaration message.
+     *
+     * @param element_name The element name.
+     * @param attribute_name The attribute full name.
+     * @param attr_type The attribute type.
+     * @param default_type The attribute default value type.
+     * @param default_value The attribute default value.
+     * @param default_values The attribute possible default values.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool attribute_declaration (const std::string &element_name,
+                                        const std::string &attribute_name,
+                                        attribute_type attr_type,
+                                        attribute_default_type default_type,
+                                        const std::string &default_value,
+                                        const values_type &default_values);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber
@@ -378,6 +425,8 @@ private:
     impl::epimpl *pimpl_; // private implementation
 
     entity_type get_entity_type (int);
+    attribute_type get_attribute_type (int);
+    attribute_default_type get_attribute_default_type (int);
 
     /*
      * Don't allow anyone to copy construct an event_parser or to call the
