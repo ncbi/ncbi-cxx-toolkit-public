@@ -79,7 +79,7 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
             if( hit->IsReverseStrand( !pairmate ) ) {
                 flags |= fMateReverse;
             }
-        } else {
+        } else if( hit->GetQuery()->GetTopHit( 1 << (1&!pairmate) ) == 0 ) { // only if there are no hits for the pairmate
             flags |= fMateUnmapped;
         }
     }
