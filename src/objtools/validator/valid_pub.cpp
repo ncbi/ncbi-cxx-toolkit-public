@@ -404,8 +404,12 @@ void CValidError_imp::ValidatePubArticle
                 CImprint::TPubstatus pubstatus = imp.GetPubstatus();
                 if (pubstatus == ePubStatus_aheadofprint
                     && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
-                    PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                             "Ahead-of-print without in-press", obj, ctx);
+                    bool noVol = !imp.IsSetVolume() || NStr::IsBlank(imp.GetVolume());
+                    bool noPages = !imp.IsSetPages() || NStr::IsBlank(imp.GetPages());
+                    if (!noVol && !noPages) {
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                                 "Ahead-of-print without in-press", obj, ctx);
+                    }
                 }  
                 if (pubstatus == ePubStatus_epublish 
                     && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {

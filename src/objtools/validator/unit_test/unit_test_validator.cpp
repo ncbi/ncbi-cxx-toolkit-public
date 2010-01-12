@@ -235,6 +235,15 @@ static void SetDbxref (CBioSource& src, string db, size_t id)
 }
 
 
+static void SetDbxref (CBioSource& src, string db, string id)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetStr(id);
+    src.SetOrg().SetDb().push_back(dbtag);
+}
+
+
 static void RemoveDbxref (CBioSource& src, string db, size_t id)
 {
     if (src.IsSetOrg()) {
@@ -250,6 +259,27 @@ static void RemoveDbxref (CBioSource& src, string db, size_t id)
 
 
 static void SetDbxref (CRef<CSeq_entry> entry, string db, size_t id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_entry> entry, string db, string id)
 {
     if (!entry) {
         return;
@@ -299,6 +329,18 @@ static void SetDbxref (CRef<CSeq_feat> feat, string db, size_t id)
     CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb(db);
     dbtag->SetTag().SetId(id);
+    feat->SetDbxref().push_back(dbtag);
+}
+
+
+static void SetDbxref (CRef<CSeq_feat> feat, string db, string id)
+{
+    if (!feat) {
+        return;
+    }
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetStr(id);
     feat->SetDbxref().push_back(dbtag);
 }
 
@@ -8132,7 +8174,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CLEAR_ERRORS
 
     // add fields in wrong order, with bad values where appropriate
-    REVERSE_ITERATE(vector<string>, it, required_fields) {
+    const vector<string>& const_required_fields = required_fields;
+    REVERSE_ITERATE(vector<string>, it, const_required_fields) {
         CRef<CUser_field> field(new CUser_field());
         field->SetLabel().SetStr(*it);
         field->SetData().SetStr("bad value");
@@ -8858,7 +8901,6 @@ BOOST_AUTO_TEST_CASE(Test_Generic_CollidingSerialNumbers)
 }
 
 
-#if 0
 BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -8874,21 +8916,26 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "EmbeddedScript",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadCharInAuthorLastName",
+                              "Bad characters in author foo<script"));
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "EmbeddedScript",
                               "Script tag found in item"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     author->SetName().SetName().SetLast("Last");
+    delete expected_errors[0];
+    expected_errors[0] = NULL;
+
     feat->SetComment("<object");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     feat->ResetComment();
 
-    SetTaxname(entry, "<applet");
+    feat->SetTitle("<applet");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    SetTaxname(entry, "Sebaea microphylla");
+    feat->ResetTitle();
 
     SetSubSource(entry, CSubSource::eSubtype_cell_line, "<embed");
     eval = validator.Validate(seh, options);
@@ -8912,7 +8959,314 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 
     CLEAR_ERRORS
 }
-#endif
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_PublicationInconsistency)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    CRef<CPub> pub = BuildGoodArticlePub();
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
+    desc->SetPub().SetPub().Set().push_back(pub);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+    
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "Ahead-of-print without in-press"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_epublish);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    expected_errors[0]->SetErrMsg("Electronic-only publication should not also be in-press");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPubstatus();
+    pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPrepub();
+    
+    CRef<CAuthor> consortium(new CAuthor());
+    consortium->SetName().SetConsortium("");
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(consortium);
+    expected_errors[0]->SetErrMsg("Empty consortium");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    consortium->SetName().SetConsortium("duplicate");
+    CRef<CAuthor> consortium2(new CAuthor());
+    consortium2->SetName().SetConsortium("duplicate");
+    pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(consortium2);
+    expected_errors[0]->SetErrMsg("Duplicate consortium 'duplicate'");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    STANDARD_SETUP
+
+    vector<string> sgml_tags;
+
+    sgml_tags.push_back("&gt;");
+    sgml_tags.push_back("&lt;");
+    sgml_tags.push_back("&amp;");
+    sgml_tags.push_back("&agr;");
+    sgml_tags.push_back("&Agr;");
+    sgml_tags.push_back("&bgr;");
+    sgml_tags.push_back("&Bgr;");
+    sgml_tags.push_back("&ggr;");
+    sgml_tags.push_back("&Ggr;");
+    sgml_tags.push_back("&dgr;");
+    sgml_tags.push_back("&Dgr;");
+    sgml_tags.push_back("&egr;");
+    sgml_tags.push_back("&Egr;");
+    sgml_tags.push_back("&zgr;");
+    sgml_tags.push_back("&Zgr;");
+    sgml_tags.push_back("&eegr;");
+    sgml_tags.push_back("&EEgr;");
+    sgml_tags.push_back("&thgr;");
+    sgml_tags.push_back("&THgr;");
+    sgml_tags.push_back("&igr;");
+    sgml_tags.push_back("&Igr;");
+    sgml_tags.push_back("&kgr;");
+    sgml_tags.push_back("&Kgr;");
+    sgml_tags.push_back("&lgr;");
+    sgml_tags.push_back("&Lgr;");
+    sgml_tags.push_back("&mgr;");
+    sgml_tags.push_back("&Mgr;");
+    sgml_tags.push_back("&ngr;");
+    sgml_tags.push_back("&Ngr;");
+    sgml_tags.push_back("&xgr;");
+    sgml_tags.push_back("&Xgr;");
+    sgml_tags.push_back("&ogr;");
+    sgml_tags.push_back("&Ogr;");
+    sgml_tags.push_back("&pgr;");
+    sgml_tags.push_back("&Pgr;");
+    sgml_tags.push_back("&rgr;");
+    sgml_tags.push_back("&Rgr;");
+    sgml_tags.push_back("&sgr;");
+    sgml_tags.push_back("&Sgr;");
+    sgml_tags.push_back("&sfgr;");
+    sgml_tags.push_back("&tgr;");
+    sgml_tags.push_back("&Tgr;");
+    sgml_tags.push_back("&ugr;");
+    sgml_tags.push_back("&Ugr;");
+    sgml_tags.push_back("&phgr;");
+    sgml_tags.push_back("&PHgr;");
+    sgml_tags.push_back("&khgr;");
+    sgml_tags.push_back("&KHgr;");
+    sgml_tags.push_back("&psgr;");
+    sgml_tags.push_back("&PSgr;");
+    sgml_tags.push_back("&ohgr;");
+    sgml_tags.push_back("&OHgr;");
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SgmlPresentInText",
+                              "taxname %s has SGML"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+                              "Taxonomy lookup failed with message 'Organism not found'"));
+    ITERATE(vector<string>, it, sgml_tags) {
+        string taxname = "a" + *it + "b";
+        SetTaxname(entry, taxname);
+        expected_errors[0]->SetErrMsg("taxname " + taxname + " has SGML");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    SetTaxname(entry, "Sebaea microphylla");
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    size_t tag_num = 0;
+
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("subsource " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetSubSource(entry, CSubSource::eSubtype_cell_line, "");
+
+    ++tag_num;
+    SetOrgMod(entry, COrgMod::eSubtype_acronym, sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("orgmod " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetOrgMod(entry, COrgMod::eSubtype_acronym, "");
+
+    CLEAR_ERRORS
+    tag_num++;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SgmlPresentInText",
+                              "dbxref database " + sgml_tags[tag_num] + " has SGML"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref",
+                              "Illegal db_xref type " + sgml_tags[tag_num]));
+
+    SetDbxref (entry, sgml_tags[tag_num], 1234);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (entry, sgml_tags[tag_num], 1234);
+
+    tag_num++;
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    SetDbxref (entry, "AFTOL", sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("dbxref value " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (entry, "AFTOL", 0);
+
+    ++tag_num;
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("dbxref database " + sgml_tags[tag_num] + " has SGML");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref",
+                              "Illegal db_xref type " + sgml_tags[tag_num]));
+    SetDbxref(feat, sgml_tags[tag_num], 1234);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (feat, sgml_tags[tag_num], 1234);
+
+    tag_num++;
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    SetDbxref (feat, "AFTOL", sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("dbxref value " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    RemoveDbxref (feat, "AFTOL", 0);
+
+    tag_num++;
+    scope.RemoveTopLevelSeqEntry(seh);
+    string foo = sgml_tags[tag_num] + "foo";
+    feat->SetData().SetGene().SetLocus(foo);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("gene locus " + foo + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetGene().SetLocus("good locus");
+
+    tag_num++;
+    feat->SetData().SetGene().SetLocus_tag(sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("gene locus_tag " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetGene().ResetLocus_tag();
+
+    tag_num++;
+    feat->SetData().SetGene().SetDesc(sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("gene description " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetGene().ResetDesc();
+
+    tag_num++;
+    feat->SetData().SetGene().SetSyn().push_back(sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("gene synonym " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetGene().ResetDesc();
+
+    tag_num++;
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    foo = sgml_tags[tag_num] + "foo";
+    feat->SetData().SetRna().SetExt().SetName(foo);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("mRNA name " + foo + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    tag_num++;
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    foo = sgml_tags[tag_num] + "foo";
+    feat->SetData().SetRna().SetExt().SetName(foo);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("rRNA name " + foo + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetRna().SetExt().SetName("good name");
+
+    tag_num++;
+    feat->SetComment(sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("feature comment " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->ResetComment();
+
+    tag_num++;
+    CRef<CGb_qual> qual(new CGb_qual());
+    qual->SetQual("standard_name");
+    qual->SetVal(sgml_tags[tag_num]);
+    feat->SetQual().push_back(qual);
+    expected_errors[0]->SetErrMsg("feature qualifier " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetQual().pop_back();
+
+    tag_num++;
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet ();
+    feat = entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    foo = sgml_tags[tag_num] + "foo";
+    feat->SetData().SetProt().SetName().push_back(foo);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("prot");
+    expected_errors[0]->SetErrMsg("protein name " + foo + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetProt().SetName().pop_back();
+    feat->SetData().SetProt().SetName().push_back("bar");
+
+
+    tag_num++;
+    feat->SetData().SetProt().SetDesc(sgml_tags[tag_num]);
+    expected_errors[0]->SetErrMsg("protein description " + sgml_tags[tag_num] + " has SGML");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetData().SetProt().ResetDesc();
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CPub> pub = BuildGoodArticlePub();
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_epublish);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetPub().SetPub().Set().push_back(pub);
+    desc->SetPub().SetComment("Publication Status");
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnexpectedPubStatusComment",
+                                                 "Publication status is in comment for pmid 0"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_ppublish);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    desc->SetPub().SetComment("Publication-Status");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    desc->SetPub().SetComment("Publication_Status");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
 
 
 static string MakeWrongCap (const string& str)
