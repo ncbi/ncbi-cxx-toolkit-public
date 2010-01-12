@@ -497,22 +497,19 @@ RunTest()
 
                         # Run check
                         start_time="\`date +'$x_date_format'\`"
-                        if test \$CHECK_TIMEOUT -gt 200; then
-                            # For heavy apps we would like to know execution time also
-                            # for the case of exceeding of the maximum execution time.
-                            launch_sh="/var/tmp/launch.\$\$.sh"
+                        
+                        # Use separate shell to run test.
+                        # This will allow to know execution time for applications with timeout.
+                        # Also, process guard works better if used after "time -p".
+                        launch_sh="/var/tmp/launch.\$\$.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
 exec time -p \$check_exec \`eval echo \$xx_run\`
 EOF_launch
-                            chmod a+x \$launch_sh
-                            \$launch_sh >\$x_log 2>&1
-                            result=\$?
-                            rm \$launch_sh
-                        else
-                            \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
-                            result=\$?
-                        fi
+                        chmod a+x \$launch_sh
+                        \$launch_sh >\$x_log 2>&1
+                        result=\$?
+                        rm \$launch_sh
                         stop_time="\`date +'$x_date_format'\`"
 
                         sed -e '/ ["][$][@]["].*\$/ {
