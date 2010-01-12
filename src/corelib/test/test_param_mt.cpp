@@ -179,14 +179,6 @@ bool CTestParamApp::Thread_Run(int idx)
 
 bool CTestParamApp::TestApp_Init(void)
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                              "Test of CE2Blast interface");
-
-    SetupArgDescriptions(arg_desc.release());
-
     NcbiCout << NcbiEndl
              << "Testing parameters with "
              << NStr::IntToString(s_NumThreads)
@@ -224,5 +216,5 @@ bool CTestParamApp::TestApp_Exit(void)
 int main(int argc, const char* argv[]) 
 {
     CTestParamApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default, 0);
+    return app.AppMain(argc, argv);
 }
