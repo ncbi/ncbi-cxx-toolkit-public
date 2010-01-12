@@ -144,6 +144,417 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 }
 
 
+static void SetDbxref (CBioSource& src, string db, size_t id)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetId(id);
+    src.SetOrg().SetDb().push_back(dbtag);
+}
+
+
+static void SetDbxref (CBioSource& src, string db, string id)
+{
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetStr(id);
+    src.SetOrg().SetDb().push_back(dbtag);
+}
+
+
+static void RemoveDbxref (CBioSource& src, string db, size_t id)
+{
+    if (src.IsSetOrg()) {
+        EDIT_EACH_DBXREF_ON_ORGREF(it, src.SetOrg()) {            
+            if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
+                if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+                    ERASE_DBXREF_ON_ORGREF(it, src.SetOrg());
+                }
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_entry> entry, string db, size_t id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_entry> entry, string db, string id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void RemoveDbxref (CRef<CSeq_entry> entry, string db, size_t id)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                RemoveDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                RemoveDbxref((*it)->SetSource(), db, id);
+            }
+        }
+    }
+}
+
+
+static void SetDbxref (CRef<CSeq_feat> feat, string db, size_t id)
+{
+    if (!feat) {
+        return;
+    }
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetId(id);
+    feat->SetDbxref().push_back(dbtag);
+}
+
+
+static void SetDbxref (CRef<CSeq_feat> feat, string db, string id)
+{
+    if (!feat) {
+        return;
+    }
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb(db);
+    dbtag->SetTag().SetStr(id);
+    feat->SetDbxref().push_back(dbtag);
+}
+
+
+static void RemoveDbxref (CRef<CSeq_feat> feat, string db, size_t id)
+{
+    if (!feat) {
+        return;
+    }
+    EDIT_EACH_DBXREF_ON_SEQFEAT(it, *feat) {            
+        if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
+            if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+                ERASE_DBXREF_ON_SEQFEAT(it, *feat);
+            }
+        }
+    }
+}
+
+
+static void SetTaxon (CBioSource& src, size_t taxon)
+{
+    if (taxon == 0) {
+        RemoveDbxref (src, "taxon", 0);
+    } else {
+        SetDbxref(src, "taxon", taxon);
+    }
+}
+
+
+static void SetTaxon (CRef<CSeq_entry> entry, size_t taxon)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetTaxon((*it)->SetSource(), taxon);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                SetTaxon((*it)->SetSource(), taxon);
+            }
+        }
+    }
+}
+
+
+static void AddGoodSource (CRef<CSeq_entry> entry)
+{
+    CRef<CSeqdesc> odesc(new CSeqdesc());
+    odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
+    odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
+    SetTaxon(odesc->SetSource(), 592768);
+    CRef<CSubSource> subsrc(new CSubSource());
+    subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
+    subsrc->SetName("1");
+    odesc->SetSource().SetSubtype().push_back(subsrc);
+
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetDescr().Set().push_back(odesc);
+    } else if (entry->IsSet()) {
+        entry->SetSet().SetDescr().Set().push_back(odesc);
+    }
+}
+
+
+static CRef<CSeqdesc> BuildGoodPubSeqdesc()
+{
+    CRef<CSeqdesc> pdesc(new CSeqdesc());
+    CRef<CPub> pub(new CPub());
+    pub->SetPmid((CPub::TPmid)1);
+    pdesc->SetPub().SetPub().Set().push_back(pub);
+
+    return pdesc;
+}
+
+
+static void AddGoodPub (CRef<CSeq_entry> entry)
+{
+    CRef<CSeqdesc> pdesc = BuildGoodPubSeqdesc();
+
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetDescr().Set().push_back(pdesc);
+    } else if (entry->IsSet()) {
+        entry->SetSet().SetDescr().Set().push_back(pdesc);
+    }
+}
+
+
+static CRef<CSeq_entry> BuildGoodSeq(void)
+{
+    CRef<CBioseq> seq(new CBioseq());
+    seq->SetInst().SetMol(CSeq_inst::eMol_dna);
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    seq->SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    seq->SetInst().SetLength(60);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr ("good");
+    seq->SetId().push_back(id);
+
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
+    seq->SetDescr().Set().push_back(mdesc);
+
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq(*seq);
+    AddGoodSource (entry);
+    AddGoodPub(entry);
+
+    return entry;
+}
+
+
+static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_annot> annot;
+
+    if (entry->IsSeq()) {
+        if (!entry->GetSeq().IsSetAnnot() 
+            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSeq().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSeq().SetAnnot().front();
+        }
+    } else if (entry->IsSet()) {
+        if (!entry->GetSet().IsSetAnnot() 
+            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSet().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSet().SetAnnot().front();
+        }
+    }
+    annot->SetData().SetFtable().push_back(feat);
+}
+
+
+CRef<CSeq_feat> BuildGoodFeat ()
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(59);
+    feat->SetData().SetImp().SetKey("misc_feature");
+
+    return feat;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = BuildGoodFeat();
+    gene->SetData().SetGene().SetMaploc("willmatch");
+    AddFeat(gene, entry);
+    CRef<CSeq_feat> misc_feat = BuildGoodFeat();
+    CRef<CGb_qual> qual(new CGb_qual("map", "willmatch"));
+    misc_feat->SetQual().push_back(qual);
+    AddFeat(misc_feat, entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.ExtendedCleanup (*entry);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+	if (changes_str.size() == 0) {
+        BOOST_CHECK_EQUAL("missing cleanup", "remove qualifier");
+	} else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Remove Qualifier");
+        for (int i = 1; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+	}
+    // make sure change was actually made
+    CFeat_CI feat (seh);
+    while (feat) {
+        if (feat->GetData().IsGene()) {
+            if (!feat->GetData().GetGene().IsSetMaploc()) {
+                BOOST_CHECK_EQUAL("gene map missing", "unexpected cleanup");
+            }
+        } else {
+            if (feat->IsSetQual()) {
+                BOOST_CHECK_EQUAL("map still present", feat->GetQual().front()->GetVal());
+            }
+        }
+        ++feat;
+    }
+
+    // don't remove if not same
+    scope->RemoveTopLevelSeqEntry(seh);
+    misc_feat = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    qual->SetVal("wontmatch");
+    misc_feat->SetQual().push_back(qual);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+
+    changes = cleanup.ExtendedCleanup (*entry);
+    if (changes_str.size() > 0) {
+        for (int i = 1; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+	}
+ 
+    // make sure qual is still there
+    CFeat_CI feat2(seh);
+    while (feat2) {
+        if (feat2->GetData().IsGene()) {
+            if (!feat2->GetData().GetGene().IsSetMaploc()) {
+                BOOST_CHECK_EQUAL("gene map missing", "unexpected cleanup");
+            }
+        } else {
+            if (!feat2->IsSetQual()) {
+                BOOST_CHECK_EQUAL("map removed", feat2->GetQual().front()->GetVal());
+            }
+        }
+        ++feat2;
+    }
+
+    // don't remove if embl or ddbj
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
+    gene = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    gene->SetLocation().SetInt().SetId().SetEmbl().SetAccession("AY123456");
+    misc_feat = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    misc_feat->SetLocation().SetInt().SetId().SetEmbl().SetAccession("AY123456");
+    qual->SetVal("willmatch");
+    misc_feat->SetQual().push_back(qual);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+
+    changes = cleanup.ExtendedCleanup (*entry);
+    if (changes_str.size() > 0) {
+        for (int i = 1; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+	}
+ 
+    // make sure qual is still there
+    CFeat_CI feat3(seh);
+    while (feat3) {
+        if (feat3->GetData().IsGene()) {
+            if (!feat3->GetData().GetGene().IsSetMaploc()) {
+                BOOST_CHECK_EQUAL("gene map missing", "unexpected cleanup");
+            }
+        } else {
+            if (!feat3->IsSetQual()) {
+                BOOST_CHECK_EQUAL("map removed", feat->GetQual().front()->GetVal());
+            }
+        }
+        ++feat3;
+    }
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetDdbj().SetAccession("AY123456");
+    gene = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    gene->SetLocation().SetInt().SetId().SetDdbj().SetAccession("AY123456");
+    misc_feat = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    misc_feat->SetLocation().SetInt().SetId().SetDdbj().SetAccession("AY123456");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+
+    changes = cleanup.ExtendedCleanup (*entry);
+    if (changes_str.size() > 0) {
+        for (int i = 1; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+	}
+ 
+    // make sure qual is still there
+    CFeat_CI feat4(seh);
+    while (feat4) {
+        if (feat4->GetData().IsGene()) {
+            if (!feat4->GetData().GetGene().IsSetMaploc()) {
+                BOOST_CHECK_EQUAL("gene map missing", "unexpected cleanup");
+            }
+        } else {
+            if (!feat4->IsSetQual()) {
+                BOOST_CHECK_EQUAL("map removed", feat->GetQual().front()->GetVal());
+            }
+        }
+        ++feat4;
+    }
+
+}
+
+
 const char *sc_TestEntryRemoveOldName = "\
 Seq-entry ::= seq {\
           id {\

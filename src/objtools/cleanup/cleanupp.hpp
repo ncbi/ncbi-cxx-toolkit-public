@@ -332,7 +332,7 @@ private:
     void x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa);
     void x_StripProtXrefs(CSeq_annot_Handle sa);
     void x_ConvertUserObjectToAnticodon(CSeq_annot_Handle sa);
-    void x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa);
+    void x_RemoveRedundantMapQuals (CSeq_annot_Handle sa);
 
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);

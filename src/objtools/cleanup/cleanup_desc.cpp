@@ -1008,9 +1008,38 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_entry_Handle seh)
     }
 }
 
+
+static bool IsEmblOrDdbj (CBioseq_Handle bh)
+{
+    bool rval = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bh.GetCompleteBioseq())) {
+        if ((*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
+            rval = true;
+            break;
+        }
+    }
+    return rval;
+}
+
+
+static bool IsEmblOrDdbj (CBioseq_set_Handle bh)
+{
+    bool rval = false;
+    CBioseq_CI bi(bh);
+
+    while (bi && !rval) {
+        rval = IsEmblOrDdbj (*bi);
+        ++bi;
+    }
+    return rval;
+}
+
+
 // This function was LoopSeqEntryToAsn3 in the C Toolkit
 void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 {
+    bool isEmblOrDDBH = IsEmblOrDdbj(bh);
     
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
@@ -1027,7 +1056,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // but CheckMaps didn't actually make any other changes
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_ConvertUserObjectToAnticodon);
     // this step was called MapsToGenref in the C Toolkit
-    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_MoveMapQualsToGeneMaploc);
+    if (!isEmblOrDDBH) {
+        x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveRedundantMapQuals);
+    }
     
     // these steps were part of CheckGeneticCode in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);
@@ -1041,6 +1072,8 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 // This function was LoopSeqEntryToAsn3 in the C Toolkit
 void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
 {
+    bool isEmblOrDDBH = IsEmblOrDdbj(bh);
+
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
     
@@ -1057,7 +1090,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
     // but CheckMaps didn't actually make any other changes
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_ConvertUserObjectToAnticodon);
     // this step was called MapsToGenref in the C Toolkit
-    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_MoveMapQualsToGeneMaploc);
+    if (!isEmblOrDDBH) {
+        x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveRedundantMapQuals);
+    }
 
     // these steps were part of CheckGeneticCode in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);

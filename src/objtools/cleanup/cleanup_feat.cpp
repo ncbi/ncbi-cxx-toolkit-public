@@ -2729,58 +2729,16 @@ void CCleanup_imp::x_ConvertUserObjectToAnticodon(CSeq_annot_Handle sa)
 // if the gene feature has no map loc, the map value will be copied to the gene
 // feature maploc.  If all of the features with map qualifiers have the same map
 // qualifier value, the map qualifiers will be removed.
-void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
+void CCleanup_imp::x_RemoveRedundantMapQuals (CSeq_annot_Handle sa)
 {
     objects::SAnnotSelector gene_sel(CSeqFeatData::eSubtype_gene);
     CFeat_CI gene_ci(sa, gene_sel);
     while (gene_ci) {
-        CFeat_CI overlapped_feat_ci (*m_Scope, gene_ci->GetOriginalFeature().GetLocation());
-        string map = "";
-        bool   same = true;
-        bool   any = false;
-        while (overlapped_feat_ci && same) {
-            // check to make sure feature is contained in (or same location as) gene
-            sequence::ECompare loc_compare = sequence::Compare(overlapped_feat_ci->GetOriginalFeature().GetLocation(),
-                                                               gene_ci->GetOriginalFeature().GetLocation(),
-                                                               m_Scope);
-            if ((loc_compare == sequence::eContained
-                  || loc_compare == sequence::eSame)
-                  && !overlapped_feat_ci->GetData().IsGene() 
-                  && overlapped_feat_ci->IsSetQual()) {
-                ITERATE (CSeq_feat::TQual, qual_it, overlapped_feat_ci->GetQual()) {
-                    if ((*qual_it)->CanGetQual() 
-                        && NStr::Equal((*qual_it)->GetQual(), "map")
-                        && (*qual_it)->CanGetVal()) {
-                        if (any) {
-                            if (!NStr::Equal(map, (*qual_it)->GetVal())) {
-                                same = false;
-                            }
-                        } else {
-                            any = true;
-                            map = (*qual_it)->GetVal();
-                        }
-                    }
-                }
-            }
-            ++overlapped_feat_ci;
-        }
-        if (any && same) {
-            string gene_map = "";
-            if(!gene_ci->GetData().GetGene().IsSetMaploc()
-               || NStr::IsBlank(gene_ci->GetData().GetGene().GetMaploc())) {
-                CSeq_feat_EditHandle efh(gene_ci->GetSeq_feat_Handle());
-                CRef<CSeq_feat> new_feat(new CSeq_feat);
-                new_feat->Assign(gene_ci->GetOriginalFeature());
-                new_feat->SetData().SetGene().SetMaploc(map);
-                efh.Replace(*new_feat);
-                ChangeMade(CCleanupChange::eChangeOther);                    
-                gene_map = map;
-            } else {
-                gene_map = gene_ci->GetData().GetGene().GetMaploc();
-            }
+        if (gene_ci->GetData().GetGene().IsSetMaploc()) {
+            string gene_map = gene_ci->GetData().GetGene().GetMaploc();
+            if (!NStr::IsBlank(gene_map)) {
+                CFeat_CI overlapped_feat_ci (*m_Scope, gene_ci->GetOriginalFeature().GetLocation());
         
-            if (NStr::Equal (gene_map, map)) {
-                overlapped_feat_ci.Rewind();
                 while (overlapped_feat_ci) {
                     bool changed = false;
                     // check to make sure feature is contained in (or same location as) gene
@@ -2798,7 +2756,8 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
                         CSeq_feat::TQual::iterator qual_it = new_feat->SetQual().begin();
                         while (qual_it != new_feat->SetQual().end()) {
                             if ((*qual_it)->CanGetQual() 
-                                && NStr::Equal((*qual_it)->GetQual(), "map")) {
+                                && NStr::Equal((*qual_it)->GetQual(), "map")
+                                && NStr::Equal((*qual_it)->GetVal(), gene_map)) {
                                 qual_it = new_feat->SetQual().erase(qual_it);
                                 changed = true;
                             } else {
@@ -2806,6 +2765,9 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
                             }
                         }
                         if (changed) {
+                            if (new_feat->IsSetQual() && new_feat->GetQual().empty()) {
+                                new_feat->ResetQual();
+                            }
                             efh.Replace(*new_feat);
                             ChangeMade(CCleanupChange::eRemoveQualifier);
                         }
