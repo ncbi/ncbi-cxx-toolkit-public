@@ -6024,6 +6024,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UTEX	c	The Culture Collection of Algae at the University of Texas Austin",
 "UTG	s	University of Tuebingen",
 "UTGD	s	Geology Department, The University of Tasmania",
+"UTHSC	c	University of Texas Health Science Center",
 "UTKI	s	University of Teheran",
 "UTLH	s	University of Technology, Human Sciences Department",
 "UTLPA	s	University of Texas at Austin, Laboratory of Physical Anthropology",
