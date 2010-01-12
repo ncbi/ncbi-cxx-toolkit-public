@@ -397,7 +397,8 @@ int main(int argc, const char* argv[])
     ofstream ofs(DEV_NULL);
     assert(ofs);
 
-    CConn_HttpStream ifs("http://www.ncbi.nlm.nih.gov", 0,
+    CConn_HttpStream ifs("http://www.ncbi.nlm.nih.gov"
+                         "/cpp/network/dispatcher.html", 0,
                         "My-Header: Header\r\n", fHCC_Flushable);
     ifs << "Sample input -- should be ignored";
 
