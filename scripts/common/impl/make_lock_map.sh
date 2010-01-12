@@ -10,13 +10,18 @@ common=_`basename $PWD`_common
 
 [ -d "$cache_dir" ]  ||  mkdir "$cache_dir"
 (test Makefile.in -ef Makefile.in) 2>/dev/null  ||  test=/usr/bin/test
+if nawk 'BEGIN { exit 0 }' 2>/dev/null; then
+    awk=nawk
+else
+    awk=awk
+fi
 
 for x in $files; do
     if [ "x$x" = "x$files" ]; then
         # echo "No application or library makefiles found in $PWD."
         exit 0
     elif $test \! -f "$cache_dir/$x" -o "$cache_dir/$x" -ot "$x"; then
-        awk -F= '{ sub("#.*", "") }
+        $awk -F= '{ sub("#.*", "") }
             /^[ 	]*(UNIX_)?SRC[ 	]*=.*/ {
                 src = $2
                 sub("^[ 	]*", "", src)
