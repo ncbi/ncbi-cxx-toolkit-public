@@ -315,7 +315,7 @@ public:
             "ST IJV LM KR EQZ A G BD P N F Y H C W"
         };
 
-        _ASSERT(alph_index >= eFirstCompressed && alph_index < eNumAlphabets);
+        _ASSERT(alph_index >= eFirstCompressed && alph_index <= eLastAlphabet);
         const char* trans_string = kCompAlphabets[alph_index
                                                   - (int)eFirstCompressed];
 
