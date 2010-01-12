@@ -835,7 +835,7 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
              *aln_stats.GetAlnVec()[aln_idx],
              anchor_row,
              row,
-             options.m_Direction);
+             row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction);
 
         if (pairwise_aln->empty()) {
             ++empty_rows;
@@ -844,8 +844,13 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
         pairwises[row].Reset(pairwise_aln);
     }
     _ALNMGR_ASSERT(empty_rows >= 0  &&  empty_rows < dim);
-
-
+    if (empty_rows == dim - 1) {
+        _ALNMGR_ASSERT(options.m_Direction != CAlnUserOptions::eBothDirections);
+        /// one option is to "return CRef<CAnchoredAln>();" here, but
+        /// perhaps an anchored-only CAnchoredAln makes more sense: at
+        /// least the anchor regions are accounted for.
+    }
+        
     /// Create the anchored aln (which may shrink vertically due to resulting empty rows)
     TDim new_dim = dim - empty_rows;
     _ALNMGR_ASSERT(new_dim > 0);
@@ -873,23 +878,25 @@ CreateAnchoredAlnVec(TAlnStats& aln_stats,           ///< input
                      const CAlnUserOptions& options) ///< user options
 {
     _ASSERT(out_vec.empty());
-    out_vec.resize(aln_stats.GetAlnCount());
+    out_vec.reserve(aln_stats.GetAlnCount());
     for (size_t aln_idx = 0;  
          aln_idx < aln_stats.GetAlnCount();
          ++aln_idx) {
 
-        out_vec[aln_idx] = 
+        CRef<CAnchoredAln> anchored_aln = 
             CreateAnchoredAlnFromAln(aln_stats, aln_idx, options);
 
-        CAnchoredAln& anchored_aln = *out_vec[aln_idx];
-
-        /// Calc scores
-        for (TAlnStats::TDim row = 0; row < anchored_aln.GetDim(); ++row) {
-            ITERATE(CPairwiseAln, rng_it, *anchored_aln.GetPairwiseAlns()[row]) {
-                anchored_aln.SetScore() += rng_it->GetLength();
+        if (anchored_aln) {
+            out_vec.push_back(anchored_aln);
+            
+            /// Calc scores
+            for (TAlnStats::TDim row = 0; row < anchored_aln->GetDim(); ++row) {
+                ITERATE(CPairwiseAln, rng_it, *anchored_aln->GetPairwiseAlns()[row]) {
+                    anchored_aln->SetScore() += rng_it->GetLength();
+                }
             }
+            anchored_aln->SetScore() /= anchored_aln->GetDim();
         }
-        anchored_aln.SetScore() /= anchored_aln.GetDim();
     }
 }
 
