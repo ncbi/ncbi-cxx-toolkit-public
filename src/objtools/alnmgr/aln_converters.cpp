@@ -846,9 +846,10 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
     _ALNMGR_ASSERT(empty_rows >= 0  &&  empty_rows < dim);
     if (empty_rows == dim - 1) {
         _ALNMGR_ASSERT(options.m_Direction != CAlnUserOptions::eBothDirections);
-        /// one option is to "return CRef<CAnchoredAln>();" here, but
-        /// perhaps an anchored-only CAnchoredAln makes more sense: at
-        /// least the anchor regions are accounted for.
+        return CRef<CAnchoredAln>();
+        /// Alternatively, perhaps we can continue processing here
+        /// which would result in a CAnchoredAln that only contains
+        /// the anchor.
     }
         
     /// Create the anchored aln (which may shrink vertically due to resulting empty rows)
