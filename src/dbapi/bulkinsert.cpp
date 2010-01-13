@@ -43,15 +43,15 @@
 BEGIN_NCBI_SCOPE
 
 // implementation
-CBulkInsert::CBulkInsert(const string& name,
-                         CConnection* conn)
+CDBAPIBulkInsert::CDBAPIBulkInsert(const string& name,
+                                   CConnection* conn)
     : m_cmd(0), m_conn(conn)
 {
     m_cmd = m_conn->GetCDB_Connection()->BCPIn(name);
-    SetIdent("CBulkInsert");
+    SetIdent("CDBAPIBulkInsert");
 }
 
-CBulkInsert::~CBulkInsert()
+CDBAPIBulkInsert::~CDBAPIBulkInsert()
 {
     try {
         Notify(CDbapiClosedEvent(this));
@@ -62,13 +62,13 @@ CBulkInsert::~CBulkInsert()
     NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
-void CBulkInsert::Close()
+void CDBAPIBulkInsert::Close()
 {
     Notify(CDbapiClosedEvent(this));
     FreeResources();
 }
 
-void CBulkInsert::FreeResources()
+void CDBAPIBulkInsert::FreeResources()
 {
     delete m_cmd;
     m_cmd = 0;
@@ -79,7 +79,7 @@ void CBulkInsert::FreeResources()
     }
 }
  
-void CBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
+void CDBAPIBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
 {
     // GetBCPInCmd()->GetBindParams().Bind(col - 1, v->GetData());
 
@@ -92,42 +92,42 @@ void CBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
 }
 		
 		
-void CBulkInsert::SetHints(CTempString hints)
+void CDBAPIBulkInsert::SetHints(CTempString hints)
 {
     GetBCPInCmd()->SetHints(hints);
 }
 
-void CBulkInsert::AddHint(EHints hint, unsigned int value /* = 0 */)
+void CDBAPIBulkInsert::AddHint(EHints hint, unsigned int value /* = 0 */)
 {
     GetBCPInCmd()->AddHint((CDB_BCPInCmd::EBCP_Hints)hint, value);
 }
 
-void CBulkInsert::AddOrderHint(CTempString columns)
+void CDBAPIBulkInsert::AddOrderHint(CTempString columns)
 {
     GetBCPInCmd()->AddOrderHint(columns);
 }
 
-void CBulkInsert::AddRow()
+void CDBAPIBulkInsert::AddRow()
 {
     GetBCPInCmd()->SendRow();
 }
 
-void CBulkInsert::StoreBatch() 
+void CDBAPIBulkInsert::StoreBatch() 
 {
     GetBCPInCmd()->CompleteBatch();
 }
 
-void CBulkInsert::Cancel()
+void CDBAPIBulkInsert::Cancel()
 {
     GetBCPInCmd()->Cancel();
 }
 
-void CBulkInsert::Complete()
+void CDBAPIBulkInsert::Complete()
 {
     GetBCPInCmd()->CompleteBCP();
 }
 
-void CBulkInsert::Action(const CDbapiEvent& e) 
+void CDBAPIBulkInsert::Action(const CDbapiEvent& e) 
 {
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
            << "' from " << e.GetSource()->GetIdent());

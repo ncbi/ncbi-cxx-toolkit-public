@@ -243,7 +243,6 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
         // Insert data ...
         {
-            bool exception_catched = false;
             CBulkInsert bi = GetDatabase().NewBulkInsert("#test_bulk_overflow", 1);
 
             bi.Bind(1, eSDB_String);
@@ -289,7 +288,6 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
         // Insert data ...
         {
-            bool exception_catched = false;
             CBulkInsert bi = GetDatabase().NewBulkInsert("#test_bulk_overflow", 2);
 
             bi.Bind(1, eSDB_Binary);
@@ -804,7 +802,6 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
 {
     string sql;
     const string table_name("#blk_late_bind_table");
-    bool exception_thrown = false;
 
     try {
         CQuery query = GetDatabase().NewQuery();

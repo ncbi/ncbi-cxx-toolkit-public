@@ -33,9 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiapp.hpp>
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_crypt.h>
-#endif
 
 #include "sdbapi_unit_test.hpp"
 
@@ -142,19 +139,6 @@ NCBITEST_AUTO_FINI()
     s_Conn.reset(NULL);
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-NCBITEST_INIT_VARIABLES(parser)
-{
-    ///////////////////////
-    // Configuration-related ...
-#ifdef HAVE_LIBCONNEXT
-    parser->AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
-#else
-    parser->AddSymbol("HAVE_LibConnExt", false);
-#endif
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(void)

@@ -40,13 +40,15 @@
 
 BEGIN_NCBI_SCOPE
 
-class CBulkInsert : public CActiveObject, 
-                    public IBulkInsert
+/// Class has deliberately obscure name to not mix it with CBulkInsert in
+/// SDBAPI and to avoid direct usages.
+class CDBAPIBulkInsert : public CActiveObject, 
+                         public IBulkInsert
 {
 public:
-    CBulkInsert(const string& table, CConnection* conn);
+    CDBAPIBulkInsert(const string& table, CConnection* conn);
 
-    virtual ~CBulkInsert();
+    virtual ~CDBAPIBulkInsert();
 
     void SetHints(CTempString hints);
     void AddHint(EHints hint, unsigned int value = 0);

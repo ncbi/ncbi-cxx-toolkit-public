@@ -368,12 +368,12 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name)
     if( m_bulkInsert != 0 ) {
         delete m_bulkInsert;
     }
-    m_bulkInsert = new CBulkInsert(table_name, nof_cols, this);
+    m_bulkInsert = new CDBAPIBulkInsert(table_name, nof_cols, this);
     AddListener(m_bulkInsert);
     m_bulkInsert->AddListener(this);
     return m_bulkInsert;
 */
-    CBulkInsert *bulkInsert = new CBulkInsert(table_name, this);
+    CDBAPIBulkInsert *bulkInsert = new CDBAPIBulkInsert(table_name, this);
     AddListener(bulkInsert);
     bulkInsert->AddListener(this);
     return bulkInsert;
@@ -422,7 +422,7 @@ IBulkInsert* CConnection::CreateBulkInsert(const string& table_name)
 //    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
 
-    CBulkInsert *bcp = new CBulkInsert(table_name, GetAuxConn());
+    CDBAPIBulkInsert *bcp = new CDBAPIBulkInsert(table_name, GetAuxConn());
     AddListener(bcp);
     bcp->AddListener(this);
     return bcp;
@@ -438,7 +438,7 @@ void CConnection::Action(const CDbapiEvent& e)
         CStatement *stmt;
         CCallableStatement *cstmt;
         CCursor *cursor;
-        CBulkInsert *bulkInsert;
+        CDBAPIBulkInsert *bulkInsert;
         if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
             if( cstmt == m_cstmt ) {
                 _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt);
@@ -457,7 +457,7 @@ void CConnection::Action(const CDbapiEvent& e)
                 m_cursor = 0;
             }
         }
-        else if( (bulkInsert = dynamic_cast<CBulkInsert*>(e.GetSource())) != 0 ) {
+        else if( (bulkInsert = dynamic_cast<CDBAPIBulkInsert*>(e.GetSource())) != 0 ) {
             if( bulkInsert == m_bulkInsert ) {
                 _TRACE("CConnection: Clearing cached bulkinsert " << (void*)m_bulkInsert);
                 m_bulkInsert = 0;
