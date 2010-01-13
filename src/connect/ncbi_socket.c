@@ -1570,7 +1570,7 @@ static EIO_Status s_Select(size_t                n,
         /* n_fds < 0 */
         if ((x_error = SOCK_ERRNO) != SOCK_EINTR) {
             char _id[MAXIDLEN];
-            CORE_LOGF_ERRNO_EXX(5, eLOG_Trace,
+            CORE_LOGF_ERRNO_EXX(5, eLOG_Warning,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("%s[SOCK::Select] "
                                  " Failed select()",
