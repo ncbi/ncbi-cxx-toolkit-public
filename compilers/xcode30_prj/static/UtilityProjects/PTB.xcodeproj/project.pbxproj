@@ -7886,6 +7886,7 @@
           <string>ABCDABCDABCDABCD00000278</string>
           <string>ABCDABCDABCDABCD0000027A</string>
           <string>ABCDABCDABCDABCD0000027C</string>
+          <string>BBCDABCDABCDABCD0000027C</string>
           <string>ABCDABCDABCDABCD0000027E</string>
           <string>ABCDABCDABCDABCD00000280</string>
           <string>ABCDABCDABCDABCD00000282</string>
@@ -8643,6 +8644,26 @@
       <dict>
         <key>fileRef</key>
         <string>ABCDABCDABCDABCD0000027C</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>BBCDABCDABCDABCD0000027C</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>objistrjson.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/objistrjson.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>BBCDABCDABCDABCD0000027D</key>
+      <dict>
+        <key>fileRef</key>
+        <string>BBCDABCDABCDABCD0000027C</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
@@ -10157,6 +10178,7 @@
           <string>ABCDABCDABCDABCD00000279</string>
           <string>ABCDABCDABCDABCD0000027B</string>
           <string>ABCDABCDABCDABCD0000027D</string>
+          <string>BBCDABCDABCDABCD0000027D</string>
           <string>ABCDABCDABCDABCD0000027F</string>
           <string>ABCDABCDABCDABCD00000281</string>
           <string>ABCDABCDABCDABCD00000283</string>
