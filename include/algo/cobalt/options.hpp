@@ -135,14 +135,14 @@ public:
         {return m_IsPointer ? !m_Pattern.pointer : m_Pattern.str.empty();}
 
     private:
-        typedef struct SPattern {
+        struct SPattern {
             char* pointer; 
             string str;
 
             SPattern(void) : pointer(NULL) {}
             SPattern(char* ptr) : pointer(ptr) {}
             SPattern(string s) : pointer(NULL), str(s) {}
-        } SPattern;
+        };
 
         SPattern m_Pattern;
         bool m_IsPointer;
@@ -151,7 +151,7 @@ public:
 
     /// Structure for representing single user constraint for pair-wise
     /// alignment
-    typedef struct SConstraint {
+    struct SConstraint {
         int seq1_index;
         int seq1_start;
         int seq1_stop;
@@ -177,7 +177,7 @@ public:
               seq2_index(ind2), seq2_start(start2), seq2_stop(end2)
         {}
 
-    } SConstraint;
+    };
 
     typedef vector<SConstraint> TConstraints;
 

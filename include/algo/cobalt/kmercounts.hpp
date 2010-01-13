@@ -62,7 +62,7 @@ public:
 
 
     /// Element of the sparse vector
-    typedef struct SVectorElement {
+    struct SVectorElement {
     Uint4 position;   ///< position of non-zero element
     TCount value;     ///< value of non-zero element
 
@@ -73,7 +73,7 @@ public:
     /// @param pos Element position
     /// @param val Element value
     SVectorElement(Uint4 pos, TCount val) {position = pos; value = val;}
-    } SVectorElement;
+    };
 
     typedef vector<SVectorElement>::const_iterator TNonZeroCounts_CI;
     

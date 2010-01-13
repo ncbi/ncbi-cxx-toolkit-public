@@ -56,7 +56,7 @@ class NCBI_COBALT_EXPORT CTree
 public:
 
     /// Structure for listing tree edges
-    typedef struct STreeEdge {
+    struct STreeEdge {
         const TPhyTreeNode *node;    ///< pointer to this edge in the tree
         double distance;             ///< length of this edge
 
@@ -66,10 +66,10 @@ public:
         ///
         STreeEdge(const TPhyTreeNode *n, double d)
             : node(n), distance(d) {}
-    } STreeEdge;
+    };
     
     /// Structure for listing tree leaves
-    typedef struct STreeLeaf {
+    struct STreeLeaf {
         int query_idx;            ///< Ordinal ID of the sequence at leaf
         double distance;          ///< Length of path to this leaf
 
@@ -80,7 +80,7 @@ public:
         ///
         STreeLeaf(int q, double d)
             : query_idx(q), distance(d) {}
-    } STreeLeaf;
+    };
 
     /// Make an empty tree
     ///
