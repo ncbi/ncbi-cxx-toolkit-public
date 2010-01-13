@@ -181,6 +181,14 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
     score = 0;
     sum = 0;
 
+/*
+   There is a trick in the loop below that you can't see from the code.
+   X is negative and when sum becomes more negative than X we break out of
+   the loop.  The reason that X is guaranteed to become negative is because
+   there is a sentinel at the beginning of the query sequence, so if you hit
+   that you get a big negative value.
+*/
+
     /* extend to the left */
     while ((s > start) || (s == start && base < remainder)) {
         if (base == 3) {
