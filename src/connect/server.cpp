@@ -430,15 +430,31 @@ void CServer::Run(void)
                 (polls, timer_requests, &timer_timeout) &&
                 (timeout == kDefaultTimeout ||
                  timeout == kInfiniteTimeout ||
-                 timer_timeout < *timeout))
+                 timer_timeout < *timeout)) {
                 timeout = &timer_timeout;
+            }
 
 //            _TRACE("Poll with vector of length " << NStr::IntToString(polls.size()));
             EIO_Status status = CSocketAPI::Poll(polls, timeout, &count);
 //            _TRACE("Poll returned");
 
             if (status != eIO_Success  &&  status != eIO_Timeout) {
-                ERR_POST_X(8, Critical << "Poll failed with status " << status);
+                int x_errno = errno;
+                const char* temp = IO_StatusStr(status);
+                string ststr(temp
+                             ? temp
+                             : NStr::UIntToString((unsigned int) status));
+                string erstr;
+                if (x_errno) {
+                    erstr = ", {" + NStr::IntToString(x_errno);
+                    if (temp  &&  *temp) {
+                        erstr += ',';
+                        erstr += temp;
+                    }
+                    erstr += '}';
+                }
+                ERR_POST_X(8, Critical << "Poll failed with status "
+                           << ststr << erstr);
                 continue;
             }
 
