@@ -593,3 +593,7 @@ QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
 # EUtils
 EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
               einfo uilist ehistory
+
+# SDBAPI
+SDBAPI_LIB  = sdbapi ncbi_xdbapi_ftds $(FTDS_LIB) dbapi dbapi_driver $(XCONNEXT)
+SDBAPI_LIBS = $(FTDS_LIBS)

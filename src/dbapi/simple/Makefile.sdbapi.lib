@@ -1,0 +1,5 @@
+# $Id$
+
+SRC = sdbapi
+
+LIB = sdbapi

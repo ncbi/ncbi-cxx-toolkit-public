@@ -1,8 +1,8 @@
 # $Id$
 
-SUB_PROJ = driver simple cache lang_bind test
+LIB_PROJ = sdbapi
 
-LIB_PROJ = dbapi
+SUB_PROJ = test
 
 REQUIRES = dbapi
 
