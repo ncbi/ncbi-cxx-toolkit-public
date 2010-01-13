@@ -194,7 +194,7 @@ public:
     void InsureOrder(ESortOrder order);
     
     /// Test for existence of a GI.
-    bool FindGi(int gi);
+    bool FindGi(int gi) const;
     
     /// Try to find a GI and return the associated OID.
     /// @param gi The gi for which to search. [in]
@@ -210,7 +210,7 @@ public:
     bool GiToOid(int gi, int & oid, int & index);
     
     /// Test for existence of a TI.
-    bool FindTi(Int8 ti);
+    bool FindTi(Int8 ti) const;
     
     /// Try to find a TI and return the associated OID.
     /// @param ti The ti for which to search. [in]
@@ -226,7 +226,7 @@ public:
     bool TiToOid(Int8 ti, int & oid, int & index);
     
     /// Test for existence of a Seq-id.
-    bool FindSeqId(const CSeq_id & seqid);
+    bool FindSeqId(const CSeq_id & seqid) const;
     
     /// Try to find a Seq-id and return the associated OID.
     /// @param seqid The Seq-id for which to search. [in]

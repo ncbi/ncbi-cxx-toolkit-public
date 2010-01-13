@@ -599,10 +599,10 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
 }
 
 
-bool CSeqDBGiList::FindGi(int gi)
+bool CSeqDBGiList::FindGi(int gi) const
 {
     int oid(0), index(0);
-    return GiToOid(gi, oid, index);
+    return (const_cast<CSeqDBGiList *>(this))->GiToOid(gi, oid, index);
 }
 
 
@@ -639,10 +639,10 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 }
 
 
-bool CSeqDBGiList::FindTi(Int8 ti)
+bool CSeqDBGiList::FindTi(Int8 ti) const
 {
     int oid(0), index(0);
-    return TiToOid(ti, oid, index);
+    return (const_cast<CSeqDBGiList *>(this))->TiToOid(ti, oid, index);
 }
 
 
@@ -679,10 +679,10 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
 }
 
 
-bool CSeqDBGiList::FindSeqId(const CSeq_id & seqid)
+bool CSeqDBGiList::FindSeqId(const CSeq_id & seqid) const
 {
     int oid(0), index(0);
-    return SeqIdToOid(seqid, oid, index);
+    return (const_cast<CSeqDBGiList *>(this))->SeqIdToOid(seqid, oid, index);
 }
 
 
