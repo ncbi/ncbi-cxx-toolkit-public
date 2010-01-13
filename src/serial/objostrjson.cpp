@@ -191,7 +191,10 @@ void CObjectOStreamJson::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamJson::WriteNullPointer(void)
 {
-    WriteKeywordValue("null");
+    if (m_ExpectValue ||
+        TopFrame().GetFrameType() == CObjectStackFrame::eFrameArrayElement) {
+        WriteKeywordValue("null");
+    }
 }
 
 void CObjectOStreamJson::WriteObjectReference(TObjectIndex /*index*/)

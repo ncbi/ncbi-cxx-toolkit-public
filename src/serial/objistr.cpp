@@ -90,6 +90,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
         switch ( format ) {
         case eSerial_AsnText:
         case eSerial_Xml:
+        case eSerial_Json:
             binary = false;
             break;
         case eSerial_AsnBinary:
@@ -131,6 +132,8 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
         return CreateObjectIStreamAsnBinary();
     case eSerial_Xml:
         return CreateObjectIStreamXml();
+    case eSerial_Json:
+        return CreateObjectIStreamJson();
     default:
         break;
     }

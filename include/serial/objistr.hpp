@@ -929,6 +929,7 @@ private:
     static CObjectIStream* CreateObjectIStreamAsn(void);
     static CObjectIStream* CreateObjectIStreamAsnBinary(void);
     static CObjectIStream* CreateObjectIStreamXml(void);
+    static CObjectIStream* CreateObjectIStreamJson(void);
 
     static CRef<CByteSource> GetSource(ESerialDataFormat format,
                                        const string& fileName,
