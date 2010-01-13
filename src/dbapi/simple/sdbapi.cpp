@@ -129,6 +129,8 @@ s_ConvertType(EDB_Type type)
         return eSDB_Text;
     case eDB_Image:
         return eSDB_Image;
+    case eDB_UnsupportedType:
+        break;
     }
     _ASSERT(false);
     return eSDB_String;

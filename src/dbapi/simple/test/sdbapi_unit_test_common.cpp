@@ -33,6 +33,9 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiapp.hpp>
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_crypt.h>
+#endif
 
 #include "sdbapi_unit_test.hpp"
 
