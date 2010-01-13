@@ -164,8 +164,6 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
         if (fd >= 1024) {
             ERR_POST(Error << "Accepted unpollable file descriptor "
                      << fd << ", aborting connection");
-            // We can't be sure here that connection is usable at all,
-            // so we better not even report it through OnOverflow.
             conn->OnOverflow(eOR_UnpollableSocket);
             conn->Abort();
             return;
