@@ -108,7 +108,7 @@ string CRefArgs::GetQueryString(const string& referrer) const
                 return url.GetArgs().GetValue(it->second);
             }
         }
-    } catch (CCgiArgsException& ex) {
+    } catch (CUrlException& ex) {
         ERR_POST_X(7, Warning << "Ignoring malformed HTTP referrer " << ex);
     }
     return kEmptyStr;

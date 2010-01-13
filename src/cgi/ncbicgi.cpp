@@ -48,6 +48,7 @@
 #include <cgi/error_codes.hpp>
 #include <cgi/impl/cgi_entry_reader.hpp>
 #include <util/checksum.hpp>
+#include <util/ncbi_url.hpp>
 
 #include <algorithm>
 
@@ -800,7 +801,7 @@ void s_AddEntry(TCgiEntries& entries, const string& name,
 }
 
 
-class CCgiEntries_Parser : public CCgiArgs_Parser
+class CCgiEntries_Parser : public CUrlArgs_Parser
 {
 public:
     CCgiEntries_Parser(TCgiEntries* entries,
@@ -1290,7 +1291,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     try {
         parser.SetQueryString(str);
     }
-    catch (CCgiArgsParserException& ae) {
+    catch (CUrlParserException& ae) {
         return ae.GetPos();
     }
     return 0;
@@ -1303,7 +1304,7 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
     try {
         parser.SetQueryString(str);
     }
-    catch (CCgiArgsParserException& ae) {
+    catch (CUrlParserException& ae) {
         return ae.GetPos();
     }
     return 0;

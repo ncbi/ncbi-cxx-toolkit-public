@@ -37,6 +37,7 @@
 
 #include <corelib/ncbi_param.hpp>
 #include <corelib/version.hpp>
+#include <util/ncbi_url.hpp>
 
 #include <map>
 #include <memory>
@@ -47,421 +48,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-
-/// URL encode flags
-enum EUrlEncode {
-    eUrlEncode_None             = NStr::eUrlEnc_None,
-    eUrlEncode_SkipMarkChars    = NStr::eUrlEnc_SkipMarkChars,
-    eUrlEncode_ProcessMarkChars = NStr::eUrlEnc_ProcessMarkChars,
-    eUrlEncode_PercentOnly      = NStr::eUrlEnc_PercentOnly,
-    eUrlEncode_Path             = NStr::eUrlEnc_Path
-};
-
-/// URL decode flags
-enum EUrlDecode {
-    eUrlDecode_All              = NStr::eUrlDec_All,
-    eUrlDecode_Percent          = NStr::eUrlDec_Percent
-};
-
-
-/// Decode the URL-encoded string "str";  return the result of decoding
-/// If "str" format is invalid then throw CParseException
-/// @deprecated Use NStr::URLDecode()
-NCBI_DEPRECATED
-NCBI_XCGI_EXPORT
-extern string
-URL_DecodeString(const string& str,
-                 EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
-
-/// URL-decode string "str" into itself
-/// Return 0 on success;  otherwise, return 1-based error position
-/// @deprecated Use NStr::URLDecodeInPlace()
-NCBI_DEPRECATED
-NCBI_XCGI_EXPORT
-extern SIZE_TYPE
-URL_DecodeInPlace(string& str, EUrlDecode decode_flag = eUrlDecode_All);
-
-/// URL-encode a string "str" to the "x-www-form-urlencoded" form;
-/// return the result of encoding. If 
-/// @deprecated Use NStr::URLEncode()
-NCBI_DEPRECATED
-NCBI_XCGI_EXPORT
-extern string
-URL_EncodeString(const      string& str,
-                 EUrlEncode encode_flag = eUrlEncode_SkipMarkChars);
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// IUrlEncoder::
-///
-/// URL parts encoder/decoder interface. Used by CUrl.
-///
-
-class IUrlEncoder
-{
-public:
-    virtual ~IUrlEncoder(void) {}
-
-    /// Encode user name
-    virtual string EncodeUser(const string& user) const = 0;
-    /// Decode user name
-    virtual string DecodeUser(const string& user) const = 0;
-    /// Encode password
-    virtual string EncodePassword(const string& password) const = 0;
-    /// Decode password
-    virtual string DecodePassword(const string& password) const = 0;
-    /// Encode path on server
-    virtual string EncodePath(const string& path) const = 0;
-    /// Decode path on server
-    virtual string DecodePath(const string& path) const = 0;
-    /// Encode CGI argument name
-    virtual string EncodeArgName(const string& name) const = 0;
-    /// Decode CGI argument name
-    virtual string DecodeArgName(const string& name) const = 0;
-    /// Encode CGI argument value
-    virtual string EncodeArgValue(const string& value) const = 0;
-    /// Decode CGI argument value
-    virtual string DecodeArgValue(const string& value) const = 0;
-    /// Encode fragment
-    virtual string EncodeFragment(const string& value) const = 0;
-    /// Decode fragment
-    virtual string DecodeFragment(const string& value) const = 0;
-};
-
-
-/// Primitive encoder - all methods return the argument value.
-/// Used as base class for other encoders.
-class NCBI_XCGI_EXPORT CEmptyUrlEncoder : public IUrlEncoder
-{
-public:
-    virtual string EncodeUser(const string& user) const
-        {  return user; }
-    virtual string DecodeUser(const string& user) const
-        {  return user; }
-    virtual string EncodePassword(const string& password) const
-        {  return password; }
-    virtual string DecodePassword(const string& password) const
-        {  return password; }
-    virtual string EncodePath(const string& path) const
-        {  return path; }
-    virtual string DecodePath(const string& path) const
-        {  return path; }
-    virtual string EncodeArgName(const string& name) const
-        {  return name; }
-    virtual string DecodeArgName(const string& name) const
-        {  return name; }
-    virtual string EncodeArgValue(const string& value) const
-        {  return value; }
-    virtual string DecodeArgValue(const string& value) const
-        {  return value; }
-    virtual string EncodeFragment(const string& value) const
-        {  return value; }
-    virtual string DecodeFragment(const string& value) const
-        {  return value; }
-};
-
-
-/// Default encoder, uses the selected encoding for argument names/values
-/// and eUrlEncode_Path for document path. Other parts of the URL are
-/// not encoded.
-class NCBI_XCGI_EXPORT CDefaultUrlEncoder : public CEmptyUrlEncoder
-{
-public:
-    CDefaultUrlEncoder(EUrlEncode encode = eUrlEncode_SkipMarkChars)
-        : m_Encode(NStr::EUrlEncode(encode)) { return; }
-    virtual string EncodePath(const string& path) const
-        { return NStr::URLEncode(path, NStr::eUrlEnc_URIPath); }
-    virtual string DecodePath(const string& path) const
-        { return NStr::URLDecode(path); }
-    virtual string EncodeArgName(const string& name) const
-        { return NStr::URLEncode(name, m_Encode); }
-    virtual string DecodeArgName(const string& name) const
-        { return NStr::URLDecode(name,
-            m_Encode == NStr::eUrlEnc_PercentOnly ?
-            NStr::eUrlDec_Percent : NStr::eUrlDec_All); }
-    virtual string EncodeArgValue(const string& value) const
-        { return NStr::URLEncode(value, m_Encode); }
-    virtual string DecodeArgValue(const string& value) const
-        { return NStr::URLDecode(value,
-            m_Encode == NStr::eUrlEnc_PercentOnly ?
-            NStr::eUrlDec_Percent : NStr::eUrlDec_All); }
-    virtual string EncodeFragment(const string& value) const
-        { return NStr::URLEncode(value, NStr::eUrlEnc_URIFragment); }
-    virtual string DecodeFragment(const string& value) const
-        { return NStr::URLDecode(value, NStr::eUrlDec_All); }
-private:
-    NStr::EUrlEncode m_Encode;
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CCgiArgs_Parser::
-///
-/// CGI base class for arguments parsers.
-///
-
-class NCBI_XCGI_EXPORT CCgiArgs_Parser
-{
-public:
-    CCgiArgs_Parser(void) : m_SemicolonIsNotArgDelimiter(false) {}
-    virtual ~CCgiArgs_Parser(void) {}
-
-    /// Parse query string, call AddArgument() to store each value.
-    void SetQueryString(const string& query, EUrlEncode encode);
-    /// Parse query string, call AddArgument() to store each value.
-    void SetQueryString(const string& query,
-                        const IUrlEncoder* encoder = 0);
-
-    /// Treat semicolon as query string argument separator
-    void SetSemicolonIsNotArgDelimiter(bool enable = true)
-    {
-        m_SemicolonIsNotArgDelimiter = enable;
-    }
-
-protected:
-    /// Query type flag
-    enum EArgType {
-        eArg_Value, ///< Query contains name=value pairs
-        eArg_Index  ///< Query contains a list of names: name1+name2+name3
-    };
-
-    /// Process next query argument. Must be overriden to process and store
-    /// the arguments.
-    /// @param position
-    ///   1-based index of the argument in the query.
-    /// @param name
-    ///   Name of the argument.
-    /// @param value
-    ///   Contains argument value if query type is eArg_Value or
-    ///   empty string for eArg_Index.
-    /// @param arg_type
-    ///   Query type flag.
-    virtual void AddArgument(unsigned int  position,
-                             const string& name,
-                             const string& value,
-                             EArgType      arg_type = eArg_Index) = 0;
-private:
-    void x_SetIndexString(const string& query,
-                          const IUrlEncoder& encoder);
-
-    bool m_SemicolonIsNotArgDelimiter;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CCgiArgs::
-///
-/// CGI arguments list.
-///
-
-class NCBI_XCGI_EXPORT CCgiArgs : public CCgiArgs_Parser
-{
-public:
-    /// Create an empty arguments set.
-    CCgiArgs(void);
-    /// Parse the query string, store the arguments.
-    CCgiArgs(const string& query, EUrlEncode decode);
-    /// Parse the query string, store the arguments.
-    CCgiArgs(const string& query, const IUrlEncoder* encoder = 0);
-
-    /// Ampersand encoding for composed URLs
-    enum EAmpEncoding {
-        eAmp_Char,   ///< Use & to separate arguments
-        eAmp_Entity  ///< Encode '&' as "&amp;"
-    };
-
-    /// Construct and return complete query string. Use selected amp
-    /// and name/value encodings.
-    string GetQueryString(EAmpEncoding amp_enc,
-                          EUrlEncode encode) const;
-    /// Construct and return complete query string. Use selected amp
-    /// and name/value encodings.
-    string GetQueryString(EAmpEncoding amp_enc,
-                          const IUrlEncoder* encoder = 0) const;
-
-    /// Name-value pair.
-    struct SCgiArg
-    {
-        SCgiArg(const string& aname, const string& avalue)
-            : name(aname), value(avalue) { }
-        string name;
-        string value;
-    };
-    typedef SCgiArg               TArg;
-    typedef list<TArg>            TArgs;
-    typedef TArgs::iterator       iterator;
-    typedef TArgs::const_iterator const_iterator;
-
-    /// Check if an argument with the given name exists.
-    bool IsSetValue(const string& name) const
-        { return FindFirst(name) != m_Args.end(); }
-
-    /// Get value for the given name. finds first of the arguments with the
-    /// given name. If the name does not exist, is_found is set to false.
-    /// If is_found is null, CCgiArgsException is thrown.
-    const string& GetValue(const string& name, bool* is_found = 0) const;
-
-    /// Set new value for the first argument with the given name or
-    /// add a new argument.
-    void SetValue(const string& name, const string& value);
-
-    /// Get the const list of arguments.
-    const TArgs& GetArgs(void) const 
-        { return m_Args; }
-
-    /// Get the list of arguments.
-    TArgs& GetArgs(void) 
-        { return m_Args; }
-
-    /// Find the first argument with the given name. If not found, return
-    /// GetArgs().end().
-    iterator FindFirst(const string& name);
-
-    /// Take argument name from the iterator, find next argument with the same
-    /// name, return GetArgs().end() if not found.
-    iterator FindNext(const iterator& iter);
-
-    /// Find the first argument with the given name. If not found, return
-    /// GetArgs().end().
-    const_iterator FindFirst(const string& name) const;
-
-    /// Take argument name from the iterator, find next argument with the same
-    /// name, return GetArgs().end() if not found.
-    const_iterator FindNext(const const_iterator& iter) const;
-
-    /// Select case sensitivity of arguments' names.
-    void SetCase(NStr::ECase name_case)
-        { m_Case = name_case; }
-
-protected:
-    virtual void AddArgument(unsigned int  position,
-                             const string& name,
-                             const string& value,
-                             EArgType      arg_type);
-private:
-    iterator x_Find(const string& name, const iterator& start);
-    const_iterator x_Find(const string& name,
-                          const const_iterator& start) const;
-
-    NStr::ECase m_Case;
-    bool        m_IsIndex;
-    TArgs       m_Args;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CUrl::
-///
-/// URL parser. Uses CCgiArgs to parse arguments.
-///
-
-class NCBI_XCGI_EXPORT CUrl
-{
-public:
-    /// Default constructor
-    CUrl(void);
-
-    /// Parse the URL.
-    ///
-    /// @param url
-    ///   String to parse as URL:
-    ///   Generic: [scheme://[user[:password]@]]host[:port][/path][?args]
-    ///   Special: scheme:[path]
-    ///   The leading '/', if any, is included in path value.
-    /// @param encode_flag
-    ///   Decode the string before parsing according to the flag.
-    CUrl(const string& url, const IUrlEncoder* encoder = 0);
-
-    /// Parse the URL.
-    ///
-    /// @param url
-    ///   String to parse as URL
-    /// @param encode_flag
-    ///   Decode the string before parsing according to the flag.
-    void SetUrl(const string& url, const IUrlEncoder* encoder = 0);
-
-    /// Compose the URL.
-    ///
-    /// @param encode_flag
-    ///   Encode the URL parts before composing the URL.
-    string ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
-                      const IUrlEncoder* encoder = 0) const;
-
-    // Access parts of the URL
-
-    string GetScheme(void) const            { return m_Scheme; }
-    void   SetScheme(const string& value)   { m_Scheme = value; }
-
-    string GetUser(void) const              { return m_User; }
-    void   SetUser(const string& value)     { m_User = value; }
-
-    string GetPassword(void) const          { return m_Password; }
-    void   SetPassword(const string& value) { m_Password = value; }
-    
-    string GetHost(void) const              { return m_Host; }
-    void   SetHost(const string& value)     { m_Host = value; }
-    
-    string GetPort(void) const              { return m_Port; }
-    void   SetPort(const string& value)     { m_Port = value; }
-
-    string GetPath(void) const              { return m_Path; }
-    void   SetPath(const string& value)     { m_Path = value; }
-
-    string GetFragment(void) const          { return m_Fragment; }
-    void   SetFragment(const string& value) { m_Fragment = value; }
-
-    /// Get the original (unparsed and undecoded) CGI query string
-    string GetOriginalArgsString(void) const
-        { return m_OrigArgs; }
-
-    /// Check if the URL contains any arguments
-    bool HaveArgs(void) const
-        { return m_ArgsList.get() != 0  &&  !m_ArgsList->GetArgs().empty(); }
-
-    /// Get const list of arguments
-    const CCgiArgs& GetArgs(void) const;
-
-    /// Get list of arguments
-    CCgiArgs& GetArgs(void);
-
-    CUrl(const CUrl& url);
-    CUrl& operator=(const CUrl& url);
-
-    /// Return default URL encoder.
-    ///
-    /// @sa CDefaultUrlEncoder
-    static IUrlEncoder* GetDefaultEncoder(void);
-
-private:
-    // Set values with verification
-    void x_SetScheme(const string& scheme, const IUrlEncoder& encoder);
-    void x_SetUser(const string& user, const IUrlEncoder& encoder);
-    void x_SetPassword(const string& password, const IUrlEncoder& encoder);
-    void x_SetHost(const string& host, const IUrlEncoder& encoder);
-    void x_SetPort(const string& port, const IUrlEncoder& encoder);
-    void x_SetPath(const string& path, const IUrlEncoder& encoder);
-    void x_SetArgs(const string& args, const IUrlEncoder& encoder);
-    void x_SetFragment(const string& fragment, const IUrlEncoder& encoder);
-
-    string  m_Scheme;
-    bool    m_IsGeneric;  // generic schemes include '//' delimiter
-    string  m_User;
-    string  m_Password;
-    string  m_Host;
-    string  m_Port;
-    string  m_Path;
-    string  m_Fragment;
-    string  m_OrigArgs;
-    auto_ptr<CCgiArgs> m_ArgsList;
-};
-
-
 
 /// User agent version info
 typedef CVersionInfo TUserAgentVersion;
@@ -653,110 +239,76 @@ protected:
 
 
 
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //
-// Inline functions
+//   DEPRECATED
 //
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 
-// CUrl
+/// @deprecated Use NStr::EUrlEncode
+enum EUrlEncode {
+    eUrlEncode_None             = NStr::eUrlEnc_None,
+    eUrlEncode_SkipMarkChars    = NStr::eUrlEnc_SkipMarkChars,
+    eUrlEncode_ProcessMarkChars = NStr::eUrlEnc_ProcessMarkChars,
+    eUrlEncode_PercentOnly      = NStr::eUrlEnc_PercentOnly,
+    eUrlEncode_Path             = NStr::eUrlEnc_Path
+};
 
-inline
-void CUrl::x_SetScheme(const string& scheme,
-                       const IUrlEncoder& /*encoder*/)
+/// @deprecated Use NStr::EUrlDecode
+enum EUrlDecode {
+    eUrlDecode_All              = NStr::eUrlDec_All,
+    eUrlDecode_Percent          = NStr::eUrlDec_Percent
+};
+
+
+/// @deprecated Use NStr::URLDecode()
+NCBI_DEPRECATED
+NCBI_XCGI_EXPORT
+extern string
+URL_DecodeString(const string& str,
+                 EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
+
+/// @deprecated Use NStr::URLDecodeInPlace()
+NCBI_DEPRECATED
+NCBI_XCGI_EXPORT
+extern SIZE_TYPE
+URL_DecodeInPlace(string& str, EUrlDecode decode_flag = eUrlDecode_All);
+
+/// @deprecated Use NStr::URLEncode()
+NCBI_DEPRECATED
+NCBI_XCGI_EXPORT
+extern string
+URL_EncodeString(const      string& str,
+                 EUrlEncode encode_flag = eUrlEncode_SkipMarkChars);
+
+
+/// @deprecated Use CUrlArgs_Parser
+NCBI_DEPRECATED
+class NCBI_XCGI_EXPORT CCgiArgs_Parser : public CUrlArgs_Parser
 {
-    m_Scheme = scheme;
-}
+public:
+    CCgiArgs_Parser(void) {}
+    void SetQueryString(const string& query, EUrlEncode encode)
+    { CUrlArgs_Parser::SetQueryString(query, NStr::EUrlEncode(encode)); }
+    void SetQueryString(const string& query,
+                        const IUrlEncoder* encoder = 0)
+    { CUrlArgs_Parser::SetQueryString(query, encoder); }
+};
 
-inline
-void CUrl::x_SetUser(const string& user,
-                     const IUrlEncoder& encoder)
+
+/// @deprecated Use CUrlArgs
+NCBI_DEPRECATED
+class NCBI_XCGI_EXPORT CCgiArgs : public CUrlArgs
 {
-    m_User = encoder.DecodeUser(user);
-}
-
-inline
-void CUrl::x_SetPassword(const string& password,
-                         const IUrlEncoder& encoder)
-{
-    m_Password = encoder.DecodePassword(password);
-}
-
-inline
-void CUrl::x_SetHost(const string& host,
-                     const IUrlEncoder& /*encoder*/)
-{
-    m_Host = host;
-}
-
-inline
-void CUrl::x_SetPort(const string& port,
-                     const IUrlEncoder& /*encoder*/)
-{
-    NStr::StringToInt(port);
-    m_Port = port;
-}
-
-inline
-void CUrl::x_SetPath(const string& path,
-                     const IUrlEncoder& encoder)
-{
-    m_Path = encoder.DecodePath(path);
-}
-
-inline
-void CUrl::x_SetFragment(const string& fragment,
-                         const IUrlEncoder& encoder)
-{
-    m_Fragment = encoder.DecodeFragment(fragment);
-}
-
-inline
-void CUrl::x_SetArgs(const string& args,
-                     const IUrlEncoder& encoder)
-{
-    m_OrigArgs = args;
-    m_ArgsList.reset(new CCgiArgs(m_OrigArgs, &encoder));
-}
-
-
-inline
-CCgiArgs& CUrl::GetArgs(void)
-{
-    if ( !m_ArgsList.get() ) {
-        x_SetArgs(kEmptyStr, *GetDefaultEncoder());
-    }
-    return *m_ArgsList;
-}
-
-
-inline
-CCgiArgs::const_iterator CCgiArgs::FindFirst(const string& name) const
-{
-    return x_Find(name, m_Args.begin());
-}
-
-
-inline
-CCgiArgs::iterator CCgiArgs::FindFirst(const string& name)
-{
-    return x_Find(name, m_Args.begin());
-}
-
-
-inline
-CCgiArgs::const_iterator CCgiArgs::FindNext(const const_iterator& iter) const
-{
-    return x_Find(iter->name, iter);
-}
-
-
-inline
-CCgiArgs::iterator CCgiArgs::FindNext(const iterator& iter)
-{
-    return x_Find(iter->name, iter);
-}
+public:
+    CCgiArgs(void) {}
+    CCgiArgs(const string& query, EUrlEncode decode)
+        : CUrlArgs(query, NStr::EUrlEncode(decode)) {}
+    string GetQueryString(EAmpEncoding amp_enc,
+                          EUrlEncode encode) const
+    { return CUrlArgs::GetQueryString(amp_enc, NStr::EUrlEncode(encode)); }
+};
 
 
 END_NCBI_SCOPE

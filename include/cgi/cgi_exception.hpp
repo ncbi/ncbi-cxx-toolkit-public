@@ -38,6 +38,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/request_status.hpp>
+#include <util/ncbi_url.hpp>
 
 
 /** @addtogroup CGIExcep
@@ -277,63 +278,6 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CCgiArgsException --
-///
-///   Exceptions to be used by CGI arguments parser.
-///
-
-class CCgiArgsException : public CCgiException
-{
-public:
-    /// Bad (malformed or missing) HTTP request components
-    enum EErrCode {
-        eFormat,     //< Format of arguments
-        eValue,      //< Invalid argument value
-        eName,       //< Argument does not exist
-        eNoArgs      //< CUrl contains no arguments
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch ( GetErrCode() ) {
-        case eFormat:  return "Misformatted CGI query string";
-        case eValue:   return "Invalid argument value";
-        case eName:    return "Unknown argument name";
-        case eNoArgs:  return "Arguments list is empty";
-        default:       return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CCgiArgsException, CCgiException);
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CCgiArgsParserException --
-///
-///   Exceptions used by CGI arguments parser when the error has occurred
-///   while parsing the arguments.
-///
-
-class CCgiArgsParserException : public CParseTemplException<CCgiArgsException>
-{
-public:
-    /// @sa CCgiArgsException
-    enum EErrCode {
-        eFormat = CCgiArgsException::eFormat,
-        eValue  = CCgiArgsException::eValue
-        // WARNING:  no enums not listed in "CCgiArgsException::EErrCode"
-        //           can be here -- unless you re-implement GetErrCodeString()
-    };
-
-    NCBI_EXCEPTION_DEFAULT2
-    (CCgiArgsParserException, CParseTemplException<CCgiArgsException>,
-     std::string::size_type);
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
 /// CCgiResponseException --
 ///
 ///   Exceptions used by CGI response
@@ -416,6 +360,15 @@ CCgiException& CCgiException::SetStatus(const SCgiStatus& status)
     m_StatusMessage = status.m_Message;
     return *this;
 }
+
+
+/// @deprecated Use CUrlException
+NCBI_DEPRECATED
+typedef CUrlException CCgiArgsException;
+
+/// @deprecated Use CUrlParserException
+NCBI_DEPRECATED
+typedef CUrlParserException CCgiArgsParserException;
 
 
 END_NCBI_SCOPE
