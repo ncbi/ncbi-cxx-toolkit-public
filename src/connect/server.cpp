@@ -157,22 +157,19 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
         new CServer_Connection(listener->m_Factory->Create()));
     if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
         return;
-#if defined(NCBI_OS_UNIX)
-    int fd;
-    if (conn->GetOSHandle(&fd, sizeof(fd)) != eIO_Success) {
-        ERR_POST(Error << "Can not get OS handle from CSocket,"
-                       << " closing connection");
-        // We can't be sure here that connection is usable at all,
-        // so we better not even report it through OnOverflow.
-        conn->Abort();
-        return;
-    }
-    if (fd >= 1024) {
-        ERR_POST(Error << "Got unpollable file descriptor " << fd <<
-                          " during Accept, closing connection");
-        conn->OnOverflow(eOR_UnpollableSocket);
-        conn->Abort();
-        return;
+#ifdef NCBI_OS_UNIX
+    if (conn->Wait(eIO_Write, &kZeroTimeout) == eIO_Unknown) {
+        int fd;
+        _VERIFY(conn->GetOSHandle(&fd, sizeof(fd)) == eIO_Success);
+        if (fd >= 1024) {
+            ERR_POST(Error << "Accepted unpollable file descriptor "
+                     << fd << ", aborting connection");
+            // We can't be sure here that connection is usable at all,
+            // so we better not even report it through OnOverflow.
+            conn->OnOverflow(eOR_UnpollableSocket);
+            conn->Abort();
+            return;
+        }
     }
 #endif
     conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
