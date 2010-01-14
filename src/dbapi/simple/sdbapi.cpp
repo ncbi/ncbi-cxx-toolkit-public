@@ -168,12 +168,6 @@ s_ConvertionNotSupported(const char* one_type, EDB_Type other_type)
 }
 
 #ifdef NCBI_COMPILER_WORKSHOP
-/// For some weird reason WorkShop cannot compile correctly without this fake
-/// template present AND with all s_ConvertValue() functions static.
-template <class T>
-void
-s_ConvertValue(const T& from_val, CVariant& to_var);
-
 #define CONVERTVALUE_STATIC
 #else
 #define CONVERTVALUE_STATIC static
