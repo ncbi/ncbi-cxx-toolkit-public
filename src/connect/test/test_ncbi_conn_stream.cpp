@@ -241,7 +241,7 @@ int main(int argc, const char* argv[])
         LOG_POST("Test 2 completed: " << (unsigned long) size <<
                  " bytes downloaded via FTP\n");
     } else
-        ERR_POST(Fatal << "Test 2 failed");
+        ERR_POST(Fatal << "No file downloaded, test 2 failed");
 
 #if 1
     {{
