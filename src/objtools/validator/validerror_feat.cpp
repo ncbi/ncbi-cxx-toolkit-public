@@ -189,12 +189,11 @@ const string kInferenceMessage[] = {
 
 void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 {
-    if ( !feat.CanGetLocation() ) {
+    if ( !feat.IsSetLocation() ) {
         PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
             "The feature is missing a location", feat);
         return;
     }
-    _ASSERT(feat.CanGetLocation());
 
     if (m_Scope) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
@@ -1835,7 +1834,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     
     // skip if organelle
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
-    if (m_Imp.IsOrganelle(bsh)) {
+    if (!bsh || m_Imp.IsOrganelle(bsh)) {
         return;
     }
     
@@ -4219,7 +4218,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         if (report_errors  ||  unclassified_except) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
                 "Unable to transcribe mRNA", feat);
-        };
+        }
+        return;
     }
 
     bool is_refseq = false;
@@ -4525,7 +4525,7 @@ void CValidError_feat::ValidateCommonCDSProduct
             return;
         }
 
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCDSproducts,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
             "Unable to find product Bioseq from CDS feature", feat);
         return;
     }
@@ -5036,13 +5036,15 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             if (m_Scope) {
                 CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
                 bool check_refseq = false;
-                if (GetGenProdSetParent (bsh)) {
-                    check_refseq = true;
-                } else {
-                    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-                        if ((*id_it)->IsOther()) {
-                            check_refseq = true;
-                            break;
+                if (bsh) {
+                    if (GetGenProdSetParent (bsh)) {
+                        check_refseq = true;
+                    } else {
+                        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+                            if ((*id_it)->IsOther()) {
+                                check_refseq = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -5446,20 +5448,21 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     try {
         if (m_Scope) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-            if (bsh 
-                && (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
-                    || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1)) {
-                // don't translate
-            } else {
-                CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
-                                            true,   // include stop codons
-                                            false,  // do not remove trailing X/B/Z
-                                            &alt_start);
-                if (!NStr::IsBlank(transl_prot)) {
-                    if (NStr::EndsWith(transl_prot, "*")) {
-                        got_stop = true;
+            if (bsh) {
+                if (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
+                    || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1) {
+                    // don't translate
+                } else {
+                    CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
+                                                true,   // include stop codons
+                                                false,  // do not remove trailing X/B/Z
+                                                &alt_start);
+                    if (!NStr::IsBlank(transl_prot)) {
+                        if (NStr::EndsWith(transl_prot, "*")) {
+                            got_stop = true;
+                        }
+                        show_stop = true;
                     }
-                    show_stop = true;
                 }
             }
         }
@@ -5511,7 +5514,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
         
-    
     // check for code break not on a codon
     if (x_ValidateCodeBreakNotOnCodon(feat, location, cdregion, transl_prot, report_errors)) {
         has_errors = true;
@@ -5899,6 +5901,14 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     if (feat.IsSetData() && feat.GetData().IsGene()) {
         return;
     }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    // if we can't get the bioseq on which the gene is located, we can't check for 
+    // overlapping/ambiguous/redundant conditions
+    if (!bsh) {
+        return;
+    }
+
     const CGene_ref* gene_xref = feat.GetGeneXref();
 
     // get the list of overlapping genes
@@ -5990,8 +6000,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     } else if ( !gene_xref->IsSuppressed() ) {
         // we are counting features with gene xrefs
         m_Imp.IncrementGeneXrefCount();
-
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
 
         // compare gene xref to overlapping gene
         bool redundant_xref = false;
@@ -6299,6 +6307,9 @@ bool CValidError_feat::ArePartialsAtSpliceSitesOrGaps (const CSeq_loc& loc)
 {
     for ( CSeq_loc_CI si(loc); si; ++si ) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (si.GetSeq_loc());
+        if (!bsh) {
+            continue;
+        }
         ENa_strand strand = loc.GetStrand();
         if (si.GetFuzzFrom() != 0) {
             int end = si.GetSeq_loc().GetStart (eExtreme_Positional);

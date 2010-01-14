@@ -210,7 +210,11 @@ enum EErrType {
     eErr_SEQ_DESCR_NoOrganismInTitle,
     eErr_SEQ_DESCR_MissingChromosome,
     eErr_SEQ_DESCR_LatLonAdjacent,
-    eErr_SEQ_DESCR_BadStructuredCommentFormat,
+    eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName,
+    eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue,
+    eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
+    eErr_SEQ_DESCR_BadStructuredCommentFormatFieldOutOfOrder,
+    eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

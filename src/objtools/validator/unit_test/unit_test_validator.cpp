@@ -440,12 +440,12 @@ static void AddGoodSourceFeature(CRef<CSeq_entry> entry)
 }
 
 
-static CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry)
+static CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, string local_id = "good", size_t right_end = 10)
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr(local_id);
     feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(10);
+    feat->SetLocation().SetInt().SetTo(right_end);
     feat->SetData().SetImp().SetKey("misc_feature");
     CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetFtable().push_back(feat);
@@ -8164,7 +8164,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("Sequencing Technology");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -8185,11 +8185,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     size_t pos = 0;
     ITERATE(vector<string>, it, required_fields) {
         if (pos < required_fields.size() - 1) {
-            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatFieldOutOfOrder",
                                       *it + " field is out of order"));
         }
         if (!NStr::Equal(*it, "Genome Coverage") && !NStr::Equal(*it, "Sequencing Technology")) {
-            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatInvalidFieldValue",
                                       "bad value is not a valid value for " + *it));
         }
         ++pos;
@@ -8215,7 +8215,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("sequencing_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormat",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -9262,6 +9262,271 @@ BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
     CheckErrors (*eval, expected_errors);
 
     desc->SetPub().SetComment("Publication_Status");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_NoCdRegionPtr)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+
+    CRef<CSeq_entry> pentry = BuildGoodProtSeq();
+    EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, pentry->SetSeq()) {
+        if ((*it)->IsSource()) {
+            ERASE_DESCRIPTOR_ON_BIOSEQ(it, pentry->SetSeq());
+        }
+    }
+
+    entry->SetSet().SetSeq_set().push_back(pentry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NoCdRegionPtr",
+                                                 "No CdRegion in nuc-prot set points to this protein"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nentry = entry->SetSet().SetSeq_set().front();
+    entry->SetSet().SetSeq_set().pop_front();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    entry->SetSet().SetAnnot().front()->SetData().SetFtable().pop_front();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "NoCdRegionPtr",
+                                                 "No CdRegion in nuc-prot set points to this protein"));
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "NucProtProblem",
+                                                 "No nucleotides in nuc-prot set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> pentry = entry->SetSet().SetSeq_set().front();
+    entry->SetSet().SetSeq_set().pop_front();
+    entry->SetSet().SetSeq_set().push_back(nentry);
+    entry->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(cds);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    delete expected_errors[0];
+    expected_errors[0] = NULL;
+    expected_errors[1]->SetErrMsg("No proteins in nuc-prot set");
+    expected_errors[1]->SetAccession("nuc");
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoProtein",
+                                                 "No protein Bioseq given"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "MissingCDSproduct",
+                                                 "Unable to find product Bioseq from CDS feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> nentry2 = BuildGoodSeq();
+    EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, nentry2->SetSeq()) {
+        if ((*it)->IsSource()) {
+            ERASE_DESCRIPTOR_ON_BIOSEQ(it, nentry2->SetSeq());
+        }
+    }
+    entry->SetSet().SetSeq_set().push_back(nentry2);
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[1]->SetSeverity(eDiag_Critical);
+    expected_errors[1]->SetErrMsg("Multiple unsegmented nucleotides in nuc-prot set");
+    delete expected_errors[3];
+    expected_errors.pop_back();
+    delete expected_errors[2];
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_SegSetProblem)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_segset);
+    entry->SetSet().SetSeq_set().push_back(BuildGoodSeq());
+    entry->SetSet().SetSeq_set().push_back(BuildGoodSeq());
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()->SetLocal().SetStr("good2");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SegSetProblem",
+                                                 "No segmented Bioseq in segset"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_EmptySet)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    entry->SetSet().SetSeq_set().push_back(BuildGoodSeq());
+    CRef<CSeq_entry> centry(new CSeq_entry());
+    centry->SetSet().SetClass(CBioseq_set::eClass_gi);
+    entry->SetSet().SetSeq_set().push_back(centry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning, "EmptySet",
+                                                 "No Bioseqs in this set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_gibb);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_pir);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_pub_set);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_equiv);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_swissprot);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    centry->SetSet().SetClass(CBioseq_set::eClass_pdb_entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_NucProtNotSegSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> centry(new CSeq_entry());
+    centry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+    entry->SetSet().SetSeq_set().push_back(centry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Critical, "NucProtNotSegSet",
+                                                 "Nuc-prot Bioseq-set contains wrong Bioseq-set, its class is \"eco-set\"."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    entry->SetSet().SetSeq_set().back()->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "SegSetNotParts",
+                                                 "Segmented set contains wrong Bioseq-set, its class is \"eco-set\"."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_SegSetMixedBioseqs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    entry->SetSet().SetSeq_set().push_back(BuildGoodProtSeq());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "SegSetMixedBioseqs",
+                                                 "Segmented set contains mixture of nucleotides and proteins"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_PartsSetMixedBioseqs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_entry> last_part = parts_set->SetSet().SetSeq_set().back();
+    last_part->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    SetBiomol (last_part, CMolInfo::eBiomol_peptide);
+    last_part->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("part3", eDiag_Error, "NoProtRefFound",
+                                                 "No full length Prot-ref feature applied to this Bioseq"));
+    expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "PartsSetMixedBioseqs",
+                                                 "Parts set contains mixture of nucleotides and proteins"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_PartsSetHasSets)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
+    parts_set->SetSet().SetSeq_set().push_back(BuildGoodNucProtSet());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder",
+                                                 "Parts set contains too many Bioseqs"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "PartsSetHasSets",
+                                                 "Parts set contains unwanted Bioseq-set, its class is \"nuc-prot\"."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
+    AddMiscFeature(parts_set->SetSet().SetSeq_set().front(), "part3");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Critical, "FeaturePackagingProblem",
+                                                 "There is 1 mispackaged feature in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "LocOnSegmentedBioseq",
+                                                 "Feature location on segmented bioseq, not on parts"));
+    expected_errors.push_back(new CExpectedError("", eDiag_Critical, "FeaturePackagingProblem",
+                                                 "There are 2 mispackaged features in this record."));
+    scope.RemoveTopLevelSeqEntry(seh);
+    AddMiscFeature(parts_set, "master");
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

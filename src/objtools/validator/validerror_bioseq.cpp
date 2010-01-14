@@ -811,8 +811,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     x_ValidateMultiplePubs(bsh);
 
     // check feature packaging
-    // a feature packaged on a bioseq should have a location on the bioseq (or the master sequence,
-    // if it is on a part of a segmented set
+    // a feature packaged on a bioseq should have a location on the bioseq
     FOR_EACH_SEQANNOT_ON_BIOSEQ (annot_it, seq) {
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
             if ((*feat_it)->IsSetLocation()) {
@@ -823,21 +822,6 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                         if (id.Compare(**id_it) == CSeq_id::e_YES) {
                             found = true;
                             break;
-                        }
-                    }
-                    if (!found) {
-                        CBioseq_Handle feat_bsh = m_Scope->GetBioseqHandle(id);
-                        if (bsh) {
-                            CBioseq_set_Handle feat_parent = bsh.GetParentBioseq_set();
-                            if (feat_parent && feat_parent.IsSetClass() 
-                                && feat_parent.GetClass() == CBioseq_set::eClass_parts) {
-                                feat_parent = feat_parent.GetParentBioseq_set();
-                            }
-                            if (feat_parent && feat_parent.IsSetClass()
-                                && feat_parent.GetClass() == CBioseq_set::eClass_segset
-                                && IsBioseqWithIdInSet(id, feat_parent)) {
-                                found = true;
-                            }
                         }
                     }
                     if (!found) {
