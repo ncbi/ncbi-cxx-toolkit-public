@@ -126,10 +126,7 @@ void CSeqDBGiMask::x_Open(Int4              algo_id,
         return;
     }
 
-    if (algo_id < 0 || algo_id >= m_MaskNames.size()) {
-        NCBI_THROW(CSeqDBException, eFileErr,
-                       "Could not open gi-mask files.");
-    }
+    x_VerifyAlgorithmId(algo_id);
 
     string ext_i(".gmi");
     string ext_o(".gmo");

@@ -51,26 +51,30 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type)
-    : m_DbName(dbname), m_MolType(mol_type), m_FilteringAlgorithmId(-1)
+    : m_DbName(dbname), m_MolType(mol_type), m_FilteringAlgorithmId(-1),
+      m_NeedsFilteringTranslation(false)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_EntrezQueryLimitation(entrez_query), m_FilteringAlgorithmId(-1)
+      m_EntrezQueryLimitation(entrez_query), m_FilteringAlgorithmId(-1),
+      m_NeedsFilteringTranslation(false)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const TGiList& gilist)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_GiListLimitation(gilist), m_FilteringAlgorithmId(-1)
+      m_GiListLimitation(gilist), m_FilteringAlgorithmId(-1),
+      m_NeedsFilteringTranslation(false)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query, const TGiList& gilist)
     : m_DbName(dbname), m_MolType(mol_type),
       m_EntrezQueryLimitation(entrez_query), m_GiListLimitation(gilist),
-      m_FilteringAlgorithmId(-1)
+      m_FilteringAlgorithmId(-1),
+      m_NeedsFilteringTranslation(false)
 {}
 
 void 
@@ -150,14 +154,39 @@ CSearchDatabase::GetSeqIdList() const
 }
 
 void 
+CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm)
+{
+    m_FilteringAlgorithmId = NStr::StringToNumeric(filt_algorithm);
+    if (m_FilteringAlgorithmId < 0) {
+        // This is a string id, must translate to numeric id first
+        m_FilteringAlgorithmString = filt_algorithm;
+        m_NeedsFilteringTranslation = true;
+    }
+}
+
+void 
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
 {
     m_FilteringAlgorithmId = filt_algorithm_id;
 }
 
-int 
-CSearchDatabase::GetFilteringAlgorithm() const
+void
+CSearchDatabase::x_TranslateFilteringAlgorithm(const CRef<CSeqDB> seqdb) const
 {
+    if (seqdb.Empty()) {
+         NCBI_THROW(CBlastException, eInvalidArgument,
+               "String algorithm Id has not been translated");
+    }
+    m_FilteringAlgorithmId = seqdb->GetMaskAlgorithmId(m_FilteringAlgorithmString);
+    m_NeedsFilteringTranslation = false;
+}
+
+int 
+CSearchDatabase::GetFilteringAlgorithm(const CRef<CSeqDB> seqdb) const
+{
+    if (m_NeedsFilteringTranslation) {
+        x_TranslateFilteringAlgorithm(seqdb);
+    } 
     return m_FilteringAlgorithmId;
 }
 

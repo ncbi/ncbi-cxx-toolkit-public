@@ -974,6 +974,9 @@ public:
     /// @param algorithms List of algorithm ids. [out]
     void GetAvailableMaskAlgorithms(vector<int> & algorithms);
 
+    /// Get the numeric ID for a algorithm name
+    int GetMaskAlgorithmId(const string &algo_name) const;
+
     /// Returns a formatted string with the list of available masking
     /// algorithms in this database for display purposes (i.e.: help)
     string GetAvailableMaskAlgorithmDescriptions();

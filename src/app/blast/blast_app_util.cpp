@@ -208,7 +208,7 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             // sequence data for formatting from this (local) source
             CRef<CSeqDB> seqdb = GetSeqDB(db_args); 
             db_adapter.Reset(new CLocalDbAdapter(seqdb,
-                                 search_db->GetFilteringAlgorithm()));
+                                 search_db->GetFilteringAlgorithm(seqdb)));
             scope->AddDataLoader(RegisterOMDataLoader(seqdb));
         } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local

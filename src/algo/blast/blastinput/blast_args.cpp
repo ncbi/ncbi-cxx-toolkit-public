@@ -1247,7 +1247,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as soft "
                 "masking",
-                CArgDescriptions::eInteger);
+                CArgDescriptions::eString);
     }
 #endif
 
@@ -1347,7 +1347,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
         if (args.Exist(kArgDbSoftMask) && args[kArgDbSoftMask]) {
-            m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsInteger());
+            m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsString());
         }
 #endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {

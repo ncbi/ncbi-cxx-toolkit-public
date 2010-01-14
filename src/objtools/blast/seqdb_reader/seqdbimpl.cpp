@@ -1968,6 +1968,15 @@ void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
     m_AlgorithmIds.GetIdList(algorithms);
 }
 
+int CSeqDBImpl::GetMaskAlgorithmId(const string & algo) const
+{
+    if (m_UseGiMask) {
+        return m_GiMask->GetAlgorithmId(algo);
+    }
+
+    NCBI_THROW(CSeqDBException, eArgErr,
+        "String algorithm ID is not supported for volumn masks.");
+}
 
 string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
 {

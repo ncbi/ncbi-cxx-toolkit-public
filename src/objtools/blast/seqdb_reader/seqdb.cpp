@@ -1054,6 +1054,11 @@ void CSeqDB::GetAvailableMaskAlgorithms(vector<int> & algorithms)
     m_Impl->GetAvailableMaskAlgorithms(algorithms);
 }
 
+int CSeqDB::GetMaskAlgorithmId(const string &algo_name) const
+{
+    return m_Impl->GetMaskAlgorithmId(algo_name);
+}
+
 string CSeqDB::GetAvailableMaskAlgorithmDescriptions()
 {
     return m_Impl->GetAvailableMaskAlgorithmDescriptions();

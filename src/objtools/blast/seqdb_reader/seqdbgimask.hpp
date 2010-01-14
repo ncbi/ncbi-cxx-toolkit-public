@@ -104,6 +104,44 @@ public:
         return;
     }
 
+    /// Get the mask algorithsm id for a string id
+    /// @param algo_name The algorithm string [in]
+    /// @return the algorithm id corresponding to the string
+    int GetAlgorithmId(const string & algo_name) const {
+        for (unsigned int i=0; i<m_MaskNames.size(); ++i) {
+            if (m_MaskNames[i] == algo_name) return i;
+        }
+        CNcbiOstrstream oss;
+        oss << "Filtering algorithm " << algo_name
+            << " does not exist." << endl;
+        oss << GetAvailableAlgorithmNames();
+        NCBI_THROW(CSeqDBException, eArgErr,
+                       CNcbiOstrstreamToString(oss));
+    }
+
+    /// Get the mask algorithsm name for a numeric id
+    /// @param algo_id The algorithm id [in]
+    /// @return the algorithm name 
+    const string & GetAlgorithmName(int algo_id) const {
+        x_VerifyAlgorithmId(algo_id);
+        return m_MaskNames[algo_id];
+    }
+   
+    /// Get the names of available mask algorithms as string
+    string GetAvailableAlgorithmNames() const {
+        CNcbiOstrstream retval;
+        retval << endl
+               << "Available filtering algorithm(s):"
+               << endl << endl;
+        retval << setw(14) << left << "Algorithm ID"
+               << setw(40) << left << "Algorithm name" << endl;
+        for (unsigned int id=0; id < m_MaskNames.size(); ++id) {
+            retval << "    " << setw(10) << left << id
+                   << setw(40) << left << m_MaskNames[id] << endl;
+        }
+        return CNcbiOstrstreamToString(retval);
+    } 
+
 private:
     /// Sgring format used by gi mask files
     static const CBlastDbBlob::EStringFormat
@@ -126,6 +164,18 @@ private:
     /// Open files and read field data from the atlas.
     /// @param locked The lock holder object for this thread. [in]
     void x_ReadFields(CSeqDBLockHold & locked);
+
+    /// Verify the algorithm exists.  If not, raise an exception
+    void x_VerifyAlgorithmId(int algo_id) const {
+        if (algo_id < 0 || algo_id >= m_MaskNames.size()) {
+            CNcbiOstrstream oss;
+            oss << "Filtering algorithm ID " << algo_id
+                << " does not exist." << endl;
+            oss << GetAvailableAlgorithmNames();
+            NCBI_THROW(CSeqDBException, eArgErr,
+                       CNcbiOstrstreamToString(oss));
+        }
+    }
     
     /// Get a range of the index or data file.
     ///

@@ -40,6 +40,7 @@
 #include <algo/blast/api/blast_results.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 /** @addtogroup AlgoBlast
@@ -184,8 +185,12 @@ public:
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm_id filtering algorithm ID [in]
     void SetFilteringAlgorithm(int filt_algorithm_id);
+    /// Mutator for the filtering algorithm
+    /// @param filt_algorithm filtering algorithm string [in]
+    void SetFilteringAlgorithm(const string &filt_algorithm);
     /// Accessor for the filtering algorithm ID
-    int GetFilteringAlgorithm() const;
+    /// @param seqdb the BLAST db the filtering to apply on [in]
+    int GetFilteringAlgorithm(const CRef<CSeqDB> seqdb=CRef<CSeqDB>()) const;
 
     /// Mutator for the negative gi list
     /// @param gilist list of gis [in]
@@ -204,7 +209,13 @@ private:
     TGiList         m_NegativeGiListLimitation; ///< negative gi list
     CRef<CSeqDBGiList> m_SeqIdList;             ///< seqid list
     /// filtering to apply to database sequences
-    int             m_FilteringAlgorithmId;       
+    mutable int     m_FilteringAlgorithmId;       
+    string          m_FilteringAlgorithmString;
+    mutable bool    m_NeedsFilteringTranslation;
+
+    /// Translate string algorithm id to numeric id
+    /// @param seqdb the blast database [in]
+    void x_TranslateFilteringAlgorithm(const CRef<CSeqDB> seqdb) const; 
 };
 
 
