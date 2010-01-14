@@ -76,6 +76,8 @@ void GetLabel (const CSeq_feat&    feat,
                feature::ELabelType label_type,
                CScope*             scope = 0);
 
+/* @} */
+
 
 class CFeatIdRemapper : public CObject
 {
@@ -123,23 +125,73 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
                         const CSeq_id_Handle& master_id);
 
 
+/// @name GetParentFeature
+/// Returns a best parent feature for a CMappedFeat.
+/// CSeq_feat_Handle is convertible to a CMappedFeat so it can be used too.
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat GetParentFeature(const CMappedFeat& feat)
+
+/////////////////////////////////////////////////////////////////////////////
+/// CFeatTree
+/// 
+/// CFeatTree class builds a parent-child feature tree in a more efficient way
+/// than repeatedly calling of GetParentFeature() for each feature.
+/// The algorithm of a parent search is the same as the one used by
+/// GetParentFeature().
+///
+/// The class CFeatTree works with a set of features which should be
+/// specified via AddFeature() or AddFeatures() call.
+/// The actual tree is built when the first time method GetParent()
+/// or GetChildren() is called after adding new features.
+/// Features can be added later, but the parent information is cached and will
+/// not change if parents were found already. However, features with no parent
+/// will be processed again in attempt to find parents from the newly added
+/// features.
 class NCBI_XOBJUTIL_EXPORT CFeatTree : public CObject
 {
 public:
+    /// Construct empty tree.
     CFeatTree(void);
+    /// Construct a tree with features collected by a CFeat_CI.
     CFeatTree(CFeat_CI it);
+    /// Destructor.
     ~CFeatTree(void);
     
+    /// Add all features collected by a CFeat_CI to the tree.
     void AddFeatures(CFeat_CI it);
+    /// Add a single feature to the tree.
     void AddFeature(const CMappedFeat& feat);
 
+    /// Find a corresponding CMappedFeat for a feature already added to a tree.
+    /// Will throw an exception if the feature is not in the tree.
     const CMappedFeat& GetMappedFeat(const CSeq_feat_Handle& feat) const;
+    /// Return nearest parent of a feature.
+    /// Will throw an exception if the feature is not in the tree.
+    /// Will return null CMappedFeat if the feature has no parent.
     CMappedFeat GetParent(const CMappedFeat& feat);
+    /// Return parent of a feature of the specified type, it may be not
+    /// the nearest parent, but a parent's parent, and so on.
+    /// Will throw an exception if the feature is not in the tree.
+    /// Will return null CMappedFeat if the feature has no parent of the type.
     CMappedFeat GetParent(const CMappedFeat& feat,
                           CSeqFeatData::E_Choice type);
+    /// Return parent of a feature of the specified subtype, it may be not
+    /// the nearest parent, but a parent's parent, and so on.
+    /// Will throw an exception if the feature is not in the tree.
+    /// Will return null CMappedFeat if the feature has no parent of the type.
     CMappedFeat GetParent(const CMappedFeat& feat,
                           CSeqFeatData::ESubtype subtype);
+    /// Return all nearest children of a feature.
+    /// Will throw an exception if the feature is not in the tree.
+    /// Will return an empty vector if the feature has no children.
+    /// If the feat argument is null then all the features without parent
+    /// are returned.
     vector<CMappedFeat> GetChildren(const CMappedFeat& feat);
+    /// Store all nearest children of a feature into a vector.
+    /// Will throw an exception if the feature is not in the tree.
+    /// The second argument will become empty if the feature has no children.
+    /// If the feat argument is null then all the features without parent
+    /// are returned.
     void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
 
 public:

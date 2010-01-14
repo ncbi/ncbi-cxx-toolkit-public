@@ -1007,6 +1007,26 @@ namespace {
 }
 
 
+/// @name GetParentFeature
+/// The algorithm is the following:
+/// 1. Feature types are organized in a tree of possible 
+///   parent-child relationship:
+///   1.1. operon, gap cannot have a parent,
+///   1.2. gene can have operon as a parent,
+///   1.3. mRNA can have gene as a parent,
+///   1.4. cdregion can have mRNA as a parent,
+///   1.5. prot can have cdregion as a parent (by its product location),
+///   1.6. mat_peptide, sig_peptide can have prot as a parent,
+///   1.x. all other feature types can have gene as a parent.
+/// 2. If parent of a nearest feature type is not found then the next type
+///   in the tree is checked, except prot which will have no parent
+///   if no cdregion is found.
+/// 3. For each parent type candidate the search is done in several ways:
+///   3.1. first we look for a parent by Seq-feat.xref field,
+///   3.2. then by Gene-ref if current parent type is gene,
+///   3.3. then parent candidates are searched by the best intersection
+///        of their locations (product in case of prot -> cdregion link),
+///   3.4. if no candidates are found next parent type is checked.
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat GetParentFeature(const CMappedFeat& feat)
 {
