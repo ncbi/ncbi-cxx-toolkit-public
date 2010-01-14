@@ -81,6 +81,7 @@
 
 #include <algorithm>
 
+#include <objtools/readers/error_container.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
@@ -202,18 +203,21 @@ public:
     CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
                                              const string& seqid,
                                              const string& annotname,
-                                             const CFeature_table_reader::TFlags flags);
+                                             const CFeature_table_reader::TFlags flags, 
+                                             IErrorContainer* container);
 
     // create single feature from key
     CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                    CSeq_loc& location,
-                                   const CFeature_table_reader::TFlags flags);
+                                   const CFeature_table_reader::TFlags flags, 
+                                   IErrorContainer* container);
 
     // add single qualifier to feature
     void AddFeatQual (CRef<CSeq_feat> sfp,
                       const string& qual,
                       const string& val,
-                      const CFeature_table_reader::TFlags flags);
+                      const CFeature_table_reader::TFlags flags,
+                      IErrorContainer* container);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -224,7 +228,7 @@ private:
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                   string& featP, string& qualP, string& valP, Int4 offset);
 
-    bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
+    bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
                                  const string& seqid, Int4 start, Int4 stop,
                                  bool partial5, bool partial3, bool ispoint, bool isminus);
 
@@ -254,7 +258,8 @@ private:
     int x_ParseTrnaString (const string& val);
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
-                         const CFeature_table_reader::TFlags flags);
+                         const CFeature_table_reader::TFlags flags, IErrorContainer* container);
+    void  x_ProcessMsg (EDiagSev severity, const string& msg, IErrorContainer* container); 
 
 };
 
@@ -1492,7 +1497,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
 
 bool CFeature_table_reader_imp::x_AddIntervalToFeature (
     CRef<CSeq_feat> sfp,
-    CSeq_loc_mix *mix,
+    CSeq_loc_mix& mix,
     const string& seqid,
     Int4 start,
     Int4 stop,
@@ -1524,7 +1529,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (
         point.SetRightOf (true);
         CSeq_id seq_id (seqid);
         point.SetId().Assign (seq_id);
-        mix->Set().push_back(loc);
+        mix.Set().push_back(loc);
     } else if (start == stop) {
         // just a point
         CRef<CSeq_loc> loc(new CSeq_loc);
@@ -1533,7 +1538,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (
         point.SetStrand (strand);
         CSeq_id seq_id (seqid);
         point.SetId().Assign (seq_id);
-        mix->Set().push_back (loc);
+        mix.Set().push_back (loc);
     } else {
         // interval
         CRef<CSeq_loc> loc(new CSeq_loc);
@@ -1549,7 +1554,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (
         }
         CSeq_id seq_id (seqid);
         ival.SetId().Assign (seq_id);
-        mix->Set().push_back (loc);
+        mix.Set().push_back (loc);
     }
 
     if (partial5 || partial3) {
@@ -1563,7 +1568,8 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (
 bool CFeature_table_reader_imp::x_SetupSeqFeat (
     CRef<CSeq_feat> sfp,
     const string& feat,
-    const CFeature_table_reader::TFlags flags
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer* container
 )
 
 {
@@ -1647,7 +1653,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     // unrecognized feature key
 
     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-        ERR_POST_X (4, Warning << "Unrecognized feature " << feat);
+        x_ProcessMsg(eDiag_Warning, "Unrecognized feature " + feat, container);
     }
 
     if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
@@ -1674,21 +1680,36 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
 }
 
 
+void CFeature_table_reader_imp::x_ProcessMsg(EDiagSev severity,
+                                             const string& msg,
+                                             IErrorContainer* container)
+{
+    CObjReaderLineException err(severity,0,msg);
+    if (container == 0) {
+        throw (err);
+    }
+
+    if ( !container->PutError(err) ) {
+        throw(err);
+    }
+}
+                                             
+
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     ILineReader& reader,
     const string& seqid,
     const string& annotname,
-    const CFeature_table_reader::TFlags flags
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer* container
 )
 {
     string feat, qual, val;
     Int4 start, stop;
-    bool partial5, partial3, ispoint, isminus, ignore = false;;
+    bool partial5, partial3, ispoint, isminus, ignore = false;
     Int4 offset = 0;
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
-    CSeq_loc_mix *mix = 0;
 
     if (! annotname.empty ()) {
       CAnnot_descr& descr = sap->SetDesc ();
@@ -1727,19 +1748,18 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     sfp.Reset (new CSeq_feat);
                     sfp->ResetLocation ();
 
-                    if (x_SetupSeqFeat (sfp, feat, flags)) {
+                    if (x_SetupSeqFeat (sfp, feat, flags, container)) {
 
                         ftable.push_back (sfp);
 
                         // now create location
 
                         CRef<CSeq_loc> location (new CSeq_loc);
-                        mix = &(location->SetMix ());
                         sfp->SetLocation (*location);
 
                         // and add first interval
-
-                        x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
+                        x_AddIntervalToFeature (sfp, location->SetMix(), 
+                                                seqid, start, stop, partial5, partial3, ispoint, isminus);
 
                         ignore = false;
 
@@ -1758,18 +1778,33 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // process start - stop multiple interval line
 
-                    x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
+                    if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
+                        x_AddIntervalToFeature (sfp, sfp->SetLocation().SetMix(), 
+                                                seqid, start, stop, partial5, partial3, ispoint, isminus);
+                    } else {
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                            x_ProcessMsg(eDiag_Warning,
+                                         "No feature provided for intervals in line:" + string(line),
+                                         container);
+                        }
+                    }
 
                 } else if ((! qual.empty ()) && (! val.empty ())) {
 
                     // process qual - val qualifier line
 
-                    if (! x_AddQualifierToFeature (sfp, qual, val)) {
+                    if ( !sfp ) {
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                            x_ProcessMsg(eDiag_Warning,
+                                         "No feature provided for qualifiers in line:" + string(line),
+                                         container);
+                        }
+                    } else if ( !x_AddQualifierToFeature (sfp, qual, val) ) {
 
                         // unrecognized qualifier key
 
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            ERR_POST_X (2, Warning << "Unrecognized qualifier " << qual);
+                            x_ProcessMsg(eDiag_Warning, "Unrecognized qualifier " + qual, container);
                         }
 
                         if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -1780,20 +1815,28 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 } else if ((! qual.empty ()) && (val.empty ())) {
 
                     // check for the few qualifiers that do not need a value
+                    if ( !sfp ) {
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                            x_ProcessMsg(eDiag_Warning,
+                                         "No feature provided for qualifiers in line:" + string(line),
+                                         container);
+                        }
+                    } else {
+                        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+                        if (s_iter != sc_SingleKeys.end ()) {
 
-                    TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
-                    if (s_iter != sc_SingleKeys.end ()) {
+                            x_AddQualifierToFeature (sfp, qual, val);
 
-                        x_AddQualifierToFeature (sfp, qual, val);
-
+                        }
                     }
                 } else if (! feat.empty ()) {
                 
                     // unrecognized location
 
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        ERR_POST_X (3, Warning << "Bad location on feature " << feat <<
-                                   " (start " << start << ", stop " << stop << ")");
+                        x_ProcessMsg(eDiag_Warning,
+                                     "Bad start/stop on feature '" + feat + "' in line: " + string(line),
+                                     container);
                     }
                 }
             }
@@ -1807,7 +1850,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
-    const CFeature_table_reader::TFlags flags
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer* container
 )
 
 {
@@ -1815,7 +1859,7 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
 
     sfp->ResetLocation ();
 
-    if (! x_SetupSeqFeat (sfp, feat, flags)) {
+    if ( !x_SetupSeqFeat (sfp, feat, flags, container) ) {
 
         // bad feature, make dummy
 
@@ -1838,7 +1882,8 @@ void CFeature_table_reader_imp::AddFeatQual (
     CRef<CSeq_feat> sfp,
     const string& qual,
     const string& val,
-    const CFeature_table_reader::TFlags flags
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer* container
 )
 
 {
@@ -1877,11 +1922,12 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const string& seqid,
     const string& annotname,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     CStreamLineReader reader(ifs);
-    return ReadSequinFeatureTable(reader, seqid, annotname, flags);
+    return ReadSequinFeatureTable(reader, seqid, annotname, flags, container);
 }
 
 
@@ -1889,12 +1935,14 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
     const string& seqid,
     const string& annotname,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     // just read features from 5-column table
 
-    CRef<CSeq_annot> sap = x_GetImplementation().ReadSequinFeatureTable (reader, seqid, annotname, flags);
+    CRef<CSeq_annot> sap = x_GetImplementation().ReadSequinFeatureTable 
+      (reader, seqid, annotname, flags, container);
 
     // go through all features and demote single interval seqlocmix to seqlocint
     for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
@@ -1923,17 +1971,19 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     CStreamLineReader reader(ifs);
-    return ReadSequinFeatureTable(reader, flags);
+    return ReadSequinFeatureTable(reader, flags, container);
 }
 
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     string fst, scd, seqid, annotname;
@@ -1954,7 +2004,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     }
 
     // then read features from 5-column table
-    return ReadSequinFeatureTable (reader, seqid, annotname, flags);
+    return ReadSequinFeatureTable (reader, seqid, annotname, flags, container);
 
 }
 
@@ -1962,22 +2012,24 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 void CFeature_table_reader::ReadSequinFeatureTables(
     CNcbiIstream& ifs,
     CSeq_entry& entry,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     CStreamLineReader reader(ifs);
-    return ReadSequinFeatureTables(reader, entry, flags);
+    return ReadSequinFeatureTables(reader, entry, flags, container);
 }
 
 
 void CFeature_table_reader::ReadSequinFeatureTables(
     ILineReader& reader,
     CSeq_entry& entry,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 {
     while ( !reader.AtEOF() ) {
-        CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags);
+        CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, container);
         if (entry.IsSeq()) { // only one place to go
             entry.SetSeq().SetAnnot().push_back(annot);
             continue;
@@ -2014,11 +2066,12 @@ void CFeature_table_reader::ReadSequinFeatureTables(
 CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
-    const TFlags flags
+    const TFlags flags,
+    IErrorContainer* container
 )
 
 {
-    return x_GetImplementation ().CreateSeqFeat (feat, location, flags);
+    return x_GetImplementation ().CreateSeqFeat (feat, location, flags, container);
 }
 
 
@@ -2026,11 +2079,12 @@ void CFeature_table_reader::AddFeatQual (
     CRef<CSeq_feat> sfp,
     const string& qual,
     const string& val,
-    const CFeature_table_reader::TFlags flags
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer* container
 )
 
 {
-    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags);
+    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags, container);
 }
 
 
