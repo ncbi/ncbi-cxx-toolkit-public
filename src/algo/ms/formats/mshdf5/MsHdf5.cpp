@@ -43,6 +43,8 @@
 
 #define AVG_HYD 1.00794
 #define MONO_HYD 1.007825035
+#define MAX_MSLEVEL 3
+#define MSLEVEL_BOUND MAX_MSLEVEL + 1
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(H5);
@@ -55,8 +57,8 @@ CMsHdf5::CMsHdf5(string filename, unsigned int flags)
     m_curGroup = NULL;
     m_groups.clear();
     m_pathStack.clear();
-    m_msLevels.resize(3);
-    m_msLevelsInfo.resize(3);
+    m_msLevels.resize(MSLEVEL_BOUND);
+    m_msLevelsInfo.resize(MSLEVEL_BOUND);
 }
 
 CMsHdf5::~CMsHdf5(void)
@@ -74,7 +76,7 @@ void CMsHdf5::newSpectraSet(string name)
     m_pathStack.clear();
     m_path = getCurrentPath();
     m_specMap.clear();
-    for (Uint4 i=0; i<3; i++) {
+    for (Uint4 i=0; i<MSLEVEL_BOUND; i++) {
         m_msLevels[i].clear();
         m_msLevelsInfo[i].clear();
     }
