@@ -265,8 +265,8 @@ Contact information for the person responsible for the instrument.
       <xs:extension base="xs:string">
         <!-- precision is (32 | 64)  -->
         <xs:attribute name="precision" type="xs:integer" use="required"/>
-        <xs:attribute name="byteOrder" type="xs:string" use="required" default="network"/>
-        <xs:attribute name="pairOrder" type="xs:string" use="required" default="m/z-int"/>
+        <xs:attribute name="byteOrder" type="xs:string" use="optional" default="network"/>
+        <xs:attribute name="pairOrder" type="xs:string" use="optional" default="m/z-int"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -310,7 +310,17 @@ Contact information for the person responsible for the instrument.
         <xs:attribute name="precursorScanNum" type="xs:integer" use="optional"/>
         <xs:attribute name="precursorIntensity" type="xs:float" use="required"/>
         <xs:attribute name="precursorCharge" type="xs:integer" use="optional"/>
+        <xs:attribute name="possibleCharges" type="xs:string" use="optional"/>
         <xs:attribute name="windowWideness" type="xs:float" use="optional"/>
+        <xs:attribute name="activationMethod" use="optional">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="ETD"/>
+              <xs:enumeration value="ECD"/>
+              <xs:enumeration value="CID"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -391,6 +401,7 @@ Contact information for the person responsible for the instrument.
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+    <xs:attribute name="filterLine" type="xs:string" use="optional"/>
     <xs:attribute name="centroided" type="xs:boolean" use="optional"/>
     <xs:attribute name="deisotoped" type="xs:boolean" use="optional"/>
     <xs:attribute name="chargeDeconvoluted" type="xs:boolean" use="optional" default="false"/>
