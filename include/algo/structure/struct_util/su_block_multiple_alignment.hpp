@@ -219,10 +219,10 @@ private:
     typedef std::list < ncbi::CRef < Block > > BlockList;
     BlockList m_blocks;
 
-    typedef struct {
+    struct BlockInfo {
         Block *block;
         int blockColumn, alignedBlockNum;
-    } BlockInfo;
+    };
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap m_blockMap;
 
@@ -286,9 +286,9 @@ public:
     bool IsFrom(const BlockMultipleAlignment *alignment) const { return (alignment == m_parentAlignment); }
 
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
-    typedef struct {
+    struct Range {
         int from, to;
-    } Range;
+    };
 
     const Range* GetRangeOfRow(int row) const { return &(m_ranges[row]); }
     void SetRangeOfRow(unsigned int row, int from, int to)

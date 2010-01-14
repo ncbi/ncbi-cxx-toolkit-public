@@ -48,7 +48,7 @@ class NCBI_CDUTILS_EXPORT CCdFromFasta : public CCdCore
 
 public:
     typedef CSeqAnnotFromFasta::MasteringMethod TMasterMethod;
-    typedef struct Fasta2CdParams {
+    struct Fasta2CdParams {
         string cdAcc;   //  accession of CD to create
         string cdName;  //  shortname of CD to create (use accession if missing)
         bool   useLocalIds;  //  all identifiers treated as 'local'; don't parse identifier
@@ -66,7 +66,7 @@ public:
             return s;
         }
 
-    } Fasta2CdParams;
+    };
 
     CCdFromFasta();
     CCdFromFasta(const Fasta2CdParams& params);
