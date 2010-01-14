@@ -203,19 +203,25 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        const TPlace& place, 
                                        CRef<CSeq_entry> entry)
 {
+    CRef<CSeq_entry_Info> entry_info;
     {{
         CDataSource::TMainLock::TWriteLockGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource().GetMainLock());
         if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
-            CRef<CSeq_entry_Info> entry_info(new CSeq_entry_Info(*entry));
+            entry_info = new CSeq_entry_Info(*entry);
             tse.x_SetObject(*entry_info, 0); //???
         }
         else {
-            x_GetBioseq_set(tse, place).AddEntry(*entry);
+            entry_info = x_GetBioseq_set(tse, place).AddEntry(*entry);
         }
     }}
-
+    if ( !entry_info->x_GetBaseInfo().GetAnnot().empty() ) {
+        CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
+        if( tse.HasDataSource() )
+            guard.Guard(tse.GetDataSource());
+        tse.UpdateAnnotIndex(*entry_info);
+    }
 }
 
 void CTSE_Default_Assigner::LoadSequence(CTSE_Info& tse, 

@@ -119,6 +119,9 @@ public:
     void x_SetBioseqChunkId(TChunkId chunk_id);
     void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id);
 
+    bool x_CanAddBioseq(const TBioseqId& id) const;
+
+    void x_UpdateAnnotIndex(void);
     void x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
     
     // append ids with all Bioseqs Seq-ids from this Split-Info

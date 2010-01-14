@@ -269,7 +269,26 @@ void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
 }
 
 
+bool CTSE_Split_Info::x_CanAddBioseq(const TBioseqId& id) const
+{
+    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        if ( it->first->ContainsBioseq(id) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 // annot index
+void CTSE_Split_Info::x_UpdateAnnotIndex(void)
+{
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        it->first->UpdateAnnotIndex();
+    }
+}
+
+
 void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
     CFastMutexGuard guard(m_SeqIdToChunksMutex);
