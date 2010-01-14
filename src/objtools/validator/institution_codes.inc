@@ -4054,6 +4054,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMFSH	s	National Marine Fisheries Service",
 "NMG	s	Naturhistoriska Riksmuseet",
 "NMI	s	National Museum of Ireland",
+"NMI<POL>	c	Bacteria collection of National Institute of Public Health, National Medicines Institute, Poland",
 "NMID	s	National Museum of Ireland",
 "NMK	s	National Museum",
 "NMKE	s	National Museum of Kenya",
