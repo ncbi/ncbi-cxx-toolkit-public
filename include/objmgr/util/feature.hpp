@@ -129,7 +129,7 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 /// Returns a best parent feature for a CMappedFeat.
 /// CSeq_feat_Handle is convertible to a CMappedFeat so it can be used too.
 NCBI_XOBJUTIL_EXPORT
-CMappedFeat GetParentFeature(const CMappedFeat& feat)
+CMappedFeat GetParentFeature(const CMappedFeat& feat);
 
 /////////////////////////////////////////////////////////////////////////////
 /// CFeatTree
