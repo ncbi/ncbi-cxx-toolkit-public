@@ -182,7 +182,6 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
         // Retrieve data ...
         {
             string nvc255_value;
-            string sql;
 
             sql  = " SELECT nvc255_field FROM " + table_name;
             sql += " ORDER BY id";
@@ -382,8 +381,8 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
             query.Execute();
 
             // Using parameters ...
-            string sql = "INSERT INTO " + GetTableName() +
-                         "(int_field, vc1000_field) VALUES(@id, @vc_val)";
+            sql = "INSERT INTO " + GetTableName() +
+                  "(int_field, vc1000_field) VALUES(@id, @vc_val)";
 
             query.SetParameter( "@id", 2 );
             query.SetParameter( "@vc_val", test_msg);

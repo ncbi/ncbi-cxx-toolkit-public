@@ -176,8 +176,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(query, table_name);
-                BOOST_CHECK_EQUAL(rec_num, (int)record_num);
+                size_t rec_num = GetNumOfRecords(query, table_name);
+                BOOST_CHECK_EQUAL(rec_num, (size_t)record_num);
             }
         }
 
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
                 bi.Bind(3, eSDB_String);
                 bi.Bind(4, eSDB_Text);
 
-                for( int i = 0; i < record_num * batch_num; ++i ) {
+                for( int i = 0; i < (int)record_num * (int)batch_num; ++i ) {
                     string im = NStr::IntToString(i);
                     bi << i << i << im << im << EndRow;
                 }
@@ -209,8 +209,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(query, table_name);
-                BOOST_CHECK_EQUAL(rec_num, int(record_num) * int(batch_num));
+                size_t rec_num = GetNumOfRecords(query, table_name);
+                BOOST_CHECK_EQUAL(rec_num, size_t(record_num) * size_t(batch_num));
             }
         }
     }

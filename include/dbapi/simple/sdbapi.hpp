@@ -206,6 +206,8 @@ public:
         unsigned int                     m_ColNum;
         /// Vector to represent Text/Image value
         mutable vector<unsigned char>    m_Vector;
+        /// String to represent Text/Image value
+        mutable string                   m_ValueForStream;
         /// Stream to represent Text/Image value
         mutable AutoPtr<CNcbiIstrstream> m_Stream;
     };

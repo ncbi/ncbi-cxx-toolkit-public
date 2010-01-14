@@ -167,7 +167,19 @@ s_ConvertionNotSupported(const char* one_type, EDB_Type other_type)
                + CDB_Object::GetTypeName(other_type) + " is not supported");
 }
 
-static void
+#ifdef NCBI_COMPILER_WORKSHOP
+/// For some weird reason WorkShop cannot compile correctly without this fake
+/// template present AND with all s_ConvertValue() functions static.
+template <class T>
+void
+s_ConvertValue(const T& from_val, CVariant& to_var);
+
+#define CONVERTVALUE_STATIC
+#else
+#define CONVERTVALUE_STATIC static
+#endif
+
+CONVERTVALUE_STATIC void
 s_ConvertValue(const CTime& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -192,7 +204,7 @@ s_ConvertValue(const CTime& from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(Int8 from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -216,7 +228,7 @@ s_ConvertValue(Int8 from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(Int4 from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -243,7 +255,7 @@ s_ConvertValue(Int4 from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(short from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -273,7 +285,7 @@ s_ConvertValue(short from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(unsigned char from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -306,7 +318,7 @@ s_ConvertValue(unsigned char from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(bool from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -342,7 +354,7 @@ s_ConvertValue(bool from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(const float& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -369,7 +381,7 @@ s_ConvertValue(const float& from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(const double& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -393,7 +405,7 @@ s_ConvertValue(const double& from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(const string& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -433,11 +445,13 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
     }
 }
 
-static void
+CONVERTVALUE_STATIC void
 s_ConvertValue(const char* from_val, CVariant& to_var)
 {
     s_ConvertValue(string(from_val), to_var);
 }
+
+#undef CONVERTVALUE_STATIC
 
 static void
 s_ConvertValue(const CVariant& from_var, CTime& to_val)
@@ -1799,8 +1813,13 @@ CQuery::CField::AsVector(void) const
                    "Method is unsupported for this type of data");
     }
     string value = var_val.GetString();
+    // WorkShop cannot eat string::iterators in vector<>::insert (although due
+    // to STL he has to eat any iterator-like type) but is okay with pointers
+    // to unsigned char here.
+    const unsigned char* data
+                       = reinterpret_cast<const unsigned char*>(value.data());
     m_Vector.clear();
-    m_Vector.insert(m_Vector.begin(), value.begin(), value.end());
+    m_Vector.insert(m_Vector.begin(), data, data + value.size());
     return m_Vector;
 }
 
@@ -1813,7 +1832,8 @@ CQuery::CField::AsIStream(void) const
         NCBI_THROW(CSDB_Exception, eUnsupported,
                    "Method is unsupported for this type of data");
     }
-    m_Stream.reset(new CNcbiIstrstream(&var_val.GetString()[0]));
+    m_ValueForStream = var_val.GetString();
+    m_Stream.reset(new CNcbiIstrstream(m_ValueForStream.c_str()));
     return *m_Stream;
 }
 
