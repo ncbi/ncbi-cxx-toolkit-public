@@ -2679,6 +2679,10 @@ void CFeatureItem::x_ImportQuals(
             }}
             break;
 
+        case eFQ_rpt_unit_range:
+            x_AddQual(slot, new CFlatStringQVal(val, CFormatQual::eUnquoted));
+            break;
+
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
