@@ -73,12 +73,12 @@ USING_SCOPE(sequence);
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// LessEqual - predicate class for sorting references
+// LessThan - predicate class for sorting references
 
-class LessEqual
+class LessThan
 {
 public:
-    LessEqual(bool serial_first, bool is_refseq);
+    LessThan(bool serial_first, bool is_refseq);
     bool operator()(const CRef<CReferenceItem>& ref1, const CRef<CReferenceItem>& ref2);
 private:
     bool m_SerialFirst;
@@ -253,7 +253,6 @@ static void s_MergeDuplicates
     }
 
     CReferenceItem::TReferences::iterator curr = refs.begin();
-    CReferenceItem::TReferences::iterator prev = curr;
 
     while ( curr != refs.end() ) {
         if ( !*curr ) {
@@ -263,7 +262,6 @@ static void s_MergeDuplicates
         _ASSERT(*curr);
 
         bool remove = false;
-        bool merge  = true;
 
         const CReferenceItem& curr_ref = **curr;
         if ( curr_ref.IsJustUids() ) {
@@ -273,54 +271,11 @@ static void s_MergeDuplicates
             // do not allow no author reference to appear by itself - U07000.1
             if (!(ctx.IsEMBL()  &&  ctx.IsPatent())  &&  !curr_ref.IsSetAuthors()) {
                 remove = true;
-                merge = false;
             }
         }
-        if (prev != curr) {
-            const CReferenceItem& prev_ref = **prev;
-            if (curr_ref.GetPMID() == prev_ref.GetPMID()  &&
-                curr_ref.GetPMID() != 0) {
-                remove = true;
-            } else if (curr_ref.GetMUID() == prev_ref.GetMUID()  &&
-                curr_ref.GetMUID() != 0) {
-                remove = true;
-            } else if (curr_ref.GetPMID() == 0  &&  curr_ref.GetMUID() == 0  &&
-                prev_ref.GetPMID() == 0  &&  prev_ref.GetMUID() == 0) {
-                const string& curr_unique = curr_ref.GetUniqueStr();
-                const string& prev_unique = prev_ref.GetUniqueStr();
-                if (NStr::EqualNocase(curr_unique, prev_unique)  &&
-                    !NStr::IsBlank(curr_unique)) {
-                    const CSeq_loc& curr_loc = curr_ref.GetLoc();
-                    const CSeq_loc& prev_loc = prev_ref.GetLoc();
-                    if (Compare(curr_loc, prev_loc, &ctx.GetScope()) == eSame) {
-                        string curr_auth, prev_auth;
-                        CReferenceItem::FormatAuthors(curr_ref.GetAuthors(), curr_auth);
-                        CReferenceItem::FormatAuthors(prev_ref.GetAuthors(), prev_auth);
-                        if (NStr::EqualNocase(curr_auth, prev_auth)) {
-                            remove = true;
-                        }
-                    }
-                }
-            }
-            if ( remove  &&
-                 prev_ref.GetReftype() == CPubdesc::eReftype_seq  &&
-                 curr_ref.GetReftype() != CPubdesc::eReftype_seq ) {
-                // real range trumps sites
-                merge = false;
-            }
-        } else {
-            merge = false;
-        }
-
         if (remove) {
-            if (merge) {
-                CRef<CSeq_loc> merged_loc = Seq_loc_Add(curr_ref.GetLoc(),
-                    (*prev)->GetLoc(), kMergeFlags, &ctx.GetScope());
-                (*prev)->SetLoc(merged_loc);
-            }
             curr = refs.erase(curr);
         } else {
-            prev = curr;
             ++curr;
         }
     }
@@ -330,7 +285,7 @@ static void s_MergeDuplicates
 void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 {
     {{
-        sort(refs.begin(), refs.end(), LessEqual(false, ctx.IsRefSeq()));
+        sort(refs.begin(), refs.end(), LessThan(false, ctx.IsRefSeq()));
     }}
 
     {{
@@ -346,7 +301,7 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 
     {{
         // re-sort, take serial number into consideration.
-        sort(refs.begin(), refs.end(), LessEqual(true, ctx.IsRefSeq()));
+        sort(refs.begin(), refs.end(), LessThan(true, ctx.IsRefSeq()));
     }}
     
     // assign final serial numbers
@@ -1225,12 +1180,12 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
 }
 
 
-LessEqual::LessEqual(bool serial_first, bool is_refseq) :
+LessThan::LessThan(bool serial_first, bool is_refseq) :
     m_SerialFirst(serial_first), m_IsRefSeq(is_refseq)
 {}
 
 
-bool LessEqual::operator()
+bool LessThan::operator()
 (const CRef<CReferenceItem>& ref1,
  const CRef<CReferenceItem>& ref2)
 {
@@ -1342,7 +1297,7 @@ bool LessEqual::operator()
         return ref1->GetSerial() < ref2->GetSerial();
     }
 
-    return true;
+    return false;
 }
 
 
