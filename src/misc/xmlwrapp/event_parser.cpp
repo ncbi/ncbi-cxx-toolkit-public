@@ -120,6 +120,9 @@ public:
                                       int default_type,
                                       const xmlChar *default_value,
                                       xmlEnumeration *default_values);
+    void event_element_declaration (const xmlChar *element_name,
+                                    int type,
+                                    xmlElementContent *content);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -204,6 +207,14 @@ extern "C"
                                                                 default_type,
                                                                 default_value,
                                                                 default_values); }
+    //####################################################################
+    static void cb_element_declaration (void *parser,
+                                        const xmlChar *element_name,
+                                        int type,
+                                        xmlElementContent *content)
+    { static_cast<epimpl*>(parser)->event_element_declaration(element_name,
+                                                              type,
+                                                              content); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -331,6 +342,12 @@ bool xml::event_parser::attribute_declaration (const std::string &element_name,
     return true;
 }
 //####################################################################
+bool xml::event_parser::element_declaration (const std::string &name,
+                                             element_content_type type,
+                                             _xmlElementContent *content) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::warning (const std::string&) {
     return true;
 }
@@ -388,6 +405,18 @@ xml::event_parser::attribute_default_type xml::event_parser::get_attribute_defau
     throw std::runtime_error("Unknown attribute default type");
 }
 //####################################################################
+xml::event_parser::element_content_type xml::event_parser::get_element_content_type (int type) {
+    switch (type) {
+        case XML_ELEMENT_TYPE_UNDEFINED:    return type_undefined;
+        case XML_ELEMENT_TYPE_EMPTY:        return type_empty;
+        case XML_ELEMENT_TYPE_ANY:          return type_any;
+        case XML_ELEMENT_TYPE_MIXED:        return type_mixed;
+        case XML_ELEMENT_TYPE_ELEMENT:      return type_element;
+        default: ;
+    }
+    throw std::runtime_error("Unknown element type");
+}
+//####################################################################
 epimpl::epimpl (event_parser &parent)
     : parser_status_(true), parent_(parent)
 {
@@ -409,6 +438,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.unparsedEntityDecl     = cb_unparsed_entity_declaration;
     sax_handler_.externalSubset         = cb_external_subset_declaration;
     sax_handler_.attributeDecl          = cb_attribute_declaration;
+    sax_handler_.elementDecl            = cb_element_declaration;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -618,6 +648,21 @@ void epimpl::event_attribute_declaration (const xmlChar *element_name,
                                                        parent_.get_attribute_default_type(default_type),
                                                        default_val,
                                                        def_vals);
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_element_declaration (const xmlChar *element_name,
+                                        int type,
+                                        xmlElementContent *content) {
+    if (!parser_status_) return;
+
+    try {
+        std::string     element( element_name ? reinterpret_cast<const char*>(element_name) : "" );
+
+        parser_status_ = parent_.element_declaration(element,
+                                                     parent_.get_element_content_type(type),
+                                                     content);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }

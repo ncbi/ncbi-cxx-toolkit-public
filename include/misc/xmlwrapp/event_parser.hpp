@@ -54,12 +54,35 @@
 #include <map>
 #include <vector>
 
-namespace xml {
 
+// Forward declaration of a raw libxml2 structure
+struct _xmlElementContent;
+
+namespace xml {
 
 namespace impl {
 struct epimpl; // forward declaration of private implementation
 }
+
+/**
+ * The current event_parser class implementation is not the fastest and is
+ * not the most flexible. The idea behind the current implementation is to
+ * keep the same approach as it was used in the original xmlwrapp 0.6.0.
+ * The event_parser can be improved at least in the following areas:
+ * - Currently handlers are called regardless whether the deriving class
+ *   implements them or not. This leads to the fact that each element from
+ *   the XML document is converted from xmlChar* to std::string. This leads
+ *   to the performace drawbacks. It would be nicer if the handlers are called
+ *   only if they are implemented in the deriving class. Unfortunately it
+ *   is impossible to detect automatically in the base class whether a
+ *   deriving class overrides a virtual function (at least using just portable
+ *   ISO C++).
+ * - Currently all the handlers arguments are converted from C types to
+ *   their C++ counterparts even if just a part of them are used. It is
+ *   possible to convert handler arguments to structures (classes) with ability
+ *   to provide access to raw libxml2 data and to have lazy conversions to
+ *   std::string. This will improve the parser performance.
+**/
 
 /**
  * The xml::event_parser is used to parse an XML document by calling member
@@ -182,6 +205,15 @@ protected:
         type_attribute_required,
         type_attribute_implied,
         type_attribute_fixed
+    };
+
+    /// enum for element content types
+    enum element_content_type {
+        type_undefined,
+        type_empty,
+        type_any,
+        type_mixed,
+        type_element
     };
 
     //####################################################################
@@ -410,6 +442,23 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the element
+     * declaration message.
+     *
+     * @param name The element name.
+     * @param type The element content type.
+     * @param content The raw libxml2 structure pointer.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool element_declaration (const std::string &name,
+                                      element_content_type type,
+                                      _xmlElementContent *content);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber
@@ -427,6 +476,7 @@ private:
     entity_type get_entity_type (int);
     attribute_type get_attribute_type (int);
     attribute_default_type get_attribute_default_type (int);
+    element_content_type get_element_content_type (int);
 
     /*
      * Don't allow anyone to copy construct an event_parser or to call the
