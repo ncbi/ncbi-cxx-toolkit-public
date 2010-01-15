@@ -58,8 +58,6 @@
 #include <objects/entrez2/Entrez2_id_list.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
-#include <objtools/cleanup/cleanup.hpp>
-
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
@@ -508,10 +506,6 @@ bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
     //
     CArgs args = GetArgs();
     CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
-    if (!args["nocleanup"]) {
-        CCleanup Cleanup;
-        Cleanup.BasicCleanup( seh );
-    }
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
         x_GetLocation( seh, args, loc );
@@ -535,14 +529,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
 
-    const CArgs&   args = GetArgs();
-
-    if (!args["nocleanup"]) {
-    
-        CCleanup Cleanup;
-        Cleanup.BasicCleanup( se.GetObject() );
-    }
-
+    const CArgs& args = GetArgs();
     string label;
     //se->GetLabel(&label, CSeq_entry::eBoth);
 
