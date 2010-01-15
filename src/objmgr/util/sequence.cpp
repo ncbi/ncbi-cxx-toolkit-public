@@ -2413,9 +2413,9 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
     TMSMap::const_iterator  ms_it         = masking_state.begin();
     TSeqPos                 rem_state     = ms_it->first;
     int                     current_state = 0;
-    CSeqVector_CI::TResidue gap_char      = it.GetGapChar();
-    string                  uc_gaps(m_Width, gap_char);
-    string                  lc_gaps(m_Width, tolower(gap_char));
+    CSeqVector_CI::TResidue hard_mask_char = vec.IsProtein() ? 'X' : 'N';
+    string                  uc_hard_mask_str(m_Width, hard_mask_char);
+    string                  lc_hard_mask_str(m_Width, tolower(hard_mask_char));
 
     if ((m_Flags & fReverseStrand) != 0) {
         it.SetStrand(Reverse(it.GetStrand()));
@@ -2456,8 +2456,8 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
 
             rem_state -= count;
             if (current_state & eHardMask) {
-                ptr = (current_state & eSoftMask) ? lc_gaps.data()
-                    : uc_gaps.data();
+                ptr = (current_state & eSoftMask) ? lc_hard_mask_str.data()
+                    : uc_hard_mask_str.data();
             } else if (current_state & eSoftMask) {
                 // ToLower() always operates in place. :-/
                 lc_buffer.assign(ptr, count);
