@@ -128,8 +128,9 @@ class CInstancedAligner : public IAlignmentFactory
 {
 public:
 
-    CInstancedAligner(int TimeOutSeconds, float MaxRatio, int Threshold)
-        : m_TimeOutSeconds(TimeOutSeconds), m_MaxRatio(MaxRatio), m_Threshold(Threshold),
+    CInstancedAligner(int TimeOutSeconds, float MaxRatio, float MinPctCoverage, int Threshold)
+        : m_TimeOutSeconds(TimeOutSeconds), m_MaxRatio(MaxRatio),
+          m_MinPctCoverage(MinPctCoverage), m_Threshold(Threshold),
           m_Match(2), m_Mismatch(-3), m_GapOpen(-100), m_GapExtend(-1) { ; }
 
     // Defaults to +2, -3, -100, -1
@@ -153,6 +154,7 @@ private:
 
     int m_TimeOutSeconds;
     float m_MaxRatio;
+    float m_MinPctCoverage;
     int m_Threshold;
 
     int m_Match, m_Mismatch, m_GapOpen, m_GapExtend;
@@ -180,6 +182,8 @@ private:
                         vector<CRef<CInstance> >& Instances);
 
     void x_FilterInstances(vector<CRef<CInstance> >& Instances, double MaxRatio);
+
+    bool x_MinCoverageCheck(const CQuerySet& QueryAligns);
 };
 
 

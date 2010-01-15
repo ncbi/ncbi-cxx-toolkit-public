@@ -183,7 +183,7 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
 //    CRef<CMessyAligner> MessyAligner(new CMessyAligner(600, 1));
 
@@ -295,7 +295,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
@@ -307,7 +307,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     Query->SetIdList().push_back(QueryId);
 
     if(SeqMasker.get() != NULL) {
-        Query->SetSeqMasker(SeqMasker.get());
+    //    Query->SetSeqMasker(SeqMasker.get());
     //    Subject->SetSoftFiltering().push_back(1);
     }
 
@@ -406,7 +406,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(180, 3.0, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(180, 3.0, 1.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 

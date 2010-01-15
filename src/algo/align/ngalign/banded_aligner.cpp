@@ -336,9 +336,16 @@ TAlignResultsRef CInstancedAligner::GenerateAlignments(objects::CScope& Scope,
                       AccumResults->Get()) {
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
+
             ERR_POST(Info << "Determined ID: "
                           << QueryIter->second->GetQueryId()->AsFastaString()
                           << " needs Instanced MM Aligner.");
+            if(!x_MinCoverageCheck(*QueryIter->second)) {
+                ERR_POST(Info << "ID: "
+                          << QueryIter->second->GetQueryId()->AsFastaString()
+                          << " fails the minimum percent coverage cutoff. Skipping.");
+                continue;
+            }
             x_RunAligner(Scope, *QueryIter->second, NewResults);
         }
     }
@@ -929,6 +936,24 @@ void CInstancedAligner::x_FilterInstances(vector<CRef<CInstance> >& Instances, d
 
 }
 
+
+bool CInstancedAligner::x_MinCoverageCheck(const CQuerySet& QueryAligns)
+{
+    double BestPctCoverage = -1.0;
+
+    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+        CRef<CSeq_align_set> Set = SubjectIter->second;
+
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+            double PctCoverage = -1.0;
+            (*AlignIter)->GetNamedScore("pct_coverage", PctCoverage);
+            BestPctCoverage = max(BestPctCoverage, PctCoverage);
+        }
+    }
+
+
+    return (BestPctCoverage >= m_MinPctCoverage || BestPctCoverage == -1.0);
+}
 
 END_SCOPE(ncbi)
 
