@@ -56,6 +56,72 @@ class NCBI_SEQALIGN_EXPORT CSeq_align : public CSeq_align_Base
     typedef CSeq_align_Base Tparent;
 public:
     /// enum controlling known named scores
+    ///
+    /// A word on scores, since definitions are quite important:  Scores here
+    /// are to be represented as a standard set of computations, comparable
+    /// across alignment generation algorithms.  The class CScoreBuilder holds
+    /// reference implementations for most of the scores below (modulo
+    /// interpretation difficulties with a score named 'score').  The intended
+    /// meanings of scores are as follows:
+    ///
+    /// 'score'
+    ///     generic score, definable by any algorithm; not comparable
+    ///     across algorithms.
+    ///
+    /// 'bit_score'
+    ///     BLAST-specific bit score; reference implementation in the BLAST
+    ///     code, which is also exposed in CScoreBuilder.
+    ///
+    /// 'e_value'
+    ///     BLAST-specific e-value; reference implementation in the BLAST
+    ///     code, which is also exposed in CScoreBuilder.
+    ///
+    /// alignment length
+    ///     not a score per se, but a useful metric nonetheless.  This is the
+    ///     sum of all aligned segments and all gaps; this excludes introns and
+    ///     discontinuities
+    ///
+    /// 'pct_identity'
+    ///     percent identity, computed as *UNGAPPED* percent identity.  That
+    ///     is, the computation is strictly (matches) / (matches + mismatches)
+    ///     NOTE: there are, historically, at least four separate methods of
+    ///     computation for this:
+    ///         1.  C++ toolkit (CScoreBuilder): ungapped percent identity:
+    ///                 (matches) / (matches + mismatches)
+    ///         2.  BLAST: gapped percent identity:
+    ///                 (matches) / (alignment length)
+    ///         3.  gbDNA and contig processes: modified alignment length to
+    ///             count each gap as 1 base long always
+    ///                 (matches) / (matches + mismatches + gap count)
+    ///         4.  Spidey: compute identity per coverage:
+    ///                 (matches) / (stop - start + 1)
+    ///
+    /// 'gapped_pct_identity'
+    ///     percent identity, computed as gapped percent identity (as per
+    ///     BLAST, noted above)
+    ///
+    ///  alignable bases
+    ///     More a concept than a score.  The alignable region of a sequence,
+    ///     as defined by the underlying sequencing technology or biology -
+    ///     that is, the region of a sequence noted as high quality minus a
+    ///     poly-A tail in the case of a cDNA.  This quantity can be used in
+    ///     computing more appropriate coverage scores.
+    ///
+    /// 'pct_coverage'
+    ///     Percent of a sequence (query) aligned to another (subject), minus
+    ///     poly-A tail:
+    ///         (matches + mismatches) / (query length - polyA tail)
+    ///
+    /// alignable percent coverage
+    ///     (NB: no named score yet)
+    ///     Percent of the alignable region actually aligned to a subject
+    ///         (matches + mismatches in alignable region) / (length of alignable region)
+    ///
+    /// exonic coverage
+    ///     (NB: no named score yet)
+    ///     Measure of the percent of the query represented in a set of exons
+    ///         (sum of lengths of exon on query) / (query length - polyA)
+    ///
     enum EScoreType {
         //< generic 'score'
         eScore_Score,
@@ -73,6 +139,7 @@ public:
         eScore_MismatchCount,
 
         //< percent identity (0.0-100.0) (pct_identity)
+        //< NOTE: this is calculated as *UNGAPPED* identity
         eScore_PercentIdentity,
 
         //< percent coverage (0.0-100.0) (pct_coverage)
