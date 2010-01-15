@@ -811,12 +811,17 @@ void CGenbankFormatter::FormatOrigin
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    if ( origin.GetOrigin().empty() ) {
-        l.push_back("ORIGIN      ");
+    string strOrigin = origin.GetOrigin();
+
+    if ( strOrigin.empty() ) {
+        l.push_back( "ORIGIN      " );
     } else {
-        Wrap(l, "ORIGIN", origin.GetOrigin());
+        if ( ! NStr::EndsWith( strOrigin, "." ) ) {
+            strOrigin += ".";
+        }
+        Wrap( l, "ORIGIN", strOrigin );
     }
-    text_os.AddParagraph(l, origin.GetObject());
+    text_os.AddParagraph( l, origin.GetObject() );
 }
 
 
