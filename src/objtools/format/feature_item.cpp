@@ -2763,8 +2763,10 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(locus_tag);
     DO_QUAL(old_locus_tag);
+
     x_FormatQual(eFQ_gene_syn_refseq, "synonym", qvec);
     DO_QUAL(gene_syn);
+
     x_FormatQual(eFQ_gene_allele, "allele", qvec);
 
     DO_QUAL(operon);
@@ -2795,6 +2797,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(exception);
     DO_QUAL(ribosomal_slippage);
     DO_QUAL(trans_splicing);
+    DO_QUAL(artificial_location);
 
     if ( !cfg.GoQualsToNote() ) {
         x_FormatQual(eFQ_go_component, "GO_component", qvec);
@@ -2803,14 +2806,13 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     }
 
     x_FormatNoteQuals(ff);
-        
     DO_QUAL(citation);
 
     DO_QUAL(number);
 
     DO_QUAL(pseudo);
     DO_QUAL(selenocysteine);
-    // DO_QUAL(pyrrolysine);
+    DO_QUAL(pyrrolysine);
 
     DO_QUAL(codon_start);
 
@@ -2841,7 +2843,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(rpt_unit);
     DO_QUAL(rpt_unit_range);
     DO_QUAL(rpt_unit_seq);
-    // DO_QUAL(satellite);
+    DO_QUAL(satellite);
     DO_QUAL(mobile_element);
     DO_QUAL(usedin);
 
@@ -2856,12 +2858,12 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(organism);
     DO_QUAL(label);
     x_FormatQual(eFQ_cds_product, "product", qvec);
-    // DO_QUAL(UniProtKB_evidence);
+    DO_QUAL(UniProtKB_evidence);
     DO_QUAL(protein_id);
     DO_QUAL(transcript_id);
     DO_QUAL(db_xref);
     x_FormatQual(eFQ_gene_xref, "db_xref", qvec);
-    // DO_QUAL(mol_wt);
+    DO_QUAL(mol_wt);
     DO_QUAL(translation);
     DO_QUAL(transcription);
     DO_QUAL(peptide);
@@ -3173,6 +3175,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_none, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_allele, CSeqFeatData::eQual_allele),
     TQualPair(eFQ_anticodon, CSeqFeatData::eQual_anticodon),
+    TQualPair(eFQ_artificial_location, CSeqFeatData::eQual_artificial_location),
     TQualPair(eFQ_bond, CSeqFeatData::eQual_note),
     TQualPair(eFQ_bond_type, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety),
@@ -3738,6 +3741,7 @@ static const string s_GetSubsourceString(const CSubSource::TSubtype& subtype)
         case CSubSource::eSubtype_map: return "map";
         case CSubSource::eSubtype_clone: return "clone";
         case CSubSource::eSubtype_subclone: return "subclone";
+        case CSubSource::eSubtype_haplogroup: return "haplogroup";
         case CSubSource::eSubtype_haplotype: return "haplotype";
         case CSubSource::eSubtype_genotype: return "genotype";
         case CSubSource::eSubtype_sex: return "sex";
@@ -3977,6 +3981,7 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(clone);
         DO_SS(subclone);
         DO_SS(haplotype);
+        DO_SS(haplogroup);
         DO_SS(genotype);
         DO_SS(sex);
         DO_SS(cell_line);
@@ -4171,6 +4176,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(clone);
     x_FormatQual(eSQ_subclone, "sub_clone", qvec);
     DO_QUAL(haplotype);
+    DO_QUAL(haplogroup);
     DO_QUAL(sex);
     DO_QUAL(cell_line);
     DO_QUAL(cell_type);
