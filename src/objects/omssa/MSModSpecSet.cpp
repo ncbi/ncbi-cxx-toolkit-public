@@ -58,6 +58,10 @@ CMSModSpecSet::~CMSModSpecSet(void)
 //! creates arrays for the existing set
 void CMSModSpecSet::CreateArrays(void)
 {
+    int i;
+    for(i=0; i < eMSMod_max; ++i)
+        ModMass[i] = 0;
+
     Tdata::const_iterator iMods;
     for(iMods = Get().begin(); iMods != Get().end(); ++iMods) {
         int ModNum = (*iMods)->GetMod();
@@ -67,7 +71,9 @@ void CMSModSpecSet::CreateArrays(void)
             continue;
         }
         // ignore unspecified mods
-        if((*iMods)->GetMonomass() == 0.0) continue;
+        if((*iMods)->GetMonomass() == 0.0) {
+             continue;
+        }
 
         ModTypes[ModNum] = static_cast <EMSModType> ((*iMods)->GetType());
         ModMass[ModNum] = MSSCALE2INT((*iMods)->GetMonomass());
