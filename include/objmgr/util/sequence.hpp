@@ -260,7 +260,8 @@ CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh,
 enum EGetTitleFlags {
     fGetTitle_Reconstruct = 0x1, ///< ignore existing title Seqdesc.
     fGetTitle_Organism    = 0x2, ///< append [organism]
-    fGetTitle_AllProteins = 0x4  ///< normally just names the first
+    fGetTitle_AllProteins = 0x4, ///< normally just names the first
+    fGetTitle_NoExpensive = 0x8  ///< skip potential expensive operations
 };
 typedef int TGetTitleFlags;
 
@@ -657,6 +658,7 @@ public:
         fKeepGTSigns     = 0x10, ///< don't convert '>' to '_' in title
         fMapMasksUp      = 0x20, ///< honor masks specified at a lower level
         fMapMasksDown    = 0x40, ///< honor masks specified at a higher level
+        fNoExpensiveOps  = 0x80, ///< don't try too hard to find titles
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps

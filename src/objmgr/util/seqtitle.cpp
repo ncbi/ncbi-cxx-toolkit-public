@@ -83,9 +83,10 @@ static string s_TitleFromChromosome(const CBioSource&    source,
 static string s_TitleFromProtein   (const CBioseq_Handle& handle,
                                           CScope&        scope,
                                           string&        organism,
-                                          bool           all_proteins);
+                                          TGetTitleFlags flags);
 static string s_TitleFromSegment   (const CBioseq_Handle& handle,
-                                          CScope&        scope);
+                                          CScope&        scope,
+                                          TGetTitleFlags flags);
 
 static void s_FlyCG_PtoR(string& s);
                                           
@@ -298,7 +299,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             }
             break;
         }
-    } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()) {
+    } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()
+               &&  (flags & fGetTitle_NoExpensive) == 0) {
         unsigned int         genes = 0, cdregions = 0, prots = 0;
         CConstRef<CSeq_feat> gene(0),   cdregion(0);
         for (CFeat_CI it(hnd);
@@ -389,8 +391,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  hnd.GetBioseqMolType() == CSeq_inst::eMol_aa) {
-        title = s_TitleFromProtein(hnd, scope, organism,
-                                   (flags & fGetTitle_AllProteins) != 0);
+        title = s_TitleFromProtein(hnd, scope, organism, flags);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
         }
@@ -398,7 +399,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 
     if (title.empty()  &&  !htg_tech
         &&  hnd.GetInst_Repr() == CSeq_inst::eRepr_seg) {
-        title = s_TitleFromSegment(hnd, scope);
+        title = s_TitleFromSegment(hnd, scope, flags);
     }
 
     if (title.empty()  &&  !htg_tech  &&  source.NotEmpty()) {
@@ -1148,13 +1149,12 @@ static string s_TitleFromChromosome(const CBioSource& source,
 }
 
 
-static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
-                                 string& organism, bool all_proteins)
+static string s_GetProteinName(const CBioseq_Handle& handle, CScope& scope,
+                               CConstRef<CSeq_loc>& cds_loc,
+                               TGetTitleFlags flags)
 {
     CConstRef<CProt_ref> prot;
-    CConstRef<CSeq_loc>  cds_loc;
     CConstRef<CGene_ref> gene;
-    string               result;
 
     CSeq_loc everywhere;
     everywhere.SetWhole().Assign(*handle.GetSeqId());
@@ -1183,14 +1183,15 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     }
 
     if (prot.NotEmpty()  &&  prot->IsSetName()  &&  !prot->GetName().empty()) {
-        bool first = true;
+        string result;
+        bool   first = true;
         ITERATE (CProt_ref::TName, it, prot->GetName()) {
             if ( !first ) {
                 result += "; ";
             }
             result += *it;
             first = false;
-            if ( !all_proteins ) {
+            if ((flags & fGetTitle_AllProteins) == 0) {
                 break; // just give the first
             }
         }
@@ -1200,12 +1201,13 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
                 result += ' ' + gene->GetLocus_tag();
             }
         }
+        return result;
     } else if (prot.NotEmpty()  &&  prot->IsSetDesc()
                &&  !prot->GetDesc().empty()) {
-        result = prot->GetDesc();
+        return prot->GetDesc();
     } else if (prot.NotEmpty()  &&  prot->IsSetActivity()
                &&  !prot->GetActivity().empty()) {
-        result = prot->GetActivity().front();
+        return prot->GetActivity().front();
     } else if (gene) {
         string gene_name;
         if (gene->IsSetLocus()  &&  !gene->GetLocus().empty()) {
@@ -1216,8 +1218,22 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
             gene_name = gene->GetDesc();
         }
         if ( !gene_name.empty() ) {
-            result = gene_name + " gene product";
+            return gene_name + " gene product";
         }
+    }
+
+    return "unnamed protein product";
+}
+
+
+static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
+                                 string& organism, TGetTitleFlags flags)
+{
+    string              result;
+    CConstRef<CSeq_loc> cds_loc;
+
+    if ((flags & fGetTitle_NoExpensive) == 0) {
+        result = s_GetProteinName(handle, scope, cds_loc, flags);
     } else {
         result = "unnamed protein product";
     }
@@ -1244,7 +1260,8 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 }
 
 
-static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
+static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope,
+                                 TGetTitleFlags flags)
 {
     string   organism, product, locus, strain, clone, isolate;
     string   completeness = "complete";
@@ -1294,37 +1311,39 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
     CSeq_loc everywhere;
     everywhere.SetMix().Set() = handle.GetInst_Ext().GetSeg();
 
-    CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
-    for (; it;  ++it) {
-        cds_found = true;
-        if ( !it->IsSetProduct() ) {
-            continue;
-        }
-        const CSeq_loc& product_loc = it->GetProduct();
-
-        if (it->IsSetPartial()) {
-            completeness = "partial";
-        }
-
-        CConstRef<CSeq_feat> prot_feat
-            = GetBestOverlappingFeat(product_loc, CSeqFeatData::e_Prot,
-                                     eOverlap_Interval, scope);
-        if (product.empty()  &&  prot_feat.NotEmpty()
-            &&  prot_feat->GetData().GetProt().IsSetName()) {
-            product = *prot_feat->GetData().GetProt().GetName().begin();
-        }
-        
-        CConstRef<CSeq_feat> gene_feat
-            = GetOverlappingGene(it->GetLocation(), scope);
-        if (locus.empty()  &&  gene_feat.NotEmpty()) {
-            if (gene_feat->GetData().GetGene().IsSetLocus()) {
-                locus = gene_feat->GetData().GetGene().GetLocus();
-            } else if (gene_feat->GetData().GetGene().IsSetSyn()) {
-                locus = *gene_feat->GetData().GetGene().GetSyn().begin();
+    if ((flags & fGetTitle_NoExpensive) == 0) {
+        CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
+        for (; it;  ++it) {
+            cds_found = true;
+            if ( !it->IsSetProduct() ) {
+                continue;
             }
-        }
+            const CSeq_loc& product_loc = it->GetProduct();
 
-        BREAK(it);
+            if (it->IsSetPartial()) {
+                completeness = "partial";
+            }
+
+            CConstRef<CSeq_feat> prot_feat
+                = GetBestOverlappingFeat(product_loc, CSeqFeatData::e_Prot,
+                                         eOverlap_Interval, scope);
+            if (product.empty()  &&  prot_feat.NotEmpty()
+                &&  prot_feat->GetData().GetProt().IsSetName()) {
+                product = *prot_feat->GetData().GetProt().GetName().begin();
+            }
+        
+            CConstRef<CSeq_feat> gene_feat
+                = GetOverlappingGene(it->GetLocation(), scope);
+            if (locus.empty()  &&  gene_feat.NotEmpty()) {
+                if (gene_feat->GetData().GetGene().IsSetLocus()) {
+                    locus = gene_feat->GetData().GetGene().GetLocus();
+                } else if (gene_feat->GetData().GetGene().IsSetSyn()) {
+                    locus = *gene_feat->GetData().GetGene().GetSyn().begin();
+                }
+            }
+
+            BREAK(it);
+        }
     }
 
     string result = organism;

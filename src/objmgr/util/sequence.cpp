@@ -95,7 +95,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 
-string s_GetFastaTitle(const CBioseq& bs)
+static string s_GetFastaTitle(const CBioseq& bs, TGetTitleFlags flags)
 {
     string title;
     bool has_molinfo = false;
@@ -121,7 +121,7 @@ string s_GetFastaTitle(const CBioseq& bs)
     }
     else {
         CScope scope(*CObjectManager::GetInstance());
-        return GetTitle( scope.AddBioseq(bs) );
+        return GetTitle( scope.AddBioseq(bs), flags );
     }
 }
 
@@ -2236,12 +2236,15 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     }
 */
     string safe_title;
+    sequence::TGetTitleFlags title_flags = 0;
+    if ((m_Flags & fNoExpensiveOps) != 0) {
+        title_flags |= sequence::fGetTitle_NoExpensive;
+    }
     if (scope) {
         CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
-        safe_title = sequence::GetTitle(bsh);
-    }
-    else {
-        safe_title = sequence::s_GetFastaTitle( bioseq );
+        safe_title = sequence::GetTitle(bsh, title_flags);
+    } else {
+        safe_title = sequence::s_GetFastaTitle(bioseq, title_flags);
     }
 
     if ( !(m_Flags & fKeepGTSigns) ) {
