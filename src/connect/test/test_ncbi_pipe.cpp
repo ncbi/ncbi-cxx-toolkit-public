@@ -250,7 +250,7 @@ int CTest::Run(void)
 
 
     // Check bad executable
-
+    ERR_POST(Info, "Bad executable");
     assert(pipe.Open("blahblahblah", args) != eIO_Success);
 
 
@@ -265,7 +265,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (read from pipe)
-
+    ERR_POST(Info << "Unidirectional pipe read");
     assert(pipe.Open(cmd.c_str(), args,
                      CPipe::fStdIn_Close | share) == eIO_Success);
 
@@ -291,7 +291,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (read from iostream)
-
+    ERR_POST(Info << "Unidirectional stream read");
     CConn_PipeStream ios(cmd.c_str(), args,
                          CPipe::fStdIn_Close | share, &io_timeout);
     s_ReadStream(ios);
@@ -303,10 +303,9 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (write to pipe)
-
     args.clear();
     args.push_back("1");
-
+    ERR_POST(Info << "Unidirectional pipe write");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdOut_Close | share) == eIO_Success);
 
@@ -325,10 +324,9 @@ int CTest::Run(void)
 
 
     // Bidirectional pipe (pipe)
-
     args.clear();
     args.push_back("2");
-
+    ERR_POST(Info << "Bidirectional pipe");
     assert(pipe.Open(app.c_str(), args, share) == eIO_Success);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
@@ -356,10 +354,9 @@ int CTest::Run(void)
 
 
     // Bidirectional pipe (iostream)
-
     args.clear();
     args.push_back("3");
-
+    ERR_POST(Info << "Bidirectional stream");
     CConn_PipeStream ps(app.c_str(), args, share, &io_timeout);
 
     cout << endl;
@@ -387,10 +384,10 @@ int CTest::Run(void)
 
 
     // f*OnClose flags tests
-
     args.clear();
     args.push_back("4");
 
+    ERR_POST(Info << "Checking timeout");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | CPipe::fStdOut_Close
                      | CPipe::fKeepOnClose) == eIO_Success);
@@ -408,6 +405,7 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
+    ERR_POST(Info << "Checking kill-on-close");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | CPipe::fStdOut_Close
                      | CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
@@ -423,6 +421,7 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
+    ERR_POST(Info << "Checking extended timeout/kill");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | CPipe::fStdOut_Close
                      | CPipe::fKeepOnClose) == eIO_Success);

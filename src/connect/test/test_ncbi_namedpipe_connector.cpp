@@ -228,17 +228,20 @@ void CTest::Server(int n_cycle)
             do {
                 status = pipe.Read(buf, kBufferSize, &n_read);
 
-                // Dump received data
+                // Report received data
                 ERR_POST(Info <<
                          NStr::UIntToString(n_read) + " byte(s) read: " +
                          (n_read ? "" : IO_StatusStr(status)));
-                NcbiCout.write(buf, n_read);
-                assert(NcbiCout.good());
-                NcbiCout.flush();
 
                 // Write data back to the pipe
                 size_t n_total = 0;
                 while (n_total < n_read) {
+                    if (!n_total) {
+                        // NB: first time in the loop -- dump received data
+                        NcbiCout.write(buf, n_read);
+                        assert(NcbiCout.good());
+                        NcbiCout.flush();
+                    }
                     status = pipe.Write(buf + n_total, n_read - n_total,
                                         &n_written);
                     if (!n_written) {
