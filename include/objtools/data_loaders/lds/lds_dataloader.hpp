@@ -38,6 +38,7 @@
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds_manager.hpp>
+#include <objtools/readers/fasta.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -59,6 +60,7 @@ const string kCFParam_LDS_DbAlias   = "DbAlias";   // = string
 const string kCFParam_LDS_SourcePath   = "SourcePath";   // = string
 const string kCFParam_LDS_RecurseSubDir  = "RecurseSubDir"; // = bool
 const string kCFParam_LDS_ControlSum     = "ControlSum";    // = bool
+const string kCFParam_LDS_FastaFlags     = "FastaFlags"; // = int
 
 
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
@@ -86,7 +88,18 @@ public:
         CLDS_Manager::ERecurse recurse = CLDS_Manager::eRecurseSubDirs,
         CLDS_Manager::EComputeControlSum csum = 
                                          CLDS_Manager::eComputeControlSum,
+        CFastaReader::TFlags fasta_flags = -1,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const string& source_path,
+        const string& db_path,
+        const string& db_alias,
+        CLDS_Manager::ERecurse recurse,
+        CLDS_Manager::EComputeControlSum csum,
+        CObjectManager::EIsDefault is_default,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
     // Public constructor not to break CSimpleClassFactoryImpl code
@@ -125,7 +138,8 @@ private:
                          const string& db_path,
                          const string& db_alias,
                          CLDS_Manager::ERecurse           recurse,
-                         CLDS_Manager::EComputeControlSum csum);
+                         CLDS_Manager::EComputeControlSum csum,
+                         CFastaReader::TFlags             fasta_flags);
 
         virtual CDataLoader* CreateLoader(void) const;
     private:
@@ -135,6 +149,7 @@ private:
         string m_DbAlias;
         CLDS_Manager::ERecurse            m_Recurse;
         CLDS_Manager::EComputeControlSum  m_ControlSum;
+        CFastaReader::TFlags              m_FastaFlags;
     };
     friend class CLDS_LoaderMaker;
 
@@ -153,6 +168,7 @@ private:
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
 
     CRef<CLDS_IStreamCache> m_IStreamCache;
+    CFastaReader::TFlags    m_FastaFlags;
 
 private: // to prevent copying
     CLDS_DataLoader(const CLDS_DataLoader&);

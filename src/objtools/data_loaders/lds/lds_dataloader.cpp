@@ -432,14 +432,15 @@ CLDS_DataLoader::x_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
         CRef<CLDS_IStreamCache> cache = x_GetIStreamCache();
         CRef<CLDS_IStreamCache::CIStream> stream =
             cache->GetStream(obj_descr.file_name, obj_descr.pos);
-        CRef<CSeq_entry> entry = LDS_LoadTSE(obj_descr, stream->GetStream());
+        CRef<CSeq_entry> entry = LDS_LoadTSE(obj_descr, stream->GetStream(),
+                                             m_FastaFlags);
         cache->ReleaseStream(stream);
         return entry;
     }
     else {
         CNcbiIfstream stream(obj_descr.file_name.c_str(),
                              IOS_BASE::in | IOS_BASE::binary);
-        return LDS_LoadTSE(obj_descr, stream);
+        return LDS_LoadTSE(obj_descr, stream, m_FastaFlags);
     }
 }
 
@@ -474,9 +475,10 @@ CLDS_DataLoader::CLDS_LoaderMaker::CLDS_LoaderMaker(
     const string& db_path,
     const string& db_alias,
     CLDS_Manager::ERecurse recurse,
-    CLDS_Manager::EComputeControlSum csum)
+    CLDS_Manager::EComputeControlSum csum,
+    CFastaReader::TFlags fasta_flags)
     : m_SourcePath(source_path), m_DbPath(db_path), m_DbAlias(db_alias),
-      m_Recurse(recurse), m_ControlSum(csum)
+      m_Recurse(recurse), m_ControlSum(csum), m_FastaFlags(fasta_flags)
 {
     m_Name = "LDS_dataloader_";
     m_Name += db_alias.empty() ? db_path : db_alias;
@@ -491,7 +493,26 @@ CLDS_DataLoader::CLDS_LoaderMaker::CreateLoader(void) const
     mgr.Index(m_Recurse, m_ControlSum);
 
     CLDS_DataLoader* dl = new CLDS_DataLoader(m_Name, mgr.ReleaseDB());
+    dl->m_FastaFlags = m_FastaFlags;
     return dl;
+}
+
+CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& source_path,
+    const string& db_path,
+    const string& db_alias,
+    CLDS_Manager::ERecurse recurse,
+    CLDS_Manager::EComputeControlSum csum,
+    CFastaReader::TFlags fasta_flags,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority
+    )
+{
+    CLDS_LoaderMaker maker(source_path, db_path, db_alias, recurse, csum,
+                           fasta_flags);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
@@ -505,7 +526,7 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager::TPriority priority
     )
 {
-    CLDS_LoaderMaker maker(source_path, db_path, db_alias, recurse, csum);
+    CLDS_LoaderMaker maker(source_path, db_path, db_alias, recurse, csum, -1);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -513,7 +534,8 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
 CLDS_DataLoader::CLDS_DataLoader(void)
     : CDataLoader(GetLoaderNameFromArgs()),
       m_LDS_db(NULL),
-      m_OwnDatabase(false)
+      m_OwnDatabase(false),
+      m_FastaFlags(-1)
 {
 }
 
@@ -521,7 +543,8 @@ CLDS_DataLoader::CLDS_DataLoader(void)
 CLDS_DataLoader::CLDS_DataLoader(const string& dl_name)
     : CDataLoader(dl_name),
       m_LDS_db(NULL),
-      m_OwnDatabase(false)
+      m_OwnDatabase(false),
+      m_FastaFlags(-1)
 {
 }
 
@@ -529,7 +552,8 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
                                  CLDS_Database& lds_db)
  : CDataLoader(dl_name),
    m_LDS_db(&lds_db),
-   m_OwnDatabase(false)
+   m_OwnDatabase(false),
+   m_FastaFlags(-1)
 {
 }
 
@@ -537,7 +561,8 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
                                  CLDS_Database* lds_db)
  : CDataLoader(dl_name),
    m_LDS_db(lds_db),
-   m_OwnDatabase(true)
+   m_OwnDatabase(true),
+   m_FastaFlags(-1)
 {
 }
 /*
@@ -545,7 +570,8 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
                                  const pair<string,string>& paths)
  : CDataLoader(dl_name),
    m_LDS_db(NULL),
-   m_OwnDatabase(true)
+   m_OwnDatabase(true),
+   m_FastaFlags(-1)
 {
     ///?? Should a lds db be reindexed here ?????
     //    auto_ptr<CLDS_Database> lds(new CLDS_Database(db_path, kEmptyStr));
@@ -774,6 +800,11 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
        csum ?
          CLDS_Manager::eComputeControlSum : CLDS_Manager::eNoControlSum;
 
+    string fasta_flags_str =
+        GetParam(GetDriverName(), params,
+                 kCFParam_LDS_FastaFlags, false, "-1");
+    CFastaReader::TFlags fasta_flags = NStr::StringToInt(fasta_flags_str, 0, 0);
+
 // commented out...
 // suspicious code, expected somebody will pass database as a stringified pointer
 // (code has a bug in casts which should always give NULL
@@ -803,6 +834,7 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
             db_alias,
             recurse_subdir,
             control_sum,
+            fasta_flags,
             GetIsDefault(params),
             GetPriority(params)).GetLoader();
     }
