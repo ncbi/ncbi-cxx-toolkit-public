@@ -170,7 +170,7 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
         CRef<CDense_seg> Filled = Denseg.FillUnaligned();
         Denseg.Assign(*Filled);
 
-        Align->SetNamedScore("merged_alignment", 1);
+        Align->SetNamedScore(GetName(), 1);
     }
 
     if(Out->Set().empty())

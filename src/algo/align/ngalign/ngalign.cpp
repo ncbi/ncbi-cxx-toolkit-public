@@ -130,7 +130,22 @@ TAlignSetRef CNgAligner::x_Align_Impl()
         AccumResults->Insert(CurrResults);
     }
 
-    return AccumResults->ToBestSeqAlignSet();
+    TAlignSetRef Results;
+    Results = AccumResults->ToBestSeqAlignSet();
+
+    if(!Results.IsNull())
+    ITERATE(CSeq_align_set::Tdata, AlignIter, Results->Get()) {
+        const CSeq_align& Align = **AlignIter;
+        string FastaId = Align.GetSeq_id(0).AsFastaString();
+        ITERATE(TFactories, FactoryIter, m_Aligners) {
+            int Value;
+            if(Align.GetNamedScore((*FactoryIter)->GetName(), Value)) {
+                GetDiagContext().Extra().Print((*FactoryIter)->GetName(), FastaId);
+            }
+        }
+    }
+
+    return Results;
 }
 
 

@@ -322,6 +322,8 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
     Disc->SetSegs().SetDisc().Set().push_back(DomRef);
     Disc->SetSegs().SetDisc().Set().push_back(NonRef);
 
+    Disc->SetNamedScore(GetName(), 1);
+
     return Disc;
 }
 
@@ -362,8 +364,6 @@ CInversionMergeAligner::x_MergeSeqAlignSet(const CSeq_align_set& InAligns, objec
 
         CRef<CDense_seg> Filled = Denseg.FillUnaligned();
         Denseg.Assign(*Filled);
-
-        Align->SetNamedScore("merged_alignment", 1);
     }
 
     if(Out->Set().empty())

@@ -72,6 +72,8 @@ public:
 
     CInversionMergeAligner(int Threshold) : m_Threshold(Threshold) { ; }
 
+    string GetName() const { return "inversion_merge_aligner"; }
+
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
                                         ISequenceSet* SubjectSet,

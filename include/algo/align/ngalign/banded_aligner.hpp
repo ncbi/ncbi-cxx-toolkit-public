@@ -77,6 +77,8 @@ public:
     CSimpleBandedAligner(int Threshold, unsigned int BandWidth)
         : m_Threshold(Threshold), m_BandWidth(BandWidth) { ; }
 
+    string GetName() const { return "banded_aligner"; }
+
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
                                         ISequenceSet* SubjectSet,
@@ -141,6 +143,8 @@ public:
         m_GapOpen = GapOpen;
         m_GapExtend = GapExtend;
     }
+
+    string GetName() const { return "instanced_mm_aligner"; }
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,

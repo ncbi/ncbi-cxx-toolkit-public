@@ -241,6 +241,17 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
             }
         }*/
 
+    NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
+        CSearchResults& Results = **SetIter;
+        CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
+        if(!AlignSet->IsEmpty()) {
+            ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
+                CRef<CSeq_align> Align = *AlignIter;
+                Align->SetNamedScore(GetName(), 1);
+            }
+        }
+    }
+
     Results->Insert(*BlastResults);
 
     return Results;

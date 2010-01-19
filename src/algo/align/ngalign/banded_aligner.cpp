@@ -220,6 +220,11 @@ void CSimpleBandedAligner::x_RunBanded(objects::CScope& Scope,
     //ERR_POST(Info << "Banded Result: " << MSerial_AsnText << *ResultSet);
     //cerr << "Info: " << "Banded Result: " << MSerial_AsnText << *ResultSet;
 
+    ITERATE(CSeq_align_set::Tdata, AlignIter, ResultSet->Get()) {
+        CRef<CSeq_align> Align = *AlignIter;
+        Align->SetNamedScore(GetName(), 1);
+    }
+
     Results->Insert(CRef<CQuerySet>(new CQuerySet(*ResultSet)));
 
 }
@@ -411,6 +416,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
 
         Result->SetSegs().SetDenseg().Assign(*GlobalDs);
         Result->SetType() = CSeq_align::eType_partial;
+        Result->SetNamedScore(GetName(), 1);
         ResultSet->Set().push_back(Result);
 
         ERR_POST(Info << " Found alignment ");

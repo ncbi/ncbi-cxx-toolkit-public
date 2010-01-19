@@ -81,6 +81,7 @@ public:
 class IAlignmentFactory : public CObject
 {
 public:
+    virtual string GetName() const = 0;
     virtual TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                                 ISequenceSet* Querys,
                                                 ISequenceSet* Subjects,

@@ -92,6 +92,7 @@ public:
         : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
         , m_Threshold(Threshold), m_Filter(0) { ; }
 
+    string GetName() const { return "blast_aligner"; }
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
