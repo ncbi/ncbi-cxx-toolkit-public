@@ -158,7 +158,7 @@ TToken XSDLexer::LookupLexeme(void)
 {
     bool att = false;
     char c = Char();
-    char cOpen;
+    char cOpen= '\0';
     if (c == 0) {
         return T_EOF;
     }
