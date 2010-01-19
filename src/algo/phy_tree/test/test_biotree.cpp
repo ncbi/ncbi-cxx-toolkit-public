@@ -75,6 +75,147 @@ static string s_Node2String_name(const CBioTreeDynamic::TBioTreeNode& node)
     return v.features.GetFeatureValue(name_id);
 }
 
+
+
+static void TestBioTreeContainer()
+{
+    typedef CBioTreeContainer::TFdict  TContainerDict;
+    typedef TContainerDict::Tdata::value_type::element_type TCFeatureDescr;
+    typedef CBioTreeContainer::TNodes  TContainerNodes;
+
+    // create the bio-tree
+    CBioTreeContainer btrc;
+    btrc.SetTreetype("prot_cluster");
+
+    // Build/populate feature dictionary
+    //
+    {{
+        TContainerDict& fd = btrc.SetFdict();
+        TContainerDict::Tdata& feat_list = fd.Set();
+        // create id-value pairs (id MUST be unique)
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(1); d->SetName("label");
+        feat_list.push_back(d);
+        }}
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(2); d->SetName("dist");
+        feat_list.push_back(d);
+        }}
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(3); d->SetName("seq-id");
+        feat_list.push_back(d);
+        }}
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(4); d->SetName("cluster-id");
+        feat_list.push_back(d);
+        }}
+    }}
+
+    // Add tree nodes with topology and features
+    //
+    {{
+        unsigned node_id = 1;
+        TContainerNodes& nodes = btrc.SetNodes();
+        TContainerNodes::Tdata& node_lst = nodes.Set();
+
+        // make root node
+        {{
+        CRef<CNode> n(new CNode);
+        n->SetId(node_id);  // unique node id
+
+        CNode::TFeatures& nfeatures = n->SetFeatures();
+        CNode::TFeatures::Tdata& feature_list = nfeatures.Set();
+
+            // Add node features -- ids MUST correspond the feature dictionary
+            //
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(1);  //  "label"
+            nf->SetValue("RootNode_LBL");
+            feature_list.push_back(nf);
+            }}
+
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(3);  //  "seq-id"
+            nf->SetValue("gi|123");
+            feature_list.push_back(nf);
+            }}
+
+        node_lst.push_back(n);
+        }}
+        unsigned parent_node_id = node_id;
+        ++node_id; 
+
+        // make child node 1
+        {{
+        CRef<CNode> n(new CNode);
+        n->SetId(node_id);  // unique node id
+        n->SetParent(parent_node_id);
+
+        CNode::TFeatures& nfeatures = n->SetFeatures();
+        CNode::TFeatures::Tdata& feature_list = nfeatures.Set();
+
+            // Add node features -- ids MUST correspond the feature dictionary
+            //
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(1);  //  "label"
+            nf->SetValue("Child1");
+            feature_list.push_back(nf);
+            }}
+
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(3);  //  "seq-id"
+            nf->SetValue("gi|124");
+            feature_list.push_back(nf);
+            }}
+
+        node_lst.push_back(n);
+        }}
+        ++node_id; 
+
+        // make child node 2
+        {{
+        CRef<CNode> n(new CNode);
+        n->SetId(node_id);  // unique node id
+        n->SetParent(parent_node_id);
+
+        CNode::TFeatures& nfeatures = n->SetFeatures();
+        CNode::TFeatures::Tdata& feature_list = nfeatures.Set();
+
+            // Add node features -- ids MUST correspond the feature dictionary
+            //
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(1);  //  "label"
+            nf->SetValue("Child2");
+            feature_list.push_back(nf);
+            }}
+
+            {{
+            CRef<CNodeFeature> nf(new CNodeFeature);
+            nf->SetFeatureid(3);  //  "seq-id"
+            nf->SetValue("gi|125");
+            feature_list.push_back(nf);
+            }}
+
+        node_lst.push_back(n);
+        }}
+
+
+    }}
+
+    // Dump tree to file (cout)
+    cout << MSerial_AsnText << btrc;
+}
+
+
 /////////////////////////////////
 // Test application
 //
@@ -294,6 +435,8 @@ void TestTreeConvert()
 
 int main(int argc, char** argv)
 {
+    TestBioTreeContainer();
+
     TestTreeConvert();
 
     CPhyTree tr;
@@ -382,6 +525,7 @@ int main(int argc, char** argv)
 
     TreePrint(cout, *(dtr2.GetTreeNode()), s_Node2String);
 */
+
 
     // ----------------------------------------------------------
 
