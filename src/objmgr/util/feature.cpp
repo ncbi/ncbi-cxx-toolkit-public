@@ -1369,6 +1369,9 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                 CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
                 EOverlapType overlap_type = eOverlap_Contained;
+                if ( parent_type == CSeqFeatData::eSubtype_mRNA ) {
+                    overlap_type = eOverlap_CheckIntervals;
+                }
                 if ( parent_type == CSeqFeatData::eSubtype_gene &&
                      sx_IsIrregularLocation(c_loc) ) {
                     // LOCATION_SUBSET if bad order or mixed strand
