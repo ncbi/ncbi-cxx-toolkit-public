@@ -831,6 +831,9 @@ static void s_FormatCitGen
         } else if (NStr::StartsWith(cit, "Online Publication", NStr::eNocase)  ||
                    NStr::StartsWith(cit, "Published Only in DataBase", NStr::eNocase)) {
             in_press = cit;
+        } else if (NStr::StartsWith(cit, "In press", NStr::eNocase) ) {
+            in_press = cit;
+            prefix = ' ';
         } else if (!cfg.DropBadCitGens()  &&  NStr::IsBlank(journal)) {
             journal = cit;
             prefix = ' ';
