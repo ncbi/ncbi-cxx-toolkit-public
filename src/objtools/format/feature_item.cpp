@@ -56,6 +56,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -1566,14 +1567,23 @@ void CFeatureItem::x_AddQualsRna(
         case CSeqFeatData::eSubtype_tmRNA:
             break;
         case CSeqFeatData::eSubtype_misc_RNA:
-        case CSeqFeatData::eSubtype_otherRNA:
-            if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
-                string strName = rna.GetExt().GetName();
+        case CSeqFeatData::eSubtype_otherRNA: {
+            if ( ! rna.CanGetExt() ) {
+                break;
+            }
+            const CRNA_ref_Base::TExt& ext = rna.GetExt();
+            if ( ext.IsName() ) {
+                string strName = ext.GetName();
                 if ( strName != "misc_RNA" ) {
                     x_AddQual( eFQ_product, new CFlatStringQVal( strName ) );
                 }
             }
+            else if ( ext.IsGen()  &&  ext.GetGen().CanGetProduct() ) {
+                string strProduct = ext.GetGen().GetProduct();
+                x_AddQual( eFQ_product, new CFlatStringQVal( strProduct ) );
+            }
             break;
+        }
         default:
             if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
                 x_AddQual( eFQ_product, new CFlatStringQVal( rna.GetExt().GetName() ) );
