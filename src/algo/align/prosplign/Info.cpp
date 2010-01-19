@@ -73,6 +73,154 @@ CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOpt
     splice_cost = GetFlankPositives()?((100 - GetFlankPositives())*GetMinFlankingExonLen())/GetFlankPositives():0;
 }
 
+list<CNPiece> BlastGoodParts(const CProSplignText& alignment_text, const CProSplignScaledScoring& scoring, int score_cutoff, int score_dropoff)
+{
+   list<CNPiece> ali;
+
+   const string& nuc = alignment_text.GetDNA();
+   const string& prot = alignment_text.GetProtein();
+   const string& tran = alignment_text.GetTranslation();
+   int alen = (int)nuc.length();
+   vector<int> sc(alen, 0);
+
+   CSubstMatrix matr(scoring.GetScoreMatrix(), scoring.GetScale());
+
+   // score matches/mismatches
+   for(int i=0;i<alen;++i) {
+       if( isalpha(tran[i]) && isalpha(prot[i]) ) {
+           _ASSERT( ( isupper(tran[i]) && isupper(prot[i]) ) || ( islower(tran[i]) && islower(prot[i]) ) );
+           int score = matr.ScaledScore(tran[i], prot[i])/3;
+           sc[i] = score;
+           if(isupper(tran[i])) {
+                  _ASSERT( i > 0 || i < alen - 1 );
+                  _ASSERT(tran[i-1] == SPACE_CHAR && tran[i+1] == SPACE_CHAR);
+                  _ASSERT(prot[i-1] == SPACE_CHAR && prot[i+1] == SPACE_CHAR);
+                  sc[i-1] = score;
+                  sc[i+1] = score;
+           }
+       }
+   }
+
+   //introns
+   bool isintron = false;
+   for(int i=0;i<alen;++i) {
+       if(prot[i] == INTRON_CHAR) {
+           sc[i] = - scoring.GetIntronExtensionCost();
+           if(!isintron) {//put intron cost on the first letter
+               int i1, i2, i3, i4;
+               i1 = i;
+               i2 = i+1;
+               int j;
+               for(j=i;j<alen && prot[j] == INTRON_CHAR; ++j);
+               i3 = j-2;
+               i4 = j-1;
+               _ASSERT(i3>i2 && i2<alen);
+               if(nuc[i1] == 'G' && nuc[i2] == 'T' && nuc[i3] == 'A' && nuc[i4] == 'G') {
+                   sc[i] -= scoring.GetGTIntronCost();
+               } else if(nuc[i1] == 'G' && nuc[i2] == 'C' && nuc[i3] == 'A' && nuc[i4] == 'G') {
+                   sc[i] -= scoring.GetGCIntronCost();
+               } else if(nuc[i1] == 'A' && nuc[i2] == 'T' && nuc[i3] == 'A' && nuc[i4] == 'C') {
+                   sc[i] -= scoring.GetATIntronCost();
+               } else {
+                   sc[i] -= scoring.GetNonConsensusIntronCost();
+               }
+               isintron = true;
+           }
+       } else {
+           isintron = false;
+       }
+   }
+
+   //gaps/frameshifts in DNA
+   bool isgap = false;
+   for(int i=0;i<alen;++i) {
+       if(nuc[i] == GAP_CHAR) {
+           sc[i] = - scoring.GetGapExtensionCost();
+           if(!isgap) {//put extension cost on the first letter
+               //gap of frameshift?
+               int glen = 0;
+               for(int j=i; j<alen ; ++j) {
+                   if(nuc[j] == GAP_CHAR) ++glen;
+                   else if (prot[j] != INTRON_CHAR) break;
+               }
+               if( glen%3 == 0 ) {//gap   
+                   sc[i] -= scoring.GetGapOpeningCost();
+               } else { //frameshift    
+                   sc[i] -= scoring.GetFrameshiftOpeningCost();
+               }
+               isgap = true;
+           }
+       } else if(prot[i] != INTRON_CHAR) {
+           isgap = false;
+       }
+   }
+
+   //gaps/frameshifts in protein
+   isgap = false;
+   for(int i=0;i<alen;++i) {
+       if(prot[i] == GAP_CHAR) {
+           sc[i] = - scoring.GetGapExtensionCost();
+           if(!isgap) {//put extension cost on the first letter
+               //gap of frameshift?
+               int glen = 0;
+               for(int j=i; j<alen ; ++j) {
+                   if(prot[j] == GAP_CHAR) ++glen;
+                   else if (prot[j] != INTRON_CHAR) break;
+               }
+               if( glen%3 == 0 ) {//gap   
+                   sc[i] -= scoring.GetGapOpeningCost();
+               } else { //frameshift    
+                   sc[i] -= scoring.GetFrameshiftOpeningCost();
+               }
+               isgap = true;
+           }
+       } else if(prot[i] != INTRON_CHAR) {
+           isgap = false;
+       }
+   }
+       
+
+   //vector sc is completely populated with scores at this point
+
+//TEMP
+   for(int i=0;i<alen;++i) cerr<<"sc["<<i<<"] = "<<sc[i]/(double)scoring.GetScale()<<endl;
+//END OF TEMP
+
+   int cutoff = score_cutoff * scoring.GetScale();
+   int dropoff = - score_dropoff * scoring.GetScale();
+   
+   int beg, end = 0, total_score;
+   for(;;) {
+       beg = end;
+       total_score = 0;
+       int max_sc = 0,max_sc_pos = beg, drop_score = 0;
+       for(;beg<alen && sc[beg]<=0; ++beg); //find the next hit start position
+       if(beg == alen) break;
+       for(end = beg;;) {
+           total_score += sc[end];
+           drop_score += sc[end];
+           if(drop_score > 0 ) drop_score = 0;
+           if(total_score > max_sc) {
+               max_sc = total_score;
+               max_sc_pos = end;
+           }
+           ++end;
+           if(drop_score < dropoff || total_score <=0 || end == alen) {
+               end = max_sc_pos+1;
+               break;
+           }
+       }
+       if(total_score >= cutoff) {
+           ali.push_back(CNPiece(beg, end, 0, 0));
+       }
+//TEMP
+       cerr<<"beg = "<<beg<<", end = "<<end<<", total_score = "<<total_score/(double)scoring.GetScale()<<endl;
+//END OF TEMP
+   }                      
+   return ali;
+}
+
+
 list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSplignOutputOptionsExt m_options)
 {
     list<CNPiece> m_AliPiece;
@@ -632,7 +780,7 @@ char CProSplignText::MatchChar(size_t i)
 {
     char m = SPACE_CHAR;
     if (m_translation[i] != SPACE_CHAR && m_protein[i] != SPACE_CHAR) {
-        if(m_matrix->scaled_subst_matrix[m_protein[i]][m_translation[i]] > 0) {
+        if(m_matrix->ScaledScore(m_protein[i],m_translation[i]) > 0) {
             if (m_translation[i] == m_protein[i])
                 m = MATCH_CHAR;
             else
