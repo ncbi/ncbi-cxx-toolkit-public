@@ -76,9 +76,6 @@ public:
     /// Get size of blob contents.
     int Size() const;
     
-    /// Get the number of unread bytes after the read pointer.
-    int BytesLeft() const;
-    
     /// Clear all owned data and reference an empty string.
     void Clear();
     
