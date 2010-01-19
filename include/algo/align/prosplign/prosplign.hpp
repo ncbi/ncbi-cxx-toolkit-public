@@ -282,6 +282,14 @@ public:
                     const objects::CSeq_align& seq_align,
                     CProSplignOutputOptions output_options = CProSplignOutputOptions());
 
+    /// TEMPRARY TEST VERSION. BASED ON SCORES, BLAST STYLE
+    /// Refines Spliced-seg alignment by removing bad pieces according to output_options.
+    /// This is irreversible action - more relaxed parameters will not change the alignment back
+    CRef<objects::CSeq_align>
+    BlastAlignment(objects::CScope& scope,
+                   const objects::CSeq_align& seq_align, int score_cutoff, int score_dropoff);
+
+
     /// deprecated internals
     CProSplign( CProSplignScoring scoring, bool intronless, bool one_stage, bool just_second_stage, bool old);
     const vector<pair<int, int> >& GetExons() const;
@@ -320,10 +328,10 @@ public:
     CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign, const string& matrix_name = "BLOSUM62");
     ~CProSplignText();
 
-    const string& GetDNA() { return m_dna; }
-    const string& GetTranslation() { return m_translation; }
-    const string& GetMatch() { return m_match; }
-    const string& GetProtein() { return m_protein; }
+    const string& GetDNA() const { return m_dna; }
+    const string& GetTranslation() const { return m_translation; }
+    const string& GetMatch() const { return m_match; }
+    const string& GetProtein() const { return m_protein; }
 
 private:
     string m_dna;
