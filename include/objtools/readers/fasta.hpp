@@ -70,21 +70,21 @@ public:
     /// control-As.  Normally, the reader stops at the first
     /// control-A; however, this flag makes it parse all the IDs.
     enum EFlags {
-        fAssumeNuc  = 0x1,    ///< Assume nucs unless accns indicate otherwise
-        fAssumeProt = 0x2,    ///< Assume prots unless accns indicate otherwise
-        fForceType  = 0x4,    ///< Force specified type regardless of accession
-        fNoParseID  = 0x8,    ///< Generate an ID (whole defline -> title)
-        fParseGaps  = 0x10,   ///< Make a delta sequence if gaps found
-        fOneSeq     = 0x20,   ///< Just read the first sequence found
-        fAllSeqIds  = 0x40,   ///< Read Seq-ids past the first ^A (see note)
-        fNoSeqData  = 0x80,   ///< Parse the deflines but skip the data
-        fRequireID  = 0x100,  ///< Reject deflines that lack IDs
-        fDLOptional = 0x200,  ///< Don't require a leading defline
-        fParseRawID = 0x400,  ///< Try to identify raw accessions
-        fSkipCheck  = 0x800,  ///< Skip (rudimentary) body content check
-        fNoSplit    = 0x1000, ///< Don't split out ambiguous sequence regions
-        fValidate   = 0x2000, ///< Check (alphabetic) residue validity
-        fUniqueIDs  = 0x4000  ///< Forbid duplicate IDs
+        fAssumeNuc   = 1<< 0, ///< Assume nucs unless accns indicate otherwise
+        fAssumeProt  = 1<< 1, ///< Assume prots unless accns indicate otherwise
+        fForceType   = 1<< 2, ///< Force specified type regardless of accession
+        fNoParseID   = 1<< 3, ///< Generate an ID (whole defline -> title)
+        fParseGaps   = 1<< 4, ///< Make a delta sequence if gaps found
+        fOneSeq      = 1<< 5, ///< Just read the first sequence found
+        fAllSeqIds   = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
+        fNoSeqData   = 1<< 7, ///< Parse the deflines but skip the data
+        fRequireID   = 1<< 8, ///< Reject deflines that lack IDs
+        fDLOptional  = 1<< 9, ///< Don't require a leading defline
+        fParseRawID  = 1<<10, ///< Try to identify raw accessions
+        fSkipCheck   = 1<<11, ///< Skip (rudimentary) body content check
+        fNoSplit     = 1<<12, ///< Don't split out ambiguous sequence regions
+        fValidate    = 1<<13, ///< Check (alphabetic) residue validity
+        fUniqueIDs   = 1<<14  ///< Forbid duplicate IDs
     };
     typedef int TFlags; ///< binary OR of EFlags
 
