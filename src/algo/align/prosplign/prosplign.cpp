@@ -566,6 +566,11 @@ public:
         return FindGlobalAlignment_stage2();
     }
 
+    const CProSplignScaledScoring& GetScaleScoring() const 
+    {
+        return m_scoring;
+    }
+
     virtual const vector<pair<int, int> >& GetExons() const
     {
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
@@ -956,5 +961,26 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
 
     return refined_align;
 }
+
+CRef<objects::CSeq_align> CProSplign::BlastAlignment(CScope& scope, const CSeq_align& seq_align, int score_cutoff, int score_dropoff)
+{
+    CRef<CSeq_align> refined_align(new CSeq_align);
+    refined_align->Assign(seq_align);
+
+    CProSplignText alignment_text(scope, seq_align, m_implementation->GetScaleScoring().GetScoreMatrix());
+    list<CNPiece> good_parts = BlastGoodParts( alignment_text, m_implementation->GetScaleScoring(), score_cutoff, score_dropoff );
+
+    prosplign::RefineAlignment(scope, *refined_align, good_parts);
+
+    if (good_parts.size()!=1 || !IsProteinSpanWhole(refined_align->GetSegs().GetSpliced())) {
+        refined_align->SetType(CSeq_align::eType_disc);
+    }
+
+    prosplign::SeekStartStop(*refined_align, scope);
+    prosplign::SetScores(*refined_align, scope, m_implementation->GetScaleScoring().GetScoreMatrix());
+
+    return refined_align;
+}
+
 
 END_NCBI_SCOPE
