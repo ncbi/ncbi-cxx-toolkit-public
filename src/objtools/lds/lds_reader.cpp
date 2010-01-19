@@ -58,16 +58,18 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
-                             CNcbiIstream& in)
+                             CNcbiIstream& in, CFastaReader::TFlags fasta_flags)
 {
     switch (obj_descr.format) {
     case CFormatGuess::eFasta:
     {{
+        if (fasta_flags == -1) { // invalid; stand-in for the default value
+            fasta_flags = (CFastaReader::fAssumeNuc | CFastaReader::fOneSeq
+                           | CFastaReader::fParseRawID
+                           | CFastaReader::fStrictGuess);
+        }
         CStreamLineReader lr(in);
-        CFastaReader      fr(lr,
-                             CFastaReader::fAssumeNuc |
-                             CFastaReader::fOneSeq    |
-                             CFastaReader::fParseRawID);
+        CFastaReader      fr(lr, fasta_flags);
         return fr.ReadOneSeq();
     }}
     case CFormatGuess::eTextASN:
@@ -142,7 +144,8 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
 }
 
 
-CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
+CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
+                             CFastaReader::TFlags fasta_flags)
 {
     if (!obj_descr.is_object || obj_descr.id <= 0) {
         return CRef<CSeq_entry>();
@@ -155,20 +158,21 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
         LDS_THROW(eFileNotFound, msg);
     }
     in.seekg(obj_descr.pos);
-    return LDS_LoadTSE(obj_descr, in);
+    return LDS_LoadTSE(obj_descr, in, fasta_flags);
 }
 
 
-CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db,
-                             int            object_id,
-                             bool           trace_to_top)
+CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database&       lds_db,
+                             int                  object_id,
+                             bool                 trace_to_top,
+                             CFastaReader::TFlags fasta_flags)
 {
     const map<string, int>& type_map = lds_db.GetObjTypeMap();
 
     CLDS_Query query(lds_db);
     CLDS_Query::SObjectDescr obj_descr =
         query.GetObjectDescr(type_map, object_id, trace_to_top);
-    return LDS_LoadTSE(obj_descr);
+    return LDS_LoadTSE(obj_descr, fasta_flags);
 }
 
 

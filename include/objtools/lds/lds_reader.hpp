@@ -36,6 +36,7 @@
 
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_query.hpp>
+#include <objtools/readers/fasta.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -45,11 +46,14 @@ BEGIN_SCOPE(objects)
 // Load top level seq entry.
 CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(CLDS_Database&         lds_db,
                                              int object_id,
-                                             bool trace_to_top = true);
-CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr);
+                                             bool trace_to_top = true,
+                                             CFastaReader::TFlags fasta_flags = -1);
+CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
+                                             CFastaReader::TFlags fasta_flags = -1);
 
 CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
-                                             CNcbiIstream& in);
+                                             CNcbiIstream& in,
+                                             CFastaReader::TFlags fasta_flags = -1);
 
 // Load annotation.
 CRef<CSeq_annot> 
