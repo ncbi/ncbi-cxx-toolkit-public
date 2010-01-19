@@ -513,12 +513,14 @@ static EIO_Status s_VT_Open
     status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
                            xxx->flag & fFCDC_LogControl
                            ? fSOCK_LogOn : fSOCK_LogDefault);
+    if (status == eIO_Success) {
+        SOCK_DisableOSSendDelay(xxx->cntl, 1/*yes,disable*/);
+        status =  s_FTPLogin(xxx, timeout);
+    }
     if (status == eIO_Success)
-        status = s_FTPLogin(xxx, timeout);
+        status =  s_FTPChdir(xxx, 0);
     if (status == eIO_Success)
-        status = s_FTPChdir(xxx, 0);
-    if (status == eIO_Success)
-        status = s_FTPBinary(xxx);
+        status =  s_FTPBinary(xxx);
     if (status != eIO_Success) {
         if (xxx->cntl) {
             SOCK_Close(xxx->cntl);
