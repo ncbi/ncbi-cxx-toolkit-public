@@ -79,7 +79,7 @@ public:
 
         eIE,                    ///< Microsoft Internet Explorer (www.microsoft.com/windows/ie)
         eiCab,                  ///< iCab       (www.icab.de)
-        eKonqueror,             ///< Konqueror  (www.konqueror.org)
+        eKonqueror,             ///< Konqueror  (www.konqueror.org) (KHTML based since v3.2 ?)
         eLynx,                  ///< Lynx       (lynx.browser.org)
         eNetscape,              ///< Netscape (Navigator), versions >=6 are Gecko-based (www.netscape.com)
         eOpera,                 ///< Opera      (www.opera.com)
@@ -91,19 +91,22 @@ public:
         eBeonex,                ///< Beonex Communicator (www.beonex.com)
         eCamino,                ///< Camino     (www.caminobrowser.org)
         eChimera,               ///< Chimera    (chimera.mozdev.org)
-        eEpiphany,              ///< Epiphany   (www.gnome.org/projects/epiphany)
         eFirefox,               ///< Firefox    (www.mozilla.org/products/firefox)
         eFlock,                 ///< Flock      (www.flock.com)
         eIceCat,                ///< GNU IceCat (http://www.gnu.org/software/gnuzilla)
         eIceweasel,             ///< Debian Iceweasel   (www.geticeweasel.org)
-        eGaleon,                ///< Gakeon     (galeon.sourceforge.net)
+        eGaleon,                ///< Galeon     (galeon.sourceforge.net)
+        eGranParadiso,          ///< GranParadiso (www.mozilla.org)
+        eKazehakase,            ///< Kazehakase (kazehakase.sourceforge.jp)
         eKMeleon,               ///< K-Meleon   (kmeleon.sf.net)
+        eKNinja,                ///< K-Ninja Samurai (k-ninja-samurai.en.softonic.com)
         eMadfox,                ///< Madfox     (www.splyb.com/madfox)
-        eMinimo,                ///< Minimo     (www.mozilla.org/projects/minimo)
         eMultiZilla,            ///< MultiZilla (multizilla.mozdev.org)
         eSeaMonkey,             ///< SeaMonkey  (www.mozilla.org/projects/seamonkey)
 
         // IE-based
+        eAcooBrowser,           ///< Acoo Browser   (www.acoobrowser.com)
+        eAOL,                   ///< America Online Browser (www.aol.com)
         eAvantBrowser,          ///< Avant Browser  (www.avantbrowser.com)
         eCrazyBrowser,          ///< Crazy Browser  (www.crazybrowser.com)
         eEnigmaBrowser,         ///< Enigma Browser (www.suttondesigns.com)
@@ -113,10 +116,14 @@ public:
 
         // AppleWebKit/KHTML based
         eChrome,                ///< Google Chrome  (www.google.com/chrome)
-        eOmniWeb,               ///< OmniWeb     (www.omnigroup.com/applications/omniweb)
+        eFluid,                 ///< Fluid       (fluidapp.com)
+        eMidori,                ///< Midori
         eNetNewsWire,           ///< NetNewsWire (www.apple.com)
+        eOmniWeb,               ///< OmniWeb     (www.omnigroup.com/applications/omniweb)
+        eQtWeb,                 ///< QtWeb       (www.qtweb.net)
         eSafari,                ///< Safari      (www.apple.com/safari)
         eShiira,                ///< Shiira      (hmdt-web.net/shiira/en)
+        eStainless,             ///< Stainless   (www.stainlessapp.com)
 
         /// Search robots/bots/validators
         eCrawler,               ///< Class: crawlers / search robots
@@ -124,6 +131,33 @@ public:
         eScript,                ///< Class: script tools (perl/php/...)
         eLinkChecker,           ///< Class: link checkers
         eWebValidator,          ///< Class: validators
+
+        /// Mobile devices (browsers and services for: telephones, smartphones, communicators, PDAs and etc)
+        /// Some mobile devices use standard browsers, like Opera or Safari -- see browser platform,
+        /// if you need a check on mobile device.
+
+        // See: http://www.zytrax.com/tech/web/mobile_ids.html
+
+        eAirEdge,               ///< AIR-EDGE     (www.willcom-inc.com/en/)
+        eAvantGo,               ///< AvantGo      (www.sybase.com/avantgo)
+        eBlackberry,            ///< Blackberry   (www.blackberry.com)
+        eDoCoMo,                ///< DoCoMo       (www.nttdocomo.com)
+        eEudoraWeb,             ///< EudoraWeb    (www.eudora.com)
+        eMinimo,                ///< Minimo       (www.mozilla.org/projects/minimo)
+        eNetFront,              ///< NetFront     (www.access-company.com)
+        eOperaMini,             ///< Opera Mini   (www.opera.com/mini)
+        eOperaMobile,           ///< Opera Mobile (www.opera.com/mobile)
+        eOpenWave,              ///< OpenWave/UP.Browser (www.openwave.com)
+        ePIE,                   ///< Pocket IE    (www.reensoft.com/PIEPlus)
+        ePlucker,               ///< Plucker      (www.plkr.org)
+        ePocketLink,            ///< PocketLink   (www.mobilefan.net)
+        ePolaris,               ///< Polaris Browser (www.infraware.co.kr)
+        eReqwireless,           ///< Reqwireless Webviewer
+        eSEMCBrowser,           ///< Sony Ericsson SEMC-Browser (www.sonyericsson.com)
+        eTelecaObigo,           ///< Teleca/Obigo  (www.teleca.com / www.obigo.com)
+        euZardWeb,              ///< uZard Web     (www.uzard.com)
+        eVodafone,              ///< Ex J-Phone, now Vodafone Live! (www.vodafone.com)
+        eXiino,                 ///< Xiino        (www.ilinx.co.jp/en/)
 
         /// Any other Gecko-based not from the list above,
         /// Mozilla version >= 5.0
@@ -149,7 +183,13 @@ public:
         ePlatform_Unknown = eUnknown,   ///< Unknown OS
         ePlatform_Windows,              ///< Microsoft Windows
         ePlatform_Mac,                  ///< MacOS
-        ePlatform_Unix                  ///< Unix
+        ePlatform_Unix,                 ///< Unix
+
+        // Mobile devices (telephones, smartphones, communicators, PDA's and etc...)
+        ePlatform_Palm,                 ///< PalmOS
+        ePlatform_Symbian,              ///< SymbianOS
+        ePlatform_WindowsCE,            ///< Microsoft Windows CE (+ Windows Mobile)
+        ePlatform_MobileDevice          ///< Other mobile devices or services 
     };
 
     /// Get user agent string.
@@ -217,6 +257,22 @@ public:
     /// description.
     /// @sa GetBrowser, GetEngine, CParam
     bool IsBot(TBotFlags flags = fBotAll, const string& patterns = kEmptyStr) const;
+
+    /// Check that this is known mobile device.
+    ///
+    /// By default it use GetPlatform() value to check on known mobile
+    /// platforms. If standard check fails, additonal parsing parameters
+    /// from string and/or registry/environment parameter
+    /// (section 'CGI', name 'MobileDevices') will be used.
+    /// String value should have patterns for search in the user agent string,
+    /// and should looks like:
+    ///     "AvantGo DoCoMo Minimo"
+    /// You can use any delimeters from next list " ;|~\t".
+    /// All patterns are case sensitive.
+    /// For details how to define registry/environment parameter see CParam
+    /// description.
+    /// @sa GetPlatform, EBrowserPlatform, CParam
+    bool IsMobileDevice(const string& patterns = kEmptyStr) const;
 
 protected:
     /// Init class members.

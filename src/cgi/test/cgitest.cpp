@@ -635,12 +635,13 @@ struct TVersion {
 };
 
 struct SUserAgent {
-    const char*                   str;        // in
-    CCgiUserAgent::EBrowser       browser;    // out
-    TVersion                      browser_v;  // out
-    CCgiUserAgent::EBrowserEngine engine;     // out
-    TVersion                      engine_v;   // out
-    TVersion                      mozilla_v;  // out
+    const char*                     str;        // in
+    CCgiUserAgent::EBrowser         browser;    // out
+    TVersion                        browser_v;  // out
+    CCgiUserAgent::EBrowserEngine   engine;     // out
+    TVersion                        engine_v;   // out
+    TVersion                        mozilla_v;  // out
+    CCgiUserAgent::EBrowserPlatform platform;   // out
 };
 
 const SUserAgent s_UserAgentTests[] = {
@@ -650,67 +651,80 @@ const SUserAgent s_UserAgentTests[] = {
     { "SomeUnknownBrowser",
         CCgiUserAgent::eUnknown,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "SomeUnknownBrowser/1.0",
         CCgiUserAgent::eUnknown,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "Mozilla/5.0 (Windows) Firefox",
         CCgiUserAgent::eFirefox,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Windows) Firefox;",
         CCgiUserAgent::eFirefox,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Windows) Firefox/1",
         CCgiUserAgent::eFirefox,        { 1, -1, -1},
         CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.0 (BeOS R4.5;US) Opera 3.62  [en]",
         CCgiUserAgent::eOpera,          { 3, 62, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 4, 0, -1}
+        { 4, 0, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; nl-NL; rv:1.7.5) Gecko/20041202 Firefox/1.0",
         CCgiUserAgent::eFirefox,        { 1,  0, -1},
         CCgiUserAgent::eEngine_Gecko,   { 1,  7,  5},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.2) Gecko/2008091620 Firefox/3.0.2 (.NET CLR 3.5.30729)",
         CCgiUserAgent::eFirefox,        {  3,  0,  2},
         CCgiUserAgent::eEngine_Gecko,   {  1,  9,  0},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Googlebot/2.1",
         CCgiUserAgent::eCrawler,        { 2,  1, -1},
         CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
-        { 5,  0, -1}
+        { 5,  0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1b2) Gecko/20060821 SeaMonkey/1.1a",
         CCgiUserAgent::eSeaMonkey,      {  1,  1, -1},
         CCgiUserAgent::eEngine_Gecko,   {  1,  8,  1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
         CCgiUserAgent::eSafari,         {412, -1, -1},
         CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en-US) AppleWebKit/125.4 (KHTML, like Gecko, Safari) OmniWeb/v563.51",
         CCgiUserAgent::eOmniWeb,        {563, 51, -1},
         CCgiUserAgent::eEngine_KHTML,   {125,  4, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.2.149.27 Safari/525.13",
         CCgiUserAgent::eChrome,         {  0,  2,149},
         CCgiUserAgent::eEngine_KHTML,   {525, 13, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
 
     // AppComment tests
@@ -718,32 +732,38 @@ const SUserAgent s_UserAgentTests[] = {
     { "Mozilla/5.0 (compatible; iCab 3.0.1; Macintosh; U; PPC Mac OS X)",
         CCgiUserAgent::eiCab,           { 3,  0,  1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (compatible; iCab 3.0.1)",
         CCgiUserAgent::eiCab,           { 3,  0,  1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "Mozilla/5.0 (compatible; Konqueror/3.1-rc3; i686 Linux; 20020515)",
         CCgiUserAgent::eKonqueror,      { 3,  1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Unix
     },
     { "Mozilla/4.0 (compatible; MSIE 6.0; MSN 2.5; Windows 98)",
         CCgiUserAgent::eIE,             { 6,  0, -1},
         CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
-        { 4, 0, -1}
+        { 4, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)",
         CCgiUserAgent::eIE,             { 7,  0, -1},
         CCgiUserAgent::eEngine_IE,      { 7,  0, -1},
-        { 4, 0, -1}
+        { 4, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.0 (compatible; MSIE 6.0(en); Windows NT 5.1; Avant Browser [avantbrowser.com]; iOpus-I-M; QXW03416; .NET CLR 1.1.4322)",
         CCgiUserAgent::eAvantBrowser,   {-1, -1, -1},
         CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
-        { 4, 0, -1}
+        { 4, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
 
     // Mozilla compatible
@@ -751,17 +771,20 @@ const SUserAgent s_UserAgentTests[] = {
     { "Mozilla/5.0 (compatible; unknown; i686 Linux; 20020515)",
         CCgiUserAgent::eMozillaCompatible, {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown,    {-1, -1, -1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Unix
     },
     { "Mozilla/6.2 [en] (Windows NT 5.1; U)",
         CCgiUserAgent::eMozilla,        { 6,  2, -1},
         CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
-        { 6, 2, -1}
+        { 6, 2, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41",
         CCgiUserAgent::eScript,         { 5, 41, -1},
         CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
-        { 4, 75, -1}
+        { 4, 75, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
 
      // Genuine Netscape/Mozilla
@@ -769,22 +792,26 @@ const SUserAgent s_UserAgentTests[] = {
     { "Mozilla/4.7 [en] (WinNT; U)",
         CCgiUserAgent::eNetscape,       { 4,  7, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 4, 7, -1}
+        { 4, 7, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.7C-CCK-MCD {C-UDP; EBM-APPLE} (Macintosh; I; PPC)",
         CCgiUserAgent::eNetscape,       { 4,  7, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        { 4, 7, -1}
+        { 4, 7, -1},
+        CCgiUserAgent::ePlatform_Mac
     },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.0.1) Gecko/20020823 Netscape6/6.2.3",
         CCgiUserAgent::eNetscape,       { 6,  2,  3},
         CCgiUserAgent::eEngine_Gecko,   { 1,  0,  1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.4.1) Gecko/20031008",
         CCgiUserAgent::eMozilla,        { 5,  0, -1},
         CCgiUserAgent::eEngine_Gecko,   { 1,  4,  1},
-        { 5, 0, -1}
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Unix
     },
 
      // AppProduct token tests
@@ -792,28 +819,178 @@ const SUserAgent s_UserAgentTests[] = {
     { "Microsoft Internet Explorer/4.0b1 (Windows 95)",
         CCgiUserAgent::eIE,             { 4,  0, -1},
         CCgiUserAgent::eEngine_IE,      { 4,  0, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "Lynx/2.8.4rel.1 libwww-FM/2.14",
         CCgiUserAgent::eLynx,           { 2,  8,  4},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "Avant Browser (http://www.avantbrowser.com)",
         CCgiUserAgent::eAvantBrowser,   {-1, -1, -1},
         CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Unknown
     },
     { "Opera/3.62 (Windows NT 5.0; U)  [en] (www.proxomitron.de)",
         CCgiUserAgent::eOpera,          { 3, 62, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
-        {-1, -1, -1}
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Windows
     },
     { "check_http/1.89 (nagios-plugins 1.4.3)",
         CCgiUserAgent::eNagios,         { 1,  89, -1},
         CCgiUserAgent::eEngine_Bot,     {-1,  -1, -1},
-        { -1, -1, -1}
-    }
+        { -1, -1, -1},
+        CCgiUserAgent::ePlatform_Unix
+    },
+
+    // Mobile devices
+
+    { "ASTEL/1.0/J-0511.00/c10/smel",
+        CCgiUserAgent::eAirEdge,        { 1,  0, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/5.0 (compatible; AvantGo 3.2; ProxiNet; Danger hiptop 1.0)",
+        CCgiUserAgent::eAvantGo,        { 3,  2, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 5,  0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "DoCoMo/2.0 SH901iC(c100;TB;W24H12)",
+        CCgiUserAgent::eDoCoMo,         { 2,  0, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "BlackBerry9630/4.7.1.40 Profile/MIDP-2.0 Configuration/CLDC-1.1 VendorID/105",
+        CCgiUserAgent::eBlackberry,     {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/5.0 (iPhone; U; CPU like Mac OS X; sv-se) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/3A109a Safari/419.3",
+        CCgiUserAgent::eSafari,         {419,  3, -1},
+        CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/5.0 (Windows; U; Windows CE 5.1; rv:1.8.1a3) Gecko/20060610 Minimo/0.016",
+        CCgiUserAgent::eMinimo,         { 0, 16, -1},
+        CCgiUserAgent::eEngine_Gecko,   { 1,  8,  1},
+        { 5,  0, -1},
+        CCgiUserAgent::ePlatform_WindowsCE
+    },
+    { "Mozilla/4.0 (PDA; SL-C750/1.0,Embedix/Qtopia/1.3.0) NetFront/3.0 Zaurus C750",
+        CCgiUserAgent::eNetFront,       { 3,  0, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4,  0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "ReqwirelessWeb/2.0.0 MIDP-1.0 CLDC-1.0 Nokia3650",
+        CCgiUserAgent::eReqwireless,    { 2,  0,  0},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/4.0 (compatible; MSIE 6.0; Nokia7650) ReqwirelessWeb/2.0.0.0",
+        CCgiUserAgent::eReqwireless,    { 2,  0,  0},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4,  0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Opera/8.01 (J2ME/MIDP; Opera Mini/2.0.4509/1378; nl; U; ssr)",
+        CCgiUserAgent::eOperaMini,      { 2,  0, 4509},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Opera/9.51 Beta (Microsoft Windows; PPC; Opera Mobi/1718; U; en)",
+        CCgiUserAgent::eOperaMobile,    {1718,  -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "UP.Browser/3.04-TS14 UP.Link/3.4.4",
+        CCgiUserAgent::eOpenWave,       { 3,  4, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/4.0 (compatible; MSIE 5.0; PalmOS) PLink 2.56b",
+        CCgiUserAgent::ePocketLink,     { 2, 56, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4,  0, -1},
+        CCgiUserAgent::ePlatform_Palm
+    },
+    { "Vodafone/1.0/HTC_prophet/2.15.3.113/Mozilla/4.0 (compatible; MSIE 4.01; Windows CE; PPC; 240x320)",
+        CCgiUserAgent::eVodafone,       { 1,  0, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_WindowsCE
+    },
+    { "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/1A542a Safari/419.3",
+        CCgiUserAgent::eSafari,         {419,  3, -1},
+        CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "Mozilla/5.0 (iPod; U; CPU iPhone OS 2_2_1 like Mac OS X; en-us) AppleWebKit/525.18.1 (KHTML, like Gecko) Mobile/5H11a",
+        CCgiUserAgent::eMozilla,        { 5,  0,  -1},
+        CCgiUserAgent::eEngine_KHTML,   {525, 18,  1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+
+
+    // Platform tests
+
+    { "Mozilla/2.0 (compatible; MSIE 3.02; Windows CE; PPC; 240x320)",
+        CCgiUserAgent::eIE,             { 3,  2, -1},
+        CCgiUserAgent::eEngine_IE,      { 3,  2, -1},
+        { 2,  0, -1},
+        CCgiUserAgent::ePlatform_WindowsCE
+    },
+    { "Mozilla/4.76 [en] (PalmOS; U; WebPro/3.0.1a; Palm-Cct1)",
+        CCgiUserAgent::eNetscape,       { 4, 76, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4, 76, -1},
+        CCgiUserAgent::ePlatform_Palm
+    },
+    { "Doris/1.86 [en] (Symbian)",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_Symbian
+    },
+    { "Mozilla/4.1 (compatible; MSIE 5.0; Symbian OS; Nokia 3650;424) Opera 6.10  [en]",
+        CCgiUserAgent::eOpera,          { 6, 10, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4,  1, -1},
+        CCgiUserAgent::ePlatform_Symbian
+    },
+    { "LG/U8138/v2.0",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "MOT-L6/0A.52.45R MIB/2.2.1 Profile/MIDP-2.0 Configuration/CLDC-1.1",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
+    { "J-PHONE/5.0/V801SA/SN123456789012345 SA/0001JP Profile/MIDP-1.0",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
 };
 
 
@@ -875,6 +1052,11 @@ void TestUserAgent(void)
         assert(a->mozilla_v.minor == v.GetMinor());
         assert(a->mozilla_v.patch == v.GetPatchLevel());
 
+        // Platform
+        CCgiUserAgent::EBrowserPlatform p = agent.GetPlatform();
+        cout << "Platform       : " << p << endl;
+        assert(a->platform == p);
+
         cout << endl;
     }
 
@@ -892,6 +1074,30 @@ void TestUserAgent(void)
         assert(agent.GetEngine()  == CCgiUserAgent::eEngine_Unknown);
         assert(!agent.IsBot());
         assert( agent.IsBot(CCgiUserAgent::fBotAll, "SomeNewCrawler SomeNewBot SomeOtherBot"));
+    }}
+
+    // IsMobileDevice() -- simple test
+    {{
+        agent.Reset("Mozilla/5.0 (compatible; AvantGo 3.2; ProxiNet; Danger hiptop 1.0)");
+        assert(agent.GetBrowser() == CCgiUserAgent::eAvantGo);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_MobileDevice);
+        assert( agent.IsMobileDevice());
+
+        agent.Reset("Mozilla/5.0 (Windows; U; Windows CE 5.1; rv:1.8.1a3) Gecko/20060610 Minimo/0.016");
+        assert(agent.GetBrowser() == CCgiUserAgent::eMinimo);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_WindowsCE);
+        assert( agent.IsMobileDevice());
+
+        agent.Reset("Mozilla/4.0 (PDA; PalmOS/sony/model prmr/Revision:1.1.54 (en))");
+        assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Palm);
+        assert( agent.IsMobileDevice());
+
+        agent.Reset("Mozilla/5.0 (SomeNewSmartphone/1.2.3)");
+        assert(agent.GetBrowser() == CCgiUserAgent::eMozilla);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Unknown);
+        assert(!agent.IsMobileDevice());
+        assert( agent.IsMobileDevice("SomePDA SomeNewSmartphone iAnything"));
     }}
 }
 
