@@ -84,7 +84,9 @@ public:
         fSkipCheck   = 1<<11, ///< Skip (rudimentary) body content check
         fNoSplit     = 1<<12, ///< Don't split out ambiguous sequence regions
         fValidate    = 1<<13, ///< Check (alphabetic) residue validity
-        fUniqueIDs   = 1<<14  ///< Forbid duplicate IDs
+        fUniqueIDs   = 1<<14, ///< Forbid duplicate IDs
+        fStrictGuess = 1<<15, ///< Assume no typos when guessing sequence type
+        fLaxGuess    = 1<<16  ///< Use legacy heuristic for guessing seq. type
     };
     typedef int TFlags; ///< binary OR of EFlags
 

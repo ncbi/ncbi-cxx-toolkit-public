@@ -729,14 +729,22 @@ void CFastaReader::AssembleSeq(void)
 
 void CFastaReader::AssignMolType(void)
 {
-    CSeq_inst&      inst = m_CurrentSeq->SetInst();
-    CSeq_inst::EMol default_mol;
+    CSeq_inst&                  inst = m_CurrentSeq->SetInst();
+    CSeq_inst::EMol             default_mol;
+    CFormatGuess::ESTStrictness strictness;
 
+    // Check flags; in general, treat contradictory settings as canceling out.
     // Did the user specify a (default) type?
     switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
     case fAssumeNuc:   default_mol = CSeq_inst::eMol_na;      break;
     case fAssumeProt:  default_mol = CSeq_inst::eMol_aa;      break;
     default:           default_mol = CSeq_inst::eMol_not_set; break;
+    }
+    // Did the user request non-default format-guessing strictness?
+    switch (GetFlags() & (fStrictGuess | fLaxGuess)) {
+    case fStrictGuess:  strictness = CFormatGuess::eST_Strict;  break;
+    case fLaxGuess:     strictness = CFormatGuess::eST_Lax;     break;
+    default:            strictness = CFormatGuess::eST_Default; break;
     }
 
     if (TestFlag(fForceType)) {
@@ -754,7 +762,7 @@ void CFastaReader::AssignMolType(void)
 
     // Do the residue frequencies suggest a specific type?
     SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
-    switch (CFormatGuess::SequenceType(m_SeqData.data(), length)) {
+    switch (CFormatGuess::SequenceType(m_SeqData.data(), length, strictness)) {
     case CFormatGuess::eNucleotide:  inst.SetMol(CSeq_inst::eMol_na);  return;
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
     default:
