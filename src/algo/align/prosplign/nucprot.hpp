@@ -111,9 +111,11 @@ public:
 
     inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(m_trans_table->nuc2a(nuc1, nuc2, nuc3))]; }
 
-    int scaled_subst_matrix[256][256];
+    inline int ScaledScore(char amin1, char amin2) const { return scaled_subst_matrix[int(amin1)][int(amin2)]; }
+
     string m_alphabet;
 private:
+    int scaled_subst_matrix[256][256];
     CConstRef<CTranslationTable> m_trans_table;
 };
 
