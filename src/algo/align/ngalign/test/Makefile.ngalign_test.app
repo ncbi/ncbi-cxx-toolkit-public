@@ -4,14 +4,13 @@ ASN_DEP = seq
 
 APP = ngalign_test
 SRC = ngalign_test
-LIB = xngalign  $(BLAST_LIBS) blastinput  xblast  ncbi_xloader_blastdb \
-      ncbi_xloader_blastdb_rmt blast_services  xnetblastcli   \
-      align_format   \
-      xalgoalignnw xalgoseq xalnmgr xobjmgr xobjutil xobjread creaders \
-      taxon1  $(GENBANK_LIBS)  $(QOBJMGR_ONLY_LIBS)  \
-      xalgocontig_assembly xalgoalignutil xalnmgr xalgoalignnw  xblast\
-      gpipe_objutil xqueryparse xutil \
-      xregexp $(PCRE_LIB)
+LIB = xngalign \
+	  blastinput $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) \
+      xalgoalignnw xalgoseq xalgocontig_assembly xalgoalignutil \
+      align_format gene_info xalnmgr \
+      xobjutil xobjread creaders taxon1  \
+      xcgi xhtml xregexp $(PCRE_LIB) xqueryparse \
+	  $(GENBANK_LIBS)  $(QOBJMGR_ONLY_LIBS)  \
 
 
 CXXFLAGS = $(FAST_CXXFLAGS)
