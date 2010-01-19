@@ -332,22 +332,28 @@ public:
     ///   Generic: [scheme://[user[:password]@]]host[:port][/path][?args]
     ///   Special: scheme:[path]
     ///   The leading '/', if any, is included in path value.
-    /// @param encode_flag
-    ///   Decode the string before parsing according to the flag.
+    /// @param encoder
+    ///   URL encoder object. If not set, the default encoder will be used.
+    ///   @sa CDefaultUrlEncoder
     CUrl(const string& url, const IUrlEncoder* encoder = 0);
 
     /// Parse the URL.
     ///
     /// @param url
     ///   String to parse as URL
-    /// @param encode_flag
-    ///   Decode the string before parsing according to the flag.
+    /// @param encoder
+    ///   URL encoder object. If not set, the default encoder will be used.
+    ///   @sa CDefaultUrlEncoder
     void SetUrl(const string& url, const IUrlEncoder* encoder = 0);
 
     /// Compose the URL.
     ///
-    /// @param encode_flag
-    ///   Encode the URL parts before composing the URL.
+    /// @param amp_enc
+    ///   Method of encoding ampersand.
+    ///   @sa CUrlArgs::EAmpEncoding
+    /// @param encoder
+    ///   URL encoder object. If not set, the default encoder will be used.
+    ///   @sa CDefaultUrlEncoder
     string ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
                       const IUrlEncoder* encoder = 0) const;
 
