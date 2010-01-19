@@ -220,7 +220,7 @@ CIdMapperConfig::AddMapEntry(
     CSeq_id_Handle hSource = SourceHandle( columns[0] );
     CSeq_id_Handle hTarget = TargetHandle( columns[1] );
     if ( hSource && hTarget ) {
-        AddMapping( SourceHandle( columns[0] ), TargetHandle( columns[1] ) );
+        AddMapping( hSource, hTarget );
     }
 };
 
@@ -285,7 +285,7 @@ CIdMapperConfig::TargetHandle(
     }
     
     //don't know what else to do...
-    return CSeq_id_Handle();
+    return hTo;
 };
    
 END_NCBI_SCOPE
