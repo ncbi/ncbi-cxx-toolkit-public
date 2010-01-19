@@ -250,7 +250,7 @@ int CTest::Run(void)
 
 
     // Check bad executable
-    ERR_POST(Info, "Bad executable");
+    ERR_POST(Info << "Bad executable");
     assert(pipe.Open("blahblahblah", args) != eIO_Success);
 
 
