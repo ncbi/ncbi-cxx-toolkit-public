@@ -88,6 +88,10 @@ public:
     {
         return m_Type;
     }
+    const string& GetFileName(void) const
+    {
+        return m_Filename;
+    }
 
     void Save(const string& filename) const;
     /// Debug dump

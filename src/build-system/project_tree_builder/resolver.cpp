@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "resolver.hpp"
 #include <corelib/ncbistr.hpp>
+#include "ptb_err_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -172,12 +173,29 @@ CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
 {
     // Clear cache for resolved defines
     m_Cache.clear();
-    
+
+    list<string> redefs;
+    ITERATE( CSimpleMakeFileContents::TContents, i, src.m_Data.m_Contents) {
+        if (m_Data.m_Contents.empty()) {
+            m_Trusted.insert(i->first);
+        } else {
+            if (m_Data.m_Contents.find(i->first) != m_Data.m_Contents.end() &&
+                m_Trusted.find(i->first) == m_Trusted.end()) {
+                redefs.push_back(i->first);
+                PTB_WARNING_EX(src.m_Data.GetFileName(),ePTB_ConfigurationError,
+                    "Attempt to redefine already defined macro: " << i->first);
+            }
+        }
+    }
     // Add contents of src
     copy(src.m_Data.m_Contents.begin(), 
          src.m_Data.m_Contents.end(), 
          inserter(m_Data.m_Contents, m_Data.m_Contents.end()));
 
+    ITERATE( list<string>, r, redefs) {
+        PTB_WARNING_EX(m_Data.GetFileName(),ePTB_ConfigurationError,
+            *r << "= " << NStr::Join(m_Data.m_Contents[*r]," "));
+    }
     return *this;
 }
 

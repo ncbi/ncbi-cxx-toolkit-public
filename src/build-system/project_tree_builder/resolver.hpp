@@ -34,6 +34,7 @@
 #include "file_contents.hpp"
 
 #include <map>
+#include <set>
 #include <string>
 
 #include <corelib/ncbistre.hpp>
@@ -75,6 +76,7 @@ private:
     CSimpleMakeFileContents m_Data;
 
     CSimpleMakeFileContents::TContents m_Cache;
+    set<string> m_Trusted;
 };
 
 // Filter opt defines like $(SRC_C:.core_%)           to $(SRC_C).
