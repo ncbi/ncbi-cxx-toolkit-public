@@ -28,10 +28,13 @@ while [ $i -lt $j ]; do
   echo "${i} of ${j}: `date`"
   $CHECK_EXEC test_conn_stream_pushback >$log 2>&1
   exit_code=$?
+
   if [ "$exit_code" != "0" ]; then
     outlog "$log"
+    uptime
     break
   fi
+
   i="`expr $i + 1`"
 done
 

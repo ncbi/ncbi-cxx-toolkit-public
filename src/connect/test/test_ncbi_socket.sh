@@ -39,6 +39,7 @@ kill $spid  ||  exit_code=2
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
+  uptime
 fi
 
 exit $exit_code

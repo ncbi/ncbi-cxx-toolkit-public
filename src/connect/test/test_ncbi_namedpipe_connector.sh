@@ -38,6 +38,7 @@ kill $spid  ||  exit_code=2
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
+  uptime
 fi
 
 rm -f ./.test_ncbi_namedpipe >/dev/null 2>&1

@@ -37,6 +37,7 @@ rm -f ./.ncbi_test_pipename_$$ >/dev/null 2>&1
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
+  uptime
 fi
 
 exit $exit_code
