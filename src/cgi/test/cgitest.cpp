@@ -873,9 +873,9 @@ const SUserAgent s_UserAgentTests[] = {
         {-1, -1, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
-    { "Mozilla/5.0 (iPhone; U; CPU like Mac OS X; sv-se) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/3A109a Safari/419.3",
-        CCgiUserAgent::eSafari,         {419,  3, -1},
-        CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
+    { "Mozilla/5.0 (iPhone; U; CPU iPhone OS2_2 like Mac OS X;fr-fr) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5G77 Safari/525.20",
+        CCgiUserAgent::eSafari,         {  3,  1, 1},
+        CCgiUserAgent::eEngine_KHTML,   {525, 18, 1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
@@ -934,7 +934,7 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::ePlatform_WindowsCE
     },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/1A542a Safari/419.3",
-        CCgiUserAgent::eSafari,         {419,  3, -1},
+        CCgiUserAgent::eSafari,         {  3,  0, -1},
         CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice

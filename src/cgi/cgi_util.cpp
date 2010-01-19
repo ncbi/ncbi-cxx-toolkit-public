@@ -779,6 +779,18 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         }
     }
 
+    // Hack for some browsers (like Safari) that use Version/x.x.x rather than
+    // Safari/x.x.x for real browser version (for Safari, numbers after browser
+    // name represent a build version).
+    if ( m_Browser != eUnknown ) {
+        search = " Version/";
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &m_BrowserVersion);
+        }
+    }
+
     // Try to get engine version for KHTML-based browsers
     search = " AppleWebKit/";
     pos = m_UserAgent.find(search);
