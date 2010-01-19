@@ -91,6 +91,12 @@ public:
         eThorough
     };
 
+    enum ESTStrictness {
+        eST_Lax,     ///< Implement historic behavior, risking false positives.
+        eST_Default, ///< Be relatively strict, but still allow for typos.
+        eST_Strict   ///< Require 100% encodability of printable non-digits.
+    };
+
     enum EOnError {
         eDefault = 0,      ///< Return eUnknown
         eThrowOnBadSource, ///< Throw an exception if the data source (stream, file) can't be read
@@ -133,7 +139,8 @@ public:
 
     /// Guess sequence type. Function calculates sequence alphabet and
     /// identifies if the source belongs to nucleotide or protein sequence
-    static ESequenceType SequenceType(const char* str, unsigned length);
+    static ESequenceType SequenceType(const char* str, unsigned length = 0,
+                                      ESTStrictness strictness = eST_Default);
 
     //  ------------------------------------------------------------------------
     //  "Stateless" interface:

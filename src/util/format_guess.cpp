@@ -170,14 +170,15 @@ CFormatGuess::s_CheckOrder[] =
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::ESequenceType
-CFormatGuess::SequenceType(const char* str, unsigned length)
+CFormatGuess::SequenceType(const char* str, unsigned length,
+                           ESTStrictness strictness)
 {
     if (length == 0)
         length = (unsigned)::strlen(str);
 
     init_symbol_type_table();
     unsigned int main_nuc_content = 0, ambig_content = 0, bad_nuc_content = 0,
-         amino_acid_content = 0, bad_aa_content = 0;
+        amino_acid_content = 0, exotic_aa_content = 0, bad_aa_content = 0;
 
     for (unsigned i = 0; i < length; ++i) {
         unsigned char c = str[i];
@@ -192,19 +193,46 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
 
         if ( type & fProtein_Alphabet ) {
             ++amino_acid_content;
+        } else if ( type & fAlpha ) {
+            ++exotic_aa_content;
         } else if ( !(type & (fSpace | fDigit)) ) {
             ++bad_aa_content;
         }
     }
 
-    if (bad_nuc_content + ambig_content <= main_nuc_content / 9
-        ||  (bad_nuc_content + ambig_content <= main_nuc_content / 3
-             &&  bad_nuc_content <= (main_nuc_content + ambig_content) / 19)) {
-        // >=90% main alphabet (ACGTUN-) or >=75% main and >=95% 4na-encodable
-        return eNucleotide;
-    } else if (bad_aa_content <= amino_acid_content / 9) {
-        // >=90% relatively standard protein residues.  (O and J don't count.)
-        return eProtein;
+    switch (strictness) {
+    case eST_Lax:
+    {
+        double dna_content = (double)main_nuc_content / (double)length;
+        double prot_content = (double)amino_acid_content / (double)length;
+
+        if (dna_content > 0.7) {
+            return eNucleotide;
+        }
+        if (prot_content > 0.7) {
+            return eProtein;
+        }
+    }
+
+    case eST_Default:
+        if (bad_nuc_content + ambig_content <= main_nuc_content / 9
+            ||  (bad_nuc_content + ambig_content <= main_nuc_content / 3  &&
+                 bad_nuc_content <= (main_nuc_content + ambig_content) / 19)) {
+            // >=90% main alph. (ACGTUN-) or >=75% main and >=95% 4na-encodable
+            return eNucleotide;
+        } else if (bad_aa_content + exotic_aa_content
+                   <= amino_acid_content / 9) {
+            // >=90% relatively standard protein residues.  (JOU don't count.)
+            return eProtein;
+        }
+
+    case eST_Strict: // Must be 100% encodable
+        if (bad_nuc_content == 0  &&  ambig_content <= main_nuc_content / 3) {
+            return eNucleotide;
+        } else if (bad_aa_content == 0
+                   &&  exotic_aa_content <= amino_acid_content / 9) {
+            return eProtein;
+        }
     }
 
     return eUndefined;
