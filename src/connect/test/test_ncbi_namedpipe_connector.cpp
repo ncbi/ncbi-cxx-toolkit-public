@@ -232,40 +232,42 @@ void CTest::Server(int n_cycle)
                 ERR_POST(Info <<
                          NStr::UIntToString(n_read) + " byte(s) read: " +
                          (n_read ? "" : IO_StatusStr(status)));
+                ERR_POST("Here");
 
                 // Write data back to the pipe
-                size_t n_total = 0;
-                while (n_total < n_read) {
-                    if (!n_total) {
+                size_t n_done = 0;
+                while (n_done < n_read) {
+                    if (!n_done) {
                         // NB: first time in the loop -- dump received data
-                        NcbiCout.write(buf, n_read);
-                        assert(NcbiCout.good());
-                        NcbiCout.flush();
+                        NcbiCerr.write(buf, n_read);
+                        assert(NcbiCerr.good());
+                        NcbiCerr.flush();
                     }
-                    status = pipe.Write(buf + n_total, n_read - n_total,
+                    status = pipe.Write(buf + n_done, n_read - n_done,
                                         &n_written);
                     if (!n_written) {
                         assert(status != eIO_Success);
-                        ERR_POST(Info << "Failed to write "
-                                 + NStr::UIntToString(n_read)
+                        ERR_POST(Warning << "Failed to write "
+                                 + NStr::UIntToString(n_read - n_done)
                                  + " byte(s): "
                                  + IO_StatusStr(status));
                         break;
                     }
-                    n_total += n_written;
+                    n_done += n_written;
                     ERR_POST(Info <<
                              NStr::UIntToString(n_written)
                              + " byte(s) written, "
-                             + NStr::UIntToString(n_read - n_total)
+                             + NStr::UIntToString(n_read - n_done)
                              + " remaining (status: "
                              + IO_StatusStr(status)
                              + ')');
                 }
             } while (status == eIO_Success);
-            assert(status == eIO_Timeout  ||  status == eIO_Closed);
 
+            ERR_POST("There");
             ERR_POST(Info << "Client disconnected...");
-            assert(pipe.Disconnect() == eIO_Success);
+            status = pipe.Disconnect();
+            assert(status == eIO_Success);
             break;
 
         case eIO_Timeout:
