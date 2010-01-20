@@ -148,17 +148,17 @@ bool schema::validate (const document& doc,
     if (retCode == -1)
         throw std::runtime_error("internal libxml2 API error");
 
+    // There are errors
     if (pimpl_->validation_messages_.has_errors())
-        throw parser_exception(pimpl_->validation_messages_);
+        return false;
 
-
-    bool    warnings(pimpl_->validation_messages_.has_warnings());
-    if (how == type_warnings_are_errors) {
-        if (warnings)
-            throw parser_exception(pimpl_->validation_messages_);
+    // There are warnings and they are treated as errors
+    if (pimpl_->validation_messages_.has_warnings()) {
+        if (how == type_warnings_are_errors)
+            return false;
     }
-    // warnings are considered OK
-    return !warnings;
+
+    return true;
 }
 
 const error_messages& schema::get_schema_parser_messages (void) const {

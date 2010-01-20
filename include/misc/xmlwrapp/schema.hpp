@@ -113,12 +113,14 @@ public:
      *
      * @param doc XML document.
      * @param how How to treat warnings (default: warnings are treated as
-     *            errors). If warnings are treated as errors then an exception
-     *            is thrown in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then an exception will be thrown
-     *            only when there are errors.
-     * @exception Throws xml::parser_exception in case of validating errors
-     *            and std::exception in case of other problems.
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            get_validation_messages() member function.
+     * @return true if the document is valid, false otherwise.
+     * @exception Throws std::exception in case of problems.
      * @author Sergey Satskiy, NCBI
     **/
     bool validate (const document& doc,
