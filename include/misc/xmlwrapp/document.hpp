@@ -555,6 +555,7 @@ private:
 
     friend class tree_parser;
     friend class xslt::stylesheet;
+    friend class schema;
 }; // end xml::document class
 
 } // end xml namespace

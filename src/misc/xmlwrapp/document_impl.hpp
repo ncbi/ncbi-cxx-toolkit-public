@@ -37,20 +37,47 @@
  *       API and functionality requirements.
  */
 
-#ifndef _xmlwrapp_xmlwrapp_h_
-#define _xmlwrapp_xmlwrapp_h_
 
-#include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/nodes_view.hpp>
+#ifndef _xmlwrapp_document_impl_h_
+#define _xmlwrapp_document_impl_h_
+
+
+// xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
-#include <misc/xmlwrapp/attributes.hpp>
-#include <misc/xmlwrapp/document.hpp>
-#include <misc/xmlwrapp/tree_parser.hpp>
-#include <misc/xmlwrapp/event_parser.hpp>
-#include <misc/xmlwrapp/namespace.hpp>
-#include <misc/xmlwrapp/xpath_expression.hpp>
-#include <misc/xmlwrapp/node_set.hpp>
-#include <misc/xmlwrapp/schema.hpp>
-#include <misc/xmlwrapp/errors.hpp>
+#include "dtd_impl.hpp"
+#include "node_manip.hpp"
+
+// standard includes
+#include <string>
+
+// libxml includes
+#include <libxml/tree.h>
+#include <libxml/xinclude.h>
+
+// bring in private libxslt stuff (see bug #1927398)
+#include "result.hpp"
+
+
+namespace xml {
+namespace impl {
+
+struct doc_impl {
+    doc_impl (void);
+    doc_impl (const char *root_name);
+    doc_impl (const doc_impl &other);
+    void set_doc_data (xmlDocPtr newdoc, bool root_is_okay);
+    void set_root_node (const node &n);
+    ~doc_impl (void);
+    xmlDocPtr doc_;
+
+    xslt::impl::result *xslt_result_;
+    node root_;
+    std::string version_;
+    mutable std::string encoding_;
+};
+
+} // namespace impl
+} // namespace xml
 
 #endif
+

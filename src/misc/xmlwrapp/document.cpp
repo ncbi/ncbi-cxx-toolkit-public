@@ -45,6 +45,7 @@
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include "utility.hpp"
+#include "document_impl.hpp"
 #include "dtd_impl.hpp"
 #include "node_manip.hpp"
 
@@ -76,6 +77,7 @@ namespace {
     const char const_default_encoding[] = "ISO-8859-1";
 }
 //####################################################################
+#if 0
 struct xml::impl::doc_impl {
     //####################################################################
     doc_impl (void) : doc_(0), xslt_result_(0) { 
@@ -143,6 +145,7 @@ struct xml::impl::doc_impl {
     std::string version_;
     mutable std::string encoding_;
 };
+#endif
 //####################################################################
 xml::document::document (void) {
     pimpl_ = new doc_impl;
