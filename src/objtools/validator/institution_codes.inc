@@ -580,7 +580,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BRGE	s	Laboratoire de Genetique des Plantes Superieures",
 "BRH	s	Ministry of Natural Resources, Local Government, and the Environment",
 "BRI	s	Brisbane Botanic Gardens Mt Coot-tha",
-"BRIP	s	Department of Primary Industries",
+"BRIP	sc	Department of Primary Industries",
 "BRIST	s	University of Bristol, Botany Department",
 "BRISTM	s	Bristol Museum and Art Gallery",
 "BRIT	s	Botanical Research Institute of Texas",
