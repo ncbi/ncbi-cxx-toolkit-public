@@ -335,12 +335,22 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
             ITERATE ( CID2S_Feat_type_Info::TSubtypes, sit,
                       type.GetSubtypes() ) {
                 SAnnotTypeSelector sel(CSeqFeatData::ESubtype(+*sit));
-                chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+                if ( ids.IsSetLocal_ids() ) {
+                    chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+                }
+                if ( ids.IsSetLocal_str_ids() ) {
+                    chunk.x_AddFeat_ids(sel, ids.GetLocal_str_ids());
+                }
             }
         }
         else {
             SAnnotTypeSelector sel(CSeqFeatData::E_Choice(type.GetType()));
-            chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+            if ( ids.IsSetLocal_ids() ) {
+                chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+            }
+            if ( ids.IsSetLocal_str_ids() ) {
+                chunk.x_AddFeat_ids(sel, ids.GetLocal_str_ids());
+            }
         }
     }
     ITERATE ( CID2S_Seq_feat_Ids_Info::TXref_types, it, ids.GetXref_types() ) {
@@ -349,12 +359,22 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
             ITERATE ( CID2S_Feat_type_Info::TSubtypes, sit,
                       type.GetSubtypes() ) {
                 SAnnotTypeSelector sel(CSeqFeatData::ESubtype(+*sit));
-                chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+                if ( ids.IsSetLocal_ids() ) {
+                    chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+                }
+                if ( ids.IsSetLocal_str_ids() ) {
+                    chunk.x_AddXref_ids(sel, ids.GetLocal_str_ids());
+                }
             }
         }
         else {
             SAnnotTypeSelector sel(CSeqFeatData::E_Choice(type.GetType()));
-            chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+            if ( ids.IsSetLocal_ids() ) {
+                chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+            }
+            if ( ids.IsSetLocal_str_ids() ) {
+                chunk.x_AddXref_ids(sel, ids.GetLocal_str_ids());
+            }
         }
     }
 #endif

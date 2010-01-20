@@ -931,13 +931,10 @@ namespace {
             if ( xref.IsSetId() ) {
                 const CFeat_id& id = xref.GetId();
                 if ( id.IsLocal() ) {
-                    const CObject_id& obj_id = id.GetLocal();
-                    if ( obj_id.IsId() ) {
-                        CSeq_feat_Handle feat1 =
-                            tse.GetFeatureWithId(parent_type, obj_id.GetId());
-                        if ( feat1 ) {
-                            return feat1;
-                        }
+                    CSeq_feat_Handle feat1 =
+                        tse.GetFeatureWithId(parent_type, id.GetLocal());
+                    if ( feat1 ) {
+                        return feat1;
                     }
                 }
             }
@@ -1232,13 +1229,9 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
             const CSeqFeatXref& xref = **xit;
             if ( xref.IsSetId() ) {
                 const CFeat_id& id = xref.GetId();
-                if ( !id.IsLocal() ) {
-                    continue;
-                }
-                const CObject_id& obj_id = id.GetLocal();
-                if ( obj_id.IsId() ) {
+                if ( id.IsLocal() ) {
                     vector<CSeq_feat_Handle> ff =
-                        tse.GetFeaturesWithId(parent_type, obj_id.GetId());
+                        tse.GetFeaturesWithId(parent_type, id.GetLocal());
                     ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
                         CFeatInfo* p_info = x_FindInfo(*fit);
                         if ( p_info ) {
@@ -1479,6 +1472,7 @@ void CFeatTree::x_AssignParents(void)
             continue;
         }
         CSeqFeatData::ESubtype current_type = feat_set.m_FeatType;
+        //x_AssignParentsByRef(feat_set.m_New, current_type);
         while ( current_type != CSeqFeatData::eSubtype_bad ) {
             CSeqFeatData::ESubtype parent_type=sx_GetParentType(current_type);
             if ( parent_type == CSeqFeatData::eSubtype_bad ) {

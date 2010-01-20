@@ -1052,10 +1052,7 @@ void CSeq_annot_Info::x_MapFeatById(const CFeat_id& id,
                                     bool xref)
 {
     if ( id.IsLocal() ) {
-        const CObject_id& obj_id = id.GetLocal();
-        if ( obj_id.IsId() ) {
-            GetTSE_Info().x_MapFeatById(obj_id.GetId(), info, xref);
-        }
+        GetTSE_Info().x_MapFeatById(id.GetLocal(), info, xref);
     }
 }
 
@@ -1065,10 +1062,7 @@ void CSeq_annot_Info::x_UnmapFeatById(const CFeat_id& id,
                                       bool xref)
 {
     if ( id.IsLocal() ) {
-        const CObject_id& obj_id = id.GetLocal();
-        if ( obj_id.IsId() ) {
-            GetTSE_Info().x_UnmapFeatById(obj_id.GetId(), info, xref);
-        }
+        GetTSE_Info().x_UnmapFeatById(id.GetLocal(), info, xref);
     }
 }
 

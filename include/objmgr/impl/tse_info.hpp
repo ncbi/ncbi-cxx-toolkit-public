@@ -73,6 +73,7 @@ class CAnnotTypes_CI;
 class CSeq_entry;
 
 class CSeq_literal;
+class CObject_id;
 
 class ITSE_Assigner;
 class CTSE_Default_Assigner;
@@ -293,13 +294,17 @@ public:
             TChunkId           m_ChunkId;
         };
     };
-    typedef int TFeatId;
+    typedef int TFeatIdInt;
+    typedef string TFeatIdStr;
+    typedef CObject_id TFeatId;
     struct SFeatIdIndex
     {
-        typedef multimap<TFeatId, SFeatIdInfo> TIndex;
+        typedef multimap<TFeatIdInt, SFeatIdInfo> TIndexInt;
+        typedef multimap<TFeatIdStr, SFeatIdInfo> TIndexStr;
 
         TChunkIds m_Chunks;
-        TIndex    m_Index;
+        AutoPtr<TIndexInt> m_IndexInt;
+        AutoPtr<TIndexStr> m_IndexStr;
     };
     typedef map<CSeqFeatData::ESubtype, SFeatIdIndex>        TFeatIdIndex;
     typedef pair<string, bool> TLocusKey;
@@ -363,19 +368,49 @@ public:
 
     CTSE_Info_Object* x_FindBioObject(const CBioObjectId& uniq_id) const;
 
+    SFeatIdIndex::TIndexInt& x_GetFeatIdIndexInt(CSeqFeatData::ESubtype type);
+    SFeatIdIndex::TIndexStr& x_GetFeatIdIndexStr(CSeqFeatData::ESubtype type);
+
     typedef vector<CAnnotObject_Info*> TAnnotObjects;
     void x_AddFeaturesById(TAnnotObjects& objects,
+                           const SFeatIdIndex& index,
+                           TFeatIdInt id,
+                           bool xref) const;
+    void x_AddFeaturesById(TAnnotObjects& objects,
                            CSeqFeatData::ESubtype subtype,
-                           TFeatId id,
+                           TFeatIdInt id,
                            bool xref) const;
     void x_AddAllFeaturesById(TAnnotObjects& objects,
-                              TFeatId id,
+                              TFeatIdInt id,
                               bool xref) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
-                                    TFeatId id,
+                                    TFeatIdInt id,
                                     bool xref) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
-                                    TFeatId id,
+                                    TFeatIdInt id,
+                                    bool xref) const;
+    void x_AddFeaturesById(TAnnotObjects& objects,
+                           const SFeatIdIndex& index,
+                           const TFeatIdStr& id,
+                           bool xref) const;
+    void x_AddFeaturesById(TAnnotObjects& objects,
+                           CSeqFeatData::ESubtype subtype,
+                           const TFeatIdStr& id,
+                           bool xref) const;
+    void x_AddAllFeaturesById(TAnnotObjects& objects,
+                              const TFeatIdStr& id,
+                              bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
+                                    const TFeatIdStr& id,
+                                    bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
+                                    const TFeatIdStr& id,
+                                    bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
+                                    const TFeatId& id,
+                                    bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
+                                    const TFeatId& id,
                                     bool xref) const;
     TAnnotObjects x_GetFeaturesByLocus(const string& locus, bool tag) const;
 
@@ -475,8 +510,24 @@ private:
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
 
-    void x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
-    void x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
+    void x_MapFeatById(TFeatIdInt id,
+                       CAnnotObject_Info& info,
+                       bool xref);
+    void x_UnmapFeatById(TFeatIdInt id,
+                         CAnnotObject_Info& info,
+                         bool xref);
+    void x_MapFeatById(const TFeatIdStr& id,
+                       CAnnotObject_Info& info,
+                       bool xref);
+    void x_UnmapFeatById(const TFeatIdStr& id,
+                         CAnnotObject_Info& info,
+                         bool xref);
+    void x_MapFeatById(const TFeatId& id,
+                       CAnnotObject_Info& info,
+                       bool xref);
+    void x_UnmapFeatById(const TFeatId& id,
+                         CAnnotObject_Info& info,
+                         bool xref);
     void x_MapFeatByLocus(const string& locus, bool tag,
                           CAnnotObject_Info& info);
     void x_UnmapFeatByLocus(const string& locus, bool tag,
@@ -489,15 +540,39 @@ private:
     void x_MapChunkByFeatType(const SAnnotTypeSelector& type,
                               TChunkId chunk_id);
 
-    void x_MapChunkByFeatId(TFeatId feat_id,
+    void x_MapChunkByFeatId(TFeatIdInt feat_id,
                             CSeqFeatData::ESubtype subtype,
                             TChunkId chunk_id,
                             bool xref);
-    void x_MapChunkByFeatId(TFeatId feat_id,
+    void x_MapChunkByFeatId(TFeatIdInt feat_id,
                             CSeqFeatData::E_Choice type,
                             TChunkId chunk_id,
                             bool xref);
-    void x_MapChunkByFeatId(TFeatId feat_id,
+    void x_MapChunkByFeatId(TFeatIdInt feat_id,
+                            const SAnnotTypeSelector& type,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatIdStr& feat_id,
+                            CSeqFeatData::ESubtype subtype,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatIdStr& feat_id,
+                            CSeqFeatData::E_Choice type,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatIdStr& feat_id,
+                            const SAnnotTypeSelector& type,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatId& feat_id,
+                            CSeqFeatData::ESubtype subtype,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatId& feat_id,
+                            CSeqFeatData::E_Choice type,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(const TFeatId& feat_id,
                             const SAnnotTypeSelector& type,
                             TChunkId chunk_id,
                             bool xref);

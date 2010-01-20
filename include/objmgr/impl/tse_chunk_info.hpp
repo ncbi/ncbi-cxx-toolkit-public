@@ -160,12 +160,24 @@ public:
 
     // The chunk contains features with ids
     void x_AddFeat_ids(void);
-    typedef int TFeatId;
-    typedef vector<TFeatId> TFeatIds;
-    typedef map<SAnnotTypeSelector, TFeatIds> TFeatIdsMap;
+    typedef int TFeatIdInt;
+    typedef string TFeatIdStr;
+    typedef vector<TFeatIdInt> TFeatIdIntList;
+    typedef list<TFeatIdStr> TFeatIdStrList;
+    struct SFeatIds {
+        TFeatIdIntList m_IntList;
+        TFeatIdStrList m_StrList;
+    };
+    typedef map<SAnnotTypeSelector, SFeatIds> TFeatIdsMap;
 
-    void x_AddFeat_ids(const SAnnotTypeSelector& type, const TFeatIds& ids);
-    void x_AddXref_ids(const SAnnotTypeSelector& type, const TFeatIds& ids);
+    void x_AddFeat_ids(const SAnnotTypeSelector& type,
+                       const TFeatIdIntList& ids);
+    void x_AddXref_ids(const SAnnotTypeSelector& type,
+                       const TFeatIdIntList& ids);
+    void x_AddFeat_ids(const SAnnotTypeSelector& type,
+                       const TFeatIdStrList& ids);
+    void x_AddXref_ids(const SAnnotTypeSelector& type,
+                       const TFeatIdStrList& ids);
 
     // The chunk contains seq-data. The corresponding bioseq's
     // data should be not set or set to delta with empty literal(s)

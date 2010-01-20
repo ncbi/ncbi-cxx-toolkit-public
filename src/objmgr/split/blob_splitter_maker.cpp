@@ -65,7 +65,7 @@
 #include <objmgr/annot_type_selector.hpp>
 
 #ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
-//#define HAVE_FEAT_IDS
+# define HAVE_FEAT_IDS
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -307,25 +307,36 @@ namespace {
 #ifdef HAVE_FEAT_IDS
     struct SFeatIds
     {
-        typedef int TFeatId;
+        typedef int TFeatIdInt;
+        typedef string TFeatIdStr;
         enum EIdType {
             eFeatId,
             eXrefId
         };
         typedef vector<SAnnotTypeSelector> TTypeSet;
         typedef pair<TTypeSet, TTypeSet> TTypeSets;
-        typedef map<TFeatId, TTypeSets> TAllIds;
-        typedef vector<TFeatId> TFeatIds;
-        typedef map<TTypeSets, TFeatIds> TSplitIds;
+        typedef map<TFeatIdInt, TTypeSets> TAllIdsInt;
+        typedef vector<TFeatIdInt> TFeatIdsInt;
+        typedef map<TFeatIdStr, TTypeSets> TAllIdsStr;
+        typedef vector<TFeatIdStr> TFeatIdsStr;
+        typedef map<TTypeSets, pair<TFeatIdsInt, TFeatIdsStr> > TSplitIds;
 
         void Add(const SAnnotTypeSelector& feat_type,
                  const CFeat_id& feat_id,
                  EIdType id_type)
             {
-                if ( feat_id.IsLocal() && feat_id.GetLocal().IsId() ) {
-                    TTypeSets& types = m_AllIds[feat_id.GetLocal().GetId()];
-                    (id_type == eFeatId? types.first: types.second)
-                        .push_back(feat_type);
+                if ( feat_id.IsLocal() ) {
+                    const CObject_id& id = feat_id.GetLocal();
+                    if ( id.IsId() ) {
+                        TTypeSets& types = m_AllIdsInt[id.GetId()];
+                        (id_type == eFeatId? types.first: types.second)
+                            .push_back(feat_type);
+                    }
+                    else {
+                        TTypeSets& types = m_AllIdsStr[id.GetStr()];
+                        (id_type == eFeatId? types.first: types.second)
+                            .push_back(feat_type);
+                    }
                 }
             }
 
@@ -356,20 +367,37 @@ namespace {
                 sort(types.begin(), types.end());
                 types.erase(unique(types.begin(), types.end()), types.end());
             }
+        static void clean(TFeatIdsInt& ids)
+            {
+                sort(ids.begin(), ids.end());
+                ids.erase(unique(ids.begin(), ids.end()), ids.end());
+            }
+        static void clean(TFeatIdsStr& ids)
+            {
+                sort(ids.begin(), ids.end());
+                ids.erase(unique(ids.begin(), ids.end()), ids.end());
+            }
 
         void SplitInfo(void)
             {
-                NON_CONST_ITERATE ( TAllIds, it, m_AllIds ) {
+                NON_CONST_ITERATE ( TAllIdsInt, it, m_AllIdsInt ) {
                     clean(it->second.first);
                     clean(it->second.second);
-                    m_SplitIds[it->second].push_back(it->first);
+                    m_SplitIds[it->second].first.push_back(it->first);
+                }
+                NON_CONST_ITERATE ( TAllIdsStr, it, m_AllIdsStr ) {
+                    clean(it->second.first);
+                    clean(it->second.second);
+                    m_SplitIds[it->second].second.push_back(it->first);
                 }
                 NON_CONST_ITERATE ( TSplitIds, it, m_SplitIds ) {
-                    sort(it->second.begin(), it->second.end());
+                    clean(it->second.first);
+                    clean(it->second.second);
                 }
             }
 
-        TAllIds m_AllIds;
+        TAllIdsInt m_AllIdsInt;
+        TAllIdsStr m_AllIdsStr;
         TSplitIds m_SplitIds;
     };
 #endif
@@ -954,8 +982,11 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
                 types.Add(it->first.second);
                 types.SetFeatTypes(info->SetXref_types());
             }
-            ITERATE ( SFeatIds::TFeatIds, fit, it->second ) {
+            ITERATE ( SFeatIds::TFeatIdsInt, fit, it->second.first ) {
                 info->SetLocal_ids().push_back(*fit);
+            }
+            ITERATE ( SFeatIds::TFeatIdsStr, fit, it->second.second ) {
+                info->SetLocal_str_ids().push_back(*fit);
             }
             store.push_back(info);
         }

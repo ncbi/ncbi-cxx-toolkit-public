@@ -498,7 +498,8 @@ void CScopeInfo_Base::x_ForgetTSE(CTSE_ScopeInfo* tse)
     _ASSERT(x_Check(fForceZero|fForbidInfo));
 }
 
-
+/////////////////////////////////////////////////////////////////////////////
+// FeatId support
 CSeq_feat_Handle
 CTSE_Handle::x_MakeHandle(CAnnotObject_Info* info) const
 {
@@ -525,9 +526,11 @@ CTSE_Handle::x_MakeHandles(const TAnnotObjectList& infos) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// integer FeatId
 CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
-                               TFeatureId id) const
+                               TFeatureIdInt id) const
 {
     return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
 }
@@ -535,7 +538,7 @@ CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
 
 CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
-                               TFeatureId id) const
+                               TFeatureIdInt id) const
 {
     return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
 }
@@ -543,7 +546,7 @@ CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
 
 CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
-                                 TFeatureId id) const
+                                 TFeatureIdInt id) const
 {
     return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
 }
@@ -551,26 +554,124 @@ CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
 
 CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
-                                 TFeatureId id) const
+                                 TFeatureIdInt id) const
 {
     return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
-                                               TFeatureId id) const
+                                               TFeatureIdInt id) const
 {
     return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
-                                               TFeatureId id) const
+                                               TFeatureIdInt id) const
 {
     return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// string FeatId
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                               const TFeatureIdStr& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                               const TFeatureIdStr& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                 const TFeatureIdStr& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                 const TFeatureIdStr& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                               const TFeatureIdStr& id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                               const TFeatureIdStr& id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CObject_id FeatId
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                               const TFeatureId& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                               const TFeatureId& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                 const TFeatureId& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                 const TFeatureId& id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                               const TFeatureId& id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                               const TFeatureId& id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// gene id support
 CSeq_feat_Handle CTSE_Handle::GetGeneWithLocus(const string& locus,
                                                bool tag) const
 {

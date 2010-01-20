@@ -114,7 +114,8 @@ ID2S-Seq-annot-place-Info ::= SEQUENCE {
 ID2S-Seq-feat-Ids-Info ::= SEQUENCE {
         feat-types      SET OF ID2S-Feat-type-Info OPTIONAL,
         xref-types      SET OF ID2S-Feat-type-Info OPTIONAL,
-        local-ids       SET OF INTEGER OPTIONAL
+        local-ids       SET OF INTEGER OPTIONAL,
+        local-str-ids   SET OF VisibleString OPTIONAL
 }
 
 

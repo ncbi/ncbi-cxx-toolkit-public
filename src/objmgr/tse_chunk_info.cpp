@@ -392,19 +392,37 @@ void CTSE_Chunk_Info::x_AddFeat_ids(void)
 
 
 void CTSE_Chunk_Info::x_AddFeat_ids(const SAnnotTypeSelector& type,
-                                    const TFeatIds& ids)
+                                    const TFeatIdIntList& ids)
 {
     m_ExplicitFeatIds = true;
-    TFeatIds& dst = m_FeatIds[type];
+    TFeatIdIntList& dst = m_FeatIds[type].m_IntList;
     dst.insert(dst.end(), ids.begin(), ids.end());
 }
 
 
 void CTSE_Chunk_Info::x_AddXref_ids(const SAnnotTypeSelector& type,
-                                    const TFeatIds& ids)
+                                    const TFeatIdIntList& ids)
 {
     m_ExplicitFeatIds = true;
-    TFeatIds& dst = m_XrefIds[type];
+    TFeatIdIntList& dst = m_XrefIds[type].m_IntList;
+    dst.insert(dst.end(), ids.begin(), ids.end());
+}
+
+
+void CTSE_Chunk_Info::x_AddFeat_ids(const SAnnotTypeSelector& type,
+                                    const TFeatIdStrList& ids)
+{
+    m_ExplicitFeatIds = true;
+    TFeatIdStrList& dst = m_FeatIds[type].m_StrList;
+    dst.insert(dst.end(), ids.begin(), ids.end());
+}
+
+
+void CTSE_Chunk_Info::x_AddXref_ids(const SAnnotTypeSelector& type,
+                                    const TFeatIdStrList& ids)
+{
+    m_ExplicitFeatIds = true;
+    TFeatIdStrList& dst = m_XrefIds[type].m_StrList;
     dst.insert(dst.end(), ids.begin(), ids.end());
 }
 
@@ -503,12 +521,18 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 
     if ( m_ExplicitFeatIds ) {
         ITERATE ( TFeatIdsMap, it, m_FeatIds ) {
-            ITERATE ( TFeatIds, it2, it->second ) {
+            ITERATE ( TFeatIdIntList, it2, it->second.m_IntList ) {
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), false);
+            }
+            ITERATE ( TFeatIdStrList, it2, it->second.m_StrList ) {
                 tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), false);
             }
         }
         ITERATE ( TFeatIdsMap, it, m_XrefIds ) {
-            ITERATE ( TFeatIds, it2, it->second ) {
+            ITERATE ( TFeatIdIntList, it2, it->second.m_IntList ) {
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), true);
+            }
+            ITERATE ( TFeatIdStrList, it2, it->second.m_StrList ) {
                 tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), true);
             }
         }

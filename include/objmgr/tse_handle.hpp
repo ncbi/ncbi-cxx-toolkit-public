@@ -57,6 +57,7 @@ class CSeq_id_Handle;
 class CBlobIdKey;
 class CSeq_feat_Handle;
 class CAnnotObject_Info;
+class CObject_id;
 
 class CScopeInfo_Base;
 class CScopeInfoLocker;
@@ -134,20 +135,50 @@ public:
 
     
     typedef vector<CSeq_feat_Handle> TSeq_feat_Handles;
-    typedef int TFeatureId;
 
+    /// Find features by an integer FeatId
+    typedef int TFeatureIdInt;
     TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
-                                        TFeatureId id) const;
+                                        TFeatureIdInt id) const;
     TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
-                                        TFeatureId id) const;
+                                        TFeatureIdInt id) const;
     TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
-                                          TFeatureId id) const;
+                                          TFeatureIdInt id) const;
     TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
-                                          TFeatureId id) const;
+                                          TFeatureIdInt id) const;
     CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
-                                      TFeatureId id) const;
+                                      TFeatureIdInt id) const;
     CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
-                                      TFeatureId id) const;
+                                      TFeatureIdInt id) const;
+    /// Find features by a string FeatId
+    typedef string TFeatureIdStr;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                        const TFeatureIdStr& id) const;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                        const TFeatureIdStr& id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                          const TFeatureIdStr& id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                          const TFeatureIdStr& id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                      const TFeatureIdStr& id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                      const TFeatureIdStr& id) const;
+
+    /// Find features by CObject_id (string or integer)
+    typedef CObject_id TFeatureId;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                        const TFeatureId& id) const;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                        const TFeatureId& id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                          const TFeatureId& id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                          const TFeatureId& id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                      const TFeatureId& id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                      const TFeatureId& id) const;
 
     CSeq_feat_Handle GetGeneWithLocus(const string& locus, bool tag) const;
     TSeq_feat_Handles GetGenesWithLocus(const string& locus, bool tag) const;

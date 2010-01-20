@@ -1260,20 +1260,19 @@ CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 
 
 void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
-                                  CSeqFeatData::ESubtype subtype,
-                                  TFeatId id,
+                                  const SFeatIdIndex& index,
+                                  TFeatIdInt id,
                                   bool xref) const
 {
-    TFeatIdIndex::const_iterator iter = m_FeatIdIndex.find(subtype);
-    if ( iter == m_FeatIdIndex.end() ) {
-        return;
-    }
-    const SFeatIdIndex& index = iter->second;
     if ( !index.m_Chunks.empty() ) {
         x_LoadChunks(index.m_Chunks);
     }
-    for ( SFeatIdIndex::TIndex::const_iterator iter2 = index.m_Index.find(id);
-          iter2 != index.m_Index.end() && iter2->first == id; ++iter2 ) {
+    if ( !index.m_IndexInt ) {
+        return;
+    }
+    const SFeatIdIndex::TIndexInt& index2 = *index.m_IndexInt;
+    for ( SFeatIdIndex::TIndexInt::const_iterator iter2 = index2.find(id);
+          iter2 != index2.end() && iter2->first == id; ++iter2 ) {
         const SFeatIdInfo& info = iter2->second;
         if ( info.m_Xref == xref ) {
             if ( info.m_IsChunk ) {
@@ -1287,46 +1286,125 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
 }
 
 
+void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
+                                  CSeqFeatData::ESubtype subtype,
+                                  TFeatIdInt id,
+                                  bool xref) const
+{
+    TFeatIdIndex::const_iterator iter = m_FeatIdIndex.find(subtype);
+    if ( iter == m_FeatIdIndex.end() ) {
+        return;
+    }
+    x_AddFeaturesById(objects, iter->second, id, xref);
+}
+
+
 void CTSE_Info::x_AddAllFeaturesById(TAnnotObjects& objects,
-                                     TFeatId id,
+                                     TFeatIdInt id,
                                      bool xref) const
 {
     //LOG_POST_X(1, this << ": ""x_AddAllFeaturesWithId: " << id);
     ITERATE ( TFeatIdIndex, iter, m_FeatIdIndex ) {
-        const SFeatIdIndex& index = iter->second;
-        if ( !index.m_Chunks.empty() ) {
-            x_LoadChunks(index.m_Chunks);
-        }
-        for ( SFeatIdIndex::TIndex::const_iterator iter2 = index.m_Index.find(id);
-              iter2 != index.m_Index.end() && iter2->first == id; ++iter2 ) {
-            const SFeatIdInfo& info = iter2->second;
-            if ( info.m_Xref == xref ) {
-                if ( info.m_Info->IsChunkStub() ) {
-                    info.m_Info->GetChunk_Info().Load();
-                }
-                else {
-                    objects.push_back(info.m_Info);
-                }
+        x_AddFeaturesById(objects, iter->second, id, xref);
+    }
+}
+
+
+void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
+                                  const SFeatIdIndex& index,
+                                  const TFeatIdStr& id,
+                                  bool xref) const
+{
+    if ( !index.m_Chunks.empty() ) {
+        x_LoadChunks(index.m_Chunks);
+    }
+    if ( !index.m_IndexStr ) {
+        return;
+    }
+    const SFeatIdIndex::TIndexStr& index2 = *index.m_IndexStr;
+    for ( SFeatIdIndex::TIndexStr::const_iterator iter2 = index2.find(id);
+          iter2 != index2.end() && iter2->first == id; ++iter2 ) {
+        const SFeatIdInfo& info = iter2->second;
+        if ( info.m_Xref == xref ) {
+            if ( info.m_IsChunk ) {
+                x_LoadChunk(info.m_ChunkId);
+            }
+            else {
+                objects.push_back(info.m_Info);
             }
         }
     }
 }
 
 
-void CTSE_Info::x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
+void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
+                                  CSeqFeatData::ESubtype subtype,
+                                  const TFeatIdStr& id,
+                                  bool xref) const
+{
+    TFeatIdIndex::const_iterator iter = m_FeatIdIndex.find(subtype);
+    if ( iter == m_FeatIdIndex.end() ) {
+        return;
+    }
+    x_AddFeaturesById(objects, iter->second, id, xref);
+}
+
+
+void CTSE_Info::x_AddAllFeaturesById(TAnnotObjects& objects,
+                                     const TFeatIdStr& id,
+                                     bool xref) const
+{
+    //LOG_POST_X(1, this << ": ""x_AddAllFeaturesWithId: " << id);
+    ITERATE ( TFeatIdIndex, iter, m_FeatIdIndex ) {
+        x_AddFeaturesById(objects, iter->second, id, xref);
+    }
+}
+
+
+CTSE_Info::SFeatIdIndex::TIndexInt&
+CTSE_Info::x_GetFeatIdIndexInt(CSeqFeatData::ESubtype type)
 {
     //LOG_POST_X(2, this << ": ""x_MapFeatById: " << id << " " << xref);
-    SFeatIdIndex::TIndex& index = m_FeatIdIndex[info.GetFeatSubtype()].m_Index;
-    SFeatIdIndex::TIndex::value_type value(id, SFeatIdInfo(xref, &info));
+    SFeatIdIndex& index = m_FeatIdIndex[type];
+    if ( !index.m_IndexInt ) {
+        index.m_IndexInt.reset(new SFeatIdIndex::TIndexInt);
+    }
+    return *index.m_IndexInt;
+}
+
+
+CTSE_Info::SFeatIdIndex::TIndexStr&
+CTSE_Info::x_GetFeatIdIndexStr(CSeqFeatData::ESubtype type)
+{
+    //LOG_POST_X(2, this << ": ""x_MapFeatById: " << id << " " << xref);
+    SFeatIdIndex& index = m_FeatIdIndex[type];
+    if ( !index.m_IndexStr ) {
+        index.m_IndexStr.reset(new SFeatIdIndex::TIndexStr);
+    }
+    return *index.m_IndexStr;
+}
+
+
+void CTSE_Info::x_MapFeatById(TFeatIdInt id,
+                              CAnnotObject_Info& info,
+                              bool xref)
+{
+    //LOG_POST_X(2, this << ": ""x_MapFeatById: " << id << " " << xref);
+    SFeatIdIndex::TIndexInt& index =
+        x_GetFeatIdIndexInt(info.GetFeatSubtype());
+    SFeatIdIndex::TIndexInt::value_type value(id, SFeatIdInfo(xref, &info));
     index.insert(value);
 }
 
 
-void CTSE_Info::x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
+void CTSE_Info::x_UnmapFeatById(TFeatIdInt id,
+                                CAnnotObject_Info& info,
+                                bool xref)
 {
     //LOG_POST_X(3, this << ": ""x_UnmapFeatById: " << id << " " << xref);
-    SFeatIdIndex::TIndex& index = m_FeatIdIndex[info.GetFeatSubtype()].m_Index;
-    for ( SFeatIdIndex::TIndex::iterator iter = index.lower_bound(id);
+    SFeatIdIndex::TIndexInt& index =
+        x_GetFeatIdIndexInt(info.GetFeatSubtype());
+    for ( SFeatIdIndex::TIndexInt::iterator iter = index.lower_bound(id);
           iter != index.end() && iter->first == id; ++iter ) {
         if ( iter->second.m_Info == &info && iter->second.m_Xref == xref ) {
             index.erase(iter);
@@ -1334,6 +1412,62 @@ void CTSE_Info::x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
         }
     }
     _ASSERT("x_UnmapFeatById: not found" && 0);
+}
+
+
+void CTSE_Info::x_MapFeatById(const TFeatIdStr& id,
+                              CAnnotObject_Info& info,
+                              bool xref)
+{
+    //LOG_POST_X(2, this << ": ""x_MapFeatById: " << id << " " << xref);
+    SFeatIdIndex::TIndexStr& index =
+        x_GetFeatIdIndexStr(info.GetFeatSubtype());
+    SFeatIdIndex::TIndexStr::value_type value(id, SFeatIdInfo(xref, &info));
+    index.insert(value);
+}
+
+
+void CTSE_Info::x_UnmapFeatById(const TFeatIdStr& id,
+                                CAnnotObject_Info& info,
+                                bool xref)
+{
+    //LOG_POST_X(3, this << ": ""x_UnmapFeatById: " << id << " " << xref);
+    SFeatIdIndex::TIndexStr& index =
+        x_GetFeatIdIndexStr(info.GetFeatSubtype());
+    for ( SFeatIdIndex::TIndexStr::iterator iter = index.lower_bound(id);
+          iter != index.end() && iter->first == id; ++iter ) {
+        if ( iter->second.m_Info == &info && iter->second.m_Xref == xref ) {
+            index.erase(iter);
+            return;
+        }
+    }
+    _ASSERT("x_UnmapFeatById: not found" && 0);
+}
+
+
+void CTSE_Info::x_MapFeatById(const TFeatId& id,
+                              CAnnotObject_Info& info,
+                              bool xref)
+{
+    if ( id.IsId() ) {
+        x_MapFeatById(id.GetId(), info, xref);
+    }
+    else {
+        x_MapFeatById(id.GetStr(), info, xref);
+    }
+}
+
+
+void CTSE_Info::x_UnmapFeatById(const TFeatId& id,
+                                CAnnotObject_Info& info,
+                                bool xref)
+{
+    if ( id.IsId() ) {
+        x_UnmapFeatById(id.GetId(), info, xref);
+    }
+    else {
+        x_UnmapFeatById(id.GetStr(), info, xref);
+    }
 }
 
 
@@ -1361,18 +1495,18 @@ void CTSE_Info::x_UnmapFeatByLocus(const string& locus, bool tag,
 }
 
 
-void CTSE_Info::x_MapChunkByFeatId(TFeatId id,
+void CTSE_Info::x_MapChunkByFeatId(TFeatIdInt id,
                                    CSeqFeatData::ESubtype subtype,
                                    TChunkId chunk_id,
                                    bool xref)
 {
-    SFeatIdIndex::TIndex& index = m_FeatIdIndex[subtype].m_Index;
-    SFeatIdIndex::TIndex::value_type value(id, SFeatIdInfo(xref, chunk_id));
+    SFeatIdIndex::TIndexInt& index = x_GetFeatIdIndexInt(subtype);
+    SFeatIdIndex::TIndexInt::value_type value(id, SFeatIdInfo(xref, chunk_id));
     index.insert(value);
 }
 
 
-void CTSE_Info::x_MapChunkByFeatId(TFeatId id,
+void CTSE_Info::x_MapChunkByFeatId(TFeatIdInt id,
                                    CSeqFeatData::E_Choice type,
                                    TChunkId chunk_id,
                                    bool xref)
@@ -1387,7 +1521,7 @@ void CTSE_Info::x_MapChunkByFeatId(TFeatId id,
 }
 
 
-void CTSE_Info::x_MapChunkByFeatId(TFeatId feat_id,
+void CTSE_Info::x_MapChunkByFeatId(TFeatIdInt feat_id,
                                    const SAnnotTypeSelector& type,
                                    TChunkId chunk_id,
                                    bool xref)
@@ -1397,6 +1531,88 @@ void CTSE_Info::x_MapChunkByFeatId(TFeatId feat_id,
     }
     else {
         x_MapChunkByFeatId(feat_id, type.GetFeatType(), chunk_id, xref);
+    }
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatIdStr& id,
+                                   CSeqFeatData::ESubtype subtype,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    SFeatIdIndex::TIndexStr& index = x_GetFeatIdIndexStr(subtype);
+    SFeatIdIndex::TIndexStr::value_type value(id, SFeatIdInfo(xref, chunk_id));
+    index.insert(value);
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatIdStr& id,
+                                   CSeqFeatData::E_Choice type,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    CAnnotType_Index::TIndexRange range =
+        CAnnotType_Index::GetFeatTypeRange(type);
+    for ( size_t index = range.first; index < range.second; ++index ) {
+        CSeqFeatData::ESubtype subtype =
+            CAnnotType_Index::GetSubtypeForIndex(index);
+        x_MapChunkByFeatId(id, subtype, chunk_id, xref);
+    }
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatIdStr& feat_id,
+                                   const SAnnotTypeSelector& type,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    if ( type.GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
+        x_MapChunkByFeatId(feat_id, type.GetFeatSubtype(), chunk_id, xref);
+    }
+    else {
+        x_MapChunkByFeatId(feat_id, type.GetFeatType(), chunk_id, xref);
+    }
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatId& id,
+                                   CSeqFeatData::ESubtype subtype,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    if ( id.IsId() ) {
+        x_MapChunkByFeatId(id.GetId(), subtype, chunk_id, xref);
+    }
+    else {
+        x_MapChunkByFeatId(id.GetStr(), subtype, chunk_id, xref);
+    }
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatId& id,
+                                   CSeqFeatData::E_Choice type,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    if ( id.IsId() ) {
+        x_MapChunkByFeatId(id.GetId(), type, chunk_id, xref);
+    }
+    else {
+        x_MapChunkByFeatId(id.GetStr(), type, chunk_id, xref);
+    }
+}
+
+
+void CTSE_Info::x_MapChunkByFeatId(const TFeatId& feat_id,
+                                   const SAnnotTypeSelector& type,
+                                   TChunkId chunk_id,
+                                   bool xref)
+{
+    if ( feat_id.IsId() ) {
+        x_MapChunkByFeatId(feat_id.GetId(), type, chunk_id, xref);
+    }
+    else {
+        x_MapChunkByFeatId(feat_id.GetStr(), type, chunk_id, xref);
     }
 }
 
@@ -1435,7 +1651,7 @@ void CTSE_Info::x_MapChunkByFeatType(const SAnnotTypeSelector& type,
 
 CTSE_Info::TAnnotObjects
 CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
-                             TFeatId id,
+                             TFeatIdInt id,
                              bool xref) const
 {
     UpdateAnnotIndex();
@@ -1452,7 +1668,7 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
 
 CTSE_Info::TAnnotObjects
 CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
-                             TFeatId id,
+                             TFeatIdInt id,
                              bool xref) const
 {
     UpdateAnnotIndex();
@@ -1468,6 +1684,78 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
                 CAnnotType_Index::GetSubtypeForIndex(index);
             x_AddFeaturesById(objects, subtype, id, xref);
         }
+    }
+    return objects;
+}
+
+
+CTSE_Info::TAnnotObjects
+CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
+                             const TFeatIdStr& id,
+                             bool xref) const
+{
+    UpdateAnnotIndex();
+    TAnnotObjects objects;
+    if ( subtype == CSeqFeatData::eSubtype_any ) {
+        x_AddAllFeaturesById(objects, id, xref);
+    }
+    else {
+        x_AddFeaturesById(objects, subtype, id, xref);
+    }
+    return objects;
+}
+
+
+CTSE_Info::TAnnotObjects
+CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
+                             const TFeatIdStr& id,
+                             bool xref) const
+{
+    UpdateAnnotIndex();
+    TAnnotObjects objects;
+    if ( type == CSeqFeatData::e_not_set ) {
+        x_AddAllFeaturesById(objects, id, xref);
+    }
+    else {
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetFeatTypeRange(type);
+        for ( size_t index = range.first; index < range.second; ++index ) {
+            CSeqFeatData::ESubtype subtype =
+                CAnnotType_Index::GetSubtypeForIndex(index);
+            x_AddFeaturesById(objects, subtype, id, xref);
+        }
+    }
+    return objects;
+}
+
+
+CTSE_Info::TAnnotObjects
+CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
+                             const TFeatId& id,
+                             bool xref) const
+{
+    TAnnotObjects objects;
+    if ( id.IsId() ) {
+        x_GetFeaturesById(subtype, id.GetId(), xref).swap(objects);
+    }
+    else {
+        x_GetFeaturesById(subtype, id.GetStr(), xref).swap(objects);
+    }
+    return objects;
+}
+
+
+CTSE_Info::TAnnotObjects
+CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
+                             const TFeatId& id,
+                             bool xref) const
+{
+    TAnnotObjects objects;
+    if ( id.IsId() ) {
+        x_GetFeaturesById(type, id.GetId(), xref).swap(objects);
+    }
+    else {
+        x_GetFeaturesById(type, id.GetStr(), xref).swap(objects);
     }
     return objects;
 }
