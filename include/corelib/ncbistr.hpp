@@ -1928,7 +1928,7 @@ public:
         }
     }
 
-    /// Constructor from a C++ string
+    /// Constructor from a C/C++ string
     ///
     /// @param src
     ///   Source string
@@ -1936,23 +1936,7 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
-    CStringUTF8(const string& src,
-                EEncoding encoding = eEncoding_ISO8859_1,
-                EValidate validate = eNoValidate)
-        : string()
-    {
-        x_Append(src.c_str(), encoding, validate);
-    }
-
-    /// Constructor from a C string
-    ///
-    /// @param src
-    ///   Source zero-terminated character buffer
-    /// @param encoding
-    ///   Character encoding of the source string
-    /// @param validate
-    ///   Verify the character encoding of the source
-    CStringUTF8(const char* src,
+    CStringUTF8(const CTempString& src,
                 EEncoding encoding = eEncoding_ISO8859_1,
                 EValidate validate = eNoValidate)
         : string()
@@ -2030,7 +2014,7 @@ public:
         return *this;
     }
 
-    /// Assign to C++ string
+    /// Assign to C/C++ string
     ///
     /// @param src
     ///   Source string
@@ -2038,24 +2022,7 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
-    CStringUTF8& Assign(const string& src,
-                        EEncoding encoding,
-                        EValidate validate = eNoValidate)
-    {
-        erase();
-        x_Append(src.c_str(), encoding, validate);
-        return *this;
-    }
-
-    /// Assign to C string
-    ///
-    /// @param src
-    ///   Source zero-terminated character buffer
-    /// @param encoding
-    ///   Character encoding of the source string
-    /// @param validate
-    ///   Verify the character encoding of the source
-    CStringUTF8& Assign(const char* src,
+    CStringUTF8& Assign(const CTempString& src,
                         EEncoding encoding,
                         EValidate validate = eNoValidate)
     {
@@ -2104,7 +2071,7 @@ public:
         return *this;
     }
 
-    /// Append a C++ string
+    /// Append a C/C++ string
     ///
     /// @param src
     ///   Source string
@@ -2112,23 +2079,7 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
-    CStringUTF8& Append(const string& src,
-                        EEncoding encoding,
-                        EValidate validate = eNoValidate)
-    {
-        x_Append(src.c_str(), encoding, validate);
-        return *this;
-    }
-
-    /// Append a C string
-    ///
-    /// @param src
-    ///   Source zero-terminated character buffer
-    /// @param encoding
-    ///   Character encoding of the source string
-    /// @param validate
-    ///   Verify the character encoding of the source
-    CStringUTF8& Append(const char* src,
+    CStringUTF8& Append(const CTempString& src,
                         EEncoding encoding,
                         EValidate validate = eNoValidate)
     {
@@ -2197,7 +2148,7 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid symbols (no exception thrown)
-    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size);
     
     /// Get the number of valid UTF-8 bytes (code units) in the buffer
     ///
@@ -2207,7 +2158,7 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid bytes (no exception thrown)
-    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size);
 
     /// Check that the character encoding of the string is valid UTF-8
     ///
@@ -2273,28 +2224,16 @@ public:
         return x_AsBasicString<TCharUCS2>(substitute_on_error);
     }
 
-    /// Guess the encoding of the C string
+    /// Guess the encoding of the C/C++ string
     ///
     /// It can distinguish between UTF-8, Latin1, and Win1252 only
     /// @param src
     ///   Source zero-terminated character buffer
     /// @return
     ///   Encoding
-    static EEncoding GuessEncoding( const char* src);
+    static EEncoding GuessEncoding( const CTempString& src);
 
-    /// Guess the encoding of the C++ string
-    ///
-    /// It can distinguish between UTF-8, Latin1, and Win1252 only
-    /// @param src
-    ///   Source string
-    /// @return
-    ///   Encoding
-    static EEncoding GuessEncoding( const string& src)
-    {
-        return GuessEncoding( src.c_str());
-    }
-
-    /// Check the encoding of the C string
+    /// Check the encoding of the C/C++ string
     ///
     /// Check that the encoding of the source is the same, or
     /// is compatible with the specified one
@@ -2304,22 +2243,7 @@ public:
     ///   Character encoding form to check against
     /// @return
     ///   Boolean result: encoding is same or compatible
-    static bool MatchEncoding( const char* src, EEncoding encoding);
-
-    /// Check the encoding of the C++ string
-    ///
-    /// Check that the encoding of the source is the same, or
-    /// is compatible with the specified one
-    /// @param src
-    ///   Source string
-    /// @param encoding
-    ///   Character encoding form to check against
-    /// @return
-    ///   Boolean result: encoding is same or compatible
-    static bool MatchEncoding( const string& src, EEncoding encoding)
-    {
-        return MatchEncoding( src.c_str(), encoding);
-    }
+    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
     
     /// Convert encoded character into UTF16
     ///
@@ -2384,9 +2308,12 @@ private:
     /// Convert Unicode code point into UTF8 and append
     void   x_AppendChar(TUnicodeSymbol ch);
     /// Convert coded character sequence into UTF8 and append
-    void   x_Append(const char* src,
+    void   x_Append(const CTempString& src,
                     EEncoding encoding = eEncoding_ISO8859_1,
                     EValidate validate = eNoValidate);
+
+    template <typename TChar>
+    TUnicodeSymbol x_TCharToSymbol(TChar ch);
 
     /// Convert Unicode character sequence into UTF8 and append
     /// Sequence can be in UCS-4 (TChar == (U)Int4), UCS-2 (TChar == (U)Int2)
@@ -3473,20 +3400,31 @@ basic_string<TChar> CStringUTF8::x_AsBasicString(
 
 template <typename TChar>
 inline
+TUnicodeSymbol CStringUTF8::x_TCharToSymbol(TChar ch)
+{
+    if (ch < 0) {
+        return 1 + (TUnicodeSymbol)(numeric_limits<TChar>::max()) +
+              (TUnicodeSymbol)(ch - numeric_limits<TChar>::min());
+    }
+    return ch;
+}
+
+template <typename TChar>
+inline
 void CStringUTF8::x_Append(const TChar* src)
 {
     const TChar* srcBuf;
     SIZE_TYPE needed = 0;
 
     for (srcBuf = src; *srcBuf; ++srcBuf) {
-        needed += x_BytesNeeded( *srcBuf );
+        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
     }
     if ( !needed ) {
         return;
     }
     reserve(max(capacity(),length()+needed+1));
     for (srcBuf = src; *srcBuf; ++srcBuf) {
-        x_AppendChar( *srcBuf );
+        x_AppendChar( x_TCharToSymbol(*srcBuf) );
     }
 }
 

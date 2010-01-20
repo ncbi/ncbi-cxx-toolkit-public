@@ -3196,14 +3196,16 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
 }
 
 
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
-    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
+    CTempString::const_iterator i = src.begin();
+    CTempString::const_iterator end = src.end();
+    for (; cur_size < buf_size && i != end; ++i, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
-        bool good = x_EvalFirst(*src, more);
+        bool good = x_EvalFirst(*i, more);
         while (more-- && good && ++cur_size < buf_size) {
-            good = x_EvalNext(*(++src));
+            good = x_EvalNext(*(++i));
         }
         if ( !good ) {
             return count;
@@ -3213,16 +3215,18 @@ SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 }
 
 
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0;
     SIZE_TYPE cur_size = 0;
+    CTempString::const_iterator i = src.begin();
+    CTempString::const_iterator end = src.end();
 
-    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
+    for (; cur_size < buf_size && i != end; ++i, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
-        bool good = x_EvalFirst(*src, more);
+        bool good = x_EvalFirst(*i, more);
         while (more-- && good && cur_size < buf_size) {
-            good = x_EvalNext(*(++src));
+            good = x_EvalNext(*(++i));
             if (good) {
                 ++cur_size;
             }
@@ -3257,12 +3261,14 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding,
 }
 
 
-EEncoding CStringUTF8::GuessEncoding( const char* src)
+EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
 {
     SIZE_TYPE more = 0;
+    CTempString::const_iterator i = src.begin();
+    CTempString::const_iterator end = src.end();
     bool cp1252, iso1, ascii, utf8;
-    for (cp1252 = iso1 = ascii = utf8 = true; *src; ++src) {
-        Uint1 ch = *src;
+    for (cp1252 = iso1 = ascii = utf8 = true; i != end; ++i) {
+        Uint1 ch = *i;
         bool skip = false;
         if (more != 0) {
             if (x_EvalNext(ch)) {
@@ -3304,7 +3310,7 @@ EEncoding CStringUTF8::GuessEncoding( const char* src)
 }
 
 
-bool CStringUTF8::MatchEncoding( const char* src, EEncoding encoding)
+bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
 {
     bool matches = false;
     EEncoding enc_src = GuessEncoding(src);
@@ -3417,7 +3423,7 @@ void CStringUTF8::x_AppendChar(TUnicodeSymbol c)
 }
 
 
-void CStringUTF8::x_Append(const char* src,
+void CStringUTF8::x_Append(const CTempString& src,
                            EEncoding encoding, EValidate validate)
 {
     if (encoding == eEncoding_Unknown) {
@@ -3437,17 +3443,18 @@ void CStringUTF8::x_Append(const char* src,
         return;
     }
 
-    const char* srcBuf;
     SIZE_TYPE needed = 0;
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
-        needed += x_BytesNeeded( CharToSymbol( *srcBuf,encoding ) );
+    CTempString::const_iterator i;
+    CTempString::const_iterator end = src.end();
+    for (i = src.begin(); i != end; ++i) {
+        needed += x_BytesNeeded( CharToSymbol( *i,encoding ) );
     }
     if ( !needed ) {
         return;
     }
     reserve(max(capacity(),length()+needed+1));
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
-        x_AppendChar( CharToSymbol( *srcBuf, encoding ) );
+    for (i = src.begin(); i != end; ++i) {
+        x_AppendChar( CharToSymbol( *i, encoding ) );
     }
 }
 
