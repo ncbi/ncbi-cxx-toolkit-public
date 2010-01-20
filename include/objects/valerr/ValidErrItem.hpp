@@ -257,6 +257,7 @@ enum EErrType {
     eErr_SEQ_PKG_GPSnonGPSPackaging,
     eErr_SEQ_PKG_RefSeqPopSet,
 	eErr_SEQ_PKG_BioseqSetClassNotSet,
+    eErr_SEQ_PKG_OrphanedProtein,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,

@@ -833,6 +833,44 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         }
     }
 
+    // look for orphaned proteins
+    if (seq.IsAa() && !GetNucProtSetParent(bsh)) {
+        bool is_genbank = false;
+        bool is_embl = false;
+        bool is_ddbj = false;
+        bool is_refseq = false;
+        bool is_gibbmt = false;
+        bool is_gibbsq = false;
+        FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+            switch ((*id_it)->Which()) {
+                case CSeq_id::e_Genbank:
+                    is_genbank = true;
+                    break;
+                case CSeq_id::e_Embl:
+                    is_embl = true;
+                    break;
+                case CSeq_id::e_Ddbj:
+                    is_ddbj = true;
+                    break;
+                case CSeq_id::e_Other:
+                    is_refseq = true;
+                    break;
+                case CSeq_id::e_Gibbmt:
+                    is_gibbmt = true;
+                    break;
+                case CSeq_id::e_Gibbsq:
+                    is_gibbsq = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if ((is_genbank || is_embl || is_ddbj || is_refseq)
+            && !is_gibbmt && !is_gibbsq) {
+            PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
+                    "Orphaned stand-alone protein", seq);
+        }
+    }
 }
 
 

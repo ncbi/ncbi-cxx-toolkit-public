@@ -321,7 +321,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
 }
 
 
-CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set)
+CBioseq_set_Handle GetSetParent (CBioseq_set_Handle set, CBioseq_set::TClass set_class)
 {
     CBioseq_set_Handle gps;
 
@@ -332,30 +332,47 @@ CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set)
         return gps;
     } else if (!parent.IsSet()) {
         return gps;
-    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == set_class) {
         return parent.GetSet();
     } else {
-        return GetGenProdSetParent (parent.GetSet());
+        return GetSetParent (parent.GetSet(), set_class);
     }    
 }
 
 
-CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle bioseq)
+CBioseq_set_Handle GetSetParent (CBioseq_Handle bioseq, CBioseq_set::TClass set_class)
 {
-    CBioseq_set_Handle gps;
+    CBioseq_set_Handle set;
 
     CSeq_entry_Handle parent = bioseq.GetParentEntry();
     if (!parent) {
-        return gps;
+        return set;
     } else if (!(parent = parent.GetParentEntry())) {
-        return gps;
+        return set;
     } else if (!parent.IsSet()) {
-        return gps;
-    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+        return set;
+    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == set_class) {
         return parent.GetSet();
     } else {
-        return GetGenProdSetParent (parent.GetSet());
+        return GetSetParent (parent.GetSet(), set_class);
     }
+}
+
+
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set)
+{
+    return GetSetParent (set, CBioseq_set::eClass_gen_prod_set);
+}
+
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle bioseq)
+{
+    return GetSetParent(bioseq, CBioseq_set::eClass_gen_prod_set);
+}
+
+
+CBioseq_set_Handle GetNucProtSetParent (CBioseq_Handle bioseq)
+{
+    return GetSetParent(bioseq, CBioseq_set::eClass_nuc_prot);
 }
 
 

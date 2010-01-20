@@ -781,12 +781,13 @@ bool CValidError_imp::Validate
     }
 
     Setup(seh);
- 
+
     // Get first CBioseq object pointer for PostErr below.
     CTypeConstIterator<CBioseq> seq(ConstBegin(*m_TSE));
     if (!seq) {
-        ERR_POST_X(3, "No Bioseq anywhere on this Seq-entry");
-        return false;
+        PostErr(eDiag_Error, eErr_SEQ_PKG_NoBioseqFound,
+                  "No Bioseqs in this entire record.", seh.GetCompleteSeq_entry()->GetSet());
+        return true;
     }
 
     // If m_NonASCII is true, then this flag was set by the caller
@@ -804,8 +805,6 @@ bool CValidError_imp::Validate
 
     // Iterate thru components of record and validate each
 
-    // before validating, need to know if we have insd seq in seq-entry
-    m_IsINSDInSep = false;
     // also want to know if we have gi
     bool has_gi = false;
     // also want to know if there are any nucleotide sequences
@@ -815,14 +814,7 @@ bool CValidError_imp::Validate
          bi && (!m_IsINSDInSep || !has_gi || !has_nucleotide_sequence);
          ++bi) {
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
-            if ((*it)->IsGenbank()
-                || (*it)->IsEmbl()
-                || (*it)->IsDdbj()
-                || (*it)->IsTpg()
-                || (*it)->IsTpe()
-                || (*it)->IsTpd()) {
-                m_IsINSDInSep = true;
-            } else if ((*it)->IsGi()) {
+            if ((*it)->IsGi()) {
                 has_gi = true;
             }
         }
@@ -2067,10 +2059,12 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                 case CSeq_id::e_Giim:
                     break;
                 case CSeq_id::e_Genbank:
+                    m_IsINSDInSep = true;
                     m_IsGB = true;
                     m_IsGED = true;
                     break;
                 case CSeq_id::e_Embl:
+                    m_IsINSDInSep = true;
                     m_IsGED = true;
                     m_IsEmbl = true;
                     break;
@@ -2116,6 +2110,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     m_IsGI = true;
                     break;
                 case CSeq_id::e_Ddbj:
+                    m_IsINSDInSep = true;
                     m_IsGED = true;
                     m_IsDdbj = true;
                     break;
@@ -2125,10 +2120,13 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     m_IsPDB = true;
                     break;
                 case CSeq_id::e_Tpg:
+                    m_IsINSDInSep = true;
                     break;
                 case CSeq_id::e_Tpe:
+                    m_IsINSDInSep = true;
                     break;
                 case CSeq_id::e_Tpd:
+                    m_IsINSDInSep = true;
                     break;
                 default:
                     break;

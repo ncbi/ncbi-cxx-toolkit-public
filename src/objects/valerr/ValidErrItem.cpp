@@ -683,6 +683,9 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_BioseqSetClassNotSet,
    TErrStrs ("BioseqSetClassNotSet",
 "The BioseqSet class field is not set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_OrphanedProtein,
+   TErrStrs ("OrphanedProtein",
+"The Bioseq is an INSD or RefSeq protein erroneously not in a nuc-prot set.")),
 
 /* SEQ_FEAT */
 

@@ -975,6 +975,24 @@ static void MakeSeqLong(CBioseq& seq)
 }
 
 
+static void SetBiomol (CRef<CSeq_entry> entry, CMolInfo::TBiomol biomol)
+{
+    bool found = false;
+
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            (*it)->SetMolinfo().SetBiomol(biomol);
+            found = true;
+        }
+    }
+    if (!found) {
+        CRef<CSeqdesc> mdesc(new CSeqdesc());
+        mdesc->SetMolinfo().SetBiomol(biomol);
+        entry->SetSeq().SetDescr().Set().push_back(mdesc);
+    }
+}
+
+
 static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
 {
     CRef<CSeq_annot> annot;
@@ -1093,6 +1111,82 @@ static CRef<CSeq_entry> BuildGoodNucProtSet(void)
     AddGoodSource (set_entry);
     AddGoodPub(set_entry);
     return set_entry;
+}
+
+
+static void ChangeId(CRef<CSeq_annot> annot, string suffix)
+{
+    if (annot && annot->IsFtable()) {
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        while (it != annot->SetData().SetFtable().end()) {
+            (*it)->SetLocation().SetInt().SetId().SetLocal().SetStr().append(suffix);
+            if ((*it)->IsSetProduct()) {
+                (*it)->SetProduct().SetWhole().SetLocal().SetStr().append(suffix);
+            }
+            ++it;
+        }
+    }
+}
+
+
+static void ChangeId(CRef<CSeq_entry> entry, string suffix)
+{
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetId().front()->SetLocal().SetStr().append(suffix);
+        if (entry->SetSeq().IsSetAnnot()) {
+            CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
+            while (annot_it != entry->SetSeq().SetAnnot().end()) {
+                ChangeId(*annot_it, suffix);
+                ++annot_it;
+            }
+        }
+    } else if (entry->IsSet()) {
+        CBioseq_set::TSeq_set::iterator it = entry->SetSet().SetSeq_set().begin();
+        while (it != entry->SetSet().SetSeq_set().end()) {
+            ChangeId(*it, suffix);
+            ++it;
+        }
+        if (entry->SetSet().IsSetAnnot()) {
+            CBioseq_set::TAnnot::iterator annot_it = entry->SetSet().SetAnnot().begin();
+            while (annot_it != entry->SetSet().SetAnnot().end()) {
+                ChangeId(*annot_it, suffix);
+                ++annot_it;
+            }
+        }
+    }
+}
+
+
+static CRef<CSeq_entry> BuildGoodGenProdSet()
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_gen_prod_set);
+    CRef<CSeq_entry> contig = BuildGoodSeq();
+    contig->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    contig->SetSeq().SetInst().SetLength(60);
+    entry->SetSet().SetSeq_set().push_back (contig);
+    CRef<CSeq_entry> np = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = np->SetSet().SetSeq_set().front();
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAA");
+    nuc->SetSeq().SetInst().SetLength(27);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+    entry->SetSet().SetSeq_set().push_back (np);
+    CRef<CSeq_annot> annot = np->SetSet().SetAnnot().front();
+    contig->SetSeq().SetAnnot().push_back(annot);
+    np->SetSet().SetAnnot().pop_front();
+    CRef<CSeq_feat> cds = annot->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    CRef<CSeq_feat> mrna(new CSeq_feat());
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetData().SetRna().SetExt().SetName("fake protein name");
+    mrna->SetLocation().SetInt().SetFrom(0);
+    mrna->SetLocation().SetInt().SetTo(26);
+    mrna->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    mrna->SetProduct().SetWhole().SetLocal().SetStr("nuc");
+    AddFeat (mrna, contig);
+
+    return entry;
 }
 
 
@@ -1217,24 +1311,6 @@ static void AddToDeltaSeq(CRef<CSeq_entry> entry, string seq)
 }
 
 
-static void SetBiomol (CRef<CSeq_entry> entry, CMolInfo::TBiomol biomol)
-{
-    bool found = false;
-
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().SetBiomol(biomol);
-            found = true;
-        }
-    }
-    if (!found) {
-        CRef<CSeqdesc> mdesc(new CSeqdesc());
-        mdesc->SetMolinfo().SetBiomol(biomol);
-        entry->SetSeq().SetDescr().Set().push_back(mdesc);
-    }
-}
-
-
 static CRef<CSeq_entry> BuildSegSetPart(string id_str)
 {
     CRef<CSeq_entry> part(new CSeq_entry());
@@ -1309,6 +1385,24 @@ static CRef<CSeq_entry> BuildGoodSegSet(void)
 }
 
 
+static CRef<CSeq_entry> BuildGoodEcoSet()
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+    CRef<CSeq_entry> seq1 = BuildGoodSeq();
+    ChangeId(seq1, "1");
+    CRef<CSeq_entry> seq2 = BuildGoodSeq();
+    ChangeId(seq2, "2");
+    CRef<CSeq_entry> seq3 = BuildGoodSeq();
+    ChangeId(seq3, "3");
+    entry->SetSet().SetSeq_set().push_back(seq1);
+    entry->SetSet().SetSeq_set().push_back(seq2);
+    entry->SetSet().SetSeq_set().push_back(seq3);
+
+    return entry;
+}
+
+
 static CRef<CSeq_align> BuildGoodAlign()
 {
     CRef<CSeq_align> align(new CSeq_align());
@@ -1329,6 +1423,20 @@ static CRef<CSeq_align> BuildGoodAlign()
     align->SetSegs().SetDenseg().SetLens().push_back(812);
 
     return align;
+}
+
+
+static CRef<CSeq_annot> BuildGoodGraphAnnot(string id)
+{
+    CRef<CSeq_graph> graph(new CSeq_graph());
+    graph->SetLoc().SetInt().SetFrom(0);
+    graph->SetLoc().SetInt().SetTo(10);
+    graph->SetLoc().SetInt().SetId().SetLocal().SetStr(id);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetGraph().push_back(graph);
+
+    return annot;
 }
 
 
@@ -2885,13 +2993,46 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
 }
 
 
+static void ChangeNucId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
+{
+    if (!np_set || !np_set->IsSet()) {
+        return;
+    }
+
+    CRef<CSeq_entry> nuc_entry = np_set->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    nuc_entry->SetSeq().SetId().front()->Assign(*id);
+    cds->SetLocation().SetInt().SetId().Assign(*id);
+}
+
+
+static void ChangeProtId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
+{
+    if (!np_set || !np_set->IsSet()) {
+        return;
+    }
+
+    CRef<CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    prot_entry->SetSeq().SetId().front()->Assign(*id);
+    prot_feat->SetLocation().SetInt().SetId().Assign(*id);
+    cds->SetProduct().SetWhole().Assign(*id);
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 {
-    CRef<CSeq_entry> nuc_entry = BuildGoodSeq();
-    CRef<CSeq_entry> prot_entry = BuildGoodProtSeq();
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc_entry = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
     CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
 
-    STANDARD_SETUP_NAME(prot_entry)
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("",eDiag_Error, "BadSeqIdFormat", "Bad accession"));
 
@@ -2926,6 +3067,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     good_prot_ids.push_back("ABC12345");
 
 
+    CRef<CSeq_id> good_nuc_id(new CSeq_id());
+    good_nuc_id->SetLocal().SetStr("nuc");
+    CRef<CSeq_id> good_prot_id(new CSeq_id());
+    good_prot_id->SetLocal().SetStr("prot");
+
+    CRef<CSeq_id> bad_id(new CSeq_id());
+
     // bad for both
     for (vector<string>::iterator id_it = bad_ids.begin();
          id_it != bad_ids.end();
@@ -2939,41 +3087,46 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         }
 
         //GenBank
-        scope.RemoveTopLevelSeqEntry(seh);
-        nuc_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+        bad_id->SetGenbank().SetAccession(id_str);
+        scope.RemoveTopLevelSeqEntry(seh);       
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
         // EMBL
+        bad_id->SetEmbl().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
-        nuc_entry->SetSeq().SetId().front()->SetEmbl().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetEmbl().SetAccession(id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetEmbl().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
         // DDBJ
         scope.RemoveTopLevelSeqEntry(seh);
-        nuc_entry->SetSeq().SetId().front()->SetDdbj().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetDdbj().SetAccession(id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetDdbj().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
@@ -2988,11 +3141,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
          id_it != bad_nuc_ids.end();
          ++id_it) {
         string id_str = *id_it;
+        bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
-        nuc_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
         expected_errors[0]->SetAccession(id_str);
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
-        seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
     }
@@ -3002,12 +3157,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
          id_it != bad_prot_ids.end();
          ++id_it) {
         string id_str = *id_it;
+        bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
         expected_errors[0]->SetAccession(id_str);
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
     }
@@ -3019,15 +3175,17 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
          id_it != good_ids.end();
          ++id_it) {
         string id_str = *id_it;
+        bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
-        nuc_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
@@ -3038,20 +3196,23 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
          id_it != good_prot_ids.end();
          ++id_it) {
         string id_str = *id_it;
+        bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
-        prot_entry->SetSeq().SetId().front()->SetGenbank().SetAccession(id_str);
-        prot_feat->SetLocation().SetInt().SetId().SetGenbank().SetAccession(id_str);
-        seh = scope.AddTopLevelSeqEntry(*prot_entry);
+        ChangeNucId(entry, good_nuc_id);
+        ChangeProtId(entry, bad_id);
+        seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
     }
 
     // if GI, needs version
     scope.RemoveTopLevelSeqEntry(seh);
-    nuc_entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    bad_id->SetGenbank().SetAccession("AY123456");
+    ChangeNucId(entry, bad_id);
+    ChangeProtId(entry, good_prot_id);
     CRef<CSeq_id> gi_id(new CSeq_id("gi|21914627"));
     nuc_entry->SetSeq().SetId().push_back(gi_id);
-    seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     expected_errors.push_back (new CExpectedError ("AY123456", eDiag_Critical, "BadSeqIdFormat", 
                                                    "Accession AY123456 has 0 version"));
@@ -3063,8 +3224,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 
     // id that is too long
     scope.RemoveTopLevelSeqEntry(seh);
-    nuc_entry->SetSeq().SetId().front()->SetLocal().SetStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678901234");
-    seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+    bad_id->SetLocal().SetStr("ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678901234");
+    ChangeNucId(entry, bad_id);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3073,13 +3235,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     // shouldn't report if ncbifile ID
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_id> ncbifile(new CSeq_id("gnl|NCBIFILE|ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678901234"));
-    nuc_entry->SetSeq().SetId().front()->SetLocal().SetStr("good");
+    ChangeNucId(entry, good_nuc_id);
     nuc_entry->SetSeq().SetId().push_back(ncbifile);
-    seh = scope.AddTopLevelSeqEntry(*nuc_entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     nuc_entry->SetSeq().SetId().pop_back();
-
 
 }
 
@@ -8032,13 +8193,19 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrganismInTitle)
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry = BuildGoodProtSeq();
-    entry->SetSeq().SetId().front()->SetOther().SetAccession("NP_123456");
-    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetOther().SetAccession("NP_123456");
-    SetTitle(entry, "Something that does not end with organism");
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_id> other_id(new CSeq_id());
+    other_id->SetOther().SetAccession("NP_123456");
+    ChangeProtId (entry, other_id);
+    SetTitle(entry->SetSet().SetSeq_set().back(), "Something that does not end with organism");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    
     expected_errors[0]->SetAccession("NP_123456");
-    expected_errors[0]->SetErrMsg("RefSeq protein title does not end with organism name");
+    expected_errors[0]->SetErrCode("InconsistentProteinTitle");
+    expected_errors[0]->SetErrMsg("Instantiated protein title does not match automatically generated title");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("NP_123456", eDiag_Error, "NoOrganismInTitle",
+                                                 "RefSeq protein title does not end with organism name"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -9527,6 +9694,315 @@ BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
     scope.RemoveTopLevelSeqEntry(seh);
     AddMiscFeature(parts_set, "master");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodGenProdSet();
+    CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
+
+    CRef<CSeq_entry> stray = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = stray->SetSet().SetSeq_set().front();
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAA");
+    nuc->SetSeq().SetInst().SetLength(27);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
+
+    ChangeId(stray, "2");
+    entry->SetSet().SetSeq_set().push_back(stray);
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetLocation().SetInt().SetFrom(30);
+    cds->SetLocation().SetInt().SetTo(56);
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    cds->SetProduct().SetWhole().SetLocal().SetStr("prot2");
+    AddFeat(cds, contig);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc2", eDiag_Warning, "GenomicProductPackagingProblem",
+                                                 "Nucleotide bioseq should be product of mRNA feature on contig, but is not"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    // take CDS away and add mrna - that way protein is orphan, nucleotide is product
+    contig->SetSeq().SetAnnot().front()->SetData().SetFtable().pop_back();
+
+    CRef<CSeq_feat> mrna (new CSeq_feat());
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetData().SetRna().SetExt().SetName("fake protein name");
+    mrna->SetLocation().SetInt().SetFrom(30);
+    mrna->SetLocation().SetInt().SetTo(56);
+    mrna->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    mrna->SetProduct().SetWhole().SetLocal().SetStr("nuc2");
+    AddFeat(mrna, contig);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("prot2");
+    expected_errors[0]->SetErrMsg("Protein bioseq should be product of CDS feature on contig, but is not");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // put CDS back, move annotation to gen-prod-set
+    scope.RemoveTopLevelSeqEntry(seh);
+    contig->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(cds);
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetLocation().SetInt().SetFrom(30);
+    gene->SetLocation().SetInt().SetTo(56);
+    gene->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    gene->SetData().SetGene().SetLocus("gene locus");
+    AddFeat(gene, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Critical);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetErrMsg("Seq-annot packaged directly on genomic product set");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetAnnot();
+    CRef<CSeq_feat> mrna2 (new CSeq_feat());
+    mrna2->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna2->SetData().SetRna().SetExt().SetName("second protein name");
+    mrna2->SetLocation().SetInt().SetFrom(27);
+    mrna2->SetLocation().SetInt().SetTo(29);
+    mrna2->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    mrna2->SetProduct().SetWhole().SetLocal().SetStr("nuc3");
+    AddFeat(mrna2, contig);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[0]->SetErrCode("ProductFetchFailure");
+    expected_errors[0]->SetErrMsg("Unable to fetch mRNA transcript 'lcl|nuc3'");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GenomicProductPackagingProblem",
+                                                 "Product of mRNA feature (lcl|nuc3) not packaged in genomic product set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+#define TESTPOPPHYMUTECOWGS(seh, entry) \
+    entry->SetSet().SetClass(CBioseq_set::eClass_pop_set); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors); \
+    entry->SetSet().SetClass(CBioseq_set::eClass_phy_set); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors); \
+    entry->SetSet().SetClass(CBioseq_set::eClass_mut_set); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors); \
+    entry->SetSet().SetClass(CBioseq_set::eClass_eco_set); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors); \
+    entry->SetSet().SetClass(CBioseq_set::eClass_wgs_set); \
+    eval = validator.Validate(seh, options); \
+    CheckErrors (*eval, expected_errors);
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
+{
+    CRef<CSeq_entry> entry = BuildGoodSegSet();
+    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
+    SetBiomol(parts_set->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "InconsistentMolInfoBiomols",
+                                                 "Segmented set contains inconsistent MolInfo biomols"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodEcoSet();
+    SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good1");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("Pop/phy/mut/eco set contains inconsistent MolInfo biomols");
+
+    TESTPOPPHYMUTECOWGS (seh, entry)
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_GraphPackagingProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetAnnot().push_back(BuildGoodGraphAnnot("notgood"));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Critical, "GraphPackagingProblem",
+                                                 "There is 1 mispackaged graph in this record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetAnnot().push_back(BuildGoodGraphAnnot("alsonotgood"));
+    expected_errors[0]->SetErrMsg("There are 2 mispackaged graphs in this record.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    CRef<CSeq_entry> set(new CSeq_entry());
+    set->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    entry->SetSet().SetSeq_set().push_back(set);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InternalGenBankSet",
+                                                 "Bioseq-set contains internal GenBank Bioseq-set"));
+
+    TESTPOPPHYMUTECOWGS (seh, entry)
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_ConSetProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    entry->SetSet().SetClass(CBioseq_set::eClass_conset);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "ConSetProblem",
+                                                 "Set class should not be conset"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_NoBioseqFound)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "NoBioseqFound",
+                                                 "No Bioseqs in this entire record."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_INSDRefSeqPackaging)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "INSDRefSeqPackaging",
+                                                 "INSD and RefSeq records should not be present in the same set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    entry->SetSet().SetSeq_set().push_back(BuildGoodEcoSet());
+    entry->SetSet().SetSeq_set().push_back(BuildGoodGenProdSet());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "GPSnonGPSPackaging",
+                                                 "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
+
+    TESTPOPPHYMUTECOWGS (seh, entry->SetSet().SetSeq_set().front());
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_RefSeqPopSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Critical, "RefSeqPopSet",
+                                                 "RefSeq record should not be a Pop-set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_BioseqSetClassNotSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    entry->SetSet().SetClass(CBioseq_set::eClass_not_set);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "BioseqSetClassNotSet",
+                                                 "Bioseq_set class not set"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodProtSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AYZ12345");
+    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGenbank().SetAccession("AYZ12345");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("AYZ12345", eDiag_Error, "OrphanedProtein",
+                                                 "Orphaned stand-alone protein"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AYZ12345");
+    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetEmbl().SetAccession("AYZ12345");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetDdbj().SetAccession("AYZ12345");
+    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetDdbj().SetAccession("AYZ12345");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetOther().SetAccession("NC_123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("NC_123456");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

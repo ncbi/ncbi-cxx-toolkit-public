@@ -80,8 +80,11 @@ inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope);
 
+CBioseq_set_Handle GetSetParent (CBioseq_set_Handle set, CBioseq_set::TClass set_class);
+CBioseq_set_Handle GetSetParent (CBioseq_Handle set, CBioseq_set::TClass set_class);
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set);
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle set);
+CBioseq_set_Handle GetNucProtSetParent (CBioseq_Handle bioseq);
 
 CBioseq_Handle GetNucBioseq (CBioseq_set_Handle bioseq_set);
 CBioseq_Handle GetNucBioseq (CBioseq_Handle bioseq);
