@@ -201,18 +201,6 @@ private:
     /// @param seqid The sequence identifier. [in]
     void x_AddPdb(int oid, const CSeq_id & seqid);
     
-#ifndef SHORT_ISAM_FORMAT
-    /// Add GI String.
-    /// 
-    /// In non-sparse mode, the set of string index objects includes
-    /// GIs with the format "gi|#|".  This adds such a string to the
-    /// string table.
-    ///
-    /// @param oid OID of the sequence. [in]
-    /// @param gi GI to stringify. [in]
-    void x_AddGiString(int oid, int gi);
-#endif
-    
     /// Add a 'local' type Seq-id.
     /// 
     /// For each Seq-id type, there is a defined set of strings that
@@ -245,11 +233,9 @@ private:
     /// optionally add 'genbank' strings, of the form "gb|...".
     ///
     /// @param oid OID for this sequence. [in]
-    /// @param typestr The string prefix for this type, e.g. "dbj". [in]
     /// @param id The Textseq_id object. [in]
     /// @param add_gb Specify true to add the "gb|" strings. [in]
     void x_AddTextId(int                 oid,
-                     const char        * typestr,
                      const CTextseq_id & id,
                      bool                add_gb);
     
@@ -303,35 +289,6 @@ private:
     /// @param s Accession string to add. [in]
     /// @param ver Version to use, or zero. [in]
     void x_AddString(int oid, const CTempString & s, int ver);
-    
-#ifndef SHORT_ISAM_FORMAT
-    /// Add several strings for the given identifier.
-    ///
-    /// In non-sparse mode, this method is used to add up to 12
-    /// strings to the key, each having a different combination of
-    /// accession, locus, and version information.  If the input ID
-    /// looks like "T|A.V|N", then the strings added will include the
-    /// following permutations of those components: ("A", "A.V",
-    /// "T|A.V|" "T|A.V|N", "T|A|", "T|A|N", "T||N", "gb|A.V|",
-    /// "gb|A.V|N", "gb|A|", "gb|A|N", "gb||N").  (I am calling A the
-    /// accession, V the version, N the name, and T the type prefix.
-    /// This may not correspond to the standard jargon for these
-    /// elements.)  Some of these combinations will be omitted if one
-    /// or more of elements (such as the name or version) are not
-    /// specified.  Duplications will be removed at a later stage of
-    /// processing.
-    ///
-    /// @param oid OID for this sequence. [in]
-    /// @param typestr The type prefix for this identifier. [in]
-    /// @param nm The name component of the identifier. [in]
-    /// @param ver Version to use, or zero. [in]
-    /// @param acc The accession string. [in]
-    void x_AddString(int                 oid,
-                     const char        * typestr,
-                     const CTempString & nm,
-                     int                 ver,
-                     const CTempString & acc);
-#endif
     
     /// Write the ISAM index header to disk.
     void x_WriteHeader();

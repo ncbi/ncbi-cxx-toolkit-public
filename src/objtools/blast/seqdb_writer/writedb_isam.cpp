@@ -47,8 +47,6 @@ static char const rcsid[] = "$Id$";
 #include <stdio.h>
 #include <sstream>
 
-#define SHORT_ISAM_FORMAT
-
 BEGIN_NCBI_SCOPE
 
 /// Import C++ std namespace.
@@ -557,83 +555,25 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
     // Build all sub-string objects and add those.
     
     ITERATE(TIdList, iter, idlist) {
-        const char        * typestr = 0;
-        const CTextseq_id * textid  = 0;
-        bool add_gb = true;
-        
         const CSeq_id & seqid = **iter;
-        
+        const CTextseq_id * textid  = seqid.GetTextseq_Id();
+        bool add_gb = true;
+
         switch(seqid.Which()) {
-        case CSeq_id::e_Genbank:
-            typestr = "gb";
-            textid = & seqid.GetGenbank();
-            add_gb = false;
-            break;
-            
-        case CSeq_id::e_Embl:
-            typestr = "emb";
-            textid = & seqid.GetEmbl();
-            break;
-            
-        case CSeq_id::e_Pir:
-            typestr = "pir";
-            textid = & seqid.GetPir();
-            break;
-            
-        case CSeq_id::e_Swissprot:
-            typestr = "sp";
-            textid = & seqid.GetSwissprot();
-            break;
-            
-        case CSeq_id::e_Other:
-            typestr = "ref";
-            textid = & seqid.GetOther();
-            add_gb = false;
-            break;
-            
+
         case CSeq_id::e_Gi:
-#ifndef SHORT_ISAM_FORMAT
-            if (! m_Sparse) {
-                x_AddGiString(oid, seqid.GetGi());
-            }
-#endif
-            break;
-            
-        case CSeq_id::e_Ddbj:
-            typestr = "dbj";
-            textid = & seqid.GetDdbj();
-            break;
-            
-        case CSeq_id::e_Prf:
-            typestr = "prf";
-            textid = & seqid.GetPrf();
             break;
             
         case CSeq_id::e_Pdb:
             x_AddPdb(oid, seqid);
             break;
             
-        case CSeq_id::e_Tpg:
-            typestr = "tpg";
-            textid = & seqid.GetTpg();
-            add_gb = false;
+        case CSeq_id::e_Local:
+            x_AddLocal(oid, seqid);
             break;
             
-        case CSeq_id::e_Tpe:
-            typestr = "tpe";
-            textid = & seqid.GetTpe();
-            add_gb = false;
-            break;
-            
-        case CSeq_id::e_Tpd:
-            typestr = "tpd";
-            textid = & seqid.GetTpd();
-            add_gb = false;
-            break;
-            
-        case CSeq_id::e_Gpipe:
-            typestr = "gpipe";
-            textid = & seqid.GetGpipe();
+        case CSeq_id::e_Patent:
+            x_AddPatent(oid, seqid);
             break;
             
         case CSeq_id::e_General:
@@ -645,41 +585,27 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
                 }
             }
             break;
-            
-        case CSeq_id::e_Local:
-            x_AddLocal(oid, seqid);
-            break;
-            
-        case CSeq_id::e_Patent:
-            x_AddPatent(oid, seqid);
-            break;
-            
-        default:
+
+        // general textid / non textid cases:
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            add_gb = false;
+
+        default: 
             {
-                string msg = "Seq-id type not implemented (";
-                msg += seqid.AsFastaString();
-                msg += ").";
-                
-                NCBI_THROW(CWriteDBException, eArgErr, msg);
+                if (textid) {
+                    x_AddTextId(oid, *textid, add_gb);
+                } else {
+                    string acc = seqid.AsFastaString();
+                    x_AddStringData(oid, acc.data(), acc.size()); 
+                }
             }
-        }
-        
-        if (typestr && textid) {
-            x_AddTextId(oid, typestr, *textid, add_gb);
         }
     }
 }
-
-#ifndef SHORT_ISAM_FORMAT
-void CWriteDB_IsamIndex::x_AddGiString(int oid, int gi)
-{
-    char buf[64];
-    memcpy(buf, "gi|", 3);
-    int sz = 3 + sprintf(buf + 3, "%d", gi);
-    
-    x_AddStringData(oid, buf, sz);
-}
-#endif
 
 void CWriteDB_IsamIndex::x_AddLocal(int             oid,
                                     const CSeq_id & seqid)
@@ -802,7 +728,6 @@ bool s_NoCaseEqual(CTempString & a, CTempString & b)
 }
 
 void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
-                                     const char        * typestr,
                                      const CTextseq_id & id,
                                      bool                add_gb)
 {
@@ -836,14 +761,6 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
         if (ver && acc.size()) {
             x_AddString(oid, acc, ver);
         }
-        
-#ifndef SHORT_ISAM_FORMAT
-        x_AddString(oid, typestr, acc, ver, nm);
-        
-        if (add_gb && acc.size() && ver) {
-            x_AddString(oid, "gb", acc, ver, nm);
-        }
-#endif
     }
 }
 
@@ -921,77 +838,6 @@ void CWriteDB_IsamIndex::x_AddString(int oid, const CTempString & acc, int ver)
         x_AddStringData(oid, buf, sz);
     }
 }
-
-#ifndef SHORT_ISAM_FORMAT
-void CWriteDB_IsamIndex::x_AddString(int                 oid,
-                                     const char        * typestr,
-                                     const CTempString & acc,
-                                     int                 ver,
-                                     const CTempString & nm)
-{
-    _ASSERT(! m_Sparse);
-    
-    // ab003779
-    // ab003779.1
-    // dbj|ab003779.1|
-    // dbj|ab003779.1|ab003779
-    // dbj|ab003779|
-    // dbj|ab003779|ab003779
-    // dbj||ab003779
-    // gb|ab003779.1|
-    // gb|ab003779.1|ab003779
-    // gb|ab003779|
-    // gb|ab003779|ab003779
-    // gb||ab003779
-    
-    char buf[256];
-    
-    _ASSERT((acc.size() + nm.size()) < 240);
-    
-    if (acc.size()) {
-        int sz = sprintf(buf, "%s|", typestr);
-        memcpy(buf+sz, acc.data(), acc.size());
-        sz += acc.size();
-        buf[sz++] = '|';
-        
-        x_AddStringData(oid, buf, sz);
-        
-        if (nm.size()) {
-            memcpy(buf + sz, nm.data(), nm.size());
-            sz += nm.size();
-            
-            x_AddStringData(oid, buf, sz);
-        }
-        
-        if (ver) {
-            // format is "typestr|acc.ver|"
-            sz = sprintf(buf, "%s|", typestr);
-            
-            memcpy(buf+sz, acc.data(), acc.size());
-            
-            sz += acc.size();
-            sz += sprintf(buf+sz, ".%d|", ver);
-            
-            x_AddStringData(oid, buf, sz);
-            
-            if (nm.size()) {
-                memcpy(buf + sz, nm.data(), nm.size());
-                sz += nm.size();
-                
-                x_AddStringData(oid, buf, sz);
-            }
-        }
-    }
-    
-    if (nm.size()) {
-        int sz = sprintf(buf, "%s||", typestr);
-        memcpy(buf + sz, nm.data(), nm.size());
-        sz += nm.size();
-        
-        x_AddStringData(oid, buf, sz);
-    }
-}
-#endif
 
 CWriteDB_IsamData::CWriteDB_IsamData(EWriteDBIsamType itype,
                                      const string   & dbname,
