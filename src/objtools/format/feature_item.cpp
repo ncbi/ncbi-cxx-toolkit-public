@@ -1340,7 +1340,7 @@ void CFeatureItem::x_AddQuals(
     //  Collect qualifiers that are common to most feature types:
     //
     x_AddQualPartial( ctx );
-    x_AddQualDbXref();
+    x_AddQualDbXref( ctx );
     x_AddQualExt();
     x_AddQualExpInv( ctx );
     x_AddQualCitation();
@@ -2044,10 +2044,6 @@ void CFeatureItem::x_AddProductIdQuals(
     //
     //  Objective (according to the C toolkit):
     //  We need one (and only one) /xxx_id tag. If there are multiple ids 
-    //  available, try and pick the "best" one.
-    //  In addition, if an id of type GI is available, turn it into a /db_xref 
-    //  tag, regardless of whether we already used it for the /xxx_id tag
-    //  or not.
     //
 
     if (!prod) {
@@ -2063,16 +2059,6 @@ void CFeatureItem::x_AddProductIdQuals(
         return;
     }
     x_AddQual(slot, new CFlatSeqIdQVal(*best.GetSeqId()));
-    
-    ITERATE (CBioseq_Handle::TId, it, ids) {
-        if ( it->Which() != CSeq_id::e_Gi ) {
-            continue;
-        }
-        CConstRef<CSeq_id> id = it->GetSeqId();
-        if (!id->IsGeneral()) {
-            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*id, id->IsGi()));
-        }
-    }
 }
 
 //  ---------------------------------------------------------------------------
@@ -2103,7 +2089,7 @@ void CFeatureItem::x_AddQualsProductId(
     }
     x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *best.GetSeqId() ) );
     
-    ITERATE (CBioseq_Handle::TId, it, ids) {
+/*    ITERATE (CBioseq_Handle::TId, it, ids) {
         if ( it->Which() != CSeq_id::e_Gi ) {
             continue;
         }
@@ -2112,7 +2098,7 @@ void CFeatureItem::x_AddQualsProductId(
             x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( *id, id->IsGi() ) );
         }
     }
-}
+*/}
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsRegion(
@@ -2221,6 +2207,35 @@ void CFeatureItem::x_AddQualsExt(
             x_AddGoQuals(ext);
         }
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualDbXref(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    if ( m_Feat->CanGetProduct() ) {
+        CBioseq_Handle prod = 
+            ctx.GetScope().GetBioseqHandle( m_Feat->GetProduct() );
+        if ( prod ) {
+            const CBioseq_Handle::TId& ids = prod.GetId();
+            if ( ! ids.empty() ) {
+                ITERATE (CBioseq_Handle::TId, it, ids) {
+                    if ( it->Which() != CSeq_id::e_Gi ) {
+                        continue;
+                    }
+                    CConstRef<CSeq_id> id = it->GetSeqId();
+                    if (!id->IsGeneral()) {
+                        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*id, id->IsGi()));
+                    }
+                }
+            }
+        }
+    }
+    if ( ! m_Feat->IsSetDbxref() ) {
+        return;
+    }
+    x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
 }
 
 //  ----------------------------------------------------------------------------

@@ -173,7 +173,8 @@ protected:
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CConstRef<CSeq_feat>&, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
-    void x_AddQualDbXref();
+    void x_AddQualDbXref(
+        CBioseqContext& );
     void x_AddQualCitation();
     void x_AddQualExt();
     void x_AddQualExpInv( CBioseqContext& );
@@ -307,16 +308,6 @@ inline void CFeatureItem::x_AddQualCitation()
         return;
     }
     x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat->GetCit() ) );
-}
-
-//  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualDbXref()
-//  ----------------------------------------------------------------------------
-{
-    if ( ! m_Feat->IsSetDbxref() ) {
-        return;
-    }
-    x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
 }
 
 //  ----------------------------------------------------------------------------
