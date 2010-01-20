@@ -183,7 +183,7 @@ list<CNPiece> BlastGoodParts(const CProSplignText& alignment_text, const CProSpl
    //vector sc is completely populated with scores at this point
 
 //TEMP
-   for(int i=0;i<alen;++i) cerr<<"sc["<<i<<"] = "<<sc[i]/(double)scoring.GetScale()<<endl;
+//   for(int i=0;i<alen;++i) cerr<<"sc["<<i<<"] = "<<sc[i]/(double)scoring.GetScale()<<endl;
 //END OF TEMP
 
    int cutoff = score_cutoff * scoring.GetScale();
@@ -214,7 +214,7 @@ list<CNPiece> BlastGoodParts(const CProSplignText& alignment_text, const CProSpl
            ali.push_back(CNPiece(beg, end, 0, 0));
        }
 //TEMP
-       cerr<<"beg = "<<beg<<", end = "<<end<<", total_score = "<<total_score/(double)scoring.GetScale()<<endl;
+//       cerr<<"beg = "<<beg<<", end = "<<end<<", total_score = "<<total_score/(double)scoring.GetScale()<<endl;
 //END OF TEMP
    }                      
    return ali;
