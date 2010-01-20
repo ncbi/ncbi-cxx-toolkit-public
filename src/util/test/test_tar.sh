@@ -185,12 +185,12 @@ cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                  
 cmp -l $test_base.out.1 $test_base.out.2                                                                ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
-  # Note that at least tar 1.15.1 suffers from the following shortcoming:
-  # when adding to an archive, tar resets archive format using last header
+  # Note that at least gtar 1.15.1 suffers from the following shortcoming:
+  # when adding to an archive, gtar resets archive format using the last header
   # seen, so even if there was an old GNU archive, to which ustar entries
   # have later been appended, the --format=gnu won't have any effect on any
-  # following added entries because it'd be reset by the last "ustar" entry
-  # (seen when the archive is being scanned for an append) so all the newly
+  # following added entries because it'll be reset by the last "ustar" entry
+  # (seen when the archive gets scanned for an append) so all the newly
   # added entries will always be "ustar".  I consider this as a bug.
 
   $tar --help 2>&1 | grep -q -- '-H'  &&  format="--format=gnu -"
