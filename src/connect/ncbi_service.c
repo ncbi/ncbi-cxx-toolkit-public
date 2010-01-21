@@ -245,15 +245,15 @@ static SERV_ITER s_Open(const char*          service,
     } else
         do_dispd = 0/*false*/;
     /* Ugly optimization not to access the registry more than necessary */
-    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)  ||
-         !(op = SERV_LOCAL_Open(iter, info, host_info)))  &&
-        (!do_lbsmd  ||
+    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)               ||
+         !(op = SERV_LOCAL_Open(iter, info, host_info)))                 &&
+        (!do_lbsmd                                                           ||
          !(do_lbsmd= !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE)) ||
          !(op = SERV_LBSMD_Open(iter, info, host_info,
-                                !do_dispd  ||
+                                !do_dispd                                    ||
                                 !(do_dispd = !s_IsMapperConfigured
                                   (service, REG_CONN_DISPD_DISABLE)))))  &&
-        (!do_dispd  ||
+        (!do_dispd                                                           ||
          !(do_dispd= !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE)) ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_lbsmd  &&  !do_dispd) {
