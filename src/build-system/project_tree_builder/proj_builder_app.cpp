@@ -601,6 +601,7 @@ int CProjBulderApp::Run(void)
     m_AllDllBuild = GetSite().IsProvided("DLL_BUILD");
 
     // Build projects tree
+    GetWholeTree();
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
@@ -1638,8 +1639,11 @@ void CProjBulderApp::DumpFiles(const TFiles& files,
 
 void CProjBulderApp::AddCustomMetaData(const string& file)
 {
-    m_CustomMetaData.push_back( CDirEntry::CreateRelativePath(
-        GetProjectTreeInfo().m_Src, file));
+    string s( CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src, file));
+    if ( find(m_CustomMetaData.begin(), m_CustomMetaData.end(), s) ==
+              m_CustomMetaData.end()) {
+        m_CustomMetaData.push_back( s );
+    }
 }
 
 void CProjBulderApp::GetMetaDataFiles(list<string>* files) const

@@ -1784,10 +1784,10 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     list<string> metadata_files;
     GetApp().GetMetaDataFiles(&metadata_files);
     CSymResolver resolver;
-    resolver += GetApp().GetSite().GetMacros();
+    resolver.Append( GetApp().GetSite().GetMacros());
     ITERATE(list<string>, p, metadata_files) {
-	    resolver += CSymResolver( CDirEntry::ConcatPath(
-	               root_src_path, CDirEntry::ConvertToOSPath(*p)));
+	    resolver.Append( CSymResolver( CDirEntry::ConcatPath(
+	               root_src_path, CDirEntry::ConvertToOSPath(*p))), true);;
 	}
     ResolveDefs(resolver, subtree_makefiles);
 
@@ -2053,7 +2053,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 
         }
 
-        if (!GetApp().IsScanningWholeTree()) {
+        /*if (!GetApp().IsScanningWholeTree())*/ {
             contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomMetaData);
             ITERATE(CDir::TEntries, p, contents) {
                 GetApp().AddCustomMetaData( (*p)->GetPath());

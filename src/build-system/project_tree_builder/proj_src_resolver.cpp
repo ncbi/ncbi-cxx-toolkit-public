@@ -149,13 +149,13 @@ void CProjSRCResolver::PrepereResolver(void)
     CSymResolver::LoadFrom(m_MakefilePath, &m_Resolver);
     ITERATE(list<string>, p, include_makefiles) {
         const string& makefile_path = *p;
-        m_Resolver += CSymResolver(makefile_path);
+        m_Resolver.Append( CSymResolver(makefile_path));
 
         string dir;
         CDirEntry::SplitPath(makefile_path, &dir);
         m_MakefileDirs.push_back(dir);
     }
-    m_Resolver += GetApp().GetSite().GetMacros();
+    m_Resolver.Append( GetApp().GetSite().GetMacros());
 }
 
 END_NCBI_SCOPE

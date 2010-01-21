@@ -168,8 +168,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
     }
 }
 
-
-CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
+CSymResolver& CSymResolver::Append(const CSymResolver& src, bool warn_redef)
 {
     // Clear cache for resolved defines
     m_Cache.clear();
@@ -182,8 +181,10 @@ CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
             if (m_Data.m_Contents.find(i->first) != m_Data.m_Contents.end() &&
                 m_Trusted.find(i->first) == m_Trusted.end()) {
                 redefs.push_back(i->first);
-                PTB_WARNING_EX(src.m_Data.GetFileName(),ePTB_ConfigurationError,
-                    "Attempt to redefine already defined macro: " << i->first);
+                if (warn_redef) {
+                    PTB_WARNING_EX(src.m_Data.GetFileName(),ePTB_ConfigurationError,
+                        "Attempt to redefine already defined macro: " << i->first);
+                }
             }
         }
     }

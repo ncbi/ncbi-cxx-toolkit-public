@@ -57,7 +57,7 @@ public:
     void Resolve(const string& define, list<string>* resolved_def,
                         const CSimpleMakeFileContents& data);
 
-    CSymResolver& operator+= (const CSymResolver& src);
+    CSymResolver& Append(const CSymResolver& src, bool warn_redef=false);
 
     static void LoadFrom(const string& file_path, CSymResolver* resolver);
     void AddDefinition( const string& key, const string& value);
