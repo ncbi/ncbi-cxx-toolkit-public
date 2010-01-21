@@ -70,11 +70,15 @@ struct xml::impl::schema_impl {
 
 schema::schema (const char* filename,
                 warnings_as_errors_type how) {
+    if (!filename)
+        throw std::runtime_error("invalid file name");
     construct(filename, (size_type)(-1), how);
 }
 
 schema::schema (const char* data, size_type size,
                 warnings_as_errors_type how) {
+    if (!data)
+        throw std::runtime_error("invalid data pointer");
     construct(data, size, how);
 }
 
