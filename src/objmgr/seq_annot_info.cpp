@@ -206,6 +206,8 @@ void CSeq_annot_Info::x_UpdateName(void)
         m_Name = GetTSE_Info().GetName();
         return;
     }
+    int zoom_level = -1;
+    m_Name.SetUnnamed();
     const CSeq_annot& annot = *m_Object;
     if ( annot.IsSetId() ) {
         const CSeq_annot::TId& ids = annot.GetId();
@@ -222,7 +224,7 @@ void CSeq_annot_Info::x_UpdateName(void)
                     else {
                         m_Name.SetNamed(acc);
                     }
-                    return;
+                    break;
                 }
             }
         }
@@ -232,12 +234,30 @@ void CSeq_annot_Info::x_UpdateName(void)
         ITERATE( CSeq_annot::TDesc::Tdata, it, descs ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
+                if ( m_Name.IsNamed() ) {
+                    continue;
+                }
                 m_Name.SetNamed(desc.GetName());
-                return;
+            }
+            else if ( desc.Which() == CAnnotdesc::e_User ) {
+                if ( zoom_level >= 0 ) {
+                    continue;
+                }
+                const CUser_object& user = desc.GetUser();
+                const CObject_id& type = user.GetType();
+                if ( !type.IsStr() || type.GetStr() != "AnnotationTrack" ) {
+                    continue;
+                }
+                CConstRef<CUser_field> field = user.GetFieldRef("ZoomLevel");
+                if ( field && field->GetData().IsInt() ) {
+                    zoom_level = field->GetData().GetInt();
+                }
             }
         }
     }
-    m_Name.SetUnnamed();
+    if ( zoom_level >= 0 && m_Name.IsNamed() ) {
+        m_Name.SetNamed(m_Name.GetName()+"@@"+NStr::IntToString(zoom_level));
+    }
 }
 
 
