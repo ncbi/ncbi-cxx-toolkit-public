@@ -91,6 +91,7 @@ public:
         eDbtagType_FLYBASE,
         eDbtagType_GABI,
         eDbtagType_GDB,
+        eDbtagType_GEO,
         eDbtagType_GI,
         eDbtagType_GO,
         eDbtagType_GOA,
@@ -178,6 +179,16 @@ public:
         eDbtagType_PID
     };
 
+    enum EDbtagGroup {
+        fNone    = 0,
+        fGenBank = 1 << 0,
+        fRefSeq  = 1 << 1,
+        fSrc     = 1 << 2,
+        fProbe   = 1 << 3
+    };
+
+    typedef int TDbtagGroup; ///< holds bitwise OR of "EDbtagGroup"
+
     // constructor
     CDbtag(void);
     // destructor
@@ -197,6 +208,8 @@ public:
     // Test if DB is approved (case insensitive).
     // Returns the case sensetive DB name if approved, NULL otherwise.
     const char* IsApprovedNoCase(bool refseq = false) const;
+    // Extended version allows many DB categories
+    bool IsApproved(TDbtagGroup group) const;
 
     // Test if appropriate to omit from displays, formatting, etc.
     bool IsSkippable(void) const;
@@ -204,8 +217,10 @@ public:
     // Retrieve the enumerated type for the dbtag
     EDbtagType GetType(void) const;
 
-	// determine the situations where the dbtag would be appropriate
+    // determine the situations where the dbtag would be appropriate
     bool GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) const;
+    // Extended version allows many DB categories
+    TDbtagGroup GetDBFlags (string& correct_caps) const;
 
     // Force a refresh of the internal type
     void InvalidateType(void);

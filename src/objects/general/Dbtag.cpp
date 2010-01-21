@@ -201,6 +201,10 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
+static const TDbxrefPair kApprovedProbeDbXrefs[] = {
+    TDbxrefPair("GEO", CDbtag::eDbtagType_GEO)
+};
+
 
 static const char* const kSkippableDbXrefs[] = {
     "BankIt",
@@ -216,6 +220,7 @@ typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb, kApprovedDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedRefSeqDb, kApprovedRefSeqDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb, kApprovedSrcDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb, kApprovedProbeDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefSet, sc_SkippableDbXrefs, kSkippableDbXrefs);
 
 // destructor
@@ -225,9 +230,9 @@ CDbtag::~CDbtag(void)
 
 bool CDbtag::Match(const CDbtag& dbt2) const
 {
-	if (! PNocase().Equals(GetDb(), dbt2.GetDb()))
-		return false;
-	return ((GetTag()).Match((dbt2.GetTag())));
+    if (! PNocase().Equals(GetDb(), dbt2.GetDb()))
+        return false;
+    return ((GetTag()).Match((dbt2.GetTag())));
 }
 
 
@@ -299,6 +304,33 @@ const char* CDbtag::IsApprovedNoCase(bool refseq) const
 }
 
 
+bool CDbtag::IsApproved(TDbtagGroup group) const
+{
+    if ( !CanGetDb() ) {
+        return false;
+    }
+    const string& db = GetDb();
+
+    if ( (group & fGenBank) != 0 && sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end()) {
+        return true;
+    }
+
+    if ( (group & fRefSeq) != 0 && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end()) {
+        return true;
+    }
+
+    if ( (group & fSrc) != 0 && sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end()) {
+        return true;
+    }
+
+    if ( (group & fProbe) != 0 && sc_ApprovedProbeDb.find(db.c_str()) != sc_ApprovedProbeDb.end()) {
+        return true;
+    }
+
+    return false;
+}
+
+
 bool CDbtag::IsSkippable(void) const
 {
     return sc_SkippableDbXrefs.find(GetDb().c_str())
@@ -316,62 +348,87 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
 
         const string& db = GetDb();
 
-        TDbxrefTypeMap::const_iterator iter =
-            sc_ApprovedDb.find(db.c_str());
+        TDbxrefTypeMap::const_iterator iter;
+
+        iter = sc_ApprovedDb.find(db.c_str());
         if ( iter != sc_ApprovedDb.end() ) {
             m_Type = iter->second;
-        } else {
-            iter = sc_ApprovedRefSeqDb.find(db.c_str());
-            if ( iter != sc_ApprovedRefSeqDb.end() ) {
-                m_Type = iter->second;
-            }
+            return m_Type;
+        }
+
+        iter = sc_ApprovedRefSeqDb.find(db.c_str());
+        if ( iter != sc_ApprovedRefSeqDb.end() ) {
+            m_Type = iter->second;
+            return m_Type;
+        }
+
+        iter = sc_ApprovedSrcDb.find(db.c_str());
+        if ( iter != sc_ApprovedSrcDb.end() ) {
+            m_Type = iter->second;
+            return m_Type;
+        }
+
+        iter = sc_ApprovedProbeDb.find(db.c_str());
+        if ( iter != sc_ApprovedProbeDb.end() ) {
+            m_Type = iter->second;
+            return m_Type;
         }
     }
+
     return m_Type;
 }
 
 
-bool CDbtag::GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) const
+CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
 {
-	bool found = false;
-	is_refseq = false;
-	is_src = false;
-	correct_caps = "";
+    correct_caps = "";
+    CDbtag::TDbtagGroup rsult = fNone;
 
     if ( !CanGetDb() ) {
-        return false;
+        return fNone;
     }
     const string& db = GetDb();
     
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
-			correct_caps = it->first;
-            is_src = true;
-			found = true;
-            break;
+            correct_caps = it->first;
+            rsult |= fGenBank;
         }
     }
 
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
             correct_caps = it->first;
-			is_refseq = true;
-			found = true;
-            break;
+            rsult |= fRefSeq;
         }
     }
 
-	if (!found) {
-		ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
-			if ( NStr::EqualNocase(db, it->first) ) {
-				correct_caps = it->first;
-				found = true;
-				break;
-			}
-		}
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
+        if ( NStr::EqualNocase(db, it->first) ) {
+            correct_caps = it->first;
+            rsult |= fSrc;
+        }
     }
 
-    return found;
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedProbeDb) {
+        if ( NStr::EqualNocase(db, it->first) ) {
+            correct_caps = it->first;
+            rsult |= fProbe;
+        }
+    }
+
+    return rsult;
+}
+
+
+bool CDbtag::GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) const
+{
+    CDbtag::TDbtagGroup group = CDbtag::GetDBFlags(correct_caps);
+
+    is_refseq = ((group & fRefSeq) != 0);
+    is_src    = ((group & fSrc)    != 0);
+
+    return group != fNone;
 }
 
 
