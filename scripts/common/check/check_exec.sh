@@ -49,7 +49,7 @@ wait $pid > /dev/null 2>&1
 status=$?
 
 # Special checks for core files on some platforms
-if [ $status > 128  -a  ! -f core ]; then
+if [ $status -gt 128  -a  ! -f core ]; then
    if [ `uname -s` = "Darwin" -a -d "/cores" ]; then
      core_files=`find /cores/core.* -newer $timestamp_file 2>/dev/null`
    elif [ `uname -s` = "Linux" ]; then
