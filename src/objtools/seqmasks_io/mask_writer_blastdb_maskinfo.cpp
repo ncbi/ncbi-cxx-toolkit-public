@@ -100,44 +100,34 @@ CMaskWriterBlastDbMaskInfo::~CMaskWriterBlastDbMaskInfo()
 
     m_BlastDbMaskInfo->SetMasks(*m_ListOfMasks.front());
     s_WriteObject(m_BlastDbMaskInfo, os, m_OutputFormat);
-
-    for (TBlastMaskLists::size_type i = 1; i < m_ListOfMasks.size(); i++) {
-        s_WriteObject(m_ListOfMasks[i], os, m_OutputFormat);
-    }
 }
 
 void
 CMaskWriterBlastDbMaskInfo::x_ConsolidateListOfMasks()
 {
-    static const size_t kMaxSeqLocsPerBatch = 10000;
     TBlastMaskLists consolidated_list;
     TBlastMaskLists::size_type i = 0;       // index into m_ListOfMasks
 
-    while (i < m_ListOfMasks.size()) {
+    consolidated_list.push_back
+        (TBlastMaskLists::value_type(new CBlast_mask_list));
 
-        size_t seqlocs_read = 0;
-        consolidated_list.push_back
-            (TBlastMaskLists::value_type(new CBlast_mask_list));
-
-        for (;(i < m_ListOfMasks.size() && seqlocs_read < kMaxSeqLocsPerBatch); 
-              i++) {
-            if (m_ListOfMasks[i]->GetMasks().empty()) {
-                // We only have one list and it's empty
-                _ASSERT(m_ListOfMasks.size() == 1);
-                consolidated_list.swap(m_ListOfMasks);
-                continue;
-            }
-            _ASSERT(m_ListOfMasks[i]->GetMasks().size() == 1);
-            CRef<CSeq_loc> sl = m_ListOfMasks[i]->GetMasks().front();
-            seqlocs_read += 
-                (sl->IsPacked_int() ? sl->GetPacked_int().Get().size() : 1);
-            consolidated_list.back()->SetMasks().push_back(sl);
+    for (; i < m_ListOfMasks.size(); i++) {
+        if (m_ListOfMasks[i]->GetMasks().empty()) {
+            // We only have one list and it's empty
+            _ASSERT(m_ListOfMasks.size() == 1);
+            consolidated_list.swap(m_ListOfMasks);
+            break;
         }
-        consolidated_list.back()->SetMore(true);
+        _ASSERT(m_ListOfMasks[i]->GetMasks().size() == 1);
+        CRef<CSeq_loc> sl = m_ListOfMasks[i]->GetMasks().front();
+        consolidated_list.back()->SetMasks().push_back(sl);
     }
 
     m_ListOfMasks.swap(consolidated_list);
     m_ListOfMasks.back()->SetMore(false);
+    _ASSERT(m_ListOfMasks.size() == 1);
+    _ASSERT(m_ListOfMasks.back()->GetMore() == 
+            m_ListOfMasks.front()->GetMore() == false);
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id, 

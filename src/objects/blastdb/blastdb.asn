@@ -55,13 +55,18 @@ Blast-filter-program ::= INTEGER {
 Blast-mask-list ::= SEQUENCE {
     -- masks for a single sequence should be grouped in a Packed-seqint
     masks SEQUENCE OF Seq-loc,  
+    -- as of 01/21/2010, this field is set to false always, indicating that the
+    -- entire object (set of Seq-loc) is contained in this object
     more BOOLEAN
 }
 
+-- Defines the masking information for a set of sequences
 Blast-db-mask-info ::= SEQUENCE {
     algo-id      INTEGER,
     algo-program Blast-filter-program,
     algo-options VisibleString,
+    -- This object was originally created to allow pagination of the sequence
+    -- masks, but this feature was discontinued in 01/21/2010
     masks        Blast-mask-list
 }
 
