@@ -514,6 +514,7 @@ s_ConvertValue(const CVariant& from_var, Int4& to_val)
         break;
     default:
         s_ConvertionNotSupported("Int4", from_var.GetType());
+        return;
     }
     if (temp_val < numeric_limits<Int4>::min()
         ||  temp_val > numeric_limits<Int4>::max())
@@ -548,6 +549,7 @@ s_ConvertValue(const CVariant& from_var, short& to_val)
         break;
     default:
         s_ConvertionNotSupported("short", from_var.GetType());
+        return;
     }
     if (temp_val < numeric_limits<short>::min()
         ||  temp_val > numeric_limits<short>::max())
@@ -582,6 +584,7 @@ s_ConvertValue(const CVariant& from_var, unsigned char& to_val)
         break;
     default:
         s_ConvertionNotSupported("unsigned char", from_var.GetType());
+        return;
     }
     if (temp_val < numeric_limits<unsigned char>::min()
         ||  temp_val > numeric_limits<unsigned char>::max())
@@ -614,6 +617,7 @@ s_ConvertValue(const CVariant& from_var, bool& to_val)
         break;
     default:
         s_ConvertionNotSupported("bool", from_var.GetType());
+        return;
     }
     if (temp_val != 0  &&  temp_val != 1)
     {
@@ -1744,7 +1748,7 @@ CQuery::CField::AsByte(void) const
 short
 CQuery::CField::AsShort(void) const
 {
-    short value;
+    short value = 0;
     s_ConvertValue(m_Query->GetFieldValue(*this), value);
     return value;
 }
@@ -1752,7 +1756,7 @@ CQuery::CField::AsShort(void) const
 Int4
 CQuery::CField::AsInt4(void) const
 {
-    Int4 value;
+    Int4 value = 0;
     s_ConvertValue(m_Query->GetFieldValue(*this), value);
     return value;
 }
@@ -1760,7 +1764,7 @@ CQuery::CField::AsInt4(void) const
 Int8
 CQuery::CField::AsInt8(void) const
 {
-    Int8 value;
+    Int8 value = 0;
     s_ConvertValue(m_Query->GetFieldValue(*this), value);
     return value;
 }
@@ -1768,7 +1772,7 @@ CQuery::CField::AsInt8(void) const
 float
 CQuery::CField::AsFloat(void) const
 {
-    float value;
+    float value = 0;
     s_ConvertValue(m_Query->GetFieldValue(*this), value);
     return value;
 }
@@ -1776,7 +1780,7 @@ CQuery::CField::AsFloat(void) const
 double
 CQuery::CField::AsDouble(void) const
 {
-    double value;
+    double value = 0;
     s_ConvertValue(m_Query->GetFieldValue(*this), value);
     return value;
 }

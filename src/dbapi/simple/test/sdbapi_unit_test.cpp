@@ -124,18 +124,10 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 {
     string table_name("#test_unicode_table");
     // string table_name("DBAPI_Sample..test_unicode_table");
-    const bool isValueInUTF8 = true;
 
     CQuery query = GetDatabase().NewQuery();
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
                    "Suchprotokoll entfernen");
-
-    // Russian phrase in WINDOWS-1251 encoding ...
-    const unsigned char str_rus[] =
-    {
-        0xcc, 0xe0, 0xec, 0xe0, 0x20, 0xec, 0xfb, 0xeb, 0xe0, 0x20, 0xf0, 0xe0,
-        0xec, 0xf3, 0x00
-    };
 
     // Russian phrase in UTF8 encoding ...
     const unsigned char str_rus_utf8[] =
@@ -229,7 +221,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 size_t
 GetNumOfRecords(CQuery& query, const string& table_name)
 {
-    int cur_rec_num;
+    int cur_rec_num = 0;
     query.SetSql("select count(*) FROM " + table_name);
     query.Execute();
     ITERATE(CQuery, it, query.SingleSet()) {
