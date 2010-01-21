@@ -31,7 +31,7 @@ spid=$!
 trap 'kill -9 $spid' 0 1 2 15
 
 sleep 2
-$CHECK_EXEC test_ncbi_socket_connector localhost $port >>client_log 2>&1  ||  exit_code=1
+$CHECK_EXEC test_ncbi_socket_connector localhost $port >>$client_log 2>&1  ||  exit_code=1
 
 kill $spid  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
