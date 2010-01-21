@@ -557,7 +557,6 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
     ITERATE(TIdList, iter, idlist) {
         const CSeq_id & seqid = **iter;
         const CTextseq_id * textid  = seqid.GetTextseq_Id();
-        bool add_gb = true;
 
         switch(seqid.Which()) {
 
@@ -586,18 +585,11 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
             }
             break;
 
-        // general textid / non textid cases:
-        case CSeq_id::e_Genbank:
-        case CSeq_id::e_Other:
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpe:
-        case CSeq_id::e_Tpd:
-            add_gb = false;
-
+        // default processing:
         default: 
             {
                 if (textid) {
-                    x_AddTextId(oid, *textid, add_gb);
+                    x_AddTextId(oid, *textid);
                 } else {
                     string acc = seqid.AsFastaString();
                     x_AddStringData(oid, acc.data(), acc.size()); 
@@ -728,8 +720,7 @@ bool s_NoCaseEqual(CTempString & a, CTempString & b)
 }
 
 void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
-                                     const CTextseq_id & id,
-                                     bool                add_gb)
+                                     const CTextseq_id & id)
 {
     CTempString acc, nm;
     

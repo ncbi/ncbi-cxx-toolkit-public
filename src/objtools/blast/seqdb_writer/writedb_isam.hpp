@@ -234,10 +234,8 @@ private:
     ///
     /// @param oid OID for this sequence. [in]
     /// @param id The Textseq_id object. [in]
-    /// @param add_gb Specify true to add the "gb|" strings. [in]
     void x_AddTextId(int                 oid,
-                     const CTextseq_id & id,
-                     bool                add_gb);
+                     const CTextseq_id & id);
     
     /// Add a string to the string table.
     /// 
