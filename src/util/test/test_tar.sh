@@ -1,4 +1,5 @@
 #! /bin/sh
+# $Id$
 
 # Locate native tar;  exit successfully if none found
 string="`whereis tar 2>/dev/null`"
