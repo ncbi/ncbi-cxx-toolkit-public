@@ -333,6 +333,12 @@ int PSSMWrapper::GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIn
             case 24: // U -> C
                 scaledScore = scaledMatrix[consensusIndex][3];
                 break;
+            case 26: // O -> K
+                scaledScore = scaledMatrix[consensusIndex][10];
+                break;
+            case 27: // J -> average I/L
+                scaledScore = ((double) (scaledMatrix[consensusIndex][9] + scaledMatrix[consensusIndex][11])) / 2;
+                break;
             default:
                 scaledScore = scaledMatrix[consensusIndex][ncbistdaa];
         }
