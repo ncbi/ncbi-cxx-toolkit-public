@@ -353,7 +353,7 @@ CAlnMap::x_SetRawSegTypes(TNumrow row) const
 
          /// What's on the anchor?
         if (anchored) {
-            if ( ! types[anchor_idx] & fSeq ) {
+            if ( ! (types[anchor_idx] & fSeq) ) {
                 flags |= fNotAlignedToSeqOnAnchor;
             }
             if (types[anchor_idx] & fUnalignedOnRight) {
