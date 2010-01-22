@@ -43,6 +43,17 @@ Contents: Printer for standard multiple sequence alignmnet formats
 USING_NCBI_SCOPE;
 USING_SCOPE(align_format);
 
+
+// Relace non-alphanumeric characters with '_'
+static void s_ReplaceNonAlphaNum(string& str)
+{
+    for (int i=0;i < str.length();i++) {
+        if (!isalnum(str[i])) {
+            str[i] = '_';
+        }
+    }
+}
+
 CMultiAlnPrinter::CMultiAlnPrinter(const CSeq_align& seqalign,
                                    CScope& scope)
     : m_AlnVec(new CAlnVec(seqalign.GetSegs().GetDenseg(), scope)),
@@ -136,6 +147,7 @@ void CMultiAlnPrinter::x_PrintPhylipSequential(CNcbiOstream& ostr)
         if (seq_title.length() > kSeqTitleWidth) {
             seq_title.erase(kSeqTitleWidth - 1, seq_title.size() - 1);
         }
+        s_ReplaceNonAlphaNum(seq_title);
         while (seq_title.length() < kSeqTitleWidth) {
             seq_title += " ";
         }
@@ -183,6 +195,7 @@ void CMultiAlnPrinter::x_PrintPhylipInterleaved(CNcbiOstream& ostr)
         if (seq_title.length() > kSeqTitleWidth) {
             seq_title.erase(kSeqTitleWidth - 1, seq_title.size() - 1);
         }
+        s_ReplaceNonAlphaNum(seq_title);
         while (seq_title.length() < kSeqTitleWidth) {
             seq_title += " ";
         }

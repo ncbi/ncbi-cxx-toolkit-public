@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipSequential)
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
-    BOOST_REQUIRE(output.find("RecName:  ---------------------------") != NPOS);
+    BOOST_REQUIRE(output.find("RecName__ ---------------------------") != NPOS);
     BOOST_REQUIRE(output.find("-----------------------------------------------"
                               "----------QIKDLLVSSSTD-LDTTLVLVNA") != NPOS);
 
@@ -132,11 +132,11 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
-    BOOST_REQUIRE(output.find("RecName:  -------------------------------------"
+    BOOST_REQUIRE(output.find("RecName__ -------------------------------------"
                               "----------------------------------") != NPOS);
 
 
-    BOOST_REQUIRE(output.find("secreted  --------------------------------MPQWA"
+    BOOST_REQUIRE(output.find("secreted_ --------------------------------MPQWA"
                               "NPVPAIA--GAAPVVITSARAAISAGVDEA---G") != NPOS);
 
     // last line

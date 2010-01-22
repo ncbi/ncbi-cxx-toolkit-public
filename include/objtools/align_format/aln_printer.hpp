@@ -58,7 +58,7 @@ public:
         ePhylipSequential,
         ePhylipInterleaved,
         eNexus,
-        ePhylip = ePhylipSequential
+        ePhylip = ePhylipInterleaved
     };
 
 public:
