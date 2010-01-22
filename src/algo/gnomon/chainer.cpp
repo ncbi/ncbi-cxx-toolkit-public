@@ -1259,7 +1259,7 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
 {
     ClearTrustedmRNA();
     ClearTrustedProt();
-    if(Continuous()) {
+    if(Continuous() && ConfirmedStart() && ConfirmedStop()) {
         ITERATE(vector<CGeneModel*>, i, m_members) {
             if(IntersectingWith(**i)) {                  // just in case we clipped this alignment
                 CAlignModel* orig_align = orig_aligns[(*i)->ID()];
