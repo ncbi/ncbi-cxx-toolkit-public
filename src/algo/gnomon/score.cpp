@@ -121,6 +121,24 @@ bool CSeqScores::OpenCodingRegion(int a, int b, int strand, int frame) const
     return (a > m_notinexon[strand][frame][b]);
 }
 
+bool CSeqScores::OpenNonCodingRegion(int a, int b, int strand) const 
+{
+    return (a > m_notinintron[strand][b]);
+}
+
+bool CSeqScores::ConflictsWithSraIntron(int a, int b) const 
+{
+    if(!m_sraintrons.empty())
+        return  m_sraintrons.find(TSignedSeqRange(a,b)) == m_sraintrons.end();
+    else
+        return false;
+}
+
+bool CSeqScores::ConflictsWithSraIsland(int a, int b) const 
+{
+    return a <= m_notinsraislands[b];
+}
+
 double CSeqScores::CodingScore(int a, int b, int strand, int frame) const
 {
     if(a > b) return 0; // for splitted start/stop
@@ -226,7 +244,9 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                const CIntronParameters&     intron_params,
                         TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
 : m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
-  m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp)
+  m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp), 
+  m_sraintrons_for_contig(gnomon.GetSRAIntrons()), m_sraintronpenalty(gnomon.GetSRAIntronPenalty()),
+  m_sraislands_for_contig(gnomon.GetSRAIslands()), m_sraislandpenalty(gnomon.GetSRAIslandPenalty())
 {
     m_align_list.sort(s_AlignLeftLimitOrder);
     NON_CONST_ITERATE(TGeneModelList, it, m_align_list) {
@@ -260,9 +280,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
     }
 }
 
-void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, 
-                       bool rightwall, double consensuspenalty,
-                       const CIntergenicParameters& intergenic_params)
+void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -282,6 +300,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             m_ncdrscr[strand].resize(len,BadScore());
             m_ingscr[strand].resize(len,BadScore());
             m_notinintron[strand].resize(len,-1);
+            m_notinsraislands.resize(len,-1);
+            m_sraintrons.clear();
             for(int frame = 0; frame < 3; ++frame) {
                 m_cdrscr[strand][frame].resize(len,BadScore());
                 m_laststop[strand][frame].resize(len,-1);
@@ -361,8 +381,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         align.FrameShifts().clear();
 
         EStrand strand = align.Strand();
-    
-        if((align.Type() & CGeneModel::eWall)==0 && (align.Type() & CGeneModel::eNested)==0) {
+
+        if((align.Type()&CGeneModel::eWall)==0 && (align.Type()&CGeneModel::eNested)==0) {
             CGeneModel al = align;
             int extrabases = m_start.Left()-3;   // bases before ATG needed for score;
             int extraNs5p = 0;                   // extra Ns if too close to the end of contig
@@ -720,6 +740,12 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             {
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,i));
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,i));
+                /*
+                if(m_ascr[strand][i] != BadScore())
+                    cout << "Acceptor\t" << i+1+chunk.GetFrom() << "\t" << m_ascr[strand][i] << "\t+" << endl;
+                if(m_dscr[strand][i] != BadScore())
+                    cout << "Donor\t" << i+2+chunk.GetFrom() << "\t" << m_dscr[strand][i] << "\t+" << endl;
+                */
                 m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,i));
                 m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,i));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
@@ -734,6 +760,12 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
                 int ii = len-2-i;   // extra -1 because ii is point on the "right"
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,ii));
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,ii));
+                /*
+                if(m_ascr[strand][i] != BadScore())
+                    cout << "Acceptor\t" << i+2+chunk.GetFrom() << "\t" << m_ascr[strand][i] << "\t-" << endl;
+                if(m_dscr[strand][i] != BadScore())
+                    cout << "Donor\t" << i+1+chunk.GetFrom() << "\t" << m_dscr[strand][i] << "\t-" << endl;
+                */
                 m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,ii));
                 m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,ii));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
@@ -742,7 +774,59 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     }		
 
+    typedef set<TSignedSeqRange> TSRAIntronsSet;
+    TIVec insraintrons(len,-1);
+    if(m_sraintrons_for_contig != 0) {
+        ITERATE(TSRAIntronsSet, it, *m_sraintrons_for_contig) {
+            TSignedSeqRange intron = *it;
+            /*
+            int ia = intron.GetFrom();
+            int ib = intron.GetTo();
+            if(chunk.GetFrom() == 0) 
+                cout << "Intron\t" << ia << "\t" << ib << "\t" << original_sequence[ia] << original_sequence[ia+1] << "\t" << original_sequence[ib-1] << original_sequence[ib] << endl;
+            */
+            if(Include(chunk,intron) && m_map.ShrinkToRealPoints(intron) == intron) {
+                TSignedSeqRange chunk_intron = m_map.MapRangeOrigToEdited(intron, false);
+                TSignedSeqPos a = chunk_intron.GetFrom();
+                TSignedSeqPos b = chunk_intron.GetTo();
+                for(TSignedSeqPos i=a; i<=b; ++i) insraintrons[i] = i;
+                if(a <= m_notinintron[ePlus][b] || a <= m_notinintron[eMinus][b])                // conflicts with alignment
+                    continue;
+                if((m_dscr[ePlus][a-1] != BadScore() && m_ascr[ePlus][b] != BadScore())          // good + intron   
+                   || (m_ascr[eMinus][a-1] != BadScore() && m_dscr[eMinus][b] != BadScore())) {  // good - intron   
 
+                    //                cout << "Accepted\t" << ia << "\t" << ib << "\t" << original_sequence[ia] << original_sequence[ia+1] << "\t" << original_sequence[ib-1] << original_sequence[ib] << endl;
+
+                    m_sraintrons.insert(chunk_intron);
+                }
+            }       
+        }
+        for(TSignedSeqPos i = 1; i < len; ++i) 
+           insraintrons[i] = max(insraintrons[i-1],insraintrons[i]);
+    }
+
+    if(m_sraislands_for_contig != 0) {
+        for(TSignedSeqPos i = 1; i < len; ++i) 
+            m_notinsraislands[i] = i;
+        ITERATE(TSRAIntronsSet, it, *m_sraislands_for_contig) {
+            TSignedSeqRange island = *it;
+            if(Include(chunk,island)) {
+                TSignedSeqRange chunk_island = m_map.MapRangeOrigToEdited(m_map.ShrinkToRealPoints(island), false);
+                TSignedSeqPos a = chunk_island.GetFrom();
+                TSignedSeqPos b = chunk_island.GetTo();
+
+                //                if(a > insraintrons[b])   // island doesn't overlap with any intron
+                //                    continue;
+
+                //                cout << "Accepted\t" << island.GetFrom() << "\t" << island.GetTo() << endl;
+                for(TSignedSeqPos i=a; i<=b; ++i) 
+                    m_notinsraislands[i] = -1;
+            }
+        }
+        for(TSignedSeqPos i = 1; i < len; ++i) 
+           m_notinsraislands[i] = max(m_notinsraislands[i-1],m_notinsraislands[i]);
+    }
+    
     for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
     {
         const CGeneModel& algn(*it);
@@ -1121,19 +1205,92 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
 
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
 {
-    //    const CTerminal& acceptor    = *m_data->m_acceptor;
-    // const CTerminal& donor       = *m_data->m_donor;
+    const CTerminal& acceptor    = *m_data->m_acceptor;
+    const CTerminal& donor       = *m_data->m_donor;
     const CTerminal& stt         = *m_data->m_start;
     const CTerminal& stp         = *m_data->m_stop;
     const CCodingRegion& cdr     = *m_data->m_cdr;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
     int contig_len = m_data->m_seq.size();
     EStrand strand = model.Strand();
-    //    const vector<CModelExon>& exons = model.Exons();
-    //    int num_exons = model.Exons().size();
+    const vector<CModelExon>& exons = model.Exons();
+    int num_exons = model.Exons().size();
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
     TDVec splicescr(mrna.size(),0);
+
+    if(strand == ePlus) {
+        int shift = -1;
+        for(int i = 1; i < num_exons; ++i) {
+            shift += mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
+            
+            if(exons[i-1].m_ssplice) {
+                int l = exons[i-1].GetTo();
+                double scr = donor.Score(ds[ePlus],l);
+                if(scr == BadScore()) {
+                    scr = 0;
+                } else {
+                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
+                        double s = ncdr.Score(ds[ePlus],k);
+                        if(s == BadScore()) s = 0;
+                        scr -= s;
+                    }
+                }
+                splicescr[shift] = scr;
+            }
+
+            if(exons[i].m_fsplice) {
+                int l = exons[i].GetFrom()-1;
+                double scr = acceptor.Score(ds[ePlus],l);
+                if(scr == BadScore()) {
+                    scr = 0;
+                } else {
+                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
+                        double s = ncdr.Score(ds[ePlus],k);
+                        if(s == BadScore()) s = 0;
+                        scr -= s;
+                    }
+                }
+                splicescr[shift] += scr;
+            }
+        }
+    } else {
+        int shift = mrna.size()-1;
+        for(int i = 1; i < num_exons; ++i) {
+            shift -= mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
+            
+            if(exons[i-1].m_ssplice) {
+                int l = contig_len-2-exons[i-1].GetTo();
+                double scr = acceptor.Score(ds[eMinus],l);
+                if(scr == BadScore()) {
+                    scr = 0;
+                } else {
+                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
+                        double s = ncdr.Score(ds[eMinus],k);
+                        if(s == BadScore()) s = 0;
+                        scr -= s;
+                    }
+                }
+                splicescr[shift] = scr;
+            }
+
+            if(exons[i].m_fsplice) {
+                int l = contig_len-1-exons[i].GetFrom();
+                double scr = donor.Score(ds[eMinus],l);
+                if(scr == BadScore()) {
+                    scr = 0;
+                } else {
+                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
+                        double s = ncdr.Score(ds[eMinus],k);
+                        if(s == BadScore()) s = 0;
+                        scr -= s;
+                    }
+                }
+                splicescr[shift] += scr;
+            }
+        }
+    }
+
 
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame) {
