@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq blastdb blastxml scoremat
+ASN_DEP = blastdb blastxml xnetblast
 
 LIB = xblastformat
 SRC = blastfmtutil blastxml_format blast_format data4xmlformat
