@@ -103,6 +103,15 @@ int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int p
         case 23: // Z -> rounded average E/Q
             score = Round(((double) (matrix->matrix[pssmIndex][5] + matrix->matrix[pssmIndex][15])) / 2);
             break;
+        case 24: // U -> C
+            score = matrix->matrix[pssmIndex][3];
+            break;
+        case 26: // O -> K
+            score = matrix->matrix[pssmIndex][10];
+            break;
+        case 27: // J -> average I/L
+            score = Round(((double) (matrix->matrix[pssmIndex][9] + matrix->matrix[pssmIndex][11])) / 2);
+            break;
         default:
             score = matrix->matrix[pssmIndex][blRes];
             break;
