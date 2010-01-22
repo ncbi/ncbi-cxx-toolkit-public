@@ -41,7 +41,7 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <algo/gnomon/annot.hpp>
-#include <gnomon_engine.hpp>
+#include "gnomon_engine.hpp"
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include <algo/gnomon/id_handler.hpp>
