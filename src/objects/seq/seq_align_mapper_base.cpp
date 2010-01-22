@@ -1433,10 +1433,6 @@ x_GetDstExon(CSpliced_seg&              spliced,
         }
 
         CSpliced_exon_chunk::E_Choice ptype = seg->m_PartType;
-        if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
-            ptype != CSpliced_exon_chunk::e_Product_ins) {
-            have_non_gaps = true;
-        }
 
         // Check strands consistency
         bool gen_reverse = false;
@@ -1548,6 +1544,11 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 pins_len, gen_reverse, *exon);
         }
         x_PushExonPart(last_part, ptype, seg->m_Len, gen_reverse, *exon);
+
+        if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
+            ptype != CSpliced_exon_chunk::e_Product_ins) {
+            have_non_gaps = true;
+        }
     }
     partial |= ex_partial;
     if (!have_non_gaps  ||  exon->GetParts().empty()) {
@@ -1610,8 +1611,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
 class SegByFirstRow_Less
 {
 public:
-    SegByFirstRow_Less(bool gen_rev, bool prod_rev)
-        : m_GenRev(gen_rev), m_ProdRev(gen_rev != prod_rev) {}
+    // prod_rev indicates if product strand is reversed to the genomic
+    // one, not just minus.
+    SegByFirstRow_Less(bool prod_rev)
+        : m_ProdRev(prod_rev) {}
 
     bool operator()(const SAlignment_Segment& seg1,
                     const SAlignment_Segment& seg2) const
@@ -1624,8 +1627,7 @@ public:
             if (r1.m_Id != r2.m_Id) {
                 return r1.m_Id < r2.m_Id;
             }
-            return m_GenRev ?
-                r1.m_Start > r2.m_Start : r1.m_Start < r2.m_Start;
+            return r1.m_Start < r2.m_Start;
         }
         // Use product coords in case of genomic insertion
         const SAlignment_Segment::SAlignment_Row& pr1 = seg1.m_Rows[1];
@@ -1638,7 +1640,6 @@ public:
     }
 
 private:
-    bool m_GenRev;
     bool m_ProdRev; // Product orientation is relative to genetic strand
 };
 
@@ -1685,13 +1686,13 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
         tmp.push_back(*it);
     }
     sort(tmp.begin(), tmp.end(),
-         SegByFirstRow_Less(gen_reverse, prod_reverse));
+         SegByFirstRow_Less(gen_reverse != prod_reverse));
     m_Segs.clear();
     ITERATE(TSegmentsVector, it, tmp) {
         m_Segs.push_back(*it);
     }
 #else
-    m_Segs.sort(SegByFirstRow_Less(gen_reverse, prod_reverse));
+    m_Segs.sort(SegByFirstRow_Less(gen_reverse != prod_reverse));
 #endif
 }
 
