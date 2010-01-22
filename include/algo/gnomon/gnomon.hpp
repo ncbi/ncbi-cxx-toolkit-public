@@ -66,6 +66,7 @@ private:
     CHMMParameters& operator= (const CHMMParameters& value);
 };
 
+
 class NCBI_XALGOGNOMON_EXPORT CGnomonEngine {
 public:
     CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole());
@@ -97,6 +98,15 @@ public:
 
     TSignedSeqPos PartialModelStepBack(list<CGeneModel>& genes) const;
     void PrintInfo() const;
+
+    void AddSRAIntrons(const set<TSignedSeqRange>* sraintrons, double sraintronpenalty);
+    const set<TSignedSeqRange>* GetSRAIntrons() const;
+    double GetSRAIntronPenalty() const;
+
+    void AddSRAIslands(const set<TSignedSeqRange>* sraislands, double sraislandpenalty);
+    const set<TSignedSeqRange>* GetSRAIslands() const;
+    double GetSRAIslandPenalty() const;
+
 
 private:
     // Prohibit copy constructor and assignment operator

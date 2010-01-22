@@ -44,9 +44,41 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
+void CGnomonEngine::AddSRAIntrons(const set<TSignedSeqRange>* sraintrons, double sraintronpenalty)
+{
+    m_data->m_sraintrons = sraintrons;
+    m_data->m_sraintronpenalty = sraintronpenalty;
+}
+
+const set<TSignedSeqRange>* CGnomonEngine::GetSRAIntrons() const 
+{
+    return m_data->m_sraintrons;
+}
+
+double CGnomonEngine::GetSRAIntronPenalty() const 
+{
+    return m_data->m_sraintronpenalty;
+}
+
+void CGnomonEngine::AddSRAIslands(const set<TSignedSeqRange>* sraislands, double sraislandpenalty)
+{
+    m_data->m_sraislands = sraislands;
+    m_data->m_sraislandpenalty = sraislandpenalty;
+}
+
+const set<TSignedSeqRange>* CGnomonEngine::GetSRAIslands() const 
+{
+    return m_data->m_sraislands;
+}
+
+double CGnomonEngine::GetSRAIslandPenalty() const 
+{
+    return m_data->m_sraislandpenalty;
+}
+
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
 (CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range) :
-    m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params)
+    m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params), m_sraintrons(0), m_sraislands(0)
 {}
 
 CGnomonEngine::SGnomonEngineImplData::~SGnomonEngineImplData() {}

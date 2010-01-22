@@ -159,8 +159,13 @@ double CExon::RgnScore() const
     {
         frame = (Phase()+Stop())%3;
     }
+
+    double score = m_seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
+
+    if(score != BadScore() && m_seqscr->ConflictsWithSraIsland(Start(),Stop()))
+        score -= m_seqscr->GetSRAIslandPenalty();
     
-    return m_seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
+    return score;
 }
 
 void CExon::UpdatePrevExon(const CExon& e)
@@ -329,6 +334,14 @@ double CIntron::BranchScore(const CLastExon& next) const
             
     return BadScore();
 }
+
+double CIntron::RgnScore() const { 
+    if(m_seqscr->ConflictsWithSraIntron(Start(),Stop()))
+        return -m_seqscr->GetSRAIntronPenalty();
+    else
+        return 0;    // Intron scores are substructed from all others   
+}
+
 
 CIntergenic::CIntergenic(EStrand strn, int point, const CSeqScores& seqscr, const CIntergenicParameters& intergenic_params)
     : CHMM_State(strn,point,seqscr),

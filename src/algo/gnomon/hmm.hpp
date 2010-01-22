@@ -452,7 +452,7 @@ public:
     int MaxLen() const { return m_param->m_intronlen.MaxLen(); }
     int Phase() const { return m_phase; }
     bool OpenRgn() const { return m_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
-    double RgnScore() const { return 0; }   // Intron scores are substructed from all others
+    double RgnScore() const;
     double TermScore() const
     {
         if(isPlus()) return m_seqscr->AcceptorScore(Stop(),Strand());
@@ -462,8 +462,10 @@ public:
     double DenScore() const { return m_param->m_lnDen[Phase()]; }
     double LengthScore() const
     {
-        if(SplittedStop()) return BadScore();
-        else return m_param->m_intronlen.Score(Stop()-Start()+1);
+        if(SplittedStop())
+            return BadScore();
+        else 
+            return m_param->m_intronlen.Score(Stop()-Start()+1);
     }
     double ClosingLengthScore() const;
     double ThroughLengthScore() const  { return m_param->m_lnThrough[Phase()]; }

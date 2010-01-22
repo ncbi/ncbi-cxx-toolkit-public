@@ -79,7 +79,7 @@ public:
     double CodingScore(int a, int b, int strand, int frame) const;
     int ProtNumber(int a, int b) const { return (m_protnum[b]-m_protnum[a]); }
     double MultiProtPenalty() const { return m_mpp; }
-    bool OpenNonCodingRegion(int a, int b, int strand) const { return (a > m_notinintron[strand][b]); }
+    bool OpenNonCodingRegion(int a, int b, int strand) const;
     double NonCodingScore(int a, int b, int strand) const;
     bool OpenIntergenicRegion(int a, int b) const;
     int LeftAlignmentBoundary(int b) const { return m_inalign[b]; }
@@ -95,6 +95,11 @@ public:
     bool isGT(int i, int strand) const;
     bool isConsensusIntron(int i, int j, int strand) const;
     const EResidue* SeqPtr(int i, int strand) const;
+    const set<TSignedSeqRange>& GetSRAIntrons() const { return m_sraintrons; }
+    double GetSRAIntronPenalty() const { return m_sraintronpenalty; }
+    double GetSRAIslandPenalty() const { return m_sraislandpenalty; }
+    bool ConflictsWithSraIntron(int a, int b) const;
+    bool ConflictsWithSraIsland(int a, int b) const;
 
 private:
     CSeqScores& operator=(const CSeqScores&);
@@ -113,7 +118,12 @@ private:
     int m_anum[2], m_dnum[2], m_sttnum[2], m_stpnum[2];
     TSignedSeqPos m_chunk_start, m_chunk_stop;
     double m_mpp;
-
+    set<TSignedSeqRange> m_sraintrons;
+    const set<TSignedSeqRange>* m_sraintrons_for_contig;
+    double m_sraintronpenalty;
+    const set<TSignedSeqRange>* m_sraislands_for_contig;
+    double m_sraislandpenalty;
+    TIVec m_notinsraislands;
     CResidueVec ConstructSequenceAndMaps(const TGeneModelList& aligns, const CResidueVec& original_sequence);
 };
 

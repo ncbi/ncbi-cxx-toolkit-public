@@ -41,8 +41,10 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <algo/gnomon/annot.hpp>
+#include <gnomon_engine.hpp>
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
+#include <algo/gnomon/id_handler.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -204,7 +206,35 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
     TGeneModelList suspect_aligns;
     TSignedSeqRange tested_range;
 
+    TIVec busy_spots(rlimit+1,0);
+    ITERATE(TGeneModelList, it_c, aligns) {
+        int a = max(0,it_c->Limits().GetFrom()-margin);
+        int b = min(rlimit,it_c->Limits().GetTo()+margin);
+        for(int i = a; i<=b; ++i)
+            busy_spots[i] = 1;
+    }
+        
+    typedef set<TSignedSeqRange> TSRAIntronsSet;
+    if(m_gnomon->GetSRAIntrons() != 0) {
+        ITERATE(TSRAIntronsSet, it, *m_gnomon->GetSRAIntrons()) {
+            int a = max(0,it->GetFrom()-margin);
+            int b = min(rlimit,it->GetTo()+margin);
+            for(int i = a; i<=b; ++i)
+                busy_spots[i] = 1;
+        }
+    }
+        
+    if(m_gnomon->GetSRAIslands() != 0) {
+        ITERATE(TSRAIntronsSet, it, *m_gnomon->GetSRAIslands()) {
+            int a = max(0,it->GetFrom()-margin);
+            int b = min(rlimit,it->GetTo()+margin);
+            for(int i = a; i<=b; ++i)
+                busy_spots[i] = 1;
+        }
+    }
+
     do {
+        /*
         while( right <= rlimit ) {
             bool close = false;
             ITERATE(TGeneModelList, it_c, aligns) {
@@ -217,6 +247,8 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
             }
             if(!close) break;
         }
+        */
+        for( ; right < rlimit && busy_spots[right] != 0; ++right);
             
         if (right + (right-left)/2 >= rlimit) {
             right = rlimit;
@@ -541,6 +573,11 @@ void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddFlag("nonconsens","Allows to accept nonconsensus splices starts/stops to complete partial alignmet. If not allowed some partial alignments "
                       "may be rejected if there is no way to complete them.");
     arg_desc->AddDefaultKey("ncsp","ncsp","Nonconsensus penalty",CArgDescriptions::eDouble,"25");
+
+    arg_desc->AddDefaultKey("sraintronpenalty","sraintronpenalty","Penalty for intron not included in SRA",CArgDescriptions::eDouble,"5");
+    arg_desc->AddOptionalKey("sraintrons", "sraintrons","Short reads introns",CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("sraislandpenalty","sraislandpenalty","Penalty for exon not included in SRA island",CArgDescriptions::eDouble,"5");
+    arg_desc->AddOptionalKey("sraislands", "sraislands","Short reads islands",CArgDescriptions::eInputFile);
 
     arg_desc->AddFlag("norep","DO NOT mask lower case letters");
     arg_desc->AddDefaultKey("mincont","mincont","Contigs shorter than that will be skipped unless they have alignments.",CArgDescriptions::eInteger,"1000");
