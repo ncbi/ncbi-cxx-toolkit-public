@@ -6447,13 +6447,17 @@ find "$srcdir"/src/* -name .svn -prune -o -name 'Makefile.*.mk' -print \
       echo
       echo "### Extra macro definitions from $x"
       echo
+      echo "#line 1 \"$x\""
       cat "$x"
    done >> "$builddir/Makefile.mk"
+$srcdir/scripts/common/impl/report_duplicates.awk \
+   src="$srcdir/src/build-system/Makefile.mk.in" "$builddir/Makefile.mk"
 find "$srcdir"/src/* -name .svn -prune -o -name 'ncbiconf.*.h' -print \
    | while read x; do
       echo
       echo "/*** Extra macro definitions from $x ***/"
       echo
+      echo "#line 1 \"$x\""
       cat "$x"
    done > "$build_root/inc/ncbiconf_extra.h"
 if test -s "$build_root/inc/ncbiconf_extra.h"; then
@@ -6461,6 +6465,8 @@ if test -s "$build_root/inc/ncbiconf_extra.h"; then
    newconf=$ncbiconf.extra.new
    savedconf=$ncbiconf.extra.prev
    cat "$ncbiconf" "$build_root/inc/ncbiconf_extra.h" > "$newconf"
+   $srcdir/scripts/common/impl/report_duplicates.awk \
+      src="$srcdir/src/build-system/config.h.in" "$newconf"
    if test -f "$savedconf"  &&  cmp "$newconf" "$savedconf" >/dev/null; then
       echo "$ncbiconf is unchanged"
    else

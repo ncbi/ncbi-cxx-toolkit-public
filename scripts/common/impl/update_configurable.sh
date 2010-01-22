@@ -76,8 +76,11 @@ case $output in
             echo
             echo "### Extra macro definitions from $x"
             echo
+            echo "#line 1 \"$x\""
             cat "$x"
         done >> "$builddir/Makefile.mk"
+        $srcdir/scripts/common/impl/report_duplicates.awk \
+            src=./src/build-system/Makefile.mk.in "$builddir/Makefile.mk"
         ;;
 
     *.sh)
