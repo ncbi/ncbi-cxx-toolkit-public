@@ -418,6 +418,18 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object,
             m_MappingInfo.SetPartial(GetSeq_annot_Info().IsTableFeatPartial(object));
         }
     }
+    if ( object.HasSingleKey() ) {
+        m_MappingInfo.SetTotalRange(object.GetKey().m_Range);
+    }
+    else {
+        size_t beg = object.GetKeysBegin();
+        size_t end = object.GetKeysEnd();
+        if ( beg < end ) {
+            const SAnnotObject_Key& key =
+                GetSeq_annot_Info().GetAnnotObjectKey(beg);
+            m_MappingInfo.SetTotalRange(key.m_Range);
+        }
+    }
 }
 
 
@@ -2581,6 +2593,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
     }
 
     _ASSERT(m_Selector->m_LimitTSE);
+    annot_info.UpdateAnnotIndex();
     CSeq_annot_Handle sah(annot_info, m_Selector->m_LimitTSE);
     // Collect all annotations from the annot
     ITERATE ( CSeq_annot_Info::TAnnotObjectInfos, aoit,
