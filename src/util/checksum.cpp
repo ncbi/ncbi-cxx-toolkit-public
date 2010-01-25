@@ -602,25 +602,44 @@ Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len)
 {
     const Uint4 MOD_ADLER = 65521;
 
+#define ADJUST_ADLER(a) a = (a & 0xffff) + (a >> 16) * (0x10000-MOD_ADLER)
+#define FINALIZE_ADLER(a) if (a >= MOD_ADLER) a -= MOD_ADLER
+
     Uint4 a = sum & 0xffff, b = sum >> 16;
     
+    const size_t kMaxLen = 5548u;
     while (len) {
-        size_t tlen = len > 5550u ? 5550u : len;
-        len -= tlen;
-        do {
-            a += Uint1(*data++);
-            b += a;
-        } while (--tlen);
-        a = (a & 0xffff) + (a >> 16) * (65536-MOD_ADLER);
-        b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
+        if ( len >= kMaxLen ) {
+            len -= kMaxLen;
+            for ( size_t i = 0; i < kMaxLen/4; ++i ) {
+                b += a += Uint1(data[0]);
+                b += a += Uint1(data[1]);
+                b += a += Uint1(data[2]);
+                b += a += Uint1(data[3]);
+                data += 4;
+            }
+        }
+        else {
+            for ( size_t i = len >> 2; i; --i ) {
+                b += a += Uint1(data[0]);
+                b += a += Uint1(data[1]);
+                b += a += Uint1(data[2]);
+                b += a += Uint1(data[3]);
+                data += 4;
+            }
+            for ( len &= 3; len; --len ) {
+                b += a += Uint1(data[0]);
+                data += 1;
+            }
+        }
+        ADJUST_ADLER(a);
+        ADJUST_ADLER(b);
     }
     // It can be shown that a <= 0x1013a here, so a single subtract will do.
-    if (a >= MOD_ADLER)
-        a -= MOD_ADLER;
+    FINALIZE_ADLER(a);
     // It can be shown that b can reach 0xffef1 here.
-    b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
-    if (b >= MOD_ADLER)
-        b -= MOD_ADLER;
+    ADJUST_ADLER(b);
+    FINALIZE_ADLER(b);
     return (b << 16) | a;
 }
 
