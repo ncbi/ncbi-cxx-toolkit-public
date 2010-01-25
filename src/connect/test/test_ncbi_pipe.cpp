@@ -79,7 +79,7 @@ static void x_SetupDiag(const char* who)
 }
 
 
-// Read from pipe (up to "size" bytes)
+// Read from a pipe (up to "size" bytes)
 static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
                              size_t* n_read)
 {
@@ -89,10 +89,12 @@ static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Read((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) read from pipe:");
+        ERR_POST(Info << cnt << " byte(s) read from pipe");
         if ( cnt ) {
+            cerr << ":\n";
             cerr.write((char*) buf + total, cnt);
             cerr << endl;
+            cerr.flush();
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);    
@@ -104,7 +106,7 @@ static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
 }
 
 
-// Write to pipe
+// Write to a pipe
 static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
                               size_t* n_written) 
 {
@@ -114,10 +116,12 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Write((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) written to pipe:");
+        ERR_POST(Info << cnt << " byte(s) written to pipe");
         if ( cnt ) {
+            cerr << ":\n";
             cerr.write((char*) buf + total, cnt);
             cerr << endl;
+            cerr.flush();
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);
@@ -129,7 +133,7 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
 }
 
 
-// Read from file stream
+// Read from a file stream
 static string s_ReadLine(FILE* fs) 
 {
     string str;
@@ -137,12 +141,14 @@ static string s_ReadLine(FILE* fs)
         char   buf[80];
         char*  res = fgets(buf, sizeof(buf)-1, fs);
         size_t len = res ? strlen(res) : 0;
-        ERR_POST(Info << (int) len << " byte(s) read from file:");
+        ERR_POST(Info << (int) len << " byte(s) read from file");
         if (!len) {
             break;
         }
+        cerr << ":\n";
         cerr.write(res, len);
         cerr << endl;
+        cerr.flush();
         if (res[len - 1] == '\n') {
             str += string(res, len - 1);
             break;
@@ -153,7 +159,7 @@ static string s_ReadLine(FILE* fs)
 }
 
 
-// Write to file stream
+// Write to a file stream
 static void s_WriteLine(FILE* fs, const string& str)
 {
     size_t      written = 0;
@@ -161,12 +167,14 @@ static void s_WriteLine(FILE* fs, const string& str)
     const char* data = str.c_str();
     do {
         size_t cnt = fwrite(data + written, 1, size - written, fs);
-        ERR_POST(Info << (int) cnt << " byte(s) written to file:");
+        ERR_POST(Info << (int) cnt << " byte(s) written to file");
         if (!cnt) {
             break;
         }
+        cerr << ":\n";
         cerr.write(data + written, cnt);
         cerr << endl;
+        cerr.flush();
         written += cnt;
     } while (written < size);
     if (written == size) {
@@ -186,11 +194,13 @@ static void s_ReadStream(istream& ios)
         char   buf[kBufferSize];
         ios.read(buf, sizeof(buf));
         size_t cnt = ios.gcount();
-        ERR_POST(Info << "Read from istream: " << cnt << " byte(s):");
-        cerr.write(buf, cnt);
-        if ( cnt ) {
+        ERR_POST(Info << "Read from istream: " << cnt << " byte(s)");
+        if (cnt) {
+            cerr << ":\n";
+            cerr.write(buf, cnt);
             cerr << endl;
         }
+        cerr.flush();
         total += cnt;
         if (cnt == 0  &&  ios.eof()) {
             break;
@@ -221,7 +231,7 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    const string& app = GetArguments().GetProgramName();
+    const string&  app = GetArguments().GetProgramName();
 
     string         cmd;
     string         str;
