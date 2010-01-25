@@ -383,19 +383,42 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     const CDense_seg& ds = (finalAln ? finalAln->GetSegs().GetDenseg() :
                             align.GetSegs().GetDenseg());
 
-    CAlnVec alnVec(ds, scope);
+    /// @todo code to create CAlnVec is the same as the one used in
+    /// blastxml_format.cpp (s_SeqAlignSetToXMLHsps) and also
+    /// CDisplaySeqalign::x_GetAlnVecForSeqalign(), these should be refactored
+    /// into a single function, possibly in CAlignFormatUtil. Note that
+    /// CAlignFormatUtil::GetPercentIdentity() and
+    /// CAlignFormatUtil::GetAlignmentLength() also use a similar logic...
+    /// @sa s_SeqAlignSetToXMLHsps
+    /// @sa CDisplaySeqalign::x_GetAlnVecForSeqalign
+    CRef<CAlnVec> alnVec;
+
+    // For non-transalted reverse strand alignments, show plus strand on 
+    // query and minus strand on subject. To accomplish this, Dense-seg must
+    // be reversed.
+    if (!kTranslated && ds.IsSetStrands() && 
+        ds.GetStrands().front() == eNa_strand_minus) {
+        CRef<CDense_seg> reversed_ds(new CDense_seg);
+        reversed_ds->Assign(ds);
+        reversed_ds->Reverse();
+        alnVec.Reset(new CAlnVec(*reversed_ds, scope));   
+    } else {
+        alnVec.Reset(new CAlnVec(ds, scope));
+    }    
+
+
     
     int align_length, num_gaps, num_gap_opens;
-    CAlignFormatUtil::GetAlignLengths(alnVec, align_length, num_gaps, 
+    CAlignFormatUtil::GetAlignLengths(*alnVec, align_length, num_gaps, 
                                       num_gap_opens);
 
     // Do not trust the identities count in the Seq-align, because if masking 
     // was used, then masked residues were not counted as identities. 
     // Hence retrieve the sequences present in the alignment and count the 
     // identities again.
-    alnVec.SetGapChar('-');
-    alnVec.GetWholeAlnSeqString(0, m_QuerySeq);
-    alnVec.GetWholeAlnSeqString(1, m_SubjectSeq);
+    alnVec->SetGapChar('-');
+    alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
+    alnVec->GetWholeAlnSeqString(1, m_SubjectSeq);
 
     // Do not trust the number of identities saved in the Seq-align.
     // Recalculate it again.
@@ -438,11 +461,11 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // For translated search, for a negative query frame, reverse its start and
     // end offsets.
     if (kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus) {
-        q_start = alnVec.GetSeqStop(kQueryRow) + 1;
-        q_end = alnVec.GetSeqStart(kQueryRow) + 1;
+        q_start = alnVec->GetSeqStop(kQueryRow) + 1;
+        q_end = alnVec->GetSeqStart(kQueryRow) + 1;
     } else {
-        q_start = alnVec.GetSeqStart(kQueryRow) + 1;
-        q_end = alnVec.GetSeqStop(kQueryRow) + 1;
+        q_start = alnVec->GetSeqStart(kQueryRow) + 1;
+        q_end = alnVec->GetSeqStop(kQueryRow) + 1;
     }
 
     // If subject is on a reverse strand, reverse its start and end offsets.
@@ -450,11 +473,11 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // reverse strand, because BLAST output always reverses subject, not query.
     if (ds.GetSeqStrand(kSubjectRow) == eNa_strand_minus ||
         (!kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus)) {
-        s_end = alnVec.GetSeqStart(kSubjectRow) + 1;
-        s_start = alnVec.GetSeqStop(kSubjectRow) + 1;
+        s_end = alnVec->GetSeqStart(kSubjectRow) + 1;
+        s_start = alnVec->GetSeqStop(kSubjectRow) + 1;
     } else {
-        s_start = alnVec.GetSeqStart(kSubjectRow) + 1;
-        s_end = alnVec.GetSeqStop(kSubjectRow) + 1;
+        s_start = alnVec->GetSeqStart(kSubjectRow) + 1;
+        s_end = alnVec->GetSeqStop(kSubjectRow) + 1;
     }
     
     int query_frame = 1, subject_frame = 1;
