@@ -24,7 +24,7 @@ rm -f $server_log $client_log
 
 test_ncbi_namedpipe -suffix $$ server >$server_log 2>&1 &
 spid=$!
-trap 'kill -9 $spid; rm -f ./.ncbi_test_pipename_$$' 0 1 2 15
+trap 'kill -0 $spid && kill -9 $spid; rm -f ./.ncbi_test_pipename_$$' 0 1 2 15
 
 sleep 2
 $CHECK_EXEC test_ncbi_namedpipe -suffix $$ client >$client_log  ||  exit_code=1

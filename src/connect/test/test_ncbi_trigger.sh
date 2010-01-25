@@ -32,7 +32,7 @@ spid=$!
 sleep 2
 test_ncbi_trigger              -port $port client >$client_log 2>&1 &
 cpid=$!
-trap 'kill -9 $spid $cpid' 0 1 2 15
+trap 'kill -0 $spid && kill -9 $spid; kill -0 $cpid && kill -9 $cpid' 0 1 2 15
 
 n="`expr $$ % 3`"
 while kill -0 $cpid; do

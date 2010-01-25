@@ -28,7 +28,7 @@ port="555`expr $$ % 100`"
 
 test_ncbi_socket $port >$server_log 2>&1 &
 spid=$!
-trap 'kill -9 $spid' 0 1 2 15
+trap 'kill -0 $spid && kill -9 $spid' 0 1 2 15
 
 sleep 2
 $CHECK_EXEC test_ncbi_socket localhost $port >$client_log  ||  exit_code=1
