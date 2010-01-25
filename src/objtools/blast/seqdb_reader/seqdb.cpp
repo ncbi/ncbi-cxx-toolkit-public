@@ -853,17 +853,18 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 void
 CSeqDB::FindVolumePaths(const string   & dbname,
                         ESeqType         seqtype,
-                        vector<string> & paths)
+                        vector<string> & paths,
+                        bool             recursive)
 {
     bool done = false;
     
     if (seqtype == CSeqDB::eProtein) {
-        CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
+        CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, recursive);
     } else if (seqtype == CSeqDB::eNucleotide) {
-        CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
+        CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, recursive);
     } else {
         try {
-            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
+            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, recursive);
             done = true;
         }
         catch(...) {
@@ -871,7 +872,7 @@ CSeqDB::FindVolumePaths(const string   & dbname,
         }
         
         if (! done) {
-            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
+            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, recursive);
         }
     }
 }

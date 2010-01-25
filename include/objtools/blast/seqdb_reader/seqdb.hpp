@@ -891,10 +891,13 @@ public:
     ///   Specify eProtein, eNucleotide, or eUnknown.
     /// @param paths
     ///   The set of resolved database path names
+    /// @param recursive
+    ///   If true, the search will traverse the full alias node tree
     static void
     FindVolumePaths(const string   & dbname,
                     ESeqType         seqtype,
-                    vector<string> & paths);
+                    vector<string> & paths,
+                    bool             recursive=true);
     
     /// Find volume paths
     ///
@@ -904,7 +907,7 @@ public:
     /// @param paths
     ///   The returned set of resolved database path names
     /// @param recursive
-    ///   If true, the search will continue till volume file is found
+    ///   If true, the search will traverse the full alias node tree
     void FindVolumePaths(vector<string> & paths, bool recursive=true) const;
     
     /// Set Iteration Range

@@ -632,10 +632,13 @@ public:
     ///   Indicates whether the database is protein or nucleotide
     /// @param paths
     ///   The returned set of resolved database path names
+    /// @param recursive
+    ///   If true, search will traverse the full alias node tree
     static void
     FindVolumePaths(const string   & dbname,
                     char             prot_nucl,
-                    vector<string> & paths);
+                    vector<string> & paths,
+                    bool             recursive);
     
     /// Find volume paths
     ///
@@ -646,8 +649,8 @@ public:
     /// @param paths
     ///   The returned set of resolved database path names
     /// @param recursive
-    ///   If true the search will continue till volume is found
-    void FindVolumePaths(vector<string> & paths, bool recursive=true) const;
+    ///   If true the search will traverse the full alias node tree
+    void FindVolumePaths(vector<string> & paths, bool recursive) const;
     
     /// Set Iteration Range
     ///

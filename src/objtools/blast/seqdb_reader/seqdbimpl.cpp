@@ -57,7 +57,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
       m_VolSet          (m_Atlas,
-                         m_Aliases.GetVolumeNames(),
+                         m_Aliases.GetVolumeSet(),
                          prot_nucl,
                          gi_list,
                          neg_list),
@@ -1223,25 +1223,22 @@ int CSeqDBImpl::GetOidAtOffset(int first_seq, Uint8 residue) const
 void
 CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             char             prot_nucl,
-                            vector<string> & paths)
+                            vector<string> & paths,
+                            bool             recursive)
 {
     CSeqDBAtlasHolder AH(true, NULL, NULL);
     CSeqDBAtlas & atlas(AH.Get());
     
     // This constructor handles its own locking.
     CSeqDBAliasFile aliases(atlas, dbname, prot_nucl);
-    paths = aliases.GetVolumeNames();
+    aliases.FindVolumePaths(paths, recursive);
 }
 
 void
 CSeqDBImpl::FindVolumePaths(vector<string> & paths, bool recursive) const
 {
     CHECK_MARKER();
-    if (recursive) {
-        paths = m_Aliases.GetVolumeNames();
-    } else {
-        m_Aliases.GetVolumeNames(paths);
-    }
+    m_Aliases.FindVolumePaths(paths, recursive);
 }
 
 void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)

@@ -556,7 +556,6 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
     
     ITERATE(TIdList, iter, idlist) {
         const CSeq_id & seqid = **iter;
-        const CTextseq_id * textid  = seqid.GetTextseq_Id();
 
         switch(seqid.Which()) {
 
@@ -588,6 +587,7 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
         // default processing:
         default: 
             {
+                const CTextseq_id * textid  = seqid.GetTextseq_Id();
                 if (textid) {
                     x_AddTextId(oid, *textid);
                 } else {

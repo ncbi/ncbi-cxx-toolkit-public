@@ -467,7 +467,7 @@ public:
     ///   The returned set of volume names
     /// @param recursive
     ///   If true will descend the alias tree to the volume nodes
-    void GetVolumeNames(vector<string> & vols, bool recursive=true) const;
+    void FindVolumePaths(vector<string> & vols, bool recursive) const;
     
     /// Get the title
     ///
@@ -839,7 +839,7 @@ private:
     ///
     /// @param vols
     ///   The set of strings to receive the volume names
-    void x_GetVolumeNames(set<string> & vols) const;
+    void x_FindVolumePaths(set<string> & vols) const;
     
     /// Name resolution
     ///
@@ -980,19 +980,33 @@ public:
     ///
     /// This method returns a reference to the vector of volume names.
     /// The vector will contain all volume names mentioned in any of
-    /// the DBLIST lines in the of the alias node tree.  The volume
-    /// names do not include an extension (such as .pin or .nin).
+    /// the DBLIST lines in the hierarchy of the alias node tree.  The 
+    /// volume names do not include an extension (such as .pin or .nin).
     ///
     /// @return
     ///   Reference to the internal vector of volume names.
-    const vector<string> & GetVolumeNames() const
+    const vector<string> & GetVolumeSet() const
     {
         return m_VolumeNames;
     }
     
-    void GetVolumeNames(vector<string> & vols) const
+    /// Find the base names of volumes.
+    /// 
+    /// This method populates the vector with volume names.
+    /// 
+    /// @param vols  The vector to be populated with volume names
+    /// @param recursive  If true, vol will include all volume names
+    /// within the alias node tree.  Otherwise, only the top-node volume
+    /// names are included
+    void FindVolumePaths(vector<string> & vols, bool recursive) const
     {
-        m_Node->GetVolumeNames(vols, false);
+        if (recursive) {
+            // use the cached results 
+            vols = m_VolumeNames; 
+        }
+        else {
+            m_Node->FindVolumePaths(vols, false);
+        }
     };
 
     /// Get the title
@@ -1213,7 +1227,7 @@ private:
     /// aggregates the user provided database names.
     CRef<CSeqDBAliasNode> m_Node;
     
-    /// The cached output of the topmost node's GetVolumeNames().
+    /// The cached output of the topmost node's FindVolumePaths().
     vector<string> m_VolumeNames;
     
     /// True if this is a protein database.
