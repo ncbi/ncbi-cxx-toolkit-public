@@ -285,7 +285,7 @@ public:
 
     void WriteMsg(const char*   prefix,
                   const string& msg = kEmptyStr,
-                  bool          comm_control = false);
+                  bool          interim = false);
     // Write "OK:message", differs in logging with WriteOK
     // it is logged as Extra not to end the request prematurely.
     void WriteInterim(const string& msg = kEmptyStr);
@@ -428,6 +428,8 @@ private:
     void x_AccessViolationMessage(unsigned deficit, string& msg);
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
+    SParsedCmd x_ParseCommand(CTempString command);
+    void x_LogRequest();
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(string&       lmsg,
                           const string& op,
@@ -1090,38 +1092,14 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
 // Workhorse method
 void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
 {
-    bool is_log = m_Server->IsLog();
-
     s_ReadBufToString(buffer, m_Request);
 
     m_CommandNumber = m_Server->GetCommandNumber();
 
-    // Logging
-    if (is_log || IsMonitoring()) {
-        string lmsg;
-        x_MakeLogMessage(lmsg, "REQ", m_Request);
-        if (is_log) {
-            GetDiagContext().PrintRequestStart()
-//                .Print("node", worker_node->GetId())
-//                .Print("queue", m_QueueName)
-//                .Print("job_id", NStr::IntToString(job.GetId()))
-                .Print("cmd", m_Request);
-            ;
-
-//            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
-//                << lmsg
-//                << NCBI_NS_NCBI::Endm;
-        }
-        if (IsMonitoring()) {
-            lmsg += "\n";
-            MonitorPost(lmsg);
-        }
-    }
-
     m_JobReq.Init();
     SParsedCmd cmd;
     try {
-        cmd = m_ReqParser.ParseCommand(m_Request);
+        cmd = x_ParseCommand(m_Request);
     }
     catch (const CNSProtoParserException& ex) {
         // Rewrite error in usual terms
@@ -1469,7 +1447,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     m_ReqParser.SetCommandMap(sm_BatchHeaderMap);
     try {
         try {
-            SParsedCmd parsed = m_ReqParser.ParseCommand(cmd);
+            SParsedCmd parsed = x_ParseCommand(cmd);
             const string& size_str = parsed.params["size"];
             if (!size_str.empty()) {
                 m_BatchSize = NStr::StringToInt(size_str);
@@ -1626,7 +1604,7 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
     m_ReqParser.SetCommandMap(sm_BatchEndMap);
     try {
         try {
-            m_ReqParser.ParseCommand(cmd);
+            x_ParseCommand(cmd);
         }
         catch (const CException&) {
             BUF_Read(buffer, 0, BUF_Size(buffer));
@@ -2773,7 +2751,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
 void CNetScheduleHandler::WriteMsg(const char*   prefix,
                                    const string& msg,
-                                   bool          comm_control)
+                                   bool          interim)
 {
     CSocket& socket = GetSocket();
     size_t msg_length = 0;
@@ -2802,7 +2780,6 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
 
     bool is_log = m_Server->IsLog();
     if (is_log || IsMonitoring()) {
-        string lmsg;
         size_t log_length = min(msg_length, (size_t) 1024);
         bool shortened = log_length < msg_length;
         while (log_length > 0 && (buf_ptr[log_length-1] == '\n' ||
@@ -2810,23 +2787,22 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
                 log_length--;
         }
 
-        x_MakeLogMessage(lmsg, "ANS", string(buf_ptr, log_length));
-        if (shortened) lmsg += "...";
-
         if (is_log) {
+            {{
             CDiagContext_Extra extra = GetDiagContext().Extra();
             extra.Print("answer", string(buf_ptr, log_length));
-            if (!comm_control) {
+            }}
+            if (!interim) {
                 // TODO: remove prefix, replace with success/failure, reflect it
-                // in request status
+                // in request status.
                 CDiagContext::GetRequestContext().SetRequestStatus(200);
                 GetDiagContext().PrintRequestStop();
             }
-            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
-                << lmsg
-                << NCBI_NS_NCBI::Endm;
         }
         if (IsMonitoring()) {
+            string lmsg;
+            x_MakeLogMessage(lmsg, "ANS", string(buf_ptr, log_length));
+            if (shortened) lmsg += "...";
             lmsg += "\n";
             MonitorPost(lmsg);
         }
@@ -2835,7 +2811,7 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
     size_t n_written;
     EIO_Status io_st =
         socket.Write(buf_ptr, msg_length, &n_written);
-    if (comm_control && io_st) {
+    if (interim && io_st) {
         NCBI_THROW(CNetServiceException,
                    eCommunicationError, "Socket write error.");
     }
@@ -2857,6 +2833,28 @@ void CNetScheduleHandler::WriteOK(const string& msg)
 void CNetScheduleHandler::WriteErr(const string& msg)
 {
     WriteMsg("ERR:", msg);
+}
+
+
+CNetScheduleHandler::SParsedCmd
+CNetScheduleHandler::x_ParseCommand(CTempString command)
+{
+    bool is_log = m_Server->IsLog();
+    if (is_log) {
+        GetDiagContext().PrintRequestStart()
+            .Print("cmd", command)
+//                .Print("node", worker_node->GetId())
+            .Print("queue", m_QueueName)
+//                .Print("job_id", NStr::IntToString(job.GetId()))
+        ;
+    }
+    if (IsMonitoring()) {
+        string lmsg;
+        x_MakeLogMessage(lmsg, "REQ", command);
+        lmsg += "\n";
+        MonitorPost(lmsg);
+    }
+    return m_ReqParser.ParseCommand(command);
 }
 
 
@@ -3198,9 +3196,9 @@ int CNetScheduleDApp::Run(void)
 int main(int argc, const char* argv[])
 {
     CDiagContext::SetOldPostFormat(false);
-    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
+//    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     // Main thread request context already created, so is not affected
     // by just set default, so set it manually.
-    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+//    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }

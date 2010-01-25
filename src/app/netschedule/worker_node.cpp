@@ -376,6 +376,7 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
         m_JobInfoById.erase(job_info.get());
         throw;
     }
+    job_info.release();
     worker_node->UpdateValidityTime();
 }
 

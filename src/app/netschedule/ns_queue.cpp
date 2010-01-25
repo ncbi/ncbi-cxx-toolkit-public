@@ -658,7 +658,6 @@ unsigned CQueue::Submit(CJob& job)
     if (log_job_state >= 1) {
         CRequestContext rq;
         rq.SetRequestID(CRequestContext::GetNextRequestID());
-
         CDiagContext::SetRequestContext(&rq);
 
         SQueueDescription qdesc;
@@ -683,7 +682,11 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 
     SQueueDescription qdesc;
 
+    CRequestContext rq;
     if (log_job_state >= 1) {
+        rq.SetRequestID(CRequestContext::GetNextRequestID());
+        CDiagContext::SetRequestContext(&rq);
+
         GetDiagContext().PrintRequestStart()
             .Print("action", "submit_batch")
             .Print("size", NStr::UIntToString(batch.size()));
@@ -771,8 +774,10 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
     }}
     trans.Commit();
     m_StatusTracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
-    if (log_job_state >= 1)
+    if (log_job_state >= 1) {
         GetDiagContext().PrintRequestStop();
+        CDiagContext::SetRequestContext(0);
+    }
 
     // This case is a bit complicated. If whole batch has the same
     // affinity, we include it in notification broadcast.
