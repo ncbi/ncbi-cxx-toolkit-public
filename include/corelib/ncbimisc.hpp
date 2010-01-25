@@ -31,7 +31,7 @@
  *
  */
 
-/// @file ncbistd.hpp
+/// @file ncbimisc.hpp
 /// Miscellaneous common-use basic types and functionality
 
 
