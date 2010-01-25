@@ -570,7 +570,6 @@ CNCMessageHandler::x_CheckAdminClient(void)
 inline void
 CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
 {
-    m_SessionHost.clear();
     m_BlobKey.clear();
     m_BlobSubkey.clear();
     m_BlobVersion = 0;
@@ -589,11 +588,6 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
                 cache_name = val;
             }
             break;
-        case 'h':
-            if (key == "host") {
-                m_SessionHost = val;
-            }
-            break;
         case 'i':
             if (key == "ip") {
                 _ASSERT(m_DiagContext.NotNull());
@@ -608,11 +602,6 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
             }
             else if (key == "key_ver") {
                 m_KeyVersion = NStr::StringToUInt(val);
-            }
-            break;
-        case 'p':
-            if (key == "port") {
-                m_SessionPort = NStr::StringToUInt(val);
             }
             break;
         case 's':

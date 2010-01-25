@@ -482,10 +482,6 @@ private:
     unsigned int              m_KeyVersion;
     /// Time-to-live value for the blob
     unsigned int              m_BlobTTL;
-    /// Host came as parameter to session management command
-    string                    m_SessionHost;
-    /// Port came as parameter to session management command
-    unsigned int              m_SessionPort;
     /// Exact size of the blob sent by client
     size_t                    m_StoreBlobSize;
 };
