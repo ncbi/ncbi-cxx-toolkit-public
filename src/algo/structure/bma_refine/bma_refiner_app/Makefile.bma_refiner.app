@@ -16,6 +16,7 @@ LIB =   xbma_refiner \
         mmdb \
 	entrez2cli entrez2 \
         id1cli id1 \
+        xregexp $(PCRE_LIB) \
 	$(BLAST_LIBS) \
         $(OBJMGR_LIBS)
 
@@ -25,4 +26,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
 
 LDFLAGS  = $(FAST_LDFLAGS)
 
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
