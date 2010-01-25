@@ -46,6 +46,7 @@
 #else
 #  include <ctype.h>
 #endif
+#include <memory>
 
 #if defined(_DEBUG)  &&  !defined(NCBI_NO_STRICT_CTYPE_ARGS)
 #  define NCBI_STRICT_CTYPE_ARGS
