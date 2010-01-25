@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
@@ -358,7 +359,26 @@ static void s_GetRnaRefLabel
         }
         
         break;
-    }}
+    }
+    case CRNA_ref::C_Ext::e_Gen:
+        // Treating similarly to name; should product or quals also
+        // make an appearance?
+        if (rna.GetExt().GetGen().IsSetClass()) {
+            tmp_label = rna.GetExt().GetGen().GetClass();
+        } else {
+            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+            return;
+        }
+        if (label_type == eContent  &&  type_label != 0  &&
+                tmp_label.find(*type_label) == string::npos) {
+            *label += *type_label + "-" + tmp_label;
+        } else if (!tmp_label.empty()) {
+            *label += tmp_label;
+        } else if (type_label) {
+            *label += *type_label;
+        }
+        break;
+    }
 }
 
 
