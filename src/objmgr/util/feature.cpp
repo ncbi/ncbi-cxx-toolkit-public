@@ -277,6 +277,16 @@ static void s_GetRnaRefLabel
         break;
     case CRNA_ref::C_Ext::e_Name:
         tmp_label = rna.GetExt().GetName();
+        if (feat.CanGetQual()  &&
+            (tmp_label == "ncRNA"  ||  tmp_label == "tmRNA"
+             ||  tmp_label == "misc_RNA")) {
+            ITERATE (CSeq_feat::TQual, q, feat.GetQual()) {
+                if ((*q)->GetQual() == "product") {
+                    tmp_label = (*q)->GetVal();
+                    break;
+                }
+            }
+        }
         if (label_type == eContent  &&  type_label != 0  &&
                 tmp_label.find(*type_label) == string::npos) {
             *label += *type_label + "-" + tmp_label;
@@ -361,21 +371,12 @@ static void s_GetRnaRefLabel
         break;
     }
     case CRNA_ref::C_Ext::e_Gen:
-        // Treating similarly to name; should product or quals also
-        // make an appearance?
-        if (rna.GetExt().GetGen().IsSetClass()) {
-            tmp_label = rna.GetExt().GetGen().GetClass();
+        if (rna.GetExt().GetGen().CanGetProduct()) {
+            *label = rna.GetExt().GetGen().GetProduct();
+        } else if (rna.GetExt().GetGen().CanGetClass()) {
+            *label = rna.GetExt().GetGen().GetClass();
         } else {
             s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
-            return;
-        }
-        if (label_type == eContent  &&  type_label != 0  &&
-                tmp_label.find(*type_label) == string::npos) {
-            *label += *type_label + "-" + tmp_label;
-        } else if (!tmp_label.empty()) {
-            *label += tmp_label;
-        } else if (type_label) {
-            *label += *type_label;
         }
         break;
     }
