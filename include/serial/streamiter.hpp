@@ -75,7 +75,8 @@ class CIStreamIteratorThread_Base : public CThread
 {
 public:
     CIStreamIteratorThread_Base(CObjectIStream& in)
-        : m_In(in), m_Resume(0,1), m_Ready(0,1), m_Obj(0), m_Stop(false)
+        : m_In(in), m_Resume(0,1), m_Ready(0,1), m_Obj(0),
+          m_Stop(false), m_Failed(false)
     {
     }
     // Resume thread, wait for the next object
@@ -85,7 +86,7 @@ public:
         if (!m_Stop && !m_In.EndOfData()) {
             m_Resume.Post();
             m_Ready.Wait();
-            if (m_Obj == (const TObject*)1) {
+            if (m_Failed) {
                 NCBI_THROW(CSerialException,eFail,
                              "invalid data object received");
             }
@@ -97,6 +98,11 @@ public:
         m_Stop = true;
         Detach();
         m_Resume.Post();
+    }
+    void Fail(void)
+    {
+        m_Failed = true;
+        SetObject(0);
     }
     // Object is ready: suspend thread
     void SetObject(const TObject* obj)
@@ -126,6 +132,7 @@ protected:
     CSemaphore           m_Ready;
     const TObject*       m_Obj;
     bool                 m_Stop;
+    bool                 m_Failed;
 };
 
 // Reading thread for serial objects
@@ -152,7 +159,7 @@ protected:
             this->SetObject(0);
         } catch (CException& e) {
             NCBI_REPORT_EXCEPTION("In CIStreamObjectIteratorThread",e);
-            this->SetObject((const TObject*)1);
+            this->Fail();
         }
         return 0;
     }
@@ -182,7 +189,7 @@ protected:
             this->SetObject(0);
         } catch (CException& e) {
             NCBI_REPORT_EXCEPTION("In CIStreamStdIteratorThread",e);
-            this->SetObject((const TObject*)1);
+            this->Fail();
         }
         return 0;
     }
