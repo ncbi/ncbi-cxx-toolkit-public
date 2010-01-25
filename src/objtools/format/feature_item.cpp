@@ -411,7 +411,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
 {
     CSeqFeatData::E_Choice type    = feat.GetData().Which();
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();        
-   
+
     if ( subtype == CSeqFeatData::eSubtype_pub              ||
          subtype == CSeqFeatData::eSubtype_non_std_residue  ||
          subtype == CSeqFeatData::eSubtype_biosrc           ||
@@ -427,6 +427,19 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
         (subtype == CSeqFeatData::eSubtype_bad  ||
          subtype == CSeqFeatData::eSubtype_virion) ) {
         return true;
+    }
+    
+    if ( cfg.ValidateFeatures() && type == CSeqFeatData::e_Imp ) {
+        switch ( subtype ) {
+        default:
+            break;
+        case CSeqFeatData::eSubtype_imp:
+        case CSeqFeatData::eSubtype_site_ref:
+        case CSeqFeatData::eSubtype_gene:
+        case CSeqFeatData::eSubtype_mutation:
+        case CSeqFeatData::eSubtype_allele:
+            return true;
+        }
     }
     
     if ( ctx.IsNuc()  &&  subtype == CSeqFeatData::eSubtype_het ) {
