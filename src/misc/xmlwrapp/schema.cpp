@@ -44,6 +44,7 @@
 // standard includes
 #include <stdexcept>
 #include <string.h>
+#include <memory>
 
 // libxml includes
 #include <libxml/xmlschemas.h>
