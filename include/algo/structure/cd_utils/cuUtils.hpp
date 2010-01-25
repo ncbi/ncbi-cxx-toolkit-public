@@ -68,17 +68,21 @@ string CddIdString(const CCdd_id& id);
 NCBI_CDUTILS_EXPORT 
 bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2);
 
-//  Uses format/code in MakeRID from Cn3D for old-style bv.fcgi URL parameters
+//  Returns format for old-style bv.fcgi URL parameters
 NCBI_CDUTILS_EXPORT
 string CCddBookRefToString(const CCdd_book_ref& bookRef);
 
-//  Uses format/code in MakeRID from Cn3D for old-style bv.fcgi URL parameters
+//  Returns format for old-style bv.fcgi URL parameters
 NCBI_CDUTILS_EXPORT
 string CCddBookRefToBvString(const CCdd_book_ref& bookRef);
 
-//  Uses format/code in MakeParameterString from Cn3D for new-style br.fcgi URL parameters
+//  Returns format for new-style br.fcgi URL parameters
 NCBI_CDUTILS_EXPORT
 string CCddBookRefToBrString(const CCdd_book_ref& bookRef);
+
+//  Convert a br.fcgi URL into an ASN.1 object.
+NCBI_CDUTILS_EXPORT
+bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookRef);
 
 NCBI_CDUTILS_EXPORT 
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString);

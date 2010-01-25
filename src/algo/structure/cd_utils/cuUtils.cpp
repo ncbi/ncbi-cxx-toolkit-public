@@ -33,6 +33,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <util/xregexp/regexp.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
@@ -210,7 +211,7 @@ string CddIdString(const CCdd_id& id) {
 
 }
 
-bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
+bool SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
 
     bool result = false;
     CCdd_id::E_Choice e1 = id1.Which(), e2 = id2.Which();
@@ -222,6 +223,7 @@ bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
     return result;
 }
 
+
 string CCddBookRefToString(const CCdd_book_ref& bookRef)
 {
     return CCddBookRefToBvString(bookRef);
@@ -229,22 +231,9 @@ string CCddBookRefToString(const CCdd_book_ref& bookRef)
 
 string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
 {
-    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
-    if (elementStringMap.size() == 0) {
-        elementStringMap[CCdd_book_ref::eTextelement_unassigned] = "unassigned";
-        elementStringMap[CCdd_book_ref::eTextelement_section]    = "section";
-        elementStringMap[CCdd_book_ref::eTextelement_figgrp]     = "figgrp";
-        elementStringMap[CCdd_book_ref::eTextelement_table]      = "table";
-        elementStringMap[CCdd_book_ref::eTextelement_chapter]    = "chapter";
-        elementStringMap[CCdd_book_ref::eTextelement_biblist]    = "biblist";
-        elementStringMap[CCdd_book_ref::eTextelement_box]        = "box";
-        elementStringMap[CCdd_book_ref::eTextelement_glossary]   = "glossary";
-        elementStringMap[CCdd_book_ref::eTextelement_appendix]   = "appendix";
-        elementStringMap[CCdd_book_ref::eTextelement_other]      = "other";
-    }
-
+//    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
     string result;
-    string elementid, subelementid;
+    string elementid, subelementid, typeString;
     string bookname = bookRef.GetBookname();
 
     if (!bookRef.IsSetElementid() && !bookRef.IsSetCelementid())
@@ -265,39 +254,31 @@ string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
         NStr::TruncateSpacesInPlace(elementid);
         NStr::TruncateSpacesInPlace(subelementid);
 
+        //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
+        const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
+        typeString = (allowedElements) ? allowedElements->FindName(bookRef.GetTextelement(), true) : allowedElements->FindName(CCdd_book_ref::eTextelement_unassigned, true);
+    
         char buf[2048];
 
         //  Make sure don't have overflow; 15 > length of the longest string in elementStringMap + 1.
         _ASSERT(bookname.length() + elementid.length() + subelementid.length() + 15 < 2048);
 
         if (subelementid.size() > 0)
-            sprintf(buf, "%s.%s.%s#%s", bookname.c_str(), elementStringMap[bookRef.GetTextelement()].c_str(), elementid.c_str(), subelementid.c_str());
+            sprintf(buf, "%s.%s.%s#%s", bookname.c_str(), typeString.c_str(), elementid.c_str(), subelementid.c_str());
         else
-            sprintf(buf, "%s.%s.%s", bookname.c_str(), elementStringMap[bookRef.GetTextelement()].c_str(), elementid.c_str());
+            sprintf(buf, "%s.%s.%s", bookname.c_str(), typeString.c_str(), elementid.c_str());
         result = string(buf);
     }
     
     return result;
 }
 
+
 string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
 {
-    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
-    if (elementStringMap.size() == 0) {
-        elementStringMap[CCdd_book_ref::eTextelement_unassigned] = "unassigned";
-        elementStringMap[CCdd_book_ref::eTextelement_section]    = "section";
-        elementStringMap[CCdd_book_ref::eTextelement_figgrp]     = "figure";
-        elementStringMap[CCdd_book_ref::eTextelement_table]      = "table";
-        elementStringMap[CCdd_book_ref::eTextelement_chapter]    = "chapter";
-        elementStringMap[CCdd_book_ref::eTextelement_biblist]    = "biblist";
-        elementStringMap[CCdd_book_ref::eTextelement_box]        = "box";
-        elementStringMap[CCdd_book_ref::eTextelement_glossary]   = "glossary";
-        elementStringMap[CCdd_book_ref::eTextelement_appendix]   = "appendix";
-        elementStringMap[CCdd_book_ref::eTextelement_other]      = "other";
-    }
-
+//    static map<CCdd_book_ref::ETextelement, string> brBookElementStringMap;
     string result;
-    string elementid, subelementid;
+    string elementid, subelementid, renderType;
     string bookname = bookRef.GetBookname();
 
     if (!bookRef.IsSetElementid() && !bookRef.IsSetCelementid())
@@ -312,7 +293,7 @@ string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
     else {
 
         CCdd_book_ref::ETextelement elementType;
-        string part, id, rendertype;
+        string part, id;
         
         //  Numerical element ids need to be prefixed by 'A' in br.fcgi URLs.
         if (bookRef.IsSetElementid()) {
@@ -336,18 +317,103 @@ string CCddBookRefToBrString(const CCdd_book_ref& bookRef)
         //  Expect anything else to be a 'figure' or 'table', but if not
         //  the parameter string will be constructed as if it were a 'section'.
         elementType = bookRef.GetTextelement();
+
         if (elementType == CCdd_book_ref::eTextelement_figgrp || elementType == CCdd_book_ref::eTextelement_table) {
-            rendertype = elementStringMap[elementType];
+
+            //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
+            //  For 'eTextelement_figgrp', br.fcgi needs to use 'figure'.
+            const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
+            renderType = (allowedElements) ? allowedElements->FindName(elementType, true) : allowedElements->FindName(CCdd_book_ref::eTextelement_unassigned, true);
+            if (elementType == CCdd_book_ref::eTextelement_figgrp) {
+                renderType = "figure";
+            }
+        
             if (id.length() == 0) {
                 id = part;
             }
-            result = bookname + "&part=" + part + "&rendertype=" + rendertype + "&id=" + id;
+            result = bookname + "&part=" + part + "&rendertype=" + renderType + "&id=" + id;
         } else {
             result = bookname + "&part=" + part;
             if (id.size() > 0)
                 result += "#" + id;
         }
 
+    }
+
+    return result;
+}
+
+bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookRef)
+{
+    bool result = false;
+    string bookname, address, subaddress, typeStr, firstTokenStr;
+    vector<string> sharpTokens;
+    CRegexp regexpCommon("book=(.*)&part=(.*)");
+    CRegexp regexpRendertype("&part=(.*)&rendertype=(.*)&id=(.*)");
+
+    //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
+    //  For 'eTextelement_figgrp', br.fcgi needs to use 'figure'.
+    const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::ENUM_METHOD_NAME(ETextelement)();
+    
+    NStr::Tokenize(brBookUrl, "#", sharpTokens);
+    if (sharpTokens.size() == 1 || sharpTokens.size() == 2) {
+        bool haveSubaddr = (sharpTokens.size() == 2);
+        
+        //  All URLs have 'book' and 'part' parameters.
+        firstTokenStr = sharpTokens[0];
+        regexpCommon.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
+        if (regexpCommon.NumFound() == 3) {  //  i.e., found full pattern + two subpatterns
+
+            bookname = regexpCommon.GetSub(firstTokenStr, 1);
+
+            regexpRendertype.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
+            if (regexpRendertype.NumFound() == 4) {  //  i.e., expecting a table or figure, but allow others
+                address = regexpRendertype.GetSub(firstTokenStr, 1);
+                typeStr = regexpRendertype.GetSub(firstTokenStr, 2);
+
+                //  br.fcgi uses 'figure' for 'eTextelement_figgrp'.
+                if (typeStr == "figure") {
+                    typeStr = "figgrp";
+                }
+
+                if (allowedElements && !allowedElements->IsValidName(typeStr)) { 
+                    typeStr = kEmptyStr;  //  problem if we don't have a known type
+                } else {
+                    subaddress = regexpRendertype.GetSub(firstTokenStr, 3);
+                }
+            } else {  //  treat this as a 'section'
+                address = regexpCommon.GetSub(firstTokenStr, 2);
+                typeStr = (allowedElements) ? allowedElements->FindName(CCdd_book_ref::eTextelement_section, true) : kEmptyStr;
+
+                //  If there's something after the '#', if it's an old-style
+                //  URL it could be numeric -> prepend 'A' in that case.
+                if (haveSubaddr) {
+                    subaddress = sharpTokens[1];
+                    if (NStr::StringToULong(subaddress, NStr::fConvErr_NoThrow) != 0) {
+                        subaddress = "A" + subaddress;
+                    }
+                }
+            }
+        }
+
+        if (typeStr.length() > 0) {            
+            try {
+                CCdd_book_ref::ETextelement typeEnum = (CCdd_book_ref::ETextelement) allowedElements->FindValue(typeStr);
+                bookRef->SetBookname(bookname);
+                bookRef->SetTextelement(typeEnum);
+                bookRef->SetCelementid(address);
+                if (subaddress.length() > 0) {
+                    bookRef->SetCsubelementid(subaddress);
+                }
+                result = true;
+            } catch (...) {
+                result = false;
+            }
+        }
+    }
+
+    if (!result) {
+        bookRef.Reset();
     }
 
     return result;
