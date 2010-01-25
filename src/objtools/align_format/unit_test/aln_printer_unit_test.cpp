@@ -38,14 +38,10 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
-#include <objtools/readers/fasta.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-
 #include <objects/seqalign/Seq_align.hpp>
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/align_format/aln_printer.hpp>
 
 #include <corelib/test_boost.hpp>
@@ -60,10 +56,8 @@ BOOST_AUTO_TEST_SUITE(aln_printer)
 
 string PrintAlignment(CMultiAlnPrinter::EFormat format)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*objmgr);
-    CRef<CScope> scope(new CScope(*objmgr));
-    scope->AddDefaults();
+    blast::CBlastScopeSource scope_src(false);
+    CRef<CScope> scope(scope_src.NewScope());
 
     CSeq_align seqalign;
     CNcbiIfstream istr("data/multialign.asn");
