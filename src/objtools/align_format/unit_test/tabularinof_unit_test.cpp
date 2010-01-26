@@ -186,8 +186,6 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentBTOPOutput) {
 
     string output = CNcbiOstrstreamToString(output_stream);
     
-    cerr << output << endl;
-
     BOOST_REQUIRE(output.find("AE000111	AE000111	10596	100.00	10596") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000447	57	89.41	15T-TA2TA2-T6AG8CT1GT4CA10AC28") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000116	48	98.04	12GA38") != NPOS);
