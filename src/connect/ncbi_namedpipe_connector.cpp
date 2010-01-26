@@ -36,6 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe_connector.hpp>
+#include "ncbi_ansi_ext.h"
 
 
 USING_NCBI_SCOPE;
@@ -73,12 +74,7 @@ static char* s_VT_Descr
 (CONNECTOR connector)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    size_t len = xxx->pipename.length() + 1/*EOL*/;
-    char* buf = (char*) malloc(len);
-    if (buf) {
-        strcpy(buf, xxx->pipename.c_str());
-    }
-    return buf;
+    return strdup(xxx->pipename.c_str());
 }
 
 
@@ -116,16 +112,23 @@ static EIO_Status s_VT_Status
  EIO_Event dir)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Success;
+    if (!xxx->is_open) {
+        return eIO_Success;
+    }
+    return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Unknown;
 }
 
 
 static EIO_Status s_VT_Wait
-(CONNECTOR       /*connector*/,
- EIO_Event       /*event*/,
- const STimeout* /*timeout*/)
+(CONNECTOR       connector,
+ EIO_Event       event,
+ const STimeout* timeout)
 {
-    return eIO_Success;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
+    if (!xxx->is_open) {
+        return eIO_Closed;
+    }
+    return xxx->pipe ? xxx->pipe->Wait(event, timeout) : eIO_Unknown;
 }
 
 
