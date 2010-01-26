@@ -187,6 +187,14 @@ public:
                            blast::CPsiBlastIterationState::TSeqIds prev_seqids =
                            blast::CPsiBlastIterationState::TSeqIds());
 
+    /// Writes out the query and results as an "archive" format
+    /// @param queries Query factory to provide queries
+    /// @param options_handle BLAST options
+    /// @param results the search results
+    void WriteArchive(blast::IQueryFactory& queries,
+                           blast::CBlastOptionsHandle& options_handle,
+                           const blast::CSearchResultSet& results);
+
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
     ///

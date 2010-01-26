@@ -723,6 +723,8 @@ public:
         eAsnBinary,
         /// Comma-separated values
         eCommaSeparatedValues,
+        /// BLAST archive format
+        eArchiveFormat,
         /// Sentinel value for error checking
         eEndValue
     };
@@ -776,6 +778,8 @@ public:
     string GetCustomOutputFormatSpec() const { 
         return m_CustomOutputFormatSpec; 
     }
+
+    bool ArchiveFormatRequested(const CArgs& args) const;
 
 private:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
