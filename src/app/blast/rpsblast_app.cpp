@@ -162,8 +162,13 @@ int CRPSBlastApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, query_batch);
+            if (fmt_args->ArchiveFormatRequested(args))
+            {
+                formatter.WriteArchive(*queries, *opts_hndl, *results);
+            } else {
+                ITERATE(CSearchResultSet, result, *results) {
+                    formatter.PrintOneResultSet(**result, query_batch);
+                }
             }
         }
 
