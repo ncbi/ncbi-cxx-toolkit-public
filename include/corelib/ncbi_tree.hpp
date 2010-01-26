@@ -1,5 +1,6 @@
 #ifndef CORELIB___NCBI_TREE__HPP
 #define CORELIB___NCBI_TREE__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -123,7 +124,6 @@ public:
     /// of the tree
     TTreeType* GetRoot(void);
 
-
     /// Return first const iterator on subnode list
     TNodeList_CI SubNodeBegin(void) const { return m_Nodes.begin(); }
 
@@ -183,10 +183,11 @@ public:
     ///    it  subnode iterator
     void RemoveNode(TNodeList_I it);
 
-    enum EDeletePolicy
-    {
-        eDelete,
-        eNoDelete
+    /// Whether to destroy the sub-nodes when bulk-cleaning the node
+    /// @sa RemoveAllSubNodes
+    enum EDeletePolicy {
+        eDelete,   ///< Destroy the sub-nodes when bulk-cleaning the node
+        eNoDelete  ///< Just exclude nodes from the tree, do not destroy them
     };
 
     /// Remove all immediate subnodes
@@ -198,7 +199,7 @@ public:
     ///
     void RemoveAllSubNodes(EDeletePolicy del = eDelete);
 
-    /// Remove the subtree from the tree without freeing it
+    /// Remove the subtree from the tree without destroying it
     ///
     /// If subnode is not connected directly with the current node
     /// the call has no effect. The caller is responsible for deletion
@@ -210,7 +211,7 @@ public:
     /// @return subtree pointer or NULL if requested subnode does not exist
     TTreeType* DetachNode(TTreeType* subnode);
 
-    /// Remove the subtree from the tree without freeing it
+    /// Remove the subtree from the tree without destroying it
     ///
     /// If subnode is not connected directly with the current node
     /// the call has no effect. The caller is responsible for deletion
@@ -225,7 +226,7 @@ public:
     /// Add new subnode
     ///
     /// @param 
-    ///    subnode subnode pointer
+    ///    subnode Sub-node to add
     void AddNode(TTreeType* subnode);
 
 
@@ -300,8 +301,7 @@ public:
 
     /// Parameters for node search by key
     ///
-    enum ENodeSearchType
-    {
+    enum ENodeSearchType {
         eImmediateSubNodes = (1 << 0),  ///< Search direct subnodes
         eTopLevelNodes     = (1 << 1),  ///< Search subnodes of the root
         eAllUpperSubNodes  = (1 << 2),  ///< Search all subnodes on the way up
@@ -309,7 +309,7 @@ public:
         eImmediateAndTop = (eImmediateSubNodes | eTopLevelNodes)
     };
 
-    typedef int TNodeSearchMode; ///< Recombination of ENodeSearchType
+    typedef int TNodeSearchMode; ///< Bitwise mask of ENodeSearchType
 
     /// Search for node
     ///
@@ -330,6 +330,7 @@ protected:
     TNodeList          m_Nodes;  ///< List of dependent nodes
     TValue             m_Value;  ///< Node value
 };
+
 
 
 /// Default key getter for pair-node (id + value)
@@ -925,4 +926,4 @@ CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
 
 END_NCBI_SCOPE
 
-#endif
+#endif  /* CORELIB___NCBI_TREE__HPP */
