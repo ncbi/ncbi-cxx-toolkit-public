@@ -177,7 +177,7 @@ void CMultiReaderApp::Init(void)
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "guess") );
+            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "gff3", "guess") );
 
     arg_desc->AddDefaultKey(
         "flags",
@@ -359,7 +359,8 @@ void CMultiReaderApp::SetFormat(
         format == "microarray" ) {
         m_uFormat = CFormatGuess::eBed15;
     }
-    if ( NStr::StartsWith( strProgramName, "gtf" ) || format == "gtf" ) {
+    if ( NStr::StartsWith( strProgramName, "gtf" ) || 
+        format == "gtf" || format == "gff3" ) {
         m_uFormat = CFormatGuess::eGtf;
     }
     if ( m_uFormat == CFormatGuess::eUnknown ) {
@@ -400,7 +401,13 @@ void CMultiReaderApp::SetFlags(
             m_iFlags |= CBedReader::fNumericIdsAsLocal;
         }
         break;
-                   
+       
+    case CFormatGuess::eGtf:
+        if ( args["format"].AsString() == "gff3" ) {
+            m_iFlags |= CGFFReader::fSetVersion3;
+        }
+        break;
+            
     default:
         break;
     }
