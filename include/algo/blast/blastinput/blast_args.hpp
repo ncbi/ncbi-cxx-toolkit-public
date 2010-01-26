@@ -742,6 +742,19 @@ public:
     virtual void ExtractAlgorithmOptions(const CArgs& args, 
                                          CBlastOptions& opts);
 
+    /// Parses the output format command line option value, returns the
+    /// requested output format type and any custom output formats (if
+    /// any and applicable)
+    /// @param args Command line arguments object [in]
+    /// @param fmt_type Output format type requested in command line options
+    /// [out]
+    /// @param custom_fmt_spec Custom output format specification in command
+    /// line options [out]
+    static void
+    ParseFormattingString(const CArgs& args,
+                          EOutputFormat& fmt_type,
+                          string& custom_fmt_spec);
+
     /// Get the choice of formatted output
     EOutputFormat GetFormattedOutputChoice() const {
         return m_OutputFormat;

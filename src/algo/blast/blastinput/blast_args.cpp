@@ -1455,38 +1455,29 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 bool 
 CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 {
-    if (args[kArgOutputFormat]) {
-        string fmt_choice = 
-            NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
-        int val = 0;
-        try { val =NStr::StringToInt(fmt_choice); }
-        catch (const CStringException&) {   // probably a conversion error
-            CNcbiOstrstream os;
-            os << "'" << fmt_choice << "' is not a valid output format";
-            string msg = CNcbiOstrstreamToString(os);
-            NCBI_THROW(CInputException, eInvalidInput, msg);
-        }
-        if (val == static_cast<int>(eArchiveFormat))
-           return true;
-    }
-    return false;
+    EOutputFormat output_fmt;
+    string ignore;
+    ParseFormattingString(args, output_fmt, ignore);
+    return (output_fmt == eArchiveFormat ? true : false);
 }
 
 void
-CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
-                                         CBlastOptions& opt)
+CFormattingArgs::ParseFormattingString(const CArgs& args, 
+                                       EOutputFormat& fmt_type, 
+                                       string& custom_fmt_spec)
 {
+    custom_fmt_spec.clear();
     if (args[kArgOutputFormat]) {
         string fmt_choice = 
             NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
         string::size_type pos;
         if ( (pos = fmt_choice.find_first_of(' ')) != string::npos) {
-            m_CustomOutputFormatSpec.assign(fmt_choice, pos+1,
-                                            fmt_choice.size()-(pos+1));
+            custom_fmt_spec.assign(fmt_choice, pos+1, 
+                                   fmt_choice.size()-(pos+1));
             fmt_choice.erase(pos);
         }
         int val = 0;
-        try { val =NStr::StringToInt(fmt_choice); }
+        try { val = NStr::StringToInt(fmt_choice); }
         catch (const CStringException&) {   // probably a conversion error
             CNcbiOstrstream os;
             os << "'" << fmt_choice << "' is not a valid output format";
@@ -1497,14 +1488,20 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
             string msg("Formatting choice is out of range");
             throw std::out_of_range(msg);
         }
-        m_OutputFormat = static_cast<EOutputFormat>(val);
-        if ( !(m_OutputFormat == eTabular ||
-               m_OutputFormat == eTabularWithComments ||
-               m_OutputFormat == eCommaSeparatedValues) ) {
-               m_CustomOutputFormatSpec.clear();
+        fmt_type = static_cast<EOutputFormat>(val);
+        if ( !(fmt_type == eTabular ||
+               fmt_type == eTabularWithComments ||
+               fmt_type == eCommaSeparatedValues) ) {
+               custom_fmt_spec.clear();
         }
     }
+}
 
+void
+CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                         CBlastOptions& opt)
+{
+    ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec);
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
 
     if (args[kArgNumDescriptions]) {
