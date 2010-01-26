@@ -140,6 +140,8 @@ protected:
 
     // byte block
     virtual void BeginBytes(ByteBlock& block);
+    int GetHexChar(void);
+    int GetBase64Char(void);
     virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count);
     virtual void EndBytes(const ByteBlock& block);
 
@@ -180,6 +182,7 @@ private:
 
     bool m_BlockStart;
     bool m_ExpectValue;
+    char m_Closing;
     EEncoding m_StringEncoding;
     string m_LastTag;
     string m_RejectedTag;

@@ -68,6 +68,7 @@ CObjectIStreamJson::CObjectIStreamJson(void)
     : CObjectIStream(eSerial_Json),
     m_BlockStart(false),
     m_ExpectValue(false),
+    m_Closing(0),
     m_StringEncoding( eEncoding_Unknown )
 {
 }
@@ -444,7 +445,32 @@ void CObjectIStreamJson::SkipAnyContentObject(void)
 
 void CObjectIStreamJson::ReadBitString(CBitString& obj)
 {
+#if BITSTRING_AS_VECTOR
     ThrowError(fNotImplemented, "Not Implemented");
+#else
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        ThrowError(fNotImplemented, "Not Implemented");
+        return;
+    }
+    Expect('\"');
+    obj.clear();
+    obj.resize(0);
+    CBitString::size_type len = 0;
+    for ( ;; ++len) {
+        char c = GetChar();
+        if (c == '1') {
+            obj.resize(len+1);
+            obj.set_bit(len);
+        } else if (c != '0') {
+            if ( c != 'B' ) {
+                ThrowError(fFormatError, "invalid char in bit string");
+            }
+            break;
+        }
+    }
+    obj.resize(len);
+    Expect('\"');
+#endif
 }
 
 void CObjectIStreamJson::SkipBitString(void)
@@ -616,15 +642,106 @@ void CObjectIStreamJson::EndChoiceVariant(void)
 // byte block
 void CObjectIStreamJson::BeginBytes(ByteBlock& block)
 {
+    char c = SkipWhiteSpaceAndGetChar();
+    if (c == '\"') {
+        m_Closing = '\"';
+    } else if (c == '[') {
+        m_Closing = ']';
+    } else {
+        ThrowError(fFormatError, "'\"' or '[' expected");
+    }
 }
 
-size_t CObjectIStreamJson::ReadBytes(ByteBlock& block, char* buffer, size_t count)
+int CObjectIStreamJson::GetHexChar(void)
 {
-    ThrowError(fNotImplemented, "Not Implemented");
-    return 0;
+    char c = m_Input.GetChar();
+    if ( c >= '0' && c <= '9' ) {
+        return c - '0';
+    }
+    else if ( c >= 'A' && c <= 'Z' ) {
+        return c - 'A' + 10;
+    }
+    else if ( c >= 'a' && c <= 'z' ) {
+        return c - 'a' + 10;
+    }
+    else {
+        m_Input.UngetChar(c);
+    }
+    return -1;
+}
+
+int CObjectIStreamJson::GetBase64Char(void)
+{
+    char c = SkipWhiteSpace();
+    if ( (c >= '0' && c <= '9') ||
+         (c >= 'A' && c <= 'Z') ||
+         (c >= 'a' && c <= 'z') ||
+         (c == '+' || c == '/'  || c == '=')) {
+        return c;
+    }
+    return -1;
+}
+
+size_t CObjectIStreamJson::ReadBytes(
+    ByteBlock& block, char* dst, size_t length)
+{
+    size_t count = 0;
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        bool end_of_data = false;
+        const size_t chunk_in = 80;
+        char src_buf[chunk_in];
+        size_t bytes_left = length;
+        size_t src_size, src_read, dst_written;
+        while (!end_of_data && bytes_left > chunk_in && bytes_left <= length) {
+            for ( src_size = 0; src_size < chunk_in; ) {
+                int c = GetBase64Char();
+                if (c < 0) {
+                    end_of_data = true;
+                    break;
+                }
+                /*if (c != '=')*/ {
+                    src_buf[ src_size++ ] = c;
+                }
+                m_Input.SkipChar();
+            }
+            BASE64_Decode( src_buf, src_size, &src_read,
+                        dst, bytes_left, &dst_written);
+            if (src_size != src_read) {
+                ThrowError(fFail, "error decoding base64Binary data");
+            }
+            count += dst_written;
+            bytes_left -= dst_written;
+            dst += dst_written;
+        }
+        if (end_of_data) {
+            block.EndOfBlock();
+        }
+        return count;;
+    }
+    while ( length-- > 0 ) {
+        int c1 = GetHexChar();
+        if ( c1 < 0 ) {
+            block.EndOfBlock();
+            return count;
+        }
+        int c2 = GetHexChar();
+        if ( c2 < 0 ) {
+            *dst++ = c1 << 4;
+            count++;
+            block.EndOfBlock();
+            return count;
+        }
+        else {
+            *dst++ = (c1 << 4) | c2;
+            count++;
+        }
+    }
+    return count;
 }
 void CObjectIStreamJson::EndBytes(const ByteBlock& block)
 {
+    Expect(m_Closing);
+    m_Closing = 0;
 }
 
 // char block
