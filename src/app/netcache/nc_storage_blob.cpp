@@ -51,9 +51,11 @@ inline static void
 s_CorruptedDatabase(SNCBlobInfo& blob_info)
 {
     blob_info.corrupted = true;
-    NCBI_THROW(CNCBlobStorageException, eCorruptedDB,
-               "Database information about blob is corrupted. "
-               "Blob will be deleted");
+    NCBI_THROW_FMT(CNCBlobStorageException, eCorruptedDB,
+                   "Database information about blob '"
+                   << blob_info.key << "', '" << blob_info.subkey << "', "
+                   << blob_info.version
+                   << " is corrupted. Blob will be deleted");
 }
 
 
@@ -234,18 +236,6 @@ CNCBlobLockHolder::x_OnLockValidated(void)
         m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
 }
 
-inline void
-CNCBlobLockHolder::x_ReleaseLock(void)
-{
-    if (m_Blob) {
-        m_Blob->Reset();
-        m_Storage->ReturnBlob(m_Blob);
-        m_Blob = NULL;
-    }
-    m_Storage->UnlockBlobId(m_BlobInfo.blob_id, m_RWHolder);
-    m_LockValid = false;
-}
-
 inline bool
 CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
 {
@@ -265,7 +255,8 @@ CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
             m_BlobInfo.ttl = m_Storage->GetDefBlobTTL();
 
             if (m_Storage->MoveBlobIfNeeded(m_BlobInfo, m_CreateCoords)) {
-                x_ReleaseLock();
+                _ASSERT(m_RWHolder != m_CreateHolder);
+                m_Storage->UnlockBlobId(m_BlobInfo.blob_id, m_RWHolder);
                 m_BlobInfo.AssignCoords(m_CreateCoords);
                 m_RWHolder.Swap(m_CreateHolder);
             }
@@ -410,7 +401,9 @@ CNCBlobLockHolder::x_LockAndValidate(SNCBlobCoords coords)
         {{
             CSpinGuard guard(m_LockAcqMutex);
 
-            x_ReleaseLock();
+            if (m_RWHolder != m_CreateHolder) {
+                m_Storage->UnlockBlobId(m_BlobInfo.blob_id, m_RWHolder);
+            }
             m_BlobInfo.AssignCoords(coords);
             rw_holder->AddListener(this);
             m_RWHolder = rw_holder;
@@ -449,7 +442,14 @@ CNCBlobLockHolder::ReleaseLock(void)
     }
 
     CSpinGuard guard(m_LockAcqMutex);
-    x_ReleaseLock();
+    if (m_Blob) {
+        m_Blob->Reset();
+        m_Storage->ReturnBlob(m_Blob);
+        m_Blob = NULL;
+    }
+    m_Storage->UnlockBlobId(m_BlobInfo.blob_id, m_RWHolder);
+    m_Storage->UnlockBlobId(m_CreateCoords.blob_id, m_CreateHolder);
+    m_LockValid = false;
 }
 
 CNCBlob*

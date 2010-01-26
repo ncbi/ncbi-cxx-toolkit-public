@@ -212,7 +212,7 @@ CNCMMStats               CNCMMStats::sm_Stats   [kNCMMMaxThreadsCnt];
 
 CNCMMStats_Getter        CNCMMStats::sm_Getter;
 
-DEFINE_CLASS_STATIC_FAST_MUTEX(CNCMMCentral::sm_CentralLock);
+CSpinLock       CNCMMCentral::sm_CentralLock;
 CNCMMStats      CNCMMCentral::sm_Stats;
 bool            CNCMMCentral::sm_Initialized   = false;
 ENCMMMode       CNCMMCentral::sm_Mode          = eNCMemStable;
@@ -892,14 +892,14 @@ CNCMMCentral::x_DoAlloc(size_t& size)
 inline void*
 CNCMMCentral::SysAlloc(size_t size)
 {
-    CFastMutexGuard guard(sm_CentralLock);
+    CSpinGuard guard(sm_CentralLock);
     return x_DoAlloc(size);
 }
 
 inline void*
 CNCMMCentral::SysAllocAligned(size_t size)
 {
-    CFastMutexGuard guard(sm_CentralLock);
+    CSpinGuard guard(sm_CentralLock);
 
     void* mem_ptr = x_DoAlloc(size);
     void* aligned_ptr = x_AlignToBottom(mem_ptr);
@@ -912,7 +912,7 @@ CNCMMCentral::SysAllocAligned(size_t size)
 inline void
 CNCMMCentral::SysFree(void* ptr, size_t size)
 {
-    CFastMutexGuard guard(sm_CentralLock);
+    CSpinGuard guard(sm_CentralLock);
     size_t aligned_size = x_AlignSizeToPage(size);
 
 #ifdef NCBI_OS_MSWIN
@@ -2642,6 +2642,8 @@ CNCMMCentral::ReallocMemory(void* mem_ptr, size_t new_size)
 void
 CNCMMCentral::x_Initialize(void)
 {
+    // Hack to initialize spin lock.
+    new (&sm_CentralLock) CSpinLock();
     sm_Stats.InitInstance();
 
     // Initialize all arrays related to info about blocks set for each block
@@ -2899,7 +2901,7 @@ CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
 inline void
 CNCMMDBCache::SetOptimalSize(int num_pages)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CSpinGuard guard(m_ObjLock);
 
     m_Pages.SetOptimalSize(num_pages);
 }
@@ -2937,7 +2939,7 @@ CNCMMDBCache::DetachPage(CNCMMDBPage* page)
 inline void
 CNCMMDBCache::DeleteAllPages(unsigned int min_key)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CSpinGuard guard(m_ObjLock);
 
     if (m_MaxKey < min_key  ||  m_CacheSize == 0)
         return;
@@ -2952,7 +2954,7 @@ CNCMMDBCache::DeleteAllPages(unsigned int min_key)
 inline void*
 CNCMMDBCache::PinPage(unsigned int key, EPageCreate create_flag)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CSpinGuard guard(m_ObjLock);
 
     CNCMMDBPage* page = m_Pages.GetPage(key);
     if (page) {
@@ -2982,7 +2984,7 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
 {
     CNCMMDBPage* page = CNCMMDBPage::FromDataPtr(data);
     if (must_delete) {
-        CFastMutexGuard guard(m_ObjLock);
+        CSpinGuard guard(m_ObjLock);
         DetachPage(page);
         page->DeletedFromHash();
     }
@@ -3038,7 +3040,7 @@ CNCMMDBPage::DoPeekedDestruction(void)
 void*
 CNCMMDBCache::DestroyOnePage(void)
 {
-    CFastMutexGuard guard(eEmptyGuard);
+    CSpinGuard guard(eEmptyGuard);
     CNCMMDBPage* page;
     for (;;) {
         page = CNCMMDBPage::PeekLRUForDestroy();

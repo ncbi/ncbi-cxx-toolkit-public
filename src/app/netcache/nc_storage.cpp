@@ -66,7 +66,6 @@ static const char* kNCStorage_DBRotateParam   = "db_rotate_period";
 static const char* kNCStorage_CntVolumesParam = "rr_volumes";
 static const char* kNCStorage_GCDelayParam    = "purge_thread_delay";
 static const char* kNCStorage_BlobsBatchParam = "purge_batch_size";
-static const char* kNCStorage_GCSleepParam    = "purge_batch_sleep";
 
 
 
@@ -146,8 +145,6 @@ CNCBlobStorage::x_ReadVariableParams(const IRegistry& reg,
                                   30,  0, IRegistry::eErrPost);
     m_BlobsBatchSize = reg.GetInt(section, kNCStorage_BlobsBatchParam,
                                   500, 0, IRegistry::eErrPost);
-    m_GCBatchSleep   = reg.GetInt(section, kNCStorage_GCSleepParam,
-                                  0,   0, IRegistry::eErrPost);
 }
 
 void
@@ -431,7 +428,7 @@ CNCBlobStorage::x_OpenIndexDB(EReinitMode* reinit_mode)
             m_IndexDB.reset();
             x_MonitorError(ex, "Index file  is broken, reinitializing storage");
             CFile(index_name).Remove();
-            *reinit_mode = eNoReinit;
+            *reinit_mode = eForceReinit;
         }
     }
 }
@@ -1013,14 +1010,6 @@ CNCBlobStorage::MoveBlobIfNeeded(const SNCBlobIdentity& identity,
     }
     catch (exception& ex) {
         x_MonitorError(ex, "Error attempting to move the blob");
-        try {
-            TMetaFileLock metafile(this, new_ident.part_id, new_ident.volume_id);
-            metafile->SetBlobDeadTime(new_ident.blob_id, m_LastDeadTime - 1);
-        }
-        catch (exception& inner_ex) {
-            x_MonitorError(inner_ex, "Error recovering after failed move. "
-                                     "Database can be in inconsistent state");
-        }
         return false;
     }
     MoveBlobInCache(identity, new_ident);
@@ -1144,13 +1133,13 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
 
     proxy << "Usage statistics for storage '"
                     << m_Name << "' at " << m_Path << ":" << endl
-          << endl
-          << "Currently in database - "
-                    << m_CntBlobs.Get() << " blobs, "
+          << endl;
+    PrintCacheCounts(proxy);
+    proxy << "Now in database - "
                     << m_DBParts.size() << " parts with "
                     << m_CurDBSize << " bytes (diff for ids "
                     << m_DBParts.back()->part_id
-                                        - m_DBParts.front()->part_id << ")" << endl
+                                   - m_DBParts.front()->part_id << ")" << endl
           << "List of database parts:" << endl;
     NON_CONST_ITERATE(TNCDBPartsList, it, m_DBParts) {
         SNCDBPartInfo* part_info = *it;
@@ -1171,36 +1160,34 @@ inline bool
 CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobIdentity& identity)
 {
     TNCBlobLockHolderRef blob_lock = x_GetBlobAccess(eWrite, identity);
-    if (blob_lock->IsLockAcquired()) {
-        bool need_delete = true;
-        try {
-            // IsBlobExpired() can throw an exception
-            need_delete = blob_lock->IsBlobExists()
-                          &&  blob_lock->IsBlobExpired();
-        }
-        catch (exception& ex) {
-            x_MonitorError(ex, "Error attempting to read meta-info about blob");
-        }
-        if (need_delete) {
-            if (x_IsMonitored()) {
-                CQuickStrStream msg;
-                msg << "BG: deleting blob key='"
-                    << identity.key    << "', subkey='"
-                    << identity.subkey << "', version="
-                    << identity.version;
-                x_MonitorPost(msg);
-            }
-            // Let's avoid access to database file and will not call
-            // DeleteBlob() on lock holder.
-            //blob_lock->DeleteBlob();
-            DeleteBlobFromCache(identity);
-        }
-        blob_lock->ReleaseLock();
-    }
-    else {
+    if (!blob_lock->IsLockAcquired()) {
         // Lock has not been acquired - we will need to try once more.
         return false;
     }
+    bool need_delete = true;
+    try {
+        // IsBlobExpired() can throw an exception
+        need_delete = blob_lock->IsBlobExists()
+                      &&  blob_lock->IsBlobExpired();
+    }
+    catch (exception& ex) {
+        x_MonitorError(ex, "Error attempting to read meta-info about blob");
+    }
+    if (need_delete) {
+        if (x_IsMonitored()) {
+            CQuickStrStream msg;
+            msg << "BG: deleting blob key='"
+                << identity.key    << "', subkey='"
+                << identity.subkey << "', version="
+                << identity.version;
+            x_MonitorPost(msg);
+        }
+        // Let's avoid access to database file and will not call
+        // DeleteBlob() on lock holder.
+        //blob_lock->DeleteBlob();
+        DeleteBlobFromCache(identity);
+    }
+    blob_lock->ReleaseLock();
     return true;
 }
 
@@ -1252,10 +1239,11 @@ CNCBlobStorage::x_GC_CleanDBVolume(TNCDBPartId   part_id,
             identity->part_id   = part_id;
             identity->volume_id = vol_id;
             can_shift &= x_GC_DeleteExpired(*identity);
+            // Avoid this thread to be the most foreground task to execute,
+            // let's give others a chance to work.
+            NCBI_SCHED_YIELD();
         }
         x_MonitorPost("BG: Batch processing is finished");
-        m_StopTrigger.TryWait(m_GCBatchSleep / 1000,
-                              m_GCBatchSleep % 1000 * 1000000);
     }
     while (!blobs_list.empty());
 
@@ -1291,13 +1279,13 @@ CNCBlobStorage::x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
 }
 
 inline void
-CNCBlobStorage::x_GC_CollectPartsStatistics(void)
+CNCBlobStorage::x_GC_CollectPartsStats(void)
 {
     // Nobody else changes m_DBParts, so working with it right away without
     // any mutexes.
     GetStat()->AddNumberOfDBParts(m_DBParts.size(),
                       m_DBParts.back()->part_id - m_DBParts.front()->part_id);
-    GetStat()->AddNumberOfBlobs(m_CntBlobs.Get());
+    CollectCacheStats();
 
     Int8 total_meta = 0, total_data = 0;
     // With ITERATE code should look more ugly to be
@@ -1357,7 +1345,7 @@ CNCBlobStorage::x_DoBackgroundWork(void)
             m_GCInWork = true;
             if (!m_Blocked) {
                 x_MonitorPost("BG: Starting next GC cycle");
-                x_GC_CollectPartsStatistics();
+                x_GC_CollectPartsStats();
 
                 int next_dead = int(time(NULL));
                 bool can_change = true;
@@ -1375,7 +1363,10 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                 x_MonitorPost("BG: GC cycle ended");
             }
             m_GCInWork = false;
-            m_StopTrigger.TryWait(m_GCRunDelay, 0);
+            for (int i = 0; i < m_GCRunDelay  &&  !m_Stopped; ++i) {
+                m_StopTrigger.TryWait(1, 0);
+                HeartBeat();
+            }
         }
     }
     catch (CNCStorage_StoppedException&) {

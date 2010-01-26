@@ -53,6 +53,52 @@ BEGIN_NCBI_SCOPE
 static const unsigned int kNCMaxThreadsCnt = 25;
 
 
+class CSpinRWLock;
+
+typedef CGuard< CSpinRWLock,
+                SSimpleReadLock  <CSpinRWLock>,
+                SSimpleReadUnlock<CSpinRWLock> >  CSpinReadGuard;
+typedef CGuard< CSpinRWLock,
+                SSimpleWriteLock  <CSpinRWLock>,
+                SSimpleWriteUnlock<CSpinRWLock> > CSpinWriteGuard;
+
+///
+class CSpinRWLock
+{
+public:
+    typedef CSpinReadGuard   TReadLockGuard;
+    typedef CSpinWriteGuard  TWriteLockGuard;
+
+    CSpinRWLock(void);
+    ~CSpinRWLock(void);
+
+    /// Acquire read lock
+    void ReadLock(void);
+    /// Release read lock
+    void ReadUnlock(void);
+
+    /// Acquire write lock
+    void WriteLock(void);
+    /// Release write lock
+    void WriteUnlock(void);
+
+private:
+    CSpinRWLock(const CSpinRWLock&);
+    CSpinRWLock& operator= (const CSpinRWLock&);
+
+    enum {
+        /// Number in lock count showing that read lock is acquired
+        kReadLockValue  = 0x000001,
+        /// Number in lock count showing that write lock is acquired
+        kWriteLockValue = 0x100000
+    };
+
+    /// Number of read locks acquired or value of kWriteLockValue if write
+    /// lock was acquired
+    CAtomicCounter m_LockCount;
+};
+
+
 /// Stream-like class to accumulate all in one string without actual
 /// streams-related overhead. Can be automatically converted to string or
 /// CTempString.
@@ -528,6 +574,66 @@ g_GetBitsCnt(size_t value)
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
+
+inline
+CSpinRWLock::CSpinRWLock(void)
+{
+    m_LockCount.Set(0);
+}
+
+inline
+CSpinRWLock::~CSpinRWLock(void)
+{
+    _ASSERT(m_LockCount.Get() == 0);
+}
+
+inline void
+CSpinRWLock::ReadLock(void)
+{
+    CAtomicCounter::TValue lock_cnt = m_LockCount.Add(kReadLockValue);
+    // If some writer already acquired or requested a lock we should release
+    // read lock and re-acquire it after writer is done.
+    while (lock_cnt > kWriteLockValue) {
+        m_LockCount.Add(-kReadLockValue);
+        NCBI_SCHED_YIELD();
+        lock_cnt = m_LockCount.Add(kReadLockValue);
+    }
+}
+
+inline void
+CSpinRWLock::ReadUnlock(void)
+{
+    m_LockCount.Add(-kReadLockValue);
+}
+
+inline void
+CSpinRWLock::WriteLock(void)
+{
+    CAtomicCounter::TValue lock_cnt = m_LockCount.Add(kWriteLockValue);
+    // If there's another writer who already acquired or requested the lock
+    // earlier then we need to release write lock and wait until another
+    // writer is done.
+    while (lock_cnt >= 2 * kWriteLockValue) {
+        m_LockCount.Add(-kWriteLockValue);
+        NCBI_SCHED_YIELD();
+        lock_cnt = m_LockCount.Add(kWriteLockValue);
+    }
+    // We will be here if no other writer exists or we requested a write lock
+    // earlier than other writer. So we need just to wait until other readers
+    // release there locks - wait without releasing our lock to prevent new
+    // read locks.
+    while (lock_cnt != kWriteLockValue) {
+        NCBI_SCHED_YIELD();
+        lock_cnt = m_LockCount.Get();
+    }
+}
+
+inline void
+CSpinRWLock::WriteUnlock(void)
+{
+    m_LockCount.Add(-kWriteLockValue);
+}
+
 
 inline void
 CQuickStrStream::Clear(void)

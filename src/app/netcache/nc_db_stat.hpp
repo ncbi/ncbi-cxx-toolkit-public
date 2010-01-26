@@ -1,5 +1,5 @@
-#ifndef NETCACHE_NC_DB_STAT__HPP
-#define NETCACHE_NC_DB_STAT__HPP
+#ifndef NETCACHE__NC_DB_STAT__HPP
+#define NETCACHE__NC_DB_STAT__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -58,7 +58,11 @@ struct SNCDBStatData
     CSpinLock                       m_ObjLock;
 
     /// Number of blobs in the database
-    CNCStatFigure<TNCBIAtomicValue> m_NumOfBlobs;
+    CNCStatFigure<unsigned int>     m_CountBlobs;
+    ///
+    CNCStatFigure<unsigned int>     m_CountCacheNodes;
+    ///
+    CNCStatFigure<unsigned int>     m_CacheTreeHeight;
     /// Number of database parts
     CNCStatFigure<Uint8>            m_NumOfDBParts;
     /// Difference between the highest and lowest database part ids
@@ -146,7 +150,11 @@ public:
     ~CNCDBStat(void);
 
     /// Add measurement for number of blobs in the database
-    void AddNumberOfBlobs    (TNCBIAtomicValue num_blobs);
+    void AddCountBlobs       (unsigned int num_blobs);
+    /// Add measurement for number of 
+    void AddCountCacheNodes  (unsigned int num_nodes);
+    /// Add measurement for 
+    void AddCacheTreeHeight  (unsigned int height);
     /// Add measurement for number of database parts and difference between
     /// highest and lowest ids of database parts.
     void AddNumberOfDBParts  (size_t num_parts, Int8 ids_span);
@@ -256,11 +264,29 @@ private:
 
 
 inline void
-CNCDBStat::AddNumberOfBlobs(TNCBIAtomicValue num_blobs)
+CNCDBStat::AddCountBlobs(unsigned int num_blobs)
 {
     SNCDBStatData* data = GetObjPtr();
     data->m_ObjLock.Lock();
-    data->m_NumOfBlobs.AddValue(num_blobs);
+    data->m_CountBlobs.AddValue(num_blobs);
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddCountCacheNodes(unsigned int num_nodes)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_CountCacheNodes.AddValue(num_nodes);
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddCacheTreeHeight(unsigned int height)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_CacheTreeHeight.AddValue(height);
     data->m_ObjLock.Unlock();
 }
 
@@ -526,4 +552,4 @@ CNCStatTimer::SetChunkSize(size_t size)
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_NC_DB_STAT__HPP */
+#endif /* NETCACHE__NC_DB_STAT__HPP */

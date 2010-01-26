@@ -1,5 +1,5 @@
-#ifndef NETCACHE_NC_STORAGE_BLOB__HPP
-#define NETCACHE_NC_STORAGE_BLOB__HPP
+#ifndef NETCACHE__NC_STORAGE_BLOB__HPP
+#define NETCACHE__NC_STORAGE_BLOB__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -301,11 +301,6 @@ private:
     ///
     /// @sa x_ValidateLock, OnLockAcquired
     bool x_LockAndValidate(SNCBlobCoords coords);
-    /// Internal releasing of the lock
-    /// Only pure releasing without obtaining mutex and statistics
-    /// registration, thus it should execute from constructor or under
-    /// m_LockAcqMutex.
-    void x_ReleaseLock(void);
     /// Try to create blob record in database (because it was already checked
     /// that record doesn't exist) or acquire lock for new record if it was
     /// created by another thread. Method is called only if access mode is
@@ -517,4 +512,4 @@ CNCBlobLockHolder::SetBlobOwner(const string& owner)
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_NC_STORAGE_BLOB__HPP */
+#endif /* NETCACHE__NC_STORAGE_BLOB__HPP */

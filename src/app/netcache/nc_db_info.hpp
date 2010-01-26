@@ -1,5 +1,5 @@
-#ifndef NETCACHE_NC_DB_INFO__HPP
-#define NETCACHE_NC_DB_INFO__HPP
+#ifndef NETCACHE__NC_DB_INFO__HPP
+#define NETCACHE__NC_DB_INFO__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -82,8 +82,6 @@ struct SNCBlobKeys
     void Clear(void);
     /// Copy coordinates from another structure
     void AssignKeys(const SNCBlobKeys& keys);
-    /// Check whether this coordinates are equal to other ones
-    bool operator==(const SNCBlobKeys& keys) const;
 
     /// Special transformation of the structure to pointer to it necessary
     /// for implementation of CNCBlobStorage_Specific.
@@ -212,13 +210,6 @@ SNCBlobKeys::AssignKeys(const SNCBlobKeys& keys)
     version = keys.version;
 }
 
-inline bool
-SNCBlobKeys::operator== (const SNCBlobKeys& keys) const
-{
-    return key == keys.key  &&  subkey == keys.subkey
-           &&  version == keys.version;
-}
-
 inline
 SNCBlobKeys::operator const SNCBlobKeys*(void) const
 {
@@ -264,4 +255,4 @@ SNCBlobInfo::SNCBlobInfo(void)
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_NC_DB_INFO__HPP */
+#endif /* NETCACHE__NC_DB_INFO__HPP */

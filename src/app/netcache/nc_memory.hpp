@@ -1274,7 +1274,7 @@ private:
 
 
     /// Mutex protecting access to the object
-    CFastMutex       m_ObjLock;
+    CSpinLock        m_ObjLock;
     /// TRUE if pages in this cache instance can be deleted at any time
     /// after they're unpinned by SQLite. FALSE if pages must never be
     /// deleted unless SQLite explicitly said so.
@@ -1648,12 +1648,12 @@ private:
 
 
     /// Mutex controlling access to central operations
-    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_CentralLock);
+    static CSpinLock      sm_CentralLock;
     /// Central operations statistics.
     /// By-thread statistics is not used for central operations because they
     /// are executed under central mutex anyway. Also this makes easier access
     /// to information about total allocated memory from OS, e.g.
-    static CNCMMStats sm_Stats;
+    static CNCMMStats     sm_Stats;
     /// Flag showing that memory manager was already initialized.
     static bool           sm_Initialized;
     /// Mode of memory manager operation.

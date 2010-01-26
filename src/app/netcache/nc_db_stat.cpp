@@ -64,7 +64,9 @@ SNCDBStatData::SNCDBStatData(void)
       m_CreateExists(0),
       m_ExistChecks(0)
 {
-    m_NumOfBlobs      .Initialize();
+    m_CountBlobs      .Initialize();
+    m_CountCacheNodes .Initialize();
+    m_CacheTreeHeight .Initialize();
     m_NumOfDBParts    .Initialize();
     m_DBPartsIdsSpan  .Initialize();
     m_MetaPartSize    .Initialize();
@@ -99,7 +101,9 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
 {
     CSpinGuard guard(m_ObjLock);
 
-    dest->m_NumOfBlobs      .AddValues(m_NumOfBlobs);
+    dest->m_CountBlobs      .AddValues(m_CountBlobs);
+    dest->m_CountCacheNodes .AddValues(m_CountCacheNodes);
+    dest->m_CacheTreeHeight .AddValues(m_CacheTreeHeight);
     dest->m_NumOfDBParts    .AddValues(m_NumOfDBParts);
     dest->m_DBPartsIdsSpan  .AddValues(m_DBPartsIdsSpan);
     dest->m_MetaPartSize    .AddValues(m_MetaPartSize);
@@ -183,6 +187,13 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
         m_Data[i].CollectTo(&data);
     }
 
+    proxy << "Cache    - "
+                        << data.m_CountBlobs.GetAverage()      << " avg blobs ("
+                        << data.m_CountBlobs.GetMaximum()      << " max), "
+                        << data.m_CountCacheNodes.GetAverage() << " avg nodes ("
+                        << data.m_CountCacheNodes.GetMaximum() << " max), "
+                        << data.m_CacheTreeHeight.GetAverage() << " avg height ("
+                        << data.m_CacheTreeHeight.GetMaximum() << " max)" << endl;
     proxy << "DB size  - "
                         << data.m_TotalDBSize.GetAverage()   << " avg ("
                         << data.m_TotalDataSize.GetAverage() << " data, "
@@ -200,9 +211,6 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.m_MetaFileSize.GetAverage() << " avg meta, "
                         << data.m_DataFileSize.GetMaximum() << " max data, "
                         << data.m_MetaFileSize.GetMaximum() << " max meta" << endl
-          << "DB blobs - "
-                        << data.m_NumOfBlobs.GetAverage() << " avg, "
-                        << data.m_NumOfBlobs.GetMaximum() << " max;   "
           << "DB parts - "
                         << data.m_NumOfDBParts.GetAverage()   << " avg, "
                         << data.m_NumOfDBParts.GetMaximum()   << " max, "

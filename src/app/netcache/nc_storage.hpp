@@ -1,5 +1,5 @@
-#ifndef NETCACHE_NETCACHE_DB__HPP
-#define NETCACHE_NETCACHE_DB__HPP
+#ifndef NETCACHE__NC_STORAGE__HPP
+#define NETCACHE__NC_STORAGE__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -39,6 +39,8 @@
 #include "nc_db_stat.hpp"
 #include "nc_db_files.hpp"
 #include "nc_storage_blob.hpp"
+
+#include "concurrent_map.hpp"
 
 #include <set>
 #include <map>
@@ -328,10 +330,16 @@ protected:
     /// Deinitilize storage and prepare for deletion.
     void Deinitialize(void);
 
+    ///
+    virtual void HeartBeat(void) = 0;
+    ///
+    virtual void PrintCacheCounts(CPrintTextProxy& proxy) = 0;
+    ///
+    virtual void CollectCacheStats(void) = 0;
+
     /// Create pool that will provide objects to work with database files
     virtual CNCDBFilesPool* CreateFilesPool(const string& meta_name,
                                             const string& data_name) = 0;
-
     /// Read coordinates of the blob identified by key, subkey and version
     /// from internal cache (without reading from database).
     virtual bool ReadBlobCoordsFromCache(SNCBlobIdentity* identity) = 0;
@@ -363,11 +371,6 @@ protected:
     /// Check if record about any blob with given key and subkey exists in
     /// the internal cache.
     virtual bool IsBlobFamilyExistsInCache(const SNCBlobKeys& keys) = 0;
-
-    /// Number of live blobs currently in the storage.
-    /// Member should be protected for decendant to be able to access it from
-    /// any of virtual methods from above.
-    CAtomicCounter m_CntBlobs;
 
 private:
     CNCBlobStorage(const CNCBlobStorage&);
@@ -599,7 +602,7 @@ private:
     bool x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
                           int                      dead_before);
     /// Collect statistics about number of parts, database files sizes etc.
-    void x_GC_CollectPartsStatistics(void);
+    void x_GC_CollectPartsStats(void);
 
 
     /// Directory for all database files of the storage
@@ -621,8 +624,6 @@ private:
     int                m_GCRunDelay;
     /// Number of blobs treated by GC and by caching mechanism in one batch
     int                m_BlobsBatchSize;
-    /// Time in milliseconds GC will sleep between batches
-    int                m_GCBatchSleep;
 
     /// Name of guard file excluding several instances to run on the same
     /// database.
@@ -715,15 +716,9 @@ private:
 template <class C>
 struct SNCStorageKeyTraits
 {
-    /// Create a copy for the object
-    static C CreateCopy(C object);
-    /// Delete object created earlier by CreateCopy()
-    static void Delete(C object);
     /// Check if two objects are from the same "family" (not necessarily fully
     /// equal).
     static bool IsFamilyEqual(const C& left, const C& right);
-    /// Check if two objects are exactly the same (fully equal).
-    static bool IsEqual(const C& left, const C& right);
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
     bool operator() (const C& left, const C& right) const;
@@ -750,6 +745,12 @@ private:
     typedef const TCacheKey&                TKeyConstRef;
     typedef SNCStorageKeyTraits<TCacheKey>  TKeyTraits;
 
+    ///
+    virtual void HeartBeat(void);
+    ///
+    virtual void PrintCacheCounts(CPrintTextProxy& proxy);
+    ///
+    virtual void CollectCacheStats(void);
     /// Create pool that will provide objects to work with database files
     virtual CNCDBFilesPool* CreateFilesPool(const string& meta_name,
                                             const string& data_name);
@@ -786,11 +787,8 @@ private:
     virtual bool IsBlobFamilyExistsInCache(const SNCBlobKeys& keys);
 
 
-    typedef map<TCacheKey, SNCBlobCoords*, TKeyTraits> TKeyIdMap;
+    typedef CConcurrentMap<TCacheKey, SNCBlobCoords, TKeyTraits> TKeyIdMap;
 
-
-    /// Read-write lock to work with m_KeysCache
-    CFastRWLock m_KeysCacheLock;
     /// Internal cache of blobs identification information sorted to be able
     /// to search by key, subkey and version.
     TKeyIdMap   m_KeysCache;
@@ -798,49 +796,36 @@ private:
 
 /// Type of blob storage dedicated to ICache-related functionality
 typedef CNCBlobStorage_Specific<CNCDBFilesPool_ICache,
-                                const SNCBlobKeys*>     CNCBlobStorage_ICache;
+                                SNCBlobKeys>            CNCBlobStorage_ICache;
 /// Type of blob storage dedicated to pure NetCache-related functionality
 typedef CNCBlobStorage_Specific<CNCDBFilesPool_NCCache,
                                 string>                 CNCBlobStorage_NCCache;
 
 /// Specialization of traits template to use with ICache-related blob storage
 template <>
-struct SNCStorageKeyTraits<const SNCBlobKeys*>
+struct SNCStorageKeyTraits<SNCBlobKeys>
 {
-    /// Create a copy for the keys object
-    static SNCBlobKeys* CreateCopy(const SNCBlobKeys& object) {
-        return new SNCBlobKeys(object);
-    }
-    /// Delete keys object created earlier by CreateCopy()
-    static void Delete(const SNCBlobKeys* object) {
-        delete object;
-    }
     /// Check if two keys objects are from the same "family", i.e. key and
     /// subkey are equal but version can be different.
-    static bool IsFamilyEqual(const SNCBlobKeys* left, const SNCBlobKeys* right)
+    static bool IsFamilyEqual(const SNCBlobKeys& left, const SNCBlobKeys& right)
     {
-        return left->key == right->key  &&  left->subkey == right->subkey;
-    }
-    /// Check if two objects are exactly the same (fully equal).
-    static bool IsEqual(const SNCBlobKeys* left, const SNCBlobKeys* right)
-    {
-        return *left == *right;
+        return left.key == right.key  &&  left.subkey == right.subkey;
     }
     /// Check if left object is less than right.
     /// Method is necessary to use traits class as comparator in STL container.
-    bool operator() (const SNCBlobKeys* left, const SNCBlobKeys* right) const
+    bool operator() (const SNCBlobKeys& left, const SNCBlobKeys& right) const
     {
-        if (left->key.size() != right->key.size())
-            return left->key.size() < right->key.size();
-        int ret = left->key.compare(right->key);
+        if (left.key.size() != right.key.size())
+            return left.key.size() < right.key.size();
+        if (left.subkey.size() != right.subkey.size())
+            return left.subkey.size() < right.subkey.size();
+        int ret = left.key.compare(right.key);
         if (ret != 0)
             return ret < 0;
-        if (left->subkey.size() != right->subkey.size())
-            return left->subkey.size() < right->subkey.size();
-        ret = left->subkey.compare(right->subkey);
+        ret = left.subkey.compare(right.subkey);
         if (ret != 0)
             return ret < 0;
-        return left->version < right->version;
+        return left.version < right.version;
     }
 };
 
@@ -849,20 +834,9 @@ struct SNCStorageKeyTraits<const SNCBlobKeys*>
 template <>
 struct SNCStorageKeyTraits<string>
 {
-    /// Create a copy for the object - nothing should be done for strings.
-    static const string& CreateCopy(const string& object) {
-        return object;
-    }
-    /// Delete object created earlier by CreateCopy() - nothing should be done
-    /// for strings.
-    static void Delete(const string& object) {}
     /// Check if two objects are from the same "family" - for strings it's a
     /// simple equality comparison.
     static bool IsFamilyEqual(const string& left, const string& right) {
-        return left == right;
-    }
-    /// Check if two objects are exactly the same (fully equal).
-    static bool IsEqual(const string& left, const string& right) {
         return left == right;
     }
     /// Check if left object is less than right.
@@ -1188,9 +1162,7 @@ CNCBlobStorage::CNCBlobStorage(void)
       m_BlobsPool(TNCBlobsFactory(this)),
       m_Blocked(false),
       m_CntLocksToWait(0)
-{
-    m_CntBlobs.Set(0);
-}
+{}
 
 
 template <class TFilesPool, class TCacheKey>
@@ -1205,7 +1177,7 @@ CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::~CNCBlobStorage_Specific(void)
 {
     Deinitialize();
-    m_KeysCache.clear();
+    m_KeysCache.Clear();
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1222,15 +1194,8 @@ inline bool
 CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::ReadBlobCoordsFromCache(SNCBlobIdentity* identity)
 {
-    CFastReadGuard guard(m_KeysCacheLock);
-
     TKeyConstRef key_ref(*identity);
-    typename TKeyIdMap::const_iterator it = m_KeysCache.find(key_ref);
-    if (it != m_KeysCache.end()) {
-        identity->AssignCoords(*it->second);
-        return true;
-    }
-    return false;
+    return m_KeysCache.Get(key_ref, identity);
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1239,24 +1204,11 @@ CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::CreateBlobInCache(const SNCBlobIdentity& identity,
                                     SNCBlobCoords*         new_coords)
 {
-    TCacheKey cache_key(TKeyTraits::CreateCopy(identity));
-    SNCBlobCoords* cache_coords = new SNCBlobCoords(identity);
-
-    CFastWriteGuard guard(m_KeysCacheLock);
-
-    typename TKeyIdMap::iterator it = m_KeysCache.lower_bound(cache_key);
-    if (it != m_KeysCache.end()  &&  TKeyTraits::IsEqual(it->first, cache_key))
-    {
-        TKeyTraits::Delete(cache_key);
-        delete cache_coords;
-        new_coords->AssignCoords(*it->second);
-        return false;
+    TKeyConstRef key_ref(identity);
+    if (m_KeysCache.Insert(key_ref, identity, new_coords)) {
+        return true;
     }
-    m_KeysCache.insert(it,
-                       typename TKeyIdMap::value_type(cache_key, cache_coords));
-    m_CntBlobs.Add(1);
-
-    return true;
+    return false;
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1265,18 +1217,8 @@ CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::MoveBlobInCache(const SNCBlobKeys&   keys,
                                   const SNCBlobCoords& new_coords)
 {
-    // We use write guard here because later changing of coordinates can
-    // have a race with ReadBlobCoordsFromCache() and write guard is the
-    // simplest method to avoid this race without introducing additional
-    // level of complexity.
-    CFastWriteGuard guard(m_KeysCacheLock);
-
     TKeyConstRef key_ref(keys);
-    typename TKeyIdMap::iterator it = m_KeysCache.find(key_ref);
-    _ASSERT(it != m_KeysCache.end());
-    // For now we don't allow to use the same blob_id
-    _ASSERT(it->second->blob_id != new_coords.blob_id);
-    it->second->AssignCoords(new_coords);
+    _VERIFY(m_KeysCache.Change(key_ref, new_coords));
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1285,16 +1227,12 @@ CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::IsBlobExistsInCache(const SNCBlobIdentity& identity,
                                       SNCBlobCoords*         new_coords)
 {
-    CFastReadGuard guard(m_KeysCacheLock);
-
     TKeyConstRef key_ref(identity);
-    typename TKeyIdMap::const_iterator it = m_KeysCache.find(key_ref);
-    if (it != m_KeysCache.end()) {
+    if (m_KeysCache.Get(key_ref, new_coords)) {
         // For now we don't allow to use the same blob_id when blob is moved
         // (see _ASSERT above).
-        if (it->second->blob_id == identity.blob_id)
+        if (new_coords->blob_id == identity.blob_id)
             return eBlobExists;
-        new_coords->AssignCoords(*it->second);
         return eBlobMoved;
     }
     return eBlobNotExists;
@@ -1305,24 +1243,13 @@ inline void
 CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::DeleteBlobFromCache(const SNCBlobKeys& keys)
 {
-    TCacheKey      cache_key;
-    SNCBlobCoords* cache_coords;
-    {{
-        CFastWriteGuard guard(m_KeysCacheLock);
+    TKeyConstRef key_ref(keys);
+    if (!m_KeysCache.Erase(key_ref)) {
+        // I don't know yet why this can happen in corrupted database.
+        ERR_POST("For some reason blob '" << keys.key << "', '" << keys.subkey
+                 << "', " << keys.version << " doesn't exist in cache.");
+    }
 
-        TKeyConstRef key_ref(keys);
-        typename TKeyIdMap::iterator it = m_KeysCache.find(key_ref);
-        // Blob will not be found if somebody else has already deleted it.
-        // But it should not ever occur because deleting is mutually
-        // exclusive by blob locking.
-        _ASSERT(it != m_KeysCache.end());
-        cache_key    = it->first;
-        cache_coords = it->second;
-        m_KeysCache.erase(it);
-    }}
-    TKeyTraits::Delete(cache_key);
-    delete cache_coords;
-    m_CntBlobs.Add(-1);
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1330,14 +1257,7 @@ inline void
 CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::CleanCache(void)
 {
-    CFastWriteGuard guard(m_KeysCacheLock);
-
-    ITERATE(typename TKeyIdMap, it, m_KeysCache) {
-        TKeyTraits::Delete(it->first);
-        delete it->second;
-    }
-    m_KeysCache.clear();
-    m_CntBlobs.Set(0);
+    m_KeysCache.Clear();
 }
 
 template <class TFilesPool, class TCacheKey>
@@ -1345,14 +1265,41 @@ inline bool
 CNCBlobStorage_Specific<TFilesPool, TCacheKey>
                 ::IsBlobFamilyExistsInCache(const SNCBlobKeys& keys)
 {
-    CFastReadGuard guard(m_KeysCacheLock);
-
     TKeyConstRef key_ref(keys);
-    typename TKeyIdMap::const_iterator it = m_KeysCache.lower_bound(key_ref);
-    return it != m_KeysCache.end()
-           &&  TKeyTraits::IsFamilyEqual(it->first, key_ref);
+    TCacheKey stored_key;
+    return m_KeysCache.GetLowerBound(key_ref, stored_key)
+           &&  TKeyTraits::IsFamilyEqual(stored_key, key_ref);
+}
+
+template <class TFilesPool, class TCacheKey>
+inline void
+CNCBlobStorage_Specific<TFilesPool, TCacheKey>
+                ::HeartBeat(void)
+{
+    m_KeysCache.HeartBeat();
+}
+
+template <class TFilesPool, class TCacheKey>
+inline void
+CNCBlobStorage_Specific<TFilesPool, TCacheKey>
+                ::PrintCacheCounts(CPrintTextProxy& proxy)
+{
+    proxy << "Now in cache    - "
+                    << m_KeysCache.CountValues() << " blobs, "
+                    << m_KeysCache.CountNodes()  << " nodes, "
+                    << m_KeysCache.TreeHeight()  << " height" << endl;
+}
+
+template <class TFilesPool, class TCacheKey>
+inline void
+CNCBlobStorage_Specific<TFilesPool, TCacheKey>
+                ::CollectCacheStats(void)
+{
+    GetStat()->AddCountBlobs(m_KeysCache.CountValues());
+    GetStat()->AddCountCacheNodes(m_KeysCache.CountNodes());
+    GetStat()->AddCacheTreeHeight(m_KeysCache.TreeHeight());
 }
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_NETCACHE_DB__HPP */
+#endif /* NETCACHE__NC_STORAGE__HPP */
