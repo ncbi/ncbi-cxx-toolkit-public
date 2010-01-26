@@ -155,7 +155,8 @@ public:
         string stat;
 
         if (!finished_ok) {
-            context.CommitJobWithFailure("Job has been canceled");
+            if (!context.IsCanceled())
+                context.CommitJobWithFailure("Job has been canceled");
             stat = " was canceled.";
         } else
             if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==

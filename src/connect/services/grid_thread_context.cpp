@@ -49,13 +49,16 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-CGridThreadContext::CGridThreadContext(CGridWorkerNode& node)
-    : m_Worker(node),
-      m_JobContext(NULL), m_Reporter(node.GetNSExecuter()), m_MsgThrottler(1),
-      m_StatusThrottler(1,CTimeSpan(m_CheckStatusPeriod, 0))
+CGridThreadContext::CGridThreadContext(CGridWorkerNode& node) :
+    m_Worker(node),
+    m_JobContext(NULL),
+    m_NetScheduleExecuter(node.GetNSExecuter()),
+    m_MsgThrottler(1),
+    m_StatusThrottler(1)
 {
     long check_status_period = node.GetCheckStatusPeriod();
     m_CheckStatusPeriod = check_status_period > 1 ? check_status_period : 1;
+    m_StatusThrottler.Reset(1, CTimeSpan(m_CheckStatusPeriod, 0));
     m_Reader.reset(node.CreateStorage());
     m_Writer.reset(node.CreateStorage());
     m_ProgressWriter.reset(node.CreateStorage());
@@ -111,7 +114,7 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
             debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
             if (m_JobContext->m_Job.progress_msg.empty() ) {
-                m_Reporter.GetProgressMsg(m_JobContext->m_Job);
+                m_NetScheduleExecuter.GetProgressMsg(m_JobContext->m_Job);
             }
             if (!m_JobContext->m_Job.progress_msg.empty() && m_ProgressWriter.get()) {
                 CNcbiOstream& os = m_ProgressWriter->CreateOStream(m_JobContext->m_Job.progress_msg);
@@ -136,7 +139,7 @@ void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
 {
     _ASSERT(m_JobContext);
     try {
-        m_Reporter.SetRunTimeout(m_JobContext->GetJobKey(), time_to_run);
+        m_NetScheduleExecuter.SetRunTimeout(m_JobContext->GetJobKey(), time_to_run);
     } catch(exception& ex) {
         ERR_POST_X(7, "CWorkerNodeJobContext::SetJobRunTimeout : "
                        << ex.what());
@@ -147,7 +150,7 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
 {
     _ASSERT(m_JobContext);
     try {
-        m_Reporter.JobDelayExpiration(m_JobContext->GetJobKey(), time_to_run);
+        m_NetScheduleExecuter.JobDelayExpiration(m_JobContext->GetJobKey(), time_to_run);
     } catch(exception& ex) {
         ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration : "
                        << ex.what());
@@ -178,10 +181,10 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
         if (CGridGlobals::GetInstance().IsShuttingDown() ||
                 m_Worker.IsTimeToRebalance() ||
                 decision_mask & OTHER_JOB_IS_EXCLUSIVE)
-            m_Reporter.PutResult(m_JobContext->m_Job);
+            m_NetScheduleExecuter.PutResult(m_JobContext->m_Job);
         else {
-            more_jobs =
-                m_Reporter.PutResultGetJob(m_JobContext->m_Job, new_job);
+            more_jobs = m_NetScheduleExecuter.PutResultGetJob(
+                m_JobContext->m_Job, new_job);
 
             if (more_jobs && (new_job.mask & CNetScheduleAPI::eExclusiveJob))
                 decision_mask |= NEW_JOB_IS_EXCLUSIVE;
@@ -209,10 +212,10 @@ void CGridThreadContext::ReturnJob()
     if (!debug_context ||
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
-        CNetScheduleAPI::EJobStatus status =
-            m_Reporter.GetJobStatus(m_JobContext->GetJobKey());
-        IWorkerNodeJobWatcher::EEvent event = IWorkerNodeJobWatcher::eJobReturned;
-        switch(status) {
+        IWorkerNodeJobWatcher::EEvent event =
+            IWorkerNodeJobWatcher::eJobReturned;
+
+        switch (m_NetScheduleExecuter.GetJobStatus(m_JobContext->GetJobKey())) {
         case CNetScheduleAPI::eJobNotFound:
             event = IWorkerNodeJobWatcher::eJobLost;
             break;
@@ -226,13 +229,12 @@ void CGridThreadContext::ReturnJob()
             event = IWorkerNodeJobWatcher::eJobCanceled;
             break;
         case CNetScheduleAPI::eRunning:
-            m_Reporter.ReturnJob(m_JobContext->GetJobKey());
+            m_NetScheduleExecuter.ReturnJob(m_JobContext->GetJobKey());
             break;
         default:
             break;
         }
-        m_JobContext->GetWorkerNode()
-            .x_NotifyJobWatcher(*m_JobContext, event);
+        m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext, event);
         return;
     }
     m_JobContext->GetWorkerNode()
@@ -240,20 +242,17 @@ void CGridThreadContext::ReturnJob()
                             IWorkerNodeJobWatcher::eJobReturned);
 }
 /// @internal
-void CGridThreadContext::PutFailure(const string& msg)
+void CGridThreadContext::PutFailure()
 {
     _ASSERT(m_JobContext);
-    if (!msg.empty())
-        m_JobContext->m_Job.error_msg = msg;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context ||
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
-        m_Reporter.PutFailure(m_JobContext->m_Job);
+        m_NetScheduleExecuter.PutFailure(m_JobContext->m_Job);
     }
-    m_JobContext->GetWorkerNode()
-        .x_NotifyJobWatcher(*m_JobContext,
-                            IWorkerNodeJobWatcher::eJobFailed);
+    m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
+        IWorkerNodeJobWatcher::eJobFailed);
 }
 bool CGridThreadContext::IsJobCanceled()
 {
@@ -263,10 +262,19 @@ bool CGridThreadContext::IsJobCanceled()
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
         if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode)) {
-            CNetScheduleAPI::EJobStatus status =
-                m_Reporter.GetJobStatus(m_JobContext->GetJobKey());
-            if (status != CNetScheduleAPI::eRunning)
+            switch (m_NetScheduleExecuter.GetJobStatus(
+                        m_JobContext->GetJobKey())) {
+
+            case CNetScheduleAPI::eRunning:
+                break;
+
+            case CNetScheduleAPI::eCanceled:
+                m_JobContext->SetCanceled();
+                /* FALL THROUGH */
+
+            default:
                 return true;
+            }
         }
     }
     return false;
@@ -309,7 +317,7 @@ void CGridThreadContext::CloseStreams()
 
     m_ProgressWriter->Reset();
     m_MsgThrottler.Reset(1);
-    m_StatusThrottler.Reset(1,CTimeSpan(m_CheckStatusPeriod, 0));
+    m_StatusThrottler.Reset(1, CTimeSpan(m_CheckStatusPeriod, 0));
 
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();

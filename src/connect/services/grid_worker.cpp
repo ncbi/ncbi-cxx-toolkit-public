@@ -213,16 +213,31 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
     return m_ThreadContext->GetOStream();
 }
 
+void CWorkerNodeJobContext::CommitJob()
+{
+    CheckIfCanceled();
+    m_JobCommitted = eDone;
+}
+
+void CWorkerNodeJobContext::CommitJobWithFailure(const string& err_msg)
+{
+    CheckIfCanceled();
+    m_JobCommitted = eFailure;
+    m_Job.error_msg = err_msg;
+}
+
+void CWorkerNodeJobContext::ReturnJob()
+{
+    CheckIfCanceled();
+    m_JobCommitted = eReturn;
+}
+
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
                                                bool send_immediately)
 {
     _ASSERT(m_ThreadContext);
+    CheckIfCanceled();
     m_ThreadContext->PutProgressMessage(msg, send_immediately);
-}
-
-void CWorkerNodeJobContext::SetThreadContext(CGridThreadContext* thr_context)
-{
-    m_ThreadContext = thr_context;
 }
 
 void CWorkerNodeJobContext::SetJobRunTimeout(unsigned time_to_run)
@@ -244,6 +259,14 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
     if (m_ThreadContext->IsJobCanceled())
         return CNetScheduleAdmin::eShutdownImmediate;
     return CGridGlobals::GetInstance().GetShutdownLevel();
+}
+
+void CWorkerNodeJobContext::CheckIfCanceled()
+{
+    if (IsCanceled()) {
+        NCBI_THROW_FMT(CGridWorkerNodeException, eJobIsCanceled,
+            "Job " << m_Job.job_id << " has been canceled");
+    }
 }
 
 void CWorkerNodeJobContext::Reset(const CNetScheduleJob& job)
@@ -318,7 +341,8 @@ void CGridThreadContext::x_HandleRunJobError(exception* ex /*= NULL*/)
     }
     ERR_POST_X(18, m_JobContext->GetJobKey() << msg);
     try {
-        PutFailure(ex ? ex->what() : "Unknown error");
+        m_JobContext->m_Job.error_msg = ex ? ex->what() : "Unknown error";
+        PutFailure();
     } catch (exception& ex1) {
         ERR_POST_X(19, "Failed to report exception: " <<
             m_JobContext->GetJobKey() << " " << ex1.what());
@@ -448,7 +472,7 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
                             break;
 
                         case CWorkerNodeJobContext::eFailure:
-                            PutFailure(kEmptyStr);
+                            PutFailure();
                             break;
 
                         case CWorkerNodeJobContext::eNotCommitted:
@@ -456,13 +480,20 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
                                         GetDefault() &&
                                     job_context.GetShutdownLevel() ==
                                         CNetScheduleAdmin::eNoShutdown) {
-                                PutFailure("Job was not explicitly committed");
+                                job_context.m_Job.error_msg =
+                                    "Job was not explicitly committed";
+                                PutFailure();
                                 break;
                             }
                             /* FALL THROUGH */
 
                         case CWorkerNodeJobContext::eReturn:
                             ReturnJob();
+                            break;
+
+                        case CWorkerNodeJobContext::eCanceled:
+                            ERR_POST("Job " << job_context.GetJobKey() <<
+                                " has been canceled");
                     }
                     break;
                 } catch (CNetServiceException& ex) {
@@ -848,7 +879,7 @@ CGridWorkerNode::CGridWorkerNode(
     m_SingleThreadForced(false)
 {
     if (!m_JobFactory.get())
-        NCBI_THROW(CGridWorkerAppException,
+        NCBI_THROW(CGridWorkerNodeException,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
 }
 

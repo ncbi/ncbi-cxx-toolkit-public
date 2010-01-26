@@ -209,7 +209,8 @@ public:
         string stat;
 
         if (!finished_ok) {
-            context.CommitJobWithFailure("Job has been canceled");
+            if (!context.IsCanceled())
+                context.CommitJobWithFailure("Job has been canceled");
             stat = " was canceled.";
         } else
             if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
@@ -231,8 +232,8 @@ public:
             if (err.pcount() > 0 )
                 LOG_POST("STDERR: " << err.rdbuf());
 
-            LOG_POST("Job " << context.GetJobKey() + " " + context.GetJobOutput()
-                      << stat << " Retcode: " << ret);
+            LOG_POST("Job " << context.GetJobKey() << " " <<
+                context.GetJobOutput() << stat << " Retcode: " << ret);
         }
 
         return ret;

@@ -155,6 +155,9 @@ public:
 private:
     /// Only CGridClient can create an instance of this class
     friend class CGridClient;
+
+    void CheckIfAlreadySubmitted();
+
     explicit CGridJobBatchSubmitter(CGridClient&);
 
     CGridClient& m_GridClient;
@@ -332,15 +335,15 @@ class CGridClientException : public CException
 {
 public:
     enum EErrCode {
-        eBatchHasAlreadyBeenSubmitted
+        eBatchAlreadySubmitted
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eBatchHasAlreadyBeenSubmitted: return "eBatchHasAlreadyBeenSubmitted";
-        default:                  return CException::GetErrCodeString();
+        case eBatchAlreadySubmitted: return "eBatchAlreadySubmitted";
+        default:                     return CException::GetErrCodeString();
         }
     }
 

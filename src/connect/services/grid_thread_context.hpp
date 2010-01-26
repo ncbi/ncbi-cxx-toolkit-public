@@ -60,17 +60,18 @@ public:
 
     bool PutResult(CNetScheduleJob& new_job);
     void ReturnJob();
-    void PutFailure(const string& msg);
+    void PutFailure();
     bool IsJobCanceled();
 
     IWorkerNodeJob* GetJob();
+
 private:
     void x_HandleRunJobError(exception* ex = NULL);
 
     CGridWorkerNode&              m_Worker;
     CWorkerNodeJobContext*        m_JobContext;
     CRef<IWorkerNodeJob>          m_Job;
-    CNetScheduleExecuter          m_Reporter;
+    CNetScheduleExecuter          m_NetScheduleExecuter;
 
     auto_ptr<IBlobStorage>        m_Reader;
     auto_ptr<CNcbiIstream>        m_RStream;

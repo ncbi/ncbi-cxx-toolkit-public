@@ -233,27 +233,26 @@ public:
     /// Confirm that a job is done and result is ready to be sent
     /// back to the client.
     ///
-    /// This method should be called at the end of IWorkerNodeJob::Do
-    /// method.
+    /// This method should be called at the end of the
+    /// IWorkerNodeJob::Do() method.
     ///
-    void CommitJob() { m_JobCommitted = eDone; }
+    void CommitJob();
 
     /// Confirm that a job is finished, but an error has happened
     /// during its execution.
     ///
-    /// This method should be called at the end of IWorkerNodeJob::Do
-    /// method.
+    /// This method should be called at the end of the
+    /// IWorkerNodeJob::Do() method.
     ///
-    void CommitJobWithFailure(const string& err_msg)
-    { m_JobCommitted = eFailure; m_Job.error_msg = err_msg; }
+    void CommitJobWithFailure(const string& err_msg);
 
     /// Schedule the job for return.
     ///
-    /// This method should be called before exiting the IWorkerNodeJob::Do
+    /// This method should be called before exiting the IWorkerNodeJob::Do()
     /// method.  The job will be returned back to the NetSchedule queue
     /// and re-executed after a while.
     ///
-    void ReturnJob() { m_JobCommitted = eReturn; }
+    void ReturnJob();
 
     /// Check if node application shutdown was requested.
     ///
@@ -327,11 +326,14 @@ public:
         eDone,
         eFailure,
         eReturn,
-        eNotCommitted
+        eNotCommitted,
+        eCanceled
     };
 
     bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
     ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
+
+    bool IsCanceled() const { return m_JobCommitted == eCanceled; }
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
@@ -339,7 +341,7 @@ public:
 
 private:
     friend class CGridThreadContext;
-    void SetThreadContext(CGridThreadContext*);
+    void SetThreadContext(CGridThreadContext* ctxt) { m_ThreadContext = ctxt; }
     string& SetJobOutput()             { return m_Job.output; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
@@ -351,6 +353,9 @@ private:
     CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
                           const CNetScheduleJob& job,
                           bool               log_requested);
+
+    void SetCanceled() { m_JobCommitted = eCanceled; }
+    void CheckIfCanceled();
 
     void Reset(const CNetScheduleJob& job);
 
@@ -707,30 +712,12 @@ inline bool CGridWorkerNode::IsExclusiveMode()
 }
 
 
-class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
-{
-public:
-    enum EErrCode {
-        eJobFactoryIsNotSet
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eJobFactoryIsNotSet: return "eJobFactoryIsNotSetError";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGridWorkerAppException, CException);
-};
-
-
 class NCBI_XCONNECT_EXPORT CGridWorkerNodeException : public CException
 {
 public:
     enum EErrCode {
+        eJobIsCanceled,
+        eJobFactoryIsNotSet,
         eExclusiveModeIsAlreadySet
     };
 
@@ -738,8 +725,10 @@ public:
     {
         switch (GetErrCode())
         {
-        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
-        default:                      return CException::GetErrCodeString();
+        case eJobIsCanceled:             return "eJobIsCanceled";
+        case eJobFactoryIsNotSet:        return "eJobFactoryIsNotSet";
+        case eExclusiveModeIsAlreadySet: return "eExclusiveModeIsAlreadySet";
+        default:                         return CException::GetErrCodeString();
         }
     }
 

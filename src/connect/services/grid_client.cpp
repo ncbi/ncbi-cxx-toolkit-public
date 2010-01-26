@@ -122,7 +122,7 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
                                        m_Job.input);
 
     m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
-                                             | CRWStreambuf::fLogExceptions ));
+                                             | CRWStreambuf::fLogExceptions));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
     //    return m_GridClient.GetStorage().CreateOStream(m_Input);
@@ -145,23 +145,26 @@ CGridJobBatchSubmitter::~CGridJobBatchSubmitter()
 {
 }
 
-void CGridJobBatchSubmitter::SetJobInput(const string& input)
+void CGridJobBatchSubmitter::CheckIfAlreadySubmitted()
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
-    if( m_Jobs.empty() )
+        NCBI_THROW(CGridClientException, eBatchAlreadySubmitted,
+            "The batch has been already submitted. "
+            "Use Reset() to start a new one");
+}
+
+void CGridJobBatchSubmitter::SetJobInput(const string& input)
+{
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].input = input;
 }
 
 CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
-
-    if ( m_Jobs.empty() )
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
         PrepareNextJob();
     IWriter* writer =
         new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
@@ -169,63 +172,52 @@ CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
                                        m_Jobs[m_JobIndex].input);
 
     m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
-                                             | CRWStreambuf::fLogExceptions ));
+                                             | CRWStreambuf::fLogExceptions));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
 }
 
 void CGridJobBatchSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
-    if( m_Jobs.empty() )
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].mask = mask;
 }
 
 void CGridJobBatchSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
-    if( m_Jobs.empty() )
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].tags = tags;
 }
 
 void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
-    if( m_Jobs.empty() )
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].affinity = affinity;
 }
 
 void CGridJobBatchSubmitter::PrepareNextJob()
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
+    CheckIfAlreadySubmitted();
     m_WStream.reset();
-    if( !m_Jobs.empty() )
+    if (!m_Jobs.empty())
         ++m_JobIndex;
     m_Jobs.push_back(CNetScheduleJob());
 }
 
 void CGridJobBatchSubmitter::Submit()
 {
-    if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
-                   "The Batch has already been submitted. Use Reset() method to start the a one");
+    CheckIfAlreadySubmitted();
     m_WStream.reset();
-    if( !m_Jobs.empty() ) {
+    if (!m_Jobs.empty()) {
         m_GridClient.GetNSClient().SubmitJobBatch(m_Jobs);
         m_HasBeenSubmitted = true;
     }
-
 }
 
 void CGridJobBatchSubmitter::Reset()
@@ -262,9 +254,9 @@ CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
 {
     CNetScheduleAPI::EJobStatus status =
         m_GridClient.GetNSClient().GetJobStatus(m_Job.job_id);
-    if ( m_AutoCleanUp && (
+    if (m_AutoCleanUp && (
               status == CNetScheduleAPI::eDone ||
-              status == CNetScheduleAPI::eCanceled) ) {
+              status == CNetScheduleAPI::eCanceled)) {
         x_GetJobDetails();
         m_GridClient.RemoveDataBlob(m_Job.input);
         if (m_UseProgress) {
