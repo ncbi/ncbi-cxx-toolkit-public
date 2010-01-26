@@ -1190,7 +1190,7 @@ void RestoreModelAttributes(const CSeq_feat_Handle& feat_handle, CAlignModel& mo
 
 void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
 {
-    if (feat.GetFeatType() == CSeqFeatData::e_Cdregion) {
+    if (feat && feat.GetFeatType() == CSeqFeatData::e_Cdregion) {
         TSeqRange cds_range = feat.GetLocation().GetTotalRange();
         TSignedSeqRange rf = TSignedSeqRange(cds_range.GetFrom(), cds_range.GetTo());
         if (feat.GetLocation().GetId() != CIdHandler::GnomonMRNA(model.ID())) {
@@ -1345,11 +1345,24 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
 
     map<string, CRef<CSeq_annot> > seq_annot_map;
 
+    string contig;
+
     ITERATE(CBioseq_set::TAnnot, annot, seq_entry.SetSet().SetAnnot()) {
         CAnnot_descr::Tdata::const_iterator iter = (*annot)->GetDesc().Get().begin();
-        for ( ;  iter != (*annot)->GetDesc().Get().end();  ) {
+        string name;
+        string region;
+        for ( ;  iter != (*annot)->GetDesc().Get().end();  ++iter) {
             if ((*iter)->IsName() ) {
-                seq_annot_map[(*iter)->GetName()] = *annot;
+                name = (*iter)->GetName();
+            }
+            if ((*iter)->IsRegion() ) {
+                region = CIdHandler::ToString(*(*iter)->GetRegion().GetId());
+            }
+        }
+        if (!name.empty()) {
+            seq_annot_map[name] = *annot;
+            if (name=="Gnomon models") {
+                contig = region;
             }
         }
     }
@@ -1366,8 +1379,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
     sel.SetFeatType(CSeqFeatData::e_Rna);
     CFeat_CI feat_ci(scope.GetSeq_annotHandle(*feature_table), sel);
 
-    string contig;
-    if (feat_ci) {
+    if (contig.empty() && feat_ci) {
         contig = CIdHandler::ToString(*feat_ci->GetLocation().GetId());
     }
 
