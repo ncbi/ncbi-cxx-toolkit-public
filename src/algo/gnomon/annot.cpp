@@ -591,7 +591,9 @@ void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& args)
 {
-    annot->SetHMMParameters(new CHMMParameters(args["param"].AsInputFile()));
+    CNcbiIfstream param_file(args["param"].AsString().c_str());
+    annot->SetHMMParameters(new CHMMParameters(param_file));
+
     annot->window = args["window"].AsInteger();
     annot->margin = args["margin"].AsInteger();
     annot->wall = !args["open"];

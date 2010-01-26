@@ -1407,6 +1407,9 @@ struct OverlapsSameAccessionAlignment : public Predicate {
 
 OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& alignments)
 {
+    if (alignments.empty())
+        return;
+
     alignments.sort(s_ByAccVerLen);
 
     TAlignModelList::iterator first = alignments.begin();
@@ -2290,7 +2293,8 @@ map<string,TSignedSeqRange>& CChainer::SetMrnaCDS()
 
 void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
 {
-    chainer->SetHMMParameters(new CHMMParameters(args["param"].AsInputFile()));
+    CNcbiIfstream param_file(args["param"].AsString().c_str());
+    chainer->SetHMMParameters(new CHMMParameters(param_file));
     
     chainer->SetIntersectLimit(args["oep"].AsInteger());
     chainer->SetTrim(args["trim"].AsInteger());
@@ -2315,7 +2319,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
         if (args["mrnaCDS"].AsString()=="use_objmgr") {
             mrnaCDS[args["mrnaCDS"].AsString()] = TSignedSeqRange();
         } else {
-            CNcbiIstream& cdsfile = args["mrnaCDS"].AsInputFile();
+            CNcbiIfstream cdsfile(args["mrnaCDS"].AsString().c_str());
             string accession, tmp;
             int a, b;
             while(cdsfile >> accession >> a >> b) {
@@ -2329,7 +2333,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
 
     map<string, pair<bool,bool> >& prot_complet = chainer->SetProtComplet();
     if(args["pinfo"]) {
-        CNcbiIstream& protfile = args["pinfo"].AsInputFile();
+        CNcbiIfstream protfile(args["pinfo"].AsString().c_str());
         string accession;
         bool fivep;
         bool threep; 
