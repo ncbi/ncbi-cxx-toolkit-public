@@ -166,7 +166,7 @@ public:
     ///   eIO_Unknown    -- if an error was detected during the last I/O;
     ///   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write;
     ///   eIO_Success    -- otherwise.
-    /// Note that eIO_Timeout does not get returned
+    /// Note that eIO_Timeout does not get returned.
     EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O (see Open|Read|Write functions).
