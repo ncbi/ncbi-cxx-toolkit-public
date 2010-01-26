@@ -123,6 +123,7 @@ public:
     void event_element_declaration (const xmlChar *element_name,
                                     int type,
                                     xmlElementContent *content);
+    void event_entity_reference (const xmlChar *name);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
 private:
@@ -215,6 +216,9 @@ extern "C"
     { static_cast<epimpl*>(parser)->event_element_declaration(element_name,
                                                               type,
                                                               content); }
+    //####################################################################
+    static void cb_entity_reference (void *parser, const xmlChar *name)
+    { static_cast<epimpl*>(parser)->event_entity_reference(name); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
 	std::string complete_message;
@@ -348,6 +352,10 @@ bool xml::event_parser::element_declaration (const std::string &name,
     return true;
 }
 //####################################################################
+bool xml::event_parser::entity_reference (const std::string &name) {
+    return true;
+}
+//####################################################################
 bool xml::event_parser::warning (const std::string&) {
     return true;
 }
@@ -439,6 +447,7 @@ epimpl::epimpl (event_parser &parent)
     sax_handler_.externalSubset         = cb_external_subset_declaration;
     sax_handler_.attributeDecl          = cb_attribute_declaration;
     sax_handler_.elementDecl            = cb_element_declaration;
+    sax_handler_.reference              = cb_entity_reference;
 
     if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
     else sax_handler_.ignorableWhitespace = cb_text;
@@ -663,6 +672,17 @@ void epimpl::event_element_declaration (const xmlChar *element_name,
         parser_status_ = parent_.element_declaration(element,
                                                      parent_.get_element_content_type(type),
                                                      content);
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_entity_reference (const xmlChar *name) {
+    if (!parser_status_) return;
+
+    try {
+        std::string     reference_name( name ? reinterpret_cast<const char*>(name) : "" );
+
+        parser_status_ = parent_.entity_reference(reference_name);
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }

@@ -459,6 +459,22 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the entity
+     * reference message.
+     *
+     * @param name The ientity reference name.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @note see http://mail.gnome.org/archives/xml/2009-May/msg00006.html
+     *       and http://xmlsoft.org/entities.html for more details when you
+     *       get errors on entity reference parsing
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool entity_reference (const std::string &name);
+
+    //####################################################################
+    /**
      * Set the error message that will be returned from the
      * get_error_message() member function. If one of your callback
      * functions returns false and does not first call this memeber
