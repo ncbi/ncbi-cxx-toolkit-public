@@ -985,8 +985,11 @@ string CGFFReader::x_FeatureID(const SRecord& record)
         if (!record.id.empty()) {
             return  record.id;   
         }        
-        else { // mergeable record
+        else if (!record.parent.empty()) {
             return record.source + record.key + record.parent;
+        }
+        else {
+            return "";
         }
     }    
     

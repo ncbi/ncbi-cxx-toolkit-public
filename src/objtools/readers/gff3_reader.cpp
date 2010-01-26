@@ -147,10 +147,10 @@ CGff3Reader::ReadSeqEntry(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-//    m_pErrors = pErrorContainer;
-//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-//    m_pErrors = 0;
-//    return entry;
+    m_pErrors = pErrorContainer;
+    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
+    m_pErrors = 0;
+    return entry;
 
     x_Reset();
     m_TSE->SetSet();
