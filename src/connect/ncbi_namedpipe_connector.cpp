@@ -89,10 +89,10 @@ static EIO_Status s_VT_Open
     }
     // If connected, close previous session first
     if (xxx->is_open) {
+        xxx->is_open = false;
         if (xxx->pipe->Close() != eIO_Success) {
             return eIO_Unknown;
         }
-        xxx->is_open = false;
     }
     if (xxx->pipe->SetTimeout(eIO_Open, timeout) != eIO_Success) {
         return eIO_Unknown;
@@ -113,7 +113,7 @@ static EIO_Status s_VT_Status
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     if (!xxx->is_open) {
-        return eIO_Success;
+        return eIO_Closed;
     }
     return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Unknown;
 }
@@ -144,8 +144,8 @@ static EIO_Status s_VT_Write
     if (!xxx->is_open) {
         return eIO_Closed;
     }
-    if (!xxx->pipe  ||
-        xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
+    if (!xxx->pipe
+        ||  xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Write(buf, size, n_written);
@@ -164,8 +164,8 @@ static EIO_Status s_VT_Read
     if (!xxx->is_open) {
         return eIO_Closed;
     }
-    if (!xxx->pipe  ||
-        xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
+    if (!xxx->pipe
+        ||  xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Read(buf, size, n_read);
