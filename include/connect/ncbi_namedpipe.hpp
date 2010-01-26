@@ -144,7 +144,7 @@ public:
     ///    On MS Windows client/server must not attempt to write
     ///    a data block, whose size exceeds the pipe buffer size specified
     ///    on other side of the pipe at the time of creation:  any such
-    ///    block will be refused for writing and an error will result.
+    ///    block will be rejected for writing and an error will result.
     EIO_Status Write(const void* buf, size_t count, size_t* n_written = 0);
 
 
@@ -157,8 +157,7 @@ public:
     /// eIO_Closed results.
     /// Note that non-blocking is not guaranteed for more than one byte of
     /// data (i.e. following Read or Write may complete with only one
-    /// byte read or written, successfully).  Also note that this method
-    /// is currently dummy on MS Windows (and always returns eIO_Success).
+    /// byte read or written, successfully).
     EIO_Status Wait(EIO_Event event, const STimeout* timeout);
 
 
@@ -166,8 +165,8 @@ public:
     ///   eIO_Closed     -- if the pipe is closed;
     ///   eIO_Unknown    -- if an error was detected during the last I/O;
     ///   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write;
-    ///   eIO_Timeout    -- if the timeout was on last I/O;
     ///   eIO_Success    -- otherwise.
+    /// Note that eIO_Timeout does not get returned
     EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O (see Open|Read|Write functions).
