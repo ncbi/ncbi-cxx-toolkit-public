@@ -151,8 +151,6 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
 
         bool Made = false;
         ITERATE(CSeq_align_set::Tdata, DomIter, Dominant->Get()) {
-            if(Made)
-                break;
             ITERATE(CSeq_align_set::Tdata, NonIter, NonDominant->Get()) {
 
                 (*DomIter)->GetNamedScore("pct_coverage", PctCovs[0]);
@@ -170,10 +168,11 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
                     else
                         Dist = NonSubjRange.GetFrom() - DomSubjRange.GetTo();
                 }
+
                 if( (PctCovs[0]/PctCovs[1]) <= 10.0 &&
                     (PctCovs[0]/PctCovs[1]) >= 1.0 &&
-                    Dist <= 100000) {
-                    // Trim Non.
+                    Dist >= 0 && Dist <= NonSubjRange.GetLength()*10) {
+
                     CRef<CSeq_align> Disc(new CSeq_align);
                     Disc = x_CreateDiscAlignment(**DomIter, **NonIter, Scope);
                     if(!Disc.IsNull()) {
@@ -183,6 +182,8 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
                     }
                 }
             }
+            if(Made)
+                break;
         }
     } // end Subject Set Loop
 
@@ -265,6 +266,8 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
     } else {
         DomRef = Cleaned->Set().front();
         NonRef = *( ++(Cleaned->Set().begin()) );
+        if(Dom.GetSeqStrand(0) != DomRef->GetSeqStrand(0))
+            swap(DomRef, NonRef);
     }
 
     CDense_seg& DomSeg = DomRef->SetSegs().SetDenseg();
