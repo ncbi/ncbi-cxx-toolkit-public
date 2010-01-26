@@ -44,9 +44,12 @@ Author: Jason Papadopoulos
 #include <objects/general/User_field.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #include <algo/blast/format/blastxml_format.hpp>
 #include <algo/blast/format/data4xmlformat.hpp>       /* NCBI_FAKE_WARNING */
+#include <algo/blast/format/build_archive.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -550,6 +553,31 @@ CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
         subj_index = 0;
     }
     return bhandle.GetBioseqCore();
+}
+
+void 
+CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
+                           blast::CBlastOptionsHandle& options_handle,
+                           const CSearchResultSet& results)
+{
+    if (m_IsBl2Seq)
+    {
+	CRef<CBlastQueryVector> query_vector(new CBlastQueryVector);
+	for (unsigned int i=0; i<m_SeqInfoSrc->Size(); i++)
+        {
+		list< CRef<CSeq_id> > ids = m_SeqInfoSrc->GetId(i);
+                CRef<CSeq_id> id = FindBestChoice(ids, CSeq_id::BestRank);
+                CRef<CSeq_loc> seq_loc(new CSeq_loc);
+                seq_loc->SetWhole(*id);
+                CRef<CBlastSearchQuery> search_query(new CBlastSearchQuery(*seq_loc, *m_Scope));
+                query_vector->AddQuery(search_query);
+        }
+        CObjMgr_QueryFactory subjects(*query_vector);
+        m_Outfile << MSerial_AsnText << *(BlastBuildArchive(queries, options_handle, results, subjects));
+        
+    }
+    else
+       m_Outfile << MSerial_AsnText << *(BlastBuildArchive(queries, options_handle, results,  m_DbName));
 }
 
 void

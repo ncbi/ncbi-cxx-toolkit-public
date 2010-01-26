@@ -1404,8 +1404,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "  6 = tabular,\n"
     "  7 = tabular with comment lines,\n"
     "  8 = Text ASN.1,\n"
-    "  9 = Binary ASN.1\n"
-    " 10 = Comma-separated values\n\n"
+    "  9 = Binary ASN.1,\n"
+    " 10 = Comma-separated values,\n"
+    " 11 = BLAST archive format (ASN.1) \n\n"
     "Options 6, 7, and 10 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
@@ -1449,6 +1450,26 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            new CArgAllowValuesGreaterThanOrEqual(1));
 
     arg_desc.SetCurrentGroup("");
+}
+
+bool 
+CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
+{
+    if (args[kArgOutputFormat]) {
+        string fmt_choice = 
+            NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
+        int val = 0;
+        try { val =NStr::StringToInt(fmt_choice); }
+        catch (const CStringException&) {   // probably a conversion error
+            CNcbiOstrstream os;
+            os << "'" << fmt_choice << "' is not a valid output format";
+            string msg = CNcbiOstrstreamToString(os);
+            NCBI_THROW(CInputException, eInvalidInput, msg);
+        }
+        if (val == static_cast<int>(eArchiveFormat))
+           return true;
+    }
+    return false;
 }
 
 void
@@ -1878,7 +1899,8 @@ CBlastAppArgs::SetOptions(const CArgs& args)
 
     // This is needed as a CRemoteBlast object and its options are instantiated
     // to create the search strategy
-    if (GetExportSearchStrategyStream(args)) {
+    if (GetExportSearchStrategyStream(args) || 
+           m_FormattingArgs->ArchiveFormatRequested(args)) {
         locality = CBlastOptions::eBoth;
     }
 
