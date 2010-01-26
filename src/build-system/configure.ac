@@ -281,7 +281,7 @@ AC_ARG_WITH(cppunit2,
 AC_ARG_WITH(boost,
    [ --with-boost=DIR        use Boost installation in DIR])
 AC_ARG_WITH(boost2,
-   [ --without-boost=DIR     do not use Boost])
+   [ --without-boost         do not use Boost])
 AC_ARG_WITH(boost-tag,
    [ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names])
 AC_ARG_WITH(boost-tag2,

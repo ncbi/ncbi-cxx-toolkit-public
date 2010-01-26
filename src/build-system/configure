@@ -965,7 +965,7 @@ Optional Packages:
  --with-cppunit=DIR      use CPPUNIT installation in DIR
  --without-cppunit       do not use CPPUNIT
  --with-boost=DIR        use Boost installation in DIR
- --without-boost=DIR     do not use Boost
+ --without-boost         do not use Boost
  --with-boost-tag=TAG    use TAG as the tag appended to Boost library names
  --without-boost-tag     use untagged Boost library names
  --with-sqlite=DIR       use SQLite (2.x) installation in DIR
