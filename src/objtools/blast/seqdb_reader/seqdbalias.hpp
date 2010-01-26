@@ -465,9 +465,11 @@ public:
     ///
     /// @param vols
     ///   The returned set of volume names
+    /// @param alias
+    ///   The returned set of alias names
     /// @param recursive
     ///   If true will descend the alias tree to the volume nodes
-    void FindVolumePaths(vector<string> & vols, bool recursive) const;
+    void FindVolumePaths(vector<string> & vols, vector<string> * alias, bool recursive) const;
     
     /// Get the title
     ///
@@ -839,7 +841,7 @@ private:
     ///
     /// @param vols
     ///   The set of strings to receive the volume names
-    void x_FindVolumePaths(set<string> & vols) const;
+    void x_FindVolumePaths(set<string> & vols, set<string> & alias) const;
     
     /// Name resolution
     ///
@@ -985,7 +987,7 @@ public:
     ///
     /// @return
     ///   Reference to the internal vector of volume names.
-    const vector<string> & GetVolumeSet() const
+    const vector<string> & GetVolumeNames() const
     {
         return m_VolumeNames;
     }
@@ -998,14 +1000,17 @@ public:
     /// @param recursive  If true, vol will include all volume names
     /// within the alias node tree.  Otherwise, only the top-node volume
     /// names are included
-    void FindVolumePaths(vector<string> & vols, bool recursive) const
+    void FindVolumePaths(vector<string> & vols, vector<string> * alias, bool recursive) const
     {
         if (recursive) {
             // use the cached results 
             vols = m_VolumeNames; 
+            if (alias) {
+                 *alias = m_AliasNames;
+            }
         }
         else {
-            m_Node->FindVolumePaths(vols, false);
+            m_Node->FindVolumePaths(vols, alias, recursive);
         }
     };
 
@@ -1227,8 +1232,11 @@ private:
     /// aggregates the user provided database names.
     CRef<CSeqDBAliasNode> m_Node;
     
-    /// The cached output of the topmost node's FindVolumePaths().
+    /// The cached output of the topmost node's FindVolumePaths(recursive).
     vector<string> m_VolumeNames;
+
+    /// The cached output of the topmost node's FindVolumePaths(recursive).
+    vector<string> m_AliasNames;
     
     /// True if this is a protein database.
     bool m_IsProtein;

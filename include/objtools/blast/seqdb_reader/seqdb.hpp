@@ -880,24 +880,27 @@ public:
     
     /// Find volume paths
     ///
-    /// Find the base names of all volumes.  This method builds an
-    /// alias hierarchy (which should be much faster than constructing
-    /// an entire CSeqDB object), and returns the resolved volume file
-    /// base names from that hierarchy.
+    /// Find the base names of all volumes (and alias nodes).  This 
+    /// method builds an alias hierarchy (which should be much faster 
+    /// than constructing an entire CSeqDB object), and returns the 
+    /// resolved volume/alias file base names from that hierarchy.
     ///
     /// @param dbname
     ///   The input name of the database
     /// @param seqtype
     ///   Specify eProtein, eNucleotide, or eUnknown.
     /// @param paths
-    ///   The set of resolved database path names
+    ///   The set of resolved database volume file names
+    /// @param alias_paths
+    ///   The set of resolved database alias file names
     /// @param recursive
     ///   If true, the search will traverse the full alias node tree
     static void
     FindVolumePaths(const string   & dbname,
                     ESeqType         seqtype,
                     vector<string> & paths,
-                    bool             recursive=true);
+                    vector<string> * alias_paths = NULL,
+                    bool             recursive = true);
     
     /// Find volume paths
     ///

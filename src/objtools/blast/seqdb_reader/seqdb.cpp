@@ -854,17 +854,18 @@ void
 CSeqDB::FindVolumePaths(const string   & dbname,
                         ESeqType         seqtype,
                         vector<string> & paths,
+                        vector<string> * alias_paths,
                         bool             recursive)
 {
     bool done = false;
     
     if (seqtype == CSeqDB::eProtein) {
-        CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, recursive);
+        CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, alias_paths, recursive);
     } else if (seqtype == CSeqDB::eNucleotide) {
-        CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, recursive);
+        CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, alias_paths, recursive);
     } else {
         try {
-            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, recursive);
+            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, alias_paths, recursive);
             done = true;
         }
         catch(...) {
@@ -872,7 +873,7 @@ CSeqDB::FindVolumePaths(const string   & dbname,
         }
         
         if (! done) {
-            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, recursive);
+            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, alias_paths, recursive);
         }
     }
 }

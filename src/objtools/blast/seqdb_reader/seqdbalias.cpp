@@ -78,7 +78,7 @@ CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                          prot_nucl,
                                          m_AliasSets));
         
-        m_Node->FindVolumePaths(m_VolumeNames, true);
+        m_Node->FindVolumePaths(m_VolumeNames, &m_AliasNames, true);
     }
 }
 
@@ -917,14 +917,16 @@ Int4 x_CompareVolume(const string & s1, const string & s2)
 } 
 
 
-void CSeqDBAliasNode::FindVolumePaths(vector<string> & vols, bool recursive) const
+void CSeqDBAliasNode::FindVolumePaths(vector<string> & vols, vector<string> * alias, bool recursive) const
 {
 
     set<string> volset;
+    set<string> aliset;
 
     if (recursive) {
-        x_FindVolumePaths(volset);
+        x_FindVolumePaths(volset, aliset);
     } else {
+        // No alias file list is populated in the non-recursive mode
         ITERATE(vector<CSeqDB_BasePath>, path, m_VolNames) {
             volset.insert(path->GetBasePathS());
         }
@@ -945,17 +947,30 @@ void CSeqDBAliasNode::FindVolumePaths(vector<string> & vols, bool recursive) con
     
     // Sort to insure deterministic order.
     sort(vols.begin(), vols.end(), x_CompareVolume);
+
+    if (alias) {
+        alias->clear();
+        ITERATE(set<string>, iter, aliset) {
+            alias->push_back(*iter);
+        }
+        sort(alias->begin(), alias->end(), x_CompareVolume);
+    }
 }
 
 
-void CSeqDBAliasNode::x_FindVolumePaths(set<string> & vols) const
+void CSeqDBAliasNode::x_FindVolumePaths(set<string> & vols, set<string> & alias) const
 {
     ITERATE(TVolNames, iter, m_VolNames) {
         vols.insert(iter->GetBasePathS());
     }
+
+    string alias_base = m_ThisName.GetPathS();
+    if (alias_base != "-") {
+        alias.insert(m_ThisName.GetPathS());
+    }
     
     ITERATE(TSubNodeList, iter, m_SubNodes) {
-        (*iter)->x_FindVolumePaths(vols);
+        (*iter)->x_FindVolumePaths(vols, alias);
     }
 }
 

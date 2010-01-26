@@ -57,7 +57,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
       m_VolSet          (m_Atlas,
-                         m_Aliases.GetVolumeSet(),
+                         m_Aliases.GetVolumeNames(),
                          prot_nucl,
                          gi_list,
                          neg_list),
@@ -1224,6 +1224,7 @@ void
 CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             char             prot_nucl,
                             vector<string> & paths,
+                            vector<string> * alias_paths,
                             bool             recursive)
 {
     CSeqDBAtlasHolder AH(true, NULL, NULL);
@@ -1231,14 +1232,14 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
     
     // This constructor handles its own locking.
     CSeqDBAliasFile aliases(atlas, dbname, prot_nucl);
-    aliases.FindVolumePaths(paths, recursive);
+    aliases.FindVolumePaths(paths, alias_paths, recursive);
 }
 
 void
 CSeqDBImpl::FindVolumePaths(vector<string> & paths, bool recursive) const
 {
     CHECK_MARKER();
-    m_Aliases.FindVolumePaths(paths, recursive);
+    m_Aliases.FindVolumePaths(paths, NULL, recursive);
 }
 
 void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
