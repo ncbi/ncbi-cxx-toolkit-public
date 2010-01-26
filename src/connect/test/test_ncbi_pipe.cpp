@@ -219,7 +219,7 @@ class CTest : public CNcbiApplication
 {
 public:
     void Init(void);
-    int Run(void);
+    int  Run (void);
 };
 
 
