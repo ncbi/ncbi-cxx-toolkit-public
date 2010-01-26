@@ -65,6 +65,7 @@ BEGIN_SCOPE(blast)
 /// @param options_handle BLAST options
 /// @param results set of BLAST results
 /// @param dbname name of the database
+NCBI_XBLASTFORMAT_EXPORT
 CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries, 
                           blast::CBlastOptionsHandle& options_handle,
                           const CSearchResultSet& results,
@@ -75,6 +76,7 @@ CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries,
 /// @param options_handle BLAST options
 /// @param results set of BLAST results
 /// @param subjects factory to fetch subject sequences.
+NCBI_XBLASTFORMAT_EXPORT
 CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries, 
                           blast::CBlastOptionsHandle& options_handle,
                           const CSearchResultSet& results,
