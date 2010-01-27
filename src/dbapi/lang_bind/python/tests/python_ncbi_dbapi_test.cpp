@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(TestExecuteStoredProc)
     ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
     // EXECUTE stored procedure with parameters ...
-    ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
+    ExecuteStr("cursor.callproc('sp_server_info', [1])\n");
     BOOST_CHECK_THROW(
         ExecuteStr("rc = cursor.get_proc_return_status()\n"),
         string
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(TestExecuteStoredProc)
         );
     ExecuteStr("cursor.fetchall()\n");
     ExecuteStr("rc = cursor.get_proc_return_status()\n");
-    ExecuteStr("cursor.execute('execute sp_server_info 2')\n");
+    ExecuteStr("cursor.callproc('sp_server_info', [2])\n");
     ExecuteStr("cursor.fetchall()\n");
     ExecuteStr("cursor.fetchall()\n");
     ExecuteStr("cursor.fetchone()\n");
@@ -1062,6 +1062,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
     // Insert data ..
     {
         ExecuteStr("month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']");
+        ExecuteStr("umonth_list = [u'January', u'February', u'March', u'April', u'May', u'June', u'July', u'August', u'September', u'October', u'November', u'December']");
         ExecuteStr("sql = \"insert into #sale_stat(year, month, stat) values (@year, @month, @stat)\"");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"Empty table contains\", len( cursor.fetchall() ), \"records\"");
@@ -1076,7 +1077,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
-        ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
+        ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
         ExecuteSQL("COMMIT TRANSACTION");

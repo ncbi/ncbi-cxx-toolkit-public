@@ -69,6 +69,7 @@ cursor.execute("""
 """)
 
 month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+umonth_list = [u'January', u'February', u'March', u'April', u'May', u'June', u'July', u'August', u'September', u'October', u'November', u'December']
 sql = "insert into #sale_stat(year, month, stat) values (@year, @month, @stat)"
 
 # Check that the temporary table was successfully created and we can get data from it
@@ -95,7 +96,7 @@ cursor.execute('BEGIN TRANSACTION')
 cursor.execute("select * from #sale_stat")
 checkEqual(len( cursor.fetchall() ), 0)
 # Insert records again
-cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])
+cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])
 # Check how many records we have inserted
 cursor.execute("select * from #sale_stat")
 checkEqual(len( cursor.fetchall() ), 48)
@@ -112,6 +113,11 @@ cursor.fetchall()
 checkEqual(cursor.get_proc_return_status(), 0)
 # Call a stored procedure with a parameter.
 cursor.callproc('sp_server_info', {'@attribute_id':1} )
+cursor.fetchall()
+# Retrieve return status
+checkEqual(cursor.get_proc_return_status(), 0)
+# Call a stored procedure with a parameter.
+cursor.callproc('sp_server_info', [1] )
 cursor.fetchall()
 # Retrieve return status
 checkEqual(cursor.get_proc_return_status(), 0)
