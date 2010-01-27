@@ -31,9 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "../../corelib/test/pbacktest.hpp"
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_util.h>
+#include "../../corelib/test/pbacktest.hpp"
 /* This header must go last */
 #include "test_assert.h"
 
@@ -42,23 +42,28 @@ int main(int argc, char* argv[])
 {
     USING_NCBI_SCOPE;
 
+    // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
-                        eDPF_OmitInfoSev | eDPF_ErrorID);
 
     string host = "www.ncbi.nlm.nih.gov";
     string path = "/Service/bounce.cgi";
     string args = kEmptyStr;
     string uhdr = kEmptyStr;
 
-    LOG_POST("Creating HTTP connection to http://" + host + path + args);
+    ERR_POST(Info << "Creating HTTP connection to http://" + host+path+args);
     CConn_HttpStream ios(host, path, args, uhdr);
 
     int n = TEST_StreamPushback(ios,
                                 argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
                                 false/*no rewind*/);
 
+    // Manual CONNECT_UnInit (for implicit CONNECT_Init() by HTTP stream ctor)
     CORE_SetREG(0);
     CORE_SetLOG(0);
     CORE_SetLOCK(0);

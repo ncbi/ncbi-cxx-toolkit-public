@@ -30,14 +30,14 @@
  *
  */
 
-#include "../ncbi_priv.h"               /* CORE logging facilities */
-#include "../ncbi_ansi_ext.h"
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -290,6 +290,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
-    CORE_LOG(eLOG_Note, "Test completed");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
+    CORE_SetLOG(0);
     return 0;
 }

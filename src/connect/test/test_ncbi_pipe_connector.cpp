@@ -88,7 +88,7 @@ static string s_ReadLine(FILE* fs)
     string str;
     for (;;) {
         char    c;
-        ssize_t cnt = read(fileno(fs), &c, 1);
+        ssize_t cnt = ::read(fileno(fs), &c, 1);
         if (cnt <= 0)
             break;
         assert(cnt == 1);
@@ -108,14 +108,14 @@ static void s_WriteLine(FILE* fs, string str)
     size_t      size = str.size();
     const char* data = str.c_str();
     do { 
-        ssize_t cnt = write(fileno(fs), data + written, size - written);
+        ssize_t cnt = ::write(fileno(fs), data + written, size - written);
         if (!cnt)
             break;
         written += size;
     } while (written < size);
     if (written == size) {
         static const char eol[] = { '\n' };
-        write(fileno(fs), eol, sizeof(eol));
+        ::write(fileno(fs), eol, sizeof(eol));
     }
 }
 

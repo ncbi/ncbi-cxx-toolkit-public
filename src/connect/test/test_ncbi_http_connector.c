@@ -30,10 +30,10 @@
  *
  */
 
-#include "ncbi_conntest.h"
-#include "../ncbi_ansi_ext.h"
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_util.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "ncbi_conntest.h"
 /* This header must go last */
 #include "test_assert.h"
 
@@ -101,6 +101,7 @@ int main(void)
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+
     data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);
 
@@ -134,6 +135,8 @@ int main(void)
     /* Cleanup and Exit */
     CORE_SetREG(0);
     fclose(data_file);
+
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

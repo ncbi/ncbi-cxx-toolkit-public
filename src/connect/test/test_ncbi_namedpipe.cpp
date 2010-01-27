@@ -240,22 +240,24 @@ void CTest::Client(int num)
 
         assert(s_ReadPipe(pipe, buf, 2, &n_read) == eIO_Success);
         assert(n_read == 2);
-        assert(memcmp(buf, "OK", 2) == 0);
-
+        assert(::memcmp(buf, "OK", 2) == 0);
     }}
+
     // Big binary blob test
     {{
         // Send a very big binary blob
         size_t i;
-        unsigned char* blob = (unsigned char*) malloc(kBlobSize);
-        for (i = 0; i < kBlobSize; blob[i] = (unsigned char) i, i++); 
+        unsigned char* blob = (unsigned char*) ::malloc(kBlobSize);
+        for (i = 0; i < kBlobSize; i++) {
+            blob[i] = (unsigned char) i;
+        }
         for (i = 0; i < kNumSubBlobs; i++) {
             assert(s_WritePipe(pipe, blob + i*kSubBlobSize, kSubBlobSize,
                                &n_written) == eIO_Success);
             assert(n_written == kSubBlobSize);
         }
         // Receive back a very big binary blob
-        memset(blob, 0, kBlobSize);
+        ::memset(blob, 0, kBlobSize);
         for (i = 0;  i < kNumSubBlobs; i++) {
             assert(s_ReadPipe(pipe, blob + i*kSubBlobSize, kSubBlobSize,
                               &n_read) == eIO_Success);
@@ -265,9 +267,11 @@ void CTest::Client(int num)
         for (i = 0; i < kBlobSize; i++) {
             assert(blob[i] == (unsigned char)i);
         }
-        free(blob);
+        ::free(blob);
         ERR_POST(Info << "Blob test is OK...");
     }}
+
+    ERR_POST(Info << "TEST completed successfully");
 }
 
 
@@ -311,7 +315,7 @@ void CTest::Server(void)
             {{
                 // Receive a very big binary blob
                 size_t i;
-                unsigned char* blob = (unsigned char*) malloc(kBlobSize);
+                unsigned char* blob = (unsigned char*) ::malloc(kBlobSize);
 
                 for (i = 0;  i < kNumSubBlobs; i++) {
                     assert(s_ReadPipe(pipe, blob + i*kSubBlobSize,
@@ -330,8 +334,8 @@ void CTest::Server(void)
                            == eIO_Success);
                     assert(n_written == kSubBlobSize);
                 }
-                memset(blob, 0, kBlobSize);
-                free(blob);
+                ::memset(blob, 0, kBlobSize);
+                ::free(blob);
                 ERR_POST(Info << "Blob test is OK...");
             }}
             ERR_POST(Info << "Client disconnected...");

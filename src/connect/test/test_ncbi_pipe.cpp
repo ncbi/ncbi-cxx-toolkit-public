@@ -89,14 +89,12 @@ static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Read((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) read from pipe");
+        ERR_POST(Info << cnt << " byte(s) read from pipe"+string(":"+!cnt));
         if ( cnt ) {
-            cerr << ":\n";
-            cerr.write((char*) buf + total, cnt);
-            cerr << endl;
-            cerr.flush();
+            NcbiCerr.write((char*) buf + total, cnt);
+            NcbiCerr << endl << flush;
+            total += cnt;
         }
-        total += cnt;
     } while (status == eIO_Success  &&  total < size);    
 
     *n_read = total;
@@ -116,14 +114,12 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
     do {
         size_t cnt;
         status = pipe.Write((char*) buf + total, size - total, &cnt);
-        ERR_POST(Info << cnt << " byte(s) written to pipe");
+        ERR_POST(Info << cnt << " byte(s) written to pipe"+string(":"+!cnt));
         if ( cnt ) {
-            cerr << ":\n";
-            cerr.write((char*) buf + total, cnt);
-            cerr << endl;
-            cerr.flush();
+            NcbiCerr.write((char*) buf + total, cnt);
+            NcbiCerr << endl << flush;
+            total += cnt;
         }
-        total += cnt;
     } while (status == eIO_Success  &&  total < size);
 
     *n_written = total;
@@ -141,14 +137,12 @@ static string s_ReadLine(FILE* fs)
         char   buf[80];
         char*  res = fgets(buf, sizeof(buf)-1, fs);
         size_t len = res ? strlen(res) : 0;
-        ERR_POST(Info << (int) len << " byte(s) read from file");
+        ERR_POST(Info << len << " byte(s) read from file"+string(":"+!len));
         if (!len) {
             break;
         }
-        cerr << ":\n";
-        cerr.write(res, len);
-        cerr << endl;
-        cerr.flush();
+        NcbiCerr.write(res, len);
+        NcbiCerr << endl << flush;
         if (res[len - 1] == '\n') {
             str += string(res, len - 1);
             break;
@@ -167,14 +161,12 @@ static void s_WriteLine(FILE* fs, const string& str)
     const char* data = str.c_str();
     do {
         size_t cnt = fwrite(data + written, 1, size - written, fs);
-        ERR_POST(Info << (int) cnt << " byte(s) written to file");
+        ERR_POST(Info << cnt << " byte(s) written to file"+string(":"+!cnt));
         if (!cnt) {
             break;
         }
-        cerr << ":\n";
-        cerr.write(data + written, cnt);
-        cerr << endl;
-        cerr.flush();
+        NcbiCerr.write(data + written, cnt);
+        NcbiCerr << endl << flush;
         written += cnt;
     } while (written < size);
     if (written == size) {
@@ -185,7 +177,7 @@ static void s_WriteLine(FILE* fs, const string& str)
 }
 
 
-// Soak up from istream until EOF, dump into cerr
+// Soak up from istream until EOF, dump into NcbiCerr
 static void s_ReadStream(istream& ios)
 {
     size_t total = 0;
@@ -194,15 +186,12 @@ static void s_ReadStream(istream& ios)
         char   buf[kBufferSize];
         ios.read(buf, sizeof(buf));
         size_t cnt = ios.gcount();
-        ERR_POST(Info << "Read from istream: " << cnt << " byte(s)");
+        ERR_POST(Info << cnt << " byte(s) read from stream"+string(":"+!cnt));
         if (cnt) {
-            cerr << ":\n";
-            cerr.write(buf, cnt);
-            cerr << endl;
-        }
-        cerr.flush();
-        total += cnt;
-        if (cnt == 0  &&  ios.eof()) {
+            NcbiCerr.write(buf, cnt);
+            NcbiCerr << endl << flush;
+            total += cnt;
+        } else if (ios.eof()) {
             break;
         }
         ios.clear();
@@ -260,7 +249,7 @@ int CTest::Run(void)
 
 
     // Check bad executable
-    ERR_POST(Info << "Bad executable");
+    ERR_POST(Info << "TEST:  Bad executable");
     assert(pipe.Open("blahblahblah", args) != eIO_Success);
 
 
@@ -275,7 +264,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (read from pipe)
-    ERR_POST(Info << "Unidirectional pipe read");
+    ERR_POST(Info << "TEST:  Unidirectional pipe read");
     assert(pipe.Open(cmd.c_str(), args,
                      CPipe::fStdIn_Close | share) == eIO_Success);
 
@@ -301,7 +290,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (read from iostream)
-    ERR_POST(Info << "Unidirectional stream read");
+    ERR_POST(Info << "TEST:  Unidirectional stream read");
     CConn_PipeStream ios(cmd.c_str(), args,
                          CPipe::fStdIn_Close | share, &io_timeout);
     s_ReadStream(ios);
@@ -315,7 +304,7 @@ int CTest::Run(void)
     // Unidirectional pipe (write to pipe)
     args.clear();
     args.push_back("1");
-    ERR_POST(Info << "Unidirectional pipe write");
+    ERR_POST(Info << "TEST:  Unidirectional pipe write");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdOut_Close | share) == eIO_Success);
 
@@ -336,7 +325,7 @@ int CTest::Run(void)
     // Bidirectional pipe (pipe)
     args.clear();
     args.push_back("2");
-    ERR_POST(Info << "Bidirectional pipe");
+    ERR_POST(Info << "TEST:  Bidirectional pipe");
     assert(pipe.Open(app.c_str(), args, share) == eIO_Success);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
@@ -366,22 +355,22 @@ int CTest::Run(void)
     // Bidirectional pipe (iostream)
     args.clear();
     args.push_back("3");
-    ERR_POST(Info << "Bidirectional stream");
+    ERR_POST(Info << "TEST:  Bidirectional stream");
     CConn_PipeStream ps(app.c_str(), args, share, &io_timeout);
 
-    cout << endl;
+    NcbiCout << endl;
     for (int i = 5; i<=10; i++) {
         int value; 
-        cout << "How much is " << i << "*" << i << "?\t";
+        NcbiCout << "How much is " << i << "*" << i << "?\t" << flush;
         ps << i << endl;
         ps.flush();
         ps >> value;
         assert(ps.good());
-        cout << value << endl;
+        NcbiCout << value << endl << flush;
         assert(value == i*i);
     }
     ps >> str;
-    cout << str << endl;
+    NcbiCout << str << endl << flush;
     assert(str == "Done.");
     ps.GetPipe().SetReadHandle(CPipe::eStdErr);
     ps >> str;
@@ -397,7 +386,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("4");
 
-    ERR_POST(Info << "Checking timeout");
+    ERR_POST(Info << "TEST:  Checking timeout");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | CPipe::fStdOut_Close
                      | CPipe::fKeepOnClose) == eIO_Success);
@@ -431,7 +420,7 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
-    ERR_POST(Info << "Checking extended timeout/kill");
+    ERR_POST(Info << "TEST:  Checking extended timeout/kill");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdIn_Close | CPipe::fStdOut_Close
                      | CPipe::fKeepOnClose) == eIO_Success);
@@ -519,10 +508,9 @@ int main(int argc, const char* argv[])
             int value;
             cin >> value;
             assert(value == i);
-            cout << value * value << endl;
-            cout.flush();
+            NcbiCout << value * value << endl << flush;
         }
-        cout << "Done." << endl;
+        NcbiCout << "Done." << endl;
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) done ---");
         exit(kTestResult);
     }

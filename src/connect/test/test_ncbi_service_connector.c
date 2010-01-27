@@ -30,11 +30,11 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"
 #include <connect/ncbi_service_connector.h>
 #include <stdlib.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -60,12 +60,8 @@ int main(int argc, const char* argv[])
 
     net_info = ConnNetInfo_Create(service);
     strcpy(net_info->host, host);
-    if (argc > 3) {
-        strncpy0(obuf, argv[3], sizeof(obuf) - 2);
-        obuf[n = strlen(obuf)] = '\n';
-        obuf[++n]              = 0;
-    }
     strcpy(net_info->args, "testarg=val&service=none&platform=none&address=2");
+    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
 
@@ -76,6 +72,9 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
     if (argc > 3) {
+        strncpy0(obuf, argv[3], sizeof(obuf) - 2);
+        obuf[n = strlen(obuf)] = '\n';
+        obuf[++n]              = '\0';
         if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
             != eIO_Success) {
             CONN_Close(conn);
@@ -111,9 +110,10 @@ int main(int argc, const char* argv[])
         status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
         if (n) {
             char* descr = CONN_Description(conn);
-            CORE_DATAF(ibuf, n, ("%lu bytes read from service (%s%s%s):",
-                                 (unsigned long) n, CONN_GetType(conn),
-                                 descr ? ", " : "", descr ? descr : ""));
+            CORE_DATAF_EX(eLOG_Note, ibuf, n,
+                          ("%lu bytes read from service (%s%s%s):",
+                           (unsigned long) n, CONN_GetType(conn),
+                           descr ? ", " : "", descr ? descr : ""));
             if (descr)
                 free(descr);
         }
@@ -157,6 +157,7 @@ int main(int argc, const char* argv[])
     CONN_Close(conn);
 #endif
 
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0/*okay*/;
 }

@@ -30,13 +30,12 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
-#include <connect/ncbi_util.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -386,8 +385,7 @@ int main(void)
     TEST_MIME();
     TEST_ConnNetInfo();
 
-    CORE_LOG(eLOG_Note, "All tests completed");
-
+    CORE_LOG(eLOG_Note, "All tests completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

@@ -30,11 +30,11 @@
  *
  */
 
-#include "../ncbi_priv.h"
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #if 0
 #  define eLOG_Warning eLOG_Fatal
 #  define eLOG_Error   eLOG_Fatal
@@ -241,7 +241,7 @@ int main(int argc, const char* argv[])
         HEAP_Destroy(heap);
         CORE_LOGF(eLOG_Note, ("Heap %d done", j));
     }
-    CORE_LOG(eLOG_Note, "Test completed");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

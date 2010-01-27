@@ -30,8 +30,6 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"
 #include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
@@ -41,6 +39,8 @@
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
 #endif
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Closing connection");
     CONN_Close(conn);
 
-    CORE_LOG(eLOG_Note, "Completed");
+    CORE_LOG(eLOG_Note, "Completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

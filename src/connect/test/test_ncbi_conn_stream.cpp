@@ -33,11 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"        // CORE logging facilities
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <common/test_assert.h>  // This header must go last
 
 #ifdef NCBI_OS_UNIX
@@ -410,8 +410,8 @@ int main(int argc, const char* argv[])
     CORE_SetREG(0);
     delete reg;
 
-    CORE_SetLOG(0);
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOCK(0);
-
+    CORE_SetLOG(0);
     return 0/*okay*/;
 }

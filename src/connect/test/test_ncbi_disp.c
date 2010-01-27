@@ -30,13 +30,13 @@
  *
  */
 
+#include <connect/ncbi_heapmgr.h>
+#include <stdlib.h>
+#include <time.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
-#include <connect/ncbi_heapmgr.h>
-#include <stdlib.h>
-#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -180,7 +180,7 @@ int main(int argc, const char* argv[])
     }
 
     if (n_found != 0)
-        CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
+        CORE_LOGF(eLOG_Note, ("%d server(s) found", n_found));
     else
         CORE_LOG(eLOG_Fatal, "Requested service not found");
 
@@ -203,6 +203,7 @@ int main(int argc, const char* argv[])
     }
 #endif
 
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

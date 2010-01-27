@@ -64,7 +64,7 @@ public:
     CTest();
 
     virtual void Init(void);
-    virtual int  Run(void);
+    virtual int  Run (void);
 
 protected:
     void Client(void);

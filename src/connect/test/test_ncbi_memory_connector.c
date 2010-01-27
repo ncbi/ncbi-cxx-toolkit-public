@@ -30,9 +30,9 @@
  *
  */
 
-#include "ncbi_conntest.h"
 #include <connect/ncbi_memory_connector.h>
-#include <connect/ncbi_util.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "ncbi_conntest.h"
 /* This header must go last */
 #include "test_assert.h"
 
@@ -57,6 +57,7 @@ int main(void)
 
     /* Cleanup and Exit */
     fclose(data_file);
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

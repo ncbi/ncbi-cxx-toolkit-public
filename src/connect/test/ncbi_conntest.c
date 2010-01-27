@@ -31,10 +31,10 @@
  *
  */
 
-#include "ncbi_conntest.h"
-#include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <string.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "ncbi_conntest.h"
 /* This header must go last */
 #include "test_assert.h"
 
@@ -352,5 +352,5 @@ extern void CONN_TestConnector
      */
     assert(CONN_Close(conn) == eIO_Success);
 
-    TEST_LOG(status, "Test completed successfully");
+    TEST_LOG(status, "[CONN_TestConnector]  Completed");
 }

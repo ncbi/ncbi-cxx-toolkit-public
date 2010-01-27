@@ -30,13 +30,13 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -331,7 +331,8 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    CORE_LOG(eLOG_Note, "[Client]  Completed successfully");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
+    CORE_SetLOG(0);
     return 0;
 }
 

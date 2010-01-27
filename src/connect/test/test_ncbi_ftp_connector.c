@@ -30,13 +30,13 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_ftp_connector.h>
 #include <stdlib.h>
 #include <time.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -204,9 +204,9 @@ int main(int argc, char* argv[])
     } else {
         CORE_LOGF(eLOG_Note, ("%lu bytes downloaded", (unsigned long) size));
     }
-
-    CORE_LOG(eLOG_Note, "Test completed");
     ConnNetInfo_Destroy(net_info);
+
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

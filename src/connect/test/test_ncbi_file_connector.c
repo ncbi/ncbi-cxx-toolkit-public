@@ -30,11 +30,10 @@
  *
  */
 
-#include "../ncbi_assert.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_file_connector.h>
-#include <connect/ncbi_util.h>
 #include <stdlib.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -109,6 +108,7 @@ int main(int argc, const char* argv[])
     
     /* cleanup, exit */
     verify(CONN_Close(conn) == eIO_Success);
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

@@ -30,15 +30,6 @@
  *
  */
 
-#include "../ncbi_config.h"
-#include "../ncbi_priv.h"
-
-/* OS must be specified in the command-line ("-D....") or in the conf. header
- */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
-#endif
-
 #include <connect/ncbi_socket.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,8 +42,15 @@
 #else
 #  define X_SLEEP(x) ((void) 0)
 #endif
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
+
+/* OS must be specified in the command-line ("-D....") or in the conf. header
+ */
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
+#endif
 
 #define MIN_PORT 4096
 #define DEF_PORT 5555
@@ -608,7 +606,7 @@ static void TEST__client(const char*     server_host,
     status = SOCK_Close(sock);
     assert(status == eIO_Success  ||  status == eIO_Closed);
 
-    CORE_LOG(eLOG_Note, "TEST COMPLETED");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
 }
 
 

@@ -31,12 +31,12 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_assert.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>
 #include <stdio.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_assert.h"
 /* This header must go last */
 #include "test_assert.h"
 

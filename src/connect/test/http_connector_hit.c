@@ -30,10 +30,9 @@
  *
  */
 
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_assert.h"
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_util.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -192,6 +191,7 @@ int main(int argc, const char* argv[])
     /* Success:  close the connection, cleanup, and exit */
     CONN_Close(conn);
     CORE_SetREG(0);
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

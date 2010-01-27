@@ -316,10 +316,10 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         HANDLE stderr_handle = ::GetStdHandle(STD_ERROR_HANDLE);
 
         // Flush std.output buffers before remap
-        cout.flush();
+        NcbiCout.flush();
         ::fflush(stdout);
         ::FlushFileBuffers(stdout_handle);
-        cerr.flush();
+        NcbiCerr.flush();
         ::fflush(stderr);
         ::FlushFileBuffers(stderr_handle);
 
@@ -976,9 +976,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     int status_pipe[2] = {-1, -1};
     try {
         // Flush std.output
-        cout.flush();
+        NcbiCout.flush();
         ::fflush(stdout);
-        cerr.flush();
+        NcbiCerr.flush();
         ::fflush(stderr);
 
         // Create pipe for child's stdin

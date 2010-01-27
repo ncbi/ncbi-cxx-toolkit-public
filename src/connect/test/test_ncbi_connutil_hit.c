@@ -31,8 +31,8 @@
  */
 
 #include <connect/ncbi_connutil.h>
-#include <connect/ncbi_util.h>
 #include <stdlib.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -161,7 +161,8 @@ int main(int argc, char** argv)
 
     /* Success:  close the socket, cleanup, and exit */
     SOCK_Close(sock);
-    CORE_SetLOG(0);
 
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
+    CORE_SetLOG(0);
     return 0;
 }

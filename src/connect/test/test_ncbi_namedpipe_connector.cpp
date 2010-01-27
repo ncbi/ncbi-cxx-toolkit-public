@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_namedpipe_connector.hpp>
-#include <connect/ncbi_util.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
 #include <common/test_assert.h>  // This header must go last
 
@@ -124,10 +124,6 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    // Log and data log streams
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
-
     CArgs args = GetArgs();
 
     m_PipeName = kPipeName;
@@ -155,7 +151,7 @@ int CTest::Run(void)
     else {
         _TROUBLE;
     }
-    CORE_SetLOG(0);
+
     return 0;
 }
 
@@ -164,10 +160,13 @@ void CTest::Client(void)
 {
     CONNECTOR connector;
 
-    CORE_SetLOGFILE(stderr, 0/*false*/);
-
     FILE* logfile = fopen("test_ncbi_namedpipe_connector_client.log", "ab");
     assert(logfile);
+
+    // Log and data log streams
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE(stderr, 0/*false*/);
 
     // Tests for NAMEDPIPE CONNECTOR
     ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR test ...");
@@ -186,6 +185,9 @@ void CTest::Client(void)
     CONN_TestConnector(connector, &m_Timeout, logfile, fTC_Everything);
 
     fclose(logfile);
+
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
+    CORE_SetLOG(0);
 }
 
 

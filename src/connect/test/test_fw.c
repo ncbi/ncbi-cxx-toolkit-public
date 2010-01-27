@@ -33,9 +33,9 @@
  */
 
 #include <connect/ncbi_socket.h>
-#include <connect/ncbi_util.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 
@@ -93,7 +93,7 @@ extern int main(int argc, char** argv)
     if (argc != 4  ||
         (fp = fopen(argv[1], "r")) == 0  ||
         (port = atoi(argv[3])) <= 0) {
-        perror("\nUSAGE:  test_fw <inp_file> <http_host> <http_port>\n");
+        perror("\nUSAGE:  test_fw <inp_file> <host> <port>\n");
         return 1;
     }
 
@@ -124,7 +124,8 @@ extern int main(int argc, char** argv)
     assert(status == eIO_Success  ||  status == eIO_Closed);
 
     assert(SOCK_ShutdownAPI() == eIO_Success);
-    CORE_SetLOG(0);
 
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
+    CORE_SetLOG(0);
     return 0;
 }
