@@ -340,8 +340,7 @@ URL_EncodeString(const      string& str,
 
 
 /// @deprecated Use CUrlArgs_Parser
-NCBI_DEPRECATED
-class NCBI_XCGI_EXPORT CCgiArgs_Parser : public CUrlArgs_Parser
+NCBI_DEPRECATED_CLASS NCBI_XCGI_EXPORT CCgiArgs_Parser : public CUrlArgs_Parser
 {
 public:
     CCgiArgs_Parser(void) {}
@@ -354,8 +353,7 @@ public:
 
 
 /// @deprecated Use CUrlArgs
-NCBI_DEPRECATED
-class NCBI_XCGI_EXPORT CCgiArgs : public CUrlArgs
+NCBI_DEPRECATED_CLASS NCBI_XCGI_EXPORT CCgiArgs : public CUrlArgs
 {
 public:
     CCgiArgs(void) {}
