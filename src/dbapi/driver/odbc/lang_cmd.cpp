@@ -255,6 +255,9 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* ind
     for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); ++n) {
         if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
         const string& name  =  GetBindParamsImpl().GetParamName(n);
+        if (name.empty()) {
+            DATABASE_DRIVER_ERROR( "Binding by position is not supported." + GetDbgInfo(), 420110 );
+        }
         const CDB_Object& param = *GetBindParamsImpl().GetParam(n);
 
         const string type = Type2String(param);

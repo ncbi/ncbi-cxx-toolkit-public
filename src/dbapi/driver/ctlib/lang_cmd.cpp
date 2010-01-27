@@ -156,6 +156,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     {{
         size_t l = param_name.copy(param_fmt.name, CS_MAX_NAME-1);
         param_fmt.name[l] = '\0';
+        param_fmt.namelen = l;
     }}
 
 
@@ -747,7 +748,6 @@ bool CTL_LangCmd::x_AssignParams()
 {
     CS_DATAFMT param_fmt;
     memset(&param_fmt, 0, sizeof(param_fmt));
-    param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
     for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {

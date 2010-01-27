@@ -175,8 +175,20 @@ void CStatement::SetParam(const CVariant& v,
                           const CDBParamVariant& param)
 {
     if (param.IsPositional()) {
-        NCBI_DBAPI_THROW("Binding by position is not implemented in CStatement::SetParam.");
+        if (!m_params.empty()) {
+            NCBI_DBAPI_THROW("Binding by position is prohibited if any parameter was bound by name.");
+        }
+        if (m_posParams.size() < param.GetPosition())
+            m_posParams.resize(param.GetPosition());
+        CVariant*& var = m_posParams[param.GetPosition() - 1];
+        if (var)
+            *var = v;
+        else
+            var = new CVariant(v);
     } else {
+        if (!m_posParams.empty()) {
+            NCBI_DBAPI_THROW("Binding by name is prohibited if any parameter was bound by position.");
+        }
         const string name = param.GetName();
         ParamList::iterator i = m_params.find(name);
         if( i != m_params.end() ) {
@@ -191,12 +203,15 @@ void CStatement::SetParam(const CVariant& v,
 
 void CStatement::ClearParamList()
 {
-    ParamList::iterator i = m_params.begin();
-    for( ; i != m_params.end(); ++i ) {
+    for(ParamList::iterator i = m_params.begin(); i != m_params.end(); ++i ) {
         delete (*i).second;
+    }
+    for(ParamByPosList::iterator i = m_posParams.begin(); i != m_posParams.end(); ++i ) {
+        delete (*i);
     }
 
     m_params.clear();
+    m_posParams.clear();
 }
 
 void CStatement::Execute(const string& sql)
@@ -251,12 +266,16 @@ void CStatement::ExecuteUpdate(const string& sql)
 
 void CStatement::ExecuteLast()
 {
-    ParamList::iterator i = m_params.begin();
-    for( ; i != m_params.end(); ++i ) {
+    for(ParamList::iterator i = m_params.begin(); i != m_params.end(); ++i ) {
         GetLangCmd()->GetBindParams().Bind((*i).first, (*i).second->GetData());
-        // GetLangCmd()->GetBindParams().Set((*i).first, (*i).second->GetData());
     }
-
+    for(unsigned int i = 0; i < m_posParams.size(); ++i) {
+        CVariant* var = m_posParams[i];
+        if (!var) {
+            NCBI_DBAPI_THROW("Not all parameters were bound by position.");
+        }
+        GetLangCmd()->GetBindParams().Bind(i, var->GetData());
+    }
     m_cmd->Send();
 }
 

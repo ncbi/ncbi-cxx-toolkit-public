@@ -139,6 +139,7 @@ private:
 
 private:
     typedef map<string, CVariant*> ParamList;
+    typedef vector<CVariant*>      ParamByPosList;
 
     class CConnection*  m_conn;
     I_BaseCmd*          m_cmd;
@@ -146,6 +147,7 @@ private:
     int                 m_rowCount;
     bool                m_failed;
     ParamList           m_params;
+    ParamByPosList      m_posParams;
     class CResultSet*   m_irs;
     class IWriter*      m_wr;
     class CWStream*	m_ostr;

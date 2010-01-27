@@ -478,7 +478,6 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
 {
     CS_DATAFMT param_fmt;
     memset(&param_fmt, 0, sizeof(param_fmt));
-    param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
     for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {

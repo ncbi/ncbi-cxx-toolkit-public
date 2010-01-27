@@ -1077,6 +1077,7 @@ CConnection::CConnection(
                 db_type_uc == "MS SQL") 
         {
             m_DefParams.SetServerType(CDBConnParams::eMSSqlServer);
+            m_DefParams.SetEncoding(eEncoding_UTF8);
         }
 
 
@@ -1781,6 +1782,22 @@ CStmtHelper::SetParam(const string& name, const CVariant& value)
 }
 
 void
+CStmtHelper::SetParam(size_t index, const CVariant& value)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        m_Stmt->SetParam( value, static_cast<unsigned int>(index) );
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
+    catch(const CException& e) {
+        throw CDatabaseError( e.what() );
+    }
+}
+
+void
 CStmtHelper::Execute(void)
 {
     _ASSERT( m_Stmt.get() );
@@ -2070,6 +2087,29 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value, bool& o
             output_param = false;
         } else {
             m_Stmt->SetOutputParam( value, param_name );
+            output_param = true;
+        }
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
+    catch(const CException& e) {
+        throw CDatabaseError( e.what() );
+    }
+}
+
+void
+CCallableStmtHelper::SetParam(size_t index, const CVariant& value, bool& output_param)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        unsigned int ind = static_cast<unsigned int>(index);
+        if (m_Stmt->GetParamsMetaData().GetDirection(ind) == CDBParams::eIn) {
+            m_Stmt->SetParam( value, ind );
+            output_param = false;
+        } else {
+            m_Stmt->SetOutputParam( value, ind );
             output_param = true;
         }
     }
@@ -2401,6 +2441,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
             }
 
             m_StmtHelper.Close();
+            m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
 
             // Setup parameters ...
             if ( args_size > 1 ) {
@@ -2408,20 +2449,15 @@ CCursor::callproc(const pythonpp::CTuple& args)
 
                 if ( pythonpp::CDict::HasSameType(obj) ) {
                     const pythonpp::CDict dict = obj;
-
-                    m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
                     has_out_params = SetupParameters(dict, m_CallableStmtHelper);
-                } else  {
-                    // Currently, NCBI DBAPI supports parameter binding by name only ...
-                    //            pythonpp::CSequence sequence;
-                    //            if ( pythonpp::CList::HasSameType(obj) ) {
-                    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-                    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-                    //            }
-                    throw CNotSupportedError("NCBI DBAPI supports parameter binding by name only");
+                } else  if ( pythonpp::CList::HasSameType(obj)
+                             ||  pythonpp::CTuple::HasSameType(obj) )
+                {
+                    const pythonpp::CSequence seq = obj;
+                    has_out_params = SetupParameters(seq, m_CallableStmtHelper);
+                } else {
+                    throw CNotSupportedError("Inappropriate type for parameter binding");
                 }
-            } else {
-                m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
             }
         }
 
@@ -2452,15 +2488,11 @@ CCursor::callproc(const pythonpp::CTuple& args)
                                 const string param_name = md.GetName(i + 1);
 
                                 dict.SetItem(param_name, ConvertCVariant2PCObject(value));
-                            } else  {
-                                // tuple[i] = ConvertCVariant2PCObject(value);
-                                // Curently, NCBI DBAPI supports pameter binding by name only ...
-                                //            pythonpp::CSequence sequence;
-                                //            if ( pythonpp::CList::HasSameType(obj) ) {
-                                //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-                                //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-                                //            }
-                                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                            } else  if ( pythonpp::CList::HasSameType(output_args) ) {
+                                pythonpp::CList lst = output_args;
+                                lst.SetItem(i, ConvertCVariant2PCObject(value));
+                            } else {
+                                throw CNotSupportedError("Inappropriate type for parameter binding");
                             }
                         }
                     }
@@ -2549,15 +2581,15 @@ CCursor::execute(const pythonpp::CTuple& args)
                 pythonpp::CObject obj(args[1]);
 
                 if ( pythonpp::CDict::HasSameType(obj) ) {
-                    SetupParameters(obj, m_StmtHelper);
-                } else  {
-                    // Curently, NCBI DBAPI supports parameter binding by name only ...
-                    //            pythonpp::CSequence sequence;
-                    //            if ( pythonpp::CList::HasSameType(obj) ) {
-                    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-                    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-                    //            }
-                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                    const pythonpp::CDict dict = obj;
+                    SetupParameters(dict, m_StmtHelper);
+                } else  if ( pythonpp::CList::HasSameType(obj)
+                             ||  pythonpp::CTuple::HasSameType(obj) )
+                {
+                    const pythonpp::CSequence seq = obj;
+                    SetupParameters(seq, m_StmtHelper);
+                } else {
+                    throw CNotSupportedError("Inappropriate type for parameter binding");
                 }
             }
         }
@@ -2602,6 +2634,17 @@ CCursor::SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt)
     }
 }
 
+void
+CCursor::SetupParameters(const pythonpp::CSequence& seq, CStmtHelper& stmt)
+{
+    // Iterate over a sequence.
+    size_t sz = seq.size();
+    for (size_t i = 0; i < sz; ++i) {
+        const pythonpp::CObject value_obj(seq.GetItem(i));
+        stmt.SetParam(i + 1, GetCVariant(value_obj));
+    }
+}
+
 bool
 CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
 {
@@ -2621,7 +2664,24 @@ CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
         stmt.SetParam(param_name, GetCVariant(value_obj), output_param);
         result |= output_param;
     }
+    return result;
+}
 
+bool
+CCursor::SetupParameters(const pythonpp::CSequence& seq, CCallableStmtHelper& stmt)
+{
+    // Iterate over a sequence.
+    bool result = false;
+    bool output_param = false;
+    size_t sz = seq.size();
+
+    for (size_t i = 0; i < sz; ++i) {
+        // Refer to borrowed references in key and value.
+        const pythonpp::CObject value_obj(seq.GetItem(i));
+
+        stmt.SetParam(i + 1, GetCVariant(value_obj), output_param);
+        result |= output_param;
+    }
     return result;
 }
 
@@ -2642,6 +2702,30 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         const pythonpp::CString python_str(obj);
         const string std_str(python_str);
         return CVariant( std_str );
+    } else if ( pythonpp::CDateTime::HasSameType(obj) ) {
+        const pythonpp::CDateTime python_date(obj);
+        const CTime std_date(python_date.GetYear(),
+                             python_date.GetMonth(),
+                             python_date.GetDay(),
+                             python_date.GetHour(),
+                             python_date.GetMinute(),
+                             python_date.GetSecond(),
+                             python_date.GetMicroSecond() * 1000);
+        return CVariant( std_date );
+    } else if ( pythonpp::CDate::HasSameType(obj) ) {
+        const pythonpp::CDate python_date(obj);
+        const CTime std_date(python_date.GetYear(),
+                             python_date.GetMonth(),
+                             python_date.GetDay());
+        return CVariant( std_date );
+    } else if ( pythonpp::CTime::HasSameType(obj) ) {
+        const pythonpp::CTime python_time(obj);
+        CTime std_date(CTime::eCurrent);
+        std_date.SetHour(python_time.GetHour());
+        std_date.SetMinute(python_time.GetMinute());
+        std_date.SetSecond(python_time.GetSecond());
+        std_date.SetMicroSecond(python_time.GetMicroSecond());
+        return CVariant( std_date );
     } else if (obj == CBinary::GetType()) {
         const string value = static_cast<CBinary*>(obj.Get())->GetValue();
         return CVariant::VarBinary(value.c_str(), value.size());
@@ -2687,7 +2771,17 @@ CCursor::executemany(const pythonpp::CTuple& args)
                     m_InfoMessages.Clear();
 
                     for ( citer = params.begin(); citer != cend; ++citer ) {
-                        SetupParameters(*citer, m_StmtHelper);
+                        if ( pythonpp::CDict::HasSameType(*citer) ) {
+                            const pythonpp::CDict dict = *citer;
+                            SetupParameters(dict, m_StmtHelper);
+                        } else  if ( pythonpp::CList::HasSameType(*citer)
+                                     ||  pythonpp::CTuple::HasSameType(*citer) )
+                        {
+                            const pythonpp::CSequence seq = *citer;
+                            SetupParameters(seq, m_StmtHelper);
+                        } else {
+                            throw CNotSupportedError("Inappropriate type for parameter binding");
+                        }
                         m_StmtHelper.Execute();
                         m_RowsNum += m_StmtHelper.GetRowCount();
                     }

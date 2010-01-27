@@ -214,6 +214,7 @@ public:
     // void SetStr(const string& stmt, EStatementType default_type = estFunction);
     void SetStr(const CStmtStr& stmt, CDB_UserHandler* handler);
     void SetParam(const string& name, const CVariant& value);
+    void SetParam(size_t index, const CVariant& value);
 
     void Execute(void);
     void Close(void);
@@ -272,6 +273,7 @@ public:
     // void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
     void SetStr(const CStmtStr& stmt, CDB_UserHandler* handler);
     void SetParam(const string& name, const CVariant& value, bool& output_param);
+    void SetParam(size_t index, const CVariant& value, bool& output_param);
 
     void Execute(bool cache_results = false);
     void Close(void);
@@ -445,8 +447,10 @@ private:
     CVariant GetCVariant(const pythonpp::CObject& obj) const;
 
     void SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt);
+    void SetupParameters(const pythonpp::CSequence& seq, CStmtHelper& stmt);
     // Return *true* if there are output parameters.
     bool SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt);
+    bool SetupParameters(const pythonpp::CSequence& dict, CCallableStmtHelper& stmt);
 
     void ExecuteCurrStatement(void);
 

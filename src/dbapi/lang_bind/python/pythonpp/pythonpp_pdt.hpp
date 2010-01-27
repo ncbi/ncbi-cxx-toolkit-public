@@ -621,9 +621,36 @@ class CString : public CObject
 //                   strings) */
 //    );
 
-
 // int PyString_GET_SIZE(  PyObject *string)
 // char* PyString_AS_STRING(   PyObject *string)
+
+// int PyUnicode_GET_SIZE( PyObject *o)
+// int PyUnicode_GET_DATA_SIZE(    PyObject *o)
+// Py_UNICODE* PyUnicode_AS_UNICODE(   PyObject *o)
+// const char* PyUnicode_AS_DATA(  PyObject *o)
+// int Py_UNICODE_ISSPACE( Py_UNICODE ch)
+// int Py_UNICODE_ISLOWER( Py_UNICODE ch)
+// int Py_UNICODE_ISUPPER( Py_UNICODE ch)
+// int Py_UNICODE_ISTITLE( Py_UNICODE ch)
+// int Py_UNICODE_ISLINEBREAK( Py_UNICODE ch)
+// int Py_UNICODE_ISDECIMAL(   Py_UNICODE ch)
+// int Py_UNICODE_ISDIGIT( Py_UNICODE ch)
+// int Py_UNICODE_ISNUMERIC(   Py_UNICODE ch)
+// int Py_UNICODE_ISALPHA( Py_UNICODE ch)
+// int Py_UNICODE_ISALNUM( Py_UNICODE ch)
+// Py_UNICODE Py_UNICODE_TOLOWER(  Py_UNICODE ch)
+// Py_UNICODE Py_UNICODE_TOUPPER(  Py_UNICODE ch)
+// Py_UNICODE Py_UNICODE_TOTITLE(  Py_UNICODE ch)
+// int Py_UNICODE_TODECIMAL(   Py_UNICODE ch)
+// int Py_UNICODE_TODIGIT( Py_UNICODE ch)
+// double Py_UNICODE_TONUMERIC(    Py_UNICODE ch)
+// PyObject* PyUnicode_FromUnicode(    const Py_UNICODE *u, int size)
+// Py_UNICODE* PyUnicode_AsUnicode(    PyObject *unicode)
+// int PyUnicode_GetSize(  PyObject *unicode)
+// PyObject* PyUnicode_FromEncodedObject(  PyObject *obj, const char *encoding, const char *errors)
+// PyObject* PyUnicode_FromObject( PyObject *obj)
+// PyObject* PyUnicode_FromWideChar(   const wchar_t *w, int size)
+// int PyUnicode_AsWideChar(   PyUnicodeObject *unicode, wchar_t *w, int size)
 
 public:
     CString(void)
@@ -649,7 +676,7 @@ public:
     {
     }
     CString(const string& str)
-    : CObject(PyString_FromStringAndSize(const_cast<char*>(str.c_str()), str.size()), eTakeOwnership)
+    : CObject(PyString_FromStringAndSize(str.data(), str.size()), eTakeOwnership)
     {
     }
     CString(const char* str)
@@ -685,21 +712,18 @@ public:
     }
     CString& operator= (const string& str)
     {
-        Set(PyString_FromStringAndSize(const_cast<char*>(str.c_str()), str.size()),  eTakeOwnership);
+        Set(PyString_FromStringAndSize(str.data(), str.size()),  eTakeOwnership);
         return *this;
     }
 
 public:
     size_t GetSize (void) const
     {
-        /*
-        if ( IsUnicode() ) {
-            return static_cast<size_type>( PyUnicode_GET_SIZE( Get() ) );
+        if ( PyUnicode_Check(Get()) ) {
+            return static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) );
         } else {
-            return static_cast<size_type>( PyString_Size ( Get() ) );
+            return static_cast<size_t>( PyString_Size ( Get() ) );
         }
-        */
-        return static_cast<size_t>( PyString_Size ( Get() ) );
     }
     operator string (void) const
     {
@@ -708,24 +732,23 @@ public:
 
     string AsStdSring(void) const
     {
-        /*
-        if( IsUnicode() ) {
-            throw TypeError("cannot return std::string from Unicode object");
+        if( PyUnicode_Check(Get()) ) {
+            return CStringUTF8(
+                    basic_string<Py_UNICODE>(PyUnicode_AS_UNICODE( Get() ),
+                                             static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) ) );
         } else {
-            return string( PyString_AsString( Get() ), static_cast<size_type>( PyString_Size( Get() ) ) );
+            return string( PyString_AsString( Get() ), static_cast<size_t>( PyString_Size( Get() ) ) );
         }
-        */
-        return string( PyString_AsString( Get() ), static_cast<size_t>( PyString_Size( Get() ) ) );
     }
 
 public:
     static bool HasExactSameType(PyObject* obj)
     {
-        return PyString_CheckExact (obj);
+        return PyString_CheckExact(obj)  ||  PyUnicode_CheckExact(obj);
     }
     static bool HasSameType(PyObject* obj)
     {
-        return PyString_Check (obj);
+        return PyString_Check(obj)  ||  PyUnicode_Check(obj);
     }
 };
 
@@ -758,48 +781,6 @@ public:
     static bool HasSameType(PyObject* obj)
     {
         return PyFile_Check(obj);
-    }
-};
-
-class CUnicode : public CObject
-{
-// int PyUnicode_GET_SIZE( PyObject *o)
-// int PyUnicode_GET_DATA_SIZE(    PyObject *o)
-// Py_UNICODE* PyUnicode_AS_UNICODE(   PyObject *o)
-// const char* PyUnicode_AS_DATA(  PyObject *o)
-// int Py_UNICODE_ISSPACE( Py_UNICODE ch)
-// int Py_UNICODE_ISLOWER( Py_UNICODE ch)
-// int Py_UNICODE_ISUPPER( Py_UNICODE ch)
-// int Py_UNICODE_ISTITLE( Py_UNICODE ch)
-// int Py_UNICODE_ISLINEBREAK( Py_UNICODE ch)
-// int Py_UNICODE_ISDECIMAL(   Py_UNICODE ch)
-// int Py_UNICODE_ISDIGIT( Py_UNICODE ch)
-// int Py_UNICODE_ISNUMERIC(   Py_UNICODE ch)
-// int Py_UNICODE_ISALPHA( Py_UNICODE ch)
-// int Py_UNICODE_ISALNUM( Py_UNICODE ch)
-// Py_UNICODE Py_UNICODE_TOLOWER(  Py_UNICODE ch)
-// Py_UNICODE Py_UNICODE_TOUPPER(  Py_UNICODE ch)
-// Py_UNICODE Py_UNICODE_TOTITLE(  Py_UNICODE ch)
-// int Py_UNICODE_TODECIMAL(   Py_UNICODE ch)
-// int Py_UNICODE_TODIGIT( Py_UNICODE ch)
-// double Py_UNICODE_TONUMERIC(    Py_UNICODE ch)
-// PyObject* PyUnicode_FromUnicode(    const Py_UNICODE *u, int size)
-// Py_UNICODE* PyUnicode_AsUnicode(    PyObject *unicode)
-// int PyUnicode_GetSize(  PyObject *unicode)
-// PyObject* PyUnicode_FromEncodedObject(  PyObject *obj, const char *encoding, const char *errors)
-// PyObject* PyUnicode_FromObject( PyObject *obj)
-// PyObject* PyUnicode_FromWideChar(   const wchar_t *w, int size)
-// int PyUnicode_AsWideChar(   PyUnicodeObject *unicode, wchar_t *w, int size)
-
-public:
-public:
-    static bool HasExactSameType(PyObject* obj)
-    {
-        return PyUnicode_CheckExact(obj);
-    }
-    static bool HasSameType(PyObject* obj)
-    {
-        return PyUnicode_Check(obj);
     }
 };
 

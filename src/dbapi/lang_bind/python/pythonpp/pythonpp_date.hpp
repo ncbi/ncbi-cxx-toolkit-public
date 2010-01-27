@@ -83,6 +83,20 @@ private:
 class CTime : public CObject
 {
 public:
+    CTime(PyObject* obj, EOwnership ownership = eAcquireOwnership)
+    : CObject(obj, ownership)
+    {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+    }
+    CTime(const CObject& obj)
+    {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+        Set(obj);
+    }
     CTime(int hour, int minute, int second, int usecond)
     : CObject(PyTime_FromTime(hour, minute, second, usecond), eTakeOwnership)
     {
@@ -106,7 +120,7 @@ public:
         return PyDateTime_TIME_GET_MICROSECOND(Get());
     }
 
-protected:
+public:
     static bool HasSameType(PyObject* obj)
     {
         return PyTime_Check(obj);
@@ -125,6 +139,10 @@ class CDate : public CObject
 public:
     CDate(PyObject* obj, EOwnership ownership = eAcquireOwnership)
     : CObject(obj, ownership)
+    {
+    }
+    CDate(const CObject& obj)
+    : CObject(obj)
     {
     }
     CDate(int year, int month, int day)
@@ -146,7 +164,7 @@ public:
         return PyDateTime_GET_DAY(Get());
     }
 
-protected:
+public:
     static bool HasSameType(PyObject* obj)
     {
         return PyDate_Check(obj);
@@ -167,6 +185,17 @@ public:
     CDateTime(PyObject* obj, EOwnership ownership = eAcquireOwnership)
     : CDate(obj, ownership)
     {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+    }
+    CDateTime(const CObject& obj)
+    : CDate(obj)
+    {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+        Set(obj);
     }
     CDateTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usecond = 0)
     : CDate(PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usecond), eTakeOwnership)
@@ -191,7 +220,7 @@ public:
         return PyDateTime_TIME_GET_MICROSECOND(Get());
     }
 
-protected:
+public:
     static bool HasSameType(PyObject* obj)
     {
         return PyDateTime_Check(obj);

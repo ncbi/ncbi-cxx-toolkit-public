@@ -233,6 +233,9 @@ bool CDBL_LangCmd::x_AssignParams()
     for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
         if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
         const string& name  =  GetBindParamsImpl().GetParamName(n);
+        if (name.empty()) {
+            DATABASE_DRIVER_ERROR( "Binding by position is not supported." + GetDbgInfo(), 220111 );
+        }
         CDB_Object&   param = *GetBindParamsImpl().GetParam(n);
         char          val_buffer[16*1024];
         const char*   type;
