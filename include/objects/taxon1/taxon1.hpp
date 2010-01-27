@@ -313,6 +313,14 @@ public:
     int GetAllNames(int tax_id, TNameList& lNames, bool unique);
 
     //---------------------------------------------
+    // Get list of all names for tax_id.
+    // Clears the previous content of the list.
+    // Returns: TRUE - success
+    //          FALSE - failure
+    ///
+    bool GetAllNamesEx(int tax_id, list< CRef< CTaxon1_name > >& lNames);
+
+    //---------------------------------------------
     // Dump all names of the particular class
     // Replaces the list of Taxon1_name with returned values
     // Returns: TRUE - success

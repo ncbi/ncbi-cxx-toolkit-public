@@ -1204,6 +1204,41 @@ CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
     return count;
 }
 
+//---------------------------------------------
+// Get list of all names for tax_id.
+// Clears the previous content of the list.
+// Returns: TRUE - success
+//          FALSE - failure
+///
+bool
+CTaxon1::GetAllNamesEx(int tax_id, list< CRef< CTaxon1_name > >& lNames)
+{
+    SetLastError(NULL);
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
+
+    lNames.clear();
+
+    req.SetGetorgnames( tax_id );
+
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsGetorgnames() ) {
+            // Correct response, return object
+            const list< CRef< CTaxon1_name > >& lNm = resp.GetGetorgnames();
+            // Fill in the list
+            for( list< CRef< CTaxon1_name > >::const_iterator
+                     i = lNm.begin(), li = lNm.end(); i != li; ++i ) {
+		lNames.push_back( *i );
+	    }
+        } else { // Internal: wrong respond type
+            SetLastError( "Response type is not Getorgnames" );
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool
 CTaxon1::DumpNames( short name_class, list< CRef< CTaxon1_name > >& lOut )
 {
