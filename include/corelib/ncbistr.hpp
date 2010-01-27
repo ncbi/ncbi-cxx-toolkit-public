@@ -3095,13 +3095,9 @@ inline
 size_t NStr::strftime(char* s, size_t maxsize, const char* format,
                       const struct tm* timeptr)
 {
-#if defined(NCBI_COMPILER_MSVC)
     string x_format = Replace(format, "%T", "%H:%M:%S");
     ReplaceInPlace(x_format,          "%D", "%m/%d/%y");
     return ::strftime(s, maxsize, x_format.c_str(), timeptr);
-#else
-    return ::strftime(s, maxsize, format, timeptr);
-#endif
 }
 
 

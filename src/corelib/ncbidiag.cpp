@@ -3659,19 +3659,7 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
-        static const char timefmt[] = "%D %T ";
-        time_t t = time(0);
-        char datetime[32];
-        struct tm* tm;
-#ifdef HAVE_LOCALTIME_R
-        struct tm temp;
-        localtime_r(&t, &temp);
-        tm = &temp;
-#else
-        tm = localtime(&t);
-#endif /*HAVE_LOCALTIME_R*/
-        NStr::strftime(datetime, sizeof(datetime), timefmt, tm);
-        os << datetime;
+        os << CFastLocalTime().GetLocalTime().AsString("M/D/y h:m:s ");
     }
     // "<file>"
     bool print_file = (m_File  &&  *m_File  &&
