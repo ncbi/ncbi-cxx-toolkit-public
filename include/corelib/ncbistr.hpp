@@ -3378,7 +3378,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 //
 
 template <typename TIterator>
-static inline
+inline
 TUnicodeSymbol CStringUTF8::Decode(TIterator& src)
 {
     SIZE_TYPE more=0;
