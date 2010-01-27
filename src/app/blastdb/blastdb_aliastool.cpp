@@ -222,6 +222,7 @@ int CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
         NcbiGetlineEOL(input, line);
         line_ctr++;
         if ( !line.empty() ) {
+            if (NStr::StartsWith(line, "#")) continue;
             try { builder.AppendId(NStr::StringToInt8(line)); }
             catch (const CStringException& e) {
                 ERR_POST(Warning << "error in line " << line_ctr 

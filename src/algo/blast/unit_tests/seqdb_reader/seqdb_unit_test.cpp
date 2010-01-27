@@ -1697,6 +1697,7 @@ BOOST_AUTO_TEST_CASE(IsBinaryGiList_True)
 BOOST_AUTO_TEST_CASE(IsBinaryGiList_False)
 {
     BOOST_REQUIRE_EQUAL(false, SeqDB_IsBinaryGiList("data/prot345t.gil"));
+    BOOST_REQUIRE(SeqDB_IsBinaryGiList("data/totals.nal") == false);
 }
 
 BOOST_AUTO_TEST_CASE(IsBinaryGiList_EmptyFile)
@@ -1707,7 +1708,7 @@ BOOST_AUTO_TEST_CASE(IsBinaryGiList_EmptyFile)
 
 BOOST_AUTO_TEST_CASE(IsBinaryGiList_InvalidFile)
 {
-    BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("data/totals.nal"),
+    BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("/dev/null"),
                         CSeqDBException);
 }
 

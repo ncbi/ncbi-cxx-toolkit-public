@@ -787,7 +787,8 @@ static bool s_SeqDB_IsBinaryGiList(const char* fbeginp, const char* fendp,
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Specified file is empty.");
-    } else if (isdigit((unsigned char)(*((char*) fbeginp)))) {
+    } else if (isdigit((unsigned char)(*((char*) fbeginp))) ||
+               ((unsigned char)(*((char*) fbeginp)) == '#')) {
         retval = false;
     } else if ((file_size >= 8) && ((*fbeginp & 0xFF) == 0xFF)) {
         retval = true;
@@ -915,9 +916,10 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                 dig = 9;
                 break;
             
+            case '#':
             case '\n':
             case '\r':
-                // Skip blank lines by ignoring zero.
+                // Skip blank lines or comments by ignoring zero.
                 if (elem != 0) {
                     gis.push_back(elem);
                 }
@@ -1129,9 +1131,10 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
                 dig = 9;
                 break;
             
+            case '#':
             case '\n':
             case '\r':
-                // Skip blank lines by ignoring zero.
+                // Skip blank lines and comments by ignoring zero.
                 if (elem != 0) {
                     tis.push_back(elem);
                 }
@@ -1170,6 +1173,7 @@ void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
        
     const char * p = fbeginp;
     const char * head;
+    /// @todo support # at the beginning of the line as comments
     while ( p < fendp) {
         // find the head of the seqid
         while (p< fendp && (*p=='>' || *p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) ++p;
