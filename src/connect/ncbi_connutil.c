@@ -1034,18 +1034,21 @@ static void s_SaveUserHeader(char* s, const char* name,
         memcpy(s, "NULL\n", 6);
 }
 
-extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
+extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 {
     char   scheme[32];
     char   port[16];
     size_t uhlen;
     char*  s;
 
-    if (!lg)
+    if (!lg) {
+        if (sev == eLOG_Fatal)
+            abort();
         return;
+    }
 
     if (!info) {
-        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, eLOG_Trace, 0, 0, 0,
+        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0,
                   "ConnNetInfo_Log: NULL info", 0, 0);
         return;
     }
@@ -1058,7 +1061,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                                                       uhlen) +
                              (info->http_referer
                               ? strlen(info->http_referer) : 0)))) {
-        LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11, eLOG_Error,
+        LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11,
+                  sev == eLOG_Fatal ? eLOG_Fatal : eLOG_Error,
                   "ConnNetInfo_Log: Cannot allocate temporary buffer");
         return;
     }
@@ -1115,8 +1119,16 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
-    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, eLOG_Trace, 0, 0, 0, s, 0, 0);
+    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, s, 0, 0);
     free(s);
+}
+
+
+/*FIXME:  To remove*/
+#undef ConnNetInfo_Log
+extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
+{
+    ConnNetInfo_LogEx(info, eLOG_Trace, lg);
 }
 
 
