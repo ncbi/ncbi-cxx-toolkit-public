@@ -156,6 +156,17 @@ public:
     CFeatTree(CFeat_CI it);
     /// Destructor.
     ~CFeatTree(void);
+
+    /// Mode of processing feature ids
+    enum EFeatIdMode {
+        eFeatId_ignore,
+        eFeatId_by_type, // default
+        eFeatId_always
+    };
+    EFeatIdMode GetFeatIdMode(void) const {
+        return m_FeatIdMode;
+    }
+    void SetFeatIdMode(EFeatIdMode mode);
     
     /// Add all features collected by a CFeat_CI to the tree.
     void AddFeatures(CFeat_CI it);
@@ -210,6 +221,12 @@ public:
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
         bool m_IsSetParent, m_IsSetChildren;
+        enum EIsLinkedToRoot {
+            eIsLinkedToRoot_unknown,
+            eIsLinkedToRoot_linked,
+            eIsLinkedToRoot_linking
+        };
+        Int1 m_IsLinkedToRoot;
         CFeatInfo* m_Parent;
         Int8 m_ParentOverlap;
         TChildren m_Children;
@@ -241,6 +258,12 @@ protected:
     void x_AssignParentsByOverlap(TFeatArray& features,
                                   bool by_product,
                                   TFeatArray& parents);
+    bool x_AssignParentByRef(CFeatInfo& info);
+
+    pair<int, CFeatInfo*>
+    x_LookupParentByRef(CFeatInfo& info,
+                        CSeqFeatData::ESubtype parent_type);
+    void x_VerifyLinkedToRoot(CFeatInfo& info);
     void x_CollectNeeded(TParentInfoMap& pinfo_map);
 
     void x_SetParent(CFeatInfo& info, CFeatInfo& parent);
@@ -253,6 +276,7 @@ protected:
     size_t m_AssignedParents;
     TInfoMap m_InfoMap;
     CFeatInfo m_RootInfo;
+    EFeatIdMode m_FeatIdMode;
 };
 
 
