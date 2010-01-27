@@ -32,10 +32,10 @@ spid=$!
 sleep 2
 test_ncbi_trigger              -port $port client >$client_log 2>&1 &
 cpid=$!
-trap 'kill -0 $spid && kill -9 $spid; kill -0 $cpid && kill -9 $cpid' 0 1 2 15
+trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; kill -0 $cpid 2>/dev/null && kill -9 $cpid; echo "`date`."' 0 1 2 3 15
 
 n="`expr $$ % 3`"
-while kill -0 $cpid; do
+while kill -0 $cpid 2>/dev/null; do
   i=0
   while [ $i -le $n ]; do
     $CHECK_EXEC test_ncbi_socket localhost $port >/dev/null 2>&1 &

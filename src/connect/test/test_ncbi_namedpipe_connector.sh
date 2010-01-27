@@ -27,20 +27,19 @@ CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 test_ncbi_namedpipe_connector -suffix $$ server >$server_log 2>&1 &
 
 spid=$!
-trap 'kill -0 $spid && kill -9 $spid; rm -f ./.test_ncbi_namedpipe' 0 1 2 15
+trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; rm -f ./.ncbi_test_namedpipe_$$; echo "`date`."' 0 1 2 3 15
 
 sleep 2
 $CHECK_EXEC test_ncbi_namedpipe_connector -suffix $$ client 1.23456 >$client_log 2>&1  ||  exit_code=1
 
-kill $spid  ||  exit_code=2
+( kill    $spid ) >/dev/null 2>&1  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
+wait $spid 2>/dev/null
 
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
   uptime
 fi
-
-rm -f ./.test_ncbi_namedpipe >/dev/null 2>&1
 
 exit $exit_code
