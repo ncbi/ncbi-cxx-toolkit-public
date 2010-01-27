@@ -3180,7 +3180,9 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
 {
     SIZE_TYPE count = 0;
-    for (const char* src = c_str(); *src; ++src, ++count) {
+    const_iterator src = begin();
+    const_iterator to = end();
+    for (; src != to; ++src, ++count) {
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good) {
@@ -3189,7 +3191,7 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
         if ( !good ) {
             NCBI_THROW2(CStringException, eFormat,
                         "String is not in UTF8 format",
-                        s_DiffPtr(src,c_str()));
+                        (src - begin()));
         }
     }
     return count;
@@ -3244,7 +3246,9 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding,
 {
     string result;
     result.reserve( GetSymbolCount()+1 );
-    for ( const char* src = c_str(); *src; ++src ) {
+    const_iterator src = begin();
+    const_iterator to = end();
+    for ( ; src != to; ++src ) {
         TUnicodeSymbol sym = Decode( src );
         if (substitute_on_error) {
             try {
@@ -3504,40 +3508,6 @@ bool CStringUTF8::x_EvalNext(char ch)
     return (ch & 0xC0) == 0x80;
 }
 
-
-TUnicodeSymbol CStringUTF8::Decode(const char*& src)
-{
-    TUnicodeSymbol chRes;
-    SIZE_TYPE more;
-    Uint1 ch = *src;
-    if ((ch & 0x80) == 0) {
-        chRes = ch;
-        more = 0;
-    } else if ((ch & 0xE0) == 0xC0) {
-        chRes = (ch & 0x1F);
-        more = 1;
-    } else if ((ch & 0xF0) == 0xE0) {
-        chRes = (ch & 0x0F);
-        more = 2;
-    } else if ((ch & 0xF8) == 0xF0) {
-        chRes = (ch & 0x07);
-        more = 3;
-    } else {
-        NCBI_THROW2(CStringException, eBadArgs,
-            "Source string is not in UTF8 format", 0);
-    }
-    while (more--) {
-        ch = *(++src);
-        if ((ch & 0xC0) != 0x80) {
-            NCBI_THROW2(CStringException, eBadArgs,
-                "Source string is not in UTF8 format", 0);
-        }
-        chRes = (chRes << 6) | (ch & 0x3F);
-    }
-    return chRes;
-}
-
-
 TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
 {
     TUnicodeSymbol chRes = 0;
@@ -3553,6 +3523,9 @@ TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
     } else if ((ch & 0xF8) == 0xF0) {
         chRes = (ch & 0x07);
         more = 3;
+    } else {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Source string is not in UTF8 format", 0);
     }
     return chRes;
 }
@@ -3562,6 +3535,9 @@ TUnicodeSymbol CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
 {
     if ((ch & 0xC0) == 0x80) {
         return (chU << 6) | (ch & 0x3F);
+    } else {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Source string is not in UTF8 format", 0);
     }
     return 0;
 }

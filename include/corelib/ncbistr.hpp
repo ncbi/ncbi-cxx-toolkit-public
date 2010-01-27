@@ -1950,7 +1950,7 @@ public:
     CStringUTF8(const basic_string<T>& src)
         : string()
     {
-        x_Append(src.c_str());
+        x_Append(src.begin(), src.end());
     }
 
     /// Constructor from any character sequence (ISO8859-1, USC-2 or USC-4,
@@ -1975,7 +1975,7 @@ public:
     CStringUTF8& operator= (const basic_string<TChar>& src)
     {
         erase();
-        x_Append(src.c_str());
+        x_Append(src.begin(), src.end());
         return *this;
     }
 
@@ -2001,7 +2001,7 @@ public:
     template <typename TChar>
     CStringUTF8& operator+= (const basic_string<TChar>& src)
     {
-        x_Append(src.c_str());
+        x_Append(src.begin(), src.end());
         return *this;
     }
 
@@ -2040,7 +2040,7 @@ public:
     CStringUTF8& Assign(const basic_string<TChar>& src)
     {
         erase();
-        x_Append(src.c_str());
+        x_Append(src.begin(), src.end());
         return *this;
     }
 
@@ -2095,7 +2095,7 @@ public:
     template <typename TChar>
     CStringUTF8& Append(const basic_string<TChar>& src)
     {
-        x_Append(src.c_str());
+        x_Append(src.begin(),src.end());
         return *this;
     }
 
@@ -2166,7 +2166,7 @@ public:
     ///   Result of the check
     bool IsValid(void) const
     {
-        return MatchEncoding(c_str(), eEncoding_UTF8);
+        return MatchEncoding(*this, eEncoding_UTF8);
     }
     /// Convert to ISO 8859-1 (Latin1) character representation
     ///
@@ -2271,7 +2271,9 @@ public:
     ///   UTF8 zero-terminated buffer
     /// @return
     ///   Unicode code point
-    static TUnicodeSymbol Decode(const char*& src);
+    template <typename TIterator>
+    static
+    TUnicodeSymbol Decode(TIterator& src);
 
     /// Convert first character of UTF8 sequence into Unicode
     ///
@@ -2318,6 +2320,9 @@ private:
     /// Convert Unicode character sequence into UTF8 and append
     /// Sequence can be in UCS-4 (TChar == (U)Int4), UCS-2 (TChar == (U)Int2)
     /// or in ISO8859-1 (TChar == char)
+    template <typename TIterator>
+    void x_Append(TIterator from, TIterator to);
+
     template <typename TChar>
     void x_Append(const TChar* src);
 
@@ -3372,15 +3377,28 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 //  CStringUTF8::
 //
 
+template <typename TIterator>
+static inline
+TUnicodeSymbol CStringUTF8::Decode(TIterator& src)
+{
+    SIZE_TYPE more=0;
+    TUnicodeSymbol chRes = DecodeFirst(*src,more);
+    while (more--) {
+        chRes = DecodeNext(chRes, *(++src));
+    }
+    return chRes;
+}
+
 template <typename TChar>
-inline
 basic_string<TChar> CStringUTF8::x_AsBasicString(
     const TChar* substitute_on_error) const
 {
     TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
     basic_string<TChar> result;
     result.reserve( GetSymbolCount()+1 );
-    for (const char* src = c_str(); *src; ++src) {
+    const_iterator src = begin();
+    const_iterator to = end();
+    for (; src != to; ++src) {
         TUnicodeSymbol ch = Decode(src);
         if (ch > max_char) {
             if (substitute_on_error) {
@@ -3389,7 +3407,7 @@ basic_string<TChar> CStringUTF8::x_AsBasicString(
             } else {
                 NCBI_THROW2(CStringException, eConvert,
                     "Failed to convert symbol to wide character",
-                    (SIZE_TYPE)(src - c_str()));
+                    (src - begin()));
             }
         }
         result.append(1, (TChar)ch);
@@ -3409,8 +3427,25 @@ TUnicodeSymbol CStringUTF8::x_TCharToSymbol(TChar ch)
     return ch;
 }
 
+template <typename TIterator>
+void CStringUTF8::x_Append(TIterator from, TIterator to)
+{
+    TIterator srcBuf;
+    SIZE_TYPE needed = 0;
+
+    for (srcBuf = from; srcBuf != to; ++srcBuf) {
+        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+    }
+    if ( !needed ) {
+        return;
+    }
+    reserve(max(capacity(),length()+needed+1));
+    for (srcBuf = from; srcBuf != to; ++srcBuf) {
+        x_AppendChar( x_TCharToSymbol(*srcBuf) );
+    }
+}
+
 template <typename TChar>
-inline
 void CStringUTF8::x_Append(const TChar* src)
 {
     const TChar* srcBuf;
@@ -3427,7 +3462,6 @@ void CStringUTF8::x_Append(const TChar* src)
         x_AppendChar( x_TCharToSymbol(*srcBuf) );
     }
 }
-
 
 
 
