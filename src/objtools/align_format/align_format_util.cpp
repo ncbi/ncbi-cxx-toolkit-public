@@ -724,11 +724,7 @@ string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id)
     if (id->Which() == CSeq_id::e_General){
         const CDbtag& dtg = id->GetGeneral();
         const string& dbName = dtg.GetDb();
-        if(NStr::CompareNocase(dbName, "TI") == 0){
-             retval = CAlignFormatUtil::GetGnlID(dtg);
-        } else if(NStr::CompareNocase(dbName, "BL_ORD_ID") == 0) {
-             retval = CAlignFormatUtil::GetGnlID(dtg);
-        }
+        retval = CAlignFormatUtil::GetGnlID(dtg);
     } 
     if (retval == "")
       retval = id->GetSeqIdString();
