@@ -753,22 +753,22 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     numtkns = tkns.size ();
 
     if (numtkns > 0) {
-        start = tkns [0];
+        start = NStr::TruncateSpaces(tkns[0]);
     }
     if (numtkns > 1) {
-        stop = tkns [1];
+        stop = NStr::TruncateSpaces(tkns[1]);
     }
     if (numtkns > 2) {
-        feat = tkns [2];
+        feat = NStr::TruncateSpaces(tkns[2]);
     }
     if (numtkns > 3) {
-        qual = tkns [3];
+        qual = NStr::TruncateSpaces(tkns[3]);
     }
     if (numtkns > 4) {
-        val = tkns [4];
+        val = NStr::TruncateSpaces(tkns[4]);
     }
     if (numtkns > 5) {
-        stnd = tkns [5];
+        stnd = NStr::TruncateSpaces(tkns[5]);
     }
 
     if (! start.empty ()) {
