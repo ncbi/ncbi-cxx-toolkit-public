@@ -125,6 +125,25 @@ static string s_GetFastaTitle(const CBioseq& bs, TGetTitleFlags flags)
     }
 }
 
+
+const CBioSource* GetBioSource(const CBioseq_Handle& handle)
+{
+    {{
+        CSeqdesc_CI desc(handle, CSeqdesc::e_Source);
+        if (desc) {
+            return &desc->GetSource();
+        }
+    }}
+    {{
+        CSeqdesc_CI desc(handle.GetTopLevelEntry(), CSeqdesc::e_Source);
+        if (desc) {
+            return &desc->GetSource();
+        }
+    }}
+
+    return NULL;
+}
+
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle)
 {
     {{
