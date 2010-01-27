@@ -303,7 +303,7 @@ int CTarTest::Run(void)
                 _setmode(_fileno(stdin), _O_BINARY);
 #endif // NCBI_OS_MSWIN
             } else if (action == eCreate  ||  action == eAppend) {
-                io = &cout;
+                io = &NcbiCout;
 #ifdef NCBI_OS_MSWIN
                 _setmode(_fileno(stdout), _O_BINARY);
 #endif // NCBI_OS_MSWIN
@@ -398,9 +398,9 @@ int CTarTest::Run(void)
         if (args.GetNExtra()) {
             NCBI_THROW(CArgException, eInvalidArg, "Extra args not allowed");
         }
-        cerr << "Testing archive... " << flush;
+        NcbiCerr << "Testing archive... " << flush;
         tar->Test();
-        cerr << "Done." << endl;
+        NcbiCerr << "Done." << endl;
     } else {
         size_t n = args.GetNExtra();
         if (action == eStream  &&  n == 1) {
@@ -419,7 +419,7 @@ int CTarTest::Run(void)
             }
             CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                    CRWStreambuf::fLogExceptions));
-            NcbiStreamCopy(cout, rs);
+            NcbiStreamCopy(NcbiCout, rs);
         } else {
             if (n) {
                 auto_ptr<CMaskFileName> mask(new CMaskFileName);
@@ -438,7 +438,7 @@ int CTarTest::Run(void)
                     _ASSERT(ir);
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
-                    NcbiStreamCopy(cout, rs);
+                    NcbiStreamCopy(NcbiCout, rs);
                 }
             } else if (action == eList) {
                 entries.reset(tar->List().release());
