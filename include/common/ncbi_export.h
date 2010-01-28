@@ -1205,7 +1205,7 @@
 #  define NCBI_XREADER_ID2_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library xreader_id2
+/* Export specifier for library xreader_cache
  */
 #ifdef NCBI_XREADER_CACHE_EXPORTS
 #  define NCBI_XREADER_CACHE_EXPORT NCBI_DLL_EXPORT
@@ -1221,12 +1221,20 @@
 #  define NCBI_XREADER_PUBSEQOS_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library xreader_pubseqos
+/* Export specifier for library xreader_pubseqos2
  */
 #ifdef NCBI_XREADER_PUBSEQOS2_EXPORTS
 #  define NCBI_XREADER_PUBSEQOS2_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_XREADER_PUBSEQOS2_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library xreader_gicache
+ */
+#ifdef NCBI_XREADER_GICACHE_EXPORTS
+#  define NCBI_XREADER_GICACHE_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XREADER_GICACHE_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library xregexp
