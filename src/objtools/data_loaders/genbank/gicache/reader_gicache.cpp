@@ -88,6 +88,7 @@ void CGICacheReader::x_Initialize(void)
 {
     string index = m_Path+"/gi2acc";
     LOG_POST("CGICacheReader: loading from "<<index);
+    CMutexGuard guard(m_Mutex);
     GICache_ReadData(index.c_str());
 }
 
@@ -136,7 +137,12 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
     if ( seq_id.IsGi() ) {
         CLoadLockSeq_ids ids(result, seq_id);
         char buffer[256];
-        if ( GICache_GetAccession(seq_id.GetGi(), buffer, sizeof(buffer)) ) {
+        int got;
+        {{
+            CMutexGuard guard(m_Mutex);
+            got = GICache_GetAccession(seq_id.GetGi(), buffer, sizeof(buffer));
+        }}
+        if ( got ) {
             if ( buffer[0] ) {
                 try {
                     ids->SetLoadedAccVer(CSeq_id_Handle::GetHandle(buffer));
