@@ -674,7 +674,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             // Check if ncbi_st cookie is set
             const CCgiCookie* st = req.GetCookies().Find(
                 g_GetNcbiString(eNcbiStrings_Stat));
-            CCgiArgs pg_info;
+            CUrlArgs pg_info;
             if ( st ) {
                 pg_info.SetQueryString(st->GetValue());
             }
@@ -682,7 +682,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             // Log ncbi_st values
             CDiagContext_Extra extra = GetDiagContext().Extra();
             // extra.SetType("NCBICGI");
-            ITERATE(CCgiArgs::TArgs, it, pg_info.GetArgs()) {
+            ITERATE(CUrlArgs::TArgs, it, pg_info.GetArgs()) {
                 extra.Print(it->name, it->value);
             }
             extra.Flush();
