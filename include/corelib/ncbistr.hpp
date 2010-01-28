@@ -3416,7 +3416,7 @@ template <typename TChar>
 inline
 TUnicodeSymbol CStringUTF8::x_TCharToSymbol(TChar ch)
 {
-    if (ch < 0) {
+    if (ch < 0) { /* NCBI_FAKE_WARNING */
         return 1 + (TUnicodeSymbol)(numeric_limits<TChar>::max()) +
               (TUnicodeSymbol)(ch - numeric_limits<TChar>::min());
     }
