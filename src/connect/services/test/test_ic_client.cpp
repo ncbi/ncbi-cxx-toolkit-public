@@ -125,9 +125,6 @@ int CTestICClient::Run(void)
 
     const char test_data[] = "The quick brown fox jumps over the lazy dog.";
 
-    bool b = cl.IsOpen();
-    assert(b == true);
-
     string uid = GetDiagContext().GetStringUID();
     string key1 = "TEST_IC_CLIENT_KEY1_" + uid;
     string key2 = "TEST_IC_CLIENT_KEY2_" + uid;
@@ -145,9 +142,6 @@ int CTestICClient::Run(void)
 
     size_t sz = cl.GetSize(key1, version, subkey);
     assert(sz == data_size);
-
-    string owner;
-    cl.GetBlobOwner(key1, version, subkey, &owner);
 
     char buf[1024] = {0,};
     cl.Read(key1, version, subkey, buf, sizeof(buf));

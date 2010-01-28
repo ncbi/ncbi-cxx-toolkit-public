@@ -427,12 +427,6 @@ int CTestNetCacheClient::Run(void)
 
         cout << bsize << endl;
         assert(bsize == 0);
-
-        {{
-        string owner = nc_client.GetOwner(key);
-        NcbiCout << owner << NcbiEndl;
-        }}
-
     }}
 
 
