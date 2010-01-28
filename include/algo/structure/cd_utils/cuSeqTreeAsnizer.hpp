@@ -23,7 +23,15 @@ class NCBI_CDUTILS_EXPORT SeqTreeAsnizer
 public:
 	static bool convertToTreeOption(const CRef< CAlgorithm_type>&  alg, TreeOptions& treeOption);
 	static bool convertToAlgType(const TreeOptions& options, CRef< CAlgorithm_type >& alg);
+
+    //  The first version fills in footprint and child membership fields in the asnSeqTree
+    //  from the data in the AlignmentCollection.  The second version, simply constructs
+    //  a CSequence_tree with the topology of the seqTree that contains dummy footprint information
+    //  and no child membership data (Seq-ids for leaf nodes are of type e_Gi if the parsed name is 
+    //  numeric, or type e_Local if the parsed name is non-numeric.
 	static bool convertToAsnSeqTree(const AlignmentCollection& ac, const SeqTree& seqTree, CSequence_tree& asnSeqTree);
+	static bool convertToAsnSeqTree(const SeqTree& seqTree, CSequence_tree& asnSeqTree);
+
 	static bool convertToSeqTree(CSequence_tree& asnSeqTree, SeqTree& seqTree, SeqLocToSeqItemMap& liMap);
 	static bool addAsnSeqTreeNode(const AlignmentCollection& ac, const SeqTree& seqTree, SeqTreeIterator cursor, CSeqTree_node& asnNode);
 	static bool addChildNode(SeqTree& seqTree, SeqTreeIterator parentNode, CSeqTree_node& asnNode, SeqLocToSeqItemMap& liMap);
@@ -41,7 +49,12 @@ public:
 	static bool writeAlgType(CNcbiOstream& os, const CRef< CSequence_tree >& alg);
 	*/
 private:
-		SeqTreeAsnizer(){};
+
+    SeqTreeAsnizer(){};
+
+	static bool addAsnSeqTreeNode(const SeqTree& seqTree, SeqTreeIterator cursor, CSeqTree_node& asnNode);
+	static void fillAsnSeqTreeNode(const SeqTreeIterator& cursor, CSeqTree_node& asnNode);
+
 };
 
 END_SCOPE(cd_utils)

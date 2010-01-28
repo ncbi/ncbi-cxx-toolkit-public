@@ -163,6 +163,18 @@ bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, C
 NCBI_CDUTILS_EXPORT 
 bool AddCommentToBioseq(CBioseq& bioseq, const string& comment);
 
+//  Simplify the CBioseq object to strip out elements not needed in a CD.
+//  Keep any comment-type CSeqdesc that match a strings in 'keptComments',
+//  and keep the CPDB_block for PDB CSeqdesc if 'keepPDBBlock' is true.
+//  Initially used for simplifying CBioseqs in CSeq_entry blobs retrieved from ID1.
+NCBI_CDUTILS_EXPORT 
+void SimplifyBioseqForCD(CBioseq& bioseq, const vector<string>& keptComments, bool keepPDBBlock);
+
+//  Simplify the CBioseq objects in a CSeq_entry to strip out elements not needed in a CD.
+//  Wrapper for SimplifyBioseqForCD.
+NCBI_CDUTILS_EXPORT 
+void SimplifySeqEntryForCD(CRef< CSeq_entry >& seqEntry, const vector<string>& keptComments, bool keepPDBBlock);
+
 //  First two are wrappers for the third function, that extracts a database source or accession
 //  for any Seq-id type. 
 NCBI_CDUTILS_EXPORT 

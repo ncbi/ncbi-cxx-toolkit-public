@@ -777,6 +777,85 @@ bool AddCommentToBioseq(CBioseq& bioseq, const string& comment)
     return result;
 }
 
+void SimplifyBioseqForCD(CBioseq& bioseq, const vector<string>& keptComments, bool keepPDBBlock)
+{
+    bool hasSource = false;
+    bool hasTitle  = false;
+    string newTitle = kEmptyStr;
+    CSeq_descr& seqDescr = bioseq.SetDescr();
+
+    if (seqDescr.IsSet()) {
+        list< CRef< CSeqdesc > >& descrList = seqDescr.Set();
+        list< CRef< CSeqdesc > >::iterator it = descrList.begin();
+        
+        //  See if we have a title present...
+        while (!hasTitle && it != descrList.end()) {
+            hasTitle = ((*it)->IsTitle());
+            ++it;
+        }
+
+        //  Can't pre-compute descrList.end() since descrList may change within the while loop.
+        it = descrList.begin();
+        while (it != descrList.end()) {
+            //only keep one source field
+            if ((*it)->IsSource() && (!hasSource)) {
+                hasSource = true;
+                it++;
+            } else if ((*it)->IsTitle()) {
+                it++;
+            } else if ((*it)->IsComment()) {
+                for (unsigned int i = 0; i < keptComments.size(); ++i) {
+                    if ((*it)->GetComment().find(keptComments[i]) != NPOS) {
+                        it++;
+                        break;
+                    }
+                }
+            } else if ((*it)->IsPdb()) {
+
+                //  If there is no title, create one from the PDB-Block 'compound' if possible.
+                const CPDB_block& pdbBlock = (*it)->GetPdb();
+                if (!hasTitle && pdbBlock.CanGetCompound() && pdbBlock.GetCompound().size() > 0) {
+                    newTitle = pdbBlock.GetCompound().front();
+                    if (newTitle.length() > 0) {
+                        CRef< CSeqdesc > addedTitle(new CSeqdesc);
+                        addedTitle->SetTitle(newTitle);
+                        descrList.push_back(addedTitle);
+                        hasTitle = true;
+                    }
+                }
+                if (keepPDBBlock) {
+                    it++;
+                } else {
+                    it = descrList.erase(it);
+                }
+            } else {
+                it = descrList.erase(it);
+            }
+        }
+    }
+
+    // reset annot field
+    bioseq.ResetAnnot();   
+}
+
+void SimplifySeqEntryForCD(CRef< CSeq_entry >& seqEntry, const vector<string>& keptComments, bool keepPDBBlock)
+{
+    if (seqEntry.Empty()) return;
+
+    if (seqEntry->IsSeq()) {
+        SimplifyBioseqForCD(seqEntry->SetSeq(), keptComments, keepPDBBlock);
+    } else if (seqEntry->IsSet()) {
+        CBioseq_set::TSeq_set::iterator bssIt = seqEntry->SetSet().SetSeq_set().begin(), bssEnd = seqEntry->SetSet().SetSeq_set().end();
+        for (; bssIt != bssEnd; ++bssIt) {
+            SimplifySeqEntryForCD(*bssIt, keptComments, keepPDBBlock);
+//            if ((*bssIt)->IsSeq()) {
+//                SimplifyBioseqForCD((*bssIt)->SetSeq(), keptComment, keepPDBBlock);
+//            }
+        }
+    }
+}
+
+
 string GetDbSourceForSeqId(const CRef< CSeq_id >& seqID)
 {
     string acc, dbSource;

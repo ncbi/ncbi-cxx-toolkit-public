@@ -227,6 +227,65 @@ bool SeqTreeAsnizer::writeAlgType(CNcbiOstream& os, const CRef< CAlgorithm_type 
 	return WriteASNToStream(os, *alg, false, &err);
 }
 
+bool SeqTreeAsnizer::convertToAsnSeqTree(const SeqTree& seqTree, CSequence_tree& asnSeqTree)
+{
+	if (seqTree.begin() == seqTree.end())
+		return false;
+	asnSeqTree.ResetRoot();
+	CSeqTree_node& asnNode = asnSeqTree.SetRoot();
+	fillAsnSeqTreeNode(seqTree.begin(), asnNode);
+	SeqTree::sibling_iterator sit = (seqTree.begin()).begin();
+	while (sit != (seqTree.begin()).end())
+	{
+		addAsnSeqTreeNode(seqTree, sit, asnNode);
+		++sit;
+	}
+	return true;
+}
+
+bool SeqTreeAsnizer::addAsnSeqTreeNode(const SeqTree& seqTree, SeqTreeIterator cursor, CSeqTree_node& asnNode)
+{
+	// add cursor as a child of asnNode
+	list< CRef< CSeqTree_node > >& childList = asnNode.SetChildren().SetChildren();
+	CRef< CSeqTree_node >  nodeRef(new CSeqTree_node);
+	fillAsnSeqTreeNode(cursor, nodeRef.GetObject());
+	childList.push_back(nodeRef);
+
+	//add the children of cursor as children of  nodeRef
+	SeqTree::sibling_iterator sit = cursor.begin();
+	while (sit != cursor.end())
+	{
+		addAsnSeqTreeNode(seqTree, sit, nodeRef.GetObject());
+		++sit;
+	}
+	return true;
+}
+
+void SeqTreeAsnizer::fillAsnSeqTreeNode(const SeqTreeIterator& cursor, CSeqTree_node& asnNode)
+{
+	asnNode.SetName(cursor->name);
+	asnNode.SetDistance(cursor->distance);
+	CSeqTree_node::C_Children& child = asnNode.SetChildren();
+	if (cursor.number_of_children() == 0)
+	{
+		CSeqTree_node::C_Children::C_Footprint& fp = child.SetFootprint();
+		CSeq_interval& range = fp.SetSeqRange(); //to be filled up later
+		CSeq_id& seqId = range.SetId();
+        int gi = NStr::StringToNumeric(cursor->name);
+        if (gi > 0) {
+            seqId.SetGi(gi);
+        } else {
+            seqId.SetLocal().SetStr(cursor->name);
+        }
+//		CRef<CSeq_id> seqIdRef;
+//		ac.GetSeqIDForRow(cursor->rowID, seqIdRef);
+//		seqId.Assign(*seqIdRef);
+		range.SetFrom(0);
+		range.SetTo(1);
+		fp.SetRowId(cursor->rowID);
+	}
+}
+
 /*
 bool readAsnSeqTree(const CNcbiIStream& is, CRef< CSequence_tree >& alg)
 {
