@@ -733,9 +733,9 @@ public:
     string AsStdSring(void) const
     {
         if( PyUnicode_Check(Get()) ) {
-            return CStringUTF8(
-                    basic_string<Py_UNICODE>(PyUnicode_AS_UNICODE( Get() ),
-                                             static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) ) );
+            return CStringUTF8(CStringUTF8::eCharBuffer,
+                               PyUnicode_AS_UNICODE( Get() ),
+                               static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) );
         } else {
             return string( PyString_AsString( Get() ), static_cast<size_t>( PyString_Size( Get() ) ) );
         }
