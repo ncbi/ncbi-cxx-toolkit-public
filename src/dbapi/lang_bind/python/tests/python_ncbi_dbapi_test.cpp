@@ -588,6 +588,42 @@ BOOST_AUTO_TEST_CASE(TestExecuteStoredProc)
     ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
     // EXECUTE stored procedure with parameters ...
+    ExecuteStr("cursor.execute('exec sp_server_info 1')\n");
+    BOOST_CHECK_THROW(
+        ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+        string
+        );
+    BOOST_CHECK_THROW(
+        ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+        string
+        );
+    ExecuteStr("cursor.fetchall()\n");
+    ExecuteStr("rc = cursor.get_proc_return_status()\n");
+    ExecuteStr("cursor.execute('exec sp_server_info 2')\n");
+    ExecuteStr("cursor.fetchall()\n");
+    ExecuteStr("cursor.fetchall()\n");
+    ExecuteStr("cursor.fetchone()\n");
+    ExecuteStr("cursor.fetchmany(5)\n");
+    ExecuteStr("rc = cursor.get_proc_return_status()\n");
+    ExecuteStr("rc = cursor.get_proc_return_status()\n");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestStoredProcByPos)
+{
+    // Prepare ...
+    {
+        // ExecuteStr("cursor = connection.cursor()\n");
+        ExecuteStr("cursor = conn_simple.cursor()\n");
+    }
+
+    // EXECUTE stored procedure without parameters ...
+    ExecuteStr("cursor.execute('execute sp_databases')\n");
+    ExecuteStr("cursor.fetchall()\n");
+    ExecuteStr("rc = cursor.get_proc_return_status()\n");
+    ExecuteStr("rc = cursor.get_proc_return_status()\n");
+
+    // EXECUTE stored procedure with parameters ...
     ExecuteStr("cursor.callproc('sp_server_info', [1])\n");
     BOOST_CHECK_THROW(
         ExecuteStr("rc = cursor.get_proc_return_status()\n"),
@@ -1082,6 +1118,53 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
         ExecuteSQL("COMMIT TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
+        ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestScenario_1_ByPos)
+{
+    string sql;
+
+    // Prepare ...
+    {
+        ExecuteStr( "cursor = conn_simple.cursor()\n" );
+    }
+
+    // Create a table ...
+    {
+        sql = " CREATE TABLE #sale_stat2 ( \n"
+            " year INT NOT NULL, \n"
+            " month VARCHAR(255) NOT NULL, \n"
+            " stat INT NOT NULL \n"
+            " ) ";
+        ExecuteSQL(sql);
+    }
+
+    // Insert data ..
+    {
+        ExecuteStr("month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']");
+        ExecuteStr("umonth_list = [u'January', u'February', u'March', u'April', u'May', u'June', u'July', u'August', u'September', u'October', u'November', u'December']");
+        ExecuteStr("sql = \"insert into #sale_stat2(year, month, stat) values (@year, @month, @stat)\"");
+        ExecuteSQL("select * from #sale_stat2");
+        ExecuteStr("print \"Empty table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteSQL("BEGIN TRANSACTION");
+        ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
+        ExecuteSQL("select * from #sale_stat2");
+        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("conn_simple.rollback();");
+        ExecuteSQL("select * from #sale_stat2");
+        ExecuteStr("print \"After a 'standard' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteSQL("ROLLBACK TRANSACTION");
+        ExecuteSQL("BEGIN TRANSACTION");
+        ExecuteSQL("select * from #sale_stat2");
+        ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
+        ExecuteSQL("select * from #sale_stat2");
+        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteSQL("COMMIT TRANSACTION");
+        ExecuteSQL("select * from #sale_stat2");
         ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
     }
 }

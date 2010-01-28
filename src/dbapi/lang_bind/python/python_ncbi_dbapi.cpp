@@ -2702,6 +2702,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         const pythonpp::CString python_str(obj);
         const string std_str(python_str);
         return CVariant( std_str );
+#if PY_VERSION_HEX >= 0x02040000
     } else if ( pythonpp::CDateTime::HasSameType(obj) ) {
         const pythonpp::CDateTime python_date(obj);
         const CTime std_date(python_date.GetYear(),
@@ -2726,6 +2727,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         std_date.SetSecond(python_time.GetSecond());
         std_date.SetMicroSecond(python_time.GetMicroSecond());
         return CVariant( std_date );
+#endif
     } else if (obj == CBinary::GetType()) {
         const string value = static_cast<CBinary*>(obj.Get())->GetValue();
         return CVariant::VarBinary(value.c_str(), value.size());
