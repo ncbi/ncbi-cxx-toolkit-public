@@ -376,7 +376,8 @@ int main(void)
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
-    CORE_SetLOGFormatFlags(fLOG_Short | fLOG_DateTime | fLOG_OmitNoteLevel);
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     CORE_LOG(eLOG_Note, "Miscellaneous tests started");

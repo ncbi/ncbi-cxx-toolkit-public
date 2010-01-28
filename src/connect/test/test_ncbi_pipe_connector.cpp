@@ -77,7 +77,7 @@ static void x_SetupDiag(const char* who)
     SetDiagPostPrefix(who);
 
     // Log and data log streams
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOG(LOG_cxx2c());
 }
 
 
@@ -242,7 +242,6 @@ int CTest::Run(void)
 
     ERR_POST(Info << "TEST completed successfully");
     CORE_SetLOG(0);
-
     return 0;
 }
 

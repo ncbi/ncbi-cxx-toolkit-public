@@ -160,13 +160,13 @@ void CTest::Client(void)
 {
     CONNECTOR connector;
 
+    // Log and data log streams
     FILE* logfile = fopen("test_ncbi_namedpipe_connector_client.log", "ab");
     assert(logfile);
 
-    // Log and data log streams
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOGFILE(logfile, 1/*auto-close*/);
 
     // Tests for NAMEDPIPE CONNECTOR
     ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR test ...");
@@ -184,9 +184,8 @@ void CTest::Client(void)
     connector = NAMEDPIPE_CreateConnector(m_PipeName.c_str(), kBufferSize);
     CONN_TestConnector(connector, &m_Timeout, logfile, fTC_Everything);
 
-    fclose(logfile);
+    ERR_POST(Info << "TEST completed successfully");
 
-    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
 }
 

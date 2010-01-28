@@ -101,7 +101,6 @@ int main(int argc, const char* argv[])
     char   buffer[100];
     size_t n_read, n_written;
 
-
     /* Prepare to connect:  parse and check cmd.-line args, etc. */
     s_Args.host         = (argc > 1) ? argv[1] : "";
     s_Args.port         = (argc > 2) ? argv[2] : "";
@@ -121,6 +120,8 @@ int main(int argc, const char* argv[])
             inp_file, user_header);
 
     /* Log stream */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     /* Tune to the test URL using hard-coded pseudo-registry */

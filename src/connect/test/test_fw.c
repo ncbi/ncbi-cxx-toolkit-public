@@ -98,6 +98,8 @@ extern int main(int argc, char** argv)
     }
 
     /* Error logging */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     {{
         FILE* log_fp = fopen("test_fw.log", "a");
         if ( !fp ) {

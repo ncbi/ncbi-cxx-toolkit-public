@@ -44,6 +44,8 @@ int main(void)
     FILE*           data_file;
 
     /* Log and data-log streams */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     data_file = fopen("test_ncbi_memory_connector.log", "wb");
     assert(data_file);
