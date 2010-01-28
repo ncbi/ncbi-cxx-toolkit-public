@@ -576,6 +576,10 @@ GENBANK_READER_ID2_LIBS = ncbi_xreader_id2 $(GENBANK_READER_ID2_LDEP)
 GENBANK_READER_CACHE_LDEP = $(GENBANK_READER_LIBS)
 GENBANK_READER_CACHE_LIBS = ncbi_xreader_cache $(GENBANK_READER_CACHE_LDEP)
 
+GENBANK_READER_GICACHE_LDEP = $(GENBANK_READER_LIBS)
+GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
+        $(GENBANK_READER_GICACHE_LDEP)
+
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
 SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \

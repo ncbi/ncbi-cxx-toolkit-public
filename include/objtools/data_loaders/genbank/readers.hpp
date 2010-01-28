@@ -43,6 +43,7 @@ extern void NCBI_XREADER_PUBSEQOS_EXPORT GenBankReaders_Register_Pubseq(void);
 extern void NCBI_XREADER_PUBSEQOS2_EXPORT GenBankReaders_Register_Pubseq2(void);
 extern void NCBI_XREADER_CACHE_EXPORT    GenBankReaders_Register_Cache (void);
 extern void NCBI_XREADER_CACHE_EXPORT    GenBankWriters_Register_Cache (void);
+extern void NCBI_XREADER_GICACHE_EXPORT  GenBankReaders_Register_GICache(void);
 
 }
 

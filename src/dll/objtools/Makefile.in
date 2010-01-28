@@ -21,5 +21,8 @@ SUB_PROJ =  \
     ncbi_eutils \
     ncbi_align_format
 
+EXPENDABLE_SUB_PROJ = \
+    ncbi_xreader_gicache
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

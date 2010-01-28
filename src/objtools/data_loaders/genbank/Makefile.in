@@ -2,6 +2,8 @@
 
 SUB_PROJ = cache pubseq id2 id1 pubseq2 test
 
+EXPENDABLE_SUB_PROJ = gicache
+
 LIB_PROJ = ncbi_xreader ncbi_xloader_genbank
 
 srcdir = @srcdir@
