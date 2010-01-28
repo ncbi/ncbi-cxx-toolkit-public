@@ -280,27 +280,9 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
 void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 {
     m_SubjectIds.clear();
-
-    // Check if this Bioseq handle contains a Blast-def-line-set object.
-    // If it does, retrieve Seq-ids from all redundant sequences, and 
-    // print them separated by commas.
-    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
-    // its destruction; then extract the list of CBlast_def_line objects.
-    const CRef<CBlast_def_line_set> bdlRef = 
-        CAlignFormatUtil::GetBlastDefline(bh);
-    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
-    
-    if (!bdl.empty()) {
-        ITERATE(list<CRef<CBlast_def_line> >, defl_iter, bdl) {
-            m_SubjectIds.push_back((*defl_iter)->GetSeqid());
-        }
-    } else {
-        // Blast-def-line is not filled, hence retrieve all Seq-ids directly 
-        // from the Bioseq handle's Seq-id.
-        list<CRef<CSeq_id> > next_seqid_list;
-        CShowBlastDefline::GetSeqIdList(bh, next_seqid_list);
-        m_SubjectIds.push_back(next_seqid_list);
-    }
+    list<CRef<CSeq_id> > next_seqid_list;
+    CShowBlastDefline::GetSeqIdList(bh, next_seqid_list);
+    m_SubjectIds.push_back(next_seqid_list);
 }
 
 int CBlastTabularInfo::SetFields(const CSeq_align& align, 

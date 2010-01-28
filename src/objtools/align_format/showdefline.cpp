@@ -247,16 +247,35 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
 {
     ids.clear();
 
+    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
+    // its destruction; then extract the list of CBlast_def_line objects.
+    const CRef<CBlast_def_line_set> bdlRef = 
+        CAlignFormatUtil::GetBlastDefline(bh);
+    const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
+
+    vector< CConstRef<CSeq_id> > original_seqids;
+    if (bdl.empty()) {
+        ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+            original_seqids.push_back(itr->GetSeqId());
+        }
+    } else {
+        ITERATE(CBlast_def_line_set::Tdata, itr, bdl) {
+            ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
+                original_seqids.push_back(*id);
+            }
+        }
+    }
+
     // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
     // created in a BLAST database when it is formatted without indexing.
     // For such ids, create new fake local Seq-ids, saving the first token of 
     // the Bioseq's title, if it's available.
-    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+    ITERATE(vector< CConstRef<CSeq_id> >, itr, original_seqids) {
         CRef<CSeq_id> next_seqid(new CSeq_id());
         string id_token = NcbiEmptyString;
         
-        if (next_seqid->IsGeneral() &&
-            next_seqid->AsFastaString().find("gnl|BL_ORD_ID") 
+        if ((*itr)->IsGeneral() &&
+            (*itr)->AsFastaString().find("gnl|BL_ORD_ID") 
             != string::npos) {
             vector<string> title_tokens;
             id_token = 
@@ -270,7 +289,7 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
             obj_id->SetStr(id_token);
             next_seqid->SetLocal(*obj_id);
         } else {
-                next_seqid->Assign(*itr->GetSeqId());
+            next_seqid->Assign(**itr);
         }
         ids.push_back(next_seqid);
     }
