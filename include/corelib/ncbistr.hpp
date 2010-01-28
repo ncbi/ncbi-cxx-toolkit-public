@@ -1899,17 +1899,24 @@ typedef Uint4 TUnicodeSymbol;
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
 public:
+
+    /// How to verify the character encoding of the source data
     enum EValidate {
         eNoValidate,
         eValidate
     };
 
-    /// Default constructor.
+    /// How to interpret zeros in the source character buffer -
+    /// as end of string, or as part of the data
+    enum ECharBufferType {
+        eZeroTerminated, ///< Character buffer is zero-terminated
+        eCharBuffer      ///< Zeros are part of the data
+    };
+
     CStringUTF8(void)
     {
     }
 
-    /// Destructor.
     ~CStringUTF8(void)
     {
     }
@@ -1960,6 +1967,15 @@ public:
         : string()
     {
         x_Append(src);
+    }
+
+    /// Constructor from any character sequence (ISO8859-1, USC-2 or USC-4,
+    /// depending on the size of TChar).
+    template <typename TChar>
+    CStringUTF8(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
+        : string()
+    {
+        x_Append(src,char_count,type);
     }
 
     /// Assign to UTF8 string
@@ -2057,6 +2073,24 @@ public:
         return *this;
     }
 
+    /// Assign to C string or character buffer in ISO8859-1, USC-2 or USC-4
+    /// (depending on the size of TChar)
+    ///
+    /// @param type
+    ///   How to interpret zeros in the source character buffer -
+    ///   as end of string, or as part of the data
+    /// @param src
+    ///   Source character buffer
+    /// @char_count
+    ///   Number of TChars in the buffer
+    template <typename TChar>
+    CStringUTF8& Assign(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
+    {
+        erase();
+        x_Append(src,char_count,type);
+        return *this;
+    }
+
     /// Assign to a single character
     ///
     /// @param ch
@@ -2108,6 +2142,23 @@ public:
     CStringUTF8& Append(const TChar* src)
     {
         x_Append(src);
+        return *this;
+    }
+
+    /// Append a C string or character buffer in ISO8859-1, USC-2 or USC-4
+    /// (depending on the size of TChar)
+    ///
+    /// @param type
+    ///   How to interpret zeros in the source character buffer -
+    ///   as end of string, or as part of the data
+    /// @param src
+    ///   Source character buffer
+    /// @char_count
+    ///   Number of TChars in the buffer
+    template <typename TChar>
+    CStringUTF8& Append(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
+    {
+        x_Append(src,char_count,type);
         return *this;
     }
 
@@ -2324,7 +2375,8 @@ private:
     void x_Append(TIterator from, TIterator to);
 
     template <typename TChar>
-    void x_Append(const TChar* src);
+    void x_Append(const TChar* src,
+        SIZE_TYPE to = NPOS, ECharBufferType type = eZeroTerminated);
 
     /// Check how many bytes is needed to represent the code point in UTF8
     static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
@@ -3442,19 +3494,22 @@ void CStringUTF8::x_Append(TIterator from, TIterator to)
 }
 
 template <typename TChar>
-void CStringUTF8::x_Append(const TChar* src)
+void CStringUTF8::x_Append(const TChar* src, SIZE_TYPE to, ECharBufferType type)
 {
     const TChar* srcBuf;
     SIZE_TYPE needed = 0;
+    SIZE_TYPE pos=0;
 
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
+    for (pos=0, srcBuf=src;
+            pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
         needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
     }
     if ( !needed ) {
         return;
     }
     reserve(max(capacity(),length()+needed+1));
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
+    for (pos=0, srcBuf=src;
+            pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
         x_AppendChar( x_TCharToSymbol(*srcBuf) );
     }
 }
