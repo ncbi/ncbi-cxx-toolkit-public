@@ -38,6 +38,7 @@
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/random_gen.hpp>
+#include <corelib/ncbi_mask.hpp>
 #include "blastdb_aux.hpp"
 
 #include <algo/blast/blastinput/blast_input.hpp>
@@ -88,7 +89,8 @@ enum {
 
 /// Types of tests (bit).
 enum {
-    e_IsamLookup = 1
+    e_IsamLookup = 1,
+    e_Legacy = 2
 };
 
 static string s_VerbosityString(int v)
@@ -177,16 +179,6 @@ void CBlastDbCheckApplication::Init(void)
                             CArgAllowValuesBetween((int)e_Silent,
                                                    (int)e_Max, true));
     
-    arg_desc->SetCurrentGroup("Test Methods");
-    
-    arg_desc->AddFlag
-        ("full",
-         "If true, test every sequence (warning: may be slow).");
-    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "stride");
-    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "random");
-    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "ends");
-    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "isam");
-    
 // Threading and multiprocess support should not be too complex, but
 // I'll defer writing them until it is more obvious that there is
 // actually a need for them.
@@ -200,26 +192,38 @@ void CBlastDbCheckApplication::Init(void)
 //          "Number of threads (or processes with -fork) to use at once.",
 //          CArgDescriptions::eInteger, "1");
     
-    arg_desc->AddDefaultKey
+    arg_desc->SetCurrentGroup("Test Methods");
+    
+    arg_desc->AddFlag
+        ("full",
+         "If true, test every sequence (warning: may be slow).");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "stride");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "random");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "ends");
+    
+    arg_desc->AddOptionalKey
         ("stride", "StrideLength",
          "Check integrity of every Nth sequence.",
-         CArgDescriptions::eInteger, "10000");
+         CArgDescriptions::eInteger);
     
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("random", "NumSequences",
          "Check this many randomly selected sequences.",
-         CArgDescriptions::eInteger, "200");
+         CArgDescriptions::eInteger);
     
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("ends", "NumSequences",
          "Check this many sequences at each end of the database.",
-         CArgDescriptions::eInteger, "200");
+         CArgDescriptions::eInteger);
     
-    arg_desc->AddDefaultKey
-        ("isam", "IsamLookups",
-         "Specify false to disable ISAM testing.",
-         CArgDescriptions::eBoolean, "T");
-    
+    arg_desc->AddFlag
+        ("no_isam", 
+         "Disable ISAM testing.");
+
+    arg_desc->AddFlag
+        ("legacy", 
+         "Enable check for existence of temporary files.");
+         
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -260,8 +264,8 @@ private:
 };
 
 
-class CWrap;
-class CTestAction;
+//class CWrap;
+//class CTestAction;
 
 
 class CTestAction : public CObject {
@@ -271,7 +275,7 @@ public:
     {
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen) = 0;
+    virtual int DoTest(CSeqDB & db, TSeen & seen) = 0;
     
     ostream & Log(CSeqDB & db, int lvl)
     {
@@ -299,105 +303,59 @@ public:
 private:
     CBlastDbCheckLog & m_Log;
     const string m_TestName;
+
+protected:
     int m_Flags;
+
 };
 
-
+/*
 class CWrap : public CObject {
 public:
-    virtual bool DoTest(CTestAction & action, CSeqDB & db, TSeen & seen) = 0;
+    virtual int DoTest(CTestAction & action, CSeqDB & db, TSeen & seen) = 0;
 };
+*/
 
 
 // class CForkWrap : public CWrap {
 // public:
-//     virtual bool DoTest(CTestAction & action, CSeqDB & db, TSeen & seen)
+//     virtual int DoTest(CTestAction & action, CSeqDB & db, TSeen & seen)
 //     {
 //         throw runtime_error("unimp: virtual void CForkWrap");
 //     }
 // };
 
 
-class CTestActionList : public CTestAction {
+class CTestActionList : public CObject {
 public:
-    // This test does not actually use the flags yet.
-    CTestActionList(CBlastDbCheckLog & log, int flags)
-        : CTestAction(log, "All Tests", flags)
-    {
-    }
-    
     void Add(CTestAction * action)
     {
         m_List.push_back(CRef<CTestAction>(action));
     }
     
+    /*
     void SetWrap(CWrap * wrap)
     {
         m_Wrap = wrap;
-    }
+    }*/
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen)
+    int DoTests(CSeqDB & db, TSeen & seen)
     {
-        bool success = true;
-        bool oneline = (LogLevel() == e_Summary);
-        
-        if (oneline) {
-            Log(db, e_Brief) << "... " << flush;
-        }
+        int  tot_faults = 0;
         
         NON_CONST_ITERATE(vector< CRef<CTestAction> >, iter, m_List) {
             CTestAction & test = **iter;
-            
-            bool ok = false;
-            string msg;
-            
-            try {
-                if (m_Wrap) {
-                    ok = m_Wrap->DoTest(test, db, seen);
-                } else {
-                    ok = test.DoTest(db, seen);
-                }
-                if (ok) {
-                    test.Log(db, e_Details) << " : pass" << endl;
-                } else {
-                    if (oneline) {
-                        test.LogMore(e_Summary) << "\n";
-                        oneline = false;
-                    }
-                    
-                    test.Log(db, e_Brief) << " : fail" << endl;
-                }
-            }
-            catch(exception & e) {
-                msg = e.what();
-            }
-            
-            if (msg.size()) {
-                test.Log(db, e_Brief)
-                    << "Caught exception: << " << msg << " >>" << endl;
-            }
-            
-            if (! ok) {
-                success = false;
-                break;
-            }
+            /* if (m_Wrap)  num_faults = m_Wrap->DoTest(test, db, seen);
+               else  num_faults = test.DoTest(db, seen); */
+            tot_faults += test.DoTest(db, seen);
         }
         
-        int lvl = success ? e_Summary : e_Brief;
-        string msg = success ? "PASS" : "FAIL";
-        
-        if (oneline) {
-            LogMore(lvl) << msg << endl;
-        } else {
-            Log(db, lvl) << msg << endl;
-        }
-
-        return success;
+        return tot_faults;
     }
     
 private:
     vector< CRef<CTestAction> > m_List;
-    CRef<CWrap> m_Wrap;
+    //CRef<CWrap> m_Wrap;
 };
 
 
@@ -409,12 +367,15 @@ public:
     {
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & /*seen*/)
+    virtual int DoTest(CSeqDB & db, TSeen & /*seen*/)
     {
         // Here I get more values than I actually have useful tests
         // for, because I want to trigger exceptions due to binary
         // file corruption in the all the myriad files.
-        
+
+        int num_failures = 0;
+
+        try {
         int noid = db.GetNumOIDs();
         int nseq = db.GetNumSeqs();
         /*string t =*/ db.GetTitle();
@@ -424,30 +385,59 @@ public:
         
         vector<string> vols;
         db.FindVolumePaths(vols);
-        
+
         int nv = vols.size();
         
         SSeqDBTaxInfo taxinfo;
         db.GetTaxInfo(9606, taxinfo);
         
-        bool ok = true;
-        
         if (! d.size()) {
             Log(db, e_Brief) << "db has empty date string" << endl;
-            ok = false;
+            num_failures++;
         }
         if (! nv) {
             Log(db, e_Brief) << "db has no volumes" << endl;
-            ok = false;
+            num_failures++;
         }
+
+        ITERATE(vector<string>, vol, vols) {
+            
+            CMaskFileName db_mask;
+            db_mask.Add(CFile(*vol).GetName()+".???");
+
+            CDir dir(CFile(*vol).GetDir());
+
+            CDir::TEntries entries(dir.GetEntries(db_mask));
+            ITERATE(CDir::TEntries, entry, entries) {
+                
+                // check for legacy files
+                if (m_Flags & e_Legacy) {
+                    CMaskFileName legacy_name;
+                    legacy_name.Add("*tm");
+                    if (legacy_name.Match((*entry)->GetExt())) {
+                        Log(db, e_Brief) << "Error: Legacy file " << (*entry)->GetPath() <<
+                             " exists." << endl;
+                        num_failures++;
+                    }
+                }
+
+                // check for zero-length files
+                if ((*entry)->IsFile() && (CFile((*entry)->GetPath()).GetLength() <= 0)) {
+                    Log(db, e_Brief) << "Error: File " << (*entry)->GetPath() <<
+                             " has zero length." << endl;
+                    num_failures++;
+                }
+            }
+        }
+
         if ((nseq > noid) || ((! tl) != (! noid)) || ((! vl) && tl)) {
             Log(db, e_Brief) << "sequence count/length mismatch" << endl;
-            ok = false;
+            num_failures++;
         }
         string hs = taxinfo.scientific_name;
         if (hs != "Homo sapiens") {
             Log(db, e_Brief) << "tax info looks wrong (" << hs << ")" << endl;
-            ok = false;
+            num_failures++;
         }
         
         string s1("a"), s2("b");
@@ -464,12 +454,14 @@ public:
             } else {
                 s2 = s3;
             }
+        }} catch(exception &e) {
+            num_failures++;
+            Log(db, e_Brief) << "Caught exception: " << e.what() << endl;
         }
         
-        return ok;
+        return num_failures;
     }
 };
-
 
 bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
 {
@@ -577,16 +569,16 @@ public:
     {
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen)
+    virtual int DoTest(CSeqDB & db, TSeen & seen)
     {
         Log(db, e_Minutiae) << "<testing every " << m_N << "th OID>" << endl;
         
         for(int oid = 0; db.CheckOrFindOID(oid); oid += m_N) {
             if (! TestOID(db, seen, oid)) {
-                return false;
+                return 1;
             }
         }
-        return true;
+        return 0;
     }
     
 private:
@@ -604,14 +596,14 @@ public:
         m_Rng.SetSeed(t);
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen)
+    virtual int DoTest(CSeqDB & db, TSeen & seen)
     {
         int max = db.GetNumOIDs();
         
         if (! max) {
-            // Technically this is still a valid DB.
-            Log(db, e_Details) << "Empty volume" << endl;
-            return true;
+            // Technically this is still a valid DB... not any more...
+            Log(db, e_Details) << "Error: Empty volume" << endl;
+            return 1;
         }
         
         set<int> oids;
@@ -631,11 +623,11 @@ public:
         
         ITERATE(set<int>, iter, oids) {
             if (! TestOID(db, seen, *iter)) {
-                return false;
+                return 1;
             }
         }
         
-        return true;
+        return 0;
     }
     
 private:
@@ -651,7 +643,7 @@ public:
     {
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen)
+    virtual int DoTest(CSeqDB & db, TSeen & seen)
     {
         Log(db, e_Minutiae) << "<testing " << m_N << " OIDs at each end>" << endl;
 
@@ -664,9 +656,9 @@ public:
                 }
             }
             if (! TestOID(db, seen, oid))
-                return false;
+                return 1;
         }
-        return true;
+        return 0;
     }
     
 private:
@@ -677,54 +669,63 @@ private:
 
 class CTestData : public CObject {
 public:
-    virtual bool Test(CTestAction & action) = 0;
+    CTestData(CBlastDbCheckLog & outp, string dbtype)
+        : m_Out      (outp),
+          m_DbType   (dbtype) { }
+
+    virtual bool Test(CTestActionList & action) = 0;
+
+protected:
+    CBlastDbCheckLog & m_Out;
+    string             m_DbType;
 };
 
 
 class CDbTest : public CTestData {
 public:
     CDbTest(CBlastDbCheckLog & outp, string db, string dbtype)
-        : m_Out    (outp),
-          m_Db     (db),
-          m_DbType (dbtype)
-    {
-    }
+        : CTestData(outp, dbtype),
+          m_Db     (db) { }
     
-    virtual bool Test(CTestAction & action);
+    virtual bool Test(CTestActionList & action);
     
 private:
-    CBlastDbCheckLog & m_Out;
-    
     string m_Db;
-    string m_DbType;
 
-    void x_GetVolumeList(const vector <string> &dbs, 
+    int x_GetVolumeList(const vector <string> &dbs, 
                                 CSeqDB::ESeqType stype, 
-                                set <string> &list) const;
+                                set <string> &vlist,
+                                set <string> &alist) const;
 };
 
-void CDbTest::x_GetVolumeList(const vector <string>  &dbs, 
+int CDbTest::x_GetVolumeList(const vector <string>  &dbs, 
                               CSeqDB::ESeqType       stype, 
-                              set <string>          &list) const {
+                              set <string>          &vlist,
+                              set <string>          &alist) const {
 
+    int retval = 0;
     ITERATE(vector<string>, iter, dbs) {
         vector <string> paths;
+        vector <string> alias;
         try {
-            CSeqDB::FindVolumePaths(*iter, stype, paths);
+            CSeqDB::FindVolumePaths(*iter, stype, paths, &alias);
         } catch (...) {
             m_Out.Log(e_Summary) 
                  << endl << "BLAST AliasDB error: Could not find all volume or alias "
                  << "files referenced in " << *iter << ", [skipped]" << endl;
+            retval++;
             continue;
         }
-        list.insert(paths.begin(), paths.end());
+        vlist.insert(paths.begin(), paths.end());
+        alist.insert(alias.begin(), alias.end());
     }
+    return retval;
 }
 
-bool CDbTest::Test(CTestAction & action)
+bool CDbTest::Test(CTestActionList & action)
 {
     TSeen seen;
-    bool success = true;
+    int tot_faults = 0;
     
     vector<string> dbs;
     NStr::Tokenize(m_Db, " ", dbs, NStr::eMergeDelims);
@@ -732,8 +733,9 @@ bool CDbTest::Test(CTestAction & action)
     CSeqDB::ESeqType seqtype = ParseTypeString(m_DbType);
 
     set <string> vol_list;
+    set <string> ali_list;
     
-    x_GetVolumeList(dbs, seqtype, vol_list);
+    tot_faults += x_GetVolumeList(dbs, seqtype, vol_list, ali_list);
     
     m_Out.Log(e_Summary)
         << "Testing " << vol_list.size() << " volume(s)." << endl;
@@ -742,12 +744,12 @@ bool CDbTest::Test(CTestAction & action)
     
     ITERATE(set<string>, iter, vol_list) {
         CRef<CSeqDB> db(new CSeqDB(*iter, seqtype));
-        bool okay = action.DoTest(*db, seen);
+        int num_faults = action.DoTests(*db, seen);
         
-        if (okay) {
-            passed ++;
+        if (num_faults) {
+            tot_faults += num_faults;
         } else {
-            success = false;
+            passed ++;
         }
     }
     
@@ -758,11 +760,16 @@ bool CDbTest::Test(CTestAction & action)
     } else {
         m_Out.Log(e_Brief)
             << " Result=FAILURE. "
-            << (total-passed) << " errors reported for "
+            << (total-passed) << " errors reported in "
             << total << " volume(s)." << endl;
     }
     
-    return success;
+    if (tot_faults) {
+        m_Out.Log(e_Brief)
+           << "Total errors: " << tot_faults << endl;
+    }
+    
+    return (tot_faults == 0);
 }
 
 class CDirTest : public CTestData {
@@ -772,50 +779,49 @@ public:
              string dbtype,
              int threads,
              bool recurse)
-        : m_Dir     (dir),
-          m_Out     (outp),
-          m_DbType  (dbtype),
+        : CTestData(outp, dbtype),
+          m_Dir     (dir),
           m_Threads (threads),
-          m_Recurse (recurse)
-    {
-    }
+          m_Recurse (recurse) { }
     
-    virtual bool Test(CTestAction & action);
+    virtual bool Test(CTestActionList & action);
     
 private:
     string         m_Dir;
     vector<SSeqDBInitInfo> m_DBs;
     
-    CBlastDbCheckLog & m_Out;
-    
-    string m_DbType;
     int    m_Threads;
     bool   m_Recurse;
 
-    void x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &list) const;
+    int x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &vlist, set <string> &alist) const;
 };
 
-void CDirTest::x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &list) const {
+int CDirTest::x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &vlist, set <string> &alist) const {
 
+    int retval = 0;
     ITERATE(vector<SSeqDBInitInfo>, iter, m_DBs) {
         if (iter->m_MoleculeType != stype) continue;
         vector <string> paths;
+        vector <string> alias;
         try {
-            CSeqDB::FindVolumePaths(iter->m_BlastDbName, iter->m_MoleculeType, paths);
+            CSeqDB::FindVolumePaths(iter->m_BlastDbName, iter->m_MoleculeType, paths, &alias);
         } catch (...) {
             m_Out.Log(e_Summary) 
                  << endl << "BLAST AliasDB error: Could not find all volume or alias "
                  << "files referenced in " << iter->m_BlastDbName << ", [skipped]" << endl;
+            retval++;
             continue;
         }
-        list.insert(paths.begin(), paths.end());
+        vlist.insert(paths.begin(), paths.end());
+        alist.insert(alias.begin(), alias.end());
     }
+    return retval;
    
 };
 
-bool CDirTest::Test(CTestAction & action)
+bool CDirTest::Test(CTestActionList & action)
 {
-    bool success = true;
+    int tot_faults = 0;
     
     m_Out.Log(e_Summary)
         << "Finding database volumes..." << flush;
@@ -823,10 +829,12 @@ bool CDirTest::Test(CTestAction & action)
     m_DBs = FindBlastDBs(m_Dir, m_DbType, m_Recurse, true);
 
     set <string> prot_list;
+    set <string> prot_alias;
     set <string> nucl_list;
+    set <string> nucl_alias;
     
-    x_GetVolumeList(CSeqDB::eProtein, prot_list);
-    x_GetVolumeList(CSeqDB::eNucleotide, nucl_list);
+    tot_faults += x_GetVolumeList(CSeqDB::eProtein, prot_list, prot_alias);
+    tot_faults += x_GetVolumeList(CSeqDB::eNucleotide, nucl_list, nucl_alias);
     
     m_Out.Log(e_Summary) << "(done)" << endl;
     
@@ -841,12 +849,12 @@ bool CDirTest::Test(CTestAction & action)
         CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eProtein));
         TSeen seen;
         
-        bool okay = action.DoTest(*db, seen);
+        int num_faults = action.DoTests(*db, seen);
         
-        if (okay) {
-            passed ++;
+        if (num_faults) {
+            tot_faults += num_faults;
         } else {
-            success = false;
+            passed ++;
         }
     }
     
@@ -855,12 +863,12 @@ bool CDirTest::Test(CTestAction & action)
         CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eNucleotide));
         TSeen seen;
         
-        bool okay = action.DoTest(*db, seen);
+        int num_faults  = action.DoTests(*db, seen);
         
-        if (okay) {
-            passed ++;
+        if (num_faults) {
+            tot_faults += num_faults;
         } else {
-            success = false;
+            passed ++;
         }
     }
 
@@ -871,11 +879,16 @@ bool CDirTest::Test(CTestAction & action)
     } else {
         m_Out.Log(e_Brief)
             << " Result=FAILURE. "
-            << (total-passed) << " errors reported for "
+            << (total-passed) << " errors reported in "
             << total << " volumes." << endl;
     }
+
+    if (tot_faults) {
+        m_Out.Log(e_Brief)
+           << "Total errors: " << tot_faults << endl;
+    }
     
-    return success;
+    return (tot_faults == 0);
 }
 
 
@@ -935,70 +948,65 @@ int CBlastDbCheckApplication::Run(void)
             data.Reset(new CDirTest(output, dir, dbtype, 1, recurse));
         }
         
-        // Build action object (set of tests)
-        
-        bool full = !! args["full"];
-        //bool fork1 = !! args["fork"];
-        
-        // FIXME: should use flags for all of these
-        int stride = 1;
-        int random_sample = 0;
-        int end_amt = 0;
-        bool isam = false;
-        
-        if (full) {
-            output.Log(e_Summary)
-                << "Using `full' mode: every OID will be tested." << endl;
-            
-            stride = 1;
-            random_sample = 0;
-            end_amt = 0;
-        } else {
-            stride = args["stride"].AsInteger();
-            random_sample = args["random"].AsInteger();
-            end_amt = args["ends"].AsInteger();
-            isam = args["isam"].AsString() == "T";
-        }
-        
-        // Behavior modification flags
+        // Set up testing modifiers
         
         int flags = 0;
-        
+
+        if (!args["no_isam"])  flags |= e_IsamLookup;
         output.Log(e_Summary)
-            << "ISAM testing is " << (isam ? "EN" : "DIS") << "ABLED." << endl;
+            << "ISAM testing is " << (args["no_isam"] ? "DIS" : "EN") << "ABLED." << endl;
         
-        if (isam) {
-            flags |= e_IsamLookup;
-        }
+        if (args["legacy"]) flags |= e_Legacy;
+        output.Log(e_Summary)
+            << "Legacy testing is " << (args["legacy"] ? "EN" : "DIS") << "ABLED." << endl;
         
-        // Test actions
+        //bool fork1 = !! args["fork"];
         
-        CRef<CTestActionList> tests(new CTestActionList(output, flags));
+        // Build test actions
+        
+        CRef<CTestActionList> tests(new CTestActionList());
         
         tests->Add(new CMetaDataTest(output, flags));
         
-        if (stride) {
-            if (! full) {
-                output.Log(e_Summary)
-                    << "Testing every " << stride << "-th OID." << endl;
-            }
+        bool default_set = false;
+
+        if (args["full"]) {
+            output.Log(e_Summary)
+                << "Using `full' mode: every OID will be tested." << endl;
+            tests->Add(new CStrideTest(output, 1, flags));
+            default_set = true;
+        }
             
+        if (args["stride"]) {
+            int stride = args["stride"].HasValue() ? args["stride"].AsInteger() : 10000;
+            output.Log(e_Summary)
+                << "Testing every " << stride << "-th OID." << endl;
             tests->Add(new CStrideTest(output, stride, flags));
+            default_set = true;
         }
         
-        if (random_sample) {
+        if (args["random"]) {
+            int random_sample = args["random"].HasValue() ? args["random"].AsInteger(): 200;
             output.Log(e_Summary)
                 << "Testing " << random_sample << " randomly sampled OIDs." << endl;
-            
             tests->Add(new CSampleTest(output, random_sample, flags));
+            default_set = true;
         }
         
-        if (end_amt) {
+        if (args["ends"]) {
+            int end_amt = args["ends"].HasValue() ? args["ends"].AsInteger() : 200;
             output.Log(e_Summary)
                 << "Testing first " << end_amt
                 << " and last " << end_amt << " OIDs." << endl;
-            
             tests->Add(new CEndsTest(output, end_amt, flags));
+            default_set = true;
+        }
+        
+        if (!default_set) {
+            int random_sample = 200;
+            output.Log(e_Summary)
+                << "By default, testing " << random_sample << " randomly sampled OIDs." << endl;
+            tests->Add(new CSampleTest(output, random_sample, flags));
         }
         
         //if (fork1) {
