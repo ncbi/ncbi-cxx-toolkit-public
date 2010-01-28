@@ -1,6 +1,6 @@
 # $Id$
 
-
+REQUIRES = unix
 
 APP = test_reader_gicache
 SRC = test_reader_gicache

@@ -1,5 +1,7 @@
 # $Id$
 
+REQUIRES = unix
+
 SRC = reader_gicache gicache
 
 LIB = ncbi_xreader_gicache
