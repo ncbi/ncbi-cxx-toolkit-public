@@ -28,7 +28,7 @@
 * ===========================================================================
 */
 
-/// @file search_strateg.cpp
+/// @file search_strategy.cpp
 /// Imports and exports search strategies
 
 #include <ncbi_pch.hpp>
