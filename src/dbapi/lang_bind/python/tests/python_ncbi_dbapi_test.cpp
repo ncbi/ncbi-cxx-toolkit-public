@@ -1113,7 +1113,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
-        ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
+        ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
         ExecuteSQL("COMMIT TRANSACTION");
