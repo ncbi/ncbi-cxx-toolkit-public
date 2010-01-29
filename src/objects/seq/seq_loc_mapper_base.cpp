@@ -1404,7 +1404,7 @@ x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
             if (src_from != kInvalidSeqPos) src_from *= 3;
             TSeqPos dst_from = mrg.m_Dst_from;
             if (dst_from != kInvalidSeqPos) dst_from *= 3;
-            TSeqPos len = mrg.m_Src_to - mrg.m_Src_from;
+            TSeqPos len = mrg.m_Src_to - mrg.m_Src_from + 1;
             if (len != kInvalidSeqPos) len *= 3;
             CRef<CMappingRange> new_rg = m_Mappings->AddConversion(
                 mrg.m_Src_id_Handle, src_from, len, mrg.m_Src_strand,
