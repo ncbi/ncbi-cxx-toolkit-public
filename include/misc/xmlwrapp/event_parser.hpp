@@ -419,6 +419,23 @@ protected:
 
     //####################################################################
     /**
+     * Override this memeber function to receive the internal subset
+     * declaration message.
+     *
+     * @param name The root element name.
+     * @param external_id The external ID.
+     * @param public_id The public ID.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool internal_subset_declaration (const std::string &name,
+                                              const std::string &external_id,
+                                              const std::string &system_id);
+
+    //####################################################################
+    /**
      * Override this memeber function to receive the attribute
      * declaration message.
      *
