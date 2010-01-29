@@ -38,6 +38,7 @@
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/random_gen.hpp>
+#include <util/line_reader.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include "blastdb_aux.hpp"
 
@@ -279,7 +280,7 @@ public:
     
     ostream & Log(CSeqDB & db, int lvl)
     {
-        m_Log.Log(lvl) << db.GetDBNameList() << " / " << m_TestName << ": ";
+        m_Log.Log(lvl) << "  " << db.GetDBNameList() << " / " << m_TestName << ": ";
         return m_Log.Log(lvl);
     }
     
@@ -358,10 +359,9 @@ private:
     //CRef<CWrap> m_Wrap;
 };
 
-
+        
 class CMetaDataTest : public CTestAction {
 public:
-    // This test does not actually use the flags yet.
     CMetaDataTest(CBlastDbCheckLog & log, int flags)
         : CTestAction(log, "MetaData", flags)
     {
@@ -392,11 +392,11 @@ public:
         db.GetTaxInfo(9606, taxinfo);
         
         if (! d.size()) {
-            Log(db, e_Brief) << "db has empty date string" << endl;
+            Log(db, e_Brief) << "[ERROR] db has empty date string" << endl;
             num_failures++;
         }
         if (! nv) {
-            Log(db, e_Brief) << "db has no volumes" << endl;
+            Log(db, e_Brief) << "[ERROR] db has no volumes" << endl;
             num_failures++;
         }
 
@@ -415,7 +415,7 @@ public:
                     CMaskFileName legacy_name;
                     legacy_name.Add("*tm");
                     if (legacy_name.Match((*entry)->GetExt())) {
-                        Log(db, e_Brief) << "Error: Legacy file " << (*entry)->GetPath() <<
+                        Log(db, e_Brief) << "[ERROR] legacy file " << (*entry)->GetPath() <<
                              " exists." << endl;
                         num_failures++;
                     }
@@ -423,7 +423,7 @@ public:
 
                 // check for zero-length files
                 if ((*entry)->IsFile() && (CFile((*entry)->GetPath()).GetLength() <= 0)) {
-                    Log(db, e_Brief) << "Error: File " << (*entry)->GetPath() <<
+                    Log(db, e_Brief) << "[ERROR] file " << (*entry)->GetPath() <<
                              " has zero length." << endl;
                     num_failures++;
                 }
@@ -431,12 +431,12 @@ public:
         }
 
         if ((nseq > noid) || ((! tl) != (! noid)) || ((! vl) && tl)) {
-            Log(db, e_Brief) << "sequence count/length mismatch" << endl;
+            Log(db, e_Brief) << "[ERROR] sequence count/length mismatch" << endl;
             num_failures++;
         }
         string hs = taxinfo.scientific_name;
         if (hs != "Homo sapiens") {
-            Log(db, e_Brief) << "tax info looks wrong (" << hs << ")" << endl;
+            Log(db, e_Brief) << "[ERROR] tax info looks wrong (" << hs << ")" << endl;
             num_failures++;
         }
         
@@ -456,7 +456,8 @@ public:
             }
         }} catch(exception &e) {
             num_failures++;
-            Log(db, e_Brief) << "Caught exception: " << e.what() << endl;
+            Log(db, e_Brief) << "  [ERROR] caught exception." << endl;
+            Log(db, e_Details) << e.what() << endl;
         }
         
         return num_failures;
@@ -551,11 +552,11 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
     string msg2 = minutiae.str();
     
     if (msg.size()) {
-        Log(db, e_Details) << msg << flush;
+        Log(db, e_Details) << "    " << msg << flush;
     }
     
     if (msg2.size()) {
-        Log(db, e_Minutiae) << msg2 << flush;
+        Log(db, e_Minutiae) << "      " << msg2 << flush;
     }
     
     return rv;
@@ -602,7 +603,7 @@ public:
         
         if (! max) {
             // Technically this is still a valid DB... not any more...
-            Log(db, e_Details) << "Error: Empty volume" << endl;
+            Log(db, e_Brief) << "  [ERROR] empty volume" << endl;
             return 1;
         }
         
@@ -648,7 +649,7 @@ public:
         Log(db, e_Minutiae) << "<testing " << m_N << " OIDs at each end>" << endl;
 
         for(int oid = 0; db.CheckOrFindOID(oid); oid ++) {
-            if (oid > m_N) {
+            if (oid >= m_N) {
                 int new_oid = db.GetNumOIDs()-m_N;
                 
                 if (new_oid > oid) {
@@ -666,6 +667,194 @@ private:
     int m_N;
 };
 
+
+class CAliasTest : public CObject {
+public:
+    CAliasTest(CBlastDbCheckLog & log, int flags)
+        : m_Log (log),
+          m_TestName ("AliasFileTest")
+    {
+    }
+    
+    int DoTest(const string & name, TSeen & /*seen*/)
+    {
+        // These tests are adapted from 
+        // intranet/cvsutils/index.cgi/internal/blast/DBUpdates/test_alias_file.pl
+
+        int num_failures = 0;
+
+        const CFile f(name);
+        const string dir(f.GetDir());
+        const string base(f.GetBase());
+        const string ext(f.GetExt());
+
+        if (! f.Exists()) {
+            Log(name, e_Brief) << "  [ERROR] alias file does not exist" << endl;
+            return ++num_failures;
+        }
+
+        if (f.GetLength() <= 0) {
+            Log(name, e_Brief) << "  [ERROR] alias file has zero length" << endl;
+            return ++num_failures;
+        }
+
+        int oidlist, gilist, nseq, length, mem_bit, first_oid, last_oid, maxoid, maxlen;
+        oidlist=gilist=nseq=length=mem_bit=first_oid=last_oid=maxoid=maxlen=-1;
+
+        CNcbiIfstream is(name.c_str());
+        CStreamLineReader line(is);
+
+        do {
+            ++line;
+            if (NStr::StartsWith(*line, '#')) continue;  // ignore comments
+            if (NStr::IsBlank(*line))  continue;  // ignore empty lines
+
+            vector <string> tokens;
+            NStr::Tokenize(*line, " \t\n\r", tokens, NStr::eMergeDelims);
+
+            if (tokens.size() <= 1) {
+                Log(name, e_Brief) << "  [ERROR] no value(s) found for keyword " 
+                               << tokens[0] << endl;
+                num_failures++;
+                continue;
+            }
+
+            if (tokens[0] == "DBLIST") {
+                // Don't check for right now
+            } else if (tokens[0] == "TITLE") {
+                // Don't check for right now
+            } else if (tokens[0] == "MASKLIST") {
+                // Don't check for right now
+            } else if (tokens[0] == "OIDLIST") {
+                oidlist = 0;
+                num_failures += x_CheckFile(name, dir, tokens);
+            } else if (tokens[0] == "GILIST") {
+                gilist = 0;
+                num_failures += x_CheckFile(name, dir, tokens);
+            } else if (tokens[0] == "NSEQ") {
+                num_failures += x_CheckNumber(name, tokens, nseq);
+            } else if (tokens[0] == "LENGTH") {
+                num_failures += x_CheckNumber(name, tokens, length);
+            } else if (tokens[0] == "MEMB_BIT") {
+                num_failures += x_CheckNumber(name, tokens, mem_bit);
+            } else if (tokens[0] == "FIRST_OID") {
+                num_failures += x_CheckNumber(name, tokens, first_oid);
+            } else if (tokens[0] == "LAST_OID") {
+                num_failures += x_CheckNumber(name, tokens, last_oid);
+            } else if (tokens[0] == "MAXOID") {
+                num_failures += x_CheckNumber(name, tokens, maxoid);
+            } else if (tokens[0] == "MAXLEN") {
+                num_failures += x_CheckNumber(name, tokens, maxlen);
+            } else {
+                Log(name, e_Brief) << "  [ERROR] unknown keyword encountered: " 
+                                   << tokens[0] << endl;
+                num_failures++;
+            }
+            
+        } while(!line.AtEOF());
+        
+        // check {first, last}_oid
+        if ((first_oid+1)*(last_oid+1)==0) {
+            if (first_oid+last_oid != -2) {
+                Log(name, e_Brief) << "  [ERROR] FIRST_OID not paired with LAST_OID" << endl;
+                num_failures++;
+            }
+        } else if ((nseq+1)*(nseq + first_oid -last_oid -1)!=0) {
+            Log(name, e_Brief) << "  [ERROR] (FIRST_OID, LAST_OID) is not consistent" 
+                               << " with NSEQ" << endl;
+            num_failures++;
+        }
+            
+        // check GILIST/OIDLIST
+        if (oidlist + gilist >=0) {
+            Log(name, e_Brief) << "  [ERROR] OIDLIST and GILIST cannot be present in the"
+                               << " same alias file" << endl;
+            num_failures++;
+        }
+        
+        if (oidlist!=-1 && (maxoid+1)*(length+1)*(nseq+1)==0) {
+            Log(name, e_Brief) << "  [ERROR] OIDLIST cannot be provided without MAXOID"
+                               << " , LENGTH, or NSEQ" << endl;
+            num_failures++;
+        }
+
+        // test the DB
+        const string dbname(CDirEntry::MakePath(dir, base));
+        try {
+            CSeqDB::ESeqType dbtype = (ext[0] == 'p') ? 
+                 CSeqDB::eProtein : CSeqDB::eNucleotide;
+            CRef<CSeqDB> db(new CSeqDB(dbname, dbtype));
+        } catch(exception &e) {
+            num_failures++;
+            Log(name, e_Brief) << "  [ERROR] caught exception in initialzing blastdb" << endl;
+            Log(name, e_Details) << e.what() << endl;
+        }
+        
+        return num_failures;
+    }
+
+    ostream & Log(const string & name, int lvl)
+    {
+        m_Log.Log(lvl) << "  " << name << " / " << m_TestName << ": ";
+        return m_Log.Log(lvl);
+    }
+    
+private:
+    CBlastDbCheckLog & m_Log;
+    const string       m_TestName;
+
+    int x_CheckFile(const string &name, const string &dir, const vector<string> &tokens)
+    {
+        int num_failures = 0;
+
+        for (int i=1; i< tokens.size(); ++i) {
+            CFile f(CDirEntry::MakePath(dir, tokens[i]));
+
+            // File naming check 
+            if (tokens[0] == "OIDLIST" && f.GetExt() != "msk") {
+                Log(name, e_Details) << "  [WARNING] oidlist file " << tokens[i]
+                               << " does not have .msk extension" << endl;
+            }
+
+            if (tokens[0] == "GILIST" && f.GetExt() != "gil") {
+                Log(name, e_Details) << "  [WARNING] gilist file " << tokens[i]
+                               << " does not have .gil extension" << endl;
+            }
+
+            // Existance check
+            if (! f.Exists()) {
+                Log(name, e_Brief) << "  [ERROR] file " << tokens[i]
+                               << " referenced in keyword " << tokens[0] 
+                               << " does not exist" << endl;
+                num_failures++;
+                continue;
+            }
+            // Sanity check for file size
+            if (f.GetLength() <=0) {
+                Log(name, e_Brief) << "  [ERROR] file " << tokens[i]
+                               << " referenced in keyword " << tokens[0] 
+                               << " has zero length" << endl;
+                num_failures++;
+                continue;
+            }
+        }
+        return num_failures;
+    };
+
+    int x_CheckNumber(const string &name, const vector<string> &tokens, int &n)
+    {
+        try {
+            n = NStr::StringToInt(tokens[1]);
+            return 0;
+        } catch (...) {
+            Log(name, e_Brief) 
+                 << "  [ERROR] could not convert value to number for "
+                 << tokens[0] << endl;
+            n = -1;
+            return 1;
+        }
+    }
+};
 
 class CTestData : public CObject {
 public:
@@ -710,8 +899,8 @@ int CDbTest::x_GetVolumeList(const vector <string>  &dbs,
         try {
             CSeqDB::FindVolumePaths(*iter, stype, paths, &alias);
         } catch (...) {
-            m_Out.Log(e_Summary) 
-                 << endl << "BLAST AliasDB error: Could not find all volume or alias "
+            m_Out.Log(e_Brief) 
+                 << "  [ERROR] could not find all volume or alias "
                  << "files referenced in " << *iter << ", [skipped]" << endl;
             retval++;
             continue;
@@ -737,35 +926,66 @@ bool CDbTest::Test(CTestActionList & action)
     
     tot_faults += x_GetVolumeList(dbs, seqtype, vol_list, ali_list);
     
-    m_Out.Log(e_Summary)
-        << "Testing " << vol_list.size() << " volume(s)." << endl;
-    
+    // Test volume files
     int total = vol_list.size(), passed = 0;
+    m_Out.Log(e_Summary)
+        << "Testing " << total << " volume(s)." << endl;
     
     ITERATE(set<string>, iter, vol_list) {
-        CRef<CSeqDB> db(new CSeqDB(*iter, seqtype));
-        int num_faults = action.DoTests(*db, seen);
-        
-        if (num_faults) {
-            tot_faults += num_faults;
-        } else {
-            passed ++;
+        m_Out.Log(e_Details) << " " << *iter << endl;
+        int num_faults = 0;
+
+        try {
+            CRef<CSeqDB> db(new CSeqDB(*iter, seqtype));
+            num_faults = action.DoTests(*db, seen);
+        } catch(exception &e) {
+            num_faults++;
+            m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
+            m_Out.Log(e_Details) << e.what() << endl;
         }
+        
+        if (num_faults) tot_faults += num_faults;
+        else passed++;
     }
-    
+
     if (total == passed) {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Summary)
             << " Result=SUCCESS. No errors reported for "
             << total << " volume(s)." << endl;
     } else {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Summary)
             << " Result=FAILURE. "
             << (total-passed) << " errors reported in "
             << total << " volume(s)." << endl;
     }
     
+    // Test alias files
+    total = ali_list.size(), passed = 0;
+    m_Out.Log(e_Summary)
+        << "Testing " << total << " alias(es)." << endl;
+    CAliasTest ali_test(m_Out, 0);
+
+    ITERATE(set<string>, iter, ali_list) {
+        m_Out.Log(e_Details) << " " << *iter << endl;
+        int num_faults = ali_test.DoTest(*iter, seen);
+        if (num_faults)  tot_faults += num_faults;
+        else passed++;
+    }
+    
+    if (total == passed) {
+        m_Out.Log(e_Summary)
+            << " Result=SUCCESS. No errors reported for "
+            << total << " alias(es)." << endl;
+    } else {
+        m_Out.Log(e_Summary)
+            << " Result=FAILURE. "
+            << (total-passed) << " errors reported in "
+            << total << " alias(es)." << endl;
+    }
+    
+    // Bottom line
     if (tot_faults) {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Brief) <<  endl
            << "Total errors: " << tot_faults << endl;
     }
     
@@ -806,8 +1026,8 @@ int CDirTest::x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &vlist, set <
         try {
             CSeqDB::FindVolumePaths(iter->m_BlastDbName, iter->m_MoleculeType, paths, &alias);
         } catch (...) {
-            m_Out.Log(e_Summary) 
-                 << endl << "BLAST AliasDB error: Could not find all volume or alias "
+            m_Out.Log(e_Brief) 
+                 << "  [ERROR] could not find all volume or alias "
                  << "files referenced in " << iter->m_BlastDbName << ", [skipped]" << endl;
             retval++;
             continue;
@@ -822,69 +1042,97 @@ int CDirTest::x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &vlist, set <
 bool CDirTest::Test(CTestActionList & action)
 {
     int tot_faults = 0;
+    TSeen seen;
     
     m_Out.Log(e_Summary)
-        << "Finding database volumes..." << flush;
+        << "Finding database volumes." << endl;
     
     m_DBs = FindBlastDBs(m_Dir, m_DbType, m_Recurse, true);
 
     set <string> prot_list;
-    set <string> prot_alias;
     set <string> nucl_list;
-    set <string> nucl_alias;
+    set <string> ali_list;
     
-    tot_faults += x_GetVolumeList(CSeqDB::eProtein, prot_list, prot_alias);
-    tot_faults += x_GetVolumeList(CSeqDB::eNucleotide, nucl_list, nucl_alias);
+    tot_faults += x_GetVolumeList(CSeqDB::eProtein, prot_list, ali_list);
+    tot_faults += x_GetVolumeList(CSeqDB::eNucleotide, nucl_list, ali_list);
     
-    m_Out.Log(e_Summary) << "(done)" << endl;
-    
+    // Test volumes
     int total = prot_list.size() + nucl_list.size(), passed = 0;
-
     m_Out.Log(e_Summary)
         << "Testing " << total << " volume(s)." << endl;
-    
-    
-    ITERATE(set<string>, iter, prot_list) {
 
-        CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eProtein));
-        TSeen seen;
-        
-        int num_faults = action.DoTests(*db, seen);
-        
-        if (num_faults) {
-            tot_faults += num_faults;
-        } else {
-            passed ++;
+    ITERATE(set<string>, iter, prot_list) {
+        m_Out.Log(e_Details) << " " << *iter << endl;
+        int num_faults = 0;
+
+        try {
+            CRef<CSeqDB> db(new CSeqDB(*iter, CSeqDB::eProtein));
+            num_faults = action.DoTests(*db, seen);
+        } catch(exception &e) {
+            num_faults++;
+            m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
+            m_Out.Log(e_Details) << e.what() << endl;
         }
+        
+        if (num_faults) tot_faults += num_faults;
+        else passed++;
     }
     
     ITERATE(set<string>, iter, nucl_list) {
+        m_Out.Log(e_Details) << " " << *iter << endl;
+        int num_faults = 0;
 
-        CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eNucleotide));
-        TSeen seen;
-        
-        int num_faults  = action.DoTests(*db, seen);
-        
-        if (num_faults) {
-            tot_faults += num_faults;
-        } else {
-            passed ++;
+        try {
+            CRef<CSeqDB> db(new CSeqDB(*iter, CSeqDB::eNucleotide));
+            num_faults = action.DoTests(*db, seen);
+        } catch(exception &e) {
+            num_faults++;
+            m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
+            m_Out.Log(e_Details) << e.what() << endl;
         }
+        
+        if (num_faults) tot_faults += num_faults;
+        else  passed++;
     }
 
     if (total == passed) {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Summary)
             << " Result=SUCCESS. No errors reported for "
             << total << " volumes." << endl;
     } else {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Summary)
             << " Result=FAILURE. "
             << (total-passed) << " errors reported in "
             << total << " volumes." << endl;
     }
 
+    // Test alias files
+    total = ali_list.size(), passed = 0;
+    m_Out.Log(e_Summary)
+        << "Testing " << total << " alias(es)." << endl;
+    CAliasTest ali_test(m_Out, 0);
+
+    ITERATE(set<string>, iter, ali_list) {
+        m_Out.Log(e_Details) << " " << *iter << endl;
+        int num_faults = ali_test.DoTest(*iter, seen);
+        if (num_faults)  tot_faults += num_faults;
+        else passed++;
+    }
+    
+    if (total == passed) {
+        m_Out.Log(e_Summary)
+            << " Result=SUCCESS. No errors reported for "
+            << total << " alias(es)." << endl;
+    } else {
+        m_Out.Log(e_Summary)
+            << " Result=FAILURE. "
+            << (total-passed) << " errors reported in "
+            << total << " alias(es)." << endl;
+    }
+    
+    // Bottom line
     if (tot_faults) {
-        m_Out.Log(e_Brief)
+        m_Out.Log(e_Brief) <<  endl
            << "Total errors: " << tot_faults << endl;
     }
     
@@ -959,7 +1207,7 @@ int CBlastDbCheckApplication::Run(void)
         if (args["legacy"]) flags |= e_Legacy;
         output.Log(e_Summary)
             << "Legacy testing is " << (args["legacy"] ? "EN" : "DIS") << "ABLED." << endl;
-        
+
         //bool fork1 = !! args["fork"];
         
         // Build test actions
@@ -1015,6 +1263,8 @@ int CBlastDbCheckApplication::Run(void)
         //    
         //    tests->SetWrap(new CForkWrap);
         //}
+        
+        output.Log(e_Summary) << endl;
         
         bool okay = data->Test(*tests);
         
