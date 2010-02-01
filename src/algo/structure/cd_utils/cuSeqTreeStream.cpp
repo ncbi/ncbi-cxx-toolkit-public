@@ -106,8 +106,8 @@ bool CdTreeStream::read(std::istream& is, SeqTree& seqTree)
                         if (semi_loc > 0) {
                             cursor->name = distance.substr(0, semi_loc);
                             is.putback(distance[semi_loc]);
-                        } else {
-                            std::cout<<"length missing";
+//                        } else {
+//                            std::cout<<"length missing; semi_loc = "<<semi_loc<<std::endl;
                         }			
                     }
 					else

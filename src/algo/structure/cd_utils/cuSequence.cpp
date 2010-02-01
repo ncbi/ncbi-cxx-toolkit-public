@@ -803,13 +803,8 @@ void SimplifyBioseqForCD(CBioseq& bioseq, const vector<string>& keptComments, bo
                 it++;
             } else if ((*it)->IsTitle()) {
                 it++;
-            } else if ((*it)->IsComment()) {
-                for (unsigned int i = 0; i < keptComments.size(); ++i) {
-                    if ((*it)->GetComment().find(keptComments[i]) != NPOS) {
-                        it++;
-                        break;
-                    }
-                }
+            } else if ((*it)->IsComment() && find(keptComments.begin(), keptComments.end(), (*it)->GetComment()) != keptComments.end()) {
+                it++;
             } else if ((*it)->IsPdb()) {
 
                 //  If there is no title, create one from the PDB-Block 'compound' if possible.
