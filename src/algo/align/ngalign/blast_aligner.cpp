@@ -223,8 +223,13 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     ERR_POST(Info << "Running Blast");
     CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
 
-    CRef<CSearchResultSet> BlastResults = Blast.Run();
-
+    CRef<CSearchResultSet> BlastResults;
+    try {
+        BlastResults = Blast.Run();
+    } catch(CException& e) {
+        ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
+        return Results;
+    }
 /*
         ERR_POST(Info << "Blast Results Size: " << BlastResults->size());
         ITERATE(CSearchResultSet, SetIter, *BlastResults) {

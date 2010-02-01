@@ -831,6 +831,10 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
         // but are within a 'small' gap distance of each other into initial
         // instances
         ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+
+            if((*AlignIter)->GetSegs().Which() != CSeq_align::C_Segs::e_Denseg)
+                continue;
+
             bool Inserted = false;
             bool Contained = false;
             ITERATE(TInstVector, InstIter, SubjInstances) {

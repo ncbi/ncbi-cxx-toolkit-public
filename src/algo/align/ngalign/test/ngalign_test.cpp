@@ -160,7 +160,7 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     string Operation = TestCases->Get(Case, "operation");
     list<string> BlastParams;
     BlastParams.push_back(TestCases->Get("consts", "blast"));
- //   BlastParams.push_back(TestCases->Get("consts", "blast2"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
  //   BlastParams.push_back(TestCases->Get("consts", "blast3"));
 
     if(Operation == "skip")
@@ -185,7 +185,7 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1.0, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
-//    CRef<CMessyAligner> MessyAligner(new CMessyAligner(600, 1));
+    CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
@@ -215,8 +215,9 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
         (*BlastIter)->SetSoftFiltering(30);
         Aligner.AddAligner(&**BlastIter);
     }
-    Aligner.AddAligner(InstancedAligner.GetPointer());
+//    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
+    Aligner.AddAligner(InversionMergeAligner.GetPointer());
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
@@ -327,9 +328,9 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
         (*BlastIter)->SetSoftFiltering(30);
         Aligner.AddAligner(&**BlastIter);
     }
-    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
     Aligner.AddAligner(InversionMergeAligner.GetPointer());
+   // Aligner.AddAligner(InstancedAligner.GetPointer());
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
@@ -459,9 +460,10 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         }
         Aligner.AddAligner(&**BlastIter);
     }
-//    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(MergeAligner.GetPointer());
     Aligner.AddAligner(InversionMergeAligner.GetPointer());
+//    Aligner.AddAligner(InstancedAligner.GetPointer());
+
 
     Aligner.AddScorer(BlastScorer.GetPointer());
     Aligner.AddScorer(PctIdentScorer.GetPointer());

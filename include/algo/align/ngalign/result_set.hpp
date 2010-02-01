@@ -90,6 +90,12 @@ private:
 
     bool x_AlreadyContains(const objects::CSeq_align_set& Set,
                            const objects::CSeq_align& New) const;
+
+    void x_FilterStrictSubAligns(objects::CSeq_align_set& Source) const;
+
+    // True if Outer strictly contains Inner
+    bool x_ContainsAlignment(const objects::CSeq_align& Outer,
+                             const objects::CSeq_align& Inner) const;
 };
 
 

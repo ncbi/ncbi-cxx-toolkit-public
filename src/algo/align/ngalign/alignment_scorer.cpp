@@ -248,7 +248,12 @@ user {
                     else
                         continue;
 
-                    CRef<CSeq_id> Id(new CSeq_id(IdStr));
+                    CRef<CSeq_id> Id;
+                    try {
+                        Id.Reset(new CSeq_id(IdStr));
+                    } catch(...) {
+                        continue; // Non-Seq-id entry, just skip it.
+                    }
 
                     CSeq_id_Handle CanonicalId;
                     CanonicalId = sequence::GetId(*Id, Handle.GetScope(),

@@ -38,6 +38,7 @@
 #include <objmgr/scope.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
 #include <algo/blast/api/blast_results.hpp>
@@ -97,6 +98,9 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
             }
         }
     }
+
+    x_FilterStrictSubAligns(*Out);
+
     return Out;
 }
 
@@ -166,7 +170,115 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
 }
 
 
+void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
+{
+//  Later alignments are likely to contain earlier alignments. But the iterators
+//  and erase() function only want to work one way. So we reverse the list
+    Source.Set().reverse();
 
+    CSeq_align_set::Tdata::iterator Outer, Inner;
+    for(Outer = Source.Set().begin(); Outer != Source.Set().end(); ++Outer) {
+
+        const CSeq_id& OuterSubjId = (*Outer)->GetSeq_id(1);
+
+        for(Inner = Outer, ++Inner; Inner != Source.Set().end(); ) {
+
+            const CSeq_id& InnerSubjId = (*Inner)->GetSeq_id(1);
+            if(!OuterSubjId.Equals(InnerSubjId)) {
+                ++Inner;
+                continue;
+            }
+
+            bool IsInnerContained = x_ContainsAlignment(**Outer, **Inner);
+            if(IsInnerContained) {
+                Inner = Source.Set().erase(Inner);
+            }
+            else
+                ++Inner;
+        }
+    }
+}
+
+
+bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
+                                    const CSeq_align& Inner) const
+{
+    // Recurse over any Disc alignments
+    if(Outer.GetSegs().IsDisc()) {
+        bool AccumResults = false;
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Outer.GetSegs().GetDisc().Get()) {
+            AccumResults |= x_ContainsAlignment(**AlignIter, Inner);
+        }
+        return AccumResults;
+    } else if(Inner.GetSegs().IsDisc()) {
+        bool AccumResults = false;
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Inner.GetSegs().GetDisc().Get()) {
+            AccumResults |= x_ContainsAlignment(Outer, **AlignIter);
+        }
+        return AccumResults;
+    }
+
+    CRange<TSeqPos> InQueryRange, InSubjRange;
+    CRange<TSeqPos> OutQueryRange, OutSubjRange;
+
+    InQueryRange = Inner.GetSeqRange(0);
+    InSubjRange = Inner.GetSeqRange(1);
+    OutQueryRange = Outer.GetSeqRange(0);
+    OutSubjRange = Outer.GetSeqRange(1);
+
+    // Overly simple check, of just the alignments edges, without care for the segments inside
+    /*if(OutQueryRange.IntersectionWith(InQueryRange).GetLength() == InQueryRange.GetLength() &&
+       OutSubjRange.IntersectionWith(InSubjRange).GetLength() == InSubjRange.GetLength()) {
+        return true;
+    } else {
+        return false;
+    }*/
+
+    // if they dont intersect at all, we bail early.
+    if(!OutQueryRange.IntersectingWith(InQueryRange) ||
+       !OutSubjRange.IntersectingWith(InSubjRange)) {
+        return false;
+    }
+
+    const CDense_seg& OuterSeg = Outer.GetSegs().GetDenseg();
+    const CDense_seg& InnerSeg = Inner.GetSegs().GetDenseg();
+
+    int OuterSegIdx, InnerSegIdx;
+
+    bool AllMatch = true;
+
+    for(InnerSegIdx = 0; InnerSegIdx < InnerSeg.GetNumseg(); InnerSegIdx++) {
+
+        bool InnerMatched = false;
+
+        InQueryRange.SetFrom(InnerSeg.GetStarts()[InnerSegIdx*2]);
+        InQueryRange.SetTo(InnerSeg.GetLens()[InnerSegIdx]);
+        InSubjRange.SetFrom(InnerSeg.GetStarts()[(InnerSegIdx*2)+1]);
+        InSubjRange.SetTo(InnerSeg.GetLens()[InnerSegIdx]);
+
+        for(OuterSegIdx = 0; OuterSegIdx < OuterSeg.GetNumseg(); OuterSegIdx++) {
+
+            OutQueryRange.SetFrom(OuterSeg.GetStarts()[OuterSegIdx*2]);
+            OutQueryRange.SetTo(OuterSeg.GetLens()[OuterSegIdx]);
+            OutSubjRange.SetFrom(OuterSeg.GetStarts()[(OuterSegIdx*2)+1]);
+            OutSubjRange.SetTo(OuterSeg.GetLens()[OuterSegIdx]);
+
+            // If the Outer segments are >= the Inner segments
+            if(OutQueryRange.IntersectionWith(InQueryRange).GetLength() == InQueryRange.GetLength() &&
+               OutSubjRange.IntersectionWith(InSubjRange).GetLength() == InSubjRange.GetLength() ) {
+                InnerMatched = true;
+                break;
+            }
+        }
+
+        if(!InnerMatched) {
+            AllMatch = false;
+            break;
+        }
+    }
+
+    return AllMatch;
+}
 
 
 CAlignResultsSet::CAlignResultsSet(const blast::CSearchResultSet& BlastResults)
