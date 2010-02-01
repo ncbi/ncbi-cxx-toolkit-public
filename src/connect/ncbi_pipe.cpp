@@ -1594,9 +1594,7 @@ EIO_Status CPipe::SetReadHandle(EChildIOHandle from_handle)
     if (from_handle == eStdIn) {
         return eIO_InvalidArg;
     }
-    if (from_handle != eDefault) {
-        m_ReadHandle = from_handle;
-    }
+    m_ReadHandle = from_handle == eDefault ? eStdOut : from_handle;
     return eIO_Success;
 }
 
@@ -1607,11 +1605,12 @@ EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
     if ( read ) {
         *read = 0;
     }
-    if (from_handle == eDefault)
-        from_handle = m_ReadHandle;
     if (from_handle == eStdIn) {
         return eIO_InvalidArg;
     }
+    if (from_handle == eDefault)
+        from_handle = m_ReadHandle;
+    _ASSERT(m_ReadHandle == eStdOut  ||  m_ReadHandle == eStdErr);
     if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
@@ -1649,16 +1648,18 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
     }
     TChildPollMask x_mask = mask;
     if ( mask & fDefault ) {
+        _ASSERT(m_ReadHandle == eStdOut ||  m_ReadHandle == eStdErr);
         x_mask |= m_ReadHandle;
     }
     TChildPollMask poll = m_PipeHandle->Poll(x_mask, timeout);
     if ( mask & fDefault ) {
-        TChildPollMask p = poll;
-        poll &= mask;
-        if ( p & m_ReadHandle ) {
+        if ( poll & m_ReadHandle ) {
             poll |= fDefault;
         }
+        poll &= mask;
     }
+    // Result may not be a bigger set
+    _ASSERT(!(poll ^ (poll & mask)));
     return poll;
 }
 
