@@ -345,6 +345,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 break; // connected
             }
             if (error == ERROR_NO_DATA  &&  x_Disconnect() != eIO_Success) {
+                // NB:  status == eIO_Unknown
                 throw string("Failed to close broken client session");
             }
 
@@ -363,7 +364,9 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         }
 
         // Pipe connected
-        status = eIO_Success;
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
+        status        = eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(12, s_FormatErrorMessage("Listen", what));
@@ -386,6 +389,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
             ::FlushFileBuffers(m_Pipe);
         }
         if (!::DisconnectNamedPipe(m_Pipe)) {
+            // NB:  status == eIO_Unknown
             NAMEDPIPE_THROW(::GetLastError(), "DisconnectNamedPipe() failed");
         }
 
@@ -396,6 +400,8 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
         ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
     }
 
+    m_ReadStatus  = eIO_Closed;
+    m_WriteStatus = eIO_Closed;
     return status;
 }
 
@@ -432,7 +438,8 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
     for (;;) {
         if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL) ) {
             // Has peer closed the connection?
-            if (::GetLastError() == ERROR_BROKEN_PIPE) {
+            DWORD error = ::GetLastError();
+            if (error == ERROR_BROKEN_PIPE  ||  error == ERROR_PIPE_NOT_CONNECTED) {
                 m_ReadStatus  = eIO_Closed;
                 m_WriteStatus = eIO_Closed;
                 return eIO_Closed;
@@ -468,7 +475,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     if (m_ReadStatus == eIO_Closed) {
         return eIO_Closed;
     }
-    EIO_Status status = eIO_Unknown;
+    EIO_Status status;
 
     _ASSERT(n_read  &&  !*n_read);
     try {
@@ -481,7 +488,6 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         }
 
         DWORD bytes_avail;
-
         if ((status = x_WaitForRead(timeout, &bytes_avail)) == eIO_Success) {
             _ASSERT(bytes_avail);
             // We must read only "count" bytes of data regardless of the amount
@@ -494,16 +500,15 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                     status = eIO_Unknown;
                     NAMEDPIPE_THROW(::GetLastError(),
                                     "Failed to read data from named pipe");
-                } // else NB: status == eIO_Success
+                } // else NB:  status == eIO_Success
             }
             *n_read = bytes_avail;
         } else if (status != eIO_Unknown) {
             _ASSERT(status == eIO_Closed  ||  status == eIO_Timeout);
-            // NB: eIO_Closed also updates m_{Read|Write}Status
+            // NB:  eIO_Closed also updates m_{Read|Write}Status
             return status;
         } else {
-            NAMEDPIPE_THROW(::GetLastError(),
-                            "PeekNamedPipe() failed for named pipe");
+            NAMEDPIPE_THROW(::GetLastError(), "PeekNamedPipe() failed");
         }
     }
     catch (string& what) {
@@ -522,7 +527,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
     if (m_WriteStatus == eIO_Closed) {
         return eIO_Closed;
     }
-    EIO_Status status = eIO_Unknown;
+    EIO_Status status;
 
     _ASSERT(n_written  &&  !*n_written);
     try {
@@ -534,7 +539,8 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             return eIO_Success;
         }
 
-        DWORD x_timeout     = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
+        status = eIO_Unknown;
+        DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
 
         // Wait for data from the pipe with timeout.
@@ -542,9 +548,14 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 
         for (;;) {
             if ( !::WriteFile(m_Pipe, buf, count, &bytes_written, NULL) ) {
-                // NB: status == eIO_Unknown
+                // NB:  status == eIO_Unknown
                 if ( !bytes_written ) {
-                    NAMEDPIPE_THROW(::GetLastError(),
+                    DWORD error = ::GetLastError();
+                    if (error == ERROR_BROKEN_PIPE  ||  error == ERROR_PIPE_NOT_CONNECTED) {
+                        m_ReadStatus = eIO_Closed;
+                        status       = eIO_Closed;
+                    }
+                    NAMEDPIPE_THROW(error,
                                     "Failed to write data into named pipe");
                 }
                 break;
@@ -610,7 +621,6 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
     }
     return eIO_InvalidArg;
 }
-
 
 
 #elif defined(NCBI_OS_UNIX)
