@@ -1647,6 +1647,8 @@ extern int/*bool*/ URL_DecodeEx
     *dst_written = 0;
     if (!src_size  ||  !dst_size)
         return 1/*true*/;
+    if (!src  ||  !dst)
+        return 0/*false*/;
 
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
           (*src_read)++, (*dst_written)++, src++, dst++) {
@@ -1712,7 +1714,7 @@ extern void URL_Encode
 
     *src_read    = 0;
     *dst_written = 0;
-    if (!src_size  ||  !dst_size)
+    if (!src_size  ||  !dst_size  ||  !dst  ||  !src)
         return;
 
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
