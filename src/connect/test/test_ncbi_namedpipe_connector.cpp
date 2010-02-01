@@ -54,7 +54,6 @@ USING_NCBI_SCOPE;
 const size_t kBufferSize = 25*1024;
 
 
-
 ////////////////////////////////
 // Test application
 //
@@ -137,14 +136,11 @@ int CTest::Run(void)
         m_Timeout.sec  = (unsigned int)  tv;
         m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * 1000000);
     }
-    if (args["mode"].AsString() == "client") {
+    if      (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
         Client();
     }
     else if (args["mode"].AsString() == "server") {
-        if (!args["timeout"].HasValue()) {
-            m_Timeout.sec = 5;
-        }
         SetDiagPostPrefix("Server");
         Server(10);
     }
@@ -233,7 +229,6 @@ void CTest::Server(int n_cycle)
                 ERR_POST(Info <<
                          NStr::UIntToString(n_read) + " byte(s) read: " +
                          (n_read ? "" : IO_StatusStr(status)));
-                ERR_POST("Here");
 
                 // Write data back to the pipe
                 size_t n_done = 0;
@@ -265,7 +260,6 @@ void CTest::Server(int n_cycle)
                 }
             } while (status == eIO_Success);
 
-            ERR_POST("There");
             ERR_POST(Info << "Client disconnected...");
             status = pipe.Disconnect();
             assert(status == eIO_Success);
