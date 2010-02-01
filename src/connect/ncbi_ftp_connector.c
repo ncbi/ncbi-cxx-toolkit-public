@@ -268,6 +268,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         return status;
     if (quit  ||  !xxx->cntl) {
         status = SOCK_Abort(xxx->data);
+        SOCK_Close(xxx->data);
         xxx->data = 0;
         return status;
     }
@@ -283,6 +284,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         != eIO_Success  ||  n != 2                                         ||
         (status = s_FTPCommand(xxx, "ABOR", 0)) != eIO_Success) {
         SOCK_Abort(xxx->data);
+        SOCK_Close(xxx->data);
         xxx->data = 0;
         return status == eIO_Success ? eIO_Unknown : status;
     }
@@ -300,15 +302,14 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         status = eIO_Unknown;
     }
     if (xxx->data) {
-        if (status == eIO_Success)
-            status = SOCK_Close(xxx->data);
-        else {
+        if (status != eIO_Success) {
             if (status == eIO_Timeout) {
                 CORE_LOG_X(1, eLOG_Warning,
                            "[FTP]  Timed out in data connection abort");
             }
             SOCK_Abort(xxx->data);
         }
+        SOCK_Close(xxx->data);
         xxx->data = 0;
     }
     return status;
@@ -364,6 +365,7 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
                     ("[FTP]  Cannot open data connection to %s:%hu: %s",
                      buf, port, IO_StatusStr(status)));
         s_FTPAbort(xxx, 0, 0/*!quit*/);
+        assert(!xxx->data);
         return eIO_Unknown;
     }
     return eIO_Success;
@@ -391,12 +393,14 @@ static EIO_Status s_FTPRetrieve(SFTPConnector* xxx,
         if (xxx->data) {
             /* ... so do we :-/ */
             SOCK_Abort(xxx->data);
+            SOCK_Close(xxx->data);
             xxx->data = 0;
         }
         /* with no data connection open, user gets eIO_Closed on read */
         return eIO_Success;
     }
     s_FTPAbort(xxx, 0, 0/*!quit*/);
+    assert(!xxx->data);
     return eIO_Unknown;
 }
 
@@ -407,7 +411,9 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
     size_t     size;
     char*      s;
 
-    if ((status = s_FTPAbort(xxx, timeout, 0/*!quit*/)) != eIO_Success)
+    status = s_FTPAbort(xxx, timeout, 0/*!quit*/);
+    assert(!xxx->data);
+    if (status != eIO_Success)
         return status;
     verify((size = BUF_Size(xxx->wbuf)) > 0);
     if (!(s = (char*) malloc(size + 1)))
@@ -481,11 +487,6 @@ extern "C" {
     static void        s_Setup      (SMetaConnector* meta,
                                      CONNECTOR       connector);
     static void        s_Destroy    (CONNECTOR       connector);
-#  ifdef IMPLEMENTED__CONN_WaitAsync
-    static EIO_Status s_VT_WaitAsync(void*                   connector,
-                                     FConnectorAsyncHandler  func,
-                                     SConnectorAsyncHandler* data);
-#  endif
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
@@ -507,9 +508,7 @@ static EIO_Status s_VT_Open
     EIO_Status status;
 
     assert(!xxx->data  &&  !xxx->cntl);
-    /* only clean state reopen is allowed */
-    if (xxx->r_status != eIO_Success  ||  xxx->w_status != eIO_Success)
-        return eIO_Closed;
+
     status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
                            xxx->flag & fFCDC_LogControl
                            ? fSOCK_LogOn : fSOCK_LogDefault);
@@ -533,72 +532,14 @@ static EIO_Status s_VT_Open
 }
  
 
-static EIO_Status s_VT_Write
-(CONNECTOR       connector,
- const void*     buf,
- size_t          size,
- size_t*         n_written,
- const STimeout* timeout)
-{
-    SFTPConnector* xxx = (SFTPConnector*) connector->handle;
-    EIO_Status status;
-    const char* c;
-
-    if (!xxx->cntl)
-        return eIO_Closed;
-    if (!size)
-        return eIO_Success;
-
-    if (((c = (const char*) memchr((const char*) buf, '\n', size)) != 0
-         &&  c < (const char*) buf + size - 1)
-        ||  !BUF_Write(&xxx->wbuf, buf, size - (c ? 1 : 0))) {
-        return eIO_Unknown;
-    }
-
-    status = c ? s_FTPExecute(xxx, timeout) : eIO_Success;
-    if (status == eIO_Success)
-        *n_written = size;
-    if (status != eIO_Timeout)
-        xxx->w_status = status;
-    return status;
-}
-
-
-static EIO_Status s_VT_Read
-(CONNECTOR       connector,
- void*           buf,
- size_t          size,
- size_t*         n_read,
- const STimeout* timeout)
-{
-    SFTPConnector* xxx = (SFTPConnector*) connector->handle;
-    EIO_Status status = eIO_Closed;
-    if (xxx->cntl  &&  xxx->data) {
-        SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
-        status = SOCK_Read(xxx->data, buf, size, n_read, eIO_ReadPlain);
-        if (status == eIO_Closed) {
-            int code;
-            SOCK_Close(xxx->data);
-            xxx->data = 0;
-            SOCK_SetTimeout(xxx->cntl, eIO_Read, timeout);
-            if (s_FTPReply(xxx, &code, 0, 0) != eIO_Success
-                ||  (code != 225  &&  code != 226)) {
-                status = eIO_Unknown;
-            }
-        }
-        if (status != eIO_Timeout)
-            xxx->r_status = status;
-    }
-    return status;
-}
-
-
 static EIO_Status s_VT_Wait
 (CONNECTOR       connector,
  EIO_Event       event,
  const STimeout* timeout)
 {
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
+    assert(event == eIO_Read  ||  event == eIO_Write);
+
     if (!xxx->cntl)
         return eIO_Closed;
     if (event & eIO_Write)
@@ -616,12 +557,72 @@ static EIO_Status s_VT_Wait
 }
 
 
+static EIO_Status s_VT_Write
+(CONNECTOR       connector,
+ const void*     buf,
+ size_t          size,
+ size_t*         n_written,
+ const STimeout* timeout)
+{
+    SFTPConnector* xxx = (SFTPConnector*) connector->handle;
+    EIO_Status status;
+    const char* c;
+
+    if (!xxx->cntl)
+        return eIO_Closed;
+    if (!size)
+        return eIO_Success;
+    if (((c = (const char*) memchr((const char*) buf, '\n', size)) != 0
+         &&  c < (const char*) buf + size - 1)
+        ||  !BUF_Write(&xxx->wbuf, buf, size - (c ? 1 : 0))) {
+        return eIO_Unknown;
+    }
+
+    status = c ? s_FTPExecute(xxx, timeout) : eIO_Success;
+    if (status == eIO_Success)
+        *n_written = size;
+    if (status != eIO_Timeout)
+        xxx->w_status = status;
+    return status;
+}
+
+
 static EIO_Status s_VT_Flush
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     return BUF_Size(xxx->wbuf) ? s_FTPExecute(xxx, timeout) : eIO_Success;
+}
+
+
+static EIO_Status s_VT_Read
+(CONNECTOR       connector,
+ void*           buf,
+ size_t          size,
+ size_t*         n_read,
+ const STimeout* timeout)
+{
+    SFTPConnector* xxx = (SFTPConnector*) connector->handle;
+    EIO_Status status = eIO_Closed;
+
+    if (xxx->cntl  &&  xxx->data) {
+        SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
+        status = SOCK_Read(xxx->data, buf, size, n_read, eIO_ReadPlain);
+        if (status == eIO_Closed) {
+            int code;
+            SOCK_Close(xxx->data);
+            xxx->data = 0;
+            SOCK_SetTimeout(xxx->cntl, eIO_Read, timeout);
+            if (s_FTPReply(xxx, &code, 0, 0) != eIO_Success
+                ||  (code != 225  &&  code != 226)) {
+                status = eIO_Unknown;
+            }
+        }
+        if (status != eIO_Timeout)
+            xxx->r_status = status;
+    }
+    return status;
 }
 
 
@@ -651,7 +652,9 @@ static EIO_Status s_VT_Close
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     EIO_Status status;
 
-    if ((status = s_FTPAbort(xxx, timeout, 1/*quit*/)) == eIO_Success) {
+    status = s_FTPAbort(xxx, timeout, 1/*quit*/);
+    assert(!xxx->data);
+    if (status == eIO_Success) {
         if (xxx->cntl) {
             int code;
             if (!timeout)
@@ -668,16 +671,10 @@ static EIO_Status s_VT_Close
         assert(status != eIO_Success);
         if (status == eIO_Timeout)
             SOCK_Abort(xxx->cntl);
-        else
-            SOCK_Close(xxx->cntl);
+        status = SOCK_Close(xxx->cntl);
         xxx->cntl = 0;
     }
-    /* NB: connector is going to be killed, anyways;
-     * but for consistency, allow reuse only of properly closed ones
-     */
-    xxx->r_status = eIO_Success;
-    xxx->w_status = eIO_Success;
-    return status != eIO_Closed ? status : eIO_Success;
+    return status;
 }
 
 
@@ -686,18 +683,15 @@ static void s_Setup
  CONNECTOR       connector)
 {
     /* initialize virtual table */
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
-    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
-    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
-    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
-#endif
-    meta->default_timeout = 0/*infinite*/;
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
+    CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
+    CONN_SET_METHOD(meta, flush,    s_VT_Flush,   connector);
+    CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
+    CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
+    meta->default_timeout = kInfiniteTimeout;
 }
 
 
@@ -705,16 +699,31 @@ static void s_Destroy
 (CONNECTOR connector)
 {
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
-    free((void*) xxx->host);
-    free((void*) xxx->user);
-    free((void*) xxx->pass);
-    if (xxx->path)
-        free((void*) xxx->path);
-    if (xxx->name)
-        free((void*) xxx->name);
-    BUF_Destroy(xxx->wbuf);
-    free(xxx);
     connector->handle = 0;
+
+    if (xxx->host) {
+        free((void*) xxx->host);
+        xxx->host = 0;
+    }
+    if (xxx->user) {
+        free((void*) xxx->user);
+        xxx->user = 0;
+    }
+    if (xxx->pass) {
+        free((void*) xxx->pass);
+        xxx->pass = 0;
+    }
+    if (xxx->path) {
+        free((void*) xxx->path);
+        xxx->path = 0;
+    }
+    if (xxx->name) {
+        free((void*) xxx->name);
+        xxx->name = 0;
+    }
+    BUF_Destroy(xxx->wbuf);
+    xxx->wbuf = 0;
+    free(xxx);
     free(connector);
 }
 
@@ -745,9 +754,6 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     xxx->path     = path  &&  *path ? strdup(path) : 0;
     xxx->name     = 0;
     xxx->flag     = flag;
-    /* allow reuse only in clean state */
-    xxx->r_status = eIO_Success;
-    xxx->w_status = eIO_Success;
 
     /* initialize connector data */
     ccc->handle   = xxx;

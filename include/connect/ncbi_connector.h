@@ -76,13 +76,16 @@ typedef const char* (*FConnectorGetType)
 
 /* Get the human readable connector's description (may be NULL on error)
  */
-typedef char* (*FConnectorDescr)
+typedef       char* (*FConnectorDescr)
 (CONNECTOR       connector
  );
 
 
 /* Open connection. Used to setup all related data structures,
  * but not necessarily has to actually open the data channel.
+ * NOTE: Regardless of the returned status, the connection is
+ *       considered open (so this call does not get repeated)
+ *       when the call completes.
  */
 typedef EIO_Status (*FConnectorOpen)
 (CONNECTOR       connector,
@@ -172,18 +175,15 @@ typedef EIO_Status (*FConnectorClose)
  * connectors are also here), part of connection handle("CONN").
  */
 typedef struct {
-    FConnectorGetType   get_type;    CONNECTOR c_get_type;
-    FConnectorDescr     descr;       CONNECTOR c_descr;
-    FConnectorOpen      open;        CONNECTOR c_open;
-    FConnectorWait      wait;        CONNECTOR c_wait;
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    FConnectorWaitAsync wait_async;  CONNECTOR c_wait_async;
-#endif
-    FConnectorWrite     write;       CONNECTOR c_write;
-    FConnectorFlush     flush;       CONNECTOR c_flush;
-    FConnectorRead      read;        CONNECTOR c_read;
-    FConnectorStatus    status;      CONNECTOR c_status;
-    FConnectorClose     close;       CONNECTOR c_close;
+    FConnectorGetType   get_type; CONNECTOR c_get_type;
+    FConnectorDescr     descr;    CONNECTOR c_descr;
+    FConnectorOpen      open;     CONNECTOR c_open;
+    FConnectorWait      wait;     CONNECTOR c_wait;
+    FConnectorWrite     write;    CONNECTOR c_write;
+    FConnectorFlush     flush;    CONNECTOR c_flush;
+    FConnectorRead      read;     CONNECTOR c_read;
+    FConnectorStatus    status;   CONNECTOR c_status;
+    FConnectorClose     close;    CONNECTOR c_close;
     const STimeout*     default_timeout; /* default timeout pointer     */
     STimeout            default_tmo;     /* storage for default_timeout  */
     CONNECTOR           list;
@@ -196,17 +196,17 @@ typedef struct {
     do {                                                   \
         meta->method                  = function;          \
         meta->CONN_TWO2ONE(c_,method) = connector;         \
-    } while (0);
+    } while (0)
 
 
 #define CONN_SET_DEFAULT_TIMEOUT(meta, timeout)            \
     do {                                                   \
         if (timeout) {                                     \
-            meta->default_timeout = &meta->default_tmo;    \
             meta->default_tmo     = *timeout;              \
+            meta->default_timeout = &meta->default_tmo;    \
         } else                                             \
-            meta->default_timeout = 0;                     \
-    } while (0);
+            meta->default_timeout = kInfiniteTimeout/*0*/; \
+    } while (0)
 
 
 /* Insert a connector in the beginning of the connection's list of connectors.
@@ -247,35 +247,12 @@ typedef void (*FDestroy)
 /* Connector specification.
  */
 typedef struct SConnectorTag {
-    SMetaConnector*      meta;      /* back link to CONNECTION      */
-    FSetupVTable         setup;     /* used in CONNECTION init      */
-    FDestroy             destroy;   /* destroys handle, can be NULL */
-    void*                handle;    /* data handle of the connector */
-    CONNECTOR            next;      /* linked list                  */
+    SMetaConnector* meta;     /* back link to CONNECTION      */
+    FSetupVTable    setup;    /* used in CONNECTION init      */
+    FDestroy        destroy;  /* destroys handle, can be NULL */
+    void*           handle;   /* data handle of the connector */
+    CONNECTOR       next;     /* linked list                  */
 } SConnector;
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-typedef struct {
-  CONN                   conn;
-  EIO_Event              event;
-  FConnAsyncHandler      handler;
-  void*                  data;
-  FConnAsyncCleanup      cleanup;
-} SConnectorAsyncHandler;
-
-typedef void (*FConnectorAsyncHandler)
-(SConnectorAsyncHandler* data,
- EIO_Event               event,
- EIO_Status              status
- );
-
-typedef EIO_Status (*FConnectorWaitAsync)
-(CONNECTOR               connector,
- FConnectorAsyncHandler  func,
- SConnectorAsyncHandler* data
- );
-#endif /* IMPLEMENTED__CONN_WaitAsync */
 
 
 #ifdef __cplusplus

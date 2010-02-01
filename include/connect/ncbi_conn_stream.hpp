@@ -224,17 +224,22 @@ public:
      streamsize      buf_size = kConn_DefaultBufSize);
 
     /// This variant uses existing socket "sock" to build the stream upon it.
-    /// NOTE:  it assumes the socket being in exclusive use of this stream's
-    /// underlying CONN (so the outer code must renounce the SOCK ownership).
+    /// The caller may retain ownership of "sock" by passing "own_sock" as 0
+    /// to the stream constructor -- in this case, the socket will not be
+    /// closed/destroyed upon stream destruction, and can further be used
+    /// (including proper closing when no longer needed).  Otherwise,
+    /// "sock" becomes invalid once the stream closed / destroyed.
+    /// NOTE:  "sock" should not be used elsewhere while it is also being
+    ///        in use by the stream.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
-    /// @param socket
+    /// @param sock
     ///  Socket to build the stream on
     /// @sa
     ///  SOCK, ncbi_socket.h
     CConn_SocketStream
-    (SOCK            sock,         /* socket              */
-     unsigned int    max_try  = 3, /* number of attempts  */
+    (SOCK            sock,         /* socket                               */
+     unsigned int    own_sock = 1, /* whether stream owns(non-zero) "sock" */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -250,10 +255,9 @@ public:
     /// @sa
     ///  CSocket, ncbi_socket.hpp
     CConn_SocketStream
-    (CSocket&        socket,       /* socket              */
-     unsigned int    max_try  = 3, /* number of attempts  */
-     const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
+    (CSocket&        socket,       /* socket, underlying SOCK always grabbed */
+     const STimeout* timeout    = kDefaultTimeout,
+     streamsize      buf_size   = kConn_DefaultBufSize);
 
 private:
     // Disable copy constructor and assignment.

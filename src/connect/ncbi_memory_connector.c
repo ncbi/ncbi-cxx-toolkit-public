@@ -82,11 +82,6 @@ extern "C" {
     static void        s_Setup      (SMetaConnector* meta,
                                      CONNECTOR       connector);
     static void        s_Destroy    (CONNECTOR       connector);
-#  ifdef IMPLEMENTED__CONN_WaitAsync
-    static EIO_Status s_VT_WaitAsync(void*                   connector,
-                                     FConnectorAsyncHandler  func,
-                                     SConnectorAsyncHandler* data);
-#  endif
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
@@ -109,6 +104,29 @@ static EIO_Status s_VT_Open
     xxx->r_status = eIO_Success;
     xxx->w_status = eIO_Success;
     return eIO_Success;
+}
+
+
+/*ARGSUSED*/
+static EIO_Status s_VT_Wait
+(CONNECTOR       connector,
+ EIO_Event       event,
+ const STimeout* timeout)
+{
+    SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
+    assert(event == eIO_Read  ||  event == eIO_Write);
+    switch (event) {
+    case eIO_Read:
+        if (!BUF_Size(xxx->buf))
+            return eIO_Closed;
+        /*FALLTHRU*/
+    case eIO_Write:
+        return eIO_Success;
+    default:
+        assert(0);
+        break;
+    }
+    return eIO_InvalidArg;
 }
 
 
@@ -148,22 +166,10 @@ static EIO_Status s_VT_Read
     if ( !size )
         return eIO_Success;
 
-    xxx->r_status = (!(*n_read = BUF_Read(xxx->buf, buf, size))
-                     ? eIO_Closed : eIO_Success);
+    *n_read = BUF_Read(xxx->buf, buf, size);
+    xxx->r_status = *n_read ? eIO_Success : eIO_Closed;
 
     return xxx->r_status;
-}
-
-
-/*ARGSUSED*/
-static EIO_Status s_VT_Wait
-(CONNECTOR       connector,
- EIO_Event       event,
- const STimeout* timeout)
-{
-    SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    return event == eIO_Read  &&  !BUF_Size(xxx->buf)
-        ? eIO_Closed : eIO_Success;
 }
 
 
@@ -179,8 +185,9 @@ static EIO_Status s_VT_Status
         return xxx->w_status;
     default:
         assert(0); /* should never happen as checked by connection */
-        return eIO_InvalidArg;
+        break;
     }
+    return eIO_InvalidArg;
 }
 
 
@@ -200,18 +207,15 @@ static void s_Setup
  CONNECTOR       connector)
 {
     /* initialize virtual table */
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
-    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      0,              0);
-    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
-    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
-#endif
-    meta->default_timeout = 0/*infinite*/;
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
+    CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
+    CONN_SET_METHOD(meta, flush,    0,            0);
+    CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
+    CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
+    meta->default_timeout = kInfiniteTimeout;
 }
 
 
@@ -219,10 +223,13 @@ static void s_Destroy
 (CONNECTOR connector)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    if (xxx->own_buf)
-        BUF_Destroy(xxx->buf);
-    free(xxx);
     connector->handle = 0;
+
+    if (xxx->own_buf) {
+        BUF_Destroy(xxx->buf);
+        xxx->buf = 0;
+    }
+    free(xxx);
     free(connector);
 }
 

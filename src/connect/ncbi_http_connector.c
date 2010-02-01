@@ -853,34 +853,21 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
     if (uuu->sock) /* s_PreRead() might have dropped the connection already */
         s_DropConnection(uuu, timeout);
     if (uuu->can_connect == eCC_Once)
-        uuu->can_connect = eCC_None;
+        uuu->can_connect =  eCC_None;
 
     return status;
 }
 
 
-/* Send the accumulated output data(if any) to server, then close socket.
- * Regardless of the flush, clear both input and output buffer.
- * This function is only called to either re-open or close the connector.
+/* Send the accumulated output data(if any) to server, then close the socket.
+ * Regardless of the flush, clear both input and output buffers.
  */
 static void s_FlushAndDisconnect(SHttpConnector* uuu,
-                                 int/*bool*/     close,
                                  const STimeout* timeout)
 {
-    /* store timeouts for later use */
-    if (timeout) {
-        uuu->oo_timeout = *timeout;
-        uuu->o_timeout  = &uuu->oo_timeout;
-        uuu->ww_timeout = *timeout;
-        uuu->w_timeout  = &uuu->ww_timeout;
-    } else {
-        uuu->o_timeout  = timeout;
-        uuu->w_timeout  = timeout;
-    }
-
-    if (close  &&  uuu->can_connect != eCC_None  &&  !uuu->sock
+    if (uuu->can_connect != eCC_None  &&  !uuu->sock
         &&  ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(uuu->w_buf))) {
-        /* "WRITE" mode and data (or just flag) pending */
+        /* "WRITE" mode and data (or just flag) is still pending */
         s_PreRead(uuu, timeout, eRM_DropUnread);
     }
     s_Disconnect(uuu, timeout, eRM_DropUnread);
@@ -925,11 +912,6 @@ extern "C" {
     static void        s_Setup      (SMetaConnector *meta,
                                      CONNECTOR connector);
     static void        s_Destroy    (CONNECTOR connector);
-#  ifdef IMPLEMENTED__CONN_WaitAsync
-    static EIO_Status s_VT_WaitAsync(CONNECTOR     connector,
-                                     FConnectorAsyncHandler  func,
-                                     SConnectorAsyncHandler* data);
-#  endif
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
@@ -957,16 +939,27 @@ static EIO_Status s_VT_Open
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
     /* NOTE: the real connect will be performed on the first "READ", or
-     * "CLOSE", or on "WAIT" on read -- see in "s_ConnectAndSend()";
-     * we just close underlying socket and prepare to open it later */
-    s_FlushAndDisconnect(uuu, 0/*open*/, timeout);
+     * "CLOSE", or on "WAIT" on read -- see in "s_ConnectAndSend()" */
+
+    assert(!uuu->sock);
+
+    /* store timeouts for later use */
+    if (timeout) {
+        uuu->oo_timeout = *timeout;
+        uuu->o_timeout  = &uuu->oo_timeout;
+        uuu->ww_timeout = *timeout;
+        uuu->w_timeout  = &uuu->ww_timeout;
+    } else {
+        uuu->o_timeout  = timeout;
+        uuu->w_timeout  = timeout;
+    }
 
     /* reset the auto-reconnect feature */
-    uuu->can_connect = uuu->flags & fHCC_AutoReconnect
-        ? eCC_Unlimited : eCC_Once;
+    uuu->can_connect = (uuu->flags & fHCC_AutoReconnect
+                        ? eCC_Unlimited : eCC_Once);
     uuu->major_fault = 0;
     uuu->minor_fault = 0;
-    uuu->auth_sent = 0;
+    uuu->auth_sent   = 0;
 
     return eIO_Success;
 }
@@ -980,6 +973,7 @@ static EIO_Status s_VT_Wait
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     EIO_Status status;
 
+    assert(event == eIO_Read  ||  event == eIO_Write);
     switch (event) {
     case eIO_Read:
         if (BUF_Size(uuu->r_buf))
@@ -996,9 +990,9 @@ static EIO_Status s_VT_Wait
             ||  (uuu->sock  &&  uuu->can_connect == eCC_Once)
             ? eIO_Closed : eIO_Success;
     default:
+        assert(0);
         break;
     }
-    assert(0);
     return eIO_InvalidArg;
 }
 
@@ -1025,15 +1019,14 @@ static EIO_Status s_VT_Write
         return eIO_Closed; /* no more connects permitted */
 
     /* accumulate all output in the memory buffer */
-    if (uuu->flags & fHCC_UrlEncodeOutput) {
+    if (size  &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
         /* with URL-encoding */
         size_t dst_size = 3 * size;
-        void* dst = malloc(dst_size);
-        size_t dst_written;
-        URL_Encode(buf, size, n_written, dst, dst_size, &dst_written);
-        assert(*n_written == size);
-        if (!BUF_Write(&uuu->w_buf, dst, dst_written)) {
-            free(dst);
+        void*  dst = malloc(dst_size);
+        URL_Encode(buf, size, n_written, dst, dst_size, &dst_size);
+        if (*n_written != size  ||  !BUF_Write(&uuu->w_buf, dst, dst_size)) {
+            if (dst)
+                free(dst);
             return eIO_Unknown;
         }
         free(dst);
@@ -1050,7 +1043,6 @@ static EIO_Status s_VT_Write
         uuu->w_timeout  = &uuu->ww_timeout;
     } else
         uuu->w_timeout  = timeout;
-
     return eIO_Success;
 }
 
@@ -1120,21 +1112,9 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-    s_FlushAndDisconnect((SHttpConnector*) connector->handle,
-                         1/*close*/, timeout);
+    s_FlushAndDisconnect((SHttpConnector*) connector->handle, timeout);
     return eIO_Success;
 }
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-static EIO_Status s_VT_WaitAsync
-(void*                   connector,
- FConnectorAsyncHandler  func,
- SConnectorAsyncHandler* data)
-{
-    return eIO_NotSupported;
-}
-#endif
 
 
 static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
@@ -1142,18 +1122,15 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
     /* initialize virtual table */
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, descr,      s_VT_Descr,     connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
-    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
-    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
-    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
-#endif
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
+    CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
+    CONN_SET_METHOD(meta, flush,    s_VT_Flush,   connector);
+    CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
+    CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
     CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
 }
 
@@ -1161,6 +1138,7 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 static void s_Destroy(CONNECTOR connector)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
+    connector->handle = 0;
 
     if (uuu->adjust_cleanup)
         uuu->adjust_cleanup(uuu->adjust_data);
@@ -1169,7 +1147,6 @@ static void s_Destroy(CONNECTOR connector)
     BUF_Destroy(uuu->r_buf);
     BUF_Destroy(uuu->w_buf);
     free(uuu);
-    connector->handle = 0;
     free(connector);
 }
 
@@ -1260,7 +1237,7 @@ static CONNECTOR s_CreateConnector
 
     uuu->flags            = flags;
     uuu->reserved         = 0;
-    uuu->can_connect      = eCC_Once;         /* will be properly set at open*/
+    uuu->can_connect      = eCC_None;         /* will be properly set at open*/
 
     ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", value, sizeof(value),"");
     uuu->error_header = (*value  &&  (strcmp    (value, "1")    == 0  ||

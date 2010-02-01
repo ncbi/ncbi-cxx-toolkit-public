@@ -71,7 +71,8 @@ typedef enum { /* DEPRECATED -- DON'T USE! */
  * Make up to "max_try" attempts to connect to the "host:port" before
  * giving up.
  * On successful connect, send the first "init_size" bytes from buffer
- * "init_data"(can be NULL -- then send nothing) to the opened connection.
+ * "init_data"(can be NULL -- then send nothing, regardless of "init_size")
+ * to the newly opened connection.
  * NOTE:  the connector makes (and then uses) its own copy of the "init_data".
  * Return NULL on error.
  */
@@ -85,28 +86,17 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
  );
 
 
-/* Equivalent to SOCK_CreateConnectorOnTopEx(sock, max_try, 0,0,0),
- * see below.
+/* Create new CONNECTOR structure on top of existing socket object (SOCK),
+ * acquiring the ownership of the socket "sock" if "own_sock" passed non-zero,
+ * and overriding all timeouts that might have been set already in it.
+ * Timeout values will be taken from connection (CONN), after the connector
+ * is used in CONN_Create() call.
+ * Non-owned socket will not be closed when the connection gets closed;
+ * and may further be used, as necessary (including closing it explicitly).
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
-(SOCK         sock,   /* socket object                                       */
- unsigned int max_try /* max.number of tries to re-establish the link if lost*/
- );
-
-
-/* Create new CONNECTOR structure on top of existing socket object (SOCK),
- * acquiring the ownership of the socket, and overriding all timeouts
- * that might have been set already in it. Timeout values will be taken from
- * connection (CONN), after the connector is used in CONN_Create() call.
- * Please note that this function revokes all ownership of the socket, and
- * further assumes the passed socket is for the sole use of the connector.
- * A socket obtained as a result of accepting connection on a listening socket
- * (aka server-side socket) is not allowed to have reconnects (max_try = 0).
- */
-extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
-(SOCK         sock,      /* socket object                                    */
- unsigned int max_try,   /* max.# of tries to reconnect if disconnected      */
- TSOCK_Flags  flags      /* bitwise OR of additional flags: see above        */
+(SOCK                 sock,    /* socket object                              */
+ unsigned int/*bool*/ own_sock /* non-zero if connector will own "sock"      */
  );
 
 

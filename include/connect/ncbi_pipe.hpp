@@ -247,7 +247,15 @@ public:
     ///   Return eIO_InvalidArg otherwise.
     /// @sa
     ///   Read
-    EIO_Status SetReadHandle(EChildIOHandle from_handle);
+    EIO_Status     SetReadHandle(EChildIOHandle from_handle);
+
+    /// Get standard output handle to read data from.
+    ///
+    /// @return
+    ///   Return either eStdOut(default) or eStdErr
+    /// @sa
+    ///   SetReadHandle
+    EChildIOHandle GetReadHandle(void) const { return m_ReadHandle; }
 
     /// Read data from pipe. 
     ///

@@ -68,7 +68,7 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
  * sets conn to 0, and leaves connector intact (can be used again).
  * NOTE1:  The real connection will not be established right away. Instead,
  *         it will be established at the moment of the first call to one of
- *         "Flush", "Wait", "WaitAsync", "Write", or "Read" methods.
+ *         "Flush", "Wait", "Write", or "Read" methods.
  * NOTE2:  "Connection establishment" at this level of abstraction may differ
  *         from actual link establishment at the underlying connector's level.
  * NOTE3:  Initial timeout values are set to CONN_DEFAULT_TIMEOUT, meaning
@@ -284,35 +284,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
  const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0)         */
  SCONN_Callback*       old_cb   /* [out] to save old callback at (may be 0) */
 );
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-/* Wait for an asynchronous I/O event, then call the specified handler.
- * In the "handler" function:
- *   "event"  -- is the I/O direction where the async. event happened
- *   "status" -- must be "eIO_Success" if it is ready for I/O
- *   "data"   -- callback data (passed as "data" in CONN_WaitAsync())
- * If "handler" is NULL then discard the current handler, if any.
- * The "cleanup" function to be called right after the call to "handler" or
- * by CONN_Close(), or if the handler is reset by calling CONN_WaitAsync()
- * again -- whichever happens first.
- */
-typedef void (*FConnAsyncHandler)
-(CONN       conn,
- EIO_Event  event,
- EIO_Status status,
- void*      data
-);
-typedef void (*FConnAsyncCleanup)(void* data);
-
-extern EIO_Status CONN_WaitAsync
-(CONN              conn,      /* [in] connection handle */
- EIO_Event         event,     /* [in] I/O direction     */
- FConnAsyncHandler handler,   /* [in] callback function */
- void*             data,      /* [in] callback data     */
- FConnAsyncCleanup cleanup    /* [in] cleanup procedure */
- );
-#endif /* IMPLEMENTED__CONN_WaitAsync */
 
 
 #ifdef __cplusplus

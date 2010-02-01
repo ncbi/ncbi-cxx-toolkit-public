@@ -125,10 +125,10 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 
 
 CConn_SocketStream::CConn_SocketStream(SOCK            sock,
-                                       unsigned int    max_try,
+                                       unsigned int    own_sock,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
-    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, max_try),
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, own_sock),
                      timeout, buf_size)
 {
     return;
@@ -139,6 +139,11 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 static SOCK s_GrabSOCK(CSocket& socket)
 {
     SOCK sock = socket.GetSOCK();
+    if (!sock) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_SocketStream::CConn_SocketStream(): "
+                   "Socket may not be empty");
+    }
     if (socket.SetOwnership(eNoOwnership) == eNoOwnership) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_SocketStream::CConn_SocketStream(): "
@@ -152,10 +157,9 @@ static SOCK s_GrabSOCK(CSocket& socket)
 
 
 CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
-                                       unsigned int    max_try,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
-    : CConn_IOStream(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket), max_try),
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket), 1/*own*/),
                      timeout, buf_size)
 {
     return;

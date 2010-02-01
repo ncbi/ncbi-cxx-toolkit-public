@@ -63,6 +63,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
     }
     if (LOG_IF_ERROR(3, CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
+        if (connector->destroy)
+            connector->destroy(connector);
         return;
     }
     _ASSERT(m_Conn != 0);

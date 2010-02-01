@@ -75,18 +75,20 @@ static char* s_VT_Descr(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     string cmd_line(xxx->cmd);
-    ITERATE (vector<string>, iter, xxx->args) {
+    ITERATE (vector<string>, arg, xxx->args) {
         if ( !cmd_line.empty() ) {
             cmd_line += " ";
         }
-        cmd_line += *iter;
+        bool quote = arg->find(' ') != NPOS ? true : false;
+        if ( quote ) {
+            cmd_line += '"';
+        }
+        cmd_line     += *arg;
+        if ( quote ) {
+            cmd_line += '"';
+        }
     }
-    size_t len = cmd_line.length() + 1/*EOL*/;
-    char* buf = (char*) malloc(len);
-    if (buf) {
-        strcpy(buf, cmd_line.c_str());
-    }
-    return buf;
+    return strdup(cmd_line.c_str());
 }
 
 
@@ -96,17 +98,11 @@ static EIO_Status s_VT_Open
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
 
+    _ASSERT(!xxx->is_open);
+
     if (!xxx->pipe) {
         return eIO_Unknown;
     }
-    // If connected, close previous session first
-    if (xxx->is_open) {
-        if (xxx->pipe->Close() != eIO_Success) {
-            return eIO_Unknown;
-        }
-        xxx->is_open = false;
-    }
-    // Open new connection
     EIO_Status status = xxx->pipe->Open(xxx->cmd, xxx->args, xxx->flags);
     if (status == eIO_Success) {
         xxx->is_open = true;
@@ -115,22 +111,20 @@ static EIO_Status s_VT_Open
 }
 
 
-static EIO_Status s_VT_Status
-(CONNECTOR connector,
- EIO_Event dir)
+static EIO_Status s_VT_Wait
+(CONNECTOR       connector,
+ EIO_Event       event,
+ const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Success;
-}
-
-
-static EIO_Status s_VT_Wait
-(CONNECTOR       /*connector*/,
- EIO_Event       /*event*/,
- const STimeout* /*timeout*/)
-{
-    /* NB: to be implemented */
-    return eIO_Success;
+    _ASSERT(event == eIO_Read  ||  event == eIO_Write);
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    CPipe::TChildPollMask what = 0;
+    if (event & eIO_Read)
+        what |= CPipe::fDefault;
+    if (event & eIO_Write)
+        what |= CPipe::fStdIn;
+    return xxx->pipe->Poll(what, timeout) ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -142,12 +136,8 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    if (!xxx->pipe  ||  xxx->pipe->SetTimeout(eIO_Write, timeout) != 
-        eIO_Success) {
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Write(buf, size, n_written);
@@ -162,15 +152,21 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    if (!xxx->pipe  ||  xxx->pipe->SetTimeout(eIO_Read, timeout) !=
-        eIO_Success) {
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Read(buf, size, n_read);
+}
+
+
+static EIO_Status s_VT_Status
+(CONNECTOR connector,
+ EIO_Event dir)
+{
+    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    return xxx->pipe->Status(dir);
 }
 
 
@@ -179,26 +175,11 @@ static EIO_Status s_VT_Close
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-    if (xxx->is_open) {
-        xxx->pipe->SetTimeout(eIO_Close, timeout);
-        int exitcode = 0;
-        status = xxx->pipe->Close(&exitcode);
-        xxx->is_open = false;
-    }
-    return status == eIO_Closed ? eIO_Success : status;
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    xxx->is_open = false;
+    xxx->pipe->SetTimeout(eIO_Close, timeout);
+    return xxx->pipe->Close();
 }
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-static EIO_Status s_VT_WaitAsync
-(void*                   connector,
- FConnectorAsyncHandler  func,
- SConnectorAsyncHandler* data)
-{
-    return eIO_NotSupported;
-}
-#endif
 
 
 static void s_Setup
@@ -206,32 +187,31 @@ static void s_Setup
  CONNECTOR       connector)
 {
     // Initialize virtual table
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, descr,      s_VT_Descr,     connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
-    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      0,              0);
-    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
-    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
-#endif
-    meta->default_timeout = 0; // infinite
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
+    CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
+    CONN_SET_METHOD(meta, flush,    0,            0);
+    CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
+    CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
+    meta->default_timeout = kInfiniteTimeout;
 }
 
 
 static void s_Destroy(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    connector->handle = 0;
+
     if (xxx) {
         if (xxx->is_own_pipe) {
             delete xxx->pipe;
         }
+        xxx->pipe = 0;
         delete xxx;
     }
-    connector->handle = 0;
     free(connector);
 }
 

@@ -107,17 +107,14 @@ static void s_CloseDispatcher(SServiceConnector* uuu)
  */
 static void s_Reset(SMetaConnector *meta)
 {
-    CONN_SET_METHOD(meta, descr,      0,           0);
-    CONN_SET_METHOD(meta, wait,       0,           0);
-    CONN_SET_METHOD(meta, write,      0,           0);
-    CONN_SET_METHOD(meta, flush,      0,           0);
-    CONN_SET_METHOD(meta, read,       0,           0);
-    CONN_SET_METHOD(meta, status,     s_VT_Status, 0);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, 0,           0);
-#endif
+    CONN_SET_METHOD(meta, descr,  0,           0);
+    CONN_SET_METHOD(meta, wait,   0,           0);
+    CONN_SET_METHOD(meta, write,  0,           0);
+    CONN_SET_METHOD(meta, flush,  0,           0);
+    CONN_SET_METHOD(meta, read,   0,           0);
+    CONN_SET_METHOD(meta, status, s_VT_Status, 0);
 }
-
+ 
 
 #ifdef __cplusplus
 extern "C" {
@@ -754,10 +751,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONN_SET_METHOD(meta, flush,  uuu->meta.flush,  uuu->meta.c_flush);
         CONN_SET_METHOD(meta, read,   uuu->meta.read,   uuu->meta.c_read);
         CONN_SET_METHOD(meta, status, uuu->meta.status, uuu->meta.c_status);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-        CONN_SET_METHOD(meta, wait_async,
-                        uuu->meta.wait_async, uuu->meta.c_wait_async);
-#endif
         if (uuu->meta.get_type) {
             const char* type;
             if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
@@ -827,16 +820,18 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 static void s_Destroy(CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    connector->handle = 0;
 
     if (uuu->iter)
         s_CloseDispatcher(uuu);
     if (uuu->params.cleanup)
         uuu->params.cleanup(uuu->params.data);
     ConnNetInfo_Destroy(uuu->net_info);
-    if (uuu->name)
+    if (uuu->name) {
         free((void*) uuu->name);
+        uuu->name = 0;
+    }
     free(uuu);
-    connector->handle = 0;
     free(connector);
 }
 

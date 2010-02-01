@@ -84,20 +84,14 @@ static EIO_Status s_VT_Open
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
 
+    _ASSERT(!xxx->is_open);
+
     if (!xxx->pipe) {
-        return eIO_Unknown;
-    }
-    // If connected, close previous session first
-    if (xxx->is_open) {
-        xxx->is_open = false;
-        if (xxx->pipe->Close() != eIO_Success) {
-            return eIO_Unknown;
-        }
+        return eIO_Unknown;  // blame operator "new" :-/
     }
     if (xxx->pipe->SetTimeout(eIO_Open, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
-    // Open new connection
     EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout,
                                         xxx->pipebufsize);
     if (status == eIO_Success) {
@@ -107,28 +101,15 @@ static EIO_Status s_VT_Open
 }
 
 
-static EIO_Status s_VT_Status
-(CONNECTOR connector,
- EIO_Event dir)
-{
-    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Unknown;
-}
-
-
 static EIO_Status s_VT_Wait
 (CONNECTOR       connector,
  EIO_Event       event,
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    return xxx->pipe ? xxx->pipe->Wait(event, timeout) : eIO_Unknown;
+    _ASSERT(event == eIO_Read  ||  event == eIO_Write);
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    return xxx->pipe->Wait(event, timeout);
 }
 
 
@@ -140,12 +121,8 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    if (!xxx->pipe
-        ||  xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Write(buf, size, n_written);
@@ -160,15 +137,21 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-
-    if (!xxx->is_open) {
-        return eIO_Closed;
-    }
-    if (!xxx->pipe
-        ||  xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Read(buf, size, n_read);
+}
+
+
+static EIO_Status s_VT_Status
+(CONNECTOR connector,
+ EIO_Event dir)
+{
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    return xxx->pipe->Status(dir);
 }
 
 
@@ -177,24 +160,10 @@ static EIO_Status s_VT_Close
  const STimeout* /*timeout*/)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-    if (xxx->is_open) {
-        status = xxx->pipe->Close();
-        xxx->is_open = false;
-    }
-    return status;
+    _ASSERT(xxx->is_open  &&  xxx->pipe);
+    xxx->is_open = false;
+    return xxx->pipe->Close();
 }
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-static EIO_Status s_VT_WaitAsync
-(void*                   connector,
- FConnectorAsyncHandler  func,
- SConnectorAsyncHandler* data)
-{
-    return eIO_NotSupported;
-}
-#endif
 
 
 static void s_Setup
@@ -202,19 +171,16 @@ static void s_Setup
  CONNECTOR       connector)
 {
     // Initialize virtual table
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, descr,      s_VT_Descr,     connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
-    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      0,              0);
-    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
-    CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
-#endif
-    meta->default_timeout = 0; // infinite
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
+    CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
+    CONN_SET_METHOD(meta, flush,    0,            0);
+    CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
+    CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
+    meta->default_timeout = kInfiniteTimeout;
 }
 
 
@@ -222,11 +188,13 @@ static void s_Destroy
 (CONNECTOR connector)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
+    connector->handle = 0;
+
     if (xxx) {
         delete xxx->pipe;
+        xxx->pipe = 0;
         delete xxx;
     }
-    connector->handle = 0;
     free(connector);
 }
 
