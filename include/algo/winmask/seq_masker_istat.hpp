@@ -103,7 +103,7 @@ public:
     /**
         **\brief Object destructor.
         **/
-    virtual ~CSeqMaskerIstat() {}
+    virtual ~CSeqMaskerIstat() { if( opt_data_.cba_ ) delete[] opt_data_.cba_; }
 
     /**
         **\brief Look up the count value of a given unit.
