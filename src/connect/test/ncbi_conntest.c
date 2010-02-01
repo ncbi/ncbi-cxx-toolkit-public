@@ -346,26 +346,23 @@ extern void CONN_TestConnector
      */
     assert(CONN_Create(connector, &conn) == eIO_Success);
 
-    CONN_SetTimeout(conn, eIO_Open,      timeout);
-    CONN_SetTimeout(conn, eIO_Read,      timeout);
-    CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
-    CONN_SetTimeout(conn, eIO_Close,     timeout);
+    assert(CONN_SetTimeout(conn, eIO_Open,      timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_ReadWrite, timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_Close,     timeout) == eIO_Success);
 
     assert(CONN_ReInit(conn, connector) == eIO_Success);
 
-    CONN_SetTimeout(conn, eIO_Write, timeout);
-
     status = CONN_Wait(conn, eIO_Write, timeout);
     if (status != eIO_Success) {
-        TEST_LOG(status, "[CONN_TestConnector]  CONN_Wait(Write) failed");
+        TEST_LOG(status, "[CONN_TestConnector]  CONN_Wait(write) failed");
         assert(status == eIO_Timeout);
     }
 
     /* Run the specified TESTs
      */
-    if ( !flags )
+    if ( !flags ) {
         flags = fTC_Everything;
-
+    }
     if (flags & fTC_SingleBouncePrint) {
         s_SingleBouncePrint(conn, data_file);
     }
@@ -380,5 +377,5 @@ extern void CONN_TestConnector
      */
     assert(CONN_Close(conn) == eIO_Success);
 
-    TEST_LOG(status, "[CONN_TestConnector]  Completed");
+    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Completed");
 }
