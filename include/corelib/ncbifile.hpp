@@ -1086,7 +1086,13 @@ public:
     /// will used by default in this class.
     ///
     /// @param mode
-    ///   Temporary file creation mode.
+    ///   Temporary file creation mode. Note, that default mode eTmpFileGetName
+    ///   returns only the name of the temporary file, without creating it.
+    ///   This method can be faster, but it have potential race condition,
+    ///   when other process can leave as behind and create file with the same
+    ///   name first. Also, please note, that if you call GetTmpName() again,
+    ///   without creating file for previous call of this method, the same
+    ///   file name can be returned.
     /// @return
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
