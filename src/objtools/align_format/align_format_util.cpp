@@ -723,7 +723,6 @@ string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id)
     string retval = "";
     if (id->Which() == CSeq_id::e_General){
         const CDbtag& dtg = id->GetGeneral();
-        const string& dbName = dtg.GetDb();
         retval = CAlignFormatUtil::GetGnlID(dtg);
     } 
     if (retval == "")
