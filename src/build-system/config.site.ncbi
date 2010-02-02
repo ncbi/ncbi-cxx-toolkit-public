@@ -23,7 +23,10 @@ case "$ncbi_platform" in
     SunOSSparc ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
 esac
 
-: ${BOOST_PATH=$NCBI/boost-1.35.0}
+case "$ncbi_platform" in
+    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.41.0} ;;
+    *          ) : ${BOOST_PATH=$NCBI/boost-1.35.0} ;;
+esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10}   ;;
