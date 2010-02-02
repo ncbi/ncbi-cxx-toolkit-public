@@ -254,7 +254,7 @@ PC-AssayTargetInfo ::= SEQUENCE {
                            }                DEFAULT protein,
    organism                BioSource               OPTIONAL,  -- Target Organism
    descr                   VisibleString           OPTIONAL,  -- Target Description  (e.g., cellular functionality and location)
-   comment                 VisibleString           OPTIONAL   -- Comments or Additional Information
+   comment                 SEQUENCE OF VisibleString           OPTIONAL   -- Comments or Additional Information
 }
 
 -- Annotated Cross-Reference (XRef) Information to allow the XRef to be qualified, as to its meaning or context
