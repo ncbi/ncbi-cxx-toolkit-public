@@ -1487,21 +1487,6 @@ CBlastQueryFilteredFrames(EBlastProgramType           program,
         AddSeqLoc(intv, frame);
         frames.insert(frame);
     }
-
-    if (Blast_QueryIsNucleotide(m_Program) && m_TranslateCoords) {
-        // add masks to other frames if missing
-        set<ETranslationFrame> all_available_frames = s_GetAllAvailableFrames();
-        set<ETranslationFrame> frames_wo_masks;
-        set_difference(all_available_frames.begin(),
-                       all_available_frames.end(),
-                       frames.begin(), frames.end(),
-                       inserter(frames_wo_masks, frames_wo_masks.begin()));
-        ITERATE(set<ETranslationFrame>, fr, frames_wo_masks) {
-            ITERATE(TMaskedQueryRegions, itr, mqr) {
-                AddSeqLoc((**itr).GetInterval(), *fr);
-            }
-        }
-    }
 }
 
 CBlastQueryFilteredFrames::~CBlastQueryFilteredFrames()
