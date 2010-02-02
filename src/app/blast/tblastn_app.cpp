@@ -114,6 +114,7 @@ int CTblastnApp::Run(void)
                                          query_opts->GetParseDeflines(),
                                          query_opts->GetRange(),
                                          !m_CmdLineArgs->ExecuteRemotely());
+            iconfig.SetQueryLocalIdMode();
             fasta.Reset(new CBlastFastaInputSource(
                                          m_CmdLineArgs->GetInputStream(),
                                          iconfig));

@@ -165,6 +165,15 @@ public:
     int GetLocalIdCounterInitValue() const { return m_LocalIdCounter; }
     /// Set the local id counter initial value
     void SetLocalIdCounterInitValue(int val) { m_LocalIdCounter = val; }
+    
+    /// Retrieve the custom prefix string used for generating local ids
+    const string& GetLocalIdPrefix() const { return m_LocalIdPrefix; }
+    /// Set the custom prefix string used for generating local ids
+    void SetLocalIdPrefix(const string& prefix) { m_LocalIdPrefix = prefix; }
+    /// Append query-specific prefix codes to all generated local ids 
+    void SetQueryLocalIdMode() {m_LocalIdPrefix = "Query_";}
+    /// Append subject-specific prefix codes to all generated local ids
+    void SetSubjectLocalIdMode() {m_LocalIdPrefix = "Subject_";}
 
     /// Retrieve the sequence length threshold to guess the molecule type
     unsigned int GetSeqLenThreshold2Guess() const { 
@@ -192,6 +201,8 @@ private:
     int m_LocalIdCounter;          
     /// The sequence length threshold to guess molecule type
     unsigned int m_SeqLenThreshold2Guess;
+    /// Custom prefix string passed to CSeqidGenerator
+    string m_LocalIdPrefix;
 };
 
 

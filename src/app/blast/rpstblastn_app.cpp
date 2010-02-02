@@ -112,6 +112,7 @@ int CRPSTBlastnApp::Run(void)
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange(),
                                      !m_CmdLineArgs->ExecuteRemotely());
+        iconfig.SetQueryLocalIdMode();
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 

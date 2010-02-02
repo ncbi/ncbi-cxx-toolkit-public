@@ -275,7 +275,8 @@ CBlastFastaInputSource::x_InitInputReader()
     }
 
     CRef<CSeqIdGenerator> idgen
-        (new CSeqIdGenerator(m_Config.GetLocalIdCounterInitValue()));
+        (new CSeqIdGenerator(m_Config.GetLocalIdCounterInitValue(),
+                             m_Config.GetLocalIdPrefix()));
     m_InputReader->SetIDGenerator(*idgen);
 }
 

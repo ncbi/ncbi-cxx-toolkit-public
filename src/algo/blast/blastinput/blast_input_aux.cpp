@@ -163,7 +163,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
     iconfig.SetRange(range);
     iconfig.SetBelieveDeflines(parse_deflines);
     iconfig.SetLowercaseMask(use_lcase_masking);
-    iconfig.SetLocalIdCounterInitValue(1<<16);
+    iconfig.SetSubjectLocalIdMode();
 
     CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(in, iconfig));
     CRef<CBlastInput> input(new CBlastInput(fasta));
