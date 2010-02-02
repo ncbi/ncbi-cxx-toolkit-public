@@ -44,6 +44,8 @@ Seq-id ::= CHOICE {
     named-annot-track Textseq-id -- Internal named annotation tracking ID
 }
 
+Seq-id-set ::= SET OF Seq-id
+
 
 Patent-seq-id ::= SEQUENCE {
     seqid INTEGER ,         -- number of sequence in patent
