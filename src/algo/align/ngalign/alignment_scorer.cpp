@@ -155,11 +155,14 @@ void CPctCoverageScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scop
 
 
 
-void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
+void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet,
+                                             CScope& Scope)
 {
 
-    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
-        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter,
+                      AlignSet->Get()) {
+        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
+                          QueryIter->second->Get()) {
 
             ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
 
@@ -167,8 +170,14 @@ void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& 
 
                 list<CRef<CSeq_id> > QueryIds, SubjectIds;
 
-                x_GetCompList(Curr->GetSeq_id(0), Curr->GetSeqStart(0), Curr->GetSeqStop(0), QueryIds, Scope);
-                x_GetCompList(Curr->GetSeq_id(1), Curr->GetSeqStart(1), Curr->GetSeqStop(1), SubjectIds, Scope);
+                x_GetCompList(Curr->GetSeq_id(0),
+                              Curr->GetSeqStart(0),
+                              Curr->GetSeqStop(0),
+                              QueryIds, Scope);
+                x_GetCompList(Curr->GetSeq_id(1),
+                              Curr->GetSeqStart(1),
+                              Curr->GetSeqStop(1),
+                              SubjectIds, Scope);
 
                 bool IsCommon = x_CompareCompLists(QueryIds, SubjectIds);
 
