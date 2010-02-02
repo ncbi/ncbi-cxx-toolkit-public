@@ -67,6 +67,8 @@ public:
               bool bInvert = false,
               IErrorContainer* pErrors = 0 );
 
+    virtual ~CIdMapper() {};
+
     /// Add a mapping to the internal mapping table.
     /// @param from
     ///   source handle, or target handle in the case of reverse mapping
