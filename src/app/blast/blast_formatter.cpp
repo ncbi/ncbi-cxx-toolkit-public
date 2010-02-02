@@ -298,8 +298,14 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            opts.GetMBIndexLoaded());
     CRef<CSearchResultSet> results = m_RmtBlast->GetResultSet();
     formatter.PrintProlog();
-    ITERATE(CSearchResultSet, result, *results) {
-        formatter.PrintOneResultSet(**result, queries);
+    if (fmt_args.ArchiveFormatRequested(args))
+    {
+        CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
+        formatter.WriteArchive(*query_factory, *opts_handle, *results);
+    } else {
+    	ITERATE(CSearchResultSet, result, *results) {
+       	   formatter.PrintOneResultSet(**result, queries);
+    	}
     }
     formatter.PrintEpilog(opts);
     return retval;
