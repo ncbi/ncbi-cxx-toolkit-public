@@ -154,9 +154,12 @@ public:
 
     /// Should local IDs be parsed or not?
     /// @param val value to set [in]
+    /// Returns true if the field was requested in the format specification
+    /// @param field Which field to test [in]
     void SetParseLocalIds(bool val) { m_ParseLocalIds = val; }
 
 protected:
+    bool x_IsFieldRequested(ETabularField field);
     /// Add a field to the list of fields to show, if it is not yet present in
     /// the list of fields.
     /// @param field Which field to add? [in]
@@ -370,6 +373,14 @@ inline void CBlastTabularInfo::x_PrintMismatches(void)
 inline void CBlastTabularInfo::x_PrintNumPositives(void)
 {
     m_Ostream << m_NumPositives;
+}
+
+// FIXME; do this via a bit field
+inline bool CBlastTabularInfo::x_IsFieldRequested(ETabularField field)
+{
+    return find(m_FieldsToShow.begin(), 
+                m_FieldsToShow.end(), 
+                field) != m_FieldsToShow.end();
 }
 
 inline void CBlastTabularInfo::x_PrintGapOpenings(void)

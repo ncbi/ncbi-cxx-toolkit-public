@@ -886,7 +886,7 @@ void
 CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 {
     if (m_FormatType == CFormattingArgs::eTabularWithComments) {
-        CBlastTabularInfo tabinfo(m_Outfile);
+        CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec);
         if (m_IsBl2Seq) {
             _ASSERT(m_SeqInfoSrc);
             m_QueriesFormatted /= m_SeqInfoSrc->Size();

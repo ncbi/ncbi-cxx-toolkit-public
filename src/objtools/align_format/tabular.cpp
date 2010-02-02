@@ -292,49 +292,61 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
 
-    int score, num_ident;
-    double bit_score;
-    double evalue;
-    int sum_n;
-    list<int> use_this_gi;
+    int num_ident = 0;
     
     // First reset all fields.
     x_ResetFields();
 
-    CAlignFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
-                                   num_ident, use_this_gi);
-    SetScores(score, bit_score, evalue);
+    if (x_IsFieldRequested(eEvalue) || 
+        x_IsFieldRequested(eBitScore) ||
+        x_IsFieldRequested(eScore)) {
+        int score = 0, sum_n = 0;
+        double bit_score = .0, evalue = .0;
+        list<int> use_this_gi;
+        CAlignFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
+                                       num_ident, use_this_gi);
+        SetScores(score, bit_score, evalue);
+    }
 
     bool query_is_na = false, subject_is_na = false;
     bool bioseqs_found = true;
     // Extract the full query id from the correspondintg Bioseq handle.
-    try {
-        const CBioseq_Handle& query_bh = 
-            scope.GetBioseqHandle(align.GetSeq_id(0));
-        SetQueryId(query_bh);
-        query_is_na = query_bh.IsNa();
-    } catch (const CException&) {
-        list<CRef<CSeq_id> > query_ids;
-        CRef<CSeq_id> id(new CSeq_id());
-        id->Assign(align.GetSeq_id(0));
-        query_ids.push_back(id);
-        SetQueryId(query_ids);
-        bioseqs_found = false;
+    if (x_IsFieldRequested(eQuerySeqId) || x_IsFieldRequested(eQueryGi) ||
+        x_IsFieldRequested(eQueryAccession) ||
+        x_IsFieldRequested(eQueryAccessionVersion)) {
+        try {
+            // FIXME: do this only if the query has changed
+            const CBioseq_Handle& query_bh = 
+                scope.GetBioseqHandle(align.GetSeq_id(0));
+            SetQueryId(query_bh);
+            query_is_na = query_bh.IsNa();
+        } catch (const CException&) {
+            list<CRef<CSeq_id> > query_ids;
+            CRef<CSeq_id> id(new CSeq_id());
+            id->Assign(align.GetSeq_id(0));
+            query_ids.push_back(id);
+            SetQueryId(query_ids);
+            bioseqs_found = false;
+        }
     }
 
     // Extract the full list of subject ids
-    try {
-        const CBioseq_Handle& subject_bh = 
-            scope.GetBioseqHandle(align.GetSeq_id(1));
-        SetSubjectId(subject_bh);
-        subject_is_na = subject_bh.IsNa();
-    } catch (const CException&) {
-        list<CRef<CSeq_id> > subject_ids;
-        CRef<CSeq_id> id(new CSeq_id());
-        id->Assign(align.GetSeq_id(1));
-        subject_ids.push_back(id);
-        SetSubjectId(subject_ids);
-        bioseqs_found = false;
+    if (x_IsFieldRequested(eSubjectSeqId) || x_IsFieldRequested(eSubjectGi) ||
+        x_IsFieldRequested(eSubjectAccession) ||
+        x_IsFieldRequested(eSubjAccessionVersion)) {
+        try {
+            const CBioseq_Handle& subject_bh = 
+                scope.GetBioseqHandle(align.GetSeq_id(1));
+            SetSubjectId(subject_bh);
+            subject_is_na = subject_bh.IsNa();
+        } catch (const CException&) {
+            list<CRef<CSeq_id> > subject_ids;
+            CRef<CSeq_id> id(new CSeq_id());
+            id->Assign(align.GetSeq_id(1));
+            subject_ids.push_back(id);
+            SetSubjectId(subject_ids);
+            bioseqs_found = false;
+        }
     }
 
     // If Bioseq has not been found for one or both of the sequences, all
@@ -342,6 +354,15 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // fields.
     if (!bioseqs_found)
         return -1;
+
+    if (x_IsFieldRequested(eQueryStart) || x_IsFieldRequested(eQueryEnd) ||
+        x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
+        x_IsFieldRequested(eAlignmentLength) || x_IsFieldRequested(eGaps) ||
+        x_IsFieldRequested(eGapOpenings) || x_IsFieldRequested(eQuerySeq) ||
+        x_IsFieldRequested(eSubjectSeq) || x_IsFieldRequested(eNumIdentical) ||
+        x_IsFieldRequested(ePositives) || x_IsFieldRequested(eMismatches) || 
+        x_IsFieldRequested(ePercentPositives) || x_IsFieldRequested(ePercentIdentical) ||
+        x_IsFieldRequested(eBTOP)) {
 
     CRef<CSeq_align> finalAln(0);
    
@@ -375,7 +396,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     /// @sa CDisplaySeqalign::x_GetAlnVecForSeqalign
     CRef<CAlnVec> alnVec;
 
-    // For non-transalted reverse strand alignments, show plus strand on 
+    // For non-translated reverse strand alignments, show plus strand on 
     // query and minus strand on subject. To accomplish this, Dense-seg must
     // be reversed.
     if (!kTranslated && ds.IsSetStrands() && 
@@ -389,96 +410,123 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     }    
 
 
-    
-    int align_length, num_gaps, num_gap_opens;
-    CAlignFormatUtil::GetAlignLengths(*alnVec, align_length, num_gaps, 
-                                      num_gap_opens);
+    int align_length = 0, num_gaps = 0, num_gap_opens = 0;
+    if (x_IsFieldRequested(eAlignmentLength) ||
+        x_IsFieldRequested(eGaps) ||
+        x_IsFieldRequested(eGapOpenings)) {
+        CAlignFormatUtil::GetAlignLengths(*alnVec, align_length, num_gaps, 
+                                          num_gap_opens);
+    }
 
     // Do not trust the identities count in the Seq-align, because if masking 
     // was used, then masked residues were not counted as identities. 
     // Hence retrieve the sequences present in the alignment and count the 
     // identities again.
-    alnVec->SetGapChar('-');
-    alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
-    alnVec->GetWholeAlnSeqString(1, m_SubjectSeq);
-
-    // Do not trust the number of identities saved in the Seq-align.
-    // Recalculate it again.
     num_ident = 0;
     int num_matches = 0;
     int num_positives = 0;
     string btop_string = "";
     
-    // The query and subject sequence strings must be the same size in a correct
-    // alignment, but if alignment extends beyond the end of sequence because of
-    // a bug, one of the sequence strings may be truncated, hence it is 
-    // necessary to take a minimum here.
-    /// @todo FIXME: Should an exception be thrown instead? 
-    for (unsigned int i = 0; i < min(m_QuerySeq.size(), m_SubjectSeq.size()); 
-         ++i) {
-        if (m_QuerySeq[i] == m_SubjectSeq[i]) {
-            ++num_ident;
-            ++num_positives;
-            ++num_matches;
-        } else {
-            if(num_matches > 0) {
-                btop_string +=  NStr::Int8ToString(num_matches);
-                num_matches=0; 
+    if (x_IsFieldRequested(eQuerySeq) || x_IsFieldRequested(eSubjectSeq) ||
+        x_IsFieldRequested(eNumIdentical) || x_IsFieldRequested(ePositives) ||
+        x_IsFieldRequested(eMismatches) ||
+        x_IsFieldRequested(ePercentPositives) ||
+        x_IsFieldRequested(ePercentIdentical) ||
+        x_IsFieldRequested(eBTOP)) {
+
+        alnVec->SetGapChar('-');
+        alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
+        alnVec->GetWholeAlnSeqString(1, m_SubjectSeq);
+        
+        if (x_IsFieldRequested(eNumIdentical) || x_IsFieldRequested(ePositives) ||
+            x_IsFieldRequested(eMismatches) ||
+            x_IsFieldRequested(ePercentPositives) ||
+            x_IsFieldRequested(ePercentIdentical) ||
+            x_IsFieldRequested(eBTOP)) {
+
+            // The query and subject sequence strings must be the same size in a correct
+            // alignment, but if alignment extends beyond the end of sequence because of
+            // a bug, one of the sequence strings may be truncated, hence it is 
+            // necessary to take a minimum here.
+            /// @todo FIXME: Should an exception be thrown instead? 
+            for (unsigned int i = 0; 
+                 i < min(m_QuerySeq.size(), m_SubjectSeq.size());
+                 ++i) {
+                if (m_QuerySeq[i] == m_SubjectSeq[i]) {
+                    ++num_ident;
+                    ++num_positives;
+                    ++num_matches;
+                } else {
+                    if(num_matches > 0) {
+                        btop_string +=  NStr::Int8ToString(num_matches);
+                        num_matches=0; 
+                    }
+                    btop_string += m_QuerySeq[i];
+                    btop_string += m_SubjectSeq[i];
+                    if (matrix && !matrix->GetData().empty() &&
+                           (*matrix)(m_QuerySeq[i], m_SubjectSeq[i]) > 0) {
+                        ++num_positives;
+                    }
+                }
             }
-            btop_string += m_QuerySeq[i];
-            btop_string += m_SubjectSeq[i];
-            if (matrix && !matrix->GetData().empty() &&
-                   (*matrix)(m_QuerySeq[i], m_SubjectSeq[i]) > 0) {
-                ++num_positives;
+
+            if (num_matches > 0) {
+                btop_string +=  NStr::Int8ToString(num_matches);
             }
         }
     }
-
-    if (num_matches > 0)
-         btop_string +=  NStr::Int8ToString(num_matches);
-
+    SetBTOP(btop_string);
    
-    int q_start, q_end, s_start, s_end;
+    int q_start = 0, q_end = 0, s_start = 0, s_end = 0;
 
-    // For translated search, for a negative query frame, reverse its start and
-    // end offsets.
-    if (kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus) {
-        q_start = alnVec->GetSeqStop(kQueryRow) + 1;
-        q_end = alnVec->GetSeqStart(kQueryRow) + 1;
-    } else {
-        q_start = alnVec->GetSeqStart(kQueryRow) + 1;
-        q_end = alnVec->GetSeqStop(kQueryRow) + 1;
+    if (x_IsFieldRequested(eQueryStart) || x_IsFieldRequested(eQueryEnd) ||
+        x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eFrames)) {
+        // For translated search, for a negative query frame, reverse its start
+        // and end offsets.
+        if (kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus) {
+            q_start = alnVec->GetSeqStop(kQueryRow) + 1;
+            q_end = alnVec->GetSeqStart(kQueryRow) + 1;
+        } else {
+            q_start = alnVec->GetSeqStart(kQueryRow) + 1;
+            q_end = alnVec->GetSeqStop(kQueryRow) + 1;
+        }
     }
 
-    // If subject is on a reverse strand, reverse its start and end offsets.
-    // Also do that for a nucleotide-nucleotide search, if query is on the 
-    // reverse strand, because BLAST output always reverses subject, not query.
-    if (ds.GetSeqStrand(kSubjectRow) == eNa_strand_minus ||
-        (!kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus)) {
-        s_end = alnVec->GetSeqStart(kSubjectRow) + 1;
-        s_start = alnVec->GetSeqStop(kSubjectRow) + 1;
-    } else {
-        s_start = alnVec->GetSeqStart(kSubjectRow) + 1;
-        s_end = alnVec->GetSeqStop(kSubjectRow) + 1;
+    if (x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
+        x_IsFieldRequested(eSubjFrame) || x_IsFieldRequested(eFrames)) {
+        // If subject is on a reverse strand, reverse its start and end
+        // offsets. Also do that for a nucleotide-nucleotide search, if query
+        // is on the reverse strand, because BLAST output always reverses
+        // subject, not query.
+        if (ds.GetSeqStrand(kSubjectRow) == eNa_strand_minus ||
+            (!kTranslated && ds.GetSeqStrand(kQueryRow) == eNa_strand_minus)) {
+            s_end = alnVec->GetSeqStart(kSubjectRow) + 1;
+            s_start = alnVec->GetSeqStop(kSubjectRow) + 1;
+        } else {
+            s_start = alnVec->GetSeqStart(kSubjectRow) + 1;
+            s_end = alnVec->GetSeqStop(kSubjectRow) + 1;
+        }
     }
+    SetEndpoints(q_start, q_end, s_start, s_end);
     
     int query_frame = 1, subject_frame = 1;
     if (kTranslated) {
-        query_frame = CAlignFormatUtil::
-            GetFrame (q_start - 1, ds.GetSeqStrand(kQueryRow), 
-                      scope.GetBioseqHandle(align.GetSeq_id(0)));
+        if (x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eFrames)) {
+            query_frame = CAlignFormatUtil::
+                GetFrame (q_start - 1, ds.GetSeqStrand(kQueryRow), 
+                          scope.GetBioseqHandle(align.GetSeq_id(0)));
+        }
     
-        subject_frame = CAlignFormatUtil::
-            GetFrame (s_start - 1, ds.GetSeqStrand(kSubjectRow), 
-                      scope.GetBioseqHandle(align.GetSeq_id(1)));
+        if (x_IsFieldRequested(eSubjFrame) || x_IsFieldRequested(eFrames)) {
+            subject_frame = CAlignFormatUtil::
+                GetFrame (s_start - 1, ds.GetSeqStrand(kSubjectRow), 
+                          scope.GetBioseqHandle(align.GetSeq_id(1)));
+        }
 
     }
     SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives,
               query_frame, subject_frame);
-
-    SetBTOP(btop_string);
-
-    SetEndpoints(q_start, q_end, s_start, s_end);
+    }
 
     return 0;
 }
@@ -692,9 +740,9 @@ CBlastTabularInfo::GetAllFieldNames(void)
 void 
 CBlastTabularInfo::x_AddFieldToShow(ETabularField field)
 {
-    if (find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field) == 
-        m_FieldsToShow.end())
+    if ( !x_IsFieldRequested(field) ) {
         m_FieldsToShow.push_back(field);
+    }
 }
 
 void 
