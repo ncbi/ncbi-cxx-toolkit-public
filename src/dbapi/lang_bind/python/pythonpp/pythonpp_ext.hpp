@@ -554,7 +554,7 @@ public:
 
     static CObject& GetTypeObject(void)
     {
-        static CObject obj((PyObject*)&GetType(), pythonpp::eTakeOwnership);
+        static CObject obj((PyObject*)&GetType(), pythonpp::eAcquireOwnership);
 
         return obj;
     }
