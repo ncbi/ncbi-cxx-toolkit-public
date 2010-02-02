@@ -209,15 +209,15 @@ public:
     }
     int GetMinute(void) const
     {
-        return PyDateTime_TIME_GET_MINUTE(Get());
+        return PyDateTime_DATE_GET_MINUTE(Get());
     }
     int GetSecond(void) const
     {
-        return PyDateTime_TIME_GET_SECOND(Get());
+        return PyDateTime_DATE_GET_SECOND(Get());
     }
     int GetMicroSecond(void) const
     {
-        return PyDateTime_TIME_GET_MICROSECOND(Get());
+        return PyDateTime_DATE_GET_MICROSECOND(Get());
     }
 
 public:

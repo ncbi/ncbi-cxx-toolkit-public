@@ -1128,6 +1128,7 @@ CConnection::CConnection(
         throw CDatabaseError(e.what());
     }
 
+    ROAttr( "__class__", GetTypeObject() );
     PrepareForPython(this);
 
     try {
@@ -1411,6 +1412,7 @@ CTransaction::CTransaction(
         m_PythonConnection = conn;
     }
 
+    ROAttr( "__class__", GetTypeObject() );
     PrepareForPython(this);
 }
 
@@ -2379,6 +2381,7 @@ CCursor::CCursor(CTransaction* trans)
         throw CInternalError("Invalid CTransaction object");
     }
 
+    ROAttr( "__class__", GetTypeObject() );
     ROAttr( "rowcount", m_RowsNum );
     ROAttr( "messages", m_InfoMessages );
     ROAttr( "description", m_Description );
@@ -4203,23 +4206,26 @@ void init_common(const string& module_name)
     python::CDateTimeType::GetType().SetName("DATETIME");
 
     // Declare CConnection
+    static const string connection_name(module_name + ".Connection");
     python::CConnection::
         Def("close",        &python::CConnection::close,        "close").
         Def("commit",       &python::CConnection::commit,       "commit").
         Def("rollback",     &python::CConnection::rollback,     "rollback").
         Def("cursor",       &python::CConnection::cursor,       "cursor").
         Def("transaction",  &python::CConnection::transaction,  "transaction");
-    python::CConnection::Declare(string(module_name + ".Connection").c_str());
+    python::CConnection::Declare(connection_name.c_str());
 
     // Declare CTransaction
+    static const string transaction_name(module_name + ".Transaction");
     python::CTransaction::
         Def("close",        &python::CTransaction::close,        "close").
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
         Def("rollback",     &python::CTransaction::rollback,     "rollback");
-    python::CTransaction::Declare(string(module_name + ".Transaction").c_str());
+    python::CTransaction::Declare(transaction_name.c_str());
 
     // Declare CCursor
+    static const string cursor_name(module_name + ".Cursor");
     python::CCursor::
         Def("callproc",     &python::CCursor::callproc,     "callproc").
         Def("close",        &python::CCursor::close,        "close").
@@ -4232,7 +4238,7 @@ void init_common(const string& module_name)
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
         Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
-    python::CCursor::Declare(string(module_name + ".Cursor").c_str());
+    python::CCursor::Declare(cursor_name.c_str());
 
     ///////////////////////////////////
     // Declare types ...
@@ -4274,6 +4280,25 @@ void init_common(const string& module_name)
         return;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("DATETIME"), (PyObject*)&python::CDateTimeType::GetType() ) == -1 ) {
+        return;
+    }
+
+    if ( PyType_Ready(&python::CConnection::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("Connection"), (PyObject*)&python::CConnection::GetType() ) == -1 ) {
+        return;
+    }
+    if ( PyType_Ready(&python::CTransaction::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("Transaction"), (PyObject*)&python::CTransaction::GetType() ) == -1 ) {
+        return;
+    }
+    if ( PyType_Ready(&python::CCursor::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)&python::CCursor::GetType() ) == -1 ) {
         return;
     }
 

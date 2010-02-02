@@ -386,7 +386,9 @@ public:
 public:
     virtual PyObject* Get(void) const
     {
-        return (m_Obj->*m_GetFunc)();
+        PyObject* obj = (m_Obj->*m_GetFunc)();
+        Py_INCREF(obj);
+        return obj;
     }
 
 protected:
@@ -548,6 +550,13 @@ public:
         static CExtType obj_type( sizeof(T), deallocator, sm_Base );
 
         return obj_type;
+    }
+
+    static CObject& GetTypeObject(void)
+    {
+        static CObject obj((PyObject*)&GetType(), pythonpp::eTakeOwnership);
+
+        return obj;
     }
 
     // Just delete an object ...
