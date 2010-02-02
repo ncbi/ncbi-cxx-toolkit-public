@@ -2115,6 +2115,11 @@ BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_WithVolumes)
     const string kAliasFileName(kMyAliasDb + ".pal");
     CFileDeleteAtExit::Add(kAliasFileName);
 
+    if (CFile(kAliasFileName).Exists()) {
+        CFile(kAliasFileName).Remove();
+    }
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+
     BOOST_REQUIRE_THROW( CWriteDB_CreateAliasFile(kMyAliasDb, kNumVols,
                                                   CWriteDB::eProtein, kTitle),
                          CWriteDBException);
