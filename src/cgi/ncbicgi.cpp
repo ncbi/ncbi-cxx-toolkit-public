@@ -1034,7 +1034,19 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
         return;
     }
     // Set client IP for diagnostics
-    string client = x_GetPropertyByName("HTTP_CAF_PROXIED_HOST");
+    string client;
+    if ( x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty() ) {
+        client = x_GetPropertyByName("HTTP_CLIENT_HOST");
+    }
+    if ( client.empty() ) {
+        client = x_GetPropertyByName("HTTP_CAF_PROXIED_HOST");
+    }
+    if ( client.empty() ) {
+        client = x_GetPropertyByName("PROXIED_IP");
+    }
+    if ( client.empty() ) {
+        client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteHost));
+    }
     if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
     }
