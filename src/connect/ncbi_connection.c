@@ -84,7 +84,7 @@
       }                                                                 \
       if (conn->magic != CONNECTION_MAGIC) {                            \
           const STimeout* timeout = 0/*dummy*/;                         \
-          CONN_LOG_EX(subcode, func_name, eLOG_Warning,                 \
+          CONN_LOG_EX(subcode, func_name, eLOG_Critical,                \
                       "Data corruption detected", 0);                   \
       }                                                                 \
   } while (0)
