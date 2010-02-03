@@ -1151,24 +1151,42 @@ static void s_Destroy(CONNECTOR connector)
 }
 
 
-/* NB: HTTP tag name misspelled as "Referer" as per the standard. */
-static void s_AddReferer(SConnNetInfo* net_info)
+/* NB: per the standard, HTTP tag name misspelled as "Referer" */
+static void s_AddRefererStripCAF(SConnNetInfo* net_info)
 {
     const char* s;
     char* referer;
-    if (!net_info  ||  !net_info->http_referer  ||  !*net_info->http_referer)
+    if (!net_info)
         return;
     if ((s = net_info->http_user_header) != 0) {
-        int/*bool*/ first;
-        for (first = 1;  *s;  first = 0) {
-            if (strncasecmp(s++, "\nReferer: " + first, 10 - first) == 0)
-                return;
-            if (!(s = strchr(s, '\n')))
+        int/*bool*/ found = 0/*false*/;
+        int/*bool*/ first = 1/*true*/;
+        while (*s) {
+            if (strncasecmp(s, "\nReferer: " + first, 10 - first) == 0) {
+                found = 1/*true*/;
+#ifdef HAVE_LIBCONNEXT
+            } else if (strncasecmp(s, "\nCAF" + first, 4 - first) == 0
+                       &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
+                size_t off = (size_t)(s - net_info->http_user_header);
+                ConnNetInfo_DeleteUserHeader(net_info, s + !first);
+                if (!(s = net_info->http_user_header)  ||  !*(s += off))
+                    break;
+                continue;
+#else
                 break;
+#endif /*HAVE_LIBCONNEXT*/
+            }
+            if (!(s = strchr(++s, '\n')))
+                break;
+            first = 0/*false*/;
         }
+        if (found)
+            return;
     }
-    if (!(referer = (char*) malloc(strlen(net_info->http_referer) + 12)))
+    if (!net_info->http_referer  ||  !*net_info->http_referer  ||
+        !(referer = (char*) malloc(strlen(net_info->http_referer) + 12))) {
         return;
+    }
     sprintf(referer, "Referer: %s\r\n", net_info->http_referer);
     ConnNetInfo_ExtendUserHeader(net_info, referer);
     free(referer);
@@ -1217,7 +1235,7 @@ static CONNECTOR s_CreateConnector
     }
     if (user_header)
         ConnNetInfo_OverrideUserHeader(xxx, user_header);
-    s_AddReferer(xxx);
+    s_AddRefererStripCAF(xxx);
 
     ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", value, sizeof(value),"");
     if (*value  &&  (strcmp    (value, "1")    == 0  ||

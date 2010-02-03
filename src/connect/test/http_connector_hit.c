@@ -114,7 +114,7 @@ int main(int argc, const char* argv[])
             "  URL args:        '%s'\n"
             "  Input data file: '%s'\n"
             "  User header:     '%s'\n"
-            " Reply(if any) from the hit URL goes to the standard output.\n\n",
+            "Reply(if any) from the hit URL goes to the standard output.\n\n",
             argv[0],
             s_Args.host, s_Args.port, s_Args.path, s_Args.args,
             inp_file, user_header);
@@ -146,12 +146,25 @@ int main(int argc, const char* argv[])
     /* If the input file is specified,
      * then send its content (as the HTTP request body) to URL
      */
-    if ( *inp_file ) {
-        FILE* inp_fp = fopen(inp_file, "rb");
-        if ( !inp_fp ) {
-            fprintf(stderr, "Cannot open file '%s' for read", inp_file);
-            assert(0);
-        }
+    if (*inp_file) {
+        FILE* inp_fp;
+
+        if (strcmp(inp_file, "-") != 0) {
+            static const char kDevNull[] =
+#ifdef NCBI_OS_MSWIN
+                "NUL"
+#else
+                "/dev/null"
+#endif /*NCBI_OS_MSWIN*/
+                ;
+            if (strcmp(inp_file, "+") == 0)
+                inp_file = kDevNull;
+            if (!(inp_fp = fopen(inp_file, "rb"))) {
+                fprintf(stderr, "Cannot open file '%s' for reading", inp_file);
+                assert(0);
+            }
+        } else
+            inp_fp = stdin;
 
         for (;;) {
             n_read = fread(buffer, 1, sizeof(buffer), inp_fp);
@@ -173,16 +186,20 @@ int main(int argc, const char* argv[])
     }
 
     /* Read reply from connection, write it to standard output */
-    fprintf(stdout, "\n\n----- [BEGIN] HTTP Content -----\n");
     for (;;) {
         status = CONN_Read(conn,buffer,sizeof(buffer),&n_read,eIO_ReadPlain);
         if (status != eIO_Success)
             break;
-
+        if (connector)
+            puts("----- [BEGIN] HTTP Content -----");
         fwrite(buffer, 1, n_read, stdout);
         fflush(stdout);
+        connector = 0;
     }
-    fprintf(stdout, "\n----- [END] HTTP Content -----\n\n");
+    if (!connector) {
+        puts("\n----- [END] HTTP Content -----");
+        fclose(stdout);
+    }
 
     if (status != eIO_Closed) {
         fprintf(stderr, "Error reading from URL (%s)", IO_StatusStr(status));
