@@ -195,7 +195,8 @@ check_add: check_add.needs-reqs
 
 MAKE_LOCK_MAP = $(RWL) $(top_srcdir)/scripts/common/impl/make_lock_map.sh
 
-all.real: all.usr
+all.real:
+	@$(RWL) $(MAKE) $(MFLAGS_NR) all.usr
 	@$(MAKE) $(MFLAGS_NR) all.nonusr
 all.usr: configurables
 	@-rm -f .built .built_r
@@ -215,7 +216,9 @@ all.nonusr:
 	@-rm -f .building
 	@echo "`date`: local build succeeded in `pwd`" > .built
 
-clean.real: clean.usr clean.nonusr
+clean.real:
+	@$(RWL) $(MAKE) $(MFLAGS_NR) clean.usr
+	@$(MAKE) $(MFLAGS_NR) clean.nonusr
 clean.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) clean $(USRP_KET)
@@ -228,7 +231,9 @@ clean.nonusr:
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
 
-purge.real: purge.usr purge.nonusr
+purge.real:
+	@$(RWL) $(MAKE) $(MFLAGS_NR) purge.usr
+	@$(MAKE) $(MFLAGS_NR) purge.nonusr
 purge.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) purge $(USRP_KET)
@@ -272,7 +277,7 @@ requirements: $(reqs)
 	    *:true ) ;; \
 	    check* ) $(RWL) -base $* $(MAKE) $(MFLAGS_NR) $*.real ;; \
 	    *_?:*  ) $(MAKE) $(MFLAGS_NR) $*.real ;; \
-	    *      ) $(MAKE) $(MFLAGS_NR) $*.usr  && \
+	    *      ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.usr  && \
 	             $(MAKE) $(MFLAGS_NR) $*.nonusr \
 	                 APP_PROJ='$(APP_PROJ)' LIB_PROJ='$(LIB_PROJ)' ;; \
 	esac
