@@ -68,18 +68,18 @@ BEGIN_NCBI_SCOPE
 
 // CExitInfo process state
 enum EExitInfoState {
-    eExitInfo_Unknown,
+    eExitInfo_Unknown = 0,
     eExitInfo_Alive,
     eExitInfo_Terminated
 };
 
 
-#define EXIT_INFO_CHECK \
-    if ( !IsPresent() ) { \
-        NCBI_THROW(CCoreException, eCore, \
-                  "CProcess::CExitInfo state is unknown. " \
-                  "Please check IsPresent() first."); \
-    }
+#define EXIT_INFO_CHECK                                         \
+  if ( !IsPresent() ) {                                         \
+      NCBI_THROW(CCoreException, eCore,                         \
+                 "CProcess::CExitInfo state is unknown. "       \
+                 "Please check CExitInfo::IsPresent() first."); \
+  }
 
 
 CProcess::CExitInfo::CExitInfo(void)
