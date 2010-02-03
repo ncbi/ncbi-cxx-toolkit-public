@@ -4244,10 +4244,10 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(focus);
     DO_QUAL(lat_lon);
-    DO_QUAL(identified_by);
-    DO_QUAL(pcr_primer);
     DO_QUAL(collection_date);
     DO_QUAL(collected_by);
+    DO_QUAL(identified_by);
+    DO_QUAL(pcr_primer);
 
     if ( !GetContext()->Config().SrcQualsToNote() ) {
         // some note qualifiers appear as regular quals in GBench or Dump mode
