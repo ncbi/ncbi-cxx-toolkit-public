@@ -436,16 +436,21 @@ int CTest::Run(void)
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
         int exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
+        string infostr;
+        if (exitinfo.IsPresent()) {
+            if (exitinfo.IsExited()) {
+                _ASSERT(exitinfo.GetExitCode() == exitcode);
+                infostr = "code=" + NStr::IntToString(exitcode);
+            } else if (exitinfo.IsSignaled())
+                infostr = "signal=" + NStr::IntToString(exitinfo.GetSignal());
+        }
         ERR_POST(Info << "Command completed with exit code " << exitcode
                  << " and state "
                  << (!exitinfo.IsPresent() ? "Inexistent" :
                      exitinfo.IsExited()   ? "Terminated" :
                      exitinfo.IsAlive()    ? "Alive"      :
-                     exitinfo.IsSignaled() ? "Signaled"   : "Unknown") << ": "
-                 << (exitinfo.IsPresent()
-                     ? (exitinfo.IsSignaled() ? exitinfo.GetSignal()   :
-                        exitinfo.IsExited()   ? exitinfo.GetExitCode() : -1)
-                     : -1));
+                     exitinfo.IsSignaled() ? "Signaled"   : "Unknown")
+                 << (infostr.empty() ? "" : ", ") << infostr);
         assert(exitcode == kTestResult);
         assert(!process.IsAlive());
     }}
