@@ -62,6 +62,32 @@ extern int g_NCBI_ConnectSrandAddend(void)
 }
 
 
+#ifdef _DEBUG
+
+static MT_LOCK s_CoreLock = 0;
+
+extern int g_NCBI_CoreCheckLock(void)
+{
+    /* save last lock accessed */
+    s_CoreLock = g_CORE_MT_Lock;
+    return 1/*success*/;
+}
+
+
+extern int g_NCBI_CoreCheckUnlock(void)
+{
+    /* check that unlock operates on the same lock */
+    if (s_CoreLock != g_CORE_MT_Lock) {
+        CORE_LOG(eLOG_Critical, "Inconsistent use of CORE MT-Lock detected");
+        assert(0);
+        return 0/*failure*/;
+    }
+    return 1/*success*/;
+}
+
+#endif /*_DEBUG*/
+
+
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
 {
     static const size_t buf_size = 4096;

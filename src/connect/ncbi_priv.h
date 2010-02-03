@@ -66,14 +66,29 @@ extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddend(void);
  *  Multi-Thread SAFETY
  */
 
+
+#ifdef _DEBUG
+extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckLock  (void);
+extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckUnlock(void);
+#  define CORE_CHECK_LOCK   g_NCBI_CoreCheckLock()
+#  define CORE_CHECK_UNLOCK g_NCBI_CoreCheckUnlock()
+#else
+#  define CORE_CHECK_LOCK   1/*TRUE*/
+#  define CORE_CHECK_UNLOCK 1/*TRUE*/
+#endif
+
+
 /* Always use the following macros and functions to access "g_CORE_MT_Lock",
- * dont access/change it directly!
+ * do not access/change it directly!
  */
 extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
 
-#define CORE_LOCK_WRITE  verify(MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ))
-#define CORE_LOCK_READ   verify(MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead))
-#define CORE_UNLOCK      verify(MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
+#define CORE_LOCK_WRITE  verify(CORE_CHECK_LOCK  &&                     \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ))
+#define CORE_LOCK_READ   verify(CORE_CHECK_LOCK  &&                     \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead))
+#define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK  &&                   \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
 
 
 
