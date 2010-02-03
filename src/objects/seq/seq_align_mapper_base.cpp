@@ -679,8 +679,8 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                     part_gen_start = gen_end;
                 }
             }
-            alnseg.AddRow(0, *gen_id, part_gen_start,
-                m_HaveStrands, gen_strand);
+            alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Gen,
+                *gen_id, part_gen_start, m_HaveStrands, gen_strand);
 
             int part_prod_start;
             if ( part.IsGenomic_ins() ) {
@@ -696,18 +696,18 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                     part_prod_start = prod_end;
                 }
             }
-            alnseg.AddRow(1, *prod_id, part_prod_start,
-                m_HaveStrands, prod_strand);
+            alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Prod,
+                *prod_id, part_prod_start, m_HaveStrands, prod_strand);
         }
     }
     else {
         // No parts, use the whole exon
         TSeqPos seg_len = gen_end - gen_start;
         SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
-        alnseg.AddRow(0, *ex_gen_id, gen_start,
-            m_HaveStrands, ex_gen_strand);
-        alnseg.AddRow(1, *ex_prod_id, prod_start,
-            m_HaveStrands, ex_prod_strand);
+        alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Gen,
+            *ex_gen_id, gen_start, m_HaveStrands, ex_gen_strand);
+        alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Prod,
+            *ex_prod_id, prod_start, m_HaveStrands, ex_prod_strand);
     }
 }
 
@@ -1377,8 +1377,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
         }
         group_idx = seg->m_GroupIdx;
 
-        const SAlignment_Segment::SAlignment_Row& gen_row = seg->m_Rows[0];
-        const SAlignment_Segment::SAlignment_Row& prod_row = seg->m_Rows[1];
+        const SAlignment_Segment::SAlignment_Row& gen_row =
+            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
+        const SAlignment_Segment::SAlignment_Row& prod_row =
+            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
         if (seg->m_Rows.size() > 2) {
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
                     "Can not construct spliced-seg with more than two rows");
@@ -1620,8 +1622,10 @@ public:
                     const SAlignment_Segment& seg2) const
     {
         // Used only for spliced segs, all segments must have two rows
-        const SAlignment_Segment::SAlignment_Row& r1 = seg1.m_Rows[0];
-        const SAlignment_Segment::SAlignment_Row& r2 = seg2.m_Rows[0];
+        const SAlignment_Segment::SAlignment_Row& r1 =
+            seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
+        const SAlignment_Segment::SAlignment_Row& r2 =
+            seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
         // Check if it's a genomic insertion
         if (r1.m_Start != kInvalidSeqPos  &&  r2.m_Start != kInvalidSeqPos) {
             if (r1.m_Id != r2.m_Id) {
@@ -1630,8 +1634,10 @@ public:
             return r1.m_Start < r2.m_Start;
         }
         // Use product coords in case of genomic insertion
-        const SAlignment_Segment::SAlignment_Row& pr1 = seg1.m_Rows[1];
-        const SAlignment_Segment::SAlignment_Row& pr2 = seg2.m_Rows[1];
+        const SAlignment_Segment::SAlignment_Row& pr1 =
+            seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
+        const SAlignment_Segment::SAlignment_Row& pr2 =
+            seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
         if (pr1.m_Id != pr2.m_Id) {
             return pr1.m_Id < pr2.m_Id;
         }
@@ -1652,7 +1658,8 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
     bool found_gen_strand = false;
     bool found_prod_strand = false;
     ITERATE(TSegments, seg, m_Segs) {
-        const SAlignment_Segment::SAlignment_Row& r = seg->m_Rows[0];
+        const SAlignment_Segment::SAlignment_Row& r =
+            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
         if ( r.m_IsSetStrand ) {
             bool gen_row_rev = IsReverse(r.m_Strand);
             if ( !found_gen_strand ) {
@@ -1663,7 +1670,8 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
                 gen_reverse = false; // for mixed strands use direct order
             }
         }
-        const SAlignment_Segment::SAlignment_Row& pr = seg->m_Rows[1];
+        const SAlignment_Segment::SAlignment_Row& pr =
+            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
         if ( pr.m_IsSetStrand ) {
             bool prod_row_rev = IsReverse(pr.m_Strand);
             if ( !found_prod_strand ) {

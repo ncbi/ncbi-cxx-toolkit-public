@@ -721,7 +721,8 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
     case CSeq_align::C_Segs::e_Spliced:
         {
             if (to_row == 0  ||  to_row == 1) {
-                x_InitSpliced(map_align.GetSegs().GetSpliced(), to_row);
+                x_InitSpliced(map_align.GetSegs().GetSpliced(),
+                    ESplicedRow(to_row));
             }
             else {
                 NCBI_THROW(CAnnotMapperException, eBadAlignment,
@@ -996,22 +997,22 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
     // Assume the same ID can not be used in both genomic and product rows,
     // try find the correct row.
     if (spliced.IsSetGenomic_id()  &&  spliced.GetGenomic_id().Equals(to_id)) {
-        x_InitSpliced(spliced, 0);
+        x_InitSpliced(spliced, eSplicedRow_Gen);
         return;
     }
     if (spliced.IsSetProduct_id()  &&  spliced.GetProduct_id().Equals(to_id)) {
-        x_InitSpliced(spliced, 1);
+        x_InitSpliced(spliced, eSplicedRow_Prod);
         return;
     }
     // Global IDs are not set or not equal to to_id
     ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
         const CSpliced_exon& ex = **it;
         if (ex.IsSetGenomic_id()  &&  ex.GetGenomic_id().Equals(to_id)) {
-            x_InitSpliced(spliced, 0);
+            x_InitSpliced(spliced, eSplicedRow_Gen);
             return;
         }
         if (ex.IsSetProduct_id()  &&  ex.GetProduct_id().Equals(to_id)) {
-            x_InitSpliced(spliced, 1);
+            x_InitSpliced(spliced, eSplicedRow_Prod);
             return;
         }
     }
@@ -1041,15 +1042,15 @@ TSeqPos CSeq_loc_Mapper_Base::sx_GetExonPartLength(const CSpliced_exon_chunk& pa
 
 void CSeq_loc_Mapper_Base::
 x_IterateExonParts(const CSpliced_exon::TParts& parts,
-                   int                        to_row,
-                   const CSeq_id&             gen_id,
-                   TSeqPos&                   gen_start,
-                   TSeqPos&                   gen_len,
-                   ENa_strand                 gen_strand,
-                   const CSeq_id&             prod_id,
-                   TSeqPos&                   prod_start,
-                   TSeqPos&                   prod_len,
-                   ENa_strand                 prod_strand)
+                   ESplicedRow                  to_row,
+                   const CSeq_id&               gen_id,
+                   TSeqPos&                     gen_start,
+                   TSeqPos&                     gen_len,
+                   ENa_strand                   gen_strand,
+                   const CSeq_id&               prod_id,
+                   TSeqPos&                     prod_start,
+                   TSeqPos&                     prod_len,
+                   ENa_strand                   prod_strand)
 {
     bool rev_gen = IsReverse(gen_strand);
     bool rev_prod = IsReverse(prod_strand);
@@ -1063,7 +1064,7 @@ x_IterateExonParts(const CSpliced_exon::TParts& parts,
                 gen_start + gen_len - pgen_len : gen_start;
             TSeqPos pprod_start = rev_prod ?
                 prod_start + prod_len - pprod_len : prod_start;
-            if (to_row == 1) {
+            if (to_row == eSplicedRow_Prod) {
                 x_NextMappingRange(
                     gen_id, pgen_start, pgen_len, gen_strand,
                     prod_id, pprod_start, pprod_len, prod_strand,
@@ -1094,7 +1095,7 @@ x_IterateExonParts(const CSpliced_exon::TParts& parts,
 
 
 void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
-                                         int                 to_row)
+                                         ESplicedRow         to_row)
 {
     bool have_gen_strand = spliced.IsSetGenomic_strand();
     ENa_strand gen_strand = have_gen_strand ?
@@ -1114,7 +1115,7 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
     switch ( spliced.GetProduct_type() ) {
     case CSpliced_seg::eProduct_type_protein:
         prod_is_prot = true;
-        if ( to_row == 1 ) {
+        if (to_row == eSplicedRow_Prod) {
             src_width = 3;
         }
         else {
@@ -1183,7 +1184,7 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
                *ex_prod_id, prod_from, prod_len, ex_prod_strand);
         }
         else {
-            if ( to_row == 1 ) {
+            if ( to_row == eSplicedRow_Prod ) {
                 x_NextMappingRange(
                     *ex_gen_id, gen_from, gen_len, ex_gen_strand,
                     *ex_prod_id, prod_from, prod_len, prod_strand,

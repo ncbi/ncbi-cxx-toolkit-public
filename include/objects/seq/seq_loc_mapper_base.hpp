@@ -240,6 +240,12 @@ public:
     };
     typedef int TMapOptions;
 
+    /// Spliced-seg row indexing constants.
+    enum ESplicedRow {
+        eSplicedRow_Prod = 0,
+        eSplicedRow_Gen  = 1
+    };
+
     /// Mapping through a pre-filled CMappipngRanges.
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
@@ -478,20 +484,20 @@ private:
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
     void x_InitSpliced(const CSpliced_seg& spliced,
                        const CSeq_id&      to_id);
-    void x_InitSpliced(const CSpliced_seg& spliced, int to_row);
+    void x_InitSpliced(const CSpliced_seg& spliced, ESplicedRow to_row);
     void x_InitSparse(const CSparse_seg& sparse, int to_row,
                       TMapOptions opts);
 
     void x_IterateExonParts(const CSpliced_exon::TParts& parts,
-                            int                        to_row,
-                            const CSeq_id&             gen_id,
-                            TSeqPos&                   gen_start,
-                            TSeqPos&                   gen_len,
-                            ENa_strand                 gen_strand,
-                            const CSeq_id&             prod_id,
-                            TSeqPos&                   prod_start,
-                            TSeqPos&                   prod_len,
-                            ENa_strand                 prod_strand);
+                            ESplicedRow                  to_row,
+                            const CSeq_id&               gen_id,
+                            TSeqPos&                     gen_start,
+                            TSeqPos&                     gen_len,
+                            ENa_strand                   gen_strand,
+                            const CSeq_id&               prod_id,
+                            TSeqPos&                     prod_start,
+                            TSeqPos&                     prod_len,
+                            ENa_strand                   prod_strand);
     static TSeqPos sx_GetExonPartLength(const CSpliced_exon_chunk& part);
 
     bool x_MapNextRange(const TRange&     src_rg,
