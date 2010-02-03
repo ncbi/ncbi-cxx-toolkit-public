@@ -129,11 +129,11 @@ CSeq_id_Handle CIdMapper::Map(const CSeq_id_Handle& from )
     //
     //  Cannot map this ID. We will treat this as an error.
     //
-    CObjReaderLineException MapError( eDiag_Error, 0,
-                                      MapErrorString( from ) );
-
-    if ( !m_pErrors || !m_pErrors->PutError( MapError ) ) {
-        throw MapError;
+    if ( m_pErrors ) {
+        CObjReaderLineException MapError( eDiag_Error, 0, MapErrorString( from ) );
+        if ( !m_pErrors->PutError( MapError ) ) {
+            throw MapError;
+        }
     }
     return from;
 };
@@ -164,11 +164,14 @@ CRef<CSeq_loc> CIdMapper::Map(const CSeq_loc& from )
     //
     //  Cannot map this ID. We will treat this as an error.
     //
-    CObjReaderLineException MapError( eDiag_Error, 0,
-                                      MapErrorString( from ) );
-
-    if ( !m_pErrors || !m_pErrors->PutError( MapError ) ) {
-        throw MapError;
+    //
+    //  Cannot map this ID. We will treat this as an error.
+    //
+    if ( m_pErrors ) {
+        CObjReaderLineException MapError( eDiag_Error, 0, MapErrorString( from ) );
+        if ( !m_pErrors->PutError( MapError ) ) {
+            throw MapError;
+        }
     }
 
     CRef<CSeq_loc> loc(new CSeq_loc);
