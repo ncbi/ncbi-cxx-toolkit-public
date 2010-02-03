@@ -41,6 +41,40 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
+static char* x_StrcatCRLF(char* dst, const char* src)
+{
+    size_t dstlen = dst  &&  *dst ? strlen(dst) : 0;
+    size_t srclen = src  &&  *src ? strlen(src) : 0;
+    if (dstlen  ||  srclen) {
+        size_t len;
+        char*  temp;
+        if (dstlen  &&  dst[dstlen - 1] == '\n') {
+            if (--dstlen  &&  dst[dstlen - 1] == '\r')
+                --dstlen;
+        }
+        if (srclen  &&  src[srclen - 1] == '\n') {
+            if (--srclen  &&  src[srclen - 1] == '\r')
+                --srclen;
+        }
+        len = (dstlen ? dstlen + 2 : 0) + (srclen ? srclen + 2 : 0) + 1;
+        if (!(temp = (char*)(dst ? realloc(dst, len) : malloc (len))))
+            return 0;
+        dst = temp;
+        if (dstlen) {
+            temp += dstlen;
+            memcpy(temp, "\r\n", 3);
+            temp += 2;
+        }
+        if (srclen) {
+            memcpy(temp, src, srclen);
+            temp += srclen;
+            memcpy(temp, "\r\n", 3);
+        }
+    }
+    return dst;
+}
+
+
 extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
@@ -142,15 +176,15 @@ static const char* s_Scheme(EURLScheme scheme)
 
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
-#define REG_VALUE(name, value, def_value) \
+#define REG_VALUE(name, value, def_value)                               \
     ConnNetInfo_GetValue(service, name, value, sizeof(value), def_value)
 
-    SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(*info) +
-                                                (service  &&  *service
-                                                 ? strlen(service) + 1 : 0));
-    size_t len;
-    /* aux. storage for the string-to-int conversions, etc. */
+    SConnNetInfo* info =
+        (SConnNetInfo*) malloc(sizeof(*info)
+                               + (service ? strlen(service) + 1 : 0));
+    /* aux. storage */
     char   str[1024];
+    size_t len;
     int    val;
     double dbl;
     char*  e;
@@ -270,18 +304,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                                    strcasecmp(str, "yes" ) == 0  ||
                                    strcasecmp(str, "true") == 0));
 
-    /* user header (with optional '\r\n' added automagically) */
+    /* user header */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
-    if (*str) {
-        size_t len = strlen(str);
-        if (str[len - 1] != '\n'  &&  len < sizeof(str) - 2) {
-            str[len++] = '\r';
-            str[len++] = '\n';
-            str[len]   = '\0';
-        }
-        info->http_user_header = strdup(str);
-    } else
-        info->http_user_header = 0;
+    info->http_user_header = *str ? x_StrcatCRLF(NULL, str) : 0;
 
     /* default referer */
     ConnNetInfo_GetValue(0, REG_CONN_HTTP_REFERER, str, sizeof(str),
@@ -290,10 +315,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
+
     /* store the service name for which this structure has been created */
-    info->service = (service  &&  *service
-                     ? strcpy((char*) info + sizeof(*info), service)
-                     : 0);
+    info->service = service ? strcpy((char*)info + sizeof(*info), service) : 0;
 
     /* done */
     return info;
@@ -517,11 +541,10 @@ extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 {
     if (info->http_user_header)
         free((void*) info->http_user_header);
-    if (user_header && *user_header) {
-        info->http_user_header = strdup(user_header);
-        return info->http_user_header ? 1/*success*/ : 0/*failure*/;
-    } else
+    if (!user_header  ||  !*user_header)
         info->http_user_header = 0;
+    else if (!(info->http_user_header = x_StrcatCRLF(NULL, user_header)))
+        return 0/*failure*/;
     return 1/*success*/;
 }
 
@@ -529,21 +552,15 @@ extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
                                                 const char*   user_header)
 {
-    size_t oldlen, newlen;
     char* new_header;
 
-    if (!info->http_user_header || !(oldlen = strlen(info->http_user_header)))
+    if (!info->http_user_header  ||  !*info->http_user_header)
         return ConnNetInfo_SetUserHeader(info, user_header);
 
-    if (!user_header || !(newlen = strlen(user_header)))
-        return 1/*success*/;
-
-    new_header = (char*)
-        realloc((void*) info->http_user_header, oldlen + newlen + 1);
-    if (!new_header)
+    new_header = (char*) info->http_user_header;
+    if (!(new_header = x_StrcatCRLF(new_header, user_header)))
         return 0/*failure*/;
 
-    memcpy(&new_header[oldlen], user_header, newlen + 1);
     info->http_user_header = new_header;
     return 1/*success*/;
 }
@@ -941,25 +958,37 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
+    const char* service;
+
     if (!info)
         return 0;
 
-    x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo) +
-                                    (info->service
-                                     ? strlen(info->service) + 1 : 0));
-    *x_info = *info;
+    service = info->service;
+    x_info = (SConnNetInfo*) malloc(sizeof(*x_info)
+                                    + (service ? strlen(service) + 1 : 0));
+    if (!x_info)
+        return 0;
+
+    memcpy(x_info, info, sizeof(*x_info));
+    x_info->http_user_header = 0;
+    x_info->http_referer = 0;
+
     if (info->timeout  &&  info->timeout != kDefaultTimeout) {
         x_info->tmo     = *info->timeout;
         x_info->timeout = &x_info->tmo;
     }
-    if (info->service) {
-        char* s = (char*) x_info + sizeof(*x_info);
-        strcpy(s, info->service);
-        x_info->service = s;
+    if (info->http_user_header
+        &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
+        ConnNetInfo_Destroy(x_info);
+        return 0;
     }
-    x_info->http_user_header = 0;
-    ConnNetInfo_SetUserHeader(x_info, info->http_user_header);
-    x_info->http_referer = info->http_referer ? strdup(info->http_referer) : 0;
+    if (x_info->http_referer
+        &&  !(x_info->http_referer = strdup(info->http_referer))) {
+        ConnNetInfo_Destroy(x_info);
+        return 0;
+    }
+    x_info->service
+        = service ? strcpy((char*) x_info + sizeof(*x_info), service) : 0;
     return x_info;
 }
 
@@ -1039,6 +1068,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     char   scheme[32];
     char   port[16];
     size_t uhlen;
+    size_t len;
     char*  s;
 
     if (!lg) {
@@ -1055,12 +1085,12 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
     uhlen = info->http_user_header ? strlen(info->http_user_header) : 0;
        
-    if (!(s = (char*) malloc(sizeof(*info) + 1024/*slack for all labels*/ +
-                             (info->service ? strlen(info->service) : 0) +
-                             UTIL_PrintableStringSize(info->http_user_header,
-                                                      uhlen) +
-                             (info->http_referer
-                              ? strlen(info->http_referer) : 0)))) {
+    len = sizeof(*info) + 1024/*slack for all labels*/
+        + UTIL_PrintableStringSize(info->http_user_header, uhlen)
+        + (info->http_referer ? strlen(info->http_referer) : 0)
+        + (info->service ? strlen(info->service) : 0);
+
+    if (!(s = (char*) malloc(len))) {
         LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11,
                   sev == eLOG_Fatal ? eLOG_Fatal : eLOG_Error,
                   "ConnNetInfo_Log: Cannot allocate temporary buffer");
@@ -1116,9 +1146,10 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
-    s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
+    s_SaveBool      (s, "<proxy_adjusted>",info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
+    assert(strlen(s) < len);
     LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, s, 0, 0);
     free(s);
 }
