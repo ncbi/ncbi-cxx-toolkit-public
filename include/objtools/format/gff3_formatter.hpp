@@ -150,6 +150,7 @@ private:
                         bool first,
                         bool width_inverted);
 
+    friend class CGFF3_CIGAR_Formatter;
 };
 
 

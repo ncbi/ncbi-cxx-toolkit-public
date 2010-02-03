@@ -79,6 +79,8 @@ NCBI_DEFINE_ERRCODE_X(Objtools_Rd_RepMask, 1435,  4);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Glimmer, 1436,  7);
 NCBI_DEFINE_ERRCODE_X(Objtools_Validator,  1437,  6);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_GICache, 1438,  0);
+NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_CIGAR,  1439,  1);
+NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_SAM,    1440,  0);
 
 
 END_NCBI_SCOPE

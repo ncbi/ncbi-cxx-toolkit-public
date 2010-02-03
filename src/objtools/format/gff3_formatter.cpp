@@ -39,6 +39,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_expt.hpp>
+#include <objtools/format/cigar_formatter.hpp>
 
 #include <serial/iterator.hpp>
 #include <objects/general/Object_id.hpp>
@@ -62,6 +63,247 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
+
+
+static const string& s_GetMatchType(
+        const CSeq_id& ref_id, const CSeq_id& tgt_id,
+        bool flybase)
+{
+    static const string kMatch     = "match";  // generic match
+    static const string kEST       = "EST_match";
+    static const string kcDNA      = "cDNA_match";
+    static const string kProt      = "protein_match";
+    static const string kTransNuc  = "translated_nucleotide_match";
+    static const string kNucToProt = "nucleotide_to_protein_match";
+    
+    CSeq_id::EAccessionInfo ref_info = ref_id.IdentifyAccession();
+    CSeq_id::EAccessionInfo tgt_info = tgt_id.IdentifyAccession();
+    if (flybase) {
+        if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
+            return kNucToProt; // NOT a valid SOFA term!!!
+        } else if (((ref_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) ||
+                   ((tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est)) {
+            return kEST;
+        }
+        // HACK HACK HACK
+        // we should provide a check for cDNA and retuen kMatch as the default.
+        return kcDNA;
+    }
+    // Rules according to GFF3 specifications using a more strict
+    // interpretation. If we can't reliably tell the kind of match,
+    // then don't add possibly incorrect levels of detail.
+    // Note how none of these categorizations currently in SOFA
+    // state anything about the reference side of the alignment!
+    if ( tgt_info & CSeq_id::fAcc_prot ) {
+        return kProt; // "A match against a protein sequence."
+    }
+    if ( (tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+        return kEST; // "A match against an EST sequence."
+    }
+    if ( ref_info & CSeq_id::fAcc_prot  &&  ! (tgt_info & CSeq_id::fAcc_prot) ) {
+        return kTransNuc; // "A match against a translated sequence."
+    }
+    // Should check for more refined categorization.
+    return kMatch;
+}
+
+
+class CGFF3_CIGAR_Formatter : public CCIGAR_Formatter
+{
+public:
+    CGFF3_CIGAR_Formatter(CGFF3_Formatter& gff3,
+                          const CAlignmentItem& aln,
+                          IFlatTextOStream&     text_os);
+
+protected:
+    virtual void EndRows(void);
+    virtual void EndSubAlignment(void);
+    virtual void StartRow(void);
+    virtual void AddRow(const string& cigar);
+    virtual void EndRow(void);
+    virtual void AddSegment(CNcbiOstream& cigar,
+                            char seg_type,
+                            TSeqPos seg_len);
+
+private:
+    IFlatTextOStream&           m_Out;
+    CGFF3_Formatter&            m_GFF3_Fmt;
+    auto_ptr<CNcbiOstrstream>   m_Attrs;
+    list<string>                m_Lines;
+};
+
+
+CGFF3_CIGAR_Formatter::CGFF3_CIGAR_Formatter(CGFF3_Formatter&       gff3,
+                                             const CAlignmentItem& aln,
+                                             IFlatTextOStream&     text_os)
+    : CCIGAR_Formatter(aln),
+      m_Out(text_os),
+      m_GFF3_Fmt(gff3),
+      m_Attrs(new CNcbiOstrstream)
+{
+}
+
+
+void CGFF3_CIGAR_Formatter::EndSubAlignment(void)
+{
+    if (GetSeq_align().GetSegs().IsDisc() && GetConfig().GffGenerateIdTags()) {
+        ++m_GFF3_Fmt.m_CurrentId; // ?????
+    }
+}
+
+
+void CGFF3_CIGAR_Formatter::StartRow(void)
+{
+    CScope& scope = GetScope();
+    const CFlatFileConfig& config = GetConfig();
+
+    // We can't use x_FormatAttr because we seem to need a mix
+    // of literal pluses, which we otherwise avoid due to ambiguity,
+    // as well as two kinds of escapes for spaces, one with pluses,
+    // and one with %09. Really. Read the GFF3 specs. :-/
+    if ( config.GffGenerateIdTags() ) {
+        *m_Attrs << "ID=" << m_GFF3_Fmt.m_CurrentId << ";";
+    }
+    *m_Attrs << "Target=";
+    // GFF3 specs require %09 escape for spaces in the Target,
+    // not + or any other!
+    CGFF3_Formatter::x_AppendEncoded(*m_Attrs,
+        GetTargetId().GetSeqIdString(true), "%09");
+    // We are allowed spaces here, so we'll make use of them.
+    // It's more pleasing to the eye.
+    *m_Attrs << ' ' << (GetTargetRange().GetFrom() + 1) << ' '
+        << (GetTargetRange().GetTo() + 1);
+
+    ///
+    /// HACK HACK HACK
+    /// optional strand on the end
+    if (GetTargetSign() == 1) {
+        // By prior versions of GFF3 specs (current is 1.14),
+        // + had special meaning (as a space), wheras - didn't.
+        // That made + ambiguous. However, even if interpreted as
+        // a space, the strand default to positive, so it's not
+        // a problem.
+        //
+        // DETAILS:
+        // In older versions of the specs, they discussed URL encoding,
+        // specifically mentionned + as space. In subsequent versions,
+        // + was explicitly listed amongst the allowable characters
+        // for the Seqid column. I believe the issue arised from
+        // confusion between URL encoding (which only does % escaping)
+        // vs application/x-www-form-urlencoded which is similar,
+        // but adds things like + to represent spaces. 
+        *m_Attrs << " +";
+    } else {
+        // A minus is unambiguous. So, the only question is,
+        // do we escape the space? Hmmm... "+-" looks strange (and
+        // likely wrong, given discussion above about confusion with
+        // URL Encoding in GFF3 specs), and things like "%09%2D"
+        // are totally ugly.
+        *m_Attrs << " -";
+    }
+}
+
+
+void CGFF3_CIGAR_Formatter::AddRow(const string& cigar)
+{
+    if ( !IsTrivial()  ||  GetLastType() != 'M' ) {
+        *m_Attrs << ";Gap=" << cigar;
+    }
+}
+
+
+void CGFF3_CIGAR_Formatter::EndRow(void)
+{
+    CBioseqContext ctx = GetContext();
+    // XXX - should supply appropriate score, if any
+    CSeq_loc loc(*ctx.GetPrimaryId(),
+        GetRefRange().GetFrom(), GetRefRange().GetTo(),
+        (GetRefSign() == 1 ? eNa_strand_plus
+        : eNa_strand_minus));
+
+    // HACK HACK HACK
+    // add score attributes
+    const CSeq_align& seq_align = GetSeq_align();
+    if (IsFirstSubalign()  &&  seq_align.IsSetScore()) {
+        ITERATE (CDense_seg::TScores, score_it, seq_align.GetScore()) {
+            const CScore& score = **score_it;
+            if (score.IsSetId() && score.GetId().IsStr() && score.IsSetValue()) {
+                *m_Attrs << ';';
+                // Not one of the special cases of escaping, so space ok.
+                CGFF3_Formatter::x_AppendEncoded(
+                    *m_Attrs, score.GetId().GetStr(), " ");
+                *m_Attrs << '=';
+                if (score.GetValue().IsInt()) {
+                    *m_Attrs << score.GetValue().GetInt();
+                } else {
+                    *m_Attrs << score.GetValue().GetReal();
+                }
+            }
+        }
+    }
+
+    // HACK HACK HACK
+    // add score attributes
+    const CDense_seg& ds = GetDense_seg();
+    if (ds.IsSetScores()) {
+        ITERATE (CDense_seg::TScores, score_it, ds.GetScores()) {
+            const CScore& score = **score_it;
+            if (score.IsSetId() && score.GetId().IsStr() && score.IsSetValue()) {
+                *m_Attrs << ';';
+                // Not one of the special cases of escaping, so space ok.
+                CGFF3_Formatter::x_AppendEncoded(
+                    *m_Attrs, score.GetId().GetStr(), " ");
+                *m_Attrs << '=';
+                if (score.GetValue().IsInt()) {
+                    *m_Attrs << score.GetValue().GetInt();
+                } else {
+                    *m_Attrs << score.GetValue().GetReal();
+                }
+            }
+        }
+    }
+
+    string attr_string = CNcbiOstrstreamToString(*m_Attrs);
+    m_Attrs.reset(new CNcbiOstrstream);
+
+    // Phase has a different interpretation in GFF3 for Flybase.
+    // Seriously. Adjust the phase for display, as appropriate.
+    // Note that the API expects frame, which is not the same as
+    // the phase, and it also wants that frame to be 0-based, with
+    // values 0, 1, 2, or -1 for undefined, which is not the same
+    // as the frame in ASN.1. Confused? Convert as appropriate.
+    string source = m_GFF3_Fmt.x_GetSourceName(ctx);
+    const CFlatFileConfig& config = ctx.Config();
+    int frame = GetFrame();
+    m_GFF3_Fmt.x_AddFeature(m_Lines, loc, source,
+        s_GetMatchType(GetRefId(), GetTargetId(), config.GffForFlybase()),
+        "." /*score*/,
+        config.GffForFlybase() ?
+        /* frame vs phase inverted for flybase! */
+        (frame > 0 ? 3 - frame : frame) 
+        /* frame for everybody else... undefined! */
+        : -1,
+        attr_string, false /*gtf*/, ctx);
+}
+
+
+void CGFF3_CIGAR_Formatter::EndRows(void)
+{
+    m_Out.AddParagraph(m_Lines, &GetDense_seg());
+    m_Lines.clear();
+}
+
+
+void CGFF3_CIGAR_Formatter::AddSegment(CNcbiOstream& cigar,
+                                       char seg_type,
+                                       TSeqPos seg_len)
+{
+    // In GFF3 type and length are swapped and '+' is used between segments
+    if ( cigar.tellp() > 0) {
+        cigar << '+';
+    }
+    cigar << seg_type << seg_len;
+}
 
 
 void CGFF3_Formatter::Start(IFlatTextOStream& text_os)
@@ -108,7 +350,12 @@ void CGFF3_Formatter::EndSection(const CEndSectionItem&,
 void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
                                       IFlatTextOStream& text_os)
 {
+#ifdef GFF3_USE_CIGAR_FORMATTER
+    CGFF3_CIGAR_Formatter cigar(*this, aln, text_os);
+    cigar.FormatAlignmentRows();
+#else
     x_FormatAlignment(aln, text_os, aln.GetAlign(), true, false);
+#endif
 }
 
 void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
@@ -175,49 +422,6 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                    "Conversion of alignments of type dendiag and packed "
                    "not supported in current GFF3 CIGAR output");
     }
-}
-
-
-static const string& s_GetMatchType(
-        const CSeq_id& ref_id, const CSeq_id& tgt_id,
-        bool flybase)
-{
-    static const string kMatch     = "match";  // generic match
-    static const string kEST       = "EST_match";
-    static const string kcDNA      = "cDNA_match";
-    static const string kProt      = "protein_match";
-    static const string kTransNuc  = "translated_nucleotide_match";
-    static const string kNucToProt = "nucleotide_to_protein_match";
-    
-    CSeq_id::EAccessionInfo ref_info = ref_id.IdentifyAccession();
-    CSeq_id::EAccessionInfo tgt_info = tgt_id.IdentifyAccession();
-    if (flybase) {
-        if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
-            return kNucToProt; // NOT a valid SOFA term!!!
-        } else if (((ref_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) ||
-                   ((tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est)) {
-            return kEST;
-        }
-        // HACK HACK HACK
-        // we should provide a check for cDNA and retuen kMatch as the default.
-        return kcDNA;
-    }
-    // Rules according to GFF3 specifications using a more strict
-    // interpretation. If we can't reliably tell the kind of match,
-    // then don't add possibly incorrect levels of detail.
-    // Note how none of these categorizations currently in SOFA
-    // state anything about the reference side of the alignment!
-    if ( tgt_info & CSeq_id::fAcc_prot ) {
-        return kProt; // "A match against a protein sequence."
-    }
-    if ( (tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
-        return kEST; // "A match against an EST sequence."
-    }
-    if ( ref_info & CSeq_id::fAcc_prot  &&  ! (tgt_info & CSeq_id::fAcc_prot) ) {
-        return kTransNuc; // "A match against a translated sequence."
-    }
-    // Should check for more refined categorization.
-    return kMatch;
 }
 
 

@@ -569,7 +569,6 @@ void CGFFFormatter::x_AddFeature
                         + (frame >= 0   &&  frame < 3 ? "021"[frame] : '.') + "\t"
                         + attrs + extra_attrs);
         }
-
         if (frame >= 0) {
             frame = (frame + to - from + 1) % 3;
         }
