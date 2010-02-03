@@ -270,9 +270,12 @@ bool CRmOutReader::IsHeaderLine( const string& line )
 bool CRmOutReader::IsIgnoredLine( const string& line )
 {
     //
-    //  Currently, only lines with only whitespace on them are ignored.
+    //  Currently, the only ignore lines are
+    //  those with only whitespace on them, or the form
+    //  "There were no repetitive sequences detected in <path>".
     //
-    return ( NStr::TruncateSpaces( line ).length() == 0 );
+    return ( NStr::TruncateSpaces( line ).length() == 0  ||
+             NStr::StartsWith( line, "There were no repetitive sequences detected in " ) );
 }
 
 
