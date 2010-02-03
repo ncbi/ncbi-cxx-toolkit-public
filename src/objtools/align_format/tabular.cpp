@@ -413,6 +413,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     int align_length = 0, num_gaps = 0, num_gap_opens = 0;
     if (x_IsFieldRequested(eAlignmentLength) ||
         x_IsFieldRequested(eGaps) ||
+        x_IsFieldRequested(ePercentPositives) ||
+        x_IsFieldRequested(ePercentIdentical) ||
         x_IsFieldRequested(eGapOpenings)) {
         CAlignFormatUtil::GetAlignLengths(*alnVec, align_length, num_gaps, 
                                           num_gap_opens);
