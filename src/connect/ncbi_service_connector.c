@@ -57,7 +57,7 @@ typedef struct SServiceConnectorTag {
     unsigned short  port;               /*                       ... (h.b.o) */
     ticket_t        ticket;             /* Network byte order (none if zero) */
     SSERVICE_Extra  params;
-    char            service[1];         /* Untranslated service name         */
+    const char      service[1];         /* Untranslated service name         */
 } SServiceConnector;
 
 
@@ -873,7 +873,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         s_Destroy(ccc);
         return 0;
     }
-    strcpy(xxx->service, service);
+    strcpy((char*) xxx->service, service);
     free(x_service);
 
     /* now get ready for first probe dispatching */
