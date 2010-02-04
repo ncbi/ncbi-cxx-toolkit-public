@@ -1049,9 +1049,6 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
     if ( s_StringIsJustQuotes(subname) ) {
         subname = kEmptyStr;
     }
-    if ( subname.empty() ) {
-        return;
-    }
     ConvertQuotes(subname);
     
     if (s_IsNote(flags, ctx)) {
