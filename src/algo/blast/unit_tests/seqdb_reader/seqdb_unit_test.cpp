@@ -1728,6 +1728,7 @@ BOOST_AUTO_TEST_CASE(BinaryUserGiList)
     BOOST_REQUIRE_EQUAL(29, found);
 }
 
+
 BOOST_AUTO_TEST_CASE(TextUserGiList)
 {
         
@@ -1742,6 +1743,21 @@ BOOST_AUTO_TEST_CASE(TextUserGiList)
     
     // The GI list has 471 elements, only 58 of those are in the DB.
     BOOST_REQUIRE_EQUAL(29, found);
+}
+
+BOOST_AUTO_TEST_CASE(UserSeqIdList)
+{
+        
+    CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("data/prot345.sil", CSeqDBFileGiList::eSeqIdList));
+    CSeqDB db("data/seqp", CSeqDB::eProtein, 0, 0, true, gi_list);
+    
+    int found(0);
+    
+    for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+        found ++;
+    }
+    
+    BOOST_REQUIRE_EQUAL(58, found);
 }
 
 BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)

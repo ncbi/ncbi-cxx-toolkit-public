@@ -1173,15 +1173,24 @@ void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
        
     const char * p = fbeginp;
     const char * head;
-    /// @todo support # at the beginning of the line as comments
     while ( p < fendp) {
         // find the head of the seqid
         while (p< fendp && (*p=='>' || *p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) ++p;
         head = p;
+        if (*head == '#') {
+            // anything beyond this point in the line is a comment
+            while (p< fendp && *p!='\n') ++p;
+            continue;
+        }
         while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
         if (p > head) {
-            // TODO should we validate the string first?
-            sis.push_back(new CSeq_id(string(head, p-head)));
+            try {
+                sis.push_back(new CSeq_id(string(head, p-head)));
+            } catch(...) {
+                // TODO should we (and how to) emit warning to the user?
+                //cout << "WARNING:  " << string(head, p-head) 
+                //     << " is not a valid seqid string." << endl;
+            }
         }
     }
 }
