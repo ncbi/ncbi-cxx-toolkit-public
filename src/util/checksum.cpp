@@ -37,6 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 // sx_Start must begin with "/* O" (see ValidChecksumLine() in checksum.inl)
@@ -54,12 +55,13 @@ static Uint4 s_CalcByteCRC32ZIP(size_t byte);
 static void s_FillMultiBitsCRC(Uint4* table, size_t size);
 static void s_InitTableCRC32();
 static void s_InitTableCRC32ZIP();
-#endif
+#endif //NCBI_USE_PRECOMPILED_CRC32_TABLES
 static Uint4 s_UpdateCRC32(Uint4 checksum, const char* str, size_t length);
 static Uint4 s_UpdateCRC32ZIP(Uint4 checksum, const char* str, size_t length);
 static Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len);
 static void s_PrintTable(CNcbiOstream& out, const char* name,
                          const Uint4* table, size_t size);
+
 
 CChecksum::CChecksum(EMethod method)
     : m_LineCount(0), m_CharCount(0), m_Method(method)
@@ -186,11 +188,13 @@ Uint4 CChecksum::GetChecksum() const
     }
 }
 
+
 void CChecksum::GetMD5Digest(unsigned char digest[16]) const
 {
     _ASSERT(GetMethod() == eMD5);
     m_Checksum.m_MD5->Finalize(digest);
 }
+
 
 CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
 {
@@ -329,8 +333,10 @@ static void s_PrintTable(CNcbiOstream& out, const char* name,
 
 
 static const size_t kCRC32Size = 256;
+
 #ifdef NCBI_USE_PRECOMPILED_CRC32_TABLES
-static Uint4 s_CRC32Table[256] = {
+
+static Uint4 s_CRC32Table[kCRC32Size] = {
     0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9,
     0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005,
     0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61,
@@ -397,7 +403,7 @@ static Uint4 s_CRC32Table[256] = {
     0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
 
-static Uint4 s_CRC32ZIPTable[256] = {
+static Uint4 s_CRC32ZIPTable[kCRC32Size] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
     0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
     0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -465,6 +471,7 @@ static Uint4 s_CRC32ZIPTable[256] = {
 };
 
 #else
+
 static Uint4 s_CRC32Table[kCRC32Size];
 static Uint4 s_CRC32ZIPTable[kCRC32Size];
 
@@ -477,8 +484,8 @@ static Uint4 s_CRC32ZIPTable[kCRC32Size];
 
 //  The polynomial used is
 //  x^32+x^26+x^23+x^22+x^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x^1+x^0
-#define CRC32_POLYNOM 0x04c11db7
-#define CRC32ZIP_POLYNOM 0xedb88320
+#define CRC32_POLYNOMIAL    0x04c11db7
+#define CRC32ZIP_POLYNOMIAL 0xedb88320
 
 // CRC32 is linear meaning that for any texts t1 & t2:
 //   CRC32[t1 XOR t2] = CRC32[t1] XOR CRC32[t2].
@@ -496,7 +503,7 @@ Uint4 s_CalcByteCRC32(size_t byte)
     Uint4 byteCRC = byte << 24;
     for ( int j = 0;  j < 8;  ++j ) {
         if ( byteCRC & 0x80000000L )
-            byteCRC = (byteCRC << 1) ^ CRC32_POLYNOM;
+            byteCRC = (byteCRC << 1) ^ CRC32_POLYNOMIAL;
         else
             byteCRC = (byteCRC << 1);
     }
@@ -508,7 +515,7 @@ Uint4 s_CalcByteCRC32ZIP(size_t byte)
     Uint4 byteCRC = byte;
     for ( int j = 0;  j < 8;  ++j ) {
         if ( byteCRC & 1 )
-            byteCRC = (byteCRC >> 1) ^ CRC32ZIP_POLYNOM;
+            byteCRC = (byteCRC >> 1) ^ CRC32ZIP_POLYNOMIAL;
         else
             byteCRC = (byteCRC >> 1);
     }
@@ -576,7 +583,9 @@ void s_InitTableCRC32ZIP(void)
         s_FillMultiBitsCRC(s_CRC32ZIPTable, kCRC32Size);
     }
 }
-#endif
+
+#endif //NCBI_USE_PRECOMPILED_CRC32_TABLES
+
 
 Uint4 s_UpdateCRC32(Uint4 checksum, const char *str, size_t count)
 {
@@ -642,6 +651,7 @@ Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len)
     FINALIZE_ADLER(b);
     return (b << 16) | a;
 }
+
 
 void CChecksum::PrintTables(CNcbiOstream& out)
 {
