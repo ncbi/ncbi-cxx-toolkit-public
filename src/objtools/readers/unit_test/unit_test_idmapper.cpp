@@ -69,11 +69,12 @@ BOOST_AUTO_TEST_CASE(Test_SimpleIdMapper)
     BOOST_CHECK_EQUAL(idh2, mapped_idh);
 
     ///
-    /// by default, we throw if the seq-id can't be found
+    /// by default, we echo the given handle if a mapping cannot be found.
     ///
     CSeq_id id3("lcl|3");
     CSeq_id_Handle idh3 = CSeq_id_Handle::GetHandle(id3);
-    BOOST_CHECK_THROW(mapped_idh = mapper.Map(idh3), CObjReaderParseException);
+    mapped_idh = mapper.Map(idh3);
+    BOOST_CHECK_EQUAL(idh3, mapped_idh);
 }
 
 
