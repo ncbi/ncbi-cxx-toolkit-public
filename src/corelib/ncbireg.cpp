@@ -513,7 +513,17 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
     x_CheckFlags("IRWRegistry::Read", flags,
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
                  | fWithNcbirc | fJustCore | fCountCleared);
-    return x_Read(is, flags);
+
+    // Ensure that x_Read gets a stream it can handle.
+    EEncodingForm ef = GetTextEncodingForm(is, eBOM_Discard);
+    if (ef == eEncodingForm_Utf16Native  ||  ef == eEncodingForm_Utf16Foreign) {
+        CStringUTF8 s;
+        ReadIntoUtf8(is, &s, ef);
+        CNcbiIstrstream iss(s.c_str());
+        return x_Read(iss, flags);
+    } else {
+        return x_Read(is, flags);
+    }
 }
 
 
