@@ -1453,19 +1453,6 @@ CBlastQueryFilteredFrames(EBlastProgramType program)
     m_TranslateCoords = x_NeedsTrans();
 }
 
-/// Auxiliary function to retrieve all available frames
-static set<CSeqLocInfo::ETranslationFrame> s_GetAllAvailableFrames()
-{
-    set<CSeqLocInfo::ETranslationFrame> retval;
-    retval.insert(CSeqLocInfo::eFramePlus1);
-    retval.insert(CSeqLocInfo::eFramePlus2);
-    retval.insert(CSeqLocInfo::eFramePlus3);
-    retval.insert(CSeqLocInfo::eFrameMinus1);
-    retval.insert(CSeqLocInfo::eFrameMinus2);
-    retval.insert(CSeqLocInfo::eFrameMinus3);
-    return retval;
-}
-
 CBlastQueryFilteredFrames::
 CBlastQueryFilteredFrames(EBlastProgramType           program,
                           const TMaskedQueryRegions & mqr)
