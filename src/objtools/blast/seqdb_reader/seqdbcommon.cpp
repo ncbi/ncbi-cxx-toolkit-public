@@ -1176,12 +1176,12 @@ void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
     while ( p < fendp) {
         // find the head of the seqid
         while (p< fendp && (*p=='>' || *p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) ++p;
-        head = p;
-        if (*head == '#') {
+        if (p< fendp && *p == '#') {
             // anything beyond this point in the line is a comment
             while (p< fendp && *p!='\n') ++p;
             continue;
         }
+        head = p;
         while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
         if (p > head) {
             try {
