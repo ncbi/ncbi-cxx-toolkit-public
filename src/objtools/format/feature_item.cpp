@@ -2579,6 +2579,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(rpt_unit),
         DO_IMPORT(rpt_unit_range),
         DO_IMPORT(rpt_unit_seq),
+        DO_IMPORT(satellite),
         DO_IMPORT(standard_name),
         DO_IMPORT(trans_splicing),
         DO_IMPORT(usedin)
@@ -3295,6 +3296,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_rpt_unit_range, CSeqFeatData::eQual_rpt_unit_range),
     TQualPair(eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq),
     TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_satellite, CSeqFeatData::eQual_satellite),
     TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_bad),
 //    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
 //    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
