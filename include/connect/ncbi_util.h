@@ -50,8 +50,9 @@
  *       CORE_GetUsername()
  *       CORE_GetVMPageSize()
  *
- * 3. CRC32 support:
- *       CRC32_Update()
+ * 3. Checksumming support:
+ *       UTIL_CRC32_Update()
+ *       UTIL_Adler32_Update()
  *
  * 4. Miscellaneous:
  *       UTIL_MatchesMask[Ex]()
@@ -397,8 +398,8 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
  *  otherwise, return "buf".
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
-(char*        buf,
- size_t       bufsize
+(char*  buf,
+ size_t bufsize
  );
 
 
@@ -414,23 +415,45 @@ extern NCBI_XCONNECT_EXPORT size_t CORE_GetVMPageSize(void);
  *  CRC32
  */
 
-/** Calculate/Update CRC32
+/** Calculate/Update CRC-32 checksum
+ * NB:  Initial checksum is "0".
  * @param checksum
  *  Checksum to update (start with 0)
  * @param ptr
  *  Block of data
- * @param count
- *  Size of data
+ * @param len
+ *  Size of block of data
  * @return
  *  Return the checksum updated according to the contents of the block
- *  pointed to by "ptr" and having "count" bytes in it.
+ *  pointed to by "ptr" and having "len" bytes in it.
  */
-extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
+extern NCBI_XCONNECT_EXPORT unsigned int UTIL_CRC32_Update
 (unsigned int checksum,
  const void*  ptr,
- size_t       count
+ size_t       len
  );
 
+/* FIXME: Compatibility (to remove in the future) */
+#define CRC32_Update(c, p, l)  UTIL_CRC32_Update(c, p, l)
+
+
+/** Calculate/Update Adler-32 checksum
+ * NB:  Initial checksum is "1".
+ * @param checksum
+ *  Checksum to update (start with 1)
+ * @param ptr
+ *  Block of data
+ * @param len
+ *  Size of block of data
+ * @return
+ *  Return the checksum updated according to the contents of the block
+ *  pointed to by "ptr" and having "len" bytes in it.
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
+(unsigned int checksum,
+ const void*  ptr,
+ size_t       len
+ );
 
 
 /******************************************************************************
@@ -468,7 +491,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
  * @return 0 if the hostname wasn't modified, otherwise return "hostname".
  */
 extern char* UTIL_NcbiLocalHostName
-(char*       hostname
+(char* hostname
  );
 
 

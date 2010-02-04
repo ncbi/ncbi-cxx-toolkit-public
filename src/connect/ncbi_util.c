@@ -859,24 +859,75 @@ static void s_CRC32_Init(void)
 #endif /*NCBI_USE_PRECOMPILED_CRC32_TABLES*/
 
 
-extern unsigned int CRC32_Update(unsigned int checksum,
-                                 const void *ptr, size_t count)
+extern unsigned int UTIL_CRC32_Update(unsigned int checksum,
+                                      const void *ptr, size_t len)
 {
-    size_t j;
-    const char* str = (const char*) ptr;
+    const unsigned char* data = (const unsigned char*) ptr;
+    size_t i;
 
 #ifndef NCBI_USE_PRECOMPILED_CRC32_TABLES
     s_CRC32_Init();
 #endif /*NCBI_USE_PRECOMPILED_CRC32_TABLES*/
 
-    for (j = 0;  j < count;  j++) {
-        size_t i = ((checksum >> 24) ^ *str++) & 0xFF;
+    for (i = 0;  i < len;  i++) {
+        size_t k = ((checksum >> 24) ^ *data++) & 0xFF;
         checksum <<= 8;
-        checksum  ^= s_CRC32Table[i];
+        checksum  ^= s_CRC32Table[k];
     }
 
     return checksum;
 }
+
+
+#define MOD_ADLER          65521
+#define MAXLEN_ADLER       5548  /* max len to run without overflows */
+#define ADJUST_ADLER(a)    a = (a & 0xFFFF) + (a >> 16) * (0x10000 - MOD_ADLER)
+#define FINALIZE_ADLER(a)  if (a >= MOD_ADLER) a -= MOD_ADLER
+
+unsigned int UTIL_Adler32_Update(unsigned int checksum,
+                                 const void* ptr, size_t len)
+{
+    const unsigned char* data = (const unsigned char*) ptr;
+    unsigned int a = checksum & 0xFFFF, b = checksum >> 16;
+
+    while (len) {
+        size_t i;
+        if (len >= MAXLEN_ADLER) {
+            len -= MAXLEN_ADLER;
+            for (i = 0;  i < MAXLEN_ADLER/4;  ++i) {
+                b += a += data[0];
+                b += a += data[1];
+                b += a += data[2];
+                b += a += data[3];
+                data += 4;
+            }
+        } else {
+            for (i = len >> 2;  i;  --i) {
+                b += a += data[0];
+                b += a += data[1];
+                b += a += data[2];
+                b += a += data[3];
+                data += 4;
+            }
+            for (len &= 3;  len;  --len) {
+                b += a += *data++;
+            }
+        }
+        ADJUST_ADLER(a);
+        ADJUST_ADLER(b);
+    }
+    /* It can be shown that a <= 0x1013A here, so a single subtract will do. */
+    FINALIZE_ADLER(a);
+    /* It can be shown that b can reach 0xFFEF1 here. */
+    ADJUST_ADLER(b);
+    FINALIZE_ADLER(b);
+    return (b << 16) | a;
+}
+
+#undef MOD_ADLER
+#undef MAXLEN_ADLER
+#undef ADJUST_ADLER
+#undef FINALIZE_ADLER
 
 
 
