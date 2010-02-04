@@ -254,6 +254,24 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error)
 }
 
 
+/*ARGSUSED*/
+static void x_set_errno(gnutls_session_t session, int error)
+{
+#  ifdef LIBGNUTLS_VERSION_NUMBER
+#    if                                         \
+    LIBGNUTLS_VERSION_MAJOR > 1  ||             \
+    LIBGNUTLS_VERSION_MINOR > 5  ||             \
+    LIBGNUTLS_VERSION_PATCH > 3
+    gnutls_transport_set_errno(session, error);
+    return;
+#    endif /*LIBGNUTLS_VERSION >= 1.5.4*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER*/
+    /*NOTREACHED*/
+    if (error)
+        errno = error;
+}
+
+
 static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
                             void* buf, size_t size)
 {
@@ -265,22 +283,15 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
         size_t x_read = 0;
         status = s_Pull(sock, buf, size, &x_read, s_GnuTlsLogLevel > 7);
         if (x_read > 0  ||  status == eIO_Success) {
-#  ifdef LIBGNUTLS_VERSION_NUMBER
-            gnutls_transport_set_errno((gnutls_session_t) sock->session, 0);
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
+            x_set_errno((gnutls_session_t) sock->session, 0);
             return x_read;
         }
     } else
         status = eIO_NotSupported;
 
     x_error = x_GnuTlsStatusToError(status, sock->r_timeout);
-    if (x_error) {
-#  ifdef LIBGNUTLS_VERSION_NUMBER
-        gnutls_transport_set_errno((gnutls_session_t) sock->session, x_error);
-#  else
-        errno = x_error;
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
-    }
+    if (x_error)
+        x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
 }
 
@@ -296,22 +307,15 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
         size_t x_written = 0;
         status = s_Push(sock, data, size, &x_written, s_GnuTlsLogLevel > 7);
         if (x_written  ||  (!size  &&  status == eIO_Success)) {
-#  ifdef LIBGNUTLS_VERSION_NUMBER
-            gnutls_transport_set_errno((gnutls_session_t) sock->session, 0);
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
+            x_set_errno((gnutls_session_t) sock->session, 0);
             return x_written;
         }
     } else
         status = eIO_NotSupported;
 
     x_error = x_GnuTlsStatusToError(status, sock->w_timeout);
-    if (x_error) {
-#  ifdef LIBGNUTLS_VERSION_NUMBER
-        gnutls_transport_set_errno((gnutls_session_t) sock->session, x_error);
-#  else
-        errno = x_error;
-#  endif /*LIBGNUTLS_VERSION_NUMBER*/
-    }
+    if (x_error)
+        x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
 }
 
