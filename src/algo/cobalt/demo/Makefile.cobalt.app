@@ -1,7 +1,7 @@
 APP = cobalt
 SRC = cobalt_app
 LIB = cobalt xalgoalignnw xalgophytree fastme biotree \
-      xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
+      align_format xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

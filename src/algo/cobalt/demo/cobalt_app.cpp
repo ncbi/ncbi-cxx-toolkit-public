@@ -45,12 +45,14 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
+#include <objtools/align_format/aln_printer.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
 #include <algo/cobalt/version.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 USING_SCOPE(cobalt);
 
 class CMultiApplication : public CNcbiApplication
@@ -194,6 +196,10 @@ void CMultiApplication::Init(void)
     arg_desc->AddOptionalKey("seqalign", "file", 
                              "Output text seqalign to specified file",
                              CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("outfmt", "format", "Output format for multiple "
+                             "alignment", CArgDescriptions::eString);
+    arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "mfasta",
+                                        "clustalw", "phylip", "nexus"));
     arg_desc->AddFlag("v", "Verbose output");
 
 
@@ -456,16 +462,40 @@ int CMultiApplication::Run(void)
         }
     }
 
-    const vector<CSequence>& results(aligner.GetSeqResults());
-    for (int i = 0; i < (int)results.size(); i++) {
-        CBioseq_Handle bhandle = scope->GetBioseqHandle(queries[i]->GetWhole(),
-                                                       CScope::eGetBioseq_All);
-
-        printf(">%s\n", sequence::GetTitle(bhandle).c_str());
-        for (int j = 0; j < results[i].GetLength(); j++) {
-            printf("%c", results[i].GetPrintableLetter(j));
+    if (args["outfmt"]) {
+        CMultiAlnPrinter printer(*aligner.GetResults(), *aligner.GetScope());
+        printer.SetWidth(80);
+        printer.SetGapChar('-');
+        printer.SetEndGapChar('-');
+        if (args["outfmt"].AsString() == "mfasta") {
+            printer.SetFormat(CMultiAlnPrinter::eFastaPlusGaps);
         }
-        printf("\n");
+        else if (args["outfmt"].AsString() == "clustalw") {
+            printer.SetFormat(CMultiAlnPrinter::eClustal);
+        }
+        else if (args["outfmt"].AsString() == "phylip") {
+            printer.SetFormat(CMultiAlnPrinter::ePhylipInterleaved);
+        }
+        else if (args["outfmt"].AsString() == "nexus") {
+            printer.SetFormat(CMultiAlnPrinter::eNexus);
+        }
+
+        printer.Print(NcbiCout);
+    }
+    else {
+        // default format is fasta with one sequence per line
+        const vector<CSequence>& results(aligner.GetSeqResults());
+        for (int i = 0; i < (int)results.size(); i++) {
+            CBioseq_Handle bhandle = scope->GetBioseqHandle(
+                                                queries[i]->GetWhole(),
+                                                CScope::eGetBioseq_All);
+
+            printf(">%s\n", sequence::GetTitle(bhandle).c_str());
+            for (int j = 0; j < results[i].GetLength(); j++) {
+                printf("%c", results[i].GetPrintableLetter(j));
+            }
+            printf("\n");
+        }
     }
 
     if (args["seqalign"]) {
