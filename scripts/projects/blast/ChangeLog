@@ -1,7 +1,25 @@
+Feb 03, 2010
+* 2.2.23 release
+* Bug fix for tabular output formatting involving BLAST databases that do not
+  have parseable deflines.
+* Fixed problem displaying accessions in XML output format.
+* Prevent collisions between queries and subject sequences with local
+  identifiers.
+* Fixed megablast performance regression when used with query masking.
+* Fixed seg filtering failure for blastx and genomic sequences.
+* Implemented saving search strategies in bl2seq mode.
+* Fixed bug in tabular output format with qseq, sseq, pident and ppos keywords.
+* Fixed bug with blastp-short task.
+* Fixed blastdbcmd retrieval of taxids for BLAST databases without GIs.
+* Added makeblastdb support for adding masking information to existing BLAST
+  databases.
+
 Nov 02, 2009
 * Internal bug fix release for 2.2.22
 * Fix issue dealing with opening BLAST databases which contain references to a
   BLAST database specified with a relative path.
+* Prevent collisions between queries and subject sequences with local
+  identifiers
 
 Sep 27, 2009
 * 2.2.22 release
