@@ -31,12 +31,12 @@
  */
 
 #include <connect/ncbi_heapmgr.h>
-#include <stdlib.h>
-#include <time.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
+#include <stdlib.h>
+#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
 

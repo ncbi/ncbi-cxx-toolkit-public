@@ -33,14 +33,14 @@
 #include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
 #  include <unistd.h>
-#endif
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"               /* CORE logging facilities */
+#endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
 /* This header must go last */
 #include "test_assert.h"
 
@@ -133,9 +133,9 @@ int main(int argc, char* argv[])
                   (net_info->timeout->sec | net_info->timeout->usec))
                  ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)) {
             CORE_LOG(eLOG_Fatal, "Timed out");
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
             usleep(500);
-#endif /*NCBI_OS_UNIX*/
+#endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
             continue;
         }
         if (status == eIO_Success) {

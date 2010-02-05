@@ -33,9 +33,9 @@
  */
 
 #include <connect/ncbi_util.h>
+#include "../ncbi_assert.h"
 #include <stdlib.h>
 #include <errno.h>
-#include "../ncbi_assert.h"
 /* This header must go last */
 #include "test_assert.h"
 

@@ -32,9 +32,9 @@
  */
 
 #include <connect/ncbi_connection.h>
-#include <string.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
+#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 

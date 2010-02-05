@@ -33,9 +33,9 @@
  */
 
 #include <connect/ncbi_socket.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <string.h>
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 /* This header must go last */
 #include "test_assert.h"
 

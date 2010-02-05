@@ -31,10 +31,10 @@
  */
 
 #include <connect/ncbi_heapmgr.h>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 #if 0
 #  define eLOG_Warning eLOG_Fatal
 #  define eLOG_Error   eLOG_Fatal

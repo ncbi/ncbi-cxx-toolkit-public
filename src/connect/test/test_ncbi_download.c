@@ -31,10 +31,10 @@
  */
 
 #include <connect/ncbi_service_connector.h>
-#include <stdlib.h>
-#include <time.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <stdlib.h>
+#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
 
