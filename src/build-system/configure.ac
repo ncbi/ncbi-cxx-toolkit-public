@@ -3844,8 +3844,9 @@ if test "$with_mysql" != "no" ; then
    if test -n "$mysql_config" ; then
       : ${MYSQL_BINPATH=`dirname $mysql_config`}
       # Kill off single quotes, due to later requoting
-      : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
-      NCBI_RPATHIFY_OUTPUT_COND(MYSQL_LIBS, $mysql_config --libs, [s/'//g; ])
+      : ${MYSQL_INCLUDE=`$mysql_config --include | tr -d \'`}
+      NCBI_RPATHIFY_OUTPUT_COND(MYSQL_LIBS, $mysql_config --libs${mt_sfx+_r},
+         [s/'//g; ])
       AC_CACHE_CHECK([whether MySQL works], ncbi_cv_lib_mysql,
          [CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
           LIBS="$MYSQL_LIBS $orig_LIBS"
