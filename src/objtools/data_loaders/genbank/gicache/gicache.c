@@ -1100,7 +1100,7 @@ int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix)
         ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
 #else
         fprintf(stderr, "Bad accession: %s", accession);
-        exit -1;
+        exit(-1);
 #endif
     }
     /* 1st prefix character + top 3 bits of 2nd prefix character */
@@ -1211,7 +1211,7 @@ int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix)
         ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
 #else
         fprintf(stderr, "Bad accession: %s", accession);
-        exit -1;
+        exit(-1);
 #endif
     }
     /* 1st prefix character + top 3 bits of 2nd prefix character */
