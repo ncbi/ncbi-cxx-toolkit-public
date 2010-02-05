@@ -44,7 +44,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
-#include "gicache.hpp"
+#include "gicache.h"
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_GICache
@@ -52,14 +52,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#ifdef NCBI_OS_MSWIN
-# define DEFAULT_PATH "/panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/gi_cache"
-#else
-# define DEFAULT_PATH "/net/ipubseq00/pubmed/sybase/PubSeq"
-#endif
-
 CGICacheReader::CGICacheReader(void)
-    : m_Path(DEFAULT_PATH)
+    : m_Path(DEFAULT_GI_CACHE_PATH)
 {
     SetMaximumConnections(1);
     x_Initialize();
@@ -74,7 +68,7 @@ CGICacheReader::CGICacheReader(const TPluginManagerParamTree* params,
         driver_name,
         NCBI_GBLOADER_READER_GICACHE_PARAM_PATH_NAME,
         CConfig::eErr_NoThrow,
-        DEFAULT_PATH);
+        DEFAULT_GI_CACHE_PATH);
     x_Initialize();
 }
 
@@ -86,7 +80,7 @@ CGICacheReader::~CGICacheReader()
 
 void CGICacheReader::x_Initialize(void)
 {
-    string index = m_Path+"/gi2acc";
+    string index = m_Path+'/'+DEFAULT_GI_CACHE_PREFIX;
     LOG_POST("CGICacheReader: loading from "<<index);
     CMutexGuard guard(m_Mutex);
     GICache_ReadData(index.c_str());

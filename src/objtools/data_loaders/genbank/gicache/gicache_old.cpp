@@ -32,10 +32,20 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <sys/mman.h>
 #include <sys/poll.h>
 #include <fcntl.h>
 #include "gicache.hpp"
+
+//#define USE_MMAP
+
+#define kMaxGiInfoSize 256
+#define kGiIndexPreload (32*256)
+
+#ifdef USE_MMAP
+# include <sys/mman.h>
+#else
+# define MAP_FAILED NULL
+#endif
 
 /****************************************************************************
  *
@@ -135,8 +145,9 @@ static void x_DumpDataCache(SGiDataIndex* data_index)
 
 static void x_CloseIndexFiles(SGiDataIndex* data_index)
 {
-    if (data_index->m_GiIndexFile >= 0) {
+    if (data_index->m_GiIndexFile > 0) {
         x_DumpIndexCache(data_index);
+        _ASSERT(data_index->m_GiIndexFile > 0);
         close(data_index->m_GiIndexFile);
         data_index->m_GiIndexFile = -1;
         data_index->m_GiIndexLen = 0;
@@ -146,8 +157,9 @@ static void x_CloseIndexFiles(SGiDataIndex* data_index)
 
 static void x_CloseDataFiles(SGiDataIndex* data_index)
 {
-    if (data_index->m_DataFile >= 0) {
+    if (data_index->m_DataFile > 0) {
         x_DumpDataCache(data_index);
+        _ASSERT(data_index->m_DataFile > 0);
         close(data_index->m_DataFile);
         data_index->m_DataFile = -1;
         data_index->m_DataLen = 0;
@@ -165,8 +177,12 @@ static void x_CloseFiles(SGiDataIndex* data_index)
 static void x_UnMapIndex(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndex != MAP_FAILED) {
+#ifdef USE_MMAP
         munmap((char*)data_index->m_GiIndex,
                data_index->m_MappedIndexLen*sizeof(Uint4));
+#else
+        free(data_index->m_GiIndex);
+#endif
         data_index->m_GiIndex = (Uint4*)MAP_FAILED;
         data_index->m_MappedIndexLen = 0;
     }
@@ -175,7 +191,9 @@ static void x_UnMapIndex(SGiDataIndex* data_index)
 static void x_UnMapData(SGiDataIndex* data_index)
 {
     if (data_index->m_Data != MAP_FAILED) {
+#ifdef USE_MMAP
         munmap((char*)data_index->m_Data, data_index->m_MappedDataLen);
+#endif
         data_index->m_Data = (char*)MAP_FAILED;
         data_index->m_MappedDataLen = 0;
     }
@@ -283,13 +301,22 @@ static Boolean x_MapIndex(SGiDataIndex* data_index)
     if (data_index->m_GiIndex != MAP_FAILED) return TRUE;
     
     x_DumpIndexCache(data_index);
-    prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
     map_size = data_index->m_GiIndexLen*sizeof(Uint4);
     _ASSERT(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
     _ASSERT(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
+#ifdef USE_MMAP
+    prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
     data_index->m_GiIndex =
         (Uint4*)mmap(0, map_size, prot, MAP_SHARED|MAP_NORESERVE, 
                      data_index->m_GiIndexFile, 0);
+#else
+    char* data = (char*)malloc(map_size);
+    for ( int i = 0; i < map_size; i += 4*kGiIndexPreload ) {
+        _ASSERT(i+4 <= map_size);
+        *(int*)&data[i] = -1;
+    }
+    data_index->m_GiIndex = (Uint4*)data;
+#endif
     data_index->m_MappedIndexLen = data_index->m_GiIndexLen;
 
     return (data_index->m_GiIndex != MAP_FAILED);
@@ -299,6 +326,7 @@ static Boolean x_MapData(SGiDataIndex* data_index)
 {
     if (!x_OpenDataFiles(data_index)) return FALSE;
 
+#ifdef USE_MMAP
     if (data_index->m_Data == MAP_FAILED) {
         int prot = PROT_READ | (data_index->m_ReadOnlyMode ? 0 : PROT_WRITE);
         x_DumpDataCache(data_index);
@@ -310,6 +338,9 @@ static Boolean x_MapData(SGiDataIndex* data_index)
     }
 
     return (data_index->m_Data != MAP_FAILED);
+#else
+    return TRUE;
+#endif
 }
 
 static Boolean x_ReMapIndex(SGiDataIndex* data_index)
@@ -332,6 +363,7 @@ static Boolean x_ReMapData(SGiDataIndex* data_index)
 static void x_Flush(SGiDataIndex* data_index)
 {
     if (data_index->m_DataFile >= 0) {
+#ifdef USE_MMAP
         if (data_index->m_DataCacheLen > 0) {
             int prot;
 
@@ -351,10 +383,12 @@ static void x_Flush(SGiDataIndex* data_index)
             /* Synchronize memory mapped data with the file on disk. */
             msync(data_index->m_Data, data_index->m_DataLen, MS_SYNC);
         }
+#endif
     }
 
     /* Flush index file */
     if (data_index->m_GiIndexFile >= 0) {
+#ifdef USE_MMAP
         if (data_index->m_IndexCacheLen > 0) {
             int prot;
 
@@ -377,6 +411,7 @@ static void x_Flush(SGiDataIndex* data_index)
             msync((char*)data_index->m_GiIndex, data_index->m_GiIndexLen,
                   MS_SYNC);
         }
+#endif
     }
 }
 
@@ -447,6 +482,25 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
                     return -1;
             }
             gi_index = data_index->m_GiIndex;
+#ifndef USE_MMAP
+            {
+                Uint4 page_base = page & ~(kGiIndexPreload-1);
+                if ( (int)gi_index[page_base] == -1 ) {
+                    int len = 4*(data_index->m_GiIndexLen - page_base);
+                    if ( len > 4*kGiIndexPreload )
+                        len = 4*kGiIndexPreload;
+                    _ASSERT(len >= 4);
+                    lseek(data_index->m_GiIndexFile, 4*page_base, SEEK_SET);
+                    if ( read(data_index->m_GiIndexFile,
+                              (char*)&gi_index[page_base],
+                              len) != len ) {
+                        gi_index[page_base] = -1;
+                        return 0;
+                    }
+                    _ASSERT((int)gi_index[page_base] != -1);
+                }
+            }
+#endif
         } else {
             page -= data_index->m_GiIndexLen;
             gi_index = data_index->m_IndexCache;
@@ -493,7 +547,7 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
     return base;
 }
 
-static char* x_GetGiData(SGiDataIndex* data_index, int gi)
+static char* x_GetGiData(SGiDataIndex* data_index, int gi, char* buffer)
 {
     Uint4 page = 0;
     int base = 0;
@@ -505,18 +559,17 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
     if (data_index->m_Remapping)
         return NULL;
 
-    if ((data_index->m_GiIndex == MAP_FAILED ||
-         data_index->m_Data == MAP_FAILED)) {
+    if ((data_index->m_GiIndex == MAP_FAILED
+         /*|| data_index->m_Data == MAP_FAILED*/)) {
         data_index->m_NeedRemap = TRUE;
         if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0))
             return NULL;
     }
 
-    _ASSERT((data_index->m_GiIndex != MAP_FAILED) && 
-           (data_index->m_Data != MAP_FAILED));
+    _ASSERT((data_index->m_GiIndex != MAP_FAILED)
+            /*&& (data_index->m_Data != MAP_FAILED)*/);
 
     for (level = 3; level >= 0; --level) {
-
         /* Get this gi's page number and find the starting offset for that page's 
            information in the index file. */
         page = (Uint4)base + ((gi>>(level*kPageSize+shift)) & kPageMask);
@@ -527,7 +580,6 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
          * remapping must be done here.
          */
         base = x_GetIndexOffset(data_index, gi, page, level);
-        
         /* The 0th page in the index file is reserved for the start offsets of
          * other pages. If we got there, it means the requested gi is not 
          * present in the index.
@@ -552,12 +604,19 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
     } else {
         /* If offset points to data that has been written to disk but not yet
            mapped, remap now. */
+#ifdef USE_MMAP
         if ((Uint4)base >= data_index->m_MappedDataLen) {
             data_index->m_NeedRemap = TRUE;
             if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0))
                 return NULL;
         }
         return data_index->m_Data + base;
+#else
+        lseek(data_index->m_DataFile, base, SEEK_SET);
+        if ( read(data_index->m_DataFile, buffer, kMaxGiInfoSize) != kMaxGiInfoSize )
+            return NULL;
+        return buffer;
+#endif
     }
 }
 
@@ -617,9 +676,10 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
 }
 
 /* Returns data corresponding to a given gi for reading only. */
-static const char* GiDataIndex_GetData(SGiDataIndex* data_index, int gi)
+static const char* GiDataIndex_GetData(SGiDataIndex* data_index, int gi,
+                                       char* buffer)
 {
-    return x_GetGiData(data_index, gi);
+    return x_GetGiData(data_index, gi, buffer);
 }
 
 /****************************************************************************
@@ -802,7 +862,8 @@ s_DecodeGiAccession(const char* inbuf, char* acc, int acc_len)
 int GICache_GetAccession(int gi, char* acc, int acc_len)
 {
     int retval = 0;
-    const char* gi_data = GiDataIndex_GetData(&gi_cache, gi);
+    char buffer[kMaxGiInfoSize];
+    const char* gi_data = GiDataIndex_GetData(&gi_cache, gi, buffer);
     if (gi_data) {
         retval = s_DecodeGiAccession(gi_data, acc, acc_len);
     } else {
@@ -814,7 +875,8 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
 int GICache_GetLength(int gi)
 {
     int length = 0;
-    const char *x = GiDataIndex_GetData(&gi_cache, gi);
+    char buffer[kMaxGiInfoSize];
+    const char *x = GiDataIndex_GetData(&gi_cache, gi, buffer);
 
     if(!x) return 0;
 
