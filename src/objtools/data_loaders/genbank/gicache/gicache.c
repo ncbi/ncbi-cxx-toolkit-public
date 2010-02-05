@@ -36,7 +36,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
-#include <ncbi.h>
+#include <poll.h>
+#include "ncbi_toolkit.h"
 
 /****************************************************************************
  *
@@ -66,7 +67,7 @@ typedef struct {
     Uint4   m_DataLen;
     Uint4   m_MappedDataLen;
     Uint4   m_MappedIndexLen;
-    Boolean m_ReadOnlyMode;
+    Uint1 m_ReadOnlyMode;
     Uint4   m_IndexCacheLen;
     Uint4   m_DataCacheLen;
     char    m_FileNamePrefix[256];
@@ -75,11 +76,11 @@ typedef struct {
     Uint4*  m_IndexCache;
     Uint4   m_DataCacheSize;
     char*   m_DataCache;
-    Boolean m_SequentialData;
-    Boolean m_FreeOnDrop;
+    Uint1 m_SequentialData;
+    Uint1 m_FreeOnDrop;
     volatile int m_Remapping; /* Count of threads currently trying to remap */
-    volatile Boolean m_NeedRemap; /* Is remap needed? */
-    Boolean m_RemapOnRead; /* Is remap allowed when reading data? */
+    volatile Uint1 m_NeedRemap; /* Is remap needed? */
+    Uint1 m_RemapOnRead; /* Is remap allowed when reading data? */
 } SGiDataIndex;
 
 /****************************************************************************
@@ -93,17 +94,17 @@ typedef struct {
 static void x_DumpIndexCache(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndexFile >= 0 && data_index->m_IndexCacheLen > 0) {
-        ASSERT(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(int) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(int) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         /* Write to the index file whatever is still left in cache. */
         write(data_index->m_GiIndexFile, data_index->m_IndexCache,
               data_index->m_IndexCacheLen*sizeof(int));
         data_index->m_GiIndexLen += data_index->m_IndexCacheLen;
-        ASSERT(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(int) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(int) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         data_index->m_IndexCacheLen = 0;
     }
@@ -112,17 +113,17 @@ static void x_DumpIndexCache(SGiDataIndex* data_index)
 static void x_DumpDataCache(SGiDataIndex* data_index)
 {
     if (data_index->m_DataFile >= 0 && data_index->m_DataCacheLen > 0) {
-        ASSERT(data_index->m_DataLen ==
+        assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_DataLen ==
+        assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_END));
         /* Write to the data file whatever is still left in cache. */
         write(data_index->m_DataFile, data_index->m_DataCache,
               data_index->m_DataCacheLen);
         data_index->m_DataLen += data_index->m_DataCacheLen;
-        ASSERT(data_index->m_DataLen == 
+        assert(data_index->m_DataLen == 
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_DataLen == 
+        assert(data_index->m_DataLen == 
                lseek(data_index->m_DataFile, 0, SEEK_END));
         data_index->m_DataCacheLen = 0;
     }
@@ -183,13 +184,13 @@ static void x_UnMap(SGiDataIndex* data_index)
     x_UnMapData(data_index);
 }
 
-static Boolean x_OpenIndexFiles(SGiDataIndex* data_index)
+static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
 
     if (data_index->m_GiIndexFile >= 0)
-        return TRUE;
+        return 1;
     
     flags = (data_index->m_ReadOnlyMode?O_RDONLY:O_RDWR|O_APPEND|O_CREAT);
     
@@ -210,13 +211,13 @@ static Boolean x_OpenIndexFiles(SGiDataIndex* data_index)
         /* First page of the index is reserved for the pointers to other pages. */
         data_index->m_GiIndexLen = 1<<kPageSize;
         b = (Uint4*) calloc(data_index->m_GiIndexLen, sizeof(Uint4));
-        ASSERT(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
+        assert(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         write(data_index->m_GiIndexFile, b,
               data_index->m_GiIndexLen*sizeof(Uint4));
         free(b);
-        ASSERT(data_index->m_GiIndexLen*sizeof(Uint4) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_GiIndexLen*sizeof(Uint4) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
     }
     
@@ -224,13 +225,13 @@ static Boolean x_OpenIndexFiles(SGiDataIndex* data_index)
 }
 
 /* Opens data and index files, including check if they are already open. */
-static Boolean x_OpenDataFiles(SGiDataIndex* data_index)
+static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
 
     if (data_index->m_DataFile >= 0)
-        return TRUE;
+        return 1;
     
     flags = (data_index->m_ReadOnlyMode?O_RDONLY:O_RDWR|O_APPEND|O_CREAT);
     
@@ -251,12 +252,12 @@ static Boolean x_OpenDataFiles(SGiDataIndex* data_index)
          */
         int  b[2];
         memset(b, 0, sizeof(b));
-        ASSERT(0 == lseek(data_index->m_DataFile, 0, SEEK_END));
+        assert(0 == lseek(data_index->m_DataFile, 0, SEEK_END));
         write(data_index->m_DataFile, b, sizeof(b));
         data_index->m_DataLen = sizeof(b);
-        ASSERT(data_index->m_DataLen ==
+        assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
-        ASSERT(data_index->m_DataLen ==
+        assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_END));
     }
     
@@ -264,14 +265,14 @@ static Boolean x_OpenDataFiles(SGiDataIndex* data_index)
 }
 
 /* Opens data and index files, including check if they are already open. */
-static Boolean x_OpenFiles(SGiDataIndex* data_index)
+static Uint1 x_OpenFiles(SGiDataIndex* data_index)
 {
     if (!x_OpenIndexFiles(data_index))
-        return FALSE;
+        return 0;
     if (!x_OpenDataFiles(data_index))
-        return FALSE;
+        return 0;
 
-    return TRUE;
+    return 1;
 }
 
 /* hack needed for SGI IRIX where MAP_NORESERVE isn't defined. Dima */
@@ -279,20 +280,20 @@ static Boolean x_OpenFiles(SGiDataIndex* data_index)
 #define MAP_NORESERVE (0)
 #endif
 
-static Boolean x_MapIndex(SGiDataIndex* data_index)
+static Uint1 x_MapIndex(SGiDataIndex* data_index)
 {
     int prot;
     Uint4 map_size;
 
-    if (!x_OpenIndexFiles(data_index)) return FALSE;
+    if (!x_OpenIndexFiles(data_index)) return 0;
 
-    if (data_index->m_GiIndex != MAP_FAILED) return TRUE;
+    if (data_index->m_GiIndex != MAP_FAILED) return 1;
     
     x_DumpIndexCache(data_index);
     prot = PROT_READ | (data_index->m_ReadOnlyMode? 0: PROT_WRITE);
     map_size = data_index->m_GiIndexLen*sizeof(Uint4);
-    ASSERT(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-    ASSERT(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
+    assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
+    assert(map_size == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
     data_index->m_GiIndex =
         (Uint4*)mmap(0, map_size, prot, MAP_SHARED|MAP_NORESERVE, 
                      data_index->m_GiIndexFile, 0);
@@ -301,9 +302,9 @@ static Boolean x_MapIndex(SGiDataIndex* data_index)
     return (data_index->m_GiIndex != MAP_FAILED);
 }
 
-static Boolean x_MapData(SGiDataIndex* data_index)
+static Uint1 x_MapData(SGiDataIndex* data_index)
 {
-    if (!x_OpenDataFiles(data_index)) return FALSE;
+    if (!x_OpenDataFiles(data_index)) return 0;
 
     if (data_index->m_Data == MAP_FAILED) {
         int prot = PROT_READ | (data_index->m_ReadOnlyMode ? 0 : PROT_WRITE);
@@ -318,29 +319,29 @@ static Boolean x_MapData(SGiDataIndex* data_index)
     return (data_index->m_Data != MAP_FAILED);
 }
 
-static Boolean x_Map(SGiDataIndex* data_index)
+static Uint1 x_Map(SGiDataIndex* data_index)
 {
-    if (!x_MapIndex(data_index)) return FALSE;
-    if (!x_MapData(data_index)) return FALSE;
+    if (!x_MapIndex(data_index)) return 0;
+    if (!x_MapData(data_index)) return 0;
 
-    return TRUE;
+    return 1;
 }
 
-static Boolean x_ReMapIndex(SGiDataIndex* data_index)
+static Uint1 x_ReMapIndex(SGiDataIndex* data_index)
 {
     x_UnMapIndex(data_index);
     x_CloseIndexFiles(data_index);
-    if (!x_MapIndex(data_index)) return FALSE;
+    if (!x_MapIndex(data_index)) return 0;
     
-    return TRUE;
+    return 1;
 }
 
-static Boolean x_ReMapData(SGiDataIndex* data_index)
+static Uint1 x_ReMapData(SGiDataIndex* data_index)
 {
     x_UnMapData(data_index);
-    if (!x_MapData(data_index)) return FALSE;
+    if (!x_MapData(data_index)) return 0;
     
-    return TRUE;
+    return 1;
 }
 
 static void x_Flush(SGiDataIndex* data_index)
@@ -394,12 +395,12 @@ static void x_Flush(SGiDataIndex* data_index)
     }
 }
 
-static Boolean GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
+static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
 {
     /* If some other thread has already done the remapping or is in the process
        of doing it, there is nothing to do here. */
     if (!data_index->m_NeedRemap || data_index->m_Remapping)
-        return TRUE;
+        return 1;
 
     ++data_index->m_Remapping;
 
@@ -409,24 +410,24 @@ static Boolean GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
 
     if (data_index->m_Remapping > 1) {
         data_index->m_Remapping--;
-        return FALSE;
+        return 0;
     }
-    ASSERT(data_index->m_Remapping == 1);
+    assert(data_index->m_Remapping == 1);
 
 
     x_Flush(data_index);
 
     if (!x_ReMapIndex(data_index))
-        return FALSE;
+        return 0;
     if (!x_ReMapData(data_index))
-        return FALSE;
+        return 0;
 
     /* Inform any other threads that may want remapped data that remapping has
        already finished. */
     data_index->m_Remapping = 0;
-    data_index->m_NeedRemap = FALSE;
+    data_index->m_NeedRemap = 0;
 
-    return TRUE;
+    return 1;
 }
 
 /* For each page of 256 2-byte index array slots, the first 2 slots (0 and 1)
@@ -455,7 +456,7 @@ x_GetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level)
     } else {
         if (page < data_index->m_GiIndexLen) {
             if (page >= data_index->m_MappedIndexLen) {
-                data_index->m_NeedRemap = TRUE;
+                data_index->m_NeedRemap = 1;
                 if (!data_index->m_RemapOnRead ||
                     !GiDataIndex_ReMap(data_index,0))
                     return -1;
@@ -578,12 +579,12 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
 
     if ((data_index->m_GiIndex == MAP_FAILED ||
          data_index->m_Data == MAP_FAILED)) {
-        data_index->m_NeedRemap = TRUE;
+        data_index->m_NeedRemap = 1;
         if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0))
             return NULL;
     }
 
-    ASSERT((data_index->m_GiIndex != MAP_FAILED) && 
+    assert((data_index->m_GiIndex != MAP_FAILED) && 
            (data_index->m_Data != MAP_FAILED));
 
     for (level = 3; level >= 0; --level) {
@@ -610,7 +611,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
     /* If offset points beyond the combined length of the mapped data and cache,
        try to remap data. If that still doesn't help, bail out. */
     if ((Uint4)base >= data_index->m_DataLen + data_index->m_DataCacheLen) {
-        data_index->m_NeedRemap = TRUE;
+        data_index->m_NeedRemap = 1;
         if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0) ||
             (Uint4)base >= data_index->m_DataLen + data_index->m_DataCacheLen) 
             return NULL;
@@ -624,7 +625,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
         /* If offset points to data that has been written to disk but not yet
            mapped, remap now. */
         if ((Uint4)base >= data_index->m_MappedDataLen) {
-            data_index->m_NeedRemap = TRUE;
+            data_index->m_NeedRemap = 1;
             if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index,0))
                 return NULL;
         }
@@ -635,17 +636,17 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
 /* Constructor */
 static SGiDataIndex*
 GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
-                Boolean readonly, Boolean sequential)
+                Uint1 readonly, Uint1 sequential)
 {
     if (!data_index) {
         data_index = (SGiDataIndex*) malloc(sizeof(SGiDataIndex));
-        data_index->m_FreeOnDrop = TRUE;
+        data_index->m_FreeOnDrop = 1;
     } else {
-        data_index->m_FreeOnDrop = FALSE;
+        data_index->m_FreeOnDrop = 0;
     }
 
     data_index->m_ReadOnlyMode = readonly;
-    ASSERT(strlen(name) < 256);
+    assert(strlen(name) < 256);
     strncpy(data_index->m_FileNamePrefix, name, 256);
     data_index->m_DataUnitSize = unit_size;
     data_index->m_SequentialData = sequential;
@@ -665,8 +666,8 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
     data_index->m_DataCacheSize = unit_size*DATA_CACHE_SIZE;
     data_index->m_DataCache = (char*) malloc(data_index->m_DataCacheSize);
     data_index->m_Remapping = 0;
-    data_index->m_NeedRemap = TRUE;
-    data_index->m_RemapOnRead = TRUE;
+    data_index->m_NeedRemap = 1;
+    data_index->m_RemapOnRead = 1;
 
     return data_index;
 }
@@ -703,9 +704,9 @@ static char* GiDataIndex_SetData(SGiDataIndex* data_index, int gi)
 }
 
 /* Writes data for a gi. */
-static Boolean
+static Uint1
 GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
-                    Boolean overwrite, Uint4 data_size)
+                    Uint1 overwrite, Uint4 data_size)
 {
     const Uint4 kAllOneMask = 0x7fffffff;
     Uint4 page = 0;  
@@ -715,19 +716,19 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
 
     /* No writing can occur in read-only mode. */
     if (data_index->m_ReadOnlyMode)
-        return FALSE;
+        return 0;
 
     /* Check if index and data memory maps are open. */
     if (data_index->m_GiIndex == MAP_FAILED && !x_MapIndex(data_index))
-        return FALSE;
+        return 0;
 
     if (data_index->m_Data == MAP_FAILED && !x_MapData(data_index))
-        return FALSE;
+        return 0;
 
     if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kAllOneMask)
-        return FALSE; /* can not map this amount of data anyway */
+        return 0; /* can not map this amount of data anyway */
     if (data_index->m_DataLen + sizeof(int)*(1<<kPageSize) >= kAllOneMask)
-        return FALSE; /* can not map this amount of data anyway */
+        return 0; /* can not map this amount of data anyway */
     
     for (level = 3; level >= 0; --level) {
 
@@ -741,7 +742,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
          * unrecoverable within the current process.
          */
         if ((base = x_GetIndexOffset(data_index, gi, page, level)) < 0)
-            return FALSE;
+            return 0;
 
         /* If there are no gis from the same page in the index yet, assign a new
            page in the index for this gi's page. */
@@ -759,7 +760,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
                 data_index->m_IndexCacheSize) {
                 x_DumpIndexCache(data_index);
             }
-            ASSERT(data_index->m_GiIndexLen*sizeof(Uint4) == 
+            assert(data_index->m_GiIndexLen*sizeof(Uint4) == 
                     lseek(data_index->m_GiIndexFile, 0, SEEK_END));
             memcpy((void*)(&data_index->m_IndexCache[data_index->m_IndexCacheLen]),
                    b, kPageBitSize*sizeof(Uint4));
@@ -778,7 +779,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
      */
     if (base > 0) {
         if (!overwrite)
-            return FALSE;
+            return 0;
 
         if (base >= (int)data_index->m_DataLen) {
             /* The previous data for this gi is currently in cache. */
@@ -812,7 +813,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
             data_index->m_DataCacheSize)
             x_DumpDataCache(data_index);
     
-        ASSERT(data_index->m_DataCacheLen + data_size <=
+        assert(data_index->m_DataCacheLen + data_size <=
                data_index->m_DataCacheSize);
         /* Write the current data into cache. */
         memcpy(data_index->m_DataCache + data_index->m_DataCacheLen, data,
@@ -820,11 +821,11 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
         data_index->m_DataCacheLen += data_size;
     }
 
-    return TRUE;
+    return 1;
 }
 
 /* Deletes data for a gi. */
-static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
+static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
 {
     int page = 0; 
     int base = 0;
@@ -832,14 +833,14 @@ static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
     
     /* No writing can occur in read-only mode. */
     if (data_index->m_ReadOnlyMode)
-        return FALSE;
+        return 0;
 
     /* Check if index and data memory maps are open. */
     if (data_index->m_GiIndex == MAP_FAILED && !x_MapIndex(data_index))
-        return FALSE;
+        return 0;
 
     if (data_index->m_Data == MAP_FAILED && !x_MapData(data_index))
-        return FALSE;
+        return 0;
 
     for (index = 3; index >= 0; --index) {
 
@@ -851,11 +852,11 @@ static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
          * remapping must be done here.
          */
         if (page >= (int)data_index->m_GiIndexLen) {
-            return FALSE;
+            return 0;
         } else if (page < (int)data_index->m_GiIndexLen) {
             if (page >= (int)data_index->m_MappedIndexLen) {
                 if (!x_ReMapIndex(data_index))
-                    return FALSE;
+                    return 0;
             }
             base = (int) data_index->m_GiIndex[page];
         } else {
@@ -865,7 +866,7 @@ static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
         /* If there are no gis from this page in the index, there is nothing to
            delete. Return success. */
         if (base == 0)
-            return TRUE;
+            return 1;
     }
      
     /* Check if data is already present. If it is not, there is nothing to 
@@ -878,7 +879,7 @@ static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
 
         if (base >= (int)data_index->m_DataLen) {
             /* The previous data for this gi is currently in cache. */
-            ASSERT(base + data_index->m_DataUnitSize <=
+            assert(base + data_index->m_DataUnitSize <=
                    data_index->m_DataLen + data_index->m_DataCacheLen);
             memset(data_index->m_DataCache + base - data_index->m_DataLen, 0,
                    data_index->m_DataUnitSize);
@@ -886,13 +887,13 @@ static Boolean GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
             /* If this base is in the part that has already been written to 
                disk, but not yet remapped, remap now. */
             if (base >= (int)data_index->m_MappedDataLen) {
-                data_index->m_NeedRemap = TRUE;
+                data_index->m_NeedRemap = 1;
                 GiDataIndex_ReMap(data_index, 0);
             }
             memset(data_index->m_Data + base, 0, data_index->m_DataUnitSize);
         }
     }
-    return TRUE;
+    return 1;
 }
 
 /* Returns pointer to the start of data in the data file. Needed when
@@ -1001,7 +1002,7 @@ static int GiDataIndex_GetMappedSize(SGiDataIndex* data_index)
 
 static SGiDataIndex gi_cache;
 
-static void x_GICacheInit(const char* prefix, Boolean readonly)
+static void x_GICacheInit(const char* prefix, Uint1 readonly)
 {
     char prefix_str[256];
 
@@ -1009,31 +1010,31 @@ static void x_GICacheInit(const char* prefix, Boolean readonly)
     sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
 
     /* When reading data, use readonly mode. */
-    GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, TRUE);
+    GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
 
     if (readonly) {
         /* Check whether gi cache is available at this location, by trying to
            map it right away. If local cache isn't found, use default path and
            try again. */
-        Boolean cache_found = GiDataIndex_ReMap(&gi_cache, 0);
+        Uint1 cache_found = GiDataIndex_ReMap(&gi_cache, 0);
         if (!cache_found) {
             sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
                     DEFAULT_GI_CACHE_PREFIX);
-            GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, TRUE);
+            GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
         }
     }
 }
 
 void GICache_ReadData(const char *prefix)
 {
-    x_GICacheInit(prefix, TRUE);
+    x_GICacheInit(prefix, 1);
 }
 
 void GICache_ReMap(int delay_in_sec) {
     /* If this library function is being called, delayed remapping is
        established, i.e. any future remapping is only done from here, but not on
        read attempts. */
-    gi_cache.m_RemapOnRead = FALSE;
+    gi_cache.m_RemapOnRead = 0;
     GiDataIndex_ReMap(&gi_cache, delay_in_sec*1000);
 }
 
@@ -1094,9 +1095,14 @@ int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix)
     if (!(accession[0] >= 'A' && accession[0] <= 'Z' &&
            accession[1] >= 'A' && accession[1] <= 'Z' &&
            accession[2] >= 'A' && accession[2] <= 'Z' &&
-          ((suffix>>17) == 0)))
-          ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
-
+          ((suffix>>17) == 0))) {
+#if 0
+        ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
+#else
+        fprintf(stderr, "Bad accession: %s", accession);
+        exit -1;
+#endif
+    }
     /* 1st prefix character + top 3 bits of 2nd prefix character */
     buf[0] = ((accession[0] - 'A' + 1)<<3) | ((accession[1] - 'A' + 1)>>2);
     /* bottom 2 bits of 2nd prefix character + 3rd prefix character + top 1 bit
@@ -1127,7 +1133,7 @@ static INLINE
 int s_Encode2LetterAccession(char* buf, const char* accession, int suffix,
                              int prefix_length)
 {
-    ASSERT(accession[0] >= 'A' && accession[0] <= 'Z');
+    assert(accession[0] >= 'A' && accession[0] <= 'Z');
 
     /* 1st prefix character */
     buf[0] = (accession[0] - 'A' + 1)<<3;
@@ -1166,8 +1172,8 @@ static INLINE
 void s_Decode2LetterAccession(const char* buf, Uint1 control_byte, char* prefix,
                              int* prefix_length, int* suffix)
 {
-    Boolean is_refseq = ((control_byte & (1<<5)) != 0);
-    Boolean large_suffix = ((control_byte & (1<<6)) != 0);
+    Uint1 is_refseq = ((control_byte & (1<<5)) != 0);
+    Uint1 large_suffix = ((control_byte & (1<<6)) != 0);
     Uint1 byte;
 
     prefix[0] = ((buf[0]&0xff)>>3) + 'A' - 1;
@@ -1200,9 +1206,14 @@ int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix)
            accession[1] >= 'A' && accession[1] <= 'Z' &&
            accession[2] >= 'A' && accession[2] <= 'Z' &&
            accession[3] >= 'A' && accession[3] <= '_' &&
-          ((suffix>>27) == 0)))
+          ((suffix>>27) == 0))) {
+#if 0
         ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
-
+#else
+        fprintf(stderr, "Bad accession: %s", accession);
+        exit -1;
+#endif
+    }
     /* 1st prefix character + top 3 bits of 2nd prefix character */
     buf[0] = ((accession[0] - 'A' + 1)<<3) | ((accession[1] - 'A' + 1)>>2);
     /* bottom 2 bits of 2nd prefix character + 3rd prefix character + top 1 bit
@@ -1289,7 +1300,7 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
     int suffix = 0;
     char* buf_ptr;
     int acc_pos;
-    Boolean no_encoding = FALSE;
+    Uint1 no_encoding = 0;
 
     outbuf[0] = 0;
 
@@ -1318,7 +1329,7 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
      * in 2 bytes, so it's still worth encoding!
      */
     if (suffix_length > 3) {
-        Boolean is_refseq = (acc_pos >= 3 && accession[2] == '_');
+        Uint1 is_refseq = (acc_pos >= 3 && accession[2] == '_');
         suffix = atol(&accession[acc_pos]);
         if (acc_pos == 2 || (is_refseq && acc_pos == 3)) {
             outbuf[0] |= (1<<4);
@@ -1355,7 +1366,7 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
 
         suffix_length -= 2;
     } else {
-        no_encoding = TRUE; 
+        no_encoding = 1; 
         suffix_length = 0;
     }
 
@@ -1473,7 +1484,7 @@ int GICache_GetMaxGi()
 
 int GICache_LoadStart(const char* cache_prefix)
 {
-    x_GICacheInit(cache_prefix, FALSE);
+    x_GICacheInit(cache_prefix, 0);
     return 0;
 }
 
@@ -1486,12 +1497,12 @@ int GICache_LoadAdd(int gi, int len, const char* acc, int version)
     /* Primary accession and length for a given gi never change, hence there
      * is never a need to overwrite gi data if it is already present in
      * cache.
-     * NB: The "overwrite" parameter is TRUE, because the only possible change
+     * NB: The "overwrite" parameter is 1, because the only possible change
      * in gi data is that it gets a version when previously there was no
      * version. This does not change the encoded data size, so data can be
      * modified in place.
      */
-    GiDataIndex_PutData(&gi_cache, gi, buf, TRUE, acc_len);
+    GiDataIndex_PutData(&gi_cache, gi, buf, 1, acc_len);
 
     return 0;
 }
