@@ -20,6 +20,7 @@ internal/blast/DistribDbSupport
 internal/blast/GumbelParams
 internal/gpipe/align_db
 misc/third_party_static
+misc/xmlwrapp
 objects
 objmgr
 objtools
