@@ -345,6 +345,16 @@ BOOST_AUTO_TEST_CASE(FindMatrixPathNoNcbiRcFile) {
     CMetaRegistry::SetSearchPath() = sp;
 }
 
+BOOST_AUTO_TEST_CASE(FindMatrixPathTestBLASTMAT) {
+    CAutoEnvironmentVariable a("BLASTMAT", "data");
+    CAutoEnvironmentVariable b("NCBI", "/dev/null");
+    CMetaRegistry::TSearchPath sp = CMetaRegistry::GetSearchPath();
+    CMetaRegistry::SetSearchPath().clear();
+    TAutoCharPtr input = strdup("blosum62");
+    char* matrix_path = BlastFindMatrixPath(input.get(), true);
+    BOOST_REQUIRE(matrix_path == NULL);
+}
+
 BOOST_AUTO_TEST_CASE(FindMatrixPathFailure) {
     TAutoCharPtr input = strdup("a non-existent matrix");
     char* matrix_path = BlastFindMatrixPath(input.get(), true);

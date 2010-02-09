@@ -1266,7 +1266,7 @@ char* BlastFindMatrixPath(const char* matrix_name, Boolean is_prot)
        }
    
        const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
-       if (CFile(blastmat_env).Exists()) {
+       if (CDir(blastmat_env).Exists()) {
            full_path = blastmat_env;
            full_path += CFile::GetPathSeparator();
            full_path += is_prot ? "aa" : "nt";
@@ -1289,7 +1289,7 @@ char* BlastFindMatrixPath(const char* matrix_name, Boolean is_prot)
 #endif
 
        // Try again without the "aa" or "nt"
-       if (CFile(blastmat_env).Exists()) {
+       if (CDir(blastmat_env).Exists()) {
            full_path = blastmat_env;
            full_path += CFile::GetPathSeparator();
            full_path += mtx;
