@@ -79,7 +79,7 @@ case $output in
             echo "#line 1 \"$x\""
             cat "$x"
         done >> "$builddir/Makefile.mk"
-        $srcdir/scripts/common/impl/report_duplicates.awk \
+        scripts/common/impl/report_duplicates.awk \
             src=./src/build-system/Makefile.mk.in "$builddir/Makefile.mk"
         ;;
 
