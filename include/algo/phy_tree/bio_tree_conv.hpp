@@ -396,6 +396,21 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 
 // --------------------------------------------------------------------------
 
+/// Feature ids for Bio-Tree
+///
+enum ETaxon1ConvFeatures
+{
+    eTaxTree_Name         = 1,
+    eTaxTree_BlastName    = 2,
+    eTaxTree_Rank         = 3,
+    eTaxTree_Division     = 4,
+    eTaxTree_GC           = 5,
+    eTaxTree_MGC          = 6,
+    eTaxTree_IsUncultured = 7,
+    eTaxTree_TaxId        = 8,
+    eTaxTree_SeqId        = 9
+};
+
 
 /// Taxon1 tree visitor functor. Converts taxonomy into dynamic tree.
 ///
@@ -417,7 +432,8 @@ class CTaxon1NodeConvertVisitor : public TITaxon4Each
 
 public:
 	CTaxon1NodeConvertVisitor(TBioTreeContainer*  tree_container)
-	: m_TreeContainer(tree_container)
+	: m_TreeContainer(tree_container),
+      m_MaxUID(0)
 	{
         m_NodeList = &(tree_container->SetNodes().Set());
 	}
@@ -433,8 +449,12 @@ public:
         CRef<TCNode> cnode(new TCNode);
         cnode->SetId(uid);
 
+        if (uid > m_MaxUID) { // new tree node id max?
+            m_MaxUID = uid;
+        }
+
 		vector<int>::size_type psize = m_Parents.size();
-		if (psize != 0){
+		if (psize != 0) {
 			int parent_tax_id = m_Parents[psize - 1];
 			cnode->SetParent(parent_tax_id);
 		}
@@ -447,7 +467,7 @@ public:
 		// Name
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(1);
+			cfeat->SetFeatureid(eTaxTree_Name);
 			cfeat->SetValue(pNode->GetName());
 
             fset.Set().push_back(cfeat);
@@ -456,7 +476,7 @@ public:
 		// Blast_name
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(2);
+			cfeat->SetFeatureid(eTaxTree_BlastName);
 			cfeat->SetValue(pNode->GetBlastName());
 
             fset.Set().push_back(cfeat);
@@ -465,9 +485,8 @@ public:
 		// Rank
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(3);
+			cfeat->SetFeatureid(eTaxTree_Rank);
 			int v = pNode->GetRank();
-
 			cfeat->SetValue(NStr::IntToString(v));
 
             fset.Set().push_back(cfeat);
@@ -476,9 +495,8 @@ public:
 		// Division
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(4);
+			cfeat->SetFeatureid(eTaxTree_Division);
 			int v = pNode->GetDivision();
-
 			cfeat->SetValue(NStr::IntToString(v));
 
             fset.Set().push_back(cfeat);
@@ -487,9 +505,8 @@ public:
 		// Genetic code
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(5);
+			cfeat->SetFeatureid(eTaxTree_GC);
 			int v = pNode->GetGC();
-
 			cfeat->SetValue(NStr::IntToString(v));
 
             fset.Set().push_back(cfeat);
@@ -498,9 +515,8 @@ public:
 		// Mitocondrial genetic code
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(6);
+			cfeat->SetFeatureid(eTaxTree_MGC);
 			int v = pNode->GetMGC();
-
 			cfeat->SetValue(NStr::IntToString(v));
 
             fset.Set().push_back(cfeat);
@@ -509,16 +525,22 @@ public:
 		// Uncultured
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
-			cfeat->SetFeatureid(6);
+			cfeat->SetFeatureid(eTaxTree_IsUncultured);
 			int v = pNode->IsUncultured();
-
 			cfeat->SetValue(NStr::IntToString(v));
+
+            fset.Set().push_back(cfeat);
+		}}
+		// tax-id
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(eTaxTree_TaxId);
+			cfeat->SetValue(NStr::IntToString(uid));
 
             fset.Set().push_back(cfeat);
 		}}
 
         m_NodeList->push_back(cnode);
-
 
 		return TITreeIterator::eOk;
 	}
@@ -536,10 +558,16 @@ public:
 		m_Parents.pop_back();
 		return TITreeIterator::eOk; 
 	}
+
+    int GetMaxNodeId() const
+    {
+        return m_MaxUID;
+    }
 private:
 	TBioTreeContainer*  m_TreeContainer;
     TNodeList*          m_NodeList;
 	vector<int>         m_Parents; //<! Stack of parent tax ids
+    int                 m_MaxUID;  //<! Maximum node ID
 };
 
 
@@ -569,61 +597,69 @@ template<class TBioTreeContainer,
 class CTaxon1ConvertToBioTreeContainer
 {
 public:
+   typedef typename TITreeIterator::I4Each T4Each;
+   typedef  CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
+                                      TITreeIterator, TBioTreeContainer>
+                                      TTaxon1Visitor;
+
+public:
+
+  CTaxon1ConvertToBioTreeContainer()
+    : m_MaxNodeId(0)
+  {}
+
   void operator()(TBioTreeContainer&  tree_container,
 		  TTaxon1&            tax, 
 		  int                 tax_id)
   {
-    // Setup features dictionary
-    
-    BioTreeAddFeatureToDictionary(tree_container, 1, "name");
-    BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
-    BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
-    BioTreeAddFeatureToDictionary(tree_container, 4, "division");
-    BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
-    BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
-    BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
-    
-    // Convert nodes
-    
-    const TITaxon1Node* tax_node=0;
-    bool res = tax.LoadSubtree(tax_id, &tax_node);
-    if (res) {
-      CRef<TITreeIterator> tax_tree_iter(tax.GetTreeIterator());
-      tax_tree_iter->GoNode(tax_node);
-      
-      typedef typename TITreeIterator::I4Each T4Each;
-      
-      CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
-	TITreeIterator, TBioTreeContainer>
-	tax_vis(&tree_container);
-      tax_tree_iter->TraverseDownward(tax_vis);
-    }
-    
+         SetupFeatureDictionary(tree_container);
+
+        // Convert nodes    
+        const TITaxon1Node* tax_node=0;
+        bool res = tax.LoadSubtree(tax_id, &tax_node);
+        if (res) {
+            CRef<TITreeIterator> tax_tree_iter(tax.GetTreeIterator());
+            tax_tree_iter->GoNode(tax_node);
+            TTaxon1Visitor tax_vis(&tree_container);
+            tax_tree_iter->TraverseDownward(tax_vis);
+            m_MaxNodeId = tax_vis.GetMaxNodeId();
+        }    
   }
   
   void operator()(TBioTreeContainer&  tree_container,
 		  CRef<TITreeIterator> tax_tree_iter)
   {
-    // Setup features dictionary
-    
-    BioTreeAddFeatureToDictionary(tree_container, 1, "name");
-    BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
-    BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
-    BioTreeAddFeatureToDictionary(tree_container, 4, "division");
-    BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
-    BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
-    BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
-    
-    // Convert nodes
-    
-    tax_tree_iter->GoRoot();
-    typedef typename TITreeIterator::I4Each T4Each;
-    CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
-      TITreeIterator, TBioTreeContainer>
-      tax_vis(&tree_container);
-    tax_tree_iter->TraverseDownward(tax_vis);
+        SetupFeatureDictionary(tree_container);
+            
+        // Convert nodes    
+        tax_tree_iter->GoRoot();
+        TTaxon1Visitor tax_vis(&tree_container);
+        tax_tree_iter->TraverseDownward(tax_vis);
+        m_MaxNodeId = tax_vis.GetMaxNodeId();
   }
 
+  /// Get max node id (available after conversion)
+  int GetMaxNodeId() const
+  {
+        return m_MaxNodeId;
+  }
+protected:
+  /// Add elements to the feature dictionary
+  ///
+  void SetupFeatureDictionary(TBioTreeContainer&  tree_container)
+  {
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_Name, "name");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_BlastName, "blast_name");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_Rank, "rank");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_Division, "division");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_GC, "GC");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_MGC, "MGC");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_IsUncultured, "IsUncultured");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_TaxId, "tax-id");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_SeqId, "seq-id");
+  }
+private:
+    int m_MaxNodeId;
 };
 
 
