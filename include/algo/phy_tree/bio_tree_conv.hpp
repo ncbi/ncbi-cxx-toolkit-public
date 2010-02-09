@@ -420,6 +420,7 @@ template<class TITaxon4Each,    class TITaxon1Node,
          class TITreeIterator,  class TBioTreeContainer>
 class CTaxon1NodeConvertVisitor : public TITaxon4Each   
 {
+public:
 	typedef typename TITreeIterator::EAction  EAction;
 
     typedef typename TBioTreeContainer::TNodes           TCNodeSet;
