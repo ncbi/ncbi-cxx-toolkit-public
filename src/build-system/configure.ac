@@ -3286,6 +3286,8 @@ case "$host_os:$libnsl" in
      solaris2.[[89]]:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
      solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
+dnl NCBI_CHECK_LIBS(UUID, uuid, uuid_generate)
+AC_SEARCH_LIBS(uuid_generate, uuid, [NCBI_PACKAGE(UUID)])
 dnl NCBI_CHECK_LIBS(FUSE, fuse, fuse_loop)
 AC_SEARCH_LIBS(fuse_loop, fuse, [NCBI_PACKAGE(FUSE)])
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
@@ -6239,6 +6241,7 @@ AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
 AC_SUBST(RT_LIBS)
+AC_SUBST(UUID_LIBS)
 AC_SUBST(DEMANGLE_LIBS)
 AC_SUBST(ICONV_LIBS)
 AC_SUBST(Z_LIB)
