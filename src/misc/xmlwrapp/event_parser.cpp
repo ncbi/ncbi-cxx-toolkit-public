@@ -83,7 +83,7 @@ namespace {
 //####################################################################
 struct xml::impl::epimpl {
 public:
-    epimpl (event_parser &parent);
+    epimpl (event_parser &parent, event_parser::sax_handlers_mask mask);
     ~epimpl (void);
 
     xmlSAXHandler sax_handler_;
@@ -259,8 +259,8 @@ extern "C"
 } // extern "C"
 
 //####################################################################
-xml::event_parser::event_parser (void) {
-    pimpl_ = new epimpl(*this);
+xml::event_parser::event_parser (sax_handlers_mask mask) {
+    pimpl_ = new epimpl(*this, mask);
 }
 //####################################################################
 xml::event_parser::~event_parser (void) {
@@ -442,36 +442,74 @@ xml::event_parser::element_content_type xml::event_parser::get_element_content_t
     throw std::runtime_error("Unknown element type");
 }
 //####################################################################
-epimpl::epimpl (event_parser &parent)
+epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
     : parser_status_(true), parent_(parent)
 {
     std::memset(&sax_handler_, 0, sizeof(sax_handler_));
 
-    sax_handler_.startDocument          = cb_start_document;
-    sax_handler_.endDocument            = cb_end_document;
-    sax_handler_.startElement           = cb_start_element;
-    sax_handler_.endElement             = cb_end_element;
-    sax_handler_.characters             = cb_text;
-    sax_handler_.processingInstruction  = cb_pi;
-    sax_handler_.comment                = cb_comment;
-    sax_handler_.cdataBlock             = cb_cdata;
+    // Error handlers are set unconditionally
     sax_handler_.warning                = cb_warning;
     sax_handler_.error                  = cb_error;
     sax_handler_.fatalError             = cb_error;
-    sax_handler_.notationDecl           = cb_notation_declaration;
-    sax_handler_.entityDecl             = cb_entity_declaration;
-    sax_handler_.unparsedEntityDecl     = cb_unparsed_entity_declaration;
-    sax_handler_.externalSubset         = cb_external_subset_declaration;
-    sax_handler_.internalSubset         = cb_internal_subset_declaration;
-    sax_handler_.attributeDecl          = cb_attribute_declaration;
-    sax_handler_.elementDecl            = cb_element_declaration;
-    sax_handler_.reference              = cb_entity_reference;
 
-    if (xmlKeepBlanksDefaultValue == 0) sax_handler_.ignorableWhitespace = cb_ignore;
-    else sax_handler_.ignorableWhitespace = cb_text;
+    // The rest of SAX handlers depends on the user provided mask
+    if (mask & event_parser::start_document_handler)
+        sax_handler_.startDocument = cb_start_document;
+
+    if (mask & event_parser::end_document_handler)
+        sax_handler_.endDocument = cb_end_document;
+
+    if (mask & event_parser::start_element_handler)
+        sax_handler_.startElement = cb_start_element;
+
+    if (mask & event_parser::end_element_handler)
+        sax_handler_.endElement = cb_end_element;
+
+    if (mask & event_parser::characters_handler)
+        sax_handler_.characters = cb_text;
+
+    if (mask & event_parser::pi_handler)
+        sax_handler_.processingInstruction = cb_pi;
+
+    if (mask & event_parser::comment_handler)
+        sax_handler_.comment = cb_comment;
+
+    if (mask & event_parser::cdata_handler)
+        sax_handler_.cdataBlock = cb_cdata;
+
+    if (mask & event_parser::notation_decl_handler)
+        sax_handler_.notationDecl = cb_notation_declaration;
+
+    if (mask & event_parser::entity_decl_handler)
+        sax_handler_.entityDecl = cb_entity_declaration;
+
+    if (mask & event_parser::unparsed_entity_decl_handler)
+        sax_handler_.unparsedEntityDecl = cb_unparsed_entity_declaration;
+
+    if (mask & event_parser::external_subset_handler)
+        sax_handler_.externalSubset = cb_external_subset_declaration;
+
+    if (mask & event_parser::internal_subset_handler)
+        sax_handler_.internalSubset = cb_internal_subset_declaration;
+
+    if (mask & event_parser::attribute_decl_handler)
+        sax_handler_.attributeDecl = cb_attribute_declaration;
+
+    if (mask & event_parser::element_decl_handler)
+        sax_handler_.elementDecl = cb_element_declaration;
+
+    if (mask & event_parser::reference_handler)
+        sax_handler_.reference = cb_entity_reference;
+
+
+    if ((xmlKeepBlanksDefaultValue != 0) && (mask & event_parser::characters_handler))
+        sax_handler_.ignorableWhitespace = cb_text;
+    else
+        sax_handler_.ignorableWhitespace = cb_ignore;
+
 
     if ( (parser_context_ = xmlCreatePushParserCtxt(&sax_handler_, this, 0, 0, 0)) == 0) {
-	throw std::bad_alloc();
+        throw std::bad_alloc();
     }
 }
 //####################################################################
