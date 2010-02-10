@@ -64,25 +64,6 @@ namespace impl {
 struct epimpl; // forward declaration of private implementation
 }
 
-/**
- * The current event_parser class implementation is not the fastest and is
- * not the most flexible. The idea behind the current implementation is to
- * keep the same approach as it was used in the original xmlwrapp 0.6.0.
- * The event_parser can be improved at least in the following areas:
- * - Currently handlers are called regardless whether the deriving class
- *   implements them or not. This leads to the fact that each element from
- *   the XML document is converted from xmlChar* to std::string. This leads
- *   to the performace drawbacks. It would be nicer if the handlers are called
- *   only if they are implemented in the deriving class. Unfortunately it
- *   is impossible to detect automatically in the base class whether a
- *   deriving class overrides a virtual function (at least using just portable
- *   ISO C++).
- * - Currently all the handlers arguments are converted from C types to
- *   their C++ counterparts even if just a part of them are used. It is
- *   possible to convert handler arguments to structures (classes) with ability
- *   to provide access to raw libxml2 data and to have lazy conversions to
- *   std::string. This will improve the parser performance.
-**/
 
 /**
  * The xml::event_parser is used to parse an XML document by calling member
@@ -92,18 +73,64 @@ struct epimpl; // forward declaration of private implementation
 **/
 class event_parser {
 public:
+    /**
+     * The enumeration defines control bits to on/off specific SAX parser
+     * handlers
+    **/
+    enum sax_handlers
+    {
+        start_document_handler       = (1 << 0),    ///< controls the start document handler
+        end_document_handler         = (1 << 1),    ///< controls the end document handler
+        start_element_handler        = (1 << 2),    ///< controls the start element handler
+        end_element_handler          = (1 << 3),    ///< controls the end element handler
+        characters_handler           = (1 << 4),    ///< controls the text handler
+        pi_handler                   = (1 << 5),    ///< controls the processing instruction handler
+        comment_handler              = (1 << 6),    ///< controls the comment handler
+        cdata_handler                = (1 << 7),    ///< controls the cdata handler
+        notation_decl_handler        = (1 << 8),    ///< controls the notation declaration handler
+        entity_decl_handler          = (1 << 9),    ///< controls the entity declaration handler
+        unparsed_entity_decl_handler = (1 << 10),   ///< controls the unparsed entity declaration handler
+        external_subset_handler      = (1 << 11),   ///< controls the external subset handler
+        internal_subset_handler      = (1 << 12),   ///< controls the internal subset handler
+        attribute_decl_handler       = (1 << 13),   ///< controls the attribute declaration handler
+        element_decl_handler         = (1 << 14),   ///< controls the element declaration handler
+        reference_handler            = (1 << 15),   ///< controls the reference handler
+
+        /**
+         * Set of the control bits which makes the event_parser bahave exactly
+         * the way it was in original xmlwrapp 0.6.0.
+        **/
+        default_set                  = start_element_handler |
+                                       end_element_handler   |
+                                       characters_handler    |
+                                       pi_handler            |
+                                       comment_handler       |
+                                       cdata_handler
+    };
+
     typedef std::map<std::string, std::string> attrs_type;  ///< a type for holding XML node attributes
     typedef std::size_t size_type;                          ///< size type
     typedef std::vector<std::string> values_type;           ///< a type for holding attribute declaration values
+    typedef int sax_handlers_mask;                          ///< handlers mask type
 
     //####################################################################
     /**
      * xml::event_parser class constructor.
      *
-     * @author Peter Jones
+     * @param mask The handlers mask. Default value makes it compatible with
+     *             xmlwrapp 0.6.0.
+     * @note The default mask switches on 6 handlers. If your code uses
+     *       a subset of handlers (say, 3 out of 6) and uses the default mask
+     *       the code  might be not 100% optimal. The performance
+     *       will be lower than it could be. It is caused by conversion
+     *       between libxml2 and C++ datatypes. The arguments will be
+     *       converted even for those handlers which are not used in your
+     *       code. So, to get the best performance, use an explicit mask for
+     *       handlers which you are actually interested in.
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    event_parser (void);
+    event_parser (sax_handlers_mask mask = default_set);
 
     //####################################################################
     /**
@@ -266,7 +293,7 @@ protected:
     virtual bool end_element (const std::string &name) = 0;
 
     //####################################################################
-    /** 
+    /**
      * Override this member function to receive the text message. This
      * member function is called when the parser encounters text nodes.
      *
