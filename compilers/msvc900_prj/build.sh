@@ -17,8 +17,8 @@ arch="$2"
 build_trees='static dll'
 ###sol_static="ncbi_cpp.sln"
 ###sol_dll="ncbi_cpp_dll.sln"
-sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
-sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
+sol_static="ncbi_cpp.sln gui/ncbi_gui.sln"
+sol_dll="ncbi_cpp_dll.sln gui/ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
 
@@ -152,12 +152,10 @@ for tree in $build_trees ; do
                     awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
                 if [ "$failed" = "1" ]; then
                     echo "FAILED: Build $tree\\build\\$sol, $cfg"
-                    echo "FAILED: Build $tree\\build\\$sol, $cfg" > failed.build.txt
-                    echo     >> failed.build.txt
-                    cat $out >> failed.build.txt
-                    if test ! -f "$tree/build/$sol_watchers.txt" ; then
-                        cat $tree/build/$sol_watchers.txt > failed.watchers.txt >/dev/null 2>&1
-                    fi
+                    echo "FAILED: Build $tree\\build\\$sol, $cfg" > failed.build.log
+                    echo     >> failed.build.log
+                    cat $out >> failed.build.log
+                    cat $tree/build/${sol}_watchers.txt > failed.watchers.log >/dev/null 2>&1
                 fi
                 rm -f $out $out.res >/dev/null 2>&1
                 if [ "$failed" = "1" ]; then
