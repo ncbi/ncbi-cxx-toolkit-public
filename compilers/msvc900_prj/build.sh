@@ -15,10 +15,10 @@ arch="$2"
 ########### Global variables
 
 build_trees='static dll'
-sol_static="ncbi_cpp.sln"
-sol_dll="ncbi_cpp_dll.sln"
-###sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
-###sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
+###sol_static="ncbi_cpp.sln"
+###sol_dll="ncbi_cpp_dll.sln"
+sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
+sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
 
@@ -92,23 +92,26 @@ for tree in $build_trees ; do
     fi
     sols=`eval echo "$"sol_${tree}""`
     for sol in $sols ; do
-        alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
-        start=`eval $timer`
-        echo Start time: $start
-        echo "INFO: Configure \"$tree\\$alias\""
         if test ! -f "$tree/build/$sol" ; then
             echo "INFO: Solution not found, skipped."
             continue
         fi
+        alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
+        start=`eval $timer`
+        echo Start time: $start
+        echo "INFO: Configure \"$tree\\$alias\""
         echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         status=$?
         cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
+        echo "Build time: $start - `eval $timer`"
+        if [ $status -ne 0 ] ; then
+            echo "FAILED: Configure $tree\\build\\$sol, $cfg_configure"
+        fi
         rm -f $out >/dev/null 2>&1
         if [ $status -ne 0 ] ; then
             exit 3
         fi
-        echo "Build time: $start - `eval $timer`"
     done
 done
 
@@ -128,15 +131,15 @@ for tree in $build_trees ; do
         fi
         sols=`eval echo "$"sol_${tree}""`
         for sol in $sols ; do
+            if test ! -f "$tree/build/$sol" ; then
+                echo "INFO: Solution not found, skipped."
+                continue
+            fi
             alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
             start=`eval $timer`
             echo Start time: $start
             echo "$tree,$sol,$cfg" >> $build_dir/cfgs.log
             echo "INFO: Building \"$tree\\$cfg\\$alias\""
-            if test ! -f "$tree/build/$sol" ; then
-                echo "INFO: Solution not found, skipped."
-                continue
-            fi
             echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             status=$?
@@ -147,6 +150,15 @@ for tree in $build_trees ; do
                 failed="1"
                 grep '^==* Build: .* succeeded, .* failed' $out >/dev/null 2>&1  && \
                     awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
+                if [ "$failed" = "1" ]; then
+                    echo "FAILED: Build $tree\\build\\$sol, $cfg"
+                    echo "FAILED: Build $tree\\build\\$sol, $cfg" > failed.build.txt
+                    echo     >> failed.build.txt
+                    cat $out >> failed.build.txt
+                    if test ! -f "$tree/build/$sol_watchers.txt" ; then
+                        cat $tree/build/$sol_watchers.txt > failed.watchers.txt >/dev/null 2>&1
+                    fi
+                fi
                 rm -f $out $out.res >/dev/null 2>&1
                 if [ "$failed" = "1" ]; then
                     exit 4
