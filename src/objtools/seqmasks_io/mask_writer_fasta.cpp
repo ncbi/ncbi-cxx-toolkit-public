@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACna.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
 
@@ -48,7 +49,7 @@ USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
 void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
-                              const CSeqMasker::TMaskList & mask,
+                              const TMaskList & mask,
                               bool parsed_id )
 {
     PrintId( bsh, parsed_id );
@@ -61,7 +62,7 @@ void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
     if( true )
     {
         string accumulator;
-        CSeqMasker::TMaskList::const_iterator imask = mask.begin();
+        TMaskList::const_iterator imask = mask.begin();
 
         for( TSeqPos i = 0; i < data.size(); ++i )
         {

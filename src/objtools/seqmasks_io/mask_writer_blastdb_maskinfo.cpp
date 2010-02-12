@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -131,7 +132,7 @@ CMaskWriterBlastDbMaskInfo::x_ConsolidateListOfMasks()
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id, 
-                                        const CSeqMasker::TMaskList & mask )
+                                        const TMaskList & mask )
 {
     if (mask.empty()) {
         return;
@@ -139,7 +140,7 @@ void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id,
 
     CPacked_seqint::TRanges masked_ranges;
     masked_ranges.reserve(mask.size());
-    ITERATE(CSeqMasker::TMaskList, itr, mask) {
+    ITERATE(TMaskList, itr, mask) {
         masked_ranges.push_back
             (CPacked_seqint::TRanges::value_type(itr->first, itr->second));
     }
@@ -155,14 +156,14 @@ void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id,
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( objects::CBioseq_Handle& bsh, 
-                                        const CSeqMasker::TMaskList & mask, 
+                                        const TMaskList & mask, 
                                         bool /* match_id */ )
 {
     Print(*bsh.GetSeqId(), mask);
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( int gi,
-                                        const CSeqMasker::TMaskList & mask )
+                                        const TMaskList & mask )
 {
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi));
     Print(*id, mask);

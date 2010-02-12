@@ -38,8 +38,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
-#include <algo/winmask/seq_masker.hpp>
-
 BEGIN_NCBI_SCOPE
 
 /**
@@ -70,6 +68,23 @@ public:
     virtual ~CMaskWriter() {}
 
     /**
+     **\brief Type representing a masked interval within a sequence.
+     **
+     ** If A is an object of type TMaskedInterval, then A.first is
+     ** the offset (starting from 0) of the beginning of the
+     ** interval; A.second is the offset of the end of the interval.
+     **
+     **/
+    typedef pair< TSeqPos, TSeqPos > TMaskedInterval;
+
+    /**
+     **\brief A type representing the total of masking information 
+     **       about a sequence.
+     **
+     **/
+    typedef vector< TMaskedInterval > TMaskList;
+
+    /**
      **\brief Output masked sequence data.
      **
      ** Each implementation of this abstract method will recieve the
@@ -84,7 +99,7 @@ public:
      **
      **/
     virtual void Print( objects::CBioseq_Handle & bsh,
-                        const CSeqMasker::TMaskList & mask,
+                        const TMaskList & mask,
                         bool parsed_id = false ) = 0;
 
 protected:

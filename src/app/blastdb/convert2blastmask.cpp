@@ -49,7 +49,7 @@ USING_SCOPE(blast);
 class CMaskFromFasta : public CFastaReader {
 private:
     bool m_hasMask;
-    CSeqMasker::TMaskList m_mask;
+    CMaskWriter::TMaskList m_mask;
     TSeqPos m_from;
 
 public:
@@ -60,7 +60,7 @@ public:
         return m_hasMask;
     }
 
-    const CSeqMasker::TMaskList & GetMask() const {
+    const CMaskWriter::TMaskList & GetMask() const {
         return m_mask;
     }
 
@@ -79,7 +79,7 @@ public:
             string s1, s2;
             NStr::SplitInTwo(s,"-",s1,s2);
             m_hasMask = true;
-            m_mask.push_back(CSeqMasker::TMaskedInterval(
+            m_mask.push_back(CMaskWriter::TMaskedInterval(
                                  NStr::StringToUInt(NStr::TruncateSpaces(s1)),
                                  NStr::StringToUInt(NStr::TruncateSpaces(s2))));
             // fake a sequence data to make CFastaReader happy
@@ -98,7 +98,7 @@ public:
     virtual void x_CloseMask(void) {
         CFastaReader::x_CloseMask();
         m_hasMask = true;
-        m_mask.push_back(CSeqMasker::TMaskedInterval(m_from,
+        m_mask.push_back(CMaskWriter::TMaskedInterval(m_from,
                                  GetCurrentPos(ePosWithGapsAndSegs)-1));
     }
 };   

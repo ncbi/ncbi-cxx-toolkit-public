@@ -38,6 +38,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -59,7 +60,7 @@ CMaskWriterSeqLoc::CMaskWriterSeqLoc( CNcbiOstream& arg_os,
 
 //-------------------------------------------------------------------------
 void CMaskWriterSeqLoc::Print( objects::CBioseq_Handle& bsh,
-                               const CSeqMasker::TMaskList & mask,
+                               const TMaskList & mask,
                                bool /* match_id */ )
 {
     if (mask.empty()) {
@@ -68,7 +69,7 @@ void CMaskWriterSeqLoc::Print( objects::CBioseq_Handle& bsh,
 
     CPacked_seqint::TRanges masked_ranges;
     masked_ranges.reserve(mask.size());
-    ITERATE(CSeqMasker::TMaskList, itr, mask) {
+    ITERATE(TMaskList, itr, mask) {
         masked_ranges.push_back
             (CPacked_seqint::TRanges::value_type(itr->first, itr->second));
     }

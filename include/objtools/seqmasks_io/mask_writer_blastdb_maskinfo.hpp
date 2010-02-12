@@ -83,12 +83,12 @@ public:
      **
      **/
     virtual void Print( objects::CBioseq_Handle& bsh,
-                        const CSeqMasker::TMaskList & mask,
+                        const TMaskList & mask,
                         bool parsed_id = false );
 
-    void Print( int gi, const CSeqMasker::TMaskList & mask );
+    void Print( int gi, const TMaskList & mask );
     void Print( const objects::CSeq_id& id, 
-                const CSeqMasker::TMaskList & mask );
+                const TMaskList & mask );
 
 protected:
     /// The data type objects of this class will print

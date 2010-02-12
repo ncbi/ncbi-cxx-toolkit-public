@@ -77,7 +77,7 @@ public:
      **
      **/
     virtual void Print( objects::CBioseq_Handle& bsh,
-                        const CSeqMasker::TMaskList & mask,
+                        const TMaskList & mask,
                         bool parsed_id = false );
 };
 

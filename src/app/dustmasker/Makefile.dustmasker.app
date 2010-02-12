@@ -7,7 +7,7 @@ ASN_DEP = seq
 APP = dustmasker
 SRC = main dust_mask_app
 
-LIB = xalgodustmask seqmasks_io xalgowinmask xobjread xobjutil \
+LIB = xalgodustmask seqmasks_io xobjread xobjutil \
 	seqdb blastdb creaders $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
