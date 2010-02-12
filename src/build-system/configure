@@ -19374,6 +19374,8 @@ echo "${ECHO_T}$ac_cv_search_uuid_generate" >&6
 if test "$ac_cv_search_uuid_generate" != no; then
   test "$ac_cv_search_uuid_generate" = "none required" || LIBS="$ac_cv_search_uuid_generate $LIBS"
             WithPackages="$WithPackages${WithPackagesSep}UUID"; WithPackagesSep=" "
+    test "x$ac_cv_search_uuid_generate" = "xnone required" || \
+       UUID_LIBS=$ac_cv_search_uuid_generate
 fi
 
 echo "$as_me:$LINENO: checking for library containing fuse_loop" >&5

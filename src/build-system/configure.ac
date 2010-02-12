@@ -3287,7 +3287,10 @@ case "$host_os:$libnsl" in
      solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
 dnl NCBI_CHECK_LIBS(UUID, uuid, uuid_generate)
-AC_SEARCH_LIBS(uuid_generate, uuid, [NCBI_PACKAGE(UUID)])
+AC_SEARCH_LIBS(uuid_generate, uuid,
+   [NCBI_PACKAGE(UUID)
+    test "x$ac_cv_search_uuid_generate" = "xnone required" || \
+       UUID_LIBS=$ac_cv_search_uuid_generate])
 dnl NCBI_CHECK_LIBS(FUSE, fuse, fuse_loop)
 AC_SEARCH_LIBS(fuse_loop, fuse, [NCBI_PACKAGE(FUSE)])
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
