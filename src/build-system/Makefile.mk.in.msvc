@@ -2,7 +2,6 @@
 
 
 [Compiler]
-Detect64BitPortabilityProblems=FALSE
 PreprocessorDefinitions=
 WarningLevel=3
 OptimizeForProcessor=0
@@ -19,9 +18,6 @@ RuntimeTypeInfo=TRUE
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
 AdditionalOptions=
-
-[Compiler.x64]
-Detect64BitPortabilityProblems=TRUE
 
 [Compiler.debug]
 DebugInformationFormat=3
@@ -52,8 +48,10 @@ EnableFunctionLevelLinking=TRUE
 
 [Compiler.800]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+Detect64BitPortabilityProblems=TRUE
 [Compiler.900]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+Detect64BitPortabilityProblems=FALSE
 
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
