@@ -2563,8 +2563,8 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
    SGreedySeed rev_start_point;
    Uint1 rem;
    GapEditScript* esp = NULL;
-   Int4 q_seed_start = q_off;
-   Int4 s_seed_start = s_off;
+   Int4 q_seed_start;
+   Int4 s_seed_start;
    
    q_avail = query_length - q_off;
    s_avail = subject_length - s_off;
@@ -2651,12 +2651,12 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
        }
 
        if (valid_seed_len_r > valid_seed_len_l) {
-           q_seed_start += valid_seed_len_r;
-           s_seed_start += valid_seed_len_r;
+           q_seed_start = q_seed_start_r + valid_seed_len_r;
+           s_seed_start = s_seed_start_r + valid_seed_len_r;
        }
        else {
-           q_seed_start -= valid_seed_len_l;
-           s_seed_start -= valid_seed_len_l;
+           q_seed_start = q_seed_start_l - valid_seed_len_l;
+           s_seed_start = s_seed_start_l - valid_seed_len_l;
        }
    }
    
