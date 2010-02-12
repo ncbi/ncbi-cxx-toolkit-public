@@ -48,7 +48,7 @@ please consider using <corelib/ncbi_process.hpp> instead"
 BEGIN_NCBI_SCOPE
 
 
-/// Daemonization flags
+/// Daemonization flags:  Deprecated, don't use!
 enum FDaemonFlags {
     fDaemon_DontChroot = CProcess::fDontChroot,
     fDaemon_KeepStdin  = CProcess::fKeepStdin,
