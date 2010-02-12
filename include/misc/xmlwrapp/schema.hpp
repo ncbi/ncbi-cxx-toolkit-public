@@ -63,7 +63,7 @@ public:
      * Create a new xml::schema object by parsing the given XML schema file.
      *
      * @param filename The XML schema file name.
-     * @param how How to treat warnings (default: warnings are treated as
+     * @param how How to treat warnings (default: warnings are not treated as
      *            errors). If warnings are treated as errors then an exception
      *            is thrown in case of both errors and/or warnings. If warnings
      *            are not treated as errors then an exception will be thrown
@@ -73,7 +73,7 @@ public:
      * @author Sergey Satskiy, NCBI
     **/
     schema (const char* filename,
-            warnings_as_errors_type how = type_warnings_are_errors);
+            warnings_as_errors_type how = type_warnings_not_errors);
 
     /**
      * Create a new xml::schema object by parsing the given XML schema from a
@@ -81,7 +81,7 @@ public:
      *
      * @param data The XML schema memory buffer.
      * @param size Size of the memory buffer.
-     * @param how How to treat warnings (default: warnings are treated as
+     * @param how How to treat warnings (default: warnings are not treated as
      *            errors). If warnings are treated as errors then an exception
      *            is thrown in case of both errors and/or warnings. If warnings
      *            are not treated as errors then an exception will be thrown
@@ -91,7 +91,7 @@ public:
      * @author Sergey Satskiy, NCBI
     **/
     schema (const char* data, size_type size,
-            warnings_as_errors_type how = type_warnings_are_errors);
+            warnings_as_errors_type how = type_warnings_not_errors);
 
     /**
      * Destroy the object.
