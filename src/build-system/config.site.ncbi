@@ -93,6 +93,14 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    Linux* )
+        : ${PYTHON_PATH=/opt/python-2.5.1}
+        : ${PYTHON24=/usr/local/python-2.4.4/bin/python}
+        : ${PYTHON25=/opt/python-2.5.1/bin/python}
+        ;;
+esac
+
+case "$ncbi_platform" in
     Linux32    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.1} ;;
     Linux64    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
     SunOSSparc ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
