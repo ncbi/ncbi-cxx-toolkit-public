@@ -75,6 +75,9 @@ void CAVApp::Init(void)
     // don't use colored backgrounds
     argDescr->AddFlag("no_color_bg", "don't use colored backgrounds for alignment paragraphs (HTML only)");
 
+    // ignore bad pairwise alignments
+    argDescr->AddFlag("ignore_bad_aln", "ignore invalid pairwise alignments in input data");
+
     // input file name (required)
     argDescr->AddPositional("in", "name of input file", argDescr->eString);
 
@@ -125,6 +128,7 @@ int CAVApp::Run(void)
     if (args["identity"].HasValue()) options |= CAV_SHOW_IDENTITY;
     if (args["fasta_lc"].HasValue()) options |= CAV_FASTA_LOWERCASE;
     if (args["no_color_bg"].HasValue()) options |= CAV_NO_PARAG_COLOR;
+    if (args["ignore_bad_aln"].HasValue()) options |= CAV_IGNORE_BAD_ALN;
 
     // for testing alignment features
 #if 0

@@ -60,7 +60,7 @@ private:
     int status;
 
 public:
-    AlignmentSet(SequenceSet *seqSet, const SeqAnnotList& seqAnnots);
+    AlignmentSet(SequenceSet *seqSet, const SeqAnnotList& seqAnnots, bool ignoreBadPairwiseAlignments = false);
     ~AlignmentSet(void);
 
     typedef vector < const MasterSlaveAlignment * > AlignmentList;

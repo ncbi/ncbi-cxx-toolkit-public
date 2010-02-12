@@ -43,6 +43,7 @@
 #include <objects/seq/Bioseq.hpp>
 
 #include <map>
+#include <memory>
 
 #include <objtools/cddalignview/cav_alignset.hpp>
 #include <objtools/cddalignview/cav_seqset.hpp>
@@ -59,7 +60,7 @@ USING_SCOPE(objects);
 typedef list < const CSeq_align * > SeqAlignList;
 typedef vector < CRef < CSeq_id > > SeqIdList;
 
-AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnnots) :
+AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnnots, bool ignoreBadPairwiseAlignments) :
     status(CAV_ERROR_ALIGNMENTS), master(NULL)
 {
     SeqAlignList seqaligns;
@@ -134,14 +135,18 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     SeqAlignList::const_iterator s, se = seqaligns.end();
     int i = 1;
     for (s=seqaligns.begin(); s!=se; ++s, ++i) {
-        const MasterSlaveAlignment *alignment =
-            new MasterSlaveAlignment(sequenceSet, master, **s);
-        if (!alignment || alignment->Status() != CAV_SUCCESS) {
-            ERR_POST_X(7, Error << "Error parsing master/slave pairwise alignment #" << i);
-            status = alignment->Status();
-            return;
+        auto_ptr < const MasterSlaveAlignment > alignment(
+            new MasterSlaveAlignment(sequenceSet, master, **s));
+        if (!alignment.get() || alignment->Status() != CAV_SUCCESS) {
+            if (alignment.get() && ignoreBadPairwiseAlignments) {
+                ERR_POST_X(7, Warning << "Error parsing master/slave pairwise alignment #" << i);
+            } else {
+                ERR_POST_X(7, Error << "Error parsing master/slave pairwise alignment #" << i);
+                status = alignment.get() ? alignment->Status() : CAV_ERROR_ALIGNMENTS;
+                return;
+            }
         }
-        alignments.push_back(alignment);
+        alignments.push_back(alignment.release());
     }
 
     ERR_POST_X(8, Info << "number of alignments: " << alignments.size());

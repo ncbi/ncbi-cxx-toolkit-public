@@ -333,7 +333,7 @@ int CAV_DisplayMultiple(
         ERR_POST_X(22, Critical << "Error processing sequence data");
         return sequenceSet->Status();
     }
-    auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments));
+    auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments, (options & CAV_IGNORE_BAD_ALN)));
     if (!alignmentSet.get() || alignmentSet->Status() != CAV_SUCCESS) {
         ERR_POST_X(23, Critical << "Error processing alignment data");
         return alignmentSet->Status();
