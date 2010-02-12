@@ -9,7 +9,6 @@ corelib
 ctools
 db
 dbapi
-hello
 html
 gui
 internal/asn_cache
