@@ -46,8 +46,6 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
-#include <gui/widgets/data/align_ds.hpp>
-
 #include <corelib/hash_set.hpp>
 
 
@@ -365,7 +363,7 @@ protected:
     CRef<CScope> m_Scope;
 
     /// Alignment data source
-    CRef<CAlignDataSource> m_AlignDataSource;
+    CRef<CAlnVec> m_AlignDataSource;
 
     /// Seq-id of query sequence
     string m_QuerySeqId;

@@ -118,7 +118,7 @@ auto_ptr<CBioTreeDynamic> CGuideTreeCalc::GetTree(void)
 CRef<CSeq_align> CGuideTreeCalc::GetSeqAlign(void) const
 {
     CRef<CDense_seg> denseg(new CDense_seg());
-    denseg->Assign(m_AlignDataSource->GetAlnMgr().GetDenseg());
+    denseg->Assign(m_AlignDataSource->GetDenseg());
 
     CRef<CSeq_align> seqalign(new CSeq_align());
     seqalign->SetType(CSeq_align::eType_global);
@@ -158,7 +158,7 @@ bool CGuideTreeCalc::x_CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
                                             double max_divergence,
                                             hash_set<int>& removed) const
 {
-    const CAlnVec& alnvec = m_AlignDataSource->GetAlnMgr();
+    const CAlnVec& alnvec = *m_AlignDataSource;
     int num_seqs = alnvec.GetNumRows();
     pmat.Resize(num_seqs, num_seqs);
 
@@ -230,7 +230,7 @@ CRef<CAlnVec> CGuideTreeCalc::x_CreateValidAlign(
                                          vector<int>& new_align_index)
 {
     CRef<CAlnVec> alnvec;
-    alnvec.Reset(new CAlnVec(m_AlignDataSource->GetAlnMgr().GetDenseg(),
+    alnvec.Reset(new CAlnVec(m_AlignDataSource->GetDenseg(),
                              *m_Scope));
     alnvec->SetGapChar('-');
     alnvec->SetEndChar('-');
@@ -267,7 +267,7 @@ CRef<CAlnVec> CGuideTreeCalc::x_CreateValidAlign(
         alnvec = x_CreateSubsetAlign(alnvec, new_align_index);
 
         // save current alignment
-        m_AlignDataSource->Init(*alnvec);
+        m_AlignDataSource = alnvec;
     }        
 
     return alnvec;
@@ -295,7 +295,7 @@ void CGuideTreeCalc::x_TrimMatrix(CDistMethods::TMatrix& pmat,
 }
 
 
-// Calculate pairwise distances for sequeneces in m_AlignDataSource->GetAlnMgr
+// Calculate pairwise distances for sequeneces in m_AlignDataSource
 void CGuideTreeCalc::CalcDistMatrix(const CDistMethods::TMatrix& pmat,
                                     CDistMethods::TMatrix& result,
                                     EDistMethod method)
@@ -401,8 +401,7 @@ bool CGuideTreeCalc::CalcBioTree(void)
                                  " divergence that exceeds maximum allowed.");
         }
         else {
-            alnvec.Reset(new CAlnVec(m_AlignDataSource->GetAlnMgr().GetDenseg(),
-                                     *m_Scope));
+            alnvec.Reset(new CAlnVec(m_AlignDataSource->GetDenseg(), *m_Scope));
         }
 
         CalcDistMatrix(pmat, dmat, m_DistMethod);
@@ -490,12 +489,10 @@ bool CGuideTreeCalc::x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet)
 
 void CGuideTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
 {
-    m_AlignDataSource.Reset(new CAlignDataSource());  
-    CRef<CAlnVec> alnvec;
-    alnvec.Reset(new CAlnVec(seq_aln.GetSegs().GetDenseg(), *m_Scope));       
-    alnvec->SetGapChar('-');   
-    alnvec->SetEndChar('-');     
-    m_AlignDataSource->Init(*alnvec);        
+    m_AlignDataSource.Reset(new CAlnVec(seq_aln.GetSegs().GetDenseg(),
+                                        *m_Scope));
+    m_AlignDataSource->SetGapChar('-');
+    m_AlignDataSource->SetEndChar('-');
 }
 
 
