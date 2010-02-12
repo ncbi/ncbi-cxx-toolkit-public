@@ -408,7 +408,8 @@ enum ETaxon1ConvFeatures
     eTaxTree_MGC          = 6,
     eTaxTree_IsUncultured = 7,
     eTaxTree_TaxId        = 8,
-    eTaxTree_SeqId        = 9
+    eTaxTree_SeqId        = 9,
+    eTaxTree_Label        = 10
 };
 
 
@@ -469,6 +470,14 @@ public:
 		{{
 			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
 			cfeat->SetFeatureid(eTaxTree_Name);
+			cfeat->SetValue(pNode->GetName());
+
+            fset.Set().push_back(cfeat);
+		}}
+		// Label
+		{{
+			CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+			cfeat->SetFeatureid(eTaxTree_Label);
 			cfeat->SetValue(pNode->GetName());
 
             fset.Set().push_back(cfeat);
@@ -658,6 +667,7 @@ protected:
         BioTreeAddFeatureToDictionary(tree_container, eTaxTree_IsUncultured, "IsUncultured");
         BioTreeAddFeatureToDictionary(tree_container, eTaxTree_TaxId, "tax-id");
         BioTreeAddFeatureToDictionary(tree_container, eTaxTree_SeqId, "seq-id");
+        BioTreeAddFeatureToDictionary(tree_container, eTaxTree_Label, "label");
   }
 private:
     int m_MaxNodeId;
