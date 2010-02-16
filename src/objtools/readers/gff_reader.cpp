@@ -615,6 +615,13 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
         }
     }
 
+    if ( record.source != "." ) {
+        CRef<CGb_qual> source( new CGb_qual );
+        source->SetQual( "source" );
+        source->SetVal( record.source );
+        feat->SetQual().push_back( source );
+    }
+
     string gene_id;
     string gene;
     string locus_tag;
