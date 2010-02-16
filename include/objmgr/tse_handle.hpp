@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <vector>
