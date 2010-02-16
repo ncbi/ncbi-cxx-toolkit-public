@@ -46,6 +46,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/errors.hpp>
 
 // standard includes
 #include <cstddef>
@@ -70,7 +71,7 @@ public:
     typedef std::size_t size_type;
 
     //####################################################################
-    /** 
+    /**
      * xml::tree_parser class constructor. Given the name of a file, this
      * constructor will parse that file.
      *
@@ -83,29 +84,72 @@ public:
      * No matter what option you choose, this constructor may still throw
      * exceptions for memory failure or other non-parsing related failures.
      *
+     * @deprecated
+     *  Use the tree_parser(const char* filename, warnings_as_errors_type how)
+     *  instead.
      * @param filename The name of the file to parse.
      * @param allow_exceptions Whether or not you want an exception for parsing errors.
      * @author Peter Jones
     **/
     //####################################################################
-    tree_parser (const char *filename, bool allow_exceptions=true);
+    tree_parser (const char *filename, bool allow_exceptions);
 
     //####################################################################
-    /** 
+    /**
      * xml::tree_parser class constructor. Given some data and the size of
      * that data, parse that data as XML. To see if the data was parsed
      * successfully use operator!.
      *
+     * @deprecated
+     *  Use the tree_parser(const char* data, size_type size,
+     *                      warnings_as_errors_type how)
+     *  instead.
      * @param data The XML data to parse.
      * @param size The size of the XML data to parse.
      * @param allow_exceptions Whether or not you want an exception for parsing errors.
      * @author Peter Jones
     **/
     //####################################################################
-    tree_parser (const char *data, size_type size, bool allow_exceptions=true);
+    tree_parser (const char *data, size_type size, bool allow_exceptions);
 
     //####################################################################
-    /** 
+    /**
+     * Create a new xml::tree_parser object by parsing the given XML file.
+     *
+     * @param filename The XML file name.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of schema parsing errors
+     *            and std::exception in case of other problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    tree_parser (const char* filename,
+                 warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Create a new xml::tree_parser object by parsing the given XML from a
+     * memory buffer.
+     *
+     * @param data The XML memory buffer.
+     * @param size Size of the memory buffer.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of schema parsing errors
+     *            and std::exception in case of other problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    tree_parser (const char* data, size_type size,
+                 warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
      * xml::tree_parser class destructor.
      *
      * @author Peter Jones
@@ -114,11 +158,13 @@ public:
     ~tree_parser (void);
 
     //####################################################################
-    /** 
+    /**
      * Check to see if a xml::tree_parser class is vaild. That is, check to
      * see if parsing XML data was successful and the tree_parser holds a
      * good XML node tree.
      *
+     * @deprecated Use new constructors which throw exceptions in case
+     *             of problems and allow considering warnings as errors.
      * @return True if the tree_parser is NOT VAILD; false if it is vaild.
      * @author Peter Jones
     **/
@@ -126,11 +172,12 @@ public:
     bool operator! (void) const;
 
     //####################################################################
-    /** 
+    /**
      * If operator! indicates that there was an error parsing your XML data,
      * you can use this member function to get the error message that was
      * generated durring parsing.
      *
+     * @deprecated Use get_parser_messages() instead.
      * @return The error message generated durring XML parsing.
      * @author Peter Jones
     **/
@@ -138,12 +185,24 @@ public:
     const std::string& get_error_message (void) const;
 
     //####################################################################
-    /** 
+    /**
+     * Get the XML document parsing error messages. This may include
+     * warnings, errors and fatal errors.
+     *
+     * @return XML document parser error messages.
+     * @author Sergey Satskiy, NCBI
+    **/
+    const error_messages& get_parser_messages (void) const;
+
+    //####################################################################
+    /**
      * Check to see if there were any warnings from the parser while
      * processing the given XML data. If there were, you may want to send
      * the same document through xmllint or the event_parser to catch and
      * review the warning messages.
      *
+     * @deprecated Use get_parser_messages() instead to get complete
+     *             information about all the collected messages.
      * @return True if there were any warnings.
      * @return False if there were no warnings.
      * @author Peter Jones
@@ -152,7 +211,7 @@ public:
     bool had_warnings (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get a reference to the xml::document that was generated during the
      * XML parsing. You should make sure to only use a reference to the
      * document to avoid a deep copy.
@@ -164,7 +223,7 @@ public:
     xml::document& get_document (void);
 
     //####################################################################
-    /** 
+    /**
      * Get a const reference to the xml::document that was generate during
      * the XML parsing. You should make sure to only use a reference to the
      * document to avoid a deep copy.
@@ -177,7 +236,8 @@ public:
 private:
     impl::tree_impl *pimpl_; // private implementation
 
-    /* 
+    bool is_failure (warnings_as_errors_type how) const;
+    /*
      * Don't allow anyone to copy construct a xml::tree_parser or allow the
      * assignment operator to be called. It is not very useful to copy a
      * parser that has already parsed half a document.
