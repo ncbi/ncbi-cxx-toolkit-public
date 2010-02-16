@@ -37,6 +37,10 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -72,7 +76,7 @@ class CAnnotRecord
 //  ----------------------------------------------------------------------------
 {
 public:
-    CAnnotRecord() {};
+    CAnnotRecord();
     ~CAnnotRecord() {};
     
     bool SetRecord(
@@ -80,68 +84,406 @@ public:
         
     void DumpRecord(
         CNcbiOstream& );
+        
+protected:
+    bool CAnnotRecord::AssignType(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignSeqId(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignStart(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignStop(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignSource(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignScore(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignStrand(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignPhase(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignAttributesCore(
+        const CRef< CSeq_feat > pFeature );
+    bool CAnnotRecord::AssignAttributesExtended(
+        const CRef< CSeq_feat > pFeature );
+
+    string m_strSeqId;
+    string m_strSource;
+    string m_strType;
+    string m_strStart;
+    string m_strEnd;
+    string m_strScore;
+    string m_strStrand;
+    string m_strPhase;
+    string m_strAttributes;
 };
+
+//  ----------------------------------------------------------------------------
+CAnnotRecord::CAnnotRecord():
+//  ----------------------------------------------------------------------------
+    m_strSeqId( "unknown" ),
+    m_strSource( "Genbank" ),
+    m_strType( "region" ),
+    m_strStart( "1" ),
+    m_strEnd( "0" ),
+    m_strScore( "." ),
+    m_strStrand( "." ),
+    m_strPhase( "." ),
+    m_strAttributes( "" )
+{
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignSeqId(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strSeqId = "<unknown>";
+
+    if ( pFeature->CanGetLocation() ) {
+        const CSeq_loc& location = pFeature->GetLocation();
+        const CSeq_id* pId = location.GetId();
+        switch ( pId->Which() ) {
+            
+            case CSeq_id::e_Local:
+                if ( pId->GetLocal().IsId() ) {
+                    m_strSeqId = NStr::UIntToString( pId->GetLocal().GetId() );
+                }
+                else {
+                    m_strSeqId = pId->GetLocal().GetStr();
+                }
+                break;
+
+            case CSeq_id::e_Gi:
+                m_strSeqId = NStr::IntToString( pId->GetGi() );
+                break;
+
+            case CSeq_id::e_Other:
+                if ( pId->GetOther().CanGetAccession() ) {
+                    m_strSeqId = pId->GetOther().GetAccession();
+                    if ( pId->GetOther().CanGetVersion() ) {
+                        m_strSeqId += ".";
+                        m_strSeqId += NStr::UIntToString( 
+                            pId->GetOther().GetVersion() ); 
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignType(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strType = "region";
+
+    if ( pFeature->CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+        while ( it != quals.end() ) {
+            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                if ( (*it)->GetQual() == "standard_name" ) {
+                    m_strType = (*it)->GetVal();
+                    return true;
+                }
+            }
+            ++it;
+        }
+    }
+
+    if ( ! pFeature->CanGetData() ) {
+        return true;
+    }
+
+    switch ( pFeature->GetData().GetSubtype() ) {
+    default:
+        break;
+
+    case CSeq_feat::TData::eSubtype_cdregion:
+        m_strType = "CDS";
+        break;
+
+    case CSeq_feat::TData::eSubtype_mRNA:
+        m_strType = "mRNA";
+        break;
+
+    case CSeq_feat::TData::eSubtype_scRNA:
+        m_strType = "scRNA";
+        break;
+
+    case CSeq_feat::TData::eSubtype_exon:
+        m_strType = "exon";
+        break;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignStart(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( pFeature->CanGetLocation() ) {
+        const CSeq_loc& location = pFeature->GetLocation();
+        unsigned int uStart = location.GetStart( eExtreme_Positional ) + 1;
+        m_strStart = NStr::UIntToString( uStart );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignStop(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( pFeature->CanGetLocation() ) {
+        const CSeq_loc& location = pFeature->GetLocation();
+        unsigned int uEnd = location.GetStop( eExtreme_Positional ) + 1;
+        m_strEnd = NStr::UIntToString( uEnd );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignSource(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strSource = ".";
+
+    if ( pFeature->CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+        while ( it != quals.end() ) {
+            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                if ( (*it)->GetQual() == "source" ) {
+                    m_strSource = (*it)->GetVal();
+                    return true;
+                }
+            }
+            ++it;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignScore(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strScore = ".";
+
+    if ( pFeature->CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+        while ( it != quals.end() ) {
+            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                if ( (*it)->GetQual() == "score" ) {
+                    m_strScore = (*it)->GetVal();
+                    return true;
+                }
+            }
+            ++it;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignStrand(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strStrand = ".";
+    if ( pFeature->CanGetLocation() ) {
+        const CSeq_loc& location = pFeature->GetLocation();
+        ENa_strand strand = location.GetStrand();
+        switch( strand ) {
+        default:
+            break;
+        case eNa_strand_plus:
+            m_strStrand = "+";
+            break;
+        case eNa_strand_minus:
+            m_strStrand = "-";
+            break;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignPhase(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    m_strPhase = ".";
+
+    if ( ! pFeature->CanGetData() ) {
+        return true;
+    }
+    const CSeq_feat::TData& data = pFeature->GetData();
+    if ( data.GetSubtype() != CSeq_feat::TData::eSubtype_cdregion ) {
+        return true;
+    }
+
+    const CCdregion& cdr = data.GetCdregion();
+    CCdregion::TFrame frame = cdr.GetFrame();
+    switch ( frame ) {
+    default:
+        break;
+    case CCdregion::eFrame_one:
+        m_strPhase = "0";
+        break;
+    case CCdregion::eFrame_two:
+        m_strPhase = "1";
+        break;
+    case CCdregion::eFrame_three:
+        m_strPhase = "2";
+        break;
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignAttributesCore(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( pFeature->CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+        while ( it != quals.end() ) {
+            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                if ( (*it)->GetQual() == "ID" ) {
+                    if ( ! m_strAttributes.empty() ) {
+                        m_strAttributes += ";";
+                    }
+                    m_strAttributes += "ID=";
+                    m_strAttributes += (*it)->GetVal();
+                }
+                if ( (*it)->GetQual() == "Name" ) {
+                    if ( ! m_strAttributes.empty() ) {
+                        m_strAttributes += ";";
+                    }
+                    m_strAttributes += "Name=";
+                    m_strAttributes += (*it)->GetVal();
+                }
+                if ( (*it)->GetQual() == "Var_type" ) {
+                    if ( ! m_strAttributes.empty() ) {
+                        m_strAttributes += ";";
+                    }
+                    m_strAttributes += "Var_type=";
+                    m_strAttributes += (*it)->GetVal();
+                }
+            }
+            it++;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CAnnotRecord::AssignAttributesExtended(
+    const CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( pFeature->CanGetComment() ) {
+        if ( ! m_strAttributes.empty() ) {
+            m_strAttributes += ";";
+        }
+        m_strAttributes += "comment=\"";
+        m_strAttributes += pFeature->GetComment();
+        m_strAttributes += "\"";
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CAnnotRecord::SetRecord(
     const CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( pFeature->CanGetId() ) {
-        cerr << ":id:";
+    if ( ! AssignType( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetData() ) {
-        cerr << ":data:";
+    if ( ! AssignSeqId( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetPartial() ) {
-        cerr << ":partial:";
+    if ( ! AssignStart( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetExcept() ) {
-        cerr << ":except:";
+    if ( ! AssignStop( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetComment() ) {
-        cerr << ":comment:";
+    if ( ! AssignScore( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetProduct() ) {
-        cerr << ":product:";
+    if ( ! AssignStrand( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetLocation() ) {
-        cerr << ":location:";
+    if ( ! AssignPhase( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetQual() ) {
-        cerr << ":qual:";
+    if ( ! AssignAttributesCore( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetTitle() ) {
-        cerr << ":title:";
+    if ( ! AssignAttributesExtended( pFeature ) ) {
+        return false;
     }
-    if ( pFeature->CanGetExt() ) {
-        cerr << ":ext:";
-    }
-    if ( pFeature->CanGetCit() ) {
-        cerr << ":cit:";
-    }
-    if ( pFeature->CanGetExp_ev() ) {
-        cerr << ":exp:";
-    }
-    if ( pFeature->CanGetXref() ) {
-        cerr << ":xref:";
-    }
-    if ( pFeature->CanGetDbxref() ) {
-        cerr << ":dbxref:";
-    }
-    if ( pFeature->CanGetExcept_text() ) {
-        cerr << ":xpttxt:";
-    }
-    if ( pFeature->CanGetPseudo() ) {
-        cerr << ":pseudo:";
-    }
-    if ( pFeature->CanGetIds() ) {
-        cerr << ":ids:";
-    }
-    if ( pFeature->CanGetExts() ) {
-        cerr << ":exts:";
-    }
-    cerr << endl;
+
+    //if ( pFeature->CanGetId() ) {
+    //}
+    //if ( pFeature->CanGetData() ) {
+    //    cerr << ":data:";
+    //}
+    //if ( pFeature->CanGetPartial() ) {
+    //    cerr << ":partial:";
+    //}
+    //if ( pFeature->CanGetExcept() ) {
+    //    cerr << ":except:";
+    //}
+    //if ( pFeature->CanGetProduct() ) {
+    //    cerr << ":product:";
+    //}
+    //if ( pFeature->CanGetTitle() ) {
+    //    cerr << ":title:";
+    //}
+    //if ( pFeature->CanGetExt() ) {
+    //    cerr << ":ext:";
+    //}
+    //if ( pFeature->CanGetCit() ) {
+    //    cerr << ":cit:";
+    //}
+    //if ( pFeature->CanGetExp_ev() ) {
+    //    cerr << ":exp:";
+    //}
+    //if ( pFeature->CanGetXref() ) {
+    //    cerr << ":xref:";
+    //}
+    //if ( pFeature->CanGetDbxref() ) {
+    //}
+    //if ( pFeature->CanGetExcept_text() ) {
+    //    cerr << ":xpttxt:";
+    //}
+    //if ( pFeature->CanGetPseudo() ) {
+    //    cerr << ":pseudo:";
+    //}
+    //if ( pFeature->CanGetIds() ) {
+    //    cerr << ":ids:";
+    //}
+    //if ( pFeature->CanGetExts() ) {
+    //    cerr << ":exts:";
+    //}
     return true;
 }
 
@@ -150,6 +492,15 @@ void CAnnotRecord::DumpRecord(
     CNcbiOstream& out )
 //  ----------------------------------------------------------------------------
 {
+    out << m_strSeqId + '\t';
+    out << m_strSource << '\t';
+    out << m_strType << '\t';
+    out << m_strStart << '\t';
+    out << m_strEnd << '\t';
+    out << m_strScore << '\t';
+    out << m_strStrand << '\t';
+    out << m_strPhase << '\t';
+    out << m_strAttributes << endl;
 }
 
 
@@ -239,6 +590,17 @@ int CAnnotWriterApp::Run()
         catch ( CEofException& ) {
             break;
         }
+        catch ( ... ) {
+            is.reset( x_OpenIStream( args ) );
+            CRef<CSeq_entry> entry( new CSeq_entry );
+            *is >> *entry;
+            CTypeIterator<CSeq_annot> annot_iter( *entry );
+            for ( ;  annot_iter;  ++annot_iter ) {
+                CRef< CSeq_annot > annot( annot_iter.operator->() );
+                HandleSeqAnnot( annot );
+            }
+            break;
+        }
     } 
     
     m_Os->flush();
@@ -270,12 +632,10 @@ bool CAnnotWriterApp::HandleSeqAnnotFtable(
     if ( ! annot->IsFtable() ) {
         return false;
     }
-    cerr << "SeqAnnot.Ftable" << endl;
-    
     const list< CRef< CSeq_feat > >& table = annot->GetData().GetFtable();
     list< CRef< CSeq_feat > >::const_iterator it = table.begin();
-    CAnnotRecord record;
     while ( it != table.end() ) {
+        CAnnotRecord record;
         record.SetRecord( *it );
         record.DumpRecord( *m_Os );
         it++;
@@ -291,7 +651,7 @@ bool CAnnotWriterApp::HandleSeqAnnotAlign(
     if ( ! annot->IsAlign() ) {
         return false;
     }
-    cerr << "SeqAnnot.Align" << endl;
+//    cerr << "SeqAnnot.Align" << endl;
     return true;
 }
 
