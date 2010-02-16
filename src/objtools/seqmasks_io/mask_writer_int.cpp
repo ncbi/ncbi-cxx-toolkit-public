@@ -36,6 +36,8 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
