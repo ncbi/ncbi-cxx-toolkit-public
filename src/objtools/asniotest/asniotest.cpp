@@ -636,9 +636,11 @@ NCBI_PARAM_DECL(string, MMDBSrv, Path);
 NCBI_PARAM_DEF_EX(string, MMDBSrv, Path, "/Structure/mmdb/mmdbsrv.cgi",
                   eParam_NoThread, MMDBSRV_PATH);
 
+#define MMDB_ID "1ABA"
+
 NCBI_PARAM_DECL(string, MMDBSrv, Args);
 NCBI_PARAM_DEF_EX(string, MMDBSrv, Args,
-                  "uid=1AL1&form=6&db=t&save=Save&dopt=j"
+                  "uid=" MMDB_ID "&form=6&db=t&save=Save&dopt=j"
                   "&Complexity=Cn3D%20Subset",
                   eParam_NoThread,
                   MMDBSRV_ARGS);
@@ -659,7 +661,7 @@ BEGIN_TEST_FUNCTION(MMDBSrv)
     if (!mime.IsStrucseq()  ||
         mime.GetStrucseq().GetStructure().GetDescr().size() == 0 ||
         !mime.GetStrucseq().GetStructure().GetDescr().front()->IsName() ||
-        mime.GetStrucseq().GetStructure().GetDescr().front()->GetName() != "1AL1")
+        mime.GetStrucseq().GetStructure().GetDescr().front()->GetName() != MMDB_ID)
         ADD_ERR_RETURN("structure returned is not what was expected");
 
 END_TEST_FUNCTION
