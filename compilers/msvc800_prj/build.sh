@@ -155,7 +155,7 @@ for tree in $build_trees ; do
                     echo "FAILED: Build $tree\\build\\$sol, $cfg" > failed.build.log
                     echo     >> failed.build.log
                     cat $out >> failed.build.log
-                    cat $tree/build/${sol}_watchers.txt > failed.watchers.log >/dev/null 2>&1
+                    cat $tree/build/${sol}_watchers.txt > failed.watchers.log
                 fi
                 rm -f $out $out.res >/dev/null 2>&1
                 if [ "$failed" = "1" ]; then
