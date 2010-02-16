@@ -527,11 +527,13 @@ private:
                            size_t                strand_idx,
                            const TRange&         range,
                            const TRangeFuzz&     fuzz,
+                           bool                  push_reverse,
                            int                   group);
     void x_PushSourceRange(const CSeq_id_Handle& idh,
                            size_t                src_strand,
                            size_t                dst_strand,
-                           const TRange&         range);
+                           const TRange&         range,
+                           bool                  push_reverse);
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,

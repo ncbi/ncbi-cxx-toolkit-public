@@ -1775,11 +1775,11 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         src_strand, &dst_strand);
     x_PushMappedRange(cvt.m_Dst_id_Handle,
                       STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
-                      rg, mapped_fuzz, cvt.m_Group);
+                      rg, mapped_fuzz, cvt.m_Reverse, cvt.m_Group);
     x_PushSourceRange(cvt.m_Src_id_Handle,
         STRAND_TO_INDEX(is_set_strand, src_strand),
         STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
-        TRange(left, right));
+        TRange(left, right), cvt.m_Reverse);
     if ( m_GraphRanges  &&  !used_rg.Empty() ) {
         m_GraphRanges->AddRange(used_rg);
         if ( !src_rg.IsWhole() ) {
@@ -1882,7 +1882,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedInt_Element(const CSeq_interval& si)
             TRange rg(si.GetFrom(), si.GetTo());
             x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
                 STRAND_TO_INDEX(si.IsSetStrand(), si.GetStrand()),
-                rg, fuzz, 0);
+                rg, fuzz, false, 0);
         }
         else {
             m_Partial = true;
@@ -1913,7 +1913,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedPnt_Element(const CPacked_seqpnt& pp,
                 CSeq_id_Handle::GetHandle(pp.GetId()),
                 STRAND_TO_INDEX(pp.IsSetStrand(),
                                 pp.GetStrand()),
-                rg, fuzz, 0);
+                rg, fuzz, false, 0);
         }
         else {
             m_Partial = true;
@@ -1954,7 +1954,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
                     cvt.GetDstIdHandle(),
                     // CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
                     STRAND_TO_INDEX(false, eNa_strand_unknown),
-                    TRange::GetEmpty(), fuzz, 0);
+                    TRange::GetEmpty(), fuzz, false, 0);
                 res = true;
                 break;
             }
@@ -2055,15 +2055,8 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
     case CSeq_loc::e_Packed_int:
     {
         const CPacked_seqint::Tdata& src_ints = src_loc.GetPacked_int().Get();
-        if (src_loc.GetPacked_int().IsReverseStrand()) {
-            REVERSE_ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
-                x_Map_PackedInt_Element(**i);
-            }
-        }
-        else {
-            ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
-                x_Map_PackedInt_Element(**i);
-            }
+        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+            x_Map_PackedInt_Element(**i);
         }
         break;
     }
@@ -2071,15 +2064,8 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
     {
         const CPacked_seqpnt& src_pack_pnts = src_loc.GetPacked_pnt();
         const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-        if ( src_loc.IsReverseStrand() ) {
-            REVERSE_ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-                x_Map_PackedPnt_Element(src_pack_pnts, *i);
-            }
-        }
-        else {
-            ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-                x_Map_PackedPnt_Element(src_pack_pnts, *i);
-            }
+        ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+            x_Map_PackedPnt_Element(src_pack_pnts, *i);
         }
         break;
     }
@@ -2089,15 +2075,8 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         CRef<CSeq_loc> prev = m_Dst_loc;
         m_Dst_loc.Reset();
         const CSeq_loc_mix::Tdata& src_mix = src_loc.GetMix().Get();
-        if (src_loc.GetMix().IsReverseStrand()) {
-            REVERSE_ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-                x_MapSeq_loc(**i);
-            }
-        }
-        else {
-            ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-                x_MapSeq_loc(**i);
-            }
+        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+            x_MapSeq_loc(**i);
         }
         x_PushRangesToDstMix();
         CRef<CSeq_loc> mix = m_Dst_loc;
@@ -2325,6 +2304,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
                                              size_t                strand_idx,
                                              const TRange&         range,
                                              const TRangeFuzz&     fuzz,
+                                             bool                  push_reverse,
                                              int                   group)
 {
     if (m_IncludeSrcLocs  &&  m_MergeFlag != eMergeNone) {
@@ -2338,7 +2318,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
     case eMergeContained:
     case eMergeAll:
         {
-            if ( reverse ) {
+            if ( push_reverse ) {
                 x_GetMappedRanges(id, strand_idx)
                     .push_front(SMappedRange(range, fuzz, group));
             }
@@ -2351,7 +2331,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
     case eMergeNone:
         {
             x_PushRangesToDstMix();
-            if ( reverse ) {
+            if ( push_reverse ) {
                 x_GetMappedRanges(id, strand_idx)
                     .push_front(SMappedRange(range, fuzz, group));
             }
@@ -2397,7 +2377,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
             }
             if ( no_merge ) {
                 x_PushRangesToDstMix();
-                if ( reverse ) {
+                if ( push_reverse ) {
                     x_GetMappedRanges(id, strand_idx)
                         .push_front(SMappedRange(range, fuzz, group));
                 }
@@ -2426,7 +2406,8 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
 void CSeq_loc_Mapper_Base::x_PushSourceRange(const CSeq_id_Handle& idh,
                                              size_t                src_strand,
                                              size_t                dst_strand,
-                                             const TRange&         range)
+                                             const TRange&         range,
+                                             bool                  push_reverse)
 {
     if ( !m_IncludeSrcLocs ) return;
     if ( !m_SrcLocs ) {
@@ -2454,7 +2435,7 @@ void CSeq_loc_Mapper_Base::x_PushSourceRange(const CSeq_id_Handle& idh,
     }
     bool reverse = (dst_strand > 0) &&
         IsReverse(INDEX_TO_STRAND(dst_strand));
-    if ( reverse ) {
+    if ( push_reverse ) {
         m_SrcLocs->SetMix().Set().push_front(loc);
     }
     else {
@@ -2501,12 +2482,7 @@ void CSeq_loc_Mapper_Base::x_PushLocToDstMix(CRef<CSeq_loc> loc)
             return;
         }
     }
-    if ( x_ReverseRangeOrder() ) {
-        mix.push_front(loc);
-    }
-    else {
-        mix.push_back(loc);
-    }
+    mix.push_back(loc);
 }
 
 

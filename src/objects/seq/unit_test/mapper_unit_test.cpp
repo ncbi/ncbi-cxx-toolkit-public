@@ -118,14 +118,14 @@ static void s_InitInterval(CSeq_interval& loc,
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
 {
-    // Basic mapping
+    cout << "Basic mapping test" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 4, 10, 99);
     s_InitInterval(dst.SetInt(), 5, 110, 199);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 89);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Truncated on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 109);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
     }}
 
     {{
-        // Minus strand interval
+        cout << "  Minus strand interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 89, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
     }}
 
     {{
-        // Minus strand, partial on the right
+        cout << "  Minus strand interval truncated on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 109, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -170,16 +170,438 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
 }
 
 
+BOOST_AUTO_TEST_CASE(s_TestMapping_Order)
+{
+    cout << "Order of mapped intervals" << endl;
+    {{
+        CSeq_loc src, dst;
+        s_InitInterval(src.SetInt(), 4, 10, 99);
+        s_InitInterval(dst.SetInt(), 5, 110, 199);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping plus to plus strand" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 20, 24);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 30, 39);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 120, 124, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping minus to minus strand" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 30, 39, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 20, 24, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 120, 124, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+
+    {{
+        CSeq_loc src, dst;
+        s_InitInterval(src.SetInt(), 4, 10, 99);
+        s_InitInterval(dst.SetInt(), 5, 110, 199, eNa_strand_minus);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping plus to minus strand (src on plus)" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 20, 24);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 30, 39);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 185, 189, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 170, 179, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping minus to plus strand (src on plus)" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 30, 39, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 20, 24, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 170, 179, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 185, 189, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+
+    {{
+        CSeq_loc src, dst;
+        s_InitInterval(src.SetInt(), 4, 10, 99, eNa_strand_minus);
+        s_InitInterval(dst.SetInt(), 5, 110, 199);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping plus to minus strand (src on minus)" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 20, 24);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 30, 39);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 185, 189, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 170, 179, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping minus to plus strand (src on minus)" << endl;
+            CSeq_loc loc;
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 30, 39, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 20, 24, eNa_strand_minus);
+            loc.SetMix().Set().push_back(sub);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 170, 179, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 185, 189, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+
+    {{
+        CSeq_loc src, dst;
+        {{
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 10, 19);
+            src.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 30, 49);
+            src.SetMix().Set().push_back(sub);
+        }}
+        s_InitInterval(dst.SetInt(), 5, 110, 139);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping through a mix, plus to plus strand" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 119, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 120, 139, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, plus to plus strand, with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to minus strand" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 120, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 119, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to minus strand, with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+
+    {{
+        CSeq_loc src, dst;
+        {{
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 10, 19);
+            src.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 30, 49);
+            src.SetMix().Set().push_back(sub);
+        }}
+        s_InitInterval(dst.SetInt(), 5, 110, 139, eNa_strand_minus);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping through a mix, plus to minus strand (src on plus)" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 129, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+        }}
+        {{
+            cout << "  Mapping through a mix, plus to minus (src on plus), with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to plus strand (src on plus)" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 129, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, true, eNa_strand_plus,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to plus (src on plus), with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+
+    {{
+        CSeq_loc src, dst;
+        {{
+            CRef<CSeq_loc> sub(new CSeq_loc);
+            s_InitInterval(sub->SetInt(), 4, 30, 49, eNa_strand_minus);
+            src.SetMix().Set().push_back(sub);
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, 10, 19, eNa_strand_minus);
+            src.SetMix().Set().push_back(sub);
+        }}
+        s_InitInterval(dst.SetInt(), 5, 110, 139);
+        CSeq_loc_Mapper_Base mapper(src, dst);
+
+        {{
+            cout << "  Mapping through a mix, plus to minus strand (src on minus)" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 129, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+        }}
+        {{
+            cout << "  Mapping through a mix, plus to minus strand (src on minus), with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, true, eNa_strand_minus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to plus strand (src on minus)" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 2);
+            CPacked_seqint::Tdata::const_iterator it =
+                mapped->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 110, 129, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
+            ++it;
+            BOOST_CHECK(*it);
+            CHECK_SEQ_INT(**it, 5, 130, 139, true, eNa_strand_plus,
+                CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+        }}
+        {{
+            cout << "  Mapping through a mix, minus to plus strand (src on minus), with merge" << endl;
+            CSeq_loc loc;
+            s_InitInterval(loc.SetInt(), 4, 10, 49, eNa_strand_minus);
+
+            mapper.SetMergeAbutting();
+            CRef<CSeq_loc> mapped = mapper.Map(loc);
+            mapper.SetMergeNone();
+            BOOST_CHECK(mapped);
+            BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 139, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+    }}
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
 {
-    // Mapping through minus strand
+    cout << "Mapping through minus strand" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 4, 10, 99);
     s_InitInterval(dst.SetInt(), 5, 110, 199, eNa_strand_minus);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 89);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -190,7 +612,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Partial on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 109);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -201,7 +623,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
     }}
 
     {{
-        // Minus strand
+        cout << "  Original location on minus strand" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 89, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -212,7 +634,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
     }}
 
     {{
-        // Minus strand, partial
+        cout << "  Original location on minus strand, partial" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 4, 15, 109, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -226,14 +648,14 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
 {
-    // Mapping from protein to nucleotide
+    cout << "Mapping from protein to nucleotide" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 6, 10, 99);
     s_InitInterval(dst.SetInt(), 5, 120, 389);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 6, 15, 29);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -244,7 +666,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Partial on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 6, 15, 119);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -255,7 +677,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
     }}
 
     {{
-        // Minus strand interval
+        cout << "  Original location on minus strand" << endl;
         CSeq_loc loc;
         // This is not a real-life interval. Protein strand can not be negative.
         // But let's test it anyway.
@@ -268,7 +690,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
     }}
 
     {{
-        // Minus strand, partial on the right
+        cout << "  Original location on minus strand, partial" << endl;
         CSeq_loc loc;
         // This is not a real-life interval. Protein strand can not be negative.
         s_InitInterval(loc.SetInt(), 6, 15, 119, eNa_strand_minus);
@@ -283,14 +705,14 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
 {
-    // Mapping from protein to nucleotide through minus strand
+    cout << "Mapping from protein to nucleotide through minus strand" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 6, 10, 99);
     s_InitInterval(dst.SetInt(), 5, 120, 389, eNa_strand_minus);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 6, 15, 59);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -301,7 +723,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Partial on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 6, 15, 109);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -312,7 +734,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
     }}
 
     {{
-        // Minus strand interval
+        cout << "  Original location on minus strand" << endl;
         CSeq_loc loc;
         // This is not a real-life interval. Protein strand can not be negative.
         // But let's test it anyway.
@@ -325,7 +747,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
     }}
 
     {{
-        // Minus strand, partial on the right
+        cout << "  Original location on minus strand, partial" << endl;
         CSeq_loc loc;
         // This is not a real-life interval. Protein strand can not be negative.
         s_InitInterval(loc.SetInt(), 6, 15, 119, eNa_strand_minus);
@@ -340,14 +762,14 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
 {
-    // Mapping from nucleotide to protein
+    cout << "Mapping from nucleotide to protein" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 5, 30, 329);
     s_InitInterval(dst.SetInt(), 6, 100, 199);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 89);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -358,7 +780,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Partial on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 359);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -369,7 +791,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
     }}
 
     {{
-        // Minus strand interval
+        cout << "  Original location on minus strand" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 89, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -381,7 +803,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
     }}
 
     {{
-        // Minus strand, partial on the right
+        cout << "  Original location on minus strand, partial" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 359, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -393,7 +815,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
     }}
 
     {{
-        // Shifted nucleotide positions
+        cout << "  Shifted nucleotide positions (incomplete codons)" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 46, 88);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -408,14 +830,14 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
 {
-    // Mapping from nucleotide to protein through minus strand
+    cout << "Mapping from nucleotide to protein through minus strand" << endl;
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 5, 30, 329, eNa_strand_minus);
     s_InitInterval(dst.SetInt(), 6, 100, 199);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
     {{
-        // Simple interval
+        cout << "  Simple interval" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 89);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -427,7 +849,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
     }}
 
     {{
-        // Partial on the right
+        cout << "  Partial on the right" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 359);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -439,7 +861,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
     }}
 
     {{
-        // Minus strand interval
+        cout << "  Original location on minus strand" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 89, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -451,7 +873,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
     }}
 
     {{
-        // Minus strand, partial on the right
+        cout << "  Original location on minus strand, partial" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 45, 359, eNa_strand_minus);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
@@ -463,7 +885,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
     }}
 
     {{
-        // Simple interval
+        cout << "  Shifted nucleotide positions (incomplete codons)" << endl;
         CSeq_loc loc;
         s_InitInterval(loc.SetInt(), 5, 46, 88);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
