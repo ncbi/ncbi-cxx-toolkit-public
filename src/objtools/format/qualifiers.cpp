@@ -142,7 +142,6 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
     }
     
     string go_text;
-    
     if (text_string != NULL) {
         go_text = *text_string;
     }
@@ -161,23 +160,18 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
         }
     } else { 
         if (go_id != NULL) {
-            go_text += " [GO ID ";
-            go_text += *go_id;
-            go_text += ']';
-            if (evidence != NULL) {
-                go_text += " [Evidence ";
-                go_text += *evidence;
-                go_text += ']';
+            go_text = string( "GO:" ) + *go_id;
+            if ( text_string != 0 ) {
+                go_text += string( " - " ) + *text_string;
+            }
+            if ( evidence != 0 ) {
+                go_text += string( " [Evidence " ) + *evidence + string( "]" );
             }
             if ( pmid != 0 ) {
-                go_text += " [PMID ";
-                go_text += NStr::IntToString(pmid);
-                go_text += ']';
+                go_text += string( " [PMID " ) + NStr::IntToString(pmid) + string( "]" );
             }
-            if (go_ref != NULL) {
-                go_text += " [GO Ref ";
-                go_text += *go_ref;
-                go_text += ']';
+            if ( go_ref != 0 ) {
+                go_text += string( " [GO Ref " ) + *go_ref + string( "]" );
             }
         }
     }
