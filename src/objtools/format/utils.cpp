@@ -419,7 +419,8 @@ static bool s_IsValidAccession(const string& acc)
             if ( (num_alpha == 1  &&  num_digits == 5)  ||
                  (num_alpha == 2  &&  num_digits == 6)  ||
                  (num_alpha == 3  &&  num_digits == 5)  || 
-                 (num_alpha == 4  &&  num_digits == 8) ) {
+                 (num_alpha == 4  &&  num_digits == 8)  || 
+                 (num_alpha == 4  &&  num_digits == 9) ) {
                 return true;
             }
         }}
