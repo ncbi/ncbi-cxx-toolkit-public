@@ -1012,7 +1012,7 @@ Optional Packages:
  --without-dbapi         do not build database connectivity libraries
  --without-app           do not build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
- --without-gui           do not build FLTK-based projects
+ --without-gui           do not build most graphical projects
  --without-algo          do not build CPU-intensive algorithms
  --without-internal      do not build internal projects
  --with-gbench           ensure that Genome Workbench can be built
@@ -31477,14 +31477,14 @@ fi
 if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    reason=""
    sep=
-   if test -d "$real_srcdir/src/gui/plugins"; then
-     if test "$with_fltk" = "no"; then
-       reason="$reason${sep}FLTK"
-       sep=", "
-     fi
-   elif test -d "$real_srcdir/src/gui/packages"; then
+   if test -d "$real_srcdir/src/gui/packages"; then
      if test "$with_wxwidgets" = "no"; then
        reason="$reason${sep}wxWidgets"
+       sep=", "
+     fi
+   elif test -d "$real_srcdir/src/gui/plugins"; then
+     if test "$with_fltk" = "no"; then
+       reason="$reason${sep}FLTK"
        sep=", "
      fi
    else

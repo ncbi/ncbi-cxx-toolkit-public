@@ -377,7 +377,7 @@ AC_ARG_WITH(app,
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
-   [ --without-gui           do not build FLTK-based projects])
+   [ --without-gui           do not build most graphical projects])
 AC_ARG_WITH(algo,
    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
@@ -5963,14 +5963,14 @@ fi
 if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    reason=""
    sep=
-   if test -d "$real_srcdir/src/gui/plugins"; then
-     if test "$with_fltk" = "no"; then
-       reason="$reason${sep}FLTK"
-       sep=", "
-     fi
-   elif test -d "$real_srcdir/src/gui/packages"; then
+   if test -d "$real_srcdir/src/gui/packages"; then
      if test "$with_wxwidgets" = "no"; then
        reason="$reason${sep}wxWidgets"
+       sep=", "
+     fi
+   elif test -d "$real_srcdir/src/gui/plugins"; then
+     if test "$with_fltk" = "no"; then
+       reason="$reason${sep}FLTK"
        sep=", "
      fi
    else
