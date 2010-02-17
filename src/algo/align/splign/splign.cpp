@@ -71,7 +71,7 @@ BEGIN_NCBI_SCOPE
 namespace {
 
     // the library's version object
-    CRef<CVersion> kVersion (new CVersion(CVersionInfo(1, 39, 5)));
+    CRef<CVersion> kVersion (new CVersion(CVersionInfo(1, 39, 6)));
 
     // define cut-off strategy at the terminii:
     
