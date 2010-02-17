@@ -540,7 +540,8 @@ static void s_NoteFinalize(
             AddPeriod(noteStr);
         }
         // Policy change: expand tilde on both descriptors and features
-        ExpandTildes(noteStr, style);
+//        ExpandTildes(noteStr, style);
+        TrimSpacesAndJunkFromEnds( noteStr, true );
 
         CRef<CFormatQual> note(new CFormatQual("note", noteStr));
         flatFeature.SetQuals().push_back(note);
