@@ -217,16 +217,19 @@ void CNWFormatter::SSegment::ExtendLeft(int extent,
                                         const char* seq2,
                                         CConstRef<CSplicedAligner> aligner)
 {
-    m_details.resize(m_details.size() + extent);
-    copy(m_details.begin(), m_details.end(), m_details.begin() + extent);
+    m_details.insert(0, extent, 'M');
     while(--extent >= 0) {
-        m_details[extent] =(seq1[--m_box[0]] == seq2[--m_box[2]])? 'M': 'R';
+        if(seq1[--m_box[0]] != seq2[--m_box[2]]) {
+            m_details[extent] = 'R';
+        }
     }
+
     Update(aligner.GetNonNullPointer());
     if(m_annot.size() > 2 && m_annot[2] == '<') {
         m_annot[0] = m_annot[1] = ' ';
     }
 }
+
 
 void CNWFormatter::SSegment::ExtendRight(int extent,
                                          const char* seq1,
