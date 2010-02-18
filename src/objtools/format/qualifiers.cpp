@@ -380,7 +380,18 @@ void CFlatSiteQVal::Format
  CBioseqContext& ctx,
  TFlags flags) const
 {
-    if (s_IsNote(flags, ctx)) {
+    if ( m_Value == "transmembrane-region" ) {
+        m_Value = "transmembrane region";
+    }
+    if ( m_Value == "signal-peptide" ) {
+        m_Value = "signal peptide";
+    }
+    if ( m_Value == "transit-peptide" ) {
+        m_Value = "transit peptide";
+    }
+    if (m_Value != "transit peptide" && m_Value != "signal peptide" &&
+        m_Value != "transmembrane region" && s_IsNote(flags, ctx)) 
+    {
         m_Value += " site";
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
