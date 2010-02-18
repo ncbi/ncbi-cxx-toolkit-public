@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = gumbelparams
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
