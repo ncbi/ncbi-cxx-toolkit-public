@@ -217,7 +217,7 @@ void CNWFormatter::SSegment::ExtendLeft(int extent,
                                         const char* seq2,
                                         CConstRef<CSplicedAligner> aligner)
 {
-    m_details.insert(0u, extent, 'M');
+    m_details.insert(SIZE_TYPE(0), extent, 'M');
     while(--extent >= 0) {
         if(seq1[--m_box[0]] != seq2[--m_box[2]]) {
             m_details[extent] = 'R';
