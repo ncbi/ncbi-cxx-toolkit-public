@@ -362,6 +362,10 @@ public:
     string GetScheme(void) const            { return m_Scheme; }
     void   SetScheme(const string& value)   { m_Scheme = value; }
 
+    /// Generic schemes use '//' after scheme name and colon.
+    bool GetIsGeneric(void) const           { return m_IsGeneric; }
+    void SetIsGeneric(bool value)           { m_IsGeneric = value; }
+
     string GetUser(void) const              { return m_User; }
     void   SetUser(const string& value)     { m_User = value; }
 
