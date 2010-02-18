@@ -369,7 +369,7 @@ bool CFlatSeqLoc::x_Add
                     oss << (html ? "&gt" : ">") << pnt;
                     break;
                 case CInt_fuzz::eLim_lt:
-                    oss << (html ? "&lt" : "<") << ((pnt > 3) ? pnt : 1);
+                    oss << (html ? "&lt" : "<") << pnt;
                     break;
                 case CInt_fuzz::eLim_tr:
                     oss << pnt << '^' << pnt + 1;
