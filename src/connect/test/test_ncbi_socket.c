@@ -589,6 +589,8 @@ static void TEST__client(const char*     server_host,
     /* Connect to server */
     status = SOCK_Create(server_host, server_port, timeout, &sock);
     assert(status == eIO_Success);
+    verify(SOCK_SetTimeout(sock, eIO_ReadWrite, timeout) == eIO_Success);
+    verify(SOCK_SetTimeout(sock, eIO_Close,     timeout) == eIO_Success);
 
     /* Test the simplest randezvous(plain request-reply)
      * The two peer functions are:
