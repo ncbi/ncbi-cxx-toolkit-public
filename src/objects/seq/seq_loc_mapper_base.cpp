@@ -2548,8 +2548,10 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                 }
                 if (m_MergeFlag == eMergeAll) {
                     if (rg_it->range.GetFrom() <= to + 1) {
-                        to = rg_it->range.GetTo();
-                        fuzz.second = rg_it->fuzz.second;
+                        if (rg_it->range.GetTo() > to) {
+                            to = rg_it->range.GetTo();
+                            fuzz.second = rg_it->fuzz.second;
+                        }
                         continue;
                     }
                 }
