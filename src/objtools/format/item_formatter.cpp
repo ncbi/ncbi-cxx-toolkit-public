@@ -449,13 +449,16 @@ static void s_FixPages( string& pages )
         // Likewise if we __are__ at a dash but nothing follows:
         //
         if ( it == pages.end() ) {
+            pages = firstNumber;
             return;
         }
-        if ( it != pages.end() || *it != '-' ) {
+        if ( it != pages.end() && *it != '-' ) {
+            pages = firstNumber;
             return;
         }
         ++it;
         if ( it == pages.end() ) {
+            pages = firstNumber;
             return;
         }
 
@@ -468,6 +471,7 @@ static void s_FixPages( string& pages )
             }
             ++it;
         }
+
         while ( it != pages.end() ) {
             if ( ::isalpha( *it ) || ' ' == *it ) {
                 lastText += *it;
@@ -478,9 +482,8 @@ static void s_FixPages( string& pages )
             ++it;
         }
         
-        /* Test 3: end of string test */
         if ( it != pages.end() ) {
-//            pages = "";
+            pages = firstNumber + string( "-" ) + lastNumber;
             return;
         }
     }
@@ -513,7 +516,6 @@ static void s_FixPages( string& pages )
             return;
         }
 
-        /* Test 2: dash test */
         if ( it != pages.end() && *it != '-' ) {
             return;
         }
@@ -541,7 +543,6 @@ static void s_FixPages( string& pages )
             ++it;
         }
 
-        /* Test 3: end of string test */
         if ( it != pages.end() ) {
 //            pages = "";
             return;
@@ -549,7 +550,6 @@ static void s_FixPages( string& pages )
     }
 
     //
-    //  Test 4:
     //  The textual part of the page number must be a single letter.
     //  If there is both a first and a last page then the two textual
     //  parts must match.
@@ -576,7 +576,6 @@ static void s_FixPages( string& pages )
     }
 
     //
-    //  Otherwise, Test 5:
     //  In test ranges, the first page has a numeric part if and only if 
     //  the the last page has.
     //
@@ -601,7 +600,6 @@ static void s_FixPages( string& pages )
     }
 
     //
-    //  Test 6:
     //  Make sure the numerical part of the last page is no less than the
     //  numerical part of the first page:
     //
@@ -1349,6 +1347,11 @@ void CFlatItemFormatter::x_FormatRefJournal
 
     if (NStr::IsBlank(journal)) {
         journal = "Unpublished";
+        if ( ref.IsSetDate() ) {
+            string year;
+            s_FormatYear(ref.GetDate(), year);
+            journal += string(" ") + year;
+        }
     }
     StripSpaces(journal);
 }
