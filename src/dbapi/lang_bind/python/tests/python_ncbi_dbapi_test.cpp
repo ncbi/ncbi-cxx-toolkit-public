@@ -111,11 +111,11 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "Name of the SQL server to connect to",
                             CArgDescriptions::eString, DEF_SERVER);
 
-    arg_desc->AddDefaultKey("d", "driver",
+    arg_desc->AddDefaultKey("dr", "driver",
                             "Name of the DBAPI driver to use",
                             CArgDescriptions::eString,
                             DEF_DRIVER);
-    arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
+    arg_desc->SetConstraint("dr", &(*new CArgAllow_Strings, ALL_DRIVERS));
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",

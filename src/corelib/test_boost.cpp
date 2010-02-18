@@ -53,6 +53,14 @@
 #ifdef nil
 #  undef nil
 #endif
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+// 'class' : class has virtual functions, but destructor is not virtual
+#  pragma warning(disable: 4265)
+// 'operator/operation' : unsafe conversion from 'type of expression' to 'type required'
+#  pragma warning(disable: 4191)
+#endif
+
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
@@ -67,6 +75,10 @@
 #include <boost/test/detail/global_typedef.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
+
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif
 
 #include <list>
 #include <vector>
@@ -808,6 +820,8 @@ CNcbiTestApplication::Init(void)
         m_ArgDescrs->AddFlag("dryrun",
                              "Do not actually run tests, "
                              "just print list of all available tests.");
+        m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(),
+                                     "NCBI unit test");
         x_CallUserFuncs(eTestUserFuncCmdLine);
         SetupArgDescriptions(m_ArgDescrs.release());
     }
@@ -1450,7 +1464,11 @@ CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
     // elapsed comes in microseconds
     if (timeout != 0  &&  timeout < elapsed / 1000000) {
         boost::execution_exception ex(
-               boost::execution_exception::timeout_error, "Timeout exceeded");
+               boost::execution_exception::timeout_error, "Timeout exceeded"
+#if BOOST_VERSION >= 104200
+               , boost::execution_exception::location()
+#endif
+                                     );
         but::framework::exception_caught(ex);
     }
 

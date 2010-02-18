@@ -56,6 +56,13 @@
 #  undef BOOST_AUTO_TEST_MAIN
 #endif
 
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+// 'class' : class has virtual functions, but destructor is not virtual
+#  pragma warning(disable: 4265)
+#endif
+
+#include <boost/version.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/test/framework.hpp>
@@ -65,6 +72,10 @@
 #include <boost/preprocessor/repeat.hpp>
 #include <boost/preprocessor/array/elem.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
+
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif
 
 
 // Redefine some Boost macros to make them more comfortable and fit them into
@@ -109,6 +120,12 @@ catch( ... ) {                                                               \
 }                                                                            \
 /**/
 
+#if BOOST_VERSION >= 104200
+#  define NCBI_BOOST_LOCATION()  , boost::execution_exception::location()
+#else
+#  define NCBI_BOOST_LOCATION()
+#endif
+
 #define BOOST_FIXTURE_TEST_CASE( test_name, F )                         \
 struct test_name : public F { void test_method(); };                    \
                                                                         \
@@ -124,7 +141,8 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
         throw boost::execution_exception(                               \
-                boost::execution_exception::cpp_exception_error, "");   \
+                boost::execution_exception::cpp_exception_error, ""     \
+                NCBI_BOOST_LOCATION() );                                \
     }                                                                   \
 }                                                                       \
                                                                         \

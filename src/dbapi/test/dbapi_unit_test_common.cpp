@@ -607,10 +607,10 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "Name of the SQL server to connect to",
                             CArgDescriptions::eString, DEF_SERVER);
 
-    arg_desc->AddOptionalKey("d", "driver",
+    arg_desc->AddOptionalKey("dr", "driver",
                             "Name of the DBAPI driver to use",
                             CArgDescriptions::eString);
-    arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
+    arg_desc->SetConstraint("dr", &(*new CArgAllow_Strings, ALL_DRIVERS));
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
@@ -626,15 +626,6 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddOptionalKey("v", "version",
                             "TDS protocol version",
                             CArgDescriptions::eInteger);
-
-    arg_desc->AddOptionalKey("H", "gateway_host",
-                            "DBAPI gateway host",
-                            CArgDescriptions::eString);
-
-    arg_desc->AddDefaultKey("p", "gateway_port",
-                            "DBAPI gateway port",
-                            CArgDescriptions::eInteger,
-                            "65534");
 
     arg_desc->AddDefaultKey("conf", "configuration",
                             "Configuration for testing",
