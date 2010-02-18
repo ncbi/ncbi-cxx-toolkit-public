@@ -45,11 +45,7 @@ class CDatabaseImpl : public CObject
 {
 public:
     CDatabaseImpl(const CDatabaseImpl& other);
-    CDatabaseImpl(const string&             db_name,
-                  const string&             user,
-                  const string&             password,
-                  const string&             server,
-                  const map<string, string> params);
+    CDatabaseImpl(const CSDB_ConnectionParam& params);
     ~CDatabaseImpl(void);
 
     bool IsOpen() const;

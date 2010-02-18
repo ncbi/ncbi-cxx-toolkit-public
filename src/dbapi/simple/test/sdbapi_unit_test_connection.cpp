@@ -45,12 +45,10 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
 
         // Check method Connect() ...
         {
-            CDatabase db(target_db_name);
-            db.Connect(
-                GetArgs().GetUserName(),
-                GetArgs().GetUserPassword(),
-                GetArgs().GetServerName()
-                      );
+            CSDB_ConnectionParam params(GetDatabase().GetConnectionParam());
+            params.Set(CSDB_ConnectionParam::eDatabase, target_db_name);
+            CDatabase db(params);
+            db.Connect();
 
             CQuery query = db.NewQuery("select db_name()");
 
@@ -74,12 +72,10 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         const string target_db_name("DBAPI_Sample");
 
         // Create new connection ...
-        CDatabase db(target_db_name);
-        db.Connect(
-            GetArgs().GetUserName(),
-            GetArgs().GetUserPassword(),
-            GetArgs().GetServerName()
-                  );
+        CSDB_ConnectionParam params(GetDatabase().GetConnectionParam());
+        params.Set(CSDB_ConnectionParam::eDatabase, target_db_name);
+        CDatabase db(params);
+        db.Connect();
 
         // Clone connection ...
         CDatabase new_db = db.Clone();
@@ -97,6 +93,39 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_ConnParams)
+{
+    {
+        CSDB_ConnectionParam params(
+                "dbapi://" + GetArgs().GetUserName() +
+                ":" + GetArgs().GetUserPassword() +
+                "@" + GetArgs().GetServerName()
+                );
+
+        CDatabase db(params);
+        db.Connect();
+        CQuery query = db.NewQuery("SELECT @@version");
+        query.Execute();
+        query.PurgeResults();
+    }
+
+    {
+        CSDB_ConnectionParam params(
+                "dbapi://" + GetArgs().GetUserName() +
+                ":" + GetArgs().GetUserPassword() +
+                "@" + GetArgs().GetServerName() +
+                "/" + GetArgs().GetDatabaseName()
+                );
+
+        CDatabase db(params);
+        db.Connect();
+        CQuery query = db.NewQuery("SELECT @@version");
+        query.Execute();
+        query.PurgeResults();
     }
 }
 

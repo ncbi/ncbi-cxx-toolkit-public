@@ -51,7 +51,7 @@ const char*
 CSDB_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eEmptyDBName:  return "eEmptyDBName";
+    case eURLFormat:    return "eURLFormat";
     case eClosed:       return "eClosed";
     case eStarted:      return "eStarted";
     case eNotInOrder:   return "eNotInOrder";
@@ -702,6 +702,61 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
 }
 
 
+CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string     /* = kEmptyStr */,
+                                           const string& config_section /* = kEmptyStr */)
+    : m_Url(url_string)
+{
+    if (url_string.empty()) {
+        m_Url.SetScheme("dbapi");
+        m_Url.SetIsGeneric(true);
+    }
+    if (m_Url.GetScheme() != "dbapi") {
+        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
+                       "Incorrect URL format - '" << url_string << "'");
+    }
+    if (config_section.empty()  ||  !CNcbiApplication::Instance())
+        return;
+
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    string val = reg.GetString(config_section, "user", kEmptyStr);
+    if (!val.empty())
+        m_Url.SetUser(val);
+    val = reg.GetString(config_section, "password", kEmptyStr);
+    if (!val.empty())
+        m_Url.SetPassword(val);
+    val = reg.GetString(config_section, "server", kEmptyStr);
+    if (!val.empty())
+        m_Url.SetHost(val);
+    val = reg.GetString(config_section, "port", kEmptyStr);
+    if (!val.empty())
+        m_Url.SetPort(val);
+    val = reg.GetString(config_section, "database", kEmptyStr);
+    if (!val.empty())
+        m_Url.SetPath(val);
+    val = reg.GetString(config_section, "args", kEmptyStr);
+    if (!val.empty())
+        m_Url.GetArgs().SetQueryString(val);
+}
+
+string
+CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
+                                                /* = eAllowIncomplete */) const
+{
+    if (allow_incomplete == eThrowIfIncomplete
+        &&  (m_Url.GetHost().empty()  ||  m_Url.GetUser().empty()
+             ||  m_Url.GetPassword().empty()
+             // Missing database actually has pretty legal usage when current
+             // database is set per server defaults.
+             /* ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/" */))
+    {
+        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
+                       "Connection parameters miss one of essential parts"
+                       << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
+    }
+    return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
+}
+
+
 class CDataSourceInitializer
 {
 public:
@@ -724,20 +779,28 @@ public:
 
 
 inline
-CDatabaseImpl::CDatabaseImpl(const string&             db_name,
-                             const string&             user,
-                             const string&             password,
-                             const string&             server,
-                             const map<string, string> params)
+CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
 {
-    CDBDefaultConnParams conn_params(server, user, password);
-    conn_params.SetDatabaseName(db_name);
+    string server(params.Get(CSDB_ConnectionParam::eServer));
+    string port(params.Get(CSDB_ConnectionParam::ePort));
+    if (!port.empty()) {
+        server += ":";
+        server += port;
+    }
+    CDBDefaultConnParams conn_params(server,
+                                     params.Get(CSDB_ConnectionParam::eUsername),
+                                     params.Get(CSDB_ConnectionParam::ePassword));
+    string db_name(params.Get(CSDB_ConnectionParam::eDatabase));
+    if (!db_name.empty()) {
+        _ASSERT(db_name[0] == '/');
+        conn_params.SetDatabaseName(db_name.substr(1));
+    }
     conn_params.SetDriverName("ftds");
     conn_params.SetEncoding(eEncoding_UTF8);
 
-    typedef map<string, string>  TStrMap;
-    ITERATE(TStrMap, it, params) {
-        conn_params.SetParam(it->first, it->second);
+    const CUrlArgs::TArgs& args = params.GetArgs().GetArgs();
+    ITERATE(CUrlArgs::TArgs, it, args) {
+        conn_params.SetParam(it->name, it->value);
     }
 
     static CDataSourceInitializer ds_init(conn_params);
@@ -785,14 +848,14 @@ CDatabaseImpl::GetConnection(void)
 CDatabase::CDatabase(void)
 {}
 
-CDatabase::CDatabase(const string& db_name)
-    : m_DBName(db_name)
-{
-    if (db_name.empty()) {
-        NCBI_THROW(CSDB_Exception, eEmptyDBName,
-                   "Database name cannot be empty");
-    }
-}
+CDatabase::CDatabase(const CSDB_ConnectionParam& params)
+    : m_Params(params)
+{}
+
+CDatabase::CDatabase(const string& url_string,
+                     const string& config_section /* = kEmptyStr */)
+    : m_Params(url_string, config_section)
+{}
 
 CDatabase::CDatabase(const CDatabase& db)
 {
@@ -802,17 +865,8 @@ CDatabase::CDatabase(const CDatabase& db)
 CDatabase&
 CDatabase::operator= (const CDatabase& db)
 {
-    m_DBName = db.m_DBName;
-    m_Props  = db.m_Props;
-    if (db.m_Impl.NotNull()) {
-        m_User     = db.m_User;
-        m_Password = db.m_Password;
-        m_Server   = db.m_Server;
-        m_Impl.Reset(new CDatabaseImpl(*db.m_Impl));
-    }
-    else {
-        m_Impl.Reset();
-    }
+    m_Params = db.m_Params;
+    m_Impl.Reset(db.m_Impl? new CDatabaseImpl(*db.m_Impl): NULL);
     return *this;
 }
 
@@ -823,23 +877,14 @@ CDatabase::~CDatabase(void)
 }
 
 void
-CDatabase::Connect(const string &user,
-                   const string &password,
-                   const string &server)
+CDatabase::Connect(void)
 {
     if (m_Impl) {
         m_Impl->Close();
         m_Impl.Reset();
     }
-    if (m_DBName.empty()) {
-        NCBI_THROW(CSDB_Exception, eEmptyDBName,
-                   "Database name cannot be empty");
-    }
-    m_User     = user;
-    m_Password = password;
-    m_Server   = server;
     try {
-        m_Impl.Reset(new CDatabaseImpl(m_DBName, user, password, server, m_Props));
+        m_Impl.Reset(new CDatabaseImpl(m_Params));
     }
     SDBAPI_CATCH_LOWLEVEL()
 }
@@ -851,7 +896,6 @@ CDatabase::Close(void)
         return;
     m_Impl->Close();
     m_Impl.Reset();
-    m_User = m_Password = m_Server = "";
 }
 
 CDatabase
@@ -862,9 +906,8 @@ CDatabase::Clone(void)
                    "Database cannot be cloned if it's not connected");
     }
 
-    CDatabase result(m_DBName);
-    result.m_Props = m_Props;
-    result.Connect(m_User, m_Password, m_Server);
+    CDatabase result(m_Params);
+    result.Connect();
     return result;
 }
 

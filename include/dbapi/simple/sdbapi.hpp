@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <corelib/ncbitime.hpp>
+#include <util/ncbi_url.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +53,8 @@ class CSDB_Exception : public CException
 {
 public:
     enum EErrCode {
-        eEmptyDBName,   ///< Empty database name is used to create CDatabase
+        eURLFormat,     ///< Incorrectly formated URL is used to create
+                        ///< CSDB_ConnectionParam
         eClosed,        ///< CDatabase/CQuery/CBulkInsert is tried to be used
                         ///< when no connection is opened
         eStarted,       ///< CBulkInsert has already started to send data, no
@@ -562,6 +564,89 @@ CBulkInsert& NullValue(CBulkInsert& bi);
 CBulkInsert& EndRow(CBulkInsert& bi);
   
 
+/// Convenience class to initialize database connection parameters from
+/// URL-like strings and/or application configuration and/or hard-code.
+class CSDB_ConnectionParam
+{
+public:
+    /// Get database connection parameters from a string and from
+    /// the application configuration.
+    ///
+    /// @param url_string
+    ///   Get connection parameters from this URL-like string, formatted as:
+    ///   dbapi://[username[:password]@][server[:port]][/database][?k1=v1;...]
+    ///   Each token must be URL-encoded.
+    /// @param config_section
+    ///   Look in this section of the application configuration for the
+    ///   following entries, and update the connection parameters (overriding
+    ///   parameters from 'url_string' if they conflict):
+    ///   - user
+    ///   - password
+    ///   - server
+    ///   - port
+    ///   - database
+    ///   - args
+    CSDB_ConnectionParam(const string& url_string     = kEmptyStr,
+                         const string& config_section = kEmptyStr);
+
+    /// Whether to throw an exception if the connection parameters are
+    /// incomplete, in the sense that at least one of the "essential" ('user',
+    /// 'password', 'server' or 'database') parameters is not set.
+    ///
+    /// @sa ComposeUrl
+    enum EThrowIfIncomplete {
+        /// Throw if any of essential connection parameters are not set
+        eThrowIfIncomplete,
+        /// Allow to compose an URL with some essential parameters not set
+        eAllowIncomplete
+    };
+
+    /// Compose database connection URL string out of this class.
+    ///
+    /// @param allow_incomplete
+    ///   Whether to allow composing the URL if any of the essential connection
+    ///   parameters is not set -- or to throw an exception in this case.
+    string ComposeUrl(EThrowIfIncomplete allow_incomplete = eAllowIncomplete)
+                      const;
+
+    /// "Essential" (e.g. those located before '?' in the URL) database
+    /// connection parameters
+    enum EParam {
+        eUsername,
+        ePassword,
+        eServer,    ///< Database server (or alias, including LBSM service)
+        ePort,      ///< Database server's port
+        eDatabase
+    };
+
+    /// Get one of the "essential" database connection parameters.
+    /// Empty string means that it is not set.
+    string Get(EParam param) const;
+    /// Set one of the "essential" database connection parameters.
+    ///
+    /// @param param
+    ///   Parameter to set
+    /// @param value
+    ///   The value to set the parameter to. Empty string un-sets it.
+    void   Set(EParam param, const string& value);
+    /// Access to additional (e.g. those located after '?' in the URL)
+    /// database connection parameters
+    const CUrlArgs& GetArgs(void) const;
+    /// Access to additional (e.g. those located after '?' in the URL)
+    /// database connection parameters
+    CUrlArgs& GetArgs(void);
+
+    /// Copy ctor (explicit, to avoid accidental copying)
+    explicit CSDB_ConnectionParam(const CSDB_ConnectionParam& param);
+    /// Assignment
+    CSDB_ConnectionParam& operator= (const CSDB_ConnectionParam& param);
+
+private:
+    /// Url storing all parameters
+    mutable CUrl m_Url;
+};
+
+
 /// Database connection object.
 class CDatabase
 {
@@ -570,8 +655,13 @@ public:
     /// Object created this way cannot be used for anything except assigning
     /// from another database object.
     CDatabase(void);
-    /// Create database object for particular database name
-    CDatabase(const string& db_name);
+    /// Create database object for particular database parameters
+    CDatabase(const CSDB_ConnectionParam& param);
+    /// Create database object and take database parameters from given URL and
+    /// section of application configuration. See CSDB_ConnectionParam ctor
+    /// for URL format and rules of overriding.
+    CDatabase(const string& url_string,
+              const string& config_section = kEmptyStr);
     ~CDatabase(void);
 
     /// Copying of database object.
@@ -580,15 +670,12 @@ public:
     CDatabase(const CDatabase& db);
     CDatabase& operator= (const CDatabase& db);
 
-    /// Set database property
-    void SetProperty(const string& prop_name, const string& prop_value);
-    /// Get value of database property
-    string GetProperty(const string& prop_name) const;
+    /// Get connection parameters
+    CSDB_ConnectionParam& GetConnectionParam(void);
+    const CSDB_ConnectionParam& GetConnectionParam(void) const;
 
-    /// Connect to the database server with given credentials.
-    void Connect(const string& user,
-                 const string& password,
-                 const string& server);
+    /// Connect to the database server
+    void Connect(void);
     /// Close database object.
     /// You cannot do anything with CQuery and CBulkInsert objects created
     /// from this database object after call to this method. Although you can
@@ -618,16 +705,8 @@ public:
     CBulkInsert NewBulkInsert(const string& table_name, int autoflush);           
 
 private:
-    /// Name of database
-    string               m_DBName;
-    /// User name used during last connect to the server
-    string               m_User;
-    /// Password used during last connect to the server
-    string               m_Password;
-    /// Last server object was connected to
-    string               m_Server;
-    /// Database properties
-    map<string, string>  m_Props;
+    /// Database parameters
+    CSDB_ConnectionParam m_Params;
     /// Database implementation object
     CRef<CDatabaseImpl>  m_Impl;
 };
@@ -638,20 +717,77 @@ private:
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
 
-inline void
-CDatabase::SetProperty(const string& prop_name, const string& prop_value)
+inline
+CSDB_ConnectionParam::CSDB_ConnectionParam(const CSDB_ConnectionParam& param)
+    : m_Url(param.m_Url)
+{}
+
+inline CSDB_ConnectionParam&
+CSDB_ConnectionParam::operator= (const CSDB_ConnectionParam& param)
 {
-    m_Props[prop_name] = prop_value;
+    m_Url = param.m_Url;
+    return *this;
+}
+
+inline CUrlArgs&
+CSDB_ConnectionParam::GetArgs(void)
+{
+    return m_Url.GetArgs();
+}
+
+inline const CUrlArgs&
+CSDB_ConnectionParam::GetArgs(void) const
+{
+    return const_cast<CUrl&>(m_Url).GetArgs();
 }
 
 inline string
-CDatabase::GetProperty(const string& prop_name) const
+CSDB_ConnectionParam::Get(EParam param) const
 {
-    map<string, string>::const_iterator it = m_Props.find(prop_name);
-    if (it == m_Props.end())
-        return string();
-    else
-        return it->second;
+    switch (param) {
+    case eUsername:
+        return m_Url.GetUser();
+    case ePassword:
+        return m_Url.GetPassword();
+    case eServer:
+        return m_Url.GetHost();
+    case ePort:
+        return m_Url.GetPort();
+    case eDatabase:
+        return m_Url.GetPath();
+    }
+    _ASSERT(false);
+    return string();
+}
+
+inline void
+CSDB_ConnectionParam::Set(EParam param, const string& value)
+{
+    switch (param) {
+    case eUsername:
+        return m_Url.SetUser(value);
+    case ePassword:
+        return m_Url.SetPassword(value);
+    case eServer:
+        return m_Url.SetHost(value);
+    case ePort:
+        return m_Url.SetPort(value);
+    case eDatabase:
+        return m_Url.SetPath("/" + value);
+    }
+}
+
+
+inline CSDB_ConnectionParam&
+CDatabase::GetConnectionParam(void)
+{
+    return m_Params;
+}
+
+inline const CSDB_ConnectionParam&
+CDatabase::GetConnectionParam(void) const
+{
+    return m_Params;
 }
 
 inline CQuery

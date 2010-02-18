@@ -76,10 +76,13 @@ NCBITEST_AUTO_INIT()
     SetDiagPostFlag(eDPF_DateTime);
 
     try {
-        s_Conn.reset(new CDatabase(GetArgs().GetDatabaseName()));
-        s_Conn->Connect(GetArgs().GetUserName(),
-                        GetArgs().GetUserPassword(),
-                        GetArgs().GetServerName());
+        CSDB_ConnectionParam params;
+        params.Set(CSDB_ConnectionParam::eServer,   GetArgs().GetServerName());
+        params.Set(CSDB_ConnectionParam::eUsername, GetArgs().GetUserName());
+        params.Set(CSDB_ConnectionParam::ePassword, GetArgs().GetUserPassword());
+        params.Set(CSDB_ConnectionParam::eDatabase, GetArgs().GetDatabaseName());
+        s_Conn.reset(new CDatabase(params));
+        s_Conn->Connect();
     }
     catch (CSDB_Exception& ex) {
         LOG_POST(Warning << "Error connecting to database: " << ex);
