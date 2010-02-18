@@ -125,12 +125,21 @@ private:
     set<string> m_ExcludedSources;
 };
 
-
 static bool s_IsProducedByDatatool(const string&    src_path_abs,
                                    const CProjItem& project)
 {
-    if ( project.m_DatatoolSources.empty() )
+    if ( project.m_DatatoolSources.empty() ) {
+        ITERATE( list<CProjKey>, d, project.m_Depends) {
+            if (d->Type() == CProjKey::eDataSpec) {
+                CProjectItemsTree::TProjects::const_iterator n = 
+                               GetApp().GetWholeTree().m_Projects.find(*d);
+                if (n != GetApp().GetWholeTree().m_Projects.end()) {
+                    return s_IsProducedByDatatool(src_path_abs, n->second);
+                }
+            }
+        }
         return false;
+    }
 
     string src_base;
     CDirEntry::SplitPath(src_path_abs, NULL, &src_base);
@@ -281,12 +290,12 @@ CMsvcPrjFilesCollector::CollectSources(void)
         } else {
             if (m_Project->m_MakeType >= eMakeType_Excluded ||
                 SMakeProjectT::IsConfigurableDefine(CDirEntry(abs_path).GetBase()) ||
-                !m_Project->m_DatatoolSources.empty()) {
+                m_Project->HasDataspecDependency()) {
                 PTB_WARNING_EX(abs_path, ePTB_FileNotFound,
                             "Source file not found");
             } else {
                 PTB_ERROR_EX(abs_path, ePTB_FileNotFound,
-                            "Source file not found");
+                           "Source file not found");
             }
         }
     }

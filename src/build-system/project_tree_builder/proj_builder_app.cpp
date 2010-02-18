@@ -349,6 +349,7 @@ struct PIsExcludedByUser
     {
         const CProjItem& project = item.second;
         if (project.m_ProjType != CProjKey::eDll &&
+            project.m_ProjType != CProjKey::eDataSpec &&
             !GetApp().m_CustomConfiguration.DoesValueContain(
             "__AllowedProjects",
             CreateProjectName(CProjKey(project.m_ProjType, project.m_ID)), true)) {
@@ -398,7 +399,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,4,0) );
+    SetVersion( CVersionInfo(2,5,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -601,7 +602,9 @@ int CProjBulderApp::Run(void)
     m_AllDllBuild = GetSite().IsProvided("DLL_BUILD");
 
     // Build projects tree
+#ifndef _DEBUG
     GetWholeTree();
+#endif
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 

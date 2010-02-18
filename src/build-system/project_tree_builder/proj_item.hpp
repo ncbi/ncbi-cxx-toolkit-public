@@ -58,6 +58,7 @@ public:
         eApp,
         eDll,
         eMsvc,
+        eDataSpec,
         eLast 
     } TProjType;
 
@@ -114,6 +115,8 @@ public:
     ~CProjItem(void);
 
     string GetPath(void) const;
+    
+    bool HasDataspecDependency(void) const;
 
     /// Name of atomic project.
     string       m_Name;

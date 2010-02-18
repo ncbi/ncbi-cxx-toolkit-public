@@ -221,6 +221,7 @@ public:
         eExe, 
         eLib, 
         eDll, 
+        eDataSpec,
         eOther } TTargetType;
     TTargetType m_Type;
 

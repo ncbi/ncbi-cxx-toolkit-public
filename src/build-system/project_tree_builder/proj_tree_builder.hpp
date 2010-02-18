@@ -182,6 +182,13 @@ struct SLibProjectT : public SMakeProjectT
                              const TFiles&      makeapp, 
                              CProjectItemsTree* tree,
                              EMakeFileType maketype);
+
+    static CProjKey DoCreateDataSpec(
+                            const string& source_base_dir,
+                            const string& proj_name,
+                            const string& proj_id,
+                            CProjectItemsTree* tree,
+                            EMakeFileType maketype);
 };
 
 struct SDllProjectT : public SMakeProjectT

@@ -873,7 +873,9 @@ void CBasicProjectsFilesInserter::AddInlineFile(const string& rel_file_path)
 
 void CBasicProjectsFilesInserter::Finalize(void)
 {
-    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_SourceFiles);
+    if (m_Filters.m_SourceFiles->IsSetFF()) {
+        m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_SourceFiles);
+    }
     if ( m_Filters.m_HeaderFilesPrivate->IsSetFF() ) {
         CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
         ce->SetFilter(*m_Filters.m_HeaderFilesPrivate);
@@ -884,8 +886,12 @@ void CBasicProjectsFilesInserter::Finalize(void)
         ce->SetFilter(*m_Filters.m_HeaderFilesImpl);
         m_Filters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
     }
-    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_HeaderFiles);
-    m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_InlineFiles);
+    if (m_Filters.m_HeaderFiles->IsSetFF()) {
+        m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_HeaderFiles);
+    }
+    if (m_Filters.m_InlineFiles->IsSetFF()) {
+        m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_InlineFiles);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -925,15 +931,15 @@ void CBasicProjectsFilesInserter::SFiltersItem::Initilize(void)
 
     m_HeaderFiles.Reset(new CFilter());
     m_HeaderFiles->SetAttlist().SetName("Header Files");
-    m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
 
     m_HeaderFilesPrivate.Reset(new CFilter());
     m_HeaderFilesPrivate->SetAttlist().SetName("Private");
-    m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
 
     m_HeaderFilesImpl.Reset(new CFilter());
     m_HeaderFilesImpl->SetAttlist().SetName("Impl");
-    m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
 
     m_InlineFiles.Reset(new CFilter());
     m_InlineFiles->SetAttlist().SetName("Inline Files");
@@ -1006,15 +1012,15 @@ CDllProjectFilesInserter::CDllProjectFilesInserter
 
     m_PrivateFilters.m_HeaderFiles.Reset(new CFilter());
     m_PrivateFilters.m_HeaderFiles->SetAttlist().SetName("Header Files");
-    m_PrivateFilters.m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_PrivateFilters.m_HeaderFiles->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
 
     m_PrivateFilters.m_HeaderFilesPrivate.Reset(new CFilter());
     m_PrivateFilters.m_HeaderFilesPrivate->SetAttlist().SetName("Private");
-    m_PrivateFilters.m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_PrivateFilters.m_HeaderFilesPrivate->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
     
     m_PrivateFilters.m_HeaderFilesImpl.Reset(new CFilter());
     m_PrivateFilters.m_HeaderFilesImpl->SetAttlist().SetName("Impl");
-    m_PrivateFilters.m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
+    m_PrivateFilters.m_HeaderFilesImpl->SetAttlist().SetFilter("h;hpp;hxx;hm;inc");
 
     m_PrivateFilters.m_InlineFiles.Reset(new CFilter());
     m_PrivateFilters.m_InlineFiles->SetAttlist().SetName("Inline Files");
@@ -1333,6 +1339,8 @@ string CreateProjectName(const CProjKey& project_id)
         return project_id.Id() + ".dll";
     case CProjKey::eMsvc:
         return project_id.Id();// + ".vcproj";
+    case CProjKey::eDataSpec:
+        return project_id.Id() + ".dataspec";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";

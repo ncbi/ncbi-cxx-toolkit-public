@@ -197,6 +197,9 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
     case CProjKey::eMsvc:
         name += "msvcproj.";
         break;
+    case CProjKey::eDataSpec:
+        name += "dataspec.";
+        break;
     default:
         NCBI_THROW(CProjBulderAppException, 
                    eProjectType, 

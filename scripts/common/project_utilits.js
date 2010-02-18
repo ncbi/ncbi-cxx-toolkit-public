@@ -253,6 +253,7 @@ function FillTreeStructure(oShell, oTree)
         "lock_ptb_config.bat",
         "asn_prebuild.bat",
         "ptb.bat",
+        "datatool.bat",
         "msvcvars.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,

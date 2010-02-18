@@ -227,10 +227,26 @@ string CProjItem::GetPath(void) const
     case CProjKey::eMsvc:
         path += ".msvc";
         break;
+    case CProjKey::eDataSpec:
+        path += ".dataspec";
+        break;
     default:
         break;
     }
     return path;
+}
+
+bool CProjItem::HasDataspecDependency(void) const
+{
+    if ( !m_DatatoolSources.empty() ) {
+        return true;
+    }
+    ITERATE( list<CProjKey>, d, m_Depends) {
+        if (d->Type() == CProjKey::eDataSpec) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

@@ -407,23 +407,25 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     inserter->Finalize();
 
     {{
-        //Resource Files - header files - empty
-        CRef<CFilter> filter(new CFilter());
-        filter->SetAttlist().SetName("Resource Files");
-        filter->SetAttlist().SetFilter
-            ("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
+        if (!collector.ResourceFiles().empty()) {
+            //Resource Files - header files - empty
+            CRef<CFilter> filter(new CFilter());
+            filter->SetAttlist().SetName("Resource Files");
+            filter->SetAttlist().SetFilter
+                ("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
 
-        ITERATE(list<string>, p, collector.ResourceFiles()) {
-            //Include collected header files
-            CRef<CFFile> file(new CFFile());
-            file->SetAttlist().SetRelativePath(*p);
+            ITERATE(list<string>, p, collector.ResourceFiles()) {
+                //Include collected header files
+                CRef<CFFile> file(new CFFile());
+                file->SetAttlist().SetRelativePath(*p);
 
-            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
-            ce->SetFile(*file);
-            filter->SetFF().SetFF().push_back(ce);
+                CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+                ce->SetFile(*file);
+                filter->SetFF().SetFF().push_back(ce);
+            }
+
+            xmlprj.SetFiles().SetFilter().push_back(filter);
         }
-
-        xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
     {{
         //Custom Build files
@@ -499,70 +501,131 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     build_info->m_SourceFile = 
         CDirEntry::ConcatPath(src.m_SourceBaseDir, src.m_SourceFile);
 
-    //CommandLine
-    //exe location - path is supposed to be relative encoded
-    string tool_exe_location("\"");
-    if (prj.m_ProjType == CProjKey::eApp)
-        tool_exe_location += GetApp().GetDatatoolPathForApp();
-    else if (prj.m_ProjType == CProjKey::eLib)
-        tool_exe_location += GetApp().GetDatatoolPathForLib();
-    else if (prj.m_ProjType == CProjKey::eDll)
-        tool_exe_location += GetApp().GetDatatoolPathForApp();
-    else
-        return;
-    tool_exe_location += "\"";
-    //command line
-    string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
-    tool_cmd_prfx += " -or ";
-    tool_cmd_prfx += 
-        CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src,
-                                      src.m_SourceBaseDir);
-    tool_cmd_prfx += " -oR ";
-    tool_cmd_prfx += CDirEntry::CreateRelativePath(context.ProjectDir(),
-                                         GetApp().GetProjectTreeInfo().m_Root);
+    CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
+    if (eVer > CMsvc7RegSettings::eMsvc710 &&
+        eVer < CMsvc7RegSettings::eXCode30) {
+        //CommandLine
+        string build_root = CDirEntry::ConcatPath(
+                GetApp().GetProjectTreeInfo().m_Compilers,
+                GetApp().GetRegSettings().m_CompilersSubdir);
 
-    string tool_cmd(tool_cmd_prfx);
-    if ( !src.m_ImportModules.empty() ) {
-        tool_cmd += " -M \"";
-        tool_cmd += NStr::Join(src.m_ImportModules, " ");
-        tool_cmd += '"';
-    }
-    if (!GetApp().m_BuildRoot.empty()) {
-        string src_dir = CDirEntry::ConcatPath(context.GetSrcRoot(), 
-            GetApp().GetConfig().Get("ProjectTree", "src"));
-        if (CDirEntry(src_dir).Exists()) {
-            tool_cmd += " -opm \"";
-            tool_cmd += src_dir;
+        string output_dir = CDirEntry::ConcatPath(
+                build_root,
+                GetApp().GetBuildType().GetTypeStr());
+    //    output_dir = CDirEntry::ConcatPath(output_dir, "bin\\$(ConfigurationName)");
+        output_dir = CDirEntry::ConcatPath(output_dir, "..\\static\\bin\\ReleaseDLL");
+
+        string dt_path = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
+            CDirEntry::CreateRelativePath(context.ProjectDir(), output_dir));
+
+        string tree_root = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
+            CDirEntry::CreateRelativePath(context.ProjectDir(),
+                GetApp().GetProjectTreeInfo().m_Root));
+
+        build_root = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
+                CDirEntry::CreateRelativePath(context.ProjectDir(), build_root));
+
+        //command line
+        string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
+        tool_cmd_prfx += " -or ";
+        tool_cmd_prfx += 
+            CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src,
+                                          src.m_SourceBaseDir);
+        tool_cmd_prfx += " -oR ";
+        tool_cmd_prfx += CDirEntry::CreateRelativePath(context.ProjectDir(),
+                                             GetApp().GetProjectTreeInfo().m_Root);
+
+        string tool_cmd(tool_cmd_prfx);
+        if ( !src.m_ImportModules.empty() ) {
+            tool_cmd += " -M \"";
+            tool_cmd += NStr::Join(src.m_ImportModules, " ");
             tool_cmd += '"';
         }
-    }
-    build_info->m_CommandLine = 
-        "@echo on\n" + tool_exe_location + " " + tool_cmd + "\n@echo off";
+        if (!GetApp().m_BuildRoot.empty()) {
+            string src_dir = CDirEntry::ConcatPath(context.GetSrcRoot(), 
+                GetApp().GetConfig().Get("ProjectTree", "src"));
+            if (CDirEntry(src_dir).Exists()) {
+                tool_cmd += " -opm \"";
+                tool_cmd += src_dir;
+                tool_cmd += '"';
+            }
+        }
 
-    //Description
-    build_info->m_Description = 
-        "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
+        build_info->m_CommandLine  =  "set DATATOOL_PATH=" + dt_path + "\n";
+        build_info->m_CommandLine +=  "set TREE_ROOT=" + tree_root + "\n";
+        build_info->m_CommandLine +=  "set PTB_PLATFORM=$(PlatformName)\n";
+        build_info->m_CommandLine +=  "set BUILD_TREE_ROOT=" + build_root + "\n";
+        build_info->m_CommandLine +=  "call \"%BUILD_TREE_ROOT%\\datatool.bat\" " + tool_cmd + "\n";
+        build_info->m_CommandLine +=  "if errorlevel 1 exit 1";
+        string tool_exe_location("\"");
+        tool_exe_location += dt_path + "datatool.exe" + "\"";
 
-    //Outputs
-#if 0
-    // if I do this then ASN src will always be regenerated
-    string combined;
-    list<string> cmd_args;
-    NStr::Split(tool_cmd_prfx, LIST_SEPARATOR, cmd_args);
-    list<string>::const_iterator i = find(cmd_args.begin(), cmd_args.end(), "-oc");
-    if (i != cmd_args.end()) {
-        ++i;
-        combined = "$(InputDir)" + *i + "__.cpp;" + "$(InputDir)" + *i + "___.cpp;";
-    }
-#endif
-    if (GetApp().GetIncompleteBuildTree()) {
-        build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
+        //Description
+        build_info->m_Description = 
+            "Using datatool to create a C++ object from ASN/DTD/Schema $(InputPath)";
+
+        //Outputs
+        if (GetApp().GetIncompleteBuildTree()) {
+            build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
+        } else {
+            build_info->m_Outputs = "$(InputDir)$(InputName).files;";
+        }
+
+        //Additional Dependencies
+        build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
     } else {
-        build_info->m_Outputs = "$(InputDir)$(InputName).files;";
-    }
+        //exe location - path is supposed to be relative encoded
+        string tool_exe_location("\"");
+        if (prj.m_ProjType == CProjKey::eApp)
+            tool_exe_location += GetApp().GetDatatoolPathForApp();
+        else if (prj.m_ProjType == CProjKey::eLib)
+            tool_exe_location += GetApp().GetDatatoolPathForLib();
+        else if (prj.m_ProjType == CProjKey::eDll)
+            tool_exe_location += GetApp().GetDatatoolPathForApp();
+        else
+            return;
+        tool_exe_location += "\"";
+        //command line
+        string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
+        tool_cmd_prfx += " -or ";
+        tool_cmd_prfx += 
+            CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src,
+                                          src.m_SourceBaseDir);
+        tool_cmd_prfx += " -oR ";
+        tool_cmd_prfx += CDirEntry::CreateRelativePath(context.ProjectDir(),
+                                             GetApp().GetProjectTreeInfo().m_Root);
 
-    //Additional Dependencies
-    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;
+        string tool_cmd(tool_cmd_prfx);
+        if ( !src.m_ImportModules.empty() ) {
+            tool_cmd += " -M \"";
+            tool_cmd += NStr::Join(src.m_ImportModules, " ");
+            tool_cmd += '"';
+        }
+        if (!GetApp().m_BuildRoot.empty()) {
+            string src_dir = CDirEntry::ConcatPath(context.GetSrcRoot(), 
+                GetApp().GetConfig().Get("ProjectTree", "src"));
+            if (CDirEntry(src_dir).Exists()) {
+                tool_cmd += " -opm \"";
+                tool_cmd += src_dir;
+                tool_cmd += '"';
+            }
+        }
+        build_info->m_CommandLine = 
+            "@echo on\n" + tool_exe_location + " " + tool_cmd + "\n@echo off";
+        //Description
+        build_info->m_Description = 
+            "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
+
+        //Outputs
+        if (GetApp().GetIncompleteBuildTree()) {
+            build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
+        } else {
+            build_info->m_Outputs = "$(InputDir)$(InputName).files;";
+        }
+
+        //Additional Dependencies
+        build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;
+    }
 }
 
 #endif //NCBI_COMPILER_MSVC

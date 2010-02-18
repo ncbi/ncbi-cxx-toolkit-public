@@ -332,6 +332,31 @@ struct SLib
 };
 
 
+struct SUtility
+{
+    static string ConfigurationType(void)
+    {
+	    return "10";
+    }
+    static string PreprocessorDefinitions(void)
+    {
+	    return "WIN32;_LIB;";
+    }
+    static bool IsDll(void)
+    {
+	    return false;
+    }
+    static string TargetExtension(void)
+    {
+	    return "";
+    }
+    static string SubSystem(void)
+    {
+	    return "1"; //console
+    }
+};
+
+
 struct SDll
 {
     static string ConfigurationType(void)

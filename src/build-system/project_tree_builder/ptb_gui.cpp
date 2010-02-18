@@ -226,7 +226,8 @@ bool CProjBulderApp::Gui_ConfirmProjects(CProjectItemsTree& projects_tree)
             continue;
         }
 */
-        if (p->first.Type() == CProjKey::eDll) {
+        if (p->first.Type() == CProjKey::eDll ||
+            p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
         prjid = CreateProjectName(p->first);

@@ -734,10 +734,12 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     case CProjKey::eDll:
         m_Type = eDll;
         break;
+    case CProjKey::eDataSpec:
+        m_Type = eDataSpec;
+        break;
     default:
-        //TODO - handle Dll(s)
-   	    NCBI_THROW(CProjBulderAppException, eProjectType, 
-                        NStr::IntToString(prj_context.ProjectType()));
+        m_Type = eOther;
+        break;
     }
     
 
@@ -757,9 +759,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     else if (m_Type == eDll) // same dir as exe 
         output_dir_abs = CDirEntry::ConcatPath(output_dir_abs, "bin"); 
     else {
-        //TODO - handle Dll(s)
-   	    NCBI_THROW(CProjBulderAppException, 
-                   eProjectType, NStr::IntToString(m_Type));
+        output_dir_abs = CDirEntry::ConcatPath(output_dir_abs, "lib");
     }
 
     output_dir_abs = 
@@ -852,6 +852,8 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
         m_PreBuildEvent.reset(new CPreBuildEventToolLibImpl
                                                 (project_context.PreBuilds(),
                                                  project_context.GetMakeType()));
+    } else if (project_context.ProjectType() == CProjKey::eDataSpec) {
+        m_PreBuildEvent.reset(new CPreBuildEventToolDummyImpl);
     } else {
         m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.PreBuilds(),
                                                      project_context.GetMakeType()));
@@ -980,6 +982,12 @@ static bool s_IsLib(const CMsvcPrjGeneralContext& general_context,
     return general_context.m_Type == CMsvcPrjGeneralContext::eLib;
 }
 
+static bool s_IsUtility(const CMsvcPrjGeneralContext& general_context,
+                    const CMsvcPrjProjectContext& project_context)
+{
+    return general_context.m_Type == CMsvcPrjGeneralContext::eDataSpec;
+}
+
 
 static bool s_IsDll(const CMsvcPrjGeneralContext& general_context,
                     const CMsvcPrjProjectContext& project_context)
@@ -1015,6 +1023,11 @@ s_CreateConfiguration(const CMsvcPrjGeneralContext& general_context,
 
     if ( s_IsLib(general_context, project_context) )
 	    return new CConfigurationImpl<SLib>
+                        (general_context.OutputDirectory(), 
+                         general_context.ConfigurationName());
+
+    if ( s_IsUtility(general_context, project_context) )
+	    return new CConfigurationImpl<SUtility>
                         (general_context.OutputDirectory(), 
                          general_context.ConfigurationName());
 
@@ -1060,7 +1073,8 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
 
 
     //---- LIB ----
-    if ( s_IsLib(general_context, project_context) )
+    if ( s_IsLib(general_context, project_context) ||
+         s_IsUtility(general_context, project_context) )
         return new CLinkerToolDummyImpl();
 
     //---- DLL ----

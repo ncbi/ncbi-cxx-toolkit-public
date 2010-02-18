@@ -414,6 +414,9 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             CollectLibToLibDependencies(lib_guid, visited, project, prj_i);
             continue;
         }
+        if (project.m_GUID == prj_i.m_GUID) {
+            continue;
+        }
         proj_guid.push_back(prj_i.m_GUID);
     }
     copy(lib_guid.begin(), lib_guid.end(), back_inserter(proj_guid));

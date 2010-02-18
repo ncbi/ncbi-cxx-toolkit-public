@@ -878,12 +878,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     project.m_NcbiCLibs = ncbi_clibs;
 
     //DATATOOL_SRC
+    list<CDataToolGeneratedSrc> datatool_sources;
     k = makefile.m_Contents.find("DATATOOL_SRC");
     if ( k != makefile.m_Contents.end() ) {
-        //Add depends from datatoool for ASN projects
-        if (!GetApp().GetDatatoolId().empty()) {
-            project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
-        }
         const list<string> datatool_src_list = k->second;
         ITERATE(list<string>, i, datatool_src_list) {
 
@@ -902,7 +899,24 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
             CDataToolGeneratedSrc data_tool_src;
             CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
             if ( !data_tool_src.IsEmpty() )
-                project.m_DatatoolSources.push_back(data_tool_src);
+                datatool_sources.push_back(data_tool_src);
+        }
+    }
+    if ( !datatool_sources.empty() ) {
+        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
+        if (eVer > CMsvc7RegSettings::eMsvc710 &&
+            eVer < CMsvc7RegSettings::eXCode30) {
+            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
+                source_base_dir, proj_name, proj_id, tree, maketype);
+            project.m_Depends.push_back(spec_proj);
+            CProjectItemsTree::TProjects::iterator p = tree->m_Projects.find(spec_proj);
+            CProjItem& spec_project = p->second;
+            spec_project.m_DatatoolSources = datatool_sources;
+        } else {
+            project.m_DatatoolSources = datatool_sources;
+            if (!GetApp().GetDatatoolId().empty()) {
+                project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
+            }
         }
     }
 
@@ -1252,6 +1266,35 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     return proj_key;
 }
 
+CProjKey SLibProjectT::DoCreateDataSpec(
+            const string& source_base_dir,
+            const string& proj_name,
+            const string& proj_id,
+            CProjectItemsTree* tree,
+            EMakeFileType maketype)
+{
+    string spec_proj_name = proj_name + "#";
+    string spec_proj_id   = proj_id   + "#";
+
+    list<string>   s_empty;
+    list<CProjKey> d_empty;
+    CProjKey::TProjType type = CProjKey::eDataSpec;
+    CProjKey proj_key(type, spec_proj_id);
+    tree->m_Projects[proj_key] = CProjItem(type,
+                                           spec_proj_name, 
+                                           spec_proj_id,
+                                           source_base_dir,
+                                           s_empty, 
+                                           d_empty,
+                                           s_empty,
+                                           s_empty,
+                                           s_empty,
+                                           s_empty,
+                                           maketype,
+        IdentifySlnGUID(source_base_dir, proj_key));
+    return proj_key;
+}
+
 //-----------------------------------------------------------------------------
 CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                                 const string& proj_name,
@@ -1438,12 +1481,6 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     }
     CProjItem& project = p->second;
 
-    //Add depends from datatoool for ASN projects
-    if (!GetApp().GetDatatoolId().empty()) {
-        project.m_Depends.push_back(CProjKey(CProjKey::eApp,
-                                            GetApp().GetDatatoolId()));
-    }
-
     //Will process .asn or .dtd files
     string source_file_path = CDirEntry::ConcatPath(source_base_dir, proj_name);
     switch (makeinfo.m_Type) {
@@ -1473,8 +1510,25 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
 
     CDataToolGeneratedSrc data_tool_src;
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
-    if ( !data_tool_src.IsEmpty() )
-        project.m_DatatoolSources.push_back(data_tool_src);
+    if ( !data_tool_src.IsEmpty() ) {
+
+        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
+        if (eVer > CMsvc7RegSettings::eMsvc710 &&
+            eVer < CMsvc7RegSettings::eXCode30) {
+            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
+                source_base_dir, proj_name, proj_id.Id(), tree, maketype);
+            project.m_Depends.push_back(spec_proj);
+            p = tree->m_Projects.find(spec_proj);
+            CProjItem& spec_project = p->second;
+            spec_project.m_DatatoolSources.push_back(data_tool_src);
+        } else {
+            project.m_DatatoolSources.push_back(data_tool_src);
+            if (!GetApp().GetDatatoolId().empty()) {
+                project.m_Depends.push_back(CProjKey(CProjKey::eApp,
+                                                    GetApp().GetDatatoolId()));
+            }
+        }
+    }
 
     return proj_id;
 }
@@ -1621,12 +1675,23 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         project.m_Sources.push_back(src + "___");
     }
 
-    project.m_DatatoolSources = datatool_sources;
-
-    //Add depends from datatoool for ASN projects
-    if (!GetApp().GetDatatoolId().empty()) {
-        project.m_Depends.push_back(CProjKey(CProjKey::eApp, 
-                                            GetApp().GetDatatoolId()));
+    if ( !datatool_sources.empty() ) {
+        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
+        if (eVer > CMsvc7RegSettings::eMsvc710 &&
+            eVer < CMsvc7RegSettings::eXCode30) {
+            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
+                source_base_dir, proj_name, proj_id.Id(), tree, maketype);
+            project.m_Depends.push_back(spec_proj);
+            TProjects::iterator p = tree->m_Projects.find(spec_proj);
+            CProjItem& spec_project = p->second;
+            spec_project.m_DatatoolSources = datatool_sources;
+        } else {
+            project.m_DatatoolSources = datatool_sources;
+            if (!GetApp().GetDatatoolId().empty()) {
+                project.m_Depends.push_back(CProjKey(CProjKey::eApp, 
+                                                    GetApp().GetDatatoolId()));
+            }
+        }
     }
 
     return proj_id;
@@ -1759,7 +1824,6 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(vcproj_file, proj_key));
-//                                           project_makefile.GetGUID());
 
     k = m->second.m_Contents.find("PROJ_TAG");
     if ( k != m->second.m_Contents.end() ) {
