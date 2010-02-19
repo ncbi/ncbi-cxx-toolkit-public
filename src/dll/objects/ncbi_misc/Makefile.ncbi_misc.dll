@@ -20,7 +20,7 @@ HOSTED_LIBS    = access     \
                  remapcli   \
                  tinyseq
 
-DEPENDENCIES   = ncbi_core
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub
 
 CPPFLAGS = -DNCBI_MISC_EXPORTS
 
