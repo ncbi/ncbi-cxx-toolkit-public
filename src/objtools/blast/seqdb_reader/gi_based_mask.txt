@@ -25,11 +25,11 @@ masks scheme.
 
 ----- GI Lookup File Format -----
 
-Naming:   <any-name>.[np]gx
+Naming:   <any-name>.[np]og
 Encoding: binary
 
 To retrieve the mask info, GI must first be looked up for the sequence.  
-The GI lookup file  (*.[pn]gx) is designed to help with this process.  
+The GI lookup file  (*.[pn]og) is designed to help with this process.  
 If this file is not available, CSeqDB will parse the ASN1 header 
 file for GI (a more expensive procedure).
 

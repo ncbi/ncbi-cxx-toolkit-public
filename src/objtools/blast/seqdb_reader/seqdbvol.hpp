@@ -63,7 +63,7 @@ public:
                   char           prot_nucl)
         : m_Atlas    (atlas),
           m_Lease    (atlas),
-          m_Fname    (dbname + '.' + prot_nucl + "xg"),
+          m_Fname    (dbname + '.' + prot_nucl + "og"),
           m_NumOIDs  (0) { }
 
     ~CSeqDBGiIndex()
@@ -74,7 +74,7 @@ public:
     static bool IndexExists(const string & name,
                             const char     prot_nucl)
     {
-        string fn(name + '.' + prot_nucl + "xg");
+        string fn(name + '.' + prot_nucl + "og");
         return CFile(fn).Exists();
     }
  

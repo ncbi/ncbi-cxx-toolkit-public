@@ -58,7 +58,7 @@ public:
                      bool           protein,
                      int            index,
                      Uint8          max_fsize)
-    : CWriteDB_File  (dbname, (protein ? "pxg" : "nxg"), index, max_fsize, false){ }
+    : CWriteDB_File  (dbname, (protein ? "pog" : "nog"), index, max_fsize, false){ }
 
     ~CWriteDB_GiIndex() { };
     
