@@ -67,6 +67,8 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
 {
 	if(!CanGetHitsets() ) return;
 
+        os.precision(15);
+
 	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass, P-value, NIST score" << endl;
     // read out hits
     
