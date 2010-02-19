@@ -23,13 +23,13 @@ CHECK_COPY = dbapi_unit_test.ini
 
 CHECK_TIMEOUT = 600
 
-CHECK_CMD = dbapi_unit_test -d dblib      -S MsSql
-CHECK_CMD = dbapi_unit_test -d ftds       -S MsSql
-CHECK_CMD = dbapi_unit_test -d odbc       -S MsSql
-CHECK_CMD = dbapi_unit_test -d ctlib      -S Sybase
-CHECK_CMD = dbapi_unit_test -d dblib      -S Sybase
-CHECK_CMD = dbapi_unit_test -d ftds       -S Sybase
+CHECK_CMD = dbapi_unit_test -dr dblib      -S MsSql
+CHECK_CMD = dbapi_unit_test -dr ftds       -S MsSql
+CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
+CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
+CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
+CHECK_CMD = dbapi_unit_test -dr ftds       -S Sybase
 
-CHECK_CMD = dbapi_unit_test -d ftds -S MsSql --run_test=Test_Authentication
+CHECK_CMD = dbapi_unit_test -dr ftds -S MsSql --run_test=Test_Authentication
 
 WATCHERS = ivanovp

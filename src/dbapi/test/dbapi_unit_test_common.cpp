@@ -478,9 +478,9 @@ CTestArguments::CTestArguments(void)
     m_ParamBase.SetPassword(args["P"].AsString());
     m_ParamBase2.SetPassword(args["P"].AsString());
 
-    if (args["d"].HasValue()) {
-        m_ParamBase.SetDriverName(args["d"].AsString());
-        m_ParamBase2.SetDriverName(args["d"].AsString());
+    if (args["dr"].HasValue()) {
+        m_ParamBase.SetDriverName(args["dr"].AsString());
+        m_ParamBase2.SetDriverName(args["dr"].AsString());
     }
 
     if (args["D"].HasValue()) {
@@ -492,13 +492,6 @@ CTestArguments::CTestArguments(void)
         m_ParamBase.SetProtocolVersion(args["v"].AsInteger());
         m_ParamBase2.SetProtocolVersion(args["v"].AsInteger());
     }
-    if ( args["H"].HasValue() ) {
-        m_GatewayHost = args["H"].AsString();
-    } else {
-        m_GatewayHost.clear();
-    }
-
-    m_GatewayPort  = args["p"].AsString();
 
     if (args["conf"].AsString() == "with-exceptions") {
         m_TestConfiguration = CTestArguments::eWithExceptions;

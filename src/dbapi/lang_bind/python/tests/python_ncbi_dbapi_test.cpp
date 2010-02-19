@@ -1244,7 +1244,7 @@ CTestArguments::CTestArguments(void)
 
     const CArgs& args = app->GetArgs();
     // Get command-line arguments ...
-    m_DriverName    = args["d"].AsString();
+    m_DriverName    = args["dr"].AsString();
     m_ServerName    = args["S"].AsString();
     m_UserName      = args["U"].AsString();
     m_UserPassword  = args["P"].AsString();

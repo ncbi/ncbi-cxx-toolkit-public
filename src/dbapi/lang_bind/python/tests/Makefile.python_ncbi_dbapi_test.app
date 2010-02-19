@@ -14,11 +14,11 @@ CHECK_REQUIRES = DLL
 CHECK_COPY = python_ncbi_dbapi_test.ini
 CHECK_TIMEOUT = 300
 
-CHECK_CMD = python_ncbi_dbapi_test -d ctlib -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -d dblib -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S MsSql
-CHECK_CMD = python_ncbi_dbapi_test -d odbc  -S MsSql
+CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -dr dblib -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds  -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds  -S MsSql
+CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S MsSql
 
 
 WATCHERS = ivanovp
