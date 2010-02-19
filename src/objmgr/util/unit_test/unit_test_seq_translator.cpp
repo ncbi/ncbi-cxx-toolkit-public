@@ -178,7 +178,9 @@ BOOST_AUTO_TEST_CASE(Test_Translator_Raw)
 
             /// use CSeqTranslator::Translate()
             tmp.clear();
-            CSeqTranslator::Translate(nucleotide_sequence, tmp, CSeqTranslator::fNoStop | CSeqTranslator::fRemoveTrailingX);
+            CSeqTranslator::Translate(nucleotide_sequence, tmp,
+                                      CSeqTranslator::fNoStop |
+                                      CSeqTranslator::fRemoveTrailingX);
 
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
 
@@ -228,7 +230,9 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeqVector)
 
             /// use CSeqTranslator::Translate()
             tmp.clear();
-            CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fNoStop | CSeqTranslator::fRemoveTrailingX);
+            CSeqTranslator::Translate(vec, tmp,
+                                      CSeqTranslator::fNoStop |
+                                      CSeqTranslator::fRemoveTrailingX);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
 
             /// use CSeqTranslator::Translate()
@@ -519,19 +523,23 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_internal_stop)
             string tmp;
 
             /// use CSeqTranslator::Translate()
-            tmp.clear();
-            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
-                                      scope, tmp,
-                                      false, true);
-            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
-
-            /// use CSeqTranslator::Translate()
             real_prot_seq += '*';
             tmp.clear();
             CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
                                       scope, tmp,
-                                      true, true);
+                                      true /*include stops*/,
+                                      true /*remove trailing X*/);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+
+            /// use CSeqTranslator::Translate()
+            tmp.clear();
+            real_prot_seq.erase(real_prot_seq.find_first_of("*"));
+            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
+                                      scope, tmp,
+                                      false /*include stops*/,
+                                      true /*remove trailing X*/);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+
         }
     }
 }
@@ -570,10 +578,21 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial)
             string tmp;
 
             /// use CSeqTranslator::Translate()
+            real_prot_seq += '*';
             tmp.clear();
             CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
                                       scope, tmp,
-                                      false, true);
+                                      true /*include stops*/,
+                                      true /*remove trailing X*/);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+
+            /// use CSeqTranslator::Translate()
+            real_prot_seq.erase(real_prot_seq.find_first_of("*"));
+            tmp.clear();
+            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
+                                      scope, tmp,
+                                      false /*include stops*/,
+                                      true /*remove trailing X*/);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
             for (size_t i = 0;  i < real_prot_seq.size()  &&  i < tmp.size();  ++i) {
                 if (real_prot_seq[i] != tmp[i]) {
@@ -582,14 +601,6 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial)
                              << tmp[i]);
                 }
             }
-
-            /// use CSeqTranslator::Translate()
-            real_prot_seq += '*';
-            tmp.clear();
-            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
-                                      scope, tmp,
-                                      true, true);
-            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
         }
     }
 }
@@ -632,7 +643,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_3prime_partial)
             tmp.clear();
             CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
                                       scope, tmp,
-                                      false, true);
+                                      true, true);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
         }
     }
@@ -902,51 +913,57 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     entry.SetSeq().SetAnnot().push_back(annot);
 
     string tmp;
-    string complete_trans = "MP*K*E*N";
-    string partial_trans = "LP*K*E*N";
+    string complete_trans = "MP*K*E*N*";
+    string partial_trans = "LP*K*E*N*";
 
     // translate with vector
     tmp.clear();
     CSeqVector vec(feat->GetLocation(), scope);
+
+    //
     // default value for 5' complete is true
     CSeqTranslator::Translate(vec, tmp,
-                              NULL, false, true);
-    BOOST_CHECK_EQUAL(complete_trans, tmp);
-    // try it with flag version
-    tmp.clear();
-    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fNoStop);
+                              NULL, true, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp, 0);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
+    //
     // set 5' complete false
     tmp.clear();
     CSeqTranslator::Translate(vec, tmp,
-                              NULL, false, true, 0, false);
+                              NULL, true, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+
 
     // translate with string
     string seq_str;
     vec.GetSeqData(0, entry.GetSeq().GetLength(), seq_str);
     // default value for 5' complete is true
     CSeqTranslator::Translate(seq_str, tmp,
-                              NULL, false, true);
+                              NULL, true, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fNoStop);
+    CSeqTranslator::Translate(seq_str, tmp, 0);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp,
-                              NULL, false, true, 0, false);
+                              NULL, true, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 
@@ -958,7 +975,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     tmp.clear();
     CSeqTranslator::Translate(*feat,
                               scope, tmp,
-                              false, true);
+                              true, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // if partial, should translate first codon
@@ -966,7 +983,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     tmp.clear();
     CSeqTranslator::Translate(*feat,
                               scope, tmp,
-                              false, true);
+                              true, true);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 }

@@ -799,14 +799,17 @@ public:
     /// @param code
     ///   Genetic code to use for translation (NULL to use default)
     /// @param include_stop
-    ///   If true, include stop at end of protein translation (true by default)
+    ///   If true, translate through stop codons and include trailing stop
+    ///   (true by default)
     /// @param remove_trailing_X
-    ///   If true, remove trailing Xs from protein translation (false by default)
+    ///   If true, remove trailing Xs from protein translation (false by
+    ///   default)
     /// @param alt_start
-    ///   Pointer to bool to indicate whether an alternative start codon was used
+    ///   Pointer to bool to indicate whether an alternative start codon was
+    ///   used
     /// @param is_5prime_complete
-    ///   If true, only translate first codon if start codon, otherwise translate
-    ///   as dash (-) to indicate problem with sequence
+    ///   If true, only translate first codon if start codon, otherwise
+    ///   translate as dash (-) to indicate problem with sequence
 
     NCBI_DEPRECATED static void Translate(const string& seq,
                           string& prot,
@@ -824,7 +827,8 @@ public:
     /// @param flags
     ///   Binary OR of "ETranslationFlags"
     /// @param alt_start
-    ///   Pointer to bool to indicate whether an alternative start codon was used
+    ///   Pointer to bool to indicate whether an alternative start codon was
+    ///   used
     static void Translate(const string& seq,
                           string& prot,
                           TTranslationFlags flags = fDefault,
@@ -838,14 +842,17 @@ public:
     /// @param code
     ///   Genetic code to use for translation (NULL to use default)
     /// @param include_stop
-    ///   If true, include stop at end of protein translation (true by default)
+    ///   If true, translate through stop codons and include trailing stop
+    ///   (true by default)
     /// @param remove_trailing_X
-    ///   If true, remove trailing Xs from protein translation (false by default)
+    ///   If true, remove trailing Xs from protein translation (false by
+    ///   default)
     /// @param alt_start
-    ///   Pointer to bool to indicate whether an alternative start codon was used
+    ///   Pointer to bool to indicate whether an alternative start codon was
+    ///   used
     /// @param is_5prime_complete
-    ///   If true, only translate first codon if start codon, otherwise translate
-    ///   as dash (-) to indicate problem with sequence
+    ///   If true, only translate first codon if start codon, otherwise
+    ///   translate as dash (-) to indicate problem with sequence
     NCBI_DEPRECATED static void Translate(const CSeqVector& seq,
                           string& prot,
                           const CGenetic_code* code,
@@ -863,7 +870,8 @@ public:
     /// @param flags
     ///   Binary OR of "ETranslationFlags"
     /// @param alt_start
-    ///   Pointer to bool to indicate whether an alternative start codon was used
+    ///   Pointer to bool to indicate whether an alternative start codon was
+    ///   used
     static void Translate(const CSeqVector& seq,
                           string& prot,
                           TTranslationFlags flags = fDefault,

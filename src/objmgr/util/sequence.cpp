@@ -2722,10 +2722,10 @@ void x_Translate(const Container& seq,
     }
 
     if ( !include_stop ) {
-        SIZE_TYPE sz;
-        for (sz = prot.size();  sz > 0  &&  prot[sz - 1] == '*';  --sz) {
+        SIZE_TYPE sz = prot.find_first_of("*");
+        if (sz != string::npos) {
+            prot.resize(sz);
         }
-        prot.resize(sz);
     }
 
     if (remove_trailing_X) {
