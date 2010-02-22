@@ -87,8 +87,6 @@ void CCIGAR_Formatter::AddSegment(CNcbiOstream& cigar,
 void CCIGAR_Formatter::x_FormatAlignmentRows(const CSeq_align& sa,
                                              bool              width_inverted)
 {
-    const CFlatFileConfig& config = m_Alignment.GetContext()->Config();
-
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         x_FormatDensegRows(sa.GetSegs().GetDenseg(), width_inverted);
@@ -184,9 +182,6 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
 
     typedef CAlnMap::TNumchunk    TNumchunk;
 
-    const CAlignmentItem& aln = GetAlignmentItem();
-
-    CBioseqContext& ctx = GetContext();
     m_AlnMap.Reset(new CAlnMap(*ds_for_alnmix));
     m_RefRow = -1;
     CScope& scope = GetScope();

@@ -154,7 +154,6 @@ void CGFF3_CIGAR_Formatter::EndSubAlignment(void)
 
 void CGFF3_CIGAR_Formatter::StartRow(void)
 {
-    CScope& scope = GetScope();
     const CFlatFileConfig& config = GetConfig();
 
     // We can't use x_FormatAttr because we seem to need a mix
