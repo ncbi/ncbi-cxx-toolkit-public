@@ -81,6 +81,9 @@ case "$ncbi_platform" in
     SunOSSparc ) : ${MYSQL_PATH=/netopt/mysql/3-23.40} ;;
 esac
 
+# C Toolkit (path overridden in stable components to avoid version skew)
+: ${NCBI_C_PATH=$NCBI}
+
 case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
     * ) : ${OPENGL_PATH=$NCBI/Mesa-7.0.2-ncbi2} ;;
