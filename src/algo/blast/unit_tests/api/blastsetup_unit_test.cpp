@@ -346,13 +346,19 @@ BOOST_AUTO_TEST_CASE(FindMatrixPathNoNcbiRcFile) {
 }
 
 BOOST_AUTO_TEST_CASE(FindMatrixPathTestBLASTMAT) {
-    CAutoEnvironmentVariable a("BLASTMAT", "data");
-    CAutoEnvironmentVariable b("NCBI", "/dev/null");
-    CMetaRegistry::TSearchPath sp = CMetaRegistry::GetSearchPath();
-    CMetaRegistry::SetSearchPath().clear();
+    {{
+        CAutoEnvironmentVariable a("BLASTMAT", "data");
+        CMetaRegistry::TSearchPath sp = CMetaRegistry::GetSearchPath();
+        CMetaRegistry::SetSearchPath().clear();
+        TAutoCharPtr input = strdup("blosum62");
+        char* matrix_path = BlastFindMatrixPath(input.get(), true);
+        BOOST_REQUIRE(matrix_path == NULL);
+        CMetaRegistry::SetSearchPath() = sp;
+    }}
+
     TAutoCharPtr input = strdup("blosum62");
     char* matrix_path = BlastFindMatrixPath(input.get(), true);
-    BOOST_REQUIRE(matrix_path == NULL);
+    BOOST_REQUIRE(matrix_path != NULL);
 }
 
 BOOST_AUTO_TEST_CASE(FindMatrixPathFailure) {
