@@ -134,7 +134,9 @@ static bool s_IsProducedByDatatool(const string&    src_path_abs,
                 CProjectItemsTree::TProjects::const_iterator n = 
                                GetApp().GetWholeTree().m_Projects.find(*d);
                 if (n != GetApp().GetWholeTree().m_Projects.end()) {
-                    return s_IsProducedByDatatool(src_path_abs, n->second);
+                    if (s_IsProducedByDatatool(src_path_abs, n->second)) {
+                        return true;
+                    }
                 }
             }
         }
