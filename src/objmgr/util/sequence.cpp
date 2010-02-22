@@ -2177,6 +2177,12 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
 
 END_SCOPE(sequence)
 
+CFastaOstream::CFastaOstream(CNcbiOstream& out)
+    : m_Out(out),
+      m_Width(70),
+      m_Flags(fInstantiateGaps | fAssembleParts)
+{
+}
 
 CFastaOstream::~CFastaOstream()
 {
@@ -2408,12 +2414,18 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
                 prev_state = ms_it->second;
                 ms_it->second |= eHardMask;
             } else {
+                // NB: lower_bound's name is misleading, as it actually
+                // returns the least element whose key >= from.
                 _ASSERT(ms_it != masking_state.begin());
                 TMSMap::iterator prev_it = ms_it;
                 --prev_it;
                 prev_state = prev_it->second;
                 TMSMap::value_type value(from, prev_state | eHardMask);
-                masking_state.insert(ms_it, value);
+
+                // Add the new element (using ms_it as a position hint),
+                // and repoint ms_it at it so that the below loop will
+                // start at the correct position.
+                ms_it = masking_state.insert(ms_it, value);
             }
             while (++ms_it != masking_state.end()  &&  ms_it->first < to) {
                 prev_state = ms_it->second;

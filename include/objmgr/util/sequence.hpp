@@ -670,7 +670,7 @@ public:
     };
     typedef int TFlags; ///< binary OR of EFlags
 
-    CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
+    CFastaOstream(CNcbiOstream& out);
     virtual ~CFastaOstream();
 
     /// Unspecified locations designate complete sequences
