@@ -2614,7 +2614,7 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
 {
    hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
 
-   ASSERT(s_BlastCheckBestEvalue(hsp_list) == TRUE);
+   ASSERT(s_BlastCheckBestEvalue(hsp_list) == TRUE); /* NCBI_FAKE_WARNING */
  
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
       /* If the array of HSP lists for this query is not yet allocated, 
