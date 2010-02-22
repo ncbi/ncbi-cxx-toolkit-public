@@ -48,7 +48,7 @@ EnableFunctionLevelLinking=TRUE
 
 [Compiler.800]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=TRUE
+Detect64BitPortabilityProblems=FALSE
 [Compiler.900]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 Detect64BitPortabilityProblems=FALSE
