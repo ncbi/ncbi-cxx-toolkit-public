@@ -66,6 +66,8 @@ class CSeq_align_Mapper_Base;
 class CSeq_graph;
 
 
+/// CMappingRange - describles a single interval to interval
+/// mapping.
 class NCBI_SEQ_EXPORT CMappingRange : public CObject
 {
 public:
@@ -78,6 +80,7 @@ public:
                   ENa_strand        dst_strand,
                   bool              ext_to = false);
 
+    /// Check if the id is on the source sequence.
     bool GoodSrcId(const CSeq_id& id) const;
     CRef<CSeq_id> GetDstId(void) const;
     const CSeq_id_Handle& GetDstIdHandle(void) const
@@ -87,20 +90,29 @@ public:
     typedef CRef<CInt_fuzz>    TFuzz;
     typedef pair<TFuzz, TFuzz> TRangeFuzz;
 
+    /// Check if the interval can be mapped through this mapping range.
     bool CanMap(TSeqPos    from,
                 TSeqPos    to,
                 bool       is_set_strand,
                 ENa_strand strand) const;
+    /// Map a single point
     TSeqPos Map_Pos(TSeqPos pos) const;
+    /// Map an interval, set fuzz when the mapping truncates the original
+    /// range.
     TRange Map_Range(TSeqPos           from,
                      TSeqPos           to,
                      const TRangeFuzz* fuzz = 0) const;
+    /// Map the strand, return true if the destination strand sould be
+    /// set (even if it's eNa_strand_unknown -- this may happen if the
+    /// source strand is set to unknown).
     bool Map_Strand(bool is_set_strand,
                     ENa_strand src,
                     ENa_strand* dst) const;
+    /// Map fuzz if one is set in the original location.
     TRangeFuzz Map_Fuzz(const TRangeFuzz& fuzz) const;
 
 private:
+    // Get new fuzz value when reversing location's strand.
     CInt_fuzz::ELim x_ReverseFuzzLim(CInt_fuzz::ELim lim) const;
 
     CSeq_id_Handle      m_Src_id_Handle;
@@ -110,8 +122,19 @@ private:
     CSeq_id_Handle      m_Dst_id_Handle;
     TSeqPos             m_Dst_from;
     ENa_strand          m_Dst_strand;
+    // Wether the mapping reverses the strand or not.
     bool                m_Reverse;
+    // Wether to extend the mapped location to the end of
+    // destination range. Used when mapping from a prot to a nuc.
+    // ExtTo is set when both conditions are met:
+    // - the mapping is from a protein to a nucleotide
+    // - the destination interval has partial 'to' (set as fuzz)
+    // ExtTo is used only when the interval to be mapped has
+    // partial 'to' set through the fuzz and the mapped range is
+    // just 1 or 2 bases shorter than the mapping destination.
     bool                m_ExtTo;
+    // Group of mapping ranges - used with alignments, e.g. to group
+    // mapped ranges by exon.
     int                 m_Group;
 
     friend class CSeq_loc_Mapper_Base;
@@ -132,6 +155,8 @@ public:
 };
 
 
+/// Storage for multiple mapping ranges. Stores mappings grouped
+/// by the source seq-id, then sorted by start coordinate.
 class NCBI_SEQ_EXPORT CMappingRanges : public CObject
 {
 public:
@@ -148,6 +173,7 @@ public:
     const TIdMap& GetIdMap() const { return m_IdMap; }
     TIdMap& GetIdMap(void) { return m_IdMap; }
 
+    /// Add new mapping range to the proper place.
     void AddConversion(CRef<CMappingRange> cvt);
     CRef<CMappingRange> AddConversion(CSeq_id_Handle    src_id,
                                       TSeqPos           src_from,
@@ -158,16 +184,15 @@ public:
                                       ENa_strand        dst_strand,
                                       bool              ext_to = false);
 
+    /// Get mapping ranges iterator for the given seq-id and range.
     TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
                                       TSeqPos        from,
                                       TSeqPos        to) const;
 
-    // Set overall source orientation. The order of ranges is reversed
-    // if reverse_src != reverse_dst.
+    // Overall source and destination orientation. The order of mapped ranges
+    // is reversed if ReverseSrc != ReverseDst (except in some merging modes).
     void SetReverseSrc(bool value = true) { m_ReverseSrc = value; };
     bool GetReverseSrc(void) const { return m_ReverseSrc; }
-    // Set overall destination orientation. The order of ranges is reversed
-    // if reverse_src != reverse_dst.
     void SetReverseDst(bool value = true) { m_ReverseDst = value; };
     bool GetReverseDst(void) const { return m_ReverseDst; }
 
@@ -180,7 +205,9 @@ private:
 };
 
 
-/// Helper class for mapping graphs
+/// Helper class for mapping graphs. Used to collect ranges
+/// relative to the graph location and adjust mapped graph data
+/// accordingly.
 class NCBI_SEQ_EXPORT CGraphRanges : public CObject
 {
 public:
@@ -189,11 +216,19 @@ public:
     typedef CRange<TSeqPos> TRange;
     typedef vector<TRange>  TGraphRanges;
 
+    // Offset is relative to the original graph location, indicates
+    // the part of the original location which has been already
+    // mapped (or truncated).
     TSeqPos GetOffset(void) const { return m_Offset; }
     void SetOffset(TSeqPos offset) { m_Offset = offset; }
     void IncOffset(TSeqPos inc) { m_Offset += inc; }
 
     const TGraphRanges& GetRanges(void) const { return m_Ranges; }
+
+    // Add new mapped range. The range is relative to the not yet mapped
+    // part of the original location. See:
+    //   CSeq_loc_Mapper_Base::x_MapNextRange()
+    //   CSeq_loc_Mapper_Base::x_MapInterval()
     void AddRange(const TRange& rg)
     {
         if ( rg.Empty() ) {
@@ -208,7 +243,7 @@ public:
     const TRange& GetTotalRange(void) const { return m_TotalRange; }
 
 private:
-    TSeqPos      m_Offset; // Offset new ranges
+    TSeqPos      m_Offset;
     TGraphRanges m_Ranges;
     TRange       m_TotalRange;
 };
@@ -225,16 +260,19 @@ private:
 class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Base : public CObject
 {
 public:
+    /// Mapping direction used when initializing the mapper with a feature.
     enum EFeatMapDirection {
-        eLocationToProduct,
-        eProductToLocation
+        eLocationToProduct, ///< Map from the feature's location to product
+        eProductToLocation  ///< Map from the feature's product to location
     };
 
-    /// options for interpretations of locations
+    /// Options for interpretations of locations
     enum EMapOptions {
         /// Ignore internal dense-seg structure - map each
         /// dense-seg according to the total ranges involved
         fAlign_Dense_seg_TotalRange = 0x01,
+        /// Flags used to indicate mapping direction when mapping
+        /// through a sparse-seg.
         fAlign_Sparse_ToFirst       = 0x00, ///< Map to first-id
         fAlign_Sparse_ToSecond      = 0x02  ///< Map to second-id
     };
@@ -265,7 +303,8 @@ public:
     /// target one. Only the first row matching target ID is used,
     /// all other rows are considered source.
     /// If the alignment is a spliced-seg, the merging is set to
-    /// 'merge by segment' automatically.
+    /// 'merge by segment' automatically to merge mapped locations
+    /// by exon.
     /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          const CSeq_id&    to_id,
@@ -274,7 +313,8 @@ public:
     /// row contains two seq-ids. Use options to specify mapping
     /// direction.
     /// If the alignment is a spliced-seg, the merging is set to
-    /// 'merge by segment' automatically.
+    /// 'merge by segment' automatically to merge mapped locations
+    /// by exon.
     /// @sa SetMergeBySeg
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          size_t            to_row,
@@ -287,7 +327,9 @@ public:
     /// in the destination seq-loc. No ranges will be merged if they
     /// are separated by any other sub-range.
     /// MergeContained and MergeAll sort ranges before sorting, so that
-    /// any overlapping ranges can be merged.
+    /// any overlapping ranges can be merged. The sorting takes the
+    /// mapped location strand into account.
+
     /// No merging
     CSeq_loc_Mapper_Base& SetMergeNone(void);
     /// Merge only abutting intervals, keep overlapping
@@ -300,12 +342,14 @@ public:
     /// Merge any abutting or overlapping intervals
     CSeq_loc_Mapper_Base& SetMergeAll(void);
 
+    /// Wether to preserve or remove NULL sub-locations (usually
+    /// indicating gaps) from the result. By default gaps are preserved.
     CSeq_loc_Mapper_Base& SetGapPreserve(void);
     CSeq_loc_Mapper_Base& SetGapRemove(void);
 
     /// Keep ranges which can not be mapped. Does not affect truncation
     /// of partially mapped ranges. By default nonmapping ranges are
-    /// converted to NULL.
+    /// removed.
     CSeq_loc_Mapper_Base& KeepNonmappingRanges(void);
     CSeq_loc_Mapper_Base& TruncateNonmappingRanges(void);
 
@@ -323,20 +367,25 @@ public:
 
     /// Map seq-loc
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
-    /// Map the whole alignment
+    /// Map the whole alignment. Searches all rows for ranges
+    /// which can be mapped.
     CRef<CSeq_align> Map(const CSeq_align& src_align);
-    /// Map a single row of the alignment
+    /// Map a single row of the alignment.
     CRef<CSeq_align> Map(const CSeq_align& src_align,
                          size_t            row);
     /// Map seq-graph. This will map both location and data.
+    /// The data may be truncated to match the new location.
     CRef<CSeq_graph> Map(const CSeq_graph& src_graph);
 
     /// Check if the last mapping resulted in partial location
+    /// (not all ranges from the original location could be mapped
+    /// to the target).
     bool             LastIsPartial(void);
 
     typedef vector<CSeq_id_Handle>        TSynonyms;
 
-    // Collect synonyms for the given seq-id
+    // Collect synonyms for the given seq-id. The default implementation
+    // just adds the id to the list of synonyms.
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms) const;
 
@@ -348,34 +397,50 @@ protected:
         eSeq_prot = 3
     };
 
-    // Get molecule type.
+    // Get molecule type for the given id. The default implementation
+    // returns eSeq_unknown. The overrided methods should return
+    // real sequence type. The returned type is stored in the mapper's
+    // cache. The method should not be called directly, use
+    // GetSeqTypeById instead for it uses the cached types.
+    // It's also a good idea to cache the same sequence type for all
+    // synonyms in the overrided method to prevent multiple requests
+    // to GetSeqType.
     virtual ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
 
-    // Get sequence length for the given seq-id
+    // Get sequence length for the given seq-id. Returns kInvalidSeqPos
+    // if the length is unknown (the default behavior).
     virtual TSeqPos GetSequenceLength(const CSeq_id& id);
 
-    // Create CSeq_align_Mapper, add any necessary arguments
+    // Create CSeq_align_Mapper_Base, add any necessary arguments.
     virtual CSeq_align_Mapper_Base*
         InitAlignMapper(const CSeq_align& src_align);
 
-    // Initialization methods
+    // Initialize the mapper from a feature. The feature must have
+    // both location and product set, mapping direction is set by
+    // the flag.
     void x_InitializeFeat(const CSeq_feat&  map_feat,
                           EFeatMapDirection dir);
-    // Optional frame is used for cd-region only
+    // Map between two locations. Optional frame is used by x_InitializeFeat()
+    // only with cd-region features.
     void x_InitializeLocs(const CSeq_loc& source,
                           const CSeq_loc& target,
                           int             frame = 0);
+    // Initialize the mapper from an alignment. Looks for the first
+    // row containing the id and sets it as mapping target. All other
+    // rows become mapping source.
     void x_InitializeAlign(const CSeq_align& map_align,
                            const CSeq_id&    to_id,
                            TMapOptions       opts);
+    // Initialize the mapper from an alignment, map to the specified row.
     void x_InitializeAlign(const CSeq_align& map_align,
                            size_t            to_row,
                            TMapOptions       opts);
 
-    // Create target-to-target mapping to avoid truncation of ranges
-    // already on the target sequence(s).
+    // Create dummy mapping from the whole destination location to itself.
+    // This will prevent truncation of ranges already on the target.
     void x_PreserveDestinationLocs(void);
 
+    // Add new mapping range while initializing the mapper.
     void x_NextMappingRange(const CSeq_id&   src_id,
                             TSeqPos&         src_start,
                             TSeqPos&         src_len,
@@ -387,9 +452,13 @@ protected:
                             const CInt_fuzz* fuzz_from = 0,
                             const CInt_fuzz* fuzz_to = 0);
 
+    // Parse and map the seq-loc.
     void x_MapSeq_loc(const CSeq_loc& src_loc);
 
-    // Convert collected ranges into seq-loc and push into destination mix.
+    // Convert collected ranges into a seq-loc and push it into the destination
+    // seq-loc mix. This is done to preserve the original seq-loc structure
+    // when possible (although some optimizations are done - see
+    // x_OptimizeSeq_loc).
     void x_PushRangesToDstMix(void);
 
     typedef CMappingRange::TRange           TRange;
@@ -406,6 +475,8 @@ protected:
     typedef CRef<CInt_fuzz>                 TFuzz;
     typedef pair<TFuzz, TFuzz>              TRangeFuzz;
 
+    // Structure to hold information about mapped ranges until they are
+    // converted to seq-loc parts.
     struct SMappedRange {
         SMappedRange(void) : group(0) {}
         SMappedRange(const TRange&      rg,
@@ -415,16 +486,16 @@ protected:
 
         TRange      range;
         TRangeFuzz  fuzz;
-        int         group;
+        int         group; // used mostly to group ranges by exon
 
         bool operator<(const SMappedRange& rg) const
             {
                 return range < rg.range;
             }
     };
-    //typedef pair<TRange, TRangeFuzz>             TRangeWithFuzz;
     typedef list<SMappedRange>                   TMappedRanges;
-    // 0 = not set, any other index = na_strand + 1
+    // Ranges grouped by strand. [0] contains ranges without strand,
+    // [i] where i>0 stands for 'eNa_strand_XXXX + 1'.
     typedef vector<TMappedRanges>                TRangesByStrand;
     typedef map<CSeq_id_Handle, TRangesByStrand> TRangesById;
     typedef map<CSeq_id_Handle, ESeqType>        TSeqTypeById;
@@ -441,13 +512,13 @@ private:
     enum EMergeFlags {
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
-        eMergeContained, // merge if one is contained in another
-        eMergeBySeg,     // merge ranges by mapping group (e.g. exon)
+        eMergeContained, // merge if one range is contained in another
+        eMergeBySeg,     // merge ranges by mapping group (e.g. by exon)
         eMergeAll        // merge both abutting and overlapping intervals
     };
     enum EGapFlags {
         eGapPreserve,    // Leave gaps as-is
-        eGapRemove       // Remove gaps (NULLs)
+        eGapRemove       // Remove gaps (NULL seq-locs)
     };
 
     // Check types of all sequences referenced by the location,
@@ -458,16 +529,28 @@ private:
     bool x_CheckSeqTypes(const CSeq_loc& loc,
                          ESeqType&       seqtype,
                          TSeqPos&        len) const;
-    // Try to find at least one known sequence type in the location
-    // and force it for all other sequences if any.
+    // If x_CheckSeqTypes returns false, it may indicate that some
+    // sequence types could not be detected. In this case the mapper
+    // will attempt to find at least one known type in the location
+    // and force it for all sub-locations with unknown types.
+    // The function will fail if there are diferent known types in the
+    // same seq-loc.
     ESeqType x_ForceSeqTypes(const CSeq_loc& loc) const;
 
+    // In some cases the mapper may fail to detect that both source
+    // and destination locations are on proteins rather than on nucs.
+    // CSeq_align_Mapper_Base may detect this mistake while mapping
+    // an alignment. In this case it will try to change all types to
+    // protein.
     void x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh);
 
     // Get sequence length, try to get the real length for
     // reverse strand, do not use "whole".
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
 
+    // Add new CMappingRange. This includes collecting all synonyms for the id,
+    // creating a new mapping for each of them and updating the destination
+    // ranges.
     void x_AddConversion(const CSeq_id& src_id,
                          TSeqPos        src_start,
                          ENa_strand     src_strand,
@@ -477,6 +560,7 @@ private:
                          TSeqPos        length,
                          bool           ext_right);
 
+    // Initialize the mapper from different alignment types.
     void x_InitAlign(const CDense_diag& diag, size_t to_row);
     void x_InitAlign(const CDense_seg& denseg, size_t to_row,
                      TMapOptions opts);
@@ -498,8 +582,11 @@ private:
                             TSeqPos&                     prod_start,
                             TSeqPos&                     prod_len,
                             ENa_strand                   prod_strand);
+    // Helper method to simplify getting exon part length regardless of
+    // its type.
     static TSeqPos sx_GetExonPartLength(const CSpliced_exon_chunk& part);
 
+    // Map a single range from source to destination.
     bool x_MapNextRange(const TRange&     src_rg,
                         bool              is_set_strand,
                         ENa_strand        src_strand,
@@ -507,68 +594,114 @@ private:
                         TSortedMappings&  mappings,
                         size_t            cvt_idx,
                         TSeqPos*          last_src_to);
+    // Map the interval through all matching mappings.
     bool x_MapInterval(const CSeq_id&   src_id,
                        TRange           src_rg,
                        bool             is_set_strand,
                        ENa_strand       src_strand,
                        TRangeFuzz       orig_fuzz);
+    // Set the flag to indicate that the last range was truncated
+    // during mapping.
     void x_SetLastTruncated(void);
 
+    // Pushes the location to the destination seq-loc mix.
+    // See also x_PushRangesToDstMix.
     void x_PushLocToDstMix(CRef<CSeq_loc> loc);
 
-    // Map alignment. If row == -1, map all rows.
+    // Map the alignment. If row is NULL, map all rows. Otherwise
+    // map only the selected row.
     CRef<CSeq_align> x_MapSeq_align(const CSeq_align& src_align,
                                     size_t*           row);
 
-    // Access mapped ranges, check vector size
+    // Get mapped ranges for the given id and strand index.
+    // See TRangesByStrand for strand indexing.
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
                                      size_t                strand_idx) const;
+    // Push mapped range to the list of mapped ranges. Try to merge the new
+    // range with the existing ones based on the selected merging mode.
     void x_PushMappedRange(const CSeq_id_Handle& id,
                            size_t                strand_idx,
                            const TRange&         range,
                            const TRangeFuzz&     fuzz,
                            bool                  push_reverse,
                            int                   group);
+    // Store the source range just mapped. Used only if storing source
+    // locations is enabled - see IncludeSourceLocs.
     void x_PushSourceRange(const CSeq_id_Handle& idh,
                            size_t                src_strand,
                            size_t                dst_strand,
                            const TRange&         range,
                            bool                  push_reverse);
 
+    // Convert mapped range data to a seq-loc (point or interval).
+    // Set fuzzes to indicate truncated range if necessary.
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
                                     TSeqPos               to,
                                     size_t                strand_idx,
                                     TRangeFuzz            rg_fuzz);
 
+    // Convert all collected and not yet converted mapped ranges to a seq-loc.
+    // May be called multiple times while mapping a complex location and
+    // storing its parts to a destination seq-loc mix (see
+    // x_PushRangesToDstMix).
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
+
+    // Try to optimize the mapped location if it's a mix.
+    // The allowed optimizations are:
+    // - empty mix is converted to Null
+    // - if the mix contains a single element, use just this element
+    // - if the mix contains only intervals, convert it to packed-int
+    // When mapping a complex location (e.g. a multi-level mix) each
+    // sub-location is optimized individually.
     void x_OptimizeSeq_loc(CRef<CSeq_loc>& loc) const;
 
-    bool x_ReverseRangeOrder(void) const;
+    // Returns true if the new mapped range should be added to the
+    // existing mapped ranges in the reverse order (in the front).
+    // If merging is set to contained or all, used the provided strand
+    // index to check the order of ranges. For all other merging modes
+    // compares the directions of mapping source and target.
+    bool x_ReverseRangeOrder(int str) const;
 
+    // Map parts of a complex seq-loc.
     void x_Map_PackedInt_Element(const CSeq_interval& si);
     void x_Map_PackedPnt_Element(const CPacked_seqpnt& pp, TSeqPos p);
 
+    // How to merge mapped locations.
     EMergeFlags          m_MergeFlag;
+    // How to treat gaps (Null sub-locations) if any.
     EGapFlags            m_GapFlag;
+    // Wether to keep or discard ranges which can not be mapped.
     bool                 m_KeepNonmapping;
-    bool                 m_CheckStrand; // Check strands before mapping
+    // Wether to check or not if the original location is on the same strand
+    // as the mapping source.
+    bool                 m_CheckStrand;
+    // Wether to include a source of each mapped range to the mapped seq-loc.
     bool                 m_IncludeSrcLocs;
 
+    // Mapped ranges collected from the currently parsed sub-location.
     mutable TRangesById  m_MappedLocs;
+    // Source locations for all mapped ranges.
     CRef<CSeq_loc>       m_SrcLocs;
 
-    // Collecting ranges for mapped graph
+    // Collected ranges for mapped graph. Used to adjust mapped graph data.
     CRef<CGraphRanges>   m_GraphRanges;
 
 protected:
-    // Sources may have different types, e.g. in an alignment
+    // Storage for sequence types.
     mutable TSeqTypeById m_SeqTypes;
+    // Flag indicating if the mapping truncated at least some ranges.
     bool                 m_Partial;
+    // Flag indicating if the last range mapping was partial.
     bool                 m_LastTruncated;
+    // Mapping ranges grouped by source id and strand.
     CRef<CMappingRanges> m_Mappings;
+    // Mapped seq-loc
     CRef<CSeq_loc>       m_Dst_loc;
+    // All ranges on the mapping destination.
     TDstStrandMap        m_DstRanges;
+    // Current mapping group. Incremented for each mapping sub-location
+    // (e.g. exon).
     int                  m_CurrentGroup;
 
 public:
@@ -585,7 +718,8 @@ public:
     void SetSeqTypeById(const CSeq_id_Handle& idh, ESeqType seqtype) const;
     void SetSeqTypeById(const CSeq_id& id, ESeqType seqtype) const;
 
-    // Get sequence width.
+    // Get sequence width. Return 3 for proteins, 1 for nucleotides and
+    // unknown sequence types.
     int GetWidthById(const CSeq_id_Handle& idh) const;
     int GetWidthById(const CSeq_id& id) const;
 
@@ -748,18 +882,6 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::IncludeSourceLocs(bool value)
 {
     m_IncludeSrcLocs = value;
     return *this;
-}
-
-
-inline
-bool CSeq_loc_Mapper_Base::x_ReverseRangeOrder(void) const
-{
-    if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
-        // Sorting discards the original order, no need to check
-        // m_ReverseSrc
-        return m_Mappings->GetReverseDst();
-    }
-    return m_Mappings->GetReverseSrc() != m_Mappings->GetReverseDst();
 }
 
 

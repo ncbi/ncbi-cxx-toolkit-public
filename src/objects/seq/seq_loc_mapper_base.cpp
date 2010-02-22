@@ -1374,8 +1374,7 @@ CSeq_loc_Mapper_Base::x_ForceSeqTypes(const CSeq_loc& loc) const
 }
 
 
-void CSeq_loc_Mapper_Base::
-x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
+void CSeq_loc_Mapper_Base::x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
 {
     bool have_id = false;
     bool have_known = false;
@@ -2433,8 +2432,6 @@ void CSeq_loc_Mapper_Base::x_PushSourceRange(const CSeq_id_Handle& idh,
             loc->SetStrand(INDEX_TO_STRAND(src_strand));
         }
     }
-    bool reverse = (dst_strand > 0) &&
-        IsReverse(INDEX_TO_STRAND(dst_strand));
     if ( push_reverse ) {
         m_SrcLocs->SetMix().Set().push_front(loc);
     }
@@ -2486,6 +2483,17 @@ void CSeq_loc_Mapper_Base::x_PushLocToDstMix(CRef<CSeq_loc> loc)
 }
 
 
+bool CSeq_loc_Mapper_Base::x_ReverseRangeOrder(int str) const
+{
+    if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
+        // Sorting discards the original order, no need to check
+        // mappings, just use the mapped strand.
+        return str != 0  &&  IsReverse(INDEX_TO_STRAND(str));
+    }
+    return m_Mappings->GetReverseSrc() != m_Mappings->GetReverseDst();
+}
+
+
 CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
 {
     CRef<CSeq_loc> dst_loc(new CSeq_loc);
@@ -2514,7 +2522,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                     // Empty seq-loc
                     CRef<CSeq_loc> loc(new CSeq_loc);
                     loc->SetEmpty().Assign(*id_it->first.GetSeqId());
-                    if ( x_ReverseRangeOrder() ) {
+                    if ( x_ReverseRangeOrder(0) ) {
                         dst_mix.push_front(loc);
                     }
                     else {
@@ -2556,7 +2564,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                     }
                 }
                 // Add new interval or point
-                if ( x_ReverseRangeOrder() ) {
+                if ( x_ReverseRangeOrder(str) ) {
                     dst_mix.push_front(x_RangeToSeq_loc(id_it->first, from, to,
                         str, fuzz));
                 }
@@ -2569,7 +2577,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                 fuzz = rg_it->fuzz;
             }
             // last interval or point
-            if ( x_ReverseRangeOrder() ) {
+            if ( x_ReverseRangeOrder(str) ) {
                 dst_mix.push_front(x_RangeToSeq_loc(id_it->first, from, to,
                     str, fuzz));
             }
