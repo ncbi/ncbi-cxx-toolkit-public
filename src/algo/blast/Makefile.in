@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = composition_adjustment core dbindex dbindex_search api format blastinput \
-           unit_tests
+           gumbel_params unit_tests
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
