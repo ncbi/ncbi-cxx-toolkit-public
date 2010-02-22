@@ -268,7 +268,7 @@ static string s_FormatCBlastDBSeqID(CRef<CBlastDBSeqId> id, CSeqDB& blastdb)
     string retval = id->AsString();
     if (NStr::StartsWith(retval, "OID")) {
         // First try the GI...
-        retval = CGiExtractor().Extract(*id, blastdb);
+        retval = CGiExtractor(false).Extract(*id, blastdb);
         if (retval != kInvalid) {
             return "GI " + retval;
         }
@@ -323,6 +323,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     conf.m_Strand = m_Strand;
     conf.m_TargetOnly = args["target_only"];
     conf.m_UseCtrlA = args["ctrl_a"];
+    conf.m_ExtractAllGis = args["get_dups"];
     s_ExtractFilteringAlgorithmIds(conf, args);
 
     bool errors_found = false;

@@ -61,8 +61,11 @@ public:
 /// (CSeqFormatter associates this with %g)
 class NCBI_BLASTDB_FORMAT_EXPORT CGiExtractor : public IBlastDBExtract {
 public:
+    CGiExtractor(bool extract_all):m_ExtractAll(extract_all) {}
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
+private:
+    bool m_ExtractAll;
 };
 
 /// Extracts the PIG for a given sequence id

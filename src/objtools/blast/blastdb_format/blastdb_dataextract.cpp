@@ -64,6 +64,16 @@ int GetHash(const char* buffer, int length)
 
 string CGiExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
+    if (m_ExtractAll) {
+        string retval;
+        vector<int> gis;
+        blastdb.GetGis(COidExtractor().ExtractOID(id, blastdb), gis);
+        ITERATE(vector<int>, gi, gis) {
+            retval += NStr::IntToString(*gi) + ",";
+        }
+        return retval.substr(0, retval.size()-1);
+    }
+              
     int gi = CBlastDBSeqId::kInvalid;
     if (id.IsGi()) {
         gi = id.GetGi();

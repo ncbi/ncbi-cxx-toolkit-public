@@ -108,7 +108,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
             break;
 
         case 'g':
-            m_DataExtractors.push_back(new CGiExtractor());
+            m_DataExtractors.push_back(new CGiExtractor(config.m_ExtractAllGis));
             break;
 
         case 'o':
