@@ -59,8 +59,10 @@ BEGIN_SCOPE(blast)
     class CSearchResults;
 END_SCOPE(blast)
 
+class CSplitSeqAlignMerger;
 
 
+// Stores one querys worth of alignments
 class CQuerySet : public CObject
 {
 public:
@@ -68,6 +70,7 @@ public:
 
     CQuerySet(const blast::CSearchResults& Results);
     CQuerySet(const objects::CSeq_align_set& Results);
+    CQuerySet(CRef<objects::CSeq_align> Alignment);
 
     TSubjectToAlignSet& Get() { return m_SubjectMap; }
     const TSubjectToAlignSet& Get() const { return m_SubjectMap; }
@@ -79,6 +82,7 @@ public:
 
     void Insert(CRef<CQuerySet> QuerySet);
     void Insert(const objects::CSeq_align_set& AlignSet);
+    void Insert(CRef<objects::CSeq_align> Alignment);
 
     // gets the rank of the best (lowest) ranked alignment in this query set
     int GetBestRank() const;
@@ -121,6 +125,10 @@ public:
     void Insert(CRef<CQuerySet> QuerySet);
     void Insert(CRef<CAlignResultsSet> AlignSet);
     void Insert(const blast::CSearchResultSet& BlastResults);
+    void Insert(CRef<objects::CSeq_align> Alignment);
+    void Insert(const objects::CSeq_align_set& AlignSet);
+
+
 
     size_t size() const { return m_QueryMap.size(); }
     bool empty() const { return m_QueryMap.empty(); }
@@ -128,6 +136,14 @@ public:
 private:
 
     TQueryToSubjectSet m_QueryMap;
+
+    // the one priveledged case that gets to use DropQuery()
+
+    friend class CSplitSeqAlignMerger;
+    // drops a given query from the result set.
+    // Primarily for Split sequences, once the original is inserted,
+    // drop the split subsequences
+    void DropQuery(const objects::CSeq_id& Id);
 
 };
 

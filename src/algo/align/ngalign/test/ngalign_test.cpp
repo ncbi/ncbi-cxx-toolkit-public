@@ -55,8 +55,10 @@
 #include <algo/align/ngalign/banded_aligner.hpp>
 #include <algo/align/ngalign/merge_aligner.hpp>
 #include <algo/align/ngalign/inversion_merge_aligner.hpp>
-
 #include <algo/align/ngalign/alignment_scorer.hpp>
+
+#include <algo/align/ngalign/unordered_spliter.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -71,6 +73,8 @@ private:
     void x_OneToOneCase(IRegistry* TestCases, const string& Case);
     void x_OneToBlastDbCase(IRegistry* TestCases, const string& Case);
     void x_ListToBlastDbCase(IRegistry* TestCases, const string& Case);
+    void x_SplitOneToBlastDbCase(IRegistry* TestCases, const string& Case);
+    void x_SplitListToBlastDbCase(IRegistry* TestCases, const string& Case);
 
     CRef<CScope> m_Scope;
 
@@ -133,6 +137,10 @@ int CNgAlignTest::Run()
             x_OneToBlastDbCase(&TestCases, *CaseIter);
         } else if(Type == "list_to_blastdb") {
             x_ListToBlastDbCase(&TestCases, *CaseIter);
+        } else if(Type == "split_one_to_blastdb") {
+            x_SplitOneToBlastDbCase(&TestCases, *CaseIter);
+        } else if(Type == "split_list_to_blastdb") {
+            x_SplitListToBlastDbCase(&TestCases, *CaseIter);
         }
 
     }
@@ -305,6 +313,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
 
+
     Query->SetIdList().push_back(QueryId);
 
     if(SeqMasker.get() != NULL) {
@@ -461,8 +470,8 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         Aligner.AddAligner(&**BlastIter);
     }
     Aligner.AddAligner(MergeAligner.GetPointer());
+    Aligner.AddAligner(InstancedAligner.GetPointer());
     Aligner.AddAligner(InversionMergeAligner.GetPointer());
-//    Aligner.AddAligner(InstancedAligner.GetPointer());
 
 
     Aligner.AddScorer(BlastScorer.GetPointer());
@@ -511,6 +520,260 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
 }
 
 
+
+void CNgAlignTest::x_SplitOneToBlastDbCase(IRegistry* TestCases, const string& Case)
+{
+    string QueryIdStr, BlastDbStr;
+    QueryIdStr = TestCases->Get(Case, "query");
+    BlastDbStr = TestCases->Get(Case, "blastdb");
+    CRef<CSeq_id> QueryId(new CSeq_id(QueryIdStr));
+
+    int FilterCount = TestCases->GetInt("consts", "filter_count", 0);
+    list<string> Filters;
+    for(int Loop = 0; Loop < FilterCount; Loop++) {
+        string Curr = TestCases->Get("consts", "filter"+NStr::IntToString(Loop));
+        Filters.push_back(Curr);
+    }
+    string NMerFile = TestCases->Get("consts", "nmer");
+    string Operation = TestCases->Get(Case, "operation");
+    list<string> BlastParams;
+    BlastParams.push_back(TestCases->Get("consts", "blast"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
+ //   BlastParams.push_back(TestCases->Get("consts", "blast3"));
+
+    if(Operation == "skip")
+        return;
+
+    auto_ptr<CSeqMasker> SeqMasker;
+    if(!NMerFile.empty()) {
+        SeqMasker.reset(new CSeqMasker(NMerFile,
+            0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false));
+    }
+
+    CUnorderedSplitter Splitter(*m_Scope);
+
+    CRef<CSplitSeqIdListSet> Query(new CSplitSeqIdListSet(&Splitter));
+    CRef<CBlastDbSet> Subject(new CBlastDbSet(BlastDbStr));
+    list<CRef<CQueryFilter> > QueryFilters;
+    int Rank = 0;
+    ITERATE(list<string>, StrIter, Filters) {
+        CRef<CQueryFilter> CurrFilter(new CQueryFilter(Rank, *StrIter));
+        Rank++;
+        QueryFilters.push_back(CurrFilter);
+    }
+    list<CRef<CBlastAligner> > BlastAligners;
+    BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1.0, 1));
+    CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
+    CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
+    CRef<CSplitSeqAlignMerger> SplitSeqAlignMerger(new CSplitSeqAlignMerger(&Splitter));
+
+    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
+    CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
+    CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
+
+    Query->AddSeqId(QueryId);
+
+    if(SeqMasker.get() != NULL) {
+    //    Query->SetSeqMasker(SeqMasker.get());
+    //    Subject->SetSoftFiltering().push_back(1);
+    }
+
+    Subject->SetSoftFiltering(30);
+
+
+    CNgAligner Aligner(*m_Scope);
+    Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
+    Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
+
+    NON_CONST_ITERATE(list<CRef<CQueryFilter> >, FilterIter, QueryFilters) {
+        Aligner.AddFilter(&**FilterIter);
+    }
+
+//    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+    NON_CONST_ITERATE(list<CRef<CBlastAligner> >, BlastIter, BlastAligners) {
+        (*BlastIter)->SetSoftFiltering(30);
+        Aligner.AddAligner(&**BlastIter);
+    }
+    Aligner.AddAligner(MergeAligner.GetPointer());
+   // Aligner.AddAligner(InstancedAligner.GetPointer());
+    Aligner.AddAligner(SplitSeqAlignMerger.GetPointer());
+    //Aligner.AddAligner(MergeAligner.GetPointer());
+
+//    Aligner.AddAligner(InversionMergeAligner.GetPointer());
+
+
+    Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(PctCoverageScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(CommonComponentScorer.GetPointer()));
+
+    CRef<CSeq_align_set> AlignSet;
+    AlignSet = Aligner.Align();
+
+
+    if(Operation == "save") {
+        string SaveFileName = TestCases->Get(Case, "savefile");
+        if(!SaveFileName.empty()) {
+            SaveFileName = TestCases->Get("consts", "casedir") + "/" + SaveFileName;
+            CNcbiOfstream Out(SaveFileName.c_str());
+            Out << MSerial_AsnText << *AlignSet;
+        }
+    } else if(Operation == "comp") {
+        string CompFileName = TestCases->Get(Case, "compfile");
+        if(!CompFileName.empty()) {
+            CompFileName = TestCases->Get("consts", "casedir") + "/" + CompFileName;
+            CNcbiIfstream In(CompFileName.c_str());
+            CRef<CSeq_align_set> CompSet(new CSeq_align_set);
+            In >> MSerial_AsnText >> *CompSet;
+            if(CompSet->Get().empty() || AlignSet->Get().empty()) {
+                cout << "Case: " << Case << " Empty Set, can not compare." << endl;
+            }
+            bool Match = x_CompareAlignSets(AlignSet, CompSet);
+            cout << "Case: " << Case << " Comps: " << (Match ? "True" : "False") << endl;
+        }
+    } else if(Operation == "print") {
+        cout << MSerial_AsnText << *AlignSet;
+    }
+}
+
+
+
+
+void CNgAlignTest::x_SplitListToBlastDbCase(IRegistry* TestCases, const string& Case)
+{
+    string QueryIdFile, BlastDbStr;
+    QueryIdFile = TestCases->Get(Case, "queryfile");
+    BlastDbStr = TestCases->Get(Case, "blastdb");
+
+    int FilterCount = TestCases->GetInt("consts", "filter_count", 0);
+    list<string> Filters;
+    for(int Loop = 0; Loop < FilterCount; Loop++) {
+        string Curr = TestCases->Get("consts", "filter"+NStr::IntToString(Loop));
+        Filters.push_back(Curr);
+    }
+    string NMerFile = TestCases->Get("consts", "nmer");
+    string Operation = TestCases->Get(Case, "operation");
+    list<string> BlastParams;
+    BlastParams.push_back(TestCases->Get("consts", "blast"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
+ //   BlastParams.push_back(TestCases->Get("consts", "blast3"));
+
+    if(Operation == "skip")
+        return;
+
+    auto_ptr<CSeqMasker> SeqMasker;
+    if(!NMerFile.empty()) {
+        SeqMasker.reset(new CSeqMasker(NMerFile,
+            0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false));
+    }
+
+    CUnorderedSplitter Splitter(*m_Scope);
+
+    CRef<CSplitSeqIdListSet> Query(new CSplitSeqIdListSet(&Splitter));
+    CRef<CBlastDbSet> Subject(new CBlastDbSet(BlastDbStr));
+    list<CRef<CQueryFilter> > QueryFilters;
+    int Rank = 0;
+    ITERATE(list<string>, StrIter, Filters) {
+        CRef<CQueryFilter> CurrFilter(new CQueryFilter(Rank, *StrIter));
+        Rank++;
+        QueryFilters.push_back(CurrFilter);
+    }
+    list<CRef<CBlastAligner> > BlastAligners;
+    BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 3.0, 1.0, 1));
+    CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
+    CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
+    CRef<CSplitSeqAlignMerger> SplitSeqAlignMerger(new CSplitSeqAlignMerger(&Splitter));
+
+    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
+    CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
+    CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
+
+
+    set<string> IdSet;
+    {{
+        QueryIdFile = TestCases->Get("consts", "casedir") + "/" + QueryIdFile;
+        CNcbiIfstream In(QueryIdFile.c_str());
+        CStreamLineReader Reader(In);
+        while(!Reader.AtEOF()) {
+            ++Reader;
+            string Line = *Reader;
+            if(!Line.empty() && Line[0] != '#') {
+                //cerr << "Line: " << Line << endl;
+                Line = Line.substr(0, Line.find(" "));
+                CRef<CSeq_id> QueryId(new CSeq_id(Line));
+                Query->AddSeqId(QueryId);
+                IdSet.insert(Line);
+                cout << Line << " : " << m_Scope->GetBioseqHandle(*QueryId).GetInst_Length() << endl;
+            }
+        }
+    }}
+
+    if(SeqMasker.get() != NULL) {
+    //    Query->SetSeqMasker(SeqMasker.get());
+    //    Subject->SetSoftFiltering().push_back(1);
+    }
+
+    Subject->SetSoftFiltering(30);
+
+
+    CNgAligner Aligner(*m_Scope);
+    Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
+    Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
+
+    NON_CONST_ITERATE(list<CRef<CQueryFilter> >, FilterIter, QueryFilters) {
+        Aligner.AddFilter(&**FilterIter);
+    }
+
+//    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+    NON_CONST_ITERATE(list<CRef<CBlastAligner> >, BlastIter, BlastAligners) {
+        (*BlastIter)->SetSoftFiltering(30);
+        Aligner.AddAligner(&**BlastIter);
+    }
+    Aligner.AddAligner(MergeAligner.GetPointer());
+   // Aligner.AddAligner(InstancedAligner.GetPointer());
+    Aligner.AddAligner(SplitSeqAlignMerger.GetPointer());
+    //Aligner.AddAligner(MergeAligner.GetPointer());
+
+//    Aligner.AddAligner(InversionMergeAligner.GetPointer());
+
+
+    Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(PctCoverageScorer.GetPointer()));
+    Aligner.AddScorer(CRef<IAlignmentScorer>(CommonComponentScorer.GetPointer()));
+
+    CRef<CSeq_align_set> AlignSet;
+    AlignSet = Aligner.Align();
+
+
+    if(Operation == "save") {
+        string SaveFileName = TestCases->Get(Case, "savefile");
+        if(!SaveFileName.empty()) {
+            SaveFileName = TestCases->Get("consts", "casedir") + "/" + SaveFileName;
+            CNcbiOfstream Out(SaveFileName.c_str());
+            Out << MSerial_AsnText << *AlignSet;
+        }
+    } else if(Operation == "comp") {
+        string CompFileName = TestCases->Get(Case, "compfile");
+        if(!CompFileName.empty()) {
+            CompFileName = TestCases->Get("consts", "casedir") + "/" + CompFileName;
+            CNcbiIfstream In(CompFileName.c_str());
+            CRef<CSeq_align_set> CompSet(new CSeq_align_set);
+            In >> MSerial_AsnText >> *CompSet;
+            if(CompSet->Get().empty() || AlignSet->Get().empty()) {
+                cout << "Case: " << Case << " Empty Set, can not compare." << endl;
+            }
+            bool Match = x_CompareAlignSets(AlignSet, CompSet);
+            cout << "Case: " << Case << " Comps: " << (Match ? "True" : "False") << endl;
+        }
+    } else if(Operation == "print") {
+        cout << MSerial_AsnText << *AlignSet;
+    }
+}
 
 
 

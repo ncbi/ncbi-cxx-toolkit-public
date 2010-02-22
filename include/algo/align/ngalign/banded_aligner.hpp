@@ -70,41 +70,6 @@ BEGIN_SCOPE(blast)
 END_SCOPE(blast)
 
 
-class CSimpleBandedAligner : public IAlignmentFactory
-{
-public:
-
-    CSimpleBandedAligner(int Threshold, unsigned int BandWidth)
-        : m_Threshold(Threshold), m_BandWidth(BandWidth) { ; }
-
-    string GetName() const { return "banded_aligner"; }
-
-    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
-                                        ISequenceSet* QuerySet,
-                                        ISequenceSet* SubjectSet,
-                                        TAlignResultsRef AccumResults);
-
-protected:
-
-
-private:
-
-    int m_Threshold;
-    unsigned int m_BandWidth;
-
-    void x_RunBanded(objects::CScope& Scope,
-                     CQuerySet& QueryAligns,
-                     TAlignResultsRef Results);
-
-    CRef<objects::CDense_seg> x_RunBandedGlobal(objects::CSeq_id& QueryId,
-                                                objects::CSeq_id& SubjectId,
-                                                objects::ENa_strand Strand,
-                                                TSeqPos Diagonal,
-                                                int BandHalfWidth,
-                                                objects::CScope& Scope);
-
-};
-
 
 class CInstance : public CObject {
 public:

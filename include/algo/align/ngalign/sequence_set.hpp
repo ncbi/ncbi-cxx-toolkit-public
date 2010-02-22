@@ -101,6 +101,7 @@ protected:
 };
 
 
+
 class CSeqIdListSet : public ISequenceSet
 {
 public:

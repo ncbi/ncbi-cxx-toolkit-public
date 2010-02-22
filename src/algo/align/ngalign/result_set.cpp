@@ -68,6 +68,14 @@ CQuerySet::CQuerySet(const objects::CSeq_align_set& Results)
 }
 
 
+CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment)
+{
+    m_QueryId.Reset(new CSeq_id);
+    m_QueryId->Assign(Alignment->GetSeq_id(0));
+    Insert(Alignment);
+}
+
+
 CRef<CSeq_align_set> CQuerySet::ToSeqAlignSet() const
 {
     CRef<CSeq_align_set> Out(new CSeq_align_set);
@@ -116,15 +124,29 @@ void CQuerySet::Insert(CRef<CQuerySet> QuerySet)
 void CQuerySet::Insert(const objects::CSeq_align_set& AlignSet)
 {
     ITERATE(CSeq_align_set::Tdata, Iter, AlignSet.Get()) {
-        string IdString = (*Iter)->GetSeq_id(1).AsFastaString();
+        Insert(*Iter);
+    }
+}
 
-        if(m_SubjectMap.find(IdString) == m_SubjectMap.end()) {
-            CRef<CSeq_align_set> AlignSet(new CSeq_align_set);
-            m_SubjectMap[IdString] = AlignSet;
-        }
-        if(!x_AlreadyContains(*m_SubjectMap[IdString], **Iter)) {
-            m_SubjectMap[IdString]->Set().push_back(*Iter);
-        }
+
+void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
+{
+    if(!Alignment->GetSeq_id(0).Equals(*m_QueryId)) {
+        // Error, Throw?
+        ERR_POST(Error << "Id " << Alignment->GetSeq_id(0).AsFastaString()
+                       << " tried to be inserted into set for "
+                       << m_QueryId->AsFastaString());
+        return;
+    }
+
+    string IdString = Alignment->GetSeq_id(1).AsFastaString();
+
+    if(m_SubjectMap.find(IdString) == m_SubjectMap.end()) {
+        CRef<CSeq_align_set> AlignSet(new CSeq_align_set);
+        m_SubjectMap[IdString] = AlignSet;
+    }
+    if(!x_AlreadyContains(*m_SubjectMap[IdString], *Alignment)) {
+        m_SubjectMap[IdString]->Set().push_back(Alignment);
     }
 }
 
@@ -281,6 +303,8 @@ bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
 CAlignResultsSet::CAlignResultsSet(const blast::CSearchResultSet& BlastResults)
 {
     Insert(BlastResults);
@@ -388,6 +412,41 @@ void CAlignResultsSet::Insert(const blast::CSearchResultSet& BlastResults)
         }
     }
 }
+
+
+void CAlignResultsSet::Insert(CRef<CSeq_align> Alignment)
+{
+    string IdString = Alignment->GetSeq_id(0).AsFastaString();
+    if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
+        m_QueryMap[IdString]->Insert(Alignment);
+    } else {
+        CRef<CQuerySet> Set(new CQuerySet(Alignment));
+        m_QueryMap[IdString] = Set;
+    }
+}
+
+
+void CAlignResultsSet::Insert(const CSeq_align_set& AlignSet)
+{
+    if(!AlignSet.CanGet() || AlignSet.Get().empty())
+        return;
+
+    ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet.Get()) {
+        Insert(*AlignIter);
+    }
+}
+
+
+void CAlignResultsSet::DropQuery(const CSeq_id& Id)
+{
+    string IdString = Id.AsFastaString();
+    TQueryToSubjectSet::iterator Found = m_QueryMap.find(IdString);
+    if(Found != m_QueryMap.end()) {
+        m_QueryMap.erase(Found);
+    }
+}
+
+
 
 END_SCOPE(ncbi)
 

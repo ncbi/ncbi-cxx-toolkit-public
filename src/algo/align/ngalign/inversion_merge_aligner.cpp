@@ -332,7 +332,6 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
 
 
 
-
 CRef<objects::CSeq_align_set>
 CInversionMergeAligner::x_MergeSeqAlignSet(const CSeq_align_set& InAligns, objects::CScope& Scope)
 {
