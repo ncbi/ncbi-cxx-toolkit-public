@@ -583,7 +583,7 @@ GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
 
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
-SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub pubmed medline biblio general \
+SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
     xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
