@@ -3753,6 +3753,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUSK	s	Muskegon Community College, Life Science Department",
 "MUSM	s	Museo de Historia Natural",
 "MUSN	s	Museo Universitario di Storia Naturale e della Strumentazione Scientifica",
+"MUT<ITA>	c	Mycotheca Universitatis Taurinensis",
 "MV	s	University of Montana Museum",
 "MVC	s	University of Charleston, Natural Sciences Department",
 "MVDA	s	Ministerio de Ganaderia y Agricultura",
