@@ -78,6 +78,12 @@ public:
     explicit CSeqMaskerOstatAscii( const string & name );
 
     /**
+        **\brief Object constructor.
+        **\param os the output stream
+        **/
+    explicit CSeqMaskerOstatAscii( CNcbiOstream & os );
+
+    /**
         **\brief Object destructor.
         **/
     virtual ~CSeqMaskerOstatAscii();

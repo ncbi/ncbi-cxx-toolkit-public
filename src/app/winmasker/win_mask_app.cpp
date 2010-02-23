@@ -47,18 +47,18 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include "win_mask_app.hpp"
-#include "win_mask_config.hpp"
 #include <objtools/seqmasks_io/mask_cmdline_args.hpp>
 #include <objtools/seqmasks_io/mask_reader.hpp>
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include <objtools/seqmasks_io/mask_writer.hpp>
-#include "win_mask_gen_counts.hpp"
-#include "win_mask_util.hpp"
-#include "win_mask_sdust_masker.hpp"
-#include "win_mask_counts_converter.hpp"
-
 #include <algo/winmask/seq_masker.hpp>
+#include <algo/winmask/win_mask_gen_counts.hpp>
+#include <algo/winmask/win_mask_util.hpp>
+#include <algo/winmask/win_mask_counts_converter.hpp>
+#include "win_mask_app.hpp"
+#include "win_mask_config.hpp"
+#include "win_mask_sdust_masker.hpp"
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -359,12 +359,22 @@ int CWinMaskApplication::Run (void)
     //
     // if( GetArgs()["convert"].AsBoolean() ) {
     if( GetArgs()["convert"] ) {
-        CWinMaskCountsConverter converter( 
-                GetArgs()[kInput].AsString(),
-                GetArgs()[kOutput].AsString(),
-                GetArgs()["sformat"].AsString() + 
+        if( GetArgs()[kOutput].AsString() == "-" ) {
+            CWinMaskCountsConverter converter( 
+                    GetArgs()[kInput].AsString(),
+                    NcbiCout,
+                    GetArgs()["sformat"].AsString() + 
                     GetArgs()["smem"].AsString() );
-        return converter();
+            return converter();
+        }
+        else {
+            CWinMaskCountsConverter converter( 
+                    GetArgs()[kInput].AsString(),
+                    GetArgs()[kOutput].AsString(),
+                    GetArgs()["sformat"].AsString() + 
+                    GetArgs()["smem"].AsString() );
+            return converter();
+        }
     }
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
@@ -383,7 +393,25 @@ int CWinMaskApplication::Run (void)
 
     if( aConfig.MakeCounts() )
     {
-        {
+        if( aConfig.Output() == "-" ) {
+            CWinMaskCountsGenerator cg( aConfig.Input(),
+                                        NcbiCout,
+                                        aConfig.InFmt(),
+                                        aConfig.SFormat(),
+                                        aConfig.Th(),
+                                        aConfig.Mem(),
+                                        aConfig.UnitSize(),
+                                        aConfig.GenomeSize(),
+                                        aConfig.MinScore(),
+                                        aConfig.MaxScore(),
+                                        aConfig.CheckDup(),
+                                        aConfig.FaList(),
+                                        aConfig.Ids(),
+                                        aConfig.ExcludeIds(),
+                                        aConfig.UseBA() );
+            cg();
+        }
+        else {
             CWinMaskCountsGenerator cg( aConfig.Input(),
                                         aConfig.Output(),
                                         aConfig.InFmt(),
@@ -401,6 +429,7 @@ int CWinMaskApplication::Run (void)
                                         aConfig.UseBA() );
             cg();
         }
+
         return 0;
     }
 

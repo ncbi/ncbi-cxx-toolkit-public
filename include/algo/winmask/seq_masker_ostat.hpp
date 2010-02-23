@@ -73,14 +73,14 @@ public:
         **\brief Object constructor.
         **\param os C++ stream that should be used to save the unit counts data
         **/
-    explicit CSeqMaskerOstat( CNcbiOstream & os )
-        : out_stream( os ), state( start )
+    explicit CSeqMaskerOstat( CNcbiOstream & os, bool alloc )
+        : out_stream( os ), alloc( alloc ), state( start )
     {}
 
     /**
         **\brief Trivial object destructor.
         **/
-    virtual ~CSeqMaskerOstat() {}
+    virtual ~CSeqMaskerOstat() { if( alloc ) delete &out_stream; }
 
     /**
         **\brief Set the unit size value.
@@ -154,6 +154,9 @@ protected:
         **       out the unit counts data.
         **/
     CNcbiOstream& out_stream;
+
+    /** flag indicating that the stream was allocated */
+    bool alloc;
 
 private:
 

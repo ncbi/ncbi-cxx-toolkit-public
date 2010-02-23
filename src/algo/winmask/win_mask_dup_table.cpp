@@ -49,8 +49,8 @@
 
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
-#include "win_mask_dup_table.hpp"
-#include "win_mask_util.hpp"
+#include <algo/winmask/win_mask_dup_table.hpp>
+#include <algo/winmask/win_mask_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -378,13 +378,14 @@ void tracker::report_match( Uint4 queryseq, Uint4 match_count,
                             string::size_type q_off )
 {
     string query_id( table.seqid( queryseq ) );
-    NcbiCerr << "Possible duplication of sequences:\n"
+    LOG_POST( Warning << 
+           "Possible duplication of sequences:\n"
         << "subject: " << subject_id << " and query: " << query_id << "\n"
         << "at intervals\n"
         << "subject: " << s_off - match_count*SAMPLE_SKIP
         << " --- " << s_off - SAMPLE_SKIP << "\n"
         << "query  : " << q_off - match_count*SAMPLE_SKIP
-        << " --- " << q_off - SAMPLE_SKIP << "\n" << endl;
+        << " --- " << q_off - SAMPLE_SKIP << "\n" );
 }
 
 //------------------------------------------------------------------------------
@@ -538,7 +539,7 @@ namespace {
             const string & infmt, bool parse_seqids )
     {
         if( infmt == "fasta" ) {
-            _ASSERT( is != 0 );
+            assert( is != 0 );
             return new CMaskFastaReader( *is, true, parse_seqids );
         }
         else if( infmt == "blastdb" ) {
@@ -551,8 +552,8 @@ namespace {
 //------------------------------------------------------------------------------
 void CheckDuplicates( const vector< string > & input,
                       const string & infmt,
-                      const CWinMaskConfig::CIdSet * ids,
-                      const CWinMaskConfig::CIdSet * exclude_ids )
+                      const CWinMaskUtil::CIdSet * ids,
+                      const CWinMaskUtil::CIdSet * exclude_ids )
 {
     typedef vector< string >::const_iterator input_iterator;
 
@@ -565,14 +566,13 @@ void CheckDuplicates( const vector< string > & input,
         // CMaskFastaReader reader( istream );
         std::auto_ptr< CMaskReader > reader_p(
                 x_GetReader( *i, &istream, infmt, false ) );
-        _ASSERT( reader_p.get() != 0 );
+        assert( reader_p.get() != 0 );
         CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
         Uint4 seqnum( 0 );
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            if( entry->Which() == CSeq_entry::e_not_set ) continue;
             CScope scope(*om);
             CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 

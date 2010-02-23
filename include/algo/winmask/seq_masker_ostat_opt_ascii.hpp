@@ -55,6 +55,14 @@ CSeqMaskerOstatOptAscii : public CSeqMaskerOstatOpt
         explicit CSeqMaskerOstatOptAscii( const string & name, Uint2 sz );
 
         /**
+         **\brief Object constructor.
+         **\param os the output stream 
+         **\param sz requested upper limit on the size of the data structure
+         **          (forwarded to CSeqMaskerOstatOpt)
+         **/
+        explicit CSeqMaskerOstatOptAscii( CNcbiOstream & os, Uint2 sz );
+
+        /**
          **\brief Object destructor.
          **/
         virtual ~CSeqMaskerOstatOptAscii() {}

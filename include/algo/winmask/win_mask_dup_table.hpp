@@ -26,48 +26,46 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Header file for CWinMaskSeqTitle class.
+ *   Declaration of CheckDuplicates function.
  *
  */
 
-#error "don't include me"
-#ifndef C_WIN_MASK_SEQ_TITLE_H
-#define C_WIN_MASK_SEQ_TITLE_H
+#ifndef C_WIN_MASK_DUP_TABLE_HPP
+#define C_WIN_MASK_DUP_TABLE_HPP
 
-#include <corelib/ncbistre.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+#include <string>
+#include <vector>
+#include <set>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <algo/winmask/win_mask_util.hpp>
+
+// #include "win_mask_config.hpp"
 
 BEGIN_NCBI_SCOPE
 
 /**
- **\brief Some utilities for extracting title strings from
- **       bioseqs.
+ **\brief Check for possibly duplicate sequences in the input.
+ **
+ ** input contains the list of input file names. The files should be in
+ ** the fasta format. The function checks the input sequences for
+ ** duplication and reports possible duplicates to the standard error.
+ ** 
+ **\param input list of input file names
+ **\param infmt input format
+ **\param ids set of ids to check
+ **\param exclude_ids set of ids to ignore
+ **
  **/
-class CWinMaskSeqTitle
-{
-public:
-
-    /**
-     **\brief Get the complete title of the bioseq including 
-     **       id and description.
-     **
-     **\param seh seq entry handle (via object manager)
-     **\param seq the sequence whose id is to be printed
-     **
-     **/
-    static const string GetTitle( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
-
-    /**
-     **\brief Get the id part of the title (the first word).
-     **
-     **\param seh seq entry handle (via object manager)
-     **\param seq the sequence whose id is to be printed
-     **
-     **/
-    static const string GetId( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
-};
+void CheckDuplicates( const vector< string > & input,
+                      const string & infmt,
+                      const CWinMaskUtil::CIdSet * ids,
+                      const CWinMaskUtil::CIdSet * exclude_ids );
 
 END_NCBI_SCOPE
 

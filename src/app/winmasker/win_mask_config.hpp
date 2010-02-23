@@ -43,6 +43,7 @@
 
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <algo/winmask/win_mask_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -94,121 +95,9 @@ public:
         NCBI_EXCEPTION_DEFAULT( CWinMaskConfigException, CException );
     };
 
-    /**\brief Base class for sets of seq_id representations used with
-              -ids and -exclude-ids options.
-    */
-    class CIdSet
-    {
-        public:
-
-            /**\brief Object destructor.
-            */
-            virtual ~CIdSet() {}
-
-            /**\brief Add a string to the id set.
-               \param id_str id to add
-            */
-            virtual void insert( const string & id_str ) = 0;
-
-            /**\brief Check if the id set is empty.
-               \return true if the id set is empty, false otherwise
-            */
-            virtual bool empty() const = 0;
-
-            /**\brief Check if the id of the given bioseq is in the id set.
-               \param bsh bioseq handle which id is to be checked
-               \return true if the id of the bsh is found in the id set;
-                       false otherwise
-            */
-            virtual bool find( const objects::CBioseq_Handle & bsh ) const = 0;
-    };
-
-    /**\brief Implementation of CIdSet that compares CSeq_id handles.
-    */
-    class CIdSet_SeqId : public CIdSet
-    {
-        public:
-
-            /**\brief Object destuctor.
-            */
-            virtual ~CIdSet_SeqId() {}
-
-            /**\brief See documentation for CIdSet::insert().
-            */
-            virtual void insert( const string & id_str );
-
-            /**\brief See documentation for CIdSet::empty().
-            */
-            virtual bool empty() const { return idset.empty(); }
-
-            /**\brief See documentation for CIdSet::find().
-            */
-            virtual bool find( const objects::CBioseq_Handle & ) const;
-
-        private:
-
-            /**\internal
-               \brief Container to store id handles.
-            */
-            set< objects::CSeq_id_Handle > idset;
-    };
-
-    /**\brief Implementation of CIdSet that does substring matching.
-    */
-    class CIdSet_TextMatch : public CIdSet
-    {
-        public:
-
-            /**\brief Object destructor.
-            */
-            virtual ~CIdSet_TextMatch() {}
-
-            /**\brief See documentation for CIdSet::insert().
-            */
-            virtual void insert( const string & id_str );
-
-            /**\brief See documentation for CIdSet::empty().
-            */
-            virtual bool empty() const { return nword_sets_.empty(); }
-
-            /**\brief See documentation for CIdSet::find().
-            */
-            virtual bool find( const objects::CBioseq_Handle & ) const;
-
-        private:
-
-            /**\internal\brief Set of ids consisting of the same number of words.
-            */
-            typedef set< string > TNwordSet;
-
-            /**\internal\brief Split a string into words and return an array
-                               of word start offsets.
-
-                The last element is always one past the end of the last word.
-
-                \param id_str string to split into words
-                \return vector of word start offsets
-            */
-            static const vector< Uint4 > split( const string & id_str );
-
-            /**\internal\brief Match an id by string.
-               \param id_str string to match against.
-               \return true if some id in the id set is a whole word substring 
-                       of id_str, false otherwise
-            */
-            bool find( const string & id_str ) const;
-
-            /**\internal\brief Match an n-word id by strings.
-               \param id_str n-word id substring
-               \param nwords number of words in id_str - 1
-               \return true if id_str is found in id set, false otherwise
-            */
-            bool find( const string & id_str, Uint4 nwords ) const;
-
-            /**\internal\brief Set of ids grouped by the number of words.
-            */
-            vector< TNwordSet > nword_sets_;
-    };
+    typedef CWinMaskUtil::CIdSet CIdSet;
+    typedef CWinMaskUtil::CIdSet_SeqId CIdSet_SeqId;
+    typedef CWinMaskUtil::CIdSet_TextMatch CIdSet_TextMatch;
 
     /**
      **\brief Object constructor.

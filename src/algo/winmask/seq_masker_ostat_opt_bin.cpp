@@ -40,7 +40,18 @@ BEGIN_NCBI_SCOPE
 CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( const string & name, 
                                               Uint2 sz, bool arg_use_ba )
     : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), sz ),
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), sz, true ),
+      use_ba( arg_use_ba )
+{ 
+    if( use_ba )
+        write_word( (Uint4)2 ); 
+    else write_word( (Uint4)1 );
+} 
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( CNcbiOstream & os,
+                                              Uint2 sz, bool arg_use_ba )
+    : CSeqMaskerOstatOpt( os, sz, false ),
       use_ba( arg_use_ba )
 { 
     if( use_ba )

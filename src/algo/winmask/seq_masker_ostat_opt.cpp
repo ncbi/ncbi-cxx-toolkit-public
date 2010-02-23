@@ -49,8 +49,9 @@ static const unsigned long MB = 1024L*1024L;
 static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOpt::CSeqMaskerOstatOpt( CNcbiOstream & os, Uint2 sz ) 
-    : CSeqMaskerOstat( os ), size_requested( sz ),
+CSeqMaskerOstatOpt::CSeqMaskerOstatOpt( 
+        CNcbiOstream & os, Uint2 sz, bool alloc ) 
+    : CSeqMaskerOstat( os, alloc ), size_requested( sz ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 {}
 
@@ -103,8 +104,8 @@ void CSeqMaskerOstatOpt::createCacheBitArray( Uint4 ** cba )
     typedef vector< Uint4 >::size_type size_type;
     Uint8 total = (unit_bit_size == 32) ? 0x100000000ULL : (1<<unit_bit_size);
     Uint8 divisor = 8*sizeof( Uint4 );
-    cerr << "divisor: " << divisor << " size: " 
-         << (total/(2048*divisor)) << " KB" << endl;
+    _TRACE( "divisor: " << divisor << " size: " << 
+            (total/(2048*divisor)) << " KB" );
     size_type size = (size_type)( total/divisor );
 
     try
@@ -166,12 +167,14 @@ Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll,
         else avcoll[i] = 0;
 
         ncoll[i] = t;
-        NcbiCerr << " k                  = " << (int)k << endl
+        /*
+        _TRACE(     " k                  = " << (int)k << endl
                  << " i                  = " << (int)i << endl
                  << " colliding units    = " << t << endl
                  << " collisions         = " << tc << endl
                  << " max collisions     = " << (int)mxcoll[i] << endl
-                 << " average collisions = " << avcoll[i] << endl;
+                 << " average collisions = " << avcoll[i] );
+        */
     }
 
     const double * minav = min_element( avcoll, avcoll + u - k + 1 );
@@ -184,7 +187,7 @@ Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll,
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOpt::doFinalize()
 {
-    NcbiCerr << "Optimizing the data structure." << endl;
+    LOG_POST( "optimizing the data structure" );
     Uint4 *cba = 0;
     createCacheBitArray( &cba );
     Uint1 k = unit_bit_size - 1;
@@ -247,10 +250,10 @@ void CSeqMaskerOstatOpt::doFinalize()
         NCBI_THROW( Exception, eMemory,
                     "Can not find parameters to satisfy memory requirements" );
 
-    NcbiCerr << "Using the following hash parameters: \n"
+    _TRACE(     "Using the following hash parameters: \n"
              << "hash key length = " << (int)k << " bits\n"
              << "right offset    = " << (int)roff << " bits\n"
-             << "estimated size  = " << 2*M + (1UL<<(k+2)) << " bytes\n";
+             << "estimated size  = " << 2*M + (1UL<<(k+2)) << " bytes\n" );
 
     // fill in the hash and value tables.
     Uint4 * htp = ht.get();

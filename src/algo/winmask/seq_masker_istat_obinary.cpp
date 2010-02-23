@@ -159,14 +159,12 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
             Uint4 * cba = new Uint4[cba_size];
 
             if( cba == 0 )
-                NcbiCerr << "Warning: allocation failed: "
-                            "bit array optimizations are not used." 
-                         << endl;
+                LOG_POST( Warning << "allocation failed: "
+                                  << "bit array optimizations are not used." );
             else if( !input_stream.read( (char *)cba, cba_size*sizeof( Uint4 ) ) )
             {
-                NcbiCerr << "Warning: file read failed: "
-                            "bit array optimizations are not used." 
-                         << endl;
+                LOG_POST( Warning << "file read failed: "
+                                  << "bit array optimizations are not used." );
                 delete[] cba;
                 cba = 0;
             }

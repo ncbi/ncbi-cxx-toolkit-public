@@ -36,10 +36,10 @@
 
 #include <algo/winmask/seq_masker_util.hpp>
 #include <algo/winmask/seq_masker_istat_factory.hpp>
-#include "algo/winmask/seq_masker_ostat_factory.hpp"
-#include "algo/winmask/seq_masker_ostat.hpp"
+#include <algo/winmask/seq_masker_ostat_factory.hpp>
+#include <algo/winmask/seq_masker_ostat.hpp>
 
-#include "win_mask_counts_converter.hpp"
+#include <algo/winmask/win_mask_counts_converter.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -47,37 +47,55 @@ BEGIN_NCBI_SCOPE
 CWinMaskCountsConverter::CWinMaskCountsConverter(
     const string & input_fname, const string & output_fname,
     const string & counts_oformat )
-    : istat( 0 ), ofname( output_fname ), oformat( counts_oformat )
+    : istat( 0 ), ofname( output_fname ), oformat( counts_oformat ), os( 0 )
 {
-    // if( input_fname == "" ) {
     if( input_fname == "-" ) {
         NCBI_THROW( 
                 Exception, eBadOption, "input file name must be non-empty" );
     }
 
-    // if( output_fname == "" ) {
     if( output_fname == "-" ) {
         NCBI_THROW( 
                 Exception, eBadOption, "output file name must be non-empty" );
     }
 
-    NcbiCout << "reading counts..." << flush;
+    LOG_POST( "reading counts..." );
     istat = CSeqMaskerIstatFactory::create( 
             input_fname, 0, 0, 0, 0, 0, 0, true );
-    NcbiCout << "done" << endl;
+}
+
+//------------------------------------------------------------------------------
+CWinMaskCountsConverter::CWinMaskCountsConverter(
+    const string & input_fname, CNcbiOstream & out_stream,
+    const string & counts_oformat )
+    : istat( 0 ), ofname( "" ), oformat( counts_oformat ), os( &out_stream )
+{
+    if( input_fname == "-" ) {
+        NCBI_THROW( 
+                Exception, eBadOption, "input file name must be non-empty" );
+    }
+
+    LOG_POST( "reading counts..." );
+    istat = CSeqMaskerIstatFactory::create( 
+            input_fname, 0, 0, 0, 0, 0, 0, true );
 }
 
 //------------------------------------------------------------------------------
 int CWinMaskCountsConverter::operator()()
 {
-    CRef< CSeqMaskerOstat > ostat(
-        CSeqMaskerOstatFactory::create( oformat, ofname, true ) );
+    CRef< CSeqMaskerOstat > ostat( 0 );
+
+    if( os == 0 ) {
+        ostat = CSeqMaskerOstatFactory::create( oformat, ofname, true );
+    }
+    else ostat = CSeqMaskerOstatFactory::create( oformat, *os, true );
+
     Uint4 unit_size = istat->UnitSize();
-    NcbiCout << "set unit size to " << unit_size << endl;
+    _TRACE( "set unit size to " << unit_size );
     ostat->setUnitSize( unit_size );
     Uint8 num_units = (unit_size < 16) ? (1ULL<<(2*unit_size))
                                        : 0x100000000ULL;
-    NcbiCout << "converting counts..." << flush;
+    LOG_POST( "converting counts..." );
 
     for( Uint8 i = 0; i < num_units; ++i ) {
         Uint4 ri = CSeqMaskerUtil::reverse_complement( i, unit_size );
@@ -88,8 +106,7 @@ int CWinMaskCountsConverter::operator()()
         }
     }
 
-    NcbiCout << "done" << endl;
-    NcbiCout << "converting parameters..." << flush;
+    LOG_POST( "converting parameters..." );
     ostat->setBlank();
 
     ostat->setBlank();
@@ -102,10 +119,8 @@ int CWinMaskCountsConverter::operator()()
     ostat->setParam( "t_threshold", t_threshold );
     ostat->setParam( "t_high     ", t_high );
     ostat->setBlank();
-    NcbiCout << "done" << endl;
-    NcbiCout << "final processing..." << flush;
+    LOG_POST( "final processing..." );
     ostat->finalize();
-    NcbiCout << "done" << endl;
     return 0;
 }
 

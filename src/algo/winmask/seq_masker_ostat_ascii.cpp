@@ -51,15 +51,21 @@ CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( const string & name )
-    : CSeqMaskerOstat( name.empty() ? static_cast<CNcbiOstream&>(NcbiCout)
-                                  : static_cast<CNcbiOstream&>(*new CNcbiOfstream( name.c_str() )) )
+    : CSeqMaskerOstat( 
+            name.empty() ? 
+            static_cast<CNcbiOstream&>(NcbiCout) : 
+            static_cast<CNcbiOstream&>(*new CNcbiOfstream( name.c_str() )),
+            name.empty() ? false : true )
+{}
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( CNcbiOstream & os )
+    : CSeqMaskerOstat( os, false )
 {}
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatAscii::~CSeqMaskerOstatAscii()
 {
-    if( &out_stream != &NcbiCout )
-        delete &out_stream;
 }
 
 //------------------------------------------------------------------------------

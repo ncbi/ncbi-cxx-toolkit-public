@@ -40,7 +40,19 @@ BEGIN_NCBI_SCOPE
 CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( const string & name, 
                                                   Uint2 sz )
     : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str() ) ), sz ) 
+        *new CNcbiOfstream( name.c_str() ) ), sz, true ) 
+{ 
+    // File format identifier
+    out_stream << (char)65; 
+    out_stream << (char)65; 
+    out_stream << (char)65; 
+    out_stream << (char)65 << endl; 
+}
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( CNcbiOstream & os, 
+                                                  Uint2 sz )
+    : CSeqMaskerOstatOpt( os, sz, false ) 
 { 
     // File format identifier
     out_stream << (char)65; 

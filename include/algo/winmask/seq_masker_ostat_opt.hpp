@@ -74,8 +74,9 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatOpt : public CSeqMaskerOstat
          **\brief Object constructor.
          **\param os output stream object, forwarded to CSeqMaskerOstream base
          **\param sz requested size of the unit counts file in megabytes
+         **\param alloc flag to indicate that the stream was allocated
          **/
-        explicit CSeqMaskerOstatOpt( CNcbiOstream & os, Uint2 sz );
+        explicit CSeqMaskerOstatOpt( CNcbiOstream & os, Uint2 sz, bool alloc );
 
         /**
          **\brief Object destructor.

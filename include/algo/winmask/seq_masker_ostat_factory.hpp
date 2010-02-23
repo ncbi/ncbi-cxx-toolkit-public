@@ -87,6 +87,21 @@ public:
         **/
     static CSeqMaskerOstat * create( 
         const string & ustat_type, const string & name, bool use_ba );
+
+    /**
+        **\brief Method used to create a CSeqMakserOstat object by format name.
+        **
+        ** The method instantiates the appropriate subclass of CSeqMaskerOstat
+        ** corresponding to the name of the file format, or throws an exception
+        ** if the format name is not recognized.
+        **
+        **\param ustat_type the name of the unit counts file format
+        **\param os the output stream
+        **\param use_ba whether to use bit array based optimizations
+        **\return pointer to the newly created object
+        **/
+    static CSeqMaskerOstat * create( 
+        const string & ustat_type, CNcbiOstream & os, bool use_ba );
 };
 
 END_NCBI_SCOPE

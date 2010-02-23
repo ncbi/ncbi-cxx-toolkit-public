@@ -56,6 +56,15 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
         explicit CSeqMaskerOstatOptBin( const string & name, Uint2 sz, bool use_ba );
 
         /**
+         **\brief Object constructor.
+         **\param os the output stream
+         **\param sz requested upper limit on the size of the data structure
+         **          (forwarded to CSeqMaskerOstatOpt)
+         **\param use_ba use bit array optimization
+         **/
+        explicit CSeqMaskerOstatOptBin( CNcbiOstream & os, Uint2 sz, bool use_ba );
+
+        /**
          **\brief Object destructor.
          **/
         virtual ~CSeqMaskerOstatOptBin() {}

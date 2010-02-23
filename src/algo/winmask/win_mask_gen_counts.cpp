@@ -50,9 +50,9 @@
 
 #include <algo/winmask/seq_masker_util.hpp>
 
-#include "win_mask_gen_counts.hpp"
-#include "win_mask_dup_table.hpp"
-#include "win_mask_util.hpp"
+#include <algo/winmask/win_mask_gen_counts.hpp>
+#include <algo/winmask/win_mask_dup_table.hpp>
+#include <algo/winmask/win_mask_util.hpp>
 #include "algo/winmask/seq_masker_ostat_factory.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -108,7 +108,7 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
     // CMaskFastaReader reader( input_stream );
     std::auto_ptr< CMaskReader > reader_p( x_GetReader( 
                 fname, &input_stream, infmt, false ) );
-    _ASSERT( reader_p.get() != 0 );
+    assert( reader_p.get() != 0 );
     CMaskReader & reader( *reader_p.get() );
     CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
@@ -117,7 +117,6 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 
     while( (entry = reader.GetNextSequence()).NotEmpty() )
     {
-        if( entry->Which() == CSeq_entry::e_not_set ) continue;
         CScope scope(*om);
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -140,6 +139,50 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 //------------------------------------------------------------------------------
 CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
     const string & arg_input,
+    CNcbiOstream & os,
+    const string & infmt_arg,
+    const string & sformat,
+    const string & arg_th,
+    Uint4 mem_avail,
+    Uint1 arg_unit_size,
+    Uint8 arg_genome_size,
+    Uint4 arg_min_count,
+    Uint4 arg_max_count,
+    bool arg_check_duplicates,
+    bool arg_use_list,
+    const CWinMaskUtil::CIdSet * arg_ids,
+    const CWinMaskUtil::CIdSet * arg_exclude_ids,
+    bool use_ba )
+:   input( arg_input ),
+    ustat( CSeqMaskerOstatFactory::create( sformat, os, use_ba ) ),
+    max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
+    genome_size( arg_genome_size ),
+    min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    max_count( 500 ),
+    t_high( arg_max_count ),
+    has_min_count( arg_min_count != 0 ),
+    no_extra_pass( arg_min_count != 0 && arg_max_count != 0 ),
+    check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
+    total_ecodes( 0 ), 
+    score_counts( max_count, 0 ),
+    ids( arg_ids ), exclude_ids( arg_exclude_ids ),
+    infmt( infmt_arg )
+{
+    // Parse arg_th to set up th[].
+    string::size_type pos( 0 );
+    Uint1 count( 0 );
+
+    while( pos != string::npos && count < 4 )
+    {
+        string::size_type newpos = arg_th.find_first_of( ",", pos );
+        th[count++] = atof( arg_th.substr( pos, newpos - pos ).c_str() );
+        pos = (newpos == string::npos ) ? newpos : newpos + 1;
+    }
+}
+
+//------------------------------------------------------------------------------
+CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
+    const string & arg_input,
     const string & output,
     const string & infmt_arg,
     const string & sformat,
@@ -151,8 +194,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     Uint4 arg_max_count,
     bool arg_check_duplicates,
     bool arg_use_list,
-    const CWinMaskConfig::CIdSet * arg_ids,
-    const CWinMaskConfig::CIdSet * arg_exclude_ids,
+    const CWinMaskUtil::CIdSet * arg_ids,
+    const CWinMaskUtil::CIdSet * arg_exclude_ids,
     bool use_ba )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( sformat, output, use_ba ) ),
@@ -207,24 +250,21 @@ void CWinMaskCountsGenerator::operator()()
     if( check_duplicates )
     {
         CheckDuplicates( file_list, infmt, ids, exclude_ids );
-        cerr << "." << flush;
     }
 
     if( unit_size == 0 )
     {
         if( genome_size == 0 )
         {
-            cerr << "Computing the genome length" << flush;
+            LOG_POST( "computing the genome length" );
             Uint8 total = 0;
 
             for(    vector< string >::const_iterator i = file_list.begin();
                     i != file_list.end(); ++i )
             {
                 total += fastalen( *i );
-                cerr << "." << flush;
             }
 
-            cerr << "done." << endl;
             genome_size = total;
 
             if( genome_size == 0 ) {
@@ -239,7 +279,7 @@ void CWinMaskCountsGenerator::operator()()
         }
 
         ++unit_size;
-        cerr << "Unit size is: " << unit_size << endl;
+        _TRACE( "unit size is: " << unit_size );
     }
 
     // Estimate the length of the prefix. 
@@ -258,21 +298,18 @@ void CWinMaskCountsGenerator::operator()()
         suffix_size = unit_size;
     }
 
-    cerr << "prefix size " << (int)prefix_size << endl;
-
     ustat->setUnitSize( unit_size );
 
     // Now process for each prefix.
     Uint4 prefix_exp( 1<<(2*prefix_size) );
     Uint4 passno = 1;
-    cerr << "Pass " << passno << flush;
+    LOG_POST( "pass " << passno );
 
     for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix ) {
         process( prefix, prefix_size, file_list, no_extra_pass );
     }
 
     ++passno;
-    cerr << endl;
 
     // Now put the final statistics as comments at the end of the output.
     for( Uint4 i( 1 ); i < max_count; ++i )
@@ -328,13 +365,10 @@ void CWinMaskCountsGenerator::operator()()
         for( Uint4 i( 0 ); i < max_count; ++i )
             score_counts[i] = 0;
 
-        cerr << "Pass " << passno << flush;
+        LOG_POST( "pass " << passno );
 
-        for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix ) {
+        for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
             process( prefix, prefix_size, file_list, true );
-        }
-
-        cerr << endl;
 
         for( Uint4 i( 1 ); i < max_count; ++i )
             score_counts[i] += score_counts[i-1];
@@ -376,7 +410,6 @@ void CWinMaskCountsGenerator::operator()()
     ustat->setParam( "t_high     ", index[3] );
     ustat->setBlank();
     ustat->finalize();
-    cerr << endl;
 }
 
 //------------------------------------------------------------------------------
@@ -402,13 +435,12 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
         // CMaskFastaReader reader( input_stream );
         std::auto_ptr< CMaskReader > reader_p(
                 x_GetReader( *it, &input_stream, infmt, false ) );
-        _ASSERT( reader_p.get() != 0 );
+        assert( reader_p.get() != 0 );
         CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            if( entry->Which() == CSeq_entry::e_not_set ) continue;
             CScope scope(*om);
             CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -456,8 +488,6 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
                 }
             }
         }
-
-        cerr << "." << flush;
     }
 
     for( Uint4 i( 0 ); i < vector_size; ++i )

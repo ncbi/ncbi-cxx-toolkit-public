@@ -54,6 +54,38 @@ CSeqMaskerOstatFactory::CSeqMaskerOstatFactoryException::GetErrCodeString() cons
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
+    const string & ustat_type, CNcbiOstream & os, bool use_ba )
+{
+    try
+    {
+        if( ustat_type.substr( 0, 5 ) == "ascii" )
+            return new CSeqMaskerOstatAscii( os );
+        else if( ustat_type.substr( 0, 6 ) == "binary" )
+            return new CSeqMaskerOstatBin( os );
+        else if( ustat_type.substr( 0, 6 ) == "oascii" )
+        {
+            Uint4 size = atoi( ustat_type.substr( 6 ).c_str() );
+            return new CSeqMaskerOstatOptAscii( os, size );
+        }
+        else if( ustat_type.substr( 0, 7 ) == "obinary" )
+        {
+            Uint4 size = atoi( ustat_type.substr( 7 ).c_str() );
+            return new CSeqMaskerOstatOptBin( os, size, use_ba );
+        }
+        else NCBI_THROW( CSeqMaskerOstatFactoryException,
+                         eBadName,
+                         "unkown unit counts format" );
+    }
+    catch( ... )
+    {
+        NCBI_THROW( CSeqMaskerOstatFactoryException,
+                    eCreateFail,
+                    "could not create a unit counts container" );
+    }
+}
+    
+//------------------------------------------------------------------------------
+CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
     const string & ustat_type, const string & name, bool use_ba )
 {
     try

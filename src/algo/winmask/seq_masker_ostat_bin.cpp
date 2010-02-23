@@ -45,7 +45,13 @@ static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 //------------------------------------------------------------------------------
 CSeqMaskerOstatBin::CSeqMaskerOstatBin( const string & name )
     : CSeqMaskerOstat( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ) ),
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), true ),
+      pvalues( sizeof( PARAMS )/sizeof( const char * ) )
+{ write_word( (Uint4)0 ); } // Format identifier.
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstatBin::CSeqMaskerOstatBin( CNcbiOstream & os )
+    : CSeqMaskerOstat( os, false ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 { write_word( (Uint4)0 ); } // Format identifier.
 
@@ -58,7 +64,7 @@ CSeqMaskerOstatBin::~CSeqMaskerOstatBin()
          write_word( *i );
   }
   catch( ... )
-  { cerr << "Error writing trailer." << endl; }
+  { LOG_POST( Error<< "Error writing trailer." ); }
 
   out_stream.flush();
 }

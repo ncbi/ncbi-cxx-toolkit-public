@@ -47,8 +47,9 @@
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 
-#include "algo/winmask/seq_masker_ostat.hpp"
-#include "win_mask_config.hpp"
+#include <algo/winmask/seq_masker_ostat.hpp>
+#include <algo/winmask/win_mask_util.hpp>
+// #include "win_mask_config.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -125,8 +126,54 @@ public:
                              Uint4 max_count,
                              bool check_duplicates,
                              bool use_list,
-                             const CWinMaskConfig::CIdSet * ids,
-                             const CWinMaskConfig::CIdSet * exclude_ids,
+                             const CWinMaskUtil::CIdSet * ids,
+                             const CWinMaskUtil::CIdSet * exclude_ids,
+                             bool use_ba );
+
+    /**
+     **\brief Constructor.
+     **
+     ** Creates an instance based on configuration parameters.
+     **
+     **\param input input file name or a name of the file containing
+     **             a list of input files (one per line) depending 
+     **             on the value of use_list parameter
+     **\param os the output stream
+     **\param infmt input format
+     **\param sformat counts format
+     **\param th string describing 4 percentage values (comma separated)
+     **          used to compute winmask score thresholds
+     **\param mem_avail memory (in megabytes) available to the function
+     **\param unit_size n-mer size (value of n)
+     **\param min_count do not consider n-mers with counts less than 
+     **                 the value this parameter
+     **\param max_count maximum n-mer count to consider in winmask
+     **                 thresholds computations 
+     **\param check_duplicates true if input checking for duplicates is
+     **                        requested; false otherwise
+     **\param use_list true if input file contains the list of fasta
+     **                file names; false if input is the name of the
+     **                fasta file itself
+     **\param ids set of ids to consider
+     **\param exclude_ids set of ids to ignore
+     **\param use_ba use bit array optimization for optimized binary
+     **              unit counts format
+     **
+     **/
+    CWinMaskCountsGenerator( const string & input,
+                             CNcbiOstream & os,
+                             const string & infmt,
+                             const string & sformat,
+                             const string & th,
+                             Uint4 mem_avail,
+                             Uint1 unit_size,
+                             Uint8 genome_size,
+                             Uint4 min_count,
+                             Uint4 max_count,
+                             bool check_duplicates,
+                             bool use_list,
+                             const CWinMaskUtil::CIdSet * ids,
+                             const CWinMaskUtil::CIdSet * exclude_ids,
                              bool use_ba );
 
     /**
@@ -183,7 +230,7 @@ private:
             const string & infmt, bool parse_seqids ) const
     {
         if( infmt == "fasta" ) {
-            _ASSERT( is != 0 );
+            assert( is != 0 );
             return new CMaskFastaReader( *is, true, parse_seqids );
         }
         else if( infmt == "blastdb" ) {
@@ -209,8 +256,8 @@ private:
     vector< Uint4 > score_counts;   /**<\internal counts table for each suffix */
     double th[4];                   /**<\internal percentages used to determine threshold scores */
 
-    const CWinMaskConfig::CIdSet * ids;         /**<\internal set of ids to process */
-    const CWinMaskConfig::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
+    const CWinMaskUtil::CIdSet * ids;         /**<\internal set of ids to process */
+    const CWinMaskUtil::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
 
     string infmt;                   /**<\internal input format */
 };

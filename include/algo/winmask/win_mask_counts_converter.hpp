@@ -84,6 +84,18 @@ class CWinMaskCountsConverter
                 const string & counts_oformat );
 
         /**
+            \brief Instance constructor.
+
+            \param input_fname   input file name
+            \param out_stream the output stream
+            \param counts_format desired format for the output
+         **/
+        CWinMaskCountsConverter(
+                const string & input_fname,
+                CNcbiOstream & out_stream,
+                const string & counts_oformat );
+
+        /**
             \brief Method performing the actual conversion.
 
             \return 0 on success; 1 on failure.
@@ -95,6 +107,7 @@ class CWinMaskCountsConverter
         CRef< CSeqMaskerIstat > istat;  ///< object containing unit counts read from the input
         string ofname;                  ///< output file name
         string oformat;                 ///< target n-mer counts format for the output
+        CNcbiOstream * os;
 };
 
 END_NCBI_SCOPE
