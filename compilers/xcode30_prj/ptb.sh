@@ -213,8 +213,10 @@ else
 fi
 
 if test "$TERM" = "dumb"; then
-  if test -f "${SLN_PATH}_configuration_log.txt"; then
-    open ${SLN_PATH}_configuration_log.txt
+  if ! test "$USE_GUI_CFG" = "yes"; then
+    if test -f "${SLN_PATH}_configuration_log.txt"; then
+      open ${SLN_PATH}_configuration_log.txt
+    fi
   fi
 fi
 
