@@ -115,6 +115,7 @@ private:
     CNcbiOstream* m_pOutput;
     CErrorContainerBase* m_pErrors;
     bool m_bCheckOnly;
+    bool m_bDumpStats;
     int m_iFlags;
 };
 
@@ -209,6 +210,11 @@ void CMultiReaderApp::Init(void)
         "checkonly",
         "check for errors only",
         true );
+        
+    arg_desc->AddFlag(
+        "dumpstats",
+        "write record counts to stderr",
+        false );
         
     arg_desc->AddFlag(
         "noerrors",
@@ -311,6 +317,8 @@ CMultiReaderApp::Run(void)
         break;
     }
     DumpErrors( cerr );
+
+    
     
     return 0;
 }
@@ -379,6 +387,8 @@ void CMultiReaderApp::SetFlags(
     m_iFlags = NStr::StringToInt( 
         args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         
+    m_bDumpStats = args["dumpstats"];
+
     switch( m_uFormat ) {
     
     case CFormatGuess::eWiggle:
