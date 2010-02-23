@@ -35,6 +35,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/Cit_pat.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -361,6 +362,43 @@ void CGenbankFormatter::x_FormatOrganismLine
 // the subkeywords AUTHORS, TITLE (optional), JOURNAL, MEDLINE (optional),
 // PUBMED (optional), and REMARK (optional).
 
+string s_GetLinkCambiaPatentLens( const CReferenceItem& ref, bool bHtml )
+{
+    const string strBaseUrlCambiaPatentLensHead(
+        "http://www.patentlens.net/patentlens/simple.cgi?patnum=" );
+    const string strBaseUrlCambiaPatentLensTail(
+        "#list" );
+
+    if ( ! ref.IsSetPatent() ) {
+        return "";
+    }
+    const CCit_pat& pat = ref.GetPatent();
+
+    if ( ! pat.CanGetCountry()  ||  pat.GetCountry() != "US"  || 
+        ! pat.CanGetNumber() ) 
+    {
+        return "";
+    }
+
+    string strPatString;
+    if ( bHtml ) {
+        strPatString = "CAMBIA Patent Lens: US ";
+        strPatString += "<a href=\"";
+        strPatString += strBaseUrlCambiaPatentLensHead;
+        strPatString += pat.GetCountry();
+        strPatString += pat.GetNumber();
+        strPatString += strBaseUrlCambiaPatentLensTail;
+        strPatString += "\">";
+        strPatString += pat.GetNumber();
+        strPatString += "</a>";
+    }
+    else {
+        strPatString = string( "CAMBIA Patent Lens: US " );  
+        strPatString += pat.GetNumber();
+    }
+    return strPatString;
+}
+
 void CGenbankFormatter::FormatReference
 (const CReferenceItem& ref,
  IFlatTextOStream& text_os)
@@ -505,6 +543,15 @@ void CGenbankFormatter::x_Remark
 {
     if (!NStr::IsBlank(ref.GetRemark())) {
         Wrap(l, "REMARK", ref.GetRemark(), eSubp);
+    }
+    if ( ctx.Config().GetMode() == CFlatFileConfig::eMode_Entrez ) {
+        if ( ref.IsSetPatent() ) {
+            string strCambiaPatentLens = s_GetLinkCambiaPatentLens( ref, 
+                ctx.Config().DoHTML() );
+            if ( ! strCambiaPatentLens.empty() ) {
+                Wrap(l, "REMARK", strCambiaPatentLens, eSubp);
+            }  
+        }      
     }
 }
 
