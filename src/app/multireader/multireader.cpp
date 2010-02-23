@@ -207,14 +207,14 @@ void CMultiReaderApp::Init(void)
     //  Error policy:
     //        
     arg_desc->AddFlag(
-        "checkonly",
-        "check for errors only",
+        "dumpstats",
+        "write record counts to stderr",
         true );
         
     arg_desc->AddFlag(
-        "dumpstats",
-        "write record counts to stderr",
-        false );
+        "checkonly",
+        "check for errors only",
+        true );
         
     arg_desc->AddFlag(
         "noerrors",
@@ -387,8 +387,6 @@ void CMultiReaderApp::SetFlags(
     m_iFlags = NStr::StringToInt( 
         args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         
-    m_bDumpStats = args["dumpstats"];
-
     switch( m_uFormat ) {
     
     case CFormatGuess::eWiggle:
@@ -401,6 +399,9 @@ void CMultiReaderApp::SetFlags(
         if ( args["as-graph"] ) {
             m_iFlags |= CWiggleReader::fAsGraph;
         }
+        if ( args["dumpstats"] ) {
+            m_iFlags |= CWiggleReader::fDumpStats;
+        }
         break;
     
     case CFormatGuess::eBed:
@@ -409,6 +410,9 @@ void CMultiReaderApp::SetFlags(
         }
         if ( args["numeric-ids-as-local"] ) {
             m_iFlags |= CBedReader::fNumericIdsAsLocal;
+        }
+        if ( args["dumpstats"] ) {
+            m_iFlags |= CBedReader::fDumpStats;
         }
         break;
        
