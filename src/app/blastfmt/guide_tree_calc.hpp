@@ -101,8 +101,49 @@ public:
         eNumIds             ///< Number of known feature ids
     };
 
+    /// Distance matrix (square, symmetric with zeros on diagnol)
+    class CDistMatrix
+    {
+    public:
 
-    
+        /// Constructor
+        CDistMatrix(int num_elements = 0);
+
+        /// Get number of rows/columns
+        /// @return Number of rows/columns
+        int GetNumElements(void) const {return m_NumElements;}
+
+        /// Is matrix size zero
+        /// @return true if the matrx has zero elements and false otherwise
+        bool Empty(void) const {return GetNumElements() <= 0;}
+
+        /// Resize matrix
+        /// @param num_elements New number of rows/columns [in]
+        void Resize(int num_elements);
+
+        /// Get distance value
+        /// @param i Row index [in]
+        /// @param j Column index [in]
+        /// @return Distance between i-th and j-th element
+        const double& operator()(int i, int j) const;
+
+        /// Get distance value
+        /// @param i Row index [in]
+        /// @param j Column index [in]
+        /// @return Distance between i-th and j-th element
+        double& operator()(int i, int j);
+
+    private:
+        /// Number of rows/columns
+        int m_NumElements;
+
+        /// Storage for distance values
+        vector<double> m_Distances;
+
+        /// Storage for matrix diagnol value
+        const double m_Diagnol;
+    };
+
     typedef pair<string, string> TBlastNameToColor;
     typedef vector<TBlastNameToColor> TBlastNameColorMap;
 
@@ -182,6 +223,18 @@ public:
     CRef<CSeq_align> GetSeqAlign(void) const;
 
 
+    /// Get divergence matrix
+    /// @return Divergence matrix
+    const CDistMatrix& GetDivergenceMatrix(void) const
+    {return m_DivergenceMatrix;}
+
+    
+    /// Get distance matrix
+    /// @return Distance matrix
+    const CDistMatrix& GetDistanceMatrix(void) const
+    {return m_DistMatrix;}
+
+
     /// Get maximum allowed diveregence between sequences included in tree
     /// reconstruction
     /// @return Max divergence
@@ -243,17 +296,6 @@ public:
     ///
     bool CalcBioTree(void);
 
-
-    /// Compute distance matrix -- apply evolutionary correction to divergence
-    /// @param pmat Divergence matrix [in]
-    /// @param result Distance matrix [out]
-    /// @param method Distance computation method [in]
-    ///
-    static void CalcDistMatrix(const CDistMethods::TMatrix& pmat,
-                               CDistMethods::TMatrix& result,
-                               EDistMethod method);
-
-
     /// Create and initialize tree features. Initializes node labels,
     /// descriptions, colors, etc.
     /// @param btc Tree for which features are to be initialized [in|out]
@@ -312,32 +354,27 @@ protected:
 
     /// Compute divergence matrix and find sequences to exclude from tree
     /// reconstruction
-    /// @param pmat Divergence matrix [out]
-    /// @param max_divergence Maximum allowed divergence [in]
-    /// @param removed Set of indices of excluded sequences [out]
-    /// @return True if at least two sequences are left for tree computation,
-    /// false otherwise
     ///
-    bool x_CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
-                              double max_divergence,
-                              hash_set<int>& removed) const;
-
-    /// Remove entries coresponding to excluded sequences from divergence
-    /// matrix
-    /// @param pmat Divergence matrix [in|out]
-    /// @param used_inds Indices of sequences included in tree computation [in]
+    /// Divergence between all pairs of sequences used for phylogenetic tree
+    /// reconstruction must be smaller than a cutoff (m_Divergence). Hence 
+    /// some sequences may be excluded from tree computation. The first 
+    /// sequence in alignmnet is considered query/master. All sequences similar
+    /// enough to the query and each other are included in tree computation.
     ///
-    static void x_TrimMatrix(CDistMethods::TMatrix& pmat,
-                             const vector<int>& used_inds);
+    /// @param used_indices Vector of sequence indices included in phylogenetic
+    /// tree computation [out]
+    /// @return True if tree can be computed (ie at least two sequences are
+    /// included for tree computation), false otherwise
+    ///
+    bool x_CalcDivergenceMatrix(vector<int>& used_indices);
 
+    /// Compute distance as evolutionary corrected dissimilarity
+    void x_CalcDistMatrix(void);
 
     /// Create alignment only for sequences included in tree computation
-    /// @param removed_inds Indices of excluded sequences [in]
-    /// @param new_align_index Indices of included sequences [out]
-    /// @return New alignment vector
+    /// @param included_indices Indices of included sequences [in]
     ///
-    CRef<CAlnVec> x_CreateValidAlign(const hash_set<int>& removed_inds,
-                                     vector<int>& new_align_index);
+    void x_CreateValidAlign(const vector<int>& used_indices);
 
     /// Create alignmnet composed of subset of sequences
     /// @param alnvec Initial alignment vector [in]
@@ -348,14 +385,25 @@ protected:
 
     
     /// Compute phylogenetic tree
-    /// @param alnvec Alignment vector [in]
-    /// @param dmat Distance matrix [in]
-    /// @param method Tree reconstruction method [in]
     /// @param correct Whether negative tree egde lengths should be set to zero
     /// [in]
     ///
-    void x_ComputeTree(const CAlnVec& alnvec, const CDistMethods::TMatrix& dmat,
-                       ETreeMethod method, bool correct = true);
+    void x_ComputeTree(bool correct = true);
+
+
+protected:
+
+    /// Structure for storing divergences between sequences as list of links
+    struct SLink {
+        int index1;       //< index of sequence 1
+        int index2;       //< index of sequence 2
+        double distance;  //< distance between sequences
+
+        /// Constructor
+        SLink(int ind1, int ind2, double dist)
+            : index1(ind1), index2(ind2), distance(dist) {}
+    };
+
 
 protected:
 
@@ -386,6 +434,16 @@ protected:
     /// Should query node be marked
     bool m_MarkQueryNode;
 
+    /// Matrix of percent identities based distances
+    CDistMatrix m_DivergenceMatrix;
+
+    /// Matrix of evolutionary distance
+    CDistMatrix m_DistMatrix;
+
+    /// Full distance matrix, this data structure is required by CDistMethods
+    /// functions
+    CDistMethods::TMatrix m_FullDistMatrix;
+
     /// Sequences that are not included in the tree
     vector<string> m_RemovedSeqIds;
 
@@ -408,7 +466,8 @@ public:
         eInvalidOptions,
         eTreeComputationProblem,
         eNoTree,
-        eTaxonomyError
+        eTaxonomyError,
+        eDistMatrixError
     };
 
     NCBI_EXCEPTION_DEFAULT(CGuideTreeCalcException, CException);

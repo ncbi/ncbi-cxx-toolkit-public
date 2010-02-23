@@ -41,9 +41,7 @@
 #include <objmgr/align_ci.hpp>
 
 #include <algo/cobalt/tree.hpp>
-
-#include <gui/objutils/utils.hpp>
-
+#include <util/bitset/ncbi_bitset.hpp>
 
 #include <math.h>
 
@@ -75,6 +73,65 @@ static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kUnknown = "unknown";
 static const string s_kSubtreeDisplayed = "0";
 
+
+CGuideTreeCalc::CDistMatrix::CDistMatrix(int num_elements)
+    : m_NumElements(num_elements), m_Diagnol(0.0)
+{
+    if (num_elements > 0) {
+        m_Distances.resize(num_elements * num_elements - num_elements, -1.0);
+    }
+}
+
+void CGuideTreeCalc::CDistMatrix::Resize(int num_elements)
+{
+    m_NumElements = num_elements;
+    if (num_elements > 0) {
+        m_Distances.resize(num_elements * num_elements - num_elements);
+    }
+}
+
+const double& CGuideTreeCalc::CDistMatrix::operator()(int i, int j) const
+{
+    if (i >= m_NumElements || j >= m_NumElements || i < 0 || j < 0) {
+        NCBI_THROW(CGuideTreeCalcException, eDistMatrixError,
+                   "Distance matrix index out of bounds");
+    }
+
+    if (i == j) {
+        return m_Diagnol;
+    }
+
+    if (i < j) {
+        swap(i, j);
+    }
+
+    int index = (i*i - i) / 2 + j;
+    _ASSERT(index < (int)m_Distances.size());
+
+    return m_Distances[index];
+}
+
+double& CGuideTreeCalc::CDistMatrix::operator()(int i, int j)
+{
+    if (i >= m_NumElements || j >= m_NumElements || i < 0 || j < 0) {
+        NCBI_THROW(CGuideTreeCalcException, eDistMatrixError,
+                   "Distance matrix index out of bounds");
+    }
+
+    if (i == j) {
+        NCBI_THROW(CGuideTreeCalcException, eDistMatrixError,
+                   "Distance matrix diagnol elements cannot be set");
+    }
+
+    if (i < j) {
+        swap(i, j);
+    }
+
+    int index = (i*i - i) / 2 + j;
+    _ASSERT(index < (int)m_Distances.size());
+
+    return m_Distances[index];
+}
 
 
 CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
@@ -145,200 +202,247 @@ static const string& s_GetSequence(const CAlnVec& avec,
     }
 }
 
-
-static bool IsIn(const hash_set<int>& set, int val)
+// Make sure that matrix has finite non-negative values
+bool s_ValidateMatrix(const CGuideTreeCalc::CDistMatrix& mat)
 {
-    hash_set<int>::iterator it = set.find(val);
-    return it != set.end();
+    for (int i=0;i < mat.GetNumElements() - 1;i++) {
+        for (int j=i+1;j < mat.GetNumElements();j++) {
+            double val = mat(i, j);
+            if (!finite(val) || val < 0.0) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
-
 // Calculate divergence matrix, considering max divergence constraint
-bool CGuideTreeCalc::x_CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
-                                            double max_divergence,
-                                            hash_set<int>& removed) const
+bool CGuideTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
 {
-    const CAlnVec& alnvec = *m_AlignDataSource;
-    int num_seqs = alnvec.GetNumRows();
-    pmat.Resize(num_seqs, num_seqs);
+    int num_seqs = m_AlignDataSource->GetNumRows();
 
-    vector<string> sequences(num_seqs);
+    bm::bvector<> bitvector; // which seqeunces will be included in phylo tree
+    list<SLink> links;       // for storing dissimilariues between sequences
+    vector<string> sequences(num_seqs);  // buffer for AA sequences
 
-    const string& query_seq = s_GetSequence(alnvec, sequences, 0);
+    // query has always zero index and is always included
+    const int query_idx = 0;
+    const string& query_seq = s_GetSequence(*m_AlignDataSource, sequences,
+                                            query_idx);
+    bitvector.set(query_idx);
+    
+    // Compute distances between query and each sequence
+    // and include only sequences that are similar enough to the query
 
-    // Compute distances to query
-    // and remove sequences to distant from the query
+    // for each sequence except for query
     for (int i=1;i < num_seqs;i++) {
-        // Divergence between same seqs is zero
-        pmat(i, i) = 0;
 
-        const string& seqi = s_GetSequence(alnvec, sequences, i);
+        // find divergence
+        const string& seqi = s_GetSequence(*m_AlignDataSource, sequences, i);
         double dist = CDistMethods::Divergence(query_seq, seqi);
         _ASSERT(!finite(dist) || dist >= 0.0);
 
-        pmat(i, 0) = pmat(0, i) = dist;
-
-        if (!finite(dist) || dist > max_divergence) {
-            removed.insert(i);
+        // if divergence is finite and smaller than cutoff save divergence
+        // and mark sequence as included
+        if (finite(dist) && dist <= m_MaxDivergence) {
+            links.push_back(SLink(query_idx, i, dist));
+            bitvector.set(i);
         }
-
     }
 
-    // Same for all remaning pairs
-    // for each sequence
-    for (int i=1;i < num_seqs - 1;i++) { //skiping query
+    // Compute distances between incuded sequences
+    list<SLink>::const_iterator it1 = links.begin();
 
-        // check if already removed
-        if (IsIn(removed, i)) {
+    // for each included sequence 1
+    for (; it1 != links.end() && it1->index1 == query_idx; ++it1) {
+
+        // check if still included
+        if (!bitvector.test(it1->index2)) {
             continue;
         }
-        const string& seqi = s_GetSequence(alnvec, sequences, i);
+        const string& seqi = s_GetSequence(*m_AlignDataSource, sequences,
+                                           it1->index2);
 
-        // for each sequence
-        for (int j=i+1;j < num_seqs;j++) {
+        list<SLink>::const_iterator it2(it1);
+        it2++;
 
-            if (IsIn(removed, j)) {
+        // for each sequence 2
+        for (; it2 != links.end() && it2->index1 == query_idx; ++it2) {
+
+            // check if still included
+            if (!bitvector.test(it2->index2)) {
                 continue;
             }
-            const string& seqj = s_GetSequence(alnvec, sequences, j);
+            const string& seqj = s_GetSequence(*m_AlignDataSource, sequences,
+                                               it2->index2);
 
+            // compute divergence
             double dist = CDistMethods::Divergence(seqi, seqj);
             _ASSERT(!finite(dist) || dist >= 0.0);
 
-            pmat(i, j) = pmat(j, i) = dist;
-
-            if(finite(pmat(i, j)) && dist <= max_divergence) {
-                continue;
+            // if divergence finite and smaller than cutoff save divergence
+            if (finite(dist) && dist <= m_MaxDivergence) {
+                links.push_back(SLink(it2->index2, it1->index2, dist));
             }
+            else {
+                 
+                //TO DO: This should be changed to which divergence
+                // otherwise exclude sequence less similar to the query
+                int score_1 = m_AlignDataSource->CalculateScore(query_idx,
+                                                                it1->index2);
+                int score_2 = m_AlignDataSource->CalculateScore(query_idx,
+                                                                it2->index2);
             
-            // if disvergence too large compute scores for alignement
-            // with query and remove lower scoring one
-            int score_i = alnvec.CalculateScore(0,i);
-            int score_j = alnvec.CalculateScore(0,j);
-            
-            removed.insert(score_i > score_j ? j : i);
-            
+                bitvector[score_1 > score_2 ? it2->index2 : it1->index2]
+                    = false;
+            }
         }
     }
 
-    return (int)removed.size() < (num_seqs - 1);
+    unsigned int skip_array[bm::set_total_blocks] = {0,};
+    bitvector.count_blocks(skip_array);
+
+    // Get indices of included sequences
+    bm::bvector<>::counted_enumerator en = bitvector.first();
+    for (; en.valid(); ++en) {
+        included.push_back((int)*en);
+    }
+
+    // Create divergence matrix and set values
+    m_DivergenceMatrix.Resize(bitvector.count());
+    // for each saved divergence
+    ITERATE (list<SLink>, it, links) {
+        // if both sequences included
+        if (bitvector.test(it->index1) && bitvector.test(it->index2)) {
+
+            // set divergence value using bit vector storage encoding
+
+            int index1 = (it->index1 == 0 ? 0 : 
+                    bitvector.count_range(0, it->index1 - 1, skip_array));
+
+            int index2 = (it->index2 == 0 ? 0 : 
+                    bitvector.count_range(0, it->index2 - 1, skip_array));
+
+            m_DivergenceMatrix(index1, index2) = it->distance;
+        }
+    }
+    _ASSERT(s_ValidateMatrix(m_DivergenceMatrix));
+
+    return included.size() > 1;
 }
 
-
-CRef<CAlnVec> CGuideTreeCalc::x_CreateValidAlign(
-                                         const hash_set<int>& removed_inds,
-                                         vector<int>& new_align_index)
+static void s_RecordSeqId(int index,
+                          const CAlnVec& align_data_source,
+                          vector<string>& seqids)
 {
-    CRef<CAlnVec> alnvec;
-    alnvec.Reset(new CAlnVec(m_AlignDataSource->GetDenseg(),
-                             *m_Scope));
-    alnvec->SetGapChar('-');
-    alnvec->SetEndChar('-');
-
-
-    if(!removed_inds.empty()) {
-    
-
-        //remove invalid for phylotree gi from alignment
-        int num_seqs = alnvec->GetNumRows();
-
-        new_align_index.clear();
-
-        for (int i=0; i < num_seqs;i++) {
-            if(!IsIn(removed_inds, i)) {
-                new_align_index.push_back(i);
-            }
-            else //record removed gis
-            {
-                CSeq_id_Handle seq_id_handle 
-                    = sequence::GetId(alnvec->GetBioseqHandle(i),
-                                      sequence:: eGetId_Best);
-
-                CConstRef<CSeq_id> seq_id = seq_id_handle.GetSeqId();
-                string seq_id_str = "";
-                (*seq_id).GetLabel(&seq_id_str);
-
-                m_RemovedSeqIds.push_back(seq_id_str);
-            }
-
-        }
-        //newindex contains valid for phylo_tree gis
-
-        alnvec = x_CreateSubsetAlign(alnvec, new_align_index);
-
-        // save current alignment
-        m_AlignDataSource = alnvec;
-    }        
-
-    return alnvec;
-
+    CSeq_id_Handle seq_id_handle 
+        = sequence::GetId(align_data_source.GetBioseqHandle(index),
+                          sequence::eGetId_Best);
+                
+    CConstRef<CSeq_id> seq_id = seq_id_handle.GetSeqId();
+    string seq_id_str = "";
+    (*seq_id).GetLabel(&seq_id_str);
+            
+    seqids.push_back(seq_id_str);
 }
 
-
-void CGuideTreeCalc::x_TrimMatrix(CDistMethods::TMatrix& pmat,
-                                  const vector<int>& used_inds)
+void CGuideTreeCalc::x_CreateValidAlign(const vector<int>& used_indices)
 {
-    _ASSERT(used_inds.size() <= pmat.GetRows());
+    if ((int)used_indices.size() < m_AlignDataSource->GetNumRows()) {
 
-    if (used_inds.size() == pmat.GetRows()) {
-        return;
-    }
-
-    int new_size = used_inds.size();
-    CDistMethods::TMatrix new_mat(new_size, new_size, 0.0);
-    for (int i=0;i < new_size - 1;i++) {
-        for (int j=i+1;j < new_size;j++) {
-            new_mat(i, j) = new_mat(j, i) = pmat(used_inds[i], used_inds[j]);
+        // collect ids of removed sequences
+        int index = 0;
+        ITERATE (vector<int>, it, used_indices) {
+            for (; index < *it; index++) {
+                s_RecordSeqId(index, *m_AlignDataSource, m_RemovedSeqIds);
+            }
+            index++;
         }
-    }
-    pmat.Swap(new_mat);
-}
+        for (; index < m_AlignDataSource->GetNumRows();index++) {
+            s_RecordSeqId(index, *m_AlignDataSource, m_RemovedSeqIds);
+        }
+        _ASSERT(used_indices.size() + m_RemovedSeqIds.size()
+                == (size_t)m_AlignDataSource->GetNumRows());
 
+
+        // Old implementation
+//        m_AlignDataSource = x_CreateSubsetAlign(m_AlignDataSource, used_indices);
+
+        CRef<CDense_seg> new_denseg
+            = m_AlignDataSource->GetDenseg().ExtractRows(used_indices);
+
+        m_AlignDataSource.Reset(new CAlnVec(*new_denseg, *m_Scope));
+    }
+}
 
 // Calculate pairwise distances for sequeneces in m_AlignDataSource
-void CGuideTreeCalc::CalcDistMatrix(const CDistMethods::TMatrix& pmat,
-                                    CDistMethods::TMatrix& result,
-                                    EDistMethod method)
+void CGuideTreeCalc::x_CalcDistMatrix(void)
 {
-    switch (method) {
+    _ASSERT(!m_DivergenceMatrix.Empty());
+
+    // create dist matrix data structure required by CDistMethos
+    CDistMethods::TMatrix pmat(m_DivergenceMatrix.GetNumElements(),
+                               m_DivergenceMatrix.GetNumElements(),
+                               0.0);
+
+    for (int i=0;i < m_DivergenceMatrix.GetNumElements() - 1;i++) {
+        for (int j=i+1; j < m_DivergenceMatrix.GetNumElements();j++) {
+            pmat(i, j) = pmat(j, i) = m_DivergenceMatrix(i, j);
+        }
+    }
+
+    // prepare structure for string results of distance computation
+    m_FullDistMatrix.Resize(m_DivergenceMatrix.GetNumElements(),
+                            m_DivergenceMatrix.GetNumElements(),
+                            0.0);
+
+    // compute distances
+    switch (m_DistMethod) {
     case eJukesCantor : 
-        CDistMethods::JukesCantorDist(pmat, result);
+        CDistMethods::JukesCantorDist(pmat, m_FullDistMatrix);
         break;
 
     case ePoisson :
-        CDistMethods::PoissonDist(pmat, result);
+        CDistMethods::PoissonDist(pmat, m_FullDistMatrix);
         break;
 
     case eKimura :
-        CDistMethods::KimuraDist(pmat, result);
+        CDistMethods::KimuraDist(pmat, m_FullDistMatrix);
         break;
 
     case eGrishin :
-        CDistMethods::GrishinDist(pmat, result);
+        CDistMethods::GrishinDist(pmat, m_FullDistMatrix);
         break;
 
     case eGrishinGeneral :
-        CDistMethods::GrishinGeneralDist(pmat, result);
+        CDistMethods::GrishinGeneralDist(pmat, m_FullDistMatrix);
         break;
 
     default:
         NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
                    "Invalid distance calculation method");
     }
+
+    // store distances in memory efficient data structure
+    m_DistMatrix.Resize(m_FullDistMatrix.GetRows());
+    for (int i=0;i < m_DistMatrix.GetNumElements() - 1;i++) {
+        for (int j=i+1;j < m_DistMatrix.GetNumElements();j++) {
+            m_DistMatrix(i, j) = m_FullDistMatrix(i, j);
+        }
+    }
+    _ASSERT(s_ValidateMatrix(m_DistMatrix));
 }
 
 // Compute phylogenetic tree
-void CGuideTreeCalc::x_ComputeTree(const CAlnVec& alnvec,
-                                   const CDistMethods::TMatrix& dmat,
-                                   ETreeMethod method,
-                                   bool correct)
+void CGuideTreeCalc::x_ComputeTree(bool correct)
 {
-    _ASSERT((size_t)alnvec.GetNumRows() == dmat.GetRows());
+    _ASSERT((size_t)m_AlignDataSource->GetNumRows()
+            == m_FullDistMatrix.GetRows());
 
     // Build a tree based on distances
     // Use number as labels, and sort it out later
     // Number corresponds to the position in  alnVec
-    vector<string> labels(alnvec.GetNumRows());
+    vector<string> labels(m_AlignDataSource->GetNumRows());
     for (unsigned int i = 0;i < labels.size();i++) {
         labels[i] = NStr::IntToString(i);
     }
@@ -347,13 +451,13 @@ void CGuideTreeCalc::x_ComputeTree(const CAlnVec& alnvec,
     // in CGuideTreeCalc
     cobalt::CTree tree;
 
-    switch (method) {
+    switch (m_TreeMethod) {
     case eNJ :
-        tree.ComputeTree(dmat, false);
+        tree.ComputeTree(m_FullDistMatrix, false);
         break;
 
     case eFastME :
-        tree.ComputeTree(dmat, true);
+        tree.ComputeTree(m_FullDistMatrix, true);
         break;
 
     default:
@@ -361,6 +465,8 @@ void CGuideTreeCalc::x_ComputeTree(const CAlnVec& alnvec,
                    "Invalid tree reconstruction method");
     };
 
+    // release memory used by full distance matrix
+    m_FullDistMatrix.Resize(1, 1);
 
     if (!tree.GetTree()) {
         NCBI_THROW(CGuideTreeCalcException, eTreeComputationProblem,
@@ -375,7 +481,7 @@ void CGuideTreeCalc::x_ComputeTree(const CAlnVec& alnvec,
 
     m_TreeContainer = MakeBioTreeContainer(ptree);
 
-    x_InitTreeFeatures(alnvec);
+    x_InitTreeFeatures(*m_AlignDataSource);
 }
 
 
@@ -388,24 +494,20 @@ bool CGuideTreeCalc::CalcBioTree(void)
     vector<int> used_inds;
 
     bool valid;
-    valid = x_CalcDivergenceMatrix(pmat, m_MaxDivergence, removed_inds);
+    valid = x_CalcDivergenceMatrix(used_inds);
 
     if (valid) {
-        CRef<CAlnVec> alnvec;
 
-        if (!removed_inds.empty()) {
-            alnvec = x_CreateValidAlign(removed_inds, used_inds);
-            x_TrimMatrix(pmat, used_inds);            
-            m_Messages.push_back(NStr::IntToString(removed_inds.size())
+        if ((int)used_inds.size() < m_AlignDataSource->GetNumRows()) {
+            int initial_num_seqs = m_AlignDataSource->GetNumRows();
+            x_CreateValidAlign(used_inds);
+            m_Messages.push_back(NStr::IntToString(initial_num_seqs
+                                                   - used_inds.size())
                                  + " sequences were discarded due to"
                                  " divergence that exceeds maximum allowed.");
         }
-        else {
-            alnvec.Reset(new CAlnVec(m_AlignDataSource->GetDenseg(), *m_Scope));
-        }
-
-        CalcDistMatrix(pmat, dmat, m_DistMethod);
-        x_ComputeTree(*alnvec, dmat, m_TreeMethod);
+        x_CalcDistMatrix();
+        x_ComputeTree();
 
     }
     else {
