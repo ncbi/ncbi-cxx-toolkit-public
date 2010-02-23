@@ -103,15 +103,13 @@ public:
     virtual ~CGnomonAnnotator_Base();
 
     void SetHMMParameters(CHMMParameters* params);
-    CRef<objects::CScope>& SetScope();
     void EnableSeqMasking();
-    void SetGenomic(const CSeq_id& seqid);
+    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr);
     CGnomonEngine& GetGnomon();
 
 protected:
     bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
-    CRef<CScope> m_scope;
     auto_ptr<CGnomonEngine> m_gnomon;
 };
 
@@ -134,7 +132,7 @@ public:
     TransformFunction* DoNotBelieveShortPolyATail();
     Predicate* OverlapsSameAccessionAlignment(TAlignModelList& alignments);
     Predicate* ConnectsParalogs(TAlignModelList& alignments);
-    TransformFunction* ProjectCDS();
+    TransformFunction* ProjectCDS(objects::CScope& scope);
     TransformFunction* DoNotBelieveFrameShiftsWithoutCdsEvidence();
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
     void FilterOutChimeras(TGeneModelList& clust);
@@ -215,7 +213,7 @@ struct LowSupport_Noncoding : public Predicate {
 class NCBI_XALGOGNOMON_EXPORT CChainerArgUtil {
 public:
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
-    static void ArgsToChainer(CChainer* chainer, const CArgs& args);
+    static void ArgsToChainer(CChainer* chainer, const CArgs& args, objects::CScope& scope);
 };
 
 END_SCOPE(gnomon)

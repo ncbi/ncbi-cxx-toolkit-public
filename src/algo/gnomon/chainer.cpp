@@ -58,7 +58,7 @@ struct SFShiftsCluster;
 
 class CChainer::CChainerImpl {
 public:
-    CChainerImpl(CRef<CHMMParameters>& hmm_params, CRef<CScope>& scope, auto_ptr<CGnomonEngine>& gnomon);
+    CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<CGnomonEngine>& gnomon);
     void SetGenomicRange(const TAlignModelList& alignments);
 
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
@@ -90,7 +90,6 @@ private:
     void SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_plus, TGeneModelList& clust_minus);
 
     CRef<CHMMParameters>& m_hmm_params;
-    CRef<CScope>& m_scope;
     auto_ptr<CGnomonEngine>& m_gnomon;
 
 
@@ -123,15 +122,15 @@ void CGnomonAnnotator_Base::EnableSeqMasking()
 
 CChainer::CChainer()
 {
-    m_data.reset( new CChainerImpl(m_hmm_params, m_scope, m_gnomon) );
+    m_data.reset( new CChainerImpl(m_hmm_params, m_gnomon) );
 }
 
 CChainer::~CChainer()
 {
 }
 
-CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, CRef<CScope>& scope, auto_ptr<CGnomonEngine>& gnomon)
-    :m_hmm_params(hmm_params), m_scope(scope), m_gnomon(gnomon)
+CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<CGnomonEngine>& gnomon)
+    :m_hmm_params(hmm_params), m_gnomon(gnomon)
 {
 }
 
@@ -2092,10 +2091,10 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
     orig_aligns.clear();
 }
 
-TransformFunction* CChainer::ProjectCDS()
+TransformFunction* CChainer::ProjectCDS(CScope& scope)
 {
     return new gnomon::ProjectCDS(m_data->mininframefrac, m_gnomon->GetSeq(),
-                                  m_data->mrnaCDS.find("use_objmgr")!=m_data->mrnaCDS.end() ? m_scope.GetPointer() : NULL,
+                                  m_data->mrnaCDS.find("use_objmgr")!=m_data->mrnaCDS.end() ? &scope : NULL,
                                   m_data->mrnaCDS);
 }
 
@@ -2256,11 +2255,6 @@ void CGnomonAnnotator_Base::SetHMMParameters(CHMMParameters* params)
     m_hmm_params = params;
 }
 
-CRef<CScope>& CGnomonAnnotator_Base::SetScope()
-{
-    return m_scope;
-}
-
 void CChainer::SetIntersectLimit(int value)
 {
     m_data->intersect_limit = value;
@@ -2291,7 +2285,7 @@ map<string,TSignedSeqRange>& CChainer::SetMrnaCDS()
     return m_data->mrnaCDS;
 }
 
-void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
+void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope& scope)
 {
     CNcbiIfstream param_file(args["param"].AsString().c_str());
     chainer->SetHMMParameters(new CHMMParameters(param_file));
@@ -2312,7 +2306,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
 
     chainer->SetMinInframeFrac(args["mininframefrac"].AsDouble());
     
-    CIdHandler cidh(*chainer->SetScope());
+    CIdHandler cidh(scope);
 
     map<string,TSignedSeqRange>& mrnaCDS = chainer->SetMrnaCDS();
     if(args["mrnaCDS"]) {
@@ -2344,9 +2338,9 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     }
 }
 
-void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig)
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const string& mask_annots)
 {
-    CBioseq_Handle bh(SetScope()->GetBioseqHandle(contig));
+    CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
     const size_t length (sv.size());
     string seq_txt;
@@ -2354,7 +2348,16 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig)
 
     if (m_masking) {
         SAnnotSelector sel;
-        sel.SetResolveAll().IncludeFeatSubtype(CSeqFeatData::eSubtype_repeat_region);
+        {
+            list<string> arr;
+            NStr::Split(mask_annots, " ", arr);
+            ITERATE(list<string>, annot, arr) {
+                sel.AddNamedAnnots(*annot);
+            }
+        }
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_repeat_region)
+            .SetResolveAll()
+            .SetAdaptiveDepth(true);
         for (CFeat_CI it(bh, sel);  it;  ++it) {
             TSeqRange range = it->GetLocation().GetTotalRange();
             for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i)
