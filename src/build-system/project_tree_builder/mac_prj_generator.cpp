@@ -129,6 +129,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> all_dependencies( new CArray);
     CRef<CArray> app_dependencies( new CArray);
     CRef<CArray> lib_dependencies( new CArray);
+    CRef<CArray> dataspec_dependencies( new CArray);
     CRef<CArray> products( new CArray);
     
 #if USE_VERBOSE_NAMES
@@ -173,6 +174,8 @@ void CMacProjectGenerator::Generate(const string& solution)
                 AddString( *lib_dependencies, proj_dependency);
             } else if (prj.m_ProjType == CProjKey::eApp) {
                 AddString( *app_dependencies, proj_dependency);
+            } else if (prj.m_ProjType == CProjKey::eDataSpec) {
+                AddString( *dataspec_dependencies, proj_dependency);
             } else {
                 continue;
             }
@@ -242,7 +245,7 @@ void CMacProjectGenerator::Generate(const string& solution)
             AddString( *dict_con, "remoteInfo", GetTargetName(prj));
         }
         // project product
-        {
+        if (!explicit_type.empty()) {
             AddString( *products, proj_product);
             CRef<CDict> dict_product( AddDict( *dict_objects, proj_product));
             AddString( *dict_product, "explicitFileType", explicit_type);
@@ -284,6 +287,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     AddGroupDict( *dict_objects, root_group, main_groups, "NCBI C++ Toolkit");
 
     targets->Set().sort(s_String_less);
+    dataspec_dependencies->Set().sort(s_String_less);
     lib_dependencies->Set().sort(s_String_less);
     app_dependencies->Set().sort(s_String_less);
     all_dependencies->Set().sort(s_String_less);
@@ -292,6 +296,8 @@ void CMacProjectGenerator::Generate(const string& solution)
         AddConfigureTarget(solution_name,  *dict_objects, true));
     InsertString( *targets,
         AddConfigureTarget(solution_name,  *dict_objects, false));
+    InsertString( *targets,
+        AddAggregateTarget("DATASPEC_ALL", *dict_objects, dataspec_dependencies));
     InsertString( *targets,
         AddAggregateTarget("BUILD_LIBS", *dict_objects, lib_dependencies));
     InsertString( *targets,
@@ -513,9 +519,22 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
             AddString( *inputs, GetRelativePath(*f));
             AddString( *inputs, spec_base + ".def");
             AddString( *outputs, spec_base + ".files");
-            script += "echo Using datatool to create a C++ objects from " + entry.GetName() + "\n";
-            script += m_OutputDir + GetApp().GetDatatoolPathForApp() +
-                " " + GetApp().GetDatatoolCommandLine() + " -pch " + pch_name;
+#if 0
+            script += "echo Using datatool to create a C++ objects from ASN/DTD/Schema " + entry.GetName() + "\n";
+            script += m_OutputDir + GetApp().GetDatatoolPathForApp();
+#else
+            script += "export PTB_PLATFORM=\"$ARCHS\"\n";
+            script += "export DATATOOL_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
+            script += "export TREE_ROOT=" +
+                CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
+            script += "export BUILD_TREE_ROOT=" +
+                CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
+                CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
+                    GetApp().GetProjectTreeInfo().m_Compilers,
+                    GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
+            script +=  "\"$BUILD_TREE_ROOT/datatool.sh\"";
+#endif
+            script += " " + GetApp().GetDatatoolCommandLine() + " -pch " + pch_name;
             script += " -m " + GetRelativePath( entry.GetPath(), &GetApp().GetProjectTreeInfo().m_Src);
             string imports( prj_files.GetDataSpecImports(*f));
             if (!imports.empty()) {
@@ -597,6 +616,9 @@ string CMacProjectGenerator::CreateProjectBuildPhase(
     const CProjItem& prj,
     CDict& dict_objects, CRef<CArray>& build_files)
 {
+    if (prj.m_ProjType == CProjKey::eDataSpec) {
+        return kEmptyStr;
+    }
 #if USE_VERBOSE_NAMES
     string proj_build(    GetProjBuild( prj));
 #else
@@ -698,11 +720,17 @@ string CMacProjectGenerator::CreateProjectTarget(
         }
     }
     AddArray(  *dict_target, "dependencies", dependencies);
-    AddString( *dict_target, "isa", "PBXNativeTarget");
+    if (prj.m_ProjType == CProjKey::eDataSpec) {
+        AddString( *dict_target, "isa", "PBXAggregateTarget");
+    } else {
+        AddString( *dict_target, "isa", "PBXNativeTarget");
+    }
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);
-    AddString( *dict_target, "productReference", product_id);
-    AddString( *dict_target, "productType", product_type);
+    if (prj.m_ProjType != CProjKey::eDataSpec) {
+        AddString( *dict_target, "productReference", product_id);
+        AddString( *dict_target, "productType", product_type);
+    }
     return proj_target;
 }
 
@@ -932,7 +960,9 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
     }
-    AddString( *settings, "MACH_O_TYPE", GetMachOType(prj));
+    if (prj.m_ProjType != CProjKey::eDataSpec) {
+        AddString( *settings, "MACH_O_TYPE", GetMachOType(prj));
+    }
 
 // library dependencies
     if (prj.m_ProjType == CProjKey::eDll || prj.m_ProjType == CProjKey::eApp) {
@@ -972,6 +1002,11 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "OTHER_LDFLAGS", ldlib);
     }
 
+    AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
+    if (prj.m_ProjType == CProjKey::eDataSpec) {
+        return;
+    }
+
     CRef<CArray> inc_dirs( AddArray( *settings, "HEADER_SEARCH_PATHS"));
     list<string> prj_inc_dirs;
     if (prj_files.GetIncludeDirs(prj_inc_dirs, cfg)) {
@@ -984,7 +1019,6 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
             AddString( *inc_dirs, GetRelativePath( *f));
         }
     }
-    AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
 
 // preprocessor definitions    
     list<string> tmp_list = prj.m_Defines;
