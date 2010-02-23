@@ -201,6 +201,9 @@ CBedReader::ReadSeqAnnots(
         }
         continue;
     }
+    if ( m_iFlags & fDumpStats ) {
+        x_DumpStats( cerr );
+    }
     x_AddConversionInfo( annot, &m_ErrorsPrivate );
 //    return annot;
 }
@@ -273,7 +276,6 @@ bool CBedReader::x_ParseFeature(
             throw( err );
         }
     }
-
     //  assign
     feature.Reset( new CSeq_feat );
     try {
@@ -287,6 +289,7 @@ bool CBedReader::x_ParseFeature(
             "Bad data line: General parsing error." );
         throw( err );    
     }
+    x_CountRecord( fields[0] );
     ftable.push_back( feature );
     return true;
 }
@@ -471,6 +474,42 @@ CBedReader::x_ProcessError(
     {
         throw( err );
     }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CBedReader::x_CountRecord(
+    const string& strRawId )
+//  ----------------------------------------------------------------------------
+{
+    if ( 0 == (m_iFlags & fDumpStats) ) {
+        return;
+    }
+     
+    map< string, unsigned int >::iterator it = m_RecordCounts.find( strRawId );
+    if ( it != m_RecordCounts.end() ) {
+        m_RecordCounts[ strRawId ] += 1;
+    }
+    else {
+        m_RecordCounts[ strRawId ] = 1;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CBedReader::x_DumpStats(
+    CNcbiOstream& out )
+//  ----------------------------------------------------------------------------
+{
+    out << "---------------------------------------------------------" << endl;
+    out << "Record Counts:" << endl;
+    out << "---------------------------------------------------------" << endl;
+    for ( map<string, unsigned int>::iterator it = m_RecordCounts.begin(); 
+        it != m_RecordCounts.end(); ++it ) 
+    {
+        out << it->first << " :    " << it->second << endl;
+    } 
+    out << endl;      
 }
 
 END_objects_SCOPE
