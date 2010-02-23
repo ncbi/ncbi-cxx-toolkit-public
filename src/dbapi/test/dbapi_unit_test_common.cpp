@@ -579,30 +579,32 @@ void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) co
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
 // Describe the expected command-line arguments
+#define DEF_SERVER    "MSSQL"
+#define DEF_DRIVER    ftds64_driver
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
 
-#if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MSSQL"
+//#if defined(NCBI_OS_MSWIN)
+//#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
 //#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
 
-#elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "Sybase"
+//#elif defined(HAVE_LIBSYBASE)
+//#define DEF_SERVER    "Sybase"
 //#define DEF_DRIVER    ctlib_driver
 //#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver
-#else
-#define DEF_SERVER    "MSSQL"
+//#else
+//#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
 //#define ALL_DRIVERS   ftds64_driver
-#endif
+//#endif
 
     arg_desc->AddDefaultKey("S", "server",
                             "Name of the SQL server to connect to",
                             CArgDescriptions::eString, DEF_SERVER);
 
-    arg_desc->AddOptionalKey("dr", "driver",
+    arg_desc->AddDefaultKey("dr", "driver",
                             "Name of the DBAPI driver to use",
-                            CArgDescriptions::eString);
+                            CArgDescriptions::eString, DEF_DRIVER);
     arg_desc->SetConstraint("dr", &(*new CArgAllow_Strings, ALL_DRIVERS));
 
     arg_desc->AddDefaultKey("U", "username",
