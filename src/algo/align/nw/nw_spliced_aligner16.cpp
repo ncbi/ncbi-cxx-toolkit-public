@@ -393,6 +393,15 @@ NWSPL_DETECTDONOR(2)
                     tracer |= kMaskD;
                 }
             }
+            
+/* TODO:
+ *
+ * As a performance improvement, exploit the fact that the scoring
+ * is consistent among gaps and introns. That is, since the score of a splice
+ * effectively caps the gap length, there is no need to check explicitly 
+ * if an intron has the min length.
+ *
+ */
 
             // check for any donors just ripened (loop unroll)
 #define NW_NDON_EVAL(st_idx) \

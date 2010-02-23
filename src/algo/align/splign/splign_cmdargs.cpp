@@ -37,9 +37,11 @@
 #include <algo/align/util/compartment_finder.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 
+namespace {
+    const size_t kMb (1u << 20);
+}
 
 BEGIN_NCBI_SCOPE
-
 
 void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 {    
@@ -100,6 +102,15 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::IntToString(CCompartmentFinder<CSplign::THit>::
                            s_GetDefaultMaxIntron()));
 
+    argdescr->AddDefaultKey
+        ("max_space",
+         "max_space",
+         "The max space to allocate for a splice, in MB. "
+         "Specify lower values to spend less time stitching "
+         "over large genomic intervals.",
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(double(CNWAligner::GetDefaultSpaceLimit()) / kMb));
+
     CArgAllow * constrain01 (new CArgAllow_Doubles(0,1));
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
@@ -107,6 +118,9 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 
     CArgAllow * constrain_7_2M (new CArgAllow_Integers(7,2000000));
     argdescr->SetConstraint("max_intron", constrain_7_2M);
+
+    CArgAllow * constrain_max_space (new CArgAllow_Doubles(500, 4096));
+    argdescr->SetConstraint("max_space", constrain_max_space);
 
 #ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     CArgAllow_Strings * constrain_querytype (new CArgAllow_Strings);
@@ -141,7 +155,12 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     const bool query_low_quality (false);
 #endif
 
-    splign->SetAligner() = CSplign::s_CreateDefaultAligner(query_low_quality);
+    double max_space (args["max_space"].AsDouble() * kMb);
+    const Uint4 kMax32 (numeric_limits<Uint4>::max());
+    if(max_space > kMax32) max_space = kMax32;
+    CRef<CSplicedAligner> aligner = CSplign::s_CreateDefaultAligner(query_low_quality);
+    aligner->SetSpaceLimit(size_t(max_space));
+    splign->SetAligner() = aligner;
 }
 
 
