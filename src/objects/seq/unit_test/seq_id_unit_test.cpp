@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromNatAcc)
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
 {
     CRef<CSeq_id> id;
-    
+
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("asd|fgh|jkl")));
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|123")));
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 {
     CRef<CSeq_id> id;
     CDbtag        dbtag;
-    
+
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(dbtag)));
 
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
@@ -676,9 +676,8 @@ static void s_TestFastaRoundTrip(const char* s)
     }
 }
 
-BOOST_AUTO_TU_REGISTRAR(s_FastaRoundTrip)
-(BOOST_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
-                       kTestFastaStrings + kNumFastaStrings));
+BOOST_AUTO_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
+                           kTestFastaStrings + kNumFastaStrings);
 
 BOOST_AUTO_TEST_CASE(s_TestNoStrays)
 {
@@ -791,7 +790,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
         BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
-    
+
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
         BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
@@ -846,7 +845,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         BOOST_CHECK(loc2->IsEmpty());
         BOOST_CHECK(loc2->GetEmpty().IsGi());
         BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
-    
+
         BOOST_CHECK(loc1->GetId());
         BOOST_CHECK(loc1->GetId()->IsGi());
         BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);

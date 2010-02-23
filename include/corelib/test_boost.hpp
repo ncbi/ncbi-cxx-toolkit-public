@@ -67,6 +67,7 @@
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/test/framework.hpp>
 #include <boost/test/execution_monitor.hpp>
+#include <boost/test/parameterized_test.hpp>
 
 #include <boost/preprocessor/tuple/rem.hpp>
 #include <boost/preprocessor/repeat.hpp>
@@ -83,6 +84,7 @@
 #undef BOOST_CHECK_THROW_IMPL
 #undef BOOST_CHECK_NO_THROW_IMPL
 #undef BOOST_FIXTURE_TEST_CASE
+#undef BOOST_PARAM_TEST_CASE
 
 #define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
 try {                                                                    \
@@ -160,6 +162,12 @@ BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
 void test_name::test_method()                                           \
 /**/
 
+#define BOOST_PARAM_TEST_CASE( function, begin, end )                       \
+    ::NCBI_NS_NCBI::NcbiTestGenTestCases( function,                         \
+                                          BOOST_TEST_STRINGIZE( function ), \
+                                          (begin), (end) )                  \
+/**/
+
 /// Set timeout value for the test case created using auto-registration
 /// facility.
 #define BOOST_AUTO_TEST_CASE_TIMEOUT(test_name, n)                      \
@@ -174,6 +182,16 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
       SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID( test_name ) >( n )    \
     {}                                                                  \
 } BOOST_JOIN( test_name, _timeout_spec_inst );                          \
+/**/
+
+/// Automatic registration of the set of test cases based on some function
+/// accepting one parameter. Set of parameters used to call that function is
+/// taken from iterator 'begin' which is incremented until it reaches 'end'.
+///
+/// @sa BOOST_PARAM_TEST_CASE
+#define BOOST_AUTO_PARAM_TEST_CASE( function, begin, end )               \
+    BOOST_AUTO_TU_REGISTRAR(function) (                                  \
+                            BOOST_PARAM_TEST_CASE(function, begin, end)) \
 /**/
 
 
@@ -357,12 +375,6 @@ BEGIN_NCBI_SCOPE
                       NcbiTestGetUnit(BOOST_STRINGIZE(dep_name)))
 
 
-/// Helper macro to implement NCBI_TEST_DEPENDS_ON_N. For internal use only.
-#define NCBITEST_DEPENDS_ON_N_IMPL(z, n, names_array)               \
-    NCBITEST_DEPENDS_ON(BOOST_PP_ARRAY_ELEM(0, names_array),        \
-                        BOOST_PP_ARRAY_ELEM(BOOST_PP_INC(n), names_array));
-
-
 /// Add dependency between test test_name and several other tests which names
 /// given in the list dep_names_array. This dependency means if any of the
 /// tests in list dep_names_array is failed during execution or was disabled
@@ -390,6 +402,38 @@ BEGIN_NCBI_SCOPE
                     (BOOST_PP_INC(N), (test_name,                   \
                         BOOST_PP_TUPLE_REM(N) dep_names_array)))    \
     (void)0
+
+
+/// Set of macros to manually add test cases that cannot be created using
+/// BOOST_AUTO_TEST_CASE. To create such test cases you should have a function
+/// (that can accept up to 3 parameters) and use one of macros below inside
+/// NCBITEST_INIT_TREE() function. All function parameters are passed by value.
+///
+/// @sa NCBITEST_INIT_TREE, BOOST_AUTO_PARAM_TEST_CASE
+#define NCBITEST_ADD_TEST_CASE(function)                            \
+    boost::unit_test::framework::master_test_suite().add(           \
+        boost::unit_test::make_test_case(                           \
+                            boost::bind(function),                  \
+                            BOOST_TEST_STRINGIZE(function)          \
+                                        )               )
+#define NCBITEST_ADD_TEST_CASE1(function, param1)                   \
+    boost::unit_test::framework::master_test_suite().add(           \
+        boost::unit_test::make_test_case(                           \
+                            boost::bind(function, (param1)),        \
+                            BOOST_TEST_STRINGIZE(function)          \
+                                        )               )
+#define NCBITEST_ADD_TEST_CASE2(function, param1, param2)               \
+    boost::unit_test::framework::master_test_suite().add(               \
+        boost::unit_test::make_test_case(                               \
+                            boost::bind(function, (param1), (param2)),  \
+                            BOOST_TEST_STRINGIZE(function)              \
+                                        )               )
+#define NCBITEST_ADD_TEST_CASE3(function, param1, param2, param3)                \
+    boost::unit_test::framework::master_test_suite().add(                        \
+        boost::unit_test::make_test_case(                                        \
+                            boost::bind(function, (param1), (param2), (param3)), \
+                            BOOST_TEST_STRINGIZE(function)                       \
+                                        )               )
 
 
 /// Disable execution of all tests in current configuration. Call to the
@@ -420,6 +464,12 @@ void NcbiTestSetGlobalSkipped(void);
 // intended for use by any users. All this stuff is used by end-user
 // macros defined above.
 //////////////////////////////////////////////////////////////////////////
+
+
+/// Helper macro to implement NCBI_TEST_DEPENDS_ON_N.
+#define NCBITEST_DEPENDS_ON_N_IMPL(z, n, names_array)               \
+    NCBITEST_DEPENDS_ON(BOOST_PP_ARRAY_ELEM(0, names_array),        \
+    BOOST_PP_ARRAY_ELEM(BOOST_PP_INC(n), names_array));
 
 
 /// Mark test case/suite as dependent on another test case/suite.
@@ -574,6 +624,86 @@ private:
     // Data members
     unsigned    m_value;
 };
+
+
+/// Special generator of test cases for function accepting one parameter.
+/// Generator differs from the one provided in Boost.Test in names assigned to
+/// generated test cases. NCBI.Test library requires all test names to be
+/// unique.
+template<typename ParamType, typename ParamIter>
+class CNcbiTestParamTestCaseGenerator
+    : public boost::unit_test::test_unit_generator
+{
+public:
+    CNcbiTestParamTestCaseGenerator(
+                    boost::unit_test::callback1<ParamType> const& test_func,
+                    boost::unit_test::const_string                name, 
+                    ParamIter                                     par_begin,
+                    ParamIter                                     par_end)
+        : m_TestFunc(test_func),
+          m_Name(boost::unit_test::ut_detail::normalize_test_case_name(name)),
+          m_ParBegin(par_begin),
+          m_ParEnd(par_end),
+          m_CaseIndex(0)
+    {
+        m_Name += "_";
+    }
+
+    virtual boost::unit_test::test_unit* next() const
+    {
+        if( m_ParBegin == m_ParEnd )
+            return NULL;
+
+        boost::unit_test::ut_detail::test_func_with_bound_param<ParamType>
+                                    bound_test_func( m_TestFunc, *m_ParBegin );
+        string this_name(m_Name);
+        this_name += NStr::IntToString(++m_CaseIndex);
+        boost::unit_test::test_unit* res
+                  = new boost::unit_test::test_case(this_name, bound_test_func);
+        ++m_ParBegin;
+
+        return res;
+    }
+
+private:
+    // Data members
+    boost::unit_test::callback1<ParamType>  m_TestFunc;
+    string                                  m_Name;
+    mutable ParamIter                       m_ParBegin;
+    ParamIter                               m_ParEnd;
+    mutable int                             m_CaseIndex;
+};
+
+
+/// Helper functions to be used in BOOST_PARAM_TEST_CASE macro to create
+/// special test case generator.
+template<typename ParamType, typename ParamIter>
+inline CNcbiTestParamTestCaseGenerator<ParamType, ParamIter>
+NcbiTestGenTestCases(boost::unit_test::callback1<ParamType> const& test_func,
+                     boost::unit_test::const_string                name, 
+                     ParamIter                                     par_begin,
+                     ParamIter                                     par_end)
+{
+    return CNcbiTestParamTestCaseGenerator<ParamType, ParamIter>(
+                                        test_func, name, par_begin, par_end);
+}
+
+template<typename ParamType, typename ParamIter>
+inline CNcbiTestParamTestCaseGenerator<
+                    typename boost::remove_const<
+                            typename boost::remove_reference<ParamType>::type
+                                                >::type, ParamIter>
+NcbiTestGenTestCases(void (*test_func)(ParamType),
+                     boost::unit_test::const_string name, 
+                     ParamIter                      par_begin,
+                     ParamIter                      par_end )
+{
+    typedef typename boost::remove_const<
+                        typename boost::remove_reference<ParamType>::type
+                                        >::type             param_value_type;
+    return CNcbiTestParamTestCaseGenerator<param_value_type, ParamIter>(
+                                        test_func, name, par_begin, par_end);
+}
 
 
 END_NCBI_SCOPE

@@ -911,10 +911,26 @@ CNcbiTestApplication::x_GetTrimmedTestName(const string& test_name)
 inline void
 CNcbiTestApplication::CollectTestUnit(but::test_unit* tu)
 {
-    const string& test_name = tu->p_name.get();
-    if (test_name == kDummyTestCaseName)
+    const string unit_name = x_GetTrimmedTestName(tu->p_name.get());
+    if (unit_name == kDummyTestCaseName)
         return;
-    m_AllTests[x_GetTrimmedTestName(test_name)] = tu;
+    string test_name(unit_name);
+    int index = 0;
+    for (;;) {
+        but::test_unit*& tu_val = m_AllTests[test_name];
+        if (!tu_val) {
+            tu_val = tu;
+            if (test_name != unit_name) {
+                LOG_POST_X(3, Info << "Duplicate name found: '" << unit_name
+                                   << "' - renamed to '" << test_name << "'");
+                tu->p_name.set(test_name);
+            }
+            break;
+        }
+        test_name = unit_name;
+        test_name += "_";
+        test_name += NStr::IntToString(++index);
+    }
 }
 
 inline void
@@ -1344,9 +1360,7 @@ CNcbiTestApplication::GetTestUnit(CTempString test_name)
 inline void
 CNcbiTestApplication::x_CollectAllTests(void)
 {
-    if (m_AllTests.size() > 1)
-        return;
-
+    m_AllTests.clear();
     CNcbiTestsCollector collector;
     but::traverse_test_tree(but::framework::master_test_suite(), collector);
 }
@@ -1394,10 +1408,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
         m_Timeout = min(max(0.0, m_Timeout - 3), 0.9 * m_Timeout);
     }
 
-    x_CollectAllTests();
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
-        // Call should be double to support tests with automatic registration
-        // and without it at the same time.
         x_CollectAllTests();
 
         but::traverse_test_tree(but::framework::master_test_suite(),
@@ -1409,6 +1420,9 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
             &&  (!but::runtime_config::test_to_run().empty()
                  ||  x_ReadConfiguration()))
         {
+            // Call should be doubled to support manual adding of
+            // test cases inside NCBITEST_INIT_TREE().
+            x_CollectAllTests();
             if (x_GetEnabledTestsCount() == 0) {
                 SetGloballyDisabled();
                 x_AddDummyTest();
