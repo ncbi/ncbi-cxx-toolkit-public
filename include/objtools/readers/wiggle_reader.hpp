@@ -82,7 +82,8 @@ public:
         fDefaults = 0,
         fJoinSame = 1<<0,
         fAsByte = 1<<1,
-        fAsGraph = 1<<2
+        fAsGraph = 1<<2,
+        fDumpStats = 1<<3
     };
     typedef int TFlags;
 
@@ -150,7 +151,9 @@ protected:
     /* throws CObjReaderLineException */
 
     void x_UpdateWiggleSet();
-    
+
+    virtual void x_DumpStats(
+        CNcbiOstream& );    
     //
     //  data:
     //

@@ -179,6 +179,9 @@ CWiggleReader::ReadSeqAnnotGraph(
         ProcessError( err, pErrorContainer );
     }
     x_AddConversionInfo( annot, pErrorContainer );
+    if ( m_iFlags & fDumpStats ) {
+        x_DumpStats( cerr );
+    }
     return annot; 
 }
     
@@ -220,6 +223,9 @@ CWiggleReader::ReadSeqAnnotTable(
         ProcessError( err, pErrorContainer );
     }
     x_AddConversionInfo( annot, pErrorContainer );
+    if ( m_iFlags & fDumpStats ) {
+        x_DumpStats( cerr );
+    }
     return annot; 
 }
     
@@ -464,5 +470,14 @@ void CWiggleReader::x_SetTrackData(
     }
     CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
 }
+
+//  ----------------------------------------------------------------------------
+void CWiggleReader::x_DumpStats(
+    CNcbiOstream& out )
+//  ----------------------------------------------------------------------------
+{
+    m_pSet->DumpStats( out );
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

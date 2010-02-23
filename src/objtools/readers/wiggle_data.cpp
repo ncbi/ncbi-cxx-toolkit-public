@@ -457,6 +457,20 @@ void CWiggleSet::MakeTable(
 }
 
 //  ===========================================================================
+void CWiggleSet::DumpStats(
+    CNcbiOstream& out )
+//  ===========================================================================
+{
+    out << "---------------------------------------------------------" << endl;
+    out << "Record Counts:" << endl;
+    out << "---------------------------------------------------------" << endl;
+    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
+        out << it->first << " :    " << it->second->Count() << endl;
+    } 
+    out << endl;      
+}
+
+//  ===========================================================================
 void CWiggleTrack::MakeTable(
     CSeq_table& table,
     bool bJoinSame,

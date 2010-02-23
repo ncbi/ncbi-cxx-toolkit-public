@@ -115,7 +115,9 @@ public:
         CNcbiOstream& );
 
     size_t Count() const { return m_Tracks.size(); };
-                    
+
+    void DumpStats(
+        CNcbiOstream& );                    
 protected:
     bool FindTrack(
         const std::string&,
