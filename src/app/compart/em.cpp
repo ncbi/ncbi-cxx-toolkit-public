@@ -131,10 +131,10 @@ string GetBinString(T v)
 
 void CheckWrittenFile(const string& filename, const Uint8& len_bytes)
 {
-    Uint8 curlen (0);
+    Int8 reported_len (-1);
     for(size_t attempt(0); attempt < 1; ++attempt) {
-        curlen = CFile(filename).GetLength();
-        if(curlen == len_bytes) {
+        reported_len = CFile(filename).GetLength();
+        if(reported_len >= 0 && Uint8(reported_len) == len_bytes) {
             return;
         }
         else {
@@ -143,9 +143,17 @@ void CheckWrittenFile(const string& filename, const Uint8& len_bytes)
     }
 
     CNcbiOstrstream ostr;
-    ostr << "The size of " << filename << " (" << curlen << ')'
-         << " is different from the expected " << len_bytes
-         << ". Please make sure there is enough disk space.";
+
+    if(reported_len < 0) {
+        ostr << "Cannot write " << filename 
+             << " (error code = " << reported_len << "). ";
+    }
+    else {
+        ostr << "The size of " << filename << " (" << reported_len << ')'
+             << " is different from the expected " << len_bytes << ". ";
+    }
+    ostr << "Please make sure there is enough disk space.";
+
     const string errmsg = CNcbiOstrstreamToString(ostr);
     NCBI_THROW(CException, eUnknown, errmsg);
 }
