@@ -905,7 +905,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if ( !datatool_sources.empty() ) {
         CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
         if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eMsvcNone) {
+            eVer < CMsvc7RegSettings::eXCode30) {
             CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
                 source_base_dir, proj_name, proj_id, tree, maketype);
             project.m_Depends.push_back(spec_proj);
@@ -1515,7 +1515,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
 
         CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
         if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eMsvcNone) {
+            eVer < CMsvc7RegSettings::eXCode30) {
             CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
                 source_base_dir, proj_name, proj_id.Id(), tree, maketype);
             project.m_Depends.push_back(spec_proj);
@@ -1679,7 +1679,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     if ( !datatool_sources.empty() ) {
         CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
         if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eMsvcNone) {
+            eVer < CMsvc7RegSettings::eXCode30) {
             CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
                 source_base_dir, proj_name, proj_id.Id(), tree, maketype);
             project.m_Depends.push_back(spec_proj);

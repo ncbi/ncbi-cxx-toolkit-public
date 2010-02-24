@@ -513,6 +513,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
         }
 #endif
         string pch_name = GetApp().GetMetaMakefile().GetDefaultPch();
+        bool dataspec_first = true;
         ITERATE ( list<string>, f, prj_files.GetDataSpecs()) {
             CDirEntry entry(*f);
             string spec_base( CDirEntry(GetRelativePath(*f)).GetDir() + entry.GetBase());
@@ -523,15 +524,18 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
             script += "echo Using datatool to create a C++ objects from ASN/DTD/Schema " + entry.GetName() + "\n";
             script += m_OutputDir + GetApp().GetDatatoolPathForApp();
 #else
-            script += "export PTB_PLATFORM=\"$ARCHS\"\n";
-            script += "export DATATOOL_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
-            script += "export TREE_ROOT=" +
-                CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
-            script += "export BUILD_TREE_ROOT=" +
-                CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
-                CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
-                    GetApp().GetProjectTreeInfo().m_Compilers,
-                    GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
+            if (dataspec_first) {
+                script += "export PTB_PLATFORM=\"$ARCHS\"\n";
+                script += "export DATATOOL_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
+                script += "export TREE_ROOT=" +
+                    CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
+                script += "export BUILD_TREE_ROOT=" +
+                    CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
+                    CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
+                        GetApp().GetProjectTreeInfo().m_Compilers,
+                        GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
+                dataspec_first = false;
+            }
             script +=  "\"$BUILD_TREE_ROOT/datatool.sh\"";
 #endif
             script += " " + GetApp().GetDatatoolCommandLine() + " -pch " + pch_name;
