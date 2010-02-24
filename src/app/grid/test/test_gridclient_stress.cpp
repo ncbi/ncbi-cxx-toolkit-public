@@ -161,6 +161,11 @@ int CGridClientTestApp::Run(void)
 
             if (status == CNetScheduleAPI::eDone) {
                 CNcbiIstream& is = job_status.GetIStream();
+                if (!is.good()) {
+                    LOG_POST("Input stream error while reading the "
+                        "size of the resulting vector");
+                    break;
+                }
                 int count;
                 is >> count;
                 vector<double> resvec;
