@@ -539,7 +539,7 @@ namespace {
             const string & infmt, bool parse_seqids )
     {
         if( infmt == "fasta" ) {
-            assert( is != 0 );
+            _ASSERT( is != 0 );
             return new CMaskFastaReader( *is, true, parse_seqids );
         }
         else if( infmt == "blastdb" ) {
@@ -566,7 +566,7 @@ void CheckDuplicates( const vector< string > & input,
         // CMaskFastaReader reader( istream );
         std::auto_ptr< CMaskReader > reader_p(
                 x_GetReader( *i, &istream, infmt, false ) );
-        assert( reader_p.get() != 0 );
+        _ASSERT( reader_p.get() != 0 );
         CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
         Uint4 seqnum( 0 );

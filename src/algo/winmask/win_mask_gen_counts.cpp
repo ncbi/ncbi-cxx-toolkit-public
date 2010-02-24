@@ -108,7 +108,7 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
     // CMaskFastaReader reader( input_stream );
     std::auto_ptr< CMaskReader > reader_p( x_GetReader( 
                 fname, &input_stream, infmt, false ) );
-    assert( reader_p.get() != 0 );
+    _ASSERT( reader_p.get() != 0 );
     CMaskReader & reader( *reader_p.get() );
     CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
@@ -435,7 +435,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
         // CMaskFastaReader reader( input_stream );
         std::auto_ptr< CMaskReader > reader_p(
                 x_GetReader( *it, &input_stream, infmt, false ) );
-        assert( reader_p.get() != 0 );
+        _ASSERT( reader_p.get() != 0 );
         CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
 
