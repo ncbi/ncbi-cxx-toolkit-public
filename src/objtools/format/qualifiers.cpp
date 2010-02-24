@@ -1168,32 +1168,58 @@ void CFlatSubSourcePrimer::Format(
     CBioseqContext& ctx, 
     IFlatQVal::TFlags flags) const
 {
-    string value;
+    vector< string > fwd_names;
     if ( ! m_fwd_name.empty() ) {
-        value += "fwd_name: " + m_fwd_name;
+        string fwd_name = NStr::Replace( m_fwd_name, "(", "" );
+        NStr::ReplaceInPlace( fwd_name, ")", "" );
+        NStr::Tokenize( fwd_name, ",", fwd_names );
     }
-    if ( ! m_fwd_seq.empty() ) {
-        if ( ! value.empty() ) {
-            value += ", ";
-        }
-        value += "fwd_seq: " + m_fwd_seq;
-    }
+    if ( fwd_names.empty() ) {
+        return;
+    } 
+    
+    vector< string > rev_names;
     if ( ! m_rev_name.empty() ) {
-        if ( ! value.empty() ) {
-            value += ", ";
-        }
-        value += "rev_name: " + m_rev_name;
+        string rev_name = NStr::Replace( m_rev_name, "(", "" );
+        NStr::ReplaceInPlace( rev_name, ")", "" );
+        NStr::Tokenize( rev_name, ",", rev_names );
     }
-    if ( ! m_rev_seq.empty() ) {
-        if ( ! value.empty() ) {
-            value += ", ";
-        }
-        value += "rev_seq: " + m_rev_seq;
-    }
-    if ( value.empty() ) {
+    if ( rev_names.size() != fwd_names.size() ) {
         return;
     }
-    x_AddFQ( q, "PCR_primers", value );
+
+    vector< string > fwd_seqs;
+    if ( ! m_fwd_seq.empty() ) {
+        string fwd_seq = NStr::Replace( m_fwd_seq, "(", "" );
+        NStr::ReplaceInPlace( fwd_seq, ")", "" );
+        NStr::Tokenize( fwd_seq, ",", fwd_seqs );
+    }
+    if ( fwd_seqs.size() != fwd_names.size() ) {
+        return;
+    }
+
+    vector< string > rev_seqs;
+    if ( ! m_rev_seq.empty() ) {
+        string rev_seq = NStr::Replace( m_rev_seq, "(", "" );
+        NStr::ReplaceInPlace( rev_seq, ")", "" );
+        NStr::Tokenize( rev_seq, ",", rev_seqs );
+    }
+    if ( rev_seqs.size() != fwd_names.size() ) {
+        return;
+    }
+
+    for ( size_t i=0; i < fwd_names.size(); ++i ) {
+
+        string value( "fwd_name: " );
+        value += fwd_names[i];
+        value += ", fwd_seq: ";
+        value += fwd_seqs[i];
+        value += ", rev_name: ";
+        value += rev_names[i];
+        value += ", rev_seq: ";
+        value += rev_seqs[i];
+        x_AddFQ( q, "PCR_primers", value );
+    }
 }
 
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
