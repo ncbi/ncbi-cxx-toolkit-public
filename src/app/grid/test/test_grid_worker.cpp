@@ -70,6 +70,20 @@ public:
 
     int Do(CWorkerNodeJobContext& context)
     {
+        CNcbiIstream& is = context.GetIStream();
+        string input_type;
+        is >> input_type;
+        if (input_type != "doubles") {
+            context.CommitJobWithFailure(
+                "This worker node can only process the 'doubles' input type.");
+            return 1;
+        }
+        int vsize;
+        is >> vsize;
+        vector<double> v(vsize);
+        for (int i = 0; i < vsize; ++i)
+            is >> v[i];
+
         unsigned delay = m_SleepTimeDistr.GetNextValue();
 
         if (delay > 0)
@@ -78,8 +92,15 @@ public:
         if (m_Random.GetRand() <
                 TParam_FailureRate::GetDefault() * m_Random.GetMax())
             context.CommitJobWithFailure("FAILED");
-        else
+        else {
+            sort(v.begin(), v.end());
+
+            CNcbiOstream& os = context.GetOStream();
+            os << vsize << ' ';
+            for (int i = 0; i < vsize; ++i)
+                os << v[i] << ' ';
             context.CommitJob();
+        }
 
         return 0;
     }
