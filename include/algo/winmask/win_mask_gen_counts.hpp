@@ -230,7 +230,7 @@ private:
             const string & infmt, bool parse_seqids ) const
     {
         if( infmt == "fasta" ) {
-            assert( is != 0 );
+            _ASSERT( is != 0 );
             return new CMaskFastaReader( *is, true, parse_seqids );
         }
         else if( infmt == "blastdb" ) {
