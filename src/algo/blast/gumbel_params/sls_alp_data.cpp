@@ -87,7 +87,7 @@ alp_data::alp_data(//constructor
 
                 d_memory_size_in_MB=0;
 
-                #ifndef NCBI_OS_WINDOWS
+                #ifndef NCBI_OS_MSWIN
 
                 #else
                         _CrtMemCheckpoint( &d_s1 );
@@ -181,7 +181,7 @@ alp_data::alp_data(//constructor
                 if(AdvancedParams_tmp.Empty())
                 {
                         random_factor=(Uint4)time(NULL);
-                        #ifndef NCBI_OS_WINDOWS //UNIX program
+                        #ifndef NCBI_OS_MSWIN //UNIX program
                                 struct timeval tv;
                                 struct timezone tz;
                                 struct tm *tm;
@@ -382,7 +382,7 @@ string out_file_name_)//output file name
 
                 d_memory_size_in_MB=0;
 
-                #ifndef NCBI_OS_WINDOWS //UNIX program
+                #ifndef NCBI_OS_MSWIN //UNIX program
 
                 #else
                         _CrtMemCheckpoint( &d_s1 );
@@ -462,7 +462,7 @@ string out_file_name_)//output file name
                 if(random_factor<0)
                 {
                         random_factor=(Uint4)time(NULL);
-                        #ifndef NCBI_OS_WINDOWS //UNIX program
+                        #ifndef NCBI_OS_MSWIN //UNIX program
                                 struct timeval tv;
                                 struct timezone tz;
                                 struct tm *tm;
@@ -801,7 +801,7 @@ void alp_data::check_out_file(
 double alp_data::get_allocated_memory_in_MB()
 {
 
-        #ifndef NCBI_OS_WINDOWS //UNIX program
+        #ifndef NCBI_OS_MSWIN //UNIX program
 
                 return 0;
 
@@ -1493,7 +1493,7 @@ importance_sampling::~importance_sampling()
 void alp_data::get_current_time(
 double &seconds_)
 {
-#ifndef NCBI_OS_WINDOWS //UNIX program
+#ifndef NCBI_OS_MSWIN //UNIX program
          struct timeval tv;
      struct timezone tz;
      struct tm *tm;

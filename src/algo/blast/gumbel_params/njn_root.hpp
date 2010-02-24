@@ -280,13 +280,13 @@ END_SCOPE()
 
          double x = x_;
          // swaps end-points if necessary to make p_ < q_
-         if (q_ < p_) std::swap <double> (p_, q_);
+         if (q_ < p_) swap(p_, q_);
 
          // makes an initial guess within [p_, q_]
          if (x_ < p_ || q_ < x_) x = 0.5 * (p_ + q_);
 
          // swaps end-points if necessary to make F (p_) < 0.0 < F (q_)
-         if (fp > 0.0) std::swap <double> (p_, q_);
+         if (fp > 0.0) swap(p_, q_);
    
          // Set up the bisection & Newton-Raphson iteration.
 
@@ -365,7 +365,7 @@ END_SCOPE()
          if (p_ == q_) IoUtil::abort ("Root::bisection : p_ == q_");
 
          // swaps end-points if necessary to make F (p_) < 0.0 < F (q_)
-         if (fp > 0.0) std::swap <double> (p_, q_);
+         if (fp > 0.0) swap(p_, q_);
 
          double x = 0.0;
          double fx = 0.0;
@@ -411,7 +411,7 @@ END_SCOPE()
          if (fx0 == 0.0) return x0;
 
          // swaps end-points if necessary to make p_ < q_
-         if (q_ < p_) std::swap <double> (p_, q_);
+         if (q_ < p_) swap(p_, q_);
 
          size_t pts = 2;
          double del = 0.5 * (q_ - p_);
@@ -455,7 +455,7 @@ END_SCOPE()
          Int4 *itmax = itmax_ == 0 ? &iter: itmax_;
          
          // swaps end-points if necessary to make p_ < q_
-         if (q_ < p_) std::swap <double> (p_, q_);
+         if (q_ < p_) swap(p_, q_);
 
          // check there is a root
          double x = hunt <T> (y_, f_, param_, p_, q_, tol_, rtol_, itmax);

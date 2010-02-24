@@ -46,7 +46,7 @@ Contents: Contains input data
 #include <stdlib.h>
 #include <limits>
 
-#ifndef NCBI_OS_WINDOWS
+#ifndef NCBI_OS_MSWIN
 #include <sys/time.h>
 
 #else
@@ -634,7 +634,7 @@ BEGIN_SCOPE(Sls)
 
 private:
 
-        #ifndef NCBI_OS_WINDOWS
+        #ifndef NCBI_OS_MSWIN
 
         #else
                 _CrtMemState d_s1, d_s2, d_s3;
