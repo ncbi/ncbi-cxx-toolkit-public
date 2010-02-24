@@ -1083,7 +1083,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             {{
                 const CDbtag& dbt = id.GetGeneral();
                 if ((flags & CSeq_id::fLabel_GeneralDbIsContent) == 0) {
-                    *label += dbt.GetDb() + '|';
+                    *label += dbt.GetDb() + ':';
                 }
                 if (dbt.GetTag().IsId()) {
                     *label += NStr::IntToString(dbt.GetTag().GetId());
@@ -1097,11 +1097,11 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             {{
                 const CId_pat& idp = id.GetPatent().GetCit();
                 *label += idp.GetCountry();
-                *label += '|';
+                // *label += '|';
                 *label += (idp.GetId().IsNumber() ?
                            idp.GetId().GetNumber() :
                            idp.GetId().GetApp_number());
-                *label += '|';
+                *label += '_'; // |
                 *label += NStr::IntToString(id.GetPatent().GetSeqid());
             }}
             break;
@@ -1113,15 +1113,16 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_Pdb:
             {{
                 const CPDB_seq_id& pid = id.GetPdb();
-                char chain = (char)pid.GetChain();
-                if (chain == '|') {
-                    *label += pid.GetMol().Get() + "|VB";
-                } else if (islower((unsigned char) chain) != 0) {
-                    *label += pid.GetMol().Get() + "-" + (char) toupper((unsigned char) chain);
-                } else if ( chain == '\0' ) {
-                    *label += pid.GetMol().Get() + "-";
-                } else {
-                    *label += pid.GetMol().Get() + "-" + chain;
+                *label += pid.GetMol().Get();
+                unsigned char chain = static_cast<unsigned char>(pid.GetChain());
+                if (chain > ' ') {
+                    *label += '_';
+                    if (islower(chain)) {
+                        *label += string(SIZE_TYPE(2),
+                                         static_cast<char>(toupper(chain)));
+                    } else {
+                        *label += static_cast<char>(chain);
+                    }
                 }
             }}
             break;

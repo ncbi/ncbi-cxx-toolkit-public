@@ -878,20 +878,24 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         "ref|NM_123456.1|", "NM_123456.1", "NM_123456",
 
         "Seq-id ::= general { db \"ti\", tag id 1}",
-        "gnl", "ti|1", "gnl|ti|1",
-        "gnl|ti|1", "ti|1", "ti|1",
+        "gnl", "ti:1", "gnl|ti:1",
+        "gnl|ti|1", "ti:1", "ti:1",
 
         "Seq-id ::= general { db \"NCBI_GENOMES\", tag id 1}",
-        "gnl", "NCBI_GENOMES|1", "gnl|NCBI_GENOMES|1",
-        "gnl|NCBI_GENOMES|1", "NCBI_GENOMES|1", "NCBI_GENOMES|1",
+        "gnl", "NCBI_GENOMES:1", "gnl|NCBI_GENOMES:1",
+        "gnl|NCBI_GENOMES|1", "NCBI_GENOMES:1", "NCBI_GENOMES:1",
 
         "Seq-id ::= pir { name \"S34010\" }",
         "pir", "S34010", "pir|S34010",
         "pir||S34010", "S34010", "S34010",
 
         "Seq-id ::= patent { seqid 257, cit { country \"JP\", id number \"2003530853\" } }",
-        "pat", "JP|2003530853|257", "pat|JP|2003530853|257",
-        "pat|JP|2003530853|257", "JP|2003530853|257", "JP|2003530853|257",
+        "pat", "JP2003530853_257", "pat|JP2003530853_257",
+        "pat|JP|2003530853|257", "JP2003530853_257", "JP2003530853_257",
+
+        "Seq-id ::= pdb { mol \"1GAV\", chain 120 }",
+        "pdb", "1GAV_XX", "pdb|1GAV_XX",
+        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX",
 
         NULL, NULL, NULL, NULL, NULL, NULL
     };
