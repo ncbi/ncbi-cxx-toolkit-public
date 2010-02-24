@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPrf)
 {
     CRef<CSeq_id> id;
 
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("prf|0806162C")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("prf||0806162C")));
     BOOST_CHECK(id->IsPrf());
 }
 
@@ -639,7 +639,7 @@ static const char* kTestFastaStrings[] = {
     "gnl|taxon|9606",
     "gi|1234",
     "dbj|N00068|",
-    "prf|0806162C|",
+    "prf||0806162C",
     "pdb|1GAV| ",
     "pdb|1GAV|X",
     "pdb|1GAV|XX",
