@@ -52,7 +52,6 @@ static char const rcsid[] =
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <util/format_guess.hpp>
-#include <util/xregexp/regexp.hpp>
 #include <util/util_exception.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 
