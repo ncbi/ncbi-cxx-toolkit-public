@@ -411,6 +411,10 @@ public:
     
     /// Get the current stream position
     ///
+    /// NOTE: 
+    ///   This is not the same as istream::tellg();
+    ///   rather, this is an offset in the current input
+    ///
     /// @return
     ///   stream position
     CNcbiStreampos GetStreamPos(void) const;
@@ -420,7 +424,8 @@ public:
     /// @sa SetStreamPos() 
     NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
 
-    /// Set the current stream position
+    /// Set the current read position in underlying input stream
+    /// This is the same as istream::seekg()
     ///
     /// @param pos
     ///   stream position

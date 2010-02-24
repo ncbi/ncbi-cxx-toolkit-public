@@ -316,6 +316,10 @@ public:
 
     /// Get the current stream position
     ///
+    /// NOTE: 
+    ///   This is not the same as ostream::tellp();
+    ///   rather, this is an offset in the current output
+    ///
     /// @return
     ///   stream position
     CNcbiStreampos GetStreamPos(void) const;
