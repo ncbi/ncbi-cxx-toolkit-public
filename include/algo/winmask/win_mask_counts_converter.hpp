@@ -43,14 +43,14 @@ BEGIN_NCBI_SCOPE
 /** 
     \brief Class responsible for converting unit counts between different formats.
  **/
-class CWinMaskCountsConverter
+class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsConverter
 {
     public:
 
         /**
             \brief Class defining exceptions specific to CWinMaskCountsConverter.
          **/
-        class Exception : public CException
+        class NCBI_XALGOWINMASK_EXPORT Exception : public CException
         {
             public:
 

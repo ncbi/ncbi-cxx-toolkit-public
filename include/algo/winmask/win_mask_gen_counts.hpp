@@ -58,13 +58,13 @@ BEGIN_NCBI_SCOPE
  **       functionality of winmasker.
  **
  **/
-class CWinMaskCountsGenerator
+class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsGenerator
 {
 public:
 
     /**\brief Exceptions that CWinMaskCountsGenerator may throw.
     */
-    class GenCountsException : public CException
+    class NCBI_XALGOWINMASK_EXPORT GenCountsException : public CException
     {
         public:
 

@@ -45,14 +45,14 @@
 
 BEGIN_NCBI_SCOPE
 
-class CWinMaskUtil
+class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
 {
     public:
 
     /**\brief Base class for sets of seq_id representations used with
               -ids and -exclude-ids options.
     */
-    class CIdSet
+    class NCBI_XALGOWINMASK_EXPORT CIdSet
     {
         public:
 
@@ -80,7 +80,7 @@ class CWinMaskUtil
 
     /**\brief Implementation of CIdSet that compares CSeq_id handles.
     */
-    class CIdSet_SeqId : public CIdSet
+    class NCBI_XALGOWINMASK_EXPORT CIdSet_SeqId : public CIdSet
     {
         public:
 
@@ -110,7 +110,7 @@ class CWinMaskUtil
 
     /**\brief Implementation of CIdSet that does substring matching.
     */
-    class CIdSet_TextMatch : public CIdSet
+    class NCBI_XALGOWINMASK_EXPORT CIdSet_TextMatch : public CIdSet
     {
         public:
 
