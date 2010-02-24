@@ -69,6 +69,12 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/// Flag showing whether all pythonpp::CString objects should be created as
+/// Python unicode strings (TRUE value) or regular strings (FALSE value)
+bool g_PythonStrDefToUnicode = false;
+
+
 namespace python
 {
 
@@ -3567,6 +3573,27 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
 namespace python
 {
 //////////////////////////////////////////////////////////////////////////////
+// return_strs_as_unicode(flag_value)
+static
+PyObject*
+ReturnStrsAsUnicode(PyObject *self, PyObject *args)
+{
+    try{
+        const pythonpp::CTuple func_args(args);
+        g_PythonStrDefToUnicode = pythonpp::CBool(func_args[0]);
+    }
+    catch (const pythonpp::CError&) {
+        // An error message is already set by an exception ...
+        return NULL;
+    }
+    catch (...) {
+        pythonpp::CError::SetString("Unknown error in python_ncbi_dbapi::Connect");
+    }
+
+    return pythonpp::CNone().Get();
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // connect(driver_name, db_type, db_name, user_name, user_pswd)
 static
 PyObject*
@@ -3914,6 +3941,12 @@ CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
 }
 
 static struct PyMethodDef python_ncbi_dbapi_methods[] = {
+    {(char*)"return_strs_as_unicode", (PyCFunction) python::ReturnStrsAsUnicode, METH_VARARGS, (char*)
+        "return_strs_as_unicode(bool_flag_value) "
+        "-- set global flag indicating that all strings returned from database "
+        "should be presented to Python as unicode strings (if value is True) or "
+        " as regular strings (if value is False - the default one)"
+    },
     {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
         "connect(driver_name, db_type, server_name, database_name, userid, password) "
         "-- connect to the "

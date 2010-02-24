@@ -2258,7 +2258,7 @@ public:
     ///   or, if substitute_on_error equals 0, throw the exception
     wstring AsUnicode(const wchar_t* substitute_on_error = 0) const
     {
-        return x_AsBasicString<wchar_t>(substitute_on_error);
+        return AsBasicString<wchar_t>(substitute_on_error);
     }
 #endif // HAVE_WSTRING
 
@@ -2272,8 +2272,12 @@ public:
     ///   or, if substitute_on_error equals 0, throw the exception
     TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const
     {
-        return x_AsBasicString<TCharUCS2>(substitute_on_error);
+        return AsBasicString<TCharUCS2>(substitute_on_error);
     }
+
+    /// Conversion to basic_string with any base type we need
+    template <typename TChar>
+    basic_string<TChar> AsBasicString(const TChar* substitute_on_error) const;
 
     /// Guess the encoding of the C/C++ string
     ///
@@ -2352,10 +2356,6 @@ private:
     {
         return AsLatin1();
     }
-
-    /// Conversion to basic_string with any base type we need
-    template <typename TChar>
-    basic_string<TChar> x_AsBasicString(const TChar* substitute_on_error) const;
 
     void   x_Validate(void) const;
     /// Convert Unicode code point into UTF8 and append
@@ -3438,7 +3438,7 @@ TUnicodeSymbol CStringUTF8::Decode(TIterator& src)
 }
 
 template <typename TChar>
-basic_string<TChar> CStringUTF8::x_AsBasicString(
+basic_string<TChar> CStringUTF8::AsBasicString(
     const TChar* substitute_on_error) const
 {
     TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();

@@ -106,6 +106,18 @@ cursor.execute('COMMIT TRANSACTION')
 cursor.execute("select * from #sale_stat")
 checkEqual(len( cursor.fetchall() ), 48)
 
+cursor.execute("select month from #sale_stat")
+month = cursor.fetchone()[0]
+check(isinstance(month, str))
+dbapi.return_strs_as_unicode(True)
+cursor.execute("select month from #sale_stat")
+month = cursor.fetchone()[0]
+check(isinstance(month, unicode))
+dbapi.return_strs_as_unicode(False)
+cursor.execute("select month from #sale_stat")
+month = cursor.fetchone()[0]
+check(isinstance(month, str))
+
 
 cursor.callproc('sp_databases')
 cursor.fetchall()

@@ -1119,6 +1119,20 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteSQL("COMMIT TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
         ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteSQL("select month from #sale_stat");
+        ExecuteStr("month = cursor.fetchone()[0]");
+        ExecuteStr("if not isinstance(month, str) : "
+                    "raise StandardError('Invalid data type: ') \n");
+        ExecuteStr("dbapi.return_strs_as_unicode(True)");
+        ExecuteSQL("select month from #sale_stat");
+        ExecuteStr("month = cursor.fetchone()[0]");
+        ExecuteStr("if not isinstance(month, unicode) : "
+            "raise StandardError('Invalid data type: ') \n");
+        ExecuteStr("dbapi.return_strs_as_unicode(False)");
+        ExecuteSQL("select month from #sale_stat");
+        ExecuteStr("month = cursor.fetchone()[0]");
+        ExecuteStr("if not isinstance(month, str) : "
+            "raise StandardError('Invalid data type: ') \n");
     }
 }
 

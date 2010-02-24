@@ -39,6 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Flag showing whether all pythonpp::CString objects should be created as
+/// Python unicode strings (TRUE value) or regular strings (FALSE value)
+extern bool g_PythonStrDefToUnicode;
+
+
 namespace pythonpp
 {
 
@@ -676,16 +681,16 @@ public:
     {
     }
     CString(const string& str)
-    : CObject(PyString_FromStringAndSize(str.data(), str.size()), eTakeOwnership)
     {
+        operator= (str);
     }
     CString(const char* str)
-    : CObject(PyString_FromString(str), eTakeOwnership)
     {
+        operator= (str);
     }
     CString(const char* str, size_t str_size)
-    : CObject(PyString_FromStringAndSize(const_cast<char*>(str), str_size), eTakeOwnership)
     {
+        operator= (string(str, str_size));
     }
 
 public:
@@ -712,8 +717,19 @@ public:
     }
     CString& operator= (const string& str)
     {
-        Set(PyString_FromStringAndSize(str.data(), str.size()),  eTakeOwnership);
+        if (g_PythonStrDefToUnicode) {
+            CStringUTF8 str_utf8(str, eEncoding_UTF8);
+            basic_string<Py_UNICODE> str_uni(str_utf8.AsBasicString<Py_UNICODE>(NULL));
+            Set(PyUnicode_FromUnicode(str_uni.data(), str_uni.size()), eTakeOwnership);
+        }
+        else {
+            Set(PyString_FromStringAndSize(str.data(), str.size()), eTakeOwnership);
+        }
         return *this;
+    }
+    CString& operator= (const char* str)
+    {
+        return operator= (string(str));
     }
 
 public:
