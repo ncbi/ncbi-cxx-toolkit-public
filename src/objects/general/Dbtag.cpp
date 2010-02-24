@@ -478,7 +478,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"),
     TDbtUrl(CDbtag::eDbtagType_GOA, "http://www.ebi.ac.uk/ego/GProtein?ac="),
     TDbtUrl(CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?"),
-    TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Dispatcher?formType=navBar&submit=Search+for&organism=All%3Apombe%3Acerevisiae%3Adicty%3Aasp%3Atryp%3Aleish%3Amalaria%3Astyphi%3Aglossina&desc=yes&ohmr=%2F&name="),
+    TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Search?name="),
     TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=Retrieve&dopt=full_report&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id="),
     TDbtUrl(CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id="),
@@ -650,6 +650,10 @@ string CDbtag::GetUrl(void) const
             if (NStr::Find(tag, "_") != NPOS) {
                 prefix = &kDictyPrim;
             }
+            break;
+
+        case CDbtag::eDbtagType_GeneDB:
+            tag +="&organism=pombe";
             break;
 
         default:
