@@ -247,8 +247,8 @@ void CGenbankFormatter::FormatGenomeProject(
     }
     list<string> l;
     CNcbiOstrstream project_line;
-    project_line << "GenomeProject:" << gp.GetProjectNumber();
-    Wrap(l, GetWidth(), "PROJECT", CNcbiOstrstreamToString(project_line));
+    project_line << "Project:" << gp.GetProjectNumber();
+    Wrap(l, GetWidth(), "DBLINK", CNcbiOstrstreamToString(project_line));
     text_os.AddParagraph(l, gp.GetObject());
 }
 
