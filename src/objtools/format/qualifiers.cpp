@@ -1266,12 +1266,18 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         CDbtag::TDb db = dbt.GetDb();
         if (db == "PID"  ||  db == "GI") {
             continue;
-        } else if (db == "cdd") {
+        }
+
+        if (db == "cdd") {
             db = "CDD"; // canonicalize
         }
 
         if (ctx.Config().DropBadDbxref()) {
             if (!dbt.IsApproved(ctx.IsRefSeq())) {
+                continue;
+            }
+            if ( (flags | IFlatQVal::fIsSource) && db == "dbEST" ) {
+                // approved for features only
                 continue;
             }
         }
