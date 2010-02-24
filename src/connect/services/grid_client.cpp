@@ -258,7 +258,9 @@ CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
               status == CNetScheduleAPI::eDone ||
               status == CNetScheduleAPI::eCanceled)) {
         x_GetJobDetails();
-        m_GridClient.RemoveDataBlob(m_Job.input);
+        const char* job_input = m_Job.input.c_str();
+        if (job_input[0] == 'K' && job_input[1] == ' ')
+            m_GridClient.RemoveDataBlob(job_input + 2);
         if (m_UseProgress) {
             m_GridClient.GetNSClient().GetProgressMsg(m_Job);
             if (!m_Job.progress_msg.empty())
