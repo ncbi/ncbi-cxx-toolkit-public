@@ -1502,19 +1502,7 @@ void CFeatureItem::x_AddQualsRna(
                 int aa = 0;
                 if ( trna.CanGetAa()  &&  trna.GetAa().IsNcbieaa() ) {
                     aa = trna.GetAa().GetNcbieaa();
-                } else {
-                    // !!!
-                    return;
-                }
-/*                if (aa == 'U') {
-                    if ( ctx.Config().SelenocysteineToNote() ) {
-                        x_AddQual(eFQ_selenocysteine_note,
-                            new CFlatStringQVal("selenocysteine"));
-                    } else {
-                        x_AddQual(eFQ_selenocysteine, new CFlatBoolQVal(true));
-                    }
-                }
-*/                if ( cfg.IupacaaOnly() ) {
+                }                 if ( cfg.IupacaaOnly() ) {
                     aa = s_ToIupacaa(aa);
                 }
                 const string& aa_str = s_AaName(aa);
