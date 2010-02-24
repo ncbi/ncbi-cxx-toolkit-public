@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -39,10 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
-static const unsigned s_FlagsLen = 2;
-static const char *s_Flags[s_FlagsLen] = {
-    "D ",
-    "K " };
+static const char* const s_Flags[] = {"D ", "K "};
+
+#define JOB_OUTPUT_PREFIX_EMBEDDED s_Flags[0]
+#define JOB_OUTPUT_PREFIX_NETCACHE s_Flags[1]
+#define JOB_OUTPUT_PREFIX_LEN 2
 
 CStringOrBlobStorageWriter::
 CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
@@ -64,7 +65,9 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
 void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
 {
     m_MaxBuffSize = max_string_size;
-    m_Data = s_Flags[max_string_size > 0 ? 0 : 1];
+    m_Data = max_string_size > 0 ?
+        JOB_OUTPUT_PREFIX_EMBEDDED :
+        JOB_OUTPUT_PREFIX_NETCACHE;
 }
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
@@ -112,10 +115,10 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
     string key;
     m_BlobOstr = &m_Storage.CreateOStream(key);
 
-    if (m_Data.size() > s_FlagsLen) {
+    if (m_Data.size() > JOB_OUTPUT_PREFIX_LEN) {
         ERW_Result ret = x_WriteToStream(
-            &*m_Data.begin() + s_FlagsLen,
-            m_Data.size() - s_FlagsLen);
+            &*m_Data.begin() + JOB_OUTPUT_PREFIX_LEN,
+            m_Data.size() - JOB_OUTPUT_PREFIX_LEN);
 
         if (ret != eRW_Success) {
             m_Storage.Reset();
@@ -124,7 +127,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
         }
     }
 
-    m_Data = s_Flags[1] + key;
+    m_Data = JOB_OUTPUT_PREFIX_NETCACHE + key;
 
     return x_WriteToStream(buf, count, &written);
 }
@@ -176,26 +179,24 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage* storage,
 void CStringOrBlobStorageReader::x_Init(size_t* data_size,
                                         IBlobStorage::ELockMode lock_mode)
 {
-    if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[1]) == 0) {
-        //    if (m_Storage.IsKeyValid(data)) {
-        //        try {
-        m_BlobIstr = &m_Storage.GetIStream(m_Data.data() + s_FlagsLen,
-                                           data_size, lock_mode);
-        //        } catch (CBlobStorageException& ex) {
-        //            if (ex.GetErrCode() != CBlobStorageException::eBlobNotFound)
-        //                throw;
-        //        }
-    } else if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[0]) == 0) {
-        m_CurPos = m_Data.begin() + s_FlagsLen;
-        if (data_size) *data_size = m_Data.size() - s_FlagsLen;
+    if (NStr::CompareCase(m_Data, 0, JOB_OUTPUT_PREFIX_LEN,
+            JOB_OUTPUT_PREFIX_NETCACHE) == 0) {
+        m_BlobIstr = &m_Storage.GetIStream(
+            m_Data.data() + JOB_OUTPUT_PREFIX_LEN, data_size, lock_mode);
+    } else if (NStr::CompareCase(m_Data, 0,
+            JOB_OUTPUT_PREFIX_LEN, JOB_OUTPUT_PREFIX_EMBEDDED) == 0) {
+        m_CurPos = m_Data.begin() + JOB_OUTPUT_PREFIX_LEN;
+        if (data_size)
+            *data_size = m_Data.size() - JOB_OUTPUT_PREFIX_LEN;
     } else {
         if (!m_Data.empty())
             NCBI_THROW(CStringOrBlobStorageRWException, eInvalidFlag,
-                       "Unknown data type " +
-                       string(m_Data.begin(),m_Data.begin()+s_FlagsLen));
+                "Unknown data type " +
+                string(m_Data.begin(), m_Data.begin() + JOB_OUTPUT_PREFIX_LEN));
         else {
             m_CurPos = m_Data.begin();
-            if (data_size) *data_size = m_Data.size();
+            if (data_size)
+                *data_size = m_Data.size();
         }
     }
 }
