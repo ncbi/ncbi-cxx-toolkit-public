@@ -64,7 +64,8 @@ void CTextTagWriter::x_WriteText(const string& text)
 }
 void CTextTagWriter::x_WriteStream(CNcbiIstream& is)
 {
-    m_Os << is.rdbuf() << NcbiEndl;
+    NcbiStreamCopy(m_Os, is);
+    m_Os << NcbiEndl;
 }
 
 ///////////////////////////////////////////////////////
@@ -120,7 +121,8 @@ void CXmlTagWriter::x_WriteText(const string& text)
 }
 void CXmlTagWriter::x_WriteStream(CNcbiIstream& is)
 {
-    m_Os << is.rdbuf() << NcbiEndl;
+    NcbiStreamCopy(m_Os, is);
+    m_Os << NcbiEndl;
 }
 
 void  CXmlTagWriter::x_WriteIndent()

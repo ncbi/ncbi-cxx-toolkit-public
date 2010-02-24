@@ -74,7 +74,8 @@ static inline void s_WriteBlob(CNcbiOstream& os, const string& blobkey,
         size_t bsize = 0;
         CNcbiIstream& is = storage.GetIStream(blobkey, &bsize);
         os << bsize << " " ;
-        if (bsize > 0) os << is.rdbuf();
+        if (bsize > 0)
+            NcbiStreamCopy(os, is);
     } else {
         os << "0 ";
     }
@@ -158,7 +159,8 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
         ifstream ifstr(fname.c_str());
         WriteStrWithLen(os, fname);
         os << len << " ";
-        if (len > 0) os << ifstr.rdbuf();
+        if (len > 0)
+            NcbiStreamCopy(os, ifstr);
     }
 
     Reset();

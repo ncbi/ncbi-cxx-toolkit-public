@@ -205,10 +205,8 @@ static void DumpStdStreams(const CArgValue& arg,
 
     while (job_list.GetNextArg(job_id)) {
         CNSJobInfo job_info(job_id, *info_collector);
-        if (!use_stderr)
-            *out << job_info.GetStdOut().rdbuf();
-        else
-            *out << job_info.GetStdErr().rdbuf();
+        NcbiStreamCopy(*out,
+            use_stderr ? job_info.GetStdErr() : job_info.GetStdOut());
     }
 }
 

@@ -190,9 +190,7 @@ void CRemoteAppDispatcher::x_RunNewJob(CGridClient& grid, const string& app_name
     CGridJobSubmitter& submitter = grid.GetJobSubmitter();
     CNcbiOstream& jos = submitter.GetOStream();
     WriteStrWithLen(jos, app_name);
-    if (is.good()) {
-        jos << is.rdbuf();
-    }
+    NcbiStreamCopy(jos, is);
     submitter.SetJobMask(CRemoteAppRequestSB::kSingleBlobMask);
     string job_key = submitter.Submit();
 
@@ -209,8 +207,8 @@ void CRemoteAppDispatcher::x_CheckJobStatus(CGridClient& grid, const string& app
     string token = app_name + '|' + jid;
     WriteStrWithLen(os, token);
     switch( st ) {
-    case CNetScheduleAPI::eDone:        
-        os << stat.GetIStream().rdbuf();
+    case CNetScheduleAPI::eDone:
+        NcbiStreamCopy(os, stat.GetIStream());
         break;
     case CNetScheduleAPI::eFailed:
         WriteStrWithLen(os, stat.GetErrorMessage());
