@@ -261,10 +261,7 @@ void CMacProjectGenerator::Generate(const string& solution)
             AddString( *dict_product, "sourceTree", "BUILT_PRODUCTS_DIR");
         }
         // watchers
-        GetApp().RegisterProjectWatcher(
-            prj_files.GetProjectContext().ProjectName(),
-            prj.m_SourcesBaseDir, prj.m_Watchers);
-
+        GetApp().RegisterProjectWatcher( GetTargetName(prj), prj.m_SourcesBaseDir, prj.m_Watchers);
     }
 
 // collect file groups
