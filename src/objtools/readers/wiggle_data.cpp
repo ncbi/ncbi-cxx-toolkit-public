@@ -848,16 +848,16 @@ unsigned char CWiggleTrack::ByteGraphValue(
 {
     double dRaw( 0 );
     if ( ! DataValue( uStart, dRaw ) ) {
-        // return 0 as the gap value
+        // return 0 as the default value
         return static_cast<unsigned char>( 0 );
     }
     else {
-        // scale into interval [1,255]
+        // scale into interval [0,255]
         if ( m_dMinValue == m_dMaxValue ) {
-            return static_cast<unsigned char>( (dRaw ? 255 : 1) );
+            return static_cast<unsigned char>( (dRaw ? 255 : 0) );
         }
-        double dScaled =  1 +
-            ( 254 * (dRaw - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
+        double dScaled =
+            ( 255 * (dRaw - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
         return static_cast<unsigned char>( dScaled + 0.5 );
     }
     
