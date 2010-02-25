@@ -2716,7 +2716,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetPatent().SetCit().SetCountry("USA");
     id2->SetPatent().SetCit().SetId().SetNumber("2");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("USA|1|1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (pat|USA|1|1 - pat|USA|2|2)"));
+    expected_errors.push_back(new CExpectedError("USA1_1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (pat|USA|1|1 - pat|USA|2|2)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2725,7 +2725,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id1->SetPdb().SetMol().Set("good");
     id2->SetPdb().SetMol().Set("badd");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("good- ");
+    expected_errors[0]->SetAccession("good");
     expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (pdb|good|  - pdb|badd| )");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2737,7 +2737,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
     id2->SetGeneral().SetDb("a");
     id2->SetGeneral().SetTag().SetStr("bad");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("a|good");
+    expected_errors[0]->SetAccession("a:good");
     expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gnl|a|good - gnl|a|bad)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3621,8 +3621,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetCountry("USA");
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("USA|1|1");
-    expected_errors[1]->SetAccession("USA|1|1");
+    expected_errors[0]->SetAccession("USA1_1");
+    expected_errors[1]->SetAccession("USA1_1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3672,8 +3672,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetCountry("USA");
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("USA|1|1");
-    expected_errors[1]->SetAccession("USA|1|1");
+    expected_errors[0]->SetAccession("USA1_1");
+    expected_errors[1]->SetAccession("USA1_1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4143,10 +4143,10 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetCountry("USA");
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("USA|1|1");
-    expected_errors[1]->SetAccession("USA|1|1");
-    expected_errors[2]->SetAccession("USA|1|1");
-    expected_errors[3]->SetAccession("USA|1|1");
+    expected_errors[0]->SetAccession("USA1_1");
+    expected_errors[1]->SetAccession("USA1_1");
+    expected_errors[2]->SetAccession("USA1_1");
+    expected_errors[3]->SetAccession("USA1_1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5027,7 +5027,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     pdb_id->SetMol().Set("foo");
     id2->SetPdb(*pdb_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    SetErrorsAccessions(expected_errors, "foo- ");
+    SetErrorsAccessions(expected_errors, "foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
