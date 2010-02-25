@@ -141,7 +141,7 @@ private:
 
     const EDB_ResType   m_ResType;
     const unsigned int  m_ColumsNum;
-   
+
     TRecordSet  m_RecordSet;
     auto_ptr<const IResultSetMetaData> m_MetaData;
     size_t      m_CurRowNum;
@@ -169,13 +169,13 @@ CCachedResultSet::~CCachedResultSet(void)
 {
 }
 
-EDB_ResType 
+EDB_ResType
 CCachedResultSet::GetResultType(void)
 {
     return m_ResType;
 }
 
-bool 
+bool
 CCachedResultSet::Next(void)
 {
     if (m_CurRowNum < m_RecordSet.size()) {
@@ -186,14 +186,14 @@ CCachedResultSet::Next(void)
     return false;
 }
 
-const CVariant& 
+const CVariant&
 CCachedResultSet::GetVariant(const CDBParamVariant& param)
 {
     if (param.IsPositional()) {
         unsigned int col_num = param.GetPosition();
 
-        if (col_num > 0 
-            && col_num <= GetTotalColumns() 
+        if (col_num > 0
+            && col_num <= GetTotalColumns()
             && m_CurRowNum <= m_RecordSet.size()
             ) {
             return m_RecordSet[m_CurRowNum - 1][col_num - 1];
@@ -204,13 +204,13 @@ CCachedResultSet::GetVariant(const CDBParamVariant& param)
     return value;
 }
 
-unsigned int 
+unsigned int
 CCachedResultSet::GetTotalColumns(void)
 {
     return m_ColumsNum;
 }
 
-const IResultSetMetaData& 
+const IResultSetMetaData&
 CCachedResultSet::GetMetaData(void) const
 {
     return *m_MetaData;
@@ -245,31 +245,31 @@ CRealResultSet::~CRealResultSet(void)
 {
 }
 
-EDB_ResType 
+EDB_ResType
 CRealResultSet::GetResultType(void)
 {
     return m_RS->GetResultType();
 }
 
-bool 
+bool
 CRealResultSet::Next(void)
 {
     return m_RS->Next();
 }
 
-const CVariant& 
+const CVariant&
 CRealResultSet::GetVariant(const CDBParamVariant& param)
 {
     return m_RS->GetVariant(param);
 }
 
-unsigned int 
+unsigned int
 CRealResultSet::GetTotalColumns(void)
 {
     return m_RS->GetTotalColumns();
 }
 
-const IResultSetMetaData& 
+const IResultSetMetaData&
 CRealResultSet::GetMetaData(void) const
 {
     return *m_RS->GetMetaData();
@@ -321,13 +321,13 @@ bool CRealSetProxy::MoveToNextRS(void)
     return m_HasRS;
 }
 
-bool 
+bool
 CRealSetProxy::MoveToLastRS(void)
 {
     return false;
 }
 
-CVariantSet& 
+CVariantSet&
 CRealSetProxy::GetRS(void)
 {
     return *m_VariantSet;
@@ -343,7 +343,7 @@ bool CRealSetProxy::HasRS(void) const
     return m_HasRS;
 }
 
-void 
+void
 CRealSetProxy::DumpResult(void)
 {
     while ( m_Stmt->HasMoreResults() ) {
@@ -396,7 +396,7 @@ CVariantSetProxy::~CVariantSetProxy(void)
 bool CVariantSetProxy::MoveToNextRS(void)
 {
     m_HasRS = false;
-    
+
     if (!m_CachedSet.empty()) {
         m_CurResultSet.Reset(m_CachedSet.front());
         m_CachedSet.pop_front();
@@ -406,7 +406,7 @@ bool CVariantSetProxy::MoveToNextRS(void)
     return m_HasRS;
 }
 
-bool 
+bool
 CVariantSetProxy::MoveToLastRS(void)
 {
     m_HasRS = false;
@@ -1080,7 +1080,7 @@ CConnection::CConnection(
             m_DefParams.SetServerType(CDBConnParams::eMySQL);
         } else if ( db_type_uc == "MSSQL" ||
                 db_type_uc == "MS_SQL" ||
-                db_type_uc == "MS SQL") 
+                db_type_uc == "MS SQL")
         {
             m_DefParams.SetServerType(CDBConnParams::eMSSqlServer);
             m_DefParams.SetEncoding(eEncoding_UTF8);
@@ -2226,7 +2226,7 @@ CCallableStmtHelper::MoveToNextRS(void)
     return result;
 }
 
-bool 
+bool
 CCallableStmtHelper::MoveToLastRS(void)
 {
     if ( m_RSProxy.get() == NULL ) {
@@ -3129,14 +3129,14 @@ CDatabaseError::CDatabaseError(const string& msg, PyObject* err_type)
 {
 }
 
-void 
+void
 CDatabaseError::SetPythonExeption(const string& msg, long db_errno, const string& db_msg)
-{        
+{
     PyObject *exc_ob = NULL;
     PyObject *errno_ob = NULL;
     PyObject *msg_ob = NULL;
 
-    // Make an integer for the error code. 
+    // Make an integer for the error code.
     errno_ob = PyInt_FromLong(db_errno);
     if (errno_ob == NULL) {
         return;
@@ -3179,7 +3179,7 @@ CDatabaseError::SetPythonExeption(const string& msg, long db_errno, const string
 
     //  Finished with the msg_ob object.
     Py_DECREF(msg_ob);
-    
+
     //  Set the error state to our exception object.
     PyErr_SetObject(GetPyException(), exc_ob);
 
@@ -3603,8 +3603,8 @@ Connect(PyObject *self, PyObject *args)
 
     try {
         // Debugging ...
-        // throw  python::CDatabaseError("oops ..."); 
-        // throw  python::CDatabaseError("oops ...", 200, "Blah-blah-blah"); 
+        // throw  python::CDatabaseError("oops ...");
+        // throw  python::CDatabaseError("oops ...", 200, "Blah-blah-blah");
 
         string driver_name;
         string db_type;
@@ -3945,7 +3945,8 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
         "return_strs_as_unicode(bool_flag_value) "
         "-- set global flag indicating that all strings returned from database "
         "should be presented to Python as unicode strings (if value is True) or "
-        " as regular strings (if value is False - the default one)"
+        " as regular strings in UTF-8 encoding (if value is False - the default one). "
+        "NOTE:  This is not a part of the Python Database API Specification v2.0."
     },
     {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
         "connect(driver_name, db_type, server_name, database_name, userid, password) "
@@ -3970,7 +3971,7 @@ struct PyDatabaseErrorExtObject : public PyBaseExceptionObject
     PyObject *db_message;
     PyObject *db_code;
 };
- 
+
 
 static int
 DatabaseErrorExt_init(PyDatabaseErrorExtObject *self, PyObject *args, PyObject *kwds)
@@ -3985,17 +3986,17 @@ DatabaseErrorExt_init(PyDatabaseErrorExtObject *self, PyObject *args, PyObject *
     static char *kwlist[] = {"message", "db_message", "db_code", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(
-            args, 
-            kwds, 
-            "S|SO", 
-            kwlist, 
+            args,
+            kwds,
+            "S|SO",
+            kwlist,
             &message,
-            &db_message, 
+            &db_message,
             &db_code
             )
-        ) 
+        )
     {
-        return -1; 
+        return -1;
     }
 
     if (db_message) {
@@ -4008,7 +4009,7 @@ DatabaseErrorExt_init(PyDatabaseErrorExtObject *self, PyObject *args, PyObject *
     if (db_code) {
         // We are reading an object. Let us check the type.
         if (! PyInt_CheckExact(db_code)) {
-            PyErr_SetString(PyExc_TypeError, 
+            PyErr_SetString(PyExc_TypeError,
                     "The second attribute value must be an int or a long");
             return -1;
         }
@@ -4064,14 +4065,14 @@ DatabaseErrorExt_set_db_message(PyDatabaseErrorExtObject *self, PyObject *value,
     }
 
     if (! PyString_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, 
+        PyErr_SetString(PyExc_TypeError,
                 "The first attribute value must be a string");
         return -1;
     }
 
     Py_DECREF(self->db_message);
     Py_INCREF(value);
-    self->db_message = value;    
+    self->db_message = value;
 
     return 0;
 }
@@ -4092,14 +4093,14 @@ DatabaseErrorExt_set_db_code(PyDatabaseErrorExtObject *self, PyObject *value, vo
     }
 
     if (! PyLong_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, 
+        PyErr_SetString(PyExc_TypeError,
                 "The second attribute value must be a long");
         return -1;
     }
 
     Py_DECREF(self->db_code);
     Py_INCREF(value);
-    self->db_code = value;    
+    self->db_code = value;
 
     return 0;
 }
@@ -4107,7 +4108,7 @@ DatabaseErrorExt_set_db_code(PyDatabaseErrorExtObject *self, PyObject *value, vo
 static PyGetSetDef DatabaseErrorExt_getseters[] = {
     {"db_message", (getter)DatabaseErrorExt_get_db_message, (setter)DatabaseErrorExt_set_db_message, "Database message", NULL},
     {"db_code", (getter)DatabaseErrorExt_get_db_code, (setter)DatabaseErrorExt_set_db_code, "Database error code", NULL},
-    {NULL}  
+    {NULL}
 };
 
 static int
@@ -4119,7 +4120,7 @@ DatabaseErrorExt_traverse(PyDatabaseErrorExtObject *self, visitproc visit, void 
     return 0;
 }
 
-static int 
+static int
 DatabaseErrorExt_clear(PyDatabaseErrorExtObject *self)
 {
     Py_CLEAR(self->db_message);
@@ -4182,7 +4183,7 @@ DatabaseErrorExt_dealloc(PyDatabaseErrorExtObject *self)
 //     0,                       /* tp_alloc */
 //     0, // DatabaseErrorExt_new,    /* tp_new */
 // };
-// static PyObject *PyExc_DatabaseErrorExtType = (PyObject *)&DatabaseErrorExtType; 
+// static PyObject *PyExc_DatabaseErrorExtType = (PyObject *)&DatabaseErrorExtType;
 // static PyObject* PyExc_DatabaseErrorExt = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -4350,7 +4351,7 @@ void init_common(const string& module_name)
 
         PyObject* dict = PyModule_GetDict(module);
         if (dict == NULL) {
-            Py_FatalError("exceptions bootstrapping error."); 
+            Py_FatalError("exceptions bootstrapping error.");
         }
 
         Py_INCREF(PyExc_DatabaseErrorExtType);
@@ -4373,8 +4374,8 @@ void init_common(const string& module_name)
     /* DO NOT delete this code ...
 
     python::CDatabaseError::Declare(
-        string(module_name + ".DatabaseErrorExt").c_str(), 
-        NULL, 
+        string(module_name + ".DatabaseErrorExt").c_str(),
+        NULL,
         python::CError::GetPyException()->ob_type
         );
     */
