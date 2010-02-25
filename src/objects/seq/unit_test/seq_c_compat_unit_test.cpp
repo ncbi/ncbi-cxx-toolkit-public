@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objistrasn.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -51,6 +52,7 @@ static AsnTypePtr s_SeqIdATP;
 
 NCBITEST_AUTO_INIT()
 {
+    CONNECT_Init();
     SeqLocAsnLoad();
     ObjMgrTypePtr omtp = ObjMgrTypeFind(ObjMgrGet(), OBJ_SEQID, "Seq-id",
                                         "Sequence ID");
