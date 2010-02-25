@@ -361,6 +361,8 @@ public:
         m_GffOptions |= fGffForFlybase;
     };
 
+public:
+    static const size_t SMARTFEATLIMIT = 1000000;
 
 private:
     // mode specific flags

@@ -36,6 +36,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -134,6 +135,12 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     } else if ( ctx.DoContigStyle() ) {
         if ( cfg.ShowContigFeatures() ) {
             x_GatherFeatures();
+        }
+        else if ( cfg.IsModeEntrez() ) {
+            size_t size = sequence::GetLength( m_Current->GetLocation(), &m_Current->GetScope() );
+            if ( size <= cfg.SMARTFEATLIMIT ) {
+                x_GatherFeatures();
+            }
         }
         item.Reset( new CContigItem(ctx) );
         ItemOS() << item;
