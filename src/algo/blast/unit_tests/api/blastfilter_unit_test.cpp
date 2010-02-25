@@ -341,13 +341,15 @@ static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
     const CPacked_seqint::Tdata& seqinterval_list = 
         query_reference[0].mask->GetPacked_int().Get();
     BOOST_CHECK_EQUAL(kNumLocs, seqinterval_list.size());
-    index = 0;
+    // CSeq_loc_mapper returns intervals sorted in reverse order if on minus strand.
+    bool reverse = IsReverse(query_reference[0].mask->GetStrand());
+    index = reverse ? masked_offsets.size() - 1 : 0;
     ITERATE(CPacked_seqint::Tdata, itr, seqinterval_list) {
         BOOST_CHECK_EQUAL(masked_offsets[index].first, 
                           (*itr)->GetFrom());
         BOOST_CHECK_EQUAL(masked_offsets[index].second, 
                           (*itr)->GetTo());
-        index++;
+        reverse ? index-- : index++;
     }
 
     // Run a self hit BLAST search, discard the return value, and get the
@@ -1213,16 +1215,23 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclMinus) {
     CBlastNucleotideOptionsHandle nucl_handle;
     nucl_handle.SetDustFiltering(true);
     Blast_FindDustFilterLoc(query_v, &nucl_handle);
-
-    int loc_index=0;
+    // CSeq_loc_mapper sorts intervals in reverse order if on minus strand.
+    bool reverse = IsReverse(query_v[0].mask->GetStrand());
+    int loc_index = reverse ? kNumLocs - 1 : 0;
     ITERATE(list< CRef<CSeq_interval> >, itr, 
             query_v[0].mask->GetPacked_int().Get()) {
         BOOST_REQUIRE_EQUAL(kDustStarts[loc_index], (int)(*itr)->GetFrom());
         BOOST_REQUIRE_EQUAL(kDustEnds[loc_index], (int)(*itr)->GetTo());
-        ++loc_index;
+	reverse ? --loc_index : ++loc_index;
     }
 
-    BOOST_REQUIRE_EQUAL(loc_index, kNumLocs);
+    // Check that we finished loop on reverse strand is that loc_index is -1.
+    if ( !reverse ) {
+        BOOST_REQUIRE_EQUAL(loc_index, kNumLocs);
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(loc_index, -1);
+    }
 }
 
 
