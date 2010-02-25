@@ -90,8 +90,10 @@ int CTestApplication::Run(void)
     int gi_to = args["gi_to"].AsInteger();
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    for ( int i = 0; i < 100; ++i ) {
-        CGBDataLoader::RegisterInObjectManager(*om, new CGICacheReader);
+    for ( int i = 0; i < 10; ++i ) {
+        CDataLoader* loader =
+            CGBDataLoader::RegisterInObjectManager(*om, new CGICacheReader).GetLoader();
+        om->RevokeDataLoader(*loader);
     }
     for ( int pass = 0; pass < count; ++pass ) {
         CRef<CReadDispatcher> dispatcher(new CReadDispatcher);

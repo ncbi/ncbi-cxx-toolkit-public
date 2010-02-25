@@ -75,13 +75,14 @@ CGICacheReader::CGICacheReader(const TPluginManagerParamTree* params,
 
 CGICacheReader::~CGICacheReader()
 {
+    CMutexGuard guard(m_Mutex);
+    GICache_LoadEnd();
 }
 
 
 void CGICacheReader::x_Initialize(void)
 {
     string index = m_Path+'/'+DEFAULT_GI_CACHE_PREFIX;
-    LOG_POST("CGICacheReader: loading from "<<index);
     CMutexGuard guard(m_Mutex);
     GICache_ReadData(index.c_str());
 }
