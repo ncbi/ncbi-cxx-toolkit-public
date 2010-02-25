@@ -48,6 +48,16 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(NCBI_DLL_BUILD)
+NCBITEST_AUTO_INIT()
+{
+    NcbiTestSetGlobalDisabled();
+}
+
+BOOST_AUTO_TEST_CASE(s_TestIdFormatting)
+{
+}
+#else
 static AsnTypePtr s_SeqIdATP;
 
 NCBITEST_AUTO_INIT()
@@ -159,3 +169,4 @@ static void s_TestIdFormatting(const char* s)
 
 BOOST_AUTO_PARAM_TEST_CASE(s_TestIdFormatting, kRepresentativeIDs + 0,
                            kRepresentativeIDs + kNumRepresentativeIDs);
+#endif
