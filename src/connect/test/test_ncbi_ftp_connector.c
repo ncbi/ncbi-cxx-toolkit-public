@@ -126,10 +126,12 @@ int main(int argc, char* argv[])
         if (n != 0) {
             printf("%.*s", (int) n, buf);
             first = 0/*false*/;
+            fflush(stdout);
         }
     } while (status == eIO_Success);
-    if (first) {
-        printf("<EOF>\n");
+    if (first  ||  status != eIO_Closed) {
+        printf("<%s>\n", status != eIO_Success ? IO_StatusStr(status) : "EOF");
+        fflush(stdout);
     }
 
     if (CONN_Write(conn, "NLST\r\n", 6, &n, eIO_WritePlain) != eIO_Success)
@@ -142,10 +144,14 @@ int main(int argc, char* argv[])
         if (n != 0) {
             printf("%.*s", (int) n, buf);
             first = 0/*false*/;
+            fflush(stdout);
+        } else {
+            assert(status != eIO_Success);
         }
     } while (status == eIO_Success);
-    if (first) {
-        printf("<EOF>\n");
+    if (first  ||  status != eIO_Closed) {
+        printf("<%s>\n", status != eIO_Success ? IO_StatusStr(status) : "EOF");
+        fflush(stdout);
     }
 
     if (CONN_Write(conn, kChdir, sizeof(kChdir) - 1, &n, eIO_WritePlain)
@@ -165,6 +171,9 @@ int main(int argc, char* argv[])
         if (n != 0) {
             fwrite(buf, n, 1, data_file);
             size += n;
+        } else {
+            assert(status != eIO_Success);
+            CORE_LOGF(eLOG_Error, ("Read error: %s", IO_StatusStr(status)));
         }
         if (argc > 1  &&  rand() % 100 == 0) {
             aborting = 1;
@@ -185,10 +194,12 @@ int main(int argc, char* argv[])
             if (n != 0) {
                 printf("%.*s", (int) n, buf);
                 first = 0/*false*/;
+                fflush(stdout);
             }
         } while (status == eIO_Success);
         if (first) {
             printf("<EOF>\n");
+            fflush(stdout);
         }
     }
 
