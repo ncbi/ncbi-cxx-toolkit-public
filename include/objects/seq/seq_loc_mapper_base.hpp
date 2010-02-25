@@ -91,6 +91,7 @@ public:
     typedef pair<TFuzz, TFuzz> TRangeFuzz;
 
     /// Check if the interval can be mapped through this mapping range.
+    /// Strand direction is checked only if is_set_strand is true.
     bool CanMap(TSeqPos    from,
                 TSeqPos    to,
                 bool       is_set_strand,
@@ -329,13 +330,17 @@ public:
     /// MergeContained and MergeAll sort ranges before sorting, so that
     /// any overlapping ranges can be merged. The sorting takes the
     /// mapped location strand into account.
+    /// NOTE: any merging (except None) is incompatible with collecting
+    /// source ranges.
+    /// @sa IncludeSourceLocs
 
     /// No merging
     CSeq_loc_Mapper_Base& SetMergeNone(void);
     /// Merge only abutting intervals, keep overlapping
     CSeq_loc_Mapper_Base& SetMergeAbutting(void);
-    /// Merge only intervals from the same group (e.g. mapped through
-    /// the same exon)
+    /// Merge only intervals from the same group. Group is created
+    /// for each exon, dense-diag, std-seg and disc sub-alignment.
+    /// For spliced segs this mode is turned on by default.
     CSeq_loc_Mapper_Base& SetMergeBySeg(void);
     /// Merge intervals only if one is completely covered by another
     CSeq_loc_Mapper_Base& SetMergeContained(void);
@@ -363,6 +368,8 @@ public:
     /// first sub-loc containing the usual mapped seq-loc, and
     /// the second one - the set of source locations used in the
     /// mapping.
+    /// NOTE: this option is incompatible with any merging.
+    /// Merging mode must be set to MergeNone.
     CSeq_loc_Mapper_Base& IncludeSourceLocs(bool value = true);
 
     /// Map seq-loc
@@ -384,8 +391,9 @@ public:
 
     typedef vector<CSeq_id_Handle>        TSynonyms;
 
-    // Collect synonyms for the given seq-id. The default implementation
-    // just adds the id to the list of synonyms.
+    // Collect synonyms for the given seq-id and put them in the container.
+    // The default implementation just adds the id to the list of synonyms.
+    // Any overriden method should do at least the same.
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms) const;
 
@@ -438,9 +446,16 @@ protected:
 
     // Create dummy mapping from the whole destination location to itself.
     // This will prevent truncation of ranges already on the target.
+    // For some reason (?) the function is used only by CSeq_loc_Mapper,
+    // not CSeq_loc_Mapper_Base, and only when initializing the mapper
+    // from a bioseq handle or a seq-map. When mapping through a feature
+    // or a pair of seq-locs it's not called and ranges on destination
+    // are truncated or preserved the same way as any other non-mapping
+    // ranges.
     void x_PreserveDestinationLocs(void);
 
-    // Add new mapping range while initializing the mapper.
+    // Add new mapping range while initializing the mapper. The function
+    // adjusts starts and lengths according to the used range and strand.
     void x_NextMappingRange(const CSeq_id&   src_id,
                             TSeqPos&         src_start,
                             TSeqPos&         src_len,
@@ -692,7 +707,8 @@ protected:
     mutable TSeqTypeById m_SeqTypes;
     // Flag indicating if the mapping truncated at least some ranges.
     bool                 m_Partial;
-    // Flag indicating if the last range mapping was partial.
+    // Flag indicating if the last range could not be mapped and was
+    // dropped.
     bool                 m_LastTruncated;
     // Mapping ranges grouped by source id and strand.
     CRef<CMappingRanges> m_Mappings;
@@ -714,7 +730,8 @@ public:
     ESeqType GetSeqTypeById(const CSeq_id& id) const;
     // Methods for setting sequence types. May be used to populate the
     // cache before mapping huge alignments if the types are already
-    // known.
+    // known. Throw exception if the sequence type is already set to
+    // a different value.
     void SetSeqTypeById(const CSeq_id_Handle& idh, ESeqType seqtype) const;
     void SetSeqTypeById(const CSeq_id& id, ESeqType seqtype) const;
 
