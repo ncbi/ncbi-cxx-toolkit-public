@@ -190,6 +190,8 @@ public:
                                           log_entry_types let);
     virtual
     void log_entry_value  (ostream& ostr, but::const_string value);
+    // Next line is necessary for compiling with ICC and Boost 1.41.0 and up
+    using TBoostLogFormatter::log_entry_value;
     virtual
     void log_entry_finish (ostream& ostr);
 
