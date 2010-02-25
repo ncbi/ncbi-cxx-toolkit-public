@@ -1419,7 +1419,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(eeh);
         CConstRef<CSeq_entry> eent = eeh.GetCompleteObject();
         _ASSERT(eent);
-        _ASSERT(eent == ent);
+        _ASSERT(eent == ent || eent->Equals(*ent));
         eeh.Remove();
         _ASSERT(!eeh);
         _ASSERT(eeh.IsRemoved());
