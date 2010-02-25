@@ -1356,6 +1356,35 @@ BOOST_AUTO_TEST_CASE(IsamSorting)
     // A null terminated array of NUL terminated strings.
     
     const char* accs[] = {
+        /*"AAC76335.1",*/ "AAC77159.1", /*"AAA58145.1",*/ "AAC76880.1",
+        "AAC76230.1", "AAC76373.1", "AAC77137.1", "AAC76637.2",
+        "AAA58101.1", /*"AAC76329.1",*/ "AAC76702.1", "AAC77109.1",
+        "AAC76757.1", "AAA58162.1", "AAC76604.1", "AAC76539.1",
+        "AAA24224.1", /*"AAC76351.1",*/ "AAC76926.1", "AAC77047.1",
+        /*"AAC76390.1", "AAC76195.1",*/ "AAA57930.1", "AAC76134.1",
+        "AAC76586.2", "AAA58123.1", "AAC76430.1", "AAA58107.1",
+        /*"AAC76765.1",*/ "AAA24272.1", "AAC76396.2", /*"AAA24183.1",*/
+        "AAC76918.1", "AAC76727.1", /*"AAC76161.1",*/ "AAA57964.1",
+        "AAA24251.1", 0
+    };
+    
+    TIdList ids;
+    s_BuildIds(ids, accs);
+    
+    s_DupSequencesTest(ids,
+                       true,
+                       false,
+                       "nr",
+                       "w-isam-sort-bs",
+                       "test of string ISAM sortedness");
+}
+
+BOOST_AUTO_TEST_CASE(DuplicateId)
+{
+        
+    // This checks if duplicate IDs (AAC76373 and AAA58145) are found 
+    
+    const char* accs[] = {
         "AAC76335.1", "AAC77159.1", "AAA58145.1", "AAC76880.1",
         "AAC76230.1", "AAC76373.1", "AAC77137.1", "AAC76637.2",
         "AAA58101.1", "AAC76329.1", "AAC76702.1", "AAC77109.1",
@@ -1371,12 +1400,13 @@ BOOST_AUTO_TEST_CASE(IsamSorting)
     TIdList ids;
     s_BuildIds(ids, accs);
     
-    s_DupSequencesTest(ids,
+    BOOST_REQUIRE_THROW(s_DupSequencesTest(ids,
                        true,
                        false,
                        "nr",
                        "w-isam-sort-bs",
-                       "test of string ISAM sortedness");
+                       "test of string ISAM sortedness"),
+                        CWriteDBException);
 }
 
 BOOST_AUTO_TEST_CASE(HashToOid)
