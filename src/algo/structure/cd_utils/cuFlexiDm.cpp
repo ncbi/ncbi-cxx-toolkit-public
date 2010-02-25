@@ -185,8 +185,11 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
 
 double FlexiDm::GetDistance(int nIdentities, int alignLen) 
 {
-
-    return 1.0 - (TMatType(nIdentities) / TMatType (alignLen));
+    if (alignLen == 0) {
+        return 1.0;
+    } else {
+        return 1.0 - (TMatType(nIdentities) / TMatType (alignLen));
+    }
 }
 
 

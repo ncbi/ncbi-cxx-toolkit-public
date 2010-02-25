@@ -158,7 +158,11 @@ void DM_Identities::GetPercentIdentities(pProgressFunction pFunc) {
 
 double DM_Identities::GetDistance(int nIdentities, int alignLen) {
 
-    return 1.0 - (TMatType(nIdentities) / TMatType (alignLen));
+    if (alignLen == 0) {
+        return 1.0;
+    } else {
+        return 1.0 - (TMatType(nIdentities) / TMatType (alignLen));
+    }
 }
 
     //  Correct for multiple AA substitutions a la Kimura:
