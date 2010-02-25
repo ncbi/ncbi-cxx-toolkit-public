@@ -401,6 +401,7 @@ CArg_InputFile::~CArg_InputFile(void)
 
 CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 {
+    CFastMutexGuard LOCK(m_AccessMutex);
     x_Open();
     return *m_InputFile;
 }
@@ -408,6 +409,7 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 
 void CArg_InputFile::CloseFile(void) const
 {
+    CFastMutexGuard LOCK(m_AccessMutex);
     if ( !m_InputFile ) {
         ERR_POST_X(20, Warning
                        << s_ArgExptMsg(GetName(),
@@ -479,6 +481,7 @@ CArg_OutputFile::~CArg_OutputFile(void)
 
 CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 {
+    CFastMutexGuard LOCK(m_AccessMutex);
     x_Open();
     return *m_OutputFile;
 }
@@ -486,6 +489,7 @@ CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 
 void CArg_OutputFile::CloseFile(void) const
 {
+    CFastMutexGuard LOCK(m_AccessMutex);
     if ( !m_OutputFile ) {
         ERR_POST_X(21, Warning << s_ArgExptMsg( GetName(),
             "CArg_InputFile::CloseFile: File was not opened", AsString()));

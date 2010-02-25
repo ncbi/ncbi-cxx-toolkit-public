@@ -164,6 +164,7 @@ private:
     mutable IOS_BASE::openmode m_OpenMode;
     mutable CNcbiIstream*      m_InputFile;
     mutable bool               m_DeleteFlag;
+    mutable CFastMutex m_AccessMutex;
 };
 
 
@@ -183,6 +184,7 @@ private:
     mutable IOS_BASE::openmode m_OpenMode;
     mutable CNcbiOstream*      m_OutputFile;
     mutable bool               m_DeleteFlag;
+    mutable CFastMutex m_AccessMutex;
 };
 
 
