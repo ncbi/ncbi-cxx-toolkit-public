@@ -804,7 +804,12 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)
     CRef<CSeq_entry> entry = x_ReadSeqsToAlign(ids);
     CRef<CSeq_annot> annot(new CSeq_annot);
 
-    if (reference_row >= 0) {
+    if ( !entry->IsSet()
+        ||  entry->GetSet().GetSeq_set().size() < max(reference_row + 1, 2)) {
+        NCBI_THROW2(CObjReaderParseException, eEOF,
+                    "CFastaReader::ReadAlignedSet: not enough input sequences.",
+                    LineNumber());
+    } else if (reference_row >= 0) {
         x_AddPairwiseAlignments(*annot, ids, reference_row);
     } else {
         x_AddMultiwayAlignment(*annot, ids);
