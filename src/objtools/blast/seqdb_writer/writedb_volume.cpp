@@ -177,6 +177,19 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     }
     
     if (m_Indices != CWriteDB::eNoIndex) {
+
+        // check the uniqueness of id
+        ITERATE(TIdList, iter, idlist) {
+            ITERATE(TIdList, iter2, m_IdList) {
+                if ((*iter)->Match(**iter2)) {
+                   NCBI_THROW(CWriteDBException,
+                       eArgErr,
+                       "Error: Duplicate seq_ids are found.");
+                }
+            }
+            m_IdList.push_back(*iter);
+        }
+
         int num = (int)idlist.size();
         
         if (! (m_AccIsam->CanFit(num) &&

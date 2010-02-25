@@ -1210,10 +1210,10 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
         try {
             success = AddSequences(fbs);
         }
-        catch (const CObjReaderParseException& e) {
+        catch (...) {
             EndBuild(true);
             // stop the upper layer from going further...
-            throw(e);
+            throw;
         }
     }
     

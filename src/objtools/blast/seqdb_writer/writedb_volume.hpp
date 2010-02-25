@@ -267,6 +267,9 @@ private:
     /// Database columns.
     vector< CRef<CWriteDB_Column> > m_Columns;
 #endif
+
+    /// Included Seq_ids
+    TIdList m_IdList;
     
     // Functions
     
