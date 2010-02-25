@@ -54,10 +54,7 @@ NCBITEST_AUTO_INIT()
 {
     CONNECT_Init();
     SeqLocAsnLoad();
-    ObjMgrTypePtr omtp = ObjMgrTypeFind(ObjMgrGet(), OBJ_SEQID, "Seq-id",
-                                        "Sequence ID");
-    _ASSERT(omtp);
-    s_SeqIdATP = omtp->atp;
+    s_SeqIdATP = AsnFind("Seq-id");
 }
 
 static const char* const kRepresentativeIDs[] = {
