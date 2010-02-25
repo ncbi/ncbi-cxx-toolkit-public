@@ -72,6 +72,12 @@
 
 #include <algorithm>
 
+#if 0 && defined(_DEBUG)
+# define TSE_LOCK_NO_SWAP
+# define TSE_LOCK_TRACE(x) _TRACE(x)
+#else
+# define TSE_LOCK_TRACE(x)
+#endif
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_DataSource
 
@@ -1344,6 +1350,7 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLockIfLoaded(const TBlobId& blob_id)
         _ASSERT(lock);
         _ASSERT(IsLoaded(*lock));
         ret.m_DataSource.Reset(this);
+        TSE_LOCK_TRACE("TSE_LoadLock("<<&*lock<<") "<<&lock<<" lock");
         _VERIFY(lock->m_LockCounter.Add(1) > 1);
         ret.m_Info = const_cast<CTSE_Info*>(lock.GetNonNullPointer());
     }}
@@ -1447,7 +1454,7 @@ void CDataSource::x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const
     _ASSERT(!lock);
     _ASSERT(tse);
     lock.m_Info.Reset(&*tse);
-    //_TRACE("TSE_Lock("<<&*tse<<") "<<&lock<<" lock");
+    TSE_LOCK_TRACE("TSE_Lock("<<&*tse<<") "<<&lock<<" lock");
     if ( tse->m_LockCounter.Add(1) != 1 ) {
         return;
     }
@@ -1506,6 +1513,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load, CTSE_Lock& lock)
     _ASSERT(lock->IsLocked());
     load.m_DataSource.Reset(this);
     load.m_Info.Reset(const_cast<CTSE_Info*>(lock.GetNonNullPointer()));
+    TSE_LOCK_TRACE("TSE_LoadLock("<<&*load<<") "<<&load<<" lock");
     load.m_Info->m_LockCounter.Add(1);
     if ( !IsLoaded(*load) ) {
         _ASSERT(load->m_LoadMutex);
@@ -1526,6 +1534,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load,
     _ASSERT(!load);
     _ASSERT(tse.IsLocked());
     load.m_DataSource.Reset(this);
+    TSE_LOCK_TRACE("TSE_LoadLock("<<&tse<<") "<<&load<<" lock");
     _VERIFY(tse.m_LockCounter.Add(1) > 1);
     load.m_Info.Reset(&tse);
     if ( !IsLoaded(tse) ) {
@@ -1593,6 +1602,7 @@ CTSE_LoadLock& CTSE_LoadLock::operator=(const CTSE_LoadLock& lock)
         m_DataSource = lock.m_DataSource;
         m_LoadLock = lock.m_LoadLock;
         if ( *this ) {
+            TSE_LOCK_TRACE("TSE_LoadLock("<<&*lock<<") "<<this<<" lock");
             m_Info->m_LockCounter.Add(1);
         }
     }
@@ -1638,6 +1648,7 @@ void CTSE_LoadLock::Reset(void)
 {
     ReleaseLoadLock();
     if ( *this ) {
+        TSE_LOCK_TRACE("TSE_LoadLock("<<&**this<<") "<<this<<" unlock");
         if ( m_Info->m_LockCounter.Add(-1) == 0 ) {
             m_DataSource->x_ReleaseLastLoadLock(*this);
             _ASSERT(!*this);
@@ -1666,8 +1677,21 @@ void CTSE_Lock::x_Drop(void)
 {
     _ASSERT(*this);
     const CTSE_Info* info = GetNonNullPointer();
+    TSE_LOCK_TRACE("TSE_Lock("<<info<<") "<<this<<" drop");
     _VERIFY(info->m_LockCounter.Add(-1) == 0);
     m_Info.Reset();
+}
+
+
+void CTSE_Lock::Swap(CTSE_Lock& lock)
+{
+#ifdef TSE_LOCK_NO_SWAP
+    CTSE_Lock tmp(lock);
+    lock = *this;
+    *this = tmp;
+#else
+    m_Info.Swap(lock.m_Info);
+#endif
 }
 
 
@@ -1675,7 +1699,7 @@ void CTSE_Lock::x_Unlock(void)
 {
     _ASSERT(*this);
     const CTSE_Info* info = GetNonNullPointer();
-    //_TRACE("TSE_Lock("<<info<<") "<<this<<" unlock");
+    TSE_LOCK_TRACE("TSE_Lock("<<info<<") "<<this<<" unlock");
     CDataSource* ds = info->HasDataSource() ? &info->GetDataSource() : 0;
     if ( info->m_LockCounter.Add(-1) == 0 ) {
         _ASSERT(ds);
@@ -1692,7 +1716,7 @@ bool CTSE_Lock::x_Lock(const CTSE_Info* info)
 {
     _ASSERT(!*this && info);
     m_Info.Reset(info);
-    //_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
+    TSE_LOCK_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
     return info->m_LockCounter.Add(1) == 1;
 }
 
@@ -1702,7 +1726,7 @@ void CTSE_Lock::x_Relock(const CTSE_Info* info)
     _ASSERT(!*this && info);
     _ASSERT(info->m_LockCounter.Get() != 0);
     m_Info.Reset(info);
-    //_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
+    TSE_LOCK_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
     info->m_LockCounter.Add(1);
 }
 

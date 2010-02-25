@@ -450,6 +450,7 @@ public:
     CRef<CDataSource_ScopeInfo> AddDS(CRef<CDataSource> ds,
                                       TPriority priority);
     CRef<CDataSource_ScopeInfo> GetNonSharedDS(TPriority priority);
+    CRef<CDataSource_ScopeInfo> GetSharedDS(TPriority priority);
     CRef<CDataSource_ScopeInfo>
     AddDSBefore(CRef<CDataSource> ds,
                 CRef<CDataSource_ScopeInfo> ds2,

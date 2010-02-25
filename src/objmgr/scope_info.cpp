@@ -96,6 +96,7 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
       m_CanBeUnloaded(s_GetScopeAutoReleaseEnabled() &&
                       ds.GetDataLoader() &&
                       ds.GetDataLoader()->CanGetBlobById()),
+      m_CanBeEdited(ds.CanBeEdited()),
       m_NextTSEIndex(0),
       m_TSE_UnlockQueue(s_GetScopeAutoReleaseSize())
 {
@@ -125,12 +126,21 @@ CDataLoader* CDataSource_ScopeInfo::GetDataLoader(void)
 }
 
 
-bool CDataSource_ScopeInfo::CanBeEdited(void) const
+bool CDataSource_ScopeInfo::IsShared(void) const
 {
-    return GetDataSource().CanBeEdited();
+    return !CanBeEdited() && GetDataSource().CanBeEdited();
 }
 
 
+void CDataSource_ScopeInfo::SetShared(void)
+{
+    _ASSERT(CanBeEdited());
+    _ASSERT(GetDataSource().CanBeEdited());
+    m_CanBeEdited = false;
+    _ASSERT(IsShared());
+}
+
+    
 void CDataSource_ScopeInfo::DetachScope(void)
 {
     if ( m_Scope ) {

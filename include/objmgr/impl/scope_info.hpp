@@ -214,6 +214,8 @@ public:
     const CDataSource& GetDataSource(void) const;
     CDataLoader* GetDataLoader(void);
     bool CanBeEdited(void) const;
+    bool IsShared(void) const;
+    void SetShared(void);
 
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
@@ -261,6 +263,7 @@ private: // members
     CScope_Impl*                m_Scope;
     TDataSourceLock             m_DataSource;
     bool                        m_CanBeUnloaded;
+    bool                        m_CanBeEdited;
     int                         m_NextTSEIndex;
     TTSE_InfoMap                m_TSE_InfoMap;
     mutable TTSE_InfoMapMutex   m_TSE_InfoMapMutex;
@@ -554,6 +557,14 @@ CDataSource_ScopeInfo::GetTSE_LockSetMutex(void) const
 {
     return m_TSE_LockSetMutex;
 }
+
+
+inline
+bool CDataSource_ScopeInfo::CanBeEdited(void) const
+{
+    return m_CanBeEdited;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -118,10 +118,7 @@ public:
             }
         }
 
-    void Swap(CTSE_Lock& lock)
-        {
-            m_Info.Swap(lock.m_Info);
-        }
+    void Swap(CTSE_Lock& lock);
     
 protected:
     // TSE locks can be aquired only through CDataSource.
