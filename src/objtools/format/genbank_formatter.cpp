@@ -603,6 +603,7 @@ void CGenbankFormatter::FormatFeature
     Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
     ITERATE (vector<CRef<CFormatQual> >, it, feat->GetQuals()) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
+        TrimSpacesAndJunkFromEnds( value, true );
         switch ((*it)->GetStyle()) {
         case CFormatQual::eEmpty:
             value = qual;
