@@ -3989,10 +3989,30 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
         x_AddQual(eSQ_common_name, new CFlatStringQVal(common));
     }
     if ( org.CanGetOrgname() ) {
+        list<string> ecotypes;
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
             ESourceQualifier slot = s_OrgModToSlot(**it);
-            if (slot != eSQ_none) {
+            switch( slot ) {
+            case eSQ_ecotype: {
+                const COrgMod& mod = **it;
+                if ( ! mod.CanGetSubname() ) {
+                    break;
+                }
+                string strSubName = mod.GetSubname();
+                list<string>::iterator it = std::find( 
+                    ecotypes.begin(), ecotypes.end(), strSubName );
+                if ( it != ecotypes.end() ) {
+                    break;
+                }
+                ecotypes.push_back( strSubName );
+                x_AddQual(slot, new CFlatOrgModQVal(mod));
+                break;
+                }
+            case eSQ_none:
+                break;
+            default:
                 x_AddQual(slot, new CFlatOrgModQVal(**it));
+                break;
             }
         }
     }
