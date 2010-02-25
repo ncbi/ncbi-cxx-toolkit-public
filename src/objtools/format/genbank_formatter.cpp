@@ -859,6 +859,9 @@ void CGenbankFormatter::FormatOrigin
 {
     list<string> l;
     string strOrigin = origin.GetOrigin();
+    if ( strOrigin == "." ) {
+        strOrigin.erase();
+    }
 
     if ( strOrigin.empty() ) {
         l.push_back( "ORIGIN      " );
