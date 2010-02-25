@@ -44,6 +44,7 @@
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>           // for CDbIndex_Exception
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp> // for CInvalidDataException
+#include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>   // for CBlastFormatUtil
 
 BEGIN_NCBI_SCOPE
@@ -132,6 +133,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     catch (const CIndexedDbException& e) {                                  \
         cerr << "Indexed BLAST database error: " << e.GetMsg() << endl;     \
         exit_code = BLAST_DATABASE_ERROR;                                   \
+    }                                                                       \
+    catch (const CWriteDBException& e) {                                    \
+        cerr << "BLAST Database creation error: " << e.GetMsg() << endl;    \
+        exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const blast::CBlastException& e) {                               \
         cerr << "BLAST engine error: " << e.GetMsg() << endl;               \
