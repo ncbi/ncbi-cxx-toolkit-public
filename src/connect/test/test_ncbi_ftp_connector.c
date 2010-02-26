@@ -36,6 +36,9 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
+#ifdef HAVE_GETTIMEOFDAY
+#  include <sys/time.h>
+#endif /*HAVE_GETTIMEOFDAY*/
 #include <time.h>
 /* This header must go last */
 #include "test_assert.h"
@@ -45,6 +48,18 @@
 #define TEST_USER "ftp"
 #define TEST_PASS "none"
 #define TEST_PATH ((char*) 0)
+
+
+static double s_GetTime(void)
+{
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval t;
+    return gettimeofday(&t, 0) == 0 ? t.tv_sec + t.tv_usec / 1000000.0 : 0.0;
+#else
+    time_t t = time(0);
+    return (double)((unsigned long) t);
+#endif /*HAVE_GETTIMEOFDAY*/
+}
 
 
 int main(int argc, char* argv[])
@@ -59,6 +74,7 @@ int main(int argc, char* argv[])
     FILE*         data_file;
     size_t        size, n;
     EIO_Status    status;
+    double        elapse;
     CONN          conn;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -166,20 +182,25 @@ int main(int argc, char* argv[])
     }
 
     size = 0;
+    elapse = s_GetTime();
     do {
         status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
         if (n != 0) {
             fwrite(buf, n, 1, data_file);
+            fflush(data_file);
             size += n;
+            rand();
+            if (argc > 1  &&  rand() % 100 == 0) {
+                aborting = 1;
+                break;
+            }
         } else {
             assert(status != eIO_Success);
-            CORE_LOGF(eLOG_Error, ("Read error: %s", IO_StatusStr(status)));
-        }
-        if (argc > 1  &&  rand() % 100 == 0) {
-            aborting = 1;
-            break;
+            if (status != eIO_Closed  ||  !size)
+                CORE_LOGF(eLOG_Error, ("Read error: %s",IO_StatusStr(status)));
         }
     } while (status == eIO_Success);
+    elapse = s_GetTime() - elapse;
 
     if (!aborting  ||  (rand() & 1) == 0) {
         if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain)
@@ -210,11 +231,13 @@ int main(int argc, char* argv[])
 
     /* Cleanup and exit */
     fclose(data_file);
-    if (aborting) {
+    if (!aborting) {
+        CORE_LOGF(size ? eLOG_Note : eLOG_Fatal,
+                  ("%lu byte(s) downloaded in %.2f second(s) @ %.2fKB/s",
+                   (unsigned long) size, elapse,
+                   (unsigned long) size / (1024 * (elapse ? elapse : 1.0))));
+    } else
         remove("test_ncbi_ftp_connector.dat");
-    } else {
-        CORE_LOGF(eLOG_Note, ("%lu bytes downloaded", (unsigned long) size));
-    }
     ConnNetInfo_Destroy(net_info);
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
