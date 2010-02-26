@@ -446,7 +446,7 @@ protected:
     ///
     CPhyloTreeNode* x_GetNode(int id, CPhyloTreeNode* root = NULL);
 
-    inline static TBioTreeFeatureId x_GetFeatureId(const string& tag);
+    inline TBioTreeFeatureId x_GetFeatureId(const string& tag);
 
     /// Get feature value by tag of selected node
     /// @param node Node [in]
@@ -563,10 +563,11 @@ private:
     public:
 
         /// Constructor
-        CSingleBlastNameExaminer(void) : m_IsSingleBlastName(true) 
+        CSingleBlastNameExaminer(CPhyloTreeDataSource& tree)
+            : m_IsSingleBlastName(true) 
         {
             const CBioTreeFeatureDictionary& fdict
-                = CPhyTreeNode::GetDictionary();
+                = tree.GetDictionary();
 
             if (!fdict.HasFeature(CGuideTree::kBlastNameTag)) {
                 NCBI_THROW(CException, eInvalid, 
@@ -759,21 +760,21 @@ public:
     ///
     ///@return 
     /// A string concatinating all "areas" corresponding to the image    
-	const string & GetMap(void) { return m_Map;}
+        const string & GetMap(void) { return m_Map;}
 
-    	
+            
     ETreeTraverseCode operator()(CPhyloTreeNode &  tree_node, int delta)
     {
             if (delta==1 || delta==0){
-				x_FillNodeMapData(tree_node);				
+                                x_FillNodeMapData(tree_node);                                
             }                
             return eTreeTraverse;
     }
-	virtual ~CGuideTreeCGIMap(){}
+        virtual ~CGuideTreeCGIMap(){}
 protected:
-	virtual void x_FillNodeMapData(CPhyloTreeNode &  tree_node);
+        virtual void x_FillNodeMapData(CPhyloTreeNode &  tree_node);
 
-	CGlPane * m_Pane;
+        CGlPane * m_Pane;
     string  m_JSMouseoverFunction; //"javascript:setupPopupMenu(" 
     string  m_JSMouseoutFunction; //"PopUpMenu2_Hide(0);"
     string  m_JSClickNodeFunction;// - string(JS_SELECT_NODE_FUNC) - both
@@ -781,7 +782,7 @@ protected:
     string  m_JSClickQueryFunction;// - "" blast, "" multi
     bool    m_ShowQuery;
 
-	string    m_Map;      
+        string    m_Map;      
 };
 
 

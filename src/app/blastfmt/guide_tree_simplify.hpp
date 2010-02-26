@@ -38,6 +38,7 @@
 #include <stack>
 #include <corelib/ncbi_tree.hpp>
 #include <gui/widgets/phylo_tree/phylo_tree_algorithm.hpp>
+#include <gui/widgets/phylo_tree/phylo_tree_ds.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -67,9 +68,14 @@ public:
 
 
 public:
-    CPhyloTreeNodeGroupper(const string& feature_name, const string& feature_color, CNcbiOfstream* ostr = NULL);
+    CPhyloTreeNodeGroupper(const string& feature_name,
+                           const string& feature_color,
+                           CPhyloTreeDataSource& tree,
+                           CNcbiOfstream* ostr = NULL);
+
     virtual ~CPhyloTreeNodeGroupper() {}
-    void Init(const string& feature_name, const string& feature_color);
+    void Init(const string& feature_name, const string& feature_color,
+              CPhyloTreeDataSource& tree);
     const string& GetError(void) const {return m_Error;}
     virtual CLabeledNodes& GetLabeledNodes(void) {return m_LabeledNodes;}
     const string& GetFeatureName(void) const {return m_LabelFeatureName;}
@@ -109,7 +115,8 @@ public:
     typedef TLabelColorMap::iterator TLabelColorMap_I;
 
 public:
-    CPhyloTreeLabelTracker(const string& label, const string& color);
+    CPhyloTreeLabelTracker(const string& label, const string& color,
+                           CPhyloTreeDataSource& tree);
     ETreeTraverseCode operator() (CPhyloTreeNode& node, int delta);
     const string& GetError(void) const {return m_Error;}
     TLabelColorMap_I Begin(void) {return m_LabelsColors.begin();}

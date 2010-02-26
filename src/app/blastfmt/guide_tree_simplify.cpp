@@ -37,17 +37,23 @@ BEGIN_NCBI_SCOPE
 static const string s_kDifferentGroups = "$DIFFERENT_GROUPS";
 
 
-CPhyloTreeNodeGroupper::CPhyloTreeNodeGroupper(const string& feature_name, const string& feature_color, CNcbiOfstream* ostr) : IPhyloTreeVisitor(), m_Root(NULL), m_Ostr(ostr)
+CPhyloTreeNodeGroupper::CPhyloTreeNodeGroupper(const string& feature_name,
+                                               const string& feature_color,
+                                               CPhyloTreeDataSource& tree,
+                                               CNcbiOfstream* ostr)
+    : IPhyloTreeVisitor(), m_Root(NULL), m_Ostr(ostr)
 {
-    Init(feature_name, feature_color);
+    Init(feature_name, feature_color, tree);
 }
 
-void CPhyloTreeNodeGroupper::Init(const string& feature_name, const string& feature_color)
+void CPhyloTreeNodeGroupper::Init(const string& feature_name,
+                                  const string& feature_color,
+                                  CPhyloTreeDataSource& tree)
 {
     m_LabelFeatureName = feature_name;
     m_ColorFeatureName = feature_color;
 
-    const CBioTreeFeatureDictionary& fdict = CPhyTreeNode::GetDictionary();
+    const CBioTreeFeatureDictionary& fdict = tree.GetDictionary();
     if (!fdict.HasFeature(m_LabelFeatureName) || !fdict.HasFeature(m_ColorFeatureName)) {
         m_Error = "Feature not in feature dictionary";
     }
@@ -239,10 +245,11 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepLeft(TTreeType& x_node)
 
 
 CPhyloTreeLabelTracker::CPhyloTreeLabelTracker(const string& label_feature, 
-                                               const string& color_feature) 
+                                               const string& color_feature,
+                                               CPhyloTreeDataSource& tree) 
   : m_QueryNode(NULL)
 {
-    const CBioTreeFeatureDictionary& fdict = CPhyTreeNode::GetDictionary();
+    const CBioTreeFeatureDictionary& fdict = tree.GetDictionary();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
         m_Error = "Feature not in feature dictionary";
     }
