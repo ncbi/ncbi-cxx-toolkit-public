@@ -9,3 +9,5 @@ SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_run cgi_util \
 LIB = xcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
+
+WATCHERS = vakatov

@@ -8,3 +8,5 @@ SRC    = asntypes serialasn
 LIB    = xcser
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+
+WATCHERS = vasilche

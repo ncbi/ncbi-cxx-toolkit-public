@@ -17,3 +17,5 @@ SRC = \
 	objostrjson objistrjson serializable serialobject pathhook
 
 LIB    = xser
+
+WATCHERS = gouriano

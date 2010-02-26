@@ -4,3 +4,5 @@ SRC = test_mt
 LIB    = test_mt
 
 # REQUIRES = MT
+
+WATCHERS = grichenk

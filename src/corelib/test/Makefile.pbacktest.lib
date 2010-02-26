@@ -2,3 +2,5 @@
 
 SRC = pbacktest
 LIB = xpbacktest
+
+WATCHERS = lavr

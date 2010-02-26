@@ -9,3 +9,5 @@ LIB = xcgi xutil xncbi
 #
 # LIB = xfcgi xutil xncbi
 # LIBS = $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
+WATCHERS = grichenk

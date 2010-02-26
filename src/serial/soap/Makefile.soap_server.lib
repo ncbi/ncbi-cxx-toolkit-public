@@ -4,7 +4,8 @@
 #################################
 
 SRC = soap_server
-
 LIB = xsoap_server
 
 REQUIRES = cgi
+
+WATCHERS = gouriano
