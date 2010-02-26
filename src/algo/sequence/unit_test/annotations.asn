@@ -1006,3 +1006,246 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Bos taurus Werner syndrome (WRN), mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 56648,
+        to 113905,
+        strand plus,
+        id gi 269932227
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Bos taurus Werner syndrome (WRN), mRNA"
+      },
+      partial TRUE,
+      product whole gi 219879766,
+      location packed-int {
+        {
+          from 56648,
+          to 56840,
+          strand plus,
+          id gi 269932227,
+          fuzz-from lim lt
+        },
+        {
+          from 67107,
+          to 67281,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 71925,
+          to 72106,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 76797,
+          to 76898,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 77179,
+          to 77271,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 85287,
+          to 85425,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 90312,
+          to 90482,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 90560,
+          to 90654,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 91683,
+          to 91755,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 92545,
+          to 92621,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 99963,
+          to 100038,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 100271,
+          to 100383,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 102403,
+          to 102517,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 103435,
+          to 103566,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 106141,
+          to 106303,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 109903,
+          to 110117,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 113162,
+          to 113905,
+          strand plus,
+          id gi 269932227
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      product whole gi 219879767,
+      location packed-int {
+        {
+          from 56648,
+          to 56840,
+          strand plus,
+          id gi 269932227,
+          fuzz-from lim lt
+        },
+        {
+          from 67107,
+          to 67281,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 71925,
+          to 72106,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 76797,
+          to 76898,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 77179,
+          to 77271,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 85287,
+          to 85425,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 90312,
+          to 90482,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 90560,
+          to 90654,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 91683,
+          to 91755,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 92545,
+          to 92621,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 99963,
+          to 100038,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 100271,
+          to 100383,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 102403,
+          to 102517,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 103435,
+          to 103566,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 106141,
+          to 106303,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 109903,
+          to 110117,
+          strand plus,
+          id gi 269932227
+        },
+        {
+          from 113162,
+          to 113281,
+          strand plus,
+          id gi 269932227
+        }
+      }
+    }
+  }
+}

@@ -464,10 +464,19 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
                     CSeqFeatData::TCdregion& cds =
                         cds_feat->SetData().SetCdregion();
-                    NON_CONST_ITERATE(CCdregion::TCode_break, it,
-                                      cds.SetCode_break()) {
+                    CCdregion::TCode_break::iterator it =
+                        cds.SetCode_break().begin();
+                    for ( ;  it != cds.SetCode_break().end();  ) {
                         CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
-                        (*it)->SetLoc(*new_cb_loc);
+                        if (new_cb_loc  &&  !new_cb_loc->IsNull()) {
+                            (*it)->SetLoc(*new_cb_loc);
+                            ++it;
+                        } else {
+                            it = cds.SetCode_break().erase(it);
+                        }
+                    }
+                    if (cds.GetCode_break().empty()) {
+                        cds.ResetCode_break();
                     }
                 }
 

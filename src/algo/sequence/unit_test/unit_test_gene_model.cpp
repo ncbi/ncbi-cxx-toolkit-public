@@ -47,6 +47,7 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 #include <algo/sequence/gene_model.hpp>
 
@@ -104,12 +105,12 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             break;
         }
 
-        *annot_is >> expected_annot;
-
         CBioseq_set seqs;
         CSeq_annot actual_annot;
         CGeneModel::CreateGeneModelFromAlign(align, scope,
                                              actual_annot, seqs);
+
+        *annot_is >> expected_annot;
 
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
             actual_annot.GetData().GetFtable().begin();
@@ -131,6 +132,12 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct()) {
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
+            }
+
+            if (f1.GetData().IsCdregion()  &&
+                f2.GetData().IsCdregion()) {
+                BOOST_CHECK(f1.GetData().GetCdregion().IsSetCode_break() ==
+                            f2.GetData().GetCdregion().IsSetCode_break());
             }
         }
     }
