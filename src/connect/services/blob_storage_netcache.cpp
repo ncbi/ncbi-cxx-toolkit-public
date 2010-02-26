@@ -121,7 +121,7 @@ CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
         m_IStream.reset(fstr.release());
     } else {
         m_IStream.reset(new CRStream(reader.release(), 0, 0,
-            CRWStreambuf::fOwnReader));
+            CRWStreambuf::fOwnReader | CRWStreambuf::fLogExceptions));
 
         if (!m_IStream.get() || !m_IStream->good()) {
             m_IStream.reset();

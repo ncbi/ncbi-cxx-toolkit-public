@@ -72,24 +72,29 @@ ERW_Result CNetCacheReader::Read(void*   buf,
     if (!m_Reader.get())
         return eRW_Error;
 
-    ERW_Result res = eRW_Eof;
-    if ( m_BlobBytesToRead == 0) {
-        if ( bytes_read ) {
+    if (m_BlobBytesToRead == 0) {
+        if (bytes_read != NULL)
             *bytes_read = 0;
-        }
-        return res;
-    }
-    if ( m_BlobBytesToRead < count ) {
-        count = m_BlobBytesToRead;
-    }
-    size_t nn_read = 0;
-    if ( count ) {
-        res = m_Reader->Read(buf, count, &nn_read);
+        return eRW_Eof;
     }
 
-    if ( bytes_read ) {
+    if (m_BlobBytesToRead < count)
+        count = m_BlobBytesToRead;
+
+    size_t nn_read = 0;
+    ERW_Result res = eRW_Eof;
+
+    if (count > 0)
+        if ((res = m_Reader->Read(buf, count, &nn_read)) == eRW_Eof) {
+            NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
+                "Amount read is less than the expected blob size "
+                "(premature EOF while reading from " <<
+                m_Connection->m_Server->m_Address.AsString() << ")");
+        }
+
+    if (bytes_read != NULL)
         *bytes_read = nn_read;
-    }
+
     m_BlobBytesToRead -= nn_read;
 
     return res;

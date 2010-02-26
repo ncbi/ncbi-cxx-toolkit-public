@@ -67,6 +67,8 @@ public:
         eUnknnownCache,
         ///< Blob is not found
         eBlobNotFound,
+        ///< Blob could not be read completely
+        eBlobClipped,
         ///< The requested command is (yet) unknown
         eUnknownCommand,
         ///< The requested command is not implemented
