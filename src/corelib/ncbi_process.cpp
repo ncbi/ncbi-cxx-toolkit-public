@@ -45,6 +45,7 @@
 #  include <sys/types.h>
 #  include <sys/wait.h>
 #elif defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbitime.hpp>  // for CStopWatch
 #  include <process.h>
 #  include <tlhelp32.h>
 #endif
@@ -200,7 +201,7 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
         // For main thread always force caching of PIDs
         CFastMutexGuard guard(s_GetPidMutex);
         s_CurrentPid = getpid();
-        s_ParentPid  = getppid();
+        s_ParentPid = getppid();
     }
     else {
         // For child threads update cached PIDs only if there was a fork
@@ -961,8 +962,13 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 // CPIDGuard
 //
 
-// NOTE: CPIDGuard know nothing about PID file modification or deletion 
+// Protective mutex
+DEFINE_STATIC_FAST_MUTEX(s_PidGuardMutex);
+
+// NOTE: This method to protect PID file works only within one process.
+//       CPIDGuard know nothing about PID file modification or deletion 
 //       by other processes. Be aware.
+
 
 CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     : m_OldPID(0), m_NewPID(0)
@@ -979,9 +985,6 @@ CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     } else {
         m_Path = filename;
     }
-    // Create guard for MT-Safe protect	
-    m_MTGuard.reset(new CInterProcessLock(m_Path + ".guard"));
-    // Update PID
     UpdatePID();
 }
 
@@ -989,23 +992,19 @@ CPIDGuard::CPIDGuard(const string& filename, const string& dir)
 CPIDGuard::~CPIDGuard(void)
 {
     Release();
-    m_MTGuard.reset();
-    m_PIDGuard.reset();
 }
 
 
 void CPIDGuard::Release(void)
 {
     if ( !m_Path.empty() ) {
-    
         // MT-Safe protect
-        CGuard<CInterProcessLock> LOCK(*m_MTGuard);
+        CFastMutexGuard LOCK(s_PidGuardMutex);
 
         // Read info
         TPid pid = 0;
         unsigned int ref = 0;
         CNcbiIfstream in(m_Path.c_str());
-        
         if ( in.good() ) {
             in >> pid >> ref;
             in.close();
@@ -1032,13 +1031,6 @@ void CPIDGuard::Release(void)
             } else {
                 // Remove the file
                 CDirEntry(m_Path).Remove();
-                // Remove modification protect guard
-                m_MTGuard->Remove();
-                // PID-file can be reused now
-                if ( m_PIDGuard.get() ) {
-                    m_PIDGuard->Remove();
-                    m_PIDGuard.reset();
-                }
             }
         }
         m_Path.erase();
@@ -1050,17 +1042,10 @@ void CPIDGuard::Remove(void)
 {
     if ( !m_Path.empty() ) {
         // MT-Safe protect
-        CGuard<CInterProcessLock> LOCK(*m_MTGuard);
-        // Remove the PID file
+        CFastMutexGuard LOCK(s_PidGuardMutex);
+        // Remove the file
         CDirEntry(m_Path).Remove();
         m_Path.erase();
-        // Remove modification protect guard
-        m_MTGuard->Remove();
-        // PID-file can be reused now
-        if ( m_PIDGuard.get() ) {
-            m_PIDGuard->Remove();
-            m_PIDGuard.reset();
-        }
     }
 }
 
@@ -1072,41 +1057,26 @@ void CPIDGuard::UpdatePID(TPid pid)
     }
 
     // MT-Safe protect
-    CGuard<CInterProcessLock> LOCK(*m_MTGuard);
-  
-    // Check PID from valid PID-files only. The file can be left on
-    // the file system from previous session. And stored in the file
-    // PID can be already reused by OS.
-    
-    bool valid_file = true;
+    CFastMutexGuard LOCK(s_PidGuardMutex);
+
+    // Read old PID
     unsigned int ref = 1;
-    
-    // Create guard for PID file
-    if ( !m_PIDGuard.get() ) {
-        // first call to Update() ?
-        m_PIDGuard.reset(new CInterProcessLock(m_Path + ".start.guard"));
-        // If the lock is successfully obtained, do not use existent PID file.
-        valid_file = !m_PIDGuard->TryLock();
-    }
-    if ( valid_file ) {
-        // Read old PID
-        CNcbiIfstream in(m_Path.c_str());
-        if ( in.good() ) {
-            in >> m_OldPID >> ref;
-            if ( m_OldPID == pid ) {
-                // Guard the same PID. Just increase the reference counter.
-                ref++;
-            } else {
-                if ( CProcess(m_OldPID,CProcess::ePid).IsAlive() ) {
-                    NCBI_THROW2(CPIDGuardException, eStillRunning,
-                                "Process is still running", m_OldPID);
-                }
-                ref = 1;
+    CNcbiIfstream in(m_Path.c_str());
+    if ( in.good() ) {
+        in >> m_OldPID >> ref;
+        if ( m_OldPID == pid ) {
+            // Guard the same PID. Just increase the reference counter.
+            ref++;
+        } else {
+            if ( CProcess(m_OldPID,CProcess::ePid).IsAlive() ) {
+                NCBI_THROW2(CPIDGuardException, eStillRunning,
+                            "Process is still running", m_OldPID);
             }
+            ref = 1;
         }
-        in.close();
     }
-                
+    in.close();
+
     // Write new PID
     CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( out.good() ) {
@@ -1120,7 +1090,6 @@ void CPIDGuard::UpdatePID(TPid pid)
     // Save updated pid
     m_NewPID = pid;
 }
-
 
 const char* CPIDGuardException::GetErrCodeString(void) const
 {

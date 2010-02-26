@@ -161,7 +161,8 @@ static void Test_PIDGuard(int ppid, string lockfile)
     } else if (ppid == -2) {
         CPIDGuard guard(lockfile);
         TPid old_pid = guard.GetOldPID();
-        assert(old_pid == 0);
+        assert(old_pid > 0);
+        LOG_POST("Old PID was " << old_pid);
     } else {
         _TROUBLE;
     }
