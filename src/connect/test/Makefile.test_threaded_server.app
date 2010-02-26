@@ -10,3 +10,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 REQUIRES = MT
 
 # Tested along with test_threaded_client from its makefile.
+
+WATCHERS = ucko

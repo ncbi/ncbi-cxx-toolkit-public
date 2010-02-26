@@ -1,9 +1,10 @@
 # $Id$
 
 SRC = sqlitewrapp
-
 LIB = sqlitewrapp
 
 CPPFLAGS= $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
 
 REQUIRES = SQLITE3
+
+WATCHERS = ivanovp

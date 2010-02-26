@@ -7,4 +7,5 @@ LIB = xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
+WATCHERS = kuznets
 

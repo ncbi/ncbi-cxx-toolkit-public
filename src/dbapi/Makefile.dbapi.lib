@@ -8,3 +8,5 @@ SRC = variant active_obj dbapi driver_mgr err_handler ds_impl conn_impl \
 LIB    = dbapi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
+
+WATCHERS = ivanovp

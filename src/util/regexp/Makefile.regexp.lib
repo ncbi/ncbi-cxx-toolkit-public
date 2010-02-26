@@ -8,3 +8,5 @@ SRC = pcre_chartables pcre_compile pcre_config pcre_dfa_exec pcre_exec pcre_full
 LIB = regexp
 
 CPPFLAGS = -I$(includedir)/util/regexp -DHAVE_CONFIG_H $(ORIG_CPPFLAGS)
+
+WATCHERS = ivanov

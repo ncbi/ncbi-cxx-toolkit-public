@@ -10,3 +10,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 STATIC_LIBS = $(SYBASE_LIBS) $(ODBC_LIBS) $(FTDS_LIBS) $(LIBS)
 
 CHECK_COPY = dbapi_cursor.ini
+
+WATCHERS = ivanovp

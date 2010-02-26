@@ -1,5 +1,7 @@
 # $Id$
 
 SRC = sdbapi
-
 LIB = sdbapi
+
+WATCHERS = ivanovp
+

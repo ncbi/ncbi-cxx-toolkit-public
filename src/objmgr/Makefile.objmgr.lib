@@ -29,3 +29,5 @@ LIB    = xobjmgr
 
 # Dependencies for shared library
 DLL_LIB = $(SOBJMGR_LDEP)
+
+WATCHERS = vasilche

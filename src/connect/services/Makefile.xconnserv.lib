@@ -17,3 +17,5 @@ PROJ_TAG = core
 LIBS    = $(NETWORK_LIBS)
 
 DLL_LIB = xthrserv xconnect xutil
+
+WATCHERS = kazimird

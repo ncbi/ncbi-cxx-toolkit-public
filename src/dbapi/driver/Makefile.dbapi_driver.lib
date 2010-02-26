@@ -20,3 +20,5 @@ LIBS = $(DL_LIBS) $(ORIG_LIBS)
 # Work around a mysterious bug in Apple's GCC.
 CXXFLAGS_darwin = -fno-inline
 CXXFLAGS = $(ORIG_CXXFLAGS) $(CXXFLAGS_$(OSTYPE))
+
+WATCHERS = ivanovp

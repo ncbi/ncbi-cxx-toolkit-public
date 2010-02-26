@@ -10,3 +10,5 @@ DLL_LIB = xutil xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) 
 LIBS = $(ORIG_LIBS)
+
+WATCHERS = vakatov

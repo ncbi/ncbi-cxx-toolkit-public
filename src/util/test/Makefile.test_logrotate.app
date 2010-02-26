@@ -7,3 +7,5 @@
 APP = test_logrotate
 SRC = test_logrotate
 LIB = xutil xncbi
+
+WATCHERS = ucko

@@ -12,3 +12,5 @@ LIB = xutil
 PROJ_TAG = core
 
 LIBS = $(ORIG_LIBS)
+
+WATCHERS = vakatov

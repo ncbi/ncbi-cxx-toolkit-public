@@ -7,3 +7,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/bzip2
 
 CFLAGS   = $(FAST_CFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = ivanov

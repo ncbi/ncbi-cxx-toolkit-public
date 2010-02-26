@@ -2,3 +2,5 @@
 
 LIB = tables
 SRC = raw_scoremat
+
+WATCHERS = ucko

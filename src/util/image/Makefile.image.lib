@@ -12,3 +12,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
            $(TIFF_INCLUDE) $(XPM_INCLUDE)
 
 LIBS  = $(IMAGE_LIBS) $(ORIG_LIBS)
+
+WATCHERS = dicuccio

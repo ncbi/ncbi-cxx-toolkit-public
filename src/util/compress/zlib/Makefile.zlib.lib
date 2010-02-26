@@ -9,3 +9,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/zlib
 
 CFLAGS   = $(FAST_CFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = ivanov

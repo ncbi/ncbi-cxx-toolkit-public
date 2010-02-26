@@ -5,3 +5,5 @@
 
 SRC = redirect
 LIB = xcgi_redirect
+
+WATCHERS = ivanov

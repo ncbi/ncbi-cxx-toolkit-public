@@ -12,3 +12,5 @@ SRC = bdb_types bdb_file bdb_cursor bdb_blob \
 LIB = bdb
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
+
+WATCHERS = kuznets
