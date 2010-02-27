@@ -712,7 +712,7 @@ CBM	s	Natural History Museum and Institute
 CBM:ZC	s	Natural History Museum and Institute, Zoological Collection
 CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry (Colecao Brasileira de Microrganismos de Ambiente e Industria)
 CBNM	s	Cedar Breaks National Monument
-CBS	c	Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection
+CBS	sc	Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection
 CBSIZA	s	Caspian Biological Station Institute of Zoology
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences
 CBU<CAN>	s	Cape Breton University
