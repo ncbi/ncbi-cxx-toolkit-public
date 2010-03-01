@@ -622,9 +622,8 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                      CSeq_test_result& result)
 {
     string translation;
-    CCdregion_translate::TranslateCdregion(translation,
-                                           feat_iter->GetOriginalFeature(),
-                                           ctx->GetScope(), false);
+    CSeqTranslator::Translate(feat_iter->GetOriginalFeature(), ctx->GetScope(),
+                              translation, false /* include_stop */);
     result.SetOutput_data().AddField("length_translation",
                                      int(translation.size()));
 

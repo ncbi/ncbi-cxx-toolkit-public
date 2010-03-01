@@ -152,10 +152,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             code = &it->GetData().GetCdregion().GetCode();
         }
         string xcript_prot, genomic_prot;
-        CSeqTranslator::Translate(cds_loc, xcript_hand,
-                                  xcript_prot, code);
-        CSeqTranslator::Translate(*genomic_cds_loc, genomic_hand,
-                                  genomic_prot, code);
+        CSeqTranslator::Translate(cds_loc, scope, xcript_prot, code);
+        CSeqTranslator::Translate(*genomic_cds_loc, scope, genomic_prot, code);
         // Say that they "can make same prot" iff the translations
         // are the same AND do not contain ambiguities
         bool can_make_same_prot = false;
