@@ -781,12 +781,12 @@ public:
         // test the DB
         const string dbname(CDirEntry::MakePath(dir, base));
         try {
-            CSeqDB::ESeqType dbtype = (ext[0] == 'p') ? 
+            CSeqDB::ESeqType dbtype = (ext[1] == 'p') ? 
                  CSeqDB::eProtein : CSeqDB::eNucleotide;
             CRef<CSeqDB> db(new CSeqDB(dbname, dbtype));
         } catch(exception &e) {
             num_failures++;
-            Log(name, e_Brief) << "  [ERROR] caught exception in initialzing blastdb" << endl;
+            Log(name, e_Brief) << "  [ERROR] caught exception in initializing blastdb" << endl;
             Log(name, e_Details) << e.what() << endl;
         }
         
