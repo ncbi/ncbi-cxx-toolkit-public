@@ -260,7 +260,11 @@ void CBioseqContext::x_SetId(void)
         }
         if ( obj.GetType().GetStr() == "TpaAssembly" ) {
             bTpaAssemblyPresent = true;
-            break; 
+            continue; 
+        }
+        if ( obj.GetType().GetStr() == "GenomeProjectsDB" ) {
+            m_IsGbGenomeProject = true;
+            continue; 
         }
     }
 
@@ -293,7 +297,7 @@ void CBioseqContext::x_SetId(void)
             default:
                 break;
             }
-            break;
+           break;
         // Patent
         case CSeq_id::e_Patent:
             m_IsPatent = true;
