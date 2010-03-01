@@ -183,6 +183,17 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              BOOST_CHECK_EQUAL(kExpectedMismatches, actual);
          }}
 
+        /// check uninitialized / wrongly initialized variables
+        /// (CXX-1594 - GetMismatchCount() adds to incoming values blindly)
+        {{
+             int mismatches = 1000;
+             int identities = 1000;
+             score_builder.GetMismatchCount(*scope, alignment,
+                                            identities, mismatches);
+             BOOST_CHECK_EQUAL(kExpectedMismatches, mismatches);
+             BOOST_CHECK_EQUAL(kExpectedIdentities, identities);
+         }}
+
         /// check gap count (= gap openings)
         {{
              int actual =
