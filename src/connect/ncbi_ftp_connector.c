@@ -123,7 +123,7 @@ static EIO_Status s_FTPCloseData(SFTPConnector* xxx, int/*bool*/ abort)
     EIO_Status status;
     assert(xxx->data);
     if (xxx->flag & fFCDC_LogControl)
-        SOCK_SetDataLogging(xxx->data, fSOCK_LogOn);
+        SOCK_SetDataLogging(xxx->data, eOn);
     if (!abort) {
         static const STimeout kInstant = {0, 0};
         SOCK_SetTimeout(xxx->data, eIO_Close, &kInstant);
@@ -363,7 +363,7 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
         return eIO_Unknown;
     }
     if (!(xxx->flag & fFCDC_LogData))
-        SOCK_SetDataLogging(xxx->data, fSOCK_LogDefault);
+        SOCK_SetDataLogging(xxx->data, eDefault);
     return eIO_Success;
 }
 
