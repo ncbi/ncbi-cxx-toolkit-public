@@ -10,8 +10,7 @@ APP = demo_score_builder
 SRC = demo_score_builder
 # OBJ =
 
-LIB = xalgoalignutil xalnmgr $(BLAST_LIBS) \
-	  $(OBJMGR_LIBS) $(COMPRESS_LIBS)
+LIB = xalgoalignutil xalnmgr xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
