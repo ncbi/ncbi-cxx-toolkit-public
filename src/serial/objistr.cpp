@@ -389,6 +389,7 @@ ESerialSkipUnknown CObjectIStream::UpdateSkipUnknownVariants(void)
 CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
+      m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_VerifyData(x_GetVerifyDataDefault()),
       m_SkipUnknown(eSerialSkipUnknown_Default),
       m_SkipUnknownVariants(eSerialSkipUnknown_Default),
@@ -650,6 +651,36 @@ void CObjectIStream::SetPathSkipVariantHook(const string& path,
 {
     m_PathSkipVariantHooks.SetHook(path,hook);
     WatchPathHooks();
+}
+
+void CObjectIStream::SetDelayBufferParsingPolicy(EDelayBufferParsing policy)
+{
+    m_ParseDelayBuffers = policy;
+}
+CObjectIStream::EDelayBufferParsing
+CObjectIStream::GetDelayBufferParsingPolicy(void) const
+{
+    return m_ParseDelayBuffers;
+}
+
+bool CObjectIStream::ShouldParseDelayBuffer(void) const
+{
+    if (m_ParseDelayBuffers != eDelayBufferPolicyNotSet) {
+        return m_ParseDelayBuffers == eDelayBufferPolicyAlwaysParse;
+    }
+    return
+        !m_ObjectHookKey.IsEmpty() ||
+        !m_ClassMemberHookKey.IsEmpty() ||
+        !m_ChoiceVariantHookKey.IsEmpty() ||
+        !m_ObjectSkipHookKey.IsEmpty() ||
+        !m_ClassMemberSkipHookKey.IsEmpty() ||
+        !m_ChoiceVariantSkipHookKey.IsEmpty() ||
+        !m_PathReadObjectHooks.IsEmpty() ||
+        !m_PathSkipObjectHooks.IsEmpty() ||
+        !m_PathReadMemberHooks.IsEmpty() ||
+        !m_PathSkipMemberHooks.IsEmpty() ||
+        !m_PathReadVariantHooks.IsEmpty() ||
+        !m_PathSkipVariantHooks.IsEmpty();
 }
 
 void CObjectIStream::UseMemoryPool(void)

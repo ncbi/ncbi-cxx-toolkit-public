@@ -148,7 +148,9 @@ public:
     /// Set global (for all streams) read hook
     /// @param hook
     ///   Pointer to hook object
-    void SetGlobalReadHook(CReadObjectHook* hook) const;
+    /// @deprecated
+    ///   Use local hooks instead
+    NCBI_DEPRECATED void SetGlobalReadHook(CReadObjectHook* hook) const;
 
     /// Reset local read hook
     /// @param stream
@@ -180,7 +182,9 @@ public:
     /// Set global (for all streams) write hook
     /// @param hook
     ///   Pointer to hook object
-    void SetGlobalWriteHook(CWriteObjectHook* hook) const;
+    /// @deprecated
+    ///   Use local hooks instead
+    NCBI_DEPRECATED void SetGlobalWriteHook(CWriteObjectHook* hook) const;
 
     /// Reset local write hook
     /// @param stream
@@ -212,7 +216,9 @@ public:
     /// Set global (for all streams) skip hook
     /// @param hook
     ///   Pointer to hook object
-    void SetGlobalSkipHook(CSkipObjectHook* hook) const;
+    /// @deprecated
+    ///   Use local hooks instead
+    NCBI_DEPRECATED void SetGlobalSkipHook(CSkipObjectHook* hook) const;
 
     /// Reset local skip hook
     /// @param stream
@@ -244,7 +250,9 @@ public:
     /// Set global (for all streams) copy hook
     /// @param hook
     ///   Pointer to hook object
-    void SetGlobalCopyHook(CCopyObjectHook* hook) const;
+    /// @deprecated
+    ///   Use local hooks instead
+    NCBI_DEPRECATED void SetGlobalCopyHook(CCopyObjectHook* hook) const;
 
     /// Reset local copy hook
     /// @param stream

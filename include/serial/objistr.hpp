@@ -453,6 +453,19 @@ public:
     void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
     void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
     void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
+    
+    /// DelayBuffer parsing policy
+    enum EDelayBufferParsing {
+        /// Parse only if local hook are present
+        eDelayBufferPolicyNotSet,
+        /// Parse always
+        eDelayBufferPolicyAlwaysParse,
+        /// Never parse
+        eDelayBufferPolicyNeverParse
+    };
+    void SetDelayBufferParsingPolicy(EDelayBufferParsing policy);
+    EDelayBufferParsing GetDelayBufferParsingPolicy(void) const;
+    bool ShouldParseDelayBuffer(void) const;
 
 //---------------------------------------------------------------------------
 // User interface
@@ -929,6 +942,7 @@ protected:
     CIStreamBuffer m_Input;
     bool m_DiscardCurrObject;
     ESerialDataFormat   m_DataFormat;
+    EDelayBufferParsing  m_ParseDelayBuffers;
     
 private:
     static CObjectIStream* CreateObjectIStreamAsn(void);

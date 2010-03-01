@@ -212,6 +212,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_Separator(""), m_AutoSeparator(false),
       m_DataFormat(format),
       m_WriteNamedIntegersByValue(false),
+      m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_VerifyData(x_GetVerifyDataDefault())
 {
 }
@@ -379,6 +380,30 @@ void CObjectOStream::SetPathWriteVariantHook(const string& path,
 {
     m_PathWriteVariantHooks.SetHook(path,hook);
     WatchPathHooks();
+}
+
+void CObjectOStream::SetDelayBufferParsingPolicy(EDelayBufferParsing policy)
+{
+    m_ParseDelayBuffers = policy;
+}
+CObjectOStream::EDelayBufferParsing
+CObjectOStream::GetDelayBufferParsingPolicy(void) const
+{
+    return m_ParseDelayBuffers;
+}
+
+bool CObjectOStream::ShouldParseDelayBuffer(void) const
+{
+    if (m_ParseDelayBuffers != eDelayBufferPolicyNotSet) {
+        return m_ParseDelayBuffers == eDelayBufferPolicyAlwaysParse;
+    }
+    return
+        !m_ObjectHookKey.IsEmpty() ||
+        !m_ClassMemberHookKey.IsEmpty() ||
+        !m_ChoiceVariantHookKey.IsEmpty() ||
+        !m_PathWriteObjectHooks.IsEmpty() ||
+        !m_PathWriteMemberHooks.IsEmpty() ||
+        !m_PathWriteVariantHooks.IsEmpty();
 }
 
 string CObjectOStream::GetStackTrace(void) const

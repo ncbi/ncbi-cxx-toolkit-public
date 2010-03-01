@@ -57,6 +57,10 @@ public:
     ~CLocalHookSetBase(void);
 
     void Clear(void);
+    bool IsEmpty(void) const
+    {
+        return m_Hooks.empty();
+    }
 
     typedef pair<THookData*, CRef<THook> > TValue;
     typedef vector<TValue> THooks;

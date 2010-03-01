@@ -734,11 +734,13 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
     if ( memberInfo->CanBeDelayed() ) {
         CDelayBuffer& buffer = memberInfo->GetDelayBuffer(classPtr);
         if ( !buffer ) {
-            memberInfo->UpdateSetFlagYes(classPtr);
-            in.StartDelayBuffer();
-            memberInfo->GetTypeInfo()->SkipData(in);
-            in.EndDelayBuffer(buffer, memberInfo, classPtr);
-            return;
+            if (!in.ShouldParseDelayBuffer()) {
+                memberInfo->UpdateSetFlagYes(classPtr);
+                in.StartDelayBuffer();
+                memberInfo->GetTypeInfo()->SkipData(in);
+                in.EndDelayBuffer(buffer, memberInfo, classPtr);
+                return;
+            }
         }
         buffer.Update();
     }
@@ -916,8 +918,10 @@ void CMemberInfoFunctions::WriteLongMember(CObjectOStream& out,
     if ( memberInfo->CanBeDelayed() ) {
         const CDelayBuffer& buffer = memberInfo->GetDelayBuffer(classPtr);
         if ( buffer ) {
-            if ( out.WriteClassMember(memberInfo->GetId(), buffer) )
-                return;
+            if (!out.ShouldParseDelayBuffer()) {
+                if ( out.WriteClassMember(memberInfo->GetId(), buffer) )
+                    return;
+            }
 
             // cannot write delayed buffer -> proceed after update
             const_cast<CDelayBuffer&>(buffer).Update();

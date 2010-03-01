@@ -343,6 +343,19 @@ public:
     void SetPathWriteObjectHook( const string& path, CWriteObjectHook*        hook);
     void SetPathWriteMemberHook( const string& path, CWriteClassMemberHook*   hook);
     void SetPathWriteVariantHook(const string& path, CWriteChoiceVariantHook* hook);
+    
+    /// DelayBuffer parsing policy
+    enum EDelayBufferParsing {
+        /// Parse only if local hook are present
+        eDelayBufferPolicyNotSet,
+        /// Parse always
+        eDelayBufferPolicyAlwaysParse,
+        /// Never parse
+        eDelayBufferPolicyNeverParse
+    };
+    void SetDelayBufferParsingPolicy(EDelayBufferParsing policy);
+    EDelayBufferParsing GetDelayBufferParsingPolicy(void) const;
+    bool ShouldParseDelayBuffer(void) const;
 
 //---------------------------------------------------------------------------
 // User interface
@@ -696,6 +709,7 @@ protected:
     bool   m_AutoSeparator;
     ESerialDataFormat   m_DataFormat;
     bool  m_WriteNamedIntegersByValue;
+    EDelayBufferParsing  m_ParseDelayBuffers;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
