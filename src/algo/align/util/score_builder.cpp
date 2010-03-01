@@ -624,6 +624,8 @@ int CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align)
 void CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align,
                                      int& identities, int& mismatches)
 {
+    identities = 0;
+    mismatches = 0;
     s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
 }
 
