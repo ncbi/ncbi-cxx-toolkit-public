@@ -108,15 +108,15 @@ checkEqual(len( cursor.fetchall() ), 48)
 
 cursor.execute("select month from #sale_stat")
 month = cursor.fetchone()[0]
-check(isinstance(month, str))
-dbapi.return_strs_as_unicode(True)
+check(isinstance(month, str), "Value of str should be regular string")
+return_strs_as_unicode(True)
 cursor.execute("select month from #sale_stat")
 month = cursor.fetchone()[0]
-check(isinstance(month, unicode))
-dbapi.return_strs_as_unicode(False)
+check(isinstance(month, unicode), "Value of str should be unicode string")
+return_strs_as_unicode(False)
 cursor.execute("select month from #sale_stat")
 month = cursor.fetchone()[0]
-check(isinstance(month, str))
+check(isinstance(month, str), "Value of str should be regular string")
 
 
 cursor.callproc('sp_databases')
