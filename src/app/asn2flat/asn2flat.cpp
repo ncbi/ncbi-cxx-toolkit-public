@@ -71,8 +71,20 @@ public:
     void Init(void);
     int  Run (void);
 
-    bool HandleSeqEntry(CRef<CSeq_entry>& se);
-    bool HandleSeqID( const string& seqID );
+    bool HandleSeqEntry(
+        CRef<CSeq_entry>& se);
+
+    bool HandleSeqEntryHandle(
+        CScope&,
+        CSeq_entry_Handle );
+
+protected:
+    void HandleSeqSubmit(
+        auto_ptr<CObjectIStream> is );
+    void HandleReleaseFile( 
+        auto_ptr<CObjectIStream> is );
+    void HandleSeqId(
+        const string& );
     
     bool ObtainSeqEntryFromSeqEntry( 
         auto_ptr<CObjectIStream>& is, 
@@ -256,108 +268,192 @@ int CAsn2FlatApp::Run(void)
                         "Unable to read data from stdin";
         NCBI_THROW(CFlatException, eInternal, msg);
     }
+
+    if ( args[ "sub" ] ) {
+        try {
+            HandleSeqSubmit( is );
+            return 0;
+        }
+        catch( CException& e ) {
+            cerr << e.GetMsg() << endl;
+            return 1;
+        }
+    }
     
-    if ( args["batch"] ) {
-        CGBReleaseFile in(*is.release());
-        in.RegisterHandler(this);
-        in.Read();  // HandleSeqEntry will be called from this function
+    if ( args[ "batch" ] ) {
+        try {
+            HandleReleaseFile( is );
+            return 0;
+        }
+        catch( CException& e ) {
+            cerr << e.GetMsg() << endl;
+            return 1;
+        }
     } 
-    else {
+
+    if ( args[ "id" ] ) {
+        if ( ! args[ "gbload" ] ) {
+            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+        }   
+        try {
+            HandleSeqId( args[ "id" ].AsString() );
+            return 0;
+        }
+        catch( CException& e ) {
+            cerr << e.GetMsg() << endl;
+            return 1;
+        }
+    } 
+
+    string asn_type = args["type"].AsString();
+    CRef<CSeq_entry> se(new CSeq_entry);
+    
+    if ( asn_type == "seq-entry" ) {
+        //
+        //  Straight through processing: Read a seq_entry, then process
+        //  a seq_entry:
+        //
+        if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+            NCBI_THROW( 
+                CFlatException, eInternal, "Unable to construct Seq-entry object" );
+        }
+        HandleSeqEntry(se);
+		//m_Objmgr.Reset();
+	}
+	else if ( asn_type == "bioseq" ) {				
+		//
+		//  Read object as a bioseq, wrap it into a seq_entry, then process
+		//  the wrapped bioseq as a seq_entry:
+		//
+        if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+            NCBI_THROW( 
+                CFlatException, eInternal, "Unable to construct Seq-entry object" );
+        }
+        HandleSeqEntry( se );
+	}
+	else if ( asn_type == "bioseq-set" ) {
+		//
+		//  Read object as a bioseq_set, wrap it into a seq_entry, then 
+		//  process the wrapped bioseq_set as a seq_entry:
+		//
+        if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+            NCBI_THROW( 
+                CFlatException, eInternal, "Unable to construct Seq-entry object" );
+        }
+        HandleSeqEntry( se );
+	}
+    else if ( asn_type == "any" ) {
+        //
+        //  Try the first three in turn:
+        //
+        string strNextTypeName = is->PeekNextTypeName();
         
-        if (args["sub"]) {  // submission
-            CRef<CSeq_submit> sub(new CSeq_submit);
-            if (sub.Empty()) {
-                NCBI_THROW(CFlatException, eInternal, 
-                    "Could not allocate Seq-submit object");
-            }
-            *is >> *sub;
-            if (sub->IsSetSub()  &&  sub->IsSetData()) {
-                CRef<CScope> scope(new CScope(*m_Objmgr));
-                if ( !scope ) {
-                    NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-                }
-                scope->AddDefaults();
-                m_FFGenerator->Generate(*sub, *scope, *m_Os);
-            }
-        } else if ( args["id"] ) {
-        
-            //
-            //  Implies gbload; otherwise this feature would be pretty 
-            //  useless...
-            //
-            if ( ! args[ "gbload" ] ) {
-                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-            }   
-            string seqID = args["id"].AsString();
-            HandleSeqID( seqID );
-            
-        } else {
-            string asn_type = args["type"].AsString();
-            CRef<CSeq_entry> se(new CSeq_entry);
-            
-            if ( asn_type == "seq-entry" ) {
-                //
-                //  Straight through processing: Read a seq_entry, then process
-                //  a seq_entry:
-                //
-                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
-                }
-                HandleSeqEntry(se);
-				//m_Objmgr.Reset();
-			}
-			else if ( asn_type == "bioseq" ) {				
-				//
-				//  Read object as a bioseq, wrap it into a seq_entry, then process
-				//  the wrapped bioseq as a seq_entry:
-				//
+        if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+            is->Close();
+            is.reset( x_OpenIStream( args ) );
+            if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                is->Close();
+                is.reset( x_OpenIStream( args ) );
                 if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
                     NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+                        CFlatException, eInternal, 
+                        "Unable to construct Seq-entry object" 
+                    );
                 }
-                HandleSeqEntry( se );
-			}
-			else if ( asn_type == "bioseq-set" ) {
-				//
-				//  Read object as a bioseq_set, wrap it into a seq_entry, then 
-				//  process the wrapped bioseq_set as a seq_entry:
-				//
-                if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
-                }
-                HandleSeqEntry( se );
-			}
-            else if ( asn_type == "any" ) {
-                //
-                //  Try the first three in turn:
-                //
-                string strNextTypeName = is->PeekNextTypeName();
-                
-                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                    is->Close();
-                    is.reset( x_OpenIStream( args ) );
-                    if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                        is->Close();
-                        is.reset( x_OpenIStream( args ) );
-                        if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                            NCBI_THROW( 
-                                CFlatException, eInternal, 
-                                "Unable to construct Seq-entry object" 
-                            );
-                        }
-                    }
-                }
-                HandleSeqEntry(se);
             }
         }
+        HandleSeqEntry(se);
     }
 
     m_Os->flush();
 
     is.reset();
     return 0;
+}
+
+//  ============================================================================
+void CAsn2FlatApp::HandleSeqSubmit(
+    auto_ptr<CObjectIStream> is )
+//  ============================================================================
+{
+    CRef<CSeq_submit> sub(new CSeq_submit);
+    *is >> *sub;
+    if (sub->IsSetSub()  &&  sub->IsSetData()) {
+        CRef<CScope> scope(new CScope(*m_Objmgr));
+        scope->AddDefaults();
+        m_FFGenerator->Generate(*sub, *scope, *m_Os);
+    }
+}
+
+//  ============================================================================
+void CAsn2FlatApp::HandleReleaseFile(
+    auto_ptr<CObjectIStream> is )
+//  ============================================================================
+{
+    CGBReleaseFile in( *is.release() );
+    in.RegisterHandler( this );
+    in.Read();  // HandleSeqEntry will be called from this function
+}
+
+//  ============================================================================
+void CAsn2FlatApp::HandleSeqId(
+    const string& strId )
+//  ============================================================================
+{
+    unsigned int gi( 0 );
+    const char* database_names[] = { "Nucleotide", "Protein" };
+    const int num_databases = sizeof( database_names ) / sizeof( const char* );
+    
+    for ( int i=0; (gi == 0) && (i < num_databases); ++ i ) {
+        gi = x_SeqIdToGiNumber( strId, database_names[ i ] );
+    }
+    if ( 0 == gi ) {
+       NCBI_THROW( 
+            CFlatException, eInternal, 
+            "Given ID does not resolve to a GI number" 
+        );
+    }
+
+    CSeq_id id;
+    id.SetGi( gi );
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    scope->AddDefaults();
+    CBioseq_Handle bsh = scope->GetBioseqHandle( id );
+    if ( ! bsh ) {
+       NCBI_THROW( 
+            CFlatException, eInternal, 
+            "Unable to retrieve data for the given ID" 
+        );
+    }
+    
+    //
+    //  ... and use that to generate the flat file:
+    //
+    HandleSeqEntryHandle( *scope, bsh.GetTopLevelEntry() );
+}
+
+//  ============================================================================
+bool CAsn2FlatApp::HandleSeqEntryHandle(
+    CScope& scope,
+    CSeq_entry_Handle seh )
+//  ============================================================================
+{
+    const CArgs& args = GetArgs();
+
+    // generate flat file
+    if ( args["from"]  ||  args["to"] ) {
+        CSeq_loc loc;
+        x_GetLocation( seh, args, loc );
+        m_FFGenerator->Generate(loc, scope, *m_Os);
+    } 
+    else {
+        int count = args["count"].AsInteger();
+        for ( int i = 0; i < count; ++i ) {
+            m_FFGenerator->Generate( seh, *m_Os);
+        }
+
+    }
+    return true;
 }
 
 bool CAsn2FlatApp::ObtainSeqEntryFromSeqEntry( 
@@ -457,72 +553,6 @@ int CAsn2FlatApp::x_SeqIdToGiNumber(
     return 0;
 };
 
-
-bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
-{
-    //
-    //  Let's make sure we are dealing with something that qualifies a seq id
-    //  in the first place:
-    //
-    try {
-        CSeq_id SeqId( seq_id );
-    }
-    catch ( CException& ) {
-        ERR_POST( Fatal << "The ID " << seq_id.c_str() << " is not a valid seq ID." );
-    }
-    
-    unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
- 
-    //
-    //  We need a gi number for the remote fetching. So if seq_id does not come
-    //  as a gi number already, we have to go through a lookup step first. 
-    //
-    const char* database_names[] = { "Nucleotide", "Protein" };
-    const int num_databases = sizeof( database_names ) / sizeof( const char* );
-    
-    for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
-        gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
-    }
-    if ( 0 == gi_number ) {
-        ERR_POST(Fatal << "Given ID \"" << seq_id.c_str() 
-          << "\" does not resolve to a GI number." );
-    }
-       
-    //
-    //  Now use the gi_number to get the actual seq object...
-    //
-    CSeq_id id;
-    id.SetGi( gi_number );
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    scope->AddDefaults();
-    CBioseq_Handle bsh = scope->GetBioseqHandle( id );
-    if ( ! bsh ) {
-        ERR_POST(Fatal << "Unable to obtain data on ID \"" << seq_id.c_str() 
-          << "\"." );
-    }
-    
-    //
-    //  ... and use that to generate the flat file:
-    //
-    CArgs args = GetArgs();
-    CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
-    if ( args["from"]  ||  args["to"] ) {
-        CSeq_loc loc;
-        x_GetLocation( seh, args, loc );
-        m_FFGenerator->Generate(loc, *scope, *m_Os);
-    } else {
-        try {
-            int count = args["count"].AsInteger();
-            for ( int i = 0; i < count; ++i ) {
-                m_FFGenerator->Generate( bsh.GetTopLevelEntry(), *m_Os);
-            }
-        } catch (CException& ) {
-            ERR_POST( Fatal << "Flat file generation failed on " << id.DumpAsFasta() );
-        }
-    }
-    return true;
-}
-
 bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
     if (!se) {
@@ -546,6 +576,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
 
+    return HandleSeqEntryHandle( *scope, entry );
     // generate flat file
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
