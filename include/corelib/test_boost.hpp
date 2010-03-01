@@ -610,10 +610,10 @@ struct SNcbiTestTCTimeout
         instance() = this;
     }
 
-    static SNcbiTestTCTimeout*& instance() 
+    static SNcbiTestTCTimeout*& instance()
     {
-        static SNcbiTestTCTimeout  inst; 
-        static SNcbiTestTCTimeout* inst_ptr = &inst; 
+        static SNcbiTestTCTimeout  inst;
+        static SNcbiTestTCTimeout* inst_ptr = &inst;
 
         return inst_ptr;
     }
@@ -637,7 +637,7 @@ class CNcbiTestParamTestCaseGenerator
 public:
     CNcbiTestParamTestCaseGenerator(
                     boost::unit_test::callback1<ParamType> const& test_func,
-                    boost::unit_test::const_string                name, 
+                    boost::unit_test::const_string                name,
                     ParamIter                                     par_begin,
                     ParamIter                                     par_end)
         : m_TestFunc(test_func),
@@ -648,6 +648,8 @@ public:
     {
         m_Name += "_";
     }
+
+    virtual ~CNcbiTestParamTestCaseGenerator() {}
 
     virtual boost::unit_test::test_unit* next() const
     {
@@ -680,7 +682,7 @@ private:
 template<typename ParamType, typename ParamIter>
 inline CNcbiTestParamTestCaseGenerator<ParamType, ParamIter>
 NcbiTestGenTestCases(boost::unit_test::callback1<ParamType> const& test_func,
-                     boost::unit_test::const_string                name, 
+                     boost::unit_test::const_string                name,
                      ParamIter                                     par_begin,
                      ParamIter                                     par_end)
 {
@@ -694,7 +696,7 @@ inline CNcbiTestParamTestCaseGenerator<
                             typename boost::remove_reference<ParamType>::type
                                                 >::type, ParamIter>
 NcbiTestGenTestCases(void (*test_func)(ParamType),
-                     boost::unit_test::const_string name, 
+                     boost::unit_test::const_string name,
                      ParamIter                      par_begin,
                      ParamIter                      par_end )
 {
