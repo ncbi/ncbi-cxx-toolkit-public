@@ -61,7 +61,7 @@ bool IsPartOfUrl(
     const string& sentence,
     size_t pos )
 {
-    const string separators( "( \t\r\n" );
+    string separators( "( \t\r\n" );
     const string legal_path_chars(
         "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-." );
     
@@ -78,7 +78,8 @@ bool IsPartOfUrl(
     //
     //  Find the start of the "word" that surrounds the given position:
     //
-    string::size_type left_edge = sentence.find_last_of( separators, pos );
+    separators += '~';
+    string::size_type left_edge = sentence.find_last_of( separators, pos-1 );
     if ( left_edge == string::npos ) {
         left_edge = 0;
     }
@@ -89,7 +90,12 @@ bool IsPartOfUrl(
     //
     //  If it's a URL, it better start with a protocol specifier we approve of:
     //
-    if ( sentence.substr( left_edge, 5 ) != "http:" ) {
+    static const string sc_ProtocolSpecifiers[] = {
+      "URL:",
+      "http:",
+    };
+    DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, vProtocolSpecifiers, sc_ProtocolSpecifiers);
+    if ( vProtocolSpecifiers.find( sentence.substr( left_edge, 5 ) ) == vProtocolSpecifiers.end() ) {
         return false;
     }
     
@@ -155,6 +161,16 @@ void ExpandTildes(string& s, ETildeStyle style)
             }
             break;
 
+        case eTilde_note:
+            if ( tilde + 1 < length  &&  s[tilde + 1] == '~' ) {
+                result += '~';
+                start = tilde + 2;
+            } else {
+                result += ";\n";
+                start = tilde + 1;
+            }
+            break;
+
         case eTilde_comment:
             if (tilde > 0  &&  s[tilde - 1] == '`') {
                 result.replace(result.length() - 1, 1, 1,'~');
@@ -163,7 +179,7 @@ void ExpandTildes(string& s, ETildeStyle style)
                 result += '~';
             } 
             else {
-                result += '\n';
+                result += "\n";
             }
             start = tilde + 1;
             break;

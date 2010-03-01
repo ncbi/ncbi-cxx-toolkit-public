@@ -302,7 +302,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
 {
     flags |= m_AddPeriod;
 
-    ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_newline : eTilde_space);
+    ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_note : eTilde_space);
     ExpandTildes(m_Value, tilde_style);
                 
     TFlatQual qual = x_AddFQ(q, (s_IsNote(flags, ctx) ? "note" : name), m_Value, m_Style);
@@ -1087,9 +1087,12 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
         = CBioSource::GetTypeInfo_enum_EGenome()->FindName(m_Value, true);
 
     switch (m_Value) {
-    case CBioSource::eGenome_chloroplast: case CBioSource::eGenome_chromoplast:
-    case CBioSource::eGenome_cyanelle:    case CBioSource::eGenome_apicoplast:
-    case CBioSource::eGenome_leucoplast:  case CBioSource::eGenome_proplastid:
+    case CBioSource::eGenome_chloroplast: 
+    case CBioSource::eGenome_chromoplast:
+    case CBioSource::eGenome_cyanelle:    
+    case CBioSource::eGenome_apicoplast:
+    case CBioSource::eGenome_leucoplast:  
+    case CBioSource::eGenome_proplastid:
         x_AddFQ(q, name, "plastid:" + organelle);
         break;
 
@@ -1097,17 +1100,22 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
         x_AddFQ(q, name, "mitochondrion:kinetoplast");
         break;
 
-    case CBioSource::eGenome_mitochondrion: case CBioSource::eGenome_plastid:
+    case CBioSource::eGenome_mitochondrion: 
+    case CBioSource::eGenome_plastid:
     case CBioSource::eGenome_nucleomorph:
         x_AddFQ(q, name, organelle);
         break;
 
-    case CBioSource::eGenome_macronuclear: case CBioSource::eGenome_proviral:
-    case CBioSource::eGenome_virion:
+    case CBioSource::eGenome_macronuclear: 
+    case CBioSource::eGenome_proviral:
         x_AddFQ(q, organelle, kEmptyStr, CFormatQual::eEmpty);
         break;
+    case CBioSource::eGenome_virion:
+//        x_AddFQ(q, organelle, kEmptyStr, CFormatQual::eEmpty);
+        break;
 
-    case CBioSource::eGenome_plasmid: case CBioSource::eGenome_transposon:
+    case CBioSource::eGenome_plasmid: 
+    case CBioSource::eGenome_transposon:
         x_AddFQ(q, organelle, kEmptyStr);
         break;
 

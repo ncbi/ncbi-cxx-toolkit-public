@@ -48,7 +48,8 @@ enum ETildeStyle {
     eTilde_tilde,   // no-op
     eTilde_space,   // '~' -> ' ', except before /[ (]?\d/
     eTilde_newline, // '~' -> '\n' but "~~" -> "~"
-    eTilde_comment  // '~' -> '\n' always
+    eTilde_comment,  // '~' -> '\n' always
+    eTilde_note     // '~' -> ';\n' but "~~" -> "~"
 };
 void ExpandTildes(string& s, ETildeStyle style);
 

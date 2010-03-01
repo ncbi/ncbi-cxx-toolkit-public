@@ -613,11 +613,11 @@ const CDate* CLocusItem::x_GetDateForBioseq(const CBioseq_Handle& bsh) const
 
 const CDate* CLocusItem::x_GetLaterDate(const CDate* d1, const CDate* d2) const
 {
-    if ( d1 == 0 ) {
+    if ( d1 == 0 || d1->Which() == CDate::e_Str ) {
         return d2;
     }
 
-    if ( d2 == 0 ) {
+    if ( d2 == 0 || d2->Which() == CDate::e_Str ) {
         return d1;
     }
 
