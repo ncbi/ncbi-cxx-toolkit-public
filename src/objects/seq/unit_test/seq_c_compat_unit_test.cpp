@@ -64,7 +64,7 @@ NCBITEST_AUTO_INIT()
 {
     CONNECT_Init();
     SeqLocAsnLoad();
-    s_SeqIdATP = AsnFind("Seq-id");
+    s_SeqIdATP = AsnFind(const_cast<char*>("Seq-id")); // avoid warnings
 }
 
 static const char* const kRepresentativeIDs[] = {
@@ -149,7 +149,8 @@ static void s_TestIdFormatting(const char* s)
     CObjectIStreamAsn ois(s, len);
     CSeq_id           cxx_id;
     AsnIoMemPtr       aimp = AsnIoMemOpen
-        ("r", reinterpret_cast<BytePtr>(const_cast<char*>(s)), len);
+        (const_cast<char*>("r"),
+         reinterpret_cast<BytePtr>(const_cast<char*>(s)), len);
     AsnIoPtr          aip = AsnIoNew((ASNIO_IN | ASNIO_TEXT), NULL, aimp,
                                      AsnIoMemRead, AsnIoMemWrite);
     TAutoSeqId        c_id;
