@@ -289,6 +289,7 @@ public:
     // History cleanup methods
     void ResetScope(void); // reset scope in initial state (no data)
     void ResetHistory(EActionIfLocked action = eKeepIfLocked);
+    void ResetDataAndHistory(void);
     void RemoveFromHistory(CTSE_Handle tse);
 
     // Revoke data sources from the scope. Throw exception if the
@@ -449,8 +450,8 @@ public:
     CRef<CDataSource_ScopeInfo> x_GetDSInfo(CDataSource& ds);
     CRef<CDataSource_ScopeInfo> AddDS(CRef<CDataSource> ds,
                                       TPriority priority);
-    CRef<CDataSource_ScopeInfo> GetNonSharedDS(TPriority priority);
-    CRef<CDataSource_ScopeInfo> GetSharedDS(TPriority priority);
+    CRef<CDataSource_ScopeInfo> GetEditDS(TPriority priority);
+    CRef<CDataSource_ScopeInfo> GetConstDS(TPriority priority);
     CRef<CDataSource_ScopeInfo>
     AddDSBefore(CRef<CDataSource> ds,
                 CRef<CDataSource_ScopeInfo> ds2,

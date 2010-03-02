@@ -35,6 +35,9 @@
 #include <objmgr/impl/priority.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/serialbase.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -143,20 +146,24 @@ CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
         m_SubTree = new CPriorityTree(scope, node.GetTree());
     }
     else if ( node.IsLeaf() ) {
-        if ( !node.GetLeaf().CanBeEdited() ) { // shared -> use original DS
-            CDataSource& ds =
-                const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
-            m_Leaf = scope.x_GetDSInfo(ds);
+        const CDataSource_ScopeInfo& src_info = node.GetLeaf();
+        const CDataSource& src_ds = src_info.GetDataSource();
+        if ( !src_info.CanBeEdited() && !src_info.IsConst() ) {
+            // shared -> use original DS
+            m_Leaf = scope.x_GetDSInfo(const_cast<CDataSource&>(src_ds));
         }
         else { // private -> copy DS content
-            CRef<CDataSource> ds(new CDataSource);
-            const CTSE_LockSet& blobs =
-                node.GetLeaf().GetDataSource().GetStaticBlobs();
-            ITERATE ( CTSE_LockSet, it, blobs ) {
-                CRef<CTSE_Info> new_tse(new CTSE_Info(it->second));
-                ds->AddStaticTSE(new_tse);
+            CRef<CDataSource> new_ds(new CDataSource);
+            ITERATE ( CTSE_LockSet, it, src_ds.GetStaticBlobs() ) {
+                CRef<CSeq_entry> new_entry
+                    (SerialClone(*it->second->GetCompleteTSE()));
+                CRef<CTSE_Info> new_tse(new CTSE_Info(*new_entry));
+                new_ds->AddStaticTSE(new_tse);
             }
-            m_Leaf = scope.x_GetDSInfo(*ds);
+            m_Leaf = scope.x_GetDSInfo(*new_ds);
+            if ( src_info.IsConst() ) {
+                m_Leaf->SetConst();
+            }
         }
     }
 }

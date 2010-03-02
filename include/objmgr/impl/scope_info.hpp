@@ -213,9 +213,11 @@ public:
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
     CDataLoader* GetDataLoader(void);
+    // CanBeEdited() is true for a data source with blobs in 'edited' state
     bool CanBeEdited(void) const;
-    bool IsShared(void) const;
-    void SetShared(void);
+    // IsConst() is true for a data source with manually added const TSEs
+    bool IsConst(void) const;
+    void SetConst(void);
 
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;

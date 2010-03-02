@@ -184,7 +184,7 @@ CSeq_entry_Handle CScope_Impl::AddSeq_entry(CSeq_entry& entry,
         return CSeq_entry_Handle(*lock.first, *lock.second);
     }
     
-    CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(entry);
     x_ClearCacheOnNewData(*tse_lock);
 
@@ -213,7 +213,7 @@ CSeq_entry_Handle CScope_Impl::AddSharedSeq_entry(const CSeq_entry& entry,
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
 #else
-    CRef<CDataSource_ScopeInfo> ds_info = GetSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(const_cast<CSeq_entry&>(entry));
 #endif
     x_ClearCacheOnNewData(*tse_lock);
@@ -239,7 +239,7 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
         return CBioseq_Handle(CSeq_id_Handle(), *lock);
     }
     
-    CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(bioseq);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
@@ -260,7 +260,7 @@ CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
 #else
-    CRef<CDataSource_ScopeInfo> ds_info = GetSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(const_cast<CBioseq&>(bioseq));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
@@ -289,7 +289,7 @@ CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
         return CSeq_annot_Handle(*lock.first, *lock.second);
     }
     
-    CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set(); // it's not optional
     entry->SetSet().SetAnnot().push_back(Ref(&annot));
@@ -322,7 +322,7 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
 #else
-    CRef<CDataSource_ScopeInfo> ds_info = GetSharedDS(priority);
+    CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set(); // it's not optional
     entry->SetSet().SetAnnot().push_back(Ref(&const_cast<CSeq_annot&>(annot)));
@@ -1162,7 +1162,7 @@ CRef<CDataSource_ScopeInfo> CScope_Impl::AddDS(CRef<CDataSource> ds,
 
 
 CRef<CDataSource_ScopeInfo>
-CScope_Impl::GetNonSharedDS(TPriority priority)
+CScope_Impl::GetEditDS(TPriority priority)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     typedef CPriorityTree::TPriorityMap TMap;
@@ -1184,14 +1184,14 @@ CScope_Impl::GetNonSharedDS(TPriority priority)
 
 
 CRef<CDataSource_ScopeInfo>
-CScope_Impl::GetSharedDS(TPriority priority)
+CScope_Impl::GetConstDS(TPriority priority)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     typedef CPriorityTree::TPriorityMap TMap;
     TMap& pmap = m_setDataSrc.GetTree();
     TMap::iterator iter = pmap.lower_bound(priority);
     while ( iter != pmap.end() && iter->first == priority ) {
-        if ( iter->second.IsLeaf() && iter->second.GetLeaf().IsShared() ) {
+        if ( iter->second.IsLeaf() && iter->second.GetLeaf().IsConst() ) {
             return Ref(&iter->second.GetLeaf());
         }
         ++iter;
@@ -1201,8 +1201,8 @@ CScope_Impl::GetSharedDS(TPriority priority)
     CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
     _ASSERT(ds_info->CanBeEdited());
     pmap.insert(iter, TMap::value_type(priority, CPriorityNode(*ds_info)));
-    ds_info->SetShared();
-    _ASSERT(ds_info->IsShared());
+    ds_info->SetConst();
+    _ASSERT(ds_info->IsConst());
     _ASSERT(!ds_info->CanBeEdited());
     return ds_info;
 }
@@ -1685,7 +1685,7 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
         ds.Reset();
         old_ds->DetachScope();
     }
-    else if ( old_ds->IsShared() ) {
+    else if ( old_ds->IsConst() ) {
         _ASSERT(!ds->GetDataLoader());
         const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE.reset();
         _VERIFY(ds->DropStaticTSE(*old_tse));
@@ -2165,6 +2165,24 @@ void CScope_Impl::ResetHistory(EActionIfLocked action)
     }
     x_ClearCacheOnRemoveData();
     //m_Seq_idMap.clear();
+}
+
+
+void CScope_Impl::ResetDataAndHistory(void)
+{
+    TConfWriteLockGuard guard(m_ConfLock);
+    NON_CONST_ITERATE ( TDSMap, it, m_DSMap ) {
+        it->second->ResetHistory(eRemoveIfLocked);
+    }
+    x_ClearCacheOnRemoveData();
+    m_Seq_idMap.clear();
+    NON_CONST_ITERATE ( TDSMap, it, m_DSMap ) {
+        CDataSource_ScopeInfo& ds_info = *it->second;
+        if ( ds_info.IsConst() || ds_info.CanBeEdited() ) {
+            ds_info.ResetDS();
+            ds_info.GetDataSource().DropAllTSEs();
+        }
+    }
 }
 
 

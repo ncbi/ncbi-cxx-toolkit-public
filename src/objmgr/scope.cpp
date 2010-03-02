@@ -300,6 +300,18 @@ void CScope::ResetHistory(void)
 }
 
 
+void CScope::ResetDataAndHistory(void)
+{
+    m_Impl->ResetDataAndHistory();
+}
+
+
+void CScope::ResetDataAndHistory(ERemoveDataLoaders)
+{
+    m_Impl->ResetScope();
+}
+
+
 void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq)
 {
     m_Impl->RemoveFromHistory(bioseq.GetTSE_Handle());

@@ -126,18 +126,18 @@ CDataLoader* CDataSource_ScopeInfo::GetDataLoader(void)
 }
 
 
-bool CDataSource_ScopeInfo::IsShared(void) const
+bool CDataSource_ScopeInfo::IsConst(void) const
 {
     return !CanBeEdited() && GetDataSource().CanBeEdited();
 }
 
 
-void CDataSource_ScopeInfo::SetShared(void)
+void CDataSource_ScopeInfo::SetConst(void)
 {
     _ASSERT(CanBeEdited());
     _ASSERT(GetDataSource().CanBeEdited());
     m_CanBeEdited = false;
-    _ASSERT(IsShared());
+    _ASSERT(IsConst());
 }
 
     

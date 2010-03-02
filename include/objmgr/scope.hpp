@@ -287,6 +287,14 @@ public:
     /// Clean all unused TSEs from the scope's cache and release the memory.
     /// TSEs referenced by any handles are not removed.
     void ResetHistory(void);
+    /// Clear all information in the scope except added data loaders.
+    void ResetDataAndHistory(void);
+    /// Clear all information in the scope including data loaders.
+    enum ERemoveDataLoaders {
+        eRemoveDataLoaders
+    };
+    void ResetDataAndHistory(ERemoveDataLoaders remove_data_loaders);
+
     /// Remove single TSE from the scope's history. If there are other
     /// live handles referencing the TSE, nothing is removed.
     /// @param tse
