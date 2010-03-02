@@ -64,6 +64,19 @@ BEGIN_SCOPE(feature)
  * @{
  */
 
+enum FFeatLabelFlags {
+    fFGL_Type       = 1 <<  1, ///< Always include the feature's type.
+    fFGL_Content    = 1 <<  2, ///< Include its content if there is any.
+    fFGL_Both       = fFGL_Type | fFGL_Content,
+    fFGL_NoComments = 1 <<  3  ///< Leave out comments, even as fallbacks.
+};
+typedef int TFeatLabelFlags; ///< binary OR of FFeatLabelFlags
+
+NCBI_XOBJUTIL_EXPORT
+void GetLabel(const CSeq_feat& feat, string* label, TFeatLabelFlags flags,
+              CScope* scope = 0);
+
+/// For compatibility with legacy code.
 enum ELabelType {
     eType,
     eContent,
@@ -71,6 +84,7 @@ enum ELabelType {
 };
 
 NCBI_XOBJUTIL_EXPORT
+NCBI_DEPRECATED
 void GetLabel (const CSeq_feat&    feat, 
                string*             label, 
                feature::ELabelType label_type,

@@ -89,7 +89,7 @@ USING_SCOPE(sequence);
 
 
 // Appends a label onto "label" based on the type of feature       
-void s_GetTypeLabel(const CSeq_feat& feat, string* label)
+void s_GetTypeLabel(const CSeq_feat& feat, string* label, TFeatLabelFlags flags)
 {    
     string tlabel;
     
@@ -99,8 +99,9 @@ void s_GetTypeLabel(const CSeq_feat& feat, string* label)
         tlabel = feat.GetData().GetKey();
         if (feat.GetData().IsImp()  &&  tlabel != "CDS") {
             tlabel = "[" + tlabel + "]";
-        } else if (feat.GetData().IsRegion()  && 
-            feat.GetData().GetRegion() == "Domain"  &&  feat.IsSetComment() ) {
+        } else if ((flags & fFGL_NoComments) == 0  &&  feat.GetData().IsRegion()
+                   &&  feat.GetData().GetRegion() == "Domain"
+                   &&  feat.IsSetComment() ) {
             tlabel = "Domain";
         }
     } else if (feat.GetData().IsImp()) {
@@ -229,11 +230,12 @@ inline
 static void s_GetRnaRefLabelFromComment
 (const CSeq_feat& feat, 
  string*          label,
- ELabelType       label_type,
+ TFeatLabelFlags  flags,
  const string*    type_label)
 {
-    if (feat.IsSetComment()  &&  !feat.GetComment().empty()) {
-        if (label_type == eContent  &&  type_label != 0
+    if ((flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()
+        &&  !feat.GetComment().empty()) {
+        if ((flags & fFGL_Both == fFGL_Content)  &&  type_label != NULL
             &&  feat.GetComment().find(*type_label) == string::npos) {
             *label += *type_label + "-" + feat.GetComment();
         } else {
@@ -250,7 +252,7 @@ inline
 static void s_GetRnaRefLabel
 (const CSeq_feat& feat, 
  string*          label,
- ELabelType       label_type,
+ TFeatLabelFlags  flags,
  const string*    type_label)
 {
     // Check that label exists and that feature data is type RNA-ref
@@ -263,7 +265,7 @@ static void s_GetRnaRefLabel
     // Append the feature comment, the type label, or both  and return 
     // if Ext is not set
     if (!rna.IsSetExt()) {
-        s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+        s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
         return;
     }
     
@@ -272,7 +274,7 @@ static void s_GetRnaRefLabel
     string tmp_label;
     switch (rna.GetExt().Which()) {
     case CRNA_ref::C_Ext::e_not_set:
-        s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+        s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
         break;
     case CRNA_ref::C_Ext::e_Name:
         tmp_label = rna.GetExt().GetName();
@@ -286,8 +288,8 @@ static void s_GetRnaRefLabel
                 }
             }
         }
-        if (label_type == eContent  &&  type_label != 0  &&
-                tmp_label.find(*type_label) == string::npos) {
+        if ((flags & fFGL_Type) == 0  &&  type_label != 0
+            &&  tmp_label.find(*type_label) == string::npos) {
             *label += *type_label + "-" + tmp_label;
         } else if (!tmp_label.empty()) {
             *label += tmp_label;
@@ -298,7 +300,7 @@ static void s_GetRnaRefLabel
     case CRNA_ref::C_Ext::e_TRNA:
     {
         if ( !rna.GetExt().GetTRNA().IsSetAa() ) {
-            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+            s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
             break;                
         }
         try {
@@ -320,8 +322,7 @@ static void s_GetRnaRefLabel
                     aa_code = out_seq.GetNcbistdaa().Get()[0];
                     tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
                 } else {
-                    s_GetRnaRefLabelFromComment(feat, label, label_type,
-                                                type_label);
+                    s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
                 }
                 break;
             case CTrna_ext::C_Aa::e_Ncbieaa:
@@ -336,8 +337,7 @@ static void s_GetRnaRefLabel
                     aa_code = out_seq.GetNcbistdaa().Get()[0];
                     tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
                 } else {
-                    s_GetRnaRefLabelFromComment(feat, label, label_type,
-                                                type_label);
+                    s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
                 }
                 break;
             case CTrna_ext::C_Aa::e_Ncbi8aa:
@@ -354,8 +354,8 @@ static void s_GetRnaRefLabel
                 break;
             }
         
-            // Append to label, depending on ELabelType
-            if (label_type == eContent  &&  type_label != 0) {
+            // Append to label, depending on flags
+            if ((flags & fFGL_Type) == 0  &&  type_label != 0) {
                 *label += *type_label + "-" + tmp_label;
             } else if (!tmp_label.empty()) {
                 *label += tmp_label;
@@ -364,7 +364,7 @@ static void s_GetRnaRefLabel
             }
         } catch (CSeqportUtil::CBadIndex&) {
             // fall back to comment (if any)
-            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+            s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
         }
         
         break;
@@ -375,7 +375,7 @@ static void s_GetRnaRefLabel
         } else if (rna.GetExt().GetGen().CanGetClass()) {
             *label = rna.GetExt().GetGen().GetClass();
         } else {
-            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+            s_GetRnaRefLabelFromComment(feat, label, flags, type_label);
         }
         break;
     }
@@ -388,7 +388,7 @@ inline
 static bool s_GetImpLabel
 (const CSeq_feat&      feat, 
  string*               tlabel,
- ELabelType            label_type,
+ TFeatLabelFlags       flags,
  const string*         type_label)
 {
     // Return if tlablel does not exist or feature data is not Imp-feat
@@ -407,7 +407,7 @@ static bool s_GetImpLabel
             return true;
         }
     // else if the key is not Site-ref
-    } else if (label_type == eContent) {
+    } else if ((flags & fFGL_Type) == 0) {
         // If the key is CDS
         if (NStr::EqualNocase(key, "CDS")) {
             *tlabel += "[CDS]";
@@ -445,7 +445,7 @@ static bool s_GetImpLabel
             
             // If nothing has been appended yet
             if (empty) {
-                if (feat.IsSetComment()) {
+                if ((flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()) {
                     size_t pos = feat.GetComment().find(";");
                     if (pos == string::npos) {
                         *tlabel += feat.GetComment();
@@ -501,7 +501,7 @@ void s_GetContentLabel
 (const CSeq_feat&      feat,
  string*               label,
  const string*         type_label,
- ELabelType            label_type, 
+ TFeatLabelFlags       flags,
  CScope*               scope)
 {
     string tlabel;
@@ -521,7 +521,7 @@ void s_GetContentLabel
         feat.GetData().GetProt().GetLabel(&tlabel);
         break;
     case CSeqFeatData::e_Rna:
-        s_GetRnaRefLabel(feat, &tlabel, label_type, type_label);
+        s_GetRnaRefLabel(feat, &tlabel, flags, type_label);
         break;  
     case CSeqFeatData::e_Pub:
         feat.GetData().GetPub().GetPub().GetLabel(&tlabel); 
@@ -529,21 +529,23 @@ void s_GetContentLabel
     case CSeqFeatData::e_Seq:
         break;
     case CSeqFeatData::e_Imp:
-        if (s_GetImpLabel(feat, &tlabel, label_type, type_label)) {
+        if (s_GetImpLabel(feat, &tlabel, flags, type_label)) {
             *label += tlabel;
             return;
         }
         break;
     case CSeqFeatData::e_Region:
         if (feat.GetData().GetRegion().find("Domain") != string::npos  && 
-                feat.IsSetComment()) {
+            (flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()) {
             tlabel += feat.GetComment();
         } else {
             tlabel += feat.GetData().GetRegion();
         }
         break;
     case CSeqFeatData::e_Comment:
-        tlabel += feat.IsSetComment() ? feat.GetComment() : string("");
+        if ((flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()) {
+            tlabel += feat.GetComment();
+        }
         break;
     case CSeqFeatData::e_Bond:
         // Get the ASN string name for the enumerated EBond type
@@ -634,7 +636,7 @@ void s_GetContentLabel
     }
     
     // Put Seq-feat comment into label
-    if (feat.IsSetComment()) {
+    if ((flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()) {
         if (tlabel.empty()) {
             tlabel = feat.GetComment();
         } else {
@@ -649,7 +651,7 @@ void s_GetContentLabel
 void GetLabel
 (const CSeq_feat&    feat,
  string*             label,
- ELabelType          label_type,
+ TFeatLabelFlags     flags,
  CScope*             scope)
 {
  
@@ -660,24 +662,41 @@ void GetLabel
     
     // Get the type label
     string type_label;
-    s_GetTypeLabel(feat, &type_label);
+    s_GetTypeLabel(feat, &type_label, flags);
     
     // Append the type label and return if content label not required
-    if (label_type == eBoth) {
-        *label += type_label + ": ";
-    } else if (label_type == eType) {
+    if ((flags & fFGL_Type) != 0) {
         *label += type_label;
-        return;
+        if ((flags & fFGL_Content) != 0) {
+            *label += ": ";
+        } else {
+            return;
+        }
     }
     
     // Append the content label
     size_t label_len = label->size();
-    s_GetContentLabel(feat, label, &type_label, label_type, scope);
+    s_GetContentLabel(feat, label, &type_label, flags, scope);
     
     // If there is no content label, append the type label
-    if (label->size() == label_len  &&  label_type == eContent) {
+    if (label->size() == label_len  &&  (flags & fFGL_Type) == 0) {
         *label += type_label;
     }
+}
+
+
+void GetLabel (const CSeq_feat&    feat, 
+               string*             label, 
+               feature::ELabelType label_type,
+               CScope*             scope)
+{
+    TFeatLabelFlags flags = 0;
+    switch (label_type) {
+    case eType:    flags = fFGL_Type;     break;
+    case eContent: flags = fFGL_Content;  break;
+    case eBoth:    flags = fFGL_Both;     break;
+    }
+    GetLabel(feat, label, flags, scope);
 }
 
 
@@ -783,8 +802,8 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
                                   CScope* scope)
 {
     string l1, l2;
-    GetLabel(f1, &l1, eBoth, scope);
-    GetLabel(f2, &l2, eBoth, scope);
+    GetLabel(f1, &l1, fFGL_Both, scope);
+    GetLabel(f2, &l2, fFGL_Both, scope);
     return l1 < l2;
 }
 

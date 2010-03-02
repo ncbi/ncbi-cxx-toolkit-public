@@ -752,13 +752,13 @@ string CDeflineGenerator::x_TitleFromNM (
     if (genes == 1 && cdregions == 1 && (! m_Taxname.empty())) {
         result = m_Taxname + " ";
         string cds_label;
-        feature::GetLabel (*cdregion, &cds_label, feature::eContent, &scope);
+        feature::GetLabel(*cdregion, &cds_label, feature::fFGL_Content, &scope);
         if (NStr::EqualNocase (m_Taxname, "Drosophila melanogaster")) {
             x_FlyCG_PtoR (cds_label);
         }
         result += NStr::Replace (cds_label, "isoform ", "transcript variant ");
         result += " (";
-        feature::GetLabel (*gene, &result, feature::eContent, &scope);
+        feature::GetLabel(*gene, &result, feature::fFGL_Content, &scope);
         result += "), mRNA";
     }
 
@@ -785,7 +785,7 @@ string CDeflineGenerator::x_TitleFromNR (
         const CSeq_feat& sft = *it;
         if (FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Gene))) {
             result = m_Taxname + " ";
-            feature::GetLabel(*it, &result, feature::eContent);
+            feature::GetLabel(*it, &result, feature::fFGL_Content);
             result += ", ";
             switch (m_MIBiomol) {
                 case NCBI_BIOMOL(pre_RNA):

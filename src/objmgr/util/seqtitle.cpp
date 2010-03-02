@@ -325,7 +325,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             &&  source->GetOrg().IsSetTaxname()) {
             title = source->GetOrg().GetTaxname() + ' ';
             string cds_label;
-            feature::GetLabel(*cdregion, &cds_label, feature::eContent,
+            feature::GetLabel(*cdregion, &cds_label, feature::fFGL_Content,
                               &scope);
             if (NStr::EqualNocase(source->GetOrg().GetTaxname(),
                                   "Drosophila melanogaster")) {
@@ -334,7 +334,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             title += NStr::Replace(cds_label, "isoform ",
                                    "transcript variant ");
             title += " (";
-            feature::GetLabel(*gene, &title, feature::eContent,
+            feature::GetLabel(*gene, &title, feature::fFGL_Content,
                               &scope);
             title += "), mRNA";
         }
@@ -345,7 +345,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
              it;  ++it) {
             if (it->GetData().IsGene()) {
                 title = source->GetOrg().GetTaxname() + ' ';
-                feature::GetLabel(*it, &title, feature::eContent);
+                feature::GetLabel(*it, &title, feature::fFGL_Content);
                 title += ", ";
                 switch (mol_info->GetBiomol()) {
                 case CMolInfo::eBiomol_pre_RNA: title += "precursorRNA"; break;
