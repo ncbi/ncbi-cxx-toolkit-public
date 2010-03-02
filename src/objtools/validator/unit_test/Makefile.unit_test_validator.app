@@ -1,7 +1,7 @@
 # $Id$
 
 APP = unit_test_validator
-SRC = unit_test_validator
+SRC = unit_test_validator wrong_qual
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
