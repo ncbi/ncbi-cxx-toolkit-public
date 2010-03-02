@@ -558,6 +558,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields,
    TErrStrs( "BadStructuredCommentFormatMultipleFields",
 "Structured comment is missing required fields or field values do not conform to correct format.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceNeedsChromosome,
+   TErrStrs( "BioSourceNeedsChromosome",
+"Chromosome should be set on a BioSource descriptor in non-viral complete genomes.")),
 
 /* SEQ_GENERIC */
 

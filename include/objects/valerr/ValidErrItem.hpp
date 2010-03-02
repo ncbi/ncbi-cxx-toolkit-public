@@ -215,6 +215,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
     eErr_SEQ_DESCR_BadStructuredCommentFormatFieldOutOfOrder,
     eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields,
+    eErr_SEQ_DESCR_BioSourceNeedsChromosome,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

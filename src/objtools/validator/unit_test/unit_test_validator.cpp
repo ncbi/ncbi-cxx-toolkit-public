@@ -224,6 +224,20 @@ static void CheckErrors (const CValidError& eval, vector< CExpectedError* >& exp
 	                      | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
+#define STANDARD_SETUP_WITH_DATABASE \
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
+    CGBDataLoader::RegisterInObjectManager(*objmgr); \
+    CScope scope(*objmgr); \
+    scope.AddDefaults(); \
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
+    CConstRef<CValidError> eval; \
+    CValidator validator(*objmgr); \
+    unsigned int options = CValidator::eVal_need_isojta \
+                          | CValidator::eVal_far_fetch_mrna_products \
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+	                      | CValidator::eVal_use_entrez; \
+    vector< CExpectedError *> expected_errors;
+
 
 
 static void SetDbxref (CBioSource& src, string db, size_t id)
@@ -425,7 +439,46 @@ static void AddFeatAnnotToSeqEntry (CRef<CSeq_annot> annot, CRef<CSeq_entry> ent
 }
 
 
-static void AddGoodSourceFeature(CRef<CSeq_entry> entry)
+static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_annot> annot;
+
+    if (entry->IsSeq()) {
+        if (!entry->GetSeq().IsSetAnnot() 
+            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSeq().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSeq().SetAnnot().front();
+        }
+    } else if (entry->IsSet()) {
+        if (!entry->GetSet().IsSetAnnot() 
+            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSet().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSet().SetAnnot().front();
+        }
+    }
+    annot->SetData().SetFtable().push_back(feat);
+}
+
+
+static CRef<CSeq_feat> AddProtFeat(CRef<CSeq_entry> entry) 
+{
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetProt().SetName().push_back("fake protein name");
+    feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    AddFeat (feat, entry);
+    return feat;
+}
+
+
+static CRef<CSeq_feat> AddGoodSourceFeature(CRef<CSeq_entry> entry)
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
@@ -437,19 +490,38 @@ static void AddGoodSourceFeature(CRef<CSeq_entry> entry)
     CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetFtable().push_back(feat);
     AddFeatAnnotToSeqEntry (annot, entry);
+    return feat;
 }
 
 
-static CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, string local_id = "good", size_t right_end = 10)
+static CRef<CSeq_feat> MakeMiscFeature(CRef<CSeq_id> id, size_t right_end = 10, size_t left_end = 0)
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr(local_id);
-    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetId().Assign(*id);
+    feat->SetLocation().SetInt().SetFrom(left_end);
     feat->SetLocation().SetInt().SetTo(right_end);
     feat->SetData().SetImp().SetKey("misc_feature");
-    CRef<CSeq_annot> annot(new CSeq_annot());
-    annot->SetData().SetFtable().push_back(feat);
-    AddFeatAnnotToSeqEntry (annot, entry);
+    return feat;
+}
+
+
+static CRef<CSeq_id> IdFromEntry(CRef<CSeq_entry> entry)
+{
+    if (entry->IsSeq()) {
+        return entry->SetSeq().SetId().front();
+    } else if (entry->IsSet()) {
+        return IdFromEntry (entry->SetSet().SetSeq_set().front());
+    } else {
+        CRef<CSeq_id> empty;
+        return empty;
+    }
+}
+
+
+static CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end = 10)
+{
+    CRef<CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
+    AddFeat (feat, entry);
     return feat;
 }
 
@@ -585,6 +657,27 @@ static void SetOrigin (CRef<CSeq_entry> entry, CBioSource::TOrigin origin)
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrigin(origin);
+            }
+        }
+    }
+}
+
+
+static void SetGcode (CRef<CSeq_entry> entry, COrgName::TGcode gcode)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
             }
         }
     }
@@ -993,33 +1086,6 @@ static void SetBiomol (CRef<CSeq_entry> entry, CMolInfo::TBiomol biomol)
 }
 
 
-static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
-{
-    CRef<CSeq_annot> annot;
-
-    if (entry->IsSeq()) {
-        if (!entry->GetSeq().IsSetAnnot() 
-            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
-            CRef<CSeq_annot> new_annot(new CSeq_annot());
-            entry->SetSeq().SetAnnot().push_back(new_annot);
-            annot = new_annot;
-        } else {
-            annot = entry->SetSeq().SetAnnot().front();
-        }
-    } else if (entry->IsSet()) {
-        if (!entry->GetSet().IsSetAnnot() 
-            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
-            CRef<CSeq_annot> new_annot(new CSeq_annot());
-            entry->SetSet().SetAnnot().push_back(new_annot);
-            annot = new_annot;
-        } else {
-            annot = entry->SetSet().SetAnnot().front();
-        }
-    }
-    annot->SetData().SetFtable().push_back(feat);
-}
-
-
 static CRef<CSeq_entry> BuildGoodProtSeq(void)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -1033,12 +1099,7 @@ static CRef<CSeq_entry> BuildGoodProtSeq(void)
         }
     }
 
-    CRef<CSeq_feat> feat (new CSeq_feat());
-    feat->SetData().SetProt().SetName().push_back("fake protein name");
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(6);
-    AddFeat (feat, entry);
+    AddProtFeat (entry);
 
     return entry;
 }
@@ -1111,6 +1172,164 @@ static CRef<CSeq_entry> BuildGoodNucProtSet(void)
     AddGoodSource (set_entry);
     AddGoodPub(set_entry);
     return set_entry;
+}
+
+
+static void AdjustProtFeatForNucProtSet(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> prot;
+    CRef<CSeq_entry> prot_seq;
+
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        prot_seq = entry;
+        prot = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    } else if (entry->IsSet()) {
+        prot_seq = entry->SetSet().SetSeq_set().back();
+        prot = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    }
+    if (prot && prot_seq) {
+        prot->SetLocation().SetInt().SetTo(prot_seq->SetSeq().SetInst().SetLength() - 1);
+    }
+}
+
+
+static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
+{
+    if (entry->IsSeq()) {
+        bool found = false;
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsMolinfo()) {
+                (*it)->SetMolinfo().SetCompleteness (completeness);
+                found = true;
+            }
+        }
+        if (!found) {
+            CRef<CSeqdesc> mdesc(new CSeqdesc());
+            if (entry->GetSeq().IsAa()) {
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+            } else {
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+            }
+            mdesc->SetMolinfo().SetCompleteness (completeness);
+            entry->SetSeq().SetDescr().Set().push_back(mdesc);
+        }
+    }
+}
+
+
+static void MakeNucProtSet3Partial (CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetTo(59);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACAAAGGGATGCCCAGAAAAACAGAGATAAACAAAGGG");
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEINKGMPRKTEINKG");
+    prot_seq->SetSeq().SetInst().SetLength(20);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    CRef<CSeq_feat> prot = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot->SetLocation().SetInt().SetTo(19);
+    prot->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    prot->SetPartial(true);
+    
+}
+
+
+static void ChangeId(CRef<CSeq_annot> annot, CRef<CSeq_id> id)
+{
+    if (annot && annot->IsFtable()) {
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        while (it != annot->SetData().SetFtable().end()) {
+            (*it)->SetLocation().SetInt().SetId().Assign(*id);
+            ++it;
+        }
+    }
+}
+
+
+static void ChangeProductId(CRef<CSeq_annot> annot, CRef<CSeq_id> id)
+{
+    if (annot && annot->IsFtable()) {
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        while (it != annot->SetData().SetFtable().end()) {
+            if ((*it)->IsSetProduct()) {
+                (*it)->SetProduct().SetWhole().Assign(*id);
+            }
+            ++it;
+        }
+    }
+}
+
+
+static void ChangeNucId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
+{
+    if (!np_set || !np_set->IsSet()) {
+        return;
+    }
+
+    CRef<CSeq_entry> nuc_entry = np_set->SetSet().SetSeq_set().front();
+
+    nuc_entry->SetSeq().SetId().front()->Assign(*id);
+    EDIT_EACH_SEQANNOT_ON_BIOSEQ (annot_it, nuc_entry->SetSeq()) {
+        ChangeId (*annot_it, id);
+    }
+    EDIT_EACH_SEQANNOT_ON_SEQSET (annot_it, np_set->SetSet()) {
+        ChangeId (*annot_it, id);
+    }
+}
+
+
+static void ChangeProtId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
+{
+    if (!np_set || !np_set->IsSet()) {
+        return;
+    }
+
+    CRef<CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    prot_entry->SetSeq().SetId().front()->Assign(*id);
+    EDIT_EACH_SEQANNOT_ON_BIOSEQ (annot_it, prot_entry->SetSeq()) {
+        ChangeId (*annot_it, id);
+    }
+
+    EDIT_EACH_SEQANNOT_ON_SEQSET (annot_it, np_set->SetSet()) {
+        ChangeProductId (*annot_it, id);
+    }
+}
+
+
+static CRef<CSeq_id> BuildRefSeqId(void)
+{
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetOther().SetAccession("NC_123456");
+    return id;
+}
+
+
+static void ChangeId(CRef<CSeq_entry> entry, CRef<CSeq_id> id)
+{
+    if (entry->IsSeq()) {
+        entry->SetSeq().SetId().front()->Assign(*id);
+        if (entry->SetSeq().IsSetAnnot()) {
+            CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
+            while (annot_it != entry->SetSeq().SetAnnot().end()) {
+                if ((*annot_it)->IsFtable()) {
+                    CSeq_annot::C_Data::TFtable::iterator it = (*annot_it)->SetData().SetFtable().begin();
+                    while (it != (*annot_it)->SetData().SetFtable().end()) {
+                        (*it)->SetLocation().SetId(*id);
+                        ++it;
+                    }
+                }
+                ++annot_it;
+            }
+        }
+    }
 }
 
 
@@ -1450,6 +1669,63 @@ static void RemoveDescriptorType (CRef<CSeq_entry> entry, CSeqdesc::E_Choice des
 }
 
 
+CRef<CSeq_feat> BuildtRNA(CRef<CSeq_id> id)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetId().Assign(*id);
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(10);
+
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    feat->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('N');
+    feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetId().Assign(*id);
+    feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(11);
+    feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(13);
+
+    return feat;
+}
+
+
+CRef<CSeq_loc> MakeMixLoc (CRef<CSeq_id> id)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(15);
+    loc1->SetInt().SetId().Assign(*id);
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(46);
+    loc2->SetInt().SetTo(56);
+    loc2->SetInt().SetId().Assign(*id);
+    CRef<CSeq_loc> mixloc(new CSeq_loc());
+    mixloc->SetMix().Set().push_back(loc1);
+    mixloc->SetMix().Set().push_back(loc2);
+    return mixloc;
+}
+
+
+static void SetSpliceForMixLoc (CBioseq& seq)
+{
+    seq.SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
+    seq.SetInst().SetSeq_data().SetIupacna().Set()[17] = 'T';
+    seq.SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
+    seq.SetInst().SetSeq_data().SetIupacna().Set()[45] = 'G';
+}
+
+
+static CRef<CSeq_feat> MakeGeneForFeature (CRef<CSeq_feat> feat)
+{
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetLocation().SetInt().SetId().Assign(*(feat->GetLocation().GetId()));
+    gene->SetLocation().SetInt().SetStrand(feat->GetLocation().GetStrand());
+    gene->SetLocation().SetInt().SetFrom(feat->GetLocation().GetStart(eExtreme_Positional));
+    gene->SetLocation().SetInt().SetTo(feat->GetLocation().GetStop(eExtreme_Positional));
+    return gene;
+}
+    
+
+// new case test ground
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -1716,30 +1992,6 @@ const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
                   id\
                     local str \"LocusCollidesWithLocusTag\" } } } } } }\
 ";
-
-
-static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
-{
-    if (entry->IsSeq()) {
-        bool found = false;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsMolinfo()) {
-                (*it)->SetMolinfo().SetCompleteness (completeness);
-                found = true;
-            }
-        }
-        if (!found) {
-            CRef<CSeqdesc> mdesc(new CSeqdesc());
-            if (entry->GetSeq().IsAa()) {
-                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-            } else {
-                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-            }
-            mdesc->SetMolinfo().SetCompleteness (completeness);
-            entry->SetSeq().SetDescr().Set().push_back(mdesc);
-        }
-    }
-}
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_CircularProtein)
@@ -2146,25 +2398,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     // list of expected errors
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept();
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept_text();
-    delete expected_errors[1];
-    expected_errors[1] = NULL;
-    expected_errors[2]->SetSeverity(eDiag_Error);
-    expected_errors[3]->SetSeverity(eDiag_Error);
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
-    delete expected_errors[2];
-    expected_errors[2] = NULL;
-    expected_errors[3]->SetErrMsg("3 internal stops. Genetic code [0]");
+    delete expected_errors[1];
+    expected_errors[1] = NULL;
+    expected_errors[2]->SetErrMsg("3 internal stops. Genetic code [0]");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2521,8 +2775,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     }
 
     // don't report if NT or NC
-    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2993,37 +3247,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
 }
 
 
-static void ChangeNucId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
-{
-    if (!np_set || !np_set->IsSet()) {
-        return;
-    }
-
-    CRef<CSeq_entry> nuc_entry = np_set->SetSet().SetSeq_set().front();
-    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
-
-    nuc_entry->SetSeq().SetId().front()->Assign(*id);
-    cds->SetLocation().SetInt().SetId().Assign(*id);
-}
-
-
-static void ChangeProtId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
-{
-    if (!np_set || !np_set->IsSet()) {
-        return;
-    }
-
-    CRef<CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
-    CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-    CRef<CSeq_feat> cds = np_set->SetSet().SetAnnot().front()->SetData().SetFtable().front();
-
-    prot_entry->SetSeq().SetId().front()->Assign(*id);
-    prot_feat->SetLocation().SetInt().SetId().Assign(*id);
-    cds->SetProduct().SetWhole().Assign(*id);
-
-}
-
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
@@ -3062,6 +3285,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     vector<string> good_nuc_ids;
     good_nuc_ids.push_back("AY123456");
     good_nuc_ids.push_back("A12345");
+    good_nuc_ids.push_back("ABCD123456789");
 
     vector<string> good_prot_ids;
     good_prot_ids.push_back("ABC12345");
@@ -3189,6 +3413,24 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
+    }
+
+    // good for nucs
+    for (vector<string>::iterator id_it = good_nuc_ids.begin();
+         id_it != good_nuc_ids.end();
+         ++id_it) {
+        string id_str = *id_it;
+        bad_id->SetGenbank().SetAccession(id_str);
+        scope.RemoveTopLevelSeqEntry(seh);
+        ChangeNucId(entry, bad_id);
+        ChangeProtId(entry, good_prot_id);
+        if (id_str.length() == 12 ||id_str.length() == 13) {
+            SetTech (entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_wgs);
+        }
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        SetTech(entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_unknown);
     }
 
     // good for just prots
@@ -3876,9 +4118,14 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
 
     CLEAR_ERRORS
 
+    scope.RemoveTopLevelSeqEntry(seh);
     // if length 11, should not be a problem
+    entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGenbank().SetAccession("AY123456");
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(10);
     entry->SetSeq().SetInst().SetLength(33);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 }
@@ -3945,6 +4192,7 @@ BOOST_AUTO_TEST_CASE(Test_CompleteTitleProblem)
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    SetLineage (entry, "Viruses; foo");
     SetTitle(entry, "Foo complete genome");
 
     STANDARD_SETUP
@@ -4376,10 +4624,10 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCNNNNNNNNNNNNNNNTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTT");
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCNNNNNNNNNNNNNNNNTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTT");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Sequence contains 15 percent Ns");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of 15 Ns"));
+    expected_errors[0]->SetErrMsg("Sequence contains 16 percent Ns");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of 16 Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -6222,8 +6470,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    SetGenome(entry, CBioSource::eGenome_apicoplast);
-    expected_errors[0]->SetErrMsg("HIV with moltype RNA should have source location unset or set to genomic (on genomic RNA sequence)");
+    SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    expected_errors[0]->SetErrMsg("HIV with mRNA molecule type is rare");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8393,6 +8641,52 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetBiomol (entry, CMolInfo::eBiomol_genomic);
+    SetCompleteness (entry, CMolInfo::eCompleteness_complete);
+    SetTitle (entry, "Sebaea microphylla, complete genome.");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceNeedsChromosome",
+                              "Non-viral complete genome not labeled as chromosome"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // error goes away if viruses in lineage
+    SetLineage(entry, "Viruses; ");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetLineage(entry, "some lineage");
+
+    // if not genomic
+    SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetBiomol (entry, CMolInfo::eBiomol_genomic);
+
+    // if not end with complete genome
+    SetTitle (entry, "Sebaea microphylla, complete sequence.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    SetTitle (entry, "Sebaea microphylla, complete genome.");
+
+    // if source location chromosome
+    SetGenome (entry, CBioSource::eGenome_chromosome);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ChromosomeLocation",
+                   "INDEXER_ONLY - BioSource location is chromosome"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Generic_NonAsciiAsn)
 {
     // prepare entry
@@ -9677,7 +9971,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
 {
     CRef<CSeq_entry> entry = BuildGoodSegSet();
     CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    AddMiscFeature(parts_set->SetSet().SetSeq_set().front(), "part3");
+    CRef<CSeq_feat> misc_feat = AddMiscFeature(parts_set->SetSet().SetSeq_set().front());
+    misc_feat->SetLocation().SetInt().SetId().SetLocal().SetStr("part3");
 
     STANDARD_SETUP
 
@@ -9692,7 +9987,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
     expected_errors.push_back(new CExpectedError("", eDiag_Critical, "FeaturePackagingProblem",
                                                  "There are 2 mispackaged features in this record."));
     scope.RemoveTopLevelSeqEntry(seh);
-    AddMiscFeature(parts_set, "master");
+    misc_feat = AddMiscFeature(parts_set);
+    misc_feat->SetLocation().SetInt().SetId().SetLocal().SetStr("master");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10010,6 +10306,6721 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(5);
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
+    feat->SetData().SetCdregion();
+    feat->SetPseudo(true);
+    AddFeat (feat, entry->SetSet().SetSeq_set().back());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "InvalidForType",
+                                                 "Invalid feature for a protein Bioseq."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetRna();
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetRsite();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetTxinit();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetGene().SetLocus("good locus");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().pop_back();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc");
+    feat->SetData().SetProt().SetName().push_back("prot name");
+    AddFeat(feat, entry->SetSet().SetSeq_set().front());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Invalid feature for a nucleotide Bioseq.");
+    expected_errors[0]->SetAccession("nuc");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetData().SetPsec_str();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(10);
+    loc1->SetInt().SetId().Assign(*(entry->SetSeq().GetId().front()));
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(21);
+    loc2->SetInt().SetTo(35);
+    loc2->SetInt().SetId().Assign(*(entry->SetSeq().GetId().front()));
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->SetLocation().SetMix().Set().push_back(loc1);
+    cds->SetLocation().SetMix().Set().push_back(loc2);
+    cds->SetData().SetCdregion();
+    cds->SetPseudo(true);
+    AddFeat(cds, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetErrMsg("Multi-interval CDS feature is invalid on an mRNA (cDNA) Bioseq.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // different warning level if RefSeq
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> rsid(new CSeq_id());
+    rsid->SetOther().SetAccession("NY_123456");
+    ChangeId(entry, rsid);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetAccession("NY_123456");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> good_id(new CSeq_id());
+    good_id->SetLocal().SetStr("good");
+    ChangeId(entry, good_id);
+    cds->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetErrMsg("mRNA feature is invalid on an mRNA (cDNA) Bioseq.");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    cds->SetData().SetImp().SetKey("CAAT_signal");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Invalid feature for an mRNA Bioseq.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetBiomol(entry, CMolInfo::eBiomol_pre_RNA);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Invalid feature for an pre-RNA Bioseq.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    vector<string> peptide_feat;
+    peptide_feat.push_back("mat_peptide");
+    peptide_feat.push_back("sig_peptide");
+    peptide_feat.push_back("transit_peptide");
+    peptide_feat.push_back("preprotein");
+    peptide_feat.push_back("proprotein");
+    
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> imp(new CSeq_feat());
+    imp->SetLocation().SetInt().SetFrom(0);
+    imp->SetLocation().SetInt().SetTo(5);
+    imp->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
+    AddFeat(imp, entry->SetSet().SetSeq_set().back());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("Peptide processing feature should be converted to the appropriate protein feature subtype");
+    CRef<CSeq_id> local_id(new CSeq_id());
+    local_id->SetLocal().SetStr("good");
+    ITERATE(vector<string>, key, peptide_feat) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        ChangeProtId(entry, local_id);
+        imp->SetData().SetImp().SetKey(*key);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        expected_errors[0]->SetAccession("good");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        scope.RemoveTopLevelSeqEntry(seh);
+        ChangeProtId(entry, rsid);
+        imp->SetData().SetImp().SetKey(*key);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        expected_errors[0]->SetAccession("NY_123456");
+        expected_errors[0]->SetSeverity(eDiag_Error);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    vector<string> rna_feat;
+    rna_feat.push_back("mRNA");
+    rna_feat.push_back("tRNA");
+    rna_feat.push_back("rRNA");
+    rna_feat.push_back("snRNA");
+    rna_feat.push_back("scRNA");
+    rna_feat.push_back("snoRNA");
+    rna_feat.push_back("misc_RNA");
+    rna_feat.push_back("precursor_RNA");
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("RNA feature should be converted to the appropriate RNA feature subtype, location should be converted manually");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[0]->SetAccession("good");
+    ITERATE(vector<string>, key, rna_feat) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        entry->SetSeq().ResetAnnot();
+        CRef<CSeq_feat> rna = AddMiscFeature(entry);
+        rna->SetData().SetImp().SetKey(*key);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    vector<CProt_ref::TProcessed> prot_types;
+    prot_types.push_back(CProt_ref::eProcessed_mature);
+    prot_types.push_back(CProt_ref::eProcessed_transit_peptide);
+    prot_types.push_back(CProt_ref::eProcessed_signal_peptide);
+    prot_types.push_back(CProt_ref::eProcessed_preprotein);
+
+    entry->SetSeq().ResetAnnot();
+    CRef<CSeq_feat> prot(new CSeq_feat());
+    prot->SetLocation().SetInt().SetFrom(0);
+    prot->SetLocation().SetInt().SetTo(10);
+    prot->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    prot->SetData().SetProt().SetName().push_back("unnamed");
+    AddFeat(prot, entry);
+    expected_errors[0]->SetErrMsg("Invalid feature for a nucleotide Bioseq.");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InvalidForType",
+        "Peptide processing feature should be remapped to the appropriate protein bioseq"));
+
+    ITERATE(vector<CProt_ref::TProcessed>, key, prot_types) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        ChangeId(entry, local_id);
+        prot->SetData().SetProt().SetProcessed(*key);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        expected_errors[0]->SetAccession("good");
+        expected_errors[1]->SetAccession("good");
+        expected_errors[1]->SetSeverity(eDiag_Warning);
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+
+        scope.RemoveTopLevelSeqEntry(seh);
+        ChangeId(entry, rsid);
+        prot->SetData().SetProt().SetProcessed(*key);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        expected_errors[0]->SetAccession("NY_123456");
+        expected_errors[1]->SetAccession("NY_123456");
+        expected_errors[1]->SetSeverity(eDiag_Error);
+        expected_errors.push_back(new CExpectedError("NY_123456", eDiag_Warning, "UndesiredProteinName",
+                                                     "Uninformative protein name 'unnamed'"));
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+        delete expected_errors[2];
+        expected_errors.pop_back();
+    }
+
+
+
+    CLEAR_ERRORS
+}
+
+
+static CRef<CSeq_entry> BuildGoodSpliceNucProtSet (void)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet ();
+    CRef<CSeq_entry> nseq = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> pseq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat>  cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat>  prot = pseq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+
+    nseq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGGTATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+
+    cds->SetLocation().Assign(*MakeMixLoc(nseq->SetSeq().SetId().front()));
+#if 0
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetId().SetLocal().SetStr("nuc");
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(15);
+
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetId().SetLocal().SetStr("nuc");
+    loc2->SetInt().SetFrom(46);
+    loc2->SetInt().SetTo(56);
+
+    cds->SetLocation().SetMix().Set().push_back(loc1);
+    cds->SetLocation().SetMix().Set().push_back(loc2);
+#endif
+
+    return entry;
+}
+   
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    SetCompleteness (entry->SetSet().SetSeq_set().back(), CMolInfo::eCompleteness_complete);
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is partial but protein is complete"));
+    // cds 5' partial, protein complete
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds 5' complete, protein 5' partial
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    cds->SetPartial(false);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+                                                 "Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is 5' complete but protein is NH2 partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds 5' partial, protein 3' partial
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is 3' complete but protein is CO2 partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                                                 "CDS is 5' partial but protein is CO2 partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds 3' partial, protein 5' partial
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is 5' complete but protein is NH2 partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is 3' partial but protein is NH2 partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds 5' partial, protein no ends
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                                                 "CDS is 5' partial but protein has neither end"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds 3' partial, protein no ends
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is 3' partial but protein has neither end"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // cds complete, protein no ends
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    cds->SetPartial(false);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+        "Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is complete but protein has neither end"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    // misc feature with location whole but not marked partial
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_complete);
+    SetCompleteness (nuc_seq, CMolInfo::eCompleteness_no_left);
+    CRef<CSeq_feat> misc_feat = AddMiscFeature (nuc_seq);
+    misc_feat->SetLocation().SetWhole().SetLocal().SetStr("nuc");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "WholeLocation",
+        "Feature may not have whole location"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "PartialProblem",
+        "On partial Bioseq, SeqFeat.partial should be TRUE"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+ 
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetCompleteness (nuc_seq, CMolInfo::eCompleteness_unknown);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    cds->SetPartial(true);
+    nuc_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().pop_back();
+    misc_feat = AddMiscFeature (nuc_seq);
+    misc_feat->SetPartial(true);
+    misc_feat->SetProduct().SetWhole().SetLocal().SetStr("prot");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "When SeqFeat.product is a partial Bioseq, SeqFeat.location should also be partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    nuc_seq->SetSeq().ResetAnnot();
+    CRef<CSeq_loc> first(new CSeq_loc());
+    first->SetInt().SetId().SetLocal().SetStr("nuc");
+    first->SetInt().SetFrom(0);
+    first->SetInt().SetTo(5);
+    CRef<CSeq_loc> middle(new CSeq_loc());
+    middle->SetNull();
+    CRef<CSeq_loc> last(new CSeq_loc());
+    last->SetInt().SetId().SetLocal().SetStr("nuc");
+    last->SetInt().SetFrom(7);
+    last->SetInt().SetTo(10);
+
+    CRef<CSeq_feat> gene_feat(new CSeq_feat());
+    gene_feat->SetData().SetGene().SetLocus("locus value");
+    gene_feat->SetLocation().SetMix().Set().push_back(first);
+    gene_feat->SetLocation().SetMix().Set().push_back(middle);
+    gene_feat->SetLocation().SetMix().Set().push_back(last);
+    AddFeat (gene_feat, nuc_seq);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "MultiIntervalGene",
+        "Gene feature on non-segmented sequence should not have multiple intervals"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "Gene of 'order' with otherwise complete location should have partial flag set"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSgeneRange",
+        "gene overlaps CDS but does not completely contain it"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    nuc_seq->SetSeq().ResetAnnot();
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    cds->SetPartial(true);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_partial);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "5' or 3' partial location should not have unclassified partial in product molinfo descriptor"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSpliceNucProtSet();
+    misc_feat = AddMiscFeature (entry->SetSet().SetSeq_set().front(), 15);
+    misc_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    misc_feat->SetPartial(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "PartialProblem",
+        "PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    misc_feat->SetLocation().SetInt().SetFrom(46);
+    misc_feat->SetLocation().SetInt().SetTo(56);
+    misc_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc_feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("PartialLocation: Start does not include first/last residue of sequence (but is at consensus splice site)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    // take misc_feat away
+    entry->SetSet().SetSeq_set().front()->SetSeq().ResetAnnot();
+    // cds, but splicing not expected
+    SetDiv (entry, "BCT");
+    entry->SetSet().ResetAnnot();
+    cds.Reset(new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetProduct().SetWhole().SetLocal().SetStr("prot");
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc");
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(15);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    AddFeat (cds, entry->SetSet().SetSeq_set().front());
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKT");
+    prot_seq->SetSeq().SetInst().SetLength(5);
+    prot_seq->SetSeq().ResetAnnot();
+    CRef<CSeq_feat> prot_feat = AddProtFeat(prot_seq);   
+    prot_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    prot_feat->SetPartial(true);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // splicing expected but on mRNA
+    SetDiv (entry, "PRI");
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site, but is on an mRNA that is already spliced)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetFrom(3);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[2] = '#';
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("PRKTEIN");
+    prot_seq->SetSeq().SetInst().SetLength(7);
+    prot_feat = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot_feat->SetLocation().SetInt().SetTo(6);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue '#' at position [3]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "PartialProblem",
+        "PartialLocation: Start does not include first/last residue of sequence (and is at bad sequence)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetTo(23);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[24] = '#';
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Invalid residue '#' at position [25]");
+    expected_errors[1]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (and is at bad sequence)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetFrom(3);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("PRKTEIN");
+    prot_seq->SetSeq().SetInst().SetLength(7);
+    prot_feat = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot_feat->SetLocation().SetInt().SetTo(6);
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetTo(23);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetPartial(true);
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetLocation().SetInt().SetFrom(3);
+    misc_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc_feat->SetPartial(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PartialProblem",
+        "PartialLocation: Start does not include first/last residue of sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    misc_feat->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    misc_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    misc_feat->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    misc_feat->SetLocation().SetMix().Set().front()->SetPartialStop(true, eExtreme_Biological);
+    expected_errors[0]->SetErrMsg("PartialLocation: Internal partial intervals do not include first/last residue of sequence");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetPartial(true);
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("KPRKTEIN");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+        "Inconsistent: Product= complete, Location= complete, Feature.partial= TRUE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+        "Start of location should probably be partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MisMatchAA",
+        "Residue 1 in protein [K] != translation [M] at lcl|nuc:both1-3"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetPartial(true);
+    cds->SetLocation().SetInt().SetTo(23);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+        "Inconsistent: Product= complete, Location= complete, Feature.partial= TRUE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+        "End of location should probably be partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetPartial(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[1]->SetErrMsg("This SeqFeat should not be partial");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+        "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "Got stop codon, but 3'end is labeled partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidType)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetData().Reset();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidType",
+                                                 "Invalid SeqFeat type [0]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(14);
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Range",
+                                                 "Anticodon is not 3 bases in length"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Range",
+                                                 "Anticodon location not in tRNA"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "Range",
+        "Anticodon location [lcl|good:15-14] out of range"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(100);
+    expected_errors[2]->SetErrMsg("Anticodon location [lcl|good:15-101] out of range");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(50);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(-1);
+    expected_errors[2]->SetErrMsg("Anticodon location [lcl|good:0-51] out of range");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CCode_break> codebreak(new CCode_break());
+    codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak->SetLoc().SetInt().SetFrom(27);
+    codebreak->SetLoc().SetInt().SetTo(29);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "Range",
+                                                 "Code-break location not in coding region"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('N');
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetId().SetLocal().SetStr("good");
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(11);
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(13);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Range",
+                                                 "Anticodon location not in tRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(6);
+    misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("Anticodon is not 3 bases in length");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    misc = AddMiscFeature (entry);
+    misc->SetLocation().SetInt().SetFrom(11);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Critical);
+    expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:12-11] out of range");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    misc = AddMiscFeature (entry);
+    misc->SetLocation().SetInt().SetTo(100);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:1-101] out of range");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    misc = AddMiscFeature (entry);
+    misc->SetLocation().SetInt().SetFrom(-1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:0-11] out of range");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    CRef<CSeq_loc> anticodon_loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(0);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(0);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetStrand(eNa_strand_minus);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(9);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MixedStrand",
+                                                 "Mixed strands in Anticodon [[lcl|good:minus1-1, 10-11]]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
+                                                 "Codons predicted from anticodon (UAA) cannot produce amino acid (N/Asn)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    trna = BuildtRNA(entry->SetSeq().SetId().front());
+    anticodon_loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(0);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(0);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetStrand(eNa_strand_plus);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(9);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    AddFeat (trna, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors[0]->SetErrMsg("Mixed plus and unknown strands in Anticodon [[lcl|good:plus1-1, 10-11]]");
+    expected_errors[1]->SetErrMsg("Codons predicted from anticodon (AAA) cannot produce amino acid (N/Asn)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_SeqLocOrder)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = BuildtRNA(entry->SetSeq().SetId().front());
+    CRef<CSeq_loc> anticodon_loc = MakeMixLoc(entry->SetSeq().SetId().front());
+    anticodon_loc->SetMix().Set().front()->SetInt().SetFrom(9);
+    anticodon_loc->SetMix().Set().front()->SetInt().SetTo(10);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetFrom(0);
+    anticodon_loc->SetMix().Set().back()->SetInt().SetTo(0);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().Assign(*anticodon_loc);
+    AddFeat (trna, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLocOrder",
+                                                 "Intervals out of order in Anticodon [[lcl|good:10-11, 1-1]]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
+                                                 "Codons predicted from anticodon (AAA) cannot produce amino acid (N/Asn)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetLocation().Assign(*anticodon_loc);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[0]->SetErrMsg("Location: Intervals out of order in SeqLoc [[lcl|good:10-11, 1-1]]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetFrom(27);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "Range",
+                              "Location: SeqLoc [lcl|nuc:28-27] out of range"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "CdTransFail",
+                                                 "Unable to translate"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+                                                 "Given protein length [8] does not match translation length [0]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetTo(27);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon",
+                              "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop",
+                              "1 internal stops (and illegal start codon). Genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+                                                 "Given protein length [8] does not match translation length [9]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoStop",
+                                                 "Missing stop codon"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // don't report start codon if unclassified exception
+    cds->SetExcept(true);
+    cds->SetExcept_text("unclassified translation discrepancy");
+    delete expected_errors[0];
+    expected_errors[0] = new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation");
+    expected_errors[1]->SetSeverity(eDiag_Warning);
+    delete expected_errors[2];
+    delete expected_errors[3];
+    expected_errors.pop_back();
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetExcept(false);
+    cds->ResetExcept_text();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[0] = 'C';
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[1] = 'C';
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    delete expected_errors[0];
+    expected_errors[0] = new CExpectedError("nuc", eDiag_Error, "StartCodon",
+                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial");
+    delete expected_errors[1];
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // don't report start codon if unclassified exception
+    cds->SetExcept(true);
+    cds->SetExcept_text("unclassified translation discrepancy");
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetTo(27);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon",
+                              "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop",
+                              "1 internal stops (and illegal start codon). Genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+                                                 "Given protein length [8] does not match translation length [9]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoStop",
+                                                 "Missing stop codon"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[9] = 'T';
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPR*TEIN");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein",
+                              "[1] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop",
+                              "1 internal stops. Genetic code [0]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    entry->SetSet().SetSeq_set().pop_back();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NucProtProblem",
+                              "No proteins in nuc-prot set"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoProtein",
+                              "No protein Bioseq given"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "MissingCDSproduct",
+                              "Unable to find product Bioseq from CDS feature"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_MisMatchAA)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    MakeNucProtSet3Partial(entry);
+    CRef<CSeq_entry> prot = entry->SetSet().SetSeq_set().back();
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[0] = 'A';
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MisMatchAA",
+    "Residue 1 in protein [A] != translation [M] at lcl|nuc:both1-3"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    for (int i = 0; i < 11; i++) {
+      prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[i] = 'A';
+    }
+
+
+    expected_errors[0]->SetErrMsg("11 mismatches found. First mismatch at 1, residue in protein [A] != translation [M] at lcl|nuc:both1-3. Last mismatch at 11, residue in protein [A] != translation [M] at lcl|nuc:both31-33. Genetic code [0]");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEI");
+    prot_seq->SetSeq().SetInst().SetLength(7);
+    AdjustProtFeatForNucProtSet (entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+                                                 "Given protein length [7] does not match translation length [9]"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[27] = 'A';
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[28] = 'T';
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetTo(28);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+                              "Coding region extends 2 base(s) past stop codon"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetExcept(true);
+    cds->SetExcept_text("annotated by transcript or proteomic data");
+    cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
+    prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEINQQLLLLLLLLLLQQQQQQQQQQ");
+    prot_seq->SetSeq().SetInst().SetLength(30);
+    AdjustProtFeatForNucProtSet (entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TransLen",
+                              "Protein product length [30] is more than 120% of the translation length [9]"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_NoStop)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().SetInt().SetTo(23);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoStop",
+                                                 "Missing stop codon"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_TranslExcept)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->AddQualifier("transl_except", "abc");
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[4] = 'E';
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MisMatchAA",
+    "Residue 5 in protein [E] != translation [T] at lcl|nuc:both13-15"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExcept",
+                                                 "Unparsed transl_except qual. Skipped"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->AddQualifier("transl_except", "abc");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExcept",
+                                                 "Unparsed transl_except qual (but protein is okay). Skipped"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtRefFound)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> prot_feat = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot_feat->SetLocation().SetInt().SetTo (6);
+
+    STANDARD_SETUP
+
+    // see this error if prot-ref present, but wrong size, or if absent completely
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoProtRefFound",
+    "No full length Prot-ref feature applied to this Bioseq"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    prot_seq->SetSeq().ResetAnnot();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_OrfCdsHasProduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetData().SetCdregion().SetOrf(true);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "OrfCdsHasProduct",
+    "An ORF coding region should not have a product"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_GeneRefHasNoData)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> gene = AddMiscFeature (entry);
+    gene->SetData().SetGene();
+    gene->SetLocation().SetInt().SetTo(26);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "GeneRefHasNoData",
+    "There is a gene feature where all fields are empty"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_ExceptInconsistent)
+{
+    string except_text = "trans-splicing";
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->AddQualifier("exception", except_text);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ExceptInconsistent",
+                              "Exception flag should be set in coding region"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    cds->ResetQual();
+    cds->SetExcept_text(except_text);
+    expected_errors[0]->SetErrMsg("Exception text is present, but exception flag is not set");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    cds->ResetExcept_text();
+    cds->SetExcept(true);
+
+    expected_errors[0]->SetErrMsg("Exception flag is set, but exception text is empty");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_ProtRefHasNoData)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot_feat = entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    prot_feat->SetData().SetProt().Reset();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "ProtRefHasNoData",
+                              "There is a protein feature where all fields are empty"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "NoNameForProtein",
+                              "Protein feature has no name"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_GenCodeMismatch)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
+    ce->SetId(3);
+    CRef<CGenetic_code> gcode(new CGenetic_code());
+    cds->SetData().SetCdregion().SetCode().Set().push_back(ce);
+    SetGenome (entry, CBioSource::eGenome_apicoplast);
+    SetGcode (entry, 2);
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[6] = 'M';
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "GenCodeMismatch",
+                              "Genetic code conflict between CDS (code 3) and BioSource.genome biological context (apicoplast) (uses code 11)"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetGenome (entry, CBioSource::eGenome_unknown);
+
+    expected_errors[0]->SetErrMsg("Genetic code conflict between CDS (code 3) and BioSource (code 2)");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_RNAtype0)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> rna = AddMiscFeature (entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_unknown);
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "RNAtype0",
+                              "RNA type 0 (unknown) not supported"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_UnknownImpFeatKey)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetData().SetImp().SetKey("bad value");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnknownImpFeatKey",
+                              "Unknown feature key bad value"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    misc->SetData().SetImp().SetKey("");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("NULL feature key");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    vector<string> illegal_keys;
+    illegal_keys.push_back ("virion");
+    illegal_keys.push_back ("mutation");
+    illegal_keys.push_back ("allele");
+    illegal_keys.push_back ("Import");
+
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    ITERATE (vector<string>, it, illegal_keys) {
+        scope.RemoveTopLevelSeqEntry(seh);
+        misc->SetData().SetImp().SetKey(*it);
+        seh = scope.AddTopLevelSeqEntry(*entry);
+        expected_errors[0]->SetErrMsg("Feature key " + *it + " is no longer legal");
+        eval = validator.Validate(seh, options);
+        CheckErrors (*eval, expected_errors);
+    }
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_UnknownImpFeatQual)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->AddQualifier("bad name", "some value");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnknownImpFeatQual",
+                              "Unknown qualifier bad name"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    misc->SetQual().front()->SetQual("");
+    expected_errors[0]->SetErrMsg("NULL qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+// begin automatically generated section
+#define TESTWRONGQUAL(qual, val, feat, err) \
+    misc_feat->AddQualifier (qual, val);\
+    msg = "Wrong qualifier ";\
+    msg.append(qual);\
+    msg.append(" for feature ");\
+    msg.append(feat);\
+    expected_errors[err]->SetErrMsg(msg);\
+    eval = validator.Validate(seh, options);\
+    CheckErrors (*eval, expected_errors);\
+    misc_feat->SetQual().pop_back();
+
+BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
+{
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc_feat = AddMiscFeature (entry);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat",
+                              ""));
+    string msg = "";
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("allele");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnknownImpFeatKey",
+                              "Feature key allele is no longer legal"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat",
+                              ""));
+    TESTWRONGQUAL ("compare", "AY123456.1", "allele", 1)
+    TESTWRONGQUAL ("mitochondrion", "foo", "allele", 1)
+    TESTWRONGQUAL ("mobile_element", "integron", "allele", 1)
+    TESTWRONGQUAL ("metagenomic", "foo", "allele", 1)
+    TESTWRONGQUAL ("kinetoplast", "foo", "allele", 1)
+    TESTWRONGQUAL ("chromoplast", "foo", "allele", 1)
+    TESTWRONGQUAL ("specific_host", "foo", "allele", 1)
+    TESTWRONGQUAL ("sub_strain", "foo", "allele", 1)
+    TESTWRONGQUAL ("tag_peptide", "foo", "allele", 1)
+    TESTWRONGQUAL ("isolation_source", "foo", "allele", 1)
+    TESTWRONGQUAL ("collected_by", "foo", "allele", 1)
+    TESTWRONGQUAL ("rpt_family", "foo", "allele", 1)
+    TESTWRONGQUAL ("rpt_type", "flanking", "allele", 1)
+    TESTWRONGQUAL ("insertion_seq", "foo", "allele", 1)
+    TESTWRONGQUAL ("transl_table", "foo", "allele", 1)
+    TESTWRONGQUAL ("rearranged", "foo", "allele", 1)
+    TESTWRONGQUAL ("mod_base", "foo", "allele", 1)
+    TESTWRONGQUAL ("rpt_unit", "foo", "allele", 1)
+    TESTWRONGQUAL ("anticodon", "foo", "allele", 1)
+    TESTWRONGQUAL ("function", "foo", "allele", 1)
+    TESTWRONGQUAL ("number", "foo", "allele", 1)
+    TESTWRONGQUAL ("identified_by", "foo", "allele", 1)
+    TESTWRONGQUAL ("collection_date", "foo", "allele", 1)
+    TESTWRONGQUAL ("direction", "foo", "allele", 1)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "allele", 1)
+    TESTWRONGQUAL ("serotype", "foo", "allele", 1)
+    TESTWRONGQUAL ("satellite", "foo", "allele", 1)
+    TESTWRONGQUAL ("organism", "foo", "allele", 1)
+    TESTWRONGQUAL ("transcript_id", "foo", "allele", 1)
+    TESTWRONGQUAL ("serovar", "foo", "allele", 1)
+    TESTWRONGQUAL ("variety", "foo", "allele", 1)
+    TESTWRONGQUAL ("country", "foo", "allele", 1)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "allele", 1)
+    TESTWRONGQUAL ("lab_host", "foo", "allele", 1)
+    TESTWRONGQUAL ("macronuclear", "foo", "allele", 1)
+    TESTWRONGQUAL ("cyanelle", "foo", "allele", 1)
+    TESTWRONGQUAL ("bio_material", "foo", "allele", 1)
+    TESTWRONGQUAL ("chloroplast", "foo", "allele", 1)
+    TESTWRONGQUAL ("plasmid", "foo", "allele", 1)
+    TESTWRONGQUAL ("mating_type", "foo", "allele", 1)
+    TESTWRONGQUAL ("cell_type", "foo", "allele", 1)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "allele", 1)
+    TESTWRONGQUAL ("mol_type", "foo", "allele", 1)
+    TESTWRONGQUAL ("operon", "foo", "allele", 1)
+    TESTWRONGQUAL ("cultivar", "foo", "allele", 1)
+    TESTWRONGQUAL ("artificial_location", "foo", "allele", 1)
+    TESTWRONGQUAL ("segment", "foo", "allele", 1)
+    TESTWRONGQUAL ("cons_splice", "foo", "allele", 1)
+    TESTWRONGQUAL ("environmental_sample", "foo", "allele", 1)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "allele", 1)
+    TESTWRONGQUAL ("transposon", "foo", "allele", 1)
+    TESTWRONGQUAL ("haplogroup", "foo", "allele", 1)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "allele", 1)
+    TESTWRONGQUAL ("codon_start", "foo", "allele", 1)
+    TESTWRONGQUAL ("clone", "foo", "allele", 1)
+    TESTWRONGQUAL ("gdb_xref", "foo", "allele", 1)
+    TESTWRONGQUAL ("translation", "foo", "allele", 1)
+    TESTWRONGQUAL ("transl_except", "foo", "allele", 1)
+    TESTWRONGQUAL ("bound_moiety", "foo", "allele", 1)
+    TESTWRONGQUAL ("sub_clone", "foo", "allele", 1)
+    TESTWRONGQUAL ("cell_line", "foo", "allele", 1)
+    TESTWRONGQUAL ("transgenic", "foo", "allele", 1)
+    TESTWRONGQUAL ("germline", "foo", "allele", 1)
+    TESTWRONGQUAL ("protein_id", "foo", "allele", 1)
+    TESTWRONGQUAL ("codon", "foo", "allele", 1)
+    TESTWRONGQUAL ("clone_lib", "foo", "allele", 1)
+    TESTWRONGQUAL ("PCR_primers", "foo", "allele", 1)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "allele", 1)
+    TESTWRONGQUAL ("strain", "foo", "allele", 1)
+    TESTWRONGQUAL ("proviral", "foo", "allele", 1)
+    TESTWRONGQUAL ("lat_lon", "foo", "allele", 1)
+    TESTWRONGQUAL ("culture_collection", "foo", "allele", 1)
+    TESTWRONGQUAL ("haplotype", "foo", "allele", 1)
+    TESTWRONGQUAL ("estimated_length", "foo", "allele", 1)
+    TESTWRONGQUAL ("tissue_lib", "foo", "allele", 1)
+    TESTWRONGQUAL ("focus", "foo", "allele", 1)
+    TESTWRONGQUAL ("dev_stage", "foo", "allele", 1)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "allele", 1)
+    TESTWRONGQUAL ("pseudo", "foo", "allele", 1)
+    TESTWRONGQUAL ("isolate", "foo", "allele", 1)
+    TESTWRONGQUAL ("chromosome", "foo", "allele", 1)
+    TESTWRONGQUAL ("allele", "foo", "allele", 1)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "allele", 1)
+    TESTWRONGQUAL ("pop_variant", "foo", "allele", 1)
+    TESTWRONGQUAL ("tissue_type", "foo", "allele", 1)
+    TESTWRONGQUAL ("trans_splicing", "foo", "allele", 1)
+    TESTWRONGQUAL ("organelle", "foo", "allele", 1)
+    TESTWRONGQUAL ("sex", "foo", "allele", 1)
+    TESTWRONGQUAL ("virion", "foo", "allele", 1)
+    TESTWRONGQUAL ("sub_species", "foo", "allele", 1)
+    TESTWRONGQUAL ("exception", "foo", "allele", 1)
+    TESTWRONGQUAL ("ecotype", "foo", "allele", 1)
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat",
+                              ""));
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("attenuator");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "attenuator", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "attenuator", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "attenuator", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("function", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("number", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("direction", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "attenuator", 0)
+    TESTWRONGQUAL ("serotype", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("satellite", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("organism", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("serovar", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("variety", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("country", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "attenuator", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("segment", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("frequency", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("transposon", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("clone", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("translation", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("germline", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("codon", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "attenuator", 0)
+    TESTWRONGQUAL ("strain", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("proviral", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("focus", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("isolate", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("organelle", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("sex", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("virion", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("exception", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "attenuator", 0)
+    TESTWRONGQUAL ("product", "foo", "attenuator", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("C_region");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "C_region", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "C_region", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "C_region", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "C_region", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "C_region", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "C_region", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "C_region", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "C_region", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "C_region", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "C_region", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "C_region", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "C_region", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "C_region", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "C_region", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "C_region", 0)
+    TESTWRONGQUAL ("function", "foo", "C_region", 0)
+    TESTWRONGQUAL ("number", "foo", "C_region", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "C_region", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "C_region", 0)
+    TESTWRONGQUAL ("direction", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "C_region", 0)
+    TESTWRONGQUAL ("serotype", "foo", "C_region", 0)
+    TESTWRONGQUAL ("satellite", "foo", "C_region", 0)
+    TESTWRONGQUAL ("organism", "foo", "C_region", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "C_region", 0)
+    TESTWRONGQUAL ("serovar", "foo", "C_region", 0)
+    TESTWRONGQUAL ("variety", "foo", "C_region", 0)
+    TESTWRONGQUAL ("country", "foo", "C_region", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "C_region", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "C_region", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "C_region", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "C_region", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "C_region", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "C_region", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "C_region", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "C_region", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "C_region", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "C_region", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "C_region", 0)
+    TESTWRONGQUAL ("operon", "foo", "C_region", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "C_region", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "C_region", 0)
+    TESTWRONGQUAL ("segment", "foo", "C_region", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "C_region", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "C_region", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "C_region", 0)
+    TESTWRONGQUAL ("frequency", "foo", "C_region", 0)
+    TESTWRONGQUAL ("transposon", "foo", "C_region", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "C_region", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "C_region", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "C_region", 0)
+    TESTWRONGQUAL ("clone", "foo", "C_region", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "C_region", 0)
+    TESTWRONGQUAL ("translation", "foo", "C_region", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "C_region", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "C_region", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "C_region", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "C_region", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "C_region", 0)
+    TESTWRONGQUAL ("germline", "foo", "C_region", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "C_region", 0)
+    TESTWRONGQUAL ("codon", "foo", "C_region", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "C_region", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "C_region", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "C_region", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "C_region", 0)
+    TESTWRONGQUAL ("strain", "foo", "C_region", 0)
+    TESTWRONGQUAL ("proviral", "foo", "C_region", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "C_region", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "C_region", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "C_region", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "C_region", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "C_region", 0)
+    TESTWRONGQUAL ("focus", "foo", "C_region", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "C_region", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "C_region", 0)
+    TESTWRONGQUAL ("isolate", "foo", "C_region", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "C_region", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "C_region", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "C_region", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "C_region", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "C_region", 0)
+    TESTWRONGQUAL ("organelle", "foo", "C_region", 0)
+    TESTWRONGQUAL ("sex", "foo", "C_region", 0)
+    TESTWRONGQUAL ("virion", "foo", "C_region", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "C_region", 0)
+    TESTWRONGQUAL ("exception", "foo", "C_region", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "C_region", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "C_region", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("CAAT_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "CAAT_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "CAAT_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "CAAT_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "CAAT_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "CAAT_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("operon", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "CAAT_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "CAAT_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "CAAT_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("conflict");
+    misc_feat->AddQualifier ("citation", "1");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("mitochondrion", "foo", "conflict", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "conflict", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "conflict", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "conflict", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "conflict", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "conflict", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "conflict", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "conflict", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "conflict", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "conflict", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "conflict", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "conflict", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "conflict", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "conflict", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "conflict", 0)
+    TESTWRONGQUAL ("function", "foo", "conflict", 0)
+    TESTWRONGQUAL ("number", "foo", "conflict", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "conflict", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "conflict", 0)
+    TESTWRONGQUAL ("direction", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "conflict", 0)
+    TESTWRONGQUAL ("serotype", "foo", "conflict", 0)
+    TESTWRONGQUAL ("satellite", "foo", "conflict", 0)
+    TESTWRONGQUAL ("organism", "foo", "conflict", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "conflict", 0)
+    TESTWRONGQUAL ("serovar", "foo", "conflict", 0)
+    TESTWRONGQUAL ("variety", "foo", "conflict", 0)
+    TESTWRONGQUAL ("country", "foo", "conflict", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "conflict", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "conflict", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "conflict", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "conflict", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "conflict", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "conflict", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "conflict", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "conflict", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "conflict", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "conflict", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "conflict", 0)
+    TESTWRONGQUAL ("operon", "foo", "conflict", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "conflict", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "conflict", 0)
+    TESTWRONGQUAL ("segment", "foo", "conflict", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "conflict", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "conflict", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "conflict", 0)
+    TESTWRONGQUAL ("frequency", "foo", "conflict", 0)
+    TESTWRONGQUAL ("transposon", "foo", "conflict", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "conflict", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "conflict", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "conflict", 0)
+    TESTWRONGQUAL ("clone", "foo", "conflict", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "conflict", 0)
+    TESTWRONGQUAL ("translation", "foo", "conflict", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "conflict", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "conflict", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "conflict", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "conflict", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "conflict", 0)
+    TESTWRONGQUAL ("germline", "foo", "conflict", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "conflict", 0)
+    TESTWRONGQUAL ("codon", "foo", "conflict", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "conflict", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "conflict", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "conflict", 0)
+    TESTWRONGQUAL ("strain", "foo", "conflict", 0)
+    TESTWRONGQUAL ("proviral", "foo", "conflict", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "conflict", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "conflict", 0)
+    TESTWRONGQUAL ("label", "foo", "conflict", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "conflict", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "conflict", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "conflict", 0)
+    TESTWRONGQUAL ("focus", "foo", "conflict", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "conflict", 0)
+    TESTWRONGQUAL ("partial", "foo", "conflict", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "conflict", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "conflict", 0)
+    TESTWRONGQUAL ("isolate", "foo", "conflict", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "conflict", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "conflict", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "conflict", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "conflict", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "conflict", 0)
+    TESTWRONGQUAL ("organelle", "foo", "conflict", 0)
+    TESTWRONGQUAL ("sex", "foo", "conflict", 0)
+    TESTWRONGQUAL ("virion", "foo", "conflict", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "conflict", 0)
+    TESTWRONGQUAL ("exception", "foo", "conflict", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "conflict", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "conflict", 0)
+    TESTWRONGQUAL ("product", "foo", "conflict", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("D-loop");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "D-loop", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "D-loop", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "D-loop", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("function", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("number", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("direction", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "D-loop", 0)
+    TESTWRONGQUAL ("serotype", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("satellite", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("organism", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("serovar", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("variety", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("country", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "D-loop", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("operon", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("segment", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("frequency", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("transposon", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("clone", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("translation", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("germline", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("codon", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "D-loop", 0)
+    TESTWRONGQUAL ("strain", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("proviral", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("focus", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("isolate", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("organelle", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("sex", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("virion", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("exception", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "D-loop", 0)
+    TESTWRONGQUAL ("product", "foo", "D-loop", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("D_segment");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "D_segment", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "D_segment", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "D_segment", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("function", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("number", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("direction", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "D_segment", 0)
+    TESTWRONGQUAL ("serotype", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("satellite", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("organism", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("serovar", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("variety", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("country", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "D_segment", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("operon", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("segment", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("frequency", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("transposon", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("clone", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("translation", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("germline", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("codon", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "D_segment", 0)
+    TESTWRONGQUAL ("strain", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("proviral", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("focus", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("isolate", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("organelle", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("sex", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("virion", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("exception", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "D_segment", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "D_segment", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("enhancer");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "enhancer", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "enhancer", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "enhancer", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("function", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("number", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("direction", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "enhancer", 0)
+    TESTWRONGQUAL ("serotype", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("satellite", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("organism", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("serovar", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("variety", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("country", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "enhancer", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("operon", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("segment", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("frequency", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("transposon", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("clone", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("translation", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("germline", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("codon", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "enhancer", 0)
+    TESTWRONGQUAL ("strain", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("proviral", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("focus", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("isolate", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("organelle", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("sex", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("virion", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("exception", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "enhancer", 0)
+    TESTWRONGQUAL ("product", "foo", "enhancer", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("exon");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "exon", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "exon", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "exon", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "exon", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "exon", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "exon", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "exon", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "exon", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "exon", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "exon", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "exon", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "exon", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "exon", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "exon", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "exon", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "exon", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "exon", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "exon", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "exon", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "exon", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "exon", 0)
+    TESTWRONGQUAL ("direction", "foo", "exon", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "exon", 0)
+    TESTWRONGQUAL ("serotype", "foo", "exon", 0)
+    TESTWRONGQUAL ("satellite", "foo", "exon", 0)
+    TESTWRONGQUAL ("organism", "foo", "exon", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "exon", 0)
+    TESTWRONGQUAL ("serovar", "foo", "exon", 0)
+    TESTWRONGQUAL ("variety", "foo", "exon", 0)
+    TESTWRONGQUAL ("country", "foo", "exon", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "exon", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "exon", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "exon", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "exon", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "exon", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "exon", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "exon", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "exon", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "exon", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "exon", 0)
+    TESTWRONGQUAL ("operon", "foo", "exon", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "exon", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "exon", 0)
+    TESTWRONGQUAL ("segment", "foo", "exon", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "exon", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "exon", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "exon", 0)
+    TESTWRONGQUAL ("frequency", "foo", "exon", 0)
+    TESTWRONGQUAL ("transposon", "foo", "exon", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "exon", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "exon", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "exon", 0)
+    TESTWRONGQUAL ("clone", "foo", "exon", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "exon", 0)
+    TESTWRONGQUAL ("translation", "foo", "exon", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "exon", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "exon", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "exon", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "exon", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "exon", 0)
+    TESTWRONGQUAL ("germline", "foo", "exon", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "exon", 0)
+    TESTWRONGQUAL ("codon", "foo", "exon", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "exon", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "exon", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "exon", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "exon", 0)
+    TESTWRONGQUAL ("strain", "foo", "exon", 0)
+    TESTWRONGQUAL ("proviral", "foo", "exon", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "exon", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "exon", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "exon", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "exon", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "exon", 0)
+    TESTWRONGQUAL ("focus", "foo", "exon", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "exon", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "exon", 0)
+    TESTWRONGQUAL ("isolate", "foo", "exon", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "exon", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "exon", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "exon", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "exon", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "exon", 0)
+    TESTWRONGQUAL ("organelle", "foo", "exon", 0)
+    TESTWRONGQUAL ("sex", "foo", "exon", 0)
+    TESTWRONGQUAL ("virion", "foo", "exon", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "exon", 0)
+    TESTWRONGQUAL ("exception", "foo", "exon", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "exon", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "exon", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("GC_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "GC_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "GC_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "GC_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "GC_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "GC_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("operon", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "GC_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "GC_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "GC_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("iDNA");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "iDNA", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "iDNA", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "iDNA", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("direction", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "iDNA", 0)
+    TESTWRONGQUAL ("serotype", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("satellite", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("organism", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("serovar", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("variety", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("country", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "iDNA", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("operon", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("segment", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("frequency", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("transposon", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("clone", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("translation", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("germline", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("codon", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "iDNA", 0)
+    TESTWRONGQUAL ("strain", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("proviral", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("focus", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("isolate", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("organelle", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("sex", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("virion", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("exception", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "iDNA", 0)
+    TESTWRONGQUAL ("product", "foo", "iDNA", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("intron");
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[0] = 'G';
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[1] = 'T';
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[9] = 'A';
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[10] = 'G';
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "intron", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "intron", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "intron", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "intron", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "intron", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "intron", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "intron", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "intron", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "intron", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "intron", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "intron", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "intron", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "intron", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "intron", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "intron", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "intron", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "intron", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "intron", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "intron", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "intron", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "intron", 0)
+    TESTWRONGQUAL ("direction", "foo", "intron", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "intron", 0)
+    TESTWRONGQUAL ("serotype", "foo", "intron", 0)
+    TESTWRONGQUAL ("satellite", "foo", "intron", 0)
+    TESTWRONGQUAL ("organism", "foo", "intron", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "intron", 0)
+    TESTWRONGQUAL ("serovar", "foo", "intron", 0)
+    TESTWRONGQUAL ("variety", "foo", "intron", 0)
+    TESTWRONGQUAL ("country", "foo", "intron", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "intron", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "intron", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "intron", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "intron", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "intron", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "intron", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "intron", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "intron", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "intron", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "intron", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "intron", 0)
+    TESTWRONGQUAL ("operon", "foo", "intron", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "intron", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "intron", 0)
+    TESTWRONGQUAL ("segment", "foo", "intron", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "intron", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "intron", 0)
+    TESTWRONGQUAL ("frequency", "foo", "intron", 0)
+    TESTWRONGQUAL ("transposon", "foo", "intron", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "intron", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "intron", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "intron", 0)
+    TESTWRONGQUAL ("clone", "foo", "intron", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "intron", 0)
+    TESTWRONGQUAL ("translation", "foo", "intron", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "intron", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "intron", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "intron", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "intron", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "intron", 0)
+    TESTWRONGQUAL ("germline", "foo", "intron", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "intron", 0)
+    TESTWRONGQUAL ("codon", "foo", "intron", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "intron", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "intron", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "intron", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "intron", 0)
+    TESTWRONGQUAL ("strain", "foo", "intron", 0)
+    TESTWRONGQUAL ("proviral", "foo", "intron", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "intron", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "intron", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "intron", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "intron", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "intron", 0)
+    TESTWRONGQUAL ("focus", "foo", "intron", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "intron", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "intron", 0)
+    TESTWRONGQUAL ("isolate", "foo", "intron", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "intron", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "intron", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "intron", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "intron", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "intron", 0)
+    TESTWRONGQUAL ("organelle", "foo", "intron", 0)
+    TESTWRONGQUAL ("sex", "foo", "intron", 0)
+    TESTWRONGQUAL ("virion", "foo", "intron", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "intron", 0)
+    TESTWRONGQUAL ("exception", "foo", "intron", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "intron", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "intron", 0)
+    TESTWRONGQUAL ("product", "foo", "intron", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("J_segment");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "J_segment", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "J_segment", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "J_segment", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("function", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("number", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("direction", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "J_segment", 0)
+    TESTWRONGQUAL ("serotype", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("satellite", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("organism", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("serovar", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("variety", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("country", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "J_segment", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("operon", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("segment", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("frequency", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("transposon", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("clone", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("translation", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("germline", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("codon", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "J_segment", 0)
+    TESTWRONGQUAL ("strain", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("proviral", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("focus", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("isolate", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("organelle", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("sex", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("virion", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("exception", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "J_segment", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "J_segment", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("LTR");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "LTR", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "LTR", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "LTR", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "LTR", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "LTR", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "LTR", 0)
+    TESTWRONGQUAL ("map", "foo", "LTR", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "LTR", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "LTR", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "LTR", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "LTR", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "LTR", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "LTR", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "LTR", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "LTR", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "LTR", 0)
+    TESTWRONGQUAL ("number", "foo", "LTR", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "LTR", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "LTR", 0)
+    TESTWRONGQUAL ("direction", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "LTR", 0)
+    TESTWRONGQUAL ("serotype", "foo", "LTR", 0)
+    TESTWRONGQUAL ("satellite", "foo", "LTR", 0)
+    TESTWRONGQUAL ("organism", "foo", "LTR", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "LTR", 0)
+    TESTWRONGQUAL ("serovar", "foo", "LTR", 0)
+    TESTWRONGQUAL ("variety", "foo", "LTR", 0)
+    TESTWRONGQUAL ("country", "foo", "LTR", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "LTR", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "LTR", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "LTR", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "LTR", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "LTR", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "LTR", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "LTR", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "LTR", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "LTR", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "LTR", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "LTR", 0)
+    TESTWRONGQUAL ("operon", "foo", "LTR", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "LTR", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "LTR", 0)
+    TESTWRONGQUAL ("segment", "foo", "LTR", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "LTR", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "LTR", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "LTR", 0)
+    TESTWRONGQUAL ("frequency", "foo", "LTR", 0)
+    TESTWRONGQUAL ("transposon", "foo", "LTR", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "LTR", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "LTR", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "LTR", 0)
+    TESTWRONGQUAL ("clone", "foo", "LTR", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "LTR", 0)
+    TESTWRONGQUAL ("translation", "foo", "LTR", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "LTR", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "LTR", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "LTR", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "LTR", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "LTR", 0)
+    TESTWRONGQUAL ("germline", "foo", "LTR", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "LTR", 0)
+    TESTWRONGQUAL ("codon", "foo", "LTR", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "LTR", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "LTR", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "LTR", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "LTR", 0)
+    TESTWRONGQUAL ("strain", "foo", "LTR", 0)
+    TESTWRONGQUAL ("proviral", "foo", "LTR", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "LTR", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "LTR", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "LTR", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "LTR", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "LTR", 0)
+    TESTWRONGQUAL ("focus", "foo", "LTR", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "LTR", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "LTR", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "LTR", 0)
+    TESTWRONGQUAL ("isolate", "foo", "LTR", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "LTR", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "LTR", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "LTR", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "LTR", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "LTR", 0)
+    TESTWRONGQUAL ("organelle", "foo", "LTR", 0)
+    TESTWRONGQUAL ("sex", "foo", "LTR", 0)
+    TESTWRONGQUAL ("virion", "foo", "LTR", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "LTR", 0)
+    TESTWRONGQUAL ("exception", "foo", "LTR", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "LTR", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "LTR", 0)
+    TESTWRONGQUAL ("product", "foo", "LTR", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_binding");
+    misc_feat->AddQualifier ("bound_moiety", "foo");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "misc_binding", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_binding", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_binding", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("number", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_binding", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_binding", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("operon", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("clone", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "misc_binding", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_binding", 0)
+    TESTWRONGQUAL ("product", "foo", "misc_binding", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_difference");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_difference", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_difference", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("function", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("number", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_difference", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_difference", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("operon", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_difference", 0)
+    TESTWRONGQUAL ("product", "foo", "misc_difference", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_feature");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "misc_feature", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_feature", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_feature", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_feature", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_feature", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("operon", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("clone", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "misc_feature", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_feature", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_feature", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_recomb");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "misc_recomb", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_recomb", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_recomb", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("function", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("number", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_recomb", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_recomb", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("operon", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("clone", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "misc_recomb", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_recomb", 0)
+    TESTWRONGQUAL ("product", "foo", "misc_recomb", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "misc_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "misc_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "misc_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_structure");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "misc_structure", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "misc_structure", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "misc_structure", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("number", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("direction", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "misc_structure", 0)
+    TESTWRONGQUAL ("serotype", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("satellite", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("organism", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("serovar", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("variety", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("country", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "misc_structure", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("operon", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("segment", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("frequency", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("transposon", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("clone", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("translation", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("germline", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("codon", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "misc_structure", 0)
+    TESTWRONGQUAL ("strain", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("proviral", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("focus", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("isolate", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("organelle", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("sex", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("virion", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("exception", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "misc_structure", 0)
+    TESTWRONGQUAL ("product", "foo", "misc_structure", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("modified_base");
+    misc_feat->AddQualifier ("mod_base", "foo");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "modified_base", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "modified_base", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "modified_base", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("function", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("number", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("direction", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "modified_base", 0)
+    TESTWRONGQUAL ("serotype", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("satellite", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("organism", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("serovar", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("variety", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("country", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "modified_base", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("operon", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("segment", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("transposon", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("clone", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("translation", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("germline", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("codon", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "modified_base", 0)
+    TESTWRONGQUAL ("strain", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("proviral", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("focus", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("partial", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("isolate", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("organelle", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("sex", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("virion", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("exception", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "modified_base", 0)
+    TESTWRONGQUAL ("product", "foo", "modified_base", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("mutation");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnknownImpFeatKey",
+                              "Feature key mutation is no longer legal"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat",
+                              ""));
+    TESTWRONGQUAL ("compare", "AY123456.1", "mutation", 1)
+    TESTWRONGQUAL ("mitochondrion", "foo", "mutation", 1)
+    TESTWRONGQUAL ("mobile_element", "integron", "mutation", 1)
+    TESTWRONGQUAL ("metagenomic", "foo", "mutation", 1)
+    TESTWRONGQUAL ("kinetoplast", "foo", "mutation", 1)
+    TESTWRONGQUAL ("chromoplast", "foo", "mutation", 1)
+    TESTWRONGQUAL ("specific_host", "foo", "mutation", 1)
+    TESTWRONGQUAL ("sub_strain", "foo", "mutation", 1)
+    TESTWRONGQUAL ("tag_peptide", "foo", "mutation", 1)
+    TESTWRONGQUAL ("isolation_source", "foo", "mutation", 1)
+    TESTWRONGQUAL ("collected_by", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rpt_family", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rpt_type", "flanking", "mutation", 1)
+    TESTWRONGQUAL ("insertion_seq", "foo", "mutation", 1)
+    TESTWRONGQUAL ("transl_table", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rearranged", "foo", "mutation", 1)
+    TESTWRONGQUAL ("mod_base", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rpt_unit", "foo", "mutation", 1)
+    TESTWRONGQUAL ("anticodon", "foo", "mutation", 1)
+    TESTWRONGQUAL ("function", "foo", "mutation", 1)
+    TESTWRONGQUAL ("number", "foo", "mutation", 1)
+    TESTWRONGQUAL ("identified_by", "foo", "mutation", 1)
+    TESTWRONGQUAL ("collection_date", "foo", "mutation", 1)
+    TESTWRONGQUAL ("direction", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "mutation", 1)
+    TESTWRONGQUAL ("serotype", "foo", "mutation", 1)
+    TESTWRONGQUAL ("satellite", "foo", "mutation", 1)
+    TESTWRONGQUAL ("organism", "foo", "mutation", 1)
+    TESTWRONGQUAL ("transcript_id", "foo", "mutation", 1)
+    TESTWRONGQUAL ("serovar", "foo", "mutation", 1)
+    TESTWRONGQUAL ("variety", "foo", "mutation", 1)
+    TESTWRONGQUAL ("country", "foo", "mutation", 1)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "mutation", 1)
+    TESTWRONGQUAL ("lab_host", "foo", "mutation", 1)
+    TESTWRONGQUAL ("macronuclear", "foo", "mutation", 1)
+    TESTWRONGQUAL ("cyanelle", "foo", "mutation", 1)
+    TESTWRONGQUAL ("bio_material", "foo", "mutation", 1)
+    TESTWRONGQUAL ("chloroplast", "foo", "mutation", 1)
+    TESTWRONGQUAL ("plasmid", "foo", "mutation", 1)
+    TESTWRONGQUAL ("mating_type", "foo", "mutation", 1)
+    TESTWRONGQUAL ("cell_type", "foo", "mutation", 1)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "mutation", 1)
+    TESTWRONGQUAL ("mol_type", "foo", "mutation", 1)
+    TESTWRONGQUAL ("operon", "foo", "mutation", 1)
+    TESTWRONGQUAL ("cultivar", "foo", "mutation", 1)
+    TESTWRONGQUAL ("artificial_location", "foo", "mutation", 1)
+    TESTWRONGQUAL ("segment", "foo", "mutation", 1)
+    TESTWRONGQUAL ("cons_splice", "foo", "mutation", 1)
+    TESTWRONGQUAL ("environmental_sample", "foo", "mutation", 1)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "mutation", 1)
+    TESTWRONGQUAL ("transposon", "foo", "mutation", 1)
+    TESTWRONGQUAL ("haplogroup", "foo", "mutation", 1)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "mutation", 1)
+    TESTWRONGQUAL ("codon_start", "foo", "mutation", 1)
+    TESTWRONGQUAL ("clone", "foo", "mutation", 1)
+    TESTWRONGQUAL ("gdb_xref", "foo", "mutation", 1)
+    TESTWRONGQUAL ("translation", "foo", "mutation", 1)
+    TESTWRONGQUAL ("transl_except", "foo", "mutation", 1)
+    TESTWRONGQUAL ("bound_moiety", "foo", "mutation", 1)
+    TESTWRONGQUAL ("sub_clone", "foo", "mutation", 1)
+    TESTWRONGQUAL ("cell_line", "foo", "mutation", 1)
+    TESTWRONGQUAL ("transgenic", "foo", "mutation", 1)
+    TESTWRONGQUAL ("germline", "foo", "mutation", 1)
+    TESTWRONGQUAL ("protein_id", "foo", "mutation", 1)
+    TESTWRONGQUAL ("codon", "foo", "mutation", 1)
+    TESTWRONGQUAL ("clone_lib", "foo", "mutation", 1)
+    TESTWRONGQUAL ("PCR_primers", "foo", "mutation", 1)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "mutation", 1)
+    TESTWRONGQUAL ("strain", "foo", "mutation", 1)
+    TESTWRONGQUAL ("proviral", "foo", "mutation", 1)
+    TESTWRONGQUAL ("lat_lon", "foo", "mutation", 1)
+    TESTWRONGQUAL ("culture_collection", "foo", "mutation", 1)
+    TESTWRONGQUAL ("haplotype", "foo", "mutation", 1)
+    TESTWRONGQUAL ("estimated_length", "foo", "mutation", 1)
+    TESTWRONGQUAL ("tissue_lib", "foo", "mutation", 1)
+    TESTWRONGQUAL ("focus", "foo", "mutation", 1)
+    TESTWRONGQUAL ("dev_stage", "foo", "mutation", 1)
+    TESTWRONGQUAL ("partial", "foo", "mutation", 1)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "mutation", 1)
+    TESTWRONGQUAL ("pseudo", "foo", "mutation", 1)
+    TESTWRONGQUAL ("isolate", "foo", "mutation", 1)
+    TESTWRONGQUAL ("chromosome", "foo", "mutation", 1)
+    TESTWRONGQUAL ("allele", "foo", "mutation", 1)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "mutation", 1)
+    TESTWRONGQUAL ("pop_variant", "foo", "mutation", 1)
+    TESTWRONGQUAL ("tissue_type", "foo", "mutation", 1)
+    TESTWRONGQUAL ("trans_splicing", "foo", "mutation", 1)
+    TESTWRONGQUAL ("organelle", "foo", "mutation", 1)
+    TESTWRONGQUAL ("sex", "foo", "mutation", 1)
+    TESTWRONGQUAL ("virion", "foo", "mutation", 1)
+    TESTWRONGQUAL ("sub_species", "foo", "mutation", 1)
+    TESTWRONGQUAL ("exception", "foo", "mutation", 1)
+    TESTWRONGQUAL ("ecotype", "foo", "mutation", 1)
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat",
+                              ""));
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("N_region");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "N_region", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "N_region", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "N_region", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "N_region", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "N_region", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "N_region", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "N_region", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "N_region", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "N_region", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "N_region", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "N_region", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "N_region", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "N_region", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "N_region", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "N_region", 0)
+    TESTWRONGQUAL ("function", "foo", "N_region", 0)
+    TESTWRONGQUAL ("number", "foo", "N_region", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "N_region", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "N_region", 0)
+    TESTWRONGQUAL ("direction", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "N_region", 0)
+    TESTWRONGQUAL ("serotype", "foo", "N_region", 0)
+    TESTWRONGQUAL ("satellite", "foo", "N_region", 0)
+    TESTWRONGQUAL ("organism", "foo", "N_region", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "N_region", 0)
+    TESTWRONGQUAL ("serovar", "foo", "N_region", 0)
+    TESTWRONGQUAL ("variety", "foo", "N_region", 0)
+    TESTWRONGQUAL ("country", "foo", "N_region", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "N_region", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "N_region", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "N_region", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "N_region", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "N_region", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "N_region", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "N_region", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "N_region", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "N_region", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "N_region", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "N_region", 0)
+    TESTWRONGQUAL ("operon", "foo", "N_region", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "N_region", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "N_region", 0)
+    TESTWRONGQUAL ("segment", "foo", "N_region", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "N_region", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "N_region", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "N_region", 0)
+    TESTWRONGQUAL ("frequency", "foo", "N_region", 0)
+    TESTWRONGQUAL ("transposon", "foo", "N_region", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "N_region", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "N_region", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "N_region", 0)
+    TESTWRONGQUAL ("clone", "foo", "N_region", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "N_region", 0)
+    TESTWRONGQUAL ("translation", "foo", "N_region", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "N_region", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "N_region", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "N_region", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "N_region", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "N_region", 0)
+    TESTWRONGQUAL ("germline", "foo", "N_region", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "N_region", 0)
+    TESTWRONGQUAL ("codon", "foo", "N_region", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "N_region", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "N_region", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "N_region", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "N_region", 0)
+    TESTWRONGQUAL ("strain", "foo", "N_region", 0)
+    TESTWRONGQUAL ("proviral", "foo", "N_region", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "N_region", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "N_region", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "N_region", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "N_region", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "N_region", 0)
+    TESTWRONGQUAL ("focus", "foo", "N_region", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "N_region", 0)
+    TESTWRONGQUAL ("partial", "foo", "N_region", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "N_region", 0)
+    TESTWRONGQUAL ("isolate", "foo", "N_region", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "N_region", 0)
+    TESTWRONGQUAL ("allele", "foo", "N_region", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "N_region", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "N_region", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "N_region", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "N_region", 0)
+    TESTWRONGQUAL ("organelle", "foo", "N_region", 0)
+    TESTWRONGQUAL ("sex", "foo", "N_region", 0)
+    TESTWRONGQUAL ("virion", "foo", "N_region", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "N_region", 0)
+    TESTWRONGQUAL ("exception", "foo", "N_region", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "N_region", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "N_region", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("old_sequence");
+    misc_feat->AddQualifier ("citation", "1");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("mitochondrion", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "old_sequence", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "old_sequence", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("function", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("number", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("direction", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "old_sequence", 0)
+    TESTWRONGQUAL ("serotype", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("satellite", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("organism", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("serovar", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("variety", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("country", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "old_sequence", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("operon", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("segment", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("frequency", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("transposon", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("clone", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("translation", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("germline", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("codon", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("strain", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("proviral", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("label", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("focus", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("isolate", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("organelle", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("sex", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("virion", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("exception", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "old_sequence", 0)
+    TESTWRONGQUAL ("product", "foo", "old_sequence", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("operon");
+    misc_feat->AddQualifier ("operon", "foo");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "operon", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "operon", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "operon", 0)
+    TESTWRONGQUAL ("gene", "foo", "operon", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "operon", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "operon", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "operon", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "operon", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "operon", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "operon", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "operon", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "operon", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "operon", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "operon", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "operon", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "operon", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "operon", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "operon", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "operon", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "operon", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "operon", 0)
+    TESTWRONGQUAL ("locus_tag", "foo", "operon", 0)
+    TESTWRONGQUAL ("number", "foo", "operon", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "operon", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "operon", 0)
+    TESTWRONGQUAL ("direction", "foo", "operon", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "operon", 0)
+    TESTWRONGQUAL ("serotype", "foo", "operon", 0)
+    TESTWRONGQUAL ("satellite", "foo", "operon", 0)
+    TESTWRONGQUAL ("organism", "foo", "operon", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "operon", 0)
+    TESTWRONGQUAL ("serovar", "foo", "operon", 0)
+    TESTWRONGQUAL ("variety", "foo", "operon", 0)
+    TESTWRONGQUAL ("country", "foo", "operon", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "operon", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "operon", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "operon", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "operon", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "operon", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "operon", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "operon", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "operon", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "operon", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "operon", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "operon", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "operon", 0)
+    TESTWRONGQUAL ("gene_synonym", "foo", "operon", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "operon", 0)
+    TESTWRONGQUAL ("segment", "foo", "operon", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "operon", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "operon", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "operon", 0)
+    TESTWRONGQUAL ("frequency", "foo", "operon", 0)
+    TESTWRONGQUAL ("transposon", "foo", "operon", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "operon", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "operon", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "operon", 0)
+    TESTWRONGQUAL ("clone", "foo", "operon", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "operon", 0)
+    TESTWRONGQUAL ("translation", "foo", "operon", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "operon", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "operon", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "operon", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "operon", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "operon", 0)
+    TESTWRONGQUAL ("germline", "foo", "operon", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "operon", 0)
+    TESTWRONGQUAL ("codon", "foo", "operon", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "operon", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "operon", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "operon", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "operon", 0)
+    TESTWRONGQUAL ("strain", "foo", "operon", 0)
+    TESTWRONGQUAL ("proviral", "foo", "operon", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "operon", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "operon", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "operon", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "operon", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "operon", 0)
+    TESTWRONGQUAL ("focus", "foo", "operon", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "operon", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "operon", 0)
+    TESTWRONGQUAL ("isolate", "foo", "operon", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "operon", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "operon", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "operon", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "operon", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "operon", 0)
+    TESTWRONGQUAL ("organelle", "foo", "operon", 0)
+    TESTWRONGQUAL ("sex", "foo", "operon", 0)
+    TESTWRONGQUAL ("old_locus_tag", "foo", "operon", 0)
+    TESTWRONGQUAL ("virion", "foo", "operon", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "operon", 0)
+    TESTWRONGQUAL ("exception", "foo", "operon", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "operon", 0)
+    TESTWRONGQUAL ("product", "foo", "operon", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("oriT");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "oriT", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "oriT", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "oriT", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "oriT", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "oriT", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "oriT", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "oriT", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "oriT", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "oriT", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "oriT", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "oriT", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "oriT", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "oriT", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "oriT", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "oriT", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "oriT", 0)
+    TESTWRONGQUAL ("function", "foo", "oriT", 0)
+    TESTWRONGQUAL ("number", "foo", "oriT", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "oriT", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "oriT", 0)
+    TESTWRONGQUAL ("serotype", "foo", "oriT", 0)
+    TESTWRONGQUAL ("satellite", "foo", "oriT", 0)
+    TESTWRONGQUAL ("organism", "foo", "oriT", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "oriT", 0)
+    TESTWRONGQUAL ("serovar", "foo", "oriT", 0)
+    TESTWRONGQUAL ("variety", "foo", "oriT", 0)
+    TESTWRONGQUAL ("country", "foo", "oriT", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "oriT", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "oriT", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "oriT", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "oriT", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "oriT", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "oriT", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "oriT", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "oriT", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "oriT", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "oriT", 0)
+    TESTWRONGQUAL ("operon", "foo", "oriT", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "oriT", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "oriT", 0)
+    TESTWRONGQUAL ("segment", "foo", "oriT", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "oriT", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "oriT", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "oriT", 0)
+    TESTWRONGQUAL ("frequency", "foo", "oriT", 0)
+    TESTWRONGQUAL ("transposon", "foo", "oriT", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "oriT", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "oriT", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "oriT", 0)
+    TESTWRONGQUAL ("clone", "foo", "oriT", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "oriT", 0)
+    TESTWRONGQUAL ("translation", "foo", "oriT", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "oriT", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "oriT", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "oriT", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "oriT", 0)
+    TESTWRONGQUAL ("germline", "foo", "oriT", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "oriT", 0)
+    TESTWRONGQUAL ("codon", "foo", "oriT", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "oriT", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "oriT", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "oriT", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "oriT", 0)
+    TESTWRONGQUAL ("strain", "foo", "oriT", 0)
+    TESTWRONGQUAL ("proviral", "foo", "oriT", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "oriT", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "oriT", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "oriT", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "oriT", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "oriT", 0)
+    TESTWRONGQUAL ("focus", "foo", "oriT", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "oriT", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "oriT", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "oriT", 0)
+    TESTWRONGQUAL ("isolate", "foo", "oriT", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "oriT", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "oriT", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "oriT", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "oriT", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "oriT", 0)
+    TESTWRONGQUAL ("organelle", "foo", "oriT", 0)
+    TESTWRONGQUAL ("sex", "foo", "oriT", 0)
+    TESTWRONGQUAL ("virion", "foo", "oriT", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "oriT", 0)
+    TESTWRONGQUAL ("exception", "foo", "oriT", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "oriT", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "oriT", 0)
+    TESTWRONGQUAL ("product", "foo", "oriT", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("polyA_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "polyA_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "polyA_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "polyA_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "polyA_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "polyA_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("operon", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "polyA_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "polyA_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "polyA_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("polyA_site");
+    misc_feat->SetLocation().SetPnt().SetId().SetLocal().SetStr("good");
+    misc_feat->SetLocation().SetPnt().SetPoint(5);
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "polyA_site", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "polyA_site", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "polyA_site", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("function", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("number", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("direction", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "5..5", "polyA_site", 0)
+    TESTWRONGQUAL ("serotype", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("satellite", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("organism", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("serovar", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("variety", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("country", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "polyA_site", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("operon", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("segment", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("frequency", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("transposon", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("clone", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("translation", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("germline", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("codon", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "polyA_site", 0)
+    TESTWRONGQUAL ("strain", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("proviral", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("focus", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("partial", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("isolate", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("organelle", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("sex", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("virion", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("exception", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "polyA_site", 0)
+    TESTWRONGQUAL ("product", "foo", "polyA_site", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("prim_transcript");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "prim_transcript", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "prim_transcript", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "prim_transcript", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("number", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("direction", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "prim_transcript", 0)
+    TESTWRONGQUAL ("serotype", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("satellite", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("organism", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("serovar", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("variety", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("country", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "prim_transcript", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("segment", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("frequency", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("transposon", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("clone", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("translation", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("germline", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("codon", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "prim_transcript", 0)
+    TESTWRONGQUAL ("strain", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("proviral", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("focus", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("isolate", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("organelle", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("sex", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("virion", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("exception", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "prim_transcript", 0)
+    TESTWRONGQUAL ("product", "foo", "prim_transcript", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("primer_bind");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "primer_bind", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "primer_bind", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "primer_bind", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("function", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("number", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("direction", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "primer_bind", 0)
+    TESTWRONGQUAL ("serotype", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("satellite", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("organism", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("serovar", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("variety", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("country", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "primer_bind", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("operon", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("segment", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("frequency", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("transposon", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("clone", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("translation", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("germline", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("codon", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "primer_bind", 0)
+    TESTWRONGQUAL ("strain", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("proviral", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("focus", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("isolate", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("organelle", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("sex", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("virion", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("exception", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "primer_bind", 0)
+    TESTWRONGQUAL ("product", "foo", "primer_bind", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("promoter");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "promoter", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "promoter", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "promoter", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "promoter", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "promoter", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "promoter", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "promoter", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "promoter", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "promoter", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "promoter", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "promoter", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "promoter", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "promoter", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "promoter", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "promoter", 0)
+    TESTWRONGQUAL ("number", "foo", "promoter", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "promoter", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "promoter", 0)
+    TESTWRONGQUAL ("direction", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "promoter", 0)
+    TESTWRONGQUAL ("serotype", "foo", "promoter", 0)
+    TESTWRONGQUAL ("satellite", "foo", "promoter", 0)
+    TESTWRONGQUAL ("organism", "foo", "promoter", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "promoter", 0)
+    TESTWRONGQUAL ("serovar", "foo", "promoter", 0)
+    TESTWRONGQUAL ("variety", "foo", "promoter", 0)
+    TESTWRONGQUAL ("country", "foo", "promoter", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "promoter", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "promoter", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "promoter", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "promoter", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "promoter", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "promoter", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "promoter", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "promoter", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "promoter", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "promoter", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "promoter", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "promoter", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "promoter", 0)
+    TESTWRONGQUAL ("segment", "foo", "promoter", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "promoter", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "promoter", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "promoter", 0)
+    TESTWRONGQUAL ("frequency", "foo", "promoter", 0)
+    TESTWRONGQUAL ("transposon", "foo", "promoter", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "promoter", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "promoter", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "promoter", 0)
+    TESTWRONGQUAL ("clone", "foo", "promoter", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "promoter", 0)
+    TESTWRONGQUAL ("translation", "foo", "promoter", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "promoter", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "promoter", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "promoter", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "promoter", 0)
+    TESTWRONGQUAL ("germline", "foo", "promoter", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "promoter", 0)
+    TESTWRONGQUAL ("codon", "foo", "promoter", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "promoter", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "promoter", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "promoter", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "promoter", 0)
+    TESTWRONGQUAL ("strain", "foo", "promoter", 0)
+    TESTWRONGQUAL ("proviral", "foo", "promoter", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "promoter", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "promoter", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "promoter", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "promoter", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "promoter", 0)
+    TESTWRONGQUAL ("focus", "foo", "promoter", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "promoter", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "promoter", 0)
+    TESTWRONGQUAL ("isolate", "foo", "promoter", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "promoter", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "promoter", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "promoter", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "promoter", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "promoter", 0)
+    TESTWRONGQUAL ("organelle", "foo", "promoter", 0)
+    TESTWRONGQUAL ("sex", "foo", "promoter", 0)
+    TESTWRONGQUAL ("virion", "foo", "promoter", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "promoter", 0)
+    TESTWRONGQUAL ("exception", "foo", "promoter", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "promoter", 0)
+    TESTWRONGQUAL ("product", "foo", "promoter", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("protein_bind");
+    misc_feat->AddQualifier ("bound_moiety", "foo");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "protein_bind", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "protein_bind", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "protein_bind", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("number", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("direction", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "protein_bind", 0)
+    TESTWRONGQUAL ("serotype", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("satellite", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("organism", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("serovar", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("variety", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("country", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "protein_bind", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("segment", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("frequency", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("transposon", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("clone", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("translation", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("germline", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("codon", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "protein_bind", 0)
+    TESTWRONGQUAL ("strain", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("proviral", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("focus", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("isolate", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("organelle", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("sex", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("virion", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("exception", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "protein_bind", 0)
+    TESTWRONGQUAL ("product", "foo", "protein_bind", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("RBS");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "RBS", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "RBS", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "RBS", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "RBS", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "RBS", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "RBS", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "RBS", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "RBS", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "RBS", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "RBS", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "RBS", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "RBS", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "RBS", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "RBS", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "RBS", 0)
+    TESTWRONGQUAL ("function", "foo", "RBS", 0)
+    TESTWRONGQUAL ("number", "foo", "RBS", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "RBS", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "RBS", 0)
+    TESTWRONGQUAL ("direction", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "RBS", 0)
+    TESTWRONGQUAL ("serotype", "foo", "RBS", 0)
+    TESTWRONGQUAL ("satellite", "foo", "RBS", 0)
+    TESTWRONGQUAL ("organism", "foo", "RBS", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "RBS", 0)
+    TESTWRONGQUAL ("serovar", "foo", "RBS", 0)
+    TESTWRONGQUAL ("variety", "foo", "RBS", 0)
+    TESTWRONGQUAL ("country", "foo", "RBS", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "RBS", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "RBS", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "RBS", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "RBS", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "RBS", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "RBS", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "RBS", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "RBS", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "RBS", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "RBS", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "RBS", 0)
+    TESTWRONGQUAL ("operon", "foo", "RBS", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "RBS", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "RBS", 0)
+    TESTWRONGQUAL ("segment", "foo", "RBS", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "RBS", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "RBS", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "RBS", 0)
+    TESTWRONGQUAL ("frequency", "foo", "RBS", 0)
+    TESTWRONGQUAL ("transposon", "foo", "RBS", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "RBS", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "RBS", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "RBS", 0)
+    TESTWRONGQUAL ("clone", "foo", "RBS", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "RBS", 0)
+    TESTWRONGQUAL ("translation", "foo", "RBS", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "RBS", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "RBS", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "RBS", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "RBS", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "RBS", 0)
+    TESTWRONGQUAL ("germline", "foo", "RBS", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "RBS", 0)
+    TESTWRONGQUAL ("codon", "foo", "RBS", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "RBS", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "RBS", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "RBS", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "RBS", 0)
+    TESTWRONGQUAL ("strain", "foo", "RBS", 0)
+    TESTWRONGQUAL ("proviral", "foo", "RBS", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "RBS", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "RBS", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "RBS", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "RBS", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "RBS", 0)
+    TESTWRONGQUAL ("focus", "foo", "RBS", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "RBS", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "RBS", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "RBS", 0)
+    TESTWRONGQUAL ("isolate", "foo", "RBS", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "RBS", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "RBS", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "RBS", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "RBS", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "RBS", 0)
+    TESTWRONGQUAL ("organelle", "foo", "RBS", 0)
+    TESTWRONGQUAL ("sex", "foo", "RBS", 0)
+    TESTWRONGQUAL ("virion", "foo", "RBS", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "RBS", 0)
+    TESTWRONGQUAL ("exception", "foo", "RBS", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "RBS", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "RBS", 0)
+    TESTWRONGQUAL ("product", "foo", "RBS", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("repeat_region");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "repeat_region", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("number", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("direction", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("serotype", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("organism", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("serovar", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("variety", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("country", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "repeat_region", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("operon", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("segment", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("frequency", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("clone", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("translation", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("germline", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("codon", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "repeat_region", 0)
+    TESTWRONGQUAL ("strain", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("proviral", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("focus", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("isolate", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("organelle", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("sex", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("virion", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("exception", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "repeat_region", 0)
+    TESTWRONGQUAL ("product", "foo", "repeat_region", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("repeat_unit");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "repeat_unit", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "repeat_unit", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("number", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("direction", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("serotype", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("satellite", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("organism", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("serovar", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("variety", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("country", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "repeat_unit", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("operon", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("segment", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("frequency", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("transposon", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("clone", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("translation", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("germline", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("codon", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "repeat_unit", 0)
+    TESTWRONGQUAL ("strain", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("proviral", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("focus", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("isolate", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("organelle", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("sex", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("virion", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("exception", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "repeat_unit", 0)
+    TESTWRONGQUAL ("product", "foo", "repeat_unit", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("rep_origin");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "rep_origin", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "rep_origin", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "rep_origin", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("function", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("number", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "rep_origin", 0)
+    TESTWRONGQUAL ("serotype", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("satellite", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("organism", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("serovar", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("variety", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("country", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "rep_origin", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("operon", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("segment", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("frequency", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("transposon", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("clone", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("translation", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("germline", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("codon", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "rep_origin", 0)
+    TESTWRONGQUAL ("strain", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("proviral", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("focus", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("isolate", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("organelle", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("sex", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("virion", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("exception", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "rep_origin", 0)
+    TESTWRONGQUAL ("product", "foo", "rep_origin", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("S_region");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "S_region", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "S_region", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "S_region", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "S_region", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "S_region", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "S_region", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "S_region", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "S_region", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "S_region", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "S_region", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "S_region", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "S_region", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "S_region", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "S_region", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "S_region", 0)
+    TESTWRONGQUAL ("function", "foo", "S_region", 0)
+    TESTWRONGQUAL ("number", "foo", "S_region", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "S_region", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "S_region", 0)
+    TESTWRONGQUAL ("direction", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "S_region", 0)
+    TESTWRONGQUAL ("serotype", "foo", "S_region", 0)
+    TESTWRONGQUAL ("satellite", "foo", "S_region", 0)
+    TESTWRONGQUAL ("organism", "foo", "S_region", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "S_region", 0)
+    TESTWRONGQUAL ("serovar", "foo", "S_region", 0)
+    TESTWRONGQUAL ("variety", "foo", "S_region", 0)
+    TESTWRONGQUAL ("country", "foo", "S_region", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "S_region", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "S_region", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "S_region", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "S_region", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "S_region", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "S_region", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "S_region", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "S_region", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "S_region", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "S_region", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "S_region", 0)
+    TESTWRONGQUAL ("operon", "foo", "S_region", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "S_region", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "S_region", 0)
+    TESTWRONGQUAL ("segment", "foo", "S_region", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "S_region", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "S_region", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "S_region", 0)
+    TESTWRONGQUAL ("frequency", "foo", "S_region", 0)
+    TESTWRONGQUAL ("transposon", "foo", "S_region", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "S_region", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "S_region", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "S_region", 0)
+    TESTWRONGQUAL ("clone", "foo", "S_region", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "S_region", 0)
+    TESTWRONGQUAL ("translation", "foo", "S_region", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "S_region", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "S_region", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "S_region", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "S_region", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "S_region", 0)
+    TESTWRONGQUAL ("germline", "foo", "S_region", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "S_region", 0)
+    TESTWRONGQUAL ("codon", "foo", "S_region", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "S_region", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "S_region", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "S_region", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "S_region", 0)
+    TESTWRONGQUAL ("strain", "foo", "S_region", 0)
+    TESTWRONGQUAL ("proviral", "foo", "S_region", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "S_region", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "S_region", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "S_region", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "S_region", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "S_region", 0)
+    TESTWRONGQUAL ("focus", "foo", "S_region", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "S_region", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "S_region", 0)
+    TESTWRONGQUAL ("isolate", "foo", "S_region", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "S_region", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "S_region", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "S_region", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "S_region", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "S_region", 0)
+    TESTWRONGQUAL ("organelle", "foo", "S_region", 0)
+    TESTWRONGQUAL ("sex", "foo", "S_region", 0)
+    TESTWRONGQUAL ("virion", "foo", "S_region", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "S_region", 0)
+    TESTWRONGQUAL ("exception", "foo", "S_region", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "S_region", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "S_region", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("satellite");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "satellite", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "satellite", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "satellite", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "satellite", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "satellite", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "satellite", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "satellite", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "satellite", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "satellite", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "satellite", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "satellite", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "satellite", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "satellite", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "satellite", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "satellite", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "satellite", 0)
+    TESTWRONGQUAL ("function", "foo", "satellite", 0)
+    TESTWRONGQUAL ("number", "foo", "satellite", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "satellite", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "satellite", 0)
+    TESTWRONGQUAL ("direction", "foo", "satellite", 0)
+    TESTWRONGQUAL ("serotype", "foo", "satellite", 0)
+    TESTWRONGQUAL ("satellite", "foo", "satellite", 0)
+    TESTWRONGQUAL ("organism", "foo", "satellite", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "satellite", 0)
+    TESTWRONGQUAL ("serovar", "foo", "satellite", 0)
+    TESTWRONGQUAL ("variety", "foo", "satellite", 0)
+    TESTWRONGQUAL ("country", "foo", "satellite", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "satellite", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "satellite", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "satellite", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "satellite", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "satellite", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "satellite", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "satellite", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "satellite", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "satellite", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "satellite", 0)
+    TESTWRONGQUAL ("operon", "foo", "satellite", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "satellite", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "satellite", 0)
+    TESTWRONGQUAL ("segment", "foo", "satellite", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "satellite", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "satellite", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "satellite", 0)
+    TESTWRONGQUAL ("frequency", "foo", "satellite", 0)
+    TESTWRONGQUAL ("transposon", "foo", "satellite", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "satellite", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "satellite", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "satellite", 0)
+    TESTWRONGQUAL ("clone", "foo", "satellite", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "satellite", 0)
+    TESTWRONGQUAL ("translation", "foo", "satellite", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "satellite", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "satellite", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "satellite", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "satellite", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "satellite", 0)
+    TESTWRONGQUAL ("germline", "foo", "satellite", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "satellite", 0)
+    TESTWRONGQUAL ("codon", "foo", "satellite", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "satellite", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "satellite", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "satellite", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "satellite", 0)
+    TESTWRONGQUAL ("strain", "foo", "satellite", 0)
+    TESTWRONGQUAL ("proviral", "foo", "satellite", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "satellite", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "satellite", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "satellite", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "satellite", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "satellite", 0)
+    TESTWRONGQUAL ("focus", "foo", "satellite", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "satellite", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "satellite", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "satellite", 0)
+    TESTWRONGQUAL ("isolate", "foo", "satellite", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "satellite", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "satellite", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "satellite", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "satellite", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "satellite", 0)
+    TESTWRONGQUAL ("organelle", "foo", "satellite", 0)
+    TESTWRONGQUAL ("sex", "foo", "satellite", 0)
+    TESTWRONGQUAL ("virion", "foo", "satellite", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "satellite", 0)
+    TESTWRONGQUAL ("exception", "foo", "satellite", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "satellite", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "satellite", 0)
+    TESTWRONGQUAL ("product", "foo", "satellite", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("source");
+    misc_feat->AddQualifier ("organism", "foo");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "source", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "source", 0)
+    TESTWRONGQUAL ("gene", "foo", "source", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "source", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "source", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "source", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "source", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "source", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "source", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "source", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "source", 0)
+    TESTWRONGQUAL ("locus_tag", "foo", "source", 0)
+    TESTWRONGQUAL ("function", "foo", "source", 0)
+    TESTWRONGQUAL ("number", "foo", "source", 0)
+    TESTWRONGQUAL ("direction", "foo", "source", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "source", 0)
+    TESTWRONGQUAL ("satellite", "foo", "source", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "source", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "source", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "source", 0)
+    TESTWRONGQUAL ("operon", "foo", "source", 0)
+    TESTWRONGQUAL ("experiment", "foo", "source", 0)
+    TESTWRONGQUAL ("gene_synonym", "foo", "source", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "source", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "source", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "source", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "source", 0)
+    TESTWRONGQUAL ("inference", "similar to DNA sequence:INSD:AY123456.1", "source", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "source", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "source", 0)
+    TESTWRONGQUAL ("translation", "foo", "source", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "source", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "source", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "source", 0)
+    TESTWRONGQUAL ("codon", "foo", "source", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "source", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "source", 0)
+    TESTWRONGQUAL ("partial", "foo", "source", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "source", 0)
+    TESTWRONGQUAL ("evidence", "foo", "source", 0)
+    TESTWRONGQUAL ("allele", "foo", "source", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "source", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "source", 0)
+    TESTWRONGQUAL ("old_locus_tag", "foo", "source", 0)
+    TESTWRONGQUAL ("exception", "foo", "source", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "source", 0)
+    TESTWRONGQUAL ("product", "foo", "source", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("stem_loop");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "stem_loop", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "stem_loop", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "stem_loop", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("number", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("direction", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "stem_loop", 0)
+    TESTWRONGQUAL ("serotype", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("satellite", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("organism", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("serovar", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("variety", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("country", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "stem_loop", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("segment", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("frequency", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("transposon", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("clone", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("translation", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("germline", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("codon", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "stem_loop", 0)
+    TESTWRONGQUAL ("strain", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("proviral", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("focus", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("isolate", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("organelle", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("sex", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("virion", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("exception", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "stem_loop", 0)
+    TESTWRONGQUAL ("product", "foo", "stem_loop", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("STS");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "STS", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "STS", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "STS", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "STS", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "STS", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "STS", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "STS", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "STS", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "STS", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "STS", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "STS", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "STS", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "STS", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "STS", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "STS", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "STS", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "STS", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "STS", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "STS", 0)
+    TESTWRONGQUAL ("function", "foo", "STS", 0)
+    TESTWRONGQUAL ("number", "foo", "STS", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "STS", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "STS", 0)
+    TESTWRONGQUAL ("direction", "foo", "STS", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "STS", 0)
+    TESTWRONGQUAL ("serotype", "foo", "STS", 0)
+    TESTWRONGQUAL ("satellite", "foo", "STS", 0)
+    TESTWRONGQUAL ("organism", "foo", "STS", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "STS", 0)
+    TESTWRONGQUAL ("serovar", "foo", "STS", 0)
+    TESTWRONGQUAL ("variety", "foo", "STS", 0)
+    TESTWRONGQUAL ("country", "foo", "STS", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "STS", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "STS", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "STS", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "STS", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "STS", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "STS", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "STS", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "STS", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "STS", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "STS", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "STS", 0)
+    TESTWRONGQUAL ("operon", "foo", "STS", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "STS", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "STS", 0)
+    TESTWRONGQUAL ("segment", "foo", "STS", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "STS", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "STS", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "STS", 0)
+    TESTWRONGQUAL ("frequency", "foo", "STS", 0)
+    TESTWRONGQUAL ("transposon", "foo", "STS", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "STS", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "STS", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "STS", 0)
+    TESTWRONGQUAL ("clone", "foo", "STS", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "STS", 0)
+    TESTWRONGQUAL ("translation", "foo", "STS", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "STS", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "STS", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "STS", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "STS", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "STS", 0)
+    TESTWRONGQUAL ("germline", "foo", "STS", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "STS", 0)
+    TESTWRONGQUAL ("codon", "foo", "STS", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "STS", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "STS", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "STS", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "STS", 0)
+    TESTWRONGQUAL ("strain", "foo", "STS", 0)
+    TESTWRONGQUAL ("proviral", "foo", "STS", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "STS", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "STS", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "STS", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "STS", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "STS", 0)
+    TESTWRONGQUAL ("focus", "foo", "STS", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "STS", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "STS", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "STS", 0)
+    TESTWRONGQUAL ("isolate", "foo", "STS", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "STS", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "STS", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "STS", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "STS", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "STS", 0)
+    TESTWRONGQUAL ("organelle", "foo", "STS", 0)
+    TESTWRONGQUAL ("sex", "foo", "STS", 0)
+    TESTWRONGQUAL ("virion", "foo", "STS", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "STS", 0)
+    TESTWRONGQUAL ("exception", "foo", "STS", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "STS", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "STS", 0)
+    TESTWRONGQUAL ("product", "foo", "STS", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("TATA_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "TATA_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "TATA_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "TATA_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "TATA_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "TATA_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("operon", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "TATA_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "TATA_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "TATA_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("terminator");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "terminator", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "terminator", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "terminator", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "terminator", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "terminator", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "terminator", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "terminator", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "terminator", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "terminator", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "terminator", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "terminator", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "terminator", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "terminator", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "terminator", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "terminator", 0)
+    TESTWRONGQUAL ("function", "foo", "terminator", 0)
+    TESTWRONGQUAL ("number", "foo", "terminator", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "terminator", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "terminator", 0)
+    TESTWRONGQUAL ("direction", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "terminator", 0)
+    TESTWRONGQUAL ("serotype", "foo", "terminator", 0)
+    TESTWRONGQUAL ("satellite", "foo", "terminator", 0)
+    TESTWRONGQUAL ("organism", "foo", "terminator", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "terminator", 0)
+    TESTWRONGQUAL ("serovar", "foo", "terminator", 0)
+    TESTWRONGQUAL ("variety", "foo", "terminator", 0)
+    TESTWRONGQUAL ("country", "foo", "terminator", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "terminator", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "terminator", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "terminator", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "terminator", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "terminator", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "terminator", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "terminator", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "terminator", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "terminator", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "terminator", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "terminator", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "terminator", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "terminator", 0)
+    TESTWRONGQUAL ("segment", "foo", "terminator", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "terminator", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "terminator", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "terminator", 0)
+    TESTWRONGQUAL ("frequency", "foo", "terminator", 0)
+    TESTWRONGQUAL ("transposon", "foo", "terminator", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "terminator", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "terminator", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "terminator", 0)
+    TESTWRONGQUAL ("clone", "foo", "terminator", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "terminator", 0)
+    TESTWRONGQUAL ("translation", "foo", "terminator", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "terminator", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "terminator", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "terminator", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "terminator", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "terminator", 0)
+    TESTWRONGQUAL ("germline", "foo", "terminator", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "terminator", 0)
+    TESTWRONGQUAL ("codon", "foo", "terminator", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "terminator", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "terminator", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "terminator", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "terminator", 0)
+    TESTWRONGQUAL ("strain", "foo", "terminator", 0)
+    TESTWRONGQUAL ("proviral", "foo", "terminator", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "terminator", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "terminator", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "terminator", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "terminator", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "terminator", 0)
+    TESTWRONGQUAL ("focus", "foo", "terminator", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "terminator", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "terminator", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "terminator", 0)
+    TESTWRONGQUAL ("isolate", "foo", "terminator", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "terminator", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "terminator", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "terminator", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "terminator", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "terminator", 0)
+    TESTWRONGQUAL ("organelle", "foo", "terminator", 0)
+    TESTWRONGQUAL ("sex", "foo", "terminator", 0)
+    TESTWRONGQUAL ("virion", "foo", "terminator", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "terminator", 0)
+    TESTWRONGQUAL ("exception", "foo", "terminator", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "terminator", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "terminator", 0)
+    TESTWRONGQUAL ("product", "foo", "terminator", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("unsure");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "unsure", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "unsure", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "unsure", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "unsure", 0)
+    TESTWRONGQUAL ("standard_name", "foo", "unsure", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "unsure", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "unsure", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "unsure", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "unsure", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "unsure", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "unsure", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "unsure", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "unsure", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "unsure", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "unsure", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "unsure", 0)
+    TESTWRONGQUAL ("function", "foo", "unsure", 0)
+    TESTWRONGQUAL ("number", "foo", "unsure", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "unsure", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "unsure", 0)
+    TESTWRONGQUAL ("direction", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "unsure", 0)
+    TESTWRONGQUAL ("serotype", "foo", "unsure", 0)
+    TESTWRONGQUAL ("satellite", "foo", "unsure", 0)
+    TESTWRONGQUAL ("organism", "foo", "unsure", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "unsure", 0)
+    TESTWRONGQUAL ("serovar", "foo", "unsure", 0)
+    TESTWRONGQUAL ("variety", "foo", "unsure", 0)
+    TESTWRONGQUAL ("country", "foo", "unsure", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "unsure", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "unsure", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "unsure", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "unsure", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "unsure", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "unsure", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "unsure", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "unsure", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "unsure", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "unsure", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "unsure", 0)
+    TESTWRONGQUAL ("operon", "foo", "unsure", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "unsure", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "unsure", 0)
+    TESTWRONGQUAL ("segment", "foo", "unsure", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "unsure", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "unsure", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "unsure", 0)
+    TESTWRONGQUAL ("frequency", "foo", "unsure", 0)
+    TESTWRONGQUAL ("transposon", "foo", "unsure", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "unsure", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "unsure", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "unsure", 0)
+    TESTWRONGQUAL ("clone", "foo", "unsure", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "unsure", 0)
+    TESTWRONGQUAL ("translation", "foo", "unsure", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "unsure", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "unsure", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "unsure", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "unsure", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "unsure", 0)
+    TESTWRONGQUAL ("germline", "foo", "unsure", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "unsure", 0)
+    TESTWRONGQUAL ("codon", "foo", "unsure", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "unsure", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "unsure", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "unsure", 0)
+    TESTWRONGQUAL ("strain", "foo", "unsure", 0)
+    TESTWRONGQUAL ("proviral", "foo", "unsure", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "unsure", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "unsure", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "unsure", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "unsure", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "unsure", 0)
+    TESTWRONGQUAL ("focus", "foo", "unsure", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "unsure", 0)
+    TESTWRONGQUAL ("partial", "foo", "unsure", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "unsure", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "unsure", 0)
+    TESTWRONGQUAL ("isolate", "foo", "unsure", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "unsure", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "unsure", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "unsure", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "unsure", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "unsure", 0)
+    TESTWRONGQUAL ("organelle", "foo", "unsure", 0)
+    TESTWRONGQUAL ("sex", "foo", "unsure", 0)
+    TESTWRONGQUAL ("virion", "foo", "unsure", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "unsure", 0)
+    TESTWRONGQUAL ("exception", "foo", "unsure", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "unsure", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "unsure", 0)
+    TESTWRONGQUAL ("product", "foo", "unsure", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("V_region");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "V_region", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "V_region", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "V_region", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "V_region", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "V_region", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "V_region", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "V_region", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "V_region", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "V_region", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "V_region", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "V_region", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "V_region", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "V_region", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "V_region", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "V_region", 0)
+    TESTWRONGQUAL ("function", "foo", "V_region", 0)
+    TESTWRONGQUAL ("number", "foo", "V_region", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "V_region", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "V_region", 0)
+    TESTWRONGQUAL ("direction", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "V_region", 0)
+    TESTWRONGQUAL ("serotype", "foo", "V_region", 0)
+    TESTWRONGQUAL ("satellite", "foo", "V_region", 0)
+    TESTWRONGQUAL ("organism", "foo", "V_region", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "V_region", 0)
+    TESTWRONGQUAL ("serovar", "foo", "V_region", 0)
+    TESTWRONGQUAL ("variety", "foo", "V_region", 0)
+    TESTWRONGQUAL ("country", "foo", "V_region", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "V_region", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "V_region", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "V_region", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "V_region", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "V_region", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "V_region", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "V_region", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "V_region", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "V_region", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "V_region", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "V_region", 0)
+    TESTWRONGQUAL ("operon", "foo", "V_region", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "V_region", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "V_region", 0)
+    TESTWRONGQUAL ("segment", "foo", "V_region", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "V_region", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "V_region", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "V_region", 0)
+    TESTWRONGQUAL ("frequency", "foo", "V_region", 0)
+    TESTWRONGQUAL ("transposon", "foo", "V_region", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "V_region", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "V_region", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "V_region", 0)
+    TESTWRONGQUAL ("clone", "foo", "V_region", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "V_region", 0)
+    TESTWRONGQUAL ("translation", "foo", "V_region", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "V_region", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "V_region", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "V_region", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "V_region", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "V_region", 0)
+    TESTWRONGQUAL ("germline", "foo", "V_region", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "V_region", 0)
+    TESTWRONGQUAL ("codon", "foo", "V_region", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "V_region", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "V_region", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "V_region", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "V_region", 0)
+    TESTWRONGQUAL ("strain", "foo", "V_region", 0)
+    TESTWRONGQUAL ("proviral", "foo", "V_region", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "V_region", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "V_region", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "V_region", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "V_region", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "V_region", 0)
+    TESTWRONGQUAL ("focus", "foo", "V_region", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "V_region", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "V_region", 0)
+    TESTWRONGQUAL ("isolate", "foo", "V_region", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "V_region", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "V_region", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "V_region", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "V_region", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "V_region", 0)
+    TESTWRONGQUAL ("organelle", "foo", "V_region", 0)
+    TESTWRONGQUAL ("sex", "foo", "V_region", 0)
+    TESTWRONGQUAL ("virion", "foo", "V_region", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "V_region", 0)
+    TESTWRONGQUAL ("exception", "foo", "V_region", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "V_region", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "V_region", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("V_segment");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "V_segment", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "V_segment", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "V_segment", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("function", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("number", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("direction", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "V_segment", 0)
+    TESTWRONGQUAL ("serotype", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("satellite", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("organism", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("serovar", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("variety", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("country", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "V_segment", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("operon", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("segment", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("frequency", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("transposon", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("clone", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("translation", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("germline", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("codon", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "V_segment", 0)
+    TESTWRONGQUAL ("strain", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("proviral", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("focus", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("isolate", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("organelle", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("sex", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("virion", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("exception", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "V_segment", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "V_segment", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("variation");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("mitochondrion", "foo", "variation", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "variation", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "variation", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "variation", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "variation", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "variation", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "variation", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "variation", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "variation", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "variation", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "variation", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "variation", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "variation", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "variation", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "variation", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "variation", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "variation", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "variation", 0)
+    TESTWRONGQUAL ("function", "foo", "variation", 0)
+    TESTWRONGQUAL ("number", "foo", "variation", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "variation", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "variation", 0)
+    TESTWRONGQUAL ("direction", "foo", "variation", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "variation", 0)
+    TESTWRONGQUAL ("serotype", "foo", "variation", 0)
+    TESTWRONGQUAL ("satellite", "foo", "variation", 0)
+    TESTWRONGQUAL ("organism", "foo", "variation", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "variation", 0)
+    TESTWRONGQUAL ("serovar", "foo", "variation", 0)
+    TESTWRONGQUAL ("variety", "foo", "variation", 0)
+    TESTWRONGQUAL ("country", "foo", "variation", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "variation", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "variation", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "variation", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "variation", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "variation", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "variation", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "variation", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "variation", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "variation", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "variation", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "variation", 0)
+    TESTWRONGQUAL ("operon", "foo", "variation", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "variation", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "variation", 0)
+    TESTWRONGQUAL ("segment", "foo", "variation", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "variation", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "variation", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "variation", 0)
+    TESTWRONGQUAL ("transposon", "foo", "variation", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "variation", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "variation", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "variation", 0)
+    TESTWRONGQUAL ("clone", "foo", "variation", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "variation", 0)
+    TESTWRONGQUAL ("translation", "foo", "variation", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "variation", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "variation", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "variation", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "variation", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "variation", 0)
+    TESTWRONGQUAL ("germline", "foo", "variation", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "variation", 0)
+    TESTWRONGQUAL ("codon", "foo", "variation", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "variation", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "variation", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "variation", 0)
+    TESTWRONGQUAL ("strain", "foo", "variation", 0)
+    TESTWRONGQUAL ("proviral", "foo", "variation", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "variation", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "variation", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "variation", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "variation", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "variation", 0)
+    TESTWRONGQUAL ("focus", "foo", "variation", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "variation", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "variation", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "variation", 0)
+    TESTWRONGQUAL ("isolate", "foo", "variation", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "variation", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "variation", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "variation", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "variation", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "variation", 0)
+    TESTWRONGQUAL ("organelle", "foo", "variation", 0)
+    TESTWRONGQUAL ("sex", "foo", "variation", 0)
+    TESTWRONGQUAL ("virion", "foo", "variation", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "variation", 0)
+    TESTWRONGQUAL ("exception", "foo", "variation", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "variation", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("3'clip");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "3'clip", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "3'clip", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "3'clip", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("number", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("direction", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "3'clip", 0)
+    TESTWRONGQUAL ("serotype", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("satellite", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("organism", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("serovar", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("variety", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("country", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "3'clip", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("operon", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("segment", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("frequency", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("transposon", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("clone", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("translation", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("germline", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("codon", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "3'clip", 0)
+    TESTWRONGQUAL ("strain", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("proviral", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("focus", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("isolate", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("organelle", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("sex", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("virion", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("exception", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "3'clip", 0)
+    TESTWRONGQUAL ("product", "foo", "3'clip", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("3'UTR");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "3'UTR", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "3'UTR", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "3'UTR", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("number", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("direction", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "3'UTR", 0)
+    TESTWRONGQUAL ("serotype", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("satellite", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("organism", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("serovar", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("variety", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("country", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "3'UTR", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("operon", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("segment", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("frequency", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("transposon", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("clone", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("translation", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("germline", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("codon", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "3'UTR", 0)
+    TESTWRONGQUAL ("strain", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("proviral", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("focus", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("isolate", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("organelle", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("sex", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("virion", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("exception", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "3'UTR", 0)
+    TESTWRONGQUAL ("product", "foo", "3'UTR", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("5'clip");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "5'clip", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "5'clip", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "5'clip", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("number", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("direction", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "5'clip", 0)
+    TESTWRONGQUAL ("serotype", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("satellite", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("organism", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("serovar", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("variety", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("country", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "5'clip", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("operon", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("segment", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("frequency", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("transposon", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("clone", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("translation", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("germline", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("codon", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "5'clip", 0)
+    TESTWRONGQUAL ("strain", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("proviral", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("focus", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("isolate", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("organelle", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("sex", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("virion", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("exception", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "5'clip", 0)
+    TESTWRONGQUAL ("product", "foo", "5'clip", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("5'UTR");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "5'UTR", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "5'UTR", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "5'UTR", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("number", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("direction", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "5'UTR", 0)
+    TESTWRONGQUAL ("serotype", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("satellite", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("organism", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("serovar", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("variety", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("country", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "5'UTR", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("operon", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("segment", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("frequency", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("transposon", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("clone", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("translation", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("germline", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("codon", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "5'UTR", 0)
+    TESTWRONGQUAL ("strain", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("proviral", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("focus", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("isolate", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("organelle", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("sex", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("virion", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("exception", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "5'UTR", 0)
+    TESTWRONGQUAL ("product", "foo", "5'UTR", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("-10_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "-10_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "-10_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "-10_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "-10_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "-10_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "-10_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "-10_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "-10_signal", 0)
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("-35_signal");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    TESTWRONGQUAL ("compare", "AY123456.1", "-35_signal", 0)
+    TESTWRONGQUAL ("mitochondrion", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("mobile_element", "integron", "-35_signal", 0)
+    TESTWRONGQUAL ("metagenomic", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("kinetoplast", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("chromoplast", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("specific_host", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("sub_strain", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("tag_peptide", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("isolation_source", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("collected_by", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rpt_family", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rpt_type", "flanking", "-35_signal", 0)
+    TESTWRONGQUAL ("insertion_seq", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("transl_table", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rearranged", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("mod_base", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rpt_unit", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("anticodon", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("function", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("number", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("identified_by", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("collection_date", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("direction", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_range", "1..3", "-35_signal", 0)
+    TESTWRONGQUAL ("serotype", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("satellite", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("organism", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("transcript_id", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("serovar", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("variety", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("country", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("rpt_unit_seq", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("lab_host", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("macronuclear", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("cyanelle", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("bio_material", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("chloroplast", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("plasmid", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("mating_type", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("cell_type", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("EC_number", "1.2.3.4", "-35_signal", 0)
+    TESTWRONGQUAL ("mol_type", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("cultivar", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("artificial_location", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("segment", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("cons_splice", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("environmental_sample", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("PCR_conditions", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("frequency", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("transposon", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("haplogroup", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("ribosomal_slippage", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("codon_start", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("clone", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("gdb_xref", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("translation", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("transl_except", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("bound_moiety", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("sub_clone", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("cell_line", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("transgenic", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("germline", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("protein_id", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("codon", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("clone_lib", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("PCR_primers", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("sequenced_mol", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("replace", "aaaaattttt", "-35_signal", 0)
+    TESTWRONGQUAL ("strain", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("proviral", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("lat_lon", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("culture_collection", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("haplotype", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("estimated_length", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("tissue_lib", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("focus", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("dev_stage", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("specimen_voucher", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("pseudo", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("isolate", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("chromosome", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("ncRNA_class", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("pop_variant", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("tissue_type", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("trans_splicing", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("organelle", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("sex", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("virion", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("sub_species", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("exception", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("phenotype", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("ecotype", "foo", "-35_signal", 0)
+    TESTWRONGQUAL ("product", "foo", "-35_signal", 0)
+
+    CLEAR_ERRORS
+}
+//end automatically generated section
+
+
+// begin automatically generated section
+BOOST_AUTO_TEST_CASE(Test_FEAT_MissingQualOnImpFeat)
+{
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc_feat = AddMiscFeature (entry);
+
+    STANDARD_SETUP
+
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("conflict");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier citation for feature conflict"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("misc_binding");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier bound_moiety for feature misc_binding"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("modified_base");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier mod_base for feature modified_base"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("old_sequence");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier citation for feature old_sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("operon");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier operon for feature operon"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("protein_bind");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier bound_moiety for feature protein_bind"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry (seh);
+    entry = BuildGoodSeq();
+    misc_feat = AddMiscFeature (entry);
+    misc_feat->SetData().SetImp().SetKey("source");
+    seh = scope.AddTopLevelSeqEntry (*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MissingQualOnImpFeat",
+                              "Missing qualifier organism for feature source"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+//end automatically generated section
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProduct)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetPseudo(true);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetPseudo(true);
+    AddFeat (gene, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PseudoCdsHasProduct", "A pseudo coding region should not have a product"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    gene->SetPseudo(false);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetPseudo(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 static string MakeWrongCap (const string& str)
 {
     string bad = "";
@@ -10285,6 +17296,529 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     RemoveDbxref (feat, "unrecognized", 0);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FarLocation)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    misc->SetLocation().SetMix().Set().back()->SetInt().SetId().SetGenbank().SetAccession("AY123456");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FarLocation", "Feature has 'far' location - accession not packaged in record"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
+    CRef<CSeq_feat> feat2 = AddMiscFeature (entry);
+    feat2->SetComment("a");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "DuplicateFeat", "Features have identical intervals, but labels differ"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error if genbank accession
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    feat1 = AddMiscFeature (entry);
+    feat1->SetData().SetGene().SetLocus("locus1");
+    feat2 = AddMiscFeature (entry);
+    feat2->SetData().SetGene().SetLocus("locus2");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("AY123456");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetTaxname (entry, "Drosophila melanogaster");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // warning if genes are partial
+    SetTaxname(entry, "Sebaea microphylla");
+    feat1->SetPartial(true);
+    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    feat2->SetPartial(true);
+    feat2->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // warning if genes are pseudo
+    feat1->SetPartial(false);
+    feat1->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    feat2->SetPartial(false);
+    feat2->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    feat1->SetPseudo(true);
+    feat2->SetPseudo(true);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error if general ID
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGeneral().SetDb("abc");
+    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetId(123456);
+    feat1 = AddMiscFeature (entry);
+    feat1->SetData().SetGene().SetLocus("locus1");
+    feat2 = AddMiscFeature (entry);
+    feat2->SetData().SetGene().SetLocus("locus2");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("abc|123456");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetTaxname (entry, "Drosophila melanogaster");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // warning if genes are partial
+    SetTaxname(entry, "Sebaea microphylla");
+    feat1->SetPartial(true);
+    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    feat2->SetPartial(true);
+    feat2->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // warning if genes are pseudo
+    feat1->SetPartial(false);
+    feat1->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    feat2->SetPartial(false);
+    feat2->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    feat1->SetPseudo(true);
+    feat2->SetPseudo(true);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    /* always warning if on different annots */
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    feat1 = AddMiscFeature (entry);
+    CRef<CSeq_annot> annot2(new CSeq_annot());
+    feat2->Assign(*feat1);
+    feat2->SetComment("a");
+    annot2->SetData().SetFtable().push_back(feat2);
+    entry->SetSeq().SetAnnot().push_back(annot2);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("Features have identical intervals, but labels differ (packaged in different feature table)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
+    CRef<CSeq_feat> gene = AddMiscFeature (entry, 15);
+    gene->SetData().SetGene().SetLocus("foo");
+    feat1->SetGeneXref().SetLocus("foo");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryGeneXref", 
+                              "Unnecessary gene cross-reference foo"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // now gene xref is redundant
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene2 = AddMiscFeature (entry);
+    gene2->SetData().SetGene().SetLocus("bar");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error if gene references itself
+    gene2->SetGeneXref().SetLocus("bar");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnnecessaryGeneXref", 
+                              "Gene feature has gene cross-reference"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CCode_break> codebreak(new CCode_break());
+    codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak->SetLoc().SetInt().SetFrom(4);
+    codebreak->SetLoc().SetInt().SetTo(6);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExceptPhase", 
+                              "transl_except qual out of frame."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TrnaCodonWrong)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = AddMiscFeature (entry);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetCodon().push_back(0);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('A');
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TrnaCodonWrong", 
+                      "Codon recognized by tRNA (UUU) does not match amino acid (A/Ala) specified by genetic code (1/Standard)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // drop to warning if aa is 'U' or 'O'
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('U');
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("Codon recognized by tRNA (UUU) does not match amino acid (U/Sec) specified by genetic code (1/Standard)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('O');
+    expected_errors[0]->SetErrMsg("Codon recognized by tRNA (UUU) does not match amino acid (O/Pyl) specified by genetic code (1/Standard)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> feat = AddMiscFeature (entry);
+    feat->SetLocation().SetInt().SetStrand(eNa_strand_both);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BothStrands", 
+                      "Feature may not be on both (forward) strands"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    feat = AddMiscFeature (entry);
+    feat->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both);
+    feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
+    // set trans-splicing exception to prevent mixed-strand error
+    feat->SetExcept(true);
+    feat->SetExcept_text("trans-splicing");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Feature may not be on both (forward and reverse) strands");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    feat = AddMiscFeature (entry);
+    feat->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both_rev);
+    feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Feature may not be on both (reverse) strands");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    feat = AddMiscFeature (entry);
+    feat->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both);
+    feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    feat->SetData().SetRna().SetExt().SetName("mRNA product");
+    // make pseudo to prevent splice errors
+    CRef<CSeq_feat> gene = MakeGeneForFeature (feat);
+    gene->SetPseudo(true);
+    AddFeat (gene, entry);
+    // set trans-splicing exception to prevent mixed-strand error
+    feat->SetExcept(true);
+    feat->SetExcept_text("trans-splicing");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[0]->SetErrMsg("mRNA may not be on both (forward and reverse) strands");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    feat = AddMiscFeature (entry);
+    feat->SetLocation().Assign(*MakeMixLoc(entry->SetSeq().SetId().front()));
+    feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both_rev);
+    feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
+    feat->SetPseudo(true);
+    feat->SetData().SetCdregion();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("CDS may not be on both (reverse) strands");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    SetSpliceForMixLoc (nuc_seq->SetSeq());
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
+    CRef<CSeq_feat> mrna(new CSeq_feat());
+    mrna->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
+    mrna->SetData().SetRna().SetType (CRNA_ref::eType_mRNA);
+    mrna->SetData().SetRna().SetExt().SetName("mRNA product");
+    mrna->SetLocation().SetMix().Set().front()->SetInt().SetTo(17);
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[18] = 'G';
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[19] = 'T';
+    AddFeat (mrna, entry->SetSet().SetSeq_set().front());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNArange", 
+                      "mRNA contains CDS but internal intron-exon boundaries do not match"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // turn off error for ribosomal slippage and trans-splicing
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    cds->SetExcept(true);
+    cds->SetExcept_text("ribosomal slippage");
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'A';
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    cds->SetExcept_text("trans-splicing");
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // overlap problem rather than internal boundary problem
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    nuc_seq = entry->SetSet().SetSeq_set().front();
+    SetSpliceForMixLoc (nuc_seq->SetSeq());
+    cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    cds->SetLocation().Assign(*MakeMixLoc(nuc_seq->SetSeq().SetId().front()));
+    mrna = new CSeq_feat();
+    mrna->SetLocation().Assign(cds->GetLocation());
+    mrna->SetData().SetRna().SetType (CRNA_ref::eType_mRNA);
+    mrna->SetData().SetRna().SetExt().SetName("mRNA product");
+    mrna->SetLocation().SetMix().Set().front()->SetInt().SetTo(12);
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[13] = 'G';
+    nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[14] = 'T';
+    AddFeat (mrna, entry->SetSet().SetSeq_set().front());
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[4] = 'S';
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNArange", 
+                      "mRNA overlaps or contains CDS but does not completely contain intervals"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+ 
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_OverlappingPeptideFeat)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> p1 = AddMiscFeature (prot_seq, 4);
+    p1->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_signal_peptide);
+    p1->SetData().SetProt().SetName().push_back("unnamed");
+    CRef<CSeq_feat> p2 = AddMiscFeature (prot_seq, 5);
+    p2->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_signal_peptide);
+    p2->SetData().SetProt().SetName().push_back("unnamed");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "OverlappingPeptideFeat", 
+                      "Signal, Transit, or Mature peptide features overlap (parent CDS is on nuc)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodProtSeq();
+    p1 = AddMiscFeature (entry, 4);
+    p1->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+    p1->SetData().SetProt().SetName().push_back("unnamed");
+    p2 = AddMiscFeature (entry, 5);
+    p2->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_transit_peptide);
+    p2->SetData().SetProt().SetName().push_back("unnamed");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("good");
+    expected_errors[0]->SetErrMsg("Signal, Transit, or Mature peptide features overlap");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    //no error if peptide exceptions
+    p1->SetExcept(true);
+    p1->SetExcept_text("alternative processing");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SerialInComment)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetComment("blah blah [123456]");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "SerialInComment", 
+                      "Feature comment may refer to reference by serial number - attach reference specific comments to the reference REMARK instead."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleCDSproducts)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds2 = AddMiscFeature (entry);
+    cds2->SetData().SetCdregion();
+    cds2->SetProduct().SetWhole().Assign(*(entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()));
+    cds2->SetLocation().SetInt().SetFrom(30);
+    cds2->SetLocation().SetInt().SetTo(56);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "MultipleCDSproducts", 
+                      "Same product Bioseq from multiple CDS features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FocusOnBioSourceFeature)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> src = AddGoodSourceFeature (entry);
+    src->SetData().SetBiosrc().SetIs_focus();
+    SetFocus(entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "FocusOnBioSourceFeature", 
+                      "Focus must be on BioSource descriptor, not BioSource feature."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_feat> peptide = AddMiscFeature (nuc_seq, 6);
+    peptide->SetData().SetImp().SetKey("sig_peptide");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InvalidForType", 
+                      "Peptide processing feature should be converted to the appropriate protein feature subtype"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PeptideFeatOutOfFrame", 
+                      "Stop of sig_peptide is out of frame with CDS codons"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    nuc_seq = entry->SetSet().SetSeq_set().front();
+    peptide = AddMiscFeature (nuc_seq, 5);
+    peptide->SetLocation().SetInt().SetFrom(1);
+    peptide->SetData().SetImp().SetKey("sig_peptide");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[1]->SetErrMsg("Start of sig_peptide is out of frame with CDS codons");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    nuc_seq = entry->SetSet().SetSeq_set().front();
+    peptide = AddMiscFeature (nuc_seq, 6);
+    peptide->SetLocation().SetInt().SetFrom(1);
+    peptide->SetData().SetImp().SetKey("sig_peptide");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[1]->SetErrMsg("Start and stop of sig_peptide are out of frame with CDS codons");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+// insertion point
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> gene = MakeGeneForFeature (cds);
+    gene->SetLocation().SetInt().SetFrom(1);
+    AddFeat (gene, entry->SetSet().SetSeq_set().front());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSgeneRange", 
+                      "gene overlaps CDS but does not completely contain it"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 }

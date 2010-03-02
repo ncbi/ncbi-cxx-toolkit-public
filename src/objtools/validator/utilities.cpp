@@ -161,9 +161,7 @@ string GetSequenceStringFromLoc
         fasta_ostr.WriteSequence (bsh, &part);
     }
     string s = CNcbiOstrstreamToString(oss);
-    if (NStr::EndsWith(s, "\n")) {
-        s = s.substr(0, s.size() - 1);
-    }
+    NStr::ReplaceInPlace(s, "\n", "");
     return s;
 }
 

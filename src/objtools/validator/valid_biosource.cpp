@@ -922,7 +922,8 @@ void CValidError_imp::ValidateBioSource
 			if (NStr::EqualCase(div, "BCT")
 				&& bsrc.GetGenome() != CBioSource::eGenome_unknown
 				&& bsrc.GetGenome() != CBioSource::eGenome_genomic
-				&& bsrc.GetGenome() != CBioSource::eGenome_plasmid) {
+				&& bsrc.GetGenome() != CBioSource::eGenome_plasmid
+                && bsrc.GetGenome() != CBioSource::eGenome_chromosome) {
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
 						   "Bacterial source should not have organelle location",
 						   obj, ctx);
@@ -1636,25 +1637,32 @@ void CValidError_imp::ValidateBioSourceForSeq
                          obj, ctx);
 			}
 		} else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
-			bool location_ok = false;
-			if (!source.IsSetGenome() || source.GetGenome() == CBioSource::eGenome_unknown) {
-                location_ok = true;
-			} else if (source.GetGenome() == CBioSource::eGenome_genomic) {
-				CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
-				if (mi && mi->GetMolinfo().IsSetBiomol()
-					&& mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
-					location_ok = true;
-				}
-			}
-			if (!location_ok) {
+			CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+			if (mi && mi->GetMolinfo().IsSetBiomol()
+                && mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
 				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-					     "HIV with moltype RNA should have source location unset or set to genomic (on genomic RNA sequence)", 
+					     "HIV with mRNA molecule type is rare", 
                          obj, ctx);
 			}
 		}
 	}
 
     CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+    CSeqdesc_CI ti(bsh, CSeqdesc::e_Title);
+
+    // look for viral completeness
+    if (mi && mi->IsMolinfo() && ti && ti->IsTitle()) {
+        const CMolInfo& molinfo = mi->GetMolinfo();
+        if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_genomic
+            && molinfo.IsSetCompleteness() && molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete
+            && NStr::Find(ti->GetTitle(), "complete genome") != string::npos
+            && (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_chromosome)
+            && (!source.IsSetOrg() || !source.GetOrg().IsSetLineage() || !NStr::StartsWith(source.GetOrg().GetLineage(), "Viruses; "))) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceNeedsChromosome, 
+		               "Non-viral complete genome not labeled as chromosome",
+		               obj, ctx);
+        }
+    }       
 
     // validate subsources in context
 

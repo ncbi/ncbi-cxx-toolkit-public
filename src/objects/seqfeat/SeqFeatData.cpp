@@ -2043,7 +2043,6 @@ START_SUBTYPE(operon)
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
-    ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -2411,6 +2410,8 @@ const CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual
     }
     if (iter != sc_QualPairs.end()) {
         type = iter->first;
+    } else if (NStr::EqualNocase(qual, "specific_host")) {
+        type = CSeqFeatData::eQual_host;
     }
 
     return type;

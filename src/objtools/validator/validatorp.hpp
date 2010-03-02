@@ -628,6 +628,7 @@ public:
     virtual ~CValidError_feat(void);
 
     void ValidateSeqFeat(const CSeq_feat& feat);
+    void ValidateSeqFeatContext(const CSeq_feat& feat, const CBioseq& seq);
 
     enum EInferenceValidCode {
         eInferenceValidCode_valid = 0,
@@ -677,6 +678,8 @@ private:
     void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
+    void x_ReportUninformativeNames(const CProt_ref& prot, const CSeq_feat& feat);
+    void x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat);
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
@@ -724,7 +727,7 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
+    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype, bool& bad_seq);
     bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
@@ -832,8 +835,8 @@ private:
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateSeqFeatContext(const CBioseq& seq);
-    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool same_annot, bool same_label);
-    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, const CBioseq& bioseq);
+    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
+    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs, const CBioseq& bioseq);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
@@ -916,6 +919,7 @@ private:
     //internal validators
     CValidError_annot m_AnnotValidator;
     CValidError_descr m_DescrValidator;
+    CValidError_feat  m_FeatValidator;
 };
 
 
