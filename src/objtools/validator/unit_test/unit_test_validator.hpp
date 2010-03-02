@@ -32,6 +32,7 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/valerr/ValidError.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
