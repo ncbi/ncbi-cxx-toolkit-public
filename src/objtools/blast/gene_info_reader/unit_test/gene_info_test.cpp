@@ -363,6 +363,9 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
 
 BOOST_AUTO_TEST_CASE(s_GiWithNoGeneIdTest)
 {
+    CNcbiEnvironment env;
+    env.Set(GENE_INFO_PATH_ENV_VARIABLE, "data/");
+    
     try
     {
         IGeneInfoInput::TGiList listGis;
