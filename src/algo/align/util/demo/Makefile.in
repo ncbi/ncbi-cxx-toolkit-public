@@ -11,6 +11,7 @@
 #################################
 
 APP_PROJ = demo_score_builder
+PROJ_TAG = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

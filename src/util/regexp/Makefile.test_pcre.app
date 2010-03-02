@@ -4,6 +4,7 @@ REQUIRES = LocalPCRE
 
 SRC = pcretest
 APP = test_pcre
+PROJ_TAG = test
 
 CPPFLAGS = -I$(includedir)/util/regexp -I$(srcdir)/.. -DHAVE_CONFIG_H $(ORIG_CPPFLAGS)
 

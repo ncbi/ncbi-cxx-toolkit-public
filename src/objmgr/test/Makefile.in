@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = test_objmgr_basic test_objmgr test_objmgr_mt test_objmgr_sv test_seqmap_switch
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

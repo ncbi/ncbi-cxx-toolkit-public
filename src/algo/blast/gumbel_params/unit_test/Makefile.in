@@ -1,5 +1,6 @@
 
 APP_PROJ = gumbelparams_unit_test
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

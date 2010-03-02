@@ -1,5 +1,6 @@
 
 APP_PROJ = blast_services_unit_test
+PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included
 

@@ -7,6 +7,7 @@
 #################################
 
 APP_PROJ = bdbtest test_bdb_cursor
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

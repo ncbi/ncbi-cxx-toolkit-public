@@ -5,6 +5,7 @@
 # $Id$
 
 APP_PROJ = unit_test_validator
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

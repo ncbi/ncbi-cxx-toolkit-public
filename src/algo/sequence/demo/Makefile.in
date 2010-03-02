@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = cpgdemo regexplocdemo xcompareannotsdemo demo_gene_model
+PROJ_TAG = demo
 
 
 srcdir = @srcdir@

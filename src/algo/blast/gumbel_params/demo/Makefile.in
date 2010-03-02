@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = gumbelparams
+PROJ_TAG = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

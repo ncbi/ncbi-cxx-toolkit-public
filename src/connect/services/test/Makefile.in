@@ -7,7 +7,7 @@
 LIB_PROJ =
 
 APP_PROJ = test_nsstorage test_ic_client test_netcache_api
-
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

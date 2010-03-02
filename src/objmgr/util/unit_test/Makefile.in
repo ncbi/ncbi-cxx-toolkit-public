@@ -8,6 +8,7 @@
 # $Id$
 
 APP_PROJ = unit_test_seq_translator unit_test_fasta_ostream
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -4,6 +4,7 @@
 #################################
 
 EXPENDABLE_APP_PROJ = seqdb_demo
+PROJ_TAG = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

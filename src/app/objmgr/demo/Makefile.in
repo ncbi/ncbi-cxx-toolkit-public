@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = objmgr_demo
+PROJ_TAG = demo
 SUB_PROJ = 
 
 srcdir = @srcdir@

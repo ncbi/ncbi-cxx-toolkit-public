@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = agp_count pacc
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

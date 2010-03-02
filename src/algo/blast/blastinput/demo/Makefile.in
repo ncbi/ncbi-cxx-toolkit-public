@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = blastinput_demo
+PROJ_TAG = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

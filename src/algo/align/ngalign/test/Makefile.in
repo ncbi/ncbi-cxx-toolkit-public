@@ -17,6 +17,7 @@
 ## Applications to be built as usual.
 # APP_PROJ =
 APP_PROJ = ngalign_test
+PROJ_TAG = test
 
 ## Subdirectories to traverse.
 # SUB_PROJ =

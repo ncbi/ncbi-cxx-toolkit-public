@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = unit_test_gene_model
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

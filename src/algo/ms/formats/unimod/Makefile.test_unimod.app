@@ -2,6 +2,7 @@
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
 APP = test_unimod
 SRC = test_unimod
+PROJ_TAG = test
 #OBJ = unimod
 
 # PRE_LIBS = $(NCBI_C_LIBPATH) .....

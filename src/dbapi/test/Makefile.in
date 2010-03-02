@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = dbapi_unit_test dbapi_context_test
+PROJ_TAG = test
 SUB_PROJ = driver
 
 srcdir = @srcdir@

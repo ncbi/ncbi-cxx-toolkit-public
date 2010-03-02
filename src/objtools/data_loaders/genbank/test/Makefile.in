@@ -9,6 +9,7 @@ APP_PROJ = \
 
 EXPENDABLE_APP_PROJ = \
 	test_reader_gicache
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

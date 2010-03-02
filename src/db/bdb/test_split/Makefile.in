@@ -7,6 +7,7 @@
 #################################
 
 APP_PROJ = bdbtest_split
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

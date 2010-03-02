@@ -2,6 +2,7 @@
 
 
 APP_PROJ = alnvwr alnmrg aln_build
+PROJ_TAG = demo
 SUB_PROJ =
 
 srcdir = @srcdir@

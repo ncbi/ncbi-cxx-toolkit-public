@@ -2,6 +2,7 @@
 
 APP_PROJ = seq_id_unit_test seqalign_unit_test mapper_unit_test \
            ecnum_unit_test seq_c_compat_unit_test
+PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included
 

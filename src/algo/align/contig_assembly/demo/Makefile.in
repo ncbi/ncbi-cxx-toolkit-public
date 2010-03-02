@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = demo_contig_assembly
+PROJ_TAG = demo
 
 REQUIRES = objects
 

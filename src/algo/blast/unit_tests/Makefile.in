@@ -4,6 +4,7 @@
 #################################
 
 SUB_PROJ = blast_format blastdb seqdb_reader api
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

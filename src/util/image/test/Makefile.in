@@ -5,6 +5,7 @@
 #################################
 
 APP_PROJ = test_image
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

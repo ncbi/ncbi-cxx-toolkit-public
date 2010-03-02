@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = demo_seqtest
+PROJ_TAG = demo
 
 REQUIRES = objects
 

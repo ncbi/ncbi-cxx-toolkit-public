@@ -7,6 +7,7 @@
 LIB_PROJ =
 
 APP_PROJ = test_nc_stress test_nc_stress_pubmed
+PROJ_TAG = test
 
 
 srcdir = @srcdir@
