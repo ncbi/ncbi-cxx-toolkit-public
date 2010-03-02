@@ -16,7 +16,8 @@ EXPORTS BioTreeContainer, DistanceMatrix;
 BioTreeContainer ::= SEQUENCE {
    treetype  VisibleString OPTIONAL,  -- hint on what kind of tree is that
    fdict     FeatureDictSet,          -- features dictionary 
-   nodes     NodeSet                  -- set of nodes with encoded topology
+   nodes     NodeSet,                 -- set of nodes with encoded topology
+   label     VisibleString OPTIONAL   -- bio-tree label (short name)
 }
 
 
