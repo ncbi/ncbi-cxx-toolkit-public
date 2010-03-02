@@ -2981,7 +2981,8 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     string notestr;
     string suffix = kEmptyStr;
-    bool add_period = false;
+//    bool add_period = false;
+    bool add_period = true/*fl*/;
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
 
