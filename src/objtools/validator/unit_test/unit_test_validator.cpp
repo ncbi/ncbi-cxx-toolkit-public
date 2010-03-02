@@ -1739,6 +1739,17 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    misc = AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    misc->AddQualifier("rpt_unit_seq", "ATAGTGATAGTG");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrMsg("Length of rpt_unit_seq is greater than feature length");
+    expected_errors[0]->SetSeverity(eDiag_Info);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
     // TODO: Finish this
 
     CLEAR_ERRORS
@@ -11093,15 +11104,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:1-101] out of range");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry = BuildGoodSeq();
-    misc = AddMiscFeature (entry);
-    misc->SetLocation().SetInt().SetFrom(-1);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:0-11] out of range");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
     
     CLEAR_ERRORS
 }
