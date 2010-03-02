@@ -465,7 +465,6 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
-    TDbtUrl(CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name="),
     TDbtUrl(CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name="),
     TDbtUrl(CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid="),
     TDbtUrl(CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA="),
@@ -505,7 +504,6 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec="),
-    TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name="),
     TDbtUrl(CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id="),
     TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
@@ -552,7 +550,9 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
     TDbtUrl(CDbtag::eDbtagType_miRBase, "http://microrna.sanger.ac.uk/cgi-bin/sequences/mirna_entry.pl?acc="),
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
-    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?")
+    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
+    TDbtUrl(CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name="),
+    TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name=")
 };
 
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
