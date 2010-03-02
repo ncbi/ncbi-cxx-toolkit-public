@@ -540,7 +540,7 @@ static void s_NoteFinalize(
             AddPeriod(noteStr);
         }
         // Policy change: expand tilde on both descriptors and features
-//        ExpandTildes(noteStr, style);
+        ExpandTildes(noteStr, style);
         TrimSpacesAndJunkFromEnds( noteStr, true );
 
         CRef<CFormatQual> note(new CFormatQual("note", noteStr));
@@ -4389,7 +4389,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     }
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
-    s_NoteFinalize(add_period, notestr, ff, eTilde_newline);
+    s_NoteFinalize(add_period, notestr, ff, eTilde_note);
 }
 
 
