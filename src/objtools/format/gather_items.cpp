@@ -1125,7 +1125,8 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
 
     // if the descriptor has a focus (by now sorted to be first),
     // subtract out all other source locations.
-    if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
+//    if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
+    if (srcs.front()->IsFocus()) {
         x_SubtractFromFocus(srcs);
 
         // if features completely subtracted descriptor intervals,
