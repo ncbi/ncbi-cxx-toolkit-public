@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     const size_t kNumHits = 2;
     const int kGis[kNumHits] = { 46071158, 46072400 };
     const int kScores[kNumHits] = { 1024, 944 };
-    const int kNumIdent[kNumHits] = { 449, 414 };
+    const int kNumIdent[kNumHits] = { 458, 423 };
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     query_loc->SetWhole().SetGi(kQueryGi);

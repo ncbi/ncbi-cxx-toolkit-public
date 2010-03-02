@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE(testBLASTPTraceBack) {
     const int score_final[k_num_hsps_end] = { 367, 319, 139, 131, 122, 104, 69, 60, 47, 43};
     const int query_gapped_start_final[k_num_hsps_end] = { 47, 4181, 3286, 2034, 2228, 871, 1383, 2759, 3606, 259};
     const int subject_gapped_start_final[k_num_hsps_end] = { 48, 3073, 2299, 1219, 1330, 709, 1215, 1803, 484, 1250};
-    const int num_ident_final[k_num_hsps_end] = { 92, 118, 70, 61, 92, 54, 22, 18, 11, 9};
+    const int num_ident_final[k_num_hsps_end] = { 100, 122, 70, 61, 92, 54, 22, 18, 11, 9};
 
     BlastHitList* hit_list = results->hitlist_array[0];
     hsp_list = hit_list->hsplist_array[0];
@@ -698,7 +698,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
         11, 554, 438, 39, 379, 929};
     const int subject_gapped_start_final[k_num_hsps_end] = {59756, 58629, 
         58980, 58426, 59493, 58113, 59588, 59399, 58172, 59137, 9209};
-    const int num_ident_final[k_num_hsps_end] = {116, 105, 54, 36, 27, 31, 29, 
+    const int num_ident_final[k_num_hsps_end] = {116, 105, 54, 44, 27, 31, 29, 
         25, 22, 21, 12};
     const int nums[k_num_hsps_end] = {1, 1, 1, 1, 2, 2, 2, 1, 2, 1, 1};
 
