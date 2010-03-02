@@ -176,7 +176,9 @@ public:
         eDbtagType_niaEST,
         eDbtagType_taxon,
         eDbtagType_MGD,
-        eDbtagType_PID
+        eDbtagType_PID,
+        eDbtagType_BEEBASE,
+        eDbtagType_NASONIABASE
     };
 
     enum EDbtagGroup {
