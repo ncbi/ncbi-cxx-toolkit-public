@@ -155,8 +155,14 @@ CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
         else { // private -> copy DS content
             CRef<CDataSource> new_ds(new CDataSource);
             ITERATE ( CTSE_LockSet, it, src_ds.GetStaticBlobs() ) {
-                CRef<CSeq_entry> new_entry
-                    (SerialClone(*it->second->GetCompleteTSE()));
+                CConstRef<CSeq_entry> src_entry = it->second->GetCompleteTSE();
+                CRef<CSeq_entry> new_entry;
+                if ( src_info.IsConst() ) {
+                    new_entry = const_cast<CSeq_entry*>(&*src_entry);
+                }
+                else {
+                    new_entry = SerialClone(*src_entry);
+                }
                 CRef<CTSE_Info> new_tse(new CTSE_Info(*new_entry));
                 new_ds->AddStaticTSE(new_tse);
             }
