@@ -1725,6 +1725,25 @@ static CRef<CSeq_feat> MakeGeneForFeature (CRef<CSeq_feat> feat)
     
 
 // new case test ground
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    misc->AddQualifier("rpt_unit_seq", "ATA");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InvalidQualifierValue", 
+                      "repeat_region /rpt_unit and underlying sequence do not match"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // TODO: Finish this
+
+    CLEAR_ERRORS
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
 {
@@ -17379,7 +17398,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
     feat2 = AddMiscFeature (entry);
     feat2->SetData().SetGene().SetLocus("locus2");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("abc|123456");
+    expected_errors[0]->SetAccession("abc:123456");
     expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
