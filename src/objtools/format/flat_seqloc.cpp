@@ -323,6 +323,9 @@ bool CFlatSeqLoc::x_Add
         oss << "complement(";
         x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html);
         oss << ')';
+    } else if ( pnt.IsSetFuzz() && pnt.GetFuzz().Which() == CInt_fuzz::e_Range ) {
+        oss << (pnt.GetFuzz().GetRange().GetMin() + 1)
+            << '^' << (pnt.GetFuzz().GetRange().GetMax() + 1);
     } else {
         x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html);
     }
