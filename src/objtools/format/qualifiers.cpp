@@ -1184,9 +1184,6 @@ void CFlatSubSourcePrimer::Format(
         }
         NStr::Tokenize( fwd_name, ",", fwd_names );
     }
-    if ( fwd_names.empty() ) {
-        return;
-    } 
     
     vector< string > rev_names;
     if ( ! m_rev_name.empty() ) {
@@ -1196,9 +1193,6 @@ void CFlatSubSourcePrimer::Format(
         }
         NStr::Tokenize( rev_name, ",", rev_names );
     }
-    if ( rev_names.size() != fwd_names.size() ) {
-        return;
-    }
 
     vector< string > fwd_seqs;
     if ( ! m_fwd_seq.empty() ) {
@@ -1206,7 +1200,7 @@ void CFlatSubSourcePrimer::Format(
         NStr::ReplaceInPlace( fwd_seq, ")", "" );
         NStr::Tokenize( fwd_seq, ",", fwd_seqs );
     }
-    if ( fwd_seqs.size() != fwd_names.size() ) {
+    if ( fwd_seqs.empty() ) {
         return;
     }
 
@@ -1216,18 +1210,24 @@ void CFlatSubSourcePrimer::Format(
         NStr::ReplaceInPlace( rev_seq, ")", "" );
         NStr::Tokenize( rev_seq, ",", rev_seqs );
     }
-    if ( rev_seqs.size() != fwd_names.size() ) {
+    if ( rev_seqs.size() != fwd_seqs.size() ) {
         return;
     }
 
-    for ( size_t i=0; i < fwd_names.size(); ++i ) {
+    for ( size_t i=0; i < fwd_seqs.size(); ++i ) {
 
-        string value( "fwd_name: " );
-        value += fwd_names[i];
-        value += ", fwd_seq: ";
+        string value;
+        if ( i < fwd_names.size() ) {
+            value += "fwd_name: ";
+            value += fwd_names[i];
+            value += ", ";
+        }
+        value += "fwd_seq: ";
         value += fwd_seqs[i];
-        value += ", rev_name: ";
-        value += rev_names[i];
+        if ( i < rev_names.size() ) {
+            value += ", rev_name: ";
+            value += rev_names[i];
+        }
         value += ", rev_seq: ";
         value += rev_seqs[i];
         x_AddFQ( q, "PCR_primers", value );
