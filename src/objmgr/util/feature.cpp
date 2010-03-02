@@ -97,14 +97,13 @@ void s_GetTypeLabel(const CSeq_feat& feat, string* label)
     CSeqFeatData::ESubtype idx = feat.GetData().GetSubtype();
     if ( idx != CSeqFeatData::eSubtype_bad ) {
         tlabel = feat.GetData().GetKey();
-        if (feat.GetData().Which() == CSeqFeatData::e_Imp  && 
-            tlabel != "CDS") {
+        if (feat.GetData().IsImp()  &&  tlabel != "CDS") {
             tlabel = "[" + tlabel + "]";
-        } else if (feat.GetData().Which() == CSeqFeatData::e_Region  && 
+        } else if (feat.GetData().IsRegion()  && 
             feat.GetData().GetRegion() == "Domain"  &&  feat.IsSetComment() ) {
             tlabel = "Domain";
         }
-    } else if (feat.GetData().Which() == CSeqFeatData::e_Imp) {
+    } else if (feat.GetData().IsImp()) {
         tlabel = "[" + feat.GetData().GetImp().GetKey() + "]";
     } else {
         tlabel = "Unknown=0";
@@ -168,7 +167,7 @@ static void s_GetCdregionLabel
                 // if found call GetLabel() on the CProt_ref
                 CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq);
                 for (;it; ++it) {
-                    if (it->Which() == CSeqFeatData::e_Prot) {
+                    if (it->IsProt()) {
                         it->GetProt().GetLabel(tlabel);
                         return;
                     }
