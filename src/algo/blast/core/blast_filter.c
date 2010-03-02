@@ -1338,10 +1338,34 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk,
 {
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */
+    Int4 total_length = 2; /* Length to copy, adding one for beginning and end. */
+    Boolean has_mask = FALSE; /* Check for whether filter_maskloc is empty. */
+    Int4 index; /* loop variable. */
 
     ASSERT(query_blk);
     ASSERT(query_info);
     ASSERT(filter_maskloc);
+
+    
+    for (index=0; index<filter_maskloc->total_size; index++)
+    {
+         if (filter_maskloc->seqloc_array[index])
+         {
+            has_mask = TRUE;
+            break;
+         }
+    }
+    if (has_mask == FALSE)
+       return;
+
+
+    for (context = query_info->first_context;
+         context <= query_info->last_context; ++context) {
+        total_length += query_info->contexts[context].query_length;
+    }
+    query_blk->sequence_start_nomask = BlastMemDup(query_blk->sequence_start, total_length);
+    query_blk->sequence_nomask = query_blk->sequence_start_nomask + 1;
+    query_blk->nomask_allocated = TRUE;
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {

@@ -119,10 +119,15 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
         (*seq_blk)->sequence_start = (Uint1 *) buffer;
         /* The first byte is a sentinel byte. */
         (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
+
     } else {
         (*seq_blk)->sequence = (Uint1 *) buffer;
         (*seq_blk)->sequence_start = NULL;
     }
+
+    (*seq_blk)->sequence_start_nomask = (*seq_blk)->sequence_start;
+    (*seq_blk)->sequence_nomask = (*seq_blk)->sequence;
+    (*seq_blk)->nomask_allocated = FALSE;
     
     (*seq_blk)->length = length;
    
@@ -154,6 +159,9 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence_start_allocated = TRUE;
     seq_blk->sequence_start = (Uint1*) sequence;
     seq_blk->sequence = (Uint1*) sequence + 1;
+    seq_blk->sequence_start_nomask = seq_blk->sequence_start;
+    seq_blk->sequence_nomask = seq_blk->sequence_start_nomask + 1;
+    seq_blk->nomask_allocated = FALSE;
     seq_blk->length = seqlen;
     seq_blk->oof_sequence = NULL;
 
@@ -223,6 +231,10 @@ void BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
    if (seq_blk->oof_sequence_allocated) {
        sfree(seq_blk->oof_sequence);
        seq_blk->oof_sequence_allocated = FALSE;
+   }
+   if (seq_blk->nomask_allocated) {
+       sfree(seq_blk->sequence_start_nomask);
+       seq_blk->nomask_allocated = FALSE;
    }
    s_BlastSequenceBlkFreeSeqRanges(seq_blk);
    return;

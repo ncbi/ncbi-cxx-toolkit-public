@@ -447,6 +447,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        const Uint1* gen_code_string)
 {
     Uint1* query = NULL;
+    Uint1* query_nomask = NULL;
     Uint1* subject = NULL;
     const EBlastProgramType program_number = scoring_options->program_number;
     const Boolean kIsOutOfFrame = scoring_options->is_ooframe;
@@ -486,8 +487,11 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
             Int4 context = hsp->context - hsp->context % CODON_LENGTH;
             Int4 context_offset = query_info->contexts[context].query_offset;
             query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
+            query_nomask = query_blk->oof_sequence + CODON_LENGTH + context_offset;
         } else {
             query = query_blk->sequence + 
+                query_info->contexts[hsp->context].query_offset;
+            query_nomask = query_blk->sequence_nomask + 
                 query_info->contexts[hsp->context].query_offset;
         }
 
@@ -497,7 +501,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
             status = Blast_HSPGetNumIdentities(query, target_sequence, hsp, scoring_options, 0);
         }
         else
-            status = Blast_HSPGetNumIdentities(query, subject, hsp, scoring_options, 0);
+            status = Blast_HSPGetNumIdentities(query_nomask, subject, hsp, scoring_options, 0);
 
         ASSERT(status == 0);
     }

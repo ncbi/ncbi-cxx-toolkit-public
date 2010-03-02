@@ -344,6 +344,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 index;
    BlastHSP* hsp;
    Uint1* query;
+   Uint1* query_nomask = NULL;
    const Uint1* subject = NULL;
    Int4 query_length;
    BlastHSP** hsp_array;
@@ -443,10 +444,13 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
           Int4 context_offset = query_info->contexts[context].query_offset;
          
           query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
+          query_nomask = query;
           query_length = query_info->contexts[context+2].query_offset +
               query_info->contexts[context+2].query_length - context_offset;
       } else {
           query = query_blk->sequence + 
+              query_info->contexts[hsp->context].query_offset;
+          query_nomask = query_blk->sequence_nomask + 
               query_info->contexts[hsp->context].query_offset;
           query_length = query_info->contexts[hsp->context].query_length;
       }
@@ -593,7 +597,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                 /* Calculate number of identities and check if this HSP meets the
                    percent identity and length criteria. */
                 delete_hsp = 
-                    Blast_HSPTestIdentityAndLength(program_number, hsp, query, 
+                    Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
                                                    adjusted_subject, 
                                                    score_options, hit_options);
             }
