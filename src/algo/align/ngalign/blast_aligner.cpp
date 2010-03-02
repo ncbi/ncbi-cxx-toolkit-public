@@ -108,7 +108,7 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     //    NCBI_THROW(CException, eUnknown,
     //               "unknown task type: " + task_type);
     //}
-    NucOptions->SetTraditionalBlastnDefaults();
+    NucOptions->SetTraditionalMegablastDefaults();
 
 
     search_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
@@ -230,22 +230,22 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
         return Results;
     }
-/*
-        ERR_POST(Info << "Blast Results Size: " << BlastResults->size());
-        ITERATE(CSearchResultSet, SetIter, *BlastResults) {
-            const CSearchResults& Results = **SetIter;
-            TQueryMessages Errors = Results.GetErrors(eBlastSevInfo);
-            ITERATE(TQueryMessages, ErrIter, Errors) {
-                cerr << "BlastMsg: " << (*ErrIter)->GetMessage() << endl;
-            }
-            if(Results.HasErrors()) {
-                ERR_POST(Error << "BLAST: " << Results.GetErrorStrings());
-            }
-            if(Results.HasWarnings()) {
-                ERR_POST(Warning << "BLAST: " << Results.GetWarningStrings());
-            }
-        }*/
 
+    ITERATE(CSearchResultSet, SetIter, *BlastResults) {
+        const CSearchResults& Results = **SetIter;
+        TQueryMessages Errors = Results.GetErrors(eBlastSevInfo);
+        //ITERATE(TQueryMessages, ErrIter, Errors) {
+        //    cerr << "BlastMsg: " << (*ErrIter)->GetMessage() << endl;
+        //}
+        if(Results.HasErrors()) {
+            ERR_POST(Error << "BLAST: " << Results.GetErrorStrings());
+        }
+        if(Results.HasWarnings()) {
+            ERR_POST(Warning << "BLAST: " << Results.GetWarningStrings());
+        }
+    }
+
+    TSeqPos AlignCount = 0;
     NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
         CSearchResults& Results = **SetIter;
         CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
@@ -253,8 +253,13 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
             ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
                 CRef<CSeq_align> Align = *AlignIter;
                 Align->SetNamedScore(GetName(), 1);
+                AlignCount++;
             }
         }
+    }
+
+    if(AlignCount == 0) {
+        ERR_POST(Warning << "CBlastAligner found no hits this run.");
     }
 
     Results->Insert(*BlastResults);
