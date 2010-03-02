@@ -239,6 +239,10 @@ typedef struct BLAST_SequenceBlk {
                                   sequence */
    Boolean sequence_start_allocated; /**< TRUE if memory has been allocated 
                                         for sequence_start */
+   Uint1* sequence_start_nomask; /**< Query sequence without masking. */
+   Uint1* sequence_nomask; /**< Start of query sequence without masking. */
+   Boolean nomask_allocated; /**< If false the two above are just pointers to
+                                   sequence and sequence_start. */
    Uint1* oof_sequence; /**< Mixed-frame protein representation of a
                              nucleotide sequence for out-of-frame alignment */
    Boolean oof_sequence_allocated; /**< TRUE if memory has been allocated 
