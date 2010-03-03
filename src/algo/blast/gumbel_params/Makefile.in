@@ -1,8 +1,8 @@
 # Meta-makefile
 #################################
 
-EXPENDABLE_LIB_PROJ = gumbelparams
-EXPENDABLE_SUB_PROJ = demo unit_test
+LIB_PROJ = gumbelparams
+SUB_PROJ = demo unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
