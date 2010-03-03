@@ -2,8 +2,7 @@
 
 SUB_PROJ = unit_test
 REQUIRES = objects gui wxWidgets MESA
-APP_PROJ = hitmatrix
-EXPENDABLE_APP_PROJ = guidetree
+APP_PROJ = hitmatrix guidetree
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
