@@ -657,6 +657,9 @@ protected:
     /// Contains tree structure
     CRef<CPhyloTreeDataSource> m_DataSource; 
 
+    /// Stores tree data
+    CBioTreeDynamic m_Dyntree;
+
     /// Height of output image
     int m_Height;
 
@@ -708,8 +711,7 @@ protected:
 
     ///Phylo Tree Scheme
     ///
-    CRef <CPhyloTreeScheme> m_PhyloTreeScheme;
-
+    CRef<CPhyloTreeScheme> m_PhyloTreeScheme;
 };
 
 

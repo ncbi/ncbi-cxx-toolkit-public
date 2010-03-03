@@ -76,9 +76,8 @@ CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc)
 {
     x_Init();
 
-    CBioTreeDynamic dyntree;
-    BioTreeConvertContainer2Dynamic(dyntree, guide_tree_calc.GetSerialTree());
-    m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
+    BioTreeConvertContainer2Dynamic(m_Dyntree, guide_tree_calc.GetSerialTree());
+    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 
     m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
     const CGuideTreeCalc::TBlastNameColorMap map
@@ -94,10 +93,9 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
 {
     x_Init();
 
-    CBioTreeDynamic dyntree;        
     x_InitTreeLabels(btc,lblType);     
-    BioTreeConvertContainer2Dynamic(dyntree, btc);
-    m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
+    BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
+    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
@@ -113,16 +111,17 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
                                      mark_query_node, m_BlastNameColorMap,
                                      m_QueryNodeId);
 
-    CBioTreeDynamic dyntree;        
-    BioTreeConvertContainer2Dynamic(dyntree, btc);
-    m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
+    BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
+    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
 CGuideTree::CGuideTree(const CBioTreeDynamic& tree)
-    : m_DataSource(new CPhyloTreeDataSource(tree))
 {
     x_Init();
+
+    m_Dyntree = tree;
+    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
@@ -449,7 +448,6 @@ void CGuideTree::Refresh(void)
     // Often the edge starting in root has zero length which
     // does not render well. By setting very small distance this is
     // avoided.
-/*
     CPhyloTreeNode::TNodeList_I it = m_DataSource->GetTree()->SubNodeBegin();
     while (it != m_DataSource->GetTree()->SubNodeEnd()) {
         if ((*it)->GetValue().GetDistance() == 0.0) {
@@ -459,7 +457,6 @@ void CGuideTree::Refresh(void)
         }
         ++it;
     }
-*/
 
     m_DataSource->Refresh();
 }
