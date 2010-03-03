@@ -726,6 +726,8 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     const CGeneModel& model = md.model;
 
     CRef<CSeq_entry> sprot(new CSeq_entry);
+//     CRef<CBioseq> prot_bioseq = CSeqTranslator::TranslateToProtein(cdregion_feature, scope);
+//     sprot->SetSeq(*prot_bioseq);
     sprot->SetSeq().SetId().push_back(md.prot_sid);
 
     CRef<CSeqdesc> desc(new CSeqdesc);
@@ -759,48 +761,38 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
         CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
         sprot->SetSeq().SetInst().SetSeq_data(*dprot);
     } else {
-
-        // copy bases from coding region location
-        string bases;
         CSeqVector seqv(cdregion_feature.GetLocation(), scope, CBioseq_Handle::eCoding_Ncbi);
-        seqv.GetSeqData(0, seqv.size(), bases);
+        CConstRef<CSeqMap> map;
+        map.Reset(&seqv.GetSeqMap());
 
         const CCdregion& cdr = cdregion_feature.GetData().GetCdregion();
+        int frame = 0;
         if (cdr.IsSetFrame ()) {
-            int offset = 0;
-
             switch (cdr.GetFrame ()) {
             case CCdregion::eFrame_two :
-                offset = 1;
+                frame = 1;
                 break;
             case CCdregion::eFrame_three :
-                offset = 2;
+                frame = 2;
                 break;
             default :
                 break;
             }
-            if (offset > 0)
-                bases.erase(0, offset);
         }
-
-        vector<string> tokens;
-        vector<SIZE_TYPE> token_pos;
-        const string null_char(1, '\0');
-        NStr::Tokenize( bases, null_char, tokens, NStr::eMergeDelims, &token_pos);
 
         size_t b = 0;
         size_t e = 0;
-        for( size_t i = 0; i < tokens.size(); ++i) {
-            if (i>0) {
-                _ASSERT( token_pos[i]%3 == 0 );
-                e = token_pos[i]/3;
-                seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+        for( CSeqMap_CI ci = map->BeginResolved(&scope); ci; ci.Next() ) {
+            TSeqPos len = ci.GetLength() - frame;
+            frame = 0;
+            _ASSERT( len%3 == 0 );
+            e = b + len/3;
+            if (ci.IsUnknownLength()) {
+                seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-                b = e;
+            } else {
+                seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
             }
-            _ASSERT( tokens[i].size()%3 == 0 || i == tokens.size()-1 );
-            e = b + tokens[i].size()/3;
-            seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
             b = e;
         }
         _ASSERT( b == strprot.size() + (md.model.HasStop() ? 1 : 0) );
