@@ -1249,3 +1249,390 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 44241,
+        to 126305,
+        strand plus,
+        id gi 258435077
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
+      },
+      partial TRUE,
+      product whole gi 41053665,
+      location packed-int {
+        {
+          from 44241,
+          to 44372,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 46142,
+          to 46330,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 49013,
+          to 49119,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 49280,
+          to 49419,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 51919,
+          to 52016,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 55920,
+          to 56013,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 62291,
+          to 62382,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 65754,
+          to 65826,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 68648,
+          to 68706,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 72806,
+          to 72954,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 74792,
+          to 74973,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 105778,
+          to 105875,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 110578,
+          to 110658,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 126016,
+          to 126153,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 126233,
+          to 126305,
+          strand plus,
+          id gi 258435077,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      product whole gi 41053666,
+      location packed-int {
+        {
+          from 44343,
+          to 44372,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 46142,
+          to 46330,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 49013,
+          to 49119,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 49280,
+          to 49419,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 51919,
+          to 52016,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 55920,
+          to 56013,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 62291,
+          to 62382,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 65754,
+          to 65826,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 68648,
+          to 68706,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 72806,
+          to 72954,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 74792,
+          to 74973,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 105778,
+          to 105875,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 110578,
+          to 110658,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 126016,
+          to 126153,
+          strand plus,
+          id gi 258435077
+        },
+        {
+          from 126233,
+          to 126305,
+          strand plus,
+          id gi 258435077,
+          fuzz-to lim gt
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
+      },
+      location int {
+        from 3142906,
+        to 3146442,
+        strand minus,
+        id gi 260082811
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
+      },
+      product whole gi 187829866,
+      location packed-int {
+        {
+          from 3146218,
+          to 3146442,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3144701,
+          to 3144846,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3144124,
+          to 3144296,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3143632,
+          to 3143717,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3142906,
+          to 3143460,
+          strand minus,
+          id gi 260082811
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      comment "protein translation is dependent on +1 polyamine-induced
+ ribosomal frameshift",
+      product whole gi 187829867,
+      location packed-int {
+        {
+          from 3146218,
+          to 3146363,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3144789,
+          to 3144846,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3144701,
+          to 3144787,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3144124,
+          to 3144296,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3143632,
+          to 3143717,
+          strand minus,
+          id gi 260082811
+        },
+        {
+          from 3143327,
+          to 3143460,
+          strand minus,
+          id gi 260082811
+        }
+      },
+      except-text "ribosomal slippage"
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Homo sapiens paternally expressed 10 (PEG10), transcript
+ variant 1, mRNA"
+      },
+      location int {
+        from 32318479,
+        to 32331849,
+        strand plus,
+        id gi 224514692
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens paternally expressed 10 (PEG10), transcript
+ variant 1, mRNA"
+      },
+      product whole gi 94421474,
+      location packed-int {
+        {
+          from 32318479,
+          to 32318734,
+          strand plus,
+          id gi 224514692
+        },
+        {
+          from 32325488,
+          to 32331849,
+          strand plus,
+          id gi 224514692
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      comment "isoform 1 is encoded by transcript variant 1",
+      product whole gi 94421475,
+      location packed-int {
+        {
+          from 32325711,
+          to 32326667,
+          strand plus,
+          id gi 224514692
+        },
+        {
+          from 32326667,
+          to 32327836,
+          strand plus,
+          id gi 224514692
+        }
+      },
+      except-text "ribosomal slippage"
+    }
+  }
+}

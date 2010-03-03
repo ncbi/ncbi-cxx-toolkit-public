@@ -196,11 +196,13 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                       : aln.GetSegs().GetSpliced().IsSetGenomic_strand() ? aln.GetSegs().GetSpliced().GetGenomic_strand()
                       : eNa_strand_plus);
 
-                //check for gaps between exons
+                // check for gaps between exons
                 if(!prev_exon.IsNull()) {
                     if(prev_exon->GetProduct_end().GetNucpos() + 1 != exon.GetProduct_start().GetNucpos()) {
-                        //gap between exons on rna. But which exon is partial? if have non-strict consensus
-                        //splice site - blame it for partialness. If can't disambiguate on this - set both.
+                        // gap between exons on rna. But which exon is partial?
+                        // if have non-strict consensus splice site - blame it
+                        // for partialness. If can't disambiguate on this - set
+                        // both.
                         bool donor_ok = prev_exon->GetDonor_after_exon().GetBases() == "GT";
                         bool acceptor_ok = exon.GetAcceptor_before_exon().GetBases() == "AG";
                         if(donor_ok || !acceptor_ok) {
@@ -217,7 +219,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 prev_int = genomic_int;
             }
 
-            //set terminal partialness
+            // set terminal partialness
             if(m_aln.GetSeqStart(0) > 0) {
                 loc->SetPartialStart(true, eExtreme_Biological);
             }
@@ -412,40 +414,67 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         if (feat_iter  &&  feat_iter.GetSize()) {
             cds_feat.Reset(new CSeq_feat());
             cds_feat->Assign(feat_iter->GetOriginalFeature());
-            CRef<CSeq_loc> cds_loc =
-                mapper.Map(feat_iter->GetLocation());
 
-            /// use the RNA location as a guide; truncate / intersect with the
-            /// total range of this location
-            TSeqRange cds_range = cds_loc->GetTotalRange();
-            bool is_partial_5prime = cds_loc->IsPartialStart(eExtreme_Positional);
-            bool is_partial_3prime = cds_loc->IsPartialStop(eExtreme_Positional);
-            cds_loc->Reset();
-            for (CSeq_loc_CI loc_it(*loc);  loc_it;  ++loc_it) {
-                TSeqRange this_range = loc_it.GetRange();
-                if (this_range.IntersectingWith(cds_range)) {
-                    this_range.IntersectWith(cds_range);
-                    CRef<CSeq_interval> ival(new CSeq_interval);
-                    ival->SetFrom(this_range.GetFrom());
-                    ival->SetTo(this_range.GetTo());
-                    if (loc_it.IsSetStrand()) {
-                        ival->SetStrand(loc_it.GetStrand());
-                    }
-                    cds_loc->SetPacked_int().Set().push_back(ival);
+            ///
+            /// mapping is complex
+            /// we try to map each segment of the CDS
+            /// in general, there will be only one; there are some corner cases
+            /// (OAZ1, OAZ2, PAZ3, PEG10) in which there are more than one
+            /// segment.
+            ///
+            CRef<CSeq_loc> cds_loc(new CSeq_loc);
+            for (CSeq_loc_CI loc_it(feat_iter->GetLocation());
+                 loc_it;  ++loc_it) {
+                /// location for this interval
+                CSeq_loc this_loc;
+                this_loc.SetInt().SetFrom(loc_it.GetRange().GetFrom());
+                this_loc.SetInt().SetTo(loc_it.GetRange().GetTo());
+                this_loc.SetInt().SetStrand(loc_it.GetStrand());
+                this_loc.SetInt().SetId().Assign
+                    (*loc_it.GetSeq_id_Handle().GetSeqId());
+
+                /// map it
+                CRef<CSeq_loc> this_loc_mapped =
+                    mapper.Map(this_loc);
+
+                /// we take the extreme bounds of the interval only;
+                /// internal details will be recomputed based on intersection
+                /// with the mRNA location
+                CSeq_loc sub;
+                sub.SetInt().SetFrom(this_loc_mapped->GetTotalRange().GetFrom());
+                sub.SetInt().SetTo(this_loc_mapped->GetTotalRange().GetTo());
+                sub.SetInt().SetStrand(this_loc_mapped->GetStrand());
+                sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
+
+                bool is_partial_5prime =
+                    this_loc_mapped->IsPartialStart(eExtreme_Biological);
+                bool is_partial_3prime =
+                    this_loc_mapped->IsPartialStop(eExtreme_Biological);
+
+                this_loc_mapped = loc->Intersect(sub,
+                                                 CSeq_loc::fSort,
+                                                 NULL);
+                if (is_partial_5prime) {
+                    this_loc_mapped->SetPartialStart(true, eExtreme_Biological);
                 }
+                if (is_partial_3prime) {
+                    this_loc_mapped->SetPartialStop(true, eExtreme_Biological);
+                }
+                cds_loc->SetMix().Set().push_back(this_loc_mapped);
             }
+            cds_loc->ChangeToPackedInt();
+
+            bool is_partial_5prime =
+                cds_loc->IsPartialStart(eExtreme_Biological);
+            bool is_partial_3prime =
+                cds_loc->IsPartialStop(eExtreme_Biological);
+
             if (cds_loc->Which() != CSeq_loc::e_not_set) {
                 cds_loc->SetId(*loc->GetId());
                 cds_feat->SetLocation(*cds_loc);
 
                 if (is_partial_5prime  ||  is_partial_3prime) {
                     cds_feat->SetPartial(true);
-                    if (is_partial_5prime) {
-                        cds_loc->SetPartialStart(true, eExtreme_Positional);
-                    }
-                    if (is_partial_3prime) {
-                        cds_loc->SetPartialStop(true, eExtreme_Positional);
-                    }
                 }
 
 

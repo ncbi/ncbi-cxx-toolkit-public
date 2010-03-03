@@ -110,6 +110,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CGeneModel::CreateGeneModelFromAlign(align, scope,
                                              actual_annot, seqs);
 
+        //cerr << MSerial_AsnText << actual_annot;
+
         *annot_is >> expected_annot;
 
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
@@ -129,6 +131,10 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             const CSeq_feat& f2 = **expected_iter;
             BOOST_CHECK(f1.GetData().GetSubtype() == f2.GetData().GetSubtype());
             BOOST_CHECK(f1.GetLocation().Equals(f2.GetLocation()));
+            if ( !f1.GetLocation().Equals(f2.GetLocation()) ) {
+                cerr << "expected: " << MSerial_AsnText << f2.GetLocation();
+                cerr << "got: " << MSerial_AsnText << f1.GetLocation();
+            }
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct()) {
                 BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
