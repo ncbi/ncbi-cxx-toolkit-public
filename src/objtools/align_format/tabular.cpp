@@ -292,14 +292,17 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
 
-    int num_ident = 0;
+    int num_ident = -1;
     
     // First reset all fields.
     x_ResetFields();
 
     if (x_IsFieldRequested(eEvalue) || 
         x_IsFieldRequested(eBitScore) ||
-        x_IsFieldRequested(eScore)) {
+        x_IsFieldRequested(eScore) ||
+        x_IsFieldRequested(eNumIdentical) ||
+        x_IsFieldRequested(eMismatches) ||
+        x_IsFieldRequested(ePercentIdentical)) {
         int score = 0, sum_n = 0;
         double bit_score = .0, evalue = .0;
         list<int> use_this_gi;
@@ -359,7 +362,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
         x_IsFieldRequested(eAlignmentLength) || x_IsFieldRequested(eGaps) ||
         x_IsFieldRequested(eGapOpenings) || x_IsFieldRequested(eQuerySeq) ||
-        x_IsFieldRequested(eSubjectSeq) || x_IsFieldRequested(eNumIdentical) ||
+        x_IsFieldRequested(eSubjectSeq) || (x_IsFieldRequested(eNumIdentical) && num_ident <0 ) ||
         x_IsFieldRequested(ePositives) || x_IsFieldRequested(eMismatches) || 
         x_IsFieldRequested(ePercentPositives) || x_IsFieldRequested(ePercentIdentical) ||
         x_IsFieldRequested(eBTOP)) {
@@ -413,6 +416,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     int align_length = 0, num_gaps = 0, num_gap_opens = 0;
     if (x_IsFieldRequested(eAlignmentLength) ||
         x_IsFieldRequested(eGaps) ||
+        x_IsFieldRequested(eMismatches) ||
         x_IsFieldRequested(ePercentPositives) ||
         x_IsFieldRequested(ePercentIdentical) ||
         x_IsFieldRequested(eGapOpenings)) {
@@ -420,32 +424,33 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                                           num_gap_opens);
     }
 
-    // Do not trust the identities count in the Seq-align, because if masking 
-    // was used, then masked residues were not counted as identities. 
-    // Hence retrieve the sequences present in the alignment and count the 
-    // identities again.
-    num_ident = 0;
-    int num_matches = 0;
     int num_positives = 0;
-    string btop_string = "";
     
-    if (x_IsFieldRequested(eQuerySeq) || x_IsFieldRequested(eSubjectSeq) ||
-        x_IsFieldRequested(eNumIdentical) || x_IsFieldRequested(ePositives) ||
-        x_IsFieldRequested(eMismatches) ||
+    if (x_IsFieldRequested(eQuerySeq) || 
+        x_IsFieldRequested(eSubjectSeq) ||
+        x_IsFieldRequested(ePositives) ||
         x_IsFieldRequested(ePercentPositives) ||
-        x_IsFieldRequested(ePercentIdentical) ||
-        x_IsFieldRequested(eBTOP)) {
+        x_IsFieldRequested(eBTOP) ||
+        // num_ident may not be available in un-gapped protein alignment
+        (num_ident < 0 && (x_IsFieldRequested(eNumIdentical) || 
+          x_IsFieldRequested(eMismatches) ||
+          x_IsFieldRequested(ePercentIdentical)))) {
 
         alnVec->SetGapChar('-');
         alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
         alnVec->GetWholeAlnSeqString(1, m_SubjectSeq);
         
-        if (x_IsFieldRequested(eNumIdentical) || x_IsFieldRequested(ePositives) ||
-            x_IsFieldRequested(eMismatches) ||
+        if (x_IsFieldRequested(ePositives) ||
             x_IsFieldRequested(ePercentPositives) ||
-            x_IsFieldRequested(ePercentIdentical) ||
-            x_IsFieldRequested(eBTOP)) {
+            x_IsFieldRequested(eBTOP) ||
+            // num_ident may not be available in un-gapped protein alignment
+            (num_ident < 0 && (x_IsFieldRequested(eNumIdentical) || 
+              x_IsFieldRequested(eMismatches) ||
+              x_IsFieldRequested(ePercentIdentical)))) {
 
+            string btop_string = "";
+            int num_matches = 0;
+            num_ident = 0;
             // The query and subject sequence strings must be the same size in a correct
             // alignment, but if alignment extends beyond the end of sequence because of
             // a bug, one of the sequence strings may be truncated, hence it is 
@@ -475,12 +480,11 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             if (num_matches > 0) {
                 btop_string +=  NStr::Int8ToString(num_matches);
             }
+            SetBTOP(btop_string);
         }
-    }
-    SetBTOP(btop_string);
-   
-    int q_start = 0, q_end = 0, s_start = 0, s_end = 0;
+    } 
 
+    int q_start = 0, q_end = 0, s_start = 0, s_end = 0;
     if (x_IsFieldRequested(eQueryStart) || x_IsFieldRequested(eQueryEnd) ||
         x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eFrames)) {
         // For translated search, for a negative query frame, reverse its start
