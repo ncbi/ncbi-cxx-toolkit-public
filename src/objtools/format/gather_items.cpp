@@ -1172,6 +1172,10 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
                                     &m_Current->GetScope());
                     (*it2)->SetLoc(*merged_loc);
                     it = srcs.erase(it);
+                    x_MergeEqualBioSources( srcs );
+                    return;
+//                    srcs.erase(it);
+//                    it = ++it2;
                     continue;
                 }
             }
@@ -1607,11 +1611,86 @@ SAnnotSelector s_GetCdsProductSel(CBioseqContext& ctx)
     return sel;
 }
 
+//  ============================================================================
+void s_FixIntervalProtToCds(
+    const CSeq_feat& srcFeat,
+    const CSeq_loc& srcLoc,
+    CRef< CSeq_loc > pDestLoc )
+//  ============================================================================
+{
 
-void CFlatGatherer::x_GetFeatsOnCdsProduct
-(const CSeq_feat& feat,
- const CSeq_loc& mapped_loc,
- CBioseqContext& ctx) const
+    if ( ! pDestLoc->IsInt() ) {
+        return;
+    }
+    CSeq_interval& destInt = pDestLoc->SetInt();
+
+    if ( ! srcLoc.IsInt() ) {
+        return;
+    }
+    const CSeq_interval& srcInt = srcLoc.GetInt();
+    CSeq_id_Handle srcIdHandle = CSeq_id_Handle::GetHandle( srcInt.GetId());
+
+    if ( ! srcFeat.GetData().IsCdregion() ) {
+        return;
+    }
+    const CSeq_loc& featLoc = srcFeat.GetLocation();
+    if ( ! featLoc.IsInt() ) {
+        return;
+    }
+    const CSeq_interval& featInt = featLoc.GetInt();
+
+    //
+    //  [1] Coordinates are in peptides, need to be mapped to nucleotides.
+    //  [2] Intervals are closed, i.e. [first_in, last_in].
+    //  [3] Coordintates are relative to coding region + codon_start.
+    //
+    destInt.SetFrom( srcInt.GetFrom() * 3 );    
+    destInt.SetTo( srcInt.GetTo() * 3 + 2 );
+
+    if ( srcFeat.GetData().IsCdregion() ) {
+        const CSeqFeatData::TCdregion& srcCdr = srcFeat.GetData().GetCdregion();
+        if ( srcCdr.CanGetFrame() && (srcCdr.GetFrame() != CSeqFeatData::TCdregion::eFrame_not_set) ) {
+            CCdregion::TFrame frame = srcCdr.GetFrame();
+            destInt.SetFrom( featInt.GetFrom() + destInt.GetFrom() + frame - 1 );
+            destInt.SetTo( featInt.GetFrom() + destInt.GetTo() + frame - 1 );
+        }
+    }
+
+    //
+    //  If the destination feature is fuzzed at the 5', extend it all the way to
+    //  the 5' of the coding region:
+    //
+    if ( srcInt.CanGetFuzz_from() ) {
+        destInt.SetFrom( featInt.GetFrom() );
+        CRef<CInt_fuzz> pFuzzFrom( new CInt_fuzz );
+        pFuzzFrom->Assign( srcInt.GetFuzz_from() );
+        destInt.SetFuzz_from( *pFuzzFrom );
+    }
+    else {
+        destInt.ResetFuzz_from();
+    }
+
+    //
+    //  If the destination feature is fuzzed at the 3', extend it all the way to
+    //  the 3' of the coding region:
+    //
+    if ( srcInt.CanGetFuzz_to() ) {
+        destInt.SetTo( featInt.GetTo() );
+        CRef<CInt_fuzz> pFuzzTo( new CInt_fuzz );
+        pFuzzTo->Assign( srcInt.GetFuzz_to() );
+        destInt.SetFuzz_to( *pFuzzTo );
+    }
+    else {
+        destInt.ResetFuzz_to();
+    }
+}
+    
+//  ============================================================================
+void CFlatGatherer::x_GetFeatsOnCdsProduct(
+    const CSeq_feat& feat,
+    const CSeq_loc& mapped_loc,
+    CBioseqContext& ctx ) const
+//  ============================================================================
 {
     const CFlatFileConfig& cfg = ctx.Config();
 
@@ -1664,6 +1743,13 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
+        if ( curr.IsSetData() ) {
+            const CSeqFeatData& currData = curr.GetData();
+            if ( currData.Which() == CSeqFeatData::e_Prot ) {
+                s_FixIntervalProtToCds( feat, curr_loc, loc );
+            }
+        }
+
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
                 loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);

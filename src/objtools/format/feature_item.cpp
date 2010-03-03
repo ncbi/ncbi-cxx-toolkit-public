@@ -1052,6 +1052,7 @@ void CFeatureItem::x_AddQualSeqfeatNote()
         bool bAddPeriod = RemovePeriodFromEnd( comment, true );
         CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
         if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
+//fl        if ( bAddPeriod ) {
             seqfeat_note->SetAddPeriod();
         }
         x_AddQual( eFQ_seqfeat_note, seqfeat_note );
@@ -2981,7 +2982,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     string notestr;
     string suffix = kEmptyStr;
-//    bool add_period = false;
     bool add_period = true/*fl*/;
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
