@@ -235,6 +235,10 @@ public:
     void RemoveBioseq_set(const CBioseq_set_EditHandle& seqset);
     void RemoveAnnot(const CSeq_annot_EditHandle& annot);
 
+    void RemoveTopLevelBioseq(const CBioseq_Handle& seq);
+    void RemoveTopLevelBioseq_set(const CBioseq_set_Handle& seqset);
+    void RemoveTopLevelAnnot(const CSeq_annot_Handle& annot);
+
     // Modify Seq-entry.
     void SelectNone(const CSeq_entry_EditHandle& entry);
     CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
@@ -426,6 +430,16 @@ private:
     // unguarded
     CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq,
                                      const CTSE_Handle& tse);
+
+    CRef<CSeq_entry> x_MakeDummyTSE(CBioseq& seq) const;
+    CRef<CSeq_entry> x_MakeDummyTSE(CBioseq_set& seqset) const;
+    CRef<CSeq_entry> x_MakeDummyTSE(CSeq_annot& annot) const;
+    bool x_IsDummyTSE(const CTSE_Info& tse,
+                      const CBioseq_Info& seq) const;
+    bool x_IsDummyTSE(const CTSE_Info& tse,
+                      const CBioseq_set_Info& seqset) const;
+    bool x_IsDummyTSE(const CTSE_Info& tse,
+                      const CSeq_annot_Info& annot) const;
 
 public:
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;

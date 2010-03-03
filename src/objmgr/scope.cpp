@@ -336,6 +336,18 @@ void CScope::RemoveTopLevelSeqEntry(const CTSE_Handle& entry)
 }
 
 
+void CScope::RemoveBioseq(const CBioseq_Handle& seq)
+{
+    m_Impl->RemoveTopLevelBioseq(seq);
+}
+
+
+void CScope::RemoveSeq_annot(const CSeq_annot_Handle& annot)
+{
+    m_Impl->RemoveTopLevelAnnot(annot);
+}
+
+
 CScope::TIds CScope::GetIds(const CSeq_id& id)
 {
     return GetIds(CSeq_id_Handle::GetHandle(id));

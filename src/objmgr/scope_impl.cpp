@@ -240,8 +240,7 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
     }
     
     CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq(bioseq);
+    CRef<CSeq_entry> entry = x_MakeDummyTSE(bioseq);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
     x_ClearCacheOnNewData(*tse_lock);
 
@@ -261,8 +260,7 @@ CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
     CTSE_Lock tse_lock = ds->GetSharedTSE();
 #else
     CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq(const_cast<CBioseq&>(bioseq));
+    CRef<CSeq_entry> entry = x_MakeDummyTSE(const_cast<CBioseq&>(bioseq));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
 #endif
     _ASSERT(tse_lock->IsSeq() &&
@@ -290,9 +288,7 @@ CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
     }
     
     CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSet().SetSeq_set(); // it's not optional
-    entry->SetSet().SetAnnot().push_back(Ref(&annot));
+    CRef<CSeq_entry> entry = x_MakeDummyTSE(annot);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
     x_ClearCacheOnNewAnnot(*tse_lock);
 
@@ -323,9 +319,7 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
     CTSE_Lock tse_lock = ds->GetSharedTSE();
 #else
     CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSet().SetSeq_set(); // it's not optional
-    entry->SetSet().SetAnnot().push_back(Ref(&const_cast<CSeq_annot&>(annot)));
+    CRef<CSeq_entry> entry = x_MakeDummyTSE(const_cast<CSeq_annot&>(annot));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
 #endif
     _ASSERT(tse_lock->IsSet() &&
@@ -1358,6 +1352,94 @@ void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 }
 
 
+CRef<CSeq_entry> CScope_Impl::x_MakeDummyTSE(CBioseq& seq) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(seq);
+    return entry;
+}
+
+
+CRef<CSeq_entry> CScope_Impl::x_MakeDummyTSE(CBioseq_set& seqset) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet(seqset);
+    return entry;
+}
+
+
+CRef<CSeq_entry> CScope_Impl::x_MakeDummyTSE(CSeq_annot& annot) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set(); // it's not optional
+    entry->SetSet().SetAnnot().push_back(Ref(&annot));
+    return entry;
+}
+
+
+bool CScope_Impl::x_IsDummyTSE(const CTSE_Info& tse,
+                               const CBioseq_Info& seq) const
+{
+    if ( &tse != &seq.GetParentSeq_entry_Info() ) {
+        return false;
+    }
+    return true;
+}
+
+
+bool CScope_Impl::x_IsDummyTSE(const CTSE_Info& tse,
+                               const CBioseq_set_Info& seqset) const
+{
+    if ( &tse != &seqset.GetParentSeq_entry_Info() ) {
+        return false;
+    }
+    return true;
+}
+
+
+bool CScope_Impl::x_IsDummyTSE(const CTSE_Info& tse,
+                               const CSeq_annot_Info& annot) const
+{
+    if ( &tse != &annot.GetParentSeq_entry_Info() ) {
+        return false;
+    }
+    if ( !tse.IsSet() ) {
+        return false;
+    }
+    const CBioseq_set_Info& seqset = tse.GetSet();
+    if ( seqset.IsSetId() ) {
+        return false;
+    }
+    if ( seqset.IsSetColl() ) {
+        return false;
+    }
+    if ( seqset.IsSetLevel() ) {
+        return false;
+    }
+    if ( seqset.IsSetClass() ) {
+        return false;
+    }
+    if ( seqset.IsSetRelease() ) {
+        return false;
+    }
+    if ( seqset.IsSetDate() ) {
+        return false;
+    }
+    if ( seqset.IsSetDescr() ) {
+        return false;
+    }
+    if ( !seqset.IsSetSeq_set() || !seqset.IsEmptySeq_set() ) {
+        return false;
+    }
+    if ( !seqset.IsSetAnnot() ||
+         seqset.GetAnnot().size() != 1 ||
+         seqset.GetAnnot()[0] != &annot ) {
+        return false;
+    }
+    return true;
+}
+
+
 void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 {
     TConfWriteLockGuard guard(m_ConfLock);
@@ -1394,6 +1476,39 @@ void CScope_Impl::RemoveBioseq(const CBioseq_EditHandle& seq)
 void CScope_Impl::RemoveBioseq_set(const CBioseq_set_EditHandle& seqset)
 {
     SelectNone(seqset.GetParentEntry());
+}
+
+
+void CScope_Impl::RemoveTopLevelBioseq(const CBioseq_Handle& seq)
+{
+    CTSE_Handle tse = seq.GetTSE_Handle();
+    if ( !x_IsDummyTSE(tse.x_GetTSE_Info(), seq.x_GetInfo()) ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "Not a top level Bioseq");
+    }
+    RemoveTopLevelSeqEntry(tse);
+}
+
+
+void CScope_Impl::RemoveTopLevelBioseq_set(const CBioseq_set_Handle& seqset)
+{
+    CTSE_Handle tse = seqset.GetTSE_Handle();
+    if ( !x_IsDummyTSE(tse.x_GetTSE_Info(), seqset.x_GetInfo()) ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "Not a top level Bioseq-set");
+    }
+    RemoveTopLevelSeqEntry(tse);
+}
+
+
+void CScope_Impl::RemoveTopLevelAnnot(const CSeq_annot_Handle& annot)
+{
+    CTSE_Handle tse = annot.GetTSE_Handle();
+    if ( !x_IsDummyTSE(tse.x_GetTSE_Info(), annot.x_GetInfo()) ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "Not a top level Seq-annot");
+    }
+    RemoveTopLevelSeqEntry(tse);
 }
 
 

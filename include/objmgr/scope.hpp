@@ -309,11 +309,21 @@ public:
     /// Revoke data loader from the scope. Throw exception if the
     /// operation fails (e.g. data source is in use or not found).
     void RemoveDataLoader(const string& loader_name);
-    // Revoke TSE previously added using AddTopLevelSeqEntry() or
-    // AddBioseq(). Throw exception if the TSE is still in use or
+    /// Revoke TSE previously added using AddTopLevelSeqEntry() or
+    /// AddBioseq(). Throw exception if the TSE is still in use or
     /// not found in the scope.
     void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
     void RemoveTopLevelSeqEntry(const CSeq_entry_Handle& entry);
+
+    /// Revoke Bioseq previously added using AddBioseq().
+    /// Throw exception if the Bioseq is still in use or
+    /// not found in the scope.
+    void RemoveBioseq(const CBioseq_Handle& seq);
+
+    /// Revoke Seq-annot previously added using AddSeq_annot().
+    /// Throw exception if the Bioseq is still in use or
+    /// not found in the scope.
+    void RemoveSeq_annot(const CSeq_annot_Handle& annot);
 
     /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id&        id );
