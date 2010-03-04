@@ -57,6 +57,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/RNA_qual_set.hpp>
+#include <objects/seqfeat/RNA_qual.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -1567,8 +1569,29 @@ void CFeatureItem::x_AddQualsRna(
         switch ( subtype ) {
 
         case CSeqFeatData::eSubtype_ncRNA:
-        case CSeqFeatData::eSubtype_tmRNA:
             break;
+        case CSeqFeatData::eSubtype_tmRNA: {
+            if ( ! rna.CanGetExt() ) {
+                break;
+            }
+            const CRNA_ref_Base::TExt& ext = rna.GetExt();
+            if ( ext.IsGen()  &&  ext.GetGen().CanGetQuals() ) {
+
+                const list< CRef< CRNA_qual > >& quals = ext.GetGen().GetQuals().Get();
+                list< CRef< CRNA_qual > >::const_iterator it = quals.begin();
+                for ( 0; it != quals.end(); ++it ) {
+                    if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                        if ( (*it)->GetQual() == "tag_peptide" ) {
+                            x_AddQual( eFQ_tag_peptide, 
+                                new CFlatStringQVal( 
+                                    (*it)->GetVal(), CFormatQual::eUnquoted ) );
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
         case CSeqFeatData::eSubtype_misc_RNA:
         case CSeqFeatData::eSubtype_otherRNA: {
             if ( ! rna.CanGetExt() ) {
@@ -2571,6 +2594,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(rpt_unit_seq),
         DO_IMPORT(satellite),
         DO_IMPORT(standard_name),
+        DO_IMPORT(tag_peptide),
         DO_IMPORT(trans_splicing),
         DO_IMPORT(usedin)
 #undef DO_IMPORT
