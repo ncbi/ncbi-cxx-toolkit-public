@@ -247,29 +247,28 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
 {
     ids.clear();
 
-    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
-    // its destruction; then extract the list of CBlast_def_line objects.
-    const CRef<CBlast_def_line_set> bdlRef = 
-        CAlignFormatUtil::GetBlastDefline(bh);
-    const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
-
+    
     vector< CConstRef<CSeq_id> > original_seqids;
-    if (bdl.empty()) {
-        ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-            original_seqids.push_back(itr->GetSeqId());
-        }
-    } else {
-        ITERATE(CBlast_def_line_set::Tdata, itr, bdl) {
-            ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
-                original_seqids.push_back(*id);
-            }
-        }
-    }
+    
+    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+      original_seqids.push_back(itr->GetSeqId());    
+    } 
 
     // Check for ids of type "gnl|BL_ORD_ID". These are the artificial ids
     // created in a BLAST database when it is formatted without indexing.
     // For such ids, create new fake local Seq-ids, saving the first token of 
     // the Bioseq's title, if it's available.
+    GetSeqIdList(bh,original_seqids,ids);
+}
+
+
+
+void 
+CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
+                                vector< CConstRef<CSeq_id> > &original_seqids,
+                                list<CRef<objects::CSeq_id> >& ids)
+{
+    ids.clear();
     ITERATE(vector< CConstRef<CSeq_id> >, itr, original_seqids) {
         CRef<CSeq_id> next_seqid(new CSeq_id());
         string id_token = NcbiEmptyString;
@@ -605,9 +604,21 @@ void CShowBlastDefline::Display(CNcbiOstream & out)
 {
     string descrTableFormat = m_Ctx ? m_Ctx->GetRequestValue("NEW_VIEW").GetValue() : kEmptyStr;
     descrTableFormat = NStr::ToLower(descrTableFormat);
-    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;    
-    if (formatAsTable) {        
-        x_DisplayDeflineTable(out);        
+    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;
+
+    bool newDesign = false;
+    string oldBlastFormat = m_Ctx ? m_Ctx->GetRequestValue("OLD_BLAST").GetValue() : kEmptyStr;
+    if(!oldBlastFormat.empty() && m_Option & eHtml) {
+        oldBlastFormat = NStr::ToLower(oldBlastFormat);
+        newDesign = (oldBlastFormat == "on" || oldBlastFormat == "true" || oldBlastFormat == "yes") ? false : true;
+    }    
+    if (formatAsTable) {
+        if(newDesign) {
+            x_DisplayDeflineTableBody(out);
+        }
+        else {
+            x_DisplayDeflineTable(out); 
+        }
     }
     else {        
         x_DisplayDefline(out);
@@ -1043,9 +1054,7 @@ void CShowBlastDefline::x_InitDeflineTable(void)
 
 void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 {
-    int percent_identity = 0;
-	//This is max number of columns in the table - later should be probably put in enum DisplayOption
-	int tableColNumber = 9;
+    //This is max number of columns in the table - later should be probably put in enum DisplayOption	
     //if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
@@ -1119,8 +1128,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::eEvalue,CAlignFormatUtil::eHspEvalue,kEvalue,m_MaxEvalueLen,m_Option & eHtml);
             if(m_Option & eShowPercentIdent){
                 s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::ePercentIdentity,CAlignFormatUtil::eHspPercentIdentity,kIdentity,m_MaxPercentIdentityLen,m_Option & eHtml);
-            }else {
-                tableColNumber--;
+            }else {             
             }
            
             if(m_Option & eShowSumN){
@@ -1134,16 +1142,23 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 out << "</tr>\n";
                 out << "</thead>\n";
             }
-        }
-		//????
-        /*      if(m_PsiblastStatus == eRepeatPass){
-            out << kRepeatHeader <<"\n";
-        }
-        if(m_PsiblastStatus == eNewPass){
-            out << kNewSeqHeader <<"\n";
-            }*/
-    //}
+        }		
     
+	if (m_Option & eHtml) {
+		out << "<tbody>\n";
+	}
+    
+    x_DisplayDeflineTableBody(out);
+    
+    if (m_Option & eHtml) {
+	out << "</tbody>\n</table></div>\n";
+    }
+}
+
+void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
+{
+    int percent_identity = 0;
+    int tableColNumber = (m_Option & eShowPercentIdent) ? 9 : 8;    
     bool first_new =true;
     int prev_database_type = 0, cur_database_type = 0;
     bool is_first = true;
@@ -1161,9 +1176,6 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                                                  parameters_to_change,
                                                  query_buf);
     }
-	if (m_Option & eHtml) {
-		out << "<tbody>\n";
-	}
     ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
@@ -1388,10 +1400,8 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
         }
         delete sdl;
     }
-    if (m_Option & eHtml) {
-	out << "</tbody>\n</table></div>\n";
-    }
 }
+
 
 void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 {
