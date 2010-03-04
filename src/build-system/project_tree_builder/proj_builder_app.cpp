@@ -945,7 +945,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
                 continue;
             }
-            if (p->first.Type() == CProjKey::eMsvc) {
+            if (p->first.Type() == CProjKey::eMsvc ||
+                p->first.Type() == CProjKey::eDataSpec) {
                 continue;
             }
             ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
@@ -993,7 +994,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             }
             dependencies.clear();
             // exclude MSVC projects
-            if (p->first.Type() == CProjKey::eMsvc) {
+            if (p->first.Type() == CProjKey::eMsvc ||
+                p->first.Type() == CProjKey::eDataSpec) {
                 continue;
             }
 
@@ -1056,7 +1058,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 
             if (p->second.m_MakeType != eMakeType_Excluded &&
                 p->second.m_MakeType != eMakeType_ExcludedByReq &&
-                p->first.Type() != CProjKey::eMsvc) {
+                p->first.Type() != CProjKey::eMsvc &&
+                p->first.Type() != CProjKey::eDataSpec) {
 
                 path_to_target[rel_path].push_back(target);
                 string stop_path(CDirEntry::AddTrailingPathSeparator("."));
@@ -1866,6 +1869,10 @@ CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
     return *m_DllSrcFilesDistr;
 }
 
+string CProjBulderApp::GetDataspecProjId(void) const
+{
+    return "_generate_all_objects";
+}
 
 string CProjBulderApp::GetDatatoolId(void) const
 {

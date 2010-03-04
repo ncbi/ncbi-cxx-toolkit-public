@@ -173,6 +173,7 @@ public:
 
     CDllSrcFilesDistr&       GetDllFilesDistr  (void);
 
+    string GetDataspecProjId      (void) const;
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
     string GetDatatoolPathForLib  (void) const;

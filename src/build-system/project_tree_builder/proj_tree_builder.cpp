@@ -903,21 +903,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         }
     }
     if ( !datatool_sources.empty() ) {
-        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
-        if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eXCode30) {
-            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
-                source_base_dir, proj_name, proj_id, tree, maketype);
-            project.m_Depends.push_back(spec_proj);
-            CProjectItemsTree::TProjects::iterator p = tree->m_Projects.find(spec_proj);
-            CProjItem& spec_project = p->second;
-            spec_project.m_DatatoolSources = datatool_sources;
-        } else {
-            project.m_DatatoolSources = datatool_sources;
-            if (!GetApp().GetDatatoolId().empty()) {
-                project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
-            }
-        }
+        project.m_DatatoolSources = datatool_sources;
     }
 
 // assemble check info
@@ -1273,8 +1259,8 @@ CProjKey SLibProjectT::DoCreateDataSpec(
             CProjectItemsTree* tree,
             EMakeFileType maketype)
 {
-    string spec_proj_name = proj_name + "#";
-    string spec_proj_id   = proj_id   + "#";
+    string spec_proj_name = proj_name;
+    string spec_proj_id   = proj_id;
 
     list<string>   s_empty;
     list<CProjKey> d_empty;
@@ -1292,7 +1278,6 @@ CProjKey SLibProjectT::DoCreateDataSpec(
                                            s_empty,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
-    tree->m_Projects[proj_key].m_External = true;
     return proj_key;
 }
 
@@ -1512,23 +1497,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     CDataToolGeneratedSrc data_tool_src;
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
     if ( !data_tool_src.IsEmpty() ) {
-
-        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
-        if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eXCode30) {
-            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
-                source_base_dir, proj_name, proj_id.Id(), tree, maketype);
-            project.m_Depends.push_back(spec_proj);
-            p = tree->m_Projects.find(spec_proj);
-            CProjItem& spec_project = p->second;
-            spec_project.m_DatatoolSources.push_back(data_tool_src);
-        } else {
-            project.m_DatatoolSources.push_back(data_tool_src);
-            if (!GetApp().GetDatatoolId().empty()) {
-                project.m_Depends.push_back(CProjKey(CProjKey::eApp,
-                                                    GetApp().GetDatatoolId()));
-            }
-        }
+        project.m_DatatoolSources.push_back(data_tool_src);
     }
 
     return proj_id;
@@ -1677,22 +1646,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     }
 
     if ( !datatool_sources.empty() ) {
-        CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
-        if (eVer > CMsvc7RegSettings::eMsvc710 &&
-            eVer < CMsvc7RegSettings::eXCode30) {
-            CProjKey spec_proj = SLibProjectT::DoCreateDataSpec(
-                source_base_dir, proj_name, proj_id.Id(), tree, maketype);
-            project.m_Depends.push_back(spec_proj);
-            TProjects::iterator p = tree->m_Projects.find(spec_proj);
-            CProjItem& spec_project = p->second;
-            spec_project.m_DatatoolSources = datatool_sources;
-        } else {
-            project.m_DatatoolSources = datatool_sources;
-            if (!GetApp().GetDatatoolId().empty()) {
-                project.m_Depends.push_back(CProjKey(CProjKey::eApp, 
-                                                    GetApp().GetDatatoolId()));
-            }
-        }
+        project.m_DatatoolSources = datatool_sources;
     }
 
     return proj_id;
@@ -1873,6 +1827,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
 {
     // Build subtree
     CProjectItemsTree target_tree;
+
     BuildOneProjectTree(filter, root_src_path, &target_tree);
 
     if (GetApp().IsScanningWholeTree()) {
@@ -2307,6 +2262,9 @@ void s_CollectDatatoolIds(const CProjectItemsTree& tree,
 {
     ITERATE(CProjectItemsTree::TProjects, p, tree.m_Projects) {
         const CProjKey&  project_id = p->first;
+        if (project_id.Type() == CProjKey::eDataSpec) {
+            continue;
+        }
         const CProjItem& project    = p->second;
         ITERATE(list<CDataToolGeneratedSrc>, n, project.m_DatatoolSources) {
             const CDataToolGeneratedSrc& src = *n;
@@ -2365,12 +2323,21 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
     } while( tree_extented );
 
 
+    CProjKey proj_key(CProjKey::eDataSpec, GetApp().GetDataspecProjId());
+    CProjectItemsTree::TProjects::iterator z = tree->m_Projects.find(proj_key);
+
     // 3. Finally - generate depends
     NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
         const CProjKey&  project_id = p->first;
+        if (project_id.Type() == CProjKey::eDataSpec) {
+            continue;
+        }
         CProjItem& project          = p->second;
         ITERATE(list<CDataToolGeneratedSrc>, n, project.m_DatatoolSources) {
             const CDataToolGeneratedSrc& src = *n;
+            if (z != tree->m_Projects.end()) {
+                z->second.m_DatatoolSources.push_back(src);
+            }
             ITERATE(list<string>, i, src.m_ImportModules) {
                 const string& module = *i;
                 map<string, CProjKey>::const_iterator j = 

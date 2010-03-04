@@ -63,6 +63,9 @@ string CProjectsLstFileFilter::ConvertToMask(const string& name)
     string s = NStr::Replace(name,"\\","/");
     if (NStr::EndsWith(s,'$')) {
         s.erase(s.size()-1,1);
+        while (NStr::EndsWith(s,'/')) {
+            s.erase(s.size()-1,1);
+        }
         s += "/$";
     } else {
         s += '/';
