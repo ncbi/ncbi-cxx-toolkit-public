@@ -500,11 +500,12 @@ Int4
 Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program, 
                                           BlastHSPList* hsp_list);
 
-/** Reevaluate all ungapped HSPs in an HSP list, using ambiguity information. 
- * This is/can only done either for an ungapped search, or if traceback is 
+/** Reevaluate all ungapped HSPs in an HSP list.  
+ * This is only done for an ungapped search, or if traceback is 
  * already available.
- * Subject sequence is uncompressed and saved here. Number of identities is
- * calculated for each HSP along the way. 
+ * Subject sequence is uncompressed and saved here (for nucleotide sequences). 
+ * The number of identities is calculated for each HSP along the way,
+ * hence this function is called for all programs. 
  * @param program Type of BLAST program [in]
  * @param hsp_list The list of HSPs for one subject sequence [in] [out]
  * @param query_blk The query sequence [in]
@@ -522,7 +523,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
  */
 NCBI_XBLAST_EXPORT
 Int2 
-Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program, 
+Blast_HSPListReevaluateUngapped(EBlastProgramType program, 
    BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
