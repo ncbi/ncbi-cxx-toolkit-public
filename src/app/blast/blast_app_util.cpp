@@ -414,8 +414,7 @@ s_ImportSubjects(const CBlast4_subject& subj, bool subject_is_protein)
     return db_args;
 }
 
-/// Real implementation of search strategy import
-/// @todo refactor this code so that it can be reused in other contexts
+/// Imports search strategy, using CImportStrategy.
 static void
 s_ImportSearchStrategy(CNcbiIstream* in, 
                        blast::CBlastAppArgs* cmdline_args,
