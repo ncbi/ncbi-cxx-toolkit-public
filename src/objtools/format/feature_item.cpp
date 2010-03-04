@@ -2982,6 +2982,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     string notestr;
     string suffix = kEmptyStr;
+//    bool add_period = false;
     bool add_period = true/*fl*/;
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
@@ -3761,6 +3762,8 @@ static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
         case COrgMod::eSubtype_gb_synonym:       return "gb_synonym";
         case COrgMod::eSubtype_old_lineage:      return "old_lineage";
         case COrgMod::eSubtype_old_name:         return "old_name";
+        case COrgMod::eSubtype_culture_collection: return "culture_collection";
+        case COrgMod::eSubtype_bio_material:     return "bio_material";
         case COrgMod::eSubtype_other:            return "note";
         default:                                 return kEmptyStr;
     }
@@ -3955,6 +3958,8 @@ static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
         CASE_ORGMOD(forma);
         CASE_ORGMOD(forma_specialis);
         CASE_ORGMOD(ecotype);
+        CASE_ORGMOD(culture_collection);
+        CASE_ORGMOD(bio_material);
         CASE_ORGMOD(synonym);
         CASE_ORGMOD(anamorph);
         CASE_ORGMOD(teleomorph);
@@ -4218,6 +4223,8 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     x_FormatQual(eSQ_spec_or_nat_host, "host", qvec);
     DO_QUAL(sub_species);
     DO_QUAL(specimen_voucher);
+    DO_QUAL(culture_collection);
+    DO_QUAL(bio_material);
 
     DO_QUAL(db_xref);
     x_FormatQual(eSQ_org_xref, "db_xref", qvec);
