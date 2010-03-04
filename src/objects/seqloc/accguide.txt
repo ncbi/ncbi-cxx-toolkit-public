@@ -266,7 +266,7 @@ version  1 # of file format
 2+6  FU  ddbj_patent
 2+6  FV  ddbj_patent
 2+6  FW  ddbj_other_nuc
-2+6  FX  ddbj_other_nuc
+2+6  FX  ddbj_tsa_nuc
 2+6  FY  ddbj_other_nuc
 2+6  FZ  ddbj_other_nuc
 2+6  GA  ddbj_other_nuc
@@ -307,7 +307,7 @@ version  1 # of file format
 2+6  HJ  gb_patent
 2+6  HK  gb_patent
 2+6  HL  gb_patent
-2+6  HM  gb_other_nuc
+2+6  HM  gb_dirsub
 2+6  HN  gb_other_nuc
 2+6  HO  gb_other_nuc
 2+6  HP  gb_other_nuc
