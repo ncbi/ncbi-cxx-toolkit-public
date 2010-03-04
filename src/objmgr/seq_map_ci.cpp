@@ -135,6 +135,8 @@ bool CSeqMap_CI::x_Push(TSeqPos pos)
 
 
 CSeqMap_CI::CSeqMap_CI(void)
+    : m_SearchPos(0),
+      m_SearchEnd(kInvalidSeqPos)
 {
     m_Selector.SetPosition(kInvalidSeqPos);
 }
@@ -144,9 +146,11 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        CScope* scope,
                        const SSeqMapSelector& sel,
                        TSeqPos pos)
-    : m_Scope(scope)
+    : m_Scope(scope),
+      m_SearchPos(0),
+      m_SearchEnd(kInvalidSeqPos)
 {
-    x_Select(seqMap, sel, pos, kInvalidSeqPos);
+    x_Select(seqMap, sel, pos);
 }
 
 
@@ -154,32 +158,37 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        CScope* scope,
                        const SSeqMapSelector& sel,
                        const CRange<TSeqPos>& range)
-    : m_Scope(scope)
+    : m_Scope(scope),
+      m_SearchPos(range.GetFrom()),
+      m_SearchEnd(range.GetToOpen())
 {
-    x_Select(seqMap, sel, range.GetFrom(), range.GetToOpen());
+    x_Select(seqMap, sel, range.GetFrom());
 }
 
 
 CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
                        const SSeqMapSelector& sel,
                        TSeqPos pos)
-    : m_Scope(&bioseq.GetScope())
+    : m_Scope(&bioseq.GetScope()),
+      m_SearchPos(0),
+      m_SearchEnd(kInvalidSeqPos)
 {
     SSeqMapSelector tse_sel(sel);
     tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
-    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, pos, kInvalidSeqPos);
+    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, pos);
 }
 
 
 CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
                        const SSeqMapSelector& sel,
                        const CRange<TSeqPos>& range)
-    : m_Scope(&bioseq.GetScope())
+    : m_Scope(&bioseq.GetScope()),
+      m_SearchPos(range.GetFrom()),
+      m_SearchEnd(range.GetToOpen())
 {
     SSeqMapSelector tse_sel(sel);
     tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
-    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel,
-             range.GetFrom(), range.GetToOpen());
+    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, range.GetFrom());
 }
 
 
@@ -188,7 +197,9 @@ CSeqMap_CI::CSeqMap_CI(const CSeqMap_CI& base,
                        size_t index,
                        TSeqPos pos)
     : m_Scope(base.m_Scope),
-      m_Stack(1, base.m_Stack.back())
+      m_Stack(1, base.m_Stack.back()),
+      m_SearchPos(0),
+      m_SearchEnd(kInvalidSeqPos)
 {
     TSegmentInfo& info = x_GetSegmentInfo();
     if ( &info.x_GetSeqMap() != &seqmap ||
@@ -216,8 +227,7 @@ CSeqMap_CI::~CSeqMap_CI(void)
 
 void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
                           const SSeqMapSelector& selector,
-                          TSeqPos pos,
-                          TSeqPos end_pos)
+                          TSeqPos pos)
 {
     m_Selector = selector;
     if ( m_Selector.m_Length == kInvalidSeqPos ) {
@@ -236,9 +246,9 @@ void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
            m_Selector.m_Length,
            m_Selector.m_MinusStrand,
            pos - m_Selector.m_Position);
-    while ( !x_Found() && GetPosition() < end_pos ) {
+    while ( !x_Found() && GetPosition() < m_SearchEnd ) {
         if ( !x_Push(pos - m_Selector.m_Position) ) {
-            x_SettleNext(end_pos);
+            x_SettleNext();
             break;
         }
     }
@@ -541,7 +551,10 @@ bool CSeqMap_CI::x_Next(void)
 
 bool CSeqMap_CI::x_Next(bool resolveExternal)
 {
-    if ( x_Push(0, resolveExternal) ) {
+    TSeqPos search_pos = m_SearchPos;
+    TSeqPos level_pos = GetPosition();
+    TSeqPos offset = search_pos > level_pos? search_pos - level_pos: 0;
+    if ( x_Push(offset, resolveExternal) ) {
         return true;
     }
     do {
@@ -556,7 +569,13 @@ bool CSeqMap_CI::x_Prev(void)
 {
     if ( !x_TopPrev() )
         return x_Pop();
-    while ( x_Push(m_Selector.m_Length-1) ) {
+    for ( ;; ) {
+        TSeqPos search_end = m_SearchEnd;
+        TSeqPos level_end = GetEndPosition();
+        TSeqPos end_offset = search_end < level_end? level_end - search_end: 0;
+        if ( !x_Push(m_Selector.m_Length-end_offset-1) ) {
+            break;
+        }
     }
     return true;
 }
@@ -602,9 +621,9 @@ bool CSeqMap_CI::x_Found(void) const
 }
 
 
-bool CSeqMap_CI::x_SettleNext(TSeqPos end_pos)
+bool CSeqMap_CI::x_SettleNext(void)
 {
-    while ( !x_Found() && GetPosition() < end_pos ) {
+    while ( !x_Found() && GetPosition() < m_SearchEnd ) {
         if ( !x_Next() )
             return false;
     }
@@ -638,6 +657,15 @@ bool CSeqMap_CI::Prev(void)
 void CSeqMap_CI::SetFlags(TFlags flags)
 {
     m_Selector.SetFlags(flags);
+}
+
+
+bool CSeqMap_CI::IsValid(void) const
+{
+    return GetPosition() < m_SearchEnd &&
+        !m_Stack.empty() &&
+        m_Stack.front().InRange() &&
+        m_Stack.front().GetType() != CSeqMap::eSeqEnd;
 }
 
 

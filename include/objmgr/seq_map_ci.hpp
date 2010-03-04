@@ -283,6 +283,9 @@ public:
     CSeqMap_CI& operator++(void);
     CSeqMap_CI& operator--(void);
 
+    /// return the depth of current segment
+    size_t       GetDepth(void) const;
+
     /// return position of current segment in sequence
     TSeqPos      GetPosition(void) const;
     /// return length of current segment
@@ -349,13 +352,12 @@ private:
     bool x_TopNext(void);
     bool x_TopPrev(void);
 
-    bool x_SettleNext(TSeqPos end_pos = kInvalidSeqPos);
+    bool x_SettleNext(void);
     bool x_SettlePrev(void);
 
     void x_Select(const CConstRef<CSeqMap>& seqMap,
                   const SSeqMapSelector& selector,
-                  TSeqPos pos,
-                  TSeqPos end_pos);
+                  TSeqPos pos);
 
     typedef vector<TSegmentInfo> TStack;
 
@@ -365,6 +367,9 @@ private:
     TStack               m_Stack;
     // iterator parameters
     SSeqMapSelector      m_Selector;
+    // search range
+    TSeqPos              m_SearchPos;
+    TSeqPos              m_SearchEnd;
 };
 
 
@@ -494,6 +499,13 @@ bool CSeqMap_CI_SegmentInfo::IsSetData(void) const
 
 
 inline
+size_t CSeqMap_CI::GetDepth(void) const
+{
+    return m_Stack.size();
+}
+
+
+inline
 const CSeqMap_CI::TSegmentInfo& CSeqMap_CI::x_GetSegmentInfo(void) const
 {
     return m_Stack.back();
@@ -574,14 +586,6 @@ inline
 bool CSeqMap_CI::IsInvalid(void) const
 {
     return m_Stack.empty();
-}
-
-
-inline
-bool CSeqMap_CI::IsValid(void) const
-{
-    return !m_Stack.empty()  &&  m_Stack.front().InRange()  &&
-        m_Stack.front().GetType() != CSeqMap::eSeqEnd;
 }
 
 
