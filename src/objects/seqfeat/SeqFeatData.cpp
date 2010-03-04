@@ -2026,6 +2026,8 @@ END_SUBTYPE
 
 START_SUBTYPE(gap)
     ADD_QUAL(estimated_length);
+    ADD_QUAL(experiment);
+    ADD_QUAL(inference);
     ADD_QUAL(map);
     ADD_QUAL(note);
 END_SUBTYPE
