@@ -1568,8 +1568,24 @@ void CFeatureItem::x_AddQualsRna(
     default:
         switch ( subtype ) {
 
-        case CSeqFeatData::eSubtype_ncRNA:
+        case CSeqFeatData::eSubtype_ncRNA: {
+            if ( ! rna.CanGetExt() ) {
+                break;
+            }
+            const CRNA_ref_Base::TExt& ext = rna.GetExt();
+            if ( ! ext.IsGen() ) {
+                break;
+            }
+            if ( ext.GetGen().CanGetProduct() ) {
+                x_AddQual( eFQ_product, 
+                    new CFlatStringQVal( ext.GetGen().GetProduct() ) );
+            }
+            if ( ext.GetGen().CanGetClass() ) {
+                x_AddQual( eFQ_ncRNA_class, 
+                    new CFlatStringQVal( ext.GetGen().GetClass() ) );
+            }
             break;
+        }
         case CSeqFeatData::eSubtype_tmRNA: {
             if ( ! rna.CanGetExt() ) {
                 break;
