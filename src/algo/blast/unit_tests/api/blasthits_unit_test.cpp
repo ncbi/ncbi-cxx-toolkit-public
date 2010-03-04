@@ -697,7 +697,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         Uint1* gen_code_string = (Uint1*)
            BlastMemDup(FindGeneticCode(1).get(), 64);
 
-        Blast_HSPListReevaluateWithAmbiguitiesUngapped(program_number, 
+        Blast_HSPListReevaluateUngapped(program_number, 
                                  hsp_list, query_blk, subject_blk, 
                                  word_params, hit_params, query_info, sbp, 
                                  score_params, NULL, gen_code_string);
