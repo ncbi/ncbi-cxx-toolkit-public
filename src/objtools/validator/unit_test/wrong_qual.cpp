@@ -46,8 +46,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validator.hpp>
 
-#if !defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(__sparc)
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -5019,5 +5017,3 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
     }
 
 }    
-
-#endif // !defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(__sparc)
