@@ -223,6 +223,16 @@ public:
     /// @param ids list of Seq-ids from this Bioseq handle. [out]
     static void GetSeqIdList(const objects::CBioseq_Handle& bh,
                              list<CRef<objects::CSeq_id> >& ids);
+    
+    /// Check the vector of objects::CSeq_id  references (original_seqids),
+    /// substituting an artificial gnl|BL_ORD_ID identifier by a 
+    /// corresponding first token of the title (bh). 
+    /// @param bh Bioseq handle [in]
+    /// @param original_seqids vector< CConstRef<objects::CSeq_id> > [in]
+    /// @param ids list of possibly modified Seq-ids  [out]
+    static void GetSeqIdList(const objects::CBioseq_Handle& bh,
+                                vector< CConstRef<objects::CSeq_id> > &original_seqids,
+                                list<CRef<objects::CSeq_id> >& ids);
 
     /// Returns sequence id and a BLAST defline as strings, given a Bioseq 
     /// handle and a list of gis. 
@@ -412,6 +422,9 @@ protected:
     ///Display defline for table output
     ///
     void x_DisplayDeflineTable(CNcbiOstream & out);
+    ///Display defline table contents for table output
+    ///
+    void x_DisplayDeflineTableBody(CNcbiOstream & out);
     //For internal test
     friend struct ::CShowBlastDeflineTest;
 };
