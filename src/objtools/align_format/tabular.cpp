@@ -361,10 +361,13 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     }
 
     // Extract the full list of subject ids
-    if (x_IsFieldRequested(eSubjectSeqId) || x_IsFieldRequested(eSubjectGi) ||
+    if (x_IsFieldRequested(eSubjectSeqId) || 
+        x_IsFieldRequested(eSubjectAllSeqIds) ||
+        x_IsFieldRequested(eSubjectGi) ||
+        x_IsFieldRequested(eSubjectAllGis) ||
         x_IsFieldRequested(eSubjectAccession) ||
-        x_IsFieldRequested(eSubjAccessionVersion) ||
-        x_IsFieldRequested(eSubjectAllSeqIds)) {
+        x_IsFieldRequested(eSubjectAllAccessions) ||
+        x_IsFieldRequested(eSubjAccessionVersion)) {
         try {
             const CBioseq_Handle& subject_bh = 
                 scope.GetBioseqHandle(align.GetSeq_id(1));
