@@ -286,7 +286,7 @@ public:
         eAcc_ddbj_dirsub    = e_Ddbj | eAcc_dirsub     | fAcc_nuc,  // D
         eAcc_ddbj_patent    = e_Ddbj | eAcc_div_patent | fAcc_nuc,  // E
         eAcc_ddbj_mrna      = e_Ddbj | eAcc_mrna       | fAcc_nuc,  // AK
-        eAcc_ddbj_tsa_nuc   = e_Ddbj | eAcc_tsa        | fAcc_nuc,
+        eAcc_ddbj_tsa_nuc   = e_Ddbj | eAcc_tsa        | fAcc_nuc,  // FX
         eAcc_ddbj_tsa_prot  = e_Ddbj | eAcc_tsa        | fAcc_prot,
         eAcc_ddbj_gss       = e_Ddbj | eAcc_gss        | fAcc_nuc,  // DE
         eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,  // AP
