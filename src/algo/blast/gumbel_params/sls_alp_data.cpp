@@ -184,9 +184,7 @@ alp_data::alp_data(//constructor
                         #ifndef NCBI_OS_MSWIN //UNIX program
                                 struct timeval tv;
                                 struct timezone tz;
-                                struct tm *tm;
                                 gettimeofday(&tv, &tz);
-                                tm=localtime(&tv.tv_sec);
                                 random_factor+=tv.tv_usec*10000000;
                         #else
                                 struct _timeb timebuffer;
@@ -465,9 +463,7 @@ string out_file_name_)//output file name
                         #ifndef NCBI_OS_MSWIN //UNIX program
                                 struct timeval tv;
                                 struct timezone tz;
-                                struct tm *tm;
                                 gettimeofday(&tv, &tz);
-                                tm=localtime(&tv.tv_sec);
                                 random_factor+=tv.tv_usec*10000000;
                         #else
                                 struct _timeb timebuffer;
@@ -1496,12 +1492,13 @@ double &seconds_)
 #ifndef NCBI_OS_MSWIN //UNIX program
          struct timeval tv;
      struct timezone tz;
-     struct tm *tm;
+     time_t t;
 
      gettimeofday(&tv, &tz);
-     tm=localtime(&tv.tv_sec);
+     t = tv.tv_sec;
+     localtime(&t);
 
-         seconds_=(double)(tv.tv_sec)+(double)(tv.tv_usec)/1000000.0;
+     seconds_=(double)(t)+(double)(tv.tv_usec) * 0.000001;
 
 #else
 
