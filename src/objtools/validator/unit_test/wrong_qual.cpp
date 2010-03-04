@@ -89,12 +89,12 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
 
 
 typedef struct keyqualval {
-  string key;
-  string qual;
-  string val;
+  const char* key;
+  const char* qual;
+  const char* val;
 } TKeyQualVal;
 
-TKeyQualVal s_KeyQualVal[] = {
+static const TKeyQualVal s_KeyQualVal[] = {
     // begin automatically generated section
     { "allele", "compare", "AY123456.1" },
     { "allele", "mitochondrion", "foo" },
