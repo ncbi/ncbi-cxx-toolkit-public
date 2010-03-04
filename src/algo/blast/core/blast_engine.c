@@ -1111,9 +1111,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          if (!gapped_calculation) {
             /* The following must be performed for any ungapped 
                search with a nucleotide database. */
-	     if (Blast_SubjectIsNucleotide(program_number)) {
                status = 
-                  Blast_HSPListReevaluateWithAmbiguitiesUngapped(
+                  Blast_HSPListReevaluateUngapped(
                             program_number, hsp_list, query, 
                             seq_arg.seq, word_params, hit_params, 
                             query_info, sbp, score_params, seq_src, 
@@ -1140,7 +1139,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                }
                status = Blast_HSPListReapByEvalue(hsp_list, 
                                           hit_params->options);
-            }
              
             /* Calculate and fill the bit scores, since there will be no
                traceback stage where this can be done. */

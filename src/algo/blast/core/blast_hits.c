@@ -2009,7 +2009,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
 }
 
 Int2 
-Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program, 
+Blast_HSPListReevaluateUngapped(EBlastProgramType program, 
    BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
@@ -2021,9 +2021,10 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
    const Uint1* subject_start = NULL;
    Uint1* query_start;
    Int4 index, context, hspcnt;
-   Boolean purge, delete_hsp;
+   Boolean purge;
    Int2 status = 0;
    const Boolean kTranslateSubject = Blast_SubjectIsTranslated(program);
+   const Boolean kNucleotideSubject = Blast_SubjectIsNucleotide(program);
    SBlastTargetTranslation* target_t = NULL;
 
    ASSERT(!score_params->options->gapped_calculation);
@@ -2045,17 +2046,21 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
    if (seq_src) {
       /* Wrap subject sequence block into a BlastSeqSrcGetSeqArg structure, which is 
          needed by the BlastSeqSrc API. */
-      BlastSeqSrcGetSeqArg seq_arg;
-      memset((void*) &seq_arg, 0, sizeof(seq_arg));
-      seq_arg.oid = subject_blk->oid;
-      seq_arg.encoding =
-         (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);
-      seq_arg.seq = subject_blk;
-      /* Return the packed sequence to the database */
-      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
-      /* Get the unpacked sequence */
-      if ((status=BlastSeqSrcGetSequence(seq_src, &seq_arg)))
+      /* If this was a protein subject, leave as is. */
+      if (kNucleotideSubject)
+      {
+      	BlastSeqSrcGetSeqArg seq_arg;
+      	memset((void*) &seq_arg, 0, sizeof(seq_arg));
+      	seq_arg.oid = subject_blk->oid;
+      	seq_arg.encoding =
+       	  (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);
+      	seq_arg.seq = subject_blk;
+      	/* Return the packed sequence to the database */
+      	BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
+      	/* Get the unpacked sequence */
+      	if ((status=BlastSeqSrcGetSequence(seq_src, &seq_arg)))
           return status;
+       }
    }
 
    if (kTranslateSubject) {
@@ -2066,11 +2071,15 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
                    score_params->options->is_ooframe, &target_t);
    } else {
       /* Store sequence in blastna encoding in sequence_start */
-      subject_start = subject_blk->sequence_start + 1;
+      if (subject_blk->sequence_start)
+          subject_start = subject_blk->sequence_start + 1;
+      else
+          subject_start = subject_blk->sequence;
    }
 
    purge = FALSE;
    for (index = 0; index < hspcnt; ++index) {
+      Boolean delete_hsp = FALSE;
       if (hsp_array[index] == NULL)
          continue;
       else
@@ -2084,13 +2093,17 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
       if (kTranslateSubject)
          subject_start = Blast_HSPGetTargetTranslation(target_t, hsp, NULL);
 
-      delete_hsp = 
-         Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
-            subject_start, word_params, sbp, kTranslateSubject);
+      if (kNucleotideSubject) {
+         delete_hsp = 
+             Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
+                subject_start, word_params, sbp, kTranslateSubject);
+      }
    
       if (!delete_hsp) {
+          const Uint1* query_nomask = query_blk->sequence_nomask +
+              query_info->contexts[context].query_offset;
           delete_hsp = 
-              Blast_HSPTestIdentityAndLength(program, hsp, query_start, 
+              Blast_HSPTestIdentityAndLength(program, hsp, query_nomask, 
                                              subject_start, 
                                              score_params->options, 
                                              hit_params->options);
