@@ -36,6 +36,8 @@
 
 #include "unit_test_validator.hpp"
 
+#if !defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(__sparc)
+
 #include <corelib/test_boost.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -5284,3 +5286,5 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
     CLEAR_ERRORS
 }
 //end automatically generated section
+
+#endif // !defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(__sparc)
