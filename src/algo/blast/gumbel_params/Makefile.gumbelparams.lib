@@ -7,3 +7,5 @@ SRC = gumbel_params pvalues general_score_matrix sls_alp sls_alp_data \
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+REQUIRES = -Cygwin

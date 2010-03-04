@@ -40,6 +40,10 @@ Contents:
 
 #include "njn_doubletype.hpp"
 
+#ifdef log2
+#undef log2
+#endif
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
