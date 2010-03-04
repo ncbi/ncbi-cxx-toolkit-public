@@ -235,7 +235,7 @@ static void s_GetRnaRefLabelFromComment
 {
     if ((flags & fFGL_NoComments) == 0  &&  feat.IsSetComment()
         &&  !feat.GetComment().empty()) {
-        if ((flags & fFGL_Both == fFGL_Content)  &&  type_label != NULL
+        if ((flags & fFGL_Type) == 0  &&  type_label != NULL
             &&  feat.GetComment().find(*type_label) == string::npos) {
             *label += *type_label + "-" + feat.GetComment();
         } else {
