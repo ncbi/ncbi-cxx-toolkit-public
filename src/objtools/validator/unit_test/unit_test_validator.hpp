@@ -110,8 +110,25 @@ private:
 	                      | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
+#define STANDARD_SETUP_NO_DATABASE \
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
+    try { \
+        objmgr->RevokeDataLoader("GBLOADER"); \
+    } catch (CException ) { \
+    } \
+    CScope scope(*objmgr); \
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
+    CConstRef<CValidError> eval; \
+    CValidator validator(*objmgr); \
+    unsigned int options = CValidator::eVal_need_isojta \
+                          | CValidator::eVal_far_fetch_mrna_products \
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+	                      | CValidator::eVal_use_entrez; \
+    vector< CExpectedError *> expected_errors;
+
 CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end = 10);
 CRef<CSeq_entry> BuildGoodSeq(void);
+CRef<CSeq_feat> AddGoodImpFeat (CRef<CSeq_entry> entry, string key);
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);
 

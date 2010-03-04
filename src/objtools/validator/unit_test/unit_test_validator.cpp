@@ -1650,6 +1650,35 @@ static CRef<CSeq_feat> MakeGeneForFeature (CRef<CSeq_feat> feat)
     return gene;
 }
 
+
+CRef<CSeq_feat> AddGoodImpFeat (CRef<CSeq_entry> entry, string key)
+{
+    CRef<CSeq_feat> imp_feat = AddMiscFeature (entry);
+    imp_feat->SetData().SetImp().SetKey(key);
+    if (NStr::Equal(key, "conflict")) {
+        imp_feat->AddQualifier("citation", "1");
+    } else if (NStr::Equal(key, "intron")) {
+        entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[0] = 'G';
+        entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[1] = 'T';
+        entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[9] = 'A';
+        entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[10] = 'G';
+    } else if (NStr::Equal(key, "misc_binding") || NStr::Equal(key, "protein_bind")) {
+        imp_feat->AddQualifier("bound_moiety", "foo");
+    } else if (NStr::Equal(key, "modified_base")) {
+        imp_feat->AddQualifier("mod_base", "foo");
+    } else if (NStr::Equal(key, "old_sequence")) {
+        imp_feat->AddQualifier("citation", "1");
+    } else if (NStr::Equal(key, "operon")) {
+        imp_feat->AddQualifier("operon", "foo");
+    } else if (NStr::Equal(key, "polyA_site")) {
+        imp_feat->SetLocation().SetPnt().SetId().SetLocal().SetStr("good");
+        imp_feat->SetLocation().SetPnt().SetPoint(5);
+    } else if (NStr::Equal(key, "source")) {
+        imp_feat->AddQualifier("organism", "foo");
+    } 
+    return imp_feat;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1657,6 +1686,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 // new case test ground
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -2860,7 +2890,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    STANDARD_SETUP
+    STANDARD_SETUP_NO_DATABASE
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (lcl|good - lcl|bad)"));
 
@@ -12563,7 +12593,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ExceptionProblem", "Exception explanation text is also found in feature comment"));
 
     CRef<CSeq_feat> feat = AddMiscFeature(entry);
-    feat->SetExcept();
+    feat->SetExcept(true);
 
     // look for exception in comment
     feat->SetExcept_text("RNA editing");
