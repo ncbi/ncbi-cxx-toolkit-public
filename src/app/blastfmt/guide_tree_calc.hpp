@@ -46,8 +46,6 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
-#include <corelib/hash_set.hpp>
-
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -375,14 +373,6 @@ protected:
     /// @param included_indices Indices of included sequences [in]
     ///
     void x_CreateValidAlign(const vector<int>& used_indices);
-
-    /// Create alignmnet composed of subset of sequences
-    /// @param alnvec Initial alignment vector [in]
-    /// @param align_index Indices of sequences included in the subset [in]
-    /// @return New alignment vector
-    CRef<CAlnVec> x_CreateSubsetAlign(const CRef<CAlnVec>& alnvec,
-                                      const vector<int>& align_index);
-
     
     /// Compute phylogenetic tree
     /// @param correct Whether negative tree egde lengths should be set to zero

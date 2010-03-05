@@ -364,10 +364,6 @@ void CGuideTreeCalc::x_CreateValidAlign(const vector<int>& used_indices)
         _ASSERT(used_indices.size() + m_RemovedSeqIds.size()
                 == (size_t)m_AlignDataSource->GetNumRows());
 
-
-        // Old implementation
-//        m_AlignDataSource = x_CreateSubsetAlign(m_AlignDataSource, used_indices);
-
         CRef<CDense_seg> new_denseg
             = m_AlignDataSource->GetDenseg().ExtractRows(used_indices);
 
@@ -487,10 +483,6 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
 
 bool CGuideTreeCalc::CalcBioTree(void)
 {
-
-    CDistMethods::TMatrix pmat;
-    CDistMethods::TMatrix dmat;
-    hash_set<int> removed_inds;
     vector<int> used_inds;
 
     bool valid;
@@ -517,33 +509,6 @@ bool CGuideTreeCalc::CalcBioTree(void)
 
     return valid;
 }
-
-
-/*
-// Needed for displaying alignment
-bool CGuideTreeCalc::CalcSelectedAligns(int selected_node_id)
-{
-    CRef<CAlnVec> alignvec;
-    bool success = true;
-
-    if(m_AlignDataSource.Empty()) {   
-        // Create m_SeqAlign and initialize m_AlignDataSource
-        success = x_InitAlignDS();
-        if(success) {
-            // Validate distances, if invalid seqs are found
-            // initialize m_AlignDataSource with m_SeqAlign 
-//            x_CreatePhyloValidAlign();
-            CreateValidAlign();
-        }
-    }
-    if(success) {        
-        const CAlnVec& alnvec = m_AlignDataSource->GetAlnMgr();
-        alignvec.Reset(const_cast<CAlnVec*>(&alnVec));        
-    }
-    return success;
-}
-*/
-
 
 // Init parameters to default values
 void CGuideTreeCalc::x_Init(void)
@@ -596,151 +561,6 @@ void CGuideTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
     m_AlignDataSource->SetGapChar('-');
     m_AlignDataSource->SetEndChar('-');
 }
-
-
-// Find the first segment that does not have all gaps
-static void s_GetNonGapSegmentRange(const CAlnVec& avec,
-                                    const vector<int>& align_index,
-                                    int* seg_start, int* seg_stop)
-{
-    const size_t& num_segs = avec.GetNumSegs(); 
-    const size_t& num_rows = avec.GetNumRows(); 
-    const CDense_seg& denseSeq = avec.GetDenseg();
-    const CDense_seg::TStarts&  starts  = denseSeq.GetStarts();
-    
-    bool segment_start = false;
-    bool segment_stop = false;
-    size_t seg;
-    for (seg=0;seg < num_segs;seg++) {
-        
-        for(size_t i=1;i < align_index.size();i++)
-        {
-            int sel_aln_row = align_index[i];
-            int curr_start = starts[seg*num_rows + sel_aln_row];
-            if(curr_start != -1) {
-                segment_start = true;
-                break;
-            }            
-        }
-        if(segment_start) {
-            break;
-        }
-    }
-    *seg_start = (seg < num_segs) ? seg : 0;
-    for (seg=num_segs - 1;seg >= 0;seg--) {
-        
-        for(size_t i=1;i < align_index.size();i++)
-        {
-            int sel_aln_row = align_index[i];
-            
-            if(starts[seg * num_rows + sel_aln_row] != -1) {
-                segment_stop = true;                
-                break;
-             }            
-        }
-        if(segment_stop) {
-            break;
-        }
-    }
-    *seg_stop = (seg > 0) ? seg + 1 : num_segs;
-}
-
-
-// Create seq_align from a subset of given alnvec
-CRef<CAlnVec> CGuideTreeCalc::x_CreateSubsetAlign(const CRef<CAlnVec>& alnvec,
-                                        const vector<int>& align_index) 
-{
-    CAlnVec avec(alnvec->GetDenseg(), alnvec->GetScope());
-    avec.SetGapChar('-');  
-    avec.SetEndChar('-');
-   
-    // Create dense-seg from curent avec
-    const CDense_seg& dense_seq = avec.GetDenseg();
-    const size_t& num_segs = avec.GetNumSegs(); 
-    const size_t& num_rows = avec.GetNumRows(); 
-    const CDense_seg::TStarts& starts  = dense_seq.GetStarts();
-    const CDense_seg::TStrands& strands = dense_seq.GetStrands();
-    const CDense_seg::TLens& lens = dense_seq.GetLens();
-
-    // Create new dense-seg
-    CRef<CDense_seg> new_dseg(new CDense_seg);
-    CDense_seg::TStarts& new_starts = new_dseg->SetStarts();
-    CDense_seg::TStrands& new_strands = new_dseg->SetStrands();
-    CDense_seg::TLens& new_lens = new_dseg->SetLens();
-    CDense_seg::TIds&  new_ids = new_dseg->SetIds();
-
-    // Compute dimensions
-    int new_num_rows = align_index.size();
-    new_dseg->SetDim(new_num_rows);
-    CDense_seg::TNumseg& new_num_segs = new_dseg->SetNumseg();
-    new_num_segs = num_segs; // initialize
-
-    // Assign ids
-    new_ids.resize(new_num_rows);
-    for (int i=0;i < new_num_rows;i++) {
-        int sel_aln_row = align_index[i];
-        const CSeq_id& seq_id = avec.GetSeqId(sel_aln_row);
-        CRef<CSeq_id> selected_seq_id(new CSeq_id);
-        SerialAssign(*selected_seq_id, seq_id);
-        new_ids[i] = selected_seq_id;
-    }
-    new_lens.resize(new_num_segs);
-    new_starts.resize(new_num_rows * new_num_segs, -1);
-    if (!strands.empty()) {
-        new_strands.resize(new_num_rows * new_num_segs, eNa_strand_minus);
-    }
-    
-    // main loop through segments
-    int new_seg = 0;
-
-    // Delete the whole segment if all starts = -1 
-    int seg_start = 0;
-    int seg_stop = new_num_segs;
-    if(align_index.size() > 1) {
-        s_GetNonGapSegmentRange(avec, align_index, &seg_start, &seg_stop);
-    }
-
-    for (int seg=seg_start;seg < seg_stop;seg++) {
-
-        new_lens[new_seg] = lens[seg];
-        bool delete_gap_seg = true;
-        bool seg_cont_query_ins = false;
-        for (int row=0;row < new_num_rows;row++) {            
-            int sel_aln_row = align_index[row];
-
-            delete_gap_seg = (starts[seg*num_rows + sel_aln_row] == -1);
-
-
-            new_starts[new_seg*new_num_rows + row] = starts[seg*num_rows
-                                                            + sel_aln_row];
-            if (!strands.empty()) {
-                new_strands[new_seg*new_num_rows + row] = strands[seg*num_rows
-                                                                  + sel_aln_row];
-            }
-            
-        }        
-        if(!delete_gap_seg) {
-            new_seg++;
-        }
-        // If extra segment was inserted to keep query continious
-        if(seg_cont_query_ins) {
-           seg--;            // don't increment current seg
-        }
-    }
-    new_num_segs = new_seg;
-    
-    new_lens.resize(new_num_segs);
-    new_starts.resize(new_num_rows * new_num_segs, -1);
-    if (!strands.empty()) {
-        new_strands.resize(new_num_rows * new_num_segs);
-    }
-           
-    new_dseg->Validate(true);
-
-    CRef<CAlnVec> new_alnvec(new CAlnVec(*new_dseg, *m_Scope));
-    return new_alnvec;
-}
-
 
 #define MAX_NODES_TO_COLOR 24
 static string s_GetBlastNameColor(

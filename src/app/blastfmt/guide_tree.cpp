@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <corelib/hash_set.hpp>
 
 #include <util/image/image.hpp>
 #include <util/image/image_util.hpp>
