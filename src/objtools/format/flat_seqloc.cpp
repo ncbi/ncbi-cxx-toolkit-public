@@ -144,9 +144,10 @@ bool CFlatSeqLoc::x_Add
         const CFlatGapLoc* gap = dynamic_cast<const CFlatGapLoc*>(&loc);
         if (gap == 0) {
             oss << "gap()";
-        } else {
-            oss << "gap(" << gap->GetLength() << ")";
-        }
+            break;
+        } 
+        size_t uLength = gap->GetLength();
+        oss << (uLength==100 ? "gap(unk" : "gap(") << uLength << ")";
         break;
     }}
     case CSeq_loc::e_Empty:
