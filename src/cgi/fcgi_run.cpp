@@ -412,8 +412,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 alarm(0);  // cancel the alarm
             }
             sigaction(SIGALRM, &old_sa, NULL);
+            bool timed_out = s_AcceptTimedOut;
             s_AcceptTimedOut = false;
-            if (s_AcceptTimedOut  &&  accept_errcode != 0) {
+            if (timed_out  &&  accept_errcode != 0) {
                 {{ // If to restart the application
                     int restart_code = s_ShouldRestart(mtime, watcher.get(),
                                                        restart_delay);
