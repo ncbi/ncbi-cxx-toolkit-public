@@ -170,7 +170,8 @@ private:
 /// tree conversion.  Special node names (starting with dots) get mapped as
 ///     [<section>].<name> <-> NCBI_CONFIG_<name>__<section> ;
 /// all other names get mapped as
-///     [<section>]<name> <-> NCBI_CONFIG__<section>__<name> .
+///     [<section>]<name> <-> NCBI_CONFIG__<section>__<name>
+/// with _DOT_ corresponding to internal periods.
 
 class NCBI_XNCBI_EXPORT CNcbiEnvRegMapper : public IEnvRegMapper
 {

@@ -281,11 +281,13 @@ const char* CNcbiEnvRegMapper::sm_Prefix = "NCBI_CONFIG_";
 string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
     const
 {
+    string result(sm_Prefix);
     if (NStr::StartsWith(name, ".")) {
-        return sm_Prefix + name.substr(1) + "__" + section;
+        result += name.substr(1) + "__" + section;
     } else {
-        return string(sm_Prefix) + "_" + section + "__" + name;
+        result += "_" + section + "__" + name;
     }
+    return NStr::Replace(result, ".", "_DOT_");
 }
 
 
@@ -309,6 +311,8 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
         name[0] = '.';
         section = env.substr(uu_pos + 2);
     }
+    NStr::ReplaceInPlace(section, "_DOT_", ".");
+    NStr::ReplaceInPlace(name,    "_DOT_", ".");
     return true;
 }
 
