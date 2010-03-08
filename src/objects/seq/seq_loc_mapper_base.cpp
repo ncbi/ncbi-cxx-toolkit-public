@@ -60,6 +60,97 @@ const char* CAnnotMapperException::GetErrCodeString(void) const
     }
 }
 
+/*
+/////////////////////////////////////////////////////////////////////
+
+CSeq_loc_Mapper_Base basic approaches.
+
+1. Initialization
+
+The mapper parses input data (two seq-locs, seq-alignment) and stores
+mappings in a collection of CMappingRange objects. Each mapping range
+contains source (id, start, stop, strand) and destination (id, start,
+strand).
+
+All coordinates are converted to genomic with one exception: if
+source and destination locations have the same length and the mapper
+can not obtain real sequence types, it assumes that both sequences
+are nucleotides even if they are proteins. See x_AdjustSeqTypesToProt()
+for more info on this special case.
+
+The mapper uses several methods to check sequence types: by comparing
+source and destination lengths, by calling GetSeqType() which is
+overriden in CSeq_loc_Mapper to provide the correct information, using
+some information from alignments (e.g. spiced-segs contain explicit
+sequence types). If all these methods fail, the mapper may still
+successfully do its job. E.g. if mapping is between two whole seq-locs,
+it may be done with the assumption that both sequences have the same
+type.
+
+The order of mapping ranges is not preserved, they are sorted by
+source seq-id and start position.
+
+When parsing input locations the mapper also tries to create equivalent
+mappings for all synonyms of the source sequence id. The base class
+does not provide synonyms, buy CSeq_loc_Mapper does override
+CollectSynonyms() method to implement this.
+
+In some situations (like mapping between a bioseq and its segments),
+the mapper also creates dummy mappings from destination to itself,
+so that during the mapping any ranges already on the destination
+sequence are not truncated. See x_PreserveDestinationLocs().
+
+
+2. Mapping
+
+Mapping of seq-locs is done range-by-range, the original seq-loc
+is not parsed completely before mapping. Each original interval is
+mapped through all matching mapping ranges, some parts may be mapped
+more than once.
+
+The mapped ranges are first stored in a container of SMappedRange
+structures. This is done to simplify merging ranges. If no merge
+flag is set or the new range can not be merged with the collected
+set, all ranges from the container are moved (pushed) to the
+destination seq-loc and the new range starts the new collection.
+This is done by x_PushMappedRange method (adding a new range) and
+x_PushRangesToDstMix (pushing the collected mapped ranges to the
+destination seq-loc).
+
+The pushing also occurs in the following situations:
+- When a source range is discarded (not just clipped) - see
+  x_SetLastTruncated.
+- When a non-mapping range is copied to the destination mix (in fact,
+  in this case pushing is usually done by the truncation described
+  above).
+- When a new complex seq-loc is started (e.g. a new mix or equiv)
+  to preserve the structure of the source location.
+
+Since merging is done only among the temporary collection, any
+of the above conditions breaks merging. Examples:
+- The original seq-loc is a mix, containing two other mixes A and B,
+  which contain overlapping ranges. These ranges will not be merged,
+  since they originate from different complex locations.
+- If the original seq-loc contains three ranges A, B and C, which are
+  mapped so that A' and C' overlap or abut, but B is discarded, the
+  A' and C' will not be merged. Depending on the flags, B may be
+  also included in the mapped location between A' and C' (see
+  KeepNonmappingRanges).
+
+TODO: Is the above behavior expected or should it be changed so that
+merging can be done at least in some of the described cases?
+
+After mapping the destination seq-loc may be a simple interval or
+a mix of sub-locations. This mix can be optimized when the mapping
+is finished: null locations are removed (if no GapPreserve is set),
+as well as empty mixes etc. Mixes with a single element are replaced
+with this element. Mixes which contain only intervals are converted
+to packed-ints.
+
+
+/////////////////////////////////////////////////////////////////////
+*/
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -430,6 +521,65 @@ void CSeq_loc_Mapper_Base::x_InitializeFeat(const CSeq_feat&  map_feat,
 {
     // Make sure product is set
     _ASSERT(map_feat.IsSetProduct());
+
+    // Sometimes sequence types can be detected based on the feature type.
+    ESeqType loc_type = eSeq_unknown;
+    ESeqType prod_type = eSeq_unknown;
+    switch ( map_feat.GetData().Which() ) {
+    case CSeqFeatData::e_Gene:
+        loc_type = eSeq_nuc; // Can gene features have product?
+        break;
+    case CSeqFeatData::e_Cdregion:
+        loc_type = eSeq_nuc;
+        prod_type = eSeq_prot;
+        break;
+    case CSeqFeatData::e_Prot:
+        loc_type = eSeq_prot; // Can protein features have product?
+        break;
+    case CSeqFeatData::e_Rna:
+        loc_type = eSeq_nuc;
+        prod_type = eSeq_nuc;
+        break;
+    /*
+    case e_Org:
+    case e_Pub:
+    case e_Seq:
+    case e_Imp:
+    case e_Region:
+    case e_Comment:
+    case e_Bond:
+    case e_Site:
+    case e_Rsite:
+    case e_User:
+    case e_Txinit:
+    case e_Num:
+    case e_Psec_str:
+    case e_Non_std_residue:
+    case e_Het:
+    case e_Biosrc:
+    case e_Clone:
+    */
+    default:
+        break;
+    }
+
+    if (loc_type != eSeq_unknown) {
+        for (CSeq_loc_CI it(map_feat.GetLocation()); it; ++it) {
+            CSeq_id_Handle idh = it.GetSeq_id_Handle();
+            if (idh) {
+                SetSeqTypeById(idh, loc_type);
+            }
+        }
+    }
+    if (prod_type != eSeq_unknown) {
+        for (CSeq_loc_CI it(map_feat.GetProduct()); it; ++it) {
+            CSeq_id_Handle idh = it.GetSeq_id_Handle();
+            if (idh) {
+                SetSeqTypeById(idh, prod_type);
+            }
+        }
+    }
+
     int frame = 0;
     if (map_feat.GetData().IsCdregion()) {
         // For cd-regions use frame information.
@@ -559,16 +709,35 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 
     CSeq_loc_CI src_it(source);
     CSeq_loc_CI dst_it(target);
-    TSeqPos src_start = src_it.GetRange().GetFrom();
-    if (src_start != kInvalidSeqPos) src_start *= src_width;
-    TSeqPos src_len = x_GetRangeLength(src_it);
-    if (src_len != kInvalidSeqPos) src_len *= src_width;
-    TSeqPos dst_start = dst_it.GetRange().GetFrom();
-    if (dst_start != kInvalidSeqPos) dst_start *= dst_width;
-    TSeqPos dst_len = x_GetRangeLength(dst_it);
-    if (dst_len != kInvalidSeqPos) dst_len *= dst_width;
+
+    // Get starts and lengths with care, check for empty and whole ranges.
+    TRange rg = src_it.GetRange();
+    // Start with an empty range
+    TSeqPos src_start = kInvalidSeqPos;
+    TSeqPos src_len = 0;
+    if ( rg.IsWhole() ) {
+        src_start = 0;
+        src_len = kInvalidSeqPos;
+    }
+    else if ( !rg.Empty() ) {
+        src_start = src_it.GetRange().GetFrom()*src_width;
+        src_len = x_GetRangeLength(src_it)*src_width;
+    }
+
+    rg = dst_it.GetRange();
+    TSeqPos dst_start = kInvalidSeqPos;
+    TSeqPos dst_len = 0;
+    if ( rg.IsWhole() ) {
+        dst_start = 0;
+        dst_len = kInvalidSeqPos;
+    }
+    else if ( !rg.Empty() ) {
+        dst_start = dst_it.GetRange().GetFrom()*dst_width;
+        dst_len = x_GetRangeLength(dst_it)*dst_width;
+    }
+
     if ( frame ) {
-        // Shift start according to the frame
+        // Shift start according to the frame.
         if (src_type == eSeq_prot  &&  src_start != kInvalidSeqPos) {
             src_start += frame - 1;
         }
@@ -599,16 +768,34 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         // incremented and both source ranges will be mapped to the same
         // sequence.
         if (src_len == 0  &&  ++src_it) {
-            src_start = src_it.GetRange().GetFrom();
-            if (src_start != kInvalidSeqPos) src_start *= src_width;
-            src_len = x_GetRangeLength(src_it);
-            if (src_len != kInvalidSeqPos) src_len *= src_width;
+            TRange rg = src_it.GetRange();
+            if ( rg.Empty() ) {
+                src_start = kInvalidSeqPos;
+                src_len = 0;
+            }
+            else if ( rg.IsWhole() ) {
+                src_start = 0;
+                src_len = kInvalidSeqPos;
+            }
+            else {
+                src_start = src_it.GetRange().GetFrom()*src_width;
+                src_len = x_GetRangeLength(src_it)*src_width;
+            }
         }
         if (dst_len == 0  &&  ++dst_it) {
-            dst_start = dst_it.GetRange().GetFrom();
-            if (dst_start != kInvalidSeqPos) dst_start *= dst_width;
-            dst_len = x_GetRangeLength(dst_it);
-            if (dst_len != kInvalidSeqPos) dst_len *= dst_width;
+            TRange rg = dst_it.GetRange();
+            if ( rg.Empty() ) {
+                dst_start = kInvalidSeqPos;
+                dst_len = 0;
+            }
+            else if ( rg.IsWhole() ) {
+                dst_start = 0;
+                dst_len = kInvalidSeqPos;
+            }
+            else {
+                dst_start = dst_it.GetRange().GetFrom()*dst_width;
+                dst_len = x_GetRangeLength(dst_it)*dst_width;
+            }
         }
     }
     // Remember the direction of source and destination. This information
@@ -939,6 +1126,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
             ENa_strand src_strand = have_strands ?
                 denseg.GetStrands()[row] : eNa_strand_unknown;
 
+            // Dense-seg can not contain whole ranges, no need to check the ranges.
             TSeqPos src_len = r_src.GetLength()*len_width;
             TSeqPos dst_len = r_dst.GetLength()*len_width;
             TSeqPos src_start = r_src.GetFrom()*src_width;
@@ -1575,10 +1763,16 @@ void CSeq_loc_Mapper_Base::x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
     NON_CONST_ITERATE(TDstStrandMap, str_it, m_DstRanges) {
         NON_CONST_ITERATE(TDstIdMap, id_it, *str_it) {
             NON_CONST_ITERATE(TDstRanges, rg_it, id_it->second) {
-                TSeqPos from = rg_it->GetFrom();
-                if (from != kInvalidSeqPos) from *= 3;
-                TSeqPos to = rg_it->GetToOpen();
-                if (to != kInvalidSeqPos) to *= 3;
+                TSeqPos from = kInvalidSeqPos;
+                TSeqPos to = 0;
+                if ( rg_it->IsWhole() ) {
+                    from = 0;
+                    to = kInvalidSeqPos;
+                }
+                else if ( !rg_it->Empty() ) {
+                    from = rg_it->GetFrom()*3;
+                    to = rg_it->GetToOpen()*3;
+                }
                 rg_it->SetOpen(from, to);
             }
         }
@@ -1648,9 +1842,8 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     }
     else if (src_len > dst_len) {
         // It is possible that the source location is whole. In this
-        // case its start must be 0, and the strand not set.
-        _ASSERT(src_len != kInvalidSeqPos  ||
-            (src_start == 0  &&  src_strand == eNa_strand_unknown));
+        // case its strand must be not set.
+        _ASSERT(src_len != kInvalidSeqPos || src_strand == eNa_strand_unknown);
         // Destination range is shorter - use it as a single interval,
         // adjust source range according to its strand.
         if (IsReverse(src_strand)) {
@@ -1668,9 +1861,8 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     }
     else { // if (src_len < dst_len)
         // It is possible that the destination location is whole. In this
-        // case its start must be 0, and the strand not set.
-        _ASSERT(dst_len != kInvalidSeqPos  ||
-            (dst_start == 0  &&  dst_strand == eNa_strand_unknown));
+        // case its strand must be not set.
+        _ASSERT(dst_len != kInvalidSeqPos || dst_strand == eNa_strand_unknown);
         // Source range is shorter - use it as a single interval,
         // adjust destination range according to its strand.
         if ( IsReverse(dst_strand) ) {
@@ -1754,6 +1946,7 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
         NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
             TSynonyms syns;
             CollectSynonyms(id_it->first, syns);
+            // Sort the ranges so that they can be merged.
             id_it->second.sort();
             TSeqPos dst_start = kInvalidSeqPos;
             TSeqPos dst_stop = kInvalidSeqPos;
@@ -1761,14 +1954,24 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
             int dst_width = (dst_type == eSeq_prot) ? 3 : 1;
             ITERATE(TDstRanges, rg_it, id_it->second) {
                 // Collect and merge ranges
-                TSeqPos rg_start = rg_it->GetFrom()*dst_width;
-                TSeqPos rg_stop = rg_it->GetTo()*dst_width;
+                TSeqPos rg_start = kInvalidSeqPos;
+                TSeqPos rg_stop = 0;
+                if ( rg_it->IsWhole() ) {
+                    rg_start = 0;
+                    rg_stop = kInvalidSeqPos;
+                }
+                else if ( !rg_it->Empty() ) {
+                    rg_start = rg_it->GetFrom()*dst_width;
+                    rg_stop = rg_it->GetTo()*dst_width;
+                }
+                // The following will also be true if the first destination
+                // range is empty. Ignore it anyway.
                 if (dst_start == kInvalidSeqPos) {
                     dst_start = rg_start;
                     dst_stop = rg_stop;
                     continue;
                 }
-                if (rg_start <= dst_stop + 1) {
+                if (dst_stop != kInvalidSeqPos  &&  rg_start <= dst_stop + 1) {
                     // overlapping or abutting ranges, continue collecting
                     dst_stop = max(dst_stop, rg_stop);
                     continue;
@@ -1777,16 +1980,26 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
                 ITERATE(TSynonyms, syn_it, syns) {
                     // Separate ranges, add conversion and restart collecting
                     m_Mappings->AddConversion(
-                        *syn_it, dst_start, dst_stop - dst_start + 1,
+                        *syn_it, dst_start,
+                        dst_stop == kInvalidSeqPos
+                        ? kInvalidSeqPos : dst_stop - dst_start + 1,
                         ENa_strand(str_idx),
                         id_it->first, dst_start, ENa_strand(str_idx));
+                }
+                // Do we have the whole sequence already?
+                if (dst_stop == kInvalidSeqPos) {
+                    // Prevent the range to be added one more time.
+                    dst_start = dst_stop;
+                    break;
                 }
             }
             // Add any remaining range.
             if (dst_start < dst_stop) {
                 ITERATE(TSynonyms, syn_it, syns) {
                     m_Mappings->AddConversion(
-                        *syn_it, dst_start, dst_stop - dst_start + 1,
+                        *syn_it, dst_start,
+                        dst_stop == kInvalidSeqPos
+                        ? kInvalidSeqPos : dst_stop - dst_start + 1,
                         ENa_strand(str_idx),
                         id_it->first, dst_start, ENa_strand(str_idx));
                 }
@@ -1898,7 +2111,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     bool partial_right = false;
     // Used source sub-range is required to adjust graph data.
     // The values are relative to the source range.
-    TRange used_rg = src_rg.IsWhole() ? src_rg :
+    TRange used_rg = (src_rg.IsWhole() || src_rg.Empty()) ? src_rg :
         TRange(0, src_rg.GetLength() - 1);
 
     bool reverse = IsReverse(src_strand);
@@ -2037,7 +2250,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
     bool res = false;
     CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
     ESeqType src_type = GetSeqTypeById(src_idh);
-    if (src_type == eSeq_prot  &&  !src_rg.IsWhole()) {
+    if (src_type == eSeq_prot  &&  !(src_rg.IsWhole() || src_rg.Empty()) ) {
         src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
     }
     else if (m_GraphRanges  &&  src_type == eSeq_unknown) {
@@ -2938,6 +3151,10 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                 from = rg_it->range.GetFrom();
                 to = rg_it->range.GetTo();
                 fuzz = rg_it->fuzz;
+            }
+            // If there were only empty ranges, do not try to add them as points.
+            if (from == kInvalidSeqPos  &&  to == kInvalidSeqPos) {
+                continue;
             }
             // Last interval or point not yet stored.
             if ( x_ReverseRangeOrder(str) ) {

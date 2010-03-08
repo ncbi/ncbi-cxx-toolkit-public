@@ -124,6 +124,8 @@ private:
     TSeqPos             m_Dst_from;
     ENa_strand          m_Dst_strand;
     // Wether the mapping reverses the strand or not.
+    // This value can be calculated from source and destination
+    // strands, but is cached for better performance.
     bool                m_Reverse;
     // Wether to extend the mapped location to the end of
     // destination range. Used when mapping from a prot to a nuc.

@@ -63,6 +63,7 @@ SAlignment_Segment::SAlignment_Segment(int len, size_t dim)
 SAlignment_Segment::SAlignment_Row&
 SAlignment_Segment::GetRow(size_t idx)
 {
+    // Make sure the row exists (this should always be true).
     _ASSERT(m_Rows.size() > idx);
     return m_Rows[idx];
 }
@@ -71,12 +72,15 @@ SAlignment_Segment::GetRow(size_t idx)
 SAlignment_Segment::SAlignment_Row&
 SAlignment_Segment::CopyRow(size_t idx, const SAlignment_Row& src_row)
 {
+    // Copy the row to this segment. m_Rows must already contain the
+    // requested index.
     SAlignment_Row& dst_row = GetRow(idx);
     dst_row = src_row;
     return dst_row;
 }
 
 
+// Add new alignment row. The rows vector must contain the entry.
 SAlignment_Segment::SAlignment_Row&
 SAlignment_Segment::AddRow(size_t         idx,
                            const CSeq_id& id,
@@ -94,6 +98,7 @@ SAlignment_Segment::AddRow(size_t         idx,
 }
 
 
+// Add new alignment row. The rows vector must contain the entry.
 SAlignment_Segment::SAlignment_Row&
 SAlignment_Segment::AddRow(size_t                 idx,
                            const CSeq_id_Handle&  id,
@@ -103,6 +108,7 @@ SAlignment_Segment::AddRow(size_t                 idx,
 {
     SAlignment_Row& row = GetRow(idx);
     row.m_Id = id;
+    // If start is negative (-1), use kInvalidSeqPos.
     row.m_Start = start < 0 ? kInvalidSeqPos : start;
     row.m_IsSetStrand = is_set_strand;
     row.m_Strand = strand;
@@ -111,6 +117,8 @@ SAlignment_Segment::AddRow(size_t                 idx,
 }
 
 
+// Create an empty seq-align mapper. The mapper may be initialized later
+// with a seq-align or an exon.
 CSeq_align_Mapper_Base::
 CSeq_align_Mapper_Base(CSeq_loc_Mapper_Base& loc_mapper)
     : m_LocMapper(loc_mapper),
@@ -124,6 +132,7 @@ CSeq_align_Mapper_Base(CSeq_loc_Mapper_Base& loc_mapper)
 }
 
 
+// Initialize the mapper with a seq-align.
 CSeq_align_Mapper_Base::
 CSeq_align_Mapper_Base(const CSeq_align&     align,
                        CSeq_loc_Mapper_Base& loc_mapper)
@@ -144,7 +153,8 @@ CSeq_align_Mapper_Base::~CSeq_align_Mapper_Base(void)
 }
 
 
-// Copy each element from source to destination
+// Helper function to copy a container (scores, user-objects, seq-locs).
+// Copies each element, not just pointers.
 template<class T, class C1, class C2>
 void CloneContainer(const C1& src, C2& dst)
 {
@@ -156,7 +166,9 @@ void CloneContainer(const C1& src, C2& dst)
 }
 
 
-// Copy pointers from source to destination
+// Copy pointers from source to destination. Used to store scores
+// in the parsed segments while mapping an alignment. Should never
+// be used to create final mapped alignments.
 template<class C1, class C2>
 void CopyContainer(const C1& src, C2& dst)
 {
@@ -166,10 +178,14 @@ void CopyContainer(const C1& src, C2& dst)
 }
 
 
+// Parse the alignment into segments and rows.
 void CSeq_align_Mapper_Base::x_Init(const CSeq_align& align)
 {
     m_OrigAlign.Reset(&align);
     if (align.IsSetScore()  &&  !align.GetScore().empty()) {
+        // Copy global scores. This copies the pointers, not
+        // the objects, so, the result should not be copies
+        // to the mapped seq-align.
         CopyContainer<CSeq_align::TScore, TScores>(
             align.GetScore(), m_AlignScores);
     }
@@ -201,10 +217,14 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align& align)
 }
 
 
+// Add new segment with the given length and dimension.
 SAlignment_Segment& CSeq_align_Mapper_Base::x_PushSeg(int len,
                                                       size_t dim,
                                                       ENa_strand strand)
 {
+    // The order of storing parsed segments depends on the strand
+    // so that the segments always go in coordinate order, not in
+    // biological one.
     if ( !IsReverse(strand) ) {
         m_Segs.push_back(SAlignment_Segment(len, dim));
         return m_Segs.back();
@@ -216,6 +236,7 @@ SAlignment_Segment& CSeq_align_Mapper_Base::x_PushSeg(int len,
 }
 
 
+// Insert new segment. Used when splitting a partially mapped segment.
 SAlignment_Segment&
 CSeq_align_Mapper_Base::x_InsertSeg(TSegments::iterator& where,
                                     int                  len,
@@ -225,9 +246,12 @@ CSeq_align_Mapper_Base::x_InsertSeg(TSegments::iterator& where,
 }
 
 
+// Parse dense-diag alignment.
 void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
 {
     ITERATE(TDendiag, diag_it, diags) {
+        // Make sure all values are consistent. Post warnings and try to
+        // fix any incorrect values.
         const CDense_diag& diag = **diag_it;
         size_t dim = diag.GetDim();
         if (dim != diag.GetIds().size()) {
@@ -238,6 +262,7 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
             ERR_POST_X(2, Warning << "Invalid 'starts' size in dendiag");
             dim = min(dim, diag.GetStarts().size());
         }
+        // Remember if the original alignment contained any strands.
         m_HaveStrands = diag.IsSetStrands();
         if (m_HaveStrands && dim != diag.GetStrands().size()) {
             ERR_POST_X(3, Warning << "Invalid 'strands' size in dendiag");
@@ -245,15 +270,19 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
         }
         if (dim != m_Dim) {
             if ( m_Dim ) {
+                // Set the flag indicating that segments have different
+                // number of rows.
                 m_AlignFlags = eAlign_MultiDim;
             }
             m_Dim = max(dim, m_Dim);
         }
         bool have_prot = false;
         bool have_nuc = false;
+        // Initialize next segment.
         SAlignment_Segment& seg = x_PushSeg(diag.GetLen(), dim);
         ENa_strand strand = eNa_strand_unknown;
         if ( diag.IsSetScores() ) {
+            // Store per-segment scores if any.
             CopyContainer<CDense_diag::TScores, TScores>(
                 diag.GetScores(), seg.m_Scores);
         }
@@ -263,11 +292,12 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
             }
             const CSeq_id& row_id = *diag.GetIds()[row];
             int row_start = diag.GetStarts()[row];
+            // Adjust coordinates so that they are always genomic.
             CSeq_loc_Mapper_Base::ESeqType row_type =
                 m_LocMapper.GetSeqTypeById(row_id);
             if (row_type == CSeq_loc_Mapper_Base::eSeq_prot) {
                 if ( !have_prot ) {
-                    // Adjust segment length once
+                    // Adjust segment length only once!
                     have_prot = true;
                     seg.m_Len *= 3;
                 }
@@ -276,9 +306,11 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
             else /*if (row_type == CSeq_loc_Mapper_Base::eSeq_nuc)*/ {
                 have_nuc = true;
             }
+            // Add row.
             seg.AddRow(row, row_id, row_start, m_HaveStrands, strand);
         }
         if (have_prot  &&  have_nuc) {
+            // This type of alignment does not support mixing sequence types.
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
                 "Dense-diags with mixed sequence types are not supported");
         }
@@ -286,11 +318,13 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
 }
 
 
+// Parse dense-seg.
 void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
 {
     m_Dim = denseg.GetDim();
     size_t numseg = denseg.GetNumseg();
-    // claimed dimension may not be accurate :-/
+    // Make sure all values are consistent. Post warnings and try to
+    // fix any incorrect values.
     if (numseg != denseg.GetLens().size()) {
         ERR_POST_X(4, Warning << "Invalid 'lens' size in denseg");
         numseg = min(numseg, denseg.GetLens().size());
@@ -309,11 +343,14 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
         m_Dim = min(m_Dim*numseg, denseg.GetStrands().size()) / numseg;
     }
     if ( denseg.IsSetScores() ) {
+        // Store scores in the segments. Only pointers are copied,
+        // the objects are cloned only to the final mapped alignment.
         CopyContainer<CDense_seg::TScores, TScores>(
             denseg.GetScores(), m_SegsScores);
     }
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
+        // Create new segment.
         SAlignment_Segment& alnseg = x_PushSeg(denseg.GetLens()[seg], m_Dim);
         bool have_prot = false;
         bool have_nuc = false;
@@ -331,6 +368,7 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
                 width = 3;
             }
             else /*if (seq_type == CSeq_loc_Mapper_Base::eSeq_nuc)*/ {
+                // Treat unknown type as nuc.
                 have_nuc = true;
             }
             int start = denseg.GetStarts()[seg*m_Dim + row]*width;
@@ -340,6 +378,7 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
                 "Dense-segs with mixed sequence types are not supported");
         }
+        // For proteins segment length needs to be adjusted.
         if ( have_prot ) {
             alnseg.m_Len *= 3;
         }
@@ -347,15 +386,17 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
 }
 
 
+// Parse std-seg.
 void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
 {
     vector<int> seglens;
     seglens.reserve(sseg.size());
+    // Several passes are required to detect sequence types and lengths.
     ITERATE(CSeq_align::C_Segs::TStd, it, sseg) {
-        // Two different lengths are allowed - for nucs and prots.
+        // Two different location lengths are allowed - for nucs and prots.
         int minlen = 0;
         int maxlen = 0;
-        // First pass - find min and max segment lengths
+        // First pass - find min and max segment lengths.
         ITERATE( CStd_seg::TLoc, it_loc, (*it)->GetLoc()) {
             const CSeq_loc& loc = **it_loc;
             const CSeq_id* id = loc.GetId();
@@ -369,11 +410,13 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                     "Locations with mixed seq-ids are not supported "
                     "in std-seg alignments");
             }
+            // Store min and max lengths of locations. By default use min.
             if (minlen == 0  ||  len == minlen) {
                 minlen = len;
             }
             else if (maxlen == 0  ||  len == maxlen) {
                 maxlen = len;
+                // If necessary, swap the two lengths.
                 if (minlen > maxlen) {
                     swap(minlen, maxlen);
                 }
@@ -385,13 +428,14 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                     "Rows of the same std-seg have different lengths");
             }
         }
+        // Two different lengths were found. Try to guess sequence types.
         if (minlen != 0  &&  maxlen != 0) {
             if (minlen*3 != maxlen) {
                 NCBI_THROW(CAnnotMapperException, eBadAlignment,
                     "Inconsistent seq-loc lengths in std-seg rows");
             }
             // Found both nucs and prots - make the second pass and
-            // store widths.
+            // store widths for all sequences.
             ITERATE( CStd_seg::TLoc, it_loc, (*it)->GetLoc()) {
                 const CSeq_loc& loc = **it_loc;
                 const CSeq_id* id = loc.GetId();
@@ -399,12 +443,12 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 if (len == 0  ||  loc.IsWhole()) {
                     continue; // ignore unknown lengths
                 }
-                _ASSERT(id); // All locations should have been checked
+                _ASSERT(id); // All locations should have been checked.
                 CSeq_loc_Mapper_Base::ESeqType newtype = (len == minlen) ?
                     CSeq_loc_Mapper_Base::eSeq_prot
                     : CSeq_loc_Mapper_Base::eSeq_nuc;
                 CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
-                // Check if seq-type is available from the location mapper
+                // Check if seq-type is available from the location mapper.
                 CSeq_loc_Mapper_Base::ESeqType seqtype =
                     m_LocMapper.GetSeqTypeById(idh);
                 if (seqtype != CSeq_loc_Mapper_Base::eSeq_unknown) {
@@ -422,19 +466,22 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                         // because there were no nucs to compare to.
                         m_LocMapper.x_AdjustSeqTypesToProt(idh);
                     }
-                    // Set type anyway -- x_AdjustSeqTypesToProt could ignore it
+                    // Set type anyway -- x_AdjustSeqTypesToProt could ignore it.
                     m_LocMapper.SetSeqTypeById(idh, newtype);
                 }
             }
         }
-        // -1 indicates unknown sequence type or equal lengths for all rows
-        seglens.push_back(maxlen == 0 ? -1/*minlen*/ : maxlen);
+        // -1 indicates unknown sequence type or equal lengths for all rows.
+        // We need to know this to use the correct length below, so use -1
+        // rather than real length.
+        seglens.push_back(maxlen == 0 ? -1 : maxlen);
     }
     // By this point all possible sequence types should be detected and
     // stored in the loc-mapper.
     // All unknown types are treated as nucs.
 
     size_t seg_idx = 0;
+    // Final pass - parse the alignment.
     ITERATE (CSeq_align::C_Segs::TStd, it, sseg) {
         const CStd_seg& stdseg = **it;
         size_t dim = stdseg.GetDim();
@@ -443,6 +490,9 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             ERR_POST_X(8, Warning << "Invalid 'ids' size in std-seg");
             dim = min(dim, stdseg.GetIds().size());
         }
+        // seg_len may be -1 indicating that the real length is
+        // unknown (due to unknown sequence type or a non-interval location).
+        // We'll fix this later.
         int seg_len = seglens[seg_idx++];
         SAlignment_Segment& seg = x_PushSeg(seg_len, dim);
         if ( stdseg.IsSetScores() ) {
@@ -459,7 +509,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             const CSeq_loc& loc = **it_loc;
             const CSeq_id* id = loc.GetId();
             if ( !id ) {
-                // All supported location types must have id
+                // All supported location types must have a single id.
                 NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Missing or multiple seq-ids in std-seg alignment");
             }
@@ -468,17 +518,20 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 CSeq_loc_Mapper_Base::eSeq_unknown;
             seq_type = m_LocMapper.GetSeqTypeById(*id);
             int width = (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) ? 3 : 1;
+            // Empty and whole locations will set the correct start and length
+            // below, gon't check this now.
             int start = loc.GetTotalRange().GetFrom()*width;
             int len = loc.GetTotalRange().GetLength()*width;
             ENa_strand strand = eNa_strand_unknown;
             bool have_strand = false;
             switch ( loc.Which() ) {
             case CSeq_loc::e_Empty:
+                // Adjust start, length should be 0.
                 start = (int)kInvalidSeqPos;
                 break;
             case CSeq_loc::e_Whole:
                 start = 0;
-                len = 0;
+                len = 0; // Set length to 0 - it's unknown.
                 break;
             case CSeq_loc::e_Int:
                 have_strand = loc.GetInt().IsSetStrand();
@@ -494,20 +547,27 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 m_HaveStrands = true;
                 strand = loc.GetStrand();
             }
+            // Now the final adjustment of the length. If for the current row
+            // it's set, but not equal to the segment-wide length, there are
+            // two possibilities:
             if (len > 0  &&  len != seg_len) {
+                // The segment-wide length is unknown or equal for all rows.
+                // We can set it now, when we have at least one row with
+                // real length.
                 if (seg_len == -1  &&  seg.m_Len == -1) {
-                    // Segment length could not be calculated or is equal for
-                    // all rows - safe to use any row's length.
                     seg_len = len;
                     seg.m_Len = len;
                 }
                 else {
+                    // The segment-wide length is known, but different from
+                    // this row's length. Fail.
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Rows have different lengths in std-seg");
                 }
             }
             seg.AddRow(row_idx++, *id, start, m_HaveStrands, strand);
         }
+        // Check if all segments have the same number of rows.
         if (dim != m_Dim) {
             if ( m_Dim ) {
                 m_AlignFlags = eAlign_MultiDim;
@@ -522,7 +582,8 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
 {
     m_Dim = pseg.GetDim();
     size_t numseg = pseg.GetNumseg();
-    // claimed dimension may not be accurate :-/
+    // Make sure all values are consistent. Post warnings and try to
+    // fix any incorrect values.
     if (numseg != pseg.GetLens().size()) {
         ERR_POST_X(10, Warning << "Invalid 'lens' size in packed-seg");
         numseg = min(numseg, pseg.GetLens().size());
@@ -545,22 +606,28 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
         m_Dim = min(m_Dim*numseg, pseg.GetStrands().size()) / numseg;
     }
     if ( pseg.IsSetScores() ) {
+        // Copy pointers to scores if any.
         CopyContainer<CPacked_seg::TScores, TScores>(
             pseg.GetScores(), m_SegsScores);
     }
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
+        // By default treat the segment as nuc-only, don't adjust lengths.
+        // If there are any proteins involved, this will be set to 3.
         int seg_width = 1;
+        // Remember if there are any nucs.
         bool have_nuc = false;
         SAlignment_Segment& alnseg = x_PushSeg(pseg.GetLens()[seg], m_Dim);
         for (unsigned int row = 0;  row < m_Dim;  row++) {
             if ( m_HaveStrands ) {
                 strand = pseg.GetStrands()[seg*m_Dim + row];
             }
+            // Check sequence type for this row.
             int row_width = 1;
             const CSeq_id& id = *pseg.GetIds()[row];
             CSeq_loc_Mapper_Base::ESeqType seqtype =
                 m_LocMapper.GetSeqTypeById(id);
+            // If this is a protein, adjust widths.
             if (seqtype == CSeq_loc_Mapper_Base::eSeq_prot) {
                 seg_width = 3;
                 row_width = 3;
@@ -573,17 +640,21 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
                 pseg.GetStarts()[seg*m_Dim + row]*row_width : kInvalidSeqPos),
                 m_HaveStrands, strand);
         }
+        // If there are both nucs and prots, fail.
         if (have_nuc  &&  seg_width == 3) {
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
                 "Packed-segs with mixed sequence types are not supported");
         }
+        // If there are only prots, adjust segment length.
         alnseg.m_Len *= seg_width;
     }
 }
 
 
+// Parse align-set
 void CSeq_align_Mapper_Base::x_Init(const CSeq_align_set& align_set)
 {
+    // Iterate sub-alignments, create a new mapper for each of them.
     const CSeq_align_set::Tdata& data = align_set.Get();
     ITERATE(CSeq_align_set::Tdata, it, data) {
         m_SubAligns.push_back(Ref(CreateSubAlign(**it)));
@@ -591,6 +662,8 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align_set& align_set)
 }
 
 
+// Parse a single splices exon. A separate align-mapper is created
+// for each exon.
 void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                                       const CSpliced_exon& exon)
 {
@@ -603,6 +676,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     m_Dim = 2;
 
     if ( exon.IsSetScores() ) {
+        // Copy pointers to scores if any.
         CopyContainer<CScore_set::Tdata, TScores>(
             exon.GetScores(), m_SegsScores);
     }
@@ -617,10 +691,12 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     ENa_strand prod_strand = spliced.IsSetProduct_strand() ?
         spliced.GetProduct_strand() : eNa_strand_unknown;
 
+    // Get per-exon ids, use per-alignment ids if local ones are not set.
     const CSeq_id* ex_gen_id = exon.IsSetGenomic_id() ?
         &exon.GetGenomic_id() : gen_id;
     const CSeq_id* ex_prod_id = exon.IsSetProduct_id() ?
         &exon.GetProduct_id() : prod_id;
+    // Make sure ids are set at least somewhere.
     if ( !ex_gen_id  ) {
         ERR_POST_X(14, Warning << "Missing genomic id in spliced-seg");
         return;
@@ -638,7 +714,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     int gen_start = exon.GetGenomic_start();
     int gen_end = exon.GetGenomic_end() + 1;
 
-    // both start and stop will be converted to genomic coords
+    // Both start and stop will be converted to genomic coords.
     int prod_start, prod_end;
 
     if ( is_prot_prod ) {
@@ -654,8 +730,10 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     }
 
     if ( exon.IsSetParts() ) {
+        // Iterate exon parts.
         ITERATE(CSpliced_exon::TParts, it, exon.GetParts()) {
             const CSpliced_exon_chunk& part = **it;
+            // The length in spliced-seg is already genomic.
             TSeqPos seg_len =
                 CSeq_loc_Mapper_Base::sx_GetExonPartLength(part);
             if (seg_len == 0) {
@@ -666,6 +744,8 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
             alnseg.m_PartType = part.Which();
 
             int part_gen_start;
+            // Check the genomic strand only if genomic sequence is not
+            // missing.
             if ( part.IsProduct_ins() ) {
                 part_gen_start = -1;
             }
@@ -683,6 +763,8 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 *gen_id, part_gen_start, m_HaveStrands, gen_strand);
 
             int part_prod_start;
+            // Check the product strand only if product sequence is not
+            // missing.
             if ( part.IsGenomic_ins() ) {
                 part_prod_start = -1;
             }
@@ -701,7 +783,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
         }
     }
     else {
-        // No parts, use the whole exon
+        // No parts, use the whole exon.
         TSeqPos seg_len = gen_end - gen_start;
         SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
         alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Gen,
@@ -712,14 +794,17 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
 }
 
 
+// Parse spliced-seg.
 void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
 {
+    // Iterate exons, create sub-mapper for each one.
     ITERATE(CSpliced_seg::TExons, it, spliced.GetExons() ) {
         m_SubAligns.push_back(Ref(CreateSubAlign(spliced, **it)));
     }
 }
 
 
+// Parse sparse-seg.
 void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
 {
     // Only single-row alignments are currently supported
@@ -731,15 +816,17 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
         return;
     }
     if ( sparse.IsSetRow_scores() ) {
+        // Copy pointers to the scores.
         CopyContainer<CSparse_seg::TRow_scores, TScores>(
             sparse.GetRow_scores(), m_SegsScores);
     }
 
+    // Make sure all values are consistent. Post warnings and try to
+    // fix any incorrect values.
     const CSparse_align& row = *sparse.GetRows().front();
     m_Dim = 2;
 
     size_t numseg = row.GetNumseg();
-    // claimed dimension may not be accurate :-/
     if (numseg != row.GetFirst_starts().size()) {
         ERR_POST_X(16, Warning <<
             "Invalid 'first-starts' size in sparse-align");
@@ -761,6 +848,7 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
         numseg = min(numseg, row.GetSecond_strands().size());
     }
 
+    // Check sequence types, make sure they are the same.
     CSeq_loc_Mapper_Base::ESeqType first_type =
         m_LocMapper.GetSeqTypeById(row.GetFirst_id());
     int width = (first_type == CSeq_loc_Mapper_Base::eSeq_prot) ? 3 : 1;
@@ -774,11 +862,14 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
     }
     int scores_group = -1;
     if ( row.IsSetSeg_scores() ) {
+        // If per-row scores are set, store them along with the group number.
+        // Only pointers are copied.
         scores_group = m_GroupScores.size();
         m_GroupScores.resize(m_GroupScores.size() + 1);
         CopyContainer<CSparse_align::TSeg_scores, TScores>(
             row.GetSeg_scores(), m_GroupScores[scores_group]);
     }
+    // Iterate segments.
     for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg =
             x_PushSeg(row.GetLens()[seg]*width, m_Dim);
@@ -797,27 +888,38 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
 
 // Mapping through CSeq_loc_Mapper
 
+// Convert the whole seq-align.
 void CSeq_align_Mapper_Base::Convert(void)
 {
     m_DstAlign.Reset();
 
+    // If the alignment is a set of sub-alignments, iterate all sub-mappers.
     if ( !m_SubAligns.empty() ) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
             (*it)->Convert();
+            // Check if the top-level scores must be invalidated.
+            // If any sub-mapper has invalidated its scores due
+            // to partial mapping, the global scores are also
+            // not valid anymore.
             if ( (*it)->m_ScoresInvalidated ) {
                 x_InvalidateScores();
             }
         }
         return;
     }
-    x_ConvertAlign(0);
+    // This is a single alignment with one level - map it.
+    // NULL is a pointer to the row to be mapped. If it's NULL,
+    // all rows are mapped.
+    x_ConvertAlign(NULL);
 }
 
 
+// convert a single alignment row.
 void CSeq_align_Mapper_Base::Convert(size_t row)
 {
     m_DstAlign.Reset();
 
+    // If the alignment is a set of sub-alignments, iterate all sub-mappers.
     if ( !m_SubAligns.empty() ) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
             (*it)->Convert(row);
@@ -827,10 +929,12 @@ void CSeq_align_Mapper_Base::Convert(size_t row)
         }
         return;
     }
+    // This is a single alignment with one level - map the requested row.
     x_ConvertAlign(&row);
 }
 
 
+// Map a single alignment row if it't not NULL or all rows.
 void CSeq_align_Mapper_Base::x_ConvertAlign(size_t* row)
 {
     if ( m_Segs.empty() ) {
@@ -846,54 +950,74 @@ void CSeq_align_Mapper_Base::x_ConvertAlign(size_t* row)
 }
 
 
+// Map a single row.
 void CSeq_align_Mapper_Base::x_ConvertRow(size_t row)
 {
     CSeq_id_Handle dst_id;
+    // Iterate all segments.
     TSegments::iterator seg_it = m_Segs.begin();
     for ( ; seg_it != m_Segs.end(); ) {
         if (seg_it->m_Rows.size() <= row) {
             // No such row in the current segment
             ++seg_it;
+            // This alignment has different number of rows in
+            // different segments.
             m_AlignFlags = eAlign_MultiDim;
             continue;
         }
+        // Try to convert the current segment.
         CSeq_id_Handle seg_id = x_ConvertSegment(seg_it, row);
         if (seg_id) {
+            // Success. Check if all mappings resulted in the
+            // same mapped id.
             if (dst_id  &&  dst_id != seg_id  &&
                 m_AlignFlags == eAlign_Normal) {
+                // Mark the alignment as having multiple ids per row.
+                // Not all alignment types support this, so we may need
+                // to change the type from the original one later.
                 m_AlignFlags = eAlign_MultiId;
             }
+            // Remember the last mapped id.
             dst_id = seg_id;
         }
     }
 }
 
 
+// Convert a single segment of a single row.
+// This is where the real mapping is done.
 CSeq_id_Handle
 CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
                                          size_t               row)
 {
+    // Remember the iterator position - mapping can add segments,
+    // we need to know which should be mapped next.
+    // old_it keeps the segment to be mapped, seg_it is the next segment,
+    // any additional segments are inserted before it.
     TSegments::iterator old_it = seg_it;
     SAlignment_Segment& seg = *old_it;
     ++seg_it;
+
     SAlignment_Segment::SAlignment_Row& aln_row = seg.m_Rows[row];
+    // Skip rows with gaps.
     if (aln_row.m_Start == kInvalidSeqPos) {
-        // skipped row
-        return CSeq_id_Handle(); // aln_row.m_Id;
+        return CSeq_id_Handle(); // Use empty id to report gaps.
     }
 
+    // Find all matching mappings.
     const CMappingRanges::TIdMap& idmap = m_LocMapper.m_Mappings->GetIdMap();
     CMappingRanges::TIdIterator id_it = idmap.find(aln_row.m_Id);
     if (id_it == idmap.end()) {
-        // ID not found in the segment, leave the row unchanged
+        // Id not found in the segment, leave the row unchanged.
         return aln_row.m_Id;
     }
     const CMappingRanges::TRangeMap& rmap = id_it->second;
     if ( rmap.empty() ) {
-        // No mappings for this segment
+        // No mappings for this segment - the row should not be
+        // changed. Return the original id.
         return aln_row.m_Id;
     }
-    // Sorted mappings
+    // Sort mappings related to this segment/row.
     typedef vector< CRef<CMappingRange> > TSortedMappings;
     TSortedMappings mappings;
     CMappingRanges::TRangeIterator rg_it = rmap.begin();
@@ -907,6 +1031,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
     EAlignFlags align_flags = eAlign_Normal;
     TSeqPos start = aln_row.m_Start;
     TSeqPos stop = start + seg.m_Len - 1;
+    // left_shift indicates which portion of the segment has been mapped
+    // so far.
     TSeqPos left_shift = 0;
     int group_idx = 0;
     for (size_t map_idx = 0; map_idx < mappings.size(); ++map_idx) {
@@ -914,11 +1040,12 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         if (!mapping->CanMap(start, stop,
             aln_row.m_IsSetStrand  &&  m_LocMapper.m_CheckStrand,
             aln_row.m_Strand)) {
-            // Mapping does not apply to this segment/row
+            // Mapping does not apply to this segment/row, leave it unchanged.
             continue;
         }
 
-        // Check destination id
+        // Check the destination id, set the flag if the row is mapped
+        // to multiple ids.
         if ( dst_id ) {
             if (mapping->m_Dst_id_Handle != dst_id) {
                 align_flags = eAlign_MultiId;
@@ -929,25 +1056,31 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         group_idx = mapping->m_Group;
 
         // At least part of the interval was converted. Calculate
-        // trimming coords, trim each row.
+        // trimming coords, split each row if necessary. We will need to add
+        // new segments on the left/right to preserve the parts which could
+        // not be mapped.
         TSeqPos dl = mapping->m_Src_from <= start ?
             0 : mapping->m_Src_from - start;
         TSeqPos dr = mapping->m_Src_to >= stop ?
             0 : stop - mapping->m_Src_to;
         if (dl > 0) {
-            // Add segment for the skipped range
+            // Add segment for the skipped range on the left.
+            // Copy the original segment.
             SAlignment_Segment& lseg =
                 x_InsertSeg(seg_it, dl, seg.m_Rows.size());
             lseg.m_GroupIdx = group_idx;
             lseg.m_PartType = old_it->m_PartType;
+            // Iterate all rows, adjust their starts.
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
                     lseg.CopyRow(r, seg.m_Rows[r]);
                 if (r == row) {
+                    // The row which could not be mapped has a gap.
                     lrow.m_Start = kInvalidSeqPos;
                     lrow.m_Id = dst_id;
                 }
                 else if (lrow.m_Start != kInvalidSeqPos) {
+                    // All other rows have new starts.
                     if (lrow.SameStrand(aln_row)) {
                         lrow.m_Start += left_shift;
                     }
@@ -959,27 +1092,29 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         }
         start += dl;
         left_shift += dl;
-        // At least part of the interval was converted.
+        // At least part of the interval was converted. Add new segment for
+        // this range.
         SAlignment_Segment& mseg = x_InsertSeg(seg_it,
             stop - dr - start + 1, seg.m_Rows.size());
         mseg.m_GroupIdx = group_idx;
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
-            // copy scores if there's no truncation
+            // Copy scores if there's no truncation.
             mseg.m_Scores = seg.m_Scores;
             mseg.m_ScoresGroupIdx = seg.m_ScoresGroupIdx;
         }
         else {
-            // Invalidate all scores related to the segment (this
-            // includes alignment-level scores).
+            // Invalidate all scores related to the segment and all
+            // parent's scores.
             x_InvalidateScores(&seg);
         }
         ENa_strand dst_strand = eNa_strand_unknown;
+        // Fill the new segment.
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& mrow =
                 mseg.CopyRow(r, seg.m_Rows[r]);
             if (r == row) {
-                // translate id and coords
+                // Translate id and coords of the mapped row.
                 CMappingRange::TRange mapped_rg =
                     mapping->Map_Range(start, stop - dr);
                 mapping->Map_Strand(
@@ -997,6 +1132,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
                 m_HaveStrands = m_HaveStrands  ||  mseg.m_HaveStrands;
             }
             else {
+                // Adjust starts of all other rows.
                 if (mrow.m_Start != kInvalidSeqPos) {
                     if (mrow.SameStrand(aln_row)) {
                         mrow.m_Start += left_shift;
@@ -1012,18 +1148,23 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         start += mseg.m_Len;
         mapped = true;
     }
+    // Update alignment flags.
     if (align_flags == eAlign_MultiId  &&  m_AlignFlags == eAlign_Normal) {
         m_AlignFlags = align_flags;
     }
     if ( !mapped ) {
-        // Do not erase the segment, just change the row ID and reset start
+        // Nothing could be mapped from this row, although some mappings for
+        // the id do exist. Do not erase the segment, just change the row id
+        // and reset start to convert it to gap on the destination sequence.
+        // Use destination id of the first mapping for the source id. This
+        // should not be very important, since we have a gap anyway. (?)
         seg.m_Rows[row].m_Start = kInvalidSeqPos;
         seg.m_Rows[row].m_Id = rmap.begin()->second->m_Dst_id_Handle;
         seg.m_Rows[row].SetMapped();
         return seg.m_Rows[row].m_Id;
     }
     if (start <= stop) {
-        // Add the remaining unmapped range
+        // Add the remaining unmapped range if any.
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
             stop - start + 1, seg.m_Rows.size());
         rseg.m_GroupIdx = group_idx;
@@ -1032,6 +1173,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
             SAlignment_Segment::SAlignment_Row& rrow =
                 rseg.CopyRow(r, seg.m_Rows[r]);
             if (r == row) {
+                // The mapped row was truncated and now has a gap.
                 rrow.m_Start = kInvalidSeqPos;
                 rrow.m_Id = dst_id;
             }
@@ -1042,6 +1184,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
             }
         }
     }
+    // Remove the original segment from the alignment.
     m_Segs.erase(old_it);
     return align_flags == eAlign_MultiId ? CSeq_id_Handle() : dst_id;
 }
@@ -1049,37 +1192,56 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
 
 // Get mapped alignment
 
+// Checks each row for strand information. If found, store the
+// strand in the container. It will be used to set strand in gaps.
+// Looks only for the first known strand in each row. Does not
+// check if strand is the same for the whole row.
 void CSeq_align_Mapper_Base::x_FillKnownStrands(TStrands& strands) const
 {
-    // Remember first known strand for each row, use it in gaps
     strands.clear();
-    strands.reserve(m_Segs.front().m_Rows.size());
-    for (size_t r_idx = 0; r_idx < m_Segs.front().m_Rows.size(); r_idx++) {
+    size_t max_rows = m_Segs.front().m_Rows.size();
+    if (m_AlignFlags & eAlign_MultiDim) {
+        // Segments may contain different number of rows, check each segment.
+        ITERATE(TSegments, seg_it, m_Segs) {
+            if (seg_it->m_Rows.size() > max_rows) {
+                max_rows = seg_it->m_Rows.size();
+            }
+        }
+    }
+    strands.reserve(max_rows);
+    for (size_t r_idx = 0; r_idx < max_rows; r_idx++) {
         ENa_strand strand = eNa_strand_unknown;
         // Skip gaps, try find a row with mapped strand
         ITERATE(TSegments, seg_it, m_Segs) {
-            if ((TSeqPos)seg_it->m_Rows[r_idx].GetSegStart() != kInvalidSeqPos) {
+            // Make sure the row exists in the current segment.
+            if (seg_it->m_Rows.size() <= max_rows) continue;
+            if (seg_it->m_Rows[r_idx].GetSegStart() != -1) {
                 strand = seg_it->m_Rows[r_idx].m_Strand;
                 break;
             }
         }
+        // Store the strand.
         strands.push_back(strand == eNa_strand_unknown ?
                           eNa_strand_plus : strand);
     }
 }
 
 
+// Create dense-diag alignment.
 void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
 {
     TDendiag& diags = dst->SetSegs().SetDendiag();
     TStrands strands;
+    // Get information about strands for each row.
     x_FillKnownStrands(strands);
+    // Create dense-diag for each segment.
     ITERATE(TSegments, seg_it, m_Segs) {
         const SAlignment_Segment& seg = *seg_it;
         CRef<CDense_diag> diag(new CDense_diag);
         diag->SetDim(seg.m_Rows.size());
         int len_width = 1;
-        size_t str_idx = 0;
+        size_t str_idx = 0; // row index in the strands container
+        // Add each row to the dense-seg.
         ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
             CSeq_loc_Mapper_Base::ESeqType seq_type =
                 m_LocMapper.GetSeqTypeById(row->m_Id);
@@ -1095,15 +1257,18 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
             diag->SetIds().push_back(id);
             diag->SetStarts().push_back(row->GetSegStart()/seq_width);
             if (seg.m_HaveStrands) { // per-segment strands
-                // For gaps use the strand of the first mapped row
+                // For gaps use the strand of the first mapped row,
+                // see x_FillKnownStrands.
                 diag->SetStrands().
                     push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     row->m_Strand : strands[str_idx]);
             }
-            str_idx++;
+            str_idx++; // move to the strand for the next row
         }
+        // Adjust segment length is there are any proteins.
         diag->SetLen(seg_it->m_Len/len_width);
         if ( !seg.m_Scores.empty() ) {
+            // This will copy every element rather just pointers.
             CloneContainer<CScore, TScores, CDense_diag::TScores>(
                 seg.m_Scores, diag->SetScores());
         }
@@ -1112,37 +1277,43 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
 }
 
 
+// Create dense-seg alignment.
 void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
 {
+    // Make sure all segments have the same number of rows -
+    // dense-seg does not support multi-dim alignments.
+    _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
+
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
     dseg.SetDim(m_Segs.front().m_Rows.size());
     dseg.SetNumseg(m_Segs.size());
     if ( !m_SegsScores.empty() ) {
+        // This will copy every element rather just pointers.
         CloneContainer<CScore, TScores, CDense_seg::TScores>(
             m_SegsScores, dseg.SetScores());
     }
     int len_width = 1;
-    // Find first non-gap in each row, get its seq-id
+    // First pass: find first non-gap in each row, get its seq-id.
     for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
         bool only_gaps = true;
         ITERATE(TSegments, seg, m_Segs) {
             const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
             if (row.m_Start != kInvalidSeqPos) {
+                // Not a gap - store the id
                 CRef<CSeq_id> id(new CSeq_id);
                 id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
                 dseg.SetIds().push_back(id);
-                int width = 3; // Dense-seg widths are reversed
+                // Check sequence type, remember if lengths
+                // need to be adjusted.
                 CSeq_loc_Mapper_Base::ESeqType seq_type =
                     m_LocMapper.GetSeqTypeById(row.m_Id);
                 if (seq_type != CSeq_loc_Mapper_Base::eSeq_unknown) {
-                    // At least some widths are known and can be stored
                     if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
                         len_width = 3;
-                        width = 1;
                     }
                 }
                 only_gaps = false;
-                break;
+                break; // No need to check other segments of this row.
             }
         }
         // The row contains only gaps, don't know how to build a valid denseg
@@ -1151,15 +1322,17 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
                     "Mapped denseg contains empty row.");
         }
     }
+    // Get information about strands for each row.
     TStrands strands;
     x_FillKnownStrands(strands);
     ITERATE(TSegments, seg_it, m_Segs) {
         dseg.SetLens().push_back(seg_it->m_Len/len_width);
-        size_t str_idx = 0;
+        size_t str_idx = 0; // strands index for the current row
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             int width = 1;
+            // Are there any proteins in the alignment?
             if (len_width == 3) {
-                // Need to check for prots
+                // Adjust coordinates for proteins.
                 if (m_LocMapper.GetSeqTypeById(row->m_Id) ==
                     CSeq_loc_Mapper_Base::eSeq_prot) {
                     width = 3;
@@ -1170,7 +1343,8 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
                 start /= width;
             }
             dseg.SetStarts().push_back(start);
-            if (m_HaveStrands) { // per-alignment strands
+            // Are there any strands involved at all?
+            if (m_HaveStrands) {
                 // For gaps use the strand of the first mapped row
                 dseg.SetStrands().
                     push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
@@ -1183,34 +1357,42 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
 }
 
 
+// Create std-seg alignment.
 void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
 {
     TStd& std_segs = dst->SetSegs().SetStd();
     ITERATE(TSegments, seg_it, m_Segs) {
+        // Create new std-seg for each segment.
         CRef<CStd_seg> std_seg(new CStd_seg);
         std_seg->SetDim(seg_it->m_Rows.size());
         if ( !seg_it->m_Scores.empty() ) {
+            // Copy scores (not just pointers).
             CloneContainer<CScore, TScores, CStd_seg::TScores>(
                 seg_it->m_Scores, std_seg->SetScores());
         }
+        // Add rows.
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+            // Check sequence type, set width to 3 for prots.
             int width = (m_LocMapper.GetSeqTypeById(row->m_Id) ==
                 CSeq_loc_Mapper_Base::eSeq_prot) ? 3 : 1;
             CRef<CSeq_id> id(new CSeq_id);
             id.Reset(&const_cast<CSeq_id&>(*row->m_Id.GetSeqId()));
             std_seg->SetIds().push_back(id);
             CRef<CSeq_loc> loc(new CSeq_loc);
+            // For gaps use empty seq-loc.
             if (row->m_Start == kInvalidSeqPos) {
                 // empty
                 loc->SetEmpty(*id);
             }
             else {
-                // interval
+                // For normal ranges use seq-interval.
                 loc->SetInt().SetId(*id);
+                // Adjust coordinates according to the sequence type.
                 TSeqPos start = row->m_Start/width;
                 TSeqPos stop = (row->m_Start + seg_it->m_Len)/width;
                 loc->SetInt().SetFrom(start);
-                // len may be 0 after dividing by width
+                // len may be 0 after dividing by width, check it before
+                // decrementing stop.
                 loc->SetInt().SetTo(stop ? stop - 1 : 0);
                 if (row->m_IsSetStrand) {
                     loc->SetInt().SetStrand(row->m_Strand);
@@ -1223,17 +1405,24 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
 }
 
 
+// Create packed-seg alignment.
 void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
 {
+    // Multi-dim alignments are not supported by this type.
+    _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
+
     CPacked_seg& pseg = dst->SetSegs().SetPacked();
     pseg.SetDim(m_Segs.front().m_Rows.size());
     pseg.SetNumseg(m_Segs.size());
     if ( !m_SegsScores.empty() ) {
+        // Copy elements, not just pointers.
         CloneContainer<CScore, TScores, CPacked_seg::TScores>(
             m_SegsScores, pseg.SetScores());
     }
+    // Get strands for all rows.
     TStrands strands;
     x_FillKnownStrands(strands);
+    // Populate ids.
     for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
         ITERATE(TSegments, seg, m_Segs) {
             const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
@@ -1245,11 +1434,13 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
             }
         }
     }
+    // Create segments and rows.
     ITERATE(TSegments, seg_it, m_Segs) {
         int len_width = 1;
-        size_t str_idx = 0;
+        size_t str_idx = 0; // Strand index for the current row.
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             TSeqPos start = row->GetSegStart();
+            // Check if start needs to be converted to protein coords.
             if (m_LocMapper.GetSeqTypeById(row->m_Id) ==
                 CSeq_loc_Mapper_Base::eSeq_prot) {
                 len_width = 3;
@@ -1266,25 +1457,31 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
             }
             str_idx++;
         }
+        // If there are any proteins, length should be adjusted.
         pseg.SetLens().push_back(seg_it->m_Len/len_width);
     }
 }
 
 
+// Create disc-alignment.
 void CSeq_align_Mapper_Base::x_GetDstDisc(CRef<CSeq_align>& dst) const
 {
     CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
+    // Iterate sub-mappers, let each of them create a mapped alignment,
+    // store results to the disc-align.
     ITERATE(TSubAligns, it, m_SubAligns) {
         try {
             data.push_back((*it)->GetDstAlign());
         }
         catch (CAnnotMapperException) {
-            // Skip invalid sub-alignments (e.g. containing empty rows)
+            // Skip invalid sub-alignments.
         }
     }
 }
 
 
+// Creating exot parts - helper function to set part length
+// depending on its type.
 void SetPartLength(CSpliced_exon_chunk&          part,
                    CSpliced_exon_chunk::E_Choice ptype,
                    TSeqPos                       len)
@@ -1311,6 +1508,7 @@ void SetPartLength(CSpliced_exon_chunk&          part,
 }
 
 
+// Create and add a new exon part.
 void CSeq_align_Mapper_Base::x_PushExonPart(
     CRef<CSpliced_exon_chunk>&    last_part,
     CSpliced_exon_chunk::E_Choice part_type,
@@ -1319,14 +1517,16 @@ void CSeq_align_Mapper_Base::x_PushExonPart(
     CSpliced_exon&                exon) const
 {
     if (last_part  &&  last_part->Which() == part_type) {
+        // Merge parts of the same type.
         SetPartLength(*last_part, part_type,
             CSeq_loc_Mapper_Base::
             sx_GetExonPartLength(*last_part) + part_len);
     }
     else {
+        // Add a new part.
         last_part.Reset(new CSpliced_exon_chunk);
         SetPartLength(*last_part, part_type, part_len);
-        // Parts order depend on the genomic strand
+        // Parts order depend on the genomic strand.
         if ( !reverse ) {
             exon.SetParts().push_back(last_part);
         }
@@ -1337,6 +1537,7 @@ void CSeq_align_Mapper_Base::x_PushExonPart(
 }
 
 
+// Create spliced-seg exon.
 void CSeq_align_Mapper_Base::
 x_GetDstExon(CSpliced_seg&              spliced,
              TSegments::const_iterator& seg,
@@ -1350,6 +1551,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
 {
     CRef<CSpliced_exon> exon(new CSpliced_exon);
     if (seg != m_Segs.begin()) {
+        // This is not the first segment, exon was split for some reason.
+        // Mark the alignment as partial.
         partial = true;
     }
     int gen_start = -1;
@@ -1365,22 +1568,25 @@ x_GetDstExon(CSpliced_seg&              spliced,
         aln_protein =
             spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
     }
-    bool ex_partial = false;
-    CRef<CSpliced_exon_chunk> last_part;
+    bool ex_partial = false; // is this exon partial?
+    CRef<CSpliced_exon_chunk> last_part; // last exon part added
     int group_idx = -1;
-    bool have_non_gaps = false;
+    bool have_non_gaps = false; // are there any non-gap parts at all?
+    // Continue iterating segments. Each segment becomes a new part.
     for ( ; seg != m_Segs.end(); ++seg) {
         if (group_idx != -1  &&  seg->m_GroupIdx != group_idx) {
-            // New exon
+            // New group found - start a new exon.
             ex_partial = true;
             break;
         }
+        // Remember the last segment's group.
         group_idx = seg->m_GroupIdx;
 
         const SAlignment_Segment::SAlignment_Row& gen_row =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
         const SAlignment_Segment::SAlignment_Row& prod_row =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
+        // Spliced-seg can not have more than 2 rows.
         if (seg->m_Rows.size() > 2) {
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
                     "Can not construct spliced-seg with more than two rows");
@@ -1389,7 +1595,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
         int gstart = gen_row.GetSegStart();
         int pstart = prod_row.GetSegStart();
         if (gstart >= 0) {
+            // Not a genetic gap. Check the id.
             if (gen_id) {
+                // If it's already set and the new segment has a different id,
+                // fail.
                 if (gen_id != gen_row.m_Id) {
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Can not construct spliced-seg -- "
@@ -1397,6 +1606,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 }
             }
             else {
+                // Genetic id not yet set. Remember it.
                 gen_id = gen_row.m_Id;
                 exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
             }
@@ -1404,7 +1614,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 CSeq_loc_Mapper_Base::eSeq_prot);
         }
         if (pstart >= 0) {
+            // Not a product gap. Check the id.
             if (prod_id) {
+                // Id already set, make sure the new one is the same.
                 if (prod_id != prod_row.m_Id) {
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Can not construct spliced-seg -- "
@@ -1412,15 +1624,18 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 }
             }
             else {
+                // Product id not yet set.
                 prod_id = prod_row.m_Id;
                 exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
             }
             CSeq_loc_Mapper_Base::ESeqType prod_type =
                 m_LocMapper.GetSeqTypeById(prod_id);
+            // This part's product type. Make sure the whole alignment
+            // has the same product type (or set the type if not yet set).
             bool part_protein = prod_type == CSeq_loc_Mapper_Base::eSeq_prot;
             if ( spliced.IsSetProduct_type() ) {
                 if (part_protein != aln_protein) {
-                    // Make sure types are consistent
+                    // Make sure types are consistent.
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                         "Can not construct spliced-seg -- "
                         "exons have different product types");
@@ -1439,6 +1654,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
         // Check strands consistency
         bool gen_reverse = false;
         bool prod_reverse = false;
+        // Check genomic strand if it's not a gap.
         if (gstart >= 0  &&  gen_row.m_IsSetStrand) {
             if ( !gstrand_set ) {
                 gen_strand = gen_row.m_Strand;
@@ -1449,8 +1665,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
                         "Can not construct spliced-seg "
                         "with different genomic strands in the same exon");
             }
+            // Remember genomic strand.
             gen_reverse = IsReverse(gen_strand);
         }
+        // Check product strand if it's not a gap.
         if (pstart >= 0  &&  prod_row.m_IsSetStrand) {
             if ( !pstrand_set ) {
                 prod_strand = prod_row.m_Strand;
@@ -1461,6 +1679,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                         "Can not construct spliced-seg "
                         "with different product strands in the same exon");
             }
+            // Remember product strand.
             prod_reverse = IsReverse(prod_strand);
         }
 
@@ -1468,29 +1687,36 @@ x_GetDstExon(CSpliced_seg&              spliced,
         int pins_len = 0;
         if (gstart < 0) {
             if (pstart < 0) {
-                // Both gen and prod are missing - start new exon
+                // Both gen and prod are missing - start new exon.
                 ex_partial = true;
                 seg++;
                 break;
             }
             else {
+                // Only genomic sequence is missing.
                 ptype = CSpliced_exon_chunk::e_Product_ins;
             }
         }
         else {
+            // Genomic sequence is present.
             int gend = gen_row.GetSegStart() + seg->m_Len;
+            // Check parts intersection if the last part's coordinates
+            // are known.
             if (gen_start >= 0  &&  gen_end > 0) {
+                // Compare new part's start to the last part's end.
                 if (gstart < gen_end) {
-                    // The order of starts is not correct, break the exon
+                    // Parts can not intersect. Split the exon.
                     ex_partial = true;
                     break;
                 }
                 else if (gstart > gen_end) {
-                    // Add genomic insertion
+                    // New part does not abut the last one,
+                    // add genomic insertion.
                     gins_len = gstart - gen_end;
                 }
             }
-            if (gen_start < 0  ||  gen_start > gstart) {
+            // Update last part's start and end.
+            if (gen_start < 0) {
                 gen_start = gstart;
             }
             if (gen_end < gend) {
@@ -1499,37 +1725,43 @@ x_GetDstExon(CSpliced_seg&              spliced,
         }
 
         if (pstart < 0) {
+            // Product is missing - add genomic insertion.
             _ASSERT(gstart >= 0); // Already checked above
             ptype = CSpliced_exon_chunk::e_Genomic_ins;
         }
         else {
+            // Product is present. Make sure the coordinates are consistent.
             int pend = prod_row.GetSegStart() + seg->m_Len;
+            // Check the intersection with the last part's product.
             if (prod_start >= 0  &&  prod_end > 0) {
-                // Product and genomic directions are not independent
+                // Product and genomic directions are not independent, take
+                // strands into account.
                 if ( prod_reverse == gen_reverse ) {
                     if (pstart < prod_end) {
-                        // The order of starts is not correct, break the exon
+                        // The parts intersect. Split the exon.
                         ex_partial = true;
                         break;
                     }
                     else if (pstart > prod_end) {
-                        // Add product insertion
+                        // There's a gap between parts, add product insertion.
                         pins_len = pstart - prod_end;
                     }
                 }
                 else {
+                    // Product is reversed compared to genomic sequence.
                     if (pend > prod_start) {
-                        // The order of starts is not correct, break the exon
+                        // The parts intersect. Split the exon.
                         ex_partial = true;
                         break;
                     }
                     else if (pend < prod_start) {
-                        // Add product insertion
+                        // There's a gap between parts, add product insertion.
                         pins_len = prod_start - pend;
                     }
                 }
             }
-            if (prod_start < 0  ||  prod_start > pstart) {
+            // Save the last part's product coordinates.
+            if (prod_start < 0/*  ||  prod_start > pstart*/) {
                 prod_start = pstart;
             }
             if (prod_end < pend) {
@@ -1537,6 +1769,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
         }
 
+        // Add genomic or product insertions if any.
         if (gins_len > 0) {
             x_PushExonPart(last_part, CSpliced_exon_chunk::e_Genomic_ins,
                 gins_len, gen_reverse, *exon);
@@ -1545,16 +1778,20 @@ x_GetDstExon(CSpliced_seg&              spliced,
             x_PushExonPart(last_part, CSpliced_exon_chunk::e_Product_ins,
                 pins_len, gen_reverse, *exon);
         }
+        // Add the mapped part.
         x_PushExonPart(last_part, ptype, seg->m_Len, gen_reverse, *exon);
 
+        // Remember if there are any non-gap parts.
         if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
             ptype != CSpliced_exon_chunk::e_Product_ins) {
             have_non_gaps = true;
         }
     }
+    // The whole alignment becomes partial if any its exon is partial.
     partial |= ex_partial;
     if (!have_non_gaps  ||  exon->GetParts().empty()) {
-        // No parts were inserted (or only gaps were found) - truncated exon
+        // No parts were inserted (or only gaps were found) - truncated exon.
+        // Discard it completely.
         partial = true;
         return;
     }
@@ -1562,6 +1799,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
         exon->SetPartial(true);
     }
     else {
+        // If the exon is not partial, copy some date from the original one.
         if ( m_OrigExon->IsSetAcceptor_before_exon() ) {
             exon->SetAcceptor_before_exon().Assign(
                 m_OrigExon->GetAcceptor_before_exon());
@@ -1571,6 +1809,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 m_OrigExon->GetDonor_after_exon());
         }
     }
+    // If some id was not found in this exon, use the last known one.
     if (!gen_id  &&  last_gen_id) {
         gen_id = last_gen_id;
         exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
@@ -1579,12 +1818,14 @@ x_GetDstExon(CSpliced_seg&              spliced,
         prod_id = last_prod_id;
         exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
     }
+    // Set the whole exon's coordinates.
     exon->SetGenomic_start(gen_start);
     exon->SetGenomic_end(gen_end - 1);
     if (gen_strand != eNa_strand_unknown) {
         exon->SetGenomic_strand(gen_strand);
     }
     if ( aln_protein ) {
+        // For proteins adjust coords and set frames.
         exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
         exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
         exon->SetProduct_end().SetProtpos().SetAmin((prod_end - 1)/3);
@@ -1597,19 +1838,24 @@ x_GetDstExon(CSpliced_seg&              spliced,
             exon->SetGenomic_strand(prod_strand);
         }
     }
-    // scores should be copied from the original exon
+    // Scores should be copied from the original exon.
+    // If the mapping was partial, the scores should have been invalidated
+    // and cleared.
     if ( !m_SegsScores.empty() ) {
         CloneContainer<CScore, TScores, CScore_set::Tdata>(
             m_SegsScores, exon->SetScores().Set());
     }
+    // Copy ext from the original exon.
     if ( m_OrigExon->IsSetExt() ) {
         CloneContainer<CUser_object, CSpliced_exon::TExt, CSpliced_exon::TExt>(
             m_OrigExon->GetExt(), exon->SetExt());
     }
+    // Add the new exon to the spliced-seg.
     spliced.SetExons().push_back(exon);
 }
 
 
+// Helper class for sorting exon parts.
 class SegByFirstRow_Less
 {
 public:
@@ -1626,21 +1872,31 @@ public:
             seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
         const SAlignment_Segment::SAlignment_Row& r2 =
             seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
-        // Check if it's a genomic insertion
+        // Check if it's a genomic insertion.
         if (r1.m_Start != kInvalidSeqPos  &&  r2.m_Start != kInvalidSeqPos) {
+            // If not, sort by id, then by genomic start. This is how
+            // exons should be sorted.
             if (r1.m_Id != r2.m_Id) {
                 return r1.m_Id < r2.m_Id;
             }
             return r1.m_Start < r2.m_Start;
         }
+        // Genomic insertion. No way to sort by genomic coordinates.
+        // Try to use product starts. Take into account product's
+        // direction compared to the genomic one.
         // Use product coords in case of genomic insertion
         const SAlignment_Segment::SAlignment_Row& pr1 =
             seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
         const SAlignment_Segment::SAlignment_Row& pr2 =
             seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
+        // If ids are different, ingore the starts.
         if (pr1.m_Id != pr2.m_Id) {
             return pr1.m_Id < pr2.m_Id;
         }
+        // Compare product starts. In case of product insertion the
+        // sort order may still be invalid. There's nothing we can
+        // do about it. The exon will be removed anyway if it has
+        // gaps in both genomic and product sequences.
         return m_ProdRev ?
             pr1.m_Start > pr2.m_Start : pr1.m_Start < pr2.m_Start;
     }
@@ -1650,9 +1906,10 @@ private:
 };
 
 
+// Sort segments of an exon (exon parts).
 void CSeq_align_Mapper_Base::x_SortSegs(void) const
 {
-    // Check the strand firts
+    // Check the strands firts.
     bool gen_reverse = false;
     bool prod_reverse = false;
     bool found_gen_strand = false;
@@ -1661,25 +1918,29 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
         const SAlignment_Segment::SAlignment_Row& r =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
         if ( r.m_IsSetStrand ) {
+            // Check if all parts have the same strand.
             bool gen_row_rev = IsReverse(r.m_Strand);
             if ( !found_gen_strand ) {
                 gen_reverse = gen_row_rev;
                 found_gen_strand = true;
             }
             else if (gen_reverse != gen_row_rev) {
-                gen_reverse = false; // for mixed strands use direct order
+                // If parts have different strands, ignore the strands.
+                gen_reverse = false;
             }
         }
         const SAlignment_Segment::SAlignment_Row& pr =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
         if ( pr.m_IsSetStrand ) {
+            // Check if all parts have the same strand.
             bool prod_row_rev = IsReverse(pr.m_Strand);
             if ( !found_prod_strand ) {
                 prod_reverse = prod_row_rev;
                 found_prod_strand = true;
             }
             else if (prod_reverse != prod_row_rev) {
-                prod_reverse = false; // for mixed strands use direct order
+                // If parts have different strands, ignore the strands.
+                prod_reverse = false;
             }
         }
     }
@@ -1700,18 +1961,22 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
         m_Segs.push_back(*it);
     }
 #else
+    // Sort exon parts. Try to sort each id by genomic starts.
+    // If there's a gap on genomic sequence, try to sort by product start,
+    // but reverse the order if genomic and product strands are different.
     m_Segs.sort(SegByFirstRow_Less(gen_reverse != prod_reverse));
 #endif
 }
 
 
+// Create spliced-seg.
 void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 {
     CSpliced_seg& spliced = dst->SetSegs().SetSpliced();
-    CSeq_id_Handle gen_id;
-    CSeq_id_Handle prod_id;
-    CSeq_id_Handle last_gen_id;
-    CSeq_id_Handle last_prod_id;
+    CSeq_id_Handle gen_id;  // per-alignment genomic id
+    CSeq_id_Handle prod_id; // per-alignment product id
+    CSeq_id_Handle last_gen_id;  // last exon's genomic id
+    CSeq_id_Handle last_prod_id; // last exon's product id
     ENa_strand gen_strand = eNa_strand_unknown;
     ENa_strand prod_strand = eNa_strand_unknown;
     bool single_gen_id = true;
@@ -1722,8 +1987,14 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 
     ITERATE(TSubAligns, it, m_SubAligns) {
         // First, sort segments by the first row (genetic) starts.
+        // See comments to x_SortSegs.
         (*it)->x_SortSegs();
         TSegments::const_iterator seg = (*it)->m_Segs.begin();
+        // Convert the current sub-mapper to an exon.
+        // In some cases the exon can be split (e.g. if a gap is found in
+        // both rows). In this case 'seg' iterator will not be set to
+        // m_Segs.end() by x_GetDstExon and the next iteration will be
+        // performed.
         while (seg != (*it)->m_Segs.end()) {
             CSeq_id_Handle ex_gen_id;
             CSeq_id_Handle ex_prod_id;
@@ -1732,6 +2003,8 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
             (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
                 ex_gen_strand, ex_prod_strand, partial,
                 last_gen_id, last_prod_id);
+            // Check if all exons have the same ids in genomic and product
+            // rows.
             if (ex_gen_id) {
                 last_gen_id = ex_gen_id;
                 if ( !gen_id ) {
@@ -1749,6 +2022,7 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
                     single_prod_id &= prod_id == ex_prod_id;
                 }
             }
+            // Check if all exons have the same strands.
             if (ex_gen_strand != eNa_strand_unknown) {
                 single_gen_str &= (gen_strand == eNa_strand_unknown) ||
                     (gen_strand == ex_gen_strand);
@@ -1768,6 +2042,7 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
     }
 
+    // Try to propagate some properties to the alignment level.
     if ( single_gen_id ) {
         spliced.SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
     }
@@ -1781,20 +2056,21 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         spliced.SetProduct_strand(prod_strand);
     }
 
-    // Reset local values where possible, fill ids in gaps
+    // Reset local values where possible if the global ones are set.
+    // Fill ids in gaps.
     NON_CONST_ITERATE(CSpliced_seg::TExons, it, spliced.SetExons()) {
         if ( single_gen_id ) {
             (*it)->ResetGenomic_id();
         }
         else if ( gen_id  &&  !(*it)->IsSetGenomic_id() ) {
-            // Use the first known genomic id to fill gaps
+            // Use the first known genomic id to fill gaps.
             (*it)->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
         }
         if ( single_prod_id ) {
             (*it)->ResetProduct_id();
         }
         else if ( prod_id  &&  !(*it)->IsSetProduct_id() ) {
-            // Use the first known product id to fill gaps
+            // Use the first known product id to fill gaps.
             (*it)->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
         }
         if ( single_gen_str ) {
@@ -1806,26 +2082,29 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     }
 
     const CSpliced_seg& orig = m_OrigAlign->GetSegs().GetSpliced();
+    // Copy some values from the original alignment.
     if ( orig.IsSetPoly_a() ) {
         spliced.SetPoly_a(orig.GetPoly_a());
     }
     if ( orig.IsSetProduct_length() ) {
         spliced.SetProduct_length(orig.GetProduct_length());
     }
+    // Some properties can be copied only if the alignment was not
+    // truncated.
     if (!partial  &&  orig.IsSetModifiers()) {
-        ITERATE(CSpliced_seg::TModifiers, it, orig.GetModifiers()) {
-            CRef<CSpliced_seg_modifier> mod(new CSpliced_seg_modifier);
-            mod->Assign(**it);
-            spliced.SetModifiers().push_back(mod);
-        }
+        CloneContainer<CSpliced_seg_modifier,
+            CSpliced_seg::TModifiers, CSpliced_seg::TModifiers>(
+            orig.GetModifiers(), spliced.SetModifiers());
     }
 }
 
 
+// Create sparse-seg alignment.
 void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
 {
     CSparse_seg& sparse = dst->SetSegs().SetSparse();
     if ( !m_SegsScores.empty() ) {
+        // Copy scores (each element, not just pointers).
         CloneContainer<CScore, TScores, CSparse_seg::TRow_scores>(
             m_SegsScores, sparse.SetRow_scores());
     }
@@ -1836,6 +2115,10 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
     CSeq_id_Handle first_idh;
     CSeq_id_Handle second_idh;
     size_t s = 0;
+    // Check if all segments are related to the same group of scores.
+    // Need two special values: -2 indicates that the scores group is
+    // not yet set; -1 is used if there are segments with different
+    // groups and scores should not be copied from the original align.
     int scores_group = -2; // -2 -- not yet set; -1 -- already reset.
     ITERATE(TSegments, seg, m_Segs) {
         if (seg->m_Rows.size() > 2) {
@@ -1844,6 +2127,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
         }
         const SAlignment_Segment::SAlignment_Row& first_row = seg->m_Rows[0];
         const SAlignment_Segment::SAlignment_Row& second_row = seg->m_Rows[1];
+        // All segments must have the same seq-id.
         if ( first_idh ) {
             if (first_idh != first_row.m_Id) {
                 NCBI_THROW(CAnnotMapperException, eBadAlignment,
@@ -1864,26 +2148,30 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
             second_idh = second_row.m_Id;
             aln->SetSecond_id(const_cast<CSeq_id&>(*second_row.m_Id.GetSeqId()));
         }
+        // Check sequence types, adjust coordinates.
         bool first_prot = m_LocMapper.GetSeqTypeById(first_idh) ==
             CSeq_loc_Mapper_Base::eSeq_prot;
         bool second_prot = m_LocMapper.GetSeqTypeById(second_idh) ==
             CSeq_loc_Mapper_Base::eSeq_prot;
         int first_width = first_prot ? 3 : 1;
         int second_width = second_prot ? 3 : 1;
+        // If at least one row is on a protein, lengths should be
+        // in AAs, not bases.
         int len_width = (first_prot  ||  second_prot) ? 3 : 1;
 
         int first_start = first_row.GetSegStart();
         int second_start = second_row.GetSegStart();
         if (first_start < 0  ||  second_start < 0) {
-            continue;
+            continue; // gap in one row
         }
         aln->SetFirst_starts().push_back(first_start/first_width);
         aln->SetSecond_starts().push_back(second_start/second_width);
         aln->SetLens().push_back(seg->m_Len/len_width);
 
+        // Set strands.
         if (aln->IsSetSecond_strands()  ||
             first_row.m_IsSetStrand  ||  second_row.m_IsSetStrand) {
-            // Add missing strands if any
+            // Add missing strands to the container if necessary.
             for (size_t i = aln->SetSecond_strands().size(); i < s; i++) {
                 aln->SetSecond_strands().push_back(eNa_strand_unknown);
             }
@@ -1895,6 +2183,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
                 ? second_strand : Reverse(second_strand));
         }
 
+        // Check scores for consistency.
         if (scores_group == -2) { // not yet set
             scores_group = seg->m_ScoresGroupIdx;
         }
@@ -1902,6 +2191,8 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
             scores_group = -1; // reset
         }
     }
+    // Copy scores if possible. All segments must be assigned to the same
+    // group of scores.
     if (scores_group >= 0) {
         CloneContainer<CScore, TScores, CSparse_align::TSeg_scores>(
             m_GroupScores[scores_group], aln->SetSeg_scores());
@@ -1909,6 +2200,11 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
 }
 
 
+// When the mapped alignment can not be stored using the original
+// alignment type (e.g. most types do not allow multiple ids per row),
+// the whole mapped alignment is converted to a disc-align containing
+// several dense-segs. The following method attempts to put as many
+// mapped segments as possible to the dense-seg sub-alignment.
 int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                                                int start_seg) const
 {
@@ -1919,68 +2215,98 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
 
     int len_width = 1;
 
-    // Find first non-gap in each row, get its seq-id, detect the first
-    // one which is different.
-    CDense_seg::TDim cur_seg;
-    for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
-        cur_seg = 0;
-        CSeq_id_Handle last_id;
-        ITERATE(TSegments, seg, m_Segs) {
-            if (cur_seg >= start_seg) {
-                const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
-                if (last_id  &&  last_id != row.m_Id) {
-                    break;
-                }
-                if ( !last_id ) {
-                    // push id, width and scores only once
-                    last_id = row.m_Id;
-                    CRef<CSeq_id> id(new CSeq_id);
-                    id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
-                    dseg.SetIds().push_back(id);
-                    // Dense-seg's widths are reversed
-                    int width = 3;
-                    CSeq_loc_Mapper_Base::ESeqType seq_type =
-                        m_LocMapper.GetSeqTypeById(row.m_Id);
-                    if (seq_type != CSeq_loc_Mapper_Base::eSeq_unknown) {
-                        if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
-                            width = 1;
-                            len_width = 3;
-                        }
-                    }
-                }
-            }
-            cur_seg++;
-            if (cur_seg - start_seg >= num_seg) break;
-        }
-        num_seg = cur_seg - start_seg;
+    // First, find the requested segment. Since TSegments is a list, we
+    // have to iterate over it and skip 'start_seg' items.
+    TSegments::const_iterator start_seg_it = m_Segs.begin();
+    for (int s = 0; s < start_seg && start_seg_it != m_Segs.end();
+        s++, start_seg_it++) {
     }
-    dseg.SetNumseg(num_seg);
+    if (start_seg_it == m_Segs.end()) {
+        return -1; // The requested segment does not exist.
+    }
+    const SAlignment_Segment& start_segment = *start_seg_it;
+    // Remember number of rows in the first segment. Break the dense-seg
+    // when the next segment has a different number of rows.
+    size_t num_rows = start_segment.m_Rows.size();
+    int last_seg = m_Segs.size() - 1;
+
+    // Find first non-gap in each row, get its seq-id, detect the first
+    // one which is different. Also stop if number or rows per segment
+    // changes. Collect all seq-ids.
+    vector<CSeq_id_Handle> ids;
+    ids.resize(num_rows);
+    for (size_t r = 0; r < num_rows; r++) {
+        CSeq_id_Handle last_id;
+        TSegments::const_iterator seg_it = start_seg_it;
+        int seg_idx = start_seg;
+        for ( ; seg_idx <= last_seg  &&  seg_it != m_Segs.end();
+            seg_idx++, seg_it++) {
+            // Check number of rows.
+            if (seg_it->m_Rows.size() != num_rows) {
+                // Adjust the last segment index.
+                last_seg = seg_idx - 1;
+                break;
+            }
+            // Check ids.
+            const SAlignment_Segment::SAlignment_Row& row = seg_it->m_Rows[r];
+            if (last_id  &&  last_id != row.m_Id) {
+                last_seg = seg_idx - 1;
+                break;
+            }
+            if ( !last_id ) {
+                last_id = row.m_Id;
+                ids[seg_idx - start_seg] = row.m_Id;
+            }
+        }
+    }
+    // At lease one segment may be used.
+    _ASSERT(last_seg >= start_seg);
+
+    // Now when number of segments is known, fill the ids.
+    for (TSegments::const_iterator it = start_seg_it; it != m_Segs.end(); ++it) {
+        for (size_t i = 0; i < num_rows; i++) {
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(*ids[i].GetSeqId());
+            dseg.SetIds().push_back(id);
+            // Check sequence type and adjust length width.
+            CSeq_loc_Mapper_Base::ESeqType seq_type =
+                m_LocMapper.GetSeqTypeById(ids[i]);
+            if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
+                len_width = 3;
+            }
+        }
+    }
+    num_seg = last_seg - start_seg + 1;
+
+    // Detect strands for all rows, they will be used for gaps.
     TStrands strands;
     x_FillKnownStrands(strands);
-    cur_seg = 0;
     int non_empty_segs = 0;
-    ITERATE(TSegments, seg_it, m_Segs) {
-        if (cur_seg < start_seg) {
-            cur_seg++;
-            continue;
-        }
-        if (cur_seg >= start_seg + num_seg) {
+    int cur_seg = start_seg;
+    for (TSegments::const_iterator it = start_seg_it; it != m_Segs.end();
+        ++it, ++cur_seg) {
+        if (cur_seg > last_seg) {
             break;
         }
-        cur_seg++;
-        dseg.SetLens().push_back(seg_it->m_Len/len_width);
-        size_t str_idx = 0;
+        // Set segment length.
+        dseg.SetLens().push_back(it->m_Len/len_width);
+        // Check if at least one row is non-gap.
         bool only_gaps = true;
-        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+        ITERATE(SAlignment_Segment::TRows, row, it->m_Rows) {
             if (row->m_Start != kInvalidSeqPos) {
                 only_gaps = false;
             }
         }
-        if (only_gaps) continue;
-        non_empty_segs++;
-        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+        if (only_gaps) continue; // ignore empty rows
+
+        size_t str_idx = 0;
+        non_empty_segs++; // count segments added to the dense-seg
+        // Now iterate all rows and add them to the dense-seg.
+        ITERATE(SAlignment_Segment::TRows, row, it->m_Rows) {
             int width = 1;
-            if (m_LocMapper.GetSeqTypeById(row->m_Id) ==
+            // Don't check sequence type if there are no proteins in the
+            // used segments (len_width == 1).
+            if (len_width == 3  &&  m_LocMapper.GetSeqTypeById(row->m_Id) ==
                 CSeq_loc_Mapper_Base::eSeq_prot) {
                 width = 3;
             }
@@ -1989,7 +2315,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                 start /= width;
             }
             dseg.SetStarts().push_back(start);
-            if (m_HaveStrands) { // per-alignment strands
+            if (m_HaveStrands) { // Are per-alignment strands set?
                 // For gaps use the strand of the first mapped row
                 dseg.SetStrands().
                     push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
@@ -2003,18 +2329,24 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         // The sub-align contains only gaps in all rows, ignore it
         dst.Reset();
     }
-    return start_seg + num_seg;
+    dseg.SetNumseg(non_empty_segs);
+    return last_seg + 1;
 }
 
 
+// If the original alignment type does not support some features of
+// the mapped alignment (multi-id rows, segments with different number
+// of rows etc.), convert it to disc-align with multiple dense-segs.
 void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
 {
     // Ignore m_SegsScores -- if we are here, they are probably not valid.
-    // Anyway, there's no place to put them in.
-    // m_AlignScores may be still used though. (?)
+    // Anyway, there's no place to put them in. The same about m_AlignScores.
     CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
     int seg = 0;
-    while (size_t(seg) < m_Segs.size()) {
+    // The iteration stops when the last segment is converted or
+    // when an error occurs and x_GetPartialDenseg returns -1.
+    while (seg >= 0  &&  size_t(seg) < m_Segs.size()) {
+        // Convert as many segments as possible to a single dense-seg.
         CRef<CSeq_align> dseg(new CSeq_align);
         seg = x_GetPartialDenseg(dseg, seg);
         if (!dseg) continue; // The sub-align had only gaps
@@ -2023,6 +2355,7 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
 }
 
 
+// Check if the mapped alignment contains different sequence types.
 bool CSeq_align_Mapper_Base::x_HaveMixedSeqTypes(void) const
 {
     bool have_prot = false;
@@ -2045,13 +2378,18 @@ bool CSeq_align_Mapper_Base::x_HaveMixedSeqTypes(void) const
 }
 
 
+// Get mapped alignment. In most cases the mapper tries to
+// preserve the original alignment type and copy as much
+// information as possible (scores, bounds etc.).
 CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
 {
     if (m_DstAlign) {
+        // The mapped alignment has been created, just use it.
         return m_DstAlign;
     }
 
     CRef<CSeq_align> dst(new CSeq_align);
+    // Copy some information from the original alignment.
     dst->SetType(m_OrigAlign->GetType());
     if (m_OrigAlign->IsSetDim()) {
         dst->SetDim(m_OrigAlign->GetDim());
@@ -2069,10 +2407,15 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
             m_OrigAlign->GetExt(), dst->SetExt());
     }
     if ( x_HaveMixedSeqTypes() ) {
-        // Only std and spliced can support mixed types.
+        // Only std and spliced can support mixed sequence types.
+        // Since spliced-segs are mapped in a different way (through
+        // sub-mappers which return mapped exons rather than whole alignments),
+        // here we should always use std-seg.
         x_GetDstStd(dst);
     }
     else {
+        // Get the proper mapped alignment. Some types still may need
+        // to be converted to disc-seg.
         switch ( m_OrigAlign->GetSegs().Which() ) {
         case CSeq_align::C_Segs::e_Dendiag:
             {
@@ -2121,6 +2464,7 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
             }
         default:
             {
+                // Unknown original type, just copy the original alignment.
                 dst->Assign(*m_OrigAlign);
                 break;
             }
@@ -2133,6 +2477,7 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
 CSeq_align_Mapper_Base*
 CSeq_align_Mapper_Base::CreateSubAlign(const CSeq_align& align)
 {
+    // Create a sub-mapper instance for the given sub-alignment.
     return new CSeq_align_Mapper_Base(align, m_LocMapper);
 }
 
@@ -2141,6 +2486,7 @@ CSeq_align_Mapper_Base*
 CSeq_align_Mapper_Base::CreateSubAlign(const CSpliced_seg&  spliced,
                                        const CSpliced_exon& exon)
 {
+    // Create a sub-mapper instance for the exon.
     auto_ptr<CSeq_align_Mapper_Base> sub(
         new CSeq_align_Mapper_Base(m_LocMapper));
     sub->InitExon(spliced, exon);
@@ -2170,6 +2516,9 @@ const CSeq_id_Handle& CSeq_align_Mapper_Base::GetRowId(size_t idx) const
 void CSeq_align_Mapper_Base::
 x_InvalidateScores(SAlignment_Segment* seg)
 {
+    // Reset all scores which are related to the segment including
+    // all higher-level scores. This is done when a segment is truncated
+    // and scores become invalid.
     m_ScoresInvalidated = true;
     // Invalidate all global scores
     m_AlignScores.clear();
