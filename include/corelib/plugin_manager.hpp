@@ -41,14 +41,14 @@
 /// either statically (then, the class factory will need to be registered
 /// explicitly by the user code) or dynamically (then, the DLL will be
 /// searched for using plugin name, and the well-known DLL entry point
-/// will be used to register the class factory, automagically).
+/// will be used to register the class factory, automatically).
 ///
 /// - "class factory" -- An entity used to generate objects of the given class.
 ///                      One class factory can generate more than one version
 ///                      of the class.
 ///
 /// - "interface"  -- Defines the implementation-independent API and expected
-///                   behaviour of a class.
+///                   behavior of a class.
 ///                   Interface's name is provided by its class's factory,
 ///                   see IClassFactory::GetInterfaceName().
 ///                   Interfaces are versioned to track the compatibility.
@@ -62,7 +62,7 @@
 ///                which can implement one or more interfaces.
 ///
 /// - "version" -- MAJOR (backward- and forward-incompatible changes in the
-///                       interface and/or its expected behaviour);
+///                       interface and/or its expected behavior);
 ///                MINOR (backward compatible changes in the driver code);
 ///                PATCH_LEVEL (100% compatible plugin or driver code changes).
 ///
@@ -144,7 +144,7 @@ public: \
     static const char* GetName() { return iface_name; } \
 }
 
-/// Macro to contruct CVersionInfo class using interface name
+/// Macro to construct CVersionInfo class using interface name
 /// (relies on CInterfaceVersion class)
 /// @sa CVersionInfo
 #define NCBI_INTERFACE_VERSION(iface) \
@@ -235,7 +235,7 @@ protected:
 
     /// Utility function to get an element of parameter tree
     /// Throws an exception when mandatory parameter is missing
-    /// (or returns the deafult value)
+    /// (or returns the default value)
 
     string GetParam(const string&                  driver_name,
                     const TPluginManagerParamTree* params,
@@ -282,10 +282,10 @@ public:
 /// for the given interface.
 ///
 /// Then, to facilitate the process of instantiating the class given
-/// the registered pool of drivers, and also taking into accont the driver name
+/// the registered pool of drivers, and also taking into account the driver name
 /// and/or version as requested by the calling code.
 ///
-/// Template class is protected by mutex and safe for use from diffrent threads
+/// Template class is protected by mutex and safe for use from different threads
 
 // class TIfVer is a *default* interface version for all CPluginManager's methods.
 
@@ -329,7 +329,7 @@ public:
         TClassFactory* factory = GetFactory(driver_name, version);
         TClass* drv = factory->CreateInstance(driver_name, version, params);
         if (!drv) {
-            string msg = "Cannot create a driver instatance (driver: ";
+            string msg = "Cannot create a driver instance (driver: ";
             msg += driver;
             msg += ").";
             NCBI_THROW(CPluginManagerException, eNullInstance,msg);
@@ -426,7 +426,7 @@ public:
     };
 
     /// Entry point to get drivers' info, and (if requested) their class
-    /// factori(es).
+    /// factories.
     ///
     /// This function is usually (but not necessarily) called by
     /// RegisterWithEntryPoint().
@@ -456,7 +456,7 @@ public:
 
     /// Attach DLL resolver to plugin manager
     ///
-    /// Plugin mananger uses all attached resolvers to search for DLLs
+    /// Plugin manager uses all attached resolvers to search for DLLs
     /// exporting drivers of this interface.
     ///
     /// @param resolver
@@ -487,12 +487,12 @@ public:
 
     /// Delete all user-installed paths for the DLL lookup (for all resolvers)
     /// @param previous_paths
-    ///  If non-NULL, store the prevously set search paths in this container
+    ///  If non-NULL, store the previously set search paths in this container
     /// @sa AddDllSearchPath
     void ResetDllSearchPath(TSearchPaths* previous_paths = NULL);
 
     /// Specify which standard locations should be used for the DLL lookup
-    /// (for all resolvers). If standard locations are not set explicitelly
+    /// (for all resolvers). If standard locations are not set explicitly
     /// using this method CDllResolver::fDefaultDllPath will be used by default.
     /// @sa CDllResolver
     CDllResolver::TExtraDllPath
@@ -516,7 +516,7 @@ public:
     /// for the specified driver
     void FreezeResolution(const string& driver, bool value = true);
 
-    // ctors
+    // Constructors
     CPluginManager(void);
     virtual ~CPluginManager(void);
 
@@ -524,7 +524,7 @@ protected:
     TClassFactory* FindClassFactory(const string&  driver,
                                     const CVersionInfo& version) const;
 
-    /// Protective mutex to syncronize the access to the plugin manager
+    /// Protective mutex to synchronize the access to the plugin manager
     /// from different threads
     CMutex m_Mutex;
 
@@ -1038,7 +1038,7 @@ bool CPluginManager<TClass>::RegisterWithEntryPoint
 
     if ( !drv_list.empty() ) {
         // It is not possible to get a perfect match here.
-        // We can only cut absolutelly wrong versions of.
+        // We can only cut absolutely wrong versions of.
         // A perfect match will be found after we load all factories
         // from all DLLs.
 
