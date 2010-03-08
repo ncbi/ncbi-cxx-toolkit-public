@@ -121,10 +121,6 @@ NCBI_PARAM_DECL(string, netcache_api, fallback_server);
 typedef NCBI_PARAM_TYPE(netcache_api, fallback_server)
     TCGI_NetCacheFallbackServer;
 
-NCBI_PARAM_DECL(string, netcache_client, fallback_servers);
-typedef NCBI_PARAM_TYPE(netcache_client, fallback_servers)
-    TCGI_NetCacheFallbackServers;
-
 NCBI_PARAM_DECL(bool, netcache_api, use_hasb_fallback);
 typedef NCBI_PARAM_TYPE(netcache_api, use_hasb_fallback)
     TCGI_NetCacheUseHasbFallback;
