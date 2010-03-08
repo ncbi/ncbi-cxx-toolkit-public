@@ -904,6 +904,10 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
     if ( !datatool_sources.empty() ) {
         project.m_DatatoolSources = datatool_sources;
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvcNone &&
+            !GetApp().GetDatatoolId().empty()) {   
+              project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId())); 
+        }
     }
 
 // assemble check info
@@ -1498,6 +1502,10 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
     if ( !data_tool_src.IsEmpty() ) {
         project.m_DatatoolSources.push_back(data_tool_src);
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvcNone &&
+            !GetApp().GetDatatoolId().empty()) {   
+              project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId())); 
+        }
     }
 
     return proj_id;
@@ -1647,6 +1655,10 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
 
     if ( !datatool_sources.empty() ) {
         project.m_DatatoolSources = datatool_sources;
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvcNone &&
+            !GetApp().GetDatatoolId().empty()) {   
+              project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId())); 
+        }
     }
 
     return proj_id;

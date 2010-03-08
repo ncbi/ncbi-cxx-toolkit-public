@@ -1347,6 +1347,26 @@ string CreateProjectName(const CProjKey& project_id)
     }
 }
 
+CProjKey CreateProjKey(const string& project_name)
+{
+    CProjKey::TProjType type = CProjKey::eNoProj;
+    CDirEntry d(project_name);
+    string ext(d.GetExt());
+    string base(d.GetBase());
+    if        (ext == ".exe") {
+        type = CProjKey::eApp;
+    } else if (ext == ".lib") {
+        type = CProjKey::eLib;
+    } else if (ext == ".dll") {
+        type = CProjKey::eDll;
+    } else if (ext == ".dataspec") {
+        type = CProjKey::eDataSpec;
+    } else {
+        type = CProjKey::eMsvc;
+    }
+    return CProjKey(type,base);
+}
+
 
 //-----------------------------------------------------------------------------
 

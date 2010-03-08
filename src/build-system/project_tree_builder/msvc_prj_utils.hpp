@@ -470,6 +470,7 @@ bool SameRootDirs(const string& dir1, const string& dir2);
 
 /// Project naming schema
 string CreateProjectName(const CProjKey& project_id);
+CProjKey CreateProjKey(const string& project_name);
 
 
 /// Utility class for distinguish between static and dll builds
