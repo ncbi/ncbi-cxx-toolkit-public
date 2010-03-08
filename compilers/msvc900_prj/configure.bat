@@ -209,26 +209,26 @@ set unknown=
 set ignore_unknown=no
 set dest=
 :PARSEARGS
-if "%1"=="" goto :ENDPARSEARGS
-if "%dest%"=="lst"                      (set use_projectlst=%1&  set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="cfg"                      (set use_savedcfg=%~1&   set dest=& goto :CONTINUEPARSEARGS)
-if "%1"=="--help"                       (set help_req=yes&       goto :CONTINUEPARSEARGS)
-if "%1"=="--with-configure-dialog"      (set use_gui=yes&        goto :CONTINUEPARSEARGS)
-if "%1"=="--without-configure-dialog"   (set use_gui=no&         goto :CONTINUEPARSEARGS)
-if "%1"=="--with-saved-settings"        (set dest=cfg&           goto :CONTINUEPARSEARGS)
-if "%1"=="--without-debug"              (set use_debug=no&       goto :CONTINUEPARSEARGS)
-if "%1"=="--with-debug"                 (set use_debug=yes&      goto :CONTINUEPARSEARGS)
-if "%1"=="--without-dll"                (set use_dll=no&         goto :CONTINUEPARSEARGS)
-if "%1"=="--with-dll"                   (set use_dll=yes&        goto :CONTINUEPARSEARGS)
-if "%1"=="--with-64"                    (set use_64=yes&         goto :CONTINUEPARSEARGS)
-if "%1"=="--with-static-exe"            (set use_staticstd=yes&  goto :CONTINUEPARSEARGS)
-if "%1"=="--with-projects"              (set dest=lst&           goto :CONTINUEPARSEARGS)
-if "%1"=="--ignore-unsupported-options" (set ignore_unknown=yes& goto :CONTINUEPARSEARGS)
+if "%1"=="" goto ENDPARSEARGS
+if "%dest%"=="lst"                      (set use_projectlst=%1&  set dest=& goto CONTINUEPARSEARGS)
+if "%dest%"=="cfg"                      (set use_savedcfg=%~1&   set dest=& goto CONTINUEPARSEARGS)
+if "%1"=="--help"                       (set help_req=yes&       goto CONTINUEPARSEARGS)
+if "%1"=="--with-configure-dialog"      (set use_gui=yes&        goto CONTINUEPARSEARGS)
+if "%1"=="--without-configure-dialog"   (set use_gui=no&         goto CONTINUEPARSEARGS)
+if "%1"=="--with-saved-settings"        (set dest=cfg&           goto CONTINUEPARSEARGS)
+if "%1"=="--without-debug"              (set use_debug=no&       goto CONTINUEPARSEARGS)
+if "%1"=="--with-debug"                 (set use_debug=yes&      goto CONTINUEPARSEARGS)
+if "%1"=="--without-dll"                (set use_dll=no&         goto CONTINUEPARSEARGS)
+if "%1"=="--with-dll"                   (set use_dll=yes&        goto CONTINUEPARSEARGS)
+if "%1"=="--with-64"                    (set use_64=yes&         goto CONTINUEPARSEARGS)
+if "%1"=="--with-static-exe"            (set use_staticstd=yes&  goto CONTINUEPARSEARGS)
+if "%1"=="--with-projects"              (set dest=lst&           goto CONTINUEPARSEARGS)
+if "%1"=="--ignore-unsupported-options" (set ignore_unknown=yes& goto CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
 set maybe_gui=no
 shift
-goto :PARSEARGS
+goto PARSEARGS
 :ENDPARSEARGS
 if "%maybe_gui%"=="yes" (
   set use_gui=yes
@@ -242,7 +242,7 @@ for %%u in (%unknown%) do (
   call :CHECKUNKNOWN %%u
 )
 if "%invalid_unknown%"=="yes" exit /b 1
-goto :DONEUNKNOWN
+goto DONEUNKNOWN
 
 :CHECKUNKNOWN
 for %%n in (%noops%) do (
