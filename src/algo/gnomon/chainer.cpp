@@ -2081,10 +2081,12 @@ void CChainer::SetGenomicRange(const TAlignModelList& alignments)
 
 void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
 {
-    TSignedSeqRange range;
+    TSignedSeqRange range = alignments.empty() ? TSignedSeqRange::GetWhole() : TSignedSeqRange::GetEmpty();
+
     ITERATE(TAlignModelList, i, alignments) {
         range += i->Limits();
     }
+
     _ASSERT(m_gnomon.get() != NULL);
     m_gnomon->ResetRange(range);
 
