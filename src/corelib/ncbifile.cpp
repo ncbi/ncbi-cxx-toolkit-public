@@ -2614,36 +2614,52 @@ Int8 CFile::GetLength(void) const
 #if !defined(NCBI_OS_MSWIN)
 
 // Auxiliary function to copy a file
-bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
+static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
-    CNcbiIfstream is(src, IOS_BASE::binary | IOS_BASE::in);
-    CNcbiOfstream os(dst, IOS_BASE::binary | IOS_BASE::out | IOS_BASE::trunc);
-
+    // Default buffer size
+    const size_t kDefaultBufSize = 64*1024;
     if ( !buf_size ) {
-        if (CFile(src).GetLength() == 0) {
-            return true;
-        }
-        // Next operation fails if the source file have zero size
-        os << is.rdbuf();
-        return os.good() ? true : false;
+        buf_size = kDefaultBufSize;
     }
-
     AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[buf_size]);
     char* buf = buf_ptr.get();
+   
+    // Copy file
+    int  in  = -1;
+    int  out = -1;
     bool failed = false;
- 
-    streamsize nread;
-    do {
-        is.read(buf, buf_size);
-        nread = is.gcount();
-        if ( nread ) {
-            if (!os.write(buf, nread)) {
-                failed = true;
+    
+    try {
+        if ((in = open(src, O_RDONLY)) == -1) {
+            throw "Cannot open input file";
+        }
+        if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC)) == -1) {
+            throw "Cannot create output file";
+        }
+        ssize_t n;
+        for (;;) {
+            n = read(in, buf, buf_size);
+            if (n == 0) {
                 break;
             }
+            if (n < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                throw "Read error";
+            }
+            n = write(out, buf, n);
+            if (n < 0) {
+                throw "Write error";
+            }
         }
-    } while (is  &&  nread);
-
+    }
+    catch (const char* what) {
+        //int x_errno = errno;
+        failed = true;
+    }
+    close(in);
+    close(out);
     return !failed;
 }
 
