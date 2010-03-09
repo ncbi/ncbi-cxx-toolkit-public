@@ -2618,49 +2618,57 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
     // Default buffer size
     const size_t kDefaultBufSize = 64*1024;
-    if ( !buf_size ) {
+    if ( buf_size == 0 ) {
         buf_size = kDefaultBufSize;
     }
-    AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[buf_size]);
-    char* buf = buf_ptr.get();
-   
-    // Copy file
-    int  in  = -1;
-    int  out = -1;
-    bool failed = false;
+    // Use buffer on stack if specified "buf_size" is small.
+    char  x_buf[4096];
+    char* buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
+
+    int in  = -1;
+    int out = -1;
+    int x_errno = 0;
     
-    try {
-        if ((in = open(src, O_RDONLY)) == -1) {
-            throw "Cannot open input file";
+    if ((in = open(src, O_RDONLY)) == -1) {
+        x_errno = errno;
+    } else
+    if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC)) == -1) {
+        x_errno = errno;
+    }
+    while (!x_errno) {
+        ssize_t n_read = read(in, buf, buf_size);
+        if (n_read == 0) {
+            break;
         }
-        if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC)) == -1) {
-            throw "Cannot create output file";
-        }
-        ssize_t n;
-        for (;;) {
-            n = read(in, buf, buf_size);
-            if (n == 0) {
-                break;
+        if (n_read < 0) {
+            if (errno == EINTR) {
+                continue;
             }
-            if (n < 0) {
+            x_errno = errno;
+            break;
+        }
+        do {
+            char* ptr = buf;
+            ssize_t n_written = write(out, ptr, n_read);
+            if ( n_written < 0 ) {
                 if (errno == EINTR) {
                     continue;
                 }
-                throw "Read error";
+                x_errno = errno;
+                break;
             }
-            n = write(out, buf, n);
-            if (n < 0) {
-                throw "Write error";
-            }
+            n_read -= n_written;
+            ptr    += n_written;
         }
-    }
-    catch (const char* what) {
-        //int x_errno = errno;
-        failed = true;
+        while (n_read);
     }
     close(in);
     close(out);
-    return !failed;
+    if (buf != x_buf) {
+        delete [] buf;
+    }
+    errno = x_errno;
+    return (x_errno == 0);
 }
 
 #endif
