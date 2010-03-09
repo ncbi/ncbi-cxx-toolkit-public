@@ -1214,7 +1214,7 @@ void CSeq_align_Mapper_Base::x_FillKnownStrands(TStrands& strands) const
         // Skip gaps, try find a row with mapped strand
         ITERATE(TSegments, seg_it, m_Segs) {
             // Make sure the row exists in the current segment.
-            if (seg_it->m_Rows.size() <= max_rows) continue;
+            if (seg_it->m_Rows.size() <= r_idx) continue;
             if (seg_it->m_Rows[r_idx].GetSegStart() != -1) {
                 strand = seg_it->m_Rows[r_idx].m_Strand;
                 break;
