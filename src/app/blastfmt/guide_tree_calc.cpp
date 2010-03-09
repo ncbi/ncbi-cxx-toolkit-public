@@ -185,23 +185,6 @@ CRef<CSeq_align> CGuideTreeCalc::GetSeqAlign(void) const
     return seqalign;
 }
 
-
-static const string& s_GetSequence(const CAlnVec& avec,
-                                   vector<string> &seq_strings,
-                                   unsigned int index)
-{
-    // The seq_strings array has to be pre-allocated
-    _ASSERT(index < seq_strings.size());
-
-    if (!seq_strings[index].empty()) {
-        return seq_strings[index];
-    }
-    else {
-        avec.GetWholeAlnSeqString(index, seq_strings[index]);
-        return seq_strings[index];
-    }
-}
-
 // Make sure that matrix has finite non-negative values
 bool s_ValidateMatrix(const CGuideTreeCalc::CDistMatrix& mat)
 {
@@ -227,8 +210,10 @@ bool CGuideTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
 
     // query has always zero index and is always included
     const int query_idx = 0;
-    const string& query_seq = s_GetSequence(*m_AlignDataSource, sequences,
-                                            query_idx);
+
+    m_AlignDataSource->GetWholeAlnSeqString(query_idx, sequences[query_idx]);
+    const string& query_seq = sequences[query_idx];
+
     bitvector.set(query_idx);
     
     // Compute distances between query and each sequence
@@ -238,8 +223,8 @@ bool CGuideTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
     for (int i=1;i < num_seqs;i++) {
 
         // find divergence
-        const string& seqi = s_GetSequence(*m_AlignDataSource, sequences, i);
-        double dist = CDistMethods::Divergence(query_seq, seqi);
+        m_AlignDataSource->GetWholeAlnSeqString(i, sequences[i]);
+        double dist = CDistMethods::Divergence(query_seq, sequences[i]);
         _ASSERT(!finite(dist) || dist >= 0.0);
 
         // if divergence is finite and smaller than cutoff save divergence
@@ -247,6 +232,10 @@ bool CGuideTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
         if (finite(dist) && dist <= m_MaxDivergence) {
             links.push_back(SLink(query_idx, i, dist));
             bitvector.set(i);
+        }
+        else {
+            // otherwise purge the sequence
+            sequences[i].erase();
         }
     }
 
@@ -260,21 +249,22 @@ bool CGuideTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
         if (!bitvector.test(it1->index2)) {
             continue;
         }
-        const string& seqi = s_GetSequence(*m_AlignDataSource, sequences,
-                                           it1->index2);
+        const string& seqi = sequences[it1->index2];
+        _ASSERT(!seqi.empty());
 
         list<SLink>::const_iterator it2(it1);
         it2++;
 
         // for each sequence 2
-        for (; it2 != links.end() && it2->index1 == query_idx; ++it2) {
+        for (; it2 != links.end() && it2->index1 == query_idx
+                 && bitvector.test(it1->index2); ++it2) {
 
             // check if still included
             if (!bitvector.test(it2->index2)) {
                 continue;
             }
-            const string& seqj = s_GetSequence(*m_AlignDataSource, sequences,
-                                               it2->index2);
+            const string& seqj = sequences[it2->index2];
+            _ASSERT(!seqj.empty());
 
             // compute divergence
             double dist = CDistMethods::Divergence(seqi, seqj);
@@ -371,7 +361,6 @@ void CGuideTreeCalc::x_CreateValidAlign(const vector<int>& used_indices)
     }
 }
 
-// Calculate pairwise distances for sequeneces in m_AlignDataSource
 void CGuideTreeCalc::x_CalcDistMatrix(void)
 {
     _ASSERT(!m_DivergenceMatrix.Empty());
@@ -742,18 +731,12 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eOrganismId, CGuideTree::kOrganismTag, btc);
     x_AddFeatureDesc(eTitleId, CGuideTree::kSeqTitleTag, btc);
     x_AddFeatureDesc(eAccessionNbrId, CGuideTree::kAccessionNbrTag, btc);
-
     x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, btc);
     x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag, btc);
-
     x_AddFeatureDesc(eNodeColorId, CGuideTree::kNodeColorTag, btc);
-
     x_AddFeatureDesc(eLabelColorId, CGuideTree::kLabelColorTag, btc);
-
     x_AddFeatureDesc(eLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
-
     x_AddFeatureDesc(eLabelTagColorId, CGuideTree::kLabelTagColor, btc);
-
     x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
 
     
