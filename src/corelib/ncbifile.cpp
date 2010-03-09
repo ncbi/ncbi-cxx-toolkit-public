@@ -2650,6 +2650,10 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         do {
             char* ptr = buf;
             ssize_t n_written = write(out, ptr, n_read);
+            if (n_written == 0) {
+                x_errno = EINVAL;
+                break;
+            }
             if ( n_written < 0 ) {
                 if (errno == EINTR) {
                     continue;
