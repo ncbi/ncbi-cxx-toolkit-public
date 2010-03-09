@@ -565,11 +565,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
             "Using datatool to create a C++ object from ASN/DTD/Schema $(InputPath)";
 
         //Outputs
-        if (GetApp().GetIncompleteBuildTree()) {
-            build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
-        } else {
-            build_info->m_Outputs = "$(InputDir)$(InputName).files;";
-        }
+        build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
 
         //Additional Dependencies
         build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
@@ -617,11 +613,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
             "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
 
         //Outputs
-        if (GetApp().GetIncompleteBuildTree()) {
-            build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
-        } else {
-            build_info->m_Outputs = "$(InputDir)$(InputName).files;";
-        }
+        build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
 
         //Additional Dependencies
         build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;

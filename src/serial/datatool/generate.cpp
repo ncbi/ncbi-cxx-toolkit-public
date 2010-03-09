@@ -423,7 +423,7 @@ void CCodeGenerator::GenerateFileList(
         return;
     }
     string fileName(Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName)));
-    CNcbiOfstream fileList(fileName.c_str());
+    CDelayedOfstream fileList(fileName.c_str());
     if ( !fileList ) {
         ERR_POST_X(4, Fatal <<
                     "cannot create file list file: " << m_FileListFileName);
