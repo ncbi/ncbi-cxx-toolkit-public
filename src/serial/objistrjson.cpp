@@ -343,6 +343,9 @@ string CObjectIStreamJson::ReadFileHeader(void)
     string str( ReadKey());
     if (TopFrame().HasTypeInfo()) {
         const string& tname = TopFrame().GetTypeInfo()->GetName();
+        if (tname.empty()) {
+            UndoClassMember();
+        }
         if (str != tname) {
             if (str == NStr::Replace(tname,"-","_")) {
                 return tname;
@@ -434,7 +437,26 @@ void CObjectIStreamJson::SkipNull(void)
 
 void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
 {
-    ThrowError(fNotImplemented, "Not Implemented");
+    obj.Reset();
+    string value;
+    string name = ReadKey();
+    obj.SetName(name);
+    if (PeekChar(true) == '{') {
+        StartBlock('{');        
+        while (NextElement()) {
+            name = ReadKey();
+            value = ReadValue();
+            if (name[0] != '#') {
+                obj.AddAttribute(name,kEmptyStr,value);
+            } else {
+                obj.SetValue(value);
+            }
+        }
+        EndBlock('}');
+        return;
+    }
+    value = ReadValue();
+    obj.SetValue(value);
 }
 
 void CObjectIStreamJson::SkipAnyContentObject(void)
@@ -634,6 +656,10 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
             TopFrame().SetNotag();
         }
         UndoClassMember();
+    } else if (ind != kInvalidMember) {
+        if (classType->GetMembers().GetItemInfo(ind)->GetId().HasAnyContent()) {
+            UndoClassMember();
+        }
     }
     return ind;
 }

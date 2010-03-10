@@ -106,8 +106,10 @@ string CObjectOStreamJson::GetPosition(void) const
 void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)
 {
     StartBlock();
-    m_Output.PutEol();
-    WriteKey(type->GetName());
+    if (!type->GetName().empty()) {
+        m_Output.PutEol();
+        WriteKey(type->GetName());
+    }
 }
 
 void CObjectOStreamJson::EndOfWrite(void)
@@ -234,10 +236,9 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
         if (obj_name.empty()) {
             ThrowError(fInvalidData, "AnyContent object must have name");
         }
-    } else {
-        NextElement();
-        WriteKey(obj.GetName());
     }
+    NextElement();
+    WriteKey(obj_name);
     const vector<CSerialAttribInfoItem>& attlist = obj.GetAttributes();
     if (attlist.empty()) {
         WriteValue(obj.GetValue());
@@ -401,6 +402,9 @@ void CObjectOStreamJson::BeginClassMember(const CMemberId& id)
     if (id.HasNotag() || id.IsAttlist()) {
         m_SkippedMemberId = id.GetName();
         TopFrame().SetNotag();
+        return;
+    }
+    if (id.HasAnyContent()) {
         return;
     }
     NextElement();

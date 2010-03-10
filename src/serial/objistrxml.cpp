@@ -933,6 +933,7 @@ bool CObjectIStreamXml::ReadAnyContent(const string& ns_prefix, string& value)
 
 void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
 {
+    obj.Reset();
     string tagName;
     if (!m_RejectedTag.empty()) {
         tagName = RejectedName();
