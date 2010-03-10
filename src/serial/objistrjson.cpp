@@ -527,14 +527,61 @@ void CObjectIStreamJson::EndClass(void)
     EndBlock((GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) ? 0 : '}');
 }
 
+TMemberIndex CObjectIStreamJson::FindDeep(
+    const CItemsInfo& items, const CTempString& name, bool& deep) const
+{
+    TMemberIndex i = items.Find(name);
+    if (i != kInvalidMember) {
+        deep = false;
+        return i;
+    }
+    i = items.FindDeep(name);
+    if (i != kInvalidMember) {
+        deep = true;
+        return i;
+    }
+// on writing, we replace hyphens with underscores;
+// on reading, it complicates our life
+    if (name.find_first_of("_") != CTempString::npos) {
+        TMemberIndex first = items.FirstIndex();
+        TMemberIndex last = items.LastIndex();
+        for (i = first; i <= last; ++i) {
+            const CItemInfo *itemInfo = items.GetItemInfo(i);
+            string item_name = itemInfo->GetId().GetName();
+            NStr::ReplaceInPlace(item_name,"-","_");
+            if (name == item_name) {
+                deep = false;
+                return i;
+            }
+        }
+        for (i = first; i <= last; ++i) {
+            const CItemInfo* itemInfo = items.GetItemInfo(i);
+            const CMemberId& id = itemInfo->GetId();
+            if (!id.IsAttlist() && id.HasNotag()) {
+                const CClassTypeInfoBase* classType =
+                    dynamic_cast<const CClassTypeInfoBase*>(
+                        CItemsInfo::FindRealTypeInfo(itemInfo->GetTypeInfo()));
+                if (classType) {
+                    if (FindDeep(classType->GetItems(), name, deep) != kInvalidMember) {
+                        deep = true;
+                        return i;
+                    }
+                }
+            }
+        }
+    }
+    deep = true;
+    return kInvalidMember;
+}
+
 TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classType)
 {
     if ( !NextElement() )
         return kInvalidMember;
     string tagName = ReadKey();
-    TMemberIndex ind = classType->GetMembers().Find(tagName);
-    if (ind == kInvalidMember) {
-        ind = classType->GetMembers().FindDeep(tagName);
+    bool deep = false;
+    TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
+    if (deep) {
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
         }
@@ -580,9 +627,9 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
         tagName = tagName.substr(1);
         TopFrame().SetNotag();
     }
-    TMemberIndex ind = classType->GetMembers().Find(tagName);
-    if (ind == kInvalidMember) {
-        ind = classType->GetMembers().FindDeep(tagName);
+    bool deep = false;
+    TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
+    if (deep) {
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
         }
@@ -616,9 +663,9 @@ TMemberIndex CObjectIStreamJson::BeginChoiceVariant(const CChoiceTypeInfo* choic
     if ( !NextElement() )
         return kInvalidMember;
     string tagName = ReadKey();
-    TMemberIndex ind = choiceType->GetVariants().Find(tagName);
-    if (ind == kInvalidMember) {
-        ind = choiceType->GetVariants().FindDeep(tagName);
+    bool deep = false;
+    TMemberIndex ind = FindDeep(choiceType->GetVariants(), tagName, deep);
+    if (deep) {
         if (ind == kInvalidMember) {
             const CItemsInfo& items = choiceType->GetItems();
             TMemberIndex first = items.FirstIndex();

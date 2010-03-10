@@ -180,6 +180,8 @@ private:
     void EndBlock(char expect);
     bool NextElement(void);
 
+    TMemberIndex FindDeep(const CItemsInfo& items, const CTempString& name, bool& deep) const;
+
     bool m_BlockStart;
     bool m_ExpectValue;
     char m_Closing;
