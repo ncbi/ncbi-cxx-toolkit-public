@@ -894,7 +894,7 @@ void* CThreadInPool<TRequest>::Main(void)
                 handle.Reset(m_Pool->m_Queue.GetHandle());
             } catch (CBlockingQueueException& e) {
                 // work around "impossible" timeouts
-                ERR_POST_XX(Util_Thread, 1, Warning << e.what());
+                ERR_POST_XX(Util_Thread, 1, Warning << e);
                 m_Pool->m_Delta.Add(1);
                 continue;
             }
@@ -903,7 +903,7 @@ void* CThreadInPool<TRequest>::Main(void)
             } catch (std::exception& e) {
                 handle->MarkAsForciblyCaught();
                 ERR_POST_XX(Util_Thread, 2,
-                            "Exception from thread in pool: " << e.what());
+                            "Exception from thread in pool: " << e);
                 // throw;
             } catch (...) {
                 handle->MarkAsForciblyCaught();
