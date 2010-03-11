@@ -2629,10 +2629,15 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     int out = -1;
     int x_errno = 0;
     
+     mode_t perm = CDirEntry::MakeModeT(
+        CDirEntry::fRead | CDirEntry::fWrite /* user */,
+        CDirEntry::fRead | CDirEntry::fWrite /* group */,
+        0, 0 /* other & special */);
+
     if ((in = open(src, O_RDONLY)) == -1) {
         x_errno = errno;
     } else
-    if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC)) == -1) {
+    if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, perm)) == -1) {
         x_errno = errno;
     }
     while (!x_errno) {
