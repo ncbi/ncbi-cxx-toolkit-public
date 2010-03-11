@@ -48,11 +48,11 @@ public:
         CNcbiOstream& );
     ~CGffWriter();
 
-    bool WriteAnnot( CRef< CSeq_annot > );
+    bool WriteAnnot( const CSeq_annot& );
 
 protected:
-    bool WriteAnnotFTable( CRef< CSeq_annot > );
-    bool WriteAnnotAlign( CRef< CSeq_annot > );
+    bool WriteAnnotFTable( const CSeq_annot& );
+    bool WriteAnnotAlign( const CSeq_annot& );
 
     CNcbiOstream& m_Os;
 

@@ -25,12 +25,12 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Write gff file
+ * File Description:  Write wiggle file
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GFF_RECORD__HPP
-#define OBJTOOLS_READERS___GFF_RECORD__HPP
+#ifndef OBJTOOLS_WRITERS___WIGGLE_WRITER__HPP
+#define OBJTOOLS_READERS___WIGGLE_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -38,73 +38,36 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
+
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGffRecord
+class NCBI_XOBJWRITE_EXPORT CWiggleWriter
 //  ============================================================================
 {
 public:
-    CGffRecord();
-    ~CGffRecord() {};
-    
-    bool SetRecord(
-        const CSeq_annot&,
-        const CSeq_feat& );
-        
-    void DumpRecord(
-        CNcbiOstream& );
-        
+    CWiggleWriter(
+        CNcbiOstream&,
+        size_t = 0 );
+    ~CWiggleWriter();
+
+    bool WriteAnnot( const CSeq_annot& );
+
 protected:
-    static string FeatIdString(
-        const CFeat_id& id );
+    bool WriteAnnotTable( const CSeq_annot& );
 
-    bool AssignType(
-        const CSeq_feat& );
-    bool AssignSeqId(
-        const CSeq_feat& );
-    bool AssignStart(
-        const CSeq_feat& );
-    bool AssignStop(
-        const CSeq_feat& );
-    bool AssignSource(
-        const CSeq_feat& );
-    bool AssignScore(
-        const CSeq_feat& );
-    bool AssignStrand(
-        const CSeq_feat& );
-    bool AssignPhase(
-        const CSeq_feat& );
-    bool AssignAttributesCore(
-        const CSeq_annot&,
-        const CSeq_feat& );
-    bool AssignAttributesExtended(
-        const CSeq_feat& );
+    bool WriteAnnotGraphs( const CSeq_annot& );
+    
+    bool WriteSingleGraph( const CSeq_graph& );
+    bool WriteGraphsTrackLine( const CAnnot_descr& );
+    bool WriteSingleGraphFixedStep( const CSeq_graph&, size_t );
+    bool WriteSingleGraphRecords( const CSeq_graph&, size_t );
 
-    void AddAttribute( 
-        const string& key,
-        const string& value );
+    bool ContainsData( const CSeq_graph&, size_t );
 
-    static CSeq_feat::TData::ESubtype GetSubtypeOf(
-        const CSeq_annot&,
-        const CFeat_id& );
-        
-    static bool IsParentOf(
-        CSeq_feat::TData::ESubtype,
-        CSeq_feat::TData::ESubtype );
-        
-    string m_strSeqId;
-    string m_strSource;
-    string m_strType;
-    string m_strStart;
-    string m_strEnd;
-    string m_strScore;
-    string m_strStrand;
-    string m_strPhase;
-    string m_strAttributes;
-
-    map< string, CSeq_feat::TData::ESubtype > m_IdToTypeMap;
+    CNcbiOstream& m_Os;
+    size_t m_uTrackSize;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GFF_RECORD__HPP
+#endif  // OBJTOOLS_WRITERS___WIGGLE_WRITER__HPP

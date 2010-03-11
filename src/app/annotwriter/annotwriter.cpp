@@ -72,6 +72,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/writers/gff_record.hpp>
 #include <objtools/writers/gff_writer.hpp>
+#include <objtools/writers/wiggle_writer.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -88,9 +89,17 @@ private:
     CObjectIStream* x_OpenIStream(
         const CArgs& args );
 
+    bool Write(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
     bool WriteGff(
-        CNcbiOstream&, 
-        CRef< CSeq_annot > );
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
+    bool WriteWiggle(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
 };
 
 //  ----------------------------------------------------------------------------
@@ -116,17 +125,27 @@ void CAnnotWriterApp::Init()
         "STRING",
         "Output format",
         CArgDescriptions::eString, 
-        "gff");
+        "gff" );
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "gff" ) );
+            "gff", "wiggle" ) );
     }}
 
     // output
     {{ 
         arg_desc->AddOptionalKey( "o", "OutputFile", 
             "Output file name", CArgDescriptions::eOutputFile );
+    }}
+
+    //  flags
+    {{
+        arg_desc->AddDefaultKey(
+            "tracksize",
+            "INTEGER",
+            "Records per track",
+            CArgDescriptions::eInteger,
+            "0" );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -159,7 +178,7 @@ int CAnnotWriterApp::Run()
         try {
             CRef<CSeq_annot> annot(new CSeq_annot);
             *pIs >> *annot;
-            WriteGff( *pOs, annot );
+            Write( *annot, *pOs );
         }
         catch ( CEofException& ) {
             break;
@@ -172,7 +191,7 @@ int CAnnotWriterApp::Run()
                 CTypeIterator<CSeq_annot> annot_iter( *entry );
                 for ( ;  annot_iter;  ++annot_iter ) {
                     CRef< CSeq_annot > annot( annot_iter.operator->() );
-                    WriteGff( *pOs, annot );
+                    Write( *annot, *pOs );
                 }
                 break;
             }
@@ -208,10 +227,38 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
 }
 
 //  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGff( CNcbiOstream& os, CRef< CSeq_annot > annot )
+bool CAnnotWriterApp::Write( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    if ( GetArgs()[ "format" ].AsString() == "gff" ) { 
+        return WriteGff( annot, os );
+    }
+    if ( GetArgs()[ "format" ].AsString() == "wiggle" ) {
+        return WriteWiggle( annot, os );
+    }
+    cerr << "Unexpected!" << endl;
+    return false;    
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGff( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
     CGffWriter writer( os );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteWiggle( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CWiggleWriter writer( os, GetArgs()["tracksize"].AsInteger() );
     return writer.WriteAnnot( annot );
 }
 

@@ -63,31 +63,31 @@ CGffWriter::~CGffWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::WriteAnnot( CRef< CSeq_annot > pAnnot )
+bool CGffWriter::WriteAnnot( const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( pAnnot->IsFtable() ) {
-        return WriteAnnotFTable( pAnnot );
+    if ( annot.IsFtable() ) {
+        return WriteAnnotFTable( annot );
     }
-    if ( pAnnot->IsAlign() ) {
-        return WriteAnnotAlign( pAnnot );
+    if ( annot.IsAlign() ) {
+        return WriteAnnotAlign( annot );
     }
     cerr << "Unexpected!" << endl;
     return false;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::WriteAnnotFTable( CRef< CSeq_annot > pAnnot )
+bool CGffWriter::WriteAnnotFTable( const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! pAnnot->IsFtable() ) {
+    if ( ! annot.IsFtable() ) {
         return false;
     }
-    const list< CRef< CSeq_feat > >& table = pAnnot->GetData().GetFtable();
+    const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
     list< CRef< CSeq_feat > >::const_iterator it = table.begin();
     while ( it != table.end() ) {
         CGffRecord record;
-        record.SetRecord( pAnnot, *it );
+        record.SetRecord( annot, **it );
         record.DumpRecord( m_Os );
         it++;
     }
@@ -95,7 +95,7 @@ bool CGffWriter::WriteAnnotFTable( CRef< CSeq_annot > pAnnot )
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::WriteAnnotAlign( CRef< CSeq_annot > pAnnot )
+bool CGffWriter::WriteAnnotAlign( const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
 //    cerr << "To be done." << endl;

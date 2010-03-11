@@ -64,13 +64,13 @@ CGffRecord::CGffRecord():
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignSeqId(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strSeqId = "<unknown>";
 
-    if ( pFeature->CanGetLocation() ) {
-        const CSeq_loc& location = pFeature->GetLocation();
+    if ( feature.CanGetLocation() ) {
+        const CSeq_loc& location = feature.GetLocation();
         const CSeq_id* pId = location.GetId();
         switch ( pId->Which() ) {
             
@@ -108,13 +108,13 @@ bool CGffRecord::AssignSeqId(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignType(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strType = "region";
 
-    if ( pFeature->CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+    if ( feature.CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
         while ( it != quals.end() ) {
             if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
@@ -127,13 +127,13 @@ bool CGffRecord::AssignType(
         }
     }
 
-    if ( ! pFeature->CanGetData() ) {
+    if ( ! feature.CanGetData() ) {
         return true;
     }
 
-    switch ( pFeature->GetData().GetSubtype() ) {
+    switch ( feature.GetData().GetSubtype() ) {
     default:
-        m_strType = pFeature->GetData().GetKey();
+        m_strType = feature.GetData().GetKey();
         break;
 
     case CSeq_feat::TData::eSubtype_gene:
@@ -161,11 +161,11 @@ bool CGffRecord::AssignType(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignStart(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( pFeature->CanGetLocation() ) {
-        const CSeq_loc& location = pFeature->GetLocation();
+    if ( feature.CanGetLocation() ) {
+        const CSeq_loc& location = feature.GetLocation();
         unsigned int uStart = location.GetStart( eExtreme_Positional ) + 1;
         m_strStart = NStr::UIntToString( uStart );
     }
@@ -174,11 +174,11 @@ bool CGffRecord::AssignStart(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignStop(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( pFeature->CanGetLocation() ) {
-        const CSeq_loc& location = pFeature->GetLocation();
+    if ( feature.CanGetLocation() ) {
+        const CSeq_loc& location = feature.GetLocation();
         unsigned int uEnd = location.GetStop( eExtreme_Positional ) + 1;
         m_strEnd = NStr::UIntToString( uEnd );
     }
@@ -187,13 +187,13 @@ bool CGffRecord::AssignStop(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignSource(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strSource = ".";
 
-    if ( pFeature->CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+    if ( feature.CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
         while ( it != quals.end() ) {
             if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
@@ -210,13 +210,13 @@ bool CGffRecord::AssignSource(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignScore(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strScore = ".";
 
-    if ( pFeature->CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+    if ( feature.CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
         while ( it != quals.end() ) {
             if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
@@ -233,12 +233,12 @@ bool CGffRecord::AssignScore(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignStrand(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strStrand = ".";
-    if ( pFeature->CanGetLocation() ) {
-        const CSeq_loc& location = pFeature->GetLocation();
+    if ( feature.CanGetLocation() ) {
+        const CSeq_loc& location = feature.GetLocation();
         ENa_strand strand = location.GetStrand();
         switch( strand ) {
         default:
@@ -256,15 +256,15 @@ bool CGffRecord::AssignStrand(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignPhase(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strPhase = ".";
 
-    if ( ! pFeature->CanGetData() ) {
+    if ( ! feature.CanGetData() ) {
         return true;
     }
-    const CSeq_feat::TData& data = pFeature->GetData();
+    const CSeq_feat::TData& data = feature.GetData();
     if ( data.GetSubtype() != CSeq_feat::TData::eSubtype_cdregion ) {
         return true;
     }
@@ -290,8 +290,8 @@ bool CGffRecord::AssignPhase(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignAttributesCore(
-    const CRef<CSeq_annot>& annot,
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_annot& annot,
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
     m_strAttributes = "";
@@ -303,26 +303,22 @@ bool CGffRecord::AssignAttributesCore(
     //
     bool bIdAssigned = false;
 
-    if ( pFeature->CanGetId() ) {
-        const CSeq_feat::TId& id = pFeature->GetId();
+    if ( feature.CanGetId() ) {
+        const CSeq_feat::TId& id = feature.GetId();
         string value = CGffRecord::FeatIdString( id );
         AddAttribute( "ID", value );
         bIdAssigned = true;
-
-//        if ( pFeature->CanGetData() ) {
-//           m_IdToTypeMap[ value ] = pFeature->GetData().GetSubtype();
-//        }
     }
 
-    if ( pFeature->CanGetXref() ) {
-        const CSeq_feat::TXref& xref = pFeature->GetXref();
+    if ( feature.CanGetXref() ) {
+        const CSeq_feat::TXref& xref = feature.GetXref();
         string value;
         for ( size_t i=0; i < xref.size(); ++i ) {
-            const CSeqFeatXref& ref = *xref[i];
+//            const CSeqFeatXref& ref = *xref[i];
             if ( xref[i]->CanGetId() && xref[i]->CanGetData() ) {
                 const CSeqFeatXref::TId& id = xref[i]->GetId();
                 CSeq_feat::TData::ESubtype other_type = GetSubtypeOf( annot, id );
-                if ( ! IsParentOf( other_type, pFeature->GetData().GetSubtype() ) ) {
+                if ( ! IsParentOf( other_type, feature.GetData().GetSubtype() ) ) {
                     continue;
                 }
                 if ( ! value.empty() ) {
@@ -336,8 +332,8 @@ bool CGffRecord::AssignAttributesCore(
         }
     }
 
-    if ( pFeature->CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+    if ( feature.CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
         while ( it != quals.end() ) {
             if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
@@ -362,11 +358,11 @@ bool CGffRecord::AssignAttributesCore(
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::AssignAttributesExtended(
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( pFeature->CanGetDbxref() ) {
-        const CSeq_feat::TDbxref& dbxrefs = pFeature->GetDbxref();
+    if ( feature.CanGetDbxref() ) {
+        const CSeq_feat::TDbxref& dbxrefs = feature.GetDbxref();
         if ( dbxrefs.size() > 0 ) {
             string value;
             dbxrefs[0]->GetLabel( &value );
@@ -379,85 +375,49 @@ bool CGffRecord::AssignAttributesExtended(
             AddAttribute( "Dbxref", value );
         }
     }
-    if ( pFeature->CanGetComment() ) {
-        AddAttribute( "comment", pFeature->GetComment() );
+    if ( feature.CanGetComment() ) {
+        AddAttribute( "comment", feature.GetComment() );
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffRecord::SetRecord(
-    const CRef<CSeq_annot>& annot,
-    const CRef< CSeq_feat > pFeature )
+    const CSeq_annot& annot,
+    const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! AssignType( pFeature ) ) {
+    if ( ! AssignType( feature ) ) {
         return false;
     }
-    if ( ! AssignSeqId( pFeature ) ) {
+    if ( ! AssignSeqId( feature ) ) {
         return false;
     }
-    if ( ! AssignSource( pFeature ) ) {
+    if ( ! AssignSource( feature ) ) {
         return false;
     }
-    if ( ! AssignStart( pFeature ) ) {
+    if ( ! AssignStart( feature ) ) {
         return false;
     }
-    if ( ! AssignStop( pFeature ) ) {
+    if ( ! AssignStop( feature ) ) {
         return false;
     }
-    if ( ! AssignScore( pFeature ) ) {
+    if ( ! AssignScore( feature ) ) {
         return false;
     }
-    if ( ! AssignStrand( pFeature ) ) {
+    if ( ! AssignStrand( feature ) ) {
         return false;
     }
-    if ( ! AssignPhase( pFeature ) ) {
+    if ( ! AssignPhase( feature ) ) {
         return false;
     }
-    if ( ! AssignAttributesCore( annot, pFeature ) ) {
+    if ( ! AssignAttributesCore( annot, feature ) ) {
         return false;
     }
-    if ( ! AssignAttributesExtended( pFeature ) ) {
+    if ( ! AssignAttributesExtended( feature ) ) {
         return false;
     }
 
-    //if ( pFeature->CanGetData() ) {
-    //    cerr << ":data:";
-    //}
-    //if ( pFeature->CanGetPartial() ) {
-    //    cerr << ":partial:";
-    //}
-    //if ( pFeature->CanGetExcept() ) {
-    //    cerr << ":except:";
-    //}
-    //if ( pFeature->CanGetProduct() ) {
-    //    cerr << ":product:";
-    //}
-    //if ( pFeature->CanGetTitle() ) {
-    //    cerr << ":title:";
-    //}
-    //if ( pFeature->CanGetExt() ) {
-    //    cerr << ":ext:";
-    //}
-    //if ( pFeature->CanGetCit() ) {
-    //    cerr << ":cit:";
-    //}
-    //if ( pFeature->CanGetExp_ev() ) {
-    //    cerr << ":exp:";
-    //}
-    //if ( pFeature->CanGetExcept_text() ) {
-    //    cerr << ":xpttxt:";
-    //}
-    //if ( pFeature->CanGetPseudo() ) {
-    //    cerr << ":pseudo:";
-    //}
-    //if ( pFeature->CanGetIds() ) {
-    //    cerr << ":ids:";
-    //}
-    //if ( pFeature->CanGetExts() ) {
-    //    cerr << ":exts:";
-    //}
     return true;
 }
 
@@ -517,11 +477,11 @@ string CGffRecord::FeatIdString(
 
 //  ----------------------------------------------------------------------------
 CSeq_feat::TData::ESubtype CGffRecord::GetSubtypeOf(
-    const CRef<CSeq_annot>& annot,
+    const CSeq_annot& annot,
     const CFeat_id& id )
 //  ----------------------------------------------------------------------------
 {
-    const list< CRef< CSeq_feat > >& table = annot->GetData().GetFtable();
+    const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
     list< CRef< CSeq_feat > >::const_iterator it = table.begin();
     while ( it != table.end() ) {
         if ( (*it)->CanGetId() && (*it)->CanGetData() ) {
