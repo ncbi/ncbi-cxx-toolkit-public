@@ -2666,3 +2666,1591 @@ Seq-loc ::= mix {
     id gi 5
   }
 }
+
+
+-- ================================
+-- ! Mapping dense-diag alignment !
+-- ================================
+
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+-- Single segment
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        915,
+        15
+      },
+      len 70
+    }
+  }
+}
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 5
+      },
+      starts {
+        915,
+        115
+      },
+      len 70
+    }
+  }
+}
+
+-- Partial mapping, resulting in gaps. Should throw an exception.
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        905,
+        5
+      },
+      len 110
+    }
+  }
+}
+
+
+-- ::::: Reversed strand
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Single segment, reversed strand
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        915,
+        15
+      },
+      len 70
+    }
+  }
+}
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 5
+      },
+      starts {
+        915,
+        125
+      },
+      len 70,
+      strands {
+        unknown,
+        minus
+      }
+    }
+  }
+}
+
+
+-- ===============================
+-- ! Mapping dense-seg alignment !
+-- ===============================
+
+-- Source
+Seq-loc ::= int {
+  from 30,
+  to 89,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 129,
+  id gi 6
+}
+
+-- Mapping nuc to prot, converted to std-seg (mixed types)
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 3,
+      gi 4
+    },
+    starts {
+      915,
+      15
+    },
+    lens {
+      90
+    }
+  }
+}
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 915,
+          to 929,
+          id gi 3
+        },
+        empty gi 6
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 930,
+          to 989,
+          id gi 3
+        },
+        int {
+          from 110,
+          to 129,
+          id gi 6
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 990,
+          to 1004,
+          id gi 3
+        },
+        empty gi 6
+      }
+    }
+  }
+}
+
+-- ::::: Dense-seg mapping, prot to nuc, exception expected
+-- ::::: (mixed types in the original alignment)
+
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 3,
+      gi 6
+    },
+    starts {
+      915,
+      15
+    },
+    lens {
+      50
+    }
+  }
+}
+
+
+-- ::::: Setting correct strands in gaps
+
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 3,
+      gi 4
+    },
+    starts {
+      111,
+      10,
+      222,
+      -1,
+      333,
+      30,
+      444,
+      -1,
+      555,
+      50
+    },
+    lens {
+      10,
+      1,
+      10,
+      1,
+      10
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 3,
+      gi 5
+    },
+    starts {
+      111,
+      110,
+      222,
+      -1,
+      333,
+      130,
+      444,
+      -1,
+      555,
+      150
+    },
+    lens {
+      10,
+      1,
+      10,
+      1,
+      10
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  }
+}
+
+
+-- =================================
+-- ! Mapping spliced-seg alignment !
+-- =================================
+
+-- ::::: Mapping spliced-seg product, nuc to nuc
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        },
+        ext {
+          {
+            type str "exon-info",
+            data {
+              {
+                label str "Whatever",
+                data int 123
+              }
+            }
+          }
+        }
+      }
+    },
+    product-length 100
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 110,
+        product-end nucpos 199,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 40,
+          mismatch 50
+        },
+        ext {
+          {
+            type str "exon-info",
+            data {
+              {
+                label str "Whatever",
+                data int 123
+              }
+            }
+          }
+        }
+      }
+    },
+    product-length 100
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
+  }
+}
+
+-- ::::: Mapping spliced-seg product, nuc to prot
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 139,
+  id gi 6
+}
+
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 110,
+          frame 1
+        },
+        product-end protpos {
+          amin 139,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 40,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+
+
+-- ::::: Mapping spliced-seg product, nuc to prot, reversed strand
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  strand minus,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 139,
+  id gi 6
+}
+
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 110,
+          frame 1
+        },
+        product-end protpos {
+          amin 139,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 40,
+          genomic-ins 10
+        }
+      }
+    },
+    product-length 100
+  }
+}
+
+
+-- ::::: Mapping spliced-seg through multiple ranges
+-- Source
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 4
+  },
+  int {
+    from 50,
+    to 59,
+    id gi 4
+  },
+  int {
+    from 70,
+    to 79,
+    id gi 4
+  }
+}
+-- Destination
+Seq-loc ::= mix {
+  int {
+    from 100,
+    to 109,
+    id gi 5
+  },
+  int {
+    from 200,
+    to 214,
+    id gi 5
+  },
+  int {
+    from 300,
+    to 314,
+    id gi 5
+  }
+}
+
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 52,
+          mismatch 48
+        }
+      }
+    },
+    product-length 100
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 100,
+        product-end nucpos 314,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 10,
+          genomic-ins 10,
+          product-ins 90,
+          match 10,
+          genomic-ins 10,
+          match 2,
+          mismatch 3,
+          product-ins 85,
+          mismatch 5,
+          genomic-ins 10,
+          mismatch 10,
+          genomic-ins 20
+        }
+      }
+    },
+    product-length 100
+  }
+}
+
+
+-- ==================
+-- ! Mapping scores !
+-- ==================
+
+-- Source
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 4
+  }
+}
+-- Destination
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 5
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 5
+  }
+}
+
+-- Dense-diag - scores are preserved
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 4,
+        gi 3
+      },
+      starts {
+        10,
+        110
+      },
+      len 10,
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 4,
+        gi 3
+      },
+      starts {
+        30,
+        130
+      },
+      len 10,
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      starts {
+        10,
+        110
+      },
+      len 10,
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      starts {
+        30,
+        130
+      },
+      len 10,
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Dense-seg, scores are preserved
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+
+-- Dense-seg - scores are dropped (global and one segment)
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      15,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  segs denseg {
+    dim 2,
+    numseg 3,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      -1,
+      120,
+      30,
+      130
+    },
+    lens {
+      10,
+      5,
+      10
+    }
+  }
+}
+
+-- Std-seg, scores are preserved
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 4
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 4
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 5
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 5
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Std-seg - scores are dropped (global and one segment)
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 10,
+          to 24,
+          id gi 4
+        },
+        int {
+          from 110,
+          to 124,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 4
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 5
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        empty gi 5,
+        int {
+          from 120,
+          to 124,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 5
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Packed-seg, scores are preserved
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+
+-- Packed-seg - scores are dropped (global and one segment)
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      15,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  segs packed {
+    dim 2,
+    numseg 3,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      4294967295,
+      120,
+      30,
+      130
+    },
+    present '010100010101'H,
+    lens {
+      10,
+      5,
+      10
+    }
+  }
+}
+
+
+-- ==================
+-- ! Mapping graphs !
+-- ==================
+
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 19,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 119,
+  id gi 5
+}
+
+-- Mapping whole graph
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    }
+  }
+}
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    }
+  }
+}
+
+-- Partial - skip a range in the middle
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 5,
+      to 14,
+      id gi 4
+    },
+    {
+      from 105,
+      to 114,
+      id gi 999
+    },
+    {
+      from 15,
+      to 24,
+      id gi 4
+    }
+  },
+  numval 30,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+    }
+  }
+}
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 110,
+      to 114,
+      id gi 5,
+      fuzz-from lim lt,
+      fuzz-to lim tr
+    },
+    {
+      from 115,
+      to 119,
+      id gi 5,
+      fuzz-from lim tl,
+      fuzz-to lim gt
+    }
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      5, 6, 7, 8, 9, 20, 21, 22, 23, 24
+    }
+  }
+}
+
+-- Mapping a graph on minus strand
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    strand minus,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+    }
+  }
+}
+
+
+-- ::::: Graph mapping, nuc to prot
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 39,
+  id gi 4
+}
+-- Destination
+Seq-loc ::= int {
+  from 110,
+  to 119,
+  id gi 6
+}
+
+-- Simple graph, using comp=3 to allow mapping
+Seq-graph ::= {
+  loc int {
+    from 7,
+    to 27,
+    id gi 4
+  },
+  comp 3,
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 115,
+    id gi 6,
+    fuzz-from lim lt
+  },
+  comp 1,
+  numval 6,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      1, 2, 3, 4, 5, 6
+    }
+  }
+}
+
+-- Unsupported: different original and mapped location lengths
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+
+-- Unsupported: unknown destination sequence type
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 5,
+      to 14,
+      id gi 4
+    },
+    {
+      from 105,
+      to 114,
+      id gi 999
+    },
+    {
+      from 15,
+      to 24,
+      id gi 4
+    }
+  },
+  numval 30,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+    }
+  }
+}
