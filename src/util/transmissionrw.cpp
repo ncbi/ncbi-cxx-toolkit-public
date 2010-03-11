@@ -58,16 +58,6 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt,
 }
 
 
-CTransmissionWriter::~CTransmissionWriter()
-{
-    if (m_SendEof == eSendEofPacket) {
-        m_Wrt->Write(&sEndPacket, sizeof(sEndPacket));       
-    }
-    if (m_OwnWrt) {
-        delete m_Wrt;
-    }
-}
-
 namespace {
 class CIOBytesCountGuard 
 {
@@ -91,7 +81,7 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
     size_t wrt_count = 0;
     CIOBytesCountGuard guard(bytes_written, wrt_count);
 
-    if(count == sEndPacket) {
+    if (count == sEndPacket) {
         const char* b = (const char*)buf;
         size_t cnt = count / 2;
         res = x_WritePacket(b, cnt, wrt_count);
@@ -110,7 +100,7 @@ ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
                                               size_t&     bytes_written)
 {
     bytes_written = 0;
-    Uint4 cnt = (Uint4)count;
+    Uint4 cnt = (Uint4) count;
     size_t written = 0;
     ERW_Result res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
     if (res != eRW_Success) 
@@ -120,7 +110,7 @@ ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
     for (const char* ptr = (char*)buf; count > 0; ptr += written) {
         res = m_Wrt->Write(ptr, count, &written);
         if (res != eRW_Success) 
-	        return res;
+            return res;
         count -= written;
         bytes_written += written;
     }
@@ -132,7 +122,23 @@ ERW_Result CTransmissionWriter::Flush(void)
     return m_Wrt->Flush();
 }
 
+ERW_Result CTransmissionWriter::Close(void)
+{
+    if (m_SendEof != eSendEofPacket)
+        return eRW_Success;
 
+    m_SendEof = eDontSendEofPacket;
+
+    return m_Wrt->Write(&sEndPacket, sizeof(sEndPacket));
+}
+
+CTransmissionWriter::~CTransmissionWriter()
+{
+    Close();
+
+    if (m_OwnWrt)
+        delete m_Wrt;
+}
 
 CTransmissionReader::CTransmissionReader(IReader* rdr, EOwnership own_reader)
     : m_Rdr(rdr),

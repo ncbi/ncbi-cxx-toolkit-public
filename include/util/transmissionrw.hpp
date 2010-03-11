@@ -97,21 +97,24 @@ class NCBI_XUTIL_EXPORT CTransmissionWriter : public IWriter
 {
 public:
     enum ESendEofPacket {
-        eSendEofPacket,     ///< Writer will     send EOF packet in the descructor
-        eDontSendEofPacket  ///< Writer will not send EOF packet in the descructor
+        eSendEofPacket,     ///< Writer will send EOF packet in the destructor
+        eDontSendEofPacket  ///< Writer will not send EOF packet in the destructor
     };
     /// Constructed on another IWriter (comm. level)
     ///
     explicit CTransmissionWriter(IWriter* wrt, 
                                  EOwnership own_writer = eNoOwnership,
                                  ESendEofPacket send_eof = eDontSendEofPacket );
-    virtual ~CTransmissionWriter();
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0);
 
     virtual ERW_Result Flush(void);
+
+    ERW_Result Close(void);
+
+    virtual ~CTransmissionWriter();
 
     /// Get underlying writer
     IWriter& GetWriter() { _ASSERT(m_Wrt); return *m_Wrt; }
