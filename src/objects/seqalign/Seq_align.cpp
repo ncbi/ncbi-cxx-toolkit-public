@@ -351,6 +351,8 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_BitScore,        "bit_score"),
     TScoreNamePair(CSeq_align::eScore_EValue,          "e_value"),
     TScoreNamePair(CSeq_align::eScore_IdentityCount,   "num_ident"),
+    TScoreNamePair(CSeq_align::eScore_PositiveCount,   "num_positives"),
+    TScoreNamePair(CSeq_align::eScore_NegativeCount,   "num_negatives"),
     TScoreNamePair(CSeq_align::eScore_MismatchCount,   "num_mismatch"),
     TScoreNamePair(CSeq_align::eScore_PercentIdentity, "pct_identity"),
     TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),

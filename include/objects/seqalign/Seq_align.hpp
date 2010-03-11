@@ -135,6 +135,12 @@ public:
         //< count of identities (num_ident)
         eScore_IdentityCount,
 
+        //< count of positives (num_positives); protein-to-DNA score
+        eScore_PositiveCount,
+
+        //< count of negatives (num_negatives)
+        eScore_NegativeCount,
+
         //< count of mismatches (num_mismatch)
         eScore_MismatchCount,
 
