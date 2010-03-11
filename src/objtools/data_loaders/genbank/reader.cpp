@@ -576,6 +576,15 @@ void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
 }
 
 
+void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
+                               const TBlobId& blob_id,
+                               TChunkId chunk_id,
+                               const CLoadLockBlob& blob)
+{
+    SetAndSaveNoBlob(result, blob_id, chunk_id, blob.GetBlobState());
+}
+
+
 void CReader::SetAndSaveStringSeq_ids(CReaderRequestResult& result,
                                       const string& seq_id) const
 {

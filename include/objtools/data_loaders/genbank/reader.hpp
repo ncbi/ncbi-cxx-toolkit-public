@@ -136,6 +136,10 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           TBlobState blob_state = 0);
+    void SetAndSaveNoBlob(CReaderRequestResult& result,
+                          const TBlobId& blob_id,
+                          TChunkId chunk_id,
+                          const CLoadLockBlob& blob);
 
     void SetAndSaveStringSeq_ids(CReaderRequestResult& result,
                                  const string& seq_id,
