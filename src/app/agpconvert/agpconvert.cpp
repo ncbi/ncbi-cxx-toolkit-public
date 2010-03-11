@@ -608,7 +608,10 @@ int CAgpconvertApplication::Run(void)
                     // parse the id as a fasta id
                     ids.clear();
                     CSeq_id::ParseFastaIds(ids, id_str);
-                    id_str = ids.front()->GetSeqIdString(true);
+                    id_str.clear();
+                    // need version, no db name from id general
+                    CSeq_id::TLabelFlags flags = CSeq_id::fLabel_GeneralDbIsContent|CSeq_id::fLabel_Version;
+                    ids.front()->GetLabel(&id_str, CSeq_id::eContent, flags);
                 } else {
                     cerr << "** ID " << id_str <<
                         " contains a '|'; consider using the -fasta_id option"
