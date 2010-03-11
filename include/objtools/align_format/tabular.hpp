@@ -183,7 +183,7 @@ protected:
     /// @param field Which field to show? [in]
     void x_PrintField(ETabularField field);
     /// Print query Seq-id
-    void x_PrintQuerySeqId(void);
+    void x_PrintQuerySeqId(void) const;
     /// Print query gi
     void x_PrintQueryGi(void);
     /// Print query accession
@@ -244,12 +244,16 @@ protected:
     void x_PrintSubjectFrame();
     void x_PrintBTOP();
 
+    CNcbiOstream& m_Ostream; ///< Stream to write output to
+    char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
+    string m_QuerySeq;       ///< Aligned part of the query sequence
+    string m_SubjectSeq;     ///< Aligned part of the subject sequence
+
 private:
 
     list<CRef<objects::CSeq_id> > m_QueryId;  ///< List of query ids for this HSP
     /// All subject sequence ids for this HSP
     vector<list<CRef<objects::CSeq_id> > > m_SubjectIds;
-    CNcbiOstream& m_Ostream; ///< Stream to write output to
     int m_Score;             ///< Raw score of this HSP
     string m_BitScore;       ///< Bit score of this HSP, in appropriate format
     string m_Evalue;         ///< E-value of this HSP, in appropriate format
@@ -262,14 +266,11 @@ private:
     int m_QueryEnd;          ///< Ending offset in query
     int m_SubjectStart;      ///< Starting offset in subject
     int m_SubjectEnd;        ///< Ending offset in subject 
-    string m_QuerySeq;       ///< Aligned part of the query sequence
-    string m_SubjectSeq;     ///< Aligned part of the subject sequence
     int m_QueryFrame;        ///< query frame
     int m_SubjectFrame;      ///< subject frame
     /// Map of field enum values to field names.
     map<string, ETabularField> m_FieldMap; 
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
-    char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
     /// Should the query deflines be parsed for local IDs?
     bool m_ParseLocalIds;
     string m_BTOP;            /// Blast-traceback-operations.
@@ -392,6 +393,111 @@ inline void CBlastTabularInfo::x_PrintGaps(void)
 {
     m_Ostream << m_NumGaps;
 }
+
+/// Class containing information needed for tabular formatting of BLAST 
+/// results.
+class NCBI_ALIGN_FORMAT_EXPORT CIgBlastTabularInfo : public CBlastTabularInfo
+{
+public:
+    /// struct containing annotated gene information
+    struct SIgGene {
+        void Reset() { start = -1;}
+        bool IsSet() const { return (start >= 0); }
+        int start; // 0-based
+        int end;   // semi-inclusive [start, end)
+    };
+
+    /// struct containing annotated domain information
+    struct SIgDomain {
+        SIgDomain(const string& n, int s, int e):
+            name(n), start(s), end(e), length(0),
+            num_match(0), num_mismatch(0), num_gap(0) {};
+        const string name;
+        int start;
+        int end;
+        int length;
+        int num_match;
+        int num_mismatch;
+        int num_gap;
+    };
+
+    /// ways of presenting the gene results
+    enum EGeneOutputStyle {
+        eFull = 0,   ///< Show full gene
+        eFirstFive,  ///< Show only first 5 letters
+        eLastFive    ///< Show only last 5 letters
+    };
+
+    /// What delimiter to use between fields in each row of the tabular output.
+    /// Constructor
+    /// @param ostr Stream to write output to [in]
+    /// @param format Output format - what fields to include in the output [in]
+    CIgBlastTabularInfo(CNcbiOstream& ostr,
+                        const string& format = kDfltArgTabularOutputFmt)
+        : CBlastTabularInfo(ostr, format) { };
+
+    /// Destructor
+    ~CIgBlastTabularInfo() {
+        x_ResetIgFields();
+    };
+
+    /// Set fields for master alignment
+    int SetMasterFields(const objects::CSeq_align& align, 
+                        objects::CScope& scope, 
+                        CNcbiMatrix<int>* matrix=0);
+
+    /// Set out-of-frame information                                        
+    void SetOOF(bool oof = true) { 
+        m_IsOOF = oof;                               
+    };
+
+    /// Set strand information                                        
+    void SetMinusStrand(bool minus = true) {
+        m_IsMinusStrand = minus;
+    };
+
+    /// Set domain info
+    void AddIgDomain(const string &name, int start, int end) {
+        SIgDomain * domain = new SIgDomain(name, start, end);
+        x_ComputeIgDomain(*domain);
+        m_IgDomains.push_back(domain);
+    };
+
+    /// Set gene info
+    void SetVGene(int start, int end) {
+        m_VGene.start = start;
+        m_VGene.end = end;
+    }
+
+    /// Set gene info
+    void SetDGene(int start, int end) {
+        m_DGene.start = start;
+        m_DGene.end = end;
+    }
+
+    /// Set gene info
+    void SetJGene(int start, int end) {
+        m_JGene.start = start;
+        m_DGene.end = end;
+    }
+
+    /// Print domain information
+    void PrintMasterAlign() const;
+
+protected:
+    void x_ResetIgFields();
+    void x_ComputeIgDomain(SIgDomain &domain);
+    void x_PrintIgDomain(const SIgDomain &domain) const;
+    void x_PrintIgGene(const SIgGene &gene, EGeneOutputStyle eStyle) const;
+
+private:                                                                    
+    bool m_IsOOF;                                                           
+    bool m_IsMinusStrand;
+    SIgGene m_VGene;
+    SIgGene m_DGene;
+    SIgGene m_JGene;
+    vector<SIgDomain *> m_IgDomains;                                        
+};
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

@@ -170,7 +170,7 @@ s_GetSeqIdListString(const list<CRef<CSeq_id> >& id,
     return id_str;
 }
 
-void CBlastTabularInfo::x_PrintQuerySeqId()
+void CBlastTabularInfo::x_PrintQuerySeqId() const
 {
     m_Ostream << s_GetSeqIdListString(m_QueryId, eFullId);
 }
@@ -865,6 +865,131 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         break;
     }
 }
+
+int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align, 
+                                 CScope& scope, 
+                                 CNcbiMatrix<int>* matrix)
+{
+    int retval = 0;
+    bool hasSeq = x_IsFieldRequested(eQuerySeq);
+    bool hasSeqId = x_IsFieldRequested(eQuerySeqId);
+    // We need the query and subject sequence to process domain info
+    x_ResetIgFields();
+    if (!hasSeq) x_AddFieldToShow(eQuerySeq);
+    if (!hasSeqId) x_AddFieldToShow(eQuerySeqId);
+    retval = SetFields(align, scope, matrix);
+    if (!hasSeq) x_DeleteFieldToShow(eQuerySeq);
+    if (!hasSeqId) x_DeleteFieldToShow(eQuerySeqId);
+    return retval;
+};            
+
+void CIgBlastTabularInfo::PrintMasterAlign() const
+{
+    x_PrintQuerySeqId();
+    m_Ostream << m_FieldDelimiter
+              << ((m_IsMinusStrand) ? '-' : '+') 
+              << m_FieldDelimiter
+              << ((m_IsOOF) ? "OOF" : "IF") 
+              << m_FieldDelimiter;
+
+    x_PrintIgGene(m_VGene, eLastFive);
+    m_Ostream << m_FieldDelimiter;
+
+    x_PrintIgGene(m_DGene, eFull);
+    m_Ostream << m_FieldDelimiter;
+
+    x_PrintIgGene(m_JGene, eFirstFive);
+    m_Ostream << m_FieldDelimiter;
+    
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        x_PrintIgDomain(*(m_IgDomains[i]));
+        m_Ostream << m_FieldDelimiter;
+    }
+};
+
+void CIgBlastTabularInfo::x_ResetIgFields()
+{
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        delete m_IgDomains[i];
+    }
+    m_IgDomains.clear();
+    m_IsOOF = false;
+    m_IsMinusStrand = false;
+    m_VGene.Reset();
+    m_DGene.Reset();
+    m_JGene.Reset();
+};
+
+void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
+{
+    int pos = 0;
+    unsigned int i = 0;
+    while (pos < domain.start && i < m_QuerySeq.size()) {
+        if (m_QuerySeq[i] != '-') ++pos;
+        ++i;
+    }
+    while (pos < domain.end && i < m_QuerySeq.size()) {
+        if (m_QuerySeq[i] != '-') {
+            ++pos;
+            if (m_QuerySeq[i] == m_SubjectSeq[i]) {
+                ++domain.num_match;
+            } else if (m_SubjectSeq[i] != '-') {
+                ++domain.num_mismatch;
+            } else {
+                ++domain.num_gap;
+            }
+        } else {
+            ++domain.num_gap;
+        }
+        ++domain.length;
+        ++i;
+    }
+};
+
+void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
+{
+    m_Ostream << domain.name 
+              << m_FieldDelimiter
+              << domain.start +1
+              << m_FieldDelimiter
+              << domain.end
+              << m_FieldDelimiter
+              << domain.length
+              << m_FieldDelimiter
+              << domain.num_match
+              << m_FieldDelimiter
+              << domain.num_mismatch
+              << m_FieldDelimiter
+              << domain.num_gap;
+};
+
+void CIgBlastTabularInfo::x_PrintIgGene(const SIgGene &gene,
+                                        EGeneOutputStyle eStyle) const
+{
+    if (!gene.IsSet()) {
+        m_Ostream << "NA";
+        return;
+    }
+         
+    int start = (eStyle == eLastFive) ? max(gene.end - 5, gene.start) : gene.start;
+    int end = (eStyle == eFirstFive) ? min(gene.start + 5, gene.end) : gene.end;
+
+    // The query sequence may contain gaps and must be re-positioned
+    int pos = 0;
+    unsigned int i = 0;
+    while (pos < start && i < m_QuerySeq.size()) {
+        if (m_QuerySeq[i] != '-') ++pos;
+        ++i;
+    }
+    while (pos < end && i < m_QuerySeq.size()) {
+        if (m_QuerySeq[i] != '-') {
+            m_Ostream << m_QuerySeq[i];
+            ++pos;
+        }
+        ++i;
+    }
+    m_Ostream << m_FieldDelimiter;
+};
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
