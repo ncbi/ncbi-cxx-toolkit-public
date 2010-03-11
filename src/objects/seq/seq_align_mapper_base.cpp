@@ -1243,6 +1243,13 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
         size_t str_idx = 0; // row index in the strands container
         // Add each row to the dense-seg.
         ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
+            if (row->m_Start == kInvalidSeqPos) {
+                // Dense-diags do not support gaps ('starts' contain
+                // TSeqPos which can not be negative).
+                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                    "Mapped alignment contains gaps and can not be "
+                    "converted to dense-diag.");
+            }
             CSeq_loc_Mapper_Base::ESeqType seq_type =
                 m_LocMapper.GetSeqTypeById(row->m_Id);
             if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
@@ -2127,6 +2134,14 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
         }
         const SAlignment_Segment::SAlignment_Row& first_row = seg->m_Rows[0];
         const SAlignment_Segment::SAlignment_Row& second_row = seg->m_Rows[1];
+
+        // Skip gaps.
+        int first_start = first_row.GetSegStart();
+        int second_start = second_row.GetSegStart();
+        if (first_start < 0  ||  second_start < 0) {
+            continue; // gap in one row
+        }
+
         // All segments must have the same seq-id.
         if ( first_idh ) {
             if (first_idh != first_row.m_Id) {
@@ -2159,11 +2174,6 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
         // in AAs, not bases.
         int len_width = (first_prot  ||  second_prot) ? 3 : 1;
 
-        int first_start = first_row.GetSegStart();
-        int second_start = second_row.GetSegStart();
-        if (first_start < 0  ||  second_start < 0) {
-            continue; // gap in one row
-        }
         aln->SetFirst_starts().push_back(first_start/first_width);
         aln->SetSecond_starts().push_back(second_start/second_width);
         aln->SetLens().push_back(seg->m_Len/len_width);
@@ -2255,25 +2265,23 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
             }
             if ( !last_id ) {
                 last_id = row.m_Id;
-                ids[seg_idx - start_seg] = row.m_Id;
+                ids[r] = row.m_Id;
             }
         }
     }
     // At lease one segment may be used.
     _ASSERT(last_seg >= start_seg);
 
-    // Now when number of segments is known, fill the ids.
-    for (TSegments::const_iterator it = start_seg_it; it != m_Segs.end(); ++it) {
-        for (size_t i = 0; i < num_rows; i++) {
-            CRef<CSeq_id> id(new CSeq_id);
-            id->Assign(*ids[i].GetSeqId());
-            dseg.SetIds().push_back(id);
-            // Check sequence type and adjust length width.
-            CSeq_loc_Mapper_Base::ESeqType seq_type =
-                m_LocMapper.GetSeqTypeById(ids[i]);
-            if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
-                len_width = 3;
-            }
+    // Now when number of rows is known, fill the ids.
+    for (size_t i = 0; i < num_rows; i++) {
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*ids[i].GetSeqId());
+        dseg.SetIds().push_back(id);
+        // Check sequence type and adjust length width.
+        CSeq_loc_Mapper_Base::ESeqType seq_type =
+            m_LocMapper.GetSeqTypeById(ids[i]);
+        if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
+            len_width = 3;
         }
     }
     num_seg = last_seg - start_seg + 1;
@@ -2288,8 +2296,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         if (cur_seg > last_seg) {
             break;
         }
-        // Set segment length.
-        dseg.SetLens().push_back(it->m_Len/len_width);
         // Check if at least one row is non-gap.
         bool only_gaps = true;
         ITERATE(SAlignment_Segment::TRows, row, it->m_Rows) {
@@ -2298,6 +2304,9 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
             }
         }
         if (only_gaps) continue; // ignore empty rows
+
+        // Set segment length.
+        dseg.SetLens().push_back(it->m_Len/len_width);
 
         size_t str_idx = 0;
         non_empty_segs++; // count segments added to the dense-seg
