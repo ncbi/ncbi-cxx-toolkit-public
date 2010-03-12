@@ -540,13 +540,13 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
 
     mrna_feature->SetLocation(*create_packed_int_seqloc(model));
                 
+    if(!model.HasStart())
+        mrna_feature->SetLocation().SetPartialStart(true,eExtreme_Biological);
+    if(!model.HasStop())
+        mrna_feature->SetLocation().SetPartialStop(true,eExtreme_Biological);
+
     if(!model.HasStart() || !model.HasStop() || !model.Continuous())
         mrna_feature->SetPartial(true);
-
-    if(model.HasStart())
-        mrna_feature->SetLocation().SetPartialStart(false,eExtreme_Biological);
-    if(model.HasStop())
-        mrna_feature->SetLocation().SetPartialStop(false,eExtreme_Biological);
 
     if(!model.FrameShifts().empty()) {
         mrna_feature->SetExcept(true);
