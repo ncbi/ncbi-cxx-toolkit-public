@@ -69,7 +69,8 @@ CObjectIStreamJson::CObjectIStreamJson(void)
     m_BlockStart(false),
     m_ExpectValue(false),
     m_Closing(0),
-    m_StringEncoding( eEncoding_Unknown )
+    m_StringEncoding( eEncoding_Unknown ),
+    m_BinaryFormat(eDefault)
 {
 }
 
@@ -90,6 +91,16 @@ void CObjectIStreamJson::SetDefaultStringEncoding(EEncoding enc)
 EEncoding CObjectIStreamJson::GetDefaultStringEncoding(void) const
 {
     return m_StringEncoding;
+}
+
+CObjectIStreamJson::EBinaryDataFormat
+CObjectIStreamJson::GetBinaryDataFormat(void) const
+{
+    return m_BinaryFormat;
+}
+void CObjectIStreamJson::SetBinaryDataFormat(CObjectIStreamJson::EBinaryDataFormat fmt)
+{
+    m_BinaryFormat = fmt;
 }
 
 char CObjectIStreamJson::GetChar(void)
@@ -725,6 +736,12 @@ void CObjectIStreamJson::BeginBytes(ByteBlock& block)
     }
 }
 
+void CObjectIStreamJson::EndBytes(const ByteBlock& block)
+{
+    Expect(m_Closing);
+    m_Closing = 0;
+}
+
 int CObjectIStreamJson::GetHexChar(void)
 {
     char c = m_Input.GetChar();
@@ -758,39 +775,121 @@ int CObjectIStreamJson::GetBase64Char(void)
 size_t CObjectIStreamJson::ReadBytes(
     ByteBlock& block, char* dst, size_t length)
 {
-    size_t count = 0;
-    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
-        bool end_of_data = false;
-        const size_t chunk_in = 80;
-        char src_buf[chunk_in];
-        size_t bytes_left = length;
-        size_t src_size, src_read, dst_written;
-        while (!end_of_data && bytes_left > chunk_in && bytes_left <= length) {
-            for ( src_size = 0; src_size < chunk_in; ) {
-                int c = GetBase64Char();
-                if (c < 0) {
-                    end_of_data = true;
-                    break;
-                }
-                /*if (c != '=')*/ {
-                    src_buf[ src_size++ ] = c;
-                }
-                m_Input.SkipChar();
-            }
-            BASE64_Decode( src_buf, src_size, &src_read,
-                        dst, bytes_left, &dst_written);
-            if (src_size != src_read) {
-                ThrowError(fFail, "error decoding base64Binary data");
-            }
-            count += dst_written;
-            bytes_left -= dst_written;
-            dst += dst_written;
-        }
-        if (end_of_data) {
-            block.EndOfBlock();
-        }
-        return count;;
+    if (m_BinaryFormat != CObjectIStreamJson::eDefault) {
+        return ReadCustomBytes(block,dst,length);
     }
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        return ReadBase64Bytes( block, dst, length );
+    }
+    return ReadHexBytes( block, dst, length );
+}
+
+size_t CObjectIStreamJson::ReadCustomBytes(
+    ByteBlock& block, char* dst, size_t length)
+{
+    if (m_BinaryFormat == eString_Base64) {
+        return ReadBase64Bytes(block, dst, length);
+    } else if (m_BinaryFormat == eString_Hex) {
+        return ReadHexBytes(block, dst, length);
+    }
+    bool end_of_data = false;
+    size_t count = 0;
+    while ( !end_of_data && length-- > 0 ) {
+        Uint1 c = 0;
+        Uint1 mask=0x80;
+        switch (m_BinaryFormat) {
+        case eArray_Bool:
+            for (; !end_of_data && mask!=0; mask >>= 1) {
+                if (ReadBool()) {
+                    c |= mask;
+                }
+                end_of_data = !GetChar(',', true);
+            }
+            ++count;
+            *dst++ = c;
+            break;
+        case eArray_01:
+            for (; !end_of_data && mask!=0; mask >>= 1) {
+                if (ReadChar() != '0') {
+                    c |= mask;
+                }
+                end_of_data = !GetChar(',', true);
+            }
+            ++count;
+            *dst++ = c;
+            break;
+        default:
+        case eArray_Uint:
+            c = (Uint1)ReadUint8();
+            end_of_data = !GetChar(',', true);
+            ++count;
+            *dst++ = c;
+            break;
+        case eString_01:
+        case eString_01B:
+            for (; !end_of_data && mask!=0; mask >>= 1) {
+                char t = GetChar();
+                end_of_data = t == '\"' || t == 'B';
+                if (!end_of_data && t != '0') {
+                    c |= mask;
+                }
+                if (t == '\"') {
+                    m_Input.UngetChar(t);
+                }
+            }
+            if (mask != 0x40) {
+                ++count;
+                *dst++ = c;
+            }
+            break;
+        }
+    }
+    if (end_of_data) {
+        block.EndOfBlock();
+    }
+    return count;
+}
+
+size_t CObjectIStreamJson::ReadBase64Bytes(
+    ByteBlock& block, char* dst, size_t length)
+{
+    size_t count = 0;
+    bool end_of_data = false;
+    const size_t chunk_in = 80;
+    char src_buf[chunk_in];
+    size_t bytes_left = length;
+    size_t src_size, src_read, dst_written;
+    while (!end_of_data && bytes_left > chunk_in && bytes_left <= length) {
+        for ( src_size = 0; src_size < chunk_in; ) {
+            int c = GetBase64Char();
+            if (c < 0) {
+                end_of_data = true;
+                break;
+            }
+            /*if (c != '=')*/ {
+                src_buf[ src_size++ ] = c;
+            }
+            m_Input.SkipChar();
+        }
+        BASE64_Decode( src_buf, src_size, &src_read,
+                    dst, bytes_left, &dst_written);
+        if (src_size != src_read) {
+            ThrowError(fFail, "error decoding base64Binary data");
+        }
+        count += dst_written;
+        bytes_left -= dst_written;
+        dst += dst_written;
+    }
+    if (end_of_data) {
+        block.EndOfBlock();
+    }
+    return count;
+}
+
+size_t CObjectIStreamJson::ReadHexBytes(
+    ByteBlock& block, char* dst, size_t length)
+{
+    size_t count = 0;
     while ( length-- > 0 ) {
         int c1 = GetHexChar();
         if ( c1 < 0 ) {
@@ -810,11 +909,6 @@ size_t CObjectIStreamJson::ReadBytes(
         }
     }
     return count;
-}
-void CObjectIStreamJson::EndBytes(const ByteBlock& block)
-{
-    Expect(m_Closing);
-    m_Closing = 0;
 }
 
 // char block

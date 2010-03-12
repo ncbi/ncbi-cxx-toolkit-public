@@ -77,6 +77,29 @@ public:
     ///   Encoding
     EEncoding GetDefaultStringEncoding(void) const;
 
+    /// formatting of binary data ('OCTET STRING', 'hexBinary', 'base64Binary')
+    enum EBinaryDataFormat {
+        eDefault,       ///< default
+        eArray_Bool,    ///< array of 'true' and 'false'
+        eArray_01,      ///< array of 1 and 0
+        eArray_Uint,    ///< array of unsigned integers
+        eString_Hex,    ///< HEX string
+        eString_01,     ///< string of 0 and 1
+        eString_01B,    ///< string of 0 and 1, plus 'B' at the end
+        eString_Base64  ///< Base64Binary string
+    };
+    /// Get formatting of binary data
+    ///
+    /// @return
+    ///   Formatting type
+    EBinaryDataFormat GetBinaryDataFormat(void) const;
+    
+    /// Set formatting of binary data
+    ///
+    /// @param fmt
+    ///   Formatting type
+    void SetBinaryDataFormat(EBinaryDataFormat fmt);
+
     virtual string ReadFileHeader(void);
 
 protected:
@@ -181,6 +204,9 @@ private:
     bool NextElement(void);
 
     TMemberIndex FindDeep(const CItemsInfo& items, const CTempString& name, bool& deep) const;
+    size_t ReadCustomBytes(ByteBlock& block, char* buffer, size_t count);
+    size_t ReadBase64Bytes(ByteBlock& block, char* buffer, size_t count);
+    size_t ReadHexBytes(ByteBlock& block, char* buffer, size_t count);
 
     bool m_BlockStart;
     bool m_ExpectValue;
@@ -188,6 +214,7 @@ private:
     EEncoding m_StringEncoding;
     string m_LastTag;
     string m_RejectedTag;
+    EBinaryDataFormat m_BinaryFormat;
 };
 
 /* @} */
