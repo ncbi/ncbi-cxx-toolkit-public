@@ -1,0 +1,93 @@
+Seq-align-set ::= {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 60 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 158806822, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 111919273, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 67 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                id 48213 ,
+              local
+                id 48215 } ,
+            starts {
+              0 ,
+              0 ,
+              -1 ,
+              60 ,
+              60 ,
+              61 } ,
+            lens {
+              60 ,
+              1 ,
+              9 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 60 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 158806822, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 111919273, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 60 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                id 48213 ,
+              local
+                id 48215 } ,
+            starts {
+              60 ,
+              0 } ,
+            lens {
+              60 } ,
+            strands {
+              plus ,
+              plus } } } }
