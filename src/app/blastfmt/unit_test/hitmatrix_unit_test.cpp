@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileAcc)
 
 BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileFasta)
 {
-    string seqAlignFileName_in = "data/in_HitMatrixSeqalignFA.txt";
+    string seqAlignFileName_in = "data/in_HitMatrixSeqalignFSTA.txt";
         
     CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);        
     {
