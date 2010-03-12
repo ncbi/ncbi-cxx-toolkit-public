@@ -101,19 +101,31 @@ void CBlastHitMatrix::x_GetLabels(void)
 {
     for(size_t i=0; i < m_Aligns.size();i++) {        
         const CSeq_id& queryID = m_Aligns[i]->GetSeq_id(0);                        
-        if(queryID.IsLocal()) {
+        /* Somehow code for IsLocal stopped working
+        if(queryID.IsLocal()) {        
             (*sequence::GetId(queryID,*m_Scope,sequence:: eGetId_Best).GetSeqId()).GetLabel(&m_QueryID);                  
-        }
-        else {
+       }
+       else {
             CLabel::GetLabel(queryID,&m_QueryID,CLabel::eDefault,m_Scope.GetPointer());
-        }
+       }
+       */
+       CLabel::GetLabel(queryID,&m_QueryID,CLabel::eDefault,m_Scope.GetPointer());
+       if(queryID.IsLocal()) {
+           m_QueryID = "lcl|" + m_QueryID;
+       }
         
         const CSeq_id& subjectID = m_Aligns[i]->GetSeq_id(1);         
+        /*
         if(subjectID.IsLocal()) {
             (*sequence::GetId(subjectID,*m_Scope,sequence:: eGetId_Best).GetSeqId()).GetLabel(&m_SubjectID);    
         }
         else {
             CLabel::GetLabel(subjectID,&m_SubjectID,CLabel::eDefault,m_Scope.GetPointer());
+        }
+        */
+        CLabel::GetLabel(subjectID,&m_SubjectID,CLabel::eDefault,m_Scope.GetPointer());
+        if(subjectID.IsLocal()) {
+            m_SubjectID = "lcl|" + m_SubjectID;
         }
         //m_SubjectID = "Subj: " + m_SubjectID;
         break;
