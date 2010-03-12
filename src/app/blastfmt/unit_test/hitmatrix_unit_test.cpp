@@ -51,9 +51,30 @@
 USING_NCBI_SCOPE;
 
 BOOST_AUTO_TEST_SUITE(hitmatrix)
-BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFile)
+BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileAcc)
 {
     string seqAlignFileName_in = "data/in_HitMatrixSeqalign.txt";
+        
+    CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);        
+    {
+        ifstream in(seqAlignFileName_in.c_str());
+        in >> MSerial_AsnText >> *fileSeqAlignSet;
+    }
+    
+
+    auto_ptr<CBlastHitMatrix> blastHitMatrix
+        (new CBlastHitMatrix(fileSeqAlignSet->Get()));
+    CTmpFile tmpfile;
+    blastHitMatrix->SetFileName(tmpfile.GetFileName());
+    blastHitMatrix->WriteToFile();
+
+    CFile outFile(tmpfile.GetFileName());
+    BOOST_REQUIRE_EQUAL(true, outFile.Exists() && outFile.GetLength() > 8000);    
+}
+
+BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileFasta)
+{
+    string seqAlignFileName_in = "data/in_HitMatrixSeqalignFA.txt";
         
     CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);        
     {
