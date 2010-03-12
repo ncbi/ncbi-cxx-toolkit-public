@@ -220,7 +220,12 @@ class CBioTree
 public:
     typedef CBioTree<TBioNode>   TBioTree;
 
+    // Hide the base class from SWIG
+    #ifdef NCBI_SWIG
+    class CBioNode
+    #else
     class CBioNode : public CTreeNode<TBioNode>
+    #endif
     {
     public: 
         typedef CTreeNode<TBioNode> TParent;

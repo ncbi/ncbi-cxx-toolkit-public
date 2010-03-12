@@ -363,6 +363,7 @@ public:
     typedef typename TL::TWriteLockGuard TLockGuard;
     typedef CBDB_IdBlobFile              TBlobFile;
 
+    #ifndef NCBI_SWIG
     /// BDB Database together with the locker
     /// One database is opened twice, one regular mode,
     /// another - dedicated read-only instance to improve concurrency
@@ -374,6 +375,7 @@ public:
         AutoPtr<TBlobFile>      db_ro;    ///< database file for reads
         AutoPtr<TLock>          lock_ro;  ///< db lock for reads
     };
+    #endif
 
     /// Volume split on optimal page size
     struct SVolume

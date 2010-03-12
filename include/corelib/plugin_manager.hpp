@@ -367,6 +367,7 @@ public:
     (const string&       driver  = kEmptyStr,
      const CVersionInfo& version = GetDefaultDrvVers());
 
+    #ifndef NCBI_SWIG
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
     /// @sa FNCBI_EntryPoint
@@ -381,6 +382,7 @@ public:
               factory(0)
         {}
     };
+    #endif
 
     /// List of driver information.
     ///
