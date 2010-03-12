@@ -471,6 +471,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    /// @return\n"
                         "    ///   - true, if a value has been assigned.\n"
                         "    ///   - false, otherwise.\n";
+                } else {
+                    code.ClassPublic() <<
+                        "    ///  Check whether the "<<i->cName<<" data member has been assigned a value.\n";
                 }
                 code.ClassPublic() <<
                     "    bool IsSet" << i->cName<<"(void) const;\n";
@@ -531,6 +534,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    ///   - true, if the data member is getatable.\n"
                             "    ///   - false, otherwise.\n";
                     }
+                } else {
+                    code.ClassPublic() <<
+                        "    /// Check whether it is safe or not to call Get"<<i->cName<<" method.\n";
                 }
                 code.ClassPublic() <<
                     "    bool CanGet" << i->cName<<"(void) const;\n";
