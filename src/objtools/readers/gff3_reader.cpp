@@ -57,6 +57,7 @@
 #include <objects/seqloc/Seq_point.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -69,7 +70,6 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -88,12 +88,57 @@
 
 #include <algorithm>
 
+#include "gff3_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+//  ----------------------------------------------------------------------------
+string s_MapSofaToGenbankType(
+    const string& strSofaType )
+//  ----------------------------------------------------------------------------
+{
+    typedef pair< string, string > MapEntry;
+    static const MapEntry aSofaToGenbankTypes[] = {
+        MapEntry( "CDS", "CDS" ),
+        MapEntry( "exon", "exon" ),
+        MapEntry( "gene", "gene" ),
+        MapEntry( "mRNA", "mRNA" ),
+    };
+    typedef CStaticArrayMap < string, string> TSofaToGenbankTypes;
+    DEFINE_STATIC_ARRAY_MAP(
+        TSofaToGenbankTypes, smSofaToGenbankTypes, aSofaToGenbankTypes);
+    
+    TSofaToGenbankTypes::const_iterator cit = smSofaToGenbankTypes.find(
+        strSofaType );
+    if ( cit == smSofaToGenbankTypes.end() ) {
+        return "misc_feature";
+    }
+    return cit->second;
+}
+
+//  ----------------------------------------------------------------------------
+bool s_GetAnnotId(
+    const CSeq_annot& annot,
+    string& strId )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! annot.CanGetId() || annot.GetId().size() != 1 ) {
+        // internal error
+        return false;
+    }
+    
+    CRef< CAnnot_id > pId = *( annot.GetId().begin() );
+    if ( ! pId->IsLocal() ) {
+        // internal error
+        return false;
+    }
+    strId = pId->GetLocal().GetStr();
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 CGff3Reader::CGff3Reader(
@@ -122,7 +167,7 @@ CGff3Reader::ReadSeqAnnots(
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pErrorContainer );
 }
- 
+
 //  ---------------------------------------------------------------------------                       
 void
 CGff3Reader::ReadSeqAnnots(
@@ -131,6 +176,8 @@ CGff3Reader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
+//    return ReadSeqAnnotsNew( annots, lr, pErrorContainer );
+
     CRef< CSeq_entry > entry = ReadSeqEntry( lr, pErrorContainer );
 //    const CSeq_entry::TAnnot& list_annots = entry->GetAnnot();
 //    annots.assign( list_annots.begin(), list_annots.end() );
@@ -138,6 +185,52 @@ CGff3Reader::ReadSeqAnnots(
     for ( ;  annot_iter;  ++annot_iter) {
         annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
     }
+}
+ 
+//  ---------------------------------------------------------------------------                       
+void
+CGff3Reader::ReadSeqAnnotsNew(
+    vector< CRef<CSeq_annot> >& annots,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+//    CRef< CSeq_annot > annot( new CSeq_annot );
+
+    string line;
+    int linecount = 0;
+
+    while ( ! lr.AtEOF() ) {
+        ++linecount;
+        line = *++lr;
+        if ( NStr::TruncateSpaces( line ).empty() ) {
+            continue;
+        }
+        try {
+            if ( x_IsCommentLine( line ) ) {
+                continue;
+            }
+            if ( x_ParseStructuredCommentGff( line, annots ) ) {
+                continue;
+            }
+            if ( x_ParseBrowserLineGff( line, annots ) ) {
+                continue;
+            }
+            if ( x_ParseTrackLineGff( line, annots ) ) {
+                continue;
+            }
+            x_ParseFeatureGff( line, annots );
+        }
+        catch( CObjReaderLineException& err ) {
+            err.SetLineNumber( linecount );
+//            x_ProcessError( err, pErrorContainer );
+        }
+        continue;
+    }
+//    if ( m_iFlags & fDumpStats ) {
+//        x_DumpStats( cerr );
+//    }
+    x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
 }
 
 //  ----------------------------------------------------------------------------                
@@ -148,9 +241,9 @@ CGff3Reader::ReadSeqEntry(
 //  ----------------------------------------------------------------------------                
 { 
     m_pErrors = pErrorContainer;
-    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-    m_pErrors = 0;
-    return entry;
+//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
+//    m_pErrors = 0;
+//    return entry;
 
     x_Reset();
     m_TSE->SetSet();
@@ -421,6 +514,247 @@ void CGff3Reader::x_SetTrackDataToSeqEntry(
         return;
     }
     trackdata->AddField( strKey, strValue );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseStructuredCommentGff(
+    const string& strLine,
+    TAnnots& annots )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "##" ) ) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseFeatureGff(
+    const string& strLine,
+    TAnnots& annots )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Parse the record and determine which ID the given feature will pertain 
+    //  to:
+    //
+    CGff3Record record;
+    if ( ! record.Parse( strLine ) ) {
+        return false;
+    }
+
+    //
+    //  Search annots for a pre-existing annot pertaining to the same ID:
+    //
+    TAnnotIt it = annots.begin();
+    for ( /*NOOP*/; it != annots.end(); ++it ) {
+        string strAnnotId;
+        if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
+            return false;
+        }
+        if ( record.Id() == strAnnotId ) {
+            break;
+        }
+    }
+
+    //
+    //  If a preexisting annot was found, update it with the new feature
+    //  information:
+    //
+    if ( it != annots.end() ) {
+        if ( ! x_UpdateAnnot( record, *it ) ) {
+            return false;
+        }
+    }
+
+    //
+    //  Otherwise, create a new annot pertaining to the new ID and initialize it
+    //  with the given feature information:
+    //
+    else {
+        CRef< CSeq_annot > pAnnot( new CSeq_annot );
+        if ( ! x_InitAnnot( record, pAnnot ) ) {
+            return false;
+        }
+        annots.push_back( pAnnot );      
+    }
+ 
+    return true; 
+};
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseBrowserLineGff(
+    const string& strRawInput,
+    TAnnots& )
+//  ----------------------------------------------------------------------------
+{ 
+    if ( NStr::StartsWith( strRawInput, "browser" ) ) {
+        return true;
+    }
+    return false; 
+};
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseTrackLineGff(
+    const string& strRawInput,
+    TAnnots& )
+//  ----------------------------------------------------------------------------
+{ 
+    if ( NStr::StartsWith( strRawInput, "track" ) ) {
+        return true;
+    }
+    return false; 
+};
+                                
+//  ----------------------------------------------------------------------------
+void CGff3Reader::x_AddConversionInfoGff(
+    TAnnots&,
+    IErrorContainer* )
+//  ----------------------------------------------------------------------------
+{
+}                    
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_InitAnnot(
+    const CGff3Record& gff,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CAnnot_id > pAnnotId( new CAnnot_id );
+    pAnnotId->SetLocal().SetStr( gff.Id() );
+    pAnnot->SetId().push_back( pAnnotId );
+
+    return x_UpdateAnnot( gff, pAnnot );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_UpdateAnnot(
+    const CGff3Record& gff,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_feat > pFeature( new CSeq_feat );
+
+    if ( ! x_FeatureSetId( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetData( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetGffInfo( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+        return false;
+    }
+    
+    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetId(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    string strId;
+    if ( record.GetAttribute( "ID", strId ) ) {
+        pFeature->SetId().SetLocal().SetStr( strId );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetLocation(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_id > pId( new CSeq_id );
+    pId->SetLocal().SetStr( record.Id() );
+    CRef< CSeq_loc > pLocation( new CSeq_loc );
+    pLocation->SetInt().SetId( *pId );
+    pLocation->SetInt().SetFrom( record.SeqStart() );
+    pLocation->SetInt().SetTo( record.SeqStop() );
+    if ( record.CanGetStrand() ) {
+        pLocation->SetInt().SetStrand( record.Strand() );
+    }
+    pFeature->SetLocation( *pLocation );
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetQualifiers(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CGb_qual > pQual( new CGb_qual );
+    pQual->SetQual( "gff_source" );
+    pQual->SetVal( record.Source() );
+    pFeature->SetQual().push_back( pQual );
+
+    pQual.Reset( new CGb_qual );
+    pQual->SetQual( "gff_type" );
+    pQual->SetVal( record.Type() );
+    pFeature->SetQual().push_back( pQual );
+
+    if ( record.CanGetScore() ) {
+        pQual.Reset( new CGb_qual );
+        pQual->SetQual( "gff_score" );
+        pQual->SetVal( NStr::DoubleToString( record.Score() ) );
+        pFeature->SetQual().push_back( pQual );
+    }
+
+    //
+    //  Create GB qualifiers for the record attributes:
+    //
+    const CGff3Record::Attributes& attrs = record.Attrs();
+    CGff3Record::AttrCit it = attrs.begin();
+    for ( /*NOOP*/; it != attrs.end(); ++it ) {
+        pQual.Reset( new CGb_qual );
+        pQual->SetQual( it->first );
+        pQual->SetVal( it->second );
+        pFeature->SetQual().push_back( pQual );
+    }    
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetGffInfo(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CUser_object > pGffInfo( new CUser_object );
+    pGffInfo->SetType().SetStr( "gff-info" );    
+    pGffInfo->AddField( "gff-attributes", record.AttributesLiteral() );
+
+    pFeature->SetExts().push_back( pGffInfo );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetData(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Do something with the phase information --- but only for CDS features!
+    //
+
+    string strGenbankType = s_MapSofaToGenbankType( record.Type() );
+    
+    CSeqFeatData& data = pFeature->SetData();
+    data.SetImp().SetKey( strGenbankType );
+    
+    return true;
 }
 
 END_objects_SCOPE

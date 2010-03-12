@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff_reader.hpp>
@@ -45,12 +46,18 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGFFReader;
+class CGff3Record;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ----------------------------------------------------------------------------
     : protected CGFFReader, public CReaderBase
 {
+protected:
+    typedef vector< CRef< CSeq_annot > > TAnnots;
+    typedef TAnnots::iterator TAnnotIt;
+    typedef TAnnots::const_iterator TAnnotCit;
+
     //
     //  object management:
     //
@@ -79,16 +86,76 @@ public:
                 
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
+        TAnnots&,
         CNcbiIstream&,
         IErrorContainer* =0 );
                         
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
+        TAnnots&,
         ILineReader&,
         IErrorContainer* =0 );
-                        
+
+    virtual void
+    ReadSeqAnnotsNew(
+        TAnnots&,
+        ILineReader&,
+        IErrorContainer* =0 );
+
+    //
+    //  new stuff:
+    //
+    bool x_ParseBrowserLineGff(
+        const string&,
+        TAnnots& );
+        
+    bool x_ParseFeatureGff(
+        const string&,
+        TAnnots& );
+    /* throws CObjReaderLineException */
+
+    virtual bool x_ParseTrackLineGff(
+        const string&,
+        TAnnots& );
+                                
+    virtual bool x_ParseStructuredCommentGff(
+        const string&,
+        TAnnots& );
+                                
+    virtual void x_AddConversionInfoGff(
+        TAnnots&,
+        IErrorContainer* );
+
+    virtual bool x_InitAnnot(
+        const CGff3Record&,
+        CRef< CSeq_annot > );
+
+    virtual bool x_UpdateAnnot(
+        const CGff3Record&,
+        CRef< CSeq_annot > );
+                            
+    CErrorContainerLenient m_ErrorsPrivate;
+
+    bool x_FeatureSetId(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetQualifiers(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+    
+    bool x_FeatureSetLocation(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+    
+    bool x_FeatureSetGffInfo(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+    
+    bool x_FeatureSetData(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+    
     //
     //  helpers:
     //
