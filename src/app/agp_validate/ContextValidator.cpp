@@ -200,18 +200,15 @@ void CAgpValidateReader::OnGapOrComponent()
 
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( m_this_row->GetComponentId() );
     int div = acc_inf & CSeq_id::eAcc_division_mask;
-    bool unknown_or_local =
-      div == CSeq_id::eAcc_unknown ||
-      div == CSeq_id::eAcc_local;
     if(m_CheckCompNames) {
       string msg;
-      if(  acc_inf & CSeq_id::fAcc_prot ) msg="; looks like a protein accession";
-      else if( unknown_or_local         ) msg="; local or misspelled accession";
+      if(       acc_inf & CSeq_id::fAcc_prot ) msg="; looks like a protein accession";
+      else if(!(acc_inf & CSeq_id::fAcc_nuc )) msg="; local or misspelled accession";
 
       if(msg.size()) agpErr.Msg(CAgpErrEx::G_InvalidCompId, msg);
     }
 
-    if(!unknown_or_local && acc_inf & CSeq_id::fAcc_nuc) {
+    if(acc_inf & CSeq_id::fAcc_nuc) {
       if( div == CSeq_id::eAcc_wgs ||
           div == CSeq_id::eAcc_wgs_intermed
       ) {
@@ -328,7 +325,7 @@ void CAgpValidateReader::OnObjectChange()
             if( m_prev_row->GetObject().size() > m_this_row->GetObject().size() &&
                 m_prev_id_digits->size() == m_obj_id_digits->size()
             ) {
-              for( int i=0; i<m_prev_id_digits->size(); i++ ) {
+              for( SIZE_TYPE i=0; i<m_prev_id_digits->size(); i++ ) {
                 if((*m_prev_id_digits)[i]<(*m_obj_id_digits)[i]) break;
                 if((*m_prev_id_digits)[i]>(*m_obj_id_digits)[i]) {
                   // literally sorted, but not numerically
@@ -661,9 +658,8 @@ static int GetNameCategory(const string& s)
     if(ver2.size()!=0) return fOneAccManyVer;
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession(s);
     if(  acc_inf & CSeq_id::fAcc_prot ) return fProtein;
-    if( (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_unknown ) return fUnknownFormat;
-    if( (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_local   ) return fUnknownFormat;
-    return fNucleotideAccession; // the best possible result
+    if(  acc_inf & CSeq_id::fAcc_nuc  ) return fNucleotideAccession; // the best possible result
+    return fUnknownFormat;
   }
 
   // check both ends of the range in case one has a different number of digits
