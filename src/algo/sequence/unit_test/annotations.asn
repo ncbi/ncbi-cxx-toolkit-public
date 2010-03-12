@@ -1,6 +1,11 @@
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
+      id local id 1,
       data gene {
         locus "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
  transporter), member 1 (SLC37A1), mRNA"
@@ -17,6 +22,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 2,
       data rna {
         type mRNA,
         ext name "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
@@ -218,6 +224,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 3,
       data cdregion {
         code {
           id 1
@@ -407,8 +414,13 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
+      id local id 4,
       data gene {
         locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
  transcript variant 2, mRNA"
@@ -421,11 +433,13 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 5,
       data rna {
         type mRNA,
         ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
  transcript variant 2, mRNA"
       },
+      except TRUE,
       product whole gi 110611232,
       location packed-int {
         {
@@ -680,14 +694,17 @@ Seq-annot ::= {
           strand plus,
           id gi 224514634
         }
-      }
+      },
+      except-text "unclassified transcription discrepancy"
     },
     {
+      id local id 6,
       data cdregion {
         code {
           id 1
         }
       },
+      except TRUE,
       comment "isoform 2 precursor is encoded by transcript variant 2",
       product whole gi 110611233,
       location packed-int {
@@ -943,72 +960,19 @@ Seq-annot ::= {
           strand plus,
           id gi 224514634
         }
-      }
+      },
+      except-text "unclassified translation discrepancy"
     }
   }
 }
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
-      data gene {
-        locus "Danio rerio H6 homeo box 1 (hmx1), mRNA"
-      },
-      location int {
-        from 189712,
-        to 191145,
-        strand minus,
-        id gi 258443169
-      }
-    },
-    {
-      data rna {
-        type mRNA,
-        ext name "Danio rerio H6 homeo box 1 (hmx1), mRNA"
-      },
-      product whole gi 165377176,
-      location packed-int {
-        {
-          from 190890,
-          to 191145,
-          strand minus,
-          id gi 258443169
-        },
-        {
-          from 189712,
-          to 190304,
-          strand minus,
-          id gi 258443169
-        }
-      }
-    },
-    {
-      data cdregion {
-        frame one,
-        code {
-          id 1
-        }
-      },
-      product whole gi 165377177,
-      location packed-int {
-        {
-          from 190890,
-          to 191145,
-          strand minus,
-          id gi 258443169
-        },
-        {
-          from 189712,
-          to 190304,
-          strand minus,
-          id gi 258443169
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  data ftable {
-    {
+      id local id 7,
       data gene {
         locus "Bos taurus Werner syndrome (WRN), mRNA"
       },
@@ -1021,11 +985,13 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 8,
       data rna {
         type mRNA,
         ext name "Bos taurus Werner syndrome (WRN), mRNA"
       },
       partial TRUE,
+      except TRUE,
       product whole gi 219879766,
       location packed-int {
         {
@@ -1131,15 +1097,18 @@ Seq-annot ::= {
           strand plus,
           id gi 269932227
         }
-      }
+      },
+      except-text "unclassified transcription discrepancy"
     },
     {
+      id local id 9,
       data cdregion {
         code {
           id 1
         }
       },
       partial TRUE,
+      except TRUE,
       product whole gi 219879767,
       location packed-int {
         {
@@ -1245,13 +1214,19 @@ Seq-annot ::= {
           strand plus,
           id gi 269932227
         }
-      }
+      },
+      except-text "unclassified translation discrepancy"
     }
   }
 }
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
+      id local id 10,
       data gene {
         locus "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
       },
@@ -1264,11 +1239,13 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 11,
       data rna {
         type mRNA,
         ext name "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
       },
       partial TRUE,
+      except TRUE,
       product whole gi 41053665,
       location packed-int {
         {
@@ -1362,9 +1339,11 @@ Seq-annot ::= {
           id gi 258435077,
           fuzz-to lim gt
         }
-      }
+      },
+      except-text "unclassified transcription discrepancy"
     },
     {
+      id local id 12,
       data cdregion {
         frame one,
         code {
@@ -1372,6 +1351,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
+      except TRUE,
       product whole gi 41053666,
       location packed-int {
         {
@@ -1465,13 +1445,19 @@ Seq-annot ::= {
           id gi 258435077,
           fuzz-to lim gt
         }
-      }
+      },
+      except-text "unclassified translation discrepancy"
     }
   }
 }
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
+      id local id 13,
       data gene {
         locus "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
       },
@@ -1483,6 +1469,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 14,
       data rna {
         type mRNA,
         ext name "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
@@ -1522,6 +1509,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 15,
       data cdregion {
         code {
           id 1
@@ -1574,8 +1562,13 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
   data ftable {
     {
+      id local id 16,
       data gene {
         locus "Homo sapiens paternally expressed 10 (PEG10), transcript
  variant 1, mRNA"
@@ -1588,6 +1581,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 17,
       data rna {
         type mRNA,
         ext name "Homo sapiens paternally expressed 10 (PEG10), transcript
@@ -1610,6 +1604,7 @@ Seq-annot ::= {
       }
     },
     {
+      id local id 18,
       data cdregion {
         code {
           id 1

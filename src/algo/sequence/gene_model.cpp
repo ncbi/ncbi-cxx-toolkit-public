@@ -36,6 +36,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -44,6 +45,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -402,6 +404,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     }
 
     if (mrna_feat) {
+        SetFeatureExceptions(*mrna_feat, scope, &align);
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
 
@@ -509,6 +512,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     }
                 }
 
+                SetFeatureExceptions(*cds_feat, scope, &align);
                 annot.SetData().SetFtable().push_back(cds_feat);
 
                 if (flags & fForceTranslateCds) {
@@ -565,6 +569,385 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         }
     }
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+///
+/// Handle feature exceptions
+///
+static void s_HandleRnaExceptions(CSeq_feat& feat,
+                                  CScope& scope,
+                                  const CSeq_align* align)
+{
+    if ( !feat.IsSetProduct() ) {
+        return;
+    }
+
+    ///
+    /// check to see if there is a Spliced-seg alignment
+    /// if there is, and it corresponds to this feature, we should use it to
+    /// record our exceptions
+    ///
+
+    CConstRef<CSeq_align> al;
+    if (align->GetSegs().IsSpliced()) {
+        al.Reset(align);
+    }
+    if ( !al ) {
+        SAnnotSelector sel;
+        sel.SetResolveAll();
+        CAlign_CI align_iter(scope, feat.GetLocation(), sel);
+        for ( ;  align_iter;  ++align_iter) {
+            const CSeq_align& this_align = *align_iter;
+            if (this_align.GetSegs().IsSpliced()  &&
+                sequence::IsSameBioseq
+                (sequence::GetId(feat.GetProduct(), &scope),
+                 this_align.GetSeq_id(0),
+                 &scope)) {
+                al.Reset(&this_align);
+                break;
+            }
+        }
+    }
+
+    bool has_length_mismatch = false;
+    bool has_5prime_unaligned = false;
+    bool has_3prime_unaligned = false;
+    bool has_polya_tail = false;
+    bool has_mismatches = false;
+    bool has_gaps = false;
+    if (al) {
+        ///
+        /// can do full comparison
+        ///
+
+        /// we know we have a Spliced-seg
+        /// evaluate for gaps or mismatches
+        ITERATE (CSpliced_seg::TExons, exon_it,
+                 al->GetSegs().GetSpliced().GetExons()) {
+            const CSpliced_exon& exon = **exon_it;
+            if (exon.IsSetParts()) {
+                ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
+                    switch ((*part_it)->Which()) {
+                    case CSpliced_exon_chunk::e_Mismatch:
+                        has_mismatches = true;
+                        break;
+                    case CSpliced_exon_chunk::e_Genomic_ins:
+                    case CSpliced_exon_chunk::e_Product_ins:
+                        has_gaps = true;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// Check against aligned range - see if there is a 5' or 3'
+        /// discrepancy
+        TSeqRange r = al->GetSeqRange(0);
+        if (r.GetFrom() != 0) {
+            has_5prime_unaligned = true;
+        }
+
+        TSeqPos max_align_len = 0;
+        if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
+            has_polya_tail = true;
+            max_align_len = al->GetSegs().GetSpliced().GetPoly_a();
+        } else if (al->GetSegs().GetSpliced().IsSetProduct_length()) {
+            max_align_len = al->GetSegs().GetSpliced().GetProduct_length();
+        } else {
+            CBioseq_Handle prod_bsh = scope.GetBioseqHandle(feat.GetProduct());
+            max_align_len = prod_bsh.GetBioseqLength();
+        }
+
+        if (r.GetTo() + 1 < max_align_len) {
+            has_3prime_unaligned = true;
+        }
+
+        /// also note the poly-A
+        if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
+            has_polya_tail = true;
+        }
+
+        /**
+        LOG_POST(Error << "  spliced-seg:"
+                 << " has_mismatches=" << (has_mismatches ? "yes" : "no")
+                 << " has_gaps=" << (has_gaps ? "yes" : "no")
+                 << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
+                 << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
+                 << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no"));
+                 **/
+    } else {
+        /// only compare for mismatches and 3' unaligned
+        /// we assume that the feature is otherwise aligned
+
+        CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
+        CSeqVector nuc_vec(feat.GetLocation(), scope,
+                           CBioseq_Handle::eCoding_Iupac);
+        CSeqVector rna_vec(prod_bsh,
+                           CBioseq_Handle::eCoding_Iupac);
+
+        CSeqVector::const_iterator prod_it  = rna_vec.begin();
+        CSeqVector::const_iterator prod_end = rna_vec.end();
+
+        CSeqVector::const_iterator genomic_it  = nuc_vec.begin();
+        CSeqVector::const_iterator genomic_end = nuc_vec.end();
+
+        for ( ;  prod_it != prod_end  &&  genomic_it != genomic_end;
+              ++prod_it, ++genomic_it) {
+            if (*prod_it != *genomic_it) {
+                has_mismatches = true;
+                break;
+            }
+        }
+
+        size_t tail_len = prod_end - prod_it;
+        size_t count_a = 0;
+        for ( ;  prod_it != prod_end;  ++prod_it) {
+            if (*prod_it == 'A') {
+                ++count_a;
+            }
+        }
+
+        if (count_a >= tail_len * 0.8) {
+            has_polya_tail = true;
+            tail_len -= count_a;
+        }
+        if (tail_len) {
+            has_3prime_unaligned = true;
+        }
+
+        /**
+        LOG_POST(Error << "  raw sequence:"
+                 << " has_mismatches=" << (has_mismatches ? "yes" : "no")
+                 << " has_gaps=" << (has_gaps ? "yes" : "no")
+                 << " has_polya_tail=" << (has_polya_tail ? "yes" : "no")
+                 << " has_5prime_unaligned=" << (has_5prime_unaligned ? "yes" : "no")
+                 << " has_3prime_unaligned=" << (has_3prime_unaligned ? "yes" : "no"));
+                 **/
+    }
+
+    string except_text;
+    if (has_5prime_unaligned  ||  has_3prime_unaligned  ||
+        has_gaps  ||  has_length_mismatch) {
+        except_text = "unclassified transcription discrepancy";
+    }
+    else if (has_mismatches) {
+        except_text = "mismatches in transcription";
+    }
+
+    /**
+    LOG_POST(Error << "    existing flag: "
+             << ((feat.IsSetExcept()  &&  feat.GetExcept()) ? "exception" : "no exception"));
+    LOG_POST(Error << "    existing text: "
+             << (feat.IsSetExcept_text() ? feat.GetExcept_text() : ""));
+             **/
+
+    if (except_text.empty()) {
+        /**
+        LOG_POST(Error << "    new flag:      no exception");
+        LOG_POST(Error << "    new text:      ");
+        **/
+
+        if ( !feat.IsSetExcept()  ||  !feat.GetExcept()) {
+            /// we simply make exception mark-up consistent
+            feat.ResetExcept_text();
+        }
+    } else {
+        /**
+        LOG_POST(Error << "    new flag:      exception");
+        LOG_POST(Error << "    new text:      " << except_text);
+        **/
+
+        /// corner case:
+        /// our exception may already be set
+        bool found = false;
+        if (feat.IsSetExcept_text()) {
+            list<string> toks;
+            NStr::Split(feat.GetExcept_text(), ",", toks);
+            NON_CONST_ITERATE (list<string>, it, toks) {
+                NStr::TruncateSpacesInPlace(*it);
+                if (*it == except_text) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( !found ) {
+                except_text += ", ";
+                except_text += feat.GetExcept_text();
+            }
+        }
+
+        feat.SetExcept(true);
+        if ( !found ) {
+            feat.SetExcept_text(except_text);
+        }
+    }
+}
+
+
+static void s_HandleCdsExceptions(CSeq_feat& feat,
+                                  CScope& scope,
+                                  const CSeq_align* align)
+{
+    if ( !feat.IsSetProduct() ) {
+        return;
+    }
+
+    ///
+    /// exceptions here are easy:
+    /// we compare the annotated product to the conceptual translation and
+    /// report problems
+    ///
+    bool has_stop          = false;
+    bool has_internal_stop = false;
+    bool has_mismatches    = false;
+    bool has_gap           = false;
+
+    string xlate;
+    CSeqTranslator::Translate(feat, scope, xlate);
+    if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') {
+        /// strip a terminal stop
+        xlate.resize(xlate.size() - 1);
+        has_stop = true;
+    } else {
+        has_stop = false;
+    }
+
+    string actual;
+    CSeqVector vec(feat.GetProduct(), scope,
+                   CBioseq_Handle::eCoding_Iupac);
+    vec.GetSeqData(0, vec.size(), actual);
+
+    ///
+    /// now, compare the two
+    /// we deliberately look for problems here rather than using a direct
+    /// string compare
+    /// NB: we could actually compare lengths first; a length difference imples
+    /// the unclassified translation discrepancy state, but we may expand these
+    /// states in the future, so it's better to be explicit about our data
+    /// recording first
+    ///
+
+    string::const_iterator it1     = actual.begin();
+    string::const_iterator it1_end = actual.end();
+    string::const_iterator it2     = xlate.begin();
+    string::const_iterator it2_end = xlate.end();
+    for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
+        if (*it1 != *it2) {
+            has_mismatches = true;
+        }
+        if (*it2 == '*') {
+            has_internal_stop = true;
+        }
+        if (*it2 == '-') {
+            has_gap = true;
+        }
+    }
+
+    string except_text;
+
+    if (actual.size() != xlate.size()  ||
+        has_internal_stop  ||  has_gap) {
+        except_text = "unclassified translation discrepancy";
+    }
+    else if (has_mismatches) {
+        except_text = "mismatches in translation";
+    }
+
+    /**
+    if ((feat.IsSetExcept()  &&  feat.GetExcept()) != !except_text.empty()) {
+        LOG_POST(Error << "    existing flag: "
+                 << ((feat.IsSetExcept()  &&  feat.GetExcept()) ? "exception" : "no exception"));
+        LOG_POST(Error << "    existing text: "
+                 << (feat.IsSetExcept_text() ? feat.GetExcept_text() : ""));
+        LOG_POST(Error << "    new flag:      "
+                 << ( !except_text.empty() ? "exception" : "no exception"));
+        LOG_POST(Error << "    new text:      " << except_text);
+
+        LOG_POST(Error << "    has_internal_stop="
+                 << (has_internal_stop ? "yes" : "no"));
+        LOG_POST(Error << "    has_stop="
+                 << (has_stop ? "yes" : "no"));
+        LOG_POST(Error << "    has_gap="
+                 << (has_gap ? "yes" : "no"));
+        LOG_POST(Error << "    has_mismatches="
+                 << (has_mismatches ? "yes" : "no"));
+        LOG_POST(Error << "    size_match="
+                 << ((actual.size() == xlate.size()) ? "yes" : "no"));
+        LOG_POST(Error << "    actual: " << actual);
+        LOG_POST(Error << "    xlate:  " << xlate);
+    }
+    **/
+
+    /// there are some exceptions we don't account for
+    /// we would like to set the exception state to whatever we compute above
+    /// on the other hand, an annotated exception such as ribosomal slippage or
+    /// rearrangement required for assembly trumps any computed values
+    /// scan to see if it is set to an exception state we can account for
+    if (except_text.empty()) {
+        if ( !feat.IsSetExcept()  ||  !feat.GetExcept()) {
+            /// we simply make exception mark-up consistent
+            feat.ResetExcept_text();
+        }
+    } else {
+        feat.SetExcept(true);
+
+        /// corner case:
+        /// our exception may already be set
+        bool found = false;
+        if (feat.IsSetExcept_text()) {
+            list<string> toks;
+            NStr::Split(feat.GetExcept_text(), ",", toks);
+            NON_CONST_ITERATE (list<string>, it, toks) {
+                NStr::TruncateSpacesInPlace(*it);
+                if (*it == except_text) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( !found ) {
+                except_text += ", ";
+                except_text += feat.GetExcept_text();
+            }
+        }
+
+        if ( !found ) {
+            feat.SetExcept_text(except_text);
+        }
+    }
+}
+
+
+void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
+                                      CScope& scope,
+                                      const CSeq_align* align)
+{
+    // Exceptions identified are:
+    //
+    //   - unclassified transcription discrepancy
+    //   - mismatches in transcription
+    //   - unclassified translation discrepancy
+    //   - mismatches in translation
+    switch (feat.GetData().Which()) {
+    case CSeqFeatData::e_Rna:
+        s_HandleRnaExceptions(feat, scope, align);
+        break;
+
+    case CSeqFeatData::e_Cdregion:
+        s_HandleCdsExceptions(feat, scope, align);
+        break;
+
+    default:
+        break;
+    }
+}
+
 
 
 END_NCBI_SCOPE

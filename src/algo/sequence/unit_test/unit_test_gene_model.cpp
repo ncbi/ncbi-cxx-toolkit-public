@@ -145,6 +145,17 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 BOOST_CHECK(f1.GetData().GetCdregion().IsSetCode_break() ==
                             f2.GetData().GetCdregion().IsSetCode_break());
             }
+
+            bool f1_except = f1.IsSetExcept()  &&  f1.GetExcept();
+            bool f2_except = f2.IsSetExcept()  &&  f2.GetExcept();
+
+            BOOST_CHECK_EQUAL(f1_except, f2_except);
+
+            string f1_except_text =
+                f1.IsSetExcept_text() ? f1.GetExcept_text() : kEmptyStr;
+            string f2_except_text =
+                f2.IsSetExcept_text() ? f2.GetExcept_text() : kEmptyStr;
+            BOOST_CHECK_EQUAL(f1_except_text, f2_except_text);
         }
     }
 

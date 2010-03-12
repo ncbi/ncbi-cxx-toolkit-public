@@ -36,9 +36,13 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/scope.hpp>
+
+#include <serial/iterator.hpp>
 
 #include <algo/sequence/gene_model.hpp>
 
@@ -67,6 +71,13 @@ void CGeneModelDemoApp::Init(void)
                             "File containing seq-annot for gene model",
                             CArgDescriptions::eOutputFile,
                             "-");
+    arg_desc->AddDefaultKey("ofmt", "OutputFormat",
+                            "Format for output",
+                            CArgDescriptions::eString,
+                            "seq-annot");
+    arg_desc->SetConstraint("ofmt",
+                            &(*new CArgAllow_Strings,
+                              "seq-annot", "seq-feat"));
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -76,21 +87,47 @@ int CGeneModelDemoApp::Run(void)
 {
     const CArgs& args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
-    CSeq_align align;
-    istr >> MSerial_AsnText >> align;
+    CNcbiOstream& ostr = args["o"].AsOutputFile();
+    string ofmt = args["ofmt"].AsString();
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
     CScope scope(*om);
     scope.AddDefaults();
 
-    CSeq_annot annot;
-    CBioseq_set seqs;
-    CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                         annot, seqs);
+    int counter = 0;
+    while (istr) {
+        CSeq_align align;
+        try {
+            istr >> MSerial_AsnText >> align;
+        }
+        catch (CEofException&) {
+            break;
+        }
 
-    CNcbiOstream& ostr = args["o"].AsOutputFile();
-    ostr << MSerial_AsnText << annot;
+        CSeq_annot annot;
+        CBioseq_set seqs;
+        CGeneModel::CreateGeneModelFromAlign(align, scope,
+                                             annot, seqs);
+
+        annot.AddName("Demo Gene Models");
+        annot.SetTitle("Demo Gene Models");
+
+        CTypeIterator<CSeq_feat> feat_it(annot);
+        for ( ;  feat_it;  ++feat_it) {
+            feat_it->SetId().SetLocal().SetId(++counter);
+        }
+
+        if (ofmt == "seq-annot") {
+            ostr << MSerial_AsnText << annot;
+        }
+        else if (ofmt == "seq-feat") {
+            ITERATE (CSeq_annot::TData::TFtable, it,
+                     annot.GetData().GetFtable()) {
+                ostr << MSerial_AsnText << **it;
+            }
+        }
+    }
 
     return 0;
 }

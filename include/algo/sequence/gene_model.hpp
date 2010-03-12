@@ -38,6 +38,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CScope;
+    class CSeq_feat;
     class CSeq_align;
     class CSeq_annot;
     class CBioseq_set;
@@ -69,6 +70,14 @@ public:
                                          objects::CSeq_annot& annot,
                                          objects::CBioseq_set& seqs,
                                          TGeneModelCreateFlags flags = fDefaults);
+
+
+    /// Correctly mark exceptions on a feature
+    ///
+    static void SetFeatureExceptions(objects::CSeq_feat& feat,
+                                     objects::CScope& scope,
+                                     const objects::CSeq_align* align = NULL);
+
 };
 
 
