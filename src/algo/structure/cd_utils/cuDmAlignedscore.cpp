@@ -170,7 +170,7 @@ double DM_AlignedScore::GetScore(CharPtr residuesRow1, CharPtr residuesRow2, int
         if (residuesRow1[i] == 0 || residuesRow2[i] == 0) {
             continue;
         }
-        pairwiseScore += ppScores[residuesRow1[i]][residuesRow2[i]];
+        pairwiseScore += ppScores[(int)residuesRow1[i]][(int)residuesRow2[i]];
     }
     return pairwiseScore;
 }
