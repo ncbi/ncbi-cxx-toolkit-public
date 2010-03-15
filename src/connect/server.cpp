@@ -58,7 +58,7 @@ void IServer_MessageHandler::OnRead(void)
         this->OnTimeout();
         return;
     case eIO_Closed:
-        this->OnCloseExt(IServer_ConnectionHandler::eClientClose);
+        this->OnClose(IServer_ConnectionHandler::eClientClose);
         return;
     default:
         // TODO: ??? OnError
@@ -301,10 +301,10 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
     } else if (eServIO_Open == event) {
         m_Handler->OnOpen();
     } else if (eServIO_OurClose == event) {
-        m_Handler->OnCloseExt(IServer_ConnectionHandler::eOurClose);
+        m_Handler->OnClose(IServer_ConnectionHandler::eOurClose);
         m_Open = false;
     } else if (eServIO_ClientClose == event) {
-        m_Handler->OnCloseExt(IServer_ConnectionHandler::eClientClose);
+        m_Handler->OnClose(IServer_ConnectionHandler::eClientClose);
         m_Open = false;
     } else {
         if (eServIO_Read & event)
