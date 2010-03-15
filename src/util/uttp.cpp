@@ -142,7 +142,7 @@ bool CUTTPWriter::SendControlSymbol(char symbol)
     _ASSERT(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
-    _ASSERT(symbol < '0' || symbol > '9' &&
+    _ASSERT((symbol < '0' || symbol > '9') &&
         "Ensure the control symbol is not a digit.");
 
     m_Buffer[m_OutputBufferSize] = symbol;
