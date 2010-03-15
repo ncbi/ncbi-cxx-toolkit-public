@@ -199,23 +199,23 @@ size_t UnicodeToUTF8( TUnicode theUnicode, char *theBuffer,
     else if (theUnicode < 0x800) {
         Length = 2;
         if ( Length > theBufLength ) return 0;
-        theBuffer[0] = char(0xC0 | theUnicode>>6);
-        theBuffer[1] = char(0x80 | theUnicode & 0x3F);
+        theBuffer[0] = char( 0xC0 | theUnicode>>6);
+        theBuffer[1] = char((0x80 | theUnicode) & 0x3F);
     }
     else if (theUnicode < 0x10000) {
         Length = 3;
         if ( Length > theBufLength ) return 0;
-        theBuffer[0] = char(0xE0 | theUnicode>>12);
-        theBuffer[1] = char(0x80 | theUnicode>>6 & 0x3F);
-        theBuffer[2] = char(0x80 | theUnicode & 0x3F);
+        theBuffer[0] = char( 0xE0 | theUnicode>>12);
+        theBuffer[1] = char((0x80 | theUnicode>>6) & 0x3F);
+        theBuffer[2] = char((0x80 | theUnicode) & 0x3F);
     }
     else if (theUnicode < 0x200000) {
         Length = 4;
         if ( Length > theBufLength ) return 0;
-        theBuffer[0] = char(0xF0 | theUnicode>>18);
-        theBuffer[1] = char(0x80 | theUnicode>>12 & 0x3F);
-        theBuffer[2] = char(0x80 | theUnicode>>6 & 0x3F);
-        theBuffer[3] = char(0x80 | theUnicode & 0x3F);
+        theBuffer[0] = char( 0xF0 | theUnicode>>18);
+        theBuffer[1] = char((0x80 | theUnicode>>12) & 0x3F);
+        theBuffer[2] = char((0x80 | theUnicode>>6) & 0x3F);
+        theBuffer[3] = char((0x80 | theUnicode) & 0x3F);
     }
     return Length;
 }
