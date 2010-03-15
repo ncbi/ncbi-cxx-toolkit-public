@@ -180,7 +180,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("list", "all possible errors and warnings");
 
   // file list for file processing
-  arg_desc->AddExtra(0, 100, "files to be processed",
+  arg_desc->AddExtra(0, 1000, "files to be processed",
                       CArgDescriptions::eInputFile);
   // Setup arg.descriptions for this application
   SetupArgDescriptions(arg_desc.release());
