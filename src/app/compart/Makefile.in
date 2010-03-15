@@ -1,9 +1,11 @@
 # $Id$
 
-# Meta-makefile (algo/align/util/demo/compart)
+# Meta-makefile (app/compart)
 #################################
 
 APP_PROJ = compart
+
+REQUIRES = objects
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
