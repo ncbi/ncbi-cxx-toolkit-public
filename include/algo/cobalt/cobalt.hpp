@@ -96,7 +96,7 @@ public:
     };
 
     /// Structure for reporting alignment progress
-    typedef struct SProgress {
+    struct SProgress {
         EAlignmentStage stage;
         void* user_data;
 
