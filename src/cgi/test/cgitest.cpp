@@ -709,8 +709,20 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
-        CCgiUserAgent::eSafari,         {412, -1, -1},
+        CCgiUserAgent::eSafari,         {  2,  0, -1},
         CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Mac
+    },
+    { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-fr) AppleWebKit/125.5.6 (KHTML, like Gecko) Safari/125.12",
+        CCgiUserAgent::eSafari,         {  1,  2, -1},
+        CCgiUserAgent::eEngine_KHTML,   {125,  5,  6},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Mac
+    },
+    { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; sv-se) AppleWebKit/85.7 (KHTML, like Gecko) Safari/85.5",
+        CCgiUserAgent::eSafari,         {  1,  0, -1},
+        CCgiUserAgent::eEngine_KHTML,   { 85,  7, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_Mac
     },
@@ -1119,7 +1131,6 @@ int CTestApplication::Run(void)
     TestCgi( GetArguments() );
     TestCgiResponse( GetArguments() );
     TestUserAgent();
-
     return 0;
 }
 

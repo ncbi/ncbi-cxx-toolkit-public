@@ -779,6 +779,15 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         }
     }
 
+    // Try to get engine version for KHTML-based browsers
+    search = " AppleWebKit/";
+    pos = m_UserAgent.find(search);
+    if (pos != NPOS) {
+        m_Engine = eEngine_KHTML;
+        pos += search.length();
+        s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+    }
+
     // Hack for some browsers (like Safari) that use Version/x.x.x rather than
     // Safari/x.x.x for real browser version (for Safari, numbers after browser
     // name represent a build version).
@@ -788,17 +797,33 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         if (pos != NPOS) {
             pos += search.length();
             s_ParseVersion(m_UserAgent, pos, &m_BrowserVersion);
+        } else {
+            // Safari (old version) -- try to get browser version
+            // depending on engine (WebKit) version (very approximately).
+            if ( m_Browser == eSafari  &&  m_Engine == eEngine_KHTML) { 
+                // See http://www.useragentstring.com/pages/Safari/
+                int rev = m_EngineVersion.GetMajor();
+                if (rev < 85 ) {
+                    m_BrowserVersion.SetVersion(-1,-1,-1);  // too early version
+                } else if (rev < 124 ) {
+                    m_BrowserVersion.SetVersion(1,0,-1);    // 1.0
+                } else if (rev < 312 ) {
+                    m_BrowserVersion.SetVersion(1,2,-1);    // 1.2
+                } else if (rev < 412 ) {
+                    m_BrowserVersion.SetVersion(1,3,-1);    // 1.3
+                } else if (rev < 420 ) {
+                    m_BrowserVersion.SetVersion(2,0,-1);    // 2.0.x
+                } else if (rev < 525 ) {
+                    m_BrowserVersion.SetVersion(3,0,-1);    // 3.0.x
+                } else if (rev < 528 ) {
+                    // We should never get here, because all Safari
+                    // newer that 3.x should have "Version/" tag.
+                    m_BrowserVersion.SetVersion(3,-1,-1);   // 3.x
+                }
+            }
         }
     }
 
-    // Try to get engine version for KHTML-based browsers
-    search = " AppleWebKit/";
-    pos = m_UserAgent.find(search);
-    if (pos != NPOS) {
-        m_Engine = eEngine_KHTML;
-        pos += search.length();
-        s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
-    }
 
     // Very crude algorithm to get platform type...
     // See also x_ParseToken() for specific platform types from the table.
