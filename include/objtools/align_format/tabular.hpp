@@ -248,6 +248,9 @@ protected:
     char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
     string m_QuerySeq;       ///< Aligned part of the query sequence
     string m_SubjectSeq;     ///< Aligned part of the subject sequence
+    int m_QueryStart;        ///< Starting offset in query
+    int m_QueryEnd;          ///< Ending offset in query
+    int m_QueryFrame;        ///< query frame
 
 private:
 
@@ -262,11 +265,8 @@ private:
     int m_NumGapOpens;       ///< Number of gap openings in this HSP
     int m_NumIdent;          ///< Number of identities in this HSP
     int m_NumPositives;      ///< Number of positives in this HSP
-    int m_QueryStart;        ///< Starting offset in query
-    int m_QueryEnd;          ///< Ending offset in query
     int m_SubjectStart;      ///< Starting offset in subject
     int m_SubjectEnd;        ///< Ending offset in subject 
-    int m_QueryFrame;        ///< query frame
     int m_SubjectFrame;      ///< subject frame
     /// Map of field enum values to field names.
     map<string, ETabularField> m_FieldMap; 

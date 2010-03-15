@@ -872,14 +872,16 @@ int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align,
 {
     int retval = 0;
     bool hasSeq = x_IsFieldRequested(eQuerySeq);
-    bool hasSeqId = x_IsFieldRequested(eQuerySeqId);
-    // We need the query and subject sequence to process domain info
+    bool hasQuerySeqId = x_IsFieldRequested(eQuerySeqId);
+    bool hasQueryStart = x_IsFieldRequested(eQueryStart);
     x_ResetIgFields();
     if (!hasSeq) x_AddFieldToShow(eQuerySeq);
-    if (!hasSeqId) x_AddFieldToShow(eQuerySeqId);
+    if (!hasQuerySeqId) x_AddFieldToShow(eQuerySeqId);
+    if (!hasQueryStart) x_AddFieldToShow(eQueryStart);
     retval = SetFields(align, scope, matrix);
     if (!hasSeq) x_DeleteFieldToShow(eQuerySeq);
-    if (!hasSeqId) x_DeleteFieldToShow(eQuerySeqId);
+    if (!hasQuerySeqId) x_DeleteFieldToShow(eQuerySeqId);
+    if (!hasQueryStart) x_DeleteFieldToShow(eQueryStart);
     return retval;
 };            
 
@@ -924,11 +926,11 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
 {
     int pos = 0;
     unsigned int i = 0;
-    while (pos < domain.start && i < m_QuerySeq.size()) {
+    while (pos < domain.start - m_QueryStart +1 && i < m_QuerySeq.size()) {
         if (m_QuerySeq[i] != '-') ++pos;
         ++i;
     }
-    while (pos < domain.end && i < m_QuerySeq.size()) {
+    while (pos < domain.end - m_QueryStart +1 && i < m_QuerySeq.size()) {
         if (m_QuerySeq[i] != '-') {
             ++pos;
             if (m_QuerySeq[i] == m_SubjectSeq[i]) {
@@ -953,14 +955,21 @@ void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
               << domain.start +1
               << m_FieldDelimiter
               << domain.end
-              << m_FieldDelimiter
-              << domain.length
+              << m_FieldDelimiter;
+    if (domain.length > 0) {
+        m_Ostream  << domain.length
               << m_FieldDelimiter
               << domain.num_match
               << m_FieldDelimiter
               << domain.num_mismatch
               << m_FieldDelimiter
               << domain.num_gap;
+    } else {
+        m_Ostream  << "NA" << m_FieldDelimiter
+              <<  "NA" << m_FieldDelimiter
+              <<  "NA" << m_FieldDelimiter
+              <<  "NA";
+    }
 };
 
 void CIgBlastTabularInfo::x_PrintIgGene(const SIgGene &gene,
@@ -974,21 +983,23 @@ void CIgBlastTabularInfo::x_PrintIgGene(const SIgGene &gene,
     int start = (eStyle == eLastFive) ? max(gene.end - 5, gene.start) : gene.start;
     int end = (eStyle == eFirstFive) ? min(gene.start + 5, gene.end) : gene.end;
 
-    // The query sequence may contain gaps and must be re-positioned
+    // the query sequence may contain gaps and must be re-positioned
     int pos = 0;
     unsigned int i = 0;
-    while (pos < start && i < m_QuerySeq.size()) {
+    bool hasOutput = false;
+    while (pos < start - m_QueryStart +1 && i < m_QuerySeq.size()) {
         if (m_QuerySeq[i] != '-') ++pos;
         ++i;
     }
-    while (pos < end && i < m_QuerySeq.size()) {
+    while (pos < end - m_QueryStart +1 && i < m_QuerySeq.size()) {
         if (m_QuerySeq[i] != '-') {
             m_Ostream << m_QuerySeq[i];
             ++pos;
+            hasOutput = true;
         }
         ++i;
     }
-    m_Ostream << m_FieldDelimiter;
+    if (! hasOutput) m_Ostream << "NA";
 };
 
 END_SCOPE(align_format)
