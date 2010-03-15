@@ -149,13 +149,14 @@ const string& CCmdLineArgList::GetDelimiterString()
 
 void CBitVectorEncoder::AppendInteger(unsigned number)
 {
-    if (m_RangeFrom <= m_RangeTo)
+    if (m_RangeFrom <= m_RangeTo) {
         if (m_RangeTo + 1 != number)
             FlushRange();
         else {
             ++m_RangeTo;
             return;
         }
+    }
 
     m_RangeTo = m_RangeFrom = number;
 }
@@ -163,13 +164,14 @@ void CBitVectorEncoder::AppendInteger(unsigned number)
 void CBitVectorEncoder::AppendRange(unsigned from, unsigned to)
 {
     if (from <= to) {
-        if (m_RangeFrom <= m_RangeTo)
+        if (m_RangeFrom <= m_RangeTo) {
             if (m_RangeTo + 1 != from)
                 FlushRange();
             else {
                 m_RangeTo = to;
                 return;
             }
+        }
 
         m_RangeFrom = from;
         m_RangeTo = to;

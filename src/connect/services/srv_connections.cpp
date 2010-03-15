@@ -364,12 +364,13 @@ void SNetServerImpl::RegisterConnectionEvent(bool failure)
 
         if (m_Service->m_ReconnectionFailureThresholdNumerator > 0) {
             if (m_ConnectionFailureRegister[
-                    m_ConnectionFailureRegisterIndex] != failure)
+                    m_ConnectionFailureRegisterIndex] != failure) {
                 if ((m_ConnectionFailureRegister[
                         m_ConnectionFailureRegisterIndex] = failure) == false)
                     --m_ConnectionFailureCounter;
                 else
                     ++m_ConnectionFailureCounter;
+            }
 
             if (++m_ConnectionFailureRegisterIndex >=
                     m_Service->m_ReconnectionFailureThresholdDenominator)
