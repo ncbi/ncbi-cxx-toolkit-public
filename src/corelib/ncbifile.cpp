@@ -2641,7 +2641,6 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     int in  = -1;
     int out = -1;
     int x_errno = 0;
-    mode_t u = umask(0);
     
     if ((in = open(src, O_RDONLY)) == -1) {
         x_errno = errno;
@@ -2655,11 +2654,18 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             // The permissions for the created file are (mode & ~umask).
             if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, perm)) == -1) {
                 x_errno = errno;
+                s_CloseFile(in);
+                errno = x_errno;
+                return 0;
             }
             // Use on-stack buffer for any files smaller than 3x of buffer size.
             // This prevent unnecessary memory allocations.
             if (st.st_size <= sizeof(x_buf)*3) {
                 buf_size = sizeof(x_buf);
+            } else
+            // Use allocated buffer no more than size of copied file.
+            if (st.st_size <= buf_size) {
+                buf_size = st.st_size;
             }
         }
     }
@@ -2711,7 +2717,6 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     if (buf != x_buf) {
         delete [] buf;
     }
-    umask(u);
     errno = x_errno;
     return (x_errno == 0);
 }
