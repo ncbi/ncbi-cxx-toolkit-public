@@ -1133,6 +1133,21 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteStr("month = cursor.fetchone()[0]");
         ExecuteStr("if not isinstance(month, str) : "
             "raise StandardError('Invalid data type: ') \n");
+        // Test checking that nulls are bound to output parameters as values
+        // with actual type with which that parameter is declared.
+        // Disabled because it needs procedure to be created separately.
+        // Procedure should be as following:
+        //   CREATE PROCEDURE testing (@p1 int, @p2 int OUTPUT) AS
+        //   begin
+        //     set @p1 = 123
+        //     set @p2 = 123
+        //   end
+        //ExecuteStr("out = cursor.callproc('testing', [None, None])");
+        //ExecuteStr("print out");
+        //ExecuteStr("if isinstance(out[1], str) : "
+        //    "raise StandardError('Invalid data type: ') \n");
+        //ExecuteStr("if not isinstance(out[0], None.__class__) : "
+        //    "raise StandardError('Invalid data type: ') \n");
     }
 }
 

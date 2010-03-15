@@ -450,7 +450,9 @@ private:
     void SetupParameters(const pythonpp::CSequence& seq, CStmtHelper& stmt);
     // Return *true* if there are output parameters.
     bool SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt);
-    bool SetupParameters(const pythonpp::CSequence& dict, CCallableStmtHelper& stmt);
+    void SetupParameters(const pythonpp::CSequence& dict,
+                         CCallableStmtHelper&       stmt,
+                         vector<size_t>*            out_params);
 
     void ExecuteCurrStatement(void);
 

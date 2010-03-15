@@ -2094,7 +2094,13 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value, bool& o
             m_Stmt->SetParam( value, param_name );
             output_param = false;
         } else {
-            m_Stmt->SetOutputParam( value, param_name );
+            if (value.IsNull()) {
+                CVariant temp_val(m_Stmt->GetParamsMetaData().GetType(name));
+                m_Stmt->SetOutputParam( temp_val, param_name );
+            }
+            else {
+                m_Stmt->SetOutputParam( value, param_name );
+            }
             output_param = true;
         }
     }
@@ -2117,7 +2123,13 @@ CCallableStmtHelper::SetParam(size_t index, const CVariant& value, bool& output_
             m_Stmt->SetParam( value, ind );
             output_param = false;
         } else {
-            m_Stmt->SetOutputParam( value, ind );
+            if (value.IsNull()) {
+                CVariant temp_val(m_Stmt->GetParamsMetaData().GetType(ind));
+                m_Stmt->SetOutputParam( temp_val, ind );
+            }
+            else {
+                m_Stmt->SetOutputParam( value, ind );
+            }
             output_param = true;
         }
     }
@@ -2436,7 +2448,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
         m_RowsNum = -1;                     // As required by the specification ...
         m_AllDataFetched = false;
         m_AllSetsFetched = false;
-        bool has_out_params = false;
+        vector<size_t> out_params;
 
         if ( args_size == 0 ) {
             throw CProgrammingError("A stored procedure name is expected as a parameter");
@@ -2457,13 +2469,15 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 pythonpp::CObject obj( args[1] );
 
                 if ( pythonpp::CDict::HasSameType(obj) ) {
-                    const pythonpp::CDict dict = obj;
-                    has_out_params = SetupParameters(dict, m_CallableStmtHelper);
+                    const pythonpp::CDict dict(obj);
+                    SetupParameters(dict, m_CallableStmtHelper);
+                    // Put any number as below only size is used in this case
+                    out_params.push_back(0);
                 } else  if ( pythonpp::CList::HasSameType(obj)
                              ||  pythonpp::CTuple::HasSameType(obj) )
                 {
-                    const pythonpp::CSequence seq = obj;
-                    has_out_params = SetupParameters(seq, m_CallableStmtHelper);
+                    const pythonpp::CSequence seq(obj);
+                    SetupParameters(seq, m_CallableStmtHelper, &out_params);
                 } else {
                     throw CNotSupportedError("Inappropriate type for parameter binding");
                 }
@@ -2471,10 +2485,10 @@ CCursor::callproc(const pythonpp::CTuple& args)
         }
 
         m_InfoMessages.Clear();
-        m_CallableStmtHelper.Execute(has_out_params);
+        m_CallableStmtHelper.Execute(out_params.size() != 0);
         m_RowsNum = m_CallableStmtHelper.GetRowCount();
 
-        if ( args_size > 1 && has_out_params) {
+        if (args_size > 1  &&  out_params.size() != 0) {
             // If we have input parameters ...
             pythonpp::CObject output_args( args[1] );
 
@@ -2493,13 +2507,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
 
                             if ( pythonpp::CDict::HasSameType(output_args) ) {
                                 // Dictionary ...
-                                pythonpp::CDict dict = output_args;
+                                pythonpp::CDict dict(output_args);
                                 const string param_name = md.GetName(i + 1);
 
                                 dict.SetItem(param_name, ConvertCVariant2PCObject(value));
                             } else  if ( pythonpp::CList::HasSameType(output_args) ) {
-                                pythonpp::CList lst = output_args;
-                                lst.SetItem(i, ConvertCVariant2PCObject(value));
+                                pythonpp::CList lst(output_args);
+                                lst.SetItem(out_params[i], ConvertCVariant2PCObject(value));
                             } else {
                                 throw CNotSupportedError("Inappropriate type for parameter binding");
                             }
@@ -2676,22 +2690,23 @@ CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
     return result;
 }
 
-bool
-CCursor::SetupParameters(const pythonpp::CSequence& seq, CCallableStmtHelper& stmt)
+void
+CCursor::SetupParameters(const pythonpp::CSequence& seq,
+                         CCallableStmtHelper&       stmt,
+                         vector<size_t>*            out_params)
 {
     // Iterate over a sequence.
-    bool result = false;
-    bool output_param = false;
     size_t sz = seq.size();
 
     for (size_t i = 0; i < sz; ++i) {
         // Refer to borrowed references in key and value.
         const pythonpp::CObject value_obj(seq.GetItem(i));
 
+        bool output_param = false;
         stmt.SetParam(i + 1, GetCVariant(value_obj), output_param);
-        result |= output_param;
+        if (output_param)
+            out_params->push_back(i);
     }
-    return result;
 }
 
 CVariant
