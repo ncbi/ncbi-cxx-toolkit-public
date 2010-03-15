@@ -1106,7 +1106,9 @@ SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, TSeqPos length,
     TRanges              ranges;
 
     while (p2 < src_end) {
-        for (p1 = p2;  p1 < src_end  &&  not_ambig[*p1];  ++p1)
+        for (p1 = p2;
+             p1 < src_end  &&  not_ambig[static_cast<unsigned char>(*p1)];
+             ++p1)
             ;
         if (p1 == src_end) {
             break; // no further ambiguities
@@ -1117,7 +1119,9 @@ SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, TSeqPos length,
                 break;
             }
         }
-        for (p2 = p1 + 1;  p2 < src_end  &&  !not_ambig[*p2];  ++p2)
+        for (p2 = p1 + 1;
+             p2 < src_end  &&  !not_ambig[static_cast<unsigned char>(*p2)];
+             ++p2)
             ;
         // incorporate small tails
         // o + k/2 + x/2 > 2o + k/2 + x/4 => x > 4o
