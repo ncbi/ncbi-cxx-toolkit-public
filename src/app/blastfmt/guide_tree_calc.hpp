@@ -331,8 +331,7 @@ protected:
     bool x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet);
 
     /// Initialize tree freatures
-    /// @param alnvec Alignment vector [in]
-    void x_InitTreeFeatures(const CAlnVec& alnvec);
+    void x_InitTreeFeatures(void);
 
 
     /// Add feature descriptor to tree

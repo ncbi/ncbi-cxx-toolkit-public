@@ -53,24 +53,14 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-
-//static const int    s_kLabelId = 0;
-//static const int    s_kSeqIdId = 2;
-//static const int    s_kOrganismId = 3;
-//static const int    s_kTitleId = 4;
-//static const int    s_kAccessionNbr = 5;
-//static const int    s_kBlastName = 6;
-//static const int    s_kAlignIndexId = 7;
-//static const int    s_kQueryNodeColorId = 8;
-//static const int    s_kQueryLabelColorId = 9;
-//static const int    s_kQueryLabelBgColorId = 10;
-//static const int    s_kQueryLabelTagColorId = 11;
-static const int    s_kTreeSimplificationTagId = 12;
+// query node colors
 static const string s_kQueryNodeColor = "255 0 0";
-static const string s_kQueryLabelColor = "176 0 0";
 static const string s_kQueryNodeBgColor = "255 255 0";
 
+// tree leaf label for unknown taxonomy
 static const string s_kUnknown = "unknown";
+
+// initial value for collapsed subtree feature
 static const string s_kSubtreeDisplayed = "0";
 
 
@@ -465,8 +455,6 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
     }
 
     m_TreeContainer = MakeBioTreeContainer(ptree);
-
-    x_InitTreeFeatures(*m_AlignDataSource);
 }
 
 
@@ -495,6 +483,8 @@ bool CGuideTreeCalc::CalcBioTree(void)
         m_Messages.push_back("Sequence dissimilarity exceeds maximum"
                              " divergence.");
     }
+
+    x_InitTreeFeatures();
 
     return valid;
 }
@@ -551,6 +541,8 @@ void CGuideTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
     m_AlignDataSource->SetEndChar('-');
 }
 
+// Generate Blast Name-based colors for tree leaves
+// TO DO: This needs to be redesigned
 #define MAX_NODES_TO_COLOR 24
 static string s_GetBlastNameColor(
                      CGuideTreeCalc::TBlastNameColorMap& blast_name_color_map,
@@ -558,7 +550,6 @@ static string s_GetBlastNameColor(
 {
     string color = "";
 
-    //number of blast taxgroups ???
     //This should be rewritten in more elegant way
     string colors[MAX_NODES_TO_COLOR] 
                    = {"0 0 255", "0 255 0", "191 159 0", "30 144 255",
@@ -619,12 +610,12 @@ static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
     return id_string;
 }
 
-void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
+void CGuideTreeCalc::x_InitTreeFeatures(void)
 {
     _ASSERT(m_TreeContainer.NotEmpty());
     _ASSERT(m_Scope.NotEmpty());
 
-    InitTreeFeatures(*m_TreeContainer, alnvec.GetDenseg().GetIds(),
+    InitTreeFeatures(*m_TreeContainer, m_AlignDataSource->GetDenseg().GetIds(),
                      *m_Scope, m_LabelType, m_MarkQueryNode,
                      m_BlastNameColorMap, m_QueryNodeId);
 }
@@ -737,7 +728,7 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eLabelColorId, CGuideTree::kLabelColorTag, btc);
     x_AddFeatureDesc(eLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
     x_AddFeatureDesc(eLabelTagColorId, CGuideTree::kLabelTagColor, btc);
-    x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
+    x_AddFeatureDesc(eTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
 
     
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
@@ -815,7 +806,7 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
                     break;
                 }
             }
-            x_AddFeature(s_kTreeSimplificationTagId, s_kSubtreeDisplayed, node);
+            x_AddFeature(eTreeSimplificationTagId, s_kSubtreeDisplayed, node);
         }
     }      
 }
