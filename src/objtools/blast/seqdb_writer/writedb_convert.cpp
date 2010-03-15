@@ -37,6 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <util/random_gen.hpp>
 #include "writedb_general.hpp"
 #include "writedb_convert.hpp"
 #include <iostream>
@@ -376,12 +377,12 @@ private:
         // process it in fastest way, especially because it's very easy.
         
         if (value == 0xF) {
-            return rand() & 0x3;
+            return m_Random.GetRand() & 0x3;
         }
         
         if (value == 0) {
             cerr << "Error: '0' ambiguity code found, changing to 15." << endl;
-            return rand() & 0x3;
+            return m_Random.GetRand() & 0x3;
         }
         
         int bitcount = ((value & 1) +
@@ -393,7 +394,7 @@ private:
         _ASSERT(bitcount >= 2);
         _ASSERT(bitcount <= 3);
         
-        int pick = rand() % bitcount;
+        int pick = m_Random.GetRand() % bitcount;
         
         for(int i = 0; i < 4; i++) {
             // skip 0 bits in input.
@@ -423,6 +424,9 @@ private:
     
     /// Ambiguous regions for the sequence.
     vector<CAmbiguousRegion> m_Regions;
+
+    /// Random number generator
+    CRandom m_Random;
 };
 
 /// Builds a table from NA4 to NA2 (with ambiguities marked as 0xFF.)
