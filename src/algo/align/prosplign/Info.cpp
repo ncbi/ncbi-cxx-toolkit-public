@@ -1503,12 +1503,12 @@ void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope
             }
         }
     }
-    seq_align.SetNamedScore("N of matches", ident);
-    seq_align.SetNamedScore("N of positives", pos);
-    seq_align.SetNamedScore("N of negatives", neg);
-    seq_align.SetNamedScore("total gap length in protein", pgap);
-    seq_align.SetNamedScore("total gap length in DNA", ngap);
-    seq_align.SetNamedScore("alignment length", len);
+    seq_align.SetNamedScore("num_ident", ident);
+    seq_align.SetNamedScore("num_positives", pos);
+    seq_align.SetNamedScore("num_negatives", neg);
+    seq_align.SetNamedScore("product_gap_length", pgap);
+    seq_align.SetNamedScore("genomic_gap_length", ngap);
+    seq_align.SetNamedScore("align_length", len);
 }
 
 void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list<CNPiece>& good_parts)
