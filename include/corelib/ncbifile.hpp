@@ -480,7 +480,9 @@ public:
     ///   Flags specifying how to copy the entry.
     /// @param buf_size
     ///   Buffer size to use while copying the file contents.
-    ///   Zero value means using default buffer size.
+    ///   Zero value means using default buffer size. This parameter
+    ///   have advisory status and can be overrided, depends from OS
+    ///   and size of copied file.
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
     /// @sa

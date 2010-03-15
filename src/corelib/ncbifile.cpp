@@ -2613,33 +2613,61 @@ Int8 CFile::GetLength(void) const
 
 #if !defined(NCBI_OS_MSWIN)
 
+// Close file handle
+static int s_CloseFile(int fd)
+{
+    int status = 0;
+    do {
+        status = close(fd);
+        if ( status < 0 ) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return errno;
+        }
+    } while (status != 0);
+    // Success
+    return 0; 
+}
+
 // Auxiliary function to copy a file
 static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
     // Default buffer size
     const size_t kDefaultBufSize = 64*1024;
-    if ( buf_size == 0 ) {
-        buf_size = kDefaultBufSize;
-    }
-    // Use buffer on stack if specified "buf_size" is small.
+    // Use buffer on stack if specified "buf_size" or size of copied file is small.
     char  x_buf[4096];
-    char* buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
-
+    
     int in  = -1;
     int out = -1;
     int x_errno = 0;
+    mode_t u = umask(0);
     
-     mode_t perm = CDirEntry::MakeModeT(
-        CDirEntry::fRead | CDirEntry::fWrite /* user */,
-        CDirEntry::fRead | CDirEntry::fWrite /* group */,
-        0, 0 /* other & special */);
-
     if ((in = open(src, O_RDONLY)) == -1) {
         x_errno = errno;
-    } else
-    if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, perm)) == -1) {
-        x_errno = errno;
+    } 
+    if (in != -1) {
+        struct stat st;
+        if (fstat(in, &st) != 0) {
+            x_errno = errno;
+        } else {
+            mode_t perm = st.st_mode & 0777;
+            // The permissions for the created file are (mode & ~umask).
+            if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, perm)) == -1) {
+                x_errno = errno;
+            }
+            // Use on-stack buffer for any files smaller than 3x of buffer size.
+            // This prevent unnecessary memory allocations.
+            if (st.st_size <= sizeof(x_buf)*3) {
+                buf_size = sizeof(x_buf);
+            }
+        }
     }
+    if ( buf_size == 0 ) {
+        buf_size = kDefaultBufSize;
+    }
+    char* buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
+    
     while (!x_errno) {
         ssize_t n_read = read(in, buf, buf_size);
         if (n_read == 0) {
@@ -2671,11 +2699,19 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         }
         while (n_read);
     }
-    close(in);
-    close(out);
+    if (in !=  -1) {
+        s_CloseFile(in);
+    }
+    if (out !=  -1) {
+        int err = s_CloseFile(out);
+        if (x_errno == 0) {
+            x_errno = err;
+        }
+    }
     if (buf != x_buf) {
         delete [] buf;
     }
+    umask(u);
     errno = x_errno;
     return (x_errno == 0);
 }
@@ -2774,10 +2810,12 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                           dst.GetPath().c_str(), eFile, flags) ) {
             return false;
         }
-    } else {
-        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
-            return false;
-        }
+// #  This code don't need anymore.
+// #  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
+//    } else {
+//        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+//            return false;
+//        }
     }
     return true;
 }
