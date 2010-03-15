@@ -134,8 +134,6 @@ public:
         const CGff3Record&,
         CRef< CSeq_annot > );
                             
-    CErrorContainerLenient m_ErrorsPrivate;
-
     bool x_FeatureSetId(
         const CGff3Record&,
         CRef< CSeq_feat > );
@@ -156,6 +154,31 @@ public:
         const CGff3Record&,
         CRef< CSeq_feat > );
     
+    bool x_FeatureSetDataGene(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetDataMRNA(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetDataCDS(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetDataExon(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetDataMiscFeature(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    CErrorContainerLenient m_ErrorsPrivate;
+
+    static string GenbankKey(
+        CSeqFeatData::ESubtype );
+
     //
     //  helpers:
     //

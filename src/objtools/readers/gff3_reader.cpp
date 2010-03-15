@@ -83,6 +83,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
+#include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -95,30 +96,6 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-//  ----------------------------------------------------------------------------
-string s_MapSofaToGenbankType(
-    const string& strSofaType )
-//  ----------------------------------------------------------------------------
-{
-    typedef pair< string, string > MapEntry;
-    static const MapEntry aSofaToGenbankTypes[] = {
-        MapEntry( "CDS", "CDS" ),
-        MapEntry( "exon", "exon" ),
-        MapEntry( "gene", "gene" ),
-        MapEntry( "mRNA", "mRNA" ),
-    };
-    typedef CStaticArrayMap < string, string> TSofaToGenbankTypes;
-    DEFINE_STATIC_ARRAY_MAP(
-        TSofaToGenbankTypes, smSofaToGenbankTypes, aSofaToGenbankTypes);
-    
-    TSofaToGenbankTypes::const_iterator cit = smSofaToGenbankTypes.find(
-        strSofaType );
-    if ( cit == smSofaToGenbankTypes.end() ) {
-        return "misc_feature";
-    }
-    return cit->second;
-}
 
 //  ----------------------------------------------------------------------------
 bool s_GetAnnotId(
@@ -195,8 +172,6 @@ CGff3Reader::ReadSeqAnnotsNew(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-//    CRef< CSeq_annot > annot( new CSeq_annot );
-
     string line;
     int linecount = 0;
 
@@ -749,13 +724,85 @@ bool CGff3Reader::x_FeatureSetData(
     //  Do something with the phase information --- but only for CDS features!
     //
 
-    string strGenbankType = s_MapSofaToGenbankType( record.Type() );
-    
+    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(
+        record.Type() );
+
+    switch( iGenbankType ) {
+    default:
+        return x_FeatureSetDataMiscFeature( record, pFeature );
+
+    case CSeqFeatData::eSubtype_cdregion:
+        return x_FeatureSetDataCDS( record, pFeature );
+    case CSeqFeatData::eSubtype_exon:
+        return x_FeatureSetDataExon( record, pFeature );
+    case CSeqFeatData::eSubtype_gene:
+        return x_FeatureSetDataGene( record, pFeature );
+    case CSeqFeatData::eSubtype_mRNA:
+        return x_FeatureSetDataMRNA( record, pFeature );
+    }    
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetDataGene(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CGene_ref& geneRef = pFeature->SetData().SetGene();  
+ 
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetDataMRNA(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRNA_ref& rnaRef = pFeature->SetData().SetRna();
+    rnaRef.SetType( CRNA_ref::eType_mRNA );
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetDataCDS(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CCdregion& cdr = pFeature->SetData().SetCdregion();
+    if ( record.CanGetPhase() ) {
+        cdr.SetFrame( record.Phase() );  
+    }  
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetDataExon(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
     CSeqFeatData& data = pFeature->SetData();
-    data.SetImp().SetKey( strGenbankType );
+    data.SetImp().SetKey( "exon" );
     
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetDataMiscFeature(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData& data = pFeature->SetData();
+    data.SetImp().SetKey( "misc_feature" );
+    
+    return true;
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE
