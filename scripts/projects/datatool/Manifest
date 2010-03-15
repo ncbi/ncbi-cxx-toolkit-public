@@ -34,10 +34,10 @@ FreeBSD32  : plain  : GCC.sh           --without-debug --without-mt --with-stati
 SunOSx86   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-Win32      : plain  : msvc800_prj  static  32  ReleaseDLL
+Win32      : plain  : msvc800_prj  static  32  ReleaseMT
 
-XCode      : plain  : Xcode.sh 30
+XCode      : plain  : Xcode.sh 30 --with-universal
 

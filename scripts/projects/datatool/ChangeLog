@@ -7,3 +7,13 @@ Added possibility to override command line arguments in a DEF file.
 Added generation and skipping of 'AUTOMATIC TAGS' TagDefault in ASN specifications
 Added support of long type (BigInt) attributes in Schema
 Fixed several bugs in Schema parsing, and code generation.
+
+March 15, 2010
+version 2.0.0
+Added WSDL lexer, parser and client code generation.
+Corrected documentation tag parsing.
+Corrected code generation for Schema enumeration.
+Added option to generate sample DEF file.
+
+
+
