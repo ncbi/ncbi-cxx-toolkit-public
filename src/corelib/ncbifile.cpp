@@ -2635,46 +2635,48 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
     // Default buffer size
     const size_t kDefaultBufSize = 64*1024;
-    // Use buffer on stack if specified "buf_size" or size of copied file is small.
-    char  x_buf[4096];
     
-    int in  = -1;
-    int out = -1;
-    int x_errno = 0;
+    int in;
+    int out;
+    int x_errno;
     
     if ((in = open(src, O_RDONLY)) == -1) {
+        return false;
+    }
+
+    struct stat st;
+    if (fstat(in, &st) != 0  ||
+        (out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, st.st_mode & 0777))
+        == -1) {
         x_errno = errno;
-    } 
-    if (in != -1) {
-        struct stat st;
-        if (fstat(in, &st) != 0) {
-            x_errno = errno;
-        } else {
-            mode_t perm = st.st_mode & 0777;
-            // The permissions for the created file are (mode & ~umask).
-            if ((out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, perm)) == -1) {
-                x_errno = errno;
-                s_CloseFile(in);
-                errno = x_errno;
-                return 0;
-            }
-            // Use on-stack buffer for any files smaller than 3x of buffer size.
-            // This prevent unnecessary memory allocations.
-            if (st.st_size <= sizeof(x_buf)*3) {
-                buf_size = sizeof(x_buf);
-            } else
-            // Use allocated buffer no more than size of copied file.
-            if (st.st_size <= buf_size) {
-                buf_size = st.st_size;
-            }
+        s_CloseFile(in);
+        errno = x_errno;
+        return false;
+    }
+
+    char* buf;
+    // To prevent unnecessary memory (re-)allocations,
+    // use the on-stack buffer if either the specified
+    // "buf_size" or the size of the copied file is small.
+    char  x_buf[4096];
+
+    if (st.st_size <= 3 * sizeof(x_buf)) {
+        // Use on-stack buffer for any files smaller than 3x of buffer size.
+        buf_size = sizeof(x_buf);
+        buf = x_buf;
+    } else {
+        if (buf_size == 0) {
+            buf_size = kDefaultBufSize;
         }
+        // Use allocated buffer no bigger than the size of the file to copy.
+        if (buf_size > st.st_size) {
+            buf_size = st.st_size;
+        }
+        buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
     }
-    if ( buf_size == 0 ) {
-        buf_size = kDefaultBufSize;
-    }
-    char* buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
-    
-    while (!x_errno) {
+
+    x_errno = 0;
+    do {
         ssize_t n_read = read(in, buf, buf_size);
         if (n_read == 0) {
             break;
@@ -2704,15 +2706,12 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             ptr    += n_written;
         }
         while (n_read);
-    }
-    if (in !=  -1) {
-        s_CloseFile(in);
-    }
-    if (out !=  -1) {
-        int err = s_CloseFile(out);
-        if (x_errno == 0) {
-            x_errno = err;
-        }
+    } while (!x_errno);
+
+    s_CloseFile(in);
+    int err = s_CloseFile(out);
+    if (x_errno == 0) {
+        x_errno = err;
     }
     if (buf != x_buf) {
         delete [] buf;
