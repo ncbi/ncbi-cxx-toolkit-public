@@ -553,11 +553,7 @@ public:
     virtual void OnCloseExt(EClosePeer peer);
     virtual void OnTimeout(void);
     virtual void OnTimer(void);
-    virtual void OnOverflow(void);
-    // To avoid warning
-    virtual void OnOverflow(EOverflowReason) {
-        OnOverflow();
-    }
+    virtual void OnOverflow(EOverflowReason);
 
 private:
     typedef CObjPoolGuard<CNCMsgHandler_Factory::THandlerPool>  THandlerGuard;

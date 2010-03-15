@@ -246,15 +246,10 @@ public:
     virtual void OnTimer(void) { }
 
     /// Runs when there are insufficient resources to queue a
-    /// connection, prior to closing it.
-    // See comment for CAcceptRequest::Process and CServer::CreateRequest
-    virtual void OnOverflow(void) { }
-
-    /// More informative version of former OnOverflow, has a reason why the
+    /// connection, prior to closing it. Provides a reason why the
     /// connection is being close, which can be reported back to the client.
-    virtual void OnOverflow(EOverflowReason) {
-        OnOverflow();
-    }
+    // See comment for CAcceptRequest::Process and CServer::CreateRequest
+    virtual void OnOverflow(EOverflowReason) { }
 
     /// Get underlying socket
     CSocket& GetSocket(void) { return *m_Socket; }

@@ -1492,7 +1492,7 @@ CNCMsgHandler_Proxy::OnTimer(void)
 }
 
 void
-CNCMsgHandler_Proxy::OnOverflow(void)
+CNCMsgHandler_Proxy::OnOverflow(EOverflowReason)
 {
     m_Handler->OnOverflow();
 }
