@@ -832,13 +832,26 @@ void CMSPeak::CullPrecursor(CMZI *Temp,
             // 2. exclude all masses from (+2 parent mass + 3) to (+2 parent mass - 30)
             // 3. exclude all masses from (+3 parent mass + 3) to (+3 parent mass - 20)
             // 4. exclude all masses from (+4 parent mass + 3) to (+4 parent mass - 3)
-            if(Temp[iMZI].GetMZ() > Precursor - 60*tol) continue;
+            /*if(Temp[iMZI].GetMZ() > Precursor - 60*tol) continue;
             if(Temp[iMZI].GetMZ() > Precursor/2 - 30*tol && 
                Temp[iMZI].GetMZ() < Precursor/2 + 3*tol) continue;
             if(Temp[iMZI].GetMZ() > Precursor/3 - 20*tol && 
                Temp[iMZI].GetMZ() < Precursor/3 + 3*tol) continue;
             if(Temp[iMZI].GetMZ() > Precursor/4 - 3*tol && 
-               Temp[iMZI].GetMZ() < Precursor/4 + 3*tol) continue;
+               Temp[iMZI].GetMZ() < Precursor/4 + 3*tol) continue;*/
+	       //Precursor Filter Updated
+	       if(Temp[iMZI].GetMZ() > Precursor + MSSCALE2INT(1)  - MSSCALE2INT(60)) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/2  + MSSCALE2INT(1) - MSSCALE2INT(60)/2 -tol && 
+                  Temp[iMZI].GetMZ() < Precursor/2 + MSSCALE2INT(1) + tol + Precursor/500/2 ) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/3 + MSSCALE2INT(1) -  MSSCALE2INT(18)/3 -tol && 
+                   Temp[iMZI].GetMZ() <  Precursor/3 + MSSCALE2INT(1) + tol + Precursor/500/3 && Charge>=3) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/4 + MSSCALE2INT(1) - MSSCALE2INT(18)/4 -tol &&
+                   Temp[iMZI].GetMZ() <  Precursor/4 + MSSCALE2INT(1) + tol + Precursor/500/4 && Charge>=4) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/5 + MSSCALE2INT(1) - MSSCALE2INT(18)/5 -tol &&
+                   Temp[iMZI].GetMZ() <  Precursor/5 + MSSCALE2INT(1) + tol  + Precursor/500/5 && Charge>=5) continue;
+                 if(Temp[iMZI].GetMZ() > Precursor/6 + MSSCALE2INT(1) - MSSCALE2INT(18)/6 -tol &&
+                   Temp[iMZI].GetMZ() < Precursor/6 + MSSCALE2INT(1) + tol + Precursor/500/6 && Charge>=6) continue;
+	       //
         }
 
         Temp[iTemp] = Temp[iMZI];
