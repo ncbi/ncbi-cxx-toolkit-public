@@ -167,8 +167,8 @@ CThreadPool_Controller_PID::GetSafeSleepTime(void) const
 
     unsigned int threads_cnt = pool->GetThreadsCount();
     if (last_err == 0
-        ||  last_err > 0  &&  threads_cnt == GetMaxThreads()
-        ||  last_err < 0  &&  threads_cnt == GetMinThreads())
+        ||  (last_err > 0  &&  threads_cnt == GetMaxThreads())
+        ||  (last_err < 0  &&  threads_cnt == GetMinThreads()))
     {
         return CThreadPool_Controller::GetSafeSleepTime();
     }

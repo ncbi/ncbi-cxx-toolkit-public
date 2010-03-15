@@ -275,7 +275,7 @@ void SSystemFastMutex::Unlock(void)
 
     // check
     CheckInitialized();
-        
+
     // Release system mutex
 # if defined(NCBI_WIN32_THREADS)
 #    if defined(NCBI_USE_CRITICAL_SECTION)
@@ -479,7 +479,7 @@ public:
     void Set(HANDLE h, const char* errorMessage)
     {
         xncbi_Validate(h != NULL, errorMessage);
-        Set(h);        
+        Set(h);
     }
 
     HANDLE GetHandle(void) const  { return m_Handle; }
@@ -997,7 +997,7 @@ struct SSemaphore
 {
 #if defined(NCBI_POSIX_THREADS)
     unsigned int     max_count;
-    unsigned int     count; 
+    unsigned int     count;
     unsigned int     wait_count;  // # of threads currently waiting on the sema
     pthread_mutex_t  mutex;
     pthread_cond_t   cond;
@@ -1119,7 +1119,7 @@ void CSemaphore::Wait(void)
 }
 
 #if defined(NCBI_NO_THREADS)
-# define NCBI_THREADS_ARG(arg) 
+# define NCBI_THREADS_ARG(arg)
 #else
 # define NCBI_THREADS_ARG(arg) arg
 #endif
@@ -1163,7 +1163,7 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
         } else {
             timeout.tv_sec += timeout_sec;
         }
-        
+
         m_Sem->wait_count++;
         do {
             int status = pthread_cond_timedwait(&m_Sem->cond, &m_Sem->mutex,
@@ -1309,7 +1309,7 @@ CRWLockHolder::~CRWLockHolder(void)
 }
 
 void
-CRWLockHolder::DeleteThis(void) const 
+CRWLockHolder::DeleteThis(void) const
 {
     m_Factory->DeleteHolder(const_cast<CRWLockHolder*>(this));
 }
@@ -1447,7 +1447,7 @@ CYieldingRWLock::AcquireLock(ERWLockType lock_type)
         CSpinGuard guard(m_ObjLock);
 
         if (m_Locks[other_type] != 0  ||  !m_LockWaits.empty()
-            ||  lock_type == eWriteLock  &&  m_Locks[lock_type] != 0)
+            ||  (lock_type == eWriteLock  &&  m_Locks[lock_type] != 0))
         {
             m_LockWaits.push_back(holder);
             return holder;

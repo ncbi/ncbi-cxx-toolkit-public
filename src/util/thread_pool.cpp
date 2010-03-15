@@ -792,10 +792,10 @@ CThreadPool_Impl::ThreadStateChanged(void)
         }
     }
     else if (m_Suspended) {
-        if ((m_SuspendFlags & CThreadPool::fFlushThreads)
-                 &&  GetThreadsCount() == 0
-            ||  ! (m_SuspendFlags & CThreadPool::fFlushThreads)
-                 &&  m_WorkingThreads.size() == 0)
+        if (((m_SuspendFlags & CThreadPool::fFlushThreads)
+                 &&  GetThreadsCount() == 0)
+            ||  (! (m_SuspendFlags & CThreadPool::fFlushThreads)
+                 &&  m_WorkingThreads.size() == 0))
         {
             m_ServiceThread->WakeUp();
         }
@@ -1517,8 +1517,8 @@ CThreadPool_Impl::x_CanAddImmediateTask(void) const
     // If pool aborts at some point in waiting it has to stop waiting
     // immediately
     return !x_IsNewTaskAllowed()
-        ||  !m_Suspended  &&  (unsigned int)m_TotalTasks.Get()
-                                              < m_Controller->GetMaxThreads();
+           ||  (!m_Suspended  &&  (unsigned int)m_TotalTasks.Get()
+                                              < m_Controller->GetMaxThreads());
 }
 
 bool
@@ -1630,8 +1630,8 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     // able to acquire the mutex
     CThreadPool::TExclusiveFlags check_flags
         = CThreadPool::fDoNotAllowNewTasks + CThreadPool::fCancelQueuedTasks;
-    if (m_Aborted  ||  m_Suspended
-                       &&  (m_SuspendFlags & check_flags)  == check_flags)
+    if (m_Aborted  ||  (m_Suspended
+                        &&  (m_SuspendFlags & check_flags)  == check_flags))
     {
         if (m_Queue.GetSize() != 0) {
             x_CancelQueuedTasks();
@@ -1792,7 +1792,7 @@ CThreadPool_Impl::FlushThreads(CThreadPool::EFlushType flush_type)
     }
 
     if (flush_type == CThreadPool::eStartImmediately
-        ||  flush_type == CThreadPool::eWaitToFinish  &&  m_Suspended)
+        ||  (flush_type == CThreadPool::eWaitToFinish  &&  m_Suspended))
     {
         FinishThreads(GetThreadsCount());
     }

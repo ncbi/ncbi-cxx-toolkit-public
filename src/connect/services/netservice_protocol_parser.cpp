@@ -195,8 +195,8 @@ CNetServProtoParserBase::ParseCommand(CTempString          command,
     while (*cmd_name) {
         if (strlen(*cmd_name) == tsize
             &&  strncmp(token, *cmd_name, tsize) == 0
-            &&  (cache_name  &&  argsDescr->flags & fNSPA_ICPrefix
-                 || !cache_name  &&  !(argsDescr->flags & fNSPA_ICPrefix)))
+            &&  ((cache_name  &&  (argsDescr->flags & fNSPA_ICPrefix))
+                 ||  (!cache_name  &&  !(argsDescr->flags & fNSPA_ICPrefix))))
         {
             break;
         }
@@ -367,8 +367,8 @@ CNetServProtoParserBase::x_ArgumentMatch(const char*             key,
         val_type = eNSTT_Id;
     }
     if (arg_descr->atype == eNSPT_Str
-        ||  arg_descr->atype == eNSPT_Id  &&  (val_type == eNSTT_Int
-                                               ||  val_type == eNSTT_NCID)
+        ||  (arg_descr->atype == eNSPT_Id  &&  (val_type == eNSTT_Int
+                                                ||  val_type == eNSTT_NCID))
         ||  static_cast<int>(arg_descr->atype) == static_cast<int>(val_type))
     {
         return true;

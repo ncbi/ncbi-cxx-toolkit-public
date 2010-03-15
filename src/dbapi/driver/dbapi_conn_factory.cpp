@@ -216,7 +216,7 @@ class CDB_DBLB_Delegate : public CDBConnParamsDelegate
 {
 public:
     CDB_DBLB_Delegate(
-            const string& srv_name, 
+            const string& srv_name,
             Uint4 host,
             Uint2 port,
             const CDBConnParams& other);
@@ -240,7 +240,7 @@ private:
 
 
 CDB_DBLB_Delegate::CDB_DBLB_Delegate(
-        const string& srv_name, 
+        const string& srv_name,
         Uint4 host,
         Uint2 port,
         const CDBConnParams& other)
@@ -321,9 +321,9 @@ CDBConnectionFactory::MakeDBConnection(
                 // I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
                 // cur_conn_attr.srv_name = dsp_srv->GetName();
                 CDB_DBLB_Delegate cur_params(
-                        dsp_srv->GetName(), 
-                        dsp_srv->GetHost(), 
-                        dsp_srv->GetPort(), 
+                        dsp_srv->GetName(),
+                        dsp_srv->GetHost(),
+                        dsp_srv->GetPort(),
                         params);
 
                 // MakeValidConnection may return NULL here because a newly
@@ -434,7 +434,7 @@ CDBConnectionFactory::DispatchServerName(
         for (; !t_con && attepmpts > 0; --attepmpts) {
             try {
                 const CDB_DBLB_Delegate cur_params(
-                        cur_srv_name, 
+                        cur_srv_name,
                         cur_host,
                         cur_port,
                         params);
@@ -454,9 +454,9 @@ CDBConnectionFactory::DispatchServerName(
             if (dsp_srv->GetName() == service_name
                 &&  dsp_srv->GetHost() == 0  &&  dsp_srv->GetPort() == 0
                 &&  (conn_status != IConnValidator::eTempInvalidConn
-                        || GetMaxNumOfValidationAttempts()
-                           && rt_data.GetNumOfValidationFailures(service_name)
-                                          >= GetMaxNumOfValidationAttempts()))
+                        ||  (GetMaxNumOfValidationAttempts()
+                             &&  rt_data.GetNumOfValidationFailures(service_name)
+                                               >= GetMaxNumOfValidationAttempts())))
             {
                 if (!full_retry_made  &&  tried_servers.size() != 0) {
                     _TRACE("List of servers for service " << service_name
@@ -505,10 +505,10 @@ CDBConnectionFactory::MakeValidConnection(
 
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
-    if (conn.get()) 
+    if (conn.get())
     {
         CTrivialConnValidator use_db_validator(
-            params.GetDatabaseName(), 
+            params.GetDatabaseName(),
             CTrivialConnValidator::eKeepModifiedConnection
             );
         CConnValidatorCoR validator;
