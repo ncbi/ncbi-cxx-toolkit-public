@@ -278,7 +278,7 @@ public:
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void OnOpen(void);
     virtual void OnWrite(void);
-    virtual void OnCloseExt(IServer_ConnectionHandler::EClosePeer peer);
+    virtual void OnClose(IServer_ConnectionHandler::EClosePeer peer);
     virtual void OnTimeout(void);
     virtual void OnOverflow(EOverflowReason reason);
     virtual void OnMessage(BUF buffer);
@@ -901,7 +901,7 @@ void CNetScheduleHandler::OnWrite()
 }
 
 
-void CNetScheduleHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
+void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
 //    LOG_POST(Warning << "Socket closed by " <<
 //        (peer == IServer_ConnectionHandler::eOurClose ? "server" : "client"));

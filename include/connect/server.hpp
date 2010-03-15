@@ -225,8 +225,6 @@ public:
     virtual void OnRead(void) = 0;
     /// The client is ready to receive data.
     virtual void OnWrite(void) = 0;
-    /// The connection has closed.
-    virtual void OnClose(void) { }
 
     /// Type of connection closing
     enum EClosePeer {
@@ -235,7 +233,7 @@ public:
     };
 
     /// The connection has closed (with information on type of closing)
-    virtual void OnCloseExt(EClosePeer peer) { OnClose(); }
+    virtual void OnClose(EClosePeer peer) { }
 
     /// Runs when a client has been idle for too long, prior to
     /// closing the connection [synchronous].

@@ -92,7 +92,6 @@ public:
     virtual void OnOpen(void);
     virtual void OnMessage(BUF buf);
     virtual void OnWrite(void) {}
-    virtual void OnClose(void) {}
 private:
     CBDBEnvKeeperServer* m_Server;
 };

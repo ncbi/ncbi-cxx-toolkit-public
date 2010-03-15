@@ -463,7 +463,7 @@ CNCMessageHandler::OnOverflow(void)
 }
 
 void
-CNCMessageHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
+CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
     CDiagnosticsGuard guard(this);
 
@@ -1474,9 +1474,9 @@ CNCMsgHandler_Proxy::OnWrite(void)
 }
 
 void
-CNCMsgHandler_Proxy::OnCloseExt(EClosePeer peer)
+CNCMsgHandler_Proxy::OnClose(EClosePeer peer)
 {
-    m_Handler->OnCloseExt(peer);
+    m_Handler->OnClose(peer);
 }
 
 void

@@ -104,7 +104,6 @@ public:
     virtual void OnMessage(BUF buffer);
 
     virtual void OnWrite() {}
-    virtual void OnClose() {}
 
 private:
 

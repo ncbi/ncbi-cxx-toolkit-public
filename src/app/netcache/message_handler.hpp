@@ -225,7 +225,7 @@ public:
     void OnOpen(void);
     void OnRead(void);
     void OnWrite(void);
-    void OnCloseExt(IServer_ConnectionHandler::EClosePeer peer);
+    void OnClose(IServer_ConnectionHandler::EClosePeer peer);
     void OnTimeout(void);
     void OnTimer(void);
     void OnOverflow(void);
@@ -550,7 +550,7 @@ public:
     virtual void OnOpen(void);
     virtual void OnRead(void);
     virtual void OnWrite(void);
-    virtual void OnCloseExt(EClosePeer peer);
+    virtual void OnClose(EClosePeer peer);
     virtual void OnTimeout(void);
     virtual void OnTimer(void);
     virtual void OnOverflow(EOverflowReason);
