@@ -160,7 +160,7 @@ public:
     typedef TSizeType                           TOrder;
 
     /// Create cache object with the given capacity
-    CCache(TSizeType capacity, THandler *handler = new THandler());
+    CCache(TSizeType capacity, THandler *handler = NULL);
 
     /// Get cache element by the key. If the key is not cached yet,
     /// the handler's CreateValue() will be called to create one and
@@ -329,7 +329,8 @@ CCache<TKey, TValue, THandler, TLock, TSize>::CCache(TSizeType capacity,
       m_Counter(0)
 {
     _ASSERT(capacity > 0);
-    m_Handler.reset(handler);
+    if ( handler != NULL ) m_Handler.reset(handler);
+    else                   m_Handler.reset(new THandler());
 }
 
 
