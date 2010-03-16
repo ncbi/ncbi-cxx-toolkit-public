@@ -319,7 +319,6 @@ s_ReportDefinitionLineMismatch
     eip->message = strdup ("Mismatched definition lines");
     report_error (eip, report_error_userdata);
 }
-#endif
 
 
 /* This function recursively creates and sends an error message 
@@ -363,6 +362,7 @@ s_ReportDefinitionLines
   
     s_ReportDefinitionLines (list->next, report_error, report_error_userdata);
 }
+#endif
 
   
 /* This function creates and sends an error message regarding a line of
