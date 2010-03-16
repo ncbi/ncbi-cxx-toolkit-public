@@ -2450,7 +2450,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     CDirEntry::SStat st;
     if ( !CDirEntry(from).Stat(&st) ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                    " stat() failed for " << from);
     }
 
@@ -2466,12 +2466,12 @@ static bool s_CopyAttrs(const char* from, const char* to,
         tvp[1].tv_usec = st.mtime_nsec / 1000;
 #    if defined(HAVE_LUTIMES)
         if (lutimes(to, tvp)) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                        " lutimes() failed for " << to);
         }
 #    else
         if (utimes(to, tvp)) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                        " utimes() failed for " << to);
         }
 #    endif
@@ -2482,7 +2482,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
         times.actime  = st.orig.st_atime;
         times.modtime = st.orig.st_mtime;
         if (utime(to, &times)) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                        " utime() failed for " << to);
         }
 #  endif // HAVE_UTIMES
@@ -2497,7 +2497,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 #  if defined(HAVE_LCHOWN)
             if ( lchown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if (errno != EPERM) {
-                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                                " lchown() failed for " << to);
                 }
             }
@@ -2511,7 +2511,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
             // strip the setuid/gid bits.
             if ( chown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if ( errno != EPERM ) {
-                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                                " chown() failed for " << to);
                 }
                 st.orig.st_mode &= ~(S_ISUID | S_ISGID);
@@ -2523,7 +2523,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm)  &&
         type != CDirEntry::eLink ) {
         if ( chmod(to, st.orig.st_mode) ) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttrs():"
                                        " chmod() failed for " << to);
         }
     }
@@ -2545,13 +2545,13 @@ static bool s_CopyAttrs(const char* from, const char* to,
                               OPEN_EXISTING,
                               FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
         if ( h == INVALID_HANDLE_VALUE ) {
-            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttrs():"
                                  " Cannot open " << to);
         }
         if ( !SetFileTime(h, &attr.ftCreationTime, &attr.ftLastAccessTime,
                         &attr.ftLastWriteTime) ) {
             CloseHandle(h);
-            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttrs():"
                                  " Cannot change time for " << to);
         }
         CloseHandle(h);
@@ -2560,7 +2560,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
         if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
-            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr():"
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttrs():"
                                  " Cannot change pemissions for " << to);
         }
     }
@@ -2568,8 +2568,8 @@ static bool s_CopyAttrs(const char* from, const char* to,
     // Owner
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveOwner) ) {
         string owner, group;
-        // We dont check result here, because often is not impossible
-        // to save an original owner name without administators rights.
+        // We don't check the result here, because often is impossible
+        // to set the original owner name without administrator's rights.
         if ( efrom.GetOwner(&owner, &group) ) {
             eto.SetOwner(owner, group);
         }
@@ -2645,6 +2645,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     }
 
     struct stat st;
+    // NB:  Use extra "out = 0;" to distinguish the failures, when necessary.
     if (fstat(in, &st) != 0  ||
         (out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, st.st_mode & 0777))
         == -1) {
@@ -2746,14 +2747,14 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // If destination exists...
     if ( dst_exists ) {
         // UNIX: check on copying file into yourself.
-        // MS Window's ::CopyFile() can recognise such case.
+        // MS Window's ::CopyFile() can recognize such case.
 #if defined(NCBI_OS_UNIX)
         if ( src.IsIdentical(dst.GetPath()) ) {
             return false;
         }
 #endif
         // Can copy entries with different types?
-        // The Destination must be a file too.
+        // Destination must be a file too.
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
             LOG_ERROR_AND_RETURN("CFile::Copy():"
                                  " Destination is not a file: "
@@ -2782,18 +2783,17 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     }
 
     // Copy
+    if ( !
 #if defined(NCBI_OS_MSWIN)
-    if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) )
-        LOG_ERROR_AND_RETURN("CFile::Copy():"
-                             " Cannot copy "
-                             << src.GetPath() << " to " << dst.GetPath());
+         ::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE)
 #else
-    if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size) ){
+         s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size)
+#endif
+         ) {
         LOG_ERROR_AND_RETURN("CFile::Copy():"
                              " Cannot copy "
                              << src.GetPath() << " to " << dst.GetPath());
     }
-#endif
 
     // Verify copied data
     if ( F_ISSET(flags, fCF_Verify)  &&  !src.Compare(dst.GetPath()) ) {
@@ -2803,7 +2803,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                              << " failed");
     }
 
-    // Preserve attributes.
+    // Preserve attributes
 #if defined(NCBI_OS_MSWIN)
     // On MS Windows ::CopyFile() already preserved file attributes
     // and all date/times.
@@ -2814,18 +2814,12 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                           dst.GetPath().c_str(), eFile, flags) ) {
             return false;
         }
-// #  This code don't need anymore.
-// #  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
-//    } else {
-//        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
-//            return false;
-//        }
     }
     return true;
 }
 
 
- bool CFile::Compare(const string& file, size_t buf_size) const
+bool CFile::Compare(const string& file, size_t buf_size) const
 {
     if ( CFile(GetPath()).GetLength() != CFile(file).GetLength() ) {
         return false;
@@ -2861,6 +2855,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // Both files should be in the EOF state
     return equal  &&  f1.eof()  &&  f2.eof();
 }
+
 
 static inline char
 x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
