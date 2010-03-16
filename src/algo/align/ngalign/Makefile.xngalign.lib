@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq blast xnetblast
+ASN_DEP = xnetblast
 
 SRC = result_set  sequence_set   \
       alignment_filterer  alignment_scorer  \
