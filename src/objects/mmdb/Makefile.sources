@@ -2,6 +2,8 @@
 
 all: sources
 
+include $(builddir)/Makefile.mk
+
 sources:
 	for x in mmdb1 mmdb2 mmdb3; do \
 	    d=$(srcdir)/../$$x ; \
