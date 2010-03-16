@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeProteinWithTimeOut_Remote,
 
 void RetrieveLargeNuclSequence(bool is_remote)
 {
-    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 110349718));
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 291045224));
 
     const string db("nucl_dbs");
     const bool is_protein = false;
@@ -209,7 +209,7 @@ void RetrieveLargeNuclSequence(bool is_remote)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
     TSeqPos len = sequence::GetLength(*id, scope);
-    const TSeqPos kLength(101519);
+    const TSeqPos kLength(101520);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
