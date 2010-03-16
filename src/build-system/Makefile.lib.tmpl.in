@@ -37,7 +37,7 @@ include $(builddir)/Makefile.$(LIB_OR_DLL)
 $(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib
 
 src-stamp:
-	touch $(status_dir)/.$(LIB).files
+	@touch $(status_dir)/.$(LIB).files
 
 # Guard against invalid PTB-oriented settings.
 #
