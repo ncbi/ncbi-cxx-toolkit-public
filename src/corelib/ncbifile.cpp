@@ -2832,8 +2832,12 @@ bool CFile::Compare(const string& file, size_t buf_size) const
     if ( CFile(GetPath()).GetLength() != CFile(file).GetLength() ) {
         return false;
     }
+
     CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::binary | IOS_BASE::in);
     CNcbiIfstream f2(file.c_str(),      IOS_BASE::binary | IOS_BASE::in);
+    if (!f1  ||  !f2) {
+        return false;
+    }
 
     if ( !buf_size ) {
         buf_size = kDefaultBufferSize;
@@ -2842,7 +2846,7 @@ bool CFile::Compare(const string& file, size_t buf_size) const
     char* buf2  = new char[buf_size];
     bool  equal = true;
 
-    while ( f1.good()  &&  f2.good() ) {
+    do {
         // Fill buffers
         f1.read(buf1, buf_size);
         f2.read(buf2, buf_size);
@@ -2855,7 +2859,8 @@ bool CFile::Compare(const string& file, size_t buf_size) const
             equal = false;
             break;
         }
-    }
+    } while (f1.good()  &&  f2.good());
+
     // Clean memory
     delete[] buf1;
     delete[] buf2;
