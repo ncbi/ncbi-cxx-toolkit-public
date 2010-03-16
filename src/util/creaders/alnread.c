@@ -295,76 +295,6 @@ s_ReportInconsistentBlockLine
 }
 
 
-#if 0
-/* this section was removed by indexer request */
-/* This function creates and sends an error message regarding mismatched
- * definition lines
- */
-static void
-s_ReportDefinitionLineMismatch
-(FReportErrorFunction report_error,
- void *              report_error_userdata)
-{
-    TErrorInfoPtr eip;
-
-    if (report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadData;
-    eip->message = strdup ("Mismatched definition lines");
-    report_error (eip, report_error_userdata);
-}
-
-
-/* This function recursively creates and sends an error message 
- * regarding the number of times items in list appear.
- */
-static void 
-s_ReportDefinitionLines 
-(TStringCountPtr      list,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
-{
-    TErrorInfoPtr eip;
-    const char *  err_null_format = "Null definition line occurs %d times";
-    const char *  err_format = "Definition line %s occurs %d times";
-
-    if (list == NULL  ||  report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadData;
-    if (list->string == NULL) {
-        eip->message = (char*)malloc (strlen (err_null_format)
-                                      + kMaxPrintedIntLen + 1);
-        if (eip->message != NULL) {
-            sprintf (eip->message, err_null_format, list->num_appearances);
-        }
-    } else {
-        eip->message = (char*)malloc (strlen (err_format)
-                                      + strlen (list->string)
-                                      + kMaxPrintedIntLen + 1);
-        if (eip->message != NULL) {
-            sprintf (eip->message, err_format, list->string,
-                     list->num_appearances);
-        }
-    }
-    report_error (eip, report_error_userdata);
-  
-    s_ReportDefinitionLines (list->next, report_error, report_error_userdata);
-}
-#endif
-
-  
 /* This function creates and sends an error message regarding a line of
  * sequence data that was expected to be a different length.
  */
@@ -5737,38 +5667,6 @@ static EBool s_AreOrganismsUnique (SAlignRawFilePtr afrp)
 }
 
 
-#if 0 /* this step was removed by indexer request */
-/* This function reports whether the definition lines are identical for
- * each sequence or not.
- */
-static EBool s_AreDeflinesIdentical (SAlignRawFilePtr afrp)
-{
-    TLineInfoPtr    lip;
-    TStringCountPtr list;
-    EBool           rval;
-
-    if (afrp == NULL) {
-        return eFalse;
-    }
-
-    list = NULL;
-    for (lip = afrp->deflines;  lip != NULL;  lip = lip->next) {
-        list = s_AddStringCount (lip->data, lip->line_num, list);
-    }
-    rval = eTrue;
-    if (list != NULL  &&  list->next != NULL) {
-        rval = eFalse; 
-        s_ReportDefinitionLineMismatch (afrp->report_error,
-                                      afrp->report_error_userdata);
-        s_ReportDefinitionLines (list, afrp->report_error,
-                               afrp->report_error_userdata);
-    }
-    s_StringCountFree (list);
-    return rval;
-}
-#endif
-
-
 /* This function uses the contents of an SAlignRawFileData structure to
  * create an SAlignmentFile structure with the appropriate information.
  */
@@ -6000,11 +5898,6 @@ ReadAlignmentFileEx
     }
 
     s_ReprocessIds (afrp);
-
-#if 0 /* this step was removed by indexer request */
-    /* Note - have to check deflines after reprocessing IDs */
-    s_AreDeflinesIdentical (afrp);
-#endif
 
     if (s_s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         s_AlignFileRawFree (afrp);
