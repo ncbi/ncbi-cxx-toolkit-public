@@ -610,6 +610,48 @@ void TestMapping_Graph(CNcbiIstream& in)
 }
 
 
+void TestMapping_AlignmentsToParts(CNcbiIstream& in)
+{
+    cout << "Test mapping alignments to bioseq segments" << endl;
+    CSeq_align orig;
+
+    // Although mapping to bioseq segments, we don't have an Object Manager
+    // here. Using seq-locs instead.
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Alignment #1, mapping row 1" << endl;
+    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+    cout << "  Alignment #1, mapping row 2" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Alignment #2, mapping row 1" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+    cout << "  Alignment #2, mapping row 2" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Alignment #3, mapping row 1" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+    cout << "  Alignment #3, mapping row 2" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Alignment #4, mapping row 1" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+    cout << "  Alignment #4, mapping row 2" << endl;
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    TestMappingSeq_align(*mapper, orig, in);
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     CNcbiIfstream in("mapper_unit_test.asn");
@@ -624,4 +666,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapping_Spliced(in);
     TestMapping_Scores(in);
     TestMapping_Graph(in);
+    TestMapping_AlignmentsToParts(in);
 }

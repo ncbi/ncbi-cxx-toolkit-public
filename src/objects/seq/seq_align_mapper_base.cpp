@@ -2289,6 +2289,12 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // Detect strands for all rows, they will be used for gaps.
     TStrands strands;
     x_FillKnownStrands(strands);
+    // Count number of non-gap segments in each row.
+    // If a row has only gaps, the whole sub-alignment should be
+    // discarded.
+    vector<size_t> segs_per_row(num_rows, 0);
+    // Count total number of segments added to the alignment
+    // where at least one row is non-gap.
     int non_empty_segs = 0;
     int cur_seg = start_seg;
     for (TSegments::const_iterator it = start_seg_it; it != m_Segs.end();
@@ -2296,10 +2302,11 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         if (cur_seg > last_seg) {
             break;
         }
-        // Check if at least one row is non-gap.
+        // Check if at least one row in the current segment is non-gap.
         bool only_gaps = true;
-        ITERATE(SAlignment_Segment::TRows, row, it->m_Rows) {
-            if (row->m_Start != kInvalidSeqPos) {
+        for (size_t row = 0; row < it->m_Rows.size(); row++) {
+            if (it->m_Rows[row].m_Start != kInvalidSeqPos) {
+                segs_per_row[row]++;
                 only_gaps = false;
             }
         }
@@ -2338,7 +2345,18 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         // The sub-align contains only gaps in all rows, ignore it
         dst.Reset();
     }
-    dseg.SetNumseg(non_empty_segs);
+    else {
+        ITERATE(vector<size_t>, row, segs_per_row) {
+            if (*row == 0) {
+                // The row contains only gaps. Discard the sub-alignment.
+                dst.Reset();
+                break;
+            }
+        }
+    }
+    if ( dst ) {
+        dseg.SetNumseg(non_empty_segs);
+    }
     return last_seg + 1;
 }
 
