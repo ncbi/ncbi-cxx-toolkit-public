@@ -208,7 +208,7 @@ typedef struct SSegOptions {
 } SSegOptions;
 
 /// Default value for repeats database filtering
-#define kDefaultRepeatFilterDb "humrep"
+#define kDefaultRepeatFilterDb "repeat/repeat_9606"
 
 /** Filtering options for organsim specific repeats filtering.   
     Currently this consist of only the db name but could be expanded
