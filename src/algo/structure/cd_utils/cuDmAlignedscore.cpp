@@ -163,14 +163,17 @@ void DM_AlignedScore::CalcPairwiseScores(pProgressFunction pFunc) {
 double DM_AlignedScore::GetScore(CharPtr residuesRow1, CharPtr residuesRow2, int** ppScores) {
 
     double pairwiseScore = 0;
+    unsigned int res1, res2;
     int alignLen = m_maligns->GetAlignmentLength() + Max(0, m_nTermExt) + Max(0, m_cTermExt);
 
     // for each column of the alignment
     for (int i=0; i<alignLen; i++) {
-        if (residuesRow1[i] == 0 || residuesRow2[i] == 0) {
+        res1 = (unsigned int) residuesRow1[i];
+        res2 = (unsigned int) residuesRow2[i];
+        if (res1 == 0 || res2 == 0) {
             continue;
         }
-        pairwiseScore += ppScores[(int)residuesRow1[i]][(int)residuesRow2[i]];
+        pairwiseScore += ppScores[res1][res2];
     }
     return pairwiseScore;
 }
