@@ -775,11 +775,39 @@ static inline bool s_ReplaceEnding(string& word,
 }
 
 
+static inline bool s_TruncateEnding(string& word,
+                                    const char* match,
+                                    size_t new_ending_size,
+                                    int min_measure = 0)
+{
+    size_t match_len = strlen(match);
+    if (word.length() < match_len) {
+        return false;
+    }
+
+    if ( !s_EndsWith(word, match) ) {
+        return false;
+    }
+
+    if (s_MeasureWord(word.begin(),
+                      word.end() - match_len) <= min_measure) {
+        return false;
+    }
+
+    word.erase(word.length() - match_len + new_ending_size);
+    return true;
+}
+
+
 void CDictionaryUtil::Stem(const string& in_str, string* out_str)
 {
     *out_str = in_str;
     string& str = *out_str;
-    //NStr::ToLower(str);
+
+    // the steps outlined below follow the general scheme at:
+    //
+    //  http://snowball.tartarus.org/algorithms/porter/stemmer.html
+    //
 
     // step 1a: common 's' endings
     //
@@ -789,16 +817,19 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
     // s    ->
     if (str[ str.length()-1 ] == 's') {
         do {
-            if (s_ReplaceEnding(str, "sses", "ss")) {
+            //if (s_ReplaceEnding(str, "sses", "ss")) {
+            if (s_TruncateEnding(str, "sses", 2)) {
                 break;
             }
 
-            if (s_ReplaceEnding(str, "ies", "i")) {
+            //if (s_ReplaceEnding(str, "ies", "i")) {
+            if (s_TruncateEnding(str, "ies", 1)) {
                 break;
             }
 
             if ( !s_EndsWith(str, "ss") ) {
-                s_ReplaceEnding(str, "s", "");
+                //s_ReplaceEnding(str, "s", "");
+                s_TruncateEnding(str, "s", 0);
             }
         }
         while (false);
@@ -855,6 +886,7 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
         case 'a':
             if ( !s_ReplaceEnding(str, "ational", "ate") ) {
                 s_ReplaceEnding(str, "tional", "tion");
+                //s_TruncateEnding(str, "tional", 4);
             }
             break;
 
@@ -866,45 +898,54 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
 
         case 'e':
             s_ReplaceEnding(str, "izer", "ize");
+            //s_TruncateEnding(str, "izer", 3);
             break;
 
         case 'l':
-            if (str[ str.length()-1 ] == 'i') {
-                if ( !s_ReplaceEnding(str, "abli", "able") ) {
-                    if ( !s_ReplaceEnding(str, "alli", "al") ) {
-                        if ( !s_ReplaceEnding(str, "entli", "ent") ) {
-                            if ( !s_ReplaceEnding(str, "eli", "e") ) {
-                                s_ReplaceEnding(str, "ousli", "ous");
-                            }
-                        }
-                    }
-                }
+            if (str[ str.length()-1 ] == 'i'  &&
+                !s_ReplaceEnding(str, "abli", "able")  &&
+                !s_ReplaceEnding(str, "alli", "al")  &&
+                !s_ReplaceEnding(str, "entli", "ent")  &&
+                !s_ReplaceEnding(str, "eli", "e") ) {
+                s_ReplaceEnding(str, "ousli", "ous");
             }
+            /**
+            if (str[ str.length()-1 ] == 'i'  &&
+                !s_ReplaceEnding(str, "abli", "able")  &&
+                !s_TruncateEnding(str, "alli", 2)  &&
+                !s_TruncateEnding(str, "entli", 3)  &&
+                !s_TruncateEnding(str, "eli", 1) ) {
+                s_TruncateEnding(str, "ousli", 3);
+            }
+            **/
             break;
 
         case 'o':
-            if ( !s_ReplaceEnding(str, "ization", "ize") ) {
-                if ( !s_ReplaceEnding(str, "ation", "ate") ) {
-                    s_ReplaceEnding(str, "ator", "ate");
-                }
+            if ( !s_ReplaceEnding(str, "ization", "ize")  &&
+                 !s_ReplaceEnding(str, "ation", "ate") ) {
+                s_ReplaceEnding(str, "ator", "ate");
             }
             break;
 
         case 's':
-            if ( !s_ReplaceEnding(str, "alism", "al") ) {
-                if ( !s_ReplaceEnding(str, "iveness", "ive") ) {
-                    if ( !s_ReplaceEnding(str, "fulness", "ful") ) {
-                        s_ReplaceEnding(str, "ousness", "ous");
-                    }
-                }
+            if ( !s_ReplaceEnding(str, "alism", "al")  &&
+                 !s_ReplaceEnding(str, "iveness", "ive")  &&
+                 !s_ReplaceEnding(str, "fulness", "ful") ) {
+                s_ReplaceEnding(str, "ousness", "ous");
             }
+            /**
+            if ( !s_TruncateEnding(str, "alism", 2)  &&
+                 !s_TruncateEnding(str, "iveness", 3)  &&
+                 !s_TruncateEnding(str, "fulness", 3) ) {
+                s_TruncateEnding(str, "ousness", 3);
+            }
+            **/
             break;
 
         case 't':
-            if ( !s_ReplaceEnding(str, "aliti", "al") ) {
-                if ( !s_ReplaceEnding(str, "iviti", "ive") ) {
-                    s_ReplaceEnding(str, "biliti", "ble");
-                }
+            if ( !s_ReplaceEnding(str, "aliti", "al")  &&
+                 !s_ReplaceEnding(str, "iviti", "ive") ) {
+                s_ReplaceEnding(str, "biliti", "ble");
             }
             break;
 
@@ -940,7 +981,6 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
              }
          }
      }}
-
 
     // step 4
     if (str.length() > 2) {
@@ -1025,7 +1065,8 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
     }
 
     // step 5a
-    s_ReplaceEnding(str, "e", "", 1);
+    //s_ReplaceEnding(str, "e", "", 1);
+    s_TruncateEnding(str, "e", 0, 1);
 
     // step 5b
     if (s_MeasureWord(str.begin(), str.end()) > 1  &&
