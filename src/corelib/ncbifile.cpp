@@ -2783,17 +2783,19 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     }
 
     // Copy
-    if ( !
 #if defined(NCBI_OS_MSWIN)
-         ::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE)
-#else
-         s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size)
-#endif
-         ) {
+    if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) ) {
         LOG_ERROR_AND_RETURN("CFile::Copy():"
                              " Cannot copy "
                              << src.GetPath() << " to " << dst.GetPath());
     }
+#else
+    if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size) ){
+        LOG_ERROR_AND_RETURN("CFile::Copy():"
+                             " Cannot copy "
+                             << src.GetPath() << " to " << dst.GetPath());
+    }
+#endif
 
     // Verify copied data
     if ( F_ISSET(flags, fCF_Verify)  &&  !src.Compare(dst.GetPath()) ) {
@@ -2815,6 +2817,12 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             return false;
         }
     }
+// #  This code don't need anymore.
+// #  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
+//    } else {
+//        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+//            return false;
+//        }
     return true;
 }
 
