@@ -195,22 +195,24 @@ check_add: check_add.needs-reqs
 
 MAKE_LOCK_MAP = $(RWL) $(top_srcdir)/scripts/common/impl/make_lock_map.sh
 
-all.real:
-	@$(RWL) $(MAKE) $(MFLAGS_NR) all.usr
-	@$(MAKE) $(MFLAGS_NR) all.nonusr
-all.usr: configurables
+sources: configurables
+	@$(RWL) $(MAKE) $(MFLAGS_NR) sources.usr
+	@$(MAKE) $(MFLAGS_NR) sources.nonusr
+sources.usr: configurables
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(USRP_BRA) all   $(USRP_KET)
 	@-rm -f .building
 	@echo "`date`: local build succeeded in `pwd`" > .built
-all.nonusr:
-	@-rm -f .built .built_r
-	@-echo "`date`: starting to build in `pwd`" > .building
-	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
+sources.nonusr:
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
+
+all.real: sources
+	@-rm -f .built .built_r
+	@-echo "`date`: starting to build in `pwd`" > .building
+	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(LIBP_BRA) all   $(LIBP_KET)
 	@$(APPP_BRA) all   $(APPP_KET)
 	@-rm -f .building
@@ -246,11 +248,7 @@ purge.nonusr:
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
 
-sources:
-	@$(ASNP_BRA) all   $(ASNP_KET)
-	@$(DTDP_BRA) all   $(DTDP_KET)
-	@$(XSDP_BRA) all   $(XSDP_KET)
-libs.real:
+libs.real: sources
 	@$(LIBP_BRA) all   $(LIBP_KET)
 check.real:
 	@$(CHECK_BRA) check_add $(CHECK_KET)
