@@ -38,5 +38,5 @@ $(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib
 
 # Guard against invalid PTB-oriented settings.
 #
-all: $(ASN_DEP:%=$(status_dir)/.%.dep)
+all: $(ASN_DEP:%=$(status_dir)/.%.files)
 all: $(USR_DEP:%=$(status_dir)/.%.dep)

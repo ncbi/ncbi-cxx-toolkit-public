@@ -21,6 +21,7 @@ top_srcdir = @top_srcdir@
 abs_top_srcdir = @abs_top_srcdir@
 abs_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'`
 rel_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir)/,,'`
+status_dir = @status_dir@
 
 ### Make sure we are using a right command shell
 
@@ -85,7 +86,8 @@ ASNP_BRA = \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" \
           $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_ASN)
-ASNP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+ASNP_KET = && touch $(status_dir)/.$$i.files) \
+           || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
                 exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -99,10 +101,7 @@ DTDP_BRA = \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" \
           $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_DTD)
-DTDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET) ; \
-   done ; \
-fi
+DTDP_KET = $(ASNP_KET)
 
 MAKE_XSD = $(builddir)/new_module.sh --xsd "$$i"
 XSDP_BRA = \
@@ -113,10 +112,7 @@ XSDP_BRA = \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" \
           $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_XSD)
-XSDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET) ; \
-   done ; \
-fi
+XSDP_KET = $(ASNP_KET)
 
 # If you change this rule, please continue to honor external
 # definitions of $(MAKE_LIB).
@@ -258,7 +254,6 @@ check.real:
 check_add.real:
 	@$(CHECK_ADD_BRA)  $(CHECK_ADD_KET)
 
-status_dir = @status_dir@
 reqs = $(REQUIRES:%=$(status_dir)/%.enabled)
 requirements: $(reqs)
 
