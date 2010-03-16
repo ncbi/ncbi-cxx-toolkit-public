@@ -198,7 +198,7 @@ MAKE_LOCK_MAP = $(RWL) $(top_srcdir)/scripts/common/impl/make_lock_map.sh
 sources: configurables
 	@$(RWL) $(MAKE) $(MFLAGS_NR) sources.usr
 	@$(MAKE) $(MFLAGS_NR) sources.nonusr
-sources.usr: configurables
+all.usr sources.usr: configurables
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(USRP_BRA) all   $(USRP_KET)
@@ -209,7 +209,10 @@ sources.nonusr:
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
 
-all.real: sources
+all.real:
+	@$(MAKE) $(MFLAGS_NR) all.usr
+	@$(MAKE) $(MFLAGS_NR) all.nonusr
+all.nonusr: sources.nonusr
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
