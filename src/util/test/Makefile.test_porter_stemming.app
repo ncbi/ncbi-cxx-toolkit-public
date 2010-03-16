@@ -8,7 +8,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIB  = test_boost xncbi xutil
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = score_builder_unit_test -data-in porter-data.txt
+CHECK_CMD = test_porter_stemming -data-in porter-data.txt
 CHECK_COPY = porter-data.txt
 
 REQUIRES = Boost.Test.Included
