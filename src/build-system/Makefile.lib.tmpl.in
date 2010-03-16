@@ -36,7 +36,12 @@ include $(builddir)/Makefile.$(LIB_OR_DLL)
 #
 $(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib
 
+src-stamp:
+	touch $(status_dir)/.$(LIB).files
+
 # Guard against invalid PTB-oriented settings.
 #
 all: $(ASN_DEP:%=$(status_dir)/.%.files)
 all: $(USR_DEP:%=$(status_dir)/.%.dep)
+
+.PHONY: src-stamp

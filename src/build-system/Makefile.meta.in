@@ -86,7 +86,7 @@ ASNP_BRA = \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" \
           $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_ASN)
-ASNP_KET = && touch $(status_dir)/.$$i.files) \
+ASNP_KET = && $(MAKE_LIB) src-stamp) \
            || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
                 exit 6 $(NOTK_KET) ; \
    done ; \
