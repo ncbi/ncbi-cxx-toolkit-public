@@ -245,6 +245,10 @@ public:
     //  be at most one.  If there is no title, an empty string is returned.
     string GetTitle() const;
 
+    //  Return all 'title' strings found in the list of CCdd_descrs.
+    //  Return value is the number of such strings returned.
+    unsigned int GetTitles(vector<string>& titles) const;
+
     //  Removes any CCdd_descr of the specified choice type.
     bool RemoveCddDescrsOfType(int cddDescrChoice);
 

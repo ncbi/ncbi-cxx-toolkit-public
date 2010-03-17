@@ -2601,12 +2601,33 @@ string CCdCore::GetTitle() const
         while (cit != cend) {
             if ((*cit)->IsTitle()) { 
                 result = (*cit)->GetTitle();
+                break;
             }
             ++cit;
         }
     }
 
     return result;
+}
+
+unsigned int CCdCore::GetTitles(vector<string>& titles) const
+{
+    string result = kEmptyStr;
+    
+    titles.clear();
+    if (IsSetDescription()) {
+        TDescription::Tdata::const_iterator cit = GetDescription().Get().begin();
+        TDescription::Tdata::const_iterator cend = GetDescription().Get().end();
+        while (cit != cend) {
+            if ((*cit)->IsTitle()) { 
+                result = (*cit)->GetTitle();
+                titles.push_back(result);
+            }
+            ++cit;
+        }
+    }
+
+    return titles.size();
 }
 
 bool CCdCore::AddPmidReference(unsigned int pmid)
