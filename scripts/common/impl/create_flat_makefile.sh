@@ -168,6 +168,10 @@ ptbreqver=""
 ptbver="$srcdir/src/build-system/ptb_version.txt"
 if test -r "$ptbver"; then
   ptbreqver=`cat "$ptbver" | sed -e 's/ //'`
+  if test "$ptbreqver" = 2.5.0 -a -f $a1/status/DLL_BUILD.enabled; then
+    echo "Forcing use of local project_tree builder."
+    buildptb=yes
+  fi
 fi
 
 #-----------------------------------------------------------------------------
