@@ -94,6 +94,27 @@ public:
 };
 
 
+class CExpansionScorer : public IAlignmentScorer
+{
+public:
+    CExpansionScorer() { ; }
+
+    void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+};
+
+
+class COverlapScorer : public IAlignmentScorer
+{
+public:
+    COverlapScorer(TSeqPos Slop=10) : m_Slop(Slop) { ; }
+
+    void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+
+private:
+    TSeqPos m_Slop;
+};
+
+
 class CCommonComponentScorer : public IAlignmentScorer
 {
 public:

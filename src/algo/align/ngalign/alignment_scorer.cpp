@@ -154,6 +154,97 @@ void CPctCoverageScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scop
 
 
 
+void CExpansionScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
+{
+    CScoreBuilder Scorer;
+
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
+        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+
+            ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
+
+                CRef<CSeq_align> Curr(*Iter);
+
+                TSeqPos AlignLen, AlignedLen;
+                AlignedLen = Scorer.GetAlignLength(*Curr, true);
+                AlignLen = Curr->GetSeqRange(1).GetLength();
+
+                Curr->SetNamedScore("expansion", double(AlignLen)/double(AlignedLen) );
+            }
+        }
+    }
+}
+
+
+
+
+void COverlapScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
+{
+
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
+        NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+            ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
+
+                CRef<CSeq_align> Curr(*Iter);
+
+                if(!Curr->GetSegs().IsDenseg())
+                    continue;
+
+                if(Curr->GetSegs().GetDenseg().GetDim() != 2)
+                    continue;
+
+                vector<pair<TSeqPos, TSeqPos> > Tails;
+
+                for(int Row = 0;  Row < Curr->GetSegs().GetDenseg().GetDim(); ++Row) {
+                    TSeqPos Start = Curr->GetSeqStart(Row);
+                    TSeqPos Stop  = Curr->GetSeqStop(Row);
+
+                    TSeqPos SeqLen = Scope.GetBioseqHandle(Curr->GetSeq_id(Row)).GetInst_Length();
+
+                    pair<TSeqPos, TSeqPos> Pair;
+                    if(Curr->GetSeqStrand(Row) == eNa_strand_plus) {
+                        Pair.first = Start;
+                        Pair.second = SeqLen - Stop - 1;
+                    } else {
+                        Pair.second = Start;
+                        Pair.first = SeqLen - Stop - 1;
+                    }
+                    Tails.push_back(Pair);
+                }
+
+                bool Full;
+                int Contained;
+                TSeqPos Half;
+
+                Full = (Tails[0].second <= m_Slop && Tails[1].first <= m_Slop)
+                    || (Tails[0].first <= m_Slop && Tails[1].second <= m_Slop);
+
+                if(Tails[0].first <= m_Slop && Tails[0].second <= m_Slop)
+                    Contained = 0;
+                else if(Tails[1].first <= m_Slop && Tails[1].second <= m_Slop)
+                    Contained = 1;
+                else
+                    Contained = -1;
+
+                bool Forewards;
+                Forewards = (Tails[0].first > Tails[0].second)
+                         && (Tails[1].first < Tails[1].second);
+
+                if(Forewards)
+                    Half = max(Tails[0].second, Tails[1].first);
+                else
+                    Half = max(Tails[0].first, Tails[1].second);
+
+                Curr->SetNamedScore("full_dovetail", (int)Full);
+                Curr->SetNamedScore("half_dovetail", (int)Half);
+                Curr->SetNamedScore("contained", Contained);
+            }
+        }
+    }
+}
+
+
+
 
 void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet,
                                              CScope& Scope)
@@ -397,6 +488,11 @@ void CCommonComponentScorer::x_GetCompList(const CSeq_id& Id,
         x_GetUserCompList(Handle, CompIds);
     if(CompIds.empty())
         x_GetSeqHistCompList(Handle, Start, Stop, CompIds);
+    if(CompIds.empty()) {
+        CRef<CSeq_id> SelfId(new CSeq_id);
+        SelfId->Assign(Id);
+        CompIds.push_back(SelfId);
+    }
 }
 
 
