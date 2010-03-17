@@ -32,6 +32,7 @@ REM DO NOT ATTEMPT to run this bat file manually
 REM
 REM ===========================================================================
 
+set DEFDT_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\datatool
 
 for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
   if %%v=="" (
@@ -40,12 +41,66 @@ for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%"
     exit /b 1
   )
 )
+set DEFDT_VERSION_FILE=%TREE_ROOT%\src\build-system\datatool_version.txt
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 set DT=datatool.exe
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
-set DATATOOL_EXE=%DATATOOL_PATH%\%DT%
+
+REM -------------------------------------------------------------------------
+REM get DT version: from DEFDT_VERSION_FILE  or from PREBUILT_DATATOOL_EXE
+
+set DEFDT_VERSION=
+if exist "%DEFDT_VERSION_FILE%" (
+  for /f %%a in ('type "%DEFDT_VERSION_FILE%"') do (set DEFDT_VERSION=%%a& goto donedf)
+  :donedf
+  set DEFDT_VERSION=%DEFDT_VERSION: =%
+)
+if exist "%PREBUILT_DATATOOL_EXE%" (
+  set ptbver=
+  for /f "tokens=2" %%a in ('"%PREBUILT_DATATOOL_EXE%" -version') do (set ptbver=%%a& goto donepb)
+  :donepb
+  set ptbver=%ptbver: =%
+  if not "%DEFDT_VERSION%"=="%ptbver%" (
+    echo WARNING: requested %DT% version %ptbver% does not match default one: %DEFDT_VERSION%
+    set DEFDT_VERSION=%ptbver%
+  )
+)
+
+if "%DEFDT_VERSION%"=="" (
+  echo ERROR: DEFDT_VERSION not specified
+  exit /b 1
+)
+for /f "tokens=1-3 delims=." %%a in ('echo %DEFDT_VERSION%') do (set DT_VER=%%a%%b%%c& set DT_VER_MAJOR=%%a)
+
+
+REM -------------------------------------------------------------------------
+REM Identify DATATOOL_EXE
+
+if "%PREBUILT_DATATOOL_EXE%"=="bootstrap" (
+  set DEF_DT=%DATATOOL_PATH%\%DT%
+) else if not "%PREBUILT_DATATOOL_EXE%"=="" (
+  if exist "%PREBUILT_DATATOOL_EXE%" (
+    set DEF_DT=%PREBUILT_DATATOOL_EXE%
+  ) else (
+    echo ERROR: "%PREBUILT_DATATOOL_EXE%" not found
+    exit /b 1
+  )
+) else (
+  set DEF_DT=%DEFDT_LOCATION%\msvc\%DEFDT_VERSION%\%DT%
+)
+if exist "%DEF_DT%" (
+  set DATATOOL_EXE=%DEF_DT%
+) else (
+  echo %DT% not found at %DEF_DT%
+  set DATATOOL_EXE=%DATATOOL_PATH%\%DT%
+)
+
+
+REM -------------------------------------------------------------------------
+REM Build DATATOOL_EXE if needed
+
 if not exist "%DATATOOL_EXE%" (
   if exist "%PTB_SLN%" (
     echo ******************************************************************************
@@ -70,5 +125,9 @@ if errorlevel 1 (
   echo ERROR: cannot find working %DT%
   exit /b 1
 )
+
+
+REM -------------------------------------------------------------------------
+REM Run DATATOOL_EXE
 
 %DATATOOL_EXE% %*
