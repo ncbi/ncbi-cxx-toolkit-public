@@ -32,6 +32,8 @@
 #
 # ===========================================================================
 
+DEFDT_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool"
+
 for v in "$DATATOOL_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   if test "$v" = ""; then
     echo ERROR: required environment variable is missing
@@ -39,10 +41,50 @@ for v in "$DATATOOL_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
     exit 1
   fi
 done
+DEFDT_VERSION_FILE="${TREE_ROOT}/src/build-system/datatool_version.txt"
 PTB_SLN="${BUILD_TREE_ROOT}/static/UtilityProjects/PTB.xcodeproj"
 DT="datatool"
 
-DATATOOL_EXE=$DATATOOL_PATH/$DT
+# -------------------------------------------------------------------------
+# get DT version: from DEFDT_VERSION_FILE  or from PREBUILT_DATATOOL_EXE
+
+DEFDT_VERSION=""
+if test -r "$DEFDT_VERSION_FILE"; then
+  DEFDT_VERSION=`cat "$DEFDT_VERSION_FILE" | sed -e 's/ //g'`
+fi
+if test -x "$PREBUILT_DATATOOL_EXE"; then
+  ptbver=`$PREBUILT_DATATOOL_EXE -version | grep ^$DT | sed -e s/$DT:// | sed -e 's/ //g'`
+  if ! test "$ptbver" = "$DEFDT_VERSION"; then
+    echo "WARNING: requested $DT version $ptbver does not match default one: $DEFDT_VERSION"
+    DEFDT_VERSION=$ptbver
+  fi
+fi
+
+# -------------------------------------------------------------------------
+# Identify DATATOOL_EXE
+
+if test "$PREBUILT_DATATOOL_EXE" = "bootstrap"; then
+  DEF_DT="$DATATOOL_PATH/$DT"
+else
+  if test -n "$PREBUILT_DATATOOL_EXE"; then
+    if test -x "$PREBUILT_DATATOOL_EXE"; then
+      DEF_DT="$PREBUILT_DATATOOL_EXE"
+    else
+      echo ERROR: $PREBUILT_DATATOOL_EXE not found
+      exit 1
+    fi
+  else
+    DEF_DT="$DEFDT_LOCATION/XCode/$DEFDT_VERSION/$DT"
+  fi
+fi
+
+if test -x "$DEF_DT"; then
+  DATATOOL_EXE="$DEF_DT"
+else
+  echo "$DT not found at $DEF_DT"
+  DATATOOL_EXE="$DATATOOL_PATH/$DT"
+fi
+
 # -------------------------------------------------------------------------
 # Build DATATOOL_EXE if needed
 
