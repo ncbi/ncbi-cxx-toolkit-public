@@ -1708,8 +1708,10 @@ BOOST_AUTO_TEST_CASE(IsBinaryGiList_EmptyFile)
 
 BOOST_AUTO_TEST_CASE(IsBinaryGiList_InvalidFile)
 {
-    BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("/dev/null"),
+    if (CFile("/dev/null").Exists()) {
+        BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("/dev/null"),
                         CSeqDBException);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(BinaryUserGiList)
