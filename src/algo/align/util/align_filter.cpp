@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/align/util/align_filter.hpp>
+#include <algo/align/util/score_builder.hpp>
 #include <corelib/rwstream.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -106,7 +107,7 @@ CAlignFilter::CAlignFilter(const string& query)
 
 void CAlignFilter::SetFilter(const string& filter)
 {
-    static const char *sc_Functions[] = { "MUL", NULL };
+    static const char *sc_Functions[] = { "MUL", "ADD", NULL };
 
     m_Query = filter;
     m_ParseTree.reset(new CQueryParseTree);
@@ -275,6 +276,9 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name, const objects
     double score_value = numeric_limits<double>::quiet_NaN();
     if (NStr::EqualNocase(score_name, "align_length")) {
         score_value = align.GetSeqRange(0).GetLength();
+    } else if (NStr::EqualNocase(score_name, "align_length_ungap")) {
+        CScoreBuilder Scorer;
+        score_value = Scorer.GetAlignLength(align, true);
     } else if (NStr::EqualNocase(score_name, "product_length")) {
         if (align.GetSegs().IsSpliced())
             score_value = align.GetSegs().GetSpliced().GetProduct_length();
@@ -326,13 +330,53 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
 
         double val1 = x_TermValue(node1, align);
         double val2 = x_TermValue(node2, align);
-        
+
         this_val = val1 * val2;
-        
+
     }
+    if (NStr::EqualNocase(function, "ADD")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+
+        double val1 = x_TermValue(node1, align);
+        double val2 = x_TermValue(node2, align);
+
+        this_val = val1 + val2;
+
+    }
+
     return this_val;
 }
 
+
+bool s_IsDouble(const string& str)
+{
+    ITERATE(string, iter, str) {
+        if( !isdigit(*iter) &&
+		    *iter != '+' &&
+			*iter != '-' &&
+			*iter != '.' &&
+			*iter != ' ') {
+            return false;
+	    }
+	}
+	return true;
+}
 
 double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
                                  const CSeq_align& align)
@@ -347,11 +391,15 @@ double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
         {{
              string str = term_node.GetValue().GetStrValue();
              double val;
-             try {
-                 val = NStr::StringToDouble(str);
-             } catch (...) {
+			 if(s_IsDouble(str)) {
+			     try {
+			         val =  NStr::StringToDouble(str);
+                 } catch (...) {
+                     val = x_GetAlignmentScore(str, align);
+				 }
+		     } else {
                  val = x_GetAlignmentScore(str, align);
-             }
+			 }
              return val;
          }}
     case CQueryParseNode::eFunction:
@@ -385,10 +433,10 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
 
     case CQueryParseNode::eLE:
         return ((l_val <= r_val)  ==  !is_not);
-        
+
     case CQueryParseNode::eGT:
         return ((l_val >  r_val)  ==  !is_not);
-        
+
     case CQueryParseNode::eGE:
         return ((l_val >= r_val)  ==  !is_not);
 

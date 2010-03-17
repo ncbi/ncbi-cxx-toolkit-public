@@ -642,9 +642,9 @@ int CScoreBuilder::GetGapCount(const CSeq_align& align)
 }
 
 
-TSeqPos CScoreBuilder::GetAlignLength(const CSeq_align& align)
+TSeqPos CScoreBuilder::GetAlignLength(const CSeq_align& align, bool ungapped)
 {
-    return s_GetAlignmentLength(align, false);
+    return s_GetAlignmentLength(align, ungapped);
 }
 
 

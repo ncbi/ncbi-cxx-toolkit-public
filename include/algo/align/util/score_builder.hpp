@@ -126,7 +126,7 @@ public:
 
     /// Compute the length of the alignment (= length of all segments, gaps +
     /// aligned)
-    TSeqPos GetAlignLength(const CSeq_align& align);
+    TSeqPos GetAlignLength(const CSeq_align& align, bool ungapped=false);
 
     /// @}
 
