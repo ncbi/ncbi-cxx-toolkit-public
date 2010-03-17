@@ -232,7 +232,8 @@ function FillTreeStructure(oShell, oTree)
         "Makefile.mk.in",
         "Makefile.mk.in.msvc",
         "project_tags.txt",
-        "ptb_version.txt"
+        "ptb_version.txt",
+        "datatool_version.txt"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/src/build-system", build_files, oTree.SrcBuildSystemBranch, false);
