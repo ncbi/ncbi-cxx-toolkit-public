@@ -47,6 +47,12 @@
 #include <corelib/test_boost.hpp>
 #ifndef SKIP_DOXYGEN_PROCESSING
 
+#ifdef NCBI_OS_MSWIN
+#  define DEV_NULL "nul:"
+#else
+#  define DEV_NULL "/dev/null"
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -1708,8 +1714,8 @@ BOOST_AUTO_TEST_CASE(IsBinaryGiList_EmptyFile)
 
 BOOST_AUTO_TEST_CASE(IsBinaryGiList_InvalidFile)
 {
-    if (CFile("/dev/null").Exists()) {
-        BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("/dev/null"),
+    if (CFile(DEV_NULL).Exists()) {
+        BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList(DEV_NULL),
                         CSeqDBException);
     }
 }
