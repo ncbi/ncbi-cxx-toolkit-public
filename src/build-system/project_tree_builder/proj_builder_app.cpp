@@ -399,7 +399,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,5,0) );
+    SetVersion( CVersionInfo(2,6,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -877,10 +877,12 @@ void CProjBulderApp::CollectLibToLibDependencies(
 {
     string lib_name(CreateProjectName(lib->first));
     string lib_dep_name(CreateProjectName(lib_dep->first));
+/*
     if (GetApp().m_AllDllBuild) {
         dep.insert(lib_dep_name);
         return;
     }
+*/
     if (visited.find(lib_dep_name) != visited.end() ||
         lib_dep_name == lib_name) {
         return;
@@ -1104,7 +1106,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         dependencies.sort();
         dependencies.unique();
 
-        if (isLibrary) {
+        if (isLibrary && !m_AllDllBuild) {
             list<string> new_dependencies;
 //            new_dependencies.push_back( target + dotfiles);
             ITERATE(list<string>, d, dependencies) {
