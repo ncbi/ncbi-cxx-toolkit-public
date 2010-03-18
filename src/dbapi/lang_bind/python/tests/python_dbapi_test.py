@@ -144,6 +144,23 @@ cursor.fetchall()
 # Retrieve return status
 checkEqual(cursor.get_proc_return_status(), 0)
 
+# check output parameters
+cursor.execute("drop procedure testing")
+cursor.execute("create procedure testing (@p1 int, @p2 int output) as begin\nset @p1 = 123\nset @p2 = 123\nend")
+out = cursor.callproc('testing', [None, None])
+if isinstance(out[1], str):
+    raise Exception('Invalid data type of param2 (string)')
+if isinstance(out[1], None.__class__):
+    raise Exception('param2 was not returned')
+if not isinstance(out[0], None.__class__):
+    raise Exception('Invalid data type of param1: ' + repr(out[0].__class__))
+out = cursor.callproc('testing', [456, None])
+if isinstance(out[1], str):
+    raise Exception('Invalid data type of param2 (string)')
+if out[0] != 456:
+    raise Exception('Invalid value of param1: ' + out[0])
+cursor.execute("drop procedure testing")
+
 
 conn = connect("ftds", "SYB", "PUBSEQ_OS", "master", "anyone", "allowed")
 cursor = conn.cursor()
