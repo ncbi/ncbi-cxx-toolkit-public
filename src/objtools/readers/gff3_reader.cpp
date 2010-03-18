@@ -62,6 +62,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -85,6 +86,7 @@
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gff3_data.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -119,9 +121,9 @@ bool s_GetAnnotId(
 
 //  ----------------------------------------------------------------------------
 CGff3Reader::CGff3Reader(
-    int iFlags ):
+    unsigned int uFlags ):
 //  ----------------------------------------------------------------------------
-    m_iReaderFlags( iFlags ),
+    m_uFlags( TFlags( uFlags ) ),
     m_pErrors( 0 )
 {
 }
@@ -153,11 +155,10 @@ CGff3Reader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-//    return ReadSeqAnnotsNew( annots, lr, pErrorContainer );
-
+    if ( m_uFlags & fNewCode ) {
+        return ReadSeqAnnotsNew( annots, lr, pErrorContainer );
+    }
     CRef< CSeq_entry > entry = ReadSeqEntry( lr, pErrorContainer );
-//    const CSeq_entry::TAnnot& list_annots = entry->GetAnnot();
-//    annots.assign( list_annots.begin(), list_annots.end() );
     CTypeIterator<CSeq_annot> annot_iter( *entry );
     for ( ;  annot_iter;  ++annot_iter) {
         annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
@@ -304,11 +305,11 @@ CGff3Reader::ReadSeqEntry(
     x_Reset();
     
     // promote transcript_id and protein_id to products
-    if ( m_iReaderFlags & fSetProducts ) {
+    if ( m_uFlags & fSetProducts ) {
         x_SetProducts( tse );
     }
 
-    if ( m_iReaderFlags & fCreateGeneFeats ) {
+    if ( m_uFlags & fCreateGeneFeats ) {
         x_CreateGeneFeatures( tse );
     }
     // <--
@@ -514,7 +515,7 @@ bool CGff3Reader::x_ParseFeatureGff(
     //  to:
     //
     CGff3Record record;
-    if ( ! record.Parse( strLine ) ) {
+    if ( ! record.AssignFromGff( strLine ) ) {
         return false;
     }
 
@@ -613,6 +614,9 @@ bool CGff3Reader::x_UpdateAnnot(
     if ( ! x_FeatureSetId( gff, pFeature ) ) {
         return false;
     }
+    if ( ! x_FeatureSetXref( gff, pFeature ) ) {
+        return false;
+    }
     if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
         return false;
     }
@@ -626,8 +630,12 @@ bool CGff3Reader::x_UpdateAnnot(
         return false;
     }
     
-    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
-    return true;
+    string strId;
+    if ( gff.GetAttribute( "ID", strId ) ) {
+        m_MapIdToFeature[ strId ] = pFeature;
+    }
+
+    return x_AddFeatureToAnnot( pFeature, pAnnot );
 }
 
 //  ----------------------------------------------------------------------------
@@ -644,6 +652,25 @@ bool CGff3Reader::x_FeatureSetId(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureSetXref(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    string strParent;
+    if ( ! record.GetAttribute( "Parent", strParent ) ) {
+        return true;
+    }
+    CRef< CFeat_id > pFeatId( new CFeat_id );
+    pFeatId->SetLocal().SetStr( strParent );
+    CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
+    pXref->SetId( *pFeatId );
+    
+    pFeature->SetXref().push_back( pXref );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::x_FeatureSetLocation(
     const CGff3Record& record,
     CRef< CSeq_feat > pFeature )
@@ -655,7 +682,7 @@ bool CGff3Reader::x_FeatureSetLocation(
     pLocation->SetInt().SetId( *pId );
     pLocation->SetInt().SetFrom( record.SeqStart() );
     pLocation->SetInt().SetTo( record.SeqStop() );
-    if ( record.CanGetStrand() ) {
+    if ( record.IsSetStrand() ) {
         pLocation->SetInt().SetStrand( record.Strand() );
     }
     pFeature->SetLocation( *pLocation );
@@ -679,7 +706,7 @@ bool CGff3Reader::x_FeatureSetQualifiers(
     pQual->SetVal( record.Type() );
     pFeature->SetQual().push_back( pQual );
 
-    if ( record.CanGetScore() ) {
+    if ( record.IsSetScore() ) {
         pQual.Reset( new CGb_qual );
         pQual->SetQual( "gff_score" );
         pQual->SetVal( NStr::DoubleToString( record.Score() ) );
@@ -689,8 +716,8 @@ bool CGff3Reader::x_FeatureSetQualifiers(
     //
     //  Create GB qualifiers for the record attributes:
     //
-    const CGff3Record::Attributes& attrs = record.Attrs();
-    CGff3Record::AttrCit it = attrs.begin();
+    const CGff3Record::TAttributes& attrs = record.Attributes();
+    CGff3Record::TAttrCit it = attrs.begin();
     for ( /*NOOP*/; it != attrs.end(); ++it ) {
         pQual.Reset( new CGb_qual );
         pQual->SetQual( it->first );
@@ -709,6 +736,9 @@ bool CGff3Reader::x_FeatureSetGffInfo(
     CRef< CUser_object > pGffInfo( new CUser_object );
     pGffInfo->SetType().SetStr( "gff-info" );    
     pGffInfo->AddField( "gff-attributes", record.AttributesLiteral() );
+    pGffInfo->AddField( "gff-start", NStr::UIntToString( record.SeqStart() ) );
+    pGffInfo->AddField( "gff-stop", NStr::UIntToString( record.SeqStop() ) );
+    pGffInfo->AddField( "gff-cooked", string( "false" ) );
 
     pFeature->SetExts().push_back( pGffInfo );
     return true;
@@ -773,7 +803,7 @@ bool CGff3Reader::x_FeatureSetDataCDS(
 //  ----------------------------------------------------------------------------
 {
     CCdregion& cdr = pFeature->SetData().SetCdregion();
-    if ( record.CanGetPhase() ) {
+    if ( record.IsSetPhase() ) {
         cdr.SetFrame( record.Phase() );  
     }  
     return true;
@@ -803,6 +833,150 @@ bool CGff3Reader::x_FeatureSetDataMiscFeature(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_GetFeatureById(
+    const string & strId, 
+    ncbi::CRef<CSeq_feat>& pFeature )
+//  ----------------------------------------------------------------------------
+{
+    map< string, CRef< CSeq_feat > >::iterator it;
+    for ( it = m_MapIdToFeature.begin(); it != m_MapIdToFeature.end(); ++it ) {
+        if ( it->first == strId ) {
+            pFeature = it->second;
+            return true;
+        }
+    }
+    return false;
+}
 
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_HasTemporaryLocation(
+    const CSeq_feat& feature )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! feature.CanGetExts() ) {
+        return false;
+    }
+    list< CRef< CUser_object > > pExts = feature.GetExts();
+    list< CRef< CUser_object > >::iterator it;
+    for ( it = pExts.begin(); it != pExts.end(); ++it ) {
+        if ( ! (*it)->CanGetType() || ! (*it)->GetType().IsStr() ) {
+            continue;
+        }
+        if ( (*it)->GetType().GetStr() != "gff-info" ) {
+            continue;
+        }
+        if ( ! (*it)->HasField( "gff-cooked" ) ) {
+            return false;
+        }
+        return ( (*it)->GetField( "gff-cooked" ).GetData().GetStr() == "false" );
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::IsExon(
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! pFeature->CanGetData() || ! pFeature->GetData().IsImp() ) {
+        return false;
+    }
+    return ( pFeature->GetData().GetImp().GetKey() == "exon" );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_AddFeatureToAnnot(
+    CRef< CSeq_feat > pFeature,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! IsExon( pFeature ) ) {
+        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+        return true;
+    }
+
+    CRef< CSeq_feat > pParent;    
+    if ( ! x_GetParentFeature( *pFeature, pParent ) ) {
+        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+        return true;
+    }
+
+    bool bHasInterestingAttributes = false;
+    if ( pFeature->CanGetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        vector< CRef< CGb_qual > >::const_iterator it;
+        for ( it = quals.begin(); it != quals.end(); ++it ) {
+            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+                if ( (*it)->GetQual() != "Parent" ) {
+                    bHasInterestingAttributes = true;
+                    break;
+                }
+            }
+        }
+    }
+    if ( bHasInterestingAttributes ) {
+        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    }
+    return x_FeatureMergeExon( pFeature, pParent );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_GetParentFeature(
+    const CSeq_feat& feature,
+    CRef< CSeq_feat >& pParent )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! feature.CanGetQual() ) {
+        return false;
+    }
+
+    string strParentId;
+    vector< CRef< CGb_qual > > quals = feature.GetQual();
+    vector< CRef< CGb_qual > >::iterator it;
+    for ( it = quals.begin(); it != quals.end(); ++it ) {
+        if ( (*it)->CanGetQual() && (*it)->GetQual() == "Parent" ) {
+            strParentId = (*it)->GetVal();
+            break;
+        }
+    }
+    if ( it == quals.end() ) {
+        return false;
+    }
+    if ( ! x_GetFeatureById( strParentId, pParent ) ) {
+        return false;
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGff3Reader::x_FeatureMergeExon(
+    CRef< CSeq_feat > pExon,
+    CRef< CSeq_feat > pFeature )
+//  ---------------------------------------------------------------------------
+{
+    if ( x_HasTemporaryLocation( *pFeature ) ) {
+        // start rebuilding parent location from scratch
+        pFeature->SetLocation().Assign( pExon->GetLocation() );
+        list< CRef< CUser_object > > pExts = pFeature->SetExts();
+        list< CRef< CUser_object > >::iterator it;
+        for ( it = pExts.begin(); it != pExts.end(); ++it ) {
+            if ( ! (*it)->CanGetType() || ! (*it)->GetType().IsStr() ) {
+                continue;
+            }
+            if ( (*it)->GetType().GetStr() != "gff-info" ) {
+                continue;
+            }
+            (*it)->SetField( "gff-cooked" ).SetData().SetStr( "true" );
+        }
+    }
+    else {
+        // add exon location to current parent location
+        pFeature->SetLocation().Add(  pExon->GetLocation() );
+    }
+
+    return true;
+}
+                                
 END_objects_SCOPE
 END_NCBI_SCOPE

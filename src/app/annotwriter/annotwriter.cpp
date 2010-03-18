@@ -70,7 +70,6 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/writers/gff_record.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 
@@ -100,6 +99,9 @@ private:
     bool WriteWiggle(
         const CSeq_annot& annot,
         CNcbiOstream& );
+
+    CGffWriter::TFlags GffFlags( 
+        const CArgs& );
 };
 
 //  ----------------------------------------------------------------------------
@@ -146,6 +148,12 @@ void CAnnotWriterApp::Init()
             "Records per track",
             CArgDescriptions::eInteger,
             "0" );
+
+    arg_desc->AddFlag(
+        "so-quirks",
+        "recreate sequence ontology funniness in output",
+        true );
+        
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -248,7 +256,7 @@ bool CAnnotWriterApp::WriteGff(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CGffWriter writer( os );
+    CGffWriter writer( os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -260,6 +268,18 @@ bool CAnnotWriterApp::WriteWiggle(
 {
     CWiggleWriter writer( os, GetArgs()["tracksize"].AsInteger() );
     return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+CGffWriter::TFlags CAnnotWriterApp::GffFlags(
+    const CArgs& args )
+//  -----------------------------------------------------------------------------
+{
+    CGffWriter::TFlags eFlags = CGffWriter::fNormal;
+    if ( args["so-quirks"] ) {
+        eFlags = CGffWriter::TFlags( eFlags | CGffWriter::fSoQuirks );
+    }
+    return eFlags;
 }
 
 END_NCBI_SCOPE

@@ -29,36 +29,106 @@
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GFF_RECORD__HPP
-#define OBJTOOLS_READERS___GFF_RECORD__HPP
+#ifndef OBJTOOLS_WRITERS___GFF_WRITER__HPP
+#define OBJTOOLS_READERS___GFF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objtools/readers/gff3_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
+
+//  ----------------------------------------------------------------------------
+class CGff3RecordSet
+//  ----------------------------------------------------------------------------
+{
+public:
+    typedef vector< CGff3Record* > TRecords;
+    typedef TRecords::const_iterator TCit;
+    typedef TRecords::iterator TIt;
+
+public:
+    CGff3RecordSet() {};
+    ~CGff3RecordSet() {
+        for ( TRecords::iterator it = begin(); it != end(); ++it ) {
+            delete *it;
+        }
+    };
+
+    void AddRecord(
+        CGff3Record* pRecord ) { m_Set.push_back( pRecord ); };
+
+    const TRecords& Set() const { return m_Set; };
+    TCit begin() const { return Set().begin(); };
+    TCit end() const { return Set().end(); }; 
+    TIt begin() { return m_Set.begin(); };
+    TIt end() { return m_Set.end(); };
+
+protected:
+    TRecords m_Set;
+};
+
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffWriter
 //  ============================================================================
 {
 public:
+    typedef enum {
+        fNormal =       0,
+        fSoQuirks =     1<<0,
+    } TFlags;
+    
+public:
     CGffWriter(
-        CNcbiOstream& );
+        CNcbiOstream&,
+        TFlags = fNormal );
     ~CGffWriter();
 
     bool WriteAnnot( const CSeq_annot& );
 
 protected:
-    bool WriteAnnotFTable( const CSeq_annot& );
-    bool WriteAnnotAlign( const CSeq_annot& );
+    bool x_WriteHeader();
+    bool x_WriteAnnotFTable( 
+        const CSeq_annot& );
+    bool x_WriteAnnotAlign( 
+        const CSeq_annot& );
+    bool x_WriteRecord( 
+        const CGff3Record& );
+    bool x_WriteRecords( 
+        const CGff3RecordSet& );
+    bool x_AssignObject( 
+        const CSeq_annot&,
+        const CSeq_feat&,        
+        CGff3RecordSet& );
+
+    string x_GffId(
+        const CGff3Record& ) const;
+    string x_GffSource(
+        const CGff3Record& ) const;
+    string x_GffType(
+        const CGff3Record& ) const;
+    string x_GffSeqStart(
+        const CGff3Record& ) const;
+    string x_GffSeqStop(
+        const CGff3Record& ) const;
+    string x_GffScore(
+        const CGff3Record& ) const;
+    string x_GffStrand(
+        const CGff3Record& ) const;
+    string x_GffPhase(
+        const CGff3Record& ) const;
+    string x_GffAttributes( 
+        const CGff3Record& ) const;
 
     CNcbiOstream& m_Os;
+    TFlags m_uFlags;
 
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GFF_RECORD__HPP
+#endif  // OBJTOOLS_WRITERS___GFF_WRITER__HPP

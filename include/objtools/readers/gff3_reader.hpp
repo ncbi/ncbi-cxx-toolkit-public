@@ -34,12 +34,12 @@
 #define OBJTOOLS_READERS___GFF3_READER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff_reader.hpp>
-
+#include <objtools/readers/gff3_data.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,7 +53,13 @@ class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ----------------------------------------------------------------------------
     : protected CGFFReader, public CReaderBase
 {
-protected:
+public:
+    typedef enum {
+        fNormal =       0,
+        fNewCode =      0x1000, // for now don't clobber CGFFReader flags
+    } TFlags;
+    
+public:
     typedef vector< CRef< CSeq_annot > > TAnnots;
     typedef TAnnots::iterator TAnnotIt;
     typedef TAnnots::const_iterator TAnnotCit;
@@ -63,7 +69,7 @@ protected:
     //
 public:
     CGff3Reader( 
-        int =0 );
+        unsigned int = 0 );
 
     virtual ~CGff3Reader();
     
@@ -133,8 +139,16 @@ public:
     virtual bool x_UpdateAnnot(
         const CGff3Record&,
         CRef< CSeq_annot > );
+
+    virtual bool x_AddFeatureToAnnot(
+        CRef< CSeq_feat >,
+        CRef< CSeq_annot > );
                             
     bool x_FeatureSetId(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureSetXref(
         const CGff3Record&,
         CRef< CSeq_feat > );
 
@@ -174,10 +188,29 @@ public:
         const CGff3Record&,
         CRef< CSeq_feat > );
 
+    bool x_GetFeatureById(
+        const string&,
+        CRef< CSeq_feat >& );
+
+    bool x_GetParentFeature(
+        const CSeq_feat&,
+        CRef< CSeq_feat >& );
+
+    bool x_FeatureMergeExon(
+        CRef< CSeq_feat >,
+        CRef< CSeq_feat > );
+
     CErrorContainerLenient m_ErrorsPrivate;
+    map< string, CRef< CSeq_feat > > m_MapIdToFeature;
 
     static string GenbankKey(
         CSeqFeatData::ESubtype );
+
+    bool x_HasTemporaryLocation(
+        const CSeq_feat& );
+
+    static bool IsExon(
+        CRef< CSeq_feat > );
 
     //
     //  helpers:
@@ -220,7 +253,7 @@ protected:
     //  data:
     //
 protected:
-    int m_iReaderFlags;
+    TFlags m_uFlags;
     IErrorContainer* m_pErrors;
 };
 

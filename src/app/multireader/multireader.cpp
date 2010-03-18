@@ -280,7 +280,14 @@ void CMultiReaderApp::Init(void)
         "as-graph",
         "generate graph object",
         true );
-    
+
+    //
+    //  gff reader specific arguments:
+    //
+    arg_desc->AddFlag(
+        "new-code",
+        "use new gff3 reader implementation",
+        true );    
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -420,7 +427,9 @@ void CMultiReaderApp::SetFlags(
         if ( args["format"].AsString() == "gff3" ) {
             m_iFlags |= CGFFReader::fSetVersion3;
         }
-        break;
+        if ( args["new-code"] ) {
+            m_iFlags |= CGff3Reader::fNewCode;
+        }
             
     default:
         break;
@@ -452,7 +461,7 @@ void CMultiReaderApp::ReadAnnots(
             break;
         }    
         case CFormatGuess::eGtf: {
-            CGff3Reader reader( m_iFlags );
+            CGff3Reader reader( (unsigned int)m_iFlags );
             reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
             break;
         }
