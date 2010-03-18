@@ -147,7 +147,6 @@ public:
     /// MANDATORY for subclasses of IServer_(Line)MessageHandler
     virtual void OnMessage(BUF buf);
     virtual void OnWrite(void); ///< MANDATORY to implement
-    virtual void OnClose(void) { } ///< MANDATORY to implement
 
 private:
     CTestServer* m_Server;
