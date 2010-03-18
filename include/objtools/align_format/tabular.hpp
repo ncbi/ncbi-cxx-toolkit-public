@@ -1,5 +1,4 @@
-/* $Id$
-* ===========================================================================
+/* $Id$ * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
@@ -399,13 +398,6 @@ inline void CBlastTabularInfo::x_PrintGaps(void)
 class NCBI_ALIGN_FORMAT_EXPORT CIgBlastTabularInfo : public CBlastTabularInfo
 {
 public:
-    /// struct containing annotated gene information
-    struct SIgGene {
-        void Reset() { start = -1;}
-        bool IsSet() const { return (start >= 0); }
-        int start; // 0-based
-        int end;   // semi-inclusive [start, end)
-    };
 
     /// struct containing annotated domain information
     struct SIgDomain {
@@ -419,13 +411,6 @@ public:
         int num_match;
         int num_mismatch;
         int num_gap;
-    };
-
-    /// ways of presenting the gene results
-    enum EGeneOutputStyle {
-        eFull = 0,   ///< Show full gene
-        eFirstFive,  ///< Show only first 5 letters
-        eLastFive    ///< Show only last 5 letters
     };
 
     /// What delimiter to use between fields in each row of the tabular output.
@@ -464,21 +449,18 @@ public:
     };
 
     /// Set gene info
-    void SetVGene(int start, int end) {
-        m_VGene.start = start;
-        m_VGene.end = end;
+    void SetVGene(const string &v) {
+        m_VGene = v;
     }
 
     /// Set gene info
-    void SetDGene(int start, int end) {
-        m_DGene.start = start;
-        m_DGene.end = end;
+    void SetDGene(const string &d) {
+        m_DGene = d;
     }
 
     /// Set gene info
-    void SetJGene(int start, int end) {
-        m_JGene.start = start;
-        m_DGene.end = end;
+    void SetJGene(const string &j) {
+        m_JGene = j;
     }
 
     /// Print domain information
@@ -488,14 +470,13 @@ protected:
     void x_ResetIgFields();
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
-    void x_PrintIgGene(const SIgGene &gene, EGeneOutputStyle eStyle) const;
 
 private:                                                                    
     bool m_IsOOF;                                                           
     bool m_IsMinusStrand;
-    SIgGene m_VGene;
-    SIgGene m_DGene;
-    SIgGene m_JGene;
+    string m_VGene;
+    string m_DGene;
+    string m_JGene;
     vector<SIgDomain *> m_IgDomains;                                        
 };
 

@@ -889,24 +889,21 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 {
     x_PrintQuerySeqId();
     m_Ostream << m_FieldDelimiter
-              << ((m_IsMinusStrand) ? '-' : '+') 
+              << ((m_IsMinusStrand) ? '-' : '+');
+              /* OOF is not implemented yet...
               << m_FieldDelimiter
-              << ((m_IsOOF) ? "OOF" : "IF") 
-              << m_FieldDelimiter;
+              << ((m_IsOOF) ? "OOF" : "IF");*/
 
-    x_PrintIgGene(m_VGene, eLastFive);
-    m_Ostream << m_FieldDelimiter;
+    m_Ostream << m_FieldDelimiter << m_VGene;
+    m_Ostream << m_FieldDelimiter << m_DGene;
+    m_Ostream << m_FieldDelimiter << m_JGene;
 
-    x_PrintIgGene(m_DGene, eFull);
-    m_Ostream << m_FieldDelimiter;
-
-    x_PrintIgGene(m_JGene, eFirstFive);
-    m_Ostream << m_FieldDelimiter;
-    
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
-        x_PrintIgDomain(*(m_IgDomains[i]));
         m_Ostream << m_FieldDelimiter;
+        x_PrintIgDomain(*(m_IgDomains[i]));
     }
+
+    m_Ostream << "\n";
 };
 
 void CIgBlastTabularInfo::x_ResetIgFields()
@@ -917,9 +914,9 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_IgDomains.clear();
     m_IsOOF = false;
     m_IsMinusStrand = false;
-    m_VGene.Reset();
-    m_DGene.Reset();
-    m_JGene.Reset();
+    m_VGene = "NA";
+    m_DGene = "NA";
+    m_JGene = "NA";
 };
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
@@ -970,36 +967,6 @@ void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
               <<  "NA" << m_FieldDelimiter
               <<  "NA";
     }
-};
-
-void CIgBlastTabularInfo::x_PrintIgGene(const SIgGene &gene,
-                                        EGeneOutputStyle eStyle) const
-{
-    if (!gene.IsSet()) {
-        m_Ostream << "NA";
-        return;
-    }
-         
-    int start = (eStyle == eLastFive) ? max(gene.end - 5, gene.start) : gene.start;
-    int end = (eStyle == eFirstFive) ? min(gene.start + 5, gene.end) : gene.end;
-
-    // the query sequence may contain gaps and must be re-positioned
-    int pos = 0;
-    unsigned int i = 0;
-    bool hasOutput = false;
-    while (pos < start - m_QueryStart +1 && i < m_QuerySeq.size()) {
-        if (m_QuerySeq[i] != '-') ++pos;
-        ++i;
-    }
-    while (pos < end - m_QueryStart +1 && i < m_QuerySeq.size()) {
-        if (m_QuerySeq[i] != '-') {
-            m_Ostream << m_QuerySeq[i];
-            ++pos;
-            hasOutput = true;
-        }
-        ++i;
-    }
-    if (! hasOutput) m_Ostream << "NA";
 };
 
 END_SCOPE(align_format)
