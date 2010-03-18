@@ -314,8 +314,8 @@ CNetCacheServer::x_CleanExistingStorages(const list<string>& ini_sections)
             if (is_main
                 &&  (NStr::CompareNocase(*it_sec, kNCReg_DefCacheSection) == 0
                      ||  NStr::CompareNocase(*it_sec, kNCReg_OldCacheSection) == 0)
-                ||  !is_main 
-                    &&  NStr::CompareNocase(*it_sec, section_name) == 0)
+                ||  (!is_main
+                     &&  NStr::CompareNocase(*it_sec, section_name) == 0))
             {
                 sec_found = true;
                 break;

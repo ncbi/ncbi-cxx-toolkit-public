@@ -299,6 +299,7 @@ bool CThreadPoolTester::Thread_Run(int idx)
 
 int main(int argc, const char* argv[])
 {
-    putenv("LOG_TRUNCATE=yes");
+    string env_var("LOG_TRUNCATE=yes");
+    putenv(&env_var[0]);
     return CThreadPoolTester().AppMain(argc, argv, 0, eDS_Default, 0);
 }

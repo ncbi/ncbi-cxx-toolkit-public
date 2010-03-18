@@ -644,8 +644,9 @@ inline void
 CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd)
 {
     ENCLogCmdsType log_type = m_Server->GetLogCmdsType();
-    if (log_type == eLogAllCmds  ||  log_type == eNoLogHasb
-        &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_HasBlob)
+    if (log_type == eLogAllCmds
+        ||  (log_type == eNoLogHasb
+             &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_HasBlob))
     {
         CDiagContext_Extra diag_extra = GetDiagContext().PrintRequestStart();
         diag_extra.Print("cmd",  cmd.command->cmd);

@@ -666,7 +666,7 @@ private:
     /// Id of database part which is now in process of caching information
     /// from.
     TNCDBPartId              m_NotCachedPartId;
-    /// Minimum expiration time of all blobs remembered now by the storage. 
+    /// Minimum expiration time of all blobs remembered now by the storage.
     /// Variable is used with assumption that reads and writes for int are
     /// always atomic.
     volatile int             m_LastDeadTime;
@@ -902,7 +902,7 @@ inline bool
 CNCBlobStorage::x_IsMonitored(void) const
 {
     return IsVisibleDiagPostLevel(eDiag_Trace)
-           ||  m_Monitor  &&  m_Monitor->IsMonitorActive();
+           ||  (m_Monitor  &&  m_Monitor->IsMonitorActive());
 }
 
 inline CNCDBStat*
@@ -1007,7 +1007,7 @@ CNCBlobStorage::ReturnFile(TNCDBPartId   part_id,
     {{
         CFastReadGuard guard(m_DBFilesMutex);
         pool = m_DBFiles[part_id][vol_id].get();
-    }}    
+    }}
     _ASSERT(pool);
     pool->ReturnFile(file);
 }

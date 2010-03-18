@@ -150,10 +150,10 @@ CNCBlob::Read(void* buffer, size_t size)
         if (!m_Storage->ReadChunkValue(*m_BlobInfo, *m_NextRowIdIt, &m_Buffer))
             s_CorruptedDatabase(*m_BlobInfo);
         ++m_NextRowIdIt;
-        if (m_NextRowIdIt != m_AllRowIds.end()
-                &&  m_Buffer.size() != kNCMaxBlobChunkSize
-            ||  m_NextRowIdIt == m_AllRowIds.end()
-                &&  m_Position + m_Buffer.size() != m_BlobInfo->size)
+        if ((m_NextRowIdIt != m_AllRowIds.end()
+                 &&  m_Buffer.size() != kNCMaxBlobChunkSize)
+            ||  (m_NextRowIdIt == m_AllRowIds.end()
+                 &&  m_Position + m_Buffer.size() != m_BlobInfo->size))
         {
             s_CorruptedDatabase(*m_BlobInfo);
         }
@@ -250,7 +250,7 @@ CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
         if (m_BlobAccess == eCreate) {
             // This would be a marker showing that meta-information about blob
             // shouldn't be read from database - it isn't needed and will be
-            // re-written anyway (and it even will be impossible to read if 
+            // re-written anyway (and it even will be impossible to read if
             // we move blob into different part below).
             m_BlobInfo.ttl = m_Storage->GetDefBlobTTL();
 
@@ -427,7 +427,7 @@ void
 CNCBlobLockHolder::ReleaseLock(void)
 {
     if (IsLockAcquired()) {
-        if (m_DeleteNotFinalized  &&  (!m_Blob  ||  !m_Blob->IsFinalized())
+        if ((m_DeleteNotFinalized  &&  (!m_Blob  ||  !m_Blob->IsFinalized()))
             ||  m_BlobInfo.corrupted)
         {
             m_Storage->DeleteBlob(m_BlobInfo);

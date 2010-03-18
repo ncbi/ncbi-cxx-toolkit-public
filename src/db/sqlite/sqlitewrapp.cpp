@@ -919,7 +919,7 @@ CSQLITE_Blob::Write(const void* data, size_t size)
                           );
             _ASSERT(sql_ret == SQLITE_OK);
 
-            reinterpret_cast<const char*&>(data) += to_write;
+            data = static_cast<const char*>(data) + to_write;
             size -= to_write;
             m_Position += to_write;
         }
