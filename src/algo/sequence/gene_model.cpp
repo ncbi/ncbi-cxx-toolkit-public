@@ -58,8 +58,11 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 
 
@@ -795,6 +798,62 @@ static void s_HandleCdsExceptions(CSeq_feat& feat,
                                   const CSeq_align* align)
 {
     if ( !feat.IsSetProduct() ) {
+        ///
+        /// corner case:
+        /// we may be a CDS feature for an Ig locus
+        /// check to see if we have an overlapping V/C/D/J/S region
+        /// we trust only featu-id xrefs here
+        ///
+        if (feat.IsSetXref()) {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+            const CTSE_Handle& tse = bsh.GetTSE_Handle();
+
+            ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+                if ( !(*it)->IsSetId() ) {
+                    continue;
+                }
+
+                CSeq_feat_Handle h;
+                const CFeat_id& feat_id = (*it)->GetId();
+                if (feat_id.IsLocal()) {
+                    if (feat_id.GetLocal().IsId()) {
+                        h = tse.GetFeatureWithId(CSeqFeatData::e_not_set,
+                                                 feat_id.GetLocal().GetId());
+                    } else {
+                        h = tse.GetFeatureWithId(CSeqFeatData::e_not_set,
+                                                 feat_id.GetLocal().GetStr());
+                    }
+                }
+
+                if (h) {
+                    switch (h.GetData().GetSubtype()) {
+                    case CSeqFeatData::eSubtype_C_region:
+                    case CSeqFeatData::eSubtype_D_loop:
+                    case CSeqFeatData::eSubtype_D_segment:
+                    case CSeqFeatData::eSubtype_J_segment:
+                    case CSeqFeatData::eSubtype_S_region:
+                    case CSeqFeatData::eSubtype_V_region:
+                    case CSeqFeatData::eSubtype_V_segment:
+                        {{
+                             /// found it
+                             feat.SetExcept(true);
+
+                             string text;
+                             if (feat.IsSetExcept_text()) {
+                                 text = feat.GetExcept_text();
+                                 text += ", ";
+                             }
+                             text += "rearrangement required for product";
+                             feat.SetExcept_text(text);
+                         }}
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
         return;
     }
 
@@ -941,6 +1000,23 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
 
     case CSeqFeatData::e_Cdregion:
         s_HandleCdsExceptions(feat, scope, align);
+        break;
+
+    case CSeqFeatData::e_Imp:
+        switch (feat.GetData().GetSubtype()) {
+        case CSeqFeatData::eSubtype_C_region:
+        case CSeqFeatData::eSubtype_D_loop:
+        case CSeqFeatData::eSubtype_D_segment:
+        case CSeqFeatData::eSubtype_J_segment:
+        case CSeqFeatData::eSubtype_S_region:
+        case CSeqFeatData::eSubtype_V_region:
+        case CSeqFeatData::eSubtype_V_segment:
+            s_HandleRnaExceptions(feat, scope, align);
+            break;
+
+        default:
+            break;
+        }
         break;
 
     default:
