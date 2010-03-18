@@ -783,10 +783,10 @@ BOOST_AUTO_TEST_CASE(PositiveMismatchOption) {
     CBl2Seq blaster(*query, *subj, nucl_options_handle);
     try {
        TSeqAlignVector sav(blaster.Run());
-    } catch (CBlastException& exptn) {
+    } catch (const CException& e) {
         BOOST_REQUIRE(
             !strcmp("BLASTN penalty must be negative",  
-                    exptn.GetMsg().c_str()));
+                    e.GetMsg().c_str()));
     }
 }
 
@@ -1717,14 +1717,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
     BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
 
     CBl2Seq blaster(*query, *query, opts);
-    try {
-        TSeqAlignVector sav(blaster.Run());
-        CRef<CSeq_align> sar = *(sav[0]->Get().begin());
-        BOOST_REQUIRE(sar.NotEmpty());
-        BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
-    } catch (const CBlastException& e) {
-        BOOST_REQUIRE(e.GetErrCode() == CBlastException::eSeqSrcInit);
-    }
+    BOOST_REQUIRE_THROW(blaster.Run(), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
