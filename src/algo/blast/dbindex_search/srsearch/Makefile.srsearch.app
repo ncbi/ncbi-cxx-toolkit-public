@@ -11,3 +11,5 @@ LDFLAGS  = $(FAST_LDFLAGS)
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
+
+WATCHERS = morgulis

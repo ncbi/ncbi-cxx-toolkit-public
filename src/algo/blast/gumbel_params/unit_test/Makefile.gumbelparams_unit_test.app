@@ -9,6 +9,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD = gumbelparams_unit_test
 CHECK_COPY = data
-CHECK_AUTHORS = blastsoft
 
 WATCHERS = blastsoft

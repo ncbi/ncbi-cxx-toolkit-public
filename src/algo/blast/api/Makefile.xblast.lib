@@ -83,3 +83,5 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
+
+WATCHERS = blastsoft
