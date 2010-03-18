@@ -177,7 +177,7 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
 
     str->resize(vec.size());
     for (unsigned int i=0; i<vec.size(); ++i)
-        str->at(i) = stdaaMap[vec[i]];
+        str->at(i) = stdaaMap[(unsigned int) vec[i]];
 }
 
 Sequence::Sequence(ncbi::objects::CBioseq& bioseq) :

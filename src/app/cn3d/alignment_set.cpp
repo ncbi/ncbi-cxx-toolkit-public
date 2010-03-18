@@ -220,7 +220,7 @@ MasterDependentAlignment::MasterDependentAlignment(StructureBase *parent, const 
 
         const CDense_seg& block = seqAlign.GetSegs().GetDenseg();
 
-        if (!block.IsSetDim() && block.GetDim() != 2 ||
+        if (!block.IsSetDim() || block.GetDim() != 2 ||
             block.GetIds().size() != 2 ||
             (int)block.GetStarts().size() != 2 * block.GetNumseg() ||
             (int)block.GetLens().size() != block.GetNumseg()) {
