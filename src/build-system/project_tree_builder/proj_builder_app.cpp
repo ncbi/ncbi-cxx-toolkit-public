@@ -877,12 +877,10 @@ void CProjBulderApp::CollectLibToLibDependencies(
 {
     string lib_name(CreateProjectName(lib->first));
     string lib_dep_name(CreateProjectName(lib_dep->first));
-/*
-    if (GetApp().m_AllDllBuild) {
+    if (m_AllDllBuild) {
         dep.insert(lib_dep_name);
-        return;
+//        return;
     }
-*/
     if (visited.find(lib_dep_name) != visited.end() ||
         lib_dep_name == lib_name) {
         return;
