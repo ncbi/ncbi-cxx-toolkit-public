@@ -5965,6 +5965,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "URT	s	Universita degli Studi di Roma Tre, Dipartimento di Biologia",
 "URV	s	University of Richmond, Biology Department",
 "US	s	Smithsonian Institution, Department of Botany",
+"US<ZAF>	s	University of Stellenbosch",
 "USA	s	University of South Alabama",
 "USAC	s	University of Western Australia",
 "USAM	s	University of South Alabama, Department of Biological Sciences",
