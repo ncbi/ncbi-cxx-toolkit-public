@@ -395,42 +395,41 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
-    EIO_Status status = eIO_Success;
+    char value[32];
 
     assert(!s_GnuTlsCredAnon);
 
-    if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
-        ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
-        status = eIO_NotSupported;
-    } else if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
-        gnutls_global_deinit();
-        status = eIO_NotSupported;
-    } else if (gnutls_certificate_allocate_credentials(&xcred) != 0) {
-        gnutls_anon_free_client_credentials(acred);
-        gnutls_global_deinit();
-        status = eIO_NotSupported;
-    } else {
-        char value[32];
-        s_GnuTlsCredAnon = acred;
-        s_GnuTlsCredCert = xcred;
-        ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", value, sizeof(value), "");
-        if (*value) {
-            int level = atoi(value);
-            s_GnuTlsLogLevel = level < 0 ? 0 : level;
-            gnutls_global_set_log_function(x_GnuTlsLogger);
-            gnutls_global_set_log_level(s_GnuTlsLogLevel);
-            if (s_GnuTlsLogLevel > 1) {
-                CORE_LOGF(eLOG_Note, ("GNUTLS V%s inited",
-                                      gnutls_check_version(0)));
-            }
+    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", value, sizeof(value), "");
+    if (*value) {
+        int level = atoi(value);
+        s_GnuTlsLogLevel = level < 0 ? 0 : level;
+        gnutls_global_set_log_function(x_GnuTlsLogger);
+        gnutls_global_set_log_level(s_GnuTlsLogLevel);
+        if (s_GnuTlsLogLevel > 1) {
+            CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
+                                  gnutls_check_version(0), s_GnuTlsLogLevel));
         }
     }
-    if (status == eIO_Success) {
-        s_Pull = pull;
-        s_Push = push;
+
+    if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
+        ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
+        return eIO_NotSupported;
+    }
+    if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
+        gnutls_global_deinit();
+        return eIO_NotSupported;
+    }
+    if (gnutls_certificate_allocate_credentials(&xcred) != 0) {
+        gnutls_anon_free_client_credentials(acred);
+        gnutls_global_deinit();
+        return eIO_NotSupported;
     }
 
-    return status;
+    s_GnuTlsCredAnon = acred;
+    s_GnuTlsCredCert = xcred;
+    s_Pull = pull;
+    s_Push = push;
+    return eIO_Success;
 }
 
 
@@ -438,15 +437,15 @@ static void s_GnuTlsExit(void)
 {
     assert(s_GnuTlsCredAnon);
 
-    gnutls_global_set_log_function(0);
-    gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
-    gnutls_anon_free_client_credentials(s_GnuTlsCredAnon);
-    gnutls_certificate_free_credentials(s_GnuTlsCredCert);
-    gnutls_global_deinit();
-    s_GnuTlsCredAnon = 0;
-    s_GnuTlsCredCert = 0;
-    s_Pull = 0;
     s_Push = 0;
+    s_Pull = 0;
+    gnutls_certificate_free_credentials(s_GnuTlsCredCert);
+    s_GnuTlsCredCert = 0;
+    gnutls_anon_free_client_credentials(s_GnuTlsCredAnon);
+    s_GnuTlsCredAnon = 0;
+    gnutls_global_deinit();
+    gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
+    gnutls_global_set_log_function(0);
 }
 
  
