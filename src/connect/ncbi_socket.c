@@ -1636,16 +1636,16 @@ static EIO_Status s_Select(size_t                n,
 
 static unsigned short x_GetLocalPort(TSOCK_Handle fd)
 {
-    struct sockaddr_in addr;
-    SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
-    memset(&addr, 0, sizeof(addr));
+    struct sockaddr_in sin;
+    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
+    memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    addr.sin_len = addrlen;
+    sin.sin_len = sinlen;
 #endif /*HAVE_SIN_LEN*/
-    if (getsockname(fd, (struct sockaddr*) &addr, &addrlen) < 0)
+    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) < 0)
         return 0;
-    assert(addr.sin_family == AF_INET);
-    return ntohs(addr.sin_port);
+    assert(sin.sin_family == AF_INET);
+    return ntohs(sin.sin_port);
 }
 
 
@@ -2871,11 +2871,11 @@ static EIO_Status s_Connect(SOCK            sock,
             return eIO_InvalidArg;
         }
         addrlen = (SOCK_socklen_t) sizeof(addr.un);
+#  ifdef HAVE_SIN_LEN
+        addr.un.sun_len    = addrlen;
+#  endif /*HASE_SIN_LEN*/
         addr.un.sun_family = AF_UNIX;
         memcpy(addr.un.sun_path, sock->path, pathlen);
-#  ifdef HAVE_SIN_LEN
-        addr.un.sun_len = addrlen;
-#  endif /*HASE_SIN_LEN*/
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -2891,12 +2891,12 @@ static EIO_Status s_Connect(SOCK            sock,
         if (port)
             sock->port = port;
         addrlen = (SOCK_socklen_t) sizeof(addr.in);
-        addr.in.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
+        addr.in.sin_len         = addrlen;
+#endif /*HAVE_SIN_LEN*/
+        addr.in.sin_family      = AF_INET;
         addr.in.sin_addr.s_addr =       sock->host;
         addr.in.sin_port        = htons(sock->port);
-#ifdef HAVE_SIN_LEN
-        addr.in.sin_len = addrlen;
-#endif /*HAVE_SIN_LEN*/
     }
 
     /* create the new socket */
@@ -3461,6 +3461,7 @@ static EIO_Status s_CreateListening(const char*    path,
         return eIO_NotSupported;
     }
 
+    memset(&addr, 0, sizeof(addr));
     if (path) {
 #ifdef NCBI_OS_UNIX
         size_t pathlen = strlen(path);
@@ -3515,15 +3516,14 @@ static EIO_Status s_CreateListening(const char*    path,
     }
 
     /* bind */
-    memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (path) {
+        assert(addr.un.sun_family == AF_UNIX);
         addrlen = (SOCK_socklen_t) sizeof(addr.un);
-        addr.un.sun_family = AF_UNIX;
-        strcpy(addr.un.sun_path, path);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
+        strcpy(addr.un.sun_path, path);
         cp = path;
         u = umask(0);
     } else
@@ -3531,13 +3531,13 @@ static EIO_Status s_CreateListening(const char*    path,
     {
         unsigned int host =
             htonl(flags & fSOCK_BindLocal ? INADDR_LOOPBACK : INADDR_ANY);
+        assert(addr.in.sin_family == AF_INET);
         addrlen = sizeof(addr.in);
-        addr.in.sin_family      = AF_INET;
-        addr.in.sin_addr.s_addr =       host;
-        addr.in.sin_port        = htons(port);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
+        addr.in.sin_addr.s_addr =       host;
+        addr.in.sin_port        = htons(port);
 #ifdef NCBI_OS_UNIX
         u = 0/*dummy*/;
 #endif /*NCBI_OS_UNIX*/
@@ -5385,7 +5385,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 
 extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 {
-    struct sockaddr_in addr;
+    struct sockaddr_in sin;
     char _id[MAXIDLEN];
 
     if (sock->type != eDatagram) {
@@ -5405,14 +5405,14 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
     }
 
     /* bind */
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port        = htons(port);
+    memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    addr.sin_len         = (SOCK_socklen_t) sizeof(addr);
+    sin.sin_len         = (SOCK_socklen_t) sizeof(sin);
 #endif /*HAVE_SIN_LEN*/
-    if (bind(sock->sock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
+    sin.sin_family      = AF_INET;
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_port        = htons(port);
+    if (bind(sock->sock, (struct sockaddr*) &sin, sizeof(sin)) != 0) {
         int x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(80, x_error == SOCK_EADDRINUSE
                             ? eLOG_Trace : eLOG_Error,
@@ -5425,7 +5425,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, (struct sockaddr*) &addr);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, (struct sockaddr*) &sin);
 
     sock->myport = port;
     return eIO_Success;
@@ -5484,6 +5484,9 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     /* connect (non-empty address) or drop association (on empty address) */
     memset(&peer, 0, sizeof(peer));
+#ifdef HAVE_SIN_LEN
+    peer.sin_len             = (SOCK_socklen_t) sizeof(peer);
+#endif /*HAVE_SIN_LEN*/
     if (host/*  &&  port*/) {
         peer.sin_family      = AF_INET;
         peer.sin_addr.s_addr =       host;
@@ -5493,9 +5496,6 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     else
         peer.sin_family      = AF_UNSPEC;
 #endif /*AF_UNSPEC*/
-#ifdef HAVE_SIN_LEN
-    peer.sin_len             = (SOCK_socklen_t) sizeof(peer);
-#endif /*HAVE_SIN_LEN*/
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         int x_error = SOCK_ERRNO;
         if (host)
@@ -5533,7 +5533,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     unsigned short     x_port;
     unsigned int       x_host;
     void*              x_msg;
-    struct sockaddr_in addr;
+    struct sockaddr_in sin;
 
     if (sock->type != eDatagram) {
         CORE_LOGF_X(86, eLOG_Error,
@@ -5588,24 +5588,24 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     } else
         x_msg = 0;
 
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr =       x_host;
-    addr.sin_port        = htons(x_port);
+    memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    addr.sin_len         = (SOCK_socklen_t) sizeof(addr);
+    sin.sin_len         = (SOCK_socklen_t) sizeof(sin);
 #endif /*HAVE_SIN_LEN*/
+    sin.sin_family      = AF_INET;
+    sin.sin_addr.s_addr =       x_host;
+    sin.sin_port        = htons(x_port);
 
     for (;;) { /* optionally auto-resume if interrupted */
         int  x_written;
         int  x_error;
         if ((x_written = sendto(sock->sock, x_msg, x_msgsize, 0/*flags*/,
-                                (struct sockaddr*) &addr, sizeof(addr))) >= 0){
+                                (struct sockaddr*) &sin, sizeof(sin))) >= 0){
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(eLOG_Trace, sock, eIO_Write, x_msg, (size_t) x_written,
-                        (struct sockaddr*) &addr);
+                        (struct sockaddr*) &sin);
             }
 
             sock->n_written += x_written;
@@ -5729,14 +5729,14 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
         int                x_error;
         int                x_read;
-        struct sockaddr_in addr;
-        SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
-        memset(&addr, 0, sizeof(addr));
+        struct sockaddr_in sin;
+        SOCK_socklen_t     sinlen = (SOCK_socklen_t) sizeof(sin);
+        memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-        addr.sin_len = addrlen;
+        sin.sin_len = sinlen;
 #endif
         x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
-                          (struct sockaddr*) &addr, &addrlen);
+                          (struct sockaddr*) &sin, &sinlen);
 
 #ifdef NCBI_OS_MSWIN
         /* recvfrom() resets IO event recording */
@@ -5750,9 +5750,9 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                 if (msglen)
                     *msglen = x_read;
                 if (sender_addr)
-                    *sender_addr =       addr.sin_addr.s_addr;
+                    *sender_addr =       sin.sin_addr.s_addr;
                 if (sender_port)
-                    *sender_port = ntohs(addr.sin_port);
+                    *sender_port = ntohs(sin.sin_port);
                 if ((size_t) x_read > buflen  &&
                     !BUF_Write(&sock->r_buf,
                                (char*) x_msg  + buflen,
@@ -5766,7 +5766,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(eLOG_Trace, sock, eIO_Read, x_msg, (size_t) x_read,
-                        (struct sockaddr*) &addr);
+                        (struct sockaddr*) &sin);
             }
 
             sock->n_read += x_read;
@@ -6110,9 +6110,9 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
         if ((x_error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
-            struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
-            assert(addr->sin_family == AF_INET);
-            host = addr->sin_addr.s_addr;
+            struct sockaddr_in* sin = (struct sockaddr_in *) out->ai_addr;
+            assert(sin->sin_family == AF_INET);
+            host = sin->sin_addr.s_addr;
         } else {
             if (s_Log == eOn) {
                 if (x_error == EAI_SYSTEM)
@@ -6206,15 +6206,15 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
     if (host) {
         int x_error;
 #if defined(HAVE_GETNAMEINFO) && defined(EAI_SYSTEM)
-        struct sockaddr_in addr;
+        struct sockaddr_in sin;
 
-        memset(&addr, 0, sizeof(addr));
-        addr.sin_family      = AF_INET; /* currently, we only handle IPv4 */
-        addr.sin_addr.s_addr = host;
+        memset(&sin, 0, sizeof(sin));
 #  ifdef HAVE_SIN_LEN
-        addr.sin_len = (SOCK_socklen_t) sizeof(addr);
+        sin.sin_len = (SOCK_socklen_t) sizeof(sin);
 #  endif /*HAVE_SIN_LEN*/
-        if ((x_error = getnameinfo((struct sockaddr*) &addr, sizeof(addr),
+        sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
+        sin.sin_addr.s_addr = host;
+        if ((x_error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
                                    name, namelen, 0, 0, 0)) != 0  ||  !*name) {
             if (SOCK_ntoa(host, name, namelen) != 0) {
                 if (!x_error) {
