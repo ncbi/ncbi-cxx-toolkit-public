@@ -73,17 +73,21 @@ bool CGff3Record::AssignFromGff(
 //  ----------------------------------------------------------------------------
 {
     vector< string > columns;
-    NStr::Tokenize( strRawInput, " \t", columns, NStr::eMergeDelims );
 
-    if ( columns.size() > 9 ) {
-        // did these bozos sprinkled blanks between the attributes?
-        NStr::TruncateSpacesInPlace( columns[8] );
-        for ( unsigned int u = 9; u < columns.size(); ++u ) {
-            columns[8] += NStr::TruncateSpaces( columns[u] );
-        }
+    string strLeftOver = strRawInput;
+    for ( size_t i=0; i < 8 && ! strLeftOver.empty(); ++i ) {
+        string strFront;
+        NStr::SplitInTwo( strLeftOver, " \t", strFront, strLeftOver );
+        columns.push_back( strFront );
+        NStr::TruncateSpacesInPlace( strLeftOver, NStr::eTrunc_Begin );
     }
-
-    //  to do: sanity checks
+    columns.push_back( strLeftOver );
+        
+    if ( columns.size() < 9 ) {
+        // not enough fields to work with
+        return false;
+    }
+    //  to do: more sanity checks
 
     m_strId = columns[0];
     m_strSource = columns[1];
@@ -163,7 +167,16 @@ bool CGff3Record::x_AssignAttributesFromGff(
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
-            return false;
+            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
+                return false;
+            }
+        }
+        NStr::TruncateSpacesInPlace( strKey );
+        NStr::TruncateSpacesInPlace( strValue );
+        if ( strKey.empty() && strValue.empty() ) {
+            // Probably due to trailing "; ". Sequence Ontology generates such
+            // things. 
+            continue;
         }
         if ( NStr::StartsWith( strValue, "\"" ) ) {
             strValue = strValue.substr( 1, string::npos );

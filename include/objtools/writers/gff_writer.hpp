@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/readers/gff3_data.hpp>
 
@@ -78,7 +79,8 @@ class NCBI_XOBJWRITE_EXPORT CGffWriter
 public:
     typedef enum {
         fNormal =       0,
-        fSoQuirks =     1<<0,
+        fNoHeader =     1<<0,
+        fSoQuirks =     1<<15,
     } TFlags;
     
 public:
@@ -99,6 +101,11 @@ protected:
         const CGff3Record& );
     bool x_WriteRecords( 
         const CGff3RecordSet& );
+    bool x_WriteBrowserLine(
+        const CRef< CUser_object > );
+    bool x_WriteTrackLine(
+        const CRef< CUser_object > );
+
     bool x_AssignObject( 
         const CSeq_annot&,
         const CSeq_feat&,        
@@ -122,6 +129,18 @@ protected:
         const CGff3Record& ) const;
     string x_GffAttributes( 
         const CGff3Record& ) const;
+
+    void x_PriorityProcess(
+        const string&,
+        map<string, string >&,
+        string& ) const;
+
+    CRef< CUser_object > x_GetDescriptor(
+        const CSeq_annot&,
+        const string& ) const;
+
+    static bool x_NeedsQuoting(
+        const string& );
 
     CNcbiOstream& m_Os;
     TFlags m_uFlags;

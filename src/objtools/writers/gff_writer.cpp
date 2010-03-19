@@ -33,9 +33,12 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -69,7 +72,17 @@ bool CGffWriter::WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    x_WriteHeader();
+    if ( ! (m_uFlags & fNoHeader) ) {
+        x_WriteHeader();
+    }
+    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
+    if ( pBrowserInfo ) {
+        x_WriteBrowserLine( pBrowserInfo );
+    }
+    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
+    if ( pTrackInfo ) {
+        x_WriteTrackLine( pTrackInfo );
+    }
 
     if ( annot.IsFtable() ) {
         return x_WriteAnnotFTable( annot );
@@ -108,6 +121,59 @@ bool CGffWriter::x_WriteAnnotAlign(
 {
 //    cerr << "To be done." << endl;
     return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriter::x_WriteBrowserLine(
+    const CRef< CUser_object > pBrowserInfo )
+//  ----------------------------------------------------------------------------
+{
+    string strBrowserLine( "browser" );    
+    const vector< CRef< CUser_field > > fields = pBrowserInfo->GetData();
+    vector< CRef< CUser_field > >::const_iterator cit;
+    for ( cit = fields.begin(); cit != fields.end(); ++cit ) {
+        if ( ! (*cit)->CanGetLabel() || ! (*cit)->GetLabel().IsStr() ) {
+            continue;
+        }
+        if ( ! (*cit)->CanGetData() || ! (*cit)->GetData().IsStr() ) {
+            continue;
+        }
+        strBrowserLine += " ";
+        strBrowserLine += (*cit)->GetLabel().GetStr();
+        strBrowserLine += " ";
+        strBrowserLine += (*cit)->GetData().GetStr();
+    } 
+    m_Os << strBrowserLine << endl;   
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriter::x_WriteTrackLine(
+    const CRef< CUser_object > pTrackInfo )
+//  ----------------------------------------------------------------------------
+{
+    string strTrackLine( "track" );    
+    const vector< CRef< CUser_field > > fields = pTrackInfo->GetData();
+    vector< CRef< CUser_field > >::const_iterator cit;
+    for ( cit = fields.begin(); cit != fields.end(); ++cit ) {
+        if ( ! (*cit)->CanGetLabel() || ! (*cit)->GetLabel().IsStr() ) {
+            continue;
+        }
+        if ( ! (*cit)->CanGetData() || ! (*cit)->GetData().IsStr() ) {
+            continue;
+        }
+        string strKey = (*cit)->GetLabel().GetStr();
+        string strValue = (*cit)->GetData().GetStr();
+        if ( x_NeedsQuoting( strValue ) ) {
+            strValue = string( "\"" ) + strValue + string( "\"" );
+        }
+        strTrackLine += " ";
+        strTrackLine += strKey;
+        strTrackLine += "=";
+        strTrackLine += strValue;
+    } 
+    m_Os << strTrackLine << endl;   
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -299,26 +365,33 @@ string CGffWriter::x_GffAttributes(
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-    CGff3Record::TAttributes attrs = record.Attributes();
-    CGff3Record::TAttrCit cit;
+    CGff3Record::TAttributes attrs;
+    attrs.insert( record.Attributes().begin(), record.Attributes().end() );
+    CGff3Record::TAttrIt it;
 
-    for ( cit = attrs.begin(); cit != attrs.end(); ++cit ) {
-        string strKey = cit->first;
+    x_PriorityProcess( "ID", attrs, strAttributes );
+    x_PriorityProcess( "Name", attrs, strAttributes );
+    x_PriorityProcess( "Alias", attrs, strAttributes );
+    x_PriorityProcess( "Parent", attrs, strAttributes );
+    x_PriorityProcess( "Target", attrs, strAttributes );
+    x_PriorityProcess( "Gap", attrs, strAttributes );
+    x_PriorityProcess( "Derives_from", attrs, strAttributes );
+    x_PriorityProcess( "Note", attrs, strAttributes );
+    x_PriorityProcess( "Dbxref", attrs, strAttributes );
+    x_PriorityProcess( "Ontology_term", attrs, strAttributes );
+
+    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
+        string strKey = it->first;
         if ( NStr::StartsWith( strKey, "gff_" ) ) {
             continue;
         }
+
         if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
             strAttributes += ";";
         }
-        if ( m_uFlags & fSoQuirks ) {
-            if ( 0 == NStr::CompareNocase( strKey, "Parent" ) ) {
-                strKey = "PARENT";
-            }
-        }
-
         strAttributes += strKey;
         strAttributes += "=";
-        strAttributes += cit->second;
+        strAttributes += it->second;
         if ( m_uFlags & fSoQuirks ) {
             strAttributes += "; ";
         }
@@ -327,11 +400,80 @@ string CGffWriter::x_GffAttributes(
 }
 
 //  ----------------------------------------------------------------------------
+CRef< CUser_object > CGffWriter::x_GetDescriptor(
+    const CSeq_annot& annot,
+    const string& strType ) const
+//  ----------------------------------------------------------------------------
+{
+    CRef< CUser_object > pUser;
+    if ( ! annot.IsSetDesc() ) {
+        return pUser;
+    }
+
+    const list< CRef< CAnnotdesc > > descriptors = annot.GetDesc().Get();
+    list< CRef< CAnnotdesc > >::const_iterator it;
+    for ( it = descriptors.begin(); it != descriptors.end(); ++it ) {
+        if ( ! (*it)->IsUser() ) {
+            continue;
+        }
+        const CUser_object& user = (*it)->GetUser();
+        if ( user.GetType().GetStr() == strType ) {
+            pUser.Reset( new CUser_object );
+            pUser->Assign( user );
+            return pUser;
+        }
+    }    
+    return pUser;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGffWriter::x_WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 3" << endl;
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriter::x_NeedsQuoting(
+    const string& str )
+//  ----------------------------------------------------------------------------
+{
+    for ( size_t u=0; u < str.length(); ++u ) {
+        if ( str[u] == ' ' ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+void CGffWriter::x_PriorityProcess(
+    const string& strKey,
+    map<string, string >& attrs,
+    string& strAttributes ) const
+//  ----------------------------------------------------------------------------
+{
+    string strKeyMod( strKey );
+
+    map< string, string >::iterator it = attrs.find( strKeyMod );
+
+    if ( it != attrs.end() ) {
+        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
+            strAttributes += ";";
+        }
+        string strKey = it->first;
+        if ( m_uFlags & fSoQuirks ) {
+            NStr::ToUpper( strKeyMod );
+        }
+        strAttributes += strKeyMod;
+        strAttributes += "=";
+        strAttributes += it->second;
+        attrs.erase( it );
+        if ( m_uFlags & fSoQuirks ) {
+            strAttributes += "; ";
+        }
+    }
 }
 
 END_NCBI_SCOPE

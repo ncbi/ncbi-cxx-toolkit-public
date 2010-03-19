@@ -34,6 +34,7 @@
 #define OBJTOOLS_READERS___GFF3_READER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
@@ -255,6 +256,8 @@ protected:
 protected:
     TFlags m_uFlags;
     IErrorContainer* m_pErrors;
+    CRef< CAnnotdesc > m_CurrentTrackInfo;
+    CRef< CAnnotdesc > m_CurrentBrowserInfo;
 };
 
 END_SCOPE(objects)

@@ -564,10 +564,25 @@ bool CGff3Reader::x_ParseBrowserLineGff(
     TAnnots& )
 //  ----------------------------------------------------------------------------
 { 
-    if ( NStr::StartsWith( strRawInput, "browser" ) ) {
-        return true;
+    if ( ! NStr::StartsWith( strRawInput, "browser" ) ) {
+        return false;
     }
-    return false; 
+    vector< string > columns;
+    NStr::Tokenize( strRawInput, " \t", columns, NStr::eMergeDelims );
+
+    if ( columns.size() <= 1 || 1 != ( columns.size() % 2 ) ) {
+        // don't know how to unwrap this
+        m_CurrentBrowserInfo.Reset();
+        return true;
+    }    
+    m_CurrentBrowserInfo.Reset( new CAnnotdesc );
+    CUser_object& user = m_CurrentBrowserInfo->SetUser();
+    user.SetType().SetStr( "browser" );
+
+    for ( size_t u = 1 /* skip "browser" */; u < columns.size(); u += 2 ) {
+        user.AddField( columns[ u ], columns[ u+1 ] );
+    }
+    return true; 
 };
 
 //  ----------------------------------------------------------------------------
@@ -576,10 +591,51 @@ bool CGff3Reader::x_ParseTrackLineGff(
     TAnnots& )
 //  ----------------------------------------------------------------------------
 { 
-    if ( NStr::StartsWith( strRawInput, "track" ) ) {
-        return true;
+    const char cBlankReplace( '+' );
+
+    if ( ! NStr::StartsWith( strRawInput, "track" ) ) {
+        return false;
     }
-    return false; 
+
+    string strCookedInput( strRawInput );
+    bool bInString = false;
+    for ( size_t u=0; u < strCookedInput.length(); ++u ) {
+        if ( strCookedInput[u] == ' ' && bInString ) {
+            strCookedInput[u] = cBlankReplace;
+        }
+        if ( strCookedInput[u] == '\"' ) {
+            bInString = !bInString;
+        }
+    }
+    vector< string > columns;
+    NStr::Tokenize( strCookedInput, " \t", columns, NStr::eMergeDelims );
+
+    if ( columns.size() <= 1 ) {
+        m_CurrentTrackInfo.Reset();
+        return true;
+    } 
+    m_CurrentTrackInfo.Reset( new CAnnotdesc );
+    CUser_object& user = m_CurrentTrackInfo->SetUser();
+    user.SetType().SetStr( "track" );
+
+    for ( size_t u = 1 /* skip "track" */; u < columns.size(); ++u ) {
+        string strKey;
+        string strValue;
+        NStr::SplitInTwo( columns[u], "=", strKey, strValue );
+        NStr::TruncateSpacesInPlace( strKey, NStr::eTrunc_End );
+        if ( NStr::StartsWith( strValue, "\"" ) && NStr::EndsWith( strValue, "\"" ) ) {
+            strValue = strValue.substr( 1, strValue.length() - 2 );
+        }
+        for ( unsigned u = 0; u < strValue.length(); ++u ) {
+            if ( strValue[u] == cBlankReplace ) {
+                strValue[u] = ' ';
+            }
+        } 
+        NStr::TruncateSpacesInPlace( strValue, NStr::eTrunc_Begin );
+        user.AddField( strKey, strValue );
+    }
+       
+    return true; 
 };
                                 
 //  ----------------------------------------------------------------------------
@@ -599,6 +655,16 @@ bool CGff3Reader::x_InitAnnot(
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
     pAnnotId->SetLocal().SetStr( gff.Id() );
     pAnnot->SetId().push_back( pAnnotId );
+
+    // if available, add current browser information
+    if ( m_CurrentBrowserInfo ) {
+        pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
+    }
+
+    // if available, add current track information
+    if ( m_CurrentTrackInfo ) {
+        pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+    }
 
     return x_UpdateAnnot( gff, pAnnot );
 }
