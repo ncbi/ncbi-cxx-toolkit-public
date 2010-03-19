@@ -352,9 +352,11 @@ void CTempString::x_Init(const char* str, size_type str_len,
 inline
 void CTempString::x_MakeCopy()
 {
-    char* copy = new char[m_Length];
+    // 1 extra byte is for last 0 unconditionally
+    char* copy = new char[m_Length+1];
     memcpy(copy, m_String, m_Length);
     m_String = copy;
+    m_String[m_Length] = 0;
 }
 
 inline
