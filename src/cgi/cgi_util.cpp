@@ -459,6 +459,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eWebValidator, "WDG_Validator",            "WDG_Validator",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
 
     { CCgiUserAgent::eScript,       "DomainsDB.net",            "domainsdb.net",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
+    { CCgiUserAgent::eScript,       "Jakarta Commons HTTP Client","Jakarta Commons-HttpClient",  CCgiUserAgent::eEngine_Bot,CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eScript,       "Snoopy",                   "Snoopy",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eScript,       "libwww-perl",              "libwww-perl",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eScript,       "LWP",                      "LWP::Simple",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
