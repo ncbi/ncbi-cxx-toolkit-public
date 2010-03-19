@@ -186,13 +186,13 @@ CGff3Reader::ReadSeqAnnotsNew(
             if ( x_IsCommentLine( line ) ) {
                 continue;
             }
-            if ( x_ParseStructuredCommentGff( line, annots ) ) {
+            if ( x_ParseStructuredCommentGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            if ( x_ParseBrowserLineGff( line, annots ) ) {
+            if ( x_ParseBrowserLineGff( line, m_CurrentBrowserInfo ) ) {
                 continue;
             }
-            if ( x_ParseTrackLineGff( line, annots ) ) {
+            if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
             x_ParseFeatureGff( line, annots );
@@ -231,10 +231,10 @@ CGff3Reader::ReadSeqEntry(
             if ( x_ParseStructuredComment( strLine ) ) {
                 continue;
             }
-            if ( x_ParseBrowserLineToSeqEntry( strLine, m_TSE ) ) {
+            if ( x_ParseBrowserLineGff( strLine, m_CurrentBrowserInfo ) ) {
                 continue;
             }
-            if ( x_ParseTrackLineToSeqEntry( strLine, m_TSE ) ) {
+            if ( x_ParseTrackLineGff( strLine, m_CurrentTrackInfo ) ) {
                 continue;
             }
             // -->
@@ -408,66 +408,6 @@ bool CGff3Reader::x_IsCommentLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::x_ParseBrowserLineToSeqEntry(
-    const string& strLine,
-    CRef<CSeq_entry>& entry )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! NStr::StartsWith( strLine, "browser" ) ) {
-        return false;
-    }
-    CSeq_descr& descr = entry->SetDescr();
-    
-    vector<string> fields;
-    NStr::Tokenize( strLine, " \t", fields, NStr::eMergeDelims );
-    for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
-        if ( *it == "position" ) {
-            ++it;
-            if ( it == fields.end() ) {
-                CObjReaderLineException err(
-                    eDiag_Error,
-                    0,
-                    "Bad browser line: incomplete position directive" );
-                throw( err );
-            }
-            CRef<CSeqdesc> region( new CSeqdesc() );
-            region->SetRegion( *it );
-            descr.Set().push_back( region );
-            continue;
-        }
-    }
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::x_ParseTrackLineToSeqEntry(
-    const string& strLine,
-    CRef<CSeq_entry>& entry )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! NStr::StartsWith( strLine, "track" ) ) {
-        return false;
-    }
-    CSeq_descr& descr = entry->SetDescr();
-
-    CRef<CUser_object> trackdata( new CUser_object() );
-    trackdata->SetType().SetStr( "Track Data" );    
-    
-    map<string, string> values;
-    x_GetTrackValues( strLine, values );
-    for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
-        x_SetTrackDataToSeqEntry( entry, trackdata, it->first, it->second );
-    }
-    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
-        CRef<CSeqdesc> user( new CSeqdesc() );
-        user->SetUser( *trackdata );
-        descr.Set().push_back( user );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 void CGff3Reader::x_SetTrackDataToSeqEntry(
     CRef<CSeq_entry>& entry,
     CRef<CUser_object>& trackdata,
@@ -495,7 +435,7 @@ void CGff3Reader::x_SetTrackDataToSeqEntry(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_ParseStructuredCommentGff(
     const string& strLine,
-    TAnnots& annots )
+    CRef< CAnnotdesc >& )
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "##" ) ) {
@@ -561,7 +501,7 @@ bool CGff3Reader::x_ParseFeatureGff(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_ParseBrowserLineGff(
     const string& strRawInput,
-    TAnnots& )
+    CRef< CAnnotdesc >& pAnnotDesc )
 //  ----------------------------------------------------------------------------
 { 
     if ( ! NStr::StartsWith( strRawInput, "browser" ) ) {
@@ -572,11 +512,11 @@ bool CGff3Reader::x_ParseBrowserLineGff(
 
     if ( columns.size() <= 1 || 1 != ( columns.size() % 2 ) ) {
         // don't know how to unwrap this
-        m_CurrentBrowserInfo.Reset();
+        pAnnotDesc.Reset();
         return true;
     }    
-    m_CurrentBrowserInfo.Reset( new CAnnotdesc );
-    CUser_object& user = m_CurrentBrowserInfo->SetUser();
+    pAnnotDesc.Reset( new CAnnotdesc );
+    CUser_object& user = pAnnotDesc->SetUser();
     user.SetType().SetStr( "browser" );
 
     for ( size_t u = 1 /* skip "browser" */; u < columns.size(); u += 2 ) {
@@ -588,7 +528,7 @@ bool CGff3Reader::x_ParseBrowserLineGff(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_ParseTrackLineGff(
     const string& strRawInput,
-    TAnnots& )
+    CRef< CAnnotdesc >& pAnnotDesc )
 //  ----------------------------------------------------------------------------
 { 
     const char cBlankReplace( '+' );
@@ -611,11 +551,11 @@ bool CGff3Reader::x_ParseTrackLineGff(
     NStr::Tokenize( strCookedInput, " \t", columns, NStr::eMergeDelims );
 
     if ( columns.size() <= 1 ) {
-        m_CurrentTrackInfo.Reset();
+        pAnnotDesc.Reset();
         return true;
     } 
-    m_CurrentTrackInfo.Reset( new CAnnotdesc );
-    CUser_object& user = m_CurrentTrackInfo->SetUser();
+    pAnnotDesc.Reset( new CAnnotdesc );
+    CUser_object& user = pAnnotDesc->SetUser();
     user.SetType().SetStr( "track" );
 
     for ( size_t u = 1 /* skip "track" */; u < columns.size(); ++u ) {
@@ -1044,5 +984,46 @@ bool CGff3Reader::x_FeatureMergeExon(
     return true;
 }
                                 
+//  ---------------------------------------------------------------------------
+void CGff3Reader::x_PlaceFeature(
+    CSeq_feat& feat, 
+    const SRecord& )
+//  ---------------------------------------------------------------------------
+{
+    CRef<CBioseq> seq;
+    if ( !feat.IsSetProduct() ) {
+        for (CTypeConstIterator<CSeq_id> it(feat.GetLocation());  it;  ++it) {
+            CRef<CBioseq> seq2 = x_ResolveID(*it, kEmptyStr);
+            if ( !seq ) {
+                seq.Reset(seq2);
+            } else if ( seq2.NotEmpty()  &&  seq != seq2) {
+                seq.Reset();
+                BREAK(it);
+            }
+        }
+    }
+
+    CBioseq::TAnnot& annots
+        = seq ? seq->SetAnnot() : m_TSE->SetSet().SetAnnot();
+    NON_CONST_ITERATE (CBioseq::TAnnot, it, annots) {
+        if ((*it)->GetData().IsFtable()) {
+            (*it)->SetData().SetFtable().push_back(CRef<CSeq_feat>(&feat));
+            return;
+        }
+    }
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable().push_back(CRef<CSeq_feat>(&feat));
+    // if available, add current browser information
+    if ( m_CurrentBrowserInfo ) {
+        annot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
+    }
+
+    // if available, add current track information
+    if ( m_CurrentTrackInfo ) {
+        annot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+    }
+    annots.push_back(annot);
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

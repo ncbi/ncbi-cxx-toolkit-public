@@ -48,6 +48,7 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGFFReader;
 class CGff3Record;
+class SRecord;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3Reader
@@ -110,25 +111,24 @@ public:
         IErrorContainer* =0 );
 
     //
-    //  new stuff:
+    //  new stuff: 
     //
     bool x_ParseBrowserLineGff(
         const string&,
-        TAnnots& );
+        CRef< CAnnotdesc >& );
         
-    bool x_ParseFeatureGff(
-        const string&,
-        TAnnots& );
-    /* throws CObjReaderLineException */
-
     virtual bool x_ParseTrackLineGff(
         const string&,
-        TAnnots& );
+        CRef< CAnnotdesc >& );
                                 
     virtual bool x_ParseStructuredCommentGff(
         const string&,
-        TAnnots& );
+        CRef< CAnnotdesc >& );
                                 
+    bool x_ParseFeatureGff(
+        const string&,
+        TAnnots& );
+
     virtual void x_AddConversionInfoGff(
         TAnnots&,
         IErrorContainer* );
@@ -217,14 +217,6 @@ public:
     //  helpers:
     //
 protected:
-    virtual bool x_ParseBrowserLineToSeqEntry(
-        const string&,
-        CRef<CSeq_entry>& );
-        
-    virtual bool x_ParseTrackLineToSeqEntry(
-        const string&,
-        CRef<CSeq_entry>& );
-        
     virtual void x_SetTrackDataToSeqEntry(
         CRef<CSeq_entry>&,
         CRef<CUser_object>&,
@@ -250,6 +242,9 @@ protected:
         ILineReader&,
         string& );
 
+    void x_PlaceFeature(
+        CSeq_feat& feat, 
+        const SRecord& );
     //
     //  data:
     //
