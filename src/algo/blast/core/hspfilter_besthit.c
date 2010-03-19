@@ -280,6 +280,115 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
    return 0; 
 }
 
+/** Perform writing task for RPS blast, will save best hits to best_list
+ * @param data To store results to [in][out]
+ * @param hsp_list Pointer to the HSP list to save in the collector. [in]
+ */
+static int 
+s_BlastHSPBestHitRun_RPS(void* data, BlastHSPList* hsp_list)
+{
+   Int4 i, qid, begin, end, lenA, lenB, scoreA, scoreB, overhang; 
+   Int4 allowed_begin, allowed_end;
+   double denA, evalueA, evalueB, param_overhang, param_s;
+   BlastHSP *hsp;
+   LinkedHSP_BH *p, *q, *r;
+   Boolean bad;
+
+   BlastHSPBestHitData* bh_data = data;
+   BlastHSPBestHitParams* params = bh_data->params;
+   LinkedHSP_BH **best_list = bh_data->best_list;
+
+   if (!hsp_list) return 0;
+   param_overhang = params->overhang;
+   param_s = 1.0 - params->score_edge;
+
+   for (i=0; i<hsp_list->hspcnt; ++i) {
+      
+      hsp     = hsp_list->hsp_array[i];
+      qid     = hsp_list->query_index;
+      begin   = hsp->query.offset;
+      lenA    = hsp->query.end - hsp->query.offset;
+      end     = begin + lenA;
+      scoreA  = hsp->score;
+      evalueA = hsp->evalue;
+      denA    = 1.0 * scoreA / lenA / param_s;
+
+      /* See if new hit A is bad */
+      bad = FALSE;
+      for (p=best_list[qid]; p &&   p->end < end;   p=p->next);
+      for (                ; p && p->begin < begin; p=p->next) {
+         /* check conditions */
+         lenB   = p->len;
+         scoreB = p->hsp->score;
+         evalueB= p->hsp->evalue;
+         if (              p->end >= end               /* condition 1 */
+           &&             evalueB <= evalueA           /* condition 2 */
+           && 1.0 * scoreB / lenB >  denA)             /* condition 3 */
+         {
+             /* the new hit is bad, do nothing */
+             bad = TRUE;
+             break;
+         }
+      }
+      if (bad) continue;  
+
+      /* See if new hit A makes some old hits bad */
+      overhang = 2.0 * lenA * param_overhang / (1.0 - 2.0 * param_overhang);
+      allowed_begin = begin - overhang;
+      allowed_end   = end   + overhang;
+      overhang = lenA * param_overhang;
+      begin -= overhang;
+      end   += overhang;
+      denA   = 1.0 * scoreA / lenA * param_s;
+      /* use q to remember node before p */
+      for (q=NULL, p=best_list[qid]; p && p->begin < allowed_begin; q=p, p=p->next);
+      for (; p && p->begin < allowed_end; ) {
+         /* check conditions */
+         lenB     = p->len;
+         scoreB   = p->hsp->score;
+         overhang = (p->end - p->begin - lenB)/2;
+         evalueB= p->hsp->evalue;
+         if ( p->begin + overhang >= begin
+           && p->end   - overhang <= end               /* condition 1 */
+           &&             evalueB >= evalueA           /* condition 2 */
+           && 1.0 * scoreB / lenB <  denA)             /* condition 3 */
+         {   /* remove it from best list */
+             r = p;
+             if (q)      q->next = p->next;
+             else best_list[qid] = p->next;
+             p = p->next;
+             r->hsp = Blast_HSPFree(r->hsp);
+             free(r);
+         } else {
+             q = p;
+             p = p->next;
+         }
+      }
+
+      /* Insert hit A into the best_list and hit_list */
+      for (q=NULL, p=best_list[qid]; p && p->begin < begin; q=p, p=p->next);
+      r = malloc(sizeof(LinkedHSP_BH));
+      r->hsp   = hsp;
+      r->sid   = hsp->context;
+      hsp->context = qid;
+      r->begin = begin;
+      r->end   = end;
+      r->len   = lenA;
+      r->next  = p;
+      hsp_list->hsp_array[i] = NULL; /* remove it from hsp_list */
+      if (q) {
+         q->next = r;     
+      } else {
+         best_list[qid] = r;
+      }
+   }
+
+   /* now all qualified hits have been moved to best_list, we can remove hsp_list */
+   Blast_HSPListFree(hsp_list);
+
+   return 0; 
+}
+
 /** Free the writer 
  * @param writer The writer to free [in]
  * @return NULL.
@@ -306,6 +415,7 @@ s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
 {
    BlastHSPWriter * writer = NULL;
    BlastHSPBestHitData * data = NULL;
+   BlastHSPBestHitParams * bh_param = params;
 
    /* best hit algo needs query_info */
    if (! query_info) return NULL;
@@ -317,7 +427,9 @@ s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
    writer->InitFnPtr   = &s_BlastHSPBestHitInit;
    writer->FinalFnPtr  = &s_BlastHSPBestHitFinal;
    writer->FreeFnPtr   = &s_BlastHSPBestHitFree;
-   writer->RunFnPtr    = &s_BlastHSPBestHitRun;
+   writer->RunFnPtr    = (Blast_ProgramIsRpsBlast(bh_param->program))
+                       ? &s_BlastHSPBestHitRun_RPS
+                       : &s_BlastHSPBestHitRun;
 
    /* allocate for data structure */
    writer->data = malloc(sizeof(BlastHSPBestHitData));
