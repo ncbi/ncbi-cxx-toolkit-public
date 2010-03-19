@@ -837,14 +837,8 @@ static void s_HandleCdsExceptions(CSeq_feat& feat,
                         {{
                              /// found it
                              feat.SetExcept(true);
-
-                             string text;
-                             if (feat.IsSetExcept_text()) {
-                                 text = feat.GetExcept_text();
-                                 text += ", ";
-                             }
-                             text += "rearrangement required for product";
-                             feat.SetExcept_text(text);
+                             feat.SetExcept_text
+                                 ("rearrangement required for product");
                          }}
                         break;
 
