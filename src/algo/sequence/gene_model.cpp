@@ -834,12 +834,10 @@ static void s_HandleCdsExceptions(CSeq_feat& feat,
                     case CSeqFeatData::eSubtype_S_region:
                     case CSeqFeatData::eSubtype_V_region:
                     case CSeqFeatData::eSubtype_V_segment:
-                        {{
-                             /// found it
-                             feat.SetExcept(true);
-                             feat.SetExcept_text
-                                 ("rearrangement required for product");
-                         }}
+                        /// found it
+                        feat.SetExcept(true);
+                        feat.SetExcept_text
+                            ("rearrangement required for product");
                         break;
 
                     default:
