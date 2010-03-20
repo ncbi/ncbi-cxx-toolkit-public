@@ -49,7 +49,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(H5);
 
-CMsHdf5::CMsHdf5(string filename, unsigned int flags) 
+void CMsHdf5::init(string filename, unsigned int flags) 
 {
     H5::Exception::dontPrint();
     h5file = new H5File(filename, flags);

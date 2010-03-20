@@ -69,7 +69,8 @@ class CMsHdf5 : public CObject {
     };
 
     // constructor
-    CMsHdf5(string filename, unsigned int flags = H5F_ACC_RDONLY);
+    CMsHdf5(string filename) { init(filename, H5F_ACC_RDONLY); }
+    CMsHdf5(string filename, unsigned int flags) { init(filename, flags); }
     // destructor
     ~CMsHdf5(void);
 
@@ -107,6 +108,8 @@ class CMsHdf5 : public CObject {
     // Prohibit copy constructor and assignment operator
     CMsHdf5(const CMsHdf5& value);
     CMsHdf5& operator=(const CMsHdf5& value);
+
+    void init(string filename, unsigned int flags);
 
     void addSpectrumData(Uint4 msLevel, vector<float> &mz, vector<float> &it);
     void addSpectrumInfo(Uint4 msLevel, string &info);
