@@ -72,9 +72,11 @@ static char* s_ServiceName(const char* service, size_t depth)
     if (!service  ||  !*service  ||
         (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(buf)) {
         CORE_LOGF_X(8, eLOG_Error,
-                    ("[%s]  %s service name",
-                     !service ? "<NULL>" :  service,
-                     !service ?  "NULL"  : *service ? "Too long" : "Empty"));
+                    ("%s%s%s%s service name",
+                     !service  ||  !*service ? "" : "[",
+                     !service ? "" : service,
+                     !service  ||  !*service ? "" : "]  ",
+                     !service ? "NULL" : !*service ? "Empty" : "Too long"));
         return 0/*failure*/;
     }
     s = (char*) memcpy(buf, service, len) + len;
