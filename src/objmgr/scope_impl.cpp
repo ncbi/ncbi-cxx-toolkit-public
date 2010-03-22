@@ -254,6 +254,17 @@ CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
                                             TExist action)
 {
     TConfWriteLockGuard guard(m_ConfLock);
+
+    // first check if object already added to the scope
+    TBioseq_Lock lock = x_GetBioseq_Lock(bioseq, CScope::eMissing_Null);
+    if ( lock ) {
+        if ( action == CScope::eExist_Throw ) {
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       "Bioseq already added to the scope");
+        }
+        return CBioseq_Handle(CSeq_id_Handle(), *lock);
+    }
+    
 #if USE_OBJMGR_SHARED_POOL
     CRef<CDataSource> ds = m_ObjMgr->AcquireSharedBioseq(bioseq);
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
