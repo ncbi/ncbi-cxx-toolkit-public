@@ -43,13 +43,14 @@ public class ArgsParser {
     private String m_extroot, m_projtag, m_ide, m_arch, m_logfile, m_conffile;
     private String m_Unknown;
     private boolean m_dll;
-    public boolean m_nobuildptb, m_ext, m_nws, m_i;
+    public boolean m_nobuildptb, m_ext, m_nws, m_i, m_dtdep;
     private boolean m_projtagFromLst;
     private String m_ArgsFile;
 
     public ArgsParser() {
         m_Undef = new String("UNDEFINED");
         m_dll = m_nobuildptb = m_ext = m_nws = false;
+        m_i = m_dtdep = false;
         m_Unknown = new String();
         m_nCmd = 0;
     }
@@ -74,6 +75,7 @@ public class ArgsParser {
                     case undefined:  m_Unknown.concat(args[i]); break;
                     case cfg:        --m_nCmd;            break;
                     case i:          m_i          = true; break;
+                    case dtdep:      m_dtdep      = true; break;
                 }
             } else {
                 if (dest != eArg.undefined) {
@@ -150,6 +152,9 @@ public class ArgsParser {
             if (m_i) {
                 vcmd.add("-" + eArg.i.toString());
             }
+            if (m_dtdep) {
+                vcmd.add("-" + eArg.dtdep.toString());
+            }
             if (m_logfile != null && m_logfile.length() != 0) {
                 vcmd.add("-" + eArg.logfile.toString());
                 String l = getSolution();
@@ -168,6 +173,9 @@ public class ArgsParser {
             }
             if (m_i) {
                 vcmd.add("-" + eArg.i.toString());
+            }
+            if (m_dtdep) {
+                vcmd.add("-" + eArg.dtdep.toString());
             }
             if (m_nws) {
                 vcmd.add("-" + eArg.nws.toString());
@@ -360,6 +368,7 @@ public class ArgsParser {
         conffile,
         cfg,
         i,
+        dtdep,
         args
     }
     private eArg toEnum(String a) {

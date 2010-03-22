@@ -1006,7 +1006,7 @@
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel13">
       <Properties>
-        <Property name="text" type="java.lang.String" value="  version 0.9"/>
+        <Property name="text" type="java.lang.String" value="  version 1.0"/>
         <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
