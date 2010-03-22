@@ -399,7 +399,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,6,0) );
+    SetVersion( CVersionInfo(2,5,1) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -411,6 +411,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_ConfirmCfg = false;
     m_AllDllBuild = false;
     m_InteractiveCfg = false;
+    m_Dtdep = false;
     m_Ide = 0;
     m_ExitCode = 0;
 }
@@ -506,6 +507,8 @@ void CProjBulderApp::Init(void)
                             "Show GUI to confirm configuration parameters (MS Windows only).");
     arg_desc->AddFlag      ("i", 
                             "Run interactively. Can only be used by PTB GUI shell!");
+    arg_desc->AddFlag      ("dtdep", 
+                            "Add dependency on datatool where needed.");
 
     arg_desc->AddOptionalKey("args", "args_file",
                              "Read arguments from a file",
@@ -1202,7 +1205,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << dotfiles << dotreal;
             ofs << endl << endl;
             ofs << target << dotfiles << dotreal << " :";
-            if (!datatool_key.empty()) {
+            if (m_Dtdep && !datatool_key.empty()) {
                 ofs << " " << datatool_key << dotreal;
             }
             ofs << endl << "\t";
@@ -1582,6 +1585,7 @@ void CProjBulderApp::ParseArguments(void)
     m_ConfirmCfg =   (bool)args["cfg"];
 #endif
     m_InteractiveCfg = (bool)args["i"];
+    m_Dtdep = (bool)args["dtdep"];
 
     // Solution
     PTB_INFO("Solution: " << m_Solution);

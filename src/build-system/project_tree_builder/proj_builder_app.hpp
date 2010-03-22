@@ -128,6 +128,7 @@ public:
     bool m_ConfirmCfg;
     bool m_AllDllBuild;
     bool m_InteractiveCfg;
+    bool m_Dtdep;
     int m_Ide;
     string m_Arch;
 
