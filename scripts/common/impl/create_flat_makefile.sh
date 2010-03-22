@@ -54,63 +54,6 @@ EOF
     exit 1
 }
 
-DetectPlatform()
-{
-    arch="`uname -m`"
-    osname="`uname`"
-    if [ "$osname" = "Linux" ]; then
-        case "$arch" in
-            *86 )
-                PLATFORM="Linux32"
-                ;;
-            *86_64 )
-                PLATFORM="Linux64"
-                ;;
-        esac
-    elif [ "$osname" = "SunOS" ]; then
-        case "$arch" in
-            sun* )
-                PLATFORM="SunOSSparc"
-                ;;
-            i86pc )
-                PLATFORM="SunOSx86"
-                ;;
-        esac
-    elif [ "$osname" = "IRIX64" ]; then
-        PLATFORM="IRIX64"
-    elif [ "$osname" = "Darwin" ]; then
-        case "$arch" in
-            ppc )
-                PLATFORM="PowerMAC"
-                ;;
-	    i386 )
-                PLATFORM="IntelMAC"
-                ;;
-        esac
-    elif [ "$osname" = "FreeBSD" ]; then
-        case "$arch" in
-            i386 )
-                PLATFORM="FreeBSD32"
-                ;;
-        esac
-    elif `echo "$osname" | grep -q -s CYGWIN_NT` ; then
-        case "$arch" in
-            *86 )
-                PLATFORM="Win32"
-                ;;
-                # Unverified!
-            *64 )
-                PLATFORM="Win64"
-                ;;
-        esac
-    fi
-
-    if [ -z "$PLATFORM" ]; then
-        echo "Platform not defined for $osname -- please fix me"
-        uname -a
-    fi
-}
-
 #-----------------------------------------------------------------------------
 # analyze script arguments
 
@@ -125,6 +68,7 @@ buildptb="no"
 remoteptbonly="no"
 req_gui_cfg="no"
 savedcfg=""
+PLATFORM=`COMMON_DetectPlatform`
 shift
 
 dest=""
@@ -164,7 +108,6 @@ if test -n "$savedcfg"; then
     fi
   fi
 fi
-DetectPlatform
 
 #-----------------------------------------------------------------------------
 # get required version of PTB
