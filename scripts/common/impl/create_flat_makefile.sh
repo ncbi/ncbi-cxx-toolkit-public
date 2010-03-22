@@ -100,7 +100,7 @@ if test ! -f "$abs_projectlist"; then
   test -d "$abs_projectlist" || Usage "$abs_projectlist not found"
 fi
 if test -n "$savedcfg"; then
-  if ! test -f "$savedcfg"; then
+  if test ! -f "$savedcfg"; then
     if test -f "$initial_dir/$savedcfg"; then
       savedcfg="$initial_dir/$savedcfg"
     else
@@ -230,14 +230,14 @@ fi
 #-----------------------------------------------------------------------------
 # find datatool
 dtdep=""
-if test $verno -gt 250; then
+if test $ptb_ver_major -ge 2 -a $verno -gt 250; then
   dtreqver=""
   dtver="$srcdir/src/build-system/datatool_version.txt"
   if test -r "$dtver"; then
     dtreqver=`cat "$dtver" | sed -e 's/ //'`
   fi
   datatool="$reldatatoolpath$PLATFORM/$dtreqver/datatool"
-  if ! test -x "$datatool"; then
+  if test ! -x "$datatool"; then
     dtdep="-dtdep"
   fi
 fi
