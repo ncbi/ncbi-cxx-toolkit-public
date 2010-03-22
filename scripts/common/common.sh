@@ -413,3 +413,28 @@ COMMON_LimitTextFileSize()
 
     return $size
 }
+
+#
+#  Output a string indicating NCBI's short in-house name for the
+#  current OS/CPU platform.
+#
+COMMON_DetectPlatform()
+{
+    raw_platform=`uname -sp`
+    case "$raw_platform" in
+	*CYGWIN_NT*86   ) echo Win32      ;;
+	*CYGWIN_NT*64   ) echo Win64      ;; # unverified
+	Darwin\ i386    ) echo IntelMAC   ;;
+	Darwin\ powerpc ) echo PowerMAC   ;;
+	FreeBSD\ i386   ) echo FreeBSD32  ;;
+	IRIX64\ *       ) echo IRIX64     ;;
+	Linux\ i?86     ) echo Linux32    ;;
+	Linux\ x86_64   ) echo Linux64    ;;
+	SunOS\ i?86     ) echo SunOSx86   ;;
+	SunOS\ sparc    ) echo SunOSSparc ;;
+	* )
+	    echo "Platform not defined for $raw_platform -- please fix me" >&2
+	    echo UNKNOWN
+	    ;;
+    esac
+}
