@@ -55,7 +55,7 @@ BEGIN_SCOPE(align_format)
 ///blast related url
 
 ///class info
-const static string kClassInfo = "class=\"info\"";
+static const string kClassInfo = "class=\"info\"";
 
 ///entrez
 // .ncbirc alias: ENTREZ
