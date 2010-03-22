@@ -100,9 +100,14 @@ public:
         fGuessGBRelease     = 1<<3,
         fForceGBRelease     = 2<<3,
         fGBReleaseMask      = 3<<3,
+
+        fAbsolutePath       = 0<<5,
+        fOriginalPath       = 1<<5,
+        fPathMask           = 3<<5,
         
         fDefaultFlags       = fRecurseSubDirs | fComputeControlSum |
-                              fIgnoreDuplicates | fGuessGBRelease,
+                              fIgnoreDuplicates | fGuessGBRelease |
+                              fAbsolutePath,
     };
     typedef int TFlags;
 

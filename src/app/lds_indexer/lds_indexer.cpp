@@ -118,6 +118,13 @@ void CLDSIndexerApplication::Init(void)
                               GB_RELEASE_MODE_GUESS,
                               GB_RELEASE_MODE_FORCE));
 
+    arg_desc->AddFlag
+        ("abs_path",
+         "Use absolute path to data files (default)");
+    arg_desc->AddFlag
+        ("keep_path",
+         "Keep original path to data files");
+
     arg_desc->AddOptionalKey
         ("dump_table", "table_name",
          "Dump LDS table content",
@@ -173,6 +180,17 @@ int CLDSIndexerApplication::Run(void)
     }
     flags = (flags & ~CLDS_Manager::fControlSumMask) |
         (crc32? CLDS_Manager::fComputeControlSum: CLDS_Manager::fNoControlSum);
+    if ( args["keep_path"] ) {
+        if ( args["abs_path"] ) {
+            ERR_POST(Fatal<<"Conflicting options: -abs_path and -keep_path");
+        }
+        flags = (flags & ~CLDS_Manager::fPathMask) |
+            CLDS_Manager::fOriginalPath;
+    }
+    if ( args["abs_path"] ) {
+        flags = (flags & ~CLDS_Manager::fPathMask) |
+            CLDS_Manager::fAbsolutePath;
+    }
 
     if ( args["gb_release"] ) {
         string mode = args["gb_release"].AsString();

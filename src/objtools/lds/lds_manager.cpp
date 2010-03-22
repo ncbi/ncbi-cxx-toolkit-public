@@ -136,7 +136,11 @@ void CLDS_Manager::Index(TFlags flags)
     bool recurse = (flags & fRecurseMask) == fRecurseSubDirs;
     bool control_sum = (flags & fControlSumMask) == fComputeControlSum;
 
-    aFile.SyncWithDir(m_SourcePath, &files_deleted, &files_updated,
+    string file_path = m_SourcePath;
+    if ( (flags & fPathMask) == fAbsolutePath ) {
+        file_path = CFile::CreateAbsolutePath(file_path);
+    }
+    aFile.SyncWithDir(file_path, &files_deleted, &files_updated,
                       recurse, control_sum);
 
     bool check_dup = (flags & fDupliucatesMask) == fCheckDuplicates;

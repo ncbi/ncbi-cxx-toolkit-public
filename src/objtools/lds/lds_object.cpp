@@ -228,11 +228,13 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     CBDB_FileCursor cur(m_db.annot_db);
     cur.SetCondition(CBDB_FileCursor::eFirst);
     while (cur.Fetch() == eBDB_Ok) {
-        int fid = m_db.object_db.file_id;
-        if (fid && LDS_SetTest(file_ids, fid)) {
-            int annot_id = m_db.annot_db.annot_id;
-            annotations_deleted->set(annot_id);
-            m_db.annot_db.Delete();
+        if ( !m_db.object_db.file_id.IsNull() ) {
+            int fid = m_db.object_db.file_id;
+            if (fid && LDS_SetTest(file_ids, fid)) {
+                int annot_id = m_db.annot_db.annot_id;
+                annotations_deleted->set(annot_id);
+                m_db.annot_db.Delete();
+            }
         }
     }
 
