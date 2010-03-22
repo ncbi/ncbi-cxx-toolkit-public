@@ -61,6 +61,9 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
 
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_fasta_input.hpp>
+
 #include "test_objmgr.hpp"
 #include "blast_test_util.hpp"
 
@@ -161,14 +164,27 @@ struct CRedoAlignmentTestFixture
     }
 
     // Core function which executes the unit tests
-    // FIXME: refactor so that blastOptions are passed in!
     static void runRedoAlignmentCoreUnitTest(EBlastProgramType program,
                                     CSeq_id& qid,
                                     CSeq_id& sid,
                                     BlastHSPList* init_hsp_list,
                                     const BlastHSPList* ending_hsp_list,
                                     Int8 effective_searchsp,
-                                    bool doCompositionBasedStats,
+                                    ECompoAdjustModes compositonBasedStatsMode,
+                                    bool doSmithWaterman,
+                                    double evalue_threshold =
+                                    BLAST_EXPECT_VALUE,
+                                    int hit_list_size = BLAST_HITLIST_SIZE);
+
+    // Core function which executes the unit tests
+    // FIXME: refactor so that blastOptions are passed in!
+    static void runRedoAlignmentCoreUnitTest(EBlastProgramType program,
+                                    SSeqLoc& qsl,
+                                    SSeqLoc& ssl,
+                                    BlastHSPList* init_hsp_list,
+                                    const BlastHSPList* ending_hsp_list,
+                                    Int8 effective_searchsp,
+                                    ECompoAdjustModes compositonBasedStatsMode,
                                     bool doSmithWaterman,
                                     double evalue_threshold =
                                     BLAST_EXPECT_VALUE,
@@ -182,20 +198,41 @@ void CRedoAlignmentTestFixture::
                                     BlastHSPList* init_hsp_list,
                                     const BlastHSPList* ending_hsp_list,
                                     Int8 effective_searchsp,
-                                    bool doCompositionBasedStats,
+                                    ECompoAdjustModes compositonBasedStatsMode,
                                     bool doSmithWaterman,
                                     double evalue_threshold,
                                     int hit_list_size)
 {
+    
     auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    runRedoAlignmentCoreUnitTest(program, *qsl, *ssl, init_hsp_list,
+            ending_hsp_list, effective_searchsp, compositonBasedStatsMode,
+            doSmithWaterman, evalue_threshold, hit_list_size);
+
+}
+
+
+void CRedoAlignmentTestFixture::
+        runRedoAlignmentCoreUnitTest(EBlastProgramType program,
+                                    SSeqLoc& qsl,
+                                    SSeqLoc& ssl,
+                                    BlastHSPList* init_hsp_list,
+                                    const BlastHSPList* ending_hsp_list,
+                                    Int8 effective_searchsp,
+                                    ECompoAdjustModes compositonBasedStatsMode,
+                                    bool doSmithWaterman,
+                                    double evalue_threshold,
+                                    int hit_list_size)
+{
 
     char* program_buffer = NULL;
     Int2 rv = BlastNumber2Program(program, &program_buffer);
     BOOST_REQUIRE_MESSAGE(rv == (Int2)0, "BlastNumber2Program failed");
     blast::EProgram prog = blast::ProgramNameToEnum(string(program_buffer));
     sfree(program_buffer);
-    CBl2Seq blaster(*qsl, *ssl, prog);
+    CBl2Seq blaster(qsl, ssl, prog);
 
     CBlastQueryInfo query_info;
     CBLAST_SequenceBlk query_blk;
@@ -241,11 +278,7 @@ void CRedoAlignmentTestFixture::
 
     BlastExtensionOptions* ext_options=NULL;
     BlastExtensionOptionsNew(program, &ext_options, true);
-    if (doCompositionBasedStats) {
-        ext_options->compositionBasedStats = eCompositionBasedStats;
-    } else {
-        ext_options->compositionBasedStats = eNoCompositionBasedStats;
-    }
+    ext_options->compositionBasedStats = compositonBasedStatsMode;
     if (doSmithWaterman)
         ext_options->eTbackExt = eSmithWatermanTbck;
 
@@ -278,7 +311,7 @@ void CRedoAlignmentTestFixture::
 
     if (program == eBlastTypePsiBlast) {
         setupPositionBasedBlastScoreBlk(sbp,
-                sequence::GetLength(qid, qsl->scope));
+                sequence::GetLength(*(qsl.seqloc->GetId()), qsl.scope));
     }
                                                                 
 
@@ -384,7 +417,7 @@ void CRedoAlignmentTestFixture::
         double diff = fabs((expected_hsp->evalue-actual_hsp->evalue));
         cerr << "Diff in evalues for " << index << "=" << diff << endl;
 #endif
-        BOOST_REQUIRE_CLOSE(expected_hsp->evalue, actual_hsp->evalue, 10.0);
+       BOOST_REQUIRE_CLOSE(expected_hsp->evalue, actual_hsp->evalue, 10.0);
 //            cout << "HSP " << index << " OK" << endl;
     }
 
@@ -443,12 +476,70 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStats) {
                                                 num_idents_final);
 
     const Int8 kEffSearchSp = 500000;
-    const bool kCompBasedStats = true;
     const bool kSmithWaterman = false;
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eCompositionBasedStats,
+                                    kSmithWaterman);
+
+    ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+}
+
+BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
+    const EBlastProgramType kProgram = eBlastTypeBlastp;
+    const int k_num_hsps_start = 3;
+    const int k_num_hsps_end = 2;
+    CSeq_id query_id("gi|3091");
+    CSeq_id subj_id("gi|402871");
+
+    // It seems that the last hsp in this set was manually constructed and
+    // expected to be dropped (please note that the first 2 hsps we
+    // constructed using blastall (thus filtering on), but the sequence
+    // passed to RedoAlignmentCore was unfiltered (default for blastpgp)
+    const int query_offset[k_num_hsps_start] = { 28, 46, 463};
+    const int query_end[k_num_hsps_start] = { 485, 331, 488};
+    const int subject_offset[k_num_hsps_start] = { 36, 327, 320};
+    const int subject_end[k_num_hsps_start] = { 512, 604, 345};
+    const int score[k_num_hsps_start] = { 554, 280, 28};
+    const int query_gapped_start[k_num_hsps_start] = { 431, 186, 480};
+    const int subject_gapped_start[k_num_hsps_start] = { 458, 458, 337};
+
+    // This is freed by the HSPStream interface
+    BlastHSPList* init_hsp_list = 
+        setUpHSPList(k_num_hsps_start,
+                                                query_offset, query_end,
+                                                subject_offset, subject_end,
+                                                query_gapped_start, 
+                                                subject_gapped_start,
+                                                score);
+
+    const int query_offset_final[k_num_hsps_end] = { 2, 46};
+    const int query_end_final[k_num_hsps_end] = { 517, 331};
+    const int subject_offset_final[k_num_hsps_end] = { 9, 327};
+    const int subject_end_final[k_num_hsps_end] = { 546, 604};
+    const int score_final[k_num_hsps_end] = { 537, 298};
+    const double evalue_final[k_num_hsps_end] = {1.1417e-58, 5.6e-31};
+    const int num_idents_final[k_num_hsps_end] = { 177, 95 };
+
+    BlastHSPList* ending_hsp_list = 
+        setUpHSPList(k_num_hsps_end,
+                                                query_offset_final,
+                                                query_end_final,
+                                                subject_offset_final,
+                                                subject_end_final,
+                                                query_offset_final,
+                                                subject_offset_final,
+                                                score_final, 
+                                                evalue_final,
+                                                num_idents_final);
+
+    const Int8 kEffSearchSp = 500000;
+    const bool kSmithWaterman = false;
+
+    runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
+                                    init_hsp_list, ending_hsp_list,
+                                    kEffSearchSp, eCompositionMatrixAdjust,
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
@@ -505,12 +596,84 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
 
 
     const Int8 kEffSearchSp = 84660;
-    const bool kCompBasedStats = true;
     const bool kSmithWaterman = false;
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eCompositionBasedStats,
+                                    kSmithWaterman);
+    ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
+}
+
+BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
+    const EBlastProgramType kProgram = eBlastTypeBlastp;
+    const int k_num_hsps_start = 6;
+    const int k_num_hsps_end = 5;
+    // CSeq_id query_id("gi|129295");
+    CSeq_id subj_id("gb|AAA22059|");
+    auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+
+    CNcbiIfstream infile("data/biased.fsa");
+    const bool is_protein(true);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(infile, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(&*fasta_src));
+    CRef<CScope> scope = CBlastScopeSource(is_protein).NewScope();
+
+    blast::TSeqLocVector query_seqs = input->GetAllSeqLocs(*scope);
+
+    const int query_offset[k_num_hsps_start] = { 3, 1, 4, 3, 0, 1 };
+    const int query_end[k_num_hsps_start] = { 236, 232, 236, 235, 226, 233 };
+    const int subject_offset[k_num_hsps_start] = 
+    { 1, 1, 6, 6, 12, 22 };
+    const int subject_end[k_num_hsps_start] = 
+    { 238, 238, 238, 238, 238, 254 };
+    const int score[k_num_hsps_start] = { 345, 344, 343, 339, 332, 320 };
+    const int query_gapped_start[k_num_hsps_start] = 
+    { 32, 194, 9, 8, 104, 9 };
+    const int subject_gapped_start[k_num_hsps_start] = 
+    { 30, 200, 11, 11, 116, 30 };
+
+    // No gaps were found in these alignments. This is freed by the
+    // HSPStream interface
+    BlastHSPList* init_hsp_list = 
+        setUpHSPList(k_num_hsps_start,
+                                                query_offset, query_end,
+                                                subject_offset, subject_end,
+                                                query_gapped_start, 
+                                                subject_gapped_start,
+                                                score);
+
+    const int query_offset_final[k_num_hsps_end] = { 4, 3, 3, 0, 1};
+    const int query_end_final[k_num_hsps_end] = { 236, 235, 220, 226, 218};
+    const int subject_offset_final[k_num_hsps_end] = { 6, 6, 1, 12, 1};
+    const int subject_end_final[k_num_hsps_end] = { 238, 238, 218, 238, 218};
+    const int score_final[k_num_hsps_end] = { 73, 72, 69, 68, 66};
+    const double evalue_final[k_num_hsps_end] = 
+    { 1.26e-05 , 1.7e-5 , 4.0e-5, 5.1e-5, 0.000079};
+    const int num_idents_final[k_num_hsps_end] = { 87, 85, 81, 84, 81 };
+            
+
+    BlastHSPList* ending_hsp_list = 
+        setUpHSPList(k_num_hsps_end,
+                                                query_offset_final,
+                                                query_end_final,
+                                                subject_offset_final,
+                                                subject_end_final,
+                                                query_offset_final,
+                                                subject_offset_final,
+                                                score_final, 
+                                                evalue_final,
+                                                num_idents_final);
+
+
+    const Int8 kEffSearchSp = 84660;
+    const bool kSmithWaterman = false;
+
+    runRedoAlignmentCoreUnitTest(kProgram, query_seqs[0], *ssl,
+                                    init_hsp_list, ending_hsp_list,
+                                    kEffSearchSp, eCompositionMatrixAdjust,
                                     kSmithWaterman);
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
 }
@@ -565,12 +728,11 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
                                                 num_idents_final);
 
     const Int8 kEffSearchSp = 500000;
-    const bool kCompBasedStats = false;
     const bool kSmithWaterman = true;
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eNoCompositionBasedStats,
                                     kSmithWaterman);
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
 }
@@ -620,12 +782,11 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
                                                 num_idents_final);
 
     const Int8 kEffSearchSp = 500000;
-    const bool kCompBasedStats = true;
     const bool kSmithWaterman = true;
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eCompositionBasedStats,
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
@@ -691,12 +852,11 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
 
 
     const Int8 kEffSearchSp = 84660;
-    const bool kCompBasedStats = true;
     const bool kSmithWaterman = true;
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eCompositionBasedStats,
                                     kSmithWaterman);
 
     ending_hsp_list = Blast_HSPListFree(ending_hsp_list);
@@ -762,7 +922,6 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentUseXdropEvalue) {
                                                 num_idents_final);
 
     const Int8 kEffSearchSp = 1000*1000;
-    const bool kCompBasedStats = true;
     const bool kSmithWaterman = true;
 
     const int kHitListSize = 1;
@@ -770,7 +929,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentUseXdropEvalue) {
 
     runRedoAlignmentCoreUnitTest(kProgram, query_id, subj_id,
                                     init_hsp_list, ending_hsp_list,
-                                    kEffSearchSp, kCompBasedStats,
+                                    kEffSearchSp, eCompositionBasedStats,
                                     kSmithWaterman, kEvalueThreshold,
                                     kHitListSize);
 

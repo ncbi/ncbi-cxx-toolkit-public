@@ -1335,60 +1335,37 @@ Blast_CompositionMatrixAdj(int ** matrix,
                            Blast_CompositionWorkspace * NRrecord,
                            const Blast_MatrixInfo * matrixInfo)
 {
-    int i;                         /* loop indices */
-    static int total_iterations = 0;   /* total iterations among all
-                                          calls to
-                                          compute_new_score_matrix */
-    int new_iterations = 0;        /* number of iterations in the most
-                                      recent call to
-                                      compute_new_score_matrix */
-    static int max_iterations = 0; /* maximum number of iterations
-                                      observed in a call to
-                                      compute_new_score_matrix */
-    int status;                    /* status code for operations that may
-                                      fail */
-    double row_probs[COMPO_NUM_TRUE_AA];
-    double col_probs[COMPO_NUM_TRUE_AA];
-    double RE_final;
-
-    /*Is the relative entropy constrained? Behaves as boolean for now*/
-    int constrain_rel_entropy =
-        eUnconstrainedRelEntropy != matrix_adjust_rule;
+    int iteration_count, status;
+    double row_probs[COMPO_NUM_TRUE_AA], col_probs[COMPO_NUM_TRUE_AA];
+    /* Target RE when optimizing the matrix; zero if the relative
+       entropy should not be constrained. */
+    double dummy, desired_re = 0.0;
 
     s_GatherLetterProbs(row_probs, stdaa_row_probs, alphsize);
     s_GatherLetterProbs(col_probs, stdaa_col_probs, alphsize);
 
     switch (matrix_adjust_rule) {
     case eUnconstrainedRelEntropy:
-        /* Initialize to a arbitrary value; it won't be used */
-        RE_final = 0.0;
+        desired_re = 0.0;
         break;
     case eRelEntropyOldMatrixNewContext:
-        {
-            double entropy, Lambda;
-            int iter_count;
-            status = Blast_EntropyOldFreqNewContext(&entropy, &Lambda,
-                                                    &iter_count,
-                                                    NRrecord->mat_b,
-                                                    row_probs, col_probs);
-            if (status < 0) {
-                return status;
-            } else if (status > 0) {
-                /* Failed to compute the entropy; leave the entropy
-                 * unconstrained */
-                status = 0;
-                constrain_rel_entropy = 0;
-                RE_final = 0.0;
-            } else {
-                RE_final = entropy;
-            }
-        }
+        /* Calculate the desired re using the new marginal probs with
+           the old matrix */
+        status = Blast_EntropyOldFreqNewContext(&desired_re, &dummy,
+                                                &iteration_count,
+                                                NRrecord->mat_b,
+                                                row_probs, col_probs);
+        if (status < 0)     /* Error, e.g. memory */
+            return status;
+        else if (status > 0) /* we could not calculate the desired re */
+            desired_re = 0.0; /* so, leave the re unconstrained */
+
         break;
     case eRelEntropyOldMatrixOldContext:
-        RE_final = Blast_TargetFreqEntropy(NRrecord->mat_b);
+        desired_re = Blast_TargetFreqEntropy(NRrecord->mat_b);
         break;
     case eUserSpecifiedRelEntropy:
-        RE_final = specifiedRE;
+        desired_re = specifiedRE;
         break;
     default:  /* I assert that we can't get here */
         fprintf(stderr, "Unknown flag for setting relative entropy"
@@ -1403,39 +1380,22 @@ Blast_CompositionMatrixAdj(int ** matrix,
     status =
         Blast_OptimizeTargetFrequencies(&NRrecord->mat_final[0][0],
                                         COMPO_NUM_TRUE_AA,
-                                        &new_iterations,
+                                        &iteration_count,
                                         &NRrecord->mat_b[0][0],
                                         row_probs, col_probs,
-                                        constrain_rel_entropy,
-                                        RE_final,
+                                        (desired_re > 0.0),
+                                        desired_re,
                                         kCompoAdjustErrTolerance,
                                         kCompoAdjustIterationLimit);
-    total_iterations += new_iterations;
-    if (new_iterations > max_iterations)
-        max_iterations = new_iterations;
 
-    if (status == 0) {
-        status = s_ScoresStdAlphabet(matrix, alphsize, NRrecord->mat_final,
-                                     matrixInfo->startMatrix,
-                                     row_probs, col_probs,
-                                     matrixInfo->ungappedLambda);
-    } else if (status == -1) {
-        /* out of memory */
-        status = -1;
-    } else {
-        /* Iteration did not converge */
-        fprintf(stderr, "bad probabilities from sequence 1, length %d\n",
-                length1);
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++)
-            fprintf(stderr, "%15.12f\n", row_probs[i]);
-        fprintf(stderr, "bad probabilities from sequence 2, length %d\n",
-                length2);
-        for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++)
-            fprintf(stderr, "%15.12f\n", col_probs[i]);
-        fflush(stderr);
-        status = 1;
-    }
-    return status;
+    if (status != 0)            /* Did not compute the target freqs */
+        return status;
+
+    return
+        s_ScoresStdAlphabet(matrix, alphsize, NRrecord->mat_final,
+                            matrixInfo->startMatrix,
+                            row_probs, col_probs,
+                            matrixInfo->ungappedLambda);
 }
 
 
@@ -1497,8 +1457,8 @@ Blast_AdjustScores(int ** matrix,
         Blast_CalcLambdaFullPrecision(&lambdaForPair, &iter_count,
                                       scores,
                                       COMPO_NUM_TRUE_AA,
-                                      &(permutedQueryProbs[0]),
-                                      &(permutedMatchProbs[0]),
+                                      permutedQueryProbs,
+                                      permutedMatchProbs,
                                       kLambdaErrorTolerance,
                                       kLambdaFunctionTolerance,
                                       kLambdaIterationLimit);
@@ -1528,15 +1488,10 @@ Blast_AdjustScores(int ** matrix,
                                          composition_adjust_mode);
     }  /* end else call Yi-Kuo's code to choose mode for matrix adjustment. */
 
-    if (eCompoScaleOldMatrix == *matrix_adjust_rule) {
-        return Blast_CompositionBasedStats(matrix, ratioToPassBack, matrixInfo,
-                                           query_composition->prob,
-                                           subject_composition->prob,
-                                           calc_lambda,
-                                           (compositionTestIndex > 0));
-    } else {
-        *ratioToPassBack = 1.0;    /* meaningless for this mode */
-        return
+    if (eCompoScaleOldMatrix != *matrix_adjust_rule) {
+        /* Try matrix optimization, if it fails to converge, we
+           fall back to traditional scaling below */
+        int status =
             Blast_CompositionMatrixAdj(matrix,
                                        alphsize,
                                        *matrix_adjust_rule,
@@ -1550,5 +1505,17 @@ Blast_AdjustScores(int ** matrix,
                                        kFixedReBlosum62,
                                        NRrecord,
                                        matrixInfo);
-    }
+
+        *ratioToPassBack = 1.0;    /* meaningless for this mode */
+        if (status <= 0)
+            return status;      /* Success (=0) or fatal error (<0)*/
+            
+    } /* End try matrix optimization */
+
+    *matrix_adjust_rule = eCompoScaleOldMatrix; 
+    return Blast_CompositionBasedStats(matrix, ratioToPassBack, matrixInfo,
+                                       query_composition->prob,
+                                       subject_composition->prob,
+                                       calc_lambda,
+                                       (compositionTestIndex > 0));
 }
