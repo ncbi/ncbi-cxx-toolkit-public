@@ -755,6 +755,8 @@ static void s_ShowDataLayout(void)
 
 extern EIO_Status SOCK_InitializeAPI(void)
 {
+    CORE_TRACE("[SOCK::InitializeAPI]  Begin");
+
     CORE_LOCK_WRITE;
     if (s_Initialized) {
         CORE_UNLOCK;
@@ -801,6 +803,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #endif
 
     CORE_UNLOCK;
+    CORE_TRACE("[SOCK::InitializeAPI]  End");
     return eIO_Success;
 }
 
@@ -849,6 +852,8 @@ static EIO_Status s_InitAPI(int secure)
 
 extern EIO_Status SOCK_ShutdownAPI(void)
 {
+    CORE_TRACE("[SOCK::ShutdownAPI]  Begin");
+
     CORE_LOCK_WRITE;
     if (s_Initialized <= 0) {
         CORE_UNLOCK;
@@ -880,6 +885,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     CORE_UNLOCK;
 #endif /*NCBI_OS_MSWIN*/
 
+    CORE_TRACE("[SOCK::ShutdownAPI]  End");
     return eIO_Success;
 }
 
@@ -5981,6 +5987,8 @@ extern int SOCK_gethostname(char*  name,
     if (s_InitAPI(0) != eIO_Success)
         return eIO_NotSupported;
 
+    CORE_TRACEF(("[SOCK::gethostname]  Begin"));
+
     error = 0/*false*/;
     assert(name  &&  namelen > 0);
     name[0] = name[namelen - 1] = '\0';
@@ -5997,12 +6005,12 @@ extern int SOCK_gethostname(char*  name,
                    " Buffer too small");
         error = 1/*true*/;
     }
+    if (error)
+        name[0] = '\0';
 
-    if (!error)
-        return 0/*success*/;
+    CORE_TRACEF(("[SOCK::gethostname]  End: \"%s\"", name));
 
-    name[0] = '\0';
-    return -1/*failed*/;
+    return error ? -1/*failed*/ : 0/*success*/;
 }
 
 
@@ -6102,6 +6110,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         hostname = buf;
     }
 
+    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
+
     host = inet_addr(hostname);
     if (host == htonl(INADDR_NONE)) {
         int x_error;
@@ -6199,9 +6209,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         return 0;
     }
 
-    if (!host) {
-        host = SOCK_gethostbyname(0);
-    }
+    if (!host)
+        host = SOCK_GetLocalHostAddress(eDefault);
+
+    CORE_TRACEF(("[SOCK::gethostbyaddr]  0x%08X", (unsigned int) ntohl(host)));
 
     if (host) {
         int x_error;
