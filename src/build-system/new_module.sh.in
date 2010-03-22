@@ -148,6 +148,8 @@ for i in $imports; do
 done
 
 # detect datatool program path
+datatool=
+
 if test "`echo $bindir/*`" = "$bindir/*"; then
     # empty or non-existent (--without-execopy?)
     bindir=$build_root/build/serial/datatool
@@ -158,10 +160,21 @@ if test -x "$bindir/datatool"; then
     COMMON_AddRunpath "$libdir"
 elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
     datatool=$NCBI_DATATOOL_PATH/datatool
-elif test -x "$NCBI/c++/Release/bin/datatool"; then
-    datatool="$NCBI/c++/Release/bin/datatool"
-else
-    datatool=`command -v datatool`
+elif test -n "$NCBI"; then
+    ncbi_platform=`COMMON_DetectPlatform`
+    inst_root=/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool
+    version=`cat $top_srcdir/src/build-system/datatool_version.txt`
+    if test -x "$inst_root/$ncbi_platform/$version/datatool"; then
+        datatool=$inst_root/$ncbi_platform/$version/datatool
+    fi
+fi
+
+if test -z "$datatool"; then # keep looking
+    if test -x "$NCBI/c++/Release/bin/datatool"; then
+        datatool="$NCBI/c++/Release/bin/datatool"
+    else
+        datatool=`command -v datatool`
+    fi
 fi
 
 # guess the make command, if it is not specified in the $MAKE env. variable
