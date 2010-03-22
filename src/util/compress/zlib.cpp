@@ -1027,6 +1027,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
             if ( !footer_len ) {
                 return eStatus_Overflow;
             }
+            IncreaseOutputSize(footer_len);
             *out_avail += footer_len;
         }
         return eStatus_EndOfData;
@@ -1189,6 +1190,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 // If gzip header found, skip it
                 if ( header_len ) {
                     m_Cache.erase(0, header_len);
+                    IncreaseProcessedSize(header_len);
                     m_DecompressMode = eMode_Decompress;
                     m_IsGZ = true;
                 }
