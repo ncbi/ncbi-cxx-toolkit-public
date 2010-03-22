@@ -86,7 +86,7 @@ public:
 
     /// Compression flags. The flag selection depends from compression
     /// algorithm implementation.
-    typedef unsigned int TFlags;    // Bitwise OR of EFlags*
+    typedef unsigned int TFlags;    ///< Bitwise OR of EFlags*
 
 public:
     /// Destructor

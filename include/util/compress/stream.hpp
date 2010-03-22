@@ -131,6 +131,7 @@ public:
                        CCompressionStreamProcessor* read_sp,
                        CCompressionStreamProcessor* write_sp,
                        TOwnership                   ownership = 0);
+
     /// Destructor
     virtual ~CCompressionStream(void);
 
@@ -138,6 +139,23 @@ public:
     /// This function just calls a streambuf Finalize().
     virtual void Finalize(CCompressionStream::EDirection dir =
                           CCompressionStream::eReadWrite);
+
+protected:
+    /// Default constructor.
+    ///
+    /// Default constructor allow to create stream with specific
+    /// characteristics later, not necessary in the constructor.
+    /// Can be used in derived classes.
+    /// @sa Create()
+    CCompressionStream(void);
+
+    /// Create stream with specific characteristics later,
+    /// not necessary in the constructor. 
+    /// Do nothing, if stream is already initialized.
+    void Create(CNcbiIos&                    stream,
+                CCompressionStreamProcessor* read_sp,
+                CCompressionStreamProcessor* write_sp,
+                TOwnership                   ownership = 0);
 
 protected:
     /// Get status of last compression/decompression stream operation.
@@ -233,7 +251,7 @@ public:
         : istream(0),
           CCompressionStream(stream, stream_processor, 0, ownership)
     {}
-    
+
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus GetStatus(void) {
         return CCompressionStream::x_GetStatus(eRead);
@@ -253,6 +271,26 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
+
+protected:
+    /// Default constructor.
+    ///
+    /// Default constructor allow to create stream with specific
+    /// characteristics later, not necessary in the constructor.
+    /// Can be used in derived classes.
+    /// @sa CCompressionStream, Create()
+    CCompressionIStream(void) : istream(0) { }
+
+    /// Create stream with specific characteristics later,
+    /// not necessary in the constructor. 
+    /// Do nothing, if stream is already initialized.
+    /// @sa CCompressionStream
+    void Create(CNcbiIos&                    stream,
+                CCompressionStreamProcessor* stream_processor,
+                TOwnership                   ownership = 0)
+    {
+        CCompressionStream::Create(stream, stream_processor, 0, ownership);
+    }
 };
 
 
@@ -286,6 +324,26 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
+
+protected:
+    /// Default constructor.
+    ///
+    /// Default constructor allow to create stream with specific
+    /// characteristics later, not necessary in the constructor.
+    /// Can be used in derived classes.
+    /// @sa CCompressionStream, Create()
+    CCompressionOStream(void) : ostream(0) { }
+
+    /// Create stream with specific characteristics later,
+    /// not necessary in the constructor. 
+    /// Do nothing, if stream is already initialized.
+    /// @sa CCompressionStream
+    void Create(CNcbiIos&                    stream,
+                CCompressionStreamProcessor* stream_processor,
+                TOwnership                   ownership = 0)
+    {
+        CCompressionStream::Create(stream, 0, stream_processor, ownership);
+    }
 };
 
 
@@ -322,6 +380,15 @@ public:
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
+
+protected:
+    /// Default constructor.
+    ///
+    /// Default constructor allow to create stream with specific
+    /// characteristics later, not necessary in the constructor.
+    /// Can be used in derived classes.
+    /// @sa CCompressionStream, Create()
+    CCompressionIOStream(void) : iostream(0) { }
 };
 
 

@@ -96,9 +96,34 @@ CCompressionStream::CCompressionStream(CNcbiIos&                    stream,
                                        CCompressionStreamProcessor* read_sp,
                                        CCompressionStreamProcessor* write_sp,
                                        TOwnership                   ownership)
-    : CNcbiIos(0), m_Stream(&stream), m_StreamBuf(0),
-      m_Reader(read_sp), m_Writer(write_sp), m_Ownership(ownership)
+    : CNcbiIos(0), m_Stream(0)
 {
+    Create(stream, read_sp, write_sp, ownership);
+}
+
+
+CCompressionStream::CCompressionStream(void)
+    : CNcbiIos(0), m_Stream(0), m_StreamBuf(0),
+      m_Reader(0), m_Writer(0), m_Ownership(0)
+{
+    // see Create()
+}
+
+void CCompressionStream::Create(CNcbiIos&                    stream,
+                                CCompressionStreamProcessor* read_sp,
+                                CCompressionStreamProcessor* write_sp,
+                                TOwnership                   ownership)
+{
+    if ( m_Stream ) {
+        // Already initialized, do nothing
+        return;
+    }
+    // Initialize members
+    m_Stream    = &stream; 
+    m_Reader    = read_sp;
+    m_Writer    = write_sp;
+    m_Ownership = ownership;
+    
     // Create a new stream buffer
     auto_ptr<CCompressionStreambuf> sb(
         new CCompressionStreambuf(&stream, read_sp, write_sp));
