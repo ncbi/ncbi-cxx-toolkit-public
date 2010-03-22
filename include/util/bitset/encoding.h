@@ -735,12 +735,9 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
         return;
     }
 #if (BM_UNALIGNED_ACCESS_OK == 1)
-	const bm::word_t* buf = (bm::word_t*)buf_;
-    const bm::word_t* w_end = w + count;
-    do 
-    {
-        *w++ = *buf++;
-    } while (w < w_end);
+	memcpy(w, buf_, count * sizeof(bm::word_t));
+	seek(count * 4);
+	return;
 #else
     const unsigned char* buf = buf_;
     const bm::word_t* w_end = w + count;
@@ -751,8 +748,8 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
         *w++ = a;
         buf += sizeof(a);
     } while (w < w_end);
-#endif
     buf_ = (unsigned char*)buf;
+#endif
 }
 
 /*!

@@ -41,10 +41,26 @@ struct tmatrix
     
     T BM_ALIGN16 value[ROWS][COLS] BM_ALIGN16ATTR;
 
+    enum params
+    {
+        n_rows = ROWS,
+        n_columns = COLS
+    };
+
+
+    /// Row characteristics for transposed matrix
+    struct rstat
+    {
+        unsigned               bit_count;
+        unsigned               gap_count;
+        bm::set_representation best_rep;
+    };
+
     static unsigned rows() { return ROWS; }
     static unsigned cols() { return COLS; }
 
     const T* row(unsigned row_idx) const { return value[row_idx]; }
+          T* row(unsigned row_idx)       { return value[row_idx]; }
 };
 
 
@@ -359,13 +375,6 @@ void tmatrix_distance(const T  tmatrix[BPC][BPS],
                 } while (r2 < r2_end);
             }
             distance[i][j] = count;
-/*
-            distance[i][j] = 
-                bit_block_xor_count(
-                    (bm::word_t*)r1, (bm::word_t*)r1_end, (bm::word_t*)(tmatrix[j]));
-            if (count != distance[i][j])
-                printf("BShit!");
-*/
         } // for j
     } // for i
 }
@@ -413,13 +422,21 @@ void bit_iblock_make_pcv(
         unsigned char pc = ibpc_uncompr; 
         unsigned row_bitcount = distance[i][i];
         
+        const unsigned total_possible_max = sizeof(T)*8*BPS;
         switch (row_bitcount)
         {
         case 0:
             pc_vector[i] = ibpc_all_zero; 
             continue;
-        case sizeof(T)*8*BPS:
+        case total_possible_max:
             pc_vector[i] = ibpc_all_one; 
+            continue;
+        }
+        
+        // Dense-populated set, leave it as is
+        if (row_bitcount >  total_possible_max/2)
+        {
+            pc_vector[i] = ibpc_uncompr;
             continue;
         }
         
@@ -470,7 +487,6 @@ void bit_iblock_pcv_stat(const unsigned char* BMRESTRICT pc_vector,
 
 
 
-
 /**
     \brief Matrix reduction based on transformation pc vector
 */
@@ -487,7 +503,7 @@ void bit_iblock_reduce(
     do 
     {
         unsigned ibpc = *pc_vector & 7;
-        unsigned n_row = (pc_vector[row] >> 3);
+        unsigned n_row = *pc_vector >> 3;
         
         switch(ibpc)
         {
@@ -528,6 +544,111 @@ void bit_iblock_reduce(
 }
 
 /**
+    \brief Transposed Matrix reduction based on transformation pc vector
+*/
+template<class TMatrix>
+void tmatrix_reduce(TMatrix& tmatrix, 
+                    const unsigned char* pc_vector,
+                    const unsigned       effective_cols)
+{
+    BM_ASSERT(pc_vector);
+
+    typedef typename TMatrix::value_type value_type;
+
+    const unsigned char* pc_vector_end = pc_vector + tmatrix.rows();
+    unsigned row = 0;
+    unsigned cols = effective_cols ? effective_cols : tmatrix.cols();
+
+    do
+    {
+        unsigned ibpc = *pc_vector & 7;        
+        switch(ibpc)
+        {
+        case bm::ibpc_uncompr:
+        case bm::ibpc_all_zero:
+        case bm::ibpc_all_one:
+        case bm::ibpc_equiv:
+            break;
+        case bm::ibpc_close:
+            {
+            unsigned n_row = *pc_vector >> 3;
+            BM_ASSERT(n_row > row);
+
+            value_type* r1 = tmatrix.row(row);
+            const value_type* r2 = tmatrix.row(n_row);
+            for (unsigned i = 0; i < cols; ++i)
+            {
+                r1[i] ^= r2[i];
+            } // for
+            }
+            break;
+        default:
+            BM_ASSERT(0);
+            break;
+        } // switch
+        ++row;
+    } while (++pc_vector < pc_vector_end);
+}
+
+/**
+    \brief Transposed Matrix restore based on transformation pc vector
+*/
+template<class TMatrix>
+void tmatrix_restore(TMatrix& tmatrix, 
+                     const unsigned char* pc_vector,
+                     const unsigned effective_cols)
+{
+    BM_ASSERT(pc_vector);
+
+    typedef typename TMatrix::value_type value_type;
+
+    unsigned cols = effective_cols ? effective_cols : tmatrix.cols();
+    for (int row = tmatrix.rows()-1; row >= 0; --row)
+    {
+        unsigned ibpc = pc_vector[row] & 7;  
+        int n_row = pc_vector[row] >> 3;
+
+        value_type* r1 = tmatrix.row(row);
+
+        switch(ibpc)
+        {
+        case bm::ibpc_uncompr:
+            break;
+        case bm::ibpc_all_zero:
+            for (unsigned i = 0; i < cols; ++i)
+                r1[i] = 0;
+             break;
+        case bm::ibpc_all_one:
+            for (unsigned i = 0; i < cols; ++i)
+                r1[i] = ~0;
+            break;
+        case bm::ibpc_equiv:
+            {
+            BM_ASSERT(n_row > row);
+            const value_type* r2 = tmatrix.row(n_row);
+            for (unsigned i = 0; i < cols; ++i)
+                r1[i] = r2[i];
+            }
+            break;
+        case bm::ibpc_close:
+            {      
+            BM_ASSERT(n_row > row);
+            const value_type* r2 = tmatrix.row(n_row);
+            for (unsigned i = 0; i < cols; ++i)
+                r1[i] ^= r2[i];
+            }
+            break;
+        default:
+            BM_ASSERT(0);
+            break;
+        } // switch
+    }  // for
+
+}
+
+
+
+/**
     \brief Copy GAP block body to bit block with DGap transformation 
     \internal
 */
@@ -548,6 +669,69 @@ void gap_2_bitblock(const GT* BMRESTRICT gap_buf,
         *dgap_end = 0;
     }
 }
+
+/**
+    @brief Compute t-matrix rows statistics used for compression
+
+    @param tmatrix - transposed matrix
+    @param pc_vector - row content vector
+    @param rstat - output row vector
+
+    @internal
+*/
+template<class TMatrix>
+void compute_tmatrix_rstat(const TMatrix& tmatrix, 
+                           const unsigned char* pc_vector,
+                           typename TMatrix::rstat* rstat,
+                           unsigned effective_cols)
+{
+    BM_ASSERT(rstat);
+    typedef typename TMatrix::value_type value_type;
+
+    unsigned cols = effective_cols ? effective_cols : tmatrix.cols();
+    //unsigned cols = tmatrix.cols();
+    unsigned rows = tmatrix.rows();
+
+    for (unsigned i = 0; i < rows; ++i)
+    {
+        unsigned ibpc = pc_vector[i] & 7;        
+        switch(ibpc)
+        {
+        case bm::ibpc_all_zero:
+        case bm::ibpc_all_one:
+        case bm::ibpc_equiv:
+            rstat[i].bit_count = rstat[i].gap_count = 0;
+            rstat[i].best_rep = bm::set_bitset;
+            break;
+        case bm::ibpc_uncompr:
+        case bm::ibpc_close:
+            {
+            const value_type* r1 = tmatrix.row(i);
+            const value_type* r1_end = r1 + cols;
+            // TODO: find how to deal with the potentially incorrect type-cast
+            bm::bit_count_change32((bm::word_t*)r1, (bm::word_t*)r1_end, 
+                                    &rstat[i].bit_count, &rstat[i].gap_count);
+
+            const unsigned bitset_size = sizeof(value_type) * cols;
+            const unsigned total_possible_max_bits = sizeof(value_type)*8*cols;
+
+            rstat[i].best_rep = 
+                bm::best_representation(rstat[i].bit_count,
+                                        total_possible_max_bits,
+                                        rstat[i].gap_count,
+                                        bitset_size);
+
+            }
+            break;
+        default:
+            BM_ASSERT(0);
+            break;
+        } // switch
+
+    } // for 
+}
+
+
 
 /**
     \brief Compute effective right column border of the t-matrix
@@ -572,6 +756,7 @@ unsigned find_effective_columns(const TM& tmatrix)
     return col;
 }
 
+
 /**
     \brief Bit-plain splicing of a GAP block
     
@@ -594,7 +779,7 @@ public:
                 (((BLOCK_SIZE * sizeof(unsigned)) / (sizeof(GT))) / (sizeof(GT) * 8))>
                 tmatrix_type;
                 
-    gap_transpose_engine() 
+    gap_transpose_engine() : eff_cols_(0)
     {}            
     
     /// Transpose GAP block through a temp. block of aligned(!) memory
@@ -602,24 +787,72 @@ public:
     void transpose(const GT* BMRESTRICT gap_buf, 
                          BT* BMRESTRICT tmp_block)
     {
-        const unsigned plain_count = sizeof(GT)*8;
-        const unsigned block_size = BLOCK_SIZE * sizeof(unsigned);
-        const unsigned plain_size = block_size / (sizeof(GT) * plain_count);
         const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
 
-        BM_ASSERT(sizeof(tmatrix_.value) == plain_size * plain_count * sizeof(GT));
+        BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
+                                            tmatrix_type::n_rows * sizeof(GT));
                 
         // load all GAP as D-GAP(but not head word) into aligned bit-block
         gap_2_bitblock(gap_buf, tmp_block, BLOCK_SIZE);
         
         // transpose
-        vect_bit_transpose<GT, plain_count, plain_size>
+        vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
                            ((GT*)tmp_block, arr_size, tmatrix_.value);
 
         // calculate number of non-zero columns
-        eff_cols_ = find_effective_columns(tmatrix_);
-        
+        eff_cols_ = find_effective_columns(tmatrix_);        
     }
+
+	/// Transpose array of shorts
+	///
+	void transpose(const GT* BMRESTRICT garr,
+		           unsigned garr_size,
+				   BT* BMRESTRICT tmp_block)
+	{
+		BM_ASSERT(garr_size);
+
+		bit_block_set(tmp_block, 0);
+		::memcpy(tmp_block, garr, sizeof(GT)*garr_size);
+
+        const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
+        BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
+                                            tmatrix_type::n_rows * sizeof(GT));
+        // transpose
+        vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
+                           ((GT*)tmp_block, arr_size, tmatrix_.value);
+
+        // calculate number of non-zero columns
+        eff_cols_ = find_effective_columns(tmatrix_);        
+
+	}
+
+    void compute_distance_matrix()
+    {
+        tmatrix_distance<typename tmatrix_type::value_type, 
+                         tmatrix_type::n_rows, tmatrix_type::n_columns>
+                         (tmatrix_.value, distance_);
+
+        // make compression descriptor vector and statistics vector
+        bit_iblock_make_pcv<unsigned char, 
+                            tmatrix_type::n_rows, tmatrix_type::n_columns>
+                            (distance_, pc_vector_);
+
+        bit_iblock_pcv_stat(pc_vector_, 
+                            pc_vector_ + tmatrix_type::n_rows, 
+                            pc_vector_stat_);
+    }
+
+    void reduce()
+    {
+        tmatrix_reduce(tmatrix_, pc_vector_, eff_cols_);
+        compute_tmatrix_rstat(tmatrix_, pc_vector_, rstat_vector_, eff_cols_);
+    }
+
+    void restore()
+    {
+        tmatrix_restore(tmatrix_, pc_vector_, eff_cols_);
+    }
+    
     
     /// Restore GAP block from the transposed matrix
     ///
@@ -627,17 +860,14 @@ public:
                   GT* BMRESTRICT gap_buf, 
                   BT* BMRESTRICT tmp_block)
     {
-        const unsigned plain_count = sizeof(GT)*8;
-        const unsigned block_size = BLOCK_SIZE * sizeof(unsigned);
-        const unsigned plain_size = block_size / (sizeof(GT) * plain_count);
-
-        BM_ASSERT(sizeof(tmatrix_.value) == plain_size * plain_count * sizeof(GT));
+        BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
+                                            tmatrix_type::n_rows * sizeof(GT));
   
         // restore into a temp buffer
         GT* gap_tmp = (GT*)tmp_block;
         //*gap_tmp++ = gap_head;
        
-        vect_bit_trestore<GT, plain_count, plain_size>(tmatrix_.value, gap_tmp);
+        vect_bit_trestore<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>(tmatrix_.value, gap_tmp);
         
         // D-Gap to GAP block recalculation
         gap_tmp = (GT*)tmp_block;
@@ -646,8 +876,12 @@ public:
     
 public:
 //    GT            gap_head_;
-    tmatrix_type  tmatrix_;    
-    unsigned      eff_cols_;
+    tmatrix_type                  tmatrix_;    
+    unsigned                      eff_cols_;
+    unsigned                      distance_[tmatrix_type::n_rows][tmatrix_type::n_rows];
+    unsigned char                 pc_vector_[tmatrix_type::n_rows];
+    unsigned                      pc_vector_stat_[bm::ibpc_end];
+    typename tmatrix_type::rstat  rstat_vector_[tmatrix_type::n_rows];
 };
 
 

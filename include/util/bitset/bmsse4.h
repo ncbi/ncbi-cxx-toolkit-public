@@ -54,14 +54,25 @@ inline
 bm::id_t sse4_bit_count(const __m128i* block, const __m128i* block_end)
 {
     bm::id_t count = 0;
+#ifdef BM64_SSE4
+    const bm::id64_t* b = (bm::id64_t*) block;
+    const bm::id64_t* b_end = (bm::id64_t*) block_end;
     do
     {
-        unsigned* b = (unsigned*) block;
+        count += _mm_popcnt_u64(b[0]) +
+                 _mm_popcnt_u64(b[1]);
+        b += 2;
+    } while (b < b_end);
+#else
+    do
+    {
+        const unsigned* b = (unsigned*) block;
         count += _mm_popcnt_u32(b[0]) +
                  _mm_popcnt_u32(b[1]) +
                  _mm_popcnt_u32(b[2]) +
                  _mm_popcnt_u32(b[3]);
     } while (++block < block_end);
+#endif    
     return count;
 }
 
@@ -101,6 +112,19 @@ bm::id_t sse4_bit_count_op(const __m128i* BMRESTRICT block,
                            Func sse2_func)
 {
     bm::id_t count = 0;
+#ifdef BM64_SSE4
+    do
+    {
+        __m128i tmp0 = _mm_load_si128(block);
+        __m128i tmp1 = _mm_load_si128(mask_block);        
+        __m128i b = sse2_func(tmp0, tmp1);
+
+        count += _mm_popcnt_u64(_mm_extract_epi64(b, 0));
+        count += _mm_popcnt_u64(_mm_extract_epi64(b, 1));
+
+        ++block; ++mask_block;
+    } while (block < block_end);
+#else    
     do
     {
         __m128i tmp0 = _mm_load_si128(block);
@@ -114,9 +138,12 @@ bm::id_t sse4_bit_count_op(const __m128i* BMRESTRICT block,
 
         ++block; ++mask_block;
     } while (block < block_end);
+#endif
+    
     return count;
 }
 
+/*
 template<class Func>
 bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block, 
                             const __m128i* BMRESTRICT block_end,
@@ -124,6 +151,7 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
                            Func op_func)
 {
     bm::id_t count = 0;
+#ifdef BM64_SSE4    
     do
     {
         unsigned *r1 = (unsigned*) block;
@@ -137,10 +165,25 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
         ++mask_block;
 
     } while (++block < block_end);
+#else
+    do
+    {
+        unsigned *r1 = (unsigned*) block;
+        unsigned *r2 = (unsigned*) mask_block;
+
+        count += _mm_popcnt_u32(op_func(r1[0], r2[0]));
+        count += _mm_popcnt_u32(op_func(r1[1], r2[1]));
+        count += _mm_popcnt_u32(op_func(r1[2], r2[2]));
+        count += _mm_popcnt_u32(op_func(r1[3], r2[3]));
+
+        ++mask_block;
+
+    } while (++block < block_end);
+#endif    
     return count;
 
 }
-
+*/
 
 
 #define VECT_XOR_ARR_2_MASK(dst, src, src_end, mask)\

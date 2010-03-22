@@ -31,6 +31,11 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
+/** @defgroup SSE2 Processor specific optimizations for SSE2 instructions
+ *  @ingroup bmagic
+ */
+
+
 /*! 
   @brief SSE2 reinitialization guard class
 

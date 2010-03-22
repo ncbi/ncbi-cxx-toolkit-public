@@ -29,6 +29,10 @@ For more information please visit:  http://bmagic.sourceforge.net
 #include "bmdef.h"
 #include "bmconst.h"
 
+#if defined(_M_AMD64) || defined(_M_X64) 
+#include <intrin.h>
+#endif
+
 namespace bm
 {
 
@@ -84,7 +88,22 @@ inline bm::gap_word_t ilog2(gap_word_t x)
     return l;
 }
 
-
+/**
+     Mini auto-pointer for internal memory management
+     @internal
+*/
+template<class T>
+class ptr_guard
+{
+public:
+    ptr_guard(T* p) : ptr_(p) {}
+    ~ptr_guard() { delete ptr_; }
+private:
+    ptr_guard(const ptr_guard<T>& p);
+    ptr_guard& operator=(const ptr_guard<T>& p);
+private:
+    T* ptr_;
+};
 
 /**
     Lookup table based integer LOG2

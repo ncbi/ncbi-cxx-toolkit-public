@@ -118,6 +118,18 @@ enum strategy
 };
 
 
+/*!
+    @brief set representation variants
+    @internal
+*/
+enum set_representation
+{
+    set_bitset  = 0,  //!< Simple bitset
+    set_gap     = 1,  //!< GAP-RLE compression
+    set_array1  = 2,  //!< array of set 1 values
+    set_array0  = 3   //!< array of 0 values
+};
+
 template<bool T> struct DeBruijn_bit_position
 {
     static const unsigned _multiply[32];

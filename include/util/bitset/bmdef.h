@@ -10,11 +10,14 @@
 //
 #if defined(__i386) || defined(__x86_64) || defined(__ppc__) || \
 	defined(__ppc64__) || defined(_M_IX86) || defined(_M_AMD64) || \
+    defined(_M_IX86) || defined(_M_AMD64) || defined(_M_X64) || \
     (defined(_M_MPPC) && !defined(BM_FORBID_UNALIGNED_ACCESS))
 #define BM_UNALIGNED_ACCESS_OK 1
 #endif
 
-#if defined(__i386) || defined(__x86_64) || defined(_M_AMD64) || defined(BMSSE2OPT) || defined(BMSSE42OPT)
+#if defined(_M_IX86) || defined(_M_AMD64) || defined(_M_X64) || \
+    defined(__i386) || defined(__x86_64) || defined(_M_AMD64) || \
+    defined(BMSSE2OPT) || defined(BMSSE42OPT)
 #define BM_x86
 #endif
 
