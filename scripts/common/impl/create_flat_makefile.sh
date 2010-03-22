@@ -10,12 +10,15 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
+relroot="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore"
 
 ptbname="project_tree_builder"
 # default path to project_tree_builder
 defptbpath="$NCBI/c++.metastable/Release/bin/"
 # release path to project_tree_builder
-relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
+relptbpath="$relroot/ptb/"
+# release path to datatool
+reldatatoolpath="$relroot/datatool/"
 # Configuration GUI
 ptbgui="src/build-system/project_tree_builder_gui/bin/ptbgui.jar"
 
@@ -161,6 +164,7 @@ if test -n "$savedcfg"; then
     fi
   fi
 fi
+DetectPlatform
 
 #-----------------------------------------------------------------------------
 # get required version of PTB
@@ -181,7 +185,6 @@ if test $buildptb = "no"; then
   if test -x "$ptb"; then
     echo "Using $ptbname at $ptb"
   else
-    DetectPlatform
     ptb="$relptbpath$PLATFORM/$ptbreqver/$ptbname"
     if test -x "$ptb"; then
       echo "Using $ptbname at $ptb"
@@ -282,16 +285,31 @@ if test -n "$savedcfg"; then
 fi
 
 #-----------------------------------------------------------------------------
+# find datatool
+dtdep=""
+if test $verno -gt 250; then
+  dtreqver=""
+  dtver="$srcdir/src/build-system/datatool_version.txt"
+  if test -r "$dtver"; then
+    dtreqver=`cat "$dtver" | sed -e 's/ //'`
+  fi
+  datatool="$reldatatoolpath$PLATFORM/$dtreqver/datatool"
+  if ! test -x "$datatool"; then
+    dtdep="-dtdep"
+  fi
+fi
+
+#-----------------------------------------------------------------------------
 # run project_tree_builder
 
 COMMON_Exec cd $builddir
 echo "**********************************************************************"
 echo "Running $ptbname. Please wait."
 echo "**********************************************************************"
-echo $ptb $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+echo $ptb $dll $dtdep $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 if test "$use_gui_cfg" = "yes"; then
-  COMMON_Exec java -jar $srcdir/$ptbgui $ptb -i $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+  COMMON_Exec java -jar $srcdir/$ptbgui $ptb -i $dll $dtdep $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 else
-  COMMON_Exec $ptb $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+  COMMON_Exec $ptb $dll $dtdep $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 fi
 echo "Done"
