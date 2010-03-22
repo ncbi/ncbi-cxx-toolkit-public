@@ -229,6 +229,13 @@ void CSpliced_seg::Validate(bool full_test) const
                 NCBI_THROW(CSeqalignException, eInvalidAlignment,
                            "Genomic exon range length is not consistent with exon chunks.");
             }
+        } else {
+            TSeqPos exon_product_len = product_end - product_start + 1;
+            TSeqPos exon_genomic_len = exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+            if (exon_product_len != exon_genomic_len) {
+                NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "Product and genomic exon range lengths are not consistent.");
+            }
         }
     }
 
