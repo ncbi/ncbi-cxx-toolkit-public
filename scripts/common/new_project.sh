@@ -126,9 +126,11 @@ include Makefile.$lib_name.lib
 ###  LIBRARY BUILD RULES -- DON'T EDIT OR MOVE THESE 2 LINES !!!
 include \$(builddir)/Makefile.is_dll_support
 include \$(builddir)/Makefile.\$(LIB_OR_DLL)
+src-stamp:;
 
-###  Kludge around issues with potentially-absent .dep files
+###  Kludge around issues with potentially-absent .dep and .files files
 \$(status_dir)/.%.dep:;
+\$(status_dir)/.%.files:;
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
@@ -201,8 +203,9 @@ include Makefile.$app_name.app
 include \$(builddir)/Makefile.app
 MAKEFILE = `basename "$makefile_name"`
 
-###  Kludge around issues with potentially-absent .dep files
+###  Kludge around issues with potentially-absent .dep and .files files
 \$(status_dir)/.%.dep:;
+\$(status_dir)/.%.files:;
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
