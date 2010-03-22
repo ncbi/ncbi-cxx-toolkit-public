@@ -1019,7 +1019,7 @@ static const char* s_PortStr(unsigned short port, char buf[])
         sprintf(buf, "%hu", port);
         return buf;
     }
-    return "<default>";
+    return "(default)";
 }
 
 static void s_SaveStringQuot(char* s, const char* name,
@@ -1103,11 +1103,11 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     if (*info->client_host)
         s_SaveString(s, "client_host",     info->client_host);
     else
-        s_SaveKeyval(s, "client_host",     "<default>");
+        s_SaveKeyval(s, "client_host",     "(default)");
     s_SaveString    (s, "scheme",          s_SchemeStr(info->scheme, scheme));
     s_SaveString    (s, "user",            info->user);
     if (*info->pass)
-        s_SaveKeyval(s, "pass",           *info->user ? "<set>" : "<ignored>");
+        s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
     else
         s_SaveString(s, "pass",            info->pass);
     s_SaveString    (s, "host",            info->host);
@@ -1121,7 +1121,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                               ? "GET"
                                               : (info->req_method
                                                  == eReqMethod_Post
-                                                 ? "POST" : "<unknown>"))));
+                                                 ? "POST" : "(unknown)"))));
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
         s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
@@ -1140,13 +1140,13 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                               ? "SOME"
                                               : (info->debug_printout
                                                  == eDebugPrintout_Data
-                                                 ? "DATA" : "<unknown>"))));
+                                                 ? "DATA" : "(unknown)"))));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "firewall",        info->firewall);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
-    s_SaveBool      (s, "<proxy_adjusted>",info->http_proxy_adjusted);
+    s_SaveBool      (s, "[proxy_adjusted]",info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
     assert(strlen(s) < len);
@@ -1190,9 +1190,9 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         if (info->port)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s%s", info->http_proxy_adjusted
-                ? "<" : *info->path != '/' ? "/" : "", info->path,
+                ? "(" : *info->path != '/' ? "/" : "", info->path,
                 &"?"[!*info->args  ||  *info->args == '#'], info->args,
-                ">" + !info->http_proxy_adjusted);
+                ")" + !info->http_proxy_adjusted);
     }
     return url;
 }

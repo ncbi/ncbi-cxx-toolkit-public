@@ -322,7 +322,7 @@ extern const char* NcbiMessagePlusError
         if (*dynamic  &&  message)
             free((void*) message);
         *dynamic = 0;
-        return "<Ouch! Out of memory>";
+        return "Ouch! Out of memory";
     }
 
     if (message) {
