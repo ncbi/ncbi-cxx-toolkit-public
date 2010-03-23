@@ -135,4 +135,35 @@ BOOST_AUTO_TEST_CASE(ShortProteinSearchMT) {
         (prelim_search, results->m_HspStream->GetPointer(), options);
 }
 
+// This tests a problem that occurred when a chunk consisted of only N's, so that
+// Karlin-Altschul statistics were not calculated.  This is a test for SB-546.
+BOOST_AUTO_TEST_CASE(SplitNucleotideQuery) {
+    CSeq_id q_id(CSeq_id::e_Gi, 224384753);
+    const TSeqRange kRange(0, 5000000);
+    const ENa_strand kStrand(eNa_strand_plus);
+    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    TSeqLocVector q_tsl;
+    q_tsl.push_back(*q_ssl);
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
+
+
+    CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
+
+    // Create the options
+    CRef<CBlastOptionsHandle> options_handle
+        (CBlastOptionsFactory::Create(eMegablast));
+    CRef<CBlastOptions> options(&options_handle->SetOptions());
+
+    // Setting the chunk size low means we hit an area of all N's pretty quickly.
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
+
+    CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
+
+    // The main thing here is that an exception is NOT thrown.
+    CRef<SInternalData> results = prelim_search.Run();
+    BOOST_REQUIRE(results.GetPointer() != 0);
+    BOOST_REQUIRE(results->m_HspStream != 0);
+    BOOST_REQUIRE(results->m_Diagnostics != 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

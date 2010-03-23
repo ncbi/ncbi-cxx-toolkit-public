@@ -67,7 +67,9 @@ static Int2
 s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_info, Blast_KarlinBlk** kbp_ret)
 {
     Int4 i;   /* Look for the first valid kbp. */
-    Int2 status=1;  /* 1 means no valid block found. */
+
+    /* BLASTERR_NOVALIDKARLINALTSCHUL means no valid block found (blast_message.h) */
+    Int2 status=BLASTERR_NOVALIDKARLINALTSCHUL;  
 
     ASSERT(kbp_in && query_info && kbp_ret);
 
@@ -180,8 +182,8 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    ASSERT(word_options);
    ASSERT(sbp);
-   if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
-         return -1;
+   if ((status=s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp)) != 0)
+         return status;
 
    p = *parameters = (BlastInitialWordParameters*)calloc(1, 
                                      sizeof(BlastInitialWordParameters));
@@ -390,8 +392,9 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
  
    if (sbp->kbp) {
       Blast_KarlinBlk* kbp = NULL;
-      if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
-         return -1;
+      Int2 status=0;
+      if ((status=s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp)) != 0)
+         return status;
    } else {
       /* The Karlin block is not found, can't do any calculations */
       *parameters = NULL;

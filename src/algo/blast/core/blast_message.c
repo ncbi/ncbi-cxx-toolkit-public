@@ -181,6 +181,13 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->severity = eBlastSevInfo;
         new_msg->context = context;
         break;
+    case BLASTERR_NOVALIDKARLINALTSCHUL:
+        new_msg->message = strdup("Warning: Could not calculate ungapped Karlin-Altschul "
+                               "parameters due to an invalid query sequence or its translation. "
+                               "Please verify the query sequence(s) and/or filtering options");
+        new_msg->severity = eBlastSevError;
+        new_msg->context = context;
+        break;
 
     /* Fatal errors */
     case BLASTERR_MEMORY:

@@ -745,12 +745,26 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
    /* Effective lengths are calculated for all programs except PHI BLAST. */
    if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
                      *eff_len_params, sbp, query_info, NULL)) != 0)
+   {
+      *eff_len_params = BlastEffectiveLengthsParametersFree(*eff_len_params);
       return status;
+   }
 
-   BlastScoringParametersNew(scoring_options, sbp, score_params);
+   if((status=BlastScoringParametersNew(scoring_options, sbp, score_params)) != 0)
+   {
+      *eff_len_params = BlastEffectiveLengthsParametersFree(*eff_len_params);
+      *score_params = BlastScoringParametersFree(*score_params); 
+      return status;
+   }
 
-   BlastExtensionParametersNew(program_number, ext_options, sbp, 
-                               query_info, ext_params);
+   if((status=BlastExtensionParametersNew(program_number, ext_options, sbp, 
+                               query_info, ext_params)) != 0)
+   {
+      *eff_len_params = BlastEffectiveLengthsParametersFree(*eff_len_params);
+      *score_params = BlastScoringParametersFree(*score_params); 
+      *ext_params = BlastExtensionParametersFree(*ext_params); 
+      return status;
+   }
 
    BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info, 
                                (Int4)(total_length/num_seqs), hit_params);
