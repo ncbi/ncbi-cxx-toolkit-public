@@ -2,5 +2,7 @@
 
 APP_PROJ = hfilter
 
+REQUIRES = objects algo
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
