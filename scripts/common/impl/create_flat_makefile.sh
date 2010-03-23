@@ -188,6 +188,11 @@ test -x "$ptb" || Usage "$ptbname not found at $ptb"
 #-----------------------------------------------------------------------------
 # get version of project_tree_builder
 
+$ptb -version >/dev/null 2>&1
+if test $? -ne 0; then
+  echo "ERROR: $ptb does not work"
+  exit 1
+fi
 #ptbver=`$ptb -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
 ptbver=`$ptb -version | sed -ne "s/^$ptbname: *//p"`
 
@@ -229,17 +234,26 @@ fi
 
 #-----------------------------------------------------------------------------
 # find datatool
+dtfound="no"
 dtdep=""
 if test $ptb_ver_major -ge 2 -a $verno -gt 250; then
-  dtreqver=""
+  dtreqver="."
   dtver="$srcdir/src/build-system/datatool_version.txt"
   if test -r "$dtver"; then
     dtreqver=`cat "$dtver" | sed -e 's/ //'`
   fi
   datatool="$reldatatoolpath$PLATFORM/$dtreqver/datatool"
-  if test ! -x "$datatool"; then
-    dtdep="-dtdep"
+  if test -x "$datatool"; then
+    $datatool -version >/dev/null 2>&1
+    if test $? -eq 0; then
+      dtfound="yes"
+    else
+      echo "WARNING: $datatool does not work"
+    fi
   fi
+fi
+if test "$dtfound" = "no"; then
+  dtdep="-dtdep"
 fi
 
 #-----------------------------------------------------------------------------
@@ -255,4 +269,19 @@ if test "$use_gui_cfg" = "yes"; then
 else
   COMMON_Exec $ptb $dll $dtdep $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 fi
+
+#-----------------------------------------------------------------------------
+# generate sources
+if test "$dtfound" = "yes"; then
+  if test -f "$builddir/../status/objects.enabled"; then
+    if test -r "$solution"; then
+      echo "**********************************************************************"
+      echo "Generating objects source code. Please wait."
+      echo "**********************************************************************"
+      echo make -f $solution all_files
+      make -f $solution all_files >/dev/null 2>&1
+    fi
+  fi
+fi
+
 echo "Done"
