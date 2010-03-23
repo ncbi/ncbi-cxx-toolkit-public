@@ -443,6 +443,7 @@ public:
 
     /// Set domain info
     void AddIgDomain(const string &name, int start, int end) {
+        if (start <0 || end <= start) return;
         SIgDomain * domain = new SIgDomain(name, start, end);
         x_ComputeIgDomain(*domain);
         m_IgDomains.push_back(domain);
