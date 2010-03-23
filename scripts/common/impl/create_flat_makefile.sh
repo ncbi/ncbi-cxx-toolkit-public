@@ -234,9 +234,11 @@ fi
 
 #-----------------------------------------------------------------------------
 # find datatool
+ptb251="no"
 dtfound="no"
 dtdep=""
 if test $ptb_ver_major -ge 2 -a $verno -gt 250; then
+  ptb251="yes"
   dtreqver="."
   dtver="$srcdir/src/build-system/datatool_version.txt"
   if test -r "$dtver"; then
@@ -252,7 +254,7 @@ if test $ptb_ver_major -ge 2 -a $verno -gt 250; then
     fi
   fi
 fi
-if test "$dtfound" = "no"; then
+if test "$dtfound" = "no" -a $ptb251 = "yes"; then
   dtdep="-dtdep"
 fi
 
