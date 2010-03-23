@@ -286,13 +286,13 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name, const objects
     ///
     double score_value = numeric_limits<double>::quiet_NaN();
     if (NStr::EqualNocase(score_name, "align_length")) {
-        score_value = align.GetAlignLength();
+        score_value = align.GetAlignLength(true /* include gaps */);
     } else if (NStr::EqualNocase(score_name, "align_length_ungap")) {
-        CScoreBuilder Scorer;
-        score_value = Scorer.GetAlignLength(align, true);
+        score_value = align.GetAlignLength(false /* exclude gaps */);
     } else if (NStr::EqualNocase(score_name, "product_length")) {
-        if (align.GetSegs().IsSpliced())
+        if (align.GetSegs().IsSpliced()) {
             score_value = align.GetSegs().GetSpliced().GetProduct_length();
+        }
     } else if (align.IsSetScore()) {
         ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
             const CScore& score = **iter;
