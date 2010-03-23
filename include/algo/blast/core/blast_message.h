@@ -154,6 +154,9 @@ void Blast_PerrorEx(Blast_Message* *msg,
 /** BLAST search was interrupted via a user-provided callback */
 #define BLASTERR_INTERRUPTED                        103
 
+/** Could not calculate Karlin-Altschul statistics for any context. */
+#define BLASTERR_NOVALIDKARLINALTSCHUL              104
+
 /** The option is not supported with the specified program. */
 #define BLASTERR_OPTION_PROGRAM_INVALID             201  
 
