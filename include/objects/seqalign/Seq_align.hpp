@@ -132,6 +132,9 @@ public:
         //< blast-style 'e_value'
         eScore_EValue,
 
+        //< alignment length (align_length)
+        eScore_AlignLength,
+
         //< count of identities (num_ident)
         eScore_IdentityCount,
 
@@ -175,6 +178,13 @@ public:
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
 
+    /// Get strand (the first one if segments have different strands).
+    ENa_strand      GetSeqStrand(TDim row) const;
+
+    /// Get seq-id (the first one if segments have different ids).
+    /// Throw exception if row is invalid.
+    const CSeq_id&  GetSeq_id(TDim row) const;
+
     /// Retrieves the total number of gaps in an alignment
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetTotalGapCount() const;
@@ -184,12 +194,10 @@ public:
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetNumGapOpenings() const;
 
-    /// Get strand (the first one if segments have different strands).
-    ENa_strand      GetSeqStrand(TDim row) const;
-
-    /// Get seq-id (the first one if segments have different ids).
-    /// Throw exception if row is invalid.
-    const CSeq_id&  GetSeq_id(TDim row) const;
+    /// Get the length of this alignment.  This length corresponds to the score
+    /// 'align_length'.  By default, this function computes an alignment length
+    /// including all gap segments.
+    TSeqPos         GetAlignLength(bool include_gaps = true) const;
 
     /// Get score
     bool GetNamedScore(const string& id, int &score) const;
