@@ -249,6 +249,17 @@ bool CAlignFilter::Match(const CSeq_align& align)
     bool match = true;
     if (m_ParseTree.get()) {
         match = x_Match(*m_ParseTree->GetQueryTree(), align);
+    } else {
+        if (m_QueryWhitelist.size()  ||  m_SubjectWhitelist.size()) {
+            /// the user supplied inclusion criteria but no filter
+            /// inclusion failed - return false
+            return false;
+        }
+        else if (m_QueryBlacklist.size()  ||  m_SubjectBlacklist.size()) {
+            /// the user supplied exclusion criteria but no filter
+            /// exclusion failed - return true
+            return true;
+        }
     }
 
     return (match  &&  ( !m_RemoveDuplicates  ||  x_IsUnique(align) ) );
@@ -275,7 +286,7 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name, const objects
     ///
     double score_value = numeric_limits<double>::quiet_NaN();
     if (NStr::EqualNocase(score_name, "align_length")) {
-        score_value = align.GetSeqRange(0).GetLength();
+        score_value = align.GetAlignLength();
     } else if (NStr::EqualNocase(score_name, "align_length_ungap")) {
         CScoreBuilder Scorer;
         score_value = Scorer.GetAlignLength(align, true);
