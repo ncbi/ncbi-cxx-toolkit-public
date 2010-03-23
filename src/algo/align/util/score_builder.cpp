@@ -158,156 +158,6 @@ CScoreBuilder::~CScoreBuilder()
 }
 
 ///
-/// calculate the length of our alignment
-///
-static size_t s_GetAlignmentLength(const CSeq_align& align,
-                                   bool ungapped)
-{
-    size_t len = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            if (ungapped) {
-                for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                    bool is_gap_seg = false;
-                    for (CDense_seg::TDim j = 0;
-                         !is_gap_seg  &&  j < ds.GetDim();  ++j) {
-                        //int start = ds.GetStarts()[i * ds.GetDim() + j];
-                        if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                            is_gap_seg = true;
-                        }
-                    }
-                    if ( !is_gap_seg ) {
-                        len += ds.GetLens()[i];
-                    }
-                }
-            } else {
-                for (size_t i = 0;  i < ds.GetLens().size();  ++i) {
-                    len += ds.GetLens()[i];
-                }
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
-                 align.GetSegs().GetDisc().Get()) {
-            len += s_GetAlignmentLength(**iter, ungapped);
-        }
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        {{
-             /// pass 1:
-             /// find total ranges
-             vector<TSeqPos> sizes;
-
-             size_t count = 0;
-             ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
-                 const CStd_seg& seg = **iter;
-
-                 size_t i = 0;
-                 ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
-                     if ((*it)->IsEmpty()) {
-                         /// skip
-                     } else {
-                         if (sizes.empty()) {
-                             sizes.resize(seg.GetDim(), 0);
-                         } else if (sizes.size() != (size_t)seg.GetDim()) {
-                             NCBI_THROW(CException, eUnknown,
-                                        "invalid std-seg: "
-                                        "inconsistent number of locs");
-                         }
-                         sizes[i] += sequence::GetLength(**it, NULL);
-                     }
-
-                     ++i;
-                 }
-                 ++count;
-             }
-
-             /// pass 2: determine shortest length
-             vector<TSeqPos>::iterator iter = sizes.begin();
-             vector<TSeqPos>::iterator smallest = iter;
-             for (++iter;  iter != sizes.end();  ++iter) {
-                 if (*iter < *smallest) {
-                     smallest = iter;
-                 }
-             }
-             return *smallest;
-         }}
-        break;
-
-    case CSeq_align::TSegs::e_Spliced:
-        ITERATE (CSpliced_seg::TExons, iter,
-                 align.GetSegs().GetSpliced().GetExons()) {
-            const CSpliced_exon& exon = **iter;
-            if (exon.IsSetParts()) {
-                ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                    const CSpliced_exon_chunk& chunk = **it;
-                    switch (chunk.Which()) {
-                    case CSpliced_exon_chunk::e_Match:
-                        len += chunk.GetMatch();
-                        break;
-
-                    case CSpliced_exon_chunk::e_Mismatch:
-                        len += chunk.GetMismatch();
-                        break;
-
-                    case CSpliced_exon_chunk::e_Diag:
-                        len += chunk.GetDiag();
-                        break;
-
-                    case CSpliced_exon_chunk::e_Product_ins:
-                        if ( !ungapped ) {
-                            len += chunk.GetProduct_ins();
-                        }
-                        break;
-
-                    case CSpliced_exon_chunk::e_Genomic_ins:
-                        if ( !ungapped ) {
-                            len += chunk.GetGenomic_ins();
-                        }
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-            } else {
-                size_t product_span = 0;
-                if (exon.GetProduct_start().IsNucpos()) {
-                    product_span =
-                        exon.GetProduct_end().GetNucpos() -
-                        exon.GetProduct_start().GetNucpos();
-                } else if (exon.GetProduct_start().IsProtpos()) {
-                    product_span =
-                        exon.GetProduct_end().GetProtpos().GetAmin() -
-                        exon.GetProduct_start().GetProtpos().GetAmin();
-                } else {
-                    NCBI_THROW(CException, eUnknown,
-                               "Spliced-exon is neirther nuc nor prot");
-                }
-
-                size_t genomic_span =
-                    exon.GetGenomic_end() - exon.GetGenomic_start();
-
-                len += max(genomic_span, product_span);
-            }
-        }
-        break;
-
-    default:
-        _ASSERT(false);
-        break;
-    }
-
-    return len;
-}
-
-
-///
 /// calculate mismatches and identities in a seq-align
 ///
 static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
@@ -322,7 +172,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
             ///
             int num_ident = 0;
             if (align.GetNamedScore("num_ident", num_ident)) {
-                size_t len     = s_GetAlignmentLength(align, true);
+                size_t len     = align.GetAlignLength(false /*ignore gaps*/);
                 *identities += num_ident;
                 *mismatches += (len - num_ident);
                 break;
@@ -386,7 +236,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
             ///
             int num_ident = 0;
             if (align.GetNamedScore("num_ident", num_ident)) {
-                size_t len     = s_GetAlignmentLength(align, true);
+                size_t len     = align.GetAlignLength(false /*ignore gaps*/);
                 *identities = num_ident;
                 *mismatches = (len - num_ident);
                 break;
@@ -442,7 +292,7 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
                                  int* mismatches,
                                  double* pct_identity)
 {
-    size_t count_aligned = s_GetAlignmentLength(align, true /* ungapped */);
+    size_t count_aligned = align.GetAlignLength(false /* ungapped */);
     s_GetCountIdentityMismatch(scope, align, identities, mismatches);
     if (count_aligned) {
         *pct_identity = 100.0f * double(*identities) / count_aligned;
@@ -567,7 +417,9 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                 seq_len = bsh.GetBioseqLength() - seq_len;
             }
         }
-    } else {
+    }
+
+    if ( !seq_len ) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
         seq_len = bsh.GetBioseqLength();
     }
@@ -644,7 +496,7 @@ int CScoreBuilder::GetGapCount(const CSeq_align& align)
 
 TSeqPos CScoreBuilder::GetAlignLength(const CSeq_align& align, bool ungapped)
 {
-    return s_GetAlignmentLength(align, ungapped);
+    return align.GetAlignLength( !ungapped /* true = include gaps = !ungapped */);
 }
 
 
