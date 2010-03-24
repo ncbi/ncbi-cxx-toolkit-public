@@ -154,7 +154,8 @@ if test -n "$NCBI"; then
     ncbi_platform=`COMMON_DetectPlatform`
     inst_root=/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool
     version=`cat $top_srcdir/src/build-system/datatool_version.txt`
-    if test -x "$inst_root/$ncbi_platform/$version/datatool"; then
+    if "$inst_root/$ncbi_platform/$version/datatool" -version >/dev/null 2>&1; \
+    then
         datatool=$inst_root/$ncbi_platform/$version/datatool
     fi
 fi
