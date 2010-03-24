@@ -10,6 +10,7 @@ serial/datatool$
 cgi$
 cgi/impl$
 connect$
+connect/ext$
 connect/services$
 dbapi$
 dbapi/driver$
