@@ -99,7 +99,7 @@ int CHdf2mzXMLApplication::Run(void)
         string outFile = group + ".mzXML";
         cerr << "Extracting " << group << " as as " << outFile << endl;
         
-        objects::CMzXML mzXML;
+        objects::SPC::CMzXML mzXML;
         mzXML.SetIndexOffset("0");
         string mdStr = msHdf5->readMetadata(group);
         CNcbiIstrstream bufStream(mdStr.c_str());
@@ -108,14 +108,14 @@ int CHdf2mzXMLApplication::Run(void)
         CMsHdf5::TSpecMap specMap;
         msHdf5->getSpectraMap(group, specMap);
 
-        map<Uint4, CRef<objects::CScan> > specTree;
+        map<Uint4, CRef<objects::SPC::CScan> > specTree;
         
         ITERATE(CMsHdf5::TSpecMap, iSMap, specMap) {
             Uint4 scanNum = (*iSMap).second.scan;
             Uint4 parentNum = (*iSMap).second.parentScan;
             int msLevel =  (*iSMap).second.msLevel;
             int idx = (*iSMap).second.idx;
-            CRef<objects::CScan> pScan(new objects::CScan);
+            CRef<objects::SPC::CScan> pScan(new objects::SPC::CScan);
             CMsHdf5::TSpectrum spec;
             
             string specName = group + ":" 

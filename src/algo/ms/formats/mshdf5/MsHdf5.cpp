@@ -393,7 +393,7 @@ void CMsHdf5::printSpectra()
     cout << endl << endl;
 }
 
-void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, objects::CScan& scan, string msLevel)
+void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, objects::SPC::CScan& scan, string msLevel)
 {
     string spec, idxS;
     NStr::SplitInTwo(src, "\t", spec, idxS);

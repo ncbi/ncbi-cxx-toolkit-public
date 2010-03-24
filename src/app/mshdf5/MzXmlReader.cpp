@@ -47,10 +47,11 @@ MzXmlReader::MzXmlReader(CRef<CMsHdf5> msHdf5)
     m_inMsRun = false;
     m_lastStartElement.clear();
     m_metadata.clear();
+    m_parentScanOverride = -1;
 }
 
 MzXmlReader::~MzXmlReader()
-{
+ {
 }
 
 bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
@@ -76,6 +77,16 @@ bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
             }
             m_lastStartElement = name;
 
+            if (name == "precursorMz") {
+                attrs_type::const_iterator iA;
+                iA = attrs.find("precursorScanNum");
+                if (iA != attrs.end()) {
+                    m_parentScanOverride = NStr::StringToUInt(iA->second);
+                } else {
+                    m_parentScanOverride = -1;
+                }
+            }
+
             if (name == "scan") {
                 xmlText += ">\n";
                 attrs_type::const_iterator iAt;
@@ -86,8 +97,12 @@ bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
                 string peaksCount = iAt->second;
                 m_peaksCountStack.push(NStr::StringToUInt(peaksCount));
                 iAt = attrs.find("msLevel");
-                string msLevel = iAt->second;
-                m_msLevelStack.push(NStr::StringToUInt(msLevel));
+                string msLevelStr = iAt->second;
+                Uint4 msLevel = NStr::StringToUInt(msLevelStr);
+                //if (msLevel > 2) {
+                //    cerr << "Contains msLevel = " + msLevelStr << endl;
+                //}
+                m_msLevelStack.push(msLevel);
                 m_scanInfoStack.push(xmlText);
             } else if (m_scanStack.size() > 0) {
                 m_scanInfoStack.top() += xmlText;
@@ -131,6 +146,10 @@ bool MzXmlReader::end_element(const string &name)
                 m_scanStack.pop();
                 int parentScan = 0;
                 if (m_scanStack.size() > 0) parentScan = m_scanStack.top();
+                if (m_parentScanOverride > 0) {
+                    parentScan = m_parentScanOverride;
+                    m_parentScanOverride = -1;
+                }
                 vector<float> mz, it;
                 convertPeaks(m_peaksCountStack.top(), m_peaksStack.top(), mz, it);
                 m_msHdf5->addSpectrum(scanNum, m_msLevelStack.top(), parentScan,

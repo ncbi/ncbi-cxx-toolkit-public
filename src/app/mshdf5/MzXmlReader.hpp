@@ -68,6 +68,7 @@ private:
     bool m_inMsRun;
     string m_lastStartElement;
     string m_metadata;
+    int m_parentScanOverride;
 };
 
 #endif

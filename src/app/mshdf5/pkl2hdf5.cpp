@@ -48,6 +48,7 @@
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
+USING_SCOPE(SPC);
 
 class CPkl2hdf5Application : public CNcbiApplication
 {
