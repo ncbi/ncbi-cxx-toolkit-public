@@ -194,6 +194,9 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
     comps.SetMaxIntron(compart_options.m_MaxIntron);
     comps.Run(hitrefs.begin(), hitrefs.end());
 
+    CRef<CSeq_loc> prev_compartment_loc;
+    const TSeqPos max_extent = compart_options.m_MaxExtent;
+
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
         size_t i = 0;
@@ -220,10 +223,30 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
 
             CRef<CSeq_id> subj_id(new CSeq_id);
             subj_id->Assign(*hitrefs.front()->GetSubjId());
-            CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,boxPtr[2],boxPtr[3],comps.GetStrand(i)?eNa_strand_plus:eNa_strand_minus));
+            THit::TCoord b = boxPtr[2] < max_extent ? 0 : boxPtr[2] - max_extent;
+            THit::TCoord e = boxPtr[3] + max_extent;
+            CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,b,e,comps.GetStrand(i)?eNa_strand_plus:eNa_strand_minus));
             CRef<CAnnotdesc> region(new CAnnotdesc);
             region->SetRegion(*subj_loc);
             compartment->SetDesc().Set().push_back(region);
+
+            if (prev_compartment_loc.NotEmpty() &&
+                prev_compartment_loc->GetId()->Match(*subj_id) &&
+                prev_compartment_loc->GetStrand()==subj_loc->GetStrand()
+               ) {
+                TSeqPos prev_b = prev_compartment_loc->GetStart(eExtreme_Positional);
+                TSeqPos prev_e = prev_compartment_loc->GetStop(eExtreme_Positional);
+                _ASSERT(prev_b < b && prev_e < e);
+                if (prev_e >= b) {
+                    prev_e = (prev_e + b)/2;
+                    b = prev_e+1;
+                    _ASSERT(b <= boxPtr[2]);
+
+                    prev_compartment_loc->SetInt().SetTo(prev_e);
+                    subj_loc->SetInt().SetFrom(b);
+                }
+            }
+            prev_compartment_loc=subj_loc;
 
             results.push_back(compartment);
             ++i;
@@ -258,23 +281,6 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
                                            covered_aa, score));
     }
     sort(results.begin(),results.end());
-
-    const int max_extent = compart_options.m_MaxExtent;
-
-    int prev = 0;
-
-    for (size_t i=0; i<results.size(); ++i) {
-        SCompartment& comp = results[i];
-        prev = (i==0 || results[i-1].strand != comp.strand) ?
-            -comp.from-2 :
-            prev;
-        int next = (i==results.size()-1 || results[i+1].strand != comp.strand) ?
-            comp.to+2*max_extent+2 :
-            results[i+1].from;
-        comp.from = max(comp.from-max_extent,(prev+comp.from)/2+1);
-        prev = comp.to;
-        comp.to = min(comp.to+max_extent,(comp.to+next)/2-1);
-    }
 
     return results;
 }
