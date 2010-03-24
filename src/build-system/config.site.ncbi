@@ -4,16 +4,8 @@
 # Note default paths to third-party libraries, whose location and even
 # presence varies somewhat from platform to platform.
 
-case `uname -sp` in
-    Darwin\ i386    ) ncbi_platform=IntelMAC   ;;
-    Darwin\ powerpc ) ncbi_platform=PowerMAC   ;;
-    FreeBSD\ i386   ) ncbi_platform=FreeBSD32  ;;
-    Linux\ i?86     ) ncbi_platform=Linux32    ;;
-    Linux\ x86_64   ) ncbi_platform=Linux64    ;;
-    SunOS\ i?86     ) ncbi_platform=SunOSx86   ;;
-    SunOS\ sparc    ) ncbi_platform=SunOSSparc ;;
-    *               ) ncbi_platform=UNKNOWN    ;;
-esac
+. `dirname $0`/../../scripts/common/common.sh
+ncbi_platform=`COMMON_DetectPlatform`
 
 case "$ncbi_platform" in
     FreeBSD32  ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
