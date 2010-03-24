@@ -360,6 +360,7 @@ public:
     TCoord GetMaxIntron(void) const { return m_MaxIntron; }
 
     /// Initialize iteration over the results.
+    /// Results are sorted by strand (minus first) and subj position.
     ///
     /// @param  compartment
     ///    The first identified compartment
