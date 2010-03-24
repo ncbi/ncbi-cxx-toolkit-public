@@ -2330,12 +2330,12 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     map<string, pair<bool,bool> >& prot_complet = chainer->SetProtComplet();
     if(args["pinfo"]) {
         CNcbiIfstream protfile(args["pinfo"].AsString().c_str());
-        string accession;
+        string seqid_str;
         bool fivep;
         bool threep; 
-        while(protfile >> accession >> fivep >> threep) {
-            accession = CIdHandler::ToString(*cidh.ToCanonical(*CIdHandler::ToSeq_id(accession)));
-            prot_complet[accession] = make_pair(fivep, threep);
+        while(protfile >> seqid_str >> fivep >> threep) {
+            seqid_str = CIdHandler::ToString(*CIdHandler::ToSeq_id(seqid_str));
+            prot_complet[seqid_str] = make_pair(fivep, threep);
         }
     }
 }
