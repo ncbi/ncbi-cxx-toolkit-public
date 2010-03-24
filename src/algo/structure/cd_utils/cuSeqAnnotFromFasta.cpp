@@ -389,7 +389,7 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
             _TRACE("    Made seq-align for master index " << m_masterIndex << " and slave index " << i);
         }
 
-     }
+    }
 
 
     if (aligns.size() == nSeq - 1 || (nSeq == 1 && aligns.size() == nSeq)) {
@@ -696,6 +696,10 @@ void CSeqAnnotFromFasta::CacheSequences(CCdCore& dummyCD, unsigned int& longestS
             _TRACE("New longest sequence " << i+1 << ": new max len = " << len << ";  old max len = " << maxLen);
             maxLen = len;
             longestSequenceIndex = i;
+        }
+
+        if (len == 0) {
+            cerr << "len = 0 in CacheSequences for i = " << i << ", maxLen = " << maxLen << "; gi = " << dummyCD.GetGIFromSequenceList(i) << ":\n" << s << endl;
         }
     }
 }

@@ -112,7 +112,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
 {
     unsigned int len, masterIndex, nSeq = 1;
     string test, err;
-    TReadFastaFlags fastaFlags = fReadFasta_AssumeProt;
+    TReadFastaFlags fastaFlags = CFastaReader::fAssumeProt | CFastaReader::fForceType;
 
     if (m_fastaIO == NULL) {
         m_fastaIO = new CBasicFastaWrapper(fastaFlags, false);
@@ -122,7 +122,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
         }
     }
 
-    if (m_parameters.useLocalIds) fastaFlags |= fReadFasta_NoParseID;
+    if (m_parameters.useLocalIds) fastaFlags |= CFastaReader::fNoParseID;
     m_fastaIO->SetFastaFlags(fastaFlags);
 
 //    fastaFlags |= fReadFasta_AllSeqIds;
