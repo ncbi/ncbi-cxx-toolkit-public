@@ -255,7 +255,6 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
     SMapper mapper(align, scope, opts);
 
-
     /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
 
@@ -428,7 +427,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             /// (OAZ1, OAZ2, PAZ3, PEG10) in which there are more than one
             /// segment.
             ///
-            CRef<CSeq_loc> cds_loc(new CSeq_loc);
+            CRef<CSeq_loc> cds_loc;
             for (CSeq_loc_CI loc_it(feat_iter->GetLocation());
                  loc_it;  ++loc_it) {
                 /// location for this interval
@@ -442,6 +441,12 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 /// map it
                 CRef<CSeq_loc> this_loc_mapped =
                     mapper.Map(this_loc);
+
+                if ( !this_loc_mapped  ||
+                     this_loc_mapped->IsNull()  ||
+                     this_loc_mapped->IsEmpty() ) {
+                    continue;
+                }
 
                 /// we take the extreme bounds of the interval only;
                 /// internal details will be recomputed based on intersection
@@ -466,16 +471,24 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 if (is_partial_3prime) {
                     this_loc_mapped->SetPartialStop(true, eExtreme_Biological);
                 }
+
+                if ( !cds_loc ) {
+                    cds_loc.Reset(new CSeq_loc);
+                }
                 cds_loc->SetMix().Set().push_back(this_loc_mapped);
             }
-            cds_loc->ChangeToPackedInt();
+            if (cds_loc) {
+                cds_loc->ChangeToPackedInt();
+            }
 
-            bool is_partial_5prime =
-                cds_loc->IsPartialStart(eExtreme_Biological);
-            bool is_partial_3prime =
-                cds_loc->IsPartialStop(eExtreme_Biological);
+            if (cds_loc  &&
+                cds_loc->Which() != CSeq_loc::e_not_set) {
 
-            if (cds_loc->Which() != CSeq_loc::e_not_set) {
+                bool is_partial_5prime =
+                    cds_loc->IsPartialStart(eExtreme_Biological);
+                bool is_partial_3prime =
+                    cds_loc->IsPartialStop(eExtreme_Biological);
+
                 cds_loc->SetId(*loc->GetId());
                 cds_feat->SetLocation(*cds_loc);
 
@@ -585,6 +598,54 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
                                   const CSeq_align* align)
 {
     if ( !feat.IsSetProduct() ) {
+        ///
+        /// corner case:
+        /// we may be a CDS feature for an Ig locus
+        /// check to see if we have an overlapping V/C/D/J/S region
+        /// we trust only featu-id xrefs here
+        ///
+        if (feat.IsSetXref()) {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+            const CTSE_Handle& tse = bsh.GetTSE_Handle();
+
+            ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+                if ( !(*it)->IsSetId() ) {
+                    continue;
+                }
+
+                CSeq_feat_Handle h;
+                const CFeat_id& feat_id = (*it)->GetId();
+                if (feat_id.IsLocal()) {
+                    if (feat_id.GetLocal().IsId()) {
+                        h = tse.GetFeatureWithId(CSeqFeatData::e_not_set,
+                                                 feat_id.GetLocal().GetId());
+                    } else {
+                        h = tse.GetFeatureWithId(CSeqFeatData::e_not_set,
+                                                 feat_id.GetLocal().GetStr());
+                    }
+                }
+
+                if (h) {
+                    switch (h.GetData().GetSubtype()) {
+                    case CSeqFeatData::eSubtype_C_region:
+                    case CSeqFeatData::eSubtype_D_loop:
+                    case CSeqFeatData::eSubtype_D_segment:
+                    case CSeqFeatData::eSubtype_J_segment:
+                    case CSeqFeatData::eSubtype_S_region:
+                    case CSeqFeatData::eSubtype_V_region:
+                    case CSeqFeatData::eSubtype_V_segment:
+                        /// found it
+                        feat.SetExcept(true);
+                        feat.SetExcept_text
+                            ("rearrangement required for product");
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
         return;
     }
 

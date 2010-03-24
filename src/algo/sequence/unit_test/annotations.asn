@@ -1631,3 +1631,52 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "Danio rerio dynamin2-like (dnm2l), mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 200545,
+        to 201822,
+        strand plus,
+        id gi 258443136
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA,
+        ext name "Danio rerio dynamin2-like (dnm2l), mRNA"
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 47086060,
+      location packed-int {
+        {
+          from 200545,
+          to 200583,
+          strand plus,
+          id gi 258443136,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 201460,
+          to 201822,
+          strand plus,
+          id gi 258443136,
+          fuzz-from lim lt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    }
+  }
+}
