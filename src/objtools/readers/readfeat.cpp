@@ -430,6 +430,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "phenotype",            CFeature_table_reader_imp::eQual_phenotype            ),
     TQualKey ( "product",              CFeature_table_reader_imp::eQual_product              ),
     TQualKey ( "prot_desc",            CFeature_table_reader_imp::eQual_prot_desc            ),
+    TQualKey ( "prot_note",            CFeature_table_reader_imp::eQual_prot_note            ),
     TQualKey ( "protein_id",           CFeature_table_reader_imp::eQual_protein_id           ),
     TQualKey ( "pseudo",               CFeature_table_reader_imp::eQual_pseudo               ),
     TQualKey ( "replace",              CFeature_table_reader_imp::eQual_replace              ),
@@ -930,7 +931,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
                 return true;
             }
         case eQual_prot_note:
-            return false;
+            return x_AddGBQualToFeature(sfp, "prot_note", val);
         case eQual_transl_except:
             /* !!! */
             /* if (x_ParseCodeBreak (sfp, crp, val)) return true; */
