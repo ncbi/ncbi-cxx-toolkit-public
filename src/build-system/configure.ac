@@ -3208,6 +3208,15 @@ fi
 ### --------------------------------------------
 
 
+AC_MSG_CHECKING([whether in-house NCBI resources are available])
+if test -n "$NCBI" -a -f "$NCBI/.ncbirc" -a -d /am/coremake_builds/test_data; \
+then
+   NCBI_FEATURE(in-house-resources)
+   AC_MSG_RESULT(yes)
+else
+   AC_MSG_RESULT(no)
+fi
+
 ### Common-use system and miscellaneous libs
 if test -z "${NETWORK_LIBS+set}"; then
    AC_CHECK_LIB(nsl, gethostbyname, [libnsl=-lnsl], [libnsl=])

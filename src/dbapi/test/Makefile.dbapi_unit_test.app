@@ -19,6 +19,8 @@ STATIC_LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \
 
 REQUIRES = Boost.Test.Included
 
+CHECK_REQUIRES = in-house-resources
+
 CHECK_COPY = dbapi_unit_test.ini
 
 CHECK_TIMEOUT = 600

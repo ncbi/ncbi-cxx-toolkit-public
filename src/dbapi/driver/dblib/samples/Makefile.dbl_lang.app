@@ -10,6 +10,7 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 
 REQUIRES = Sybase DBLib
 
+CHECK_REQUIRES = in-house-resources
 CHECK_COPY = dbl_lang.ini
 CHECK_CMD = run_sybase_app.sh dbl_lang /CHECK_NAME=dbl_lang
 

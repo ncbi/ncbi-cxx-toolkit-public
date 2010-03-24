@@ -18032,6 +18032,18 @@ fi
 ### --------------------------------------------
 
 
+echo "$as_me:$LINENO: checking whether in-house NCBI resources are available" >&5
+echo $ECHO_N "checking whether in-house NCBI resources are available... $ECHO_C" >&6
+if test -n "$NCBI" -a -f "$NCBI/.ncbirc" -a -d /am/coremake_builds/test_data; \
+then
+             WithFeatures="$WithFeatures${WithFeaturesSep}in-house-resources"; WithFeaturesSep=" "
+   echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+   echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 ### Common-use system and miscellaneous libs
 if test -z "${NETWORK_LIBS+set}"; then
    echo "$as_me:$LINENO: checking for gethostbyname in -lnsl" >&5
@@ -31564,7 +31576,7 @@ CHECK_TOOLS=$with_check_tools
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS PubSeqOS check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

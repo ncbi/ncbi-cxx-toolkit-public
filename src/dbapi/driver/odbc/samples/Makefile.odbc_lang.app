@@ -10,6 +10,7 @@ LIBS = $(ODBC_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
 
+CHECK_REQUIRES = in-house-resources
 CHECK_COPY = odbc_lang.ini
 CHECK_CMD =
 

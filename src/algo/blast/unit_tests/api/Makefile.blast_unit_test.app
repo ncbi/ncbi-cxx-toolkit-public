@@ -31,7 +31,7 @@ LIBS = $(NETWORK_LIBS) \
         $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT
+CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini data
 CHECK_TIMEOUT = 750

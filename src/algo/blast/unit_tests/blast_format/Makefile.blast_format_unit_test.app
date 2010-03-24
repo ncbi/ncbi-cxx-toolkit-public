@@ -14,6 +14,7 @@ LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(PCRE_LIBS) \
     $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blast_format_unit_test
 CHECK_COPY = data
 
