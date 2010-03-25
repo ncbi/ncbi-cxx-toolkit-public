@@ -454,7 +454,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 CSeq_loc sub;
                 sub.SetInt().SetFrom(this_loc_mapped->GetTotalRange().GetFrom());
                 sub.SetInt().SetTo(this_loc_mapped->GetTotalRange().GetTo());
-                sub.SetInt().SetStrand(this_loc_mapped->GetStrand());
+                sub.SetInt().SetStrand(loc->GetStrand());
                 sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
 
                 bool is_partial_5prime =
@@ -465,6 +465,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 this_loc_mapped = loc->Intersect(sub,
                                                  CSeq_loc::fSort,
                                                  NULL);
+
                 if (is_partial_5prime) {
                     this_loc_mapped->SetPartialStart(true, eExtreme_Biological);
                 }
@@ -751,6 +752,7 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
         CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(feat.GetProduct());
         CSeqVector nuc_vec(feat.GetLocation(), scope,
                            CBioseq_Handle::eCoding_Iupac);
+
         CSeqVector rna_vec(prod_bsh,
                            CBioseq_Handle::eCoding_Iupac);
 
