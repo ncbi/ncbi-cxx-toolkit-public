@@ -212,6 +212,7 @@ function CreateTreeStructure(oTree, oTask)
     CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
     CreateFolderIfAbsent(oFso, oTree.SrcDllBranch          );
     CreateFolderIfAbsent(oFso, oTree.SrcBuildSystemBranch  );
+    CreateFolderIfAbsent(oFso, oTree.SrcBuildSystemBranch+ "\\project_tree_builder_gui\\bin");
     CreateFolderIfAbsent(oFso, oTree.SrcProjectBranch      );
 }
 
@@ -227,6 +228,8 @@ function FillTreeStructure(oShell, oTree)
     if (oTask.DllBuild) {
         GetSubtreeFromTree(oShell, oTree, oTask, "src/dll", oTree.SrcDllBranch);
     }
+    GetSubtreeFromTree(oShell, oTree, oTask, "src/build-system/project_tree_builder_gui/bin",
+        oTree.SrcBuildSystemBranch+ "\\project_tree_builder_gui\\bin");
     // Fill-in infrastructure for the build tree
     var build_files = new Array (
         "Makefile.mk.in",
