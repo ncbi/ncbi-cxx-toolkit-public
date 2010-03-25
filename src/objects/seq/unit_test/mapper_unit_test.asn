@@ -28,18 +28,13 @@ Seq-loc ::= int {
   to 89,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 119,
   to 191,
   id gi 5
 }
-
--- Interval, reversed strand
-Seq-loc ::= int {
-  from 17,
-  to 89,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 121,
   to 193,
@@ -53,19 +48,14 @@ Seq-loc ::= int {
   to 109,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 119,
   to 199,
   id gi 5,
   fuzz-to lim gt
 }
-
--- Truncated on the right, reversed strand
-Seq-loc ::= int {
-  from 17,
-  to 109,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 113,
   to 193,
@@ -80,19 +70,14 @@ Seq-loc ::= int {
   to 89,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 113,
   to 191,
   id gi 5,
   fuzz-from lim lt
 }
-
--- Truncated on the left, reversed strand
-Seq-loc ::= int {
-  from 7,
-  to 89,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 121,
   to 199,
@@ -107,6 +92,7 @@ Seq-loc ::= int {
   to 109,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 113,
   to 199,
@@ -114,13 +100,7 @@ Seq-loc ::= int {
   fuzz-from lim lt,
   fuzz-to lim gt
 }
-
--- Truncated on both ends, reversed strand
-Seq-loc ::= int {
-  from 7,
-  to 109,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 113,
   to 199,
@@ -137,20 +117,14 @@ Seq-loc ::= int {
   strand minus,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 119,
   to 191,
   strand minus,
   id gi 5
 }
-
--- Interval on minus strand, reversed strand
-Seq-loc ::= int {
-  from 17,
-  to 89,
-  strand minus,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 121,
   to 193,
@@ -165,6 +139,7 @@ Seq-loc ::= int {
   strand minus,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 119,
   to 199,
@@ -172,14 +147,7 @@ Seq-loc ::= int {
   id gi 5,
   fuzz-to lim gt
 }
-
--- Minus strand, truncated on the right, reversed strand
-Seq-loc ::= int {
-  from 17,
-  to 109,
-  strand minus,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 113,
   to 193,
@@ -195,6 +163,7 @@ Seq-loc ::= int {
   strand minus,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 113,
   to 191,
@@ -202,14 +171,7 @@ Seq-loc ::= int {
   id gi 5,
   fuzz-from lim lt
 }
-
--- Minus strand, truncated on the left, reversed strand
-Seq-loc ::= int {
-  from 7,
-  to 89,
-  strand minus,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 121,
   to 199,
@@ -225,6 +187,7 @@ Seq-loc ::= int {
   strand minus,
   id gi 4
 }
+-- Direct
 Seq-loc ::= int {
   from 113,
   to 199,
@@ -233,14 +196,7 @@ Seq-loc ::= int {
   fuzz-from lim lt,
   fuzz-to lim gt
 }
-
--- Minus strand, truncated on both ends, reversed strand
-Seq-loc ::= int {
-  from 7,
-  to 109,
-  strand minus,
-  id gi 4
-}
+-- Reversed strand
 Seq-loc ::= int {
   from 113,
   to 199,
@@ -250,6 +206,128 @@ Seq-loc ::= int {
   fuzz-to lim gt
 }
 
+-- ::::: Different seq-loc types
+
+-- Null
+Seq-loc ::= null NULL
+Seq-loc ::= null NULL
+
+-- Empty
+Seq-loc ::= empty gi 4
+Seq-loc ::= empty gi 5
+
+-- Whole
+Seq-loc ::= whole gi 4
+-- Direct
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+-- Reversed strand
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- Point
+Seq-loc ::= pnt {
+  point 20,
+  id gi 4
+}
+-- Direct
+Seq-loc ::= pnt {
+  point 122,
+  id gi 5
+}
+-- Reversed strand
+Seq-loc ::= pnt {
+  point 190,
+  strand minus,
+  id gi 5
+}
+
+-- Packed-point
+Seq-loc ::= packed-pnt {
+  id gi 4,
+  points { 20, 40 }
+}
+-- Direct
+Seq-loc ::= mix {
+  pnt {
+    point 122,
+    id gi 5
+  },
+  pnt {
+    point 142,
+    id gi 5
+  }
+}
+-- Reversed strand
+Seq-loc ::= mix {
+  pnt {
+    point 190,
+    strand minus,
+    id gi 5
+  },
+  pnt {
+    point 170,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Bond
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 4
+  },
+  b {
+    point 40,
+    id gi 3
+  }
+}
+Seq-loc ::= bond {
+  a {
+    point 122,
+    id gi 5
+  },
+  b {
+    point 40,
+    id gi 3
+  }
+}
+
+-- Bond, reversed strand
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 3
+  },
+  b {
+    point 40,
+    id gi 4
+  }
+}
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 3
+  },
+  b {
+    point 170,
+    strand minus,
+    id gi 5,
+    fuzz lim tr
+  }
+}
 
 -- =============================
 -- ! Order of mapped intervals !
@@ -42004,5 +42082,685 @@ Seq-align ::= {
       minus,
       plus
     }
+  }
+}
+
+
+-- ==============================
+-- ! Mapping through alignments !
+-- ==============================
+
+-- ::::: Dense-diag, to row 0
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      starts {
+        110,
+        10
+      },
+      len 20
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      starts {
+        150,
+        40
+      },
+      len 50
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 20,
+  to 29,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 120,
+  to 129,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 120,
+    to 129,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- ::::: Dense-seg, to row 0. Contains gaps on both source and destination.
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 4,
+    ids {
+      gi 5,
+      gi 4
+    },
+    starts {
+      110,
+      10,
+      -1,
+      20,
+      25,
+      -1,
+      130,
+      30 
+    },
+    lens {
+      10,
+      5,
+      5,
+      30
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 30,
+  to 49,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 130,
+  to 149,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- ::::: Packed-seg, to row 0. Contains gaps on both source and destination.
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs packed {
+    dim 2,
+    numseg 4,
+    ids {
+      gi 5,
+      gi 4
+    },
+    starts {
+      110, 10, 0, 20, 125, 0, 130, 30 
+    },
+    present '0101000101000101'H,
+    lens {
+      10,
+      5,
+      5,
+      30
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 30,
+  to 49,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 130,
+  to 149,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- ::::: Std-seg, to row 0.
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      loc {
+        packed-int {
+          {
+            from 110,
+            to 129,
+            id gi 5
+          },
+          {
+            from 150,
+            to 189,
+            id gi 5
+          }
+        },
+        packed-int {
+          {
+            from 10,
+            to 29,
+            id gi 4
+          },
+          {
+            from 40,
+            to 79,
+            id gi 4
+          }
+        }
+      }
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 50,
+  to 69,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 160,
+  to 179,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 129,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- ::::: Disc, to row 0.
+Seq-align ::=  {
+  type disc,
+  segs disc {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 2,
+        ids {
+          gi 5,
+          gi 4
+        },
+        starts {
+          110,
+          10,
+          130,
+          40
+        },
+        lens {
+          10,
+          50
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 6,
+          gi 4
+        },
+        starts {
+          290,
+          90
+        },
+        lens {
+            30
+        }
+      }
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 179,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 290,
+    to 319,
+    id gi 6,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 50,
+  to 79,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 140,
+  to 169,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 15,
+  to 149,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 179,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 290,
+    to 319,
+    id gi 6,
+    fuzz-to lim gt
+  }
+}
+
+-- ::::: Spliced-seg, to row 0.
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 100,
+        product-end nucpos 299,
+        genomic-start 0,
+        genomic-end 199,
+        parts {
+          match 30,
+          mismatch 20,
+          match 25,
+          genomic-ins 10,
+          match 15,
+          product-ins 10,
+          match 100
+        }
+      },
+      {
+        product-start nucpos 300,
+        product-end nucpos 349,
+        genomic-start 200,
+        genomic-end 249,
+        parts {
+          match 20,
+          mismatch 30
+        }
+      }
+    },
+    -- poly-a 5382,
+    product-length 200
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 100,
+    to 129,
+    id gi 5
+  },
+  {
+    from 130,
+    to 149,
+    id gi 5
+  },
+  {
+    from 150,
+    to 174,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 175,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 299,
+    id gi 5
+  },
+  {
+    from 300,
+    to 319,
+    id gi 5
+  },
+  {
+    from 320,
+    to 349,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 5,
+  to 70,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 105,
+    to 129,
+    id gi 5
+  },
+  {
+    from 130,
+    to 149,
+    id gi 5
+  },
+  {
+    from 150,
+    to 170,
+    id gi 5
+  }
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 5,
+  to 270,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 105,
+    to 129,
+    id gi 5
+  },
+  {
+    from 130,
+    to 149,
+    id gi 5
+  },
+  {
+    from 150,
+    to 174,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 175,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 299,
+    id gi 5
+  },
+  {
+    from 300,
+    to 319,
+    id gi 5
+  },
+  {
+    from 320,
+    to 349,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- ::::: Sparse-seg, to row 0.
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs sparse {
+    rows {
+      {
+        first-id gi 5,
+        second-id gi 4,
+        numseg 2,
+        first-starts { 110, 150 },
+        second-starts { 10, 40 },
+        lens { 20, 50 }
+      }
+    }
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 45,
+  to 75,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 155,
+  to 185,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 5,
+  to 120,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
   }
 }

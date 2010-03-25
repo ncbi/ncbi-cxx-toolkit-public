@@ -1253,7 +1253,8 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
         ESeqType src_type = GetSeqTypeById(src_id);
         int src_width = (src_type == eSeq_prot) ? 3 : 1;
         for (size_t seg = 0; seg < numseg; ++seg) {
-            if (!pseg.GetPresent()[row]  ||  !pseg.GetPresent()[to_row]) {
+            if (!pseg.GetPresent()[seg*dim + row]  ||
+                !pseg.GetPresent()[seg*dim + to_row]) {
                 // Ignore gaps
                 continue;
             }
@@ -2460,12 +2461,13 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         // to know the bioseq length.
         const CSeq_id& src_id = src_loc.GetWhole();
         TSeqPos src_to = GetSequenceLength(src_id);
+        TRange src_rg = TRange::GetWhole();
         if ( src_to != kInvalidSeqPos) {
-            src_to--;
+            src_rg.SetOpen(0, src_to);
         }
         // The length may still be unknown, but we'll try to map it anyway.
         // If there are no minus strands involved, it should be possible.
-        bool res = x_MapInterval(src_id, TRange(0, src_to),
+        bool res = x_MapInterval(src_id, src_rg,
             false, eNa_strand_unknown,
             TRangeFuzz(kEmptyFuzz, kEmptyFuzz));
         if ( !res ) {

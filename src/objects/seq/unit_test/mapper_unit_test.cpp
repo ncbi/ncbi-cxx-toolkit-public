@@ -253,44 +253,83 @@ void TestMapping_Simple(CNcbiIstream& in)
     CSeq_loc_Mapper_Base mapper_plus(src, dst_plus);
     CSeq_loc_Mapper_Base mapper_minus(src, dst_minus);
 
+    CSeq_loc orig;
+
+    in >> MSerial_AsnText >> orig;
     cout << "  Simple interval" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Simple interval, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Truncated on the right" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Truncated on the right, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Truncated on the left" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Truncated on the left, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Truncated on both ends" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Truncated on both ends, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Minus strand interval" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Minus strand interval, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Minus strand interval, truncated on the right" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Minus strand interval, truncated on the right, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Minus strand interval, truncated on the left" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Minus strand interval, truncated on the left, reversed strand" << endl;
-    TestMappingSeq_loc(mapper_minus, in);
+    TestMappingSeq_loc(mapper_minus, orig, in);
 
+    in >> MSerial_AsnText >> orig;
     cout << "  Minus strand interval, truncated on both ends" << endl;
-    TestMappingSeq_loc(mapper_plus, in);
+    TestMappingSeq_loc(mapper_plus, orig, in);
     cout << "  Minus strand interval, truncated on both ends, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    cout << "  Null seq-loc" << endl;
+    TestMappingSeq_loc(mapper_plus, in);
+
+    cout << "  Empty seq-loc" << endl;
+    TestMappingSeq_loc(mapper_plus, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Whole seq-loc" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Whole seq-loc, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Point" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Point, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Packed-points" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Packed-points, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    cout << "  Bond" << endl;
+    TestMappingSeq_loc(mapper_plus, in);
+    cout << "  Bond, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, in);
 }
 
@@ -652,6 +691,35 @@ void TestMapping_AlignmentsToParts(CNcbiIstream& in)
 }
 
 
+void TestMapping_ThroughAlignments(CNcbiIstream& in)
+{
+    cout << "Test mapping through alignments" << endl;
+    CSeq_align aln;
+
+    const char* titles[] = {
+        "  Mapping through dense-diag",
+        "  Mapping through dense-seg (with some gaps)",
+        "  Mapping through packed-seg (with some gaps)",
+        "  Mapping through std-seg",
+        "  Mapping through disc",
+        "  Mapping through spliced-seg",
+        "  Mapping through sparse-seg"
+    };
+
+    for (int i = 0; i < sizeof(titles)/sizeof(titles[0]); i++) {
+        cout << titles[i] << endl;
+        in >> MSerial_AsnText >> aln;
+        auto_ptr<CSeq_loc_Mapper_Base> mapper(new CSeq_loc_Mapper_Base(aln, 0));
+        cout << "    Whole sequence" << endl;
+        TestMappingSeq_loc(*mapper, in);
+        cout << "    Interval, complete" << endl;
+        TestMappingSeq_loc(*mapper, in);
+        cout << "    Interval, split" << endl;
+        TestMappingSeq_loc(*mapper, in);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     CNcbiIfstream in("mapper_unit_test.asn");
@@ -667,4 +735,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapping_Scores(in);
     TestMapping_Graph(in);
     TestMapping_AlignmentsToParts(in);
+    TestMapping_ThroughAlignments(in);
 }
