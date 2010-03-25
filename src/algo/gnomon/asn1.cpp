@@ -41,6 +41,7 @@
 #include "gnomon_seq.hpp"
 #include <algo/gnomon/id_handler.hpp>
 
+#include <objects/seq/seqport_util.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -162,11 +163,14 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     bioseq_set.SetAnnot().push_back(seq_annot);
     internal_feature_table = &seq_annot->SetData().SetFtable();
 
+    model_alignments = NULL;
+#ifdef _EVIDENCE_WANTED
     seq_annot.Reset(new CSeq_annot);
     bioseq_set.SetAnnot().push_back(seq_annot);
     model_alignments = &seq_annot->SetData().SetAlign();
     seq_annot->AddName("Model Alignments");
     seq_annot->SetTitle("Model Alignments");
+#endif
 }
 
 CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc) :
@@ -180,7 +184,9 @@ CAnnotationASN1::~CAnnotationASN1()
 
 CRef<CSeq_entry> CAnnotationASN1::GetASN1() const
 {
+#ifdef _EVIDENCE_WANTED
     m_data->DumpUnusedChains();
+#endif
     return m_data->main_seq_entry;
 }
 
@@ -226,9 +232,10 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 
     CRef<CSeq_entry> mrna_seq_entry = CreateModelProducts(md);
 
-    model_alignments->push_back(
-                                mrna_seq_entry->GetSeq().GetInst().GetHist().GetAssembly().front()
-                                );
+    if (model_alignments != NULL)
+        model_alignments->push_back(
+                                    mrna_seq_entry->GetSeq().GetInst().GetHist().GetAssembly().front()
+                                    );
 
 
     CRef<CSeq_feat> mrna_feat = create_mrna_feature(md);
@@ -565,7 +572,9 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         mrna_feature->SetPseudo(true);
     }
 
+#ifdef _EVIDENCE_WANTED
     DumpEvidence(md);
+#endif
 
     CRef< CUser_object > user_obj = create_ModelEvidence_user_object();
     mrna_feature->SetExts().push_back(user_obj);
@@ -834,6 +843,7 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
 
     if (model.Continuous()) {
         CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
+        CSeqportUtil::Pack(dmrna.GetPointer());
         seq_inst.SetSeq_data(*dmrna);
     } else {
         TSeqPos b = 0;
