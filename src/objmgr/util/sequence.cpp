@@ -385,10 +385,29 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                 ret = CSeq_id_Handle::GetGiHandle(gi);
             }
         }
-        else if ( (type & eGetId_TypeMask) == eGetId_Canonical  &&
-                  idh.IsGi()) {
-            /// short-cut: a gi is always the canonical form
-            return idh;
+        else if ( (type & eGetId_TypeMask) == eGetId_Canonical) {
+            if (idh.IsGi()) {
+                /// short-cut: a gi is always the canonical form
+                return idh;
+            }
+            else {
+                CSeq_id::EAccessionInfo info =
+                    idh.GetSeqId()->IdentifyAccession();
+                if (info != CSeq_id::eAcc_unknown) {
+                    /// additional short-cut:
+                    /// chances are, if it has an accession, it has a gi
+                    /// we can safely check for a gi since it is always
+                    /// canonical; this is a distinct advantage in many data
+                    /// loaders
+                    int gi = scope.GetGi(idh);
+                    if (gi) {
+                        ret = CSeq_id_Handle::GetHandle(gi);
+                    }
+                }
+                if ( !ret ) {
+                    ret = x_GetId(scope.GetIds(idh), type);
+                }
+            }
         }
         else if ( (type & eGetId_TypeMask) == eGetId_ForceAcc ) {
             ret = scope.GetAccVer(idh);
