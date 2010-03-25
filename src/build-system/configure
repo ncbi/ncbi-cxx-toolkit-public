@@ -26831,11 +26831,11 @@ else
  fi
    WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs --static $wxlibs \
       2>/dev/null | sed -e "$basesed"`
-   : ${WXWIDGETS_STATIC_LIBS=$WXWIDGETS_LIBS}
+   : ${WXWIDGETS_STATIC_LIBS:=$WXWIDGETS_LIBS}
    WXWIDGETS_GL_LIBS=`"$wxconf" $wxcfflags --libs gl | sed -e "$basesed"`
    WXWIDGETS_GL_STATIC_LIBS=`"$wxconf" $wxcfflags --libs gl --static \
-      2>/dev/null | sed -e "$basesed"`
-   : ${WXWIDGETS_GL_STATIC_LIBS=$WXWIDGETS_GL_LIBS}
+      2>/dev/null | sed -e "$basesed; s|-lGLU* -lGLU*|$OPENGL_STATIC_LIBS|"`
+   : ${WXWIDGETS_GL_STATIC_LIBS:=$WXWIDGETS_GL_LIBS}
    WXWIDGETS_POST_LINK=`"$wxconf" $wxcfflags --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
 
