@@ -41,7 +41,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 
-#include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbistr.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <sys/types.h>

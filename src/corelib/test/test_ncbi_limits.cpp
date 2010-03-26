@@ -28,6 +28,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
 

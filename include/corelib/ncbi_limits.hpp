@@ -58,6 +58,7 @@
  */
 
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbistl.hpp>
 
 
 /** @addtogroup Portability
@@ -72,7 +73,6 @@
 // as long long, so we still have to use our implementation with them.
 #  include <limits>
 #else
-#  include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -148,13 +148,6 @@ NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
 END_NCBI_SCOPE
 
 #endif // !HAVE_LIMITS  ||  NCBI_COMPILER_WORKSHOP
-
-
-// For compatibility with other sources and headers that expect such;
-// placed here rather than at the top because ncbistr.hpp makes use of
-// numeric_limits<>, which nothing else it #include-s is guaranteed to
-// supply.
-#include <corelib/ncbistd.hpp>
 
 
 BEGIN_NCBI_SCOPE
