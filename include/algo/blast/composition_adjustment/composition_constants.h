@@ -35,6 +35,10 @@
 
 #include <algo/blast/core/ncbi_std.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Minimum score in a matrix */
 #define COMPO_SCORE_MIN INT2_MIN
 
@@ -79,5 +83,8 @@ typedef enum EMatrixAdjustRule {
 } EMatrixAdjustRule;
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

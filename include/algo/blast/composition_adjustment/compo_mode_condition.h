@@ -34,12 +34,11 @@
 #define __COMPO_MODE_CONDITION__
 
 #include <algo/blast/core/blast_export.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <algo/blast/composition_adjustment/composition_constants.h>
 
 
 /**
