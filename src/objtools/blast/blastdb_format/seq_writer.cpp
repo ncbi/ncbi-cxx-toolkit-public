@@ -39,24 +39,34 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <objtools/blast/blastdb_format/seq_writer.hpp>
 #include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>
-#include "masking_fmt_spec.hpp"
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
 #include <numeric>      // for std::accumulate
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char CMaskingFmtSpecHelper::kDelim(',');
-const string CMaskingFmtSpecHelper::kDelimStr(1, CMaskingFmtSpecHelper::kDelim);
-
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                  CNcbiOstream& out, 
                  CSeqFormatterConfig config /* = CSeqFormatterConfig() */)
     : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb),
-      m_MaskingAlgoHelper(0), m_FastaRequestedAtEOL(false)
+      m_DataExtractor(blastdb, 
+                      config.m_SeqRange,
+                      config.m_Strand,
+                      config.m_FiltAlgoId,
+                      config.m_LineWidth,
+                      config.m_TargetOnly,
+                      config.m_UseCtrlA)
 {
-    auto_ptr<CMaskingFmtSpecHelper> masking_algo_helper
-		(new CMaskingFmtSpecHelper(m_FmtSpec, m_BlastDb));
-    vector<char> repl_types;    // replacement types
+    // Validate the algo id
+    if (config.m_FiltAlgoId >= 0) {
+        vector<int> algo_ids(1, config.m_FiltAlgoId);
+        vector<int> invalid_algo_ids = 
+            m_BlastDb.ValidateMaskAlgorithms(algo_ids);
+        if ( !invalid_algo_ids.empty()) {
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
+                "Invalid filtering algorithm ID.");
+        }
+    }
 
     // Record where the offsets where the replacements must occur
     for (SIZE_TYPE i = 0; i < m_FmtSpec.size(); i++) {
@@ -68,90 +78,72 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
 
         if (m_FmtSpec[i] == '%') {
             m_ReplOffsets.push_back(i);
-            repl_types.push_back(m_FmtSpec[i+1]);
+            m_ReplTypes.push_back(m_FmtSpec[i+1]);
         }
     }
 
-    if (m_ReplOffsets.empty() || repl_types.size() != m_ReplOffsets.size()) {
+    if (m_ReplOffsets.empty() || m_ReplTypes.size() != m_ReplOffsets.size()) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
                    "Invalid format specification");
     }
 
-    // Validate filtering algorithms provided, if any
-    if (config.m_FiltAlgoId != -1) {
-        CMaskingFmtSpecHelper::ValidateFilteringAlgorithm
-            (m_BlastDb, config.m_FiltAlgoId);
-    }
+    m_Fasta = (m_ReplTypes[0] == 'f');
+}
 
-    ITERATE(vector<char>, fmt, repl_types) {
+void CSeqFormatter::x_Builder(vector<string>& data2write)
+{
+    data2write.reserve(m_ReplTypes.size());
+
+    ITERATE(vector<char>, fmt, m_ReplTypes) {
         switch (*fmt) {
-        case 'f':
-            m_DataExtractors.push_back
-                (new CFastaExtractor(config.m_LineWidth, 
-                                     config.m_SeqRange,
-                                     config.m_Strand, 
-                                     config.m_TargetOnly, 
-                                     config.m_UseCtrlA,
-                                     config.m_FiltAlgoId));
-            break;
 
         case 's':
-            m_DataExtractors.push_back
-                (new CSeqDataExtractor(config.m_SeqRange, 
-                                       config.m_Strand, 
-                                       config.m_FiltAlgoId));
+            data2write.push_back(m_DataExtractor.ExtractSeqData());
             break;
 
         case 'a':
-            m_DataExtractors.push_back
-                (new CAccessionExtractor(config.m_TargetOnly));
+            data2write.push_back(m_DataExtractor.ExtractAccession());
             break;
 
         case 'g':
-            m_DataExtractors.push_back(new CGiExtractor(config.m_ExtractAllGis));
+            data2write.push_back(m_DataExtractor.ExtractGi());
             break;
 
         case 'o':
-            m_DataExtractors.push_back(new COidExtractor());
+            data2write.push_back(m_DataExtractor.ExtractOid());
             break;
 
         case 't':
-            m_DataExtractors.push_back(new CTitleExtractor(config.m_TargetOnly));
+            data2write.push_back(m_DataExtractor.ExtractTitle());
             break;
 
         case 'h':
-            m_DataExtractors.push_back(new CHashExtractor());
+            data2write.push_back(m_DataExtractor.ExtractHash());
             break;
 
         case 'l':
-            m_DataExtractors.push_back(new CSeqLenExtractor());
+            data2write.push_back(m_DataExtractor.ExtractSeqLen());
             break;
 
         case 'T':
-            m_DataExtractors.push_back(new CTaxIdExtractor());
+            data2write.push_back(m_DataExtractor.ExtractTaxId());
             break;
 
         case 'P':
-            m_DataExtractors.push_back(new CPigExtractor());
+            data2write.push_back(m_DataExtractor.ExtractPig());
             break;
 
         case 'L':
-            m_DataExtractors.push_back(new CCommonTaxonomicNameExtractor());
+            data2write.push_back(m_DataExtractor.ExtractCommonTaxonomicName());
             break;
 
         case 'S':
-            m_DataExtractors.push_back(new CScientificNameExtractor());
+            data2write.push_back(m_DataExtractor.ExtractScientificName());
             break;
 
         case 'm':
-            {
-                _ASSERT(masking_algo_helper.get());
-                int filt_algo_id = 
-                    masking_algo_helper->GetFilteringAlgorithm();
-                m_DataExtractors.push_back
-                    (new CMaskingDataExtractor(filt_algo_id));
-                break;
-            }
+            data2write.push_back(m_DataExtractor.ExtractMaskingData());
+            break;
 
         default:
             CNcbiOstrstream os;
@@ -160,43 +152,19 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                        CNcbiOstrstreamToString(os));
         }
     }
+}
 
-    // This is needed for pretty formatting purposes
-    if (dynamic_cast<CFastaExtractor*>(m_DataExtractors.back())) {
-        m_FastaRequestedAtEOL = true;
+void CSeqFormatter::Write(CBlastDBSeqId& id)
+{
+    if (m_Fasta) {
+        m_Out << m_DataExtractor.ExtractFasta(id);
+        return;
     }
-    m_MaskingAlgoHelper = masking_algo_helper.release();
-}
 
-CSeqFormatter::~CSeqFormatter()
-{
-    delete m_MaskingAlgoHelper;
-    NON_CONST_ITERATE(vector<IBlastDBExtract*>, itr, m_DataExtractors) {
-        delete *itr;
-    };
-}
-
-void
-CSeqFormatter::Write(CBlastDBSeqId& id)
-{
+    m_DataExtractor.SetSeqId(id);
     vector<string> data2write;
-    x_Transform(id, data2write);
-    m_Out << x_Replacer(data2write);
-    if ( !m_FastaRequestedAtEOL ) {
-        m_Out << "\n";
-    }
-}
-
-void
-CSeqFormatter::x_Transform(CBlastDBSeqId& id, vector<string>& retval)
-{
-    retval.clear();
-    retval.reserve(m_DataExtractors.size());
-
-    // for every type of specification, call the extractor
-    NON_CONST_ITERATE(vector<IBlastDBExtract*>, extractor, m_DataExtractors) {
-        retval.push_back((*extractor)->Extract(id, m_BlastDb));
-    }
+    x_Builder(data2write);
+    m_Out << x_Replacer(data2write) << endl;
 }
 
 /// Auxiliary functor to compute the length of a string
@@ -210,23 +178,18 @@ struct StrLenAdd : public binary_function<SIZE_TYPE, const string&, SIZE_TYPE>
 string
 CSeqFormatter::x_Replacer(const vector<string>& data2write) const
 {
-    const string& kFiltAlgoSpec =
-        m_MaskingAlgoHelper->GetFiltAlgorithmSpecifier();
     SIZE_TYPE data2write_size = accumulate(data2write.begin(), data2write.end(),
                                            0, StrLenAdd());
 
     string retval;
     retval.reserve(m_FmtSpec.size() + data2write_size -
-                   (m_DataExtractors.size() * 2));
+                   (m_ReplTypes.size() * 2));
 
     SIZE_TYPE fmt_idx = 0;
     for (SIZE_TYPE i = 0, kSize = m_ReplOffsets.size(); i < kSize; i++) {
         retval.append(&m_FmtSpec[fmt_idx], &m_FmtSpec[m_ReplOffsets[i]]);
         retval.append(data2write[i]);
         fmt_idx = m_ReplOffsets[i] + 2;
-        if (m_FmtSpec[m_ReplOffsets[i]+1] == 'm') {
-            fmt_idx += kFiltAlgoSpec.size();
-        }
     }
     if (fmt_idx <= m_FmtSpec.size()) {
         retval.append(&m_FmtSpec[fmt_idx], &m_FmtSpec[m_FmtSpec.size()]);

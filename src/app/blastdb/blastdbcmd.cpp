@@ -81,6 +81,14 @@ private:
     TSeqRange m_SeqRange;
     /// Strand to retrieve
     ENa_strand m_Strand;
+    /// Output format
+    string m_OutFmt;
+    /// output is FASTA
+    bool m_FASTA;
+    /// should we find duplicate entries? 
+    bool m_GetDuplicates;
+    /// should we output target sequence only?
+    bool m_TargetOnly;
 
     /// Initializes the application's data members
     void x_InitApplicationData();
@@ -101,39 +109,72 @@ private:
     /// @param queries queries to retrieve [in|out]
     void x_GetQueries(TQueries& queries) const;
 
-    /// Process a single query and add it to the return value
+    /// Add a query ID for processing
     /// @param retval the return value where the queries will be added [in|out]
     /// @param entry the user's query [in]
-    void x_ProcessSingleQuery(CBlastDBCmdApp::TQueries& retval, 
-                              const string& entry) const;
+    void x_AddSeqId(CBlastDBCmdApp::TQueries& retval, const string& entry) const;
+
+    /// Add an OID for processing
+    /// @param retval the return value where the queries will be added [in|out]
+    /// @param entry the user's query [in]
+    void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid) const;
 };
 
 void
-CBlastDBCmdApp::x_ProcessSingleQuery(CBlastDBCmdApp::TQueries& retval, 
-                                     const string& entry) const
+CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval, 
+                           const string& entry) const
 {
-    const CArgs& args = GetArgs();
-    const bool kGetDuplicates = args["get_dups"];
-    const bool kTargetGi = args["target_only"];
-
-    CRef<CBlastDBSeqId> blastdb_seqid;
-    if (kGetDuplicates) {
-        _ASSERT(kTargetGi == false);
+    // Process get dups
+    if (m_GetDuplicates) {
         vector<int> oids;
         m_BlastDb->AccessionToOids(entry, oids);
         ITERATE(vector<int>, oid, oids) {
-            blastdb_seqid.Reset(new CBlastDBSeqId());
-            blastdb_seqid->SetOID(*oid);
-            retval.push_back(blastdb_seqid);
+            x_AddOid(retval, *oid);
         }
-    } else {
-        blastdb_seqid.Reset(new CBlastDBSeqId(entry));
-        if (kTargetGi && !blastdb_seqid->IsGi()) {
-            ERR_POST(Warning << "Skipping " << blastdb_seqid->AsString() 
-                     << " as it is not a GI and target_only is being used");
-            return;
-        }
+        return;
+    } 
+
+    // FASTA / target_only just need one id
+    if (m_FASTA || m_TargetOnly) {
+        retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(entry)));
+        return;
+    } 
+
+    // Default: find oid first and add all pertinent
+    CSeq_id sid(entry);
+    int oid;
+    m_BlastDb->SeqidToOid(sid, oid);
+    if (oid>=0) {
+        x_AddOid(retval, oid);
+    }
+}
+
+void 
+CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
+                         const int oid) const
+{
+    // FASTA output just need one id
+    if (m_FASTA) {
+        CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
+        blastdb_seqid->SetOID(oid);
         retval.push_back(blastdb_seqid);
+        return;
+    } 
+
+    // Not a NR database, add oid instead
+    vector<int> gis;
+    m_BlastDb->GetGis(oid, gis);
+    if (gis.empty()) {
+        CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
+        blastdb_seqid->SetOID(oid);
+        retval.push_back(blastdb_seqid);
+        return;
+    }
+
+    // Default:  add all possible ids
+    ITERATE(vector<int>, gi, gis) {
+        retval.push_back(CRef<CBlastDBSeqId>
+                         (new CBlastDBSeqId(NStr::IntToString(*gi))));
     }
 }
 
@@ -141,12 +182,12 @@ void
 CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 {
     const CArgs& args = GetArgs();
+
     retval.clear();
 
     _ASSERT(m_BlastDb.NotEmpty());
 
     if (args["pig"].HasValue()) {
-
         retval.reserve(1);
         retval.push_back(CRef<CBlastDBSeqId>
                          (new CBlastDBSeqId(args["pig"].AsInteger())));
@@ -155,24 +196,19 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 
         static const string kDelim(",");
         const string& entry = args["entry"].AsString();
+
         if (entry.find(kDelim[0]) != string::npos) {
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
-            retval.reserve(tokens.size());
             ITERATE(vector<string>, itr, tokens) {
-                x_ProcessSingleQuery(retval, *itr);
+                x_AddSeqId(retval, *itr);
             }
         } else if (entry == "all") {
-            // dump all OIDs in this database
-            CRef<CBlastDBSeqId> blastdb_seqid;
             for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
-                blastdb_seqid.Reset(new CBlastDBSeqId());
-                blastdb_seqid->SetOID(i);
-                retval.push_back(blastdb_seqid);
+                x_AddOid(retval, i);
             }
         } else {
-            retval.reserve(1);
-            x_ProcessSingleQuery(retval, entry);
+            x_AddSeqId(retval, entry);
         }
 
     } else if (args["entry_batch"].HasValue()) {
@@ -183,13 +219,14 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
             string line;
             NcbiGetlineEOL(input, line);
             if ( !line.empty() ) {
-                x_ProcessSingleQuery(retval, line);
+                x_AddSeqId(retval, line);
             }
         }
 
     } else {
         NCBI_THROW(CInputException, eInvalidInput, "Must specify query type");
     }
+
     if (retval.empty()) {
         NCBI_THROW(CInputException, eInvalidInput, 
                    "No valid entries to search");
@@ -200,10 +237,11 @@ void
 CBlastDBCmdApp::x_InitApplicationData()
 {
     const CArgs& args = GetArgs();
+
     CSeqDB::ESeqType seqtype = ParseTypeString(args["dbtype"].AsString());;
     m_BlastDb.Reset(new CSeqDBExpert(args["db"].AsString(), seqtype));
-    m_DbIsProtein = 
-        static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
+
+    m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
     m_SeqRange = TSeqRange::GetEmpty();
     if (args["range"].HasValue()) {
@@ -220,6 +258,18 @@ CBlastDBCmdApp::x_InitApplicationData()
             abort();    // both strands not supported
         }
     } 
+
+    m_OutFmt = args["outfmt"].AsString();
+    m_FASTA = false;
+    // If "%f" is found within outfmt, discard everything else
+    if (m_OutFmt.find("%f") != string::npos) {
+        m_OutFmt = "%f";
+        m_FASTA = true;
+    }
+
+    m_GetDuplicates = args["get_dups"];
+
+    m_TargetOnly = args["target_only"];
 }
 
 void
@@ -258,55 +308,6 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     }
 }
 
-/// Auxiliary function to pretty-format a CBlastDBSeqId
-/// @param id the id to format [in]
-/// @param blastdb BLAST database handle [in]
-static string s_FormatCBlastDBSeqID(CRef<CBlastDBSeqId> id, CSeqDB& blastdb)
-{
-    static const string kInvalid(NStr::IntToString(CBlastDBSeqId::kInvalid));
-    _ASSERT(id.NotEmpty());
-    string retval = id->AsString();
-    if (NStr::StartsWith(retval, "OID")) {
-        // First try the GI...
-        retval = CGiExtractor(false).Extract(*id, blastdb);
-        if (retval != kInvalid) {
-            return "GI " + retval;
-        }
-
-        // ... then the accession...
-        retval = CAccessionExtractor().Extract(*id, blastdb);
-        if (retval != kInvalid && !isalnum(retval[0])) {
-            // identify as accession if not invalid or just a number (bound to
-            // occur when BLAST database wasn't created with parsing of
-            // Seq-ids)
-            return "Accession " + retval;
-        }
-
-        // ... and finally the sequence title.
-        retval = CTitleExtractor().Extract(*id, blastdb);
-        if (retval != kInvalid) {
-            return "Sequence " + retval;
-        }
-    }
-    return retval;
-}
-
-static void 
-s_ExtractFilteringAlgorithmIds(CSeqFormatterConfig& conf, const CArgs& args)
-{
-    if ( !args["mask_sequence_with"].HasValue() ) {
-        return;
-    }
-
-    try { 
-        conf.m_FiltAlgoId = NStr::StringToInt(args["mask_sequence_with"].AsString());
-    }
-    catch (...) {
-        NCBI_THROW(CInputException, eInvalidInput, 
-            "Invalid filtering algorithm specified for 'mask_sequence_with'.");
-    }
-}
-
 int
 CBlastDBCmdApp::x_ProcessSearchRequest()
 {
@@ -316,28 +317,26 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
 
     const CArgs& args = GetArgs();
     CNcbiOstream& out = args["out"].AsOutputFile();
-    const string kOutFmt = args["outfmt"].AsString();
+
     CSeqFormatterConfig conf;
     conf.m_LineWidth = args["line_length"].AsInteger();
     conf.m_SeqRange = m_SeqRange;
     conf.m_Strand = m_Strand;
-    conf.m_TargetOnly = args["target_only"];
+    conf.m_TargetOnly = m_TargetOnly;
     conf.m_UseCtrlA = args["ctrl_a"];
-    conf.m_ExtractAllGis = args["get_dups"];
-    s_ExtractFilteringAlgorithmIds(conf, args);
+    conf.m_FiltAlgoId = (args["db_mask"].HasValue()) 
+                      ? args["db_mask"].AsInteger() : -1;
 
     bool errors_found = false;
-    CSeqFormatter seq_fmt(kOutFmt, *m_BlastDb, out, conf);
+    CSeqFormatter seq_fmt(m_OutFmt, *m_BlastDb, out, conf);
     NON_CONST_ITERATE(TQueries, itr, queries) {
         try { 
             seq_fmt.Write(**itr); 
         } catch (const CException& e) {
-            ERR_POST(Error << s_FormatCBlastDBSeqID(*itr, *m_BlastDb) 
-                     << ": " << e.GetMsg());
+            ERR_POST(Error << e.GetMsg());
             errors_found = true;
         } catch (...) {
-            ERR_POST(Error << "Failed to retrieve " << 
-                     s_FormatCBlastDBSeqID(*itr, *m_BlastDb));
+            ERR_POST(Error << "Failed to retrieve requested item");
             errors_found = true;
         }
     }
@@ -364,6 +363,10 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
                                         "nucl", "prot", "guess"));
 
+    arg_desc->AddOptionalKey("db_mask", "mask_algo_id",
+                            "Masking algorithm ID", 
+                            CArgDescriptions::eInteger);
+
     arg_desc->SetCurrentGroup("Retrieval options");
     arg_desc->AddOptionalKey("entry", "sequence_identifier",
                      "Comma-delimited search string(s) of sequence identifiers"
@@ -374,8 +377,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddOptionalKey("entry_batch", "input_file", 
                  "Input file for batch processing (Format: one entry per line)",
                  CArgDescriptions::eInputFile);
-    arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes,
-                            "entry");
+    arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "entry");
 
     arg_desc->AddOptionalKey("pig", "PIG", "PIG to retrieve", 
                              CArgDescriptions::eInteger);
@@ -388,7 +390,7 @@ void CBlastDBCmdApp::Init()
     // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
-        "mask_sequence_with" };
+        "mask_sequence" };
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
@@ -406,10 +408,10 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetConstraint("strand", &(*new CArgAllow_Strings, "minus",
                                         "plus"));
 
-    arg_desc->AddOptionalKey("mask_sequence_with", "numbers",
+    arg_desc->AddFlag("mask_sequence", 
                              "Produce lower-case masked FASTA using the "
-                             "algorithm ID specified",
-                             CArgDescriptions::eString);
+                             "algorithm ID specified by db_mask", true);
+    arg_desc->SetDependency("mask_sequence", CArgDescriptions::eRequires, "db_mask");
 
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey("out", "output_file", "Output file name", 
@@ -429,10 +431,10 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
-    "\t\t%mX means sequence masking data, where X is a single, mandatory"
-    "\t\tinteger to specify the algorithm ID to display.  \n"
-    "\t\tMasking data will be displayed as a series of 'N-M' values\n"
-    "\t\tseparated by ';' or the word 'none' if none are available.\n"
+            "\t\t%m means sequence masking data (specified in db_mask).\n"
+            "\t\t   Masking data will be displayed as a series of 'N-M' values\n"
+            "\t\t   separated by ';' or the word 'none' if none are available.\n"
+            "\tIf '%f' is specified, all other format specifiers are ignored.\n"
             "\tFor every format except '%f', each line of output will "
             "correspond to\n\ta sequence.\n",
             CArgDescriptions::eString, "%f");
@@ -462,7 +464,7 @@ void CBlastDBCmdApp::Init()
 
     const char* exclusions_discovery[]  = { "entry", "entry_batch", "outfmt",
         "strand", "target_only", "ctrl_a", "get_dups", "pig", "range", "db",
-        "info", "mask_sequence_with", "line_length" };
+        "info", "mask_sequence", "line_length" };
     arg_desc->SetCurrentGroup("BLAST database configuration and discovery options");
     arg_desc->AddFlag("show_blastdb_search_path", 
                       "Displays the default BLAST database search paths", true);

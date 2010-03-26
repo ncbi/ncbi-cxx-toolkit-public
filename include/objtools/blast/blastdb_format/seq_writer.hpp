@@ -49,7 +49,6 @@ struct CSeqFormatterConfig {
         m_TargetOnly = false;
         m_UseCtrlA = false;
         m_FiltAlgoId = -1;
-        m_ExtractAllGis = false;
     }
 
     /// length of the line of output (applicable only to FASTA output)
@@ -69,8 +68,6 @@ struct CSeqFormatterConfig {
     bool m_UseCtrlA;
     /// Filtering algorithm ID to mask the FASTA
     int m_FiltAlgoId;
-    /// Extract all Gis for non-redundant db
-    bool m_ExtractAllGis;
 };
 
 /// Customizable sequence writer interface
@@ -83,9 +80,6 @@ public:
     /// @param out output stream to write the data [in]
     CSeqFormatter(const string& fmt_spec, CSeqDB& blastdb, CNcbiOstream& out,
                   CSeqFormatterConfig config = CSeqFormatterConfig());
-
-    /// Destructor
-    ~CSeqFormatter();
 
     /// Write the sequence data associated with the requested ID in the format
     /// specified in the constructor
@@ -102,18 +96,16 @@ private:
     CSeqDB& m_BlastDb;
     /// Vector of offsets where the replacements will take place
     vector<SIZE_TYPE> m_ReplOffsets;
+    /// Data extractor
+    CBlastDBExtractor m_DataExtractor;
     /// Vector of convertor objects
-    vector<IBlastDBExtract*> m_DataExtractors;
-    /// Auxiliary class to help parse the masking algorithms specifier
-    class CMaskingFmtSpecHelper* m_MaskingAlgoHelper;
-    /// Was FASTA requested at the end of format specifier string?
-    bool m_FastaRequestedAtEOL;
+    vector<char> m_ReplTypes;
+    /// Fasta output?
+    bool m_Fasta;
 
-    /// Transform the sequence id into the strings specified by the format
-    /// specification
-    /// @param id identifier for data to retrieve [in]
-    /// @param retval string representations of the datum object [out]
-    void x_Transform(CBlastDBSeqId& id, vector<string>& retval);
+    /// Build data for write
+    /// @param data2write data to replace in the output string [in]
+    void x_Builder(vector<string>& data2write);
 
     /// Replace format specifiers for the data contained in data2write
     /// @param data2write data to replace in the output string [in]

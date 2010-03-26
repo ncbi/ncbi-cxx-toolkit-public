@@ -66,20 +66,16 @@ BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_Empty)
 BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoId)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
-    BOOST_REQUIRE_THROW(CSeqFormatter f("%m15", db, std::cout),
-                        CInvalidDataException);
-}
-
-BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoIdSpec)
-{
-    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
-    BOOST_REQUIRE_THROW(CSeqFormatter f("%mhello", db, std::cout),
+    CSeqFormatterConfig config;
+    config.m_FiltAlgoId = 15;
+    BOOST_REQUIRE_THROW(CSeqFormatter f("%m", db, std::cout, config), 
                         CInvalidDataException);
 }
 
 BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    CSeqFormatterConfig config;
 
     vector<string> format_specs;
     format_specs.push_back("%o print %% sign");   // escape '%'
@@ -91,17 +87,15 @@ BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
     format_specs.push_back("%l");
     format_specs.push_back("%T");
     format_specs.push_back("%P");
-    //format_specs.push_back("%m"); // should print all masks
-    //format_specs.push_back(" %m "); // should print all masks
-    format_specs.push_back("%m20"); // should print all masks for algo ID 20
-    format_specs.push_back("%m20 "); // should print all masks for algo ID 20
-    format_specs.push_back("%m40"); // should print all masks for algo ID 40
-    format_specs.push_back("%m40 "); // should print all masks for algo ID 40
-    //format_specs.push_back("%m20,40"); // should print all masks
+    format_specs.push_back("%m"); // should print all masks for algo ID 20
 
+    config.m_FiltAlgoId = 20;
     ITERATE(vector<string>, itr, format_specs) {
-        CSeqFormatter f(*itr, db, std::cout);
+        CSeqFormatter f(*itr, db, std::cout, config);
     }
+
+    config.m_FiltAlgoId = 40;
+    CSeqFormatter f("%m", db, std::cout, config);
 }
 
 BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)

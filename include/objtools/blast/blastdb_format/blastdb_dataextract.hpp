@@ -45,215 +45,71 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-/// Interface to extract data from a BLAST database given an identifier
-class NCBI_BLASTDB_FORMAT_EXPORT IBlastDBExtract {
+/// Class to extract data from a BLAST database given an identifier
+class NCBI_BLASTDB_FORMAT_EXPORT CBlastDBExtractor {
+
 public:
-    /// Our mandatory destructor
-    virtual ~IBlastDBExtract() {}
-
-    /// Main method of this interface
-    /// @param id sequence identifier [in]
-    /// @param blastdb source from which to extract the data [in]
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb) = 0;
-};
-
-/// Extracts the GI for a given sequence id
-/// (CSeqFormatter associates this with %g)
-class NCBI_BLASTDB_FORMAT_EXPORT CGiExtractor : public IBlastDBExtract {
-public:
-    CGiExtractor(bool extract_all):m_ExtractAll(extract_all) {}
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-private:
-    bool m_ExtractAll;
-};
-
-/// Extracts the PIG for a given sequence id
-/// (CSeqFormatter associates this with %P)
-class NCBI_BLASTDB_FORMAT_EXPORT CPigExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the OID for a given sequence id
-/// (CSeqFormatter associates this with %o)
-class NCBI_BLASTDB_FORMAT_EXPORT COidExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-
-    /// Extracts the OID and returns it as an integer (as opposed to a string)
-    /// so that other *Extractor classes can use this.
-    /// @param id sequence identifier [in]
-    /// @param blastdb source from which to extract the data [in]
-    int ExtractOID(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the sequence length for a given sequence id
-/// (CSeqFormatter associates this with %l)
-class NCBI_BLASTDB_FORMAT_EXPORT CSeqLenExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-
-    /// Extracts the sequence length and returns it as an integer (as opposed
-    /// to a string)
-    /// so that other *Extractor classes can use this.
-    /// @param id sequence identifier [in]
-    /// @param blastdb source from which to extract the data [in]
-    TSeqPos ExtractLength(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Computes the sequence hash value for a given sequence id
-/// (CSeqFormatter associates this with %h)
-class NCBI_BLASTDB_FORMAT_EXPORT CHashExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-
-    /// Extracts the sequence hash value and returns it as an integer (as opposed
-    /// to a string)
-    /// so that other *Extractor classes can use this.
-    /// @param id sequence identifier [in]
-    /// @param blastdb source from which to extract the data [in]
-    int ExtractHash(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the taxonomy ID for a given sequence id
-/// (CSeqFormatter associates this with %T)
-class NCBI_BLASTDB_FORMAT_EXPORT CTaxIdExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-
-    /// Extracts the TaxID and returns it as an integer (as opposed to a string)
-    /// so that other *Extractor classes can use this.
-    /// @param id sequence identifier [in]
-    /// @param blastdb source from which to extract the data [in]
-    int ExtractTaxID(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the sequence data for a given sequence id in IUPAC{AA,NA} format
-/// (CSeqFormatter associates this with %s)
-class NCBI_BLASTDB_FORMAT_EXPORT CSeqDataExtractor : public IBlastDBExtract {
-public:
-    /// Constructor
-    /// @param range sequence range to extract, if empty, gets the entire
-    /// sequence [in]
-    /// @param strand All SeqLoc types will have this strand assigned;
-    ///             If set to 'other', the strand will be set to 'unknown'
-    ///             for protein sequences and 'both' for nucleotide [in]
-    /// @para filt_algo_ids filtering algorithm IDs to apply to FASTA output
-    CSeqDataExtractor(TSeqRange range = TSeqRange(),
+    /// ctor
+    CBlastDBExtractor(CSeqDB&             blastdb, 
+                      TSeqRange           range = TSeqRange(),
                       objects::ENa_strand strand = objects::eNa_strand_both,
-                      int filt_algo_id = -1)
-    : m_SeqRange(range), m_Strand(strand), m_FiltAlgoId(filt_algo_id) {}
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
+                      int                 filt_algo_id = -1, 
+                      int                 line_width = 80,
+                      bool                target_only = true,
+                      bool                ctrl_a = false)
+            : m_BlastDb(blastdb),
+              m_SeqRange(range),
+              m_Strand(strand),
+              m_FiltAlgoId(filt_algo_id),
+              m_LineWidth(line_width),
+              m_TargetOnly(target_only),
+              m_UseCtrlA(ctrl_a) {}
+
+    /// Setting seqid
+    /// @param id sequence identifier [in]
+    void SetSeqId(const CBlastDBSeqId &seq_id, bool get_defline=true);
+    string ExtractOid();
+    string ExtractPig();
+    string ExtractGi();
+    string ExtractAccession();
+    string ExtractTitle();
+    string ExtractTaxId();
+    string ExtractCommonTaxonomicName();
+    string ExtractScientificName();
+    string ExtractMaskingData();
+    string ExtractSeqData();
+    string ExtractSeqLen();
+    string ExtractHash();
+
+    string ExtractFasta(const CBlastDBSeqId &seq_id);
 
 protected:
-    /// The range of the sequence requested
+    /// underlying Blast database
+    CSeqDB& m_BlastDb;
+    /// sequence range
     TSeqRange m_SeqRange;
-    /// The strand of the sequence requested
+    /// strand
     objects::ENa_strand m_Strand;
-    /// List of filtering algorithm IDs to use to mask the FASTA
-    const int m_FiltAlgoId;
-};
-
-/// Extracts the FASTA for a given sequence id
-/// (CSeqFormatter associates this with %f)
-class NCBI_BLASTDB_FORMAT_EXPORT CFastaExtractor : public CSeqDataExtractor {
-public:
-    /// Constructor
-    /// @param line_width length of the line of output [in]
-    /// @param range sequence range to extract, if empty, gets the entire
-    /// sequence [in]
-    /// @param strand All SeqLoc types will have this strand assigned;
-    ///             If set to 'other', the strand will be set to 'unknown'
-    ///             for protein sequences and 'both' for nucleotide [in]
-    /// @para filt_algo_ids filtering algorithm IDs to apply to FASTA output
-    CFastaExtractor(TSeqPos line_width, TSeqRange range = TSeqRange(),
-                    objects::ENa_strand strand = objects::eNa_strand_other,
-                    bool target_only = false,
-                    bool ctrl_a = false,
-                    int  filt_algo_id = -1);
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-private:
-    /// The stream to write the output to (which is then converted to a string)
-    stringstream m_OutputStream;
-    /// Object which prints the sequence in FASTA format
-    CFastaOstream m_FastaOstream;
-    bool m_ShowTargetOnly;
+    /// filtering algorithsm
+    int m_FiltAlgoId;
+    /// FASTA output line width
+    int m_LineWidth;
+    /// Should the record contain mutilple seqids? (used only with %f)
+    bool m_TargetOnly;
+    /// Replace with ctrl_a? (used only with %f)
     bool m_UseCtrlA;
-};
+    /// OID of the record
+    int m_Oid;
+    /// the target gi
+    int m_Gi;
+    /// bioseq
+    CRef< CBioseq> m_Bioseq;
 
-/// Extracts the sequence title for a given sequence id
-/// (CSeqFormatter associates this with %t)
-class NCBI_BLASTDB_FORMAT_EXPORT CTitleExtractor : public IBlastDBExtract {
-public:
-    CTitleExtractor(bool target_only = false) : m_ShowTargetOnly(target_only) {}
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 private:
-    bool m_ShowTargetOnly;
+    CSeqDB::TSequenceRanges x_ExtractMaskingData();
+    int x_ExtractTaxId();
 };
 
-/// Extracts the accession for a given sequence id
-/// (CSeqFormatter associates this with %a)
-class NCBI_BLASTDB_FORMAT_EXPORT CAccessionExtractor : public IBlastDBExtract {
-public:
-    CAccessionExtractor(bool target_only = false)
-        : m_ShowTargetOnly(target_only) {}
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-private:
-    bool m_ShowTargetOnly;
-};
-
-/// Extracts the common taxonomy name for a given sequence id
-/// (CSeqFormatter associates this with %L)
-class NCBI_BLASTDB_FORMAT_EXPORT CCommonTaxonomicNameExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the scientific name for a given sequence id
-/// (CSeqFormatter associates this with %S)
-class NCBI_BLASTDB_FORMAT_EXPORT CScientificNameExtractor : public IBlastDBExtract {
-public:
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-};
-
-/// Extracts the masking data for a given sequence id
-/// (CSeqFormatter associates this with %m)
-class NCBI_BLASTDB_FORMAT_EXPORT CMaskingDataExtractor : public IBlastDBExtract {
-public:
-    CMaskingDataExtractor(int filt_algo_id)
-        : m_AlgoId(filt_algo_id) {}
-    /** @inheritDoc */
-    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
-
-    /// Retrieve the masked regions for a given sequence id
-    /// @param id sequence ID to fetch [in]
-    /// @param blastdb BLAST database handle [in]
-    /// @param masked_ranges masked ranges will be stored here [in|out]
-    void GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
-                          CSeqDB::TSequenceRanges& masked_ranges);
-
-    /// Retrieve the masked regions for a given sequence id
-    /// @param id sequence ID to fetch [in]
-    /// @param blastdb BLAST database handle [in]
-    /// @param seqid Seq-id object corresponding the id provided [in]
-    CConstRef<CSeq_loc> GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
-                                         CRef<CSeq_id> seqid);
-private:
-    /// The masking algorithm IDs
-    const int m_AlgoId;
-};
 
 END_NCBI_SCOPE
 
