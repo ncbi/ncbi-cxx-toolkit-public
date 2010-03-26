@@ -247,7 +247,7 @@ public:
     };
     typedef vector<CFeatInfo*> TFeatArray;
     struct SFeatSet {
-        CSeqFeatData::ESubtype m_FeatType, m_ParentType;
+        CSeqFeatData::ESubtype m_FeatType;
         bool m_NeedAll, m_CollectedAll;
         TFeatArray m_All, m_New;
 
@@ -270,7 +270,7 @@ protected:
     void x_AssignParentsByRef(TFeatArray& features,
                               CSeqFeatData::ESubtype parent_type);
     void x_AssignParentsByOverlap(TFeatArray& features,
-                                  bool by_product,
+                                  CSeqFeatData::ESubtype current_type,
                                   TFeatArray& parents);
     bool x_AssignParentByRef(CFeatInfo& info);
 
