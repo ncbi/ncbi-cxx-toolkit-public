@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <util/simple_buffer.hpp>
 
+#include <algo/text/vector.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /// @name Serialization interfaces
