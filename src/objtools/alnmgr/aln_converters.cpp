@@ -902,4 +902,17 @@ CreateAnchoredAlnVec(TAlnStats& aln_stats,           ///< input
 }
 
 
+CRef<CPairwiseAln>
+CreatePairwiseAlnFromSeqAlign(const CSeq_align& sa)
+{
+    _ALNMGR_ASSERT(sa.GetDim() == 2);
+
+    TAlnSeqIdIRef id1(new CAlnSeqId(sa.GetSeq_id(0)));
+    TAlnSeqIdIRef id2(new CAlnSeqId(sa.GetSeq_id(1)));
+    CRef<CPairwiseAln> pairwise(new CPairwiseAln(id1, id2));
+    ConvertSeqAlignToPairwiseAln(*pairwise, sa, 0, 1);
+    return pairwise;
+}
+
+
 END_NCBI_SCOPE

@@ -135,6 +135,13 @@ void
 CreateAnchoredAlnVec(TAlnStats& aln_stats,            ///< input
                      TAnchoredAlnVec& out_vec,        ///< output
                      const CAlnUserOptions& options); ///< user options
+
+
+/// A simple API that assumes that the seq_align has exactly two rows
+/// and you want to create a pairwise with the default policy
+NCBI_XALNMGR_EXPORT
+CRef<CPairwiseAln>
+CreatePairwiseAlnFromSeqAlign(const objects::CSeq_align& seq_align);
                                  
 
 END_NCBI_SCOPE
