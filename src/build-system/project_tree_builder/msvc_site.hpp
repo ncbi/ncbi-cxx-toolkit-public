@@ -54,7 +54,41 @@ struct SLibInfo
     list<string> m_StdLibs;
     list<string> m_Macro;
     list<string> m_Files;
+    string m_libinfokey;
+    bool m_good;
 
+    SLibInfo(void)
+    {
+        valid = false;
+        m_good = false;
+    }
+    SLibInfo(const SLibInfo& info)
+    {
+        valid = info.valid;
+        m_IncludeDir = info.m_IncludeDir;
+        m_LibDefines = info.m_LibDefines;
+        m_LibPath = info.m_LibPath;
+        m_Libs = info.m_Libs;
+        m_StdLibs = info.m_StdLibs;
+        m_Macro = info.m_Macro;
+        m_Files = info.m_Files;
+        m_libinfokey = info.m_libinfokey;
+        m_good = info.m_good;
+    }
+    SLibInfo& operator= (const SLibInfo& info)
+    {
+        valid = info.valid;
+        m_IncludeDir = info.m_IncludeDir;
+        m_LibDefines = info.m_LibDefines;
+        m_LibPath = info.m_LibPath;
+        m_Libs = info.m_Libs;
+        m_StdLibs = info.m_StdLibs;
+        m_Macro = info.m_Macro;
+        m_Files = info.m_Files;
+        m_libinfokey = info.m_libinfokey;
+        m_good = info.m_good;
+        return *this;
+    }
     bool IsEmpty(void) const
     {
         return valid &&
@@ -175,7 +209,7 @@ public:
         return m_Macros;
     }
 
-    static bool IsLibOk(const SLibInfo& lib_info, bool silent = false);
+    bool IsLibOk(const SLibInfo& lib_info, bool silent = false) const;
 
     static string ToOSPath(const string& path);
 
@@ -194,6 +228,7 @@ private:
     list<SLibChoice> m_LibChoices;
 
     CSymResolver m_Macros;
+    mutable map<string,SLibInfo> m_AllLibInfo;
 
     /// cache of directories and their existence
     typedef map<string, bool> TDirectoryExistenceMap;

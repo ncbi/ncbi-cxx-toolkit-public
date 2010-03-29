@@ -256,6 +256,14 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
+    string libinfokey(lib + config.m_Name);
+    map<string,SLibInfo>::const_iterator li;
+    li = m_AllLibInfo.find(libinfokey);
+    if (li != m_AllLibInfo.end()) {
+        *libinfo = li->second;
+        return;
+    }
+
     string section(lib);
     if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         section += '.';
@@ -268,34 +276,39 @@ void CMsvcSite::GetLibInfo(const string& lib,
     libinfo->valid = IsDescribed(section);
     if (!libinfo->valid) {
         libinfo->valid = IsProvided(lib, false);
-        return;
+    } else {
+        string include_str    = ToOSPath(
+            ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config),false));
+        NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
+
+        string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
+        NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
+
+        libinfo->m_LibPath    = ToOSPath(
+            ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config),false));
+
+        string libs_str = GetOpt(m_Registry, section, "LIB", config);
+        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
+
+        libs_str = GetOpt(m_Registry, section, "STDLIB", config);
+        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs);
+
+        string macro_str = GetOpt(m_Registry, section, "MACRO", config);
+        NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
+
+        string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config),false);
+        list<string> tmp;
+        NStr::Split(files_str, LIST_SEPARATOR, tmp);
+        ITERATE( list<string>, f, tmp) {
+            libinfo->m_Files.push_back( ToOSPath(*f));
+        }
     }
 
-    string include_str    = ToOSPath(
-        ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config),false));
-    NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
-
-    string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
-    NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
-
-    libinfo->m_LibPath    = ToOSPath(
-        ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config),false));
-
-    string libs_str = GetOpt(m_Registry, section, "LIB", config);
-    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
-
-    libs_str = GetOpt(m_Registry, section, "STDLIB", config);
-    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs);
-
-    string macro_str = GetOpt(m_Registry, section, "MACRO", config);
-    NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
-
-    string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config),false);
-    list<string> tmp;
-    NStr::Split(files_str, LIST_SEPARATOR, tmp);
-    ITERATE( list<string>, f, tmp) {
-        libinfo->m_Files.push_back( ToOSPath(*f));
-    }
+    libinfo->m_libinfokey = libinfokey;
+    libinfo->m_good = IsLibOk(*libinfo);
+//    m_AllLibInfo.insert( make_pair<string,SLibInfo>(libinfokey,*libinfo));
+    m_AllLibInfo.insert( map<string,SLibInfo>::value_type(libinfokey,*libinfo));
+//    m_AllLibInfo[ libinfokey ] = *libinfo;
 }
 
 
@@ -408,7 +421,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
             SLibInfo lib_info;
             site.GetLibInfo(m_3PartyLib, config, &lib_info);
 
-            if ( !CMsvcSite::IsLibOk(lib_info) ) {
+            if ( !site.IsLibOk(lib_info) ) {
 
                 m_Choice = eLib;
                 break;
@@ -649,8 +662,14 @@ string CMsvcSite::GetPlatformInfo(const string& sysname,
     return result;
 }
 
-bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
+bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
 {
+    map<string,SLibInfo>::const_iterator li = m_AllLibInfo.find(lib_info.m_libinfokey);
+    if (li != m_AllLibInfo.end()) {
+        return lib_info.m_good;
+    }
+
+
     if ( !lib_info.valid || lib_info.IsEmpty() )
         return false;
 #ifndef PSEUDO_XCODE

@@ -402,20 +402,21 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
                                             (const SConfigInfo& cfg_info) const
 {
     list<string> additional_libs;
+    const CMsvcSite& site = GetApp().GetSite();
 
     // Take into account requires, default and makefiles libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
-        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
+        if (site.Is3PartyLibWithChoice(requires)) {
+            if (site.GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
         SLibInfo lib_info;
-        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info) &&
+        site.GetLibInfo(requires, cfg_info, &lib_info);
+        if ( site.IsLibOk(lib_info) &&
             GetApp().GetSite().IsLibEnabledInConfig(requires, cfg_info)) {
             if ( !lib_info.m_Libs.empty() ) {
                 copy(lib_info.m_Libs.begin(), lib_info.m_Libs.end(), 
@@ -491,6 +492,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
                                             (const SConfigInfo& cfg_info) const
 {
     list<string> dir_list;
+    const CMsvcSite& site = GetApp().GetSite();
 // library folder
     const CProjectItemsTree* all_projects = GetApp().GetIncompleteBuildTree();
     if (all_projects) {
@@ -518,15 +520,15 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
-        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
+        if (site.Is3PartyLibWithChoice(requires)) {
+            if (site.GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
         SLibInfo lib_info;
-        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info) &&
-             GetApp().GetSite().IsLibEnabledInConfig(requires, cfg_info) ) {
+        site.GetLibInfo(requires, cfg_info, &lib_info);
+        if ( site.IsLibOk(lib_info) &&
+             site.IsLibEnabledInConfig(requires, cfg_info) ) {
             if ( !lib_info.m_LibPath.empty() ) {
                 dir_list.push_back(lib_info.m_LibPath);
             }
