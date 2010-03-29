@@ -1,0 +1,4 @@
+BLAST Gumbel parameters computing library
+
+The NCBI Gumbel parameters library computes Gumbel parameters used
+for  Basic Local Alignment Search Tool (BLAST) statics.
