@@ -31,11 +31,11 @@
  */
 
 /// @file stream_util.hpp
-/// Compression/decompression C++ I/O stream wrappers.
+/// C++ I/O stream wrappers to compress/decompress data on-the-fly.
 ///
-/// CCompressIStream    - input compression stream.
-/// CCompressOStream    - output compression stream.
-/// CDecompressIStream  - input decompression stream.
+/// CCompressIStream    - input  compression   stream.
+/// CCompressOStream    - output compression   stream.
+/// CDecompressIStream  - input  decompression stream.
 /// CDecompressOStream  - output decompression stream.
 
 
@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CCompressStream_Defines --
+/// CCompressStream --
 ///
 /// Base stream class to hold common definitions and methods.
 
@@ -76,19 +76,6 @@ public:
     enum EDefaultFlags {
         fDefault = (1<<15)    ///< Use algorithm-specific defaults
     };
-
-protected:
-    // Internal methods
-
-    // Type of initialization
-    enum EInitType { 
-        eCompress,
-        eDecompress
-    };
-    // Create stream processor on the base of passed parameters
-    CCompressionStreamProcessor* x_Init(EInitType            type,
-                                        EMethod              method,
-                                        ICompression::TFlags flags);
 };
 
 
@@ -102,27 +89,23 @@ class NCBI_XUTIL_EXPORT CCompressIStream : public CCompressStream,
                                            public CCompressionIStream
 {
 public:
-    /// Constructor
+    /// Create an input stream that compresses data read from an underlying
+    /// input stream.
     ///
-    /// Create input compression stream. On reading from created stream,
-    /// data will be readed from underlying "stream", compressed with
-    /// specified "method" and carried to called process.
+    /// Reading from CCompressIStream results in data being read from an
+    /// underlying "stream", compressed using the specified "method" and
+    /// algorithm-specific "flags", and returned to the calling code in
+    /// compressed form.
     /// @param stream
-    ///   Stream used to read data for compression.
-    ///   Note that this stream should be open in binary mode.
+    ///   The underlying input stream.
+    ///   NOTE: This stream should be opened in binary mode!
     /// @param method
-    ///   Method used for data compression.
+    ///   The method to use for data compression.
     /// @param flags
-    ///   By default predefined algorithm-specific flags will be used,
-    ///   but they can be extended with this parameter.
+    ///   By default, predefined algorithm-specific flags will be used,
+    ///   but they can be overridden by using this parameter.
     CCompressIStream(CNcbiIstream& stream, EMethod method, 
-                     ICompression::TFlags flags = fDefault)
-    {
-        CCompressionStreamProcessor* processor = x_Init(eCompress, method, flags);
-        if (processor) {
-            Create(stream, processor, CCompressionStream::fOwnProcessor);
-        }
-    }
+                     ICompression::TFlags flags = fDefault);
 
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
@@ -135,35 +118,31 @@ public:
 ///
 /// Output compression stream.
 /// The output stream will receive all data only after finalization.
-/// So, do not forget to call Finalize() after writing last data into this
-/// stream. Otherwise, finalization will be made only in the stream's
+/// So, do not forget to call Finalize() after the last data is written to
+/// this stream. Otherwise, finalization will occur only in the stream's
 /// destructor.
 
 class NCBI_XUTIL_EXPORT CCompressOStream : public CCompressStream,
                                            public CCompressionOStream
 {
 public:
-    /// Constructor
+    /// Create an output stream that compresses data written to it.
     ///
-    /// Create output compression stream. On writing to created stream,
-    /// data will be compressed with specified "method" and written 
-    /// into underlying "stream".
+    /// Writing to CCompressOStream results in the data written by the
+    /// calling code being compressed using the specified "method" and
+    /// algorithm-specific "flags", and written to an underlying "stream"
+    /// in compressed form.
     /// @param stream
-    ///   Stream used to write compressed data.
-    ///   Note that in most cases this stream should be open in binary mode.
+    ///   The underlying output stream.
+    ///   NOTE: This stream should be opened in binary mode!
     /// @param method
-    ///   Method used for data compression.
+    ///   The method to use for data compression.
     /// @param flags
-    ///   By default predefined algorithm-specific flags will be used,
-    ///   but they can be extended with this parameter.
+    ///   By default, predefined algorithm-specific flags will be used,
+    ///   but they can be overridden by using this parameter.
     CCompressOStream(CNcbiOstream& stream, EMethod method, 
-                     ICompression::TFlags flags = fDefault)
-    {
-        CCompressionStreamProcessor* processor = x_Init(eCompress, method, flags);
-        if (processor) {
-            Create(stream, processor, CCompressionStream::fOwnProcessor);
-        }
-    }
+                     ICompression::TFlags flags = fDefault);
+
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
@@ -179,28 +158,24 @@ class NCBI_XUTIL_EXPORT CDecompressIStream : public CCompressStream,
                                              public CCompressionIStream
 {
 public:
-
-    /// Constructor
+    /// Create an input stream that decompresses data read from an underlying
+    /// input stream.
     ///
-    /// Create input decompression stream. On reading from created stream,
-    /// data will be readed from underlying "stream", decompressed with
-    /// specified "method" and carried to called process.
+    /// Reading from CDecompressIStream results in data being read from an
+    /// underlying "stream", decompressed using the specified "method" and
+    /// algorithm-specific "flags", and returned to the calling code in
+    /// decompressed form.
     /// @param stream
-    ///   Stream with compressed data.
-    ///   Note that this stream should be open in binary mode.
+    ///   The underlying input stream, having compressed data.
+    ///   NOTE: This stream should be opened in binary mode!
     /// @param method
-    ///   Method used for data decompression.
+    ///   The method to use for data decompression.
     /// @param flags
-    ///   By default predefined algorithm-specific flags will be used,
-    ///   but they can be extended with this parameter.
+    ///   By default, predefined algorithm-specific flags will be used,
+    ///   but they can be overridden by using this parameter.
     CDecompressIStream(CNcbiIstream& stream, EMethod method, 
-                       ICompression::TFlags flags = fDefault)
-    {
-        CCompressionStreamProcessor* processor = x_Init(eDecompress, method, flags);
-        if (processor) {
-            Create(stream, processor, CCompressionStream::fOwnProcessor);
-        }
-    }
+                       ICompression::TFlags flags = fDefault);
+
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
@@ -212,35 +187,31 @@ public:
 ///
 /// Output decompression stream.
 /// The output stream will receive all data only after finalization.
-/// So, do not forget to call Finalize() after writing last compressed data
-/// into this stream. Otherwise, finalization will be made only in
-/// the stream's destructor.
+/// So, do not forget to call Finalize() after the last data is written to
+/// this stream. Otherwise, finalization will occur only in the stream's
+/// destructor.
 
 class NCBI_XUTIL_EXPORT CDecompressOStream : public CCompressStream,
                                              public CCompressionOStream
 {
 public:
-    /// Constructor
+    /// Create an output stream that decompresses data written to it.
     ///
-    /// Create output decompression stream. On writing to created stream
-    /// a data that compressed with specified "method", it will be 
-    /// decompressed first, and then written into underlying "stream".
+    /// Writing to CDecompressOStream results in the data written by the
+    /// calling code being decompressed using the specified "method" and
+    /// algorithm-specific "flags", and written to an underlying "stream"
+    /// in decompressed form.
     /// @param stream
-    ///   Stream used to write decompressed data.
-    ///   Note that in most cases this stream should be open in binary mode.
+    ///   The underlying output stream.
+    ///   NOTE: This stream should be opened in binary mode!
     /// @param method
-    ///   Method used for data compression.
+    ///   The method to use for data compression.
     /// @param flags
-    ///   By default predefined algorithm-specific flags will be used,
-    ///   but they can be extended with this parameter.
+    ///   By default, predefined algorithm-specific flags will be used,
+    ///   but they can be overridden by using this parameter.
     CDecompressOStream(CNcbiOstream& stream, EMethod method, 
-                       ICompression::TFlags flags = fDefault)
-    {
-        CCompressionStreamProcessor* processor = x_Init(eDecompress, method, flags);
-        if (processor) {
-            Create(stream, processor, CCompressionStream::fOwnProcessor);
-        }
-    }
+                       ICompression::TFlags flags = fDefault);
+
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)this != 0);
 };

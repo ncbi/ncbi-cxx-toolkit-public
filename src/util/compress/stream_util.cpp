@@ -42,15 +42,22 @@ const ICompression::TFlags kDefault_GZipFile = CZipCompression::fCheckFileHeader
 const ICompression::TFlags kDefault_ConcatenatedGZipFile = CZipCompression::fGZip;
 
 
-CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
-                                                     EMethod              method, 
-                                                     ICompression::TFlags flags)
+// Type of initialization
+enum EInitType { 
+    eCompress,
+    eDecompress
+};
+
+
+CCompressionStreamProcessor* s_Init(EInitType                type,
+                                    CCompressStream::EMethod method, 
+                                    ICompression::TFlags     flags)
 {
     CCompressionStreamProcessor* processor = 0;
 
     switch(method) {
-    case eBZip2:
-        if (flags = fDefault) {
+    case CCompressStream::eBZip2:
+        if (flags == CCompressStream::fDefault) {
             flags = kDefault_BZip2;
         } else {
             flags |= kDefault_BZip2;
@@ -62,9 +69,9 @@ CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
         }
         break;
 
-    case eLZO:
+    case CCompressStream::eLZO:
 #if defined(HAVE_LIBLZO)
-        if (flags = fDefault) {
+        if (flags == CCompressStream::fDefault) {
             flags = kDefault_LZO;
         } else {
             flags |= kDefault_LZO;
@@ -77,8 +84,8 @@ CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
 #endif 
         break;
 
-    case eZip:
-        if (flags = fDefault) {
+    case CCompressStream::eZip:
+        if (flags == CCompressStream::fDefault) {
             flags = kDefault_Zip;
         } else {
             flags |= kDefault_Zip;
@@ -90,8 +97,8 @@ CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
         }
         break;
 
-    case eGZipFile:
-        if (flags = fDefault) {
+    case CCompressStream::eGZipFile:
+        if (flags == CCompressStream::fDefault) {
             flags = kDefault_GZipFile;
         } else {
             flags |= kDefault_GZipFile;
@@ -103,8 +110,8 @@ CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
         }
         break;
 
-    case eConcatenatedGZipFile:
-        if (flags = fDefault) {
+    case CCompressStream::eConcatenatedGZipFile:
+        if (flags == CCompressStream::fDefault) {
             flags = kDefault_ConcatenatedGZipFile;
         } else {
             flags |= kDefault_ConcatenatedGZipFile;
@@ -118,6 +125,46 @@ CCompressionStreamProcessor* CCompressStream::x_Init(EInitType            type,
     }
 
     return processor;
+}
+
+
+CCompressIStream::CCompressIStream(CNcbiIstream& stream, EMethod method, 
+                                   ICompression::TFlags flags)
+{
+    CCompressionStreamProcessor* processor = s_Init(eCompress, method, flags);
+    if (processor) {
+        Create(stream, processor, CCompressionStream::fOwnProcessor);
+    }
+}
+
+
+CCompressOStream::CCompressOStream(CNcbiOstream& stream, EMethod method, 
+                                   ICompression::TFlags flags)
+{
+    CCompressionStreamProcessor* processor = s_Init(eCompress, method, flags);
+    if (processor) {
+        Create(stream, processor, CCompressionStream::fOwnProcessor);
+    }
+}
+
+
+CDecompressIStream::CDecompressIStream(CNcbiIstream& stream, EMethod method, 
+                       ICompression::TFlags flags)
+{
+    CCompressionStreamProcessor* processor = s_Init(eDecompress, method, flags);
+    if (processor) {
+        Create(stream, processor, CCompressionStream::fOwnProcessor);
+    }
+}
+
+
+CDecompressOStream::CDecompressOStream(CNcbiOstream& stream, EMethod method, 
+                                       ICompression::TFlags flags)
+{
+    CCompressionStreamProcessor* processor = s_Init(eDecompress, method, flags);
+    if (processor) {
+        Create(stream, processor, CCompressionStream::fOwnProcessor);
+    }
 }
 
 
