@@ -434,6 +434,7 @@ void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand
 
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
 {
+    if (GnomonNeeded()) {
 
     models.sort(s_AlignSeqOrder);
 
@@ -472,7 +473,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
 
     Predict(left, TSignedSeqPos(m_gnomon->GetSeq().size())-1, il, aligns.end(), models,
             (left!=0 || wall), wall, left!=0, false, bad_aligns);
-
+    }
     NON_CONST_ITERATE(TGeneModelList, it, models) {
 #ifdef _DEBUG
         {
