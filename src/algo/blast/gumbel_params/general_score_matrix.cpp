@@ -37,7 +37,7 @@ Contents: Implementation of generalized score matrix
 #include <ncbi_pch.hpp>
 
 #include <math.h>
-#include <algo/blast/core/ncbi_std.h>
+//#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/gumbel_params/general_score_matrix.hpp>
 
 
@@ -127,8 +127,8 @@ CGeneralScoreMatrix::CGeneralScoreMatrix(const vector<Int4>& vals,
                                          const char* order)
     : m_NumResidues((unsigned int)sqrt((double)vals.size()))
 {
-    ASSERT(vals.size() > 0);
-    ASSERT(m_NumResidues * m_NumResidues == vals.size());
+    _ASSERT(vals.size() > 0);
+    _ASSERT(m_NumResidues * m_NumResidues == vals.size());
    
     if (order) {
         m_ResidueOrder=new char[m_NumResidues];    
