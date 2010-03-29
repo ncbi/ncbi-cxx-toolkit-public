@@ -234,11 +234,10 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
                 prev_compartment_loc->GetId()->Match(*subj_id) &&
                 prev_compartment_loc->GetStrand()==subj_loc->GetStrand()
                ) {
-                TSeqPos prev_b = prev_compartment_loc->GetStart(eExtreme_Positional);
                 TSeqPos prev_e = prev_compartment_loc->GetStop(eExtreme_Positional);
-                _ASSERT(prev_b < b && prev_e < e);
+                _ASSERT(prev_e - max_extent < boxPtr[2]);
                 if (prev_e >= b) {
-                    prev_e = (prev_e + b)/2;
+                    prev_e = (prev_e - max_extent + boxPtr[2])/2;
                     b = prev_e+1;
                     _ASSERT(b <= boxPtr[2]);
 
