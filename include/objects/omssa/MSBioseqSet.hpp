@@ -42,6 +42,7 @@
 
 // generated includes
 #include <objects/omssa/MSBioseqSet_.hpp>
+#include <objects/omssa/MSBioseq.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 // generated classes
