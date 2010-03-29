@@ -599,6 +599,16 @@ private:
                             TSeqPos&                     prod_start,
                             TSeqPos&                     prod_len,
                             ENa_strand                   prod_strand);
+    void x_AddExonPartsMapping(TSeqPos&        mapping_len,
+                               ESplicedRow     to_row,
+                               const CSeq_id&  gen_id,
+                               TSeqPos&        gen_start,
+                               TSeqPos&        gen_len,
+                               ENa_strand      gen_strand,
+                               const CSeq_id&  prod_id,
+                               TSeqPos&        prod_start,
+                               TSeqPos&        prod_len,
+                               ENa_strand      prod_strand);
     // Helper method to simplify getting exon part length regardless of
     // its type.
     static TSeqPos sx_GetExonPartLength(const CSpliced_exon_chunk& part);

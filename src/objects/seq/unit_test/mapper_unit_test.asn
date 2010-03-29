@@ -42584,16 +42584,6 @@ Seq-loc ::= whole gi 4
 Seq-loc ::= packed-int {
   {
     from 100,
-    to 129,
-    id gi 5
-  },
-  {
-    from 130,
-    to 149,
-    id gi 5
-  },
-  {
-    from 150,
     to 174,
     id gi 5,
     fuzz-to lim gt
@@ -42611,11 +42601,6 @@ Seq-loc ::= packed-int {
   },
   {
     from 300,
-    to 319,
-    id gi 5
-  },
-  {
-    from 320,
     to 349,
     id gi 5,
     fuzz-to lim gt
@@ -42628,22 +42613,10 @@ Seq-loc ::= int {
   to 70,
   id gi 4
 }
-Seq-loc ::= packed-int {
-  {
-    from 105,
-    to 129,
-    id gi 5
-  },
-  {
-    from 130,
-    to 149,
-    id gi 5
-  },
-  {
-    from 150,
-    to 170,
-    id gi 5
-  }
+Seq-loc ::= int {
+  from 105,
+  to 170,
+  id gi 5
 }
 
 -- Interval, split
@@ -42655,16 +42628,6 @@ Seq-loc ::= int {
 Seq-loc ::= packed-int {
   {
     from 105,
-    to 129,
-    id gi 5
-  },
-  {
-    from 130,
-    to 149,
-    id gi 5
-  },
-  {
-    from 150,
     to 174,
     id gi 5,
     fuzz-to lim gt
@@ -42682,11 +42645,6 @@ Seq-loc ::= packed-int {
   },
   {
     from 300,
-    to 319,
-    id gi 5
-  },
-  {
-    from 320,
     to 349,
     id gi 5,
     fuzz-to lim gt

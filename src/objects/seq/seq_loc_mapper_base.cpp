@@ -677,6 +677,13 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                         "Sequence types (nuc to prot) are inconsistent with "
                         "location lengths");
                 }
+                // Report overhanging bases if any
+                if (src_total_len % 3 != 0) {
+                    ERR_POST_X(28, Warning <<
+                        "Source and destination lengths do not match, "
+                        "dropping " << src_total_len % 3 <<
+                        " overhanging bases on source location");
+                }
             }
             else if (dst_total_len/3 == src_total_len) {
                 if (src_type == eSeq_unknown) {
@@ -691,6 +698,13 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     NCBI_THROW(CAnnotMapperException, eBadLocation,
                         "Sequence types (prot to nuc) are inconsistent with "
                         "location lengths");
+                }
+                // Report overhanging bases if any
+                if (dst_total_len % 3 != 0) {
+                    ERR_POST_X(29, Warning <<
+                        "Source and destination lengths do not match, "
+                        "dropping " << dst_total_len % 3 <<
+                        " overhanging bases on destination location");
                 }
             }
             else {
@@ -1338,6 +1352,56 @@ TSeqPos CSeq_loc_Mapper_Base::sx_GetExonPartLength(const CSpliced_exon_chunk& pa
 
 
 void CSeq_loc_Mapper_Base::
+x_AddExonPartsMapping(TSeqPos&        mapping_len,
+                      ESplicedRow     to_row,
+                      const CSeq_id&  gen_id,
+                      TSeqPos&        gen_start,
+                      TSeqPos&        gen_len,
+                      ENa_strand      gen_strand,
+                      const CSeq_id&  prod_id,
+                      TSeqPos&        prod_start,
+                      TSeqPos&        prod_len,
+                      ENa_strand      prod_strand)
+{
+    if (mapping_len == 0) return;
+    bool rev_gen = IsReverse(gen_strand);
+    bool rev_prod = IsReverse(prod_strand);
+    TSeqPos pgen_len = mapping_len;
+    TSeqPos pprod_len = mapping_len;
+    // Calculate starts depending on the strand.
+    TSeqPos pgen_start = rev_gen ?
+        gen_start + gen_len - mapping_len : gen_start;
+    TSeqPos pprod_start = rev_prod ?
+        prod_start + prod_len - mapping_len : prod_start;
+    // Create the mapping.
+    if (to_row == eSplicedRow_Prod) {
+        x_NextMappingRange(
+            gen_id, pgen_start, pgen_len, gen_strand,
+            prod_id, pprod_start, pprod_len, prod_strand,
+            0, 0);
+    }
+    else {
+        x_NextMappingRange(
+            prod_id, pprod_start, pprod_len, prod_strand,
+            gen_id, pgen_start, pgen_len, gen_strand,
+            0, 0);
+    }
+    // Since the lengths are always the same, both source and
+    // destination ranges must be used in one iteration.
+    _ASSERT(pgen_len == 0  && pprod_len == 0);
+    if ( !rev_gen ) {
+        gen_start += mapping_len;
+    }
+    gen_len -= mapping_len;
+    if ( !rev_prod ) {
+        prod_start += mapping_len;
+    }
+    gen_len -= mapping_len;
+    mapping_len = 0;
+}
+
+
+void CSeq_loc_Mapper_Base::
 x_IterateExonParts(const CSpliced_exon::TParts& parts,
                    ESplicedRow                  to_row,
                    const CSeq_id&               gen_id,
@@ -1352,37 +1416,24 @@ x_IterateExonParts(const CSpliced_exon::TParts& parts,
     // Parse a single exon, create mapping for each part.
     bool rev_gen = IsReverse(gen_strand);
     bool rev_prod = IsReverse(prod_strand);
+    // Merge parts participating in the mapping (match, mismatch, diag).
+    // Calculate total length of the merged parts.
+    TSeqPos mapping_len = 0;
     ITERATE(CSpliced_exon::TParts, it, parts) {
         const CSpliced_exon_chunk& part = **it;
         TSeqPos plen = sx_GetExonPartLength(part);
         // Only match, mismatch and diag are used for mapping.
         // Ignore insertions the same way as gaps in other alignment types.
         if ( part.IsMatch() || part.IsMismatch() || part.IsDiag() ) {
-            TSeqPos pgen_len = plen;
-            TSeqPos pprod_len = plen;
-            // Calculate starts depending on the strand.
-            TSeqPos pgen_start = rev_gen ?
-                gen_start + gen_len - pgen_len : gen_start;
-            TSeqPos pprod_start = rev_prod ?
-                prod_start + prod_len - pprod_len : prod_start;
-            // Create the mapping.
-            if (to_row == eSplicedRow_Prod) {
-                x_NextMappingRange(
-                    gen_id, pgen_start, pgen_len, gen_strand,
-                    prod_id, pprod_start, pprod_len, prod_strand,
-                    0, 0);
-            }
-            else {
-                x_NextMappingRange(
-                    prod_id, pprod_start, pprod_len, prod_strand,
-                    gen_id, pgen_start, pgen_len, gen_strand,
-                    0, 0);
-            }
-            // Since the lengths are always the same, both source and
-            // destination ranges must be used in one iteration.
-            _ASSERT(pgen_len == 0  && pprod_len == 0);
+            mapping_len += plen;
+            continue;
         }
-        // Adjust starts and lengths. This will also skip gaps (insertions).
+        // Convert any collected ranges to a new mapping. Adjust starts and
+        // lengths.
+        x_AddExonPartsMapping(mapping_len, to_row,
+            gen_id, gen_start, gen_len, gen_strand,
+            prod_id, prod_start, prod_len, prod_strand);
+        // Adjust starts and lengths to skip non-participating parts.
         if (!rev_gen  &&  !part.IsProduct_ins()) {
             gen_start += plen;
         }
@@ -1396,6 +1447,11 @@ x_IterateExonParts(const CSpliced_exon::TParts& parts,
             prod_len -= plen;
         }
     }
+    // Convert any remaining ranges to a new mapping. If mapping_len is zero,
+    // nothing will be done.
+    x_AddExonPartsMapping(mapping_len, to_row,
+        gen_id, gen_start, gen_len, gen_strand,
+        prod_id, prod_start, prod_len, prod_strand);
 }
 
 
