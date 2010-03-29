@@ -96,3 +96,7 @@ version 2.5.0
 Added special project type to allow pre-generation of serialization classes
 during configuration stage
 
+March 25, 2010
+version 2.5.1
+Added option to request generation of dependencies on datatool.
+
