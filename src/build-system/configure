@@ -7663,7 +7663,7 @@ else
    # would otherwise be illegal....
    case "$host_os:$host_cpu:$bit64_sfx" in
       # linux*:*86:*) ;;
-      linux* | darwin* | solaris*:64 )
+      linux* | darwin* | solaris*:64 | *bsd* )
         CFLAGS="$CFLAGS $CFLAGS_DLL"
         CFLAGS_DLL=
         CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
