@@ -124,7 +124,7 @@ void CMkIndexApplication::Init()
             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint(
             "nmer",
-            new CArgAllow_Integers( 1, kMax_Int ) );
+            new CArgAllow_Integers( 8, 15 ) );
     SetupArgDescriptions( arg_desc.release() );
 }
 
