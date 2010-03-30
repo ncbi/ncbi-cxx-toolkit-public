@@ -16,10 +16,6 @@
 # the application listings in post_build/win/{make_win.py,ncbi-blast.nsi},
 # post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
 APP: gumbelparams
-SRC: gumbel_params pvalues general_score_matrix sls_alp sls_alp_data
-SRC: sls_alp_regression sls_alp_sim sls_pvalues njn_localmaxstatmatrix
-SRC: njn_localmaxstat njn_localmaxstatutil njn_ioutil njn_matrix
-SRC: njn_stringutil njn_dynprogprob njn_dynprogproblim njn_dynprogprobproto
 
 # Each line describes a single configuration
 # The format is as follows:
