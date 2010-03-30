@@ -9,10 +9,7 @@ util/tables$
 util/bitset$
 util/regexp$
 util/xregexp$
-objects
--objects/.*/test
--objects/.*/demo
--objects/.*/unit_test
+objects$
 serial$
 serial/impl$
 serial/datatool$
