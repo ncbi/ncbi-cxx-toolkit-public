@@ -204,6 +204,7 @@ sources.nonusr:
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
+	@$(LIBP_BRA) export-headers $(LIBP_KET)
 
 all.real:
 	@$(MAKE) $(MFLAGS_NR) all.usr
