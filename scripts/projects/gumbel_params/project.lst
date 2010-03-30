@@ -5,3 +5,6 @@ algo/blast/gumbel_params
 util$
 util/tables$
 objects
+-objects/.*/test
+-objects/.*/demo
+-objects/.*/unit_test
