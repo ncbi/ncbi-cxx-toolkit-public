@@ -432,6 +432,7 @@ BIGU	s	Universidad de San Carlos de Guatemala, Departamento de Botanica
 BIL	s	Forest Research Institute, Natural Forest Department
 BILAS	s	Institute of Botany
 BIM	s	Birmingham Natural History and Microscopical Society
+BIM<BLR>	c	Belarus National Academy of Sciences
 BING	s	State University of New York, Biological Sciences Department
 BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologia (Botanica)
 BioCC	c	BioCC BioCen Culture Collection
@@ -642,6 +643,7 @@ C	s	Botanical Museum, University of Copenhagen
 CA	s	Chicago Academy of Sciences
 CABI	c	CABI Genetic Resource Collection
 CACA	s	Carlsbad Caverns National Park
+CACC<CHN>	c	China Antibiotic Culture Collection Center
 CACS	s	Chicago Academy of Sciences, Department of Biology
 CAES	s	Connecticut Agriculture Experiment Station
 CAF	s	Chinese Academy of Forestry
@@ -2735,6 +2737,7 @@ KEF	s	Kunming Edible Fungi Institute
 KEI	s	University of Transkei, Botany Department
 KEIU	s	Korea University
 KEM	s	University of Kemerovo, Department of Botany
+KEMC<KOR>	c	Korea Environmental Microorganism Center, Kyonggi University
 KEMH	c	KEMH/PMH Culture collection
 KEN	s	Longwood Gardens, Horticulture Department
 KEND	s	Kendal Natural History Society
@@ -4407,6 +4410,7 @@ PGL	s	Preussiche Geologische Landesanstalt
 PGM	s	Pacific Grove Museum of Natural History
 PGMNH	s	Pacific Grove Museum of Natural History
 PGR	c	Plant Gene Resources of Canada national and international base and active collections
+PGSC<USA-NC>	c	Pseudomonas Genetic Stock Center
 PH	s	Academy of Natural Sciences, Botany Department
 PHA	s	Pharmaceutical Society of Great Britain
 PHBL	c	Philip Harris Biological Ltd.
