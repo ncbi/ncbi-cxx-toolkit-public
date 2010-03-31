@@ -1396,7 +1396,7 @@ x_AddExonPartsMapping(TSeqPos&        mapping_len,
     if ( !rev_prod ) {
         prod_start += mapping_len;
     }
-    gen_len -= mapping_len;
+    prod_len -= mapping_len;
     mapping_len = 0;
 }
 
