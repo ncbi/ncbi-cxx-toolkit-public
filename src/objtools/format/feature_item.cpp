@@ -1070,30 +1070,15 @@ void CFeatureItem::x_AddQualExpInv(
         return;
     }
 
-    if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
-        x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
-        return;
-    }
-
     string value;
-    CSeq_feat::TQual gbQuals = m_Feat->GetQual();
-    for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
-        it != gbQuals.end(); ++it ) 
-    {
-        //
-        //  Idea:
-        //  If a gbqual specifying the inference exists then bail out and let
-        //  gbqual processing take care of this qualifier. If no such gbqual is
-        //  present then add a default inference qualifier.
-        //
-        if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
-            continue;
+    if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
+        if ( ! x_GetGbValue( "experiment", value ) ) {
+            x_AddQual( eFQ_experiment, new CFlatExperimentQVal() );
         }
-        if ( (*it)->GetQual() == "inference" ) {
-            return;
-        }          
     }
-    x_AddQual(eFQ_inference, new CFlatInferenceQVal( "" ));
+    else if ( ! x_GetGbValue( "inference", value ) ) {
+        x_AddQual(eFQ_inference, new CFlatInferenceQVal( "" ));
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -1217,7 +1202,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 CSeqFeatData::e_Gene,
                 sequence::eOverlap_Contained,
                 ctx.GetScope(),
-                fBestFeat_NoExpensive);
+                fBestFeat_Defaults/*fBestFeat_NoExpensive*/);
         } 
         else {
             s_feat = GetOverlappingGene(GetLoc(), ctx.GetScope());
@@ -2332,6 +2317,9 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
+//    if ( ! gene_ref ) {
+//        return;
+//    }
 
     bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
@@ -4617,6 +4605,35 @@ void CFeatureItemGff::x_AddQualsRna(
         }
     } catch (CObjmgrUtilException&) {}
 }
+
+//  ----------------------------------------------------------------------------
+bool CFeatureItem::x_GetGbValue(
+    const string& key,
+    string& value ) const
+//  ----------------------------------------------------------------------------
+{
+    CSeq_feat::TQual gbQuals = m_Feat->GetQual();
+    for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
+        it != gbQuals.end(); ++it ) 
+    {
+        //
+        //  Idea:
+        //  If a gbqual specifying the inference exists then bail out and let
+        //  gbqual processing take care of this qualifier. If no such gbqual is
+        //  present then add a default inference qualifier.
+        //
+        if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
+            continue;
+        }
+        if ( (*it)->GetQual() == key ) {
+            value = (*it)->GetVal();
+            return true;
+        }          
+    }
+    return false;
+}
+
+    
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

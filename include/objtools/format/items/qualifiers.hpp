@@ -364,9 +364,12 @@ private:
 class NCBI_FORMAT_EXPORT CFlatExperimentQVal : public IFlatQVal
 {
 public:
-    CFlatExperimentQVal() { }
+    CFlatExperimentQVal(
+        const string&  = "" );
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
+protected:
+    string m_str;
 };
 
 

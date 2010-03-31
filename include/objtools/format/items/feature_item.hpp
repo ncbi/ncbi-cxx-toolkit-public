@@ -272,6 +272,9 @@ protected:
         return const_cast<const TQuals&>(m_Quals).LowerBound(slot);
     }
     void x_DropIllegalQuals(void) const;
+    bool x_GetGbValue(
+        const string&,
+        string& ) const;
 
     // format
     void x_FormatQuals(CFlatFeature& ff) const;

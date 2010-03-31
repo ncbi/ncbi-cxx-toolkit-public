@@ -486,12 +486,19 @@ void CFlatCodonQVal::Format(TFlatQuals& q, const string& name, CBioseqContext& c
     x_AddFQ(q, name, "(seq:\"" + m_Codon + "\",aa:" + m_AA + ')');
 }
 
+CFlatExperimentQVal::CFlatExperimentQVal(
+    const string& value )
+    : m_str( value ) 
+{
+    if ( m_str.empty() ) {
+        m_str = "experimental evidence, no additional details recorded";
+    }
+}
 
 void CFlatExperimentQVal::Format(TFlatQuals& q, const string& name,
                           CBioseqContext&, IFlatQVal::TFlags) const
 {
-    const char* s = "experimental evidence, no additional details recorded";
-    x_AddFQ(q, name, s, CFormatQual::eQuoted);
+    x_AddFQ(q, name, m_str.c_str(), CFormatQual::eQuoted);
 }
 
 
