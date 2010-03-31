@@ -278,7 +278,6 @@ CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
     :  IFlatQVal(&kSpace, &kSemicolon),
        m_Value(value), m_Style(style), m_AddPeriod(0)
 {
-	MakeLegalFlatFileString( m_Value );
     NStr::TruncateSpacesInPlace(m_Value);
 }
 
@@ -292,7 +291,6 @@ CFlatStringQVal::CFlatStringQVal
         m_Value(value),
         m_Style(style), m_AddPeriod(0)
 {
-	MakeLegalFlatFileString( m_Value );
     NStr::TruncateSpacesInPlace(m_Value);
 }
 

@@ -324,26 +324,6 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 }
 
 
-void MakeLegalFlatFileString( string& str )
-{
-	// NB: The fixups below should never be necessary if the input string has
-	//	ever seen BasicCleanup. In case it hasn't, we'll do the minimum nece-
-	//	ssary to produce "legal" output.
-
-	// A flatfile string must not contain double quotes. Instead, we will turn 
-	//  " into a '.
-
-	size_t doubleQuote = NStr::Find( str, "\"" );
-	if ( NPOS == doubleQuote ) {
-		return;
-	}
-	while ( doubleQuote != NPOS ) {
-		str[ doubleQuote ] = '\'';
-		doubleQuote = NStr::Find( str, "\"", doubleQuote+1 );
-	}
-}
-
-
 static bool s_IsWholeWord(const string& str, size_t pos)
 {
     // NB: To preserve the behavior of the C toolkit we only test on the left.

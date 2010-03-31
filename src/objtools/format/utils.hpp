@@ -73,7 +73,6 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 void TrimSpaces(string& str, int indent = 0);
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
-void MakeLegalFlatFileString( string& str );
 
 enum EAccValFlag
 {
