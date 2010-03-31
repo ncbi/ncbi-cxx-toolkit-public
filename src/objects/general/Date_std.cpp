@@ -162,6 +162,7 @@ void CDate_std::GetDate(string* label, const string& format) const
         "0", "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     };
+    static const int kNumMonths = sizeof (kMonths) / sizeof (char*);
 
     if (!label) {
         return;
@@ -254,7 +255,12 @@ void CDate_std::GetDate(string* label, const string& format) const
 
         if (value >= 0) {
             if (*it == 'N') { // special cases
-                const char* name = kMonths[value];
+                const char* name;
+                if (value >= kNumMonths) {
+                    name = "inv";
+                } else {
+                    name = kMonths[value];
+                }
                 if (length > 0) {
                     label->append(name, length);
                 } else {
