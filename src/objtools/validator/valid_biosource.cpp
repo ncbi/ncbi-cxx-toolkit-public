@@ -809,10 +809,10 @@ void CValidError_imp::ValidateBioSource
 			    countryname = countryname.substr(0, pos);
 		    }
 		    string test_country = countryname;
-            bool strict = TRUE;
+            bool strict = true;
 		    pos = NStr::Find(test_country, ":");
 		    if (pos != string::npos) {
-                strict = FALSE;
+                strict = false;
 			    test_country = test_country.substr(0, pos);              
 		    }
 		    if (lat_lon_map.HaveLatLonForCountry(test_country)) {
