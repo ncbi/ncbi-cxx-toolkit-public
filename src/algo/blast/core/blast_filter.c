@@ -415,10 +415,19 @@ BlastFilteringOptionsToString(const SBlastFilterOptions* filtering_options)
 
     /* Mask at hash is a modifier for other filtering options, as such it
      * doesn't make sense to apply it by itself */
-    if (SBlastFilterOptionsMaskAtHash(filtering_options) && 
-        strlen(retval) != 0 ) {
-        if (!s_SafeStrCat(&retval, &retval_size, "m;")) {
-            return 0;
+    if (SBlastFilterOptionsMaskAtHash(filtering_options)) {
+        if (strlen(retval) != 0) {
+            /* Add mask at hash as a modifier for other filtering options */
+            if (!s_SafeStrCat(&retval, &retval_size, "m;")) {
+                return 0;
+            }
+        } else {
+            /* We still need to set "m" in a filter string (WB-391, WB-394) */
+            /* The string below can be modified into "mF" or "mL" or
+               whatever is decided to be the conventional meaning */
+            if (!s_SafeStrCat(&retval, &retval_size, "m;")) {
+                return 0;
+            }
         }
     }
 

@@ -1610,7 +1610,15 @@ BOOST_AUTO_TEST_CASE(FilterOptionsToStringFromNULL)
     TAutoCharPtr retval = BlastFilteringOptionsToString(NULL);
     BOOST_REQUIRE(strcmp(retval.get(), "F") == 0);
 }
-    
+
+BOOST_AUTO_TEST_CASE(FilterOptionsToStringFromMaskAtHashOnly)
+{
+    SBlastFilterOptions filtering_options = { '\0' };
+    filtering_options.mask_at_hash = true;
+    TAutoCharPtr retval = BlastFilteringOptionsToString(&filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "m;") == 0);
+}
+        
 BOOST_AUTO_TEST_CASE(FilterOptionsToStringLargeData)
 {
     SBlastFilterOptions filtering_options = { '\0' };
