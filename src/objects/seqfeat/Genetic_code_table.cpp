@@ -197,6 +197,9 @@ void CTrans_table::x_InitFsaTransl (const string *ncbieaa,
                                             } else if ((aa == 'Z' || aa == 'E' || aa == 'Q') &&
                                                        (ch == 'E' || ch == 'Q')) {
                                                 aa = 'Z';
+                                            } else if ((aa == 'J' || aa == 'I' || aa == 'L') &&
+                                                (ch == 'I' || ch == 'L')) {
+                                                aa = 'J';
                                             } else {
                                                 aa = 'X';
                                             }
