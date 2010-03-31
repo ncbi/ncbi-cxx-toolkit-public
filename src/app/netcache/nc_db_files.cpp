@@ -49,11 +49,12 @@ static const char* kNCBlobKeys_VersionCol     = "ver";
 
 static const char* kNCBlobInfo_Table          = "NCI";
 static const char* kNCBlobInfo_BlobIdCol      = "id";
-static const char* kNCBlobInfo_AccessTimeCol  = "at";
+static const char* kNCBlobInfo_CreateTimeCol  = "at";
 static const char* kNCBlobInfo_DeadTimeCol    = "dt";
 static const char* kNCBlobInfo_OwnerCol       = "own";
 static const char* kNCBlobInfo_TTLCol         = "ttl";
 static const char* kNCBlobInfo_SizeCol        = "sz";
+static const char* kNCBlobInfo_CntReadsCol    = "rd";
 
 static const char* kNCBlobChunks_Table        = "NCC";
 static const char* kNCBlobChunks_ChunkIdCol   = "id";
@@ -212,11 +213,12 @@ CNCDBFile::CreateMetaDatabase(void)
     sql.Clear();
     sql << "create table " << kNCBlobInfo_Table
         << "(" << kNCBlobInfo_BlobIdCol     << " integer primary key,"
-               << kNCBlobInfo_AccessTimeCol << " int not null,"
+               << kNCBlobInfo_CreateTimeCol << " int not null,"
                << kNCBlobInfo_DeadTimeCol   << " int not null,"
                << kNCBlobInfo_OwnerCol      << " varchar not null,"
                << kNCBlobInfo_TTLCol        << " int not null,"
                << kNCBlobInfo_SizeCol       << " int64 not null,"
+               << kNCBlobInfo_CntReadsCol   << " int64 not null,"
                << "unique(" << kNCBlobInfo_DeadTimeCol << ","
                             << kNCBlobInfo_BlobIdCol
                <<       ")"
@@ -237,6 +239,25 @@ CNCDBFile::CreateMetaDatabase(void)
 
     stmt.SetSql("COMMIT");
     stmt.Execute();
+}
+
+void
+CNCDBFile::AdjustMetaDatabase(void)
+{
+    try {
+        // Try to upgrade from previous version of meta database
+        CQuickStrStream sql;
+        CSQLITE_Statement stmt(this);
+
+        sql << "alter table " << kNCBlobInfo_Table
+            << " add column " << kNCBlobInfo_CntReadsCol
+                                            << " int not64 null default 0";
+        stmt.SetSql(sql);
+        stmt.Execute();
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST_X(18, Info << ex);
+    }
 }
 
 void
@@ -286,12 +307,13 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
         case eStmt_WriteBlobInfo:
             sql << "insert or replace into " << kNCBlobInfo_Table
                 << "(" << kNCBlobInfo_BlobIdCol     << ","
-                       << kNCBlobInfo_AccessTimeCol << ","
+                       << kNCBlobInfo_CreateTimeCol << ","
                        << kNCBlobInfo_DeadTimeCol   << ","
                        << kNCBlobInfo_OwnerCol      << ","
                        << kNCBlobInfo_TTLCol        << ","
-                       << kNCBlobInfo_SizeCol
-                << ")values(?1,?2,?3,?4,?5,?6)";
+                       << kNCBlobInfo_SizeCol       << ","
+                       << kNCBlobInfo_CntReadsCol
+                << ")values(?1,?2,?3,?4,?5,?6,?7)";
             break;
         case eStmt_SetBlobDeadTime:
             sql << "update " << kNCBlobInfo_Table
@@ -299,11 +321,12 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
         case eStmt_ReadBlobInfo:
-            sql << "select " << kNCBlobInfo_AccessTimeCol << ","
+            sql << "select " << kNCBlobInfo_CreateTimeCol << ","
                              << kNCBlobInfo_DeadTimeCol   << ","
                              << kNCBlobInfo_OwnerCol      << ","
                              << kNCBlobInfo_TTLCol        << ","
-                             << kNCBlobInfo_SizeCol
+                             << kNCBlobInfo_SizeCol       << ","
+                             << kNCBlobInfo_CntReadsCol
                 <<  " from " << kNCBlobInfo_Table
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
@@ -318,9 +341,10 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                        << kNCBlobChunks_BlobIdCol
                 << ")values(?1,?2)";
             break;
-        case eStmt_DeleteAllChunks:
+        case eStmt_DeleteLastChunks:
             sql << "delete from " << kNCBlobChunks_Table
-                << " where " << kNCBlobChunks_BlobIdCol  << "=?1";
+                << " where " << kNCBlobChunks_BlobIdCol  << "=?1"
+                <<   " and " << kNCBlobChunks_ChunkIdCol << ">=?2";
             break;
         case eStmt_CreateChunkData:
             sql << "insert into " << kNCBlobData_Table
@@ -515,18 +539,26 @@ CNCDBFile::GetBlobsList(int&          dead_after,
 }
 
 void
-CNCDBFile::WriteBlobInfo(const SNCBlobInfo& blob_info)
+CNCDBFile::WriteBlobInfo(SNCBlobInfo& blob_info, bool move_dead_time)
 {
     int cur_time = int(time(NULL));
+    if (blob_info.create_time == 0) {
+        blob_info.create_time = cur_time;
+    }
+    if (move_dead_time  ||  blob_info.dead_time == 0) {
+        blob_info.dead_time = cur_time + blob_info.ttl;
+    }
+
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_WriteBlobInfo));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
     stmt->Bind(1, blob_info.blob_id);
-    stmt->Bind(2, cur_time);
-    stmt->Bind(3, cur_time + blob_info.ttl);
+    stmt->Bind(2, blob_info.create_time);
+    stmt->Bind(3, blob_info.dead_time);
     stmt->Bind(4, blob_info.owner);
     stmt->Bind(5, blob_info.ttl);
     stmt->Bind(6, blob_info.size);
+    stmt->Bind(7, blob_info.cnt_reads);
     stmt->Execute();
 }
 
@@ -551,11 +583,13 @@ CNCDBFile::ReadBlobInfo(SNCBlobInfo* blob_info)
 
     stmt->Bind(1, blob_info->blob_id);
     if (stmt->Step()) {
-        blob_info->access_time = stmt->GetInt   (0);
-        blob_info->expired     = stmt->GetInt   (1) <= int(time(NULL));
+        blob_info->create_time = stmt->GetInt   (0);
+        blob_info->dead_time   = stmt->GetInt   (1);
+        blob_info->expired     = blob_info->dead_time <= int(time(NULL));
         blob_info->owner       = stmt->GetString(2);
         blob_info->ttl         = stmt->GetInt   (3);
         blob_info->size        = stmt->GetInt   (4);
+        blob_info->cnt_reads   = stmt->GetInt   (5);
         return true;
     }
     return false;
@@ -588,13 +622,16 @@ CNCDBFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 }
 
 void
-CNCDBFile::DeleteAllChunks(TNCBlobId blob_id)
+CNCDBFile::DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id)
 {
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteAllChunks));
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteLastChunks));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
     stmt->Bind(1, blob_id);
+    stmt->Bind(2, min_chunk_id);
     stmt->Execute();
+
+    GetStat()->AddBlobTruncate();
 }
 
 TNCChunkId

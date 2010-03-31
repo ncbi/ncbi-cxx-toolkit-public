@@ -32,6 +32,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_bswap.hpp>
+#include <util/md5.hpp>
 
 #include <connect/services/netcache_key.hpp>
 
@@ -61,6 +62,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "key_ver", eNSPT_Int,  eNSPA_Optional, "1" },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "GET2",
@@ -68,24 +70,28 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "GET2",          eWithBlobLock, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "NW",      eNSPT_Id,   eNSPA_Obsolete | fNSPA_Match },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "RMV2",
         {&CNCMessageHandler::x_DoCmd_Remove2,
             "RMV2",          eWithBlobLock, eWrite },
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "HASB",          eNoBlobLock},
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "GetSIZe",       eWithBlobLock, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "STOR",
@@ -96,6 +102,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "STRS",
@@ -107,6 +114,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "READ",
@@ -116,6 +124,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",
@@ -125,6 +134,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "REMO",
@@ -134,6 +144,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "GSIZ",
@@ -143,6 +154,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "A?",     {&CNCMessageHandler::x_DoCmd_Alive,  "A?"} },
@@ -568,7 +580,7 @@ CNCMessageHandler::x_CheckAdminClient(void)
 }
 
 inline void
-CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
+CNCMessageHandler::x_AssignCmdParams(map<string, string>& params)
 {
     m_BlobKey.clear();
     m_BlobSubkey.clear();
@@ -578,9 +590,9 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
     string cache_name(kNCDefCacheName);
 
     typedef map<string, string> TMap;
-    ITERATE(TMap, it, params) {
+    NON_CONST_ITERATE(TMap, it, params) {
         const string& key = it->first;
-        const string& val = it->second;
+        string& val = it->second;
 
         switch (key[0]) {
         case 'c':
@@ -602,6 +614,14 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
             }
             else if (key == "key_ver") {
                 m_KeyVersion = NStr::StringToUInt(val);
+            }
+            break;
+        case 'p':
+            if (key == "pass") {
+                CMD5 md5;
+                md5.Update(val.data(), val.size());
+                val = md5.GetHexSum();
+                m_BlobPass = val;
             }
             break;
         case 's':
@@ -662,20 +682,6 @@ CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd)
 }
 
 inline void
-CNCMessageHandler::x_GenerateBlobKey(void)
-{
-    const string& host = m_Server->GetHost();
-    unsigned int  port = m_Server->GetPort();
-    do {
-        CNetCacheKey::GenerateBlobKey(&m_BlobKey,
-                                      m_Server->GetNextBlobId(),
-                                      host, port, m_KeyVersion);
-    }
-    while (m_KeyVersion == 2
-           &&  m_Storage->IsBlobFamilyExists(m_BlobKey, kEmptyStr));
-}
-
-inline void
 CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
 {
     x_SetFlag(fCommandStarted);
@@ -687,39 +693,42 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
     m_MaxCmdTime = m_CmdStartTime = m_Server->GetFastTime();
     m_MaxCmdTime.AddSecond(m_Server->GetCmdTimeout(), CTime::eIgnoreDaylight);
 
-    try {
-        if (cmd_extra.storage_access != eNoStorage  &&  !m_Storage) {
-            map<string, string>::const_iterator it = cmd.params.find("cache");
-            string cache_name = (it == cmd.params.end()? kNCDefCacheName
-                                                       : it->second);
-            NCBI_THROW_FMT(CNSProtoParserException, eWrongParams,
-                           "Cache unknown: '" << cache_name << "'");
-        }
-        if (cmd_extra.storage_access == eWithAutoBlobKey
-            &&  m_BlobKey.empty())
-        {
-            x_GenerateBlobKey();
-            // Because of this PrintRequestStart is postponed and placed
-            // below.
-            cmd.params["gen_key"] = m_BlobKey;
-        }
-    }
-    catch (exception&) {
-        // If some error happened in the above block request_start should be
-        // in logs anyway.
-        x_PrintRequestStart(cmd);
-        m_DiagContext->SetRequestStatus(eStatus_OK);
-        throw;
-    }
-
     x_PrintRequestStart(cmd);
     // PrintRequestStart() resets status value, so setting default status
     // should go here, though more logical is in x_ReadCommand()
     m_DiagContext->SetRequestStatus(eStatus_OK);
 
+    if (cmd_extra.storage_access != eNoStorage  &&  !m_Storage) {
+        map<string, string>::const_iterator it = cmd.params.find("cache");
+        string cache_name = (it == cmd.params.end()? kNCDefCacheName
+                                                   : it->second);
+        NCBI_THROW_FMT(CNSProtoParserException, eWrongParams,
+                       "Cache unknown: '" << cache_name << "'");
+    }
+    if (cmd_extra.storage_access == eWithAutoBlobKey  &&  m_BlobKey.empty()) {
+        CNetCacheKey::GenerateBlobKey(&m_BlobKey,
+                                      m_Server->GetNextBlobId(),
+                                      m_Server->GetHost(),
+                                      m_Server->GetPort(),
+                                      m_KeyVersion);
+
+        if (x_IsFlagSet(fCommandPrinted)) {
+            CDiagContext_Extra diag_extra = GetDiagContext().Extra();
+            diag_extra.Print("gen_key", m_BlobKey);
+        }
+    }
+
     if (cmd_extra.storage_access == eWithBlobLock
         ||  cmd_extra.storage_access == eWithAutoBlobKey)
     {
+        if ((m_BlobPass.empty()  &&  m_Server->GetBlobPassPolicy() == eNCOnlyWithPass)
+            ||  (!m_BlobPass.empty()  &&  m_Server->GetBlobPassPolicy() == eNCOnlyWithoutPass))
+        {
+            NCBI_THROW(CNSProtoParserException, eWrongParams,
+                       "Password in the command doesn't match server settings.");
+        }
+
+        m_BlobKey += m_BlobPass;
         m_BlobLock = m_Storage->GetBlobAccess(cmd_extra.blob_access,
                                               m_BlobKey,
                                               m_BlobSubkey,
@@ -824,7 +833,16 @@ CNCMessageHandler::x_FinishCommand(void)
         x_MonitorPost(msg);
     }
 
-    if (m_BlobLock.NotNull()) {
+    size_t blob_size = 0;
+    bool was_blob_access = m_BlobLock.NotNull();
+    if (was_blob_access) {
+        if (m_BlobLock->GetAccessType() == eWrite) {
+            // Blob was deleted, logging of size is not necessary
+            was_blob_access = false;
+        }
+        else {
+            blob_size = m_BlobLock->GetBlobSize();
+        }
         m_CurBlob = NULL;
         m_BlobLock->ReleaseLock();
         m_BlobLock.Reset();
@@ -835,6 +853,10 @@ CNCMessageHandler::x_FinishCommand(void)
     }
 
     if (x_IsFlagSet(fCommandPrinted)) {
+        if (was_blob_access) {
+            CDiagContext_Extra diag_extra = GetDiagContext().Extra();
+            diag_extra.Print("size", NStr::UInt8ToString(blob_size));
+        }
         GetDiagContext().PrintRequestStop();
         x_UnsetFlag(fCommandPrinted);
     }

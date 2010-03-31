@@ -185,6 +185,8 @@ public:
     /// Method can be called only after lock is acquired.
     /// If blob doesn't exist then value is undefined.
     bool          IsBlobExpired    (void) const;
+    /// Get type of access this holder was created for
+    ENCBlobAccess GetAccessType    (void) const;
 
     /// Get object to read/write to the blob.
     /// Method can be called only after lock is acquired and if blob exists.
@@ -491,7 +493,7 @@ inline int
 CNCBlobLockHolder::GetBlobAccessTime(void) const
 {
     x_EnsureBlobInfoRead();
-    return m_BlobInfo.access_time;
+    return m_BlobInfo.dead_time - m_BlobInfo.ttl;
 }
 
 inline bool
@@ -499,6 +501,12 @@ CNCBlobLockHolder::IsBlobExpired(void) const
 {
     x_EnsureBlobInfoRead();
     return m_BlobInfo.expired;
+}
+
+inline ENCBlobAccess
+CNCBlobLockHolder::GetAccessType(void) const
+{
+    return m_BlobAccess;
 }
 
 inline void

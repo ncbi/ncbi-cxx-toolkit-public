@@ -108,10 +108,12 @@ struct SNCBlobInfo : public SNCBlobIdentity
 {
     string owner;        ///< Blob owner
     int    ttl;          ///< Timeout for blob living
-    int    access_time;  ///< Last time blob was accessed
+    int    create_time;  ///< Last time blob was accessed
+    int    dead_time;    ///< Time when blob will expire
     bool   expired;      ///< Flag if blob has already expired but was not
                          ///< deleted yet
     size_t size;         ///< Size of the blob
+    Int8   cnt_reads;    ///< Number of reads that was called on the blob
     bool   corrupted;    ///< Special flag pointing that blob information is
                          ///< corrupted in database and need to be deleted.
 
@@ -242,9 +244,10 @@ SNCBlobInfo::Clear(void)
 {
     SNCBlobIdentity::Clear();
     owner.clear();
-    ttl = access_time = 0;
+    ttl = create_time = dead_time = 0;
     expired = corrupted = false;
     size = 0;
+    cnt_reads = 0;
 }
 
 inline

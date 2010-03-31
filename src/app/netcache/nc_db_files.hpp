@@ -54,7 +54,7 @@ enum ENCStmtType
     eStmt_BlobFamilyExists,  ///< Check if blob with given key, subkey exists
     eStmt_BlobExists,        ///< Check if blob with given key, subkey, version
                              ///< and id exists
-    eStmt_CreateBlobKey,     ///< Create record about id and key, subkey, 
+    eStmt_CreateBlobKey,     ///< Create record about id and key, subkey,
                              ///< version of the blob
     eStmt_GetBlobsList,      ///< Get part of list of blobs "alive" in
                              ///< the given time frame
@@ -63,7 +63,7 @@ enum ENCStmtType
     eStmt_ReadBlobInfo,      ///< Get all meta-info about blob
     eStmt_GetChunkIds,       ///< Get ids of all chunks for given blob
     eStmt_CreateChunk,       ///< Create new blob chunk
-    eStmt_DeleteAllChunks,   ///< Delete all chunks for the blob
+    eStmt_DeleteLastChunks,  ///< Delete last chunks for the blob
     eStmt_CreateChunkData,   ///< Create new record with blob chunk data
     eStmt_WriteChunkData,    ///< Write blob chunk data into existing chunk
     eStmt_ReadChunkData      ///< Read blob chunk data
@@ -106,6 +106,8 @@ protected:
     void CreateMetaDatabase(void);
     /// Create entire database structure for Data file
     void CreateDataDatabase(void);
+    /// Convert database structure for Meta file from previous version
+    void AdjustMetaDatabase(void);
 
     /// Create new database part and save information about it.
     /// Creation time in given info structure is set to current time.
@@ -173,7 +175,7 @@ protected:
                       TNCBlobsList* blobs_list);
 
     /// Write full meta-information for blob
-    void WriteBlobInfo(const SNCBlobInfo& blob_info);
+    void WriteBlobInfo(SNCBlobInfo& blob_info, bool move_dead_time);
     /// Change "dead time" for the blob, i.e. when blob will expire and after
     /// what moment it will be considered not existing.
     void SetBlobDeadTime(TNCBlobId blob_id, int dead_time);
@@ -187,11 +189,14 @@ protected:
     void GetChunkIds(TNCBlobId blob_id, TNCChunksList* id_list);
     /// Create record with association chunk id -> blob id
     void CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id);
-    /// Delete ids of all chunks for the blob
+    /// Delete ids of last chunks for the blob
     ///
     /// @param blob_id
     ///   Id of the blob which chunks should be deleted
-    void DeleteAllChunks(TNCBlobId blob_id);
+    /// @param min_chunk_id
+    ///   Minimum id of chunks to be deleted - all chunks with ids equal or
+    ///   greater than this id will be deleted.
+    void DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id);
     /// Create new chunk value record with given data
     ///
     /// @param data
@@ -302,6 +307,8 @@ public:
     /// existing).
     bool HasAnyBlobs(void);
 
+    using CNCDBFile::AdjustMetaDatabase;
+
     using CNCDBFile::GetLastBlobId;
     using CNCDBFile::ReadBlobId;
     using CNCDBFile::IsBlobFamilyExists;
@@ -315,7 +322,7 @@ public:
 
     using CNCDBFile::GetChunkIds;
     using CNCDBFile::CreateChunk;
-    using CNCDBFile::DeleteAllChunks;
+    using CNCDBFile::DeleteLastChunks;
 
 protected:
     /// Create connection to database file with blobs' meta-information

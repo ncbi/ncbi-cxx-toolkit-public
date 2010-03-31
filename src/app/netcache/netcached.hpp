@@ -160,7 +160,14 @@ enum ENCLogCmdsType {
     eNoLogCmds      ///< Never log these messages
 };
 
-/// Netcache server 
+/// Policy for accepting passwords for reading and writing blobs
+enum ENCBlobPassPolicy {
+    eNCBlobPassAny,     ///< Both blobs with password and without are accepted
+    eNCOnlyWithPass,    ///< Only blobs with password are accepted
+    eNCOnlyWithoutPass  ///< Only blobs without password are accepted
+};
+
+/// Netcache server
 class CNetCacheServer : public CServer
 {
 public:
@@ -178,7 +185,7 @@ public:
     int GetSignalCode(void) const;
     /// Ask server to stop after receiving given signal
     void RequestShutdown(int signal = 0);
-    
+
     /// Get monitor for the server
     CServer_Monitor* GetServerMonitor(void);
     /// Get storage for the given cache name.
@@ -201,6 +208,8 @@ public:
     ENCLogCmdsType GetLogCmdsType(void) const;
     /// Get name of client that should be used for administrative commands
     const string& GetAdminClient(void) const;
+    /// Get policy for accepting blobs with/without passwords
+    ENCBlobPassPolicy GetBlobPassPolicy(void) const;
     /// Create CTime object in fast way (via CFastTime)
     CTime GetFastTime(void);
 
@@ -273,6 +282,8 @@ private:
     unsigned                       m_CmdTimeout;
     /// Type of logging all commands starting and stopping
     ENCLogCmdsType                 m_LogCmdsType;
+    /// Policy for accepting blobs with/without passwords
+    ENCBlobPassPolicy              m_PassPolicy;
     /// Flag showing if configuration parameter to reinitialize broken storages
     /// was set.
     bool                           m_IsReinitBadDB;
@@ -447,6 +458,12 @@ inline ENCLogCmdsType
 CNetCacheServer::GetLogCmdsType(void) const
 {
     return m_LogCmdsType;
+}
+
+inline ENCBlobPassPolicy
+CNetCacheServer::GetBlobPassPolicy(void) const
+{
+    return m_PassPolicy;
 }
 
 inline const string&

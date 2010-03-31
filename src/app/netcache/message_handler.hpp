@@ -389,12 +389,10 @@ private:
     void x_CloseConnection(void);
     /// Assign command parameters returned by protocol parser to handler
     /// member variables
-    void x_AssignCmdParams(const map<string, string>& params);
+    void x_AssignCmdParams(map<string, string>& params);
     /// Print "request_start" message into diagnostics with all parameters of
     /// the current command.
     void x_PrintRequestStart(const SParsedCmd& cmd);
-    /// Automatically generate blob key for PUT commands
-    void x_GenerateBlobKey(void);
     /// Start command returned by protocol parser
     void x_StartCommand(SParsedCmd& cmd);
     /// Command execution is finished, do cleanup work
@@ -478,6 +476,8 @@ private:
     string                    m_BlobSubkey;
     /// Blob version in current command
     unsigned int              m_BlobVersion;
+    /// "Password" to access the blob
+    string                    m_BlobPass;
     /// Version of the blob key to generate
     unsigned int              m_KeyVersion;
     /// Time-to-live value for the blob

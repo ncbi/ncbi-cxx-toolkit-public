@@ -764,6 +764,10 @@ CNCBlobStorage::Initialize(const IRegistry& reg,
             for (TNCDBVolumeId i = x_GetMinVolumeId(*part_info);
                                i <= part_info->cnt_volumes; ++i)
             {
+                {{
+                    TMetaFileLock metafile(this, part_info->part_id, i);
+                    metafile->AdjustMetaDatabase();
+                }}
                 CNCFileSystem::SetFileInitialized(files_map[i]->GetMetaFileName());
                 CNCFileSystem::SetFileInitialized(files_map[i]->GetDataFileName());
             }

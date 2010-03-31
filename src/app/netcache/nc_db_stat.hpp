@@ -32,11 +32,17 @@
 #include <corelib/ncbimtx.hpp>
 
 #include "nc_utils.hpp"
+#include "nc_db_info.hpp"
 
 #include <vector>
 
 
 BEGIN_NCBI_SCOPE
+
+
+enum {
+    kNCStatMaxCntReads = 5
+};
 
 
 /// Structure containing all statistics data collected by CNCDBStat.
@@ -99,6 +105,15 @@ struct SNCDBStatData
     size_t                          m_MaxBlobSize;
     /// Maximum size of blob chunk operated at any moment by storage
     size_t                          m_MaxChunkSize;
+    /// Number of blobs that were put into database distributed by number of
+    /// reads requested on those blobs
+    vector<Uint8>                   m_BlobsByCntReads;
+    /// Maximum number of reads ever requested for single blob
+    Int8                            m_MaxCntReads;
+    /// Time between writing and first reading of the blob
+    CNCStatFigure<double>           m_FirstReadTime;
+    /// Time between writing and second reading of the blob
+    CNCStatFigure<double>           m_SecondReadTime;
     /// Number of blobs read from database
     Uint8                           m_ReadBlobs;
     /// Total size of data read from database (sum of sizes of all chunks)
@@ -131,6 +146,8 @@ struct SNCDBStatData
     Uint8                           m_DeletedBlobs;
     /// Total time spent on all database operations
     double                          m_TotalDbTime;
+    /// Number of blobs truncated down to lower size
+    Uint8                           m_TruncatedBlobs;
     /// Number of create requests that have met already existing blob
     Uint8                           m_CreateExists;
     /// Number of checks for blob existence
@@ -151,9 +168,9 @@ public:
 
     /// Add measurement for number of blobs in the database
     void AddCountBlobs       (unsigned int num_blobs);
-    /// Add measurement for number of 
+    /// Add measurement for number of
     void AddCountCacheNodes  (unsigned int num_nodes);
-    /// Add measurement for 
+    /// Add measurement for
     void AddCacheTreeHeight  (unsigned int height);
     /// Add measurement for number of database parts and difference between
     /// highest and lowest ids of database parts.
@@ -177,6 +194,14 @@ public:
     void AddGCLockAcquired   (void);
     /// Add time between blob lock request and release
     void AddTotalLockTime    (double add_time);
+    /// Register creation of blob (for the puprose of counting number of reads
+    /// requested for each blob)
+    void AddCreatedBlob      (void);
+    /// Register attempt to read the blob
+    void AddBlobReadAttempt  (const SNCBlobInfo& blob_info);
+    /// Register cached blob (for the puprose of counting number of reads
+    /// requested for each blob)
+    void AddBlobCached       (const SNCBlobInfo& blob_info);
     /// Add read blob of given size
     void AddBlobRead         (size_t size);
     /// Add read blob chunk of given size
@@ -191,6 +216,8 @@ public:
     void AddStoppedWrite     (void);
     /// Add deleted blob
     void AddBlobDelete       (void);
+    /// Add truncated blob
+    void AddBlobTruncate     (void);
     /// Add collision of trying to create over already existing blob
     void AddCreateHitExisting(void);
     /// Add check for blob existence
@@ -387,6 +414,46 @@ CNCDBStat::AddTotalLockTime(double add_time)
 }
 
 inline void
+CNCDBStat::AddCreatedBlob(void)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    ++data->m_BlobsByCntReads[0];
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddBlobReadAttempt(const SNCBlobInfo& blob_info)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_MaxCntReads = max(data->m_MaxCntReads, blob_info.cnt_reads);
+    if (blob_info.cnt_reads <= kNCStatMaxCntReads) {
+        --data->m_BlobsByCntReads[blob_info.cnt_reads - 1];
+        ++data->m_BlobsByCntReads[blob_info.cnt_reads];
+        int after_create = int(time(NULL)) - blob_info.create_time;
+        if (blob_info.cnt_reads == 1) {
+            data->m_FirstReadTime .AddValue(after_create);
+        }
+        else if (blob_info.cnt_reads == 2) {
+            data->m_SecondReadTime.AddValue(after_create);
+        }
+    }
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddBlobCached(const SNCBlobInfo& blob_info)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_MaxCntReads = max(data->m_MaxCntReads, blob_info.cnt_reads);
+    int ind = min(int(blob_info.cnt_reads), int(kNCStatMaxCntReads));
+    ++data->m_BlobsByCntReads[ind];
+    data->m_ObjLock.Unlock();
+}
+
+inline void
 CNCDBStat::AddBlobRead(size_t size)
 {
     SNCDBStatData* data = GetObjPtr();
@@ -458,6 +525,15 @@ CNCDBStat::AddBlobDelete(void)
     SNCDBStatData* data = GetObjPtr();
     data->m_ObjLock.Lock();
     ++data->m_DeletedBlobs;
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddBlobTruncate(void)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    ++data->m_TruncatedBlobs;
     data->m_ObjLock.Unlock();
 }
 

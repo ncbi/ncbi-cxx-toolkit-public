@@ -147,36 +147,30 @@ CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned int   ver /* = 1 */)
 {
     string tmp;
-    *key = kNetCache_KeyPrefix;
+    key->assign(kNetCache_KeyPrefix);
 
     NStr::IntToString(tmp, ver);
-    *key += "_";
-    *key += tmp;
+    key->append(1, '_');
+    key->append(tmp);
 
     NStr::IntToString(tmp, id);
-    *key += "_";
-    *key += tmp;
+    key->append(1, '_');
+    key->append(tmp);
 
-    *key += "_";
-    *key += host;
+    key->append(1, '_');
+    key->append(host);
 
     NStr::IntToString(tmp, port);
-    *key += "_";
-    *key += tmp;
+    key->append(1, '_');
+    key->append(tmp);
 
-    if (ver == 1) {
-        NStr::IntToString(tmp, (long) ::time(0));
-    }
-    else if (ver == 2) {
-        NStr::UIntToString(tmp, s_NCKeyRandom.GetRand());
-    }
-    else {
-        NCBI_THROW(CNetCacheException, eKeyFormatError,
-                   "Unsupported version of NetCache key -"
-                   + NStr::IntToString(ver));
-    }
-    *key += "_";
-    *key += tmp;
+    NStr::IntToString(tmp, (long) ::time(0));
+    key->append(1, '_');
+    key->append(tmp);
+
+    NStr::UIntToString(tmp, s_NCKeyRandom.GetRand());
+    key->append(1, '_');
+    key->append(tmp);
 }
 
 unsigned int

@@ -75,7 +75,16 @@ CNCBlob::x_FlushCurChunk(void)
         return;
     }
 
-    m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
+    if (m_NextRowIdIt == m_AllRowIds.end()) {
+        TNCChunkId chunk_id
+                        = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
+        m_AllRowIds.push_back(chunk_id);
+        m_NextRowIdIt = m_AllRowIds.end();
+    }
+    else {
+        m_Storage->WriteChunkValue(*m_BlobInfo, *m_NextRowIdIt, m_Buffer);
+        ++m_NextRowIdIt;
+    }
     m_Buffer.resize(0);
 }
 
@@ -95,22 +104,20 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
         // actually truncated anyway or even deleted if it's not finalized, so
         // nobody needs information about what size it was.
         m_BlobInfo->size = 0;
-        m_Storage->DeleteAllChunks(*m_BlobInfo);
+    }
+
+    m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
+    if (m_AllRowIds.size() == 0) {
+        if (m_BlobInfo->size != 0)
+            s_CorruptedDatabase(*m_BlobInfo);
     }
     else {
-        m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
-        if (m_AllRowIds.size() == 0) {
-            if (m_BlobInfo->size != 0)
-                s_CorruptedDatabase(*m_BlobInfo);
-        }
-        else {
-            size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
-            size_t min_size = max_size - kNCMaxBlobChunkSize;
-            if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
-                s_CorruptedDatabase(*m_BlobInfo);
-        }
-        m_NextRowIdIt = m_AllRowIds.begin();
+        size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
+        size_t min_size = max_size - kNCMaxBlobChunkSize;
+        if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
+            s_CorruptedDatabase(*m_BlobInfo);
     }
+    m_NextRowIdIt = m_AllRowIds.begin();
 
     m_Buffer.resize(0);
 }
@@ -203,6 +210,12 @@ CNCBlob::Finalize(void)
 
     x_FlushCurChunk();
 
+    if (m_NextRowIdIt != m_AllRowIds.end()) {
+        m_Storage->DeleteLastChunks(*m_BlobInfo, *m_NextRowIdIt);
+        m_AllRowIds.erase(m_NextRowIdIt, m_AllRowIds.end());
+        m_NextRowIdIt = m_AllRowIds.end();
+    }
+
     m_BlobInfo->size = m_Position;
     m_Finalized = true;
 }
@@ -212,8 +225,6 @@ CNCBlob::Finalize(void)
 void
 CNCBlobLockHolder::x_EnsureBlobInfoRead(void) const
 {
-    _ASSERT(IsLockAcquired());
-
     // ttl will be equal to 0 if blob exists only when info was not read yet
     if (m_BlobInfo.ttl == 0  &&  m_BlobExists
         &&  !m_Storage->ReadBlobInfo(&m_BlobInfo))
@@ -226,10 +237,27 @@ inline void
 CNCBlobLockHolder::x_OnLockValidated(void)
 {
     m_LockValid = true;
+    if (m_BlobAccess == eCreate) {
+        m_Storage->GetStat()->AddCreatedBlob();
+    }
+    else if (!m_LockFromGC) {
+        x_EnsureBlobInfoRead();
+        ++m_BlobInfo.cnt_reads;
+        if (m_BlobAccess == eRead) {
+            m_Storage->WriteBlobInfo(m_BlobInfo);
+        }
+        m_Storage->GetStat()->AddBlobReadAttempt(m_BlobInfo);
+    }
+    else if (m_BlobAccess == eRead) {
+        x_EnsureBlobInfoRead();
+        m_Storage->GetStat()->AddBlobCached(m_BlobInfo);
+    }
+
     if (!m_BlobExists) {
         m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
         m_Storage->GetStat()->AddNotExistBlobLock();
     }
+
     if (m_LockFromGC)
         m_Storage->GetStat()->AddGCLockAcquired();
     else
@@ -302,8 +330,7 @@ CNCBlobLockHolder::PrepareLock(const string& key,
     m_BlobInfo.version   = version;
     m_BlobAccess         = access;
     m_DeleteNotFinalized = access == eCreate;
-    m_SaveInfoOnRelease  = access != eRead
-                           ||  m_Storage->IsChangeTimeOnRead();
+    m_SaveInfoOnRelease  = access != eRead;
     m_LockInitialized    = false;
     m_LockFromGC         = false;
 
@@ -433,10 +460,11 @@ CNCBlobLockHolder::ReleaseLock(void)
             m_Storage->DeleteBlob(m_BlobInfo);
         }
         else if (m_SaveInfoOnRelease) {
-            // Info should be read before this
             _ASSERT(m_BlobInfo.ttl != 0);
+
             m_Storage->WriteBlobInfo(m_BlobInfo);
         }
+
         if (!m_LockFromGC)
             m_Storage->GetStat()->AddTotalLockTime(m_LockTimer.Elapsed());
     }

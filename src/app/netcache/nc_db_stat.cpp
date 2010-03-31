@@ -51,6 +51,8 @@ SNCDBStatData::SNCDBStatData(void)
       m_LocksWaitedTime(0),
       m_MaxBlobSize(0),
       m_MaxChunkSize(0),
+      m_BlobsByCntReads(kNCStatMaxCntReads + 1, 0),
+      m_MaxCntReads(0),
       m_ReadBlobs(0),
       m_ReadSize(0),
       m_StoppedReads(0),
@@ -61,6 +63,7 @@ SNCDBStatData::SNCDBStatData(void)
       m_WrittenBySize(40, 0),
       m_DeletedBlobs(0),
       m_TotalDbTime(0),
+      m_TruncatedBlobs(0),
       m_CreateExists(0),
       m_ExistChecks(0)
 {
@@ -76,6 +79,8 @@ SNCDBStatData::SNCDBStatData(void)
     m_TotalMetaSize   .Initialize();
     m_TotalDataSize   .Initialize();
     m_TotalDBSize     .Initialize();
+    m_FirstReadTime   .Initialize();
+    m_SecondReadTime  .Initialize();
     m_InfoReadTime    .Initialize();
     m_ChunkReadTime   .Initialize();
     m_ChunkRTimeBySize.resize(40, m_ChunkReadTime);
@@ -122,6 +127,12 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
     dest->m_LocksWaitedTime += m_LocksWaitedTime;
     dest->m_MaxBlobSize      = max(dest->m_MaxBlobSize,  m_MaxBlobSize);
     dest->m_MaxChunkSize     = max(dest->m_MaxChunkSize, m_MaxChunkSize);
+    for (size_t i = 0; i <= kNCStatMaxCntReads; ++i) {
+        dest->m_BlobsByCntReads[i] += m_BlobsByCntReads[i];
+    }
+    dest->m_MaxCntReads      = max(dest->m_MaxCntReads, m_MaxCntReads);
+    dest->m_FirstReadTime   .AddValues(m_FirstReadTime);
+    dest->m_SecondReadTime  .AddValues(m_SecondReadTime);
     dest->m_ReadBlobs       += m_ReadBlobs;
     dest->m_ReadSize        += m_ReadSize;
     dest->m_StoppedReads    += m_StoppedReads;
@@ -146,6 +157,7 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
     }
     dest->m_DeletedBlobs    += m_DeletedBlobs;
     dest->m_TotalDbTime     += m_TotalDbTime;
+    dest->m_TruncatedBlobs  += m_TruncatedBlobs;
     dest->m_CreateExists    += m_CreateExists;
     dest->m_ExistChecks     += m_ExistChecks;
 }
@@ -226,6 +238,7 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.CalcTimePercent(data.m_LocksWaitedTime) << "% (locks), "
                         << data.m_NotExistLocks << " (non-exist), "
                         << data.m_DeletedBlobs << " (del), "
+                        << data.m_TruncatedBlobs << " (trunc), "
                         << data.m_CreateExists << " (re-wr), "
                         << data.m_ExistChecks << " (check)" << endl
           << endl;
@@ -281,6 +294,17 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                     << data.CalcTimePercent(data.m_ChunkWriteTime) << "% for data ("
                     << data.m_ChunkWriteTime.GetAverage() << " avg, "
                     << data.m_ChunkWriteTime.GetMaximum() << " max)" << endl
+              << "Read cnt: ";
+        for (size_t i = 0; i < kNCStatMaxCntReads; ++i) {
+            proxy << i << " - " << data.m_BlobsByCntReads[i] << ", ";
+        }
+        proxy << int(kNCStatMaxCntReads) << " or more - "
+                    << data.m_BlobsByCntReads[kNCStatMaxCntReads] << endl
+              << "          max cnt: " << data.m_MaxCntReads << "; 1st: "
+                           << data.m_FirstReadTime.GetAverage() << " avg, "
+                           << data.m_FirstReadTime.GetMaximum() << " max; 2nd: "
+                           << data.m_SecondReadTime.GetAverage() << " avg, "
+                           << data.m_SecondReadTime.GetMaximum() << " max" << endl
               << "By size:" << endl;
         size_t sz = kMinSizeInChart;
         for (size_t i = 0; i < data.m_WrittenBySize.size(); ++i, sz <<= 1) {

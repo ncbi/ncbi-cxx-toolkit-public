@@ -246,7 +246,7 @@ public:
     ///   read. FALSE if database is corrupted.
     bool ReadBlobInfo(SNCBlobInfo* info);
     /// Write meta information about blob into the database.
-    void WriteBlobInfo(const SNCBlobInfo& info);
+    void WriteBlobInfo(SNCBlobInfo& info);
     /// Delete blob from database.
     void DeleteBlob(const SNCBlobIdentity& identity);
     /// Get list of chunks ids
@@ -291,11 +291,15 @@ public:
     bool ReadChunkValue(const SNCBlobCoords& coords,
                         TNCChunkId           chunk_id,
                         TNCBlobBuffer*       buffer);
-    /// Delete all chunks for blob
+    /// Delete last chunks for blob
     ///
     /// @param coords
     ///   Coordinates of the blob to delete chunks for
-    void DeleteAllChunks(const SNCBlobCoords& coords);
+    /// @param min_chunk_id
+    ///   Minimum id of chunks to delete - all blob chunks with ids equal or
+    ///   greater than this will be deleted.
+    void DeleteLastChunks(const SNCBlobCoords& coords,
+                          TNCChunkId           min_chunk_id);
 
     /// Get database file object from pool
     ///
@@ -1020,10 +1024,10 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobInfo* info)
 }
 
 inline void
-CNCBlobStorage::WriteBlobInfo(const SNCBlobInfo& info)
+CNCBlobStorage::WriteBlobInfo(SNCBlobInfo& info)
 {
     TMetaFileLock metafile(this, info.part_id, info.volume_id);
-    metafile->WriteBlobInfo(info);
+    metafile->WriteBlobInfo(info, IsChangeTimeOnRead());
 }
 
 inline void
@@ -1068,10 +1072,11 @@ CNCBlobStorage::ReadChunkValue(const SNCBlobCoords& coords,
 }
 
 inline void
-CNCBlobStorage::DeleteAllChunks(const SNCBlobCoords& coords)
+CNCBlobStorage::DeleteLastChunks(const SNCBlobCoords& coords,
+                                 TNCChunkId           min_chunk_id)
 {
     TMetaFileLock metafile(this, coords.part_id, coords.volume_id);
-    metafile->DeleteAllChunks(coords.blob_id);
+    metafile->DeleteLastChunks(coords.blob_id, min_chunk_id);
 }
 
 inline CNCBlobLockHolder*

@@ -83,6 +83,7 @@ static const char* kNCReg_MaxThreads          = "max_threads";
 static const char* kNCReg_ReinitBadDB         = "drop_db";
 static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
+static const char* kNCReg_PassPolicy          = "blob_password_policy";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
 static const char* kNCReg_MemLimit            = "memory_limit";
 static const char* kNCReg_MemAlert            = "memory_alert";
@@ -266,6 +267,21 @@ CNetCacheServer::x_ReadServerParams(void)
     }
     m_AdminClient = x_RegReadString(reg, kNCReg_AdminClient,
                                     kNCReg_DefAdminClient);
+
+    string pass_policy = x_RegReadString(reg, kNCReg_PassPolicy, "any");
+    if (pass_policy == "no_password") {
+        m_PassPolicy = eNCOnlyWithoutPass;
+    }
+    else if (pass_policy == "with_password") {
+        m_PassPolicy = eNCOnlyWithPass;
+    }
+    else {
+        if (pass_policy != "any") {
+            ERR_POST_X(16, "Incorrect value of '" << kNCReg_PassPolicy
+                           << "' parameter: '" << pass_policy << "'");
+        }
+        m_PassPolicy = eNCBlobPassAny;
+    }
 
     SServer_Parameters params;
     params.max_connections = x_RegReadInt(reg, kNCReg_MaxConnections, 100);
