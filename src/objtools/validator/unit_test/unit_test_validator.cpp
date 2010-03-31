@@ -103,7 +103,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/validator/validator.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-
+#include <corelib/ncbiapp.hpp>
 
 extern const char* sc_TestEntryCollidingLocusTags;
 
@@ -1688,6 +1688,13 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+NCBITEST_INIT_TREE()
+{
+    if ( !CNcbiApplication::Instance()->GetConfig().HasEntry("NCBI", "Data") ) {
+        NCBITEST_DISABLE(Test_Descr_BadStructuredCommentFormat);
+    }
+}
 
 // new case test ground
 

@@ -144,6 +144,10 @@ public:
     bool DoCountryBoxesOverlap (string country1, string country2);
 
 private:
+    void x_AddBlocksFromLine (string line);
+    void x_InitFromDefaultList();
+    bool x_InitFromFile();
+
     typedef vector <CCountryBlock *> TCountryBlockList;
     typedef TCountryBlockList::const_iterator TCountryBlockList_iter; 
 

@@ -2824,11 +2824,414 @@ bool CCountryBlock::DoesOverlap(const CCountryBlock* other_block) const
 }
 
 
-CCountryLatLonMap::CCountryLatLonMap (void) 
+static const char * s_DefaultCountryLatLonText[] = {
+  "Afghanistan	AF	60.4	29.3	74.9	38.5",
+  "Albania	AL	19.2	39.6	21.1	42.7",
+  "Algeria	AG	-8.7	18.9	12.0	37.1",
+  "American Samoa	AQ	-171.1	-11.1	-171.1	-11.0	-170.9	-14.4	-169.4	-14.2",
+  "Andorra	AN	1.4	42.4	1.8	42.7",
+  "Angola	AO	11.6	-18.1	24.1	-4.4",
+  "Anguilla	AV	-63.2	18.1	-62.9	18.3",
+  "Antarctica	AY	",
+  "Antigua and Barbuda	AC	-62.4	16.9	-62.3	16.9	-62.0	16.9	-61.7	17.7",
+  "Arctic Ocean	XX	",
+  "Argentina	AR	-73.6	-55.1	-53.6	-21.8",
+  "Armenia	AM	43.4	38.8	46.6	41.3",
+  "Aruba	AA	-70.1	12.4	-69.8	12.7",
+  "Ashmore and Cartier Islands	AT	122.9	-12.3	123.1	-12.1",
+  "Atlantic Ocean	XX	",
+  "Australia	AS	112.9	-43.7	153.6	-10.0",
+  "Australia: Australian Capital Territory	XX	148.7	-36.0	149.4	-35.1",
+  "Australia: Jervis Bay Territory	XX	150.5	-35.2	150.8	-35.1",
+  "Australia: New South Wales	XX	140.9	-37.6	153.6	-28.2",
+  "Australia: Northern Territory	XX	128.9	-26.1	138.0	-10.9",
+  "Australia: Queensland	XX	137.9	-29.2	153.6	-10.0",
+  "Australia: South Australia	XX	128.9	-38.1	141.0	-26.0",
+  "Australia: Tasmania	XX	143.8	-43.7	148.5	-39.6",
+  "Australia: Victoria	XX	140.9	-39.6	150.0	-34.0",
+  "Australia: Western Australia	XX	112.9	-35.2	129.0	-13.7",
+  "Austria	AU	9.5	46.3	17.2	49.0",
+  "Azerbaijan	AJ	45.0	38.3	50.6	41.9",
+  "Bahamas	BF	-79.7	20.9	-72.7	27.2",
+  "Bahrain	BA	50.3	25.7	50.7	26.3",
+  "Baker Island	FQ	-176.5	0.1	-176.5	0.2",
+  "Bangladesh	BG	88.0	20.5	92.7	26.6",
+  "Barbados	BB	-59.7	13.0	-59.4	13.3",
+  "Bassas da India	BS	39.6	-21.6	39.8	-21.4",
+  "Belarus	BO	23.1	51.2	32.8	56.2",
+  "Belgium	BE	2.5	49.4	6.4	51.5",
+  "Belize	BH	-89.3	15.8	-86.9	18.5",
+  "Benin	BN	0.7	6.2	3.9	12.4",
+  "Bermuda	BD	-64.9	32.2	-64.7	32.4",
+  "Bhutan	BT	88.7	26.7	92.1	28.3",
+  "Bolivia	BL	-69.7	-22.9	-57.5	-9.7",
+  "Bosnia and Herzegovina	BK	15.7	42.5	19.7	45.3",
+  "Botswana	BC	19.9	-27.0	29.4	-17.8",
+  "Bouvet Island	BV	3.3	-54.5	3.5	-54.4",
+  "Brazil	BR	-74.0	-33.8	-34.8	5.0",
+  "British Virgin Islands	VI	-64.8	18.2	-63.2	18.8",
+  "Brunei	BX	114.0	4.0	115.4	5.0",
+  "Bulgaria	BU	22.3	41.2	28.6	44.2",
+  "Burkina Faso	UV	-5.6	9.4	2.4	15.1",
+  "Burundi	BY	28.9	-4.5	30.8	-2.3",
+  "Cambodia	CB	102.3	9.2	107.6	14.7",
+  "Cameroon	CM	8.4	1.6	16.2	13.1",
+  "Canada	CA	-141.0	41.7	-52.6	83.1",
+  "Canada: Alberta	XX	-120.0	48.9	-110.0	60.0",
+  "Canada: British Columbia	XX	-139.1	48.3	-114.1	60.0",
+  "Canada: Manitoba	XX	-102.1	48.9	-89.0	60.0",
+  "Canada: New Brunswick	XX	-69.1	44.5	-63.8	48.1",
+  "Canada: Newfoundland and Labrador	XX	-67.9	46.6	-52.6	60.4",
+  "Canada: Northwest Territories	XX	-136.5	60.0	-102.0	78.8",
+  "Canada: Nova Scotia	XX	-66.4	43.3	-59.7	47.0",
+  "Canada: Nunavut	XX	-120.4	60.0	-61.2	83.1",
+  "Canada: Ontario	XX	-95.2	41.6	-74.3	56.9",
+  "Canada: Prince Edward Island	XX	-64.5	45.9	-62.0	47.1",
+  "Canada: Quebec	XX	-79.8	45.0	-57.1	62.6",
+  "Canada: Saskatchewan	XX	-110.0	48.9	-101.4	60.0",
+  "Canada: Yukon	XX	-141.0	60.0	-124.0	69.6",
+  "Cape Verde	CV	-25.4	14.8	-22.7	17.2",
+  "Cayman Islands	CJ	-81.5	19.2	-81.1	19.4	-80.2	19.6	-79.7	19.8",
+  "Central African Republic	CT	14.4	2.2	27.5	11.0",
+  "Chad	CD	13.4	7.4	24.0	23.5",
+  "Chile	CI	-75.8	-56.0	-66.4	-17.5",
+  "China	CH	73.5	20.2	134.8	53.6	108.6	18.1	111.1	20.2",
+  "China: Hainan	XX	108.6	18.1	111.1	20.2",
+  "Christmas Island	KT	105.5	-10.6	105.7	-10.4",
+  "Clipperton Island	IP	-109.3	10.2	-109.2	10.3",
+  "Cocos Islands	CK	96.8	-12.2	96.9	-11.8",
+  "Colombia	CO	-79.1	-4.3	-66.9	12.5",
+  "Comoros	CN	43.2	-12.5	44.5	-11.4",
+  "Cook Islands	CW	-159.9	-22.0	-157.3	-18.8",
+  "Coral Sea Islands	CR	",
+  "Costa Rica	CS	-87.1	5.4	-87.0	5.6	-86.0	8.0	-82.6	11.2",
+  "Cote d'Ivoire	IV	-8.6	4.3	-2.5	10.7",
+  "Croatia	HR	13.4	42.3	19.4	46.5",
+  "Cuba	CU	-85.0	19.8	-74.1	23.3",
+  "Cyprus	CY	32.2	34.5	34.6	35.7",
+  "Czech Republic	EZ	12.0	48.5	18.9	51.0",
+  "Democratic Republic of the Congo	CG	12.2	-13.5	31.3	5.4",
+  "Denmark	DA	8.0	54.5	12.7	57.7	14.6	54.9	15.2	55.3",
+  "Djibouti	DJ	41.7	10.9	43.4	12.7",
+  "Dominica	DO	-61.5	15.2	-61.2	15.6",
+  "Dominican Republic	DR	-72.1	17.4	-68.3	19.9",
+  "East Timor	TT	124.9	-9.5	127.4	-8.3",
+  "Ecuador	EC	-92.1	-1.5	-89.2	1.7	-81.1	-5.0	-75.2	1.4",
+  "Ecuador: Galapagos	XX	-92.1	-1.5	-89.2	1.7",
+  "Egypt	EG	24.6	21.7	35.8	31.7",
+  "El Salvador	ES	-90.2	13.1	-87.7	14.4",
+  "Equatorial Guinea	EK	8.4	3.2	8.9	3.8	9.2	0.8	11.3	2.3",
+  "Eritrea	ER	36.4	12.3	43.1	18.0",
+  "Estonia	EN	21.7	57.5	28.2	59.7",
+  "Ethiopia	ET	32.9	3.4	48.0	14.9",
+  "Europa Island	EU	40.3	-22.4	40.4	-22.3",
+  "Falkland Islands (Islas Malvinas)	FK	-61.4	-53.0	-57.7	-51.0",
+  "Faroe Islands	FO	-7.7	61.3	-6.3	62.4",
+  "Fiji	FJ	-180.0	-20.7	-178.2	-15.7	-175.7	-19.8	-175.0	-15.6	176.8	-19.3	180.0	-12.5",
+  "Finland	FI	19.3	59.7	31.6	70.1",
+  "France	FR	-5.2	42.3	8.2	51.1	8.5	41.3	9.6	43.1",
+  "France: Corsica	XX	8.5	41.3	9.6	43.1",
+  "French Guiana	FG	-54.6	2.1	-51.6	5.8",
+  "French Polynesia	FP	-154.7	-27.7	-134.9	-7.8",
+  "French Southern and Antarctic Lands	FS	68.6	-49.8	70.6	-48.5",
+  "Gabon	GB	8.6	-4.0	14.5	2.3",
+  "Gambia	GA	-16.9	13.0	-13.8	13.8",
+  "Gaza Strip	GZ	34.2	31.2	34.5	31.6",
+  "Georgia	GG	40.0	41.0	46.7	43.6",
+  "Germany	GM	5.8	47.2	15.0	55.1",
+  "Ghana	GH	-3.3	4.7	1.2	11.2",
+  "Gibraltar	GI	-5.4	36.1	-5.3	36.2",
+  "Glorioso Islands	GO	47.2	-11.6	47.4	-11.5",
+  "Greece	GR	19.3	34.8	28.2	41.8",
+  "Greenland	GL	-73.3	59.7	-11.3	83.6",
+  "Grenada	GJ	-61.8	11.9	-61.6	12.3",
+  "Guadeloupe	GP	-63.2	17.8	-62.8	18.1	-61.9	15.8	-61.0	16.5",
+  "Guam	GQ	144.6	13.2	145.0	13.7",
+  "Guatemala	GT	-92.3	13.7	-88.2	17.8",
+  "Guernsey	GK	-2.7	49.4	-2.4	49.5",
+  "Guinea	GV	-15.1	7.1	-7.6	12.7",
+  "Guinea-Bissau	PU	-16.8	10.8	-13.6	12.7",
+  "Guyana	GY	-61.4	1.1	-56.5	8.6",
+  "Haiti	HA	-74.5	18.0	-71.6	20.1",
+  "Heard Island and McDonald Islands	HM	73.2	-53.2	73.7	-52.9",
+  "Honduras	HO	-89.4	12.9	-83.2	16.5",
+  "Hong Kong	HK	113.8	22.1	114.4	22.6",
+  "Howland Island	HQ	-176.7	0.7	-176.6	0.8",
+  "Hungary	HU	16.1	45.7	22.9	48.6",
+  "Iceland	IC	-24.6	63.2	-13.5	66.6",
+  "India	IN	67.3	8.0	97.4	35.5",
+  "Indian Ocean	XX	",
+  "Indonesia	ID	95.0	-11.1	141.0	5.9",
+  "Iran	IR	44.0	25.0	63.3	39.8",
+  "Iraq	IZ	38.8	29.1	48.6	37.4",
+  "Ireland	EI	-10.7	51.4	-6.0	55.4",
+  "Isle of Man	IM	-4.9	54.0	-4.3	54.4",
+  "Israel	IS	34.2	29.4	35.7	33.3",
+  "Italy	IT	6.6	35.4	18.5	47.1",
+  "Jamaica	JM	-78.4	17.7	-76.2	18.5",
+  "Jan Mayen	JN	-9.1	70.8	-7.9	71.2",
+  "Japan	JA	122.9	24.0	125.5	25.9	126.7	20.5	145.8	45.5",
+  "Jarvis Island	DQ	-160.1	-0.4	-160.0	-0.4",
+  "Jersey	JE	-2.3	49.1	-2.0	49.3",
+  "Johnston Atoll	JQ	-169.6	16.7	-169.4	16.8",
+  "Jordan	JO	34.9	29.1	39.3	33.4",
+  "Juan de Nova Island	JU	42.6	-17.1	42.8	-16.8",
+  "Kazakhstan	KZ	46.4	40.9	87.3	55.4",
+  "Kenya	KE	33.9	-4.7	41.9	4.6",
+  "Kerguelen Archipelago	XX	",
+  "Kingman Reef	KQ	-162.9	6.1	-162.4	6.7",
+  "Kiribati	KR	172.6	0.1	173.9	3.4	174.2	-2.7	176.9	-0.5",
+  "Kosovo	KV	20.0	41.8	43.3	21.9",
+  "Kuwait	KU	46.5	28.5	48.4	30.1",
+  "Kyrgyzstan	KG	69.2	39.1	80.3	43.2",
+  "Laos	LA	100.0	13.9	107.7	22.5",
+  "Latvia	LG	20.9	55.6	28.2	58.1",
+  "Lebanon	LE	35.1	33.0	36.6	34.7",
+  "Lesotho	LT	27.0	-30.7	29.5	-28.6",
+  "Liberia	LI	-11.5	4.3	-7.4	8.6",
+  "Libya	LY	9.3	19.5	25.2	33.2",
+  "Liechtenstein	LS	9.4	47.0	9.6	47.3",
+  "Lithuania	LH	20.9	53.9	26.9	56.4",
+  "Luxembourg	LU	5.7	49.4	6.5	50.2",
+  "Macau	MC	113.5	22.1	113.6	22.2",
+  "Macedonia	MK	20.4	40.8	23.0	42.4",
+  "Madagascar	MA	43.1	-25.7	50.5	-11.9",
+  "Malawi	MI	32.6	-17.2	35.9	-9.4",
+  "Malaysia	MY	98.9	5.6	98.9	5.7	99.6	1.2	104.5	6.7	109.5	0.8	119.3	7.4",
+  "Maldives	MV	72.6	-0.7	73.7	7.1",
+  "Mali	ML	-12.3	10.1	4.2	25.0",
+  "Malta	MT	14.1	35.8	14.6	36.1",
+  "Marshall Islands	RM	160.7	4.5	172.0	14.8",
+  "Martinique	MB	-61.3	14.3	-60.8	14.9",
+  "Mauritania	MR	-17.1	14.7	-4.8	27.3",
+  "Mauritius	MP	57.3	-20.6	57.8	-20.0	59.5	-16.9	59.6	-16.7",
+  "Mayotte	MF	45.0	-13.1	45.3	-12.6",
+  "Mexico	MX	-118.5	28.8	-118.3	29.2	-117.3	14.5	-86.7	32.7",
+  "Micronesia	FM	138.0	9.4	138.2	9.6	139.6	9.8	139.8	10.0	140.5	9.7	140.5	9.8	147.0	7.3	147.0	7.4	149.3	6.6	149.3	6.7	151.5	7.1	152.0	7.5	153.5	5.2	153.8	5.6	157.1	5.7	160.7	7.1	162.9	5.2	163.0	5.4",
+  "Midway Islands	MQ	-178.4	28.3	-178.3	28.4	-177.4	28.1	-177.3	28.2	-174.0	26.0	-174.0	26.1	-171.8	25.7	-171.7	25.8",
+  "Moldova	MD	26.6	45.4	30.2	48.5",
+  "Monaco	MN	7.3	43.7	7.5	43.8",
+  "Mongolia	MG	87.7	41.5	119.9	52.2",
+  "Montenegro	MJ	18.4	42.2	20.4	43.6",
+  "Montserrat	MH	-62.3	16.6	-62.1	16.8",
+  "Morocco	MO	-13.2	27.6	-1.0	35.9",
+  "Mozambique	MZ	30.2	-26.9	40.8	-10.5",
+  "Myanmar	BM	92.1	9.6	101.2	28.5",
+  "Namibia	WA	11.7	-29.0	25.3	-17.0",
+  "Nauru	NR	166.8	-0.6	166.9	-0.5",
+  "Navassa Island	BQ	-75.1	18.3	-75.0	18.4",
+  "Nepal	NP	80.0	26.3	88.2	30.4",
+  "Netherlands	NL	3.3	50.7	7.2	53.6",
+  "Netherlands Antilles	NT	-69.2	11.9	-68.2	12.4	-63.3	17.4	-62.9	18.1",
+  "New Caledonia	NC	163.5	-22.8	169.0	-19.5",
+  "New Zealand	NZ	166.4	-48.1	178.6	-34.1",
+  "Nicaragua	NU	-87.7	10.7	-82.6	15.0",
+  "Niger	NG	0.1	11.6	16.0	23.5",
+  "Nigeria	NI	2.6	4.2	14.7	13.9",
+  "Niue	NE	-170.0	-19.2	-169.8	-19.0",
+  "Norfolk Island	NF	168.0	-29.2	168.1	-29.0",
+  "North Korea	KN	124.1	37.5	130.7	43.0",
+  "North Sea	XX	",
+  "Northern Mariana Islands	CQ	144.8	14.1	146.1	20.6",
+  "Norway	NO	4.6	57.9	31.1	71.2",
+  "Oman	MU	51.8	16.6	59.8	25.0",
+  "Pacific Ocean	XX	",
+  "Pakistan	PK	60.8	23.6	77.8	37.1",
+  "Palau	PS	132.3	4.3	132.3	4.3	134.1	6.8	134.7	7.7",
+  "Palmyra Atoll	LQ	-162.2	5.8	-162.0	5.9",
+  "Panama	PM	-83.1	7.1	-77.2	9.6",
+  "Papua New Guinea	PP	140.8	-11.7	156.0	-0.9	157.0	-4.9	157.1	-4.8	159.4	-4.7	159.5	-4.5",
+  "Paracel Islands	PF	111.1	15.7	111.2	15.8",
+  "Paraguay	PA	-62.7	-27.7	-54.3	-19.3",
+  "Peru	PE	-81.4	-18.4	-68.7	0.0",
+  "Philippines	RP	116.9	4.9	126.6	21.1",
+  "Pitcairn Islands	PC	-128.4	-24.5	-128.3	-24.3",
+  "Poland	PL	14.1	49.0	24.2	54.8",
+  "Portugal	PO	-9.5	36.9	-6.2	42.1	-31.3	36.9	-25.0	39.8	-17.3	32.4	-16.2	33.2",
+  "Portugal: Azores	XX	-31.3	36.9	-25.0	39.8",
+  "Portugal: Madeira	XX	-17.3	32.4	-16.2	33.2",
+  "Puerto Rico	RQ	-68.0	17.8	-65.2	18.5",
+  "Qatar	QA	50.7	24.4	52.4	26.2",
+  "Republic of the Congo	CF	11.2	-5.1	18.6	3.7",
+  "Reunion	RE	55.2	-21.4	55.8	-20.9",
+  "Romania	RO	20.2	43.6	29.7	48.3",
+  "Russia	RS	-180.0	64.2	-169.0	71.6	19.7	54.3	22.9	55.3	26.9	41.1	180.0	81.3",
+  "Rwanda	RW	28.8	-2.9	30.9	-1.1",
+  "Saint Helena	SH	-5.8	-16.1	-5.6	-15.9",
+  "Saint Kitts and Nevis	SC	62.9	17.0	62.5	17.5",
+  "Saint Lucia	ST	-61.1	13.7	-60.9	14.1",
+  "Saint Pierre and Miquelon	SB	-56.5	46.7	-56.2	47.1",
+  "Saint Vincent and the Grenadines	VC	-61.6	12.4	-61.1	13.4",
+  "Samoa	WS	-172.8	-14.1	-171.4	-13.4",
+  "San Marino	SM	12.4	43.8	12.5	44.0",
+  "Sao Tome and Principe	TP	6.4	0.0	1.7	7.5",
+  "Saudi Arabia	SA	34.4	15.6	55.7	32.2",
+  "Senegal	SG	-17.6	12.3	-11.4	16.7",
+  "Serbia	RB	18.8	42.2	23.1	46.2",
+  "Seychelles	SE	50.7	-9.6	51.1	-9.2	52.7	-7.2	52.8	-7.0	53.0	-6.3	53.7	-5.1	55.2	-5.9	56.0	-3.7	56.2	-7.2	56.3	-7.1",
+  "Sierra Leone	SL	-13.4	6.9	-10.3	10.0",
+  "Singapore	SN	103.6	1.1	104.1	1.5",
+  "Slovakia	LO	16.8	47.7	22.6	49.6",
+  "Slovenia	SI	13.3	45.4	16.6	46.9",
+  "Solomon Islands	BP	155.5	-11.9	162.8	-5.1	165.6	-11.8	167.0	-10.1	167.1	-10.0	167.3	-9.8	168.8	-12.3	168.8	-12.3",
+  "Somalia	SO	40.9	-1.7	51.4	12.0",
+  "South Africa	SF	16.4	-34.9	32.9	-22.1",
+  "South Georgia and the South Sandwich Islands	SX	-38.3	-54.9	-35.7	-53.9",
+  "South Korea	KS	125.0	33.1	129.6	38.6",
+  "Spain	SP	-9.3	35.1	4.3	43.8	-18.2	27.6	-13.4	29.5",
+  "Spain: Canary Islands	XX	-18.2	27.6	-13.4	29.5",
+  "Spratly Islands	PG	114.0	9.6	115.8	11.1",
+  "Sri Lanka	CE	79.6	5.9	81.9	9.8",
+  "Sudan	SU	21.8	3.4	38.6	23.6",
+  "Suriname	NS	-58.1	1.8	-54.0	6.0",
+  "Svalbard	SV	10.4	76.4	33.5	80.8",
+  "Swaziland	WZ	30.7	-27.4	32.1	-25.7",
+  "Sweden	SW	10.9	55.3	24.2	69.1",
+  "Switzerland	SZ	5.9	45.8	10.5	47.8",
+  "Syria	SY	35.7	32.3	42.4	37.3",
+  "Taiwan	TW	119.3	21.9	122.0	25.3",
+  "Tajikistan	TI	67.3	36.6	75.1	41.0",
+  "Tanzania	TZ	29.3	-11.8	40.4	-1.0",
+  "Thailand	TH	97.3	5.6	105.6	20.5",
+  "Togo	TO	-0.2	6.1	1.8	11.1",
+  "Tokelau	TL	-172.6	-9.5	-171.1	-8.5",
+  "Tonga	TN	-176.3	-22.4	-176.2	-22.3	-175.5	-21.5	-174.5	-20.0",
+  "Trinidad and Tobago	TD	-62.0	10.0	-60.5	11.3",
+  "Tromelin Island	TE	54.5	-15.9	54.5	-15.9",
+  "Tunisia	TS	7.5	30.2	11.6	37.5",
+  "Turkey	TU	25.6	35.8	44.8	42.1",
+  "Turkmenistan	TX	52.4	35.1	66.7	42.8",
+  "Turks and Caicos Islands	TK	-73.8	20.9	-73.0	21.3",
+  "Tuvalu	TV	176.0	-7.3	177.3	-5.6	178.4	-8.0	178.7	-7.4	179.0	-9.5	179.9	-8.5",
+  "Uganda	UG	29.5	-1.5	35.0	4.2",
+  "Ukraine	UP	22.1	44.3	40.2	52.4",
+  "United Arab Emirates	AE	51.1	22.4	56.4	26.1",
+  "United Kingdom	UK	-8.7	49.7	1.8	60.8",
+  "Uruguay	UY	-58.5	-35.0	-53.1	-30.1",
+  "USA	US	-124.8	24.5	-66.9	49.4	-168.2	54.3	-130.0	71.4	172.4	52.3	176.0	53.0	177.2	51.3	179.8	52.1	-179.5	51.0	-172.0	52.5	-171.5	52.0	-164.5	54.5	-164.8	23.5	-164.7	23.6	-162.0	23.0	-161.9	23.1	-160.6	18.9	-154.8	22.2",
+  "USA: Alabama	XX	-88.8	30.1	-84.9	35.0",
+  "USA: Alaska	XX	-168.2	54.3	-130.0	71.4	172.4	52.3	176.0	53.0	177.2	51.3	179.8	52.1	-179.5	51.0	-172.0	52.5	-171.5	52.0	-164.5	54.5",
+  "USA: Alaska, Aleutian Islands	XX	172.4	52.3	176.0	53.0	177.2	51.3	179.8	52.1	-179.5	51.0	-172.0	52.5	-171.5	52.0	-164.5	54.5",
+  "USA: Arizona	XX	-114.9	31.3	-109.0	37.0",
+  "USA: Arkansas	XX	-94.7	33.0	-89.6	36.5",
+  "USA: California	XX	-124.5	32.5	-114.1	42.0",
+  "USA: Colorado	XX	-109.1	36.9	-102.0	41.0",
+  "USA: Connecticut	XX	-73.8	40.9	-71.8	42.1",
+  "USA: Delaware	XX	-75.8	38.4	-74.9	39.8",
+  "USA: Florida	XX	-87.7	24.5	-80.0	31.0",
+  "USA: Georgia	XX	-85.7	30.3	-80.8	35.0",
+  "USA: Hawaii	XX	-164.8	23.5	-164.7	23.6	-162.0	23.0	-161.9	23.1	-160.6	18.9	-154.8	22.2",
+  "USA: Idaho	XX	-117.3	41.9	-111.0	49.0",
+  "USA: Illinois	XX	-91.6	36.9	-87.0	42.5",
+  "USA: Indiana	XX	-88.1	37.7	-84.8	41.8",
+  "USA: Iowa	XX	-96.7	40.3	-90.1	43.5",
+  "USA: Kansas	XX	-102.1	36.9	-94.6	40.0",
+  "USA: Kentucky	XX	-89.5	36.5	-82.0	39.1",
+  "USA: Louisiana	XX	-94.1	28.9	-88.8	33.0",
+  "USA: Maine	XX	-71.1	43.0	-66.9	47.5",
+  "USA: Maryland	XX	-79.5	37.8	-75.1	39.7",
+  "USA: Massachusetts	XX	-73.6	41.2	-69.9	42.9",
+  "USA: Michigan	XX	-90.5	41.6	-82.1	48.3",
+  "USA: Minnesota	XX	-97.3	43.4	-90.0	49.4",
+  "USA: Mississippi	XX	-91.7	30.1	-88.1	35.0",
+  "USA: Missouri	XX	-95.8	36.0	-89.1	40.6",
+  "USA: Montana	XX	-116.1	44.3	-104.0	49.0",
+  "USA: Nebraska	XX	-104.1	40.0	-95.3	43.0",
+  "USA: Nevada	XX	-120.0	35.0	-114.0	42.0",
+  "USA: New Hampshire	XX	-72.6	42.6	-70.7	45.3",
+  "USA: New Jersey	XX	-75.6	38.9	-73.9	41.4",
+  "USA: New Mexico	XX	-109.1	31.3	-103.0	37.0",
+  "USA: New York	XX	-79.8	40.4	-71.9	45.0",
+  "USA: North Carolina	XX	-84.4	33.8	-75.5	36.6",
+  "USA: North Dakota	XX	-104.1	45.9	-96.6	49.0",
+  "USA: Ohio	XX	-84.9	38.3	-80.5	42.3",
+  "USA: Oklahoma	XX	-103.1	33.6	-94.4	37.0",
+  "USA: Oregon	XX	-124.6	41.9	-116.5	46.3",
+  "USA: Pennsylvania	XX	-80.6	39.7	-74.7	42.5",
+  "USA: Rhode Island	XX	-71.9	41.1	-71.1	42.0",
+  "USA: South Carolina	XX	-83.4	32.0	-78.6	35.2",
+  "USA: South Dakota	XX	-104.1	42.4	-96.4	45.9",
+  "USA: Tennessee	XX	-90.4	35.0	-81.7	36.7",
+  "USA: Texas	XX	-106.7	25.8	-93.5	36.5",
+  "USA: Utah	XX	-114.1	37.0	-109.1	42.0",
+  "USA: Vermont	XX	-73.5	42.7	-71.5	45.0",
+  "USA: Virginia	XX	-83.7	36.5	-75.2	39.5",
+  "USA: Washington	XX	-124.8	45.5	-116.9	49.0",
+  "USA: West Virginia	XX	-82.7	37.1	-77.7	40.6",
+  "USA: Wisconsin	XX	-92.9	42.4	-86.3	47.3",
+  "USA: Wyoming	XX	-111.1	40.9	-104.1	45.0",
+  "Uzbekistan	UZ	55.9	37.1	73.1	45.6",
+  "Vanuatu	NH	166.5	-20.3	170.2	-13.1",
+  "Venezuela	VE	-73.4	0.7	-59.8	12.2",
+  "Viet Nam	VM	102.1	8.4	109.5	23.4",
+  "Virgin Islands	VQ	-65.1	17.6	-64.6	18.5",
+  "Wake Island	WQ	166.5	19.2	166.7	19.3",
+  "Wallis and Futuna	WF	-178.3	-14.4	-178.0	-14.2	-176.3	-13.4	-176.1	-13.2",
+  "West Bank	WE	34.8	31.3	35.6	32.6",
+  "Western Sahara	WI	-17.2	20.7	-8.7	27.7",
+  "Yemen	YM	41.8	11.7	54.5	19.0",
+  "Zambia	ZA	21.9	-18.1	33.7	-8.2",
+  "Zimbabwe	ZI	25.2	-22.5	33.1	-15.6",
+};
+
+
+static const int k_NumCountryLatLonText = sizeof (s_DefaultCountryLatLonText) / sizeof (char *);
+
+
+
+void CCountryLatLonMap::x_AddBlocksFromLine (string line)
+{
+	vector<string> tokens;
+	NStr::Tokenize(line, "\t", tokens);
+	if (tokens.size() < 6 || (tokens.size() - 2) % 4 > 0) {
+//				ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
+//						   << "; disregarding");
+	} else {
+		vector <CCountryBlock *> blocks_from_line;
+		bool line_ok = true;
+		try {
+			size_t offset = 2;
+			while (offset < tokens.size()) {
+				CCountryBlock *block = new CCountryBlock(tokens[0],
+					NStr::StringToDouble(tokens[offset + 1]),
+					NStr::StringToDouble(tokens[offset]),
+					NStr::StringToDouble(tokens[offset + 3]),
+					NStr::StringToDouble(tokens[offset + 2]));
+                blocks_from_line.push_back(block);
+			    offset += 4;
+			}
+		} catch (CException ) {
+			line_ok = false;
+		}
+		if (line_ok) {
+			for (int i = 0; i < blocks_from_line.size(); i++) {
+				m_CountryBlockList.push_back(blocks_from_line[i]);
+			}
+		} else {
+//					ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
+//							   << "; disregarding");
+			for (int i = 0; i < blocks_from_line.size(); i++) {
+				delete blocks_from_line[i];
+			}
+		}
+	}
+}
+
+
+void CCountryLatLonMap::x_InitFromDefaultList()
 {
 	// initialize list of country blocks
     m_CountryBlockList.clear();
 
+    for (int i = 0; i < k_NumCountryLatLonText; i++) {
+		const string& line = s_DefaultCountryLatLonText[i];
+        x_AddBlocksFromLine(line);
+	}
+}
+
+
+bool CCountryLatLonMap::x_InitFromFile()
+{
 	// note - may want to do this initialization later, when needed
     string dir;
     if (CNcbiApplication* app = CNcbiApplication::Instance()) {
@@ -2841,8 +3244,7 @@ CCountryLatLonMap::CCountryLatLonMap (void)
         }
     }
     if (dir.empty()) {
-        ERR_POST_X(2, Info << "CCountryLatLonMap: "
-                   "data not found.");
+        return false;
     }
 
     CRef<ILineReader> lr;
@@ -2850,45 +3252,26 @@ CCountryLatLonMap::CCountryLatLonMap (void)
         lr.Reset(ILineReader::New
                  (CDirEntry::MakePath(dir, "country_lat_lon.txt")));
     }
-    if (!lr.Empty()) {
+    if (lr.Empty()) {
+        return false;
+    } else {
         for (++*lr; !lr->AtEOF(); ++*lr) {
 			const string& line = **lr;
-			vector<string> tokens;
-			NStr::Tokenize(line, "\t", tokens);
-			if (tokens.size() < 6 || (tokens.size() - 2) % 4 > 0) {
-//				ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
-//						   << "; disregarding");
-			} else {
-				vector <CCountryBlock *> blocks_from_line;
-				bool line_ok = true;
-				try {
-					size_t offset = 2;
-					while (offset < tokens.size()) {
-						CCountryBlock *block = new CCountryBlock(tokens[0],
-							NStr::StringToDouble(tokens[offset + 1]),
-							NStr::StringToDouble(tokens[offset]),
-							NStr::StringToDouble(tokens[offset + 3]),
-							NStr::StringToDouble(tokens[offset + 2]));
-                        blocks_from_line.push_back(block);
-					    offset += 4;
-					}
-				} catch (CException ) {
-					line_ok = false;
-				}
-				if (line_ok) {
-					for (int i = 0; i < blocks_from_line.size(); i++) {
-						m_CountryBlockList.push_back(blocks_from_line[i]);
-					}
-				} else {
-//					ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
-//							   << "; disregarding");
-					for (int i = 0; i < blocks_from_line.size(); i++) {
-						delete blocks_from_line[i];
-					}
-				}
-			}
+            x_AddBlocksFromLine(line);
 		}
+        return true;
 	}
+}
+
+
+CCountryLatLonMap::CCountryLatLonMap (void) 
+{
+	// initialize list of country blocks
+    m_CountryBlockList.clear();
+
+    if (!x_InitFromFile()) {
+        x_InitFromDefaultList();
+    }
 }
 
 
