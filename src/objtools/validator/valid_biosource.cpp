@@ -796,89 +796,123 @@ void CValidError_imp::ValidateBioSource
 
 	// check that country and lat_lon are compatible
 	if (!NStr::IsBlank(countryname) && !NStr::IsBlank(lat_lon)) {
-		size_t pos = NStr::Find(countryname, ";");
-		// first, get rid of comments after semicolon
-		if (pos != string::npos) {
-			countryname = countryname.substr(0, pos);
-		}
-		string test_country = countryname;
-		pos = NStr::Find(test_country, ":");
-		if (pos != string::npos) {
-			test_country = test_country.substr(0, pos);
-		}
-		if (lat_lon_map.HaveLatLonForCountry(test_country)) {
-			if (lat_lon_map.IsCountryInLatLon(test_country, lat_value, lon_value)) {
-				// match, now try stricter match
-				if (pos != string::npos) {
-					test_country = countryname;
-					size_t end_region = NStr::Find(test_country, ",", pos);
-					if (end_region != string::npos) {
-						test_country = test_country.substr(0, end_region);
-					}
-					if (lat_lon_map.HaveLatLonForCountry(test_country)
-						&& !lat_lon_map.IsCountryInLatLon(test_country, lat_value, lon_value)
-						&& !CCountryLatLonMap::DoesStringContainBodyOfWater(test_country)) {
-						string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);                        
-						if (NStr::IsBlank(guess)) {
-							PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
-									  "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country + "'",
-									  obj, ctx);
-                        } else if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
-						    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
-                                        "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
-                                        obj, ctx);
-						} else {
-							PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
-									  "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country 
-									  + "', but may be in '" + guess + "'",
-									  obj, ctx);
-						}
-					}
-				}
-			} else {
-				if (lat_lon_map.IsCountryInLatLon(test_country, -lat_value, lon_value)) {
-					if (lat_value < 0.0) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
-							"Latitude should be set to N (northern hemisphere)",
-							obj, ctx);
-					} else {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
-							"Latitude should be set to S (southern hemisphere)",
-							obj, ctx);
-					}
-				} else if (lat_lon_map.IsCountryInLatLon(test_country, lat_value, -lon_value)) {
-					if (lon_value < 0.0) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
-									"Longitude should be set to E (eastern hemisphere)",
-									obj, ctx);
-					} else {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
-							"Longitude should be set to W (western hemisphere)",
-									obj, ctx);
-					}
-                } else if (lat_lon_map.IsCountryInLatLon(test_country, lon_value, lat_value)) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
-						"Latitude and longitude values appear to be exchanged",
-								obj, ctx);
-				} else if (!CCountryLatLonMap::DoesStringContainBodyOfWater(test_country)) {
-					string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);
-					if (NStr::IsBlank(guess)) {
-						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
-								  "Lat_lon '" + lat_lon + "' does not map to '" + test_country + "'",
-								  obj, ctx);
-                    } else if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
-						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
-                                    "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
-                                    obj, ctx);
-					} else {
-						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
-								  "Lat_lon '" + lat_lon + "' does not map to '" + test_country 
-								  + "', but may be in '" + guess + "'",
-								  obj, ctx);
-					}
-				}
-			}
-		}
+        // only do these checks if the latlon format is good
+        bool format_correct, lat_in_range, lon_in_range;
+		s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+			                     lat_in_range, lon_in_range,
+								 lat_value, lon_value);
+
+        if (format_correct) {
+		    size_t pos = NStr::Find(countryname, ";");
+		    // first, get rid of comments after semicolon
+		    if (pos != string::npos) {
+			    countryname = countryname.substr(0, pos);
+		    }
+		    string test_country = countryname;
+            bool strict = TRUE;
+		    pos = NStr::Find(test_country, ":");
+		    if (pos != string::npos) {
+                strict = FALSE;
+			    test_country = test_country.substr(0, pos);              
+		    }
+		    if (lat_lon_map.HaveLatLonForCountry(test_country)) {
+			    if (lat_lon_map.IsCountryInLatLon(test_country, lat_value, lon_value)) {
+                    if (!strict) {
+                        test_country = countryname;
+					    size_t end_region = NStr::Find(test_country, ",", pos);
+					    if (end_region != string::npos) {
+						    test_country = test_country.substr(0, end_region);
+					    }
+                        end_region = NStr::Find(test_country, ";", pos);
+					    if (end_region != string::npos) {
+						    test_country = test_country.substr(0, end_region);
+					    }
+                        if (lat_lon_map.HaveLatLonForCountry(test_country)) {
+                            if (lat_lon_map.IsCountryInLatLon(test_country, lat_value, lon_value)) {
+                                // match
+                            } else if (IsLatLonIgnoreWater() || 
+                                       (IsLatLonCheckState() &&
+						                !CCountryLatLonMap::DoesStringContainBodyOfWater(countryname))) {
+						        string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);                        
+						        if (NStr::IsBlank(guess)) {
+							        PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
+									          "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country + "'",
+									          obj, ctx);
+                                } else { 
+                                    if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
+                                        if (IsIndexerVersion()) {
+						                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonAdjacent,
+                                                        "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of adjacent '" + test_country + "'", 
+                                                        obj, ctx);
+                                        } else {
+						                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
+                                                        "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
+                                                        obj, ctx);
+                                        }
+						            } else {
+							            PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonState,
+									              "Lat_lon '" + lat_lon + "' does not map to subregion '" + test_country 
+									              + "', but may be in '" + guess + "'",
+									              obj, ctx);
+						            }
+                                }
+                            }
+					    }
+				    }
+			    } else {
+				    if (lat_lon_map.IsCountryInLatLon(test_country, -lat_value, lon_value)) {
+					    if (lat_value < 0.0) {
+						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+							    "Latitude should be set to N (northern hemisphere)",
+							    obj, ctx);
+					    } else {
+						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+							    "Latitude should be set to S (southern hemisphere)",
+							    obj, ctx);
+					    }
+				    } else if (lat_lon_map.IsCountryInLatLon(test_country, lat_value, -lon_value)) {
+					    if (lon_value < 0.0) {
+						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+									    "Longitude should be set to E (eastern hemisphere)",
+									    obj, ctx);
+					    } else {
+						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+							    "Longitude should be set to W (western hemisphere)",
+									    obj, ctx);
+					    }
+                    } else if (lat_lon_map.IsCountryInLatLon(test_country, lon_value, lat_value)) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, 
+						    "Latitude and longitude values appear to be exchanged",
+								    obj, ctx);
+				    } else if (IsLatLonIgnoreWater() ||
+                               !CCountryLatLonMap::DoesStringContainBodyOfWater(countryname)) {
+					    string guess = lat_lon_map.GuessCountryForLatLon(lat_value, lon_value);
+					    if (NStr::IsBlank(guess)) {
+						    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
+								      "Lat_lon '" + lat_lon + "' does not map to '" + test_country + "'",
+								      obj, ctx);
+                        } else {
+                            if (lat_lon_map.DoCountryBoxesOverlap(test_country, guess)) {
+                                if (IsIndexerVersion()) {
+						            PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonAdjacent,
+                                                "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of adjacent '" + test_country + "'", 
+                                                obj, ctx);
+                                } else {
+						            PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
+                                                "Lat_lon '" + lat_lon + "' MIGHT be in '" + guess + "' instead of '" + test_country + "'", 
+                                                obj, ctx);
+                                }
+					        } else {
+						        PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonCountry,
+								          "Lat_lon '" + lat_lon + "' does not map to '" + test_country 
+								          + "', but may be in '" + guess + "'",
+								          obj, ctx);
+                            }
+					    }
+				    }
+			    }
+		    }
+        }
 	}
 
 	// validates orgref in the context of lineage
@@ -1595,6 +1629,28 @@ bool CValidError_imp::IsOtherDNA(const CBioseq_Handle& bsh) const
 }
 
 
+static bool s_CompleteGenomeNeedsChromosome (const CBioSource& source)
+{
+    bool rval = false;
+
+    if ((!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_chromosome)) {
+        bool is_viral = false;
+        if (source.IsSetOrg()) {
+            if (source.GetOrg().IsSetDivision() && NStr::Equal(source.GetOrg().GetDivision(), "PHG")) {
+                is_viral = true;
+            } else if (source.GetOrg().IsSetLineage()) {
+                if (NStr::StartsWith(source.GetOrg().GetLineage(), "Viruses; ")
+                    || NStr::StartsWith(source.GetOrg().GetLineage(), "Viroids; ")) {
+                    is_viral = true;
+                }
+            }
+        }
+        rval = !is_viral;
+    }
+    return rval;
+}
+
+
 void CValidError_imp::ValidateBioSourceForSeq
 (const CBioSource&    source,
  const CSerialObject& obj,
@@ -1656,8 +1712,7 @@ void CValidError_imp::ValidateBioSourceForSeq
         if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_genomic
             && molinfo.IsSetCompleteness() && molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete
             && NStr::Find(ti->GetTitle(), "complete genome") != string::npos
-            && (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_chromosome)
-            && (!source.IsSetOrg() || !source.GetOrg().IsSetLineage() || !NStr::StartsWith(source.GetOrg().GetLineage(), "Viruses; "))) {
+            && s_CompleteGenomeNeedsChromosome (source)) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceNeedsChromosome, 
 		               "Non-viral complete genome not labeled as chromosome",
 		               obj, ctx);
@@ -2757,6 +2812,11 @@ bool CCountryBlock::DoesOverlap(const CCountryBlock* other_block) const
         && m_MaxX <= other_block->GetMaxX()
         && m_MaxY >= other_block->GetMinY()
         && m_MinY <= other_block->GetMaxY()) {
+        return true;
+    } else if (other_block->GetMaxX() >= m_MinX
+        && other_block->GetMaxX() <= m_MaxX
+        && other_block->GetMaxY() >= m_MinY
+        && other_block->GetMinY() <= m_MaxY) {
         return true;
     } else {
         return false;

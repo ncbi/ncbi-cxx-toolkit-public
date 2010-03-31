@@ -689,6 +689,12 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_OrphanedProtein,
    TErrStrs ("OrphanedProtein",
 "The Bioseq is an INSD or RefSeq protein erroneously not in a nuc-prot set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_MissingSetTitle,
+   TErrStrs ("MissingSetTitle",
+"No title was found on a pop/phy/mut/eco set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_NucProtSetHasTitle,
+   TErrStrs ("NucProtSetHasTitle",
+"A title descriptor was found on a nuc-prot set.")),
 
 /* SEQ_FEAT */
 
@@ -1573,6 +1579,24 @@ CValidErrItem::CValidErrItem
     SetMsg(msg);
     SetObjDesc(desc);
     SetAccession(acc);
+}
+
+CValidErrItem::CValidErrItem
+(EDiagSev             sev,
+ unsigned int         ec,
+ const string&        msg,
+ const string&        desc,
+ const CSerialObject& obj,
+ const string&        acc,
+ const string&        feature_id)
+  : m_Object(&obj)
+{
+    SetSev(sev);
+    SetErrIndex(ec);
+    SetMsg(msg);
+    SetObjDesc(desc);
+    SetAccession(acc);
+    SetFeatureId(feature_id);
 }
 
 CValidErrItem::CValidErrItem

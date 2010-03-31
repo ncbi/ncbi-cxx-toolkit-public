@@ -312,12 +312,17 @@ void CValidError_bioseqset::ValidateNucProtSet
     }
 
     bool has_source = false;
+    bool has_title = false;
     FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
         if ((*it)->IsSource()
             && (*it)->GetSource().IsSetOrg()
             && (*it)->GetSource().GetOrg().IsSetTaxname()
             && !NStr::IsBlank ((*it)->GetSource().GetOrg().GetTaxname())) {
             has_source = true;
+        } else if ((*it)->IsTitle()) {
+            has_title = true;
+        }
+        if (has_title && has_source) {
             break;
         }
     }
@@ -329,6 +334,11 @@ void CValidError_bioseqset::ValidateNucProtSet
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceMissing,
                      "Nuc-prot set does not contain expected BioSource descriptor", seqset);
         }
+    }
+
+    if (has_title) {
+        PostErr (eDiag_Warning, eErr_SEQ_PKG_NucProtSetHasTitle,
+                 "Nuc-prot set should not have title descriptor", seqset);
     }
 }
 
@@ -519,16 +529,42 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 
         PostErr(sev, eErr_SEQ_DESCR_InconsistentBioSources,
             "Population set contains inconsistent organisms.",
-            *seqit);
+            seqset);
         break;
     }
     CheckForInconsistentBiomols (seqset);
+    bool has_title = false;
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+        if ((*it)->IsTitle()) {
+            has_title = true;
+            break;
+        }
+    }
+    if (!has_title) {
+        PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
+            "Pop/Phy/Mut/Eco set does not have title",
+            seqset);
+    }
 }
 
 
 void CValidError_bioseqset::ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset)
 {
     CheckForInconsistentBiomols (seqset);
+    if (seqset.GetClass() != CBioseq_set::eClass_wgs_set) {
+        bool has_title = false;
+        FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+            if ((*it)->IsTitle()) {
+                has_title = true;
+                break;
+            }
+        }
+        if (!has_title) {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
+                "Pop/Phy/Mut/Eco set does not have title",
+                seqset);
+        }
+    }
 }
 
 

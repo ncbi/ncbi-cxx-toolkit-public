@@ -23,7 +23,8 @@ ValidErrItem ::= SEQUENCE {
     errIndex    INTEGER,
     msg         VisibleString,
     objDesc     VisibleString,
-    accession   VisibleString
+    accession   VisibleString,
+    featureId   VisibleString OPTIONAL
 }
 
 

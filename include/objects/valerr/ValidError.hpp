@@ -72,6 +72,14 @@ public:
                          unsigned int         ec,      // error code
                          const string&        msg,     // specific error message
                          const string&        desc,    // offending object's description
+                         const CSerialObject& obj,     // offending object
+                         const string&        acc,     // accession of object.
+                         const string&        feature_id); // feature ID for object
+
+     void AddValidErrItem(EDiagSev             sev,     // severity
+                         unsigned int         ec,      // error code
+                         const string&        msg,     // specific error message
+                         const string&        desc,    // offending object's description
                          const CSeqdesc&      seqdesc, // offending object
                          const CSeq_entry&    ctx,     // place of packaging
                          const string&        acc);    // accession of object or context.

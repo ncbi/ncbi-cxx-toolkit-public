@@ -111,8 +111,10 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
                 }
             }
         } // iterate
-        FOR_EACH_ALIGN_ON_ANNOT (align, annot) {
-            m_AlignValidator.ValidateSeqAlign (**align);
+        if (m_Imp.IsValidateAlignments()) {
+            FOR_EACH_ALIGN_ON_ANNOT (align, annot) {
+                m_AlignValidator.ValidateSeqAlign (**align);
+            }
         }
     } else if ( annot.IsIds() ) {
         PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotIDs,

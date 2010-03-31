@@ -74,6 +74,21 @@ void CValidError::AddValidErrItem
  unsigned int         ec,
  const string&        msg,
  const string&        desc,
+ const CSerialObject& obj,
+ const string&        acc,
+ const string&        feature_id)
+{
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, feature_id));
+    SetErrs().push_back(item);
+    m_Stats[item->GetSeverity()]++;
+}
+
+
+void CValidError::AddValidErrItem
+(EDiagSev             sev,
+ unsigned int         ec,
+ const string&        msg,
+ const string&        desc,
  const CSeqdesc&      seqdesc,
  const CSeq_entry&    ctx,
 const string&         acc)

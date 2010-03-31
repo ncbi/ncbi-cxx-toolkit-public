@@ -415,7 +415,6 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     m_Options |= args["context"]  ? CValidator::eVal_no_context   : 0;
     m_Options |= args["align"]    ? CValidator::eVal_val_align    : 0;
     m_Options |= args["exon"]     ? CValidator::eVal_val_exons    : 0;
-    m_Options |= args["splice"]   ? CValidator::eVal_splice_err   : 0;
     m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err  : 0;
     m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid   : 0;
     m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;

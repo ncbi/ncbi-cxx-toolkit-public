@@ -149,7 +149,6 @@ CValidError_imp::CValidError_imp
       m_SuppressContext = (options & CValidator::eVal_no_context) != 0;
       m_ValidateAlignments = (options & CValidator::eVal_val_align) != 0;
       m_ValidateExons = (options & CValidator::eVal_val_exons) != 0;
-      m_SpliceErr = (options & CValidator::eVal_splice_err) != 0;
       m_OvlPepErr = (options & CValidator::eVal_ovl_pep_err) != 0;
       m_RequireTaxonID = (options & CValidator::eVal_need_taxid) != 0;
       m_RequireISOJTA = (options & CValidator::eVal_need_isojta) != 0;
@@ -161,6 +160,11 @@ CValidError_imp::CValidError_imp
       m_DoRubiscoText = (options & CValidator::eVal_do_rubisco_test) != 0;
       m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
 	  m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
+      m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
+      m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
+      m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
+      m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
+      m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
       m_IsStandaloneAnnot = false;
       m_NoPubs = false;
       m_NoBioSource = false;
@@ -304,6 +308,238 @@ void CValidError_imp::PostErr
 */
 
 
+static string s_GetFeatureIdLabel (const CObject_id& object_id)
+{
+    string feature_id = "";
+
+    if (object_id.IsId()) {
+        feature_id = NStr::IntToString(object_id.GetId());
+    } else if (object_id.IsStr()) {
+        feature_id = object_id.GetStr();
+    }
+    return feature_id;
+}
+
+
+static string s_GetFeatureIdLabel (const CFeat_id& feat_id)
+{
+    string feature_id = "";
+    if (feat_id.IsLocal()) {
+        feature_id = s_GetFeatureIdLabel(feat_id.GetLocal());
+    } else if (feat_id.IsGeneral()) {
+        if (feat_id.GetGeneral().IsSetDb()) {
+            feature_id += feat_id.GetGeneral().GetDb();
+        }
+        feature_id += ":";
+        if (feat_id.GetGeneral().IsSetTag()) {
+            feature_id += s_GetFeatureIdLabel (feat_id.GetGeneral().GetTag());
+        }
+    }
+    return feature_id;
+}
+
+
+static void s_FixBioseqLabelProblems (string& str)
+{
+    size_t pos = NStr::Find(str, ",");
+    if (pos != string::npos && str.c_str()[pos + 1] != 0 && str.c_str()[pos + 1] != ' ') {
+        str = str.substr(0, pos + 1) + " " + str.substr(pos + 1);
+    }
+    pos = NStr::Find(str, "=");
+    if (pos != string::npos && str.c_str()[pos + 1] != 0 && str.c_str()[pos + 1] != ' ') {
+        str = str.substr(0, pos + 1) + " " + str.substr(pos + 1);
+    }
+}
+
+
+
+static string s_GetOrgRefContentLabel (const COrg_ref& org)
+{
+    string content = "";
+    if (org.IsSetTaxname()) {
+        content = org.GetTaxname();
+    } else if (org.IsSetCommon()) {
+        content = org.GetCommon();
+    } else if (org.IsSetDb() && !org.GetDb().empty()) {
+        org.GetDb().front()->GetLabel(&content);
+    }
+    return content;
+}
+
+
+static string s_GetBioSourceContentLabel (const CBioSource& bsrc)
+{
+    string content = "";
+
+    if (bsrc.IsSetOrg()) {
+        content = s_GetOrgRefContentLabel(bsrc.GetOrg());
+    }
+    return content;
+}
+
+
+static string s_GetFeatureContentLabelExtras (const CSeq_feat& feat)
+{
+    string tlabel = "";
+
+    // Put Seq-feat qual into label
+    if (feat.IsSetQual()) {
+        string prefix("/");
+        ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+            tlabel += prefix + (**it).GetQual();
+            prefix = " ";
+            if (!(**it).GetVal().empty()) {
+                tlabel += "=" + (**it).GetVal();
+            }
+        }
+    }
+    
+    // Put Seq-feat comment into label
+    if (feat.IsSetComment()) {
+        if (tlabel.empty()) {
+            tlabel = feat.GetComment();
+        } else {
+            tlabel += "; " + feat.GetComment();
+        }
+    }
+    return tlabel;
+}
+
+
+static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> scope)
+{
+    string content = "";
+
+    // Check that feature data is Cdregion
+    if (!feat.GetData().IsCdregion()) {
+        return content;
+    }
+    
+    const CGene_ref* gref = 0;
+    const CProt_ref* pref = 0;
+    
+    // Look for CProt_ref object to create a label from
+    if (feat.IsSetXref()) {
+        ITERATE ( CSeq_feat::TXref, it, feat.GetXref()) {
+            const CSeqFeatXref& xref = **it;
+            if ( !xref.IsSetData() ) {
+                continue;
+            }
+
+            switch (xref.GetData().Which()) {
+            case CSeqFeatData::e_Prot:
+                pref = &xref.GetData().GetProt();
+                break;
+            case CSeqFeatData::e_Gene:
+                gref = &xref.GetData().GetGene();
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    
+    // Try and create a label from a CProt_ref in CSeqFeatXref in feature
+    if (pref) {
+        pref->GetLabel(&content);
+        return content;
+    }
+    
+    // Try and create a label from a CProt_ref in the feat product and
+    // return if found 
+    if (feat.IsSetProduct()  &&  scope) {
+        try {
+            const CSeq_id& id = GetId(feat.GetProduct(), scope);            
+            CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+            if (hnd) {
+                const CBioseq& seq = *hnd.GetCompleteBioseq();
+            
+                // Now look for a CProt_ref feature in seq and
+                // if found call GetLabel() on the CProt_ref
+                CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq);
+                for (;it; ++it) {
+                    if (it->IsProt()) {
+                        it->GetProt().GetLabel(&content);
+                        return content;
+                    }
+                }
+            }
+        } catch (CObjmgrUtilException&) {}
+    }
+    
+    // Try and create a label from a CGene_ref in CSeqFeatXref in feature
+    if (gref) {
+        gref->GetLabel(&content);
+    }
+
+    if (NStr::IsBlank(content)) {
+        content = s_GetFeatureContentLabelExtras(feat);
+    }
+
+    return content;
+}
+
+
+static string s_GetFeatureContentLabel (const CSeq_feat& feat, CRef<CScope> scope)
+{
+    string content_label = "";
+
+    switch (feat.GetData().Which()) {
+        case CSeqFeatData::e_Pub:
+            content_label = "Cit: ";
+            feat.GetData().GetPub().GetPub().GetLabel(&content_label);
+            break;
+        case CSeqFeatData::e_Biosrc:
+            content_label = "Src: " + s_GetBioSourceContentLabel (feat.GetData().GetBiosrc());
+            break;
+        case CSeqFeatData::e_Imp:
+            {
+                feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+                if (feat.GetData().GetImp().IsSetKey()) {
+                    string key = feat.GetData().GetImp().GetKey();
+                    string tmp = "[" + key + "]";
+                    if (NStr::StartsWith(content_label, tmp)) {
+                        content_label = key + content_label.substr(tmp.length());
+                    }
+                }
+            }
+            break;
+        case CSeqFeatData::e_Rna:
+            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA
+                && NStr::Equal(content_label, "tRNA: tRNA")) {
+                content_label = "tRNA: ";
+            }
+            break;
+        case CSeqFeatData::e_Cdregion:
+            content_label = "CDS: " + s_GetCdregionContentLabel(feat, scope);
+            break;
+        case CSeqFeatData::e_Prot:
+            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+            if (feat.GetData().GetProt().IsSetProcessed()) {
+                switch (feat.GetData().GetProt().GetProcessed()) {
+                    case CProt_ref::eProcessed_mature:
+                        content_label = "mat_peptide: " + content_label.substr(6);
+                        break;
+                    case CProt_ref::eProcessed_signal_peptide:
+                        content_label = "sig_peptide: " + content_label.substr(6);
+                        break;
+                    case CProt_ref::eProcessed_transit_peptide:
+                        content_label = "trans_peptide: " + content_label.substr(6);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        default:
+            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+            break;
+    }
+    return content_label;
+}
+
+
 void CValidError_imp::PostErr
 (EDiagSev       sv,
  EErrType       et,
@@ -312,25 +548,40 @@ void CValidError_imp::PostErr
 {
     // Add feature part of label
     string desc = "FEATURE: ";
-    feature::GetLabel(ft, &desc, feature::eBoth, m_Scope);
+    string content_label = s_GetFeatureContentLabel(ft, m_Scope);
+    desc += content_label;
 
-    // Add feature location part of label
+    // Add feature ID part of label (if present)
+    string feature_id = "";
+    if (ft.IsSetId()) {
+        feature_id = s_GetFeatureIdLabel(ft.GetId());
+    } else if (ft.IsSetIds()) {
+        ITERATE (CSeq_feat::TIds, id_it, ft.GetIds()) {
+            feature_id = s_GetFeatureIdLabel ((**id_it));
+            if (!NStr::IsBlank(feature_id)) {
+                break;
+            }
+        }
+    }
+    if (!NStr::IsBlank(feature_id)) {
+        desc += " <" + feature_id + "> ";
+    }
+
     string loc_label;
-    if (m_SuppressContext) {
-        CSeq_loc loc;
-        loc.Assign(ft.GetLocation());
-        ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
-        loc.GetLabel(&loc_label);
-    } else {
-        ft.GetLocation().GetLabel(&loc_label);
-    }
-    if (loc_label.size() > 800) {
-        loc_label.replace(797, NPOS, "...");
-    }
-    if (!loc_label.empty()) {
-        desc += "[";
-        desc += loc_label;
-        desc += "]";
+    // Add feature location part of label
+    if (ft.IsSetLocation()) {
+        if (m_SuppressContext) {
+            CSeq_loc loc;
+            loc.Assign(ft.GetLocation());
+            ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
+            loc_label = "[" + GetValidatorLocationLabel(loc) + "]";
+        } else {
+            loc_label = "[" + GetValidatorLocationLabel(ft.GetLocation()) + "]";
+        }
+        if (loc_label.size() > 800) {
+            loc_label.replace(796, NPOS, "...]");
+        }
+        desc += " " + loc_label;
     }
 
     // Append label for bioseq of feature location
@@ -339,8 +590,11 @@ void CValidError_imp::PostErr
             CBioseq_Handle hnd = m_Scope->GetBioseqHandle(ft.GetLocation());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-                desc += "[";
-                bc->GetLabel(&desc, CBioseq::eBoth);
+                desc += " [";
+                string bc_label = "";
+                bc->GetLabel(&bc_label, CBioseq::eBoth);
+                s_FixBioseqLabelProblems(bc_label);
+                desc += bc_label;
                 desc += "]";
             }
 		} catch (CException ) {
@@ -355,28 +609,28 @@ void CValidError_imp::PostErr
             CSeq_loc loc;
             loc.Assign(ft.GetProduct());
             ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
-            loc.GetLabel(&loc_label);
+            loc_label = GetValidatorLocationLabel(loc);
         } else {
-            ft.GetProduct().GetLabel(&loc_label);
+            loc_label = GetValidatorLocationLabel (ft.GetProduct());
         }
         if (loc_label.size() > 800) {
             loc_label.replace(797, NPOS, "...");
         }
         if (!loc_label.empty()) {
-            desc += "[";
+            desc += " -> [";
             desc += loc_label;
             desc += "]";
         }
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope));
+
+    // if feature ID, add with feature id, otherwise without
+    if (NStr::IsBlank(feature_id)) {
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope));
+    } else {
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), feature_id);
+    }
 }
 
-
-static void s_AppendBioseqLabel(string& str, CValidError_imp::TBioseq sq, bool supress_context)
-{
-    str += "BIOSEQ: ";
-    sq.GetLabel(&str, CBioseq::eContent, supress_context);
-}
 
 void CValidError_imp::PostErr
 (EDiagSev       sv,
@@ -386,25 +640,15 @@ void CValidError_imp::PostErr
 {
     // Append bioseq label
     string desc;
-    s_AppendBioseqLabel(desc, sq, m_SuppressContext);
+    AppendBioseqLabel(desc, sq, m_SuppressContext);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, GetAccessionFromObjects(&sq, NULL, *m_Scope));
 }
 
 
 static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress_context)
 {
-    str += "BIOSEQ-SET: ";
-
     // GetLabel for CBioseq_set does not follow C Toolkit conventions
     // AND is a horrible performance hit for sets with lots of sequences
-
-    if (!supress_context && st.IsSetClass()) {
-        const CEnumeratedTypeValues* tv =
-            CBioseq_set::GetTypeInfo_enum_EClass();
-        const string& cn = tv->FindName(st.GetClass(), true);
-        str += cn;
-        str += ": ";
-    }
 
     const CBioseq* best = 0;
     CTypeConstIterator<CBioseq> si(ConstBegin(st));
@@ -413,13 +657,32 @@ static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress
     }
     // Add content to label.
     if (!best) {
-        str += "(No Bioseqs)";
-    } else {
-        CNcbiOstrstream os;
-        if (best->GetFirstId()) {
-            os << best->GetFirstId()->DumpAsFasta();
-            str += CNcbiOstrstreamToString(os);
+        str += "BIOSEQ-SET: ";
+        if (!supress_context && st.IsSetClass()) {
+            const CEnumeratedTypeValues* tv =
+                CBioseq_set::GetTypeInfo_enum_EClass();
+            const string& cn = tv->FindName(st.GetClass(), true);
+            str += cn;
+            str += ": ";
         }
+
+        str += "(No Bioseqs)";
+    } else if (st.IsSetClass()) {
+        str += "BIOSEQ-SET: ";
+        if (!supress_context) {
+            const CEnumeratedTypeValues* tv =
+                CBioseq_set::GetTypeInfo_enum_EClass();
+            const string& cn = tv->FindName(st.GetClass(), true);
+            str += cn;
+            str += ": ";
+        }
+        string content = "";
+        best->GetLabel(&content, CBioseq::eContent, supress_context);
+        // fix problems with label
+        s_FixBioseqLabelProblems(content);
+        str += content;
+    } else {
+        AppendBioseqLabel(str, *best, supress_context);
     }
 }
 
@@ -430,9 +693,77 @@ void CValidError_imp::PostErr
  TSet          st)
 {
     // Append Bioseq_set label
-    string desc = "BIOSEQ-SET: ";
+    string desc = "";
     s_AppendSetLabel(desc, st, m_SuppressContext);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, GetAccessionFromObjects(&st, NULL, *m_Scope));
+}
+
+
+static string s_GetDescriptorContent (const CSeqdesc& ds)
+{
+    string content = "";
+
+    switch (ds.Which()) {
+        case CSeqdesc::e_Pub:
+            content = "Pub: ";
+            ds.GetPub().GetPub().GetLabel(&content);
+            break;
+        case CSeqdesc::e_Source:
+            content = "BioSource: " + s_GetBioSourceContentLabel(ds.GetSource());
+            break;
+        case CSeqdesc::e_Modif:
+            ds.GetLabel(&content, CSeqdesc::eBoth);
+            if (NStr::StartsWith(content, "modif: ,")) {
+                content = "Modifier: " + content.substr(8);
+            }
+            break;
+        case CSeqdesc::e_Molinfo:
+            ds.GetLabel(&content, CSeqdesc::eBoth);
+            if (NStr::StartsWith(content, "molinfo: ,")) {
+                content = "molInfo: " + content.substr(10);
+            }
+            break;
+        case CSeqdesc::e_Comment:
+            ds.GetLabel(&content, CSeqdesc::eBoth);
+            if (NStr::StartsWith(content, "comment: ") && NStr::IsBlank(content.substr(9))) {
+                content = "comment: ";
+            }
+            break;
+        case CSeqdesc::e_User:
+            content = "UserObj: ";
+            if (ds.GetUser().IsSetClass()) {
+                content += ds.GetUser().GetClass();
+            } else if (ds.GetUser().IsSetType() && ds.GetUser().GetType().IsStr()) {
+                content += ds.GetUser().GetType().GetStr();
+            }
+            break;
+        default:
+            ds.GetLabel(&content, CSeqdesc::eBoth);
+            break;
+    }
+    // fix descriptor type names
+    string first = content.substr(0, 1);
+    NStr::ToUpper(first);
+    content = first + content.substr(1);
+    size_t colon_pos = NStr::Find(content, ":");
+    if (colon_pos != string::npos) {
+        size_t dash_pos = NStr::Find(content, "-", 0, colon_pos);
+        if (dash_pos != string::npos) {
+            string after_dash = content.substr(dash_pos + 1, 1);
+            NStr::ToUpper (after_dash);
+            content = content.substr(0, dash_pos) + after_dash + content.substr(dash_pos + 2);
+        }
+    }
+    if (NStr::StartsWith(content, "BioSource:")) {
+        content = "BioSrc:" + content.substr(10);
+    } else if (NStr::StartsWith(content, "Modif:")) {
+        content = "Modifier:" + content.substr(6);
+    } else if (NStr::StartsWith(content, "Embl:")) {
+        content = "EMBL:" + content.substr(5);
+    } else if (NStr::StartsWith(content, "Pir:")) {
+        content = "PIR:" + content.substr(4);
+    }
+    return content;
 }
 
 
@@ -445,11 +776,14 @@ void CValidError_imp::PostErr
 {
     // Append Descriptor label
     string desc("DESCRIPTOR: ");
-    ds.GetLabel(&desc, CSeqdesc::eBoth);
+
+    string content = s_GetDescriptorContent (ds);
+
+    desc += content;
 
     desc += " ";
     if (ctx.IsSeq()) {
-        s_AppendBioseqLabel(desc, ctx.GetSeq(), m_SuppressContext);
+        AppendBioseqLabel(desc, ctx.GetSeq(), m_SuppressContext);
     } else {
         s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext);
     }
@@ -541,7 +875,7 @@ void CValidError_imp::PostErr
     }
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
-    s_AppendBioseqLabel(desc, sq, m_SuppressContext);
+    AppendBioseqLabel(desc, sq, m_SuppressContext);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, GetAccessionFromObjects(&graph, NULL, *m_Scope));
 }
 
@@ -575,10 +909,16 @@ void CValidError_imp::PostErr
  const string& msg,
  TEntry        entry)
 {
-    string desc = "SEQ-ENTRY: ";
-    entry.GetLabel(&desc, CSeq_entry::eContent);
+    if (entry.IsSeq()) {
+        PostErr(sv, et, msg, entry.GetSeq());
+    } else if (entry.IsSet()) {
+        PostErr(sv, et, msg, entry.GetSet());
+    } else {
+        string desc = "SEQ-ENTRY: ";
+        entry.GetLabel(&desc, CSeq_entry::eContent);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
+    }
 }
 
 
@@ -825,7 +1165,7 @@ bool CValidError_imp::Validate
 
 	if (m_IsINSDInSep && IsRefSeq()) {
 		PostErr (eDiag_Error, eErr_SEQ_PKG_INSDRefSeqPackaging,
-		         "INSD and RefSeq records should not be present in the same set", *seq);
+		         "INSD and RefSeq records should not be present in the same set", *m_TSE);
 	}
 
 #if 0
@@ -920,7 +1260,7 @@ bool CValidError_imp::Validate
 	if (has_nongps && has_gps) {
 		PostErr(eDiag_Error, eErr_SEQ_PKG_GPSnonGPSPackaging,
 			"Genomic product set and mut/pop/phy/eco set records should not be present in the same set",
-			*seq);
+			*m_TSE);
 	}
 
 
@@ -959,7 +1299,7 @@ bool CValidError_imp::Validate
             NStr::IntToString(m_NumTpaWithHistory) +
             " TPAs with history and " + 
             NStr::IntToString(m_NumTpaWithoutHistory) +
-            " without history in this record.", *m_TSE);
+            " without history in this record.", *seq);
     }
     if ( m_NumTpaWithoutHistory > 0 && has_gi) {
         PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
@@ -1051,7 +1391,6 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
     case CSeq_annot::TData::e_Ftable :
         {
             CValidError_feat feat_validator(*this);
-            // for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
             for (CFeat_CI fi (sah); fi; ++fi) {
                 const CSeq_feat& sf = fi->GetOriginalFeature();
                 feat_validator.ValidateSeqFeat(sf);
@@ -1061,11 +1400,12 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
 
     case CSeq_annot::TData::e_Align :
         {
-            CValidError_align align_validator(*this);
-            // for (CTypeConstIterator <CSeq_align> ai (sa); ai; ++ai) {
-            for (CAlign_CI ai(sah); ai; ++ai) {
-                const CSeq_align& sa = ai.GetOriginalSeq_align();
-                align_validator.ValidateSeqAlign(sa);
+            if (IsValidateAlignments()) {
+                CValidError_align align_validator(*this);
+                for (CAlign_CI ai(sah); ai; ++ai) {
+                    const CSeq_align& sa = ai.GetOriginalSeq_align();
+                    align_validator.ValidateSeqAlign(sa);
+                }
             }
         }
         break;
@@ -1341,8 +1681,7 @@ void CValidError_imp::ValidateSeqLoc
                 break;
             }
             if (!chk) {
-                string lbl;
-                lit->GetLabel(&lbl);
+                string lbl = GetValidatorLocationLabel (*lit);
                 PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
                     prefix + ": SeqLoc [" + lbl + "] out of range", obj);
             }
@@ -1458,7 +1797,8 @@ void CValidError_imp::ValidateSeqLoc
 
     string loc_lbl;
     if (adjacent) {
-        loc.GetLabel(&loc_lbl);
+        loc_lbl = GetValidatorLocationLabel(loc);
+
         EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_SEQ_FEAT_AbuttingIntervals,
             prefix + ": Adjacent intervals in SeqLoc [" +
@@ -1526,14 +1866,8 @@ void CValidError_imp::AddBioseqWithNoBiosource(const CBioseq& seq)
 
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
-    const CSeq_feat* cds = GetCDSForProduct(seq);
-    if ( cds == 0 ) {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-                 "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
-    } else {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-                 "No full length Prot-ref feature applied to this Bioseq", *cds);
-    }
+    PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+             "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
 }
 
 

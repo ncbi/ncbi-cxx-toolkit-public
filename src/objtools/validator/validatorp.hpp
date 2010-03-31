@@ -259,7 +259,6 @@ public:
     bool IsSuppressContext(void)      const { return m_SuppressContext; }
     bool IsValidateAlignments(void)   const { return m_ValidateAlignments; }
     bool IsValidateExons(void)        const { return m_ValidateExons; }
-    bool IsSpliceErr(void)            const { return m_SpliceErr; }
     bool IsOvlPepErr(void)            const { return m_OvlPepErr; }
     bool IsRequireTaxonID(void)       const { return m_RequireTaxonID; }
     bool IsRequireISOJTA(void)        const { return m_RequireISOJTA; }
@@ -271,6 +270,12 @@ public:
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
 	bool UseEntrez(void)              const { return m_UseEntrez; }
+	bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
+    bool IgnoreExceptions(void) const { return m_IgnoreExceptions; }
+    bool ReportSpliceAsError(void) const { return m_ReportSpliceAsError; }
+    bool IsLatLonCheckState(void)     const { return m_LatLonCheckState; }
+    bool IsLatLonIgnoreWater(void)    const { return m_LatLonIgnoreWater; }
+
 
     // flags calculated by examining data in record
     inline bool IsStandaloneAnnot(void) const { return m_IsStandaloneAnnot; }
@@ -408,7 +413,6 @@ private:
     bool m_SuppressContext;      // Include context in errors if true
     bool m_ValidateAlignments;   // Validate Alignments if true
     bool m_ValidateExons;        // Check exon feature splice sites
-    bool m_SpliceErr;            // Bad splice site error if true, else warn
     bool m_OvlPepErr;            // Peptide overlap error if true, else warn
     bool m_RequireTaxonID;       // BioSource requires taxonID dbxref
     bool m_RequireISOJTA;        // Journal requires ISO JTA
@@ -416,10 +420,15 @@ private:
     bool m_RemoteFetch;          // Remote fetch enabled?
     bool m_FarFetchMRNAproducts; // Remote fetch mRNA products
     bool m_FarFetchCDSproducts;  // Remote fetch proteins
+    bool m_LatLonCheckState;
+    bool m_LatLonIgnoreWater;
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
     bool m_IndexerVersion;
 	bool m_UseEntrez;
+    bool m_IgnoreExceptions;             // ignore exceptions when validating translation
+    bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
+    bool m_ReportSpliceAsError;
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
@@ -667,6 +676,12 @@ private:
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged,
         bool report_errors, bool& has_errors);
+    void ValidateDonor (ENa_strand strand, TSeqPos stop, CSeqVector vec, TSeqPos seq_len,
+                        bool rare_consensus_not_expected, 
+                        string label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat);
+    void ValidateAcceptor (ENa_strand strand, TSeqPos start, CSeqVector vec, TSeqPos seq_len,
+                        bool rare_consensus_not_expected, 
+                        string label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
@@ -674,7 +689,7 @@ private:
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
     bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
-        const CCdregion& cdregion, const string& transl_prot, bool report_erros);
+        const CCdregion& cdregion, bool report_erros);
     void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
@@ -836,7 +851,8 @@ private:
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
-    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs, const CBioseq& bioseq);
+    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs);
+    void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,

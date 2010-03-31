@@ -367,8 +367,10 @@ void CValidError_imp::ValidatePubArticle
                     PostObjErr(sev, eErr_GENERIC_MissingPubInfo, 
                         "Journal volume and pages missing", obj, ctx);
                 } else if ( no_vol ) {
-                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
-                        "Journal volume missing", obj, ctx);
+                    if (!is_electronic_journal) {
+                        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+                            "Journal volume missing", obj, ctx);
+                    }
                 } else if ( no_pages ) {
                     PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
                         "Journal pages missing", obj, ctx);
@@ -611,22 +613,40 @@ void CValidError_imp::ValidatePubHasAuthor
 (const CPubdesc& pubdesc,
  const CSerialObject& obj,
  const CSeq_entry *ctx)
-{    
+{
+    bool has_name = false;
     FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
         const CPub& pub = **pub_iter;
         switch (pub.Which() ) {
             case CPub::e_Gen:
-                if ( !pub.GetGen().IsSetAuthors() 
-                     || !HasName(pub.GetGen().GetAuthors())) {
-                    PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
-                               eErr_GENERIC_MissingPubInfo,
-                               "Publication has no author names", obj, ctx);
+                // don't check if just serial number
+                if (!pub.GetGen().IsSetCit() 
+                    && !pub.GetGen().IsSetJournal()
+                    && !pub.GetGen().IsSetDate()
+                    && pub.GetGen().IsSetSerial_number()
+                    && pub.GetGen().GetSerial_number() > -1) {
+                    // skip
+                } else {
+                    has_name = false;
+                    if ( pub.GetGen().IsSetAuthors() 
+                         && HasName(pub.GetGen().GetAuthors())) {
+                         has_name = true;
+                    }
+                    if (!has_name) {
+                        PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
+                                   eErr_GENERIC_MissingPubInfo,
+                                   "Publication has no author names", obj, ctx);
+                    }
                 }
                 break;
             case CPub::e_Article:
-                if ( !pub.GetArticle().IsSetAuthors() 
-                    || !HasName(pub.GetArticle().GetAuthors())) {
-                    PostObjErr(eDiag_Error,
+                has_name = false;
+                if ( pub.GetArticle().IsSetAuthors() 
+                    && HasName(pub.GetArticle().GetAuthors())) {
+                     has_name = true;
+                }
+                if (!has_name) {
+                    PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
                                eErr_GENERIC_MissingPubInfo,
                                "Publication has no author names", obj, ctx);
                 }
@@ -1043,11 +1063,24 @@ bool CValidError_imp::IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev)
 void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     EDiagSev sev = eDiag_Error;
-    if (!m_NoPubs 
-        && !IsNoncuratedRefSeq (seq, sev)) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-        CBioseq_Handle nuc_bsh = GetNucBioseq(bsh);
-        if (!nuc_bsh || !IsWGSIntermediate(*nuc_bsh.GetCompleteBioseq())) {
+
+    if (!m_NoPubs) {
+        if (seq.IsAa()) {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+            if (bsh) {
+                bsh = GetNucBioseq (bsh);
+                if (bsh) {
+                    const CBioseq& nuc = *(bsh.GetCompleteBioseq());
+                    if(!IsNoncuratedRefSeq (nuc, sev)
+                        && !IsWGSIntermediate(nuc)) {
+                        PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
+                    }
+                    return;
+                }
+            }
+        }
+        if (!IsNoncuratedRefSeq (seq, sev)
+            && !IsWGSIntermediate(seq)) {
             PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
         }
     }
@@ -1068,6 +1101,23 @@ static bool s_IsGpipe (const CBioseq& seq)
 }
 
 
+static bool s_CuratedRefSeqLowerToWarning (const CBioseq& seq)
+{
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
+            const string& str = (*id_it)->GetOther().GetAccession();
+            if (NStr::StartsWith(str, "NM_")
+                || NStr::StartsWith(str, "NP_")
+                || NStr::StartsWith(str, "NG_")
+                || NStr::StartsWith(str, "NR_")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
     if ( m_NoPubs ) {
@@ -1075,7 +1125,11 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
             if (b_it && !s_IsNoncuratedRefSeq(*(b_it->GetCompleteBioseq()))  
                       && !s_IsGpipe(*(b_it->GetCompleteBioseq()))) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, 
+                EDiagSev sev = eDiag_Error;
+                if (s_CuratedRefSeqLowerToWarning(*(b_it)->GetCompleteBioseq())) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
                     "No publications anywhere on this entire record.", se);
             }
         } 

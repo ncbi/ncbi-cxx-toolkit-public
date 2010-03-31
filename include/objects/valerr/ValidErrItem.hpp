@@ -259,6 +259,8 @@ enum EErrType {
     eErr_SEQ_PKG_RefSeqPopSet,
 	eErr_SEQ_PKG_BioseqSetClassNotSet,
     eErr_SEQ_PKG_OrphanedProtein,
+    eErr_SEQ_PKG_MissingSetTitle,
+    eErr_SEQ_PKG_NucProtSetHasTitle,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,
@@ -551,7 +553,15 @@ private:
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
                   const string&        acc);      // accession
-    
+
+    CValidErrItem(EDiagSev             sev,       // severity
+                  unsigned int         ec,        // error code
+                  const string&        msg,       // message
+                  const string&        obj_desc,  // object description
+                  const CSerialObject& obj,       // offending object
+                  const string&        acc,       // accession
+                  const string&        feature_id); // feature ID
+
     // constructor
     CValidErrItem(EDiagSev             sev,       // severity
                   unsigned int         ec,        // error code

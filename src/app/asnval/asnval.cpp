@@ -55,6 +55,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objtools/validator/validator.hpp>
+#include <objtools/validator/valid_cmdargs.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -76,6 +77,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace validator;
 
+const char * ASNVAL_APP_VER = "10.0";
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -97,9 +99,9 @@ public:
 private:
 
     void Setup(const CArgs& args);
-    void SetupValidatorOptions(const CArgs& args);
 
     CObjectIStream* OpenFile(const CArgs& args);
+    CObjectIStream* OpenFile(string fname, const CArgs& args);
 
     CConstRef<CValidError> ProcessSeqEntry(void);
     CConstRef<CValidError> ProcessSeqSubmit(void);
@@ -107,19 +109,27 @@ private:
     CConstRef<CValidError> ProcessSeqFeat(void);
     CConstRef<CValidError> ProcessBioSource(void);
     CConstRef<CValidError> ProcessPubdesc(void);
+    CConstRef<CValidError> ValidateInput (void);
+    void ValidateOneDirectory(string dir_name, bool recurse);
+    void ValidateOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
 
-    SIZE_TYPE PrintValidError(CConstRef<CValidError> errors, 
-        const CArgs& args);
-    SIZE_TYPE PrintBatchErrors(CConstRef<CValidError> errors,
+    void PrintValidError(CConstRef<CValidError> errors, 
         const CArgs& args);
 
-    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
-    void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os, bool printAcc = false);
+    enum EVerbosity {
+        eVerbosity_Normal = 1,
+        eVerbosity_Spaced = 2,
+        eVerbosity_Tabbed = 3,
+        eVerbosity_XML = 4,
+        eVerbosity_min = 1, eVerbosity_max = 4
+    };
+
+    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os, EVerbosity verbosity);
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
@@ -129,12 +139,21 @@ private:
 
     size_t m_Level;
     size_t m_Reported;
+    size_t m_ReportLevel;
+
+    bool m_StartXML;
+
+    EDiagSev m_LowCutoff;
+    EDiagSev m_HighCutoff;
+
+    CNcbiOstream* m_ValidErrorStream;
+    CNcbiOstream* m_LogStream;
 };
 
 
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_Level(0),
-    m_Reported(0), m_OnlyAnnots(false)
+    m_Reported(0), m_OnlyAnnots(false), m_ValidErrorStream(0), m_LogStream(0)
 {
 }
 
@@ -146,51 +165,59 @@ void CAsnvalApp::Init(void)
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
+    arg_desc->AddOptionalKey
+        ("p", "Directory", "Path to ASN.1 Files",
+        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey
+        ("i", "InFile", "Single Input File",
+        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey(
+        "o", "OutFile", "Single Output File",
+        CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey(
+        "f", "Filter", "Substring Filter",
+        CArgDescriptions::eOutputFile);
     arg_desc->AddDefaultKey
-        ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
-        CArgDescriptions::eInputFile, "current.prt");
+        ("x", "String", "File Selection Substring", CArgDescriptions::eString, ".ent");
+    arg_desc->AddFlag("u", "Recurse");
+    arg_desc->AddDefaultKey(
+        "R", "SevCount", "Severity for Error in Return Code",
+        CArgDescriptions::eInteger, "4");
+    arg_desc->AddDefaultKey(
+        "Q", "SevLevel", "Lowest Severity for Error to Show",
+        CArgDescriptions::eInteger, "3");
+    arg_desc->AddDefaultKey(
+        "P", "SevLevel", "Highest Severity for Error to Show",
+        CArgDescriptions::eInteger, "4");
+    CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
+    arg_desc->SetConstraint("Q", constraint);
+    arg_desc->SetConstraint("P", constraint);
+    arg_desc->SetConstraint("R", constraint);
+    arg_desc->AddOptionalKey(
+        "E", "String", "Only Error Code to Show",
+        CArgDescriptions::eString);
 
-    arg_desc->AddFlag("s", "Input is Seq-submit");
-    arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
+    arg_desc->AddDefaultKey("a", "a", 
+                            "ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
+                            CArgDescriptions::eString,
+                            "a");
+
     arg_desc->AddFlag("b", "Input is in binary format");
-    arg_desc->AddFlag("c", "Continue on ASN.1 error");
+    arg_desc->AddFlag("c", "Batch File is Compressed");
 
-    arg_desc->AddFlag("g", "Registers ID loader");
-
-    arg_desc->AddFlag("nonascii", "Report Non Ascii Error");
-    arg_desc->AddFlag("context", "Suppress context in error msgs");
-    arg_desc->AddFlag("align", "Validate Alignments");
-    arg_desc->AddFlag("exon", "Validate exons");
-    arg_desc->AddFlag("splice", "Report splice error as error");
-    arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
-    arg_desc->AddFlag("taxid", "Requires taxid");
-    arg_desc->AddFlag("isojta", "Requires ISO-JTA");
+    CValidatorArgUtil::SetupArgDescriptions(arg_desc.get());
     arg_desc->AddFlag("annot", "Verify Seq-annots only");
-    arg_desc->AddFlag("acc", "Print Accession with errors");
 
     arg_desc->AddOptionalKey(
-        "x", "OutFile", "Output file for error messages",
+        "L", "OutFile", "Log File",
         CArgDescriptions::eOutputFile);
-    arg_desc->AddDefaultKey(
-        "q", "SevLevel", "Lowest severity error to show",
-        CArgDescriptions::eInteger, "1");
-    arg_desc->AddDefaultKey(
-        "r", "SevCount", "Severity error to count in return code",
-        CArgDescriptions::eInteger, "2");
-    CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
-    arg_desc->SetConstraint("q", constraint);
-    arg_desc->SetConstraint("r", constraint);
 
-
-    // !!!
-    // { DEBUG
-    // This flag should be removed once testing is done. It is intended for
-    // performance testing.
-    arg_desc->AddFlag("debug", "Disable suspected performance bottlenecks");
-    // }
+    arg_desc->AddDefaultKey("v", "Verbosity", "Verbosity", CArgDescriptions::eInteger, "1");
+    CArgAllow* v_constraint = new CArgAllow_Integers(eVerbosity_min, eVerbosity_max);
+    arg_desc->SetConstraint("v", v_constraint);
 
     // Program description
-    string prog_description = "Test driver for Validate()\n";
+    string prog_description = "ASN Validator\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
         prog_description, false);
 
@@ -206,53 +233,155 @@ void CAsnvalApp::Init(void)
 }
 
 
-int CAsnvalApp::Run(void)
+CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
 {
-    const CArgs& args = GetArgs();
-    Setup(args);
-
-    // Open File 
-    m_In.reset(OpenFile(args));
-
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     CConstRef<CValidError> eval;
-    if ( args["t"] ) {          // Release file
-        ProcessReleaseFile(args);
-        return 0;
-    } else {
-        string header = m_In->ReadFileHeader();
+    string header = m_In->ReadFileHeader();
 
-        if ( args["s"]  &&  header != "Seq-submit" ) {
-            NCBI_THROW(CException, eUnknown,
-                "Conflict: '-s' flag is specified but file is not Seq-submit");
-        } 
-        if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
-            eval = ProcessSeqSubmit();
-        } else if ( header == "Seq-entry" ) {           // Seq-entry
-            eval = ProcessSeqEntry();
-        } else if ( header == "Seq-annot" ) {           // Seq-annot
-            eval = ProcessSeqAnnot();
-        } else if (header == "Seq-feat" ) {             // Seq-feat
-            eval = ProcessSeqFeat();
-        } else if (header == "BioSource" ) {             // BioSource
-            eval = ProcessBioSource();
-        } else if (header == "Pubdesc" ) {             // Pubdesc
-            eval = ProcessPubdesc();
-        } else {
-            NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+    if (header == "Seq-submit" ) {  // Seq-submit
+        eval = ProcessSeqSubmit();
+    } else if ( header == "Seq-entry" ) {           // Seq-entry
+        eval = ProcessSeqEntry();
+    } else if ( header == "Seq-annot" ) {           // Seq-annot
+        eval = ProcessSeqAnnot();
+    } else if (header == "Seq-feat" ) {             // Seq-feat
+        eval = ProcessSeqFeat();
+    } else if (header == "BioSource" ) {             // BioSource
+        eval = ProcessBioSource();
+    } else if (header == "Pubdesc" ) {             // Pubdesc
+        eval = ProcessPubdesc();
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+    }
+    return eval;
+}
+
+
+void CAsnvalApp::ValidateOneFile(string fname)
+{
+    const CArgs& args = GetArgs();
+
+    bool need_to_close = false;
+
+    if (!m_ValidErrorStream) {
+        string path = fname;
+        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
+        if (pos != string::npos) {
+            path = path.substr(0, pos);
+        }
+        path = path + ".val";
+
+        m_ValidErrorStream = new CNcbiOfstream(path.c_str());
+        need_to_close = true;
+    }
+    m_In.reset(OpenFile(fname, args));
+    if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
+        // Open File 
+        ProcessReleaseFile(args);
+    } else {
+
+        CConstRef<CValidError> eval = ValidateInput ();
+
+        if ( eval ) {
+            PrintValidError(eval, args);
+        }
+
+    }
+    if (need_to_close) {
+        if (m_StartXML) {
+            // close XML
+            *m_ValidErrorStream << "</asnval>" << endl;
+            m_StartXML = false;
+        }
+        m_ValidErrorStream = 0;
+    }
+}
+
+
+void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
+{
+    const CArgs& args = GetArgs();
+
+    CDir dir(dir_name);
+
+    string suffix = ".ent";
+    if (args["x"]) {
+        suffix = args["x"].AsString();
+    }
+    string mask = "*" + suffix;
+
+    CDir::TEntries files (dir.GetEntries(mask, CDir::eFile));
+    ITERATE(CDir::TEntries, ii, files) {
+        string fname = (*ii)->GetName();
+        if ((*ii)->IsFile() &&
+            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != string::npos)) {
+            string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+            ValidateOneFile (fname);
+        }
+    }
+    if (recurse) {
+        CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
+        ITERATE(CDir::TEntries, ii, subdirs) {
+            string subdir = (*ii)->GetName();
+            if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
+                string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+                ValidateOneDirectory (subname, recurse);
+            }
+        }
+    }
+}
+
+
+int CAsnvalApp::Run(void)
+{
+    const CArgs& args = GetArgs();
+    Setup(args);
+
+    if (args["o"]) {
+        m_ValidErrorStream = &(args["o"].AsOutputFile());
+    }
+            
+    m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
+
+    // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
+    // adjust here to make the inputs to asnvalidate match asnval expectations
+    m_ReportLevel = args["R"].AsInteger() - 1;
+    m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
+    m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
+
+
+    // Process file based on its content
+    // Unless otherwise specifien we assume the file in hand is
+    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
+    // Release file (batch processing) where we process each Seq-entry
+    // at a time.
+    m_Reported = 0;
+    m_StartXML = false;
+
+    if ( args["p"] ) {
+        ValidateOneDirectory (args["p"].AsString(), args["u"]);
+    } else {
+        if (args["i"]) {
+            ValidateOneFile (args["i"].AsString());
         }
     }
 
-    unsigned int result = 0;
-    if ( eval ) {
-        result = PrintValidError(eval, args);
+    if (m_StartXML) {
+        // close XML
+        *m_ValidErrorStream << "</asnval>" << endl;
+        m_StartXML = false;
     }
 
-    return result;
+    if (m_Reported > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 
@@ -281,7 +410,7 @@ void CAsnvalApp::ReadClassMember
                         const CSeq_annot_Handle& sah = *ni;
                         CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
                         if ( eval ) {
-                            m_Reported += PrintBatchErrors(eval, GetArgs());
+                            PrintValidError(eval, GetArgs());
                         }
                     }
                 } else {
@@ -289,7 +418,7 @@ void CAsnvalApp::ReadClassMember
                     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
                     if ( eval ) {
-                        m_Reported += PrintBatchErrors(eval, GetArgs());
+                        PrintValidError(eval, GetArgs());
                     }
                 }
             } catch (exception e) {
@@ -316,38 +445,9 @@ void CAsnvalApp::ProcessReleaseFile
     CObjectTypeInfo set_type = CType<CBioseq_set>();
     set_type.FindMember("seq-set").SetLocalReadHook(*m_In, this);
 
-    m_Continue = args["c"];
-
     // Read the CBioseq_set, it will call the hook object each time we 
     // encounter a Seq-entry
     *m_In >> *seqset;
-
-    NcbiCerr << m_Reported << " messages reported" << endl;
-}
-
-
-SIZE_TYPE CAsnvalApp::PrintBatchErrors
-(CConstRef<CValidError> errors,
- const CArgs& args)
-{
-    if ( !errors  ||  errors->TotalSize() == 0 ) {
-        return 0;
-    }
-
-    bool    printAcc = args["acc"];
-    EDiagSev show  = static_cast<EDiagSev>(args["q"].AsInteger());
-    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
-    SIZE_TYPE reported = 0;
-
-    for ( CValidError_CI vit(*errors); vit; ++vit ) {
-        if ( vit->GetSeverity() < show ) {
-            continue;
-        }
-        PrintBatchItem(*vit, *os, printAcc);
-        ++reported;
-    }
-
-    return reported;
 }
 
 
@@ -375,7 +475,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
             const CSeq_annot_Handle& sah = *ni;
             CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
             if ( eval ) {
-                m_Reported += PrintBatchErrors(eval, GetArgs());
+                PrintValidError(eval, GetArgs());
             }
         }
         return CConstRef<CValidError>();
@@ -481,7 +581,7 @@ void CAsnvalApp::Setup(const CArgs& args)
 
     // Create object manager
     m_ObjMgr = CObjectManager::GetInstance();
-    if ( args["g"] ) {
+    if ( args["r"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
@@ -490,30 +590,8 @@ void CAsnvalApp::Setup(const CArgs& args)
 
     m_OnlyAnnots = args["annot"];
 
-    SetupValidatorOptions(args);
-}
-
-
-void CAsnvalApp::SetupValidatorOptions(const CArgs& args)
-{
     // Set validator options
-    m_Options = 0;
-
-    m_Options |= args["nonascii"] ? CValidator::eVal_non_ascii    : 0;
-    m_Options |= args["context"]  ? CValidator::eVal_no_context   : 0;
-    m_Options |= args["align"]    ? CValidator::eVal_val_align    : 0;
-    m_Options |= args["exon"]     ? CValidator::eVal_val_exons    : 0;
-    m_Options |= args["splice"]   ? CValidator::eVal_splice_err   : 0;
-    m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err  : 0;
-    m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid   : 0;
-    m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;
-    m_Options |= args["g"]        ? CValidator::eVal_remote_fetch : 0;
-    
-	// for now, set these options to true
-	m_Options |= CValidator::eVal_far_fetch_mrna_products 
-		  | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
-		  | CValidator::eVal_use_entrez;
-
+    m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
 }
 
 
@@ -533,70 +611,108 @@ CObjectIStream* CAsnvalApp::OpenFile
 }
 
 
-SIZE_TYPE CAsnvalApp::PrintValidError
+CObjectIStream* CAsnvalApp::OpenFile
+(string fname, const CArgs& args)
+{
+    // file format 
+    ESerialDataFormat format = eSerial_AsnText;
+    if ( args["b"] ) {
+        format = eSerial_AsnBinary;
+    }
+
+    return CObjectIStream::Open(fname, format);
+}
+
+void CAsnvalApp::PrintValidError
 (CConstRef<CValidError> errors, 
  const CArgs& args)
 {
-    EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
-    EDiagSev count = static_cast<EDiagSev>(args["r"].AsInteger());
-
-    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
+    EVerbosity verbosity = static_cast<EVerbosity>(args["v"].AsInteger());
 
     if ( errors->TotalSize() == 0 ) {
-        *os << "All entries are OK!" << endl;
-        os->flush();
-        return 0;
+        return;
     }
-
-    SIZE_TYPE result = 0;
-    SIZE_TYPE reported = 0;
 
     for ( CValidError_CI vit(*errors); vit; ++vit) {
-        if ( vit->GetSeverity() >= count ) {
-            ++result;
+        if (vit->GetSeverity() >= m_ReportLevel) {
+            ++m_Reported;
         }
-        if ( vit->GetSeverity() < show ) {
+        if ( vit->GetSeverity() < m_LowCutoff || vit->GetSeverity() > m_HighCutoff) {
             continue;
         }
-        PrintValidErrItem(*vit, *os);
-        ++reported;
+        if (args["E"] && !(NStr::EqualNocase(args["E"].AsString(), vit->GetErrCode()))) {
+            continue;
+        }
+        PrintValidErrItem(*vit, *m_ValidErrorStream, verbosity);
     }
-    *os << reported << " messages reported" << endl;
-    os->flush();
+    m_ValidErrorStream->flush();
+}
 
-    *os << "Total number of errors: " << errors->TotalSize() << endl
-        << "Info: "     << errors->InfoSize()     << endl
-        << "Warning: "  << errors->WarningSize()  << endl
-        << "Error: "    << errors->ErrorSize()    << endl
-        << "Critical: " << errors->CriticalSize() << endl
-        << "Fatal: "    << errors->FatalSize()    << endl;
 
-    return result;
+static string s_GetSeverityLabel (EDiagSev sev)
+{
+    static const string str_sev[] = {
+        "INFO", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
+    };
+    if (sev < 0 || sev > eDiagSevMax) {
+        return "NONE";
+    }
+
+    return str_sev[sev];
 }
 
 
 void CAsnvalApp::PrintValidErrItem
 (const CValidErrItem& item,
- CNcbiOstream& os)
+ CNcbiOstream& os,
+ EVerbosity verbosity)
 {
-    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ":       " 
-       << item.GetErrGroup() << " "
-       << item.GetErrCode() << endl << endl
-       << "Message: " << item.GetMsg() << " " << item.GetObjDesc() << endl << endl;
-     //<< "Verbose: " << item.GetVerbose() << endl << endl;
-}
-
-
-
-void CAsnvalApp::PrintBatchItem
-(const CValidErrItem& item,
- CNcbiOstream&os, bool printAcc)
-{
-    if (printAcc) {
-        os << item.GetAccession() << ":";
+    switch (verbosity) {
+        case eVerbosity_Normal:
+            os << s_GetSeverityLabel(item.GetSeverity()) 
+               << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
+               << item.GetMsg() << " " << item.GetObjDesc() << endl;
+            break;
+        case eVerbosity_Spaced:
+            {
+                string spacer = "                    ";
+                string msg = item.GetAccession() + spacer;
+                msg = msg.substr(0, 15);
+                msg += s_GetSeverityLabel(item.GetSeverity());
+                msg += spacer;
+                msg = msg.substr(0, 30);
+                msg += item.GetErrGroup() + "_" + item.GetErrCode();
+                os << msg << endl;
+            }
+            break;
+        case eVerbosity_Tabbed:
+            os << item.GetAccession() << "\t"
+               << s_GetSeverityLabel(item.GetSeverity()) << "\t"
+               << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
+            break;
+        case eVerbosity_XML:
+            {
+                string msg = NStr::XmlEncode(item.GetMsg());
+                if (!m_StartXML) {
+                    os << "<asnval version=\"" << ASNVAL_APP_VER << "\" severity cutoff=\""
+                    << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
+                    m_StartXML = true;
+                }
+                if (item.IsSetFeatureId()) {
+                    os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
+                       << "\" seq-id=\"" << item.GetAccession() 
+                       << "\" feat-id=\"" << item.GetFeatureId()
+                       << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
+                       << "\">" << msg << "</message>" << endl;
+                } else {
+                    os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
+                       << "\" seq-id=\"" << item.GetAccession() 
+                       << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
+                       << "\">" << msg << "</message>" << endl;
+                }
+            }
+            break;
     }
-    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ": [" << item.GetErrCode() <<"] ["
-       << item.GetMsg() << "]" << endl;
 }
 
 

@@ -6,7 +6,7 @@
 # Build application "asnval"
 #################################
 
-APP = asnval
+APP = asnvalidate
 SRC = asnval
 LIB = xvalidate xformat xalnmgr xobjutil valerr submit tables taxon3 gbseq \
       $(OBJMGR_LIBS)

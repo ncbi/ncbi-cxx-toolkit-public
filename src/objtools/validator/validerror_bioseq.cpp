@@ -99,6 +99,7 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
@@ -106,6 +107,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -794,9 +796,11 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         }
 
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating BioseqContext. EXCEPTION: ") +
-            e.what(), seq);
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating BioseqContext. EXCEPTION: ") +
+                e.what(), seq);
+        }
     }
 
     // flag missing molinfo even if not in Sequin
@@ -821,6 +825,27 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                         if (id.Compare(**id_it) == CSeq_id::e_YES) {
                             found = true;
                             break;
+                        } 
+                    }
+                    if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
+                        CBioseq_Handle part = m_Scope->GetBioseqHandle(loc_it.GetSeq_loc());
+                        if (part) {
+                            CSeq_entry_Handle parent = part.GetParentEntry();
+                            if (parent && parent.IsSeq()) {
+                                parent = parent.GetParentEntry();
+                                if (parent && parent.IsSet()
+                                    && parent.GetSet().GetClass() == CBioseq_set::eClass_parts) {
+                                    parent = parent.GetParentEntry();
+                                    if (parent && parent.IsSet()
+                                        && parent.GetSet().GetClass() == CBioseq_set::eClass_segset) {
+                                        CBioseq_CI bi(parent);
+                                        if (bi && bi->GetCompleteBioseq()->Equals(seq)) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1074,9 +1099,11 @@ void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
             }
         }
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating source features. EXCEPTION: ") +
-            e.what(), *(bsh.GetCompleteBioseq()));
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating source features. EXCEPTION: ") +
+                e.what(), *(bsh.GetCompleteBioseq()));
+        }
     }
 
 }
@@ -1148,9 +1175,11 @@ void CValidError_bioseq::x_ValidatePubFeatures(const CBioseq_Handle& bsh)
             }
         }
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating pub features. EXCEPTION: ") +
-            e.what(), *(bsh.GetCompleteBioseq()));
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating pub features. EXCEPTION: ") +
+                e.what(), *(bsh.GetCompleteBioseq()));
+        }
     }
 
 }
@@ -1867,7 +1896,8 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
                 bsh.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
             if (entry) {
                 const string& instantiated = desc->GetTitle();
-                string generated = GetTitle(bsh, fGetTitle_Reconstruct);
+                sequence::CDeflineGenerator gen;
+                const string & generated = gen.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                 if (!NStr::EqualNocase(instantiated, generated)) {
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
                         "Instantiated protein title does not match automatically "
@@ -3097,42 +3127,30 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
         return;
     }
 
-    // Check for CPubdesc on the biodseq
-    if (CSeqdesc_CI(bsh, CSeqdesc::e_Pub)) {
-        return;
+#if 1
+    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub) && !CFeat_CI(bsh, CSeqFeatData::e_Pub) ) {
+        m_Imp.AddBioseqWithNoPub(seq);
     }
-
-    // if non found look for a full length pub feature
-    SAnnotSelector sel(CSeqFeatData::e_Pub);
-    TSeqPos seq_length = bsh.GetInst_Length() - 1;
-    for (CFeat_CI it(bsh, sel); it; ++it) {
-        const CSeq_loc& loc = it->GetLocation();
-        if (loc.GetStart(eExtreme_Positional) == 0  &&
-			loc.GetStop(eExtreme_Positional) == seq_length - 1) {
-            return;
-        }
-    }
-
-    // if protein look for pubs applicable to DNA location of CDS
-    size_t partial = 0;
-    if (CSeq_inst::IsAa(bsh.GetInst_Mol())) {
-        const CSeq_feat* cds = GetCDSForProduct(bsh);
-        if (cds != NULL) {
-            const CSeq_loc& cds_loc  = cds->GetLocation();
-            for (CFeat_CI it(*m_Scope, cds_loc, sel); it; ++it) {
-                ECompare comp = Compare(cds_loc, it->GetLocation(), m_Scope);
-                if (comp == eContained  ||  comp == eSame) {
-                    return;
-                } else if (comp != eNoOverlap) { // partially overlapping pub
-                    ++partial;
+#else
+    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub) ) {
+        bool has_feat_pub = false;
+        CFeat_CI f(bsh, CSeqFeatData::e_Pub);
+        while (f && !has_feat_pub) {
+            const CSeq_id *id = f->GetLocation().GetId();
+            if (id) {
+                FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+                    if ((*id_it)->Compare(*id) == CSeq_id::e_YES) {
+                        has_feat_pub = true;
+                        break;
+                    }
                 }
             }
         }
+        if (!has_feat_pub) {
+            m_Imp.AddBioseqWithNoPub(seq);
+        }
     }
-
-    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&  !CFeat_CI(bsh, CSeqFeatData::e_Pub) ) {
-        m_Imp.AddBioseqWithNoPub(seq);
-    }
+#endif
 }
 
 
@@ -3213,9 +3231,11 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
             }
         }
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating multi-interval genes. EXCEPTION: ") +
-            e.what(), seq);
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating multi-interval genes. EXCEPTION: ") +
+                e.what(), seq);
+        }
     }
 }
 
@@ -3262,7 +3282,7 @@ void CValidError_bioseq::x_ValidateCompletness
                                 ctx, *desc);
                     } else {
                         PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
-                                "Suspicious use of complete", ctx, *desc);
+                                "Suspicious use of complete", seq);
                     }
                 }
             }
@@ -3470,8 +3490,10 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     {
                         CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
                         
-                        if ( range.IsWhole()  ||
-                             (range.GetFrom() == 0  &&  range.GetTo() == len - 1) ) {
+                        if ( (range.IsWhole()  ||
+                              (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
+                             (!feat.GetData().GetProt().IsSetProcessed() ||
+                              feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ){
                              num_full_length_prot_ref++;
                         }
                     }
@@ -3580,9 +3602,11 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 for ( CFeat_CI it(parent, CSeqFeatData::e_Prot); it; ++it ) {
                     CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
                     
-                    if ( range.IsWhole()  ||
-                        (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) {
-                        num_full_length_prot_ref = true;
+                    if ( (range.IsWhole()  ||
+                          (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) &&
+                         (!it->GetData().GetProt().IsSetProcessed() ||
+                          it->GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)){
+                        num_full_length_prot_ref ++;
                     }
                 }
             }
@@ -3651,9 +3675,11 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         ValidateMultipleGeneOverlap (bsh);
 
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating Seqfeat Context. EXCEPTION: ") +
-            e.what(), seq);
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating Seqfeat Context. EXCEPTION: ") +
+                e.what(), seq);
+        }
     }
 
 }
@@ -3924,9 +3950,10 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
     //now look for cds features that don't match up with mRNA features
     CFeat_CI cds(seq, CSeqFeatData::e_Cdregion);
     while (cds) {
+        const CSeq_feat& cds_feat = cds->GetOriginalFeature();
         vector<CSeq_feat_Handle> mrnas;
 
-        EOverlapType overlap_type = eOverlap_CheckIntervals;
+        EOverlapType overlap_type = eOverlap_CheckIntRev;
 
         bool featid_matched = false;
 
@@ -3944,10 +3971,13 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
                                scores, *m_Scope);
 
         ITERATE (TFeatScores, s, scores) {
-            if (x_IdXrefsAreReciprocal(cds->GetOriginalFeature(), *s->second)) {
+            if (x_IdXrefsAreReciprocal(cds_feat, *s->second)) {
                 featid_matched = true;
             }
-            mrnas.push_back (s_GetSeq_feat_Handle(*m_Scope, *s->second));
+            CSeq_feat_Handle mrna_handle = s_GetSeq_feat_Handle(*m_Scope, *s->second);
+            if (mrna_handle) {
+                mrnas.push_back (mrna_handle);
+            }
         }
 
         if (!featid_matched) {
@@ -3960,7 +3990,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
                             && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA
-                            && x_IdXrefsAreReciprocal(cds->GetOriginalFeature(), *(feat_it->GetSeq_feat()))) {
+                            && x_IdXrefsAreReciprocal(cds_feat, *(feat_it->GetSeq_feat()))) {
                             featid_matched = true;
                             mrnas.push_back (*feat_it);
                         }
@@ -3970,7 +4000,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
         }
 
         if (mrnas.size() == 1) {
-            unsigned int xrefs_match = x_IdXrefsNotReciprocal (cds->GetOriginalFeature(), *(mrnas.front().GetSeq_feat()));
+            unsigned int xrefs_match = x_IdXrefsNotReciprocal (cds_feat, *(mrnas.front().GetSeq_feat()));
             if (xrefs_match == 1) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal, 
                          "CDS/mRNA unambiguous pair have erroneous cross-references",
@@ -4050,14 +4080,12 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
                                        scores, *m_Scope);
 
                 if (scores.size() == 0) {
-                    const CSeq_feat& ft = cds->GetOriginalFeature();
-                    const CSeq_feat* p = &ft;
+                    const CSeq_feat* p = &cds_feat;
                     CConstRef<CSeq_feat> ref(p);
                     cds_without_mrna.push_back (ref);
                 }
             }
         }
-
         ++cds;
     }
     if (cds_without_mrna.size() > 0) {
@@ -4820,7 +4848,66 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 }
 
 
-void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs, const CBioseq& bioseq)
+static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    bool rval = false;
+    
+    if (f1.GetData().IsCdregion() && f2.GetData().IsCdregion()) {
+        CBioseq_Handle bsh = f1.GetScope().GetBioseqHandle(f1.GetLocation());
+        if (bsh) {
+            const CTSE_Handle& tse = bsh.GetTSE_Handle();
+            vector<int> mrna1;
+            vector<int> mrna2;
+
+            FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f1.GetSeq_feat())) {
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
+                    && (*itx)->GetId().GetLocal().IsId()) {
+                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                    vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
+                    ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                        if (feat_it->IsSetData() 
+                            && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                            mrna1.push_back (feat_id);
+                            break;
+                        }
+                    }
+                }
+            }
+            FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f2.GetSeq_feat())) {
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
+                    && (*itx)->GetId().GetLocal().IsId()) {
+                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                    vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
+                    ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                        if (feat_it->IsSetData() 
+                            && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                            mrna2.push_back (feat_id);
+                        }
+                    }
+                }
+            }
+
+            if (mrna1.size() > 0 && mrna2.size() > 0) {
+                rval = true;
+                ITERATE (vector<int>, i1, mrna1) {
+                    ITERATE (vector<int>, i2, mrna2) {
+                        if (*i1 == *i2) {
+                            rval = false;
+                            break;
+                        }
+                    }
+                    if (!rval) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return rval;
+}
+
+
+void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs)
 {
     const CSeq_feat& feat1 = *(f1.GetSeq_feat());
     const CSeq_feat& feat2 = *(f2.GetSeq_feat());
@@ -4857,8 +4944,10 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
                     PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                         "Duplicate feature", feat2);
                 } else if ( feat1_subtype != CSeqFeatData::eSubtype_pub ) {
-                    // do not report if partial flags are different
-                    if (s_PartialsSame(feat1_loc, feat2_loc)) {
+                    if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
+                        // do not report if features are coding regions linked to different mRNAs
+                    } else if (s_PartialsSame(feat1_loc, feat2_loc)) {
+                        // do not report if partial flags are different
                         PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                             "Features have identical intervals, but labels differ",
                             feat2);
@@ -4879,13 +4968,27 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
         }
     }
             
+}
+
+
+void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide)
+{
+    const CSeq_feat& feat1 = *(f1.GetSeq_feat());
+    const CSeq_feat& feat2 = *(f2.GetSeq_feat());
+    // subtypes
+    CSeqFeatData::ESubtype feat1_subtype = feat1.GetData().GetSubtype();
+    CSeqFeatData::ESubtype feat2_subtype = feat2.GetData().GetSubtype();
+    // locations
+    const CSeq_loc& feat1_loc = feat1.GetLocation();
+    const CSeq_loc& feat2_loc = feat2.GetLocation();
+
     if ( (feat1_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
           feat1_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-          feat1_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
-         (feat2_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
-          feat2_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-          feat2_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
-        if (sequence::Compare(feat1_loc, feat2_loc, m_Scope) != eNoOverlap  &&
+          feat1_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)) {
+        if ((feat2_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+             feat2_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+             feat2_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) &&
+            sequence::Compare(feat1_loc, feat2_loc, m_Scope) != eNoOverlap  &&
             s_NotPeptideException(feat1, feat2)) {
             EDiagSev overlapPepSev = 
                 m_Imp.IsOvlPepErr() ? eDiag_Error :eDiag_Warning;
@@ -4894,7 +4997,19 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
             try {
                 const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(bioseq);
                 if (cds != NULL) {
-                    string cds_loc = GetAccessionFromObjects(cds, NULL, *m_Scope);
+                    string cds_loc = "";
+                    const CSeq_id* id = cds->GetLocation().GetId();
+                    if (id != NULL) {
+                        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
+                        if (bsh && bsh.GetCompleteBioseq()) {
+                            AppendBioseqLabel (cds_loc, *(bsh.GetCompleteBioseq()), true);
+                            if (NStr::StartsWith(cds_loc, "BIOSEQ: ")) {
+                                cds_loc = cds_loc.substr(8);
+                            }
+                        } else {
+                            id->GetLabel(&cds_loc, CSeq_id::eContent);
+                        }
+                    }
                     if (!NStr::IsBlank(cds_loc)) {
                         cds_loc = " (parent CDS is on " + cds_loc + ")";
                         msg += cds_loc;
@@ -4903,10 +5018,19 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
             } catch ( const exception& ) {
             }
 
+            if (!reported_last_peptide) {
+                PostErr( overlapPepSev,
+                    eErr_SEQ_FEAT_OverlappingPeptideFeat,
+                    msg,
+                    feat1); 
+            }
             PostErr( overlapPepSev,
                 eErr_SEQ_FEAT_OverlappingPeptideFeat,
                 msg,
                 feat2);
+            reported_last_peptide = true;
+        } else {
+            reported_last_peptide = false;
         }
     }
 }
@@ -4944,21 +5068,34 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                     || tech == CMolInfo::eTech_htgs_3);
         }
 
-        CFeat_CI prev_it(bsh);        
+        CFeat_CI prev_it(bsh); 
         while (prev_it) {
             CFeat_CI curr_it = prev_it;
             ++curr_it;
             while (curr_it) {
-                x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs, bioseq);
+                x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs);
                 ++curr_it;
             }
             ++prev_it;
         }
 
+        CFeat_CI prev_prot(bsh);
+        if (prev_prot) {
+            CFeat_CI curr_prot = prev_prot;
+            ++curr_prot;           
+            bool reported_last_peptide = false;
+            while (curr_prot) {
+                x_ReportOverlappingPeptidePair(prev_prot->GetSeq_feat_Handle(), curr_prot->GetSeq_feat_Handle(), bioseq, reported_last_peptide);
+                ++curr_prot;
+                ++prev_prot;
+            }
+        }
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating duplicate/overlapping features. EXCEPTION: ") +
-            e.what(), bioseq);
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating duplicate/overlapping features. EXCEPTION: ") +     
+                e.what(), bioseq);
+        }
     }
 
 }
@@ -5038,7 +5175,7 @@ static string GetDateString (const CDate& date)
         val = date.GetStr();
     } else if (date.IsStd()) {
         if (date.GetStd().IsSetYear()) {
-            date.GetDate(&val, "%{%N %{%2D, %}%}%Y");
+            date.GetDate(&val, "%{%N %{%D, %}%}%Y");
             NStr::ReplaceInPlace(val, "January", "Jan");
             NStr::ReplaceInPlace(val, "February", "Feb");
             NStr::ReplaceInPlace(val, "March", "Mar");
@@ -5076,7 +5213,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         last_pdb,
                         last_prf,
                         last_sp;
-    CConstRef<CDate> create_date, update_date;
+    CConstRef<CSeqdesc> create_desc, update_desc;
     string create_str;
     int biomol = -1;
 	int tech = 0, completeness = 0;
@@ -5090,6 +5227,49 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool has_chromosome = false;
     bool is_prokaryote = false;
     bool is_organelle = false;
+
+    // some validation is for descriptors that affect a bioseq, 
+    // other validation is only for descriptors _on_ a bioseq
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+        const CSeqdesc& desc = **it;
+
+        switch ( desc.Which() ) {
+		case CSeqdesc::e_Title:
+			{
+				string title = desc.GetTitle();
+				size_t pos = NStr::Find(title, "[");
+				if (pos != string::npos) {
+					pos = NStr::Find(title, "=", pos + 1);
+				}
+				if (pos != string::npos) {
+					pos = NStr::Find(title, "]", pos + 1);
+				}
+				if (pos != string::npos) {
+					bool report_fasta_brackets = true;
+					FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+						if ((*id_it)->IsGeneral()) {
+							const CDbtag& dbtag = (*id_it)->GetGeneral();
+							if (dbtag.IsSetDb()) {
+								if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
+									|| NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
+									report_fasta_brackets = false;
+									break;
+								}
+							}
+						}
+					}
+					if (report_fasta_brackets) {
+						PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
+							    "Title may have unparsed [...=...] construct",
+								ctx, desc);
+					}
+				}
+            }
+            break;
+        default:
+            break;
+        }
+    }
 
     for ( CSeqdesc_CI di(bsh); di; ++ di ) {
         const CSeqdesc& desc = *di;
@@ -5127,30 +5307,30 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Create_date:
             {
             const CDate& current = desc.GetCreate_date();
-            if ( create_date ) {
-                if ( create_date->Compare(current) != CDate::eCompare_same ) {
+            if ( create_desc ) {
+                if ( create_desc->GetCreate_date().Compare(current) != CDate::eCompare_same ) {
                     string current_str = GetDateString(current);
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
                         "Inconsistent create_dates [" + current_str +
                         "] and [" + create_str + "]", ctx, desc);
                 }
             } else {
-                create_date = &(desc.GetCreate_date());
-                create_str = GetDateString(*create_date);
+                create_desc = &desc;
+                create_str = GetDateString(create_desc->GetCreate_date());
             }
 
-            if ( update_date ) {
-                ValidateUpdateDateContext(*update_date, current, seq, desc);
+            if ( update_desc ) {
+                ValidateUpdateDateContext(update_desc->GetUpdate_date(), current, seq, *create_desc);
             }
             }
-           break;
+            break;
 
         case CSeqdesc::e_Update_date:
-            if ( create_date ) {
-                ValidateUpdateDateContext(desc.GetUpdate_date(), *create_date, 
-                    seq, desc);
+            if ( create_desc ) {
+                ValidateUpdateDateContext(desc.GetUpdate_date(), create_desc->GetCreate_date(), 
+                    seq, *create_desc);
             } else {
-                update_date = &(desc.GetUpdate_date());
+                update_desc = &desc;
             }
             break;
 
@@ -5220,7 +5400,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                 const CObject_id& oi = desc.GetUser().GetType();
                 if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 
                     && !s_IsTPAAssemblyOkForBioseq(seq)) {
-                    string id_str = GetAccessionFromObjects(&seq, NULL, *m_Scope);
+                    string id_str;
+                    seq.GetLabel(&id_str, CBioseq::eContent, false);
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record " + id_str + " should not have TpaAssembly object", seq);
                 }
@@ -5236,33 +5417,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 		case CSeqdesc::e_Title:
 			{
 				string title = desc.GetTitle();
-				size_t pos = NStr::Find(title, "[");
-				if (pos != string::npos) {
-					pos = NStr::Find(title, "=", pos + 1);
-				}
-				if (pos != string::npos) {
-					pos = NStr::Find(title, "]", pos + 1);
-				}
-				if (pos != string::npos) {
-					bool report_fasta_brackets = true;
-					FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-						if ((*id_it)->IsGeneral()) {
-							const CDbtag& dbtag = (*id_it)->GetGeneral();
-							if (dbtag.IsSetDb()) {
-								if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
-									|| NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
-									report_fasta_brackets = false;
-									break;
-								}
-							}
-						}
-					}
-					if (report_fasta_brackets) {
-						PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
-							    "Title may have unparsed [...=...] construct",
-								ctx, desc);
-					}
-				}
 
                 // nucleotide refseq sequences should start with the organism name,
                 // protein refseq sequences should end with the organism name.
@@ -5588,6 +5742,12 @@ void CValidError_bioseq::ValidateMolInfoContext
                 seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
                     "HTGS/STS/GSS/WGS sequence should not be RNA", seq);
+            }
+            break;
+        case CMolInfo::eTech_tsa:
+            if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
+                    "TSA sequence should not be DNA", seq);
             }
             break;
         default:
@@ -5951,7 +6111,7 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
         // Loop through genes and insert into multimap sorted by
         // gene label / locus_tag -- case insensitive
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-        for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
+        for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
             const CSeq_feat& feat = fi->GetOriginalFeature();
             // record label
             string label;
@@ -5968,9 +6128,11 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
         x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
             eDiag_Error);
     } catch ( const exception& e ) {
-        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating colliding genes. EXCEPTION: ") +
-            e.what(), seq);
+        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+                string("Exeption while validating colliding genes. EXCEPTION: ") +
+                e.what(), seq);
+        }
     }
 }
 
@@ -6293,9 +6455,12 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
         const CSeq_loc& loc = graph.GetLoc();
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
         if (!bsh) {
-            string label = "unknown";
+            string label = "";
             if (loc.GetId() != 0) {
-                loc.GetId()->GetLabel(&label);
+               loc.GetId()->GetLabel(&label, CSeq_id::eContent);
+            }
+            if (NStr::IsBlank(label)) {
+                label = "unknown";
             }
             PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphBioseqId, 
                      "Bioseq not found for Graph location " + label, graph);
@@ -6305,10 +6470,9 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
         TSeqPos stop = loc.GetStop(eExtreme_Positional);
         if (start >= bsh.GetBioseqLength() || stop >= bsh.GetBioseqLength()
             || !loc.IsInt() || loc.GetStrand() == eNa_strand_minus) {
-            string label = "unknown";
-            loc.GetLabel(&label);
+            string label = GetValidatorLocationLabel (loc);
             PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphLocInvalid, 
-                     "Graph location (" + label + ") is invalid", graph);
+                     "SeqGraph location (" + label + ") is invalid", *(bsh.GetCompleteBioseq()));
             return false;
         }
     }

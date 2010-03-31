@@ -130,6 +130,10 @@ void GetPubdescLabels
 bool IsNCBIFILESeqId (const CSeq_id& id);
 bool IsRefGeneTrackingObject (const CUser_object& user);
 
+string GetValidatorLocationLabel (const CSeq_loc& loc);
+void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context);
+string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
