@@ -34,7 +34,6 @@
  *
  */
 
-
 #define NCBID_WEBPATH          "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO   "Connection-Info:"
 #define HTTP_DISP_FAILURES     "Dispatcher-Failures:"
@@ -46,7 +45,8 @@
 #define DISPATCHER_CFGFILE     "servrc.cfg"
 #define DISP_PROTOCOL_VERSION  "1.1"
 #define DISPD_MESSAGE_FILE     ".dispd.msg"
-
+#define CONN_FWD_PORT_MIN      5860
+#define CONN_FWD_PORT_MAX      5870
 
 #ifdef __cplusplus
 extern "C" {
