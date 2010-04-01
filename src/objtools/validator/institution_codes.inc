@@ -480,6 +480,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BJA	s	University of Burundi, Biology Department",
 "BJFC	s	Beijing Forestry University",
 "BJM	s	Beijing Natural History Museum",
+"BJRI<BGD>	b	Gene bank at Bangladesh Jute Research Institute",
 "BJTC	s	Capital Normal University, Biology Department",
 "BK	s	Department of Agriculture",
 "BKF	s	Royal Forest Department",
