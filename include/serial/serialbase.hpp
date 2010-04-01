@@ -364,11 +364,13 @@ public:
     // cast to object type
     TObject& operator*(void)
         {
-            return *reinterpret_cast<TObject*>(m_Buffer);
+//            return *reinterpret_cast<TObject*>(m_Buffer);
+            return *m_obj;
         }
     const TObject& operator*(void) const
         {
-            return *reinterpret_cast<const TObject*>(m_Buffer);
+//            return *reinterpret_cast<const TObject*>(m_Buffer);
+            return *m_obj;
         }
 
     // construct/destruct object
@@ -382,7 +384,10 @@ public:
         }
     
 private:
+    union {
     TBuffer m_Buffer;
+    TObject* m_obj;
+    };
 };
 
 
