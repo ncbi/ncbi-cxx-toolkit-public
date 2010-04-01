@@ -263,12 +263,14 @@ CBlastDBCmdApp::x_InitApplicationData()
         }
     } 
 
-    m_OutFmt = args["outfmt"].AsString();
-    m_FASTA = false;
-    // If "%f" is found within outfmt, discard everything else
-    if (m_OutFmt.find("%f") != string::npos) {
-        m_OutFmt = "%f";
-        m_FASTA = true;
+    if (args["outfmt"].HasValue()) {
+        m_OutFmt = args["outfmt"].AsString();
+        m_FASTA = false;
+        // If "%f" is found within outfmt, discard everything else
+        if (m_OutFmt.find("%f") != string::npos) {
+            m_OutFmt = "%f";
+            m_FASTA = true;
+        }
     }
 
     m_GetDuplicates = args["get_dups"];
