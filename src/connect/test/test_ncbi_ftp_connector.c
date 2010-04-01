@@ -92,7 +92,8 @@ int main(int argc, char* argv[])
         flag |= fFCDC_LogControl;
     else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
-        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
+        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
+                             DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
 

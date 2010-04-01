@@ -222,7 +222,8 @@ int main(int argc, const char* argv[])
         flag |= fFCDC_LogControl;
     else {
         char val[32];
-        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
+        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
+                             DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
