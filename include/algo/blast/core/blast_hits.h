@@ -702,26 +702,6 @@ Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results);
 
-/** For each query sequence in the BLAST results, remove any hits
- *  whose query range is enveloped by too many other higher-scoring
- *  hits. All hits to a query sequence are considered together.
- *  For more details see Berman P. et. al, "Winnowing Sequences
- *  from a Database Search" Journal of Computational Biology
- *  vol 7(2000) pp 293-302
- *
- * @param results The collection of results to cull [in][out]
- * @param query_info Query offset information [in]
- * @param culling_limit Maximum number of hits allowed to envelop
- *                      the query range of an HSP before the HSP is removed
- * @param query_length Length of concatenated query [in]
- * @return 0 on success
- */
-NCBI_XBLAST_EXPORT
-Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
-                                    const BlastQueryInfo *query_info,
-                                    Int4 culling_limit,
-                                    Int4 query_length);
-
 /** Blast_HSPResultsInsertHSPList
  * Insert an HSP list to the appropriate place in the results structure.
  * All HSPs in this list must be from the same query and same subject; the oid
