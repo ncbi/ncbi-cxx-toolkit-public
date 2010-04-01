@@ -582,7 +582,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         /* HTTP connector is auxiliary only */
         EIO_Status status = eIO_Success;
         CONNECTOR conn;
-        char val[40];
+        char val[32];
         CONN c;
 
         /* Clear connection info */
@@ -625,10 +625,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         else if (ConnNetInfo_GetValue(net_info->service,
                                       "FWDAEMON_COMPATIBILITY",
                                       val, sizeof(val), "")
-                 &&  *val  &&  (strcmp    (val, "1")    == 0  ||
-                                strcasecmp(val, "on")   == 0  ||
-                                strcasecmp(val, "yes")  == 0  ||
-                                strcasecmp(val, "true") == 0)) {
+                 &&  ConnNetInfo_Boolean(val)) {
             assert(sizeof(kFWDaemon) <= sizeof(net_info->host));
             memcpy(net_info->host, kFWDaemon, sizeof(kFWDaemon));
         } else
@@ -653,15 +650,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 }
 
 
-static EIO_Status s_Close(CONNECTOR       connector,
-                          const STimeout* timeout,
-                          int/*bool*/     close_dispatcher)
+static void s_Close(CONNECTOR       connector,
+                    const STimeout* timeout,
+                    int/*bool*/     close_dispatcher)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-
-    if (uuu->meta.close)
-        status = uuu->meta.close(uuu->meta.c_close, timeout);
 
     if (uuu->name) {
         free((void*) uuu->name);
@@ -684,9 +677,6 @@ static EIO_Status s_Close(CONNECTOR       connector,
         uuu->meta.list = 0;
         s_Reset(meta);
     }
-
-    uuu->status = status;
-    return status;
 }
 
 
@@ -782,7 +772,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                          uuu->service, !info ? "Firewall" : "Stateful relay",
                          IO_StatusStr(status), kFWLink));
         }
-
         s_Close(connector, timeout, 0/*don't close dispatcher yet!*/);
     }
 
@@ -800,7 +789,12 @@ static EIO_Status s_VT_Status(CONNECTOR connector, EIO_Event dir)
 
 static EIO_Status s_VT_Close(CONNECTOR connector, const STimeout* timeout)
 {
-    return s_Close(connector, timeout, 1/*close_dispatcher*/);
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    EIO_Status status = uuu->meta.close
+        ? uuu->meta.close(uuu->meta.c_close, timeout)
+        : eIO_Success;
+    s_Close(connector, timeout, 1/*close_dispatcher*/);
+    return status;
 }
 
 
