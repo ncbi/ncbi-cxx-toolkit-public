@@ -718,7 +718,7 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
     CRef<CFFile> file(new CFFile());
     file->SetAttlist().SetRelativePath(rel_source_file);
     //
-    TPch pch_usage = DefinePchUsage(m_ProjectDir, rel_source_file);
+    TPch pch_usage = DefinePchUsage(m_ProjectDir, rel_source_file, pch_default);
     //
     // For each configuration
     ITERATE(list<SConfigInfo>, iconfig, m_Configs) {
@@ -792,10 +792,10 @@ CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter,
 
 CSrcToFilterInserterWithPch::TPch 
 CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
-                                            const string& rel_source_file)
+                                            const string& rel_source_file,
+                                            const string& pch_file)
 {
-    // Check global permission
-    if ( !GetApp().GetMetaMakefile().IsPchEnabled() )
+    if ( pch_file.empty() )
         return TPch(eNotUse, "");
 
     string abs_source_file = 
@@ -806,16 +806,6 @@ CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
     string ext;
     CDirEntry::SplitPath(abs_source_file, NULL, NULL, &ext);
     if ( NStr::CompareNocase(ext, ".c") == 0)
-        return TPch(eNotUse, "");
-
-    // PCH usage is defined in msvc master makefile
-    string pch_file = 
-        GetApp().GetMetaMakefile().GetUsePchThroughHeader
-                                       (m_ProjectId,
-                                        abs_source_file, 
-                                        GetApp().GetProjectTreeInfo().m_Src);
-    // No PCH - not use
-    if ( pch_file.empty() )
         return TPch(eNotUse, "");
 
 /*

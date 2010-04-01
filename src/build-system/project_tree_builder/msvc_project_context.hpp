@@ -148,6 +148,13 @@ public:
     {
         return m_SrcRoot;
     }
+    bool IsPchEnabled(const SConfigInfo& config) const;
+    string GetPchHeader(
+        const string& project_id,
+        const string& source_file_full_path,
+        const string& tree_src_dir, const SConfigInfo& config) const;
+    string GetConfigData( const string& section, const string& entry,
+                          const SConfigInfo& config) const;
 
 private:
     // Prohibited to:

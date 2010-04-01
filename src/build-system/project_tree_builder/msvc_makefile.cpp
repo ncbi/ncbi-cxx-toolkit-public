@@ -88,6 +88,12 @@ string CMsvcMetaMakefile::GetResourceCompilerOpt
     return GetOpt(m_MakeFile, "ResourceCompiler", opt, config);
 }
 
+string CMsvcMetaMakefile::GetConfigOpt(
+    const string& section, const string& opt, const SConfigInfo& config) const
+{
+    return GetOpt(m_MakeFile, section, opt, config);
+}
+
 
 bool CMsvcMetaMakefile::IsPchEnabled(void) const
 {

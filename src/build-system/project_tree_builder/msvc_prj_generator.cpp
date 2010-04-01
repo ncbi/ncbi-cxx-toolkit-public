@@ -138,11 +138,12 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     }
 
 // default PCH
+    SConfigInfo cfg_tmp;
     string pch_default;
-    if ( GetApp().GetMetaMakefile().IsPchEnabled() ) {
+    if ( project_context.IsPchEnabled(cfg_tmp) ) {
         string noname = CDirEntry::ConcatPath(prj.m_SourcesBaseDir,"aanofile");
-        pch_default = GetApp().GetMetaMakefile().GetUsePchThroughHeader(
-            prj.m_ID, noname, GetApp().GetProjectTreeInfo().m_Src);
+        pch_default = project_context.GetPchHeader(
+            prj.m_ID, noname, GetApp().GetProjectTreeInfo().m_Src, cfg_tmp);
     }
 
     ITERATE(list<SConfigInfo>, p , project_configs) {

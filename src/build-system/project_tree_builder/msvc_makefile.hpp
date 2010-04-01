@@ -143,6 +143,9 @@ public:
                                   (const string&       opt, 
                                    const SConfigInfo&  config) const;
 
+    string GetConfigOpt(
+        const string& section, const string&       opt, 
+        const SConfigInfo&  config) const;
 
     bool   IsPchEnabled           (void) const;
     string GetUsePchThroughHeader (const string& project_id,

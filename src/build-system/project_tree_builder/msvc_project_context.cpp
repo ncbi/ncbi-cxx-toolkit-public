@@ -716,7 +716,37 @@ const list<string> CMsvcPrjProjectContext::Defines(const SConfigInfo& cfg_info) 
     return defines;
 }
 
+bool CMsvcPrjProjectContext::IsPchEnabled(const SConfigInfo& config) const
+{
+    string value = GetConfigData("UsePch","UsePch",config);
+    if (value.empty()) {
+        return false;
+    }
+    return NStr::StringToBool(value);
+}
 
+string CMsvcPrjProjectContext::GetPchHeader(
+        const string& project_id,
+        const string& source_file_full_path,
+        const string& tree_src_dir, const SConfigInfo& config) const
+{
+    string value = m_MsvcProjectMakefile->GetConfigOpt("UsePch","DefaultPch",config);
+    if (value.empty()) {
+        value = GetApp().GetMetaMakefile().GetUsePchThroughHeader(
+            project_id, source_file_full_path, tree_src_dir);
+    }
+    return value;
+}
+
+string CMsvcPrjProjectContext::GetConfigData(
+    const string& section, const string& entry, const SConfigInfo& config) const
+{
+    string value = m_MsvcProjectMakefile->GetConfigOpt(section,entry,config);
+    if (value.empty()) {
+        value = GetApp().GetMetaMakefile().GetConfigOpt(section,entry,config);
+    }
+    return value;
+}
 
 //-----------------------------------------------------------------------------
 CMsvcPrjGeneralContext::CMsvcPrjGeneralContext

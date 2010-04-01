@@ -344,7 +344,8 @@ private:
     typedef pair<EUsePch, string> TPch;
 
     TPch DefinePchUsage(const string&     project_dir,
-                        const string&     rel_source_file);
+                        const string&     rel_source_file,
+                        const string&     pch_default);
 
     void InsertFile    (CRef<CFilter>&    filter, 
                         const string&     rel_source_file,
