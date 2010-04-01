@@ -2713,7 +2713,9 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
                 str_extra += "no more than ";
                 str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
             }
-            str_extra += " arguments in \"....\"";
+            str_extra +=
+                " argument" + string(&"s"[m_nExtra + m_nExtraOpt == 1]) +
+                " in \"....\"";
             s_PrintCommentBody(arr, str_extra, m_UsageWidth);
         }
         if ( m_nExtra  &&  !opt.empty() ) {
