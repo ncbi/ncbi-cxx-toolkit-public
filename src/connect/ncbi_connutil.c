@@ -92,9 +92,11 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 
     if (service  &&  *service) {
         /* Service-specific inquiry */
+        char   temp[sizeof(buf)];
         size_t slen = strlen(service);
         size_t plen = strlen(param) + 1;
-        if (slen + 1 + sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
+        size_t len  = slen + 1 + sizeof(DEF_CONN_REG_SECTION) + plen;
+        if (len > sizeof(buf))
             return 0;
 
         /* First, environment search for 'service_CONN_param' */
@@ -104,8 +106,10 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         s += sizeof(DEF_CONN_REG_SECTION) - 1;
         *s++ = '_';
         memcpy(s, param, plen);
-        if ((val = getenv(buf)) != 0  ||  (val = getenv(strupr(buf))) != 0)
+        if ((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
+            ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0)) {
             return strncpy0(value, val, value_size - 1);
+        }
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
         buf[slen++] = '\0';
@@ -134,6 +138,15 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     s += sizeof(DEF_CONN_REG_SECTION);
     CORE_REG_GET(DEF_CONN_REG_SECTION, s, value, value_size, def_value);
     return value;
+}
+
+
+int/*bool*/ ConnNetInfo_Boolean(const char* str)
+{
+    return str  &&  *str  &&  (strcmp    (str, "1")    == 0  ||
+                               strcasecmp(str, "on")   == 0  ||
+                               strcasecmp(str, "yes")  == 0  ||
+                               strcasecmp(str, "true") == 0);
 }
 
 
@@ -271,11 +284,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
-    if (*str  &&  (strcmp    (str, "1")    == 0  ||
-                   strcasecmp(str, "on")   == 0  ||
-                   strcasecmp(str, "yes")  == 0  ||
-                   strcasecmp(str, "true") == 0  ||
-                   strcasecmp(str, "some") == 0)) {
+    if (ConnNetInfo_Boolean(str)
+        ||    (*str  &&   strcasecmp(str, "some") == 0)) {
         info->debug_printout = eDebugPrintout_Some;
     } else if (*str  &&  (strcasecmp(str, "all")  == 0  ||
                           strcasecmp(str, "data") == 0)) {
@@ -285,24 +295,15 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* stateless client? */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
-    info->stateless = (*str  &&  (strcmp    (str, "1")    == 0  ||
-                                  strcasecmp(str, "on")   == 0  ||
-                                  strcasecmp(str, "yes")  == 0  ||
-                                  strcasecmp(str, "true") == 0));
+    info->stateless = ConnNetInfo_Boolean(str);
 
     /* firewall mode? */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = (*str  &&  (strcmp    (str, "1")    == 0  ||
-                                 strcasecmp(str, "on")   == 0  ||
-                                 strcasecmp(str, "yes")  == 0  ||
-                                 strcasecmp(str, "true") == 0));
+    info->firewall = ConnNetInfo_Boolean(str);
 
     /* prohibit the use of local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
-    info->lb_disable = (*str  &&  (strcmp    (str, "1")    == 0  ||
-                                   strcasecmp(str, "on"  ) == 0  ||
-                                   strcasecmp(str, "yes" ) == 0  ||
-                                   strcasecmp(str, "true") == 0));
+    info->lb_disable = ConnNetInfo_Boolean(str);
 
     /* user header */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
@@ -923,10 +924,6 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 
     if (!info)
         return 0/*failed*/;
-    if (!service  ||  !*service) {
-        assert(0);
-        return 0/*failed*/;
-    }
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(arch = CORE_GetPlatform())  ||  !*arch)
         ConnNetInfo_DeleteArg(info, kPlatform);
@@ -943,12 +940,14 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
         ConnNetInfo_PreOverrideArg(info, kAddress, addr);
     if (addr != info->client_host)
         free((void*) addr);
-    if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
-        ConnNetInfo_DeleteArg(info, kPlatform);
+    if (service  &&  *service) {
         if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
-            ConnNetInfo_DeleteArg(info, kAddress);
-            if (!ConnNetInfo_PreOverrideArg(info, kService, service))
-                return 0/*failed*/;
+            ConnNetInfo_DeleteArg(info, kPlatform);
+            if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+                ConnNetInfo_DeleteArg(info, kAddress);
+                if (!ConnNetInfo_PreOverrideArg(info, kService, service))
+                    return 0/*failed*/;
+            }
         }
     }
     return 1/*succeeded*/;

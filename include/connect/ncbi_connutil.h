@@ -31,6 +31,8 @@
  * File Description:
  *   Auxiliary API to:
  *    1.Retrieve connection related info from the registry:
+ *       ConnNetInfo_GetValue
+ *       ConnNetInfo_Boolean
  *       SConnNetInfo
  *       ConnNetInfo_Create()
  *       ConnNetInfo_AdjustForHttpProxy()
@@ -227,6 +229,14 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  char*       value,
  size_t      value_size,
  const char* def_value
+ );
+
+
+/* Return non-zero if "str" (when non-NULL, non-empty) represents a
+ * true boolean value;  return 0 otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
+(const char* str
  );
 
 
