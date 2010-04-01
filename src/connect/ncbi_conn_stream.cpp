@@ -124,6 +124,22 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 }
 
 
+CConn_SocketStream::CConn_SocketStream(const string&   host,
+                                       unsigned short  port,
+                                       TSOCK_Flags     flags,
+                                       const void*     data,
+                                       size_t          size,
+                                       unsigned int    max_try,
+                                       const STimeout* timeout,
+                                       streamsize      buf_size)
+    : CConn_IOStream(SOCK_CreateConnectorEx(host.c_str(), port, max_try,
+                                            data, size, flags),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
 CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        unsigned int    own_sock,
                                        const STimeout* timeout,
@@ -133,7 +149,6 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 {
     return;
 }
-
 
 
 static SOCK s_GrabSOCK(CSocket& socket)

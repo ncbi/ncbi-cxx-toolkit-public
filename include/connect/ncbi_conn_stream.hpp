@@ -223,6 +223,34 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
+    /// Create a direct connection to host:port and pass initial data.
+    ///
+    /// @param host
+    ///  Host to connect to
+    /// @param port
+    ///  ... and port number
+    /// @data
+    ///  Pointer to block of data to send once connection is ready
+    /// @size
+    ///  Size of the data block to send (or 0 if to send nothing)
+    /// @param max_try
+    ///  Number of attempts
+    /// @param timeout
+    ///  Default I/O timeout
+    /// @param buf_size
+    ///  Default buffer size
+    /// @sa
+    ///  CConn_IOStream
+    CConn_SocketStream
+    (const string&   host,         /* host to connect to                     */
+     unsigned short  port,         /* ... and port number                    */
+     TSOCK_Flags     flags,        /* flags, see ncbi_socket.h               */
+     const void*     data     = 0, /* ptr to the initial data block to send  */
+     size_t          size     = 0, /* size of the data block                 */
+     unsigned int    max_try  = 3, /* number of attempts                     */
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize);
+
     /// This variant uses existing socket "sock" to build the stream upon it.
     /// The caller may retain ownership of "sock" by passing "own_sock" as 0
     /// to the stream constructor -- in this case, the socket will not be
@@ -242,7 +270,6 @@ public:
      unsigned int    own_sock = 1, /* whether stream owns(non-zero) "sock" */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
-
 
     /// This variant uses existing CSocket to build the stream upon it.
     /// NOTE:  it revokes all ownership of the sockets internals
