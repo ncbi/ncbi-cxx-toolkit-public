@@ -83,6 +83,7 @@ public:
                             const CAlnMap::TSignedRange& aln_rng)         const;
 
     // creates a vertical string of residues for a given aln pos
+    // NB: buffer will be resized to GetNumRows()
     // optionally, returns a distribution of residues
     // optionally, counts the gaps in this distribution
     string& GetColumnVector(string& buffer,

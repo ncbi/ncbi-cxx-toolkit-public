@@ -944,6 +944,7 @@ string& CAlnVec::GetColumnVector(string& buffer,
                                  TResidueCount * residue_count,
                                  bool gaps_in_count) const
 {
+    buffer.resize(GetNumRows(), GetEndChar());
     if (aln_pos > GetAlnStop()) {
         aln_pos = GetAlnStop(); // out-of-range adjustment
     }

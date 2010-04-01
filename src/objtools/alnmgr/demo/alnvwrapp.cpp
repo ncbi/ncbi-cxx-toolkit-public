@@ -301,8 +301,6 @@ void CAlnVwrApp::View8(int aln_pos)
     
     // get the column at once
     string column;
-    column.resize(m_AV->GetNumRows());
-    
     NcbiCout << m_AV->GetColumnVector(column, aln_pos) << NcbiEndl;
     
     // %ID
