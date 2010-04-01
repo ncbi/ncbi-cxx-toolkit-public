@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Maxim Didenko
+ * Author:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -31,9 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/grid_cgi/grid_cgiapp.hpp>
-
-#include <cgi/cgiapp.hpp>
+#include <cgi/cgiapp_cached.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_serial.hpp>
 
@@ -41,90 +39,285 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+#include <connect/services/grid_client.hpp>
+#include <connect/services/ns_client_factory.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
+
 #include <connect/email_diag_handler.hpp>
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/blob_storage.hpp>
 
 #include <vector>
+#include <map>
+#include <sstream>
 
 
 #define CGI2RCGI_VERSION_MAJOR 1
-#define CGI2RCGI_VERSION_MINOR 0
+#define CGI2RCGI_VERSION_MINOR 2
 #define CGI2RCGI_VERSION_PATCH 0
+
+// Program version is passed to NetSchedule so that it
+// does not allow obsolete clients to submit or execute jobs.
+#define PROGRAM_VERSION "Cgi2RCgi ver " \
+    NCBI_AS_STRING(CGI2RCGI_VERSION_MAJOR) "." \
+    NCBI_AS_STRING(CGI2RCGI_VERSION_MINOR) "." \
+    NCBI_AS_STRING(CGI2RCGI_VERSION_PATCH)
 
 USING_NCBI_SCOPE;
 
 const string kElapsedTime = "ctg_time";
 
-/////////////////////////////////////////////////////////////////////////////
-//  CGridCgiSampleApplication::
-//
 
-class CCgi2RCgiApp : public  CGridCgiApplication
+/** @addtogroup NetScheduleClient
+ *
+ * @{
+ */
+
+/////////////////////////////////////////////////////////////////////////////
+//  Grid Cgi Context
+//  Context in which a request is processed
+//
+class CGridCgiContext
 {
 public:
-    CCgi2RCgiApp() : m_CgiContext(NULL) {
+    CGridCgiContext(CHTMLPage& page,
+        CHTMLPage& custom_http_header, CCgiContext& ctx);
+
+    // Get the HTML page
+    CHTMLPage&    GetHTMLPage()       { return m_Page; }
+
+    // Get the self URL
+    string        GetSelfURL() const;
+
+    // Get current job progress message
+    const string& GetJobProgressMessage() const
+        { return m_ProgressMsg; }
+
+    // Get a value from a cgi request. if there is no an entry with a
+    // given name it returns an empty string.
+    const string& GetEntryValue(const string& entry_name) const;
+
+    // Save this entry as a cookie add it to serf url
+    void PersistEntry(const string& entry_name);
+    void PersistEntry(const string& entry_name, const string& value);
+
+    void LoadQueryStringTags();
+
+    // Get CGI Context
+    CCgiContext& GetCGIContext() { return m_CgiContext; }
+
+    void RenderView(const string& view_name);
+    void SetCompleteResponse(CNcbiIstream& is);
+    bool NeedRenderPage() const { return m_NeedRenderPage; }
+
+    string GetHiddenFields() const;
+
+    const string& GetJobInput() const { return m_JobInput; }
+    const string& GetJobOutput() const { return m_JobOutput; }
+
+public:
+    // Remove all persisted entries from cookie and self url.
+    void Clear();
+
+    void SetJobKey(const string& job_key);
+    void SetJobProgressMessage(const string& msg)
+        { m_ProgressMsg = msg; }
+    void SetJobInput(const string& input) { m_JobInput = input; }
+    void SetJobOutput(const string& output) { m_JobOutput = output; }
+
+private:
+    typedef map<string,string>    TPersistedEntries;
+
+    CHTMLPage&                    m_Page;
+    CHTMLPage&                    m_CustomHTTPHeader;
+    CCgiContext&                  m_CgiContext;
+    TCgiEntries                   m_ParsedQueryString;
+    TPersistedEntries             m_PersistedEntries;
+    string                        m_ProgressMsg;
+    string                        m_JobInput;
+    string                        m_JobOutput;
+    bool                          m_NeedRenderPage;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+CGridCgiContext::CGridCgiContext(CHTMLPage& page,
+        CHTMLPage& custom_http_header, CCgiContext& ctx) :
+    m_Page(page),
+    m_CustomHTTPHeader(custom_http_header),
+    m_CgiContext(ctx),
+    m_NeedRenderPage(true)
+{
+    const CCgiRequest& req = ctx.GetRequest();
+    string query_string = req.GetProperty(eCgi_QueryString);
+    CCgiRequest::ParseEntries(query_string, m_ParsedQueryString);
+}
+
+string CGridCgiContext::GetSelfURL() const
+{
+    string url = m_CgiContext.GetSelfURL();
+    bool first = true;
+    TPersistedEntries::const_iterator it;
+    for (it = m_PersistedEntries.begin();
+         it != m_PersistedEntries.end(); ++it) {
+        const string& name = it->first;
+        const string& value = it->second;
+        if (!name.empty() && !value.empty()) {
+            if (first) {
+                url += '?';
+                first = false;
+            }
+            else
+                url += '&';
+            url += name + '=' + NStr::URLEncode(value);
+        }
+    }
+    return url;
+}
+
+string CGridCgiContext::GetHiddenFields() const
+{
+    string ret;
+    TPersistedEntries::const_iterator it;
+    for (it = m_PersistedEntries.begin();
+         it != m_PersistedEntries.end(); ++it) {
+        const string& name = it->first;
+        const string& value = it->second;
+        ret += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + name
+             + "\" VALUE=\"" + value + "\">\n";
+    }
+    return ret;
+}
+
+void CGridCgiContext::SetJobKey(const string& job_key)
+{
+    PersistEntry("job_key", job_key);
+}
+
+const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
+{
+    TPersistedEntries::const_iterator it = m_PersistedEntries.find(entry_name);
+    if (it != m_PersistedEntries.end())
+        return it->second;
+    return kEmptyStr;
+}
+
+void CGridCgiContext::PersistEntry(const string& entry_name)
+{
+    string value = kEmptyStr;
+    ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
+        if (NStr::CompareNocase(entry_name, eit->first) == 0) {
+            string v = eit->second;
+            if (!v.empty())
+                value = v;
+        }
+    }
+    if (value.empty()) {
+        const TCgiEntries entries = m_CgiContext.GetRequest().GetEntries();
+        ITERATE(TCgiEntries, eit, entries) {
+            if (NStr::CompareNocase(entry_name, eit->first) == 0) {
+                string v = eit->second;
+                if (!v.empty())
+                    value = v;
+            }
+        }
+    }
+    PersistEntry(entry_name, value);
+}
+void CGridCgiContext::PersistEntry(const string& entry_name,
+                                   const string& value)
+{
+    if (value.empty()) {
+        TPersistedEntries::iterator it =
+              m_PersistedEntries.find(entry_name);
+        if (it != m_PersistedEntries.end())
+            m_PersistedEntries.erase(it);
+    } else {
+        m_PersistedEntries[entry_name] = value;
+    }
+}
+
+void CGridCgiContext::LoadQueryStringTags()
+{
+    ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
+        string tag("QUERY_STRING:" + eit->first);
+        m_Page.AddTagMap(tag, new CHTMLPlainText(eit->second.c_str()));
+        m_CustomHTTPHeader.AddTagMap(tag,
+            new CHTMLPlainText(eit->second.c_str()));
+    }
+}
+
+void CGridCgiContext::Clear()
+{
+    m_PersistedEntries.clear();
+}
+
+void CGridCgiContext::RenderView(const string& view_name)
+{
+    m_CustomHTTPHeader.AddTagMap("CUSTOM_HTTP_HEADER",
+        new CHTMLText("<@HEADER_" + view_name + "@>"));
+    m_Page.AddTagMap("STAT_VIEW", new CHTMLText("<@VIEW_" + view_name + "@>"));
+}
+
+void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is)
+{
+    m_CgiContext.GetResponse().out() << is.rdbuf();
+    m_NeedRenderPage = false;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Grid Cgi Application
+//
+//  Class for CGI applications starting background jobs using
+//  NetSchedule. Implements job submission, status check,
+//  error processing, etc.  All request procesing is done on the back end.
+//  CGI application is responsible for UI rendering.
+//
+class CCgi2RCgiApp : public CCgiApplicationCached
+{
+public:
+    // This method is called on the CGI application initialization -- before
+    // starting to process a HTTP request or even receiving one.
+    virtual void Init();
+
+    // The main method of this CGI application.
+    // HTTP requests are processed in this method.
+    virtual int ProcessRequest(CCgiContext& ctx);
+
+protected:
+    // Get a Grid Client.
+    CGridClient& GetGridClient() { return *m_GridClient; }
+
+    void RenderRefresh(CHTMLPage& page,
+                       const string& url,
+                       int delay);
+private:
+    int m_RefreshDelay;
+    int m_FirstDelay;
+    bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
+
+    CNetScheduleAPI m_NSClient;
+    auto_ptr<IBlobStorage> m_NSStorage;
+    auto_ptr<CGridClient> m_GridClient;
+    CCgiResponse* m_Response;
+
+public:
+    CCgi2RCgiApp() {
         SetVersion(CVersionInfo(
             CGI2RCGI_VERSION_MAJOR,
             CGI2RCGI_VERSION_MINOR,
             CGI2RCGI_VERSION_PATCH));
     }
 
-    virtual void Init(void);
-    virtual string GetProgramVersion(void) const;
-
-protected:
-
-    // Render the job input paramers HTML page
-    virtual void ShowParamsPage(CGridCgiContext& ctx) const {}
-
-    // Collect parameters from the HTML page.
-    virtual bool CollectParams(CGridCgiContext&);
-
-    // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmitter& submitter);
-
-    // Show an information page
-    virtual void OnJobSubmitted(CGridCgiContext& ctx);
-
-    // Get the job's result.
-    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx);
-    
-    // Report the job's failure.
-    virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx);
-
-    // Report when the job is canceled
-    virtual void OnJobCanceled(CGridCgiContext& ctx);
-
-    // the job is being processed by a worker node
-    virtual void OnJobRunning(CGridCgiContext& ctx);
-
-    // the job is in the Netschedule Queue 
-    virtual void OnJobPending(CGridCgiContext& ctx);
-
-    // Return a job cancelation status.
-    virtual bool JobStopRequested(void) const;
-
-    virtual void OnQueueIsBusy(CGridCgiContext&);
-
-    virtual void OnBeginProcessRequest(CGridCgiContext&);
-    virtual void OnEndProcessRequest(CGridCgiContext&);
-
-    // Get the HTML page title.
-    virtual string GetPageTitle() const;
-    
-    // Get the HTML page template file.
-    virtual string GetPageTemplate() const;
-
 private:
-    // This  function just demonstrate the use of cmd-line argument parsing
-    // mechanism in CGI application -- for the processing of both cmd-line
-    // arguments and HTTP entries
-    void x_SetupArgs(void);
-    void x_Init();
-
-    void static x_RenderView(CHTMLPage& page, const string& view_name);
+    // This method is called when the worker node reported a failure.
+    void OnJobFailed(const string& msg, CGridCgiContext& ctx);
 
     string m_Title;
     string m_FallBackUrl;
@@ -135,50 +328,60 @@ private:
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
-       
+
     string  m_StrPage;
-
-    const CCgiContext* m_CgiContext;
-
-
 };
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CCgiTunnel2Grid::
-//
-string CCgi2RCgiApp::GetProgramVersion(void) const
-{ 
-    return "Cgi2RCgi ver 1.0.0"; 
-}
-
-
-string CCgi2RCgiApp::GetPageTitle() const
-{
-    return m_Title;
-}
-
-
-string CCgi2RCgiApp::GetPageTemplate() const
-{
-    return m_HtmlTemplate;
-}
-
-void CCgi2RCgiApp::OnBeginProcessRequest(CGridCgiContext& ctx)
-{
-    vector<string>::const_iterator it;
-    for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it) {
-        string lib = NStr::TruncateSpaces(*it);
-        ctx.GetHTMLPage().LoadTemplateLibFile(lib);
-    }
-
-    ctx.PersistEntry(kElapsedTime);   
-}
 
 void CCgi2RCgiApp::Init()
 {
-   // Standard CGI framework initialization
-    CGridCgiApplication::Init();
+    // Standard CGI framework initialization
+    CCgiApplicationCached::Init();
+
+    // Grid client initialization
+
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache();
+
+    m_RefreshDelay =
+        GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
+    m_FirstDelay =
+        GetConfig().GetInt("grid_cgi", "expect_complete", 5, IRegistry::eReturn);
+    if (m_FirstDelay > 20) m_FirstDelay = 20;
+    if (m_FirstDelay < 0) m_FirstDelay = 0;
+
+    bool automatic_cleanup =
+        GetConfig().GetBool("grid_cgi", "automatic_cleanup", true, IRegistry::eReturn);
+    bool use_progress =
+        GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
+
+    if (!m_NSClient) {
+        CNetScheduleClientFactory cf(GetConfig());
+        m_NSClient = cf.CreateInstance();
+        m_NSClient.SetProgramVersion(PROGRAM_VERSION);
+    }
+    if (!m_NSStorage.get()) {
+        CBlobStorageFactory cf(GetConfig());
+        m_NSStorage.reset(cf.CreateInstance());
+    }
+    bool use_embedded_input = false;
+    if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0,
+                    CNcbiRegistry::eReturn);
+    else
+        use_embedded_input = GetConfig().
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
+                    CNcbiRegistry::eReturn);
+
+    m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), *m_NSStorage,
+                                       automatic_cleanup ?
+                                            CGridClient::eAutomaticCleanup :
+                                            CGridClient::eManualCleanup,
+                                       use_progress ?
+                                            CGridClient::eProgressMsgOn :
+                                            CGridClient::eProgressMsgOff,
+                                       use_embedded_input));
 
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
@@ -187,33 +390,47 @@ void CCgi2RCgiApp::Init()
     RegisterDiagFactory("email",    new CEmailDiagFactory);
 
 
-    // Describe possible cmd-line and HTTP entries
-    // (optional)
-    x_SetupArgs();
-    x_Init();
-}
+    // Initialize processing of both cmd-line arguments and HTTP entries
 
-void CCgi2RCgiApp::x_Init()
-{
-    m_Title = GetConfig().GetString("cgi2rcgi", "cgi_title", 
-                                    "Remote CGI Status Checker" );
+    // Disregard the case of CGI arguments
+    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
 
-    m_HtmlTemplate = GetConfig().GetString("cgi2rcgi", "html_template", 
+    // Create CGI argument descriptions class
+    //  (For CGI applications only keys can be used)
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Cgi2RCgi application");
+
+    arg_desc->AddOptionalKey("Cancel",
+                             "Cancel",
+                             "Cancel Job",
+                             CArgDescriptions::eString);
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+
+    // Read configuration parameters
+    m_Title = GetConfig().GetString("cgi2rcgi", "cgi_title",
+                                    "Remote CGI Status Checker");
+
+    m_HtmlTemplate = GetConfig().GetString("cgi2rcgi", "html_template",
                                            "cgi2rcgi.html");
 
-    string incs = GetConfig().GetString("cgi2rcgi", "html_template_includes", 
+    string incs = GetConfig().GetString("cgi2rcgi", "html_template_includes",
                                         "cgi2rcgi.inc.html");
 
     NStr::Tokenize(incs, ",; ", m_HtmlIncs);
 
 
     m_FallBackUrl = GetConfig().GetString("cgi2rcgi", "fall_back_url", "");
-    m_FallBackDelay = 
-        GetConfig().GetInt("cgi2rcgi", "error_fall_back_delay", -1, 
+    m_FallBackDelay =
+        GetConfig().GetInt("cgi2rcgi", "error_fall_back_delay", -1,
                            IRegistry::eReturn);
 
-    m_CancelGoBackDelay = 
-        GetConfig().GetInt("cgi2rcgi", "cancel_fall_back_delay", 0, 
+    m_CancelGoBackDelay =
+        GetConfig().GetInt("cgi2rcgi", "cancel_fall_back_delay", 0,
                            IRegistry::eReturn);
 
     if (m_FallBackUrl.empty()) {
@@ -221,12 +438,12 @@ void CCgi2RCgiApp::x_Init()
         m_CancelGoBackDelay = -1;
     }
 
-    bool ignore_query_string = 
-        GetConfig().GetBool("cgi2rcgi", "ignore_query_string", true, 
+    bool ignore_query_string =
+        GetConfig().GetBool("cgi2rcgi", "ignore_query_string", true,
                            IRegistry::eReturn);
 
-    bool donot_parse_content = 
-        GetConfig().GetBool("cgi2rcgi", "donot_parse_content", true, 
+    bool donot_parse_content =
+        GetConfig().GetBool("cgi2rcgi", "donot_parse_content", true,
                            IRegistry::eReturn);
     CCgiRequest::TFlags flags = 0;
     if (ignore_query_string)
@@ -236,66 +453,283 @@ void CCgi2RCgiApp::x_Init()
 
     SetRequestFlags(flags);
 
-    m_DateFormat = 
-        GetConfig().GetString("cgi2rcgi", "date_format", "D B Y, h:m:s" );
+    m_DateFormat =
+        GetConfig().GetString("cgi2rcgi", "date_format", "D B Y, h:m:s");
 
-    m_ElapsedTimeFormat = 
-        GetConfig().GetString("cgi2rcgi", "elapsed_time_format", "S" );
-
+    m_ElapsedTimeFormat =
+        GetConfig().GetString("cgi2rcgi", "elapsed_time_format", "S");
 }
 
+static const string kGridCgiForm =
+    "<FORM METHOD=\"GET\" ACTION=\"<@SELF_URL@>\">\n"
+    "<@HIDDEN_FIELDS@>\n<@STAT_VIEW@>\n"
+    "</FORM>";
 
-bool CCgi2RCgiApp::CollectParams(CGridCgiContext& ctx)
+int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 {
-    m_CgiContext = &ctx.GetCGIContext();
-    return true;
-}
+    // Given "CGI context", get access to its "HTTP request" and
+    // "HTTP response" sub-objects
+    CCgiResponse& response = ctx.GetResponse();
+    m_Response = &response;
 
-
-void CCgi2RCgiApp::PrepareJobData(CGridJobSubmitter& submitter)
-{   
-    CNcbiOstream& os = submitter.GetOStream();
-    // Send jobs input data
-    m_CgiContext->GetRequest().Serialize(os);
-}
-
-  
-void CCgi2RCgiApp::OnJobSubmitted(CGridCgiContext& ctx)
-{   
-    // Render a report page
-    CTime time(CTime::eCurrent);
-    time_t tt = time.GetTimeT();
-    string st = NStr::IntToString(tt);
-    ctx.PersistEntry(kElapsedTime,st);   
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_SUBMITTED@>");
-}
-
-
-
-void CCgi2RCgiApp::OnJobDone(CGridJobStatus& status, 
-                                CGridCgiContext& ctx)
-{
-
-    CNcbiIstream& is = status.GetIStream();
-    size_t blob_size = status.GetBlobSize();
-    
-    if (blob_size > 0) {
-        ctx.SetCompleteResponse(is);
-    } else {
-        m_StrPage = "<html><head><title>Empty Result</title>"
-                    "</head><body>Empty Result</body></html>";
-        ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
+    // Create an HTML page (using the template HTML file)
+    auto_ptr<CHTMLPage> page;
+    try {
+        page.reset(new CHTMLPage(m_Title, m_HtmlTemplate));
+        CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
+        page->AddTagMap("VIEW", stat_view);
+    } catch (exception& e) {
+        ERR_POST("Failed to create " << m_Title << " HTML page: " << e.what());
+        return 2;
     }
+    auto_ptr<CHTMLPage> custom_http_header(new CHTMLPage);
+    custom_http_header->SetTemplateString("<@CUSTOM_HTTP_HEADER@>");
+    CGridCgiContext grid_ctx(*page, *custom_http_header, ctx);
+    grid_ctx.PersistEntry("job_key");
+    grid_ctx.PersistEntry("Cancel");
+    grid_ctx.LoadQueryStringTags();
+    string job_key = grid_ctx.GetEntryValue("job_key");
+    try {
+        try {
+            vector<string>::const_iterator it;
+            for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it) {
+                string lib = NStr::TruncateSpaces(*it);
+                page->LoadTemplateLibFile(lib);
+                custom_http_header->LoadTemplateLibFile(lib);
+            }
+
+            grid_ctx.PersistEntry(kElapsedTime);
+
+            if (!job_key.empty()) {
+                bool finished = x_CheckJobStatus(grid_ctx);
+                // Check if job cancelation has been requested
+                // via the user interface(HTML).
+                if (GetArgs()["Cancel"] ||
+                        !grid_ctx.GetEntryValue("Cancel").empty())
+                    GetGridClient().CancelJob(job_key);
+
+                if (finished)
+                    grid_ctx.Clear();
+                else
+                    RenderRefresh(*page, grid_ctx.GetSelfURL(), m_RefreshDelay);
+            }
+            else {
+                bool finished = false;
+                // Get a job submitter
+                CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+                // Submit a job
+                try {
+                    // The job is ready to be sent to the queue.
+                    // Prepare the input data.
+                    CNcbiOstream& os = job_submitter.GetOStream();
+                    // Send the input data.
+                    ctx.GetRequest().Serialize(os);
+                    job_key = job_submitter.Submit();
+                    grid_ctx.SetJobKey(job_key);
+
+                    unsigned long wait_time = m_FirstDelay*1000;
+                    unsigned long sleep_time = 6;
+                    unsigned long total_sleep_time = 0;
+                    while (total_sleep_time < wait_time) {
+                        SleepMilliSec(sleep_time);
+                        finished = x_CheckJobStatus(grid_ctx);
+                        if (finished) break;
+                        total_sleep_time += sleep_time;
+                        sleep_time += sleep_time/3;
+                    }
+                    if (!finished) {
+                        // The job has just been submitted.
+                        // Render a report page
+                        CTime time(CTime::eCurrent);
+                        time_t tt = time.GetTimeT();
+                        string st = NStr::IntToString(tt);
+                        grid_ctx.PersistEntry(kElapsedTime,st);
+                        grid_ctx.RenderView("JOB_SUBMITTED");
+                        RenderRefresh(*page, grid_ctx.GetSelfURL(),
+                            m_RefreshDelay);
+                    }
+                }
+                catch (CNetScheduleException& ex) {
+                    OnJobFailed(ex.GetErrCode() ==
+                            CNetScheduleException::eTooManyPendingJobs ?
+                        "NetSchedule Queue is busy" : ex.what(), grid_ctx);
+                    finished = true;
+                }
+                catch (exception& ex) {
+                    OnJobFailed(ex.what(), grid_ctx);
+                    finished = true;
+                }
+                if (finished)
+                    grid_ctx.Clear();
+            }
+        } // try
+        catch (exception& ex) {
+            OnJobFailed(ex.what(), grid_ctx);
+        }
+        CHTMLPlainText* self_url =
+            new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
+        page->AddTagMap("SELF_URL", self_url);
+        custom_http_header->AddTagMap("SELF_URL", self_url);
+        CHTMLPlainText* hidden_fields =
+            new CHTMLPlainText(grid_ctx.GetHiddenFields(),true);
+        page->AddTagMap("HIDDEN_FIELDS", hidden_fields);
+
+        CTime now(CTime::eCurrent);
+        page->AddTagMap("DATE",
+            new CHTMLText(now.AsString(m_DateFormat)));
+        string st = grid_ctx.GetEntryValue(kElapsedTime);
+        if (!st.empty()) {
+            time_t tt = NStr::StringToInt(st);
+            CTime start;
+            start.SetTimeT(tt);
+            page->AddTagMap("SINCE",
+                         new CHTMLText(start.AsString(m_DateFormat)));
+            CTimeSpan ts = now - start;
+            page->AddTagMap("ELAPSED_TIME_MSG_HERE",
+                         new CHTMLText("<@ELAPSED_TIME_MSG@>"));
+            page->AddTagMap("ELAPSED_TIME",
+                         new CHTMLText(ts.AsString(m_ElapsedTimeFormat)));
+        }
+        page->AddTagMap("JOB_ID", new CHTMLText(job_key));
+        custom_http_header->AddTagMap("JOB_ID", new CHTMLText(job_key));
+    } //try
+    catch (exception& e) {
+        ERR_POST("Failed to populate " << m_Title << " HTML page: " << e.what());
+        return 3;
+    }
+
+    if (!grid_ctx.NeedRenderPage())
+        return 0;
+    // Compose and flush the resultant HTML page
+    try {
+        stringstream header_stream;
+        custom_http_header->Print(header_stream, CNCBINode::ePlainText);
+        string header_line;
+        while (header_stream.good()) {
+            getline(header_stream, header_line);
+            if (!header_line.empty())
+                response.out() << header_line << "\r\n";
+        }
+        response.WriteHeader();
+        page->Print(response.out(), CNCBINode::eHTML);
+    } catch (exception& e) {
+        ERR_POST("Failed to compose/send " << m_Title <<
+            " HTML page: " << e.what());
+        return 4;
+    }
+
+    return 0;
 }
 
-void CCgi2RCgiApp::OnJobFailed(const string& msg, 
+void CCgi2RCgiApp::RenderRefresh(CHTMLPage& page,
+                                        const string& url,
+                                        int idelay)
+{
+    if (idelay >= 0) {
+        CHTMLText* redirect = new CHTMLText(
+                    "<META HTTP-EQUIV=Refresh "
+                    "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
+        page.AddTagMap("REDIRECT", redirect);
+
+        CHTMLPlainText* delay = new CHTMLPlainText(NStr::IntToString(idelay));
+        page.AddTagMap("REDIRECT_DELAY",delay);
+    }
+
+    CHTMLPlainText* h_url = new CHTMLPlainText(url,true);
+    page.AddTagMap("REDIRECT_URL",h_url);
+    m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
+}
+
+
+bool CCgi2RCgiApp::x_CheckJobStatus(CGridCgiContext& grid_ctx)
+{
+    string job_key = grid_ctx.GetEntryValue("job_key");
+    CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+
+    CNetScheduleAPI::EJobStatus status;
+    status = job_status.GetStatus();
+    grid_ctx.SetJobInput(job_status.GetJobInput());
+    grid_ctx.SetJobOutput(job_status.GetJobOutput());
+
+    bool finished = false;
+    bool save_result = false;
+    grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
+        CNetScheduleAPI::StatusToString(status));
+    CHTMLText* err;
+    switch (status) {
+    case CNetScheduleAPI::eDone:
+        // The worker node has finished the job and the
+        // result is ready to be retrieved.
+        {
+            CNcbiIstream& is = job_status.GetIStream();
+
+            if (job_status.GetBlobSize() > 0) {
+                grid_ctx.SetCompleteResponse(is);
+            } else {
+                m_StrPage = "<html><head><title>Empty Result</title>"
+                            "</head><body>Empty Result</body></html>";
+                grid_ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
+            }
+        }
+        save_result = true;
+        finished = true;
+        break;
+    case CNetScheduleAPI::eFailed:
+        // a job has failed
+        OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
+        finished = true;
+        break;
+
+    case CNetScheduleAPI::eCanceled:
+        // The job has been canceled
+        grid_ctx.PersistEntry(kElapsedTime,"");
+        // Render a job cancelation page
+        grid_ctx.RenderView("JOB_CANCELED");
+
+        RenderRefresh(grid_ctx.GetHTMLPage(), m_FallBackUrl.empty() ?
+            grid_ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl,
+                m_CancelGoBackDelay);
+        finished = true;
+        break;
+
+    case CNetScheduleAPI::eJobNotFound:
+        // The job has expired
+        OnJobFailed("Job is not found.", grid_ctx);
+        finished = true;
+        break;
+
+    case CNetScheduleAPI::ePending:
+    case CNetScheduleAPI::eReturned:
+        // The job is in the NetSchedule queue and
+        // is waiting for a worker node.
+        // Render a status report page
+        grid_ctx.RenderView("JOB_PENDING");
+        break;
+
+    case CNetScheduleAPI::eRunning:
+        // A job is being processed by a worker node
+        grid_ctx.SetJobProgressMessage(job_status.GetProgressMessage());
+        // Render a status report page
+        grid_ctx.RenderView("JOB_RUNNING");
+        err = new CHTMLText(grid_ctx.GetJobProgressMessage());
+        grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",err);
+        break;
+
+    default:
+        _ASSERT(0);
+    }
+    SetRequestId(job_key,save_result);
+    return finished;
+}
+
+void CCgi2RCgiApp::OnJobFailed(const string& msg,
                                   CGridCgiContext& ctx)
 {
-    ctx.PersistEntry(kElapsedTime,"");   
+    ctx.PersistEntry(kElapsedTime,"");
     // Render a error page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_FAILED@>");
+    ctx.RenderView("JOB_FAILED");
 
-    string fall_back_url = m_FallBackUrl.empty() ? 
+    string fall_back_url = m_FallBackUrl.empty() ?
         ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
     RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
 
@@ -303,107 +737,7 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
     ctx.GetHTMLPage().AddTagMap("MSG",err);
 }
 
-void CCgi2RCgiApp::OnJobCanceled(CGridCgiContext& ctx)
-{
-    ctx.PersistEntry(kElapsedTime,"");   
-    // Render a job cancelation page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
-
-    string fall_back_url = m_FallBackUrl.empty() ? 
-        ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
-    RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_CancelGoBackDelay);
-
-}
-
-void CCgi2RCgiApp::OnQueueIsBusy(CGridCgiContext& ctx)
-{
-    ctx.PersistEntry(kElapsedTime,"");   
-    // Render a page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_QUEUE_IS_BUSY@>");
-
-    string fall_back_url = m_FallBackUrl.empty() ? 
-        ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
-
-    RenderRefresh(ctx.GetHTMLPage(), fall_back_url, m_FallBackDelay);
-}
-
-
-void CCgi2RCgiApp::OnJobPending(CGridCgiContext& ctx)
-{
-    // Render a status report page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_PENDING@>");
-}
-
-void CCgi2RCgiApp::OnJobRunning(CGridCgiContext& ctx)
-{
-    // Render a status report page
-    x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_RUNNING@>");
-    CHTMLText* err = new CHTMLText(ctx.GetJobProgressMessage());
-    ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",err);
-}
-
-void CCgi2RCgiApp::OnEndProcessRequest(CGridCgiContext& ctx)
-{
-    CTime now(CTime::eCurrent);
-    string st = ctx.GetEntryValue(kElapsedTime);
-    if (!st.empty()) {
-        time_t tt = NStr::StringToInt(st);
-        CTime start(tt); 
-        CTimeSpan ts = now - start.GetLocalTime();
-        ctx.GetHTMLPage().AddTagMap("ELAPSED_TIME_MSG_HERE",
-                     new CHTMLText("<@ELAPSED_TIME_MSG@>"));
-        ctx.GetHTMLPage().AddTagMap("ELAPSED_TIME",
-                     new CHTMLText(ts.AsString(m_ElapsedTimeFormat)));
-    }
-    ctx.GetHTMLPage().AddTagMap("DATE",
-        new CHTMLText(now.AsString(m_DateFormat)));
-}
-
-bool CCgi2RCgiApp::JobStopRequested(void) const
-{
-    const CArgs& args = GetArgs();
-
-    // Check if job cancelation has been requested.
-    if ( args["Cancel"] )
-        return true;
-    return false;
-}
-
-void /*static*/ CCgi2RCgiApp::x_RenderView(CHTMLPage& page, 
-                                              const string& view_name)
-{
-    page.AddTagMap("STAT_VIEW", new CHTMLText(view_name));  
-}
-
-void CCgi2RCgiApp::x_SetupArgs()
-{
-    // Disregard the case of CGI arguments
-    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs); 
-    //                    | CCgiRequest::fIndexesNotEntries);
-
-    // Create CGI argument descriptions class
-    //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Cgi2RCgi application");
-          
-    arg_desc->AddOptionalKey("Cancel",
-                             "Cancel",
-                             "Cancel Job",
-                             CArgDescriptions::eString);
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-}
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////
-//  MAIN
-//
 int main(int argc, const char* argv[])
 {
     int result = CCgi2RCgiApp().AppMain(argc, argv, 0, eDS_Default);
