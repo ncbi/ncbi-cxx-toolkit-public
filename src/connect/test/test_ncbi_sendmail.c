@@ -30,6 +30,7 @@
  *
  */
 
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
 #include "../ncbi_ansi_ext.h"
@@ -74,13 +75,14 @@ int main(int argc, const char* argv[])
         "lavr@pavo",
         " \"Anton Lavrentiev\"   <lavr@pavo>  , lavr, <lavr>   ",
     };
-    const char* mx_host, *p;
     size_t i, j, k, n, m;
+    const char* mx_host;
     SSendMailInfo info;
     const char* retval;
     STimeout mx_tmo;
     char* huge_body;
     short mx_port;
+    char val[32];
     FILE* fp;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -90,16 +92,13 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    if ((p = getenv("CONN_DEBUG_PRINTOUT")) != 0) {
-        if (strcmp    (p, "1")    == 0  ||
-            strcasecmp(p, "on")   == 0  ||
-            strcasecmp(p, "yes")  == 0  ||
-            strcasecmp(p, "all")  == 0  ||
-            strcasecmp(p, "true") == 0  ||
-            strcasecmp(p, "some") == 0  ||
-            strcasecmp(p, "data") == 0) {
-            SOCK_SetDataLoggingAPI(eOn);
-        }
+    ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
+                         DEF_CONN_DEBUG_PRINTOUT);
+    if (ConnNetInfo_Boolean(val)
+        ||  (*val  &&  (strcasecmp(val, "all")  == 0  ||
+                        strcasecmp(val, "some") == 0  ||
+                        strcasecmp(val, "data") == 0))) {
+        SOCK_SetDataLoggingAPI(eOn);
     }
 
     if (argc > 1) {
