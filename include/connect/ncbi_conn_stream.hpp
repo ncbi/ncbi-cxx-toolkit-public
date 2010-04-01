@@ -219,7 +219,7 @@ public:
     CConn_SocketStream
     (const string&   host,         /* host to connect to  */
      unsigned short  port,         /* ... and port number */
-     unsigned int    max_try  = 3, /* number of attempts  */
+     unsigned int    max_try,      /* number of attempts  */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -242,12 +242,12 @@ public:
     /// @sa
     ///  CConn_IOStream
     CConn_SocketStream
-    (const string&   host,         /* host to connect to                     */
-     unsigned short  port,         /* ... and port number                    */
-     TSOCK_Flags     flags,        /* flags, see ncbi_socket.h               */
-     const void*     data     = 0, /* ptr to the initial data block to send  */
-     size_t          size     = 0, /* size of the data block                 */
-     unsigned int    max_try  = 3, /* number of attempts                     */
+    (const string&   host,                        /* host to connect to      */
+     unsigned short  port,                        /* ... and port number     */
+     const void*     data     = 0,                /* initial data block      */
+     size_t          size     = 0,                /* size of the data block  */
+     TSOCK_Flags     flags    = fSOCK_LogDefault, /* see ncbi_socket.h       */
+     unsigned int    max_try  = 3,                /* number of attempts      */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
