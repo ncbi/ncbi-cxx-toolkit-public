@@ -1238,37 +1238,30 @@ static CONNECTOR s_CreateConnector
     s_AddRefererStripCAF(xxx);
 
     ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", value, sizeof(value),"");
-    if (*value  &&  (strcmp    (value, "1")    == 0  ||
-                     strcasecmp(value, "on")   == 0  ||
-                     strcasecmp(value, "yes")  == 0  ||
-                     strcasecmp(value, "true") == 0)) {
+    if (ConnNetInfo_Boolean(value))
         flags |= fHCC_InsecureRedirect;
-    }
 
     /* initialize internal data structure */
-    uuu->net_info         = xxx;
+    uuu->net_info        = xxx;
 
-    uuu->parse_http_hdr   = parse_http_hdr;
-    uuu->adjust_net_info  = adjust_net_info;
-    uuu->adjust_cleanup   = adjust_cleanup;
-    uuu->adjust_data      = adjust_data;
+    uuu->parse_http_hdr  = parse_http_hdr;
+    uuu->adjust_net_info = adjust_net_info;
+    uuu->adjust_cleanup  = adjust_cleanup;
+    uuu->adjust_data     = adjust_data;
 
-    uuu->flags            = flags;
-    uuu->reserved         = 0;
-    uuu->can_connect      = eCC_None;         /* will be properly set at open*/
+    uuu->flags           = flags;
+    uuu->reserved        = 0;
+    uuu->can_connect     = eCC_None;         /* will be properly set at open*/
 
     ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", value, sizeof(value),"");
-    uuu->error_header = (*value  &&  (strcmp    (value, "1")    == 0  ||
-                                      strcasecmp(value, "on")   == 0  ||
-                                      strcasecmp(value, "yes")  == 0  ||
-                                      strcasecmp(value, "true") == 0));
+    uuu->error_header    = ConnNetInfo_Boolean(value);
 
-    uuu->sock             = 0;
-    uuu->o_timeout        = kDefaultTimeout;  /* deliberately bad values --  */
-    uuu->w_timeout        = kDefaultTimeout;  /* must be reset prior to use  */
-    uuu->http             = 0;
-    uuu->r_buf            = 0;
-    uuu->w_buf            = 0;
+    uuu->sock            = 0;
+    uuu->o_timeout       = kDefaultTimeout;  /* deliberately bad values --  */
+    uuu->w_timeout       = kDefaultTimeout;  /* must be reset prior to use  */
+    uuu->http            = 0;
+    uuu->r_buf           = 0;
+    uuu->w_buf           = 0;
     /* there are some unintialized fields left -- they are initted later */
 
     /* initialize connector structure */
