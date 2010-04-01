@@ -142,14 +142,11 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 {
-    char val[80];
+    char val[32];
     if (s_Fast)
         return 0;
     ConnNetInfo_GetValue(service, key, val, sizeof(val), 0);
-    return *val  &&  (strcmp    (val, "1")    == 0  ||
-                      strcasecmp(val, "on")   == 0  ||
-                      strcasecmp(val, "yes")  == 0  ||
-                      strcasecmp(val, "true") == 0);
+    return ConnNetInfo_Boolean(val);
 }
 
 
