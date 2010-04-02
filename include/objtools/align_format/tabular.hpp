@@ -432,8 +432,8 @@ public:
                         CNcbiMatrix<int>* matrix=0);
 
     /// Set out-of-frame information                                        
-    void SetOOF(bool oof = true) { 
-        m_IsOOF = oof;                               
+    void SetFrame(const string frame = "NA") { 
+        m_FrameInfo = frame;                               
     };
 
     /// Set strand information                                        
@@ -473,8 +473,8 @@ protected:
     void x_PrintIgDomain(const SIgDomain &domain) const;
 
 private:                                                                    
-    bool m_IsOOF;                                                           
     bool m_IsMinusStrand;
+    string m_FrameInfo;                                                           
     string m_VGene;
     string m_DGene;
     string m_JGene;

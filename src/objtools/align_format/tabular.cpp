@@ -889,10 +889,9 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 {
     x_PrintQuerySeqId();
     m_Ostream << m_FieldDelimiter
-              << ((m_IsMinusStrand) ? '-' : '+');
-              /* OOF is not implemented yet...
+              << ((m_IsMinusStrand) ? '-' : '+')
               << m_FieldDelimiter
-              << ((m_IsOOF) ? "OOF" : "IF");*/
+              << m_FrameInfo;
 
     m_Ostream << m_FieldDelimiter << m_VGene;
     m_Ostream << m_FieldDelimiter << m_DGene;
@@ -912,7 +911,7 @@ void CIgBlastTabularInfo::x_ResetIgFields()
         delete m_IgDomains[i];
     }
     m_IgDomains.clear();
-    m_IsOOF = false;
+    m_FrameInfo = "NA";
     m_IsMinusStrand = false;
     m_VGene = "NA";
     m_DGene = "NA";
