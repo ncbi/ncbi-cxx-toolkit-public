@@ -54,7 +54,7 @@ public:
     virtual ~IBlobStorage();
 
     /// Check if a given string is a valid key.
-    /// The implementaion should not make any connection to the storage,
+    /// The implementation should not make any connection to the storage,
     /// it just checks the str structure.
     virtual bool IsKeyValid(const string& str) = 0;
 
@@ -70,7 +70,7 @@ public:
     /// @param blob_key
     ///    Blob key to read from
     /// @param blob_size
-    ///    if blob_size if not NULL the size of a blob is retured
+    ///    if blob_size if not NULL the size of a blob is returned
     /// @param lock_mode
     ///    Blob locking mode
     virtual CNcbiIstream& GetIStream(const string& blob_key, 
@@ -102,13 +102,13 @@ public:
     /// Reset this object's data
     ///
     /// @note
-    ///    The implementatioin of this method should close 
+    ///    The implementation of this method should close 
     ///    all opened streams and connections
     virtual void Reset() = 0;
 
     /// Delete the storage with all its data.
     ///
-    /// @note The default implementaion just throws 
+    /// @note The default implementation just throws 
     ///       "eNotImplemented" exception.
     virtual void DeleteStorage(void);
 };
@@ -137,7 +137,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// Blob Storage Factory interafce
+/// Blob Storage Factory interface
 ///
 /// @sa IBlobStorage
 ///
@@ -154,7 +154,7 @@ public:
 class IRegistry;
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// Blob Storage Factory interafce
+/// Blob Storage Factory interface
 ///
 /// @sa IBlobStorage
 ///
@@ -187,8 +187,8 @@ class NCBI_XNCBI_EXPORT CBlobStorageException : public CException
 {
 public:
     enum EErrCode {
-        eReader,        ///< A problem arised while reading from a stroage
-        eWriter,        ///< A problem arised while writting to a stroage
+        eReader,        ///< A problem arised while reading from a storage
+        eWriter,        ///< A problem arised while writing to a storage
         eBlocked,       ///< A blob is blocked by another reader/writer
         eBlobNotFound,  ///< A blob is not found
         eBusy,          ///< An instance of storage is busy
@@ -203,7 +203,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// An Empty implemention of Blob Storage Interface
+/// An Empty implementation of Blob Storage Interface
 ///
 class CBlobStorage_Null : public IBlobStorage
 {
@@ -239,7 +239,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// Blob Storage Factory interafce
+/// Blob Storage Factory interface
 ///
 /// @sa IBlobStorageFactory
 ///
