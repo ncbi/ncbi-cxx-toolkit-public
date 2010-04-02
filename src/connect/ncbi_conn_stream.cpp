@@ -126,9 +126,9 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
-                                       TSOCK_Flags     flags,
                                        const void*     data,
                                        size_t          size,
+                                       TSOCK_Flags     flags,
                                        unsigned int    max_try,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
