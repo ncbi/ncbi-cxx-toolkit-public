@@ -1040,10 +1040,11 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     }
 
 // precompiled header
-    if (metamake.IsPchEnabled()) {
+    SConfigInfo cfg_tmp;
+    if (prj_files.GetProjectContext().IsPchEnabled(cfg_tmp)) {
         string nofile = CDirEntry::ConcatPath(prj.m_SourcesBaseDir,"aanofile");
-        string pch_name = metamake.GetUsePchThroughHeader(
-            prj.m_ID, nofile, GetApp().GetProjectTreeInfo().m_Src);
+        string pch_name = prj_files.GetProjectContext().GetPchHeader(
+            prj.m_ID, nofile, GetApp().GetProjectTreeInfo().m_Src, cfg_tmp);
         if (!pch_name.empty()) {
             string pch_path;
             // find header (MacOS requires? path)
