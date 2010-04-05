@@ -268,7 +268,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     if (status != eIO_Success) {
         temp.clear();
         char* str = net_info ? SERV_ServiceName(kService) : 0;
-        if (str  &&  ::strcasecmp(str, kService) == 0) {
+        if (str  &&  NStr::strcasecmp(str, kService) == 0) {
             free(str);
             str = 0;
         }
@@ -278,7 +278,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
             SERV_Close(iter);
             iter = SERV_OpenSimple(kTest);
             if (!iter  ||  !SERV_GetNextInfo(iter)  ||
-                ::strcasecmp(SERV_MapperName(iter), "DISPD") != 0) {
+                NStr::strcasecmp(SERV_MapperName(iter), "DISPD") != 0) {
                 // Make sure there will be a mapper error printed
                 SERV_Close(iter);
                 iter = 0;
@@ -304,7 +304,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "; please contact " NCBI_HELP_DESK "\n";
         }
         const char* mapper = SERV_MapperName(iter);
-        if (!mapper  ||  ::strcasecmp(mapper, "DISPD") != 0) {
+        if (!mapper  ||  NStr::strcasecmp(mapper, "DISPD") != 0) {
             temp += "Network dispatcher is not enabled as a service locator;"
                 " please review your configuration to purge any occurrences"
                 " of [CONN]DISPD_DISABLE off your settings\n";
@@ -442,8 +442,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     char val[MAXHOSTNAMELEN + 1];
     ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
                          DEF_CONN_DEBUG_PRINTOUT);
-    if (*val  &&  (strcasecmp(val, "all")  == 0  ||
-                   strcasecmp(val, "data") == 0)) {
+    if (*val  &&  (NStr::strcasecmp(val, "all")  == 0  ||
+                   NStr::strcasecmp(val, "data") == 0)) {
         flags = fSOCK_LogOn;
     } else
         flags = fSOCK_LogDefault;
@@ -559,7 +559,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     string temp;
     if (status != eIO_Success) {
         char* str = SERV_ServiceName(kId2);
-        if (str  &&  ::strcasecmp(str, kId2) != 0) {
+        if (str  &&  NStr::strcasecmp(str, kId2) != 0) {
             temp += n ? "Unrecognized" : "No";
             temp += " response has been received from substituted service;"
                 " please remove [";
