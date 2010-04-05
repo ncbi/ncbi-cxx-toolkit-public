@@ -188,11 +188,13 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf, size_t len)
 }
 
 
-static void s_MakeFrom(char* buf, size_t size)
+static void s_MakeFrom(char* buf, size_t size, const char* user)
 {
     size_t len;
 
-    if (!CORE_GetUsername(buf, size)  ||  !*buf)
+    if (user  &&  *user)
+        strncpy0(buf, user, size - 1);
+    else if (!CORE_GetUsername(buf, size)  ||  !*buf)
         strncpy0(buf, "anonymous", size - 1);
     len = strlen(buf);
     size -= len;
@@ -211,13 +213,22 @@ static void s_MakeFrom(char* buf, size_t size)
 }
 
 
+/* FIXME:  To remove altogether */
+#undef SendMailInfo_Init
 SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
+{
+    return SendMailInfo_InitEx(info, 0);
+}
+
+
+SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
+                                   const char*    user)
 {
     if (info) {
         info->magic_number    = MX_MAGIC_NUMBER;
         info->cc              = 0;
         info->bcc             = 0;
-        s_MakeFrom(info->from, sizeof(info->from));
+        s_MakeFrom(info->from, sizeof(info->from), user);
         info->header          = 0;
         info->body_size       = 0;
         info->mx_host         = "mailgw.ncbi.nlm.nih.gov";

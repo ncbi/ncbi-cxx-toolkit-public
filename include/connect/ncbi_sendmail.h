@@ -97,12 +97,12 @@ typedef struct {
  * the caller's responsibility.
  */
 
-
 /* Initialize SSendMailInfo structure, setting:
  *   'magic_number' to a proper value (verified by CORE_SendMailEx()!);
  *   'cc', 'bcc', 'header' to NULL (means no recipients/additional headers);
- *   'from' filled out using the current user name (if discovered, 'anonymous'
- *          otherwise) and host in the form: username@hostname; may be later
+ *   'from' filled out using either the provided (non-empty) user name
+ *          or the name of the current user if discovered, 'anonymous'
+ *          otherwise, and host in the form: username@hostname; may be later
  *          reset by the application to "" for sending no-return messages
  *          (aka MAILER-DAEMON messages);
  *   'mx_*' filled out in accordance with some hard-coded defaults, which are
@@ -111,10 +111,12 @@ typedef struct {
  * Return value equals the argument passed in.
  * Note: This call is the only valid way to properly init SSendMailInfo.
  */
-extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_Init
-(SSendMailInfo*       info
+extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
+(SSendMailInfo*       info,
+ const char*          user
  );
 
+#define SendMailInfo_Init(info)  SendMailInfo_InitEx(info, 0)
 
 /* Send a simple message to recipient(s) defined in 'to',
  * and having subject 'subject', which may be empty (both NULL and "" treated
