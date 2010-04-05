@@ -5141,11 +5141,8 @@ fi
 # Flag for setting the runtime library search path
 if test -z "$CONF_f_runpath" ; then
    case "$host_os:$compiler" in
-    solaris*:WorkShop* | solaris*:KCC )
+    solaris* )
       CONF_f_runpath="-R"
-      ;;
-    solaris*:GCC )
-      CONF_f_runpath="-Wl,-R"
       ;;
     linux*:GCC | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
       CONF_f_runpath="-Wl,-rpath,"
