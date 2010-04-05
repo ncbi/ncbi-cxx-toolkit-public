@@ -2167,34 +2167,30 @@ static SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
 }
 
 
-static SIZE_TYPE s_VisibleWidth(const string& str, bool is_html)
+static SIZE_TYPE s_VisibleHtmlWidth(const string& str)
 {
-    if (is_html) {
-        SIZE_TYPE width = 0, pos = 0;
-        for (;;) {
-            SIZE_TYPE pos2 = str.find_first_of("<&", pos);
-            if (pos2 == NPOS) {
-                width += str.size() - pos;
+    SIZE_TYPE width = 0, pos = 0;
+    for (;;) {
+        SIZE_TYPE pos2 = str.find_first_of("<&", pos);
+        if (pos2 == NPOS) {
+            width += str.size() - pos;
+            break;
+        } else {
+            width += pos2 - pos;
+            if (str[pos2] == '&') {
+                ++width;
+                pos = s_EndOfReference(str, pos);
+            } else {
+                pos = s_EndOfTag(str, pos);
+            }
+            if (pos == NPOS) {
                 break;
             } else {
-                width += pos2 - pos;
-                if (str[pos2] == '&') {
-                    ++width;
-                    pos = s_EndOfReference(str, pos);
-                } else {
-                    pos = s_EndOfTag(str, pos);
-                }
-                if (pos == NPOS) {
-                    break;
-                } else {
-                    ++pos;
-                }
+                ++pos;
             }
         }
-        return width;
-    } else {
-        return str.size();
     }
+    return width;
 }
 
 
@@ -2222,7 +2218,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
 
     while (pos < len) {
         bool      hyphen     = false; // "-" or empty
-        SIZE_TYPE column     = s_VisibleWidth(*pfx, is_html);
+        SIZE_TYPE column     = is_html? s_VisibleHtmlWidth(*pfx) : pfx->size();
         SIZE_TYPE column0    = column;
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
@@ -2373,12 +2369,12 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
-    SIZE_TYPE     column   = s_VisibleWidth(s,     is_html);
-    SIZE_TYPE     delwidth = s_VisibleWidth(delim, is_html);
+    SIZE_TYPE     column   = is_html? s_VisibleHtmlWidth(s)     : s.size();
+    SIZE_TYPE     delwidth = is_html? s_VisibleHtmlWidth(delim) : delim.size();
     bool          at_start = true;
 
     ITERATE (list<string>, it, l) {
-        SIZE_TYPE term_width = s_VisibleWidth(*it, is_html);
+        SIZE_TYPE term_width = is_html ? s_VisibleHtmlWidth(*it) : it->size();
         if ( at_start ) {
             if (column + term_width <= width) {
                 s += *it;
@@ -2389,7 +2385,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                 Wrap(*it, width, arr, flags, prefix, pfx);
                 pfx      = prefix;
                 s        = *prefix;
-                column   = s_VisibleWidth(s, is_html);
+                column   = is_html ? s_VisibleHtmlWidth(s) : s.size();
                 at_start = true;
             }
         } else if (column + delwidth + term_width <= width) {
@@ -2402,7 +2398,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
             arr.push_back(s);
             pfx      = prefix;
             s        = *prefix;
-            column   = s_VisibleWidth(s, is_html);
+            column   = is_html ? s_VisibleHtmlWidth(s) : s.size();
             at_start = true;
             --it;
         }
