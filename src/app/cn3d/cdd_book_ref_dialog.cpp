@@ -209,10 +209,9 @@ static wxString MakeParameterString(const CCdd_book_ref& bref)
         }
 
         //  For br.fcgi, 'chapter' and 'section' are treated equivalently.
-        //  Expect anything else to be a 'figure' or 'table', but if not
-        //  the parameter string will be constructed as if it were a 'section'.
+        //  Expect anything else to be encoded in the 'rendertype' attribute.
         elementType = bref.GetTextelement();
-        if (elementType == CCdd_book_ref::eTextelement_figgrp || elementType == CCdd_book_ref::eTextelement_table) {
+        if (elementType != CCdd_book_ref::eTextelement_chapter && elementType != CCdd_book_ref::eTextelement_section) {
             rendertype = *(enum2str.Find(elementType));
             if (id.length() == 0) {
                 id = part;
@@ -451,7 +450,7 @@ bool BrURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
             bookname = regexpCommon.GetSub(firstTokenStr, 1);
 
             regexpRendertype.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
-            if (regexpRendertype.NumFound() == 4) {  //  i.e., expecting a table or figure, but allow others
+            if (regexpRendertype.NumFound() == 4) {  //  i.e., expecting anything but a chapter or section 
                 address = regexpRendertype.GetSub(firstTokenStr, 1);
                 typeStr = regexpRendertype.GetSub(firstTokenStr, 2);
                 if (enum2str.Find(typeStr) == NULL) {  
