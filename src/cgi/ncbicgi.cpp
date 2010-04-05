@@ -388,6 +388,9 @@ CCgiCookies::x_CheckField(const string& str,
 
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
+    bool need_decode = m_EncodeFlag != NStr::eUrlEnc_None;
+    NStr::EUrlDecode dec_flag = m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
+        NStr::eUrlDec_Percent : NStr::eUrlDec_All;
     SIZE_TYPE pos = str.find_first_not_of(" \t\n");
     for (;;) {
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
@@ -399,9 +402,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             string name = str.substr(pos_beg);
             switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(NStr::URLDecode(name,
-                    m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
-                    NStr::eUrlDec_Percent : NStr::eUrlDec_All),
+                Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
                     kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
@@ -421,9 +422,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             string name = str.substr(pos_beg, pos_mid - pos_beg);
             switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(NStr::URLDecode(name,
-                    m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
-                    NStr::eUrlDec_Percent : NStr::eUrlDec_All),
+                Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
                     kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
@@ -497,12 +496,8 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         ECheckResult valid_value = quoted_value ? eCheck_Valid :
             x_CheckField(val, ";", on_bad_cookie);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
-            Add(NStr::URLDecode(name,
-                m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
-                NStr::eUrlDec_Percent : NStr::eUrlDec_All),
-                NStr::URLDecode(val,
-                m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
-                NStr::eUrlDec_Percent : NStr::eUrlDec_All),
+            Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
+                need_decode ? NStr::URLDecode(val, dec_flag) : val,
                 on_bad_cookie);
         }
         else if ( valid_name != eCheck_SkipInvalid  &&
