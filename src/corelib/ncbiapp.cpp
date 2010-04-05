@@ -585,7 +585,15 @@ int CNcbiApplication::AppMain
             if ( m_ArgDesc.get() ) {
                 x_AddDefaultArgs();
                 string str;
-                LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
+                m_ArgDesc->PrintUsage(str);
+                cerr << str;
+                CStreamDiagHandler* errh =
+                    dynamic_cast<CStreamDiagHandler*>(GetDiagHandler());
+                if (!errh  ||  errh->GetStream() != &cerr) {
+                    cerr << "Error in command-line arguments. "
+                        "See error logs for more details." << endl;
+                }
+                cerr << string(72, '=') << endl;
             }
             NCBI_REPORT_EXCEPTION_X(18, "", e);
             got_exception = true;
