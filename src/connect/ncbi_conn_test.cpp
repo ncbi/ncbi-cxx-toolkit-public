@@ -61,7 +61,7 @@ static const char kTest[] = "test";
 const STimeout CConnTest::kTimeout = {30, 0};
 
 
-EIO_Status CConnTest::x_ConnStatus(bool failure, CConn_IOStream& io)
+EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
 {
     CONN conn = io.GetCONN();
     const char* descr = conn ? CONN_Description(conn) : 0;
@@ -129,15 +129,15 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         net_info->args[0] = '\0';
     }
 
-    x_PreCheck(eHttp, 0/*main*/,
-               "Checking whether NCBI is HTTP accessible");
+    PreCheck(eHttp, 0/*main*/,
+             "Checking whether NCBI is HTTP accessible");
 
     CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/index.html",
                           net_info, kEmptyStr/*user_header*/,
                           0/*flags*/, m_Timeout);
     string temp;
     http >> temp;
-    EIO_Status status = x_ConnStatus(temp.empty(), http);
+    EIO_Status status = ConnStatus(temp.empty(), http);
 
     if (status != eIO_Success) {
         temp.clear();
@@ -173,7 +173,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     } else
         temp = "OK";
 
-    x_PostCheck(eHttp, 0/*main*/, status, temp);
+    PostCheck(eHttp, 0/*main*/, status, temp);
 
     ConnNetInfo_Destroy(net_info);
     if (reason)
@@ -201,8 +201,8 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     SConnNetInfo* net_info = ConnNetInfo_Create(kTest);
     ConnNetInfo_SetupStandardArgs(net_info, kTest);
 
-    x_PreCheck(eDispatcher, 0/*main*/,
-               "Checking whether NCBI dispatcher is okay");
+    PreCheck(eDispatcher, 0/*main*/,
+             "Checking whether NCBI dispatcher is okay");
 
     int okay = 0;
     CConn_HttpStream http(net_info, kEmptyStr/*user_header*/,
@@ -211,7 +211,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     char buf[1024];
     http.read(buf, sizeof(buf));
     CTempString str(buf, http.gcount());
-    EIO_Status status = x_ConnStatus
+    EIO_Status status = ConnStatus
         (okay != 1  ||
          NStr::FindNoCase(str, "NCBI Dispatcher Test Page") == NPOS  ||
          NStr::FindNoCase(str, "Welcome!") == NPOS, http);
@@ -237,7 +237,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     } else
         temp = "OK";
 
-    x_PostCheck(eDispatcher, 0/*main*/, status, temp);
+    PostCheck(eDispatcher, 0/*main*/, status, temp);
 
     ConnNetInfo_Destroy(net_info);
     if (reason)
@@ -254,8 +254,8 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     if (net_info)
         net_info->lb_disable = 1/*no local LB to use even if available*/;
 
-    x_PreCheck(eStatelessService, 0/*main*/,
-               "Checking whether NCBI services operational");
+    PreCheck(eStatelessService, 0/*main*/,
+             "Checking whether NCBI services operational");
     
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info,
                             0/*params*/, m_Timeout);
@@ -263,7 +263,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     string temp;
     svc >> temp;
     bool responded = temp.size() > 0;
-    EIO_Status status = x_ConnStatus(NStr::CompareCase(temp, kTest) != 0, svc);
+    EIO_Status status = ConnStatus(NStr::CompareCase(temp, kTest) != 0, svc);
 
     if (status != eIO_Success) {
         temp.clear();
@@ -315,7 +315,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     } else
         temp = "OK";
 
-    x_PostCheck(eStatelessService, 0/*main*/, status, temp);
+    PostCheck(eStatelessService, 0/*main*/, status, temp);
 
     ConnNetInfo_Destroy(net_info);
     if (reason)
@@ -358,11 +358,11 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     };
     string temp = m_Firewall ? "FIREWALL" : "RELAY (legacy)";
     temp += " connection mode has been detected for stateful services\n";
-    x_PreCheck(eFirewallConnPoints, 0/*main*/,
-               temp + kFWExplanation[m_Firewall]);
+    PreCheck(eFirewallConnPoints, 0/*main*/,
+             temp + kFWExplanation[m_Firewall]);
 
-    x_PreCheck(eFirewallConnPoints, 1/*sub*/,
-               "Obtaining current NCBI firewall settings");
+    PreCheck(eFirewallConnPoints, 1/*sub*/,
+             "Obtaining current NCBI firewall settings");
 
     CConn_HttpStream script("http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
                             "/fwd_check.cgi", net_info, user_header,
@@ -384,7 +384,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             continue;
         m_Fwd.push_back(cp);
     }
-    EIO_Status status = x_ConnStatus
+    EIO_Status status = ConnStatus
         ((script.fail()  &&  !script.eof())  ||  m_Fwd.empty(), script);
 
     if (status == eIO_Success) {
@@ -394,12 +394,12 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     } else
         temp = "Please contact " NCBI_HELP_DESK;
     
-    x_PostCheck(eFirewallConnPoints, 1/*sub*/, status, temp);
+    PostCheck(eFirewallConnPoints, 1/*sub*/, status, temp);
 
     bool firewall = false;
     if (status == eIO_Success) {
-        x_PreCheck(eFirewallConnPoints, 2/*sub*/,
-                   "Verifying firewall configuration consistency");
+        PreCheck(eFirewallConnPoints, 2/*sub*/,
+                 "Verifying firewall configuration consistency");
 
         ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_Fwd) {
             if (CONN_FWD_PORT_MIN <= cp->port && cp->port <= CONN_FWD_PORT_MAX)
@@ -421,7 +421,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
                 temp.resize(2);
         }
 
-        x_PostCheck(eFirewallConnPoints, 2/*sub*/, status, temp);
+        PostCheck(eFirewallConnPoints, 2/*sub*/, status, temp);
     }
 
     ConnNetInfo_Destroy(net_info);
@@ -453,19 +453,20 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     if (*val)
         m_FWProxy = true;
 
-    x_PreCheck(eFirewallConnections, 0/*main*/,
-               "Checking individual connection points\n"
-               "NOTE that even though that not the entire port range can"
-               " be currently utilized and checked, in order for NCBI services"
-               " to work correctly, your network must support every port"
-               " in the range as documented above\n");
+    PreCheck(eFirewallConnections, 0/*main*/,
+             "Checking individual connection points\n"
+             "NOTE that even though that not the entire port range can"
+             " be currently utilized and checked, in order for NCBI services"
+             " to work correctly, your network must support every port"
+             " in the range as documented above\n");
 
     EIO_Status status;
     unsigned int n = 0;
-    ITERATE(vector<CFWConnPoint>, cp, m_Fwd) {
-        x_PreCheck(eFirewallConnections, ++n,
-                   "Checking connectivity at "
-                   + CSocketAPI::HostPortToString(cp->host, cp->port));
+    NON_CONST_ITERATE(vector<CFWConnPoint>, cp, m_Fwd) {
+        _ASSERT(cp->okay);
+        PreCheck(eFirewallConnections, ++n,
+                 "Checking connectivity at "
+                 + CSocketAPI::HostPortToString(cp->host, cp->port));
 
         CConn_SocketStream fw(m_FWProxy ? val : CSocketAPI::ntoa(cp->host),
                               cp->port, "\r\n"/*data*/, 2/*size*/,
@@ -473,10 +474,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         char line[sizeof(kFWSign) + 2/*\r+EOS*/];
         if (!fw.getline(line, sizeof(line)))
             *line = '\0';
-        status = x_ConnStatus
+        status = ConnStatus
             (NStr::strncasecmp(line, kFWSign, sizeof(kFWSign) - 1) != 0, fw);
         string temp;
         if (status != eIO_Success) {
+            cp->okay = false;
             if (m_FWProxy) {
                 temp += "Non-transparent proxy server '";
                 temp += val;
@@ -511,7 +513,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         } else
             temp = "OK";
 
-        x_PostCheck(eFirewallConnections, n, status, temp);
+        PostCheck(eFirewallConnections, n, status, temp);
 
         if (status != eIO_Success) {
             if (reason)
@@ -530,7 +532,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     } else
         summary = "All firewall ports checked OK";
 
-    x_PostCheck(eFirewallConnections, 0/*main*/, status, summary);
+    PostCheck(eFirewallConnections, 0/*main*/, status, summary);
     return status;
 }
 
@@ -545,15 +547,15 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     SConnNetInfo* net_info = ConnNetInfo_Create(kId2);
     TSERV_Type type = m_Forced ? fSERV_Stateless : fSERV_Any;
 
-    x_PreCheck(eStatefulService, 0/*main*/,
-               "Checking reachability of a stateful service");
+    PreCheck(eStatefulService, 0/*main*/,
+             "Checking reachability of a stateful service");
 
     CConn_ServiceStream id2(kId2, type, net_info, 0/*params*/, m_Timeout);
 
     streamsize n = 0;
     bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()
         ||  !(n = CStreamUtils::Readsome(id2, ry, sizeof(ry)));
-    EIO_Status status = x_ConnStatus
+    EIO_Status status = ConnStatus
         (iofail  ||  n < 4  ||  memcmp(ry, "0\200\240\200", 4) != 0, id2);
 
     string temp;
@@ -605,7 +607,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     } else
         temp = "OK";
 
-    x_PostCheck(eStatefulService, 0/*main*/, status, temp);
+    PostCheck(eStatefulService, 0/*main*/, status, temp);
 
     ConnNetInfo_Destroy(net_info);
     if (reason)
@@ -705,8 +707,8 @@ static inline list<string> s_Justify(const string& str,
 }
 
 
-void CConnTest::x_PreCheck(EStage stage, unsigned int step,
-                           const string& title)
+void CConnTest::PreCheck(EStage stage, unsigned int step,
+                         const string& title)
 {
     m_End = false;
 
@@ -741,8 +743,8 @@ void CConnTest::x_PreCheck(EStage stage, unsigned int step,
 }
 
 
-void CConnTest::x_PostCheck(EStage stage, unsigned int substage,
-                            EIO_Status status, const string& reason)
+void CConnTest::PostCheck(EStage stage, unsigned int substage,
+                          EIO_Status status, const string& reason)
 {
     bool end = m_End;
     m_End = true;
