@@ -53,10 +53,11 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CConnTest : virtual public CConnIniter
 {
 public:
-    /// Note that each stage has a previous one as a prerequisite with the
+    /// Note that each stage has a previous one as a prerequisite, with the
     /// only exception for the stateful service (last check) that may work
     /// if forced into the stateless mode when firewall connections
     /// (in preceding check) have been found non-operational...
+    ///
     enum EStage {
         eHttp,                  ///< Check whether HTTP works
         eDispatcher,            ///< Check whether NCBI dispatcher works
@@ -66,22 +67,39 @@ public:
         eStatefulService        ///< Check whether NCBI stateful service works
     };
 
-    /// Default timeout is 30 seconds;  the tests produce no output.
+    /// Create test suite
+    /// @param timeout
+    ///   non-NULL pointer to a finite timeout, or NULL (infinite); or
+    ///   default timeout (which is 30 seconds).
+    /// @param out
+    ///   test results get posted to the stream pointed to by this parameter;
+    ///   no output is produced if "out" is NULL.
     ///
     CConnTest(const STimeout* timeout = kDefaultTimeout, ostream* out = 0);
 
-    virtual ~CConnTest() { }
+    virtual ~CConnTest() { /*nothing*/ }
 
-    /// Execute test suite from the very first (eHttp) up to and
-    /// including the requested stage "stage".
-    /// Return eIO_Success if all tests completed successfully;
-    /// other code if not, and then also return an explanatory
-    /// message at "*reason" (if "reason" passed non-NULL).
+    /// Execute the test suite from the very first (eHttp) up to
+    ///  and including the requested stage "stage".
+    ///
     /// It is expected that the call advances to the next check only
     /// if the previous one was successful (or conditionally successful,
     /// meaning even though it may have formally failed, it still returns
     /// eIO_Success and creates favorable preconditions for the following
     /// check to likely succeed).
+    ///
+    /// @param stage
+    ///   final stage requested or performed, when the call returns
+    /// @param reason
+    ///   a pointer to a string to get a failure explanation
+    /// @return
+    ///   eIO_Success if all requested tests completed successfully;
+    ///   other code if not, and then also return an explanatory
+    ///   message at "*reason" (if "reason" passed non-NULL).
+    ///
+    /// NOTE that "*reason" may contain non-empty string when the call
+    /// completes successfully.  Always check return code, instead of
+    /// making any assumption on the contents of "*reason".
     ///
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
 
@@ -89,6 +107,7 @@ protected:
 
     /// Auxiliary class to hold FWDaemon CP(connection point)
     /// information and its current boolean status.
+    ///
     /// Depending on the check progress !okay may mean the CP has
     /// been marked FAIL at NCBI end at an earlier stage of testing,
     /// as well as turn "false" at a later stage is the actual connection
@@ -107,14 +126,15 @@ protected:
 
 
     /// User-redefinable checks for each stage.
+    ///
     /// Every check must include at least one call of PreCheck()
     /// followed by PostCheck() with parameter "step" set to 0
-    /// (meaning the "main" check); and as many as optional substeps
-    /// (nested or going back to back) enumerated with "step".
-    /// Each check returning eIO_Success means that its main check
-    /// with all substeps have successfully passed.  A failing check
-    /// can return an explanation via the "reason" pointer (if non-NULL)
-    /// or at least clear the string.
+    /// (meaning the "main" check); and as many as necessary optional
+    /// substeps (nested or going back to back) enumerated with "step".
+    /// A check returning eIO_Success means that its main check
+    /// with all substeps have successfully passed.  Otherwise, it is a
+    /// failing check that can return an explanation via the "reason"
+    /// pointer (if non-NULL) or at least clear the string.
 
     virtual EIO_Status HttpOkay          (string* reason);
     virtual EIO_Status DispatcherOkay    (string* reason);
@@ -125,13 +145,13 @@ protected:
 
     /// User-defined rendering callbacks:  PreCheck() and PostCheck().
     /// Each callback receives a stage enumerator and a step within.
-    /// At least one step (0) is required and denotes the main check.
+    /// At least one step (0) is required, and denotes the main check.
 
     /// PreCheck gets called before the step starts, and contains
     /// either:
     ///   a single-lined step title; or
     ///   a multi-lined step description, with first line being the actual
-    ///   title, and remaining lines -- an explanation.
+    ///   title, and remaining lines -- a verbal explanation.
     /// Lines are separated with "\n", and normally do not have any
     /// ending punctuation (but may be capitalized).
     /// The default callback does the following:
@@ -154,11 +174,11 @@ protected:
     /// detailed explanation) separated with "\n".
     /// The default callback does the following:
     ///   For succeeding check it prints the contents of "reason" and returns;
-    ///   For failing check, it prints the word "FAILED" followed by
-    ///    textual representation of "status" and return value of
-    ///    GetCheckPoint() if non-empty.  It then prints explanation (found
-    ///    in reason) as a numbered list of justified paragraphs.  If there
-    ///    is only a single line found, it won't be enumerated.
+    ///   For failing check, it prints the word "FAILED" followed by textual
+    ///     representation of "status" and the return value of GetCheckPoint()
+    ///     if non-empty.  It then prints each line of explanation (taken from
+    ///     "reason") as a numbered list of justified paragraphs.  If there is
+    ///     only a single line results, it won't be enumerated.
     /// Each PostCheck() is expected to set the m_End member to "true",
     /// so the nested or back-to-back substeps can be distiguished by
     /// the order of encounter of m_End's value.
@@ -166,13 +186,11 @@ protected:
     virtual void       PostCheck(EStage stage, unsigned int step,
                                  EIO_Status status, const string& reason);
 
-    /// Helper function that assures to return eIO_Success if predicate
-    /// "failure" is false;  and other code otherwise (taken from
-    /// the underlying CONN object of the passed "io", or eIO_Unknown
-    /// as a fallback).  Also, it sets m_CheckPoint member to contain
-    /// the connection description if available (retrievable with
-    /// GetCheckPoint()).
-    ///
+    /// A helper function that assures to return eIO_Success if the predicate
+    /// "failure" is false;  and other code otherwise:  either taken from the
+    /// underlying CONN object, or eIO_Unknown as a fallback.
+    /// Also, it sets the m_CheckPoint member to contain the connection
+    /// description if available (retrievable with GetCheckPoint()).
     ///
     virtual EIO_Status ConnStatus(bool failure, CConn_IOStream& io);
 
@@ -184,7 +202,7 @@ protected:
     const STimeout*       m_Timeout;
     ostream*              m_Out;
 
-    /// Certain properties of communication as determined from configuration
+    /// Certain properties of communication as determined by configuration
     bool                  m_HttpProxy;
     bool                  m_Stateless;
     bool                  m_Firewall;
@@ -198,6 +216,9 @@ protected:
 private:
     string                m_CheckPoint;
     STimeout              m_TimeoutValue;
+
+    /// Pretect from runaway stage argument
+    EIO_Status x_CheckTrap(string* reason);
 };
 
 

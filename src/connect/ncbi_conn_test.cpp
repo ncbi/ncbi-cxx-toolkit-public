@@ -61,20 +61,6 @@ static const char kTest[] = "test";
 const STimeout CConnTest::kTimeout = {30, 0};
 
 
-EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
-{
-    CONN conn = io.GetCONN();
-    const char* descr = conn ? CONN_Description(conn) : 0;
-    m_CheckPoint = descr ? descr : kEmptyStr;
-    if (!failure)
-        return eIO_Success;
-    EIO_Status r_status = conn ? CONN_Status(conn, eIO_Read)  : eIO_Unknown;
-    EIO_Status w_status = conn ? CONN_Status(conn, eIO_Write) : eIO_Unknown;
-    EIO_Status status   = r_status > w_status ? r_status : w_status;
-    return status == eIO_Success ? eIO_Unknown : status;
-}
-
-
 CConnTest::CConnTest(const STimeout* timeout, ostream* out)
     : m_Out(out), m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
       m_FWProxy(false), m_Forced(false), m_End(false)
@@ -98,12 +84,17 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         &CConnTest::ServiceOkay,
         &CConnTest::GetFWConnections,
         &CConnTest::CheckFWConnections,
-        &CConnTest::StatefulOkay
+        &CConnTest::StatefulOkay,
+        &CConnTest::x_CheckTrap  // Guaranteed to fail
     };
 
+    // Reset everything
     m_HttpProxy = m_Stateless = m_Firewall
         = m_FWProxy = m_Forced = m_End = false;
     m_Fwd.clear();
+    if (reason)
+        reason->clear();
+    m_CheckPoint.clear();
 
     int s = eHttp;
     EIO_Status status;
@@ -115,6 +106,20 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         }
     } while (EStage(s++) < stage);
     return status;
+}
+
+
+EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
+{
+    CONN conn = io.GetCONN();
+    const char* descr = conn ? CONN_Description(conn) : 0;
+    m_CheckPoint = descr ? descr : kEmptyStr;
+    if (!failure)
+        return eIO_Success;
+    EIO_Status r_status = conn ? CONN_Status(conn, eIO_Read)  : eIO_Unknown;
+    EIO_Status w_status = conn ? CONN_Status(conn, eIO_Write) : eIO_Unknown;
+    EIO_Status status   = r_status > w_status ? r_status : w_status;
+    return status == eIO_Success ? eIO_Unknown : status;
 }
 
 
@@ -707,7 +712,7 @@ static inline list<string> s_Justify(const string& str,
 }
 
 
-void CConnTest::PreCheck(EStage stage, unsigned int step,
+void CConnTest::PreCheck(EStage/*stage*/, unsigned int/*step*/,
                          const string& title)
 {
     m_End = false;
@@ -743,7 +748,7 @@ void CConnTest::PreCheck(EStage stage, unsigned int step,
 }
 
 
-void CConnTest::PostCheck(EStage stage, unsigned int substage,
+void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
                           EIO_Status status, const string& reason)
 {
     bool end = m_End;
@@ -751,45 +756,64 @@ void CConnTest::PostCheck(EStage stage, unsigned int substage,
 
     if (!m_Out)
         return;
+
     if (status == eIO_Success) {
-        *m_Out << (end ? '\n' : '\t') << reason << '!' << NcbiEndl;
+        *m_Out << "\n\t"[!end] << reason << '!' << NcbiEndl;
         return;
     }
-    if (!end) {
-        *m_Out << "\tFAILED (" << IO_StatusStr(status) << ')';
-        const string& where = GetCheckPoint();
-        if (!where.empty())
-            *m_Out << ':' << NcbiEndl << string(4, ' ') << where;
-        *m_Out << NcbiEndl;
-    }
+
     list<string> stmt;
     NStr::Split(reason, "\n", stmt);
     ERASE_ITERATE(list<string>, str, stmt) {
         if (str->empty())
             stmt.erase(str);
     }
-    if (stmt.size()) {
-        unsigned int n = 0;
-        NON_CONST_ITERATE(list<string>, str, stmt) {
-            NStr::TruncateSpacesInPlace(*str);
-            str->append(1, '.');
-            string pfx1, pfx;
-            if (!end) {
-                pfx.assign(4, ' ');
-                if (stmt.size() > 1) {
-                    char buf[40];
-                    pfx1.assign(buf, ::sprintf(buf, "%2d. ", ++n));
-                } else
-                    pfx1.assign(pfx);
-            }
-            list<string> par;
-            s_Justify(*str, 72, par, pfx, pfx1);
-            ITERATE(list<string>, line, par) {
-                *m_Out << NcbiEndl << *line;
-            }
+
+    if (!end  ||  !stmt.size()) {
+        *m_Out << "\n\t"[!end] << "FAILED (" << IO_StatusStr(status) << ')';
+        if (stmt.size()) {
+            const string& where = GetCheckPoint();
+            if (!where.empty())
+                *m_Out << ':' << NcbiEndl << string(4, ' ') << where;
+            *m_Out << NcbiEndl;
+        }
+    }
+
+    unsigned int n = 0;
+    NON_CONST_ITERATE(list<string>, str, stmt) {
+        NStr::TruncateSpacesInPlace(*str);
+        str->append(1, '.');
+        string pfx1, pfx;
+        if (!end) {
+            pfx.assign(4, ' ');
+            if (stmt.size() > 1) {
+                char buf[40];
+                pfx1.assign(buf, ::sprintf(buf, "%2d. ", ++n));
+            } else
+                pfx1.assign(pfx);
+        }
+        list<string> par;
+        s_Justify(*str, 72, par, pfx, pfx1);
+        ITERATE(list<string>, line, par) {
+            *m_Out << NcbiEndl << *line;
         }
     }
     *m_Out << NcbiEndl;
+}
+
+
+EIO_Status CConnTest::x_CheckTrap(string* reason)
+{
+    EIO_Status status = eIO_NotSupported;
+    string temp("Runaway check");
+    m_CheckPoint.clear();
+
+    PreCheck(EStage(0), 0, temp);
+    PostCheck(EStage(0), 0, status, "Check usage");
+
+    if (reason)
+        reason->clear();
+    return eIO_NotSupported;
 }
 
 
