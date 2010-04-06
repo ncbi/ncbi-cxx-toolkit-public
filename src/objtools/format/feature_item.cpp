@@ -1195,6 +1195,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     }
 
     if ( s_feat == 0 ) {
+//    if ( g_ref == 0 ) {
         if ( ctx.IsProt()  ||  !IsMapped()) {
 
             s_feat = GetBestOverlappingFeat(
@@ -1202,7 +1203,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
                 CSeqFeatData::e_Gene,
                 sequence::eOverlap_Contained,
                 ctx.GetScope(),
-                fBestFeat_Defaults/*fBestFeat_NoExpensive*/);
+                fBestFeat_NoExpensive );
         } 
         else {
             s_feat = GetOverlappingGene(GetLoc(), ctx.GetScope());
@@ -1315,6 +1316,16 @@ void CFeatureItem::x_AddQuals(
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
 {
+//  /**fl**/>>
+//    if ( GetLoc().IsInt() ) {
+//        size_t uFrom = GetLoc().GetInt().GetFrom();
+//        size_t uTo = GetLoc().GetInt().GetTo();
+//        if ( uFrom == 650 ) {
+//            cerr << "Break" << endl;
+//        }
+//    }
+//  <</**fl**/
+
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals( ctx );
         return;
@@ -2333,38 +2344,65 @@ void CFeatureItem::x_AddQualsGene(
         (gene_ref->IsSetLocus_tag()  &&  !NStr::IsBlank(gene_ref->GetLocus_tag())) ?
         &gene_ref->GetLocus_tag() : 0;
 
+    //  gene:
     if ( !from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
-        if (locus != NULL) {
+        if ( locus != 0 ) {
             m_Gene = *locus;
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+        } 
+        else if (desc != NULL) {
+            m_Gene = *desc;
+            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+        }
+        else if (syn != NULL) {
+            CGene_ref::TSyn syns = *syn;
+            m_Gene = syns.front();
+            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+        }
+    }
+
+    //  locus tag:
+    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+        if (locus != NULL) {
             if (locus_tag != NULL) {
                 x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
             }
+        }
+        else if (locus_tag != NULL) {
+            x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
+        }
+    }
+
+    //  gene desc:
+    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+        if (locus != NULL) {
             if (is_gene  &&  desc != NULL) {
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
+        }
+        else if (locus_tag != NULL) {
+            if (is_gene  &&  desc != NULL) {
+                x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
+            }
+        }
+    }
+
+    //  gene syn:
+    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+        if (locus != NULL) {
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (locus_tag != NULL) {
-            x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
-            if (is_gene  &&  desc != NULL) {
-                x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
-            }
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (desc != NULL) {
-            m_Gene = *desc;
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (syn != NULL) {
-            // add the first as the gene name ...
             CGene_ref::TSyn syns = *syn;
-            m_Gene = syns.front();
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             syns.pop_front();
             // ... and the rest as synonyms
             if (syn != NULL) {
@@ -2373,8 +2411,7 @@ void CFeatureItem::x_AddQualsGene(
         }
     }
 
-
-    // /allele
+    // gene allele:
     if (subtype != CSeqFeatData::eSubtype_variation && 
       subtype != CSeqFeatData::eSubtype_repeat_region &&
       subtype != CSeqFeatData::eSubtype_primer_bind ) {
@@ -2383,10 +2420,12 @@ void CFeatureItem::x_AddQualsGene(
         }
     }
 
+    //  gene xref:
     if (gene_ref->IsSetDb()) {
         x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(gene_ref->GetDb()));
     }
 
+    //  gene map:
     if (!from_overlap  &&  gene_ref->IsSetMaploc()) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene_ref->GetMaploc()));
     }
