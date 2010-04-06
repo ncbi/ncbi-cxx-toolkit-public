@@ -1473,9 +1473,12 @@ public:
 /// NOTE 2:  By default, the errors will be written to standard error stream.
 
 struct NCBI_XNCBI_EXPORT SDiagMessage {
-    typedef Uint8 TPID;  ///< Process ID
-    typedef Uint8 TTID;  ///< Thread ID
-    typedef Int8  TUID;  ///< Unique process ID
+    typedef Uint8 TPID;   ///< Process ID
+    typedef Uint8 TTID;   ///< Thread ID
+    typedef Int8  TUID;   ///< Unique process ID
+
+    /// Generic type for counters (posts, requests etc.)
+    typedef Uint4 TCount;
 
     /// Initialize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
@@ -1536,9 +1539,9 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                                    ///< but can be represented as text
     TPID             m_PID;        ///< Process ID
     TTID             m_TID;        ///< Thread ID
-    int              m_ProcPost;   ///< Number of the post in the process
-    int              m_ThrPost;    ///< Number of the post in the thread
-    int              m_RequestId;  ///< FastCGI iteration or request ID
+    TCount           m_ProcPost;   ///< Number of the post in the process
+    TCount           m_ThrPost;    ///< Number of the post in the thread
+    TCount           m_RequestId;  ///< FastCGI iteration or request ID
 
     /// If the severity is eDPF_AppLog, m_Event contains event type.
     EEventType       m_Event;
@@ -1701,9 +1704,11 @@ public:
     };
     NCBI_DEPRECATED TProperties* GetProperties(EGetProperties flag);
 
+    typedef SDiagMessage::TCount TCount;
+
     /// Request id
-    NCBI_DEPRECATED int GetRequestId(void);
-    NCBI_DEPRECATED void SetRequestId(int id);
+    NCBI_DEPRECATED TCount GetRequestId(void);
+    NCBI_DEPRECATED void SetRequestId(TCount id);
     NCBI_DEPRECATED void IncRequestId(void);
 
     /// Get request timer, create if not exist yet
@@ -1726,7 +1731,7 @@ public:
     TTID GetTID(void) const { return m_TID; }
 
     /// Get thread post number
-    int GetThreadPostNumber(EPostNumberIncrement inc);
+    TCount GetThreadPostNumber(EPostNumberIncrement inc);
 
     void AddCollectGuard(CDiagCollectGuard* guard);
     void RemoveCollectGuard(CDiagCollectGuard* guard);
@@ -1748,7 +1753,7 @@ private:
     auto_ptr<TProperties> m_Properties;       // Per-thread properties
     auto_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
     TTID                  m_TID;              // Cached thread ID
-    int                   m_ThreadPostNumber; // Number of posted messages
+    TCount                m_ThreadPostNumber; // Number of posted messages
     TCollectGuards        m_CollectGuards;
     TDiagCollection       m_DiagCollection;
     size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
@@ -2051,8 +2056,9 @@ public:
                           CNcbiRegistry*       config = NULL,
                           EDiagCollectMessages collect = eDCM_NoChange);
 
+    typedef SDiagMessage::TCount TCount;
     /// Return process post number (incrementing depends on the flag).
-    static int GetProcessPostNumber(EPostNumberIncrement inc);
+    static TCount GetProcessPostNumber(EPostNumberIncrement inc);
 
     /// Type of logging rate limit
     enum ELogRate_Type {

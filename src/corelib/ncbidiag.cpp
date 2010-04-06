@@ -718,7 +718,8 @@ CDiagContextThreadData::GetProperties(EGetProperties flag)
 }
 
 
-int CDiagContextThreadData::GetThreadPostNumber(EPostNumberIncrement inc)
+CDiagContextThreadData::TCount
+CDiagContextThreadData::GetThreadPostNumber(EPostNumberIncrement inc)
 {
     return inc == ePostNumber_Increment ?
         ++m_ThreadPostNumber : m_ThreadPostNumber;
@@ -781,13 +782,14 @@ void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
 }
 
 
-int CDiagContextThreadData::GetRequestId(void)
+CDiagContextThreadData::TCount
+CDiagContextThreadData::GetRequestId(void)
 {
     return GetRequestContext().GetRequestID();
 }
 
 
-void CDiagContextThreadData::SetRequestId(int id)
+void CDiagContextThreadData::SetRequestId(TCount id)
 {
     GetRequestContext().SetRequestID(id);
 }
@@ -2300,11 +2302,11 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 }
 
 
-int CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc)
+CDiagContext::TCount CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc)
 {
     static CAtomicCounter s_ProcessPostCount;
-    return inc == ePostNumber_Increment ?
-        s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get();
+    return (TCount)(inc == ePostNumber_Increment ?
+        s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get());
 }
 
 
