@@ -100,3 +100,8 @@ March 25, 2010
 version 2.5.1
 Added option to request generation of dependencies on datatool.
 
+April 06, 2010
+version 2.6.0
+Reduced the number of warning messages, eliminated identical ones.
+Added possibility to define precompiled header settings locally.
+
