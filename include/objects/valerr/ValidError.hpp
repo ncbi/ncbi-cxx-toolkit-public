@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeqdesc;
+class CSeq_entry;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_VALERR_EXPORT CValidError : public CValidError_Base
