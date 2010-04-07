@@ -97,7 +97,7 @@ public:
                                   TAlignResultsRef Out) = 0;
     virtual unsigned int GetFilterRank() const = 0;
 
-    const static string KFILTER_SCORE;
+    static const string KFILTER_SCORE;
 };
 
 
