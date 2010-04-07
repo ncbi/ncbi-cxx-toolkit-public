@@ -196,7 +196,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
 
 static void StringFromStdaa(const vector < char >& vec, std::string *str)
 {
-    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ";
 
     str->resize(vec.size());
     for (unsigned int i=0; i<vec.size(); ++i)
