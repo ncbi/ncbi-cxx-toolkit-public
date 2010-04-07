@@ -5,7 +5,7 @@
 
 APP_PROJ = compart
 
-REQUIRES = objects
+REQUIRES = algo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
