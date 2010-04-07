@@ -470,7 +470,7 @@ done
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,dbapi,serial,objects,algo,app],
+   m4_foreach(OPT, [dll,mt,gui,exe,sqlite3,serial,objects,algo],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -5914,7 +5914,7 @@ fi
 
 ## `algo' projects
 
-if test "$with_algo" = "no" ; then
+if test "$with_algo" = "no" -o -z "$objects" ; then
    algo=
 else
    NCBI_PROJECT(algo)
@@ -5987,8 +5987,8 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
      reason="$reason${sep}OpenGL"
      sep=", "
    fi
-   if test "$with_bdb" = "no"; then
-     reason="$reason${sep}Berkeley DB 4.3"
+   if test "$with_sqlite3" = "no"; then
+     reason="$reason${sep}SQLite 3.x"
      sep=", "
    fi
    if test "$with_mt" = "no"; then
@@ -5998,6 +5998,10 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    if test "$with_dll" != "yes"; then
      reason="$reason${sep}full-DLL setup"
      sep=", "
+   fi
+   if test "$with_algo" = "no"; then
+     reason="$reason${sep}other required subtrees"
+     sep=","
    fi
    # Anything else?
    if test -n "$reason" -a "$with_gbench" = "yes"; then

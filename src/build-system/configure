@@ -2550,12 +2550,12 @@ echo "$as_me: error: incompatible options: --without-exe but --with-gbench" >&2;
       else
          with_exe=yes
       fi
-     if test "$with_dbapi" = "no"; then
-         { { echo "$as_me:$LINENO: error: incompatible options: --without-dbapi but --with-gbench" >&5
-echo "$as_me: error: incompatible options: --without-dbapi but --with-gbench" >&2;}
+     if test "$with_sqlite3" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-sqlite3 but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-sqlite3 but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_dbapi=yes
+         with_sqlite3=yes
       fi
      if test "$with_serial" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-serial but --with-gbench" >&5
@@ -2577,13 +2577,6 @@ echo "$as_me: error: incompatible options: --without-algo but --with-gbench" >&2
    { (exit 1); exit 1; }; }
       else
          with_algo=yes
-      fi
-     if test "$with_app" = "no"; then
-         { { echo "$as_me:$LINENO: error: incompatible options: --without-app but --with-gbench" >&5
-echo "$as_me: error: incompatible options: --without-app but --with-gbench" >&2;}
-   { (exit 1); exit 1; }; }
-      else
-         with_app=yes
       fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
@@ -31428,7 +31421,7 @@ fi
 
 ## `algo' projects
 
-if test "$with_algo" = "no" ; then
+if test "$with_algo" = "no" -o -z "$objects" ; then
    algo=
 else
              WithProjects="$WithProjects${WithProjectsSep}algo"; WithProjectsSep=" "
@@ -31504,8 +31497,8 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
      reason="$reason${sep}OpenGL"
      sep=", "
    fi
-   if test "$with_bdb" = "no"; then
-     reason="$reason${sep}Berkeley DB 4.3"
+   if test "$with_sqlite3" = "no"; then
+     reason="$reason${sep}SQLite 3.x"
      sep=", "
    fi
    if test "$with_mt" = "no"; then
@@ -31515,6 +31508,10 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    if test "$with_dll" != "yes"; then
      reason="$reason${sep}full-DLL setup"
      sep=", "
+   fi
+   if test "$with_algo" = "no"; then
+     reason="$reason${sep}other required subtrees"
+     sep=","
    fi
    # Anything else?
    if test -n "$reason" -a "$with_gbench" = "yes"; then
