@@ -1048,6 +1048,12 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 !ret.GetExp().empty() ) {
                                 l.push_back("Erratum:[" + ret.GetExp() + "]");
                             }
+                            if ( ret.IsSetType()  &&
+                                ret.GetType() == CCitRetract::eType_retracted  &&
+                                ret.IsSetExp()  &&
+                                !ret.GetExp().empty() ) {
+                                l.push_back("Retracted:[" + ret.GetExp() + "]");
+                            }
                         }
                         if ( imp.CanGetPubstatus() ) {
                             CImprint::TPubstatus pubstatus = imp.GetPubstatus();
