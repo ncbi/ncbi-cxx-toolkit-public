@@ -233,11 +233,13 @@ k_all_url_pairs[]={
 /// Type definition for a map of tags - URLs
 typedef map<string, string> TUrlMap;
 
+#ifndef NCBI_SWIG
 /// create map source of all static URL's using previously defined pairs
 static 
 TUrlMap
 k_UrlMap((const TUrlMap::value_type*)&k_all_url_pairs[0], 
          (const TUrlMap::value_type*)k_all_url_pairs + DIM(k_all_url_pairs));
+#endif
 
 ///protein matrix define
 enum {
