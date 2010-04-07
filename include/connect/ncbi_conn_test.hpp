@@ -219,6 +219,8 @@ private:
 
     /// Pretect from runaway stage argument
     EIO_Status x_CheckTrap(string* reason);
+    /// Return timeout suggestion
+    string     x_TimeoutMsg(void);
 };
 
 

@@ -61,6 +61,14 @@ static const char kTest[] = "test";
 const STimeout CConnTest::kTimeout = {30, 0};
 
 
+inline bool operator > (const STimeout* t1, const STimeout& t2)
+{
+    if (!t1)
+        return true;
+    return t1->sec + t1->usec/1000000.0 > t2.sec + t2.usec/1000000.0;
+}
+
+
 CConnTest::CConnTest(const STimeout* timeout, ostream* out)
     : m_Out(out), m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
       m_FWProxy(false), m_Forced(false), m_End(false)
@@ -109,6 +117,19 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
 }
 
 
+string CConnTest::x_TimeoutMsg(void)
+{
+    if (!m_Timeout)
+        return kEmptyStr;
+    char tmo[40];
+    ::sprintf(tmo, "%u.%06u", m_Timeout->sec, m_Timeout->usec);
+    string result("Make sure the specified timeout value ");
+    result += tmo;
+    result += "s is adequate for your network throughput\n";
+    return result;
+}
+
+
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
 {
     CONN conn = io.GetCONN();
@@ -116,9 +137,12 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
     m_CheckPoint = descr ? descr : kEmptyStr;
     if (!failure)
         return eIO_Success;
-    EIO_Status r_status = conn ? CONN_Status(conn, eIO_Read)  : eIO_Unknown;
-    EIO_Status w_status = conn ? CONN_Status(conn, eIO_Write) : eIO_Unknown;
-    EIO_Status status   = r_status > w_status ? r_status : w_status;
+    EIO_Status status = io.Status();
+    if (status == eIO_Success  &&  conn) {
+        EIO_Status r_status = CONN_Status(conn, eIO_Read);
+        EIO_Status w_status = CONN_Status(conn, eIO_Write);
+        status = r_status > w_status ? r_status : w_status;
+    }
     return status == eIO_Success ? eIO_Unknown : status;
 }
 
@@ -146,18 +170,13 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 
     if (status != eIO_Success) {
         temp.clear();
-        if (m_Timeout) {
-            char tmo[40];
-            ::sprintf(tmo, "%u.%06u", m_Timeout->sec, m_Timeout->usec);
-            temp += "Make sure the specified timeout value ";
-            temp += tmo;
-            temp += "s is adequate for your network throughput\n";
-        }
+        if (status == eIO_Timeout)
+            temp += x_TimeoutMsg();
         if (m_HttpProxy) {
             temp += "Make sure that the HTTP proxy server \'";
             temp += net_info->http_proxy_host;
-            if (net_info->http_proxy_port  &&  net_info->http_proxy_port != 80)
-                temp += ":" + NStr::UIntToString(net_info->http_proxy_port);
+            temp += ':';
+            temp += NStr::UIntToString(net_info->http_proxy_port);
             temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT}"
                 " is correct\n";
         } else {
@@ -223,21 +242,21 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
 
     string temp;
     if (status != eIO_Success) {
-        temp.clear();
-        if (!okay) {
-            temp += "There was no response from service; make sure you"
-                " are using correct timeout value\n";
-        } else {
-            temp += "Make sure there are no stray [CONN]{HOST|PORT|PATH}"
-                " configuration settings on the way\n";
-        }
+        if (status != eIO_Timeout) {
+            if (okay) {
+                temp += "Make sure there are no stray [CONN]{HOST|PORT|PATH}"
+                    " configuration settings on the way\n";
+            }
+            if (okay == 1) {
+                temp += "Service response was not recognized; please contact "
+                    NCBI_HELP_DESK "\n";
+            }
+        } else
+            temp += x_TimeoutMsg();
         if (!(okay & 1)) {
             temp += "Check with your network administrator that your"
                 " network neither filters out nor blocks non-standard"
                 " HTTP headers\n";
-        } else if (okay == 1) {
-            temp += "Service response was not recognized; please contact "
-                NCBI_HELP_DESK "\n";
         }
     } else
         temp = "OK";
@@ -271,7 +290,6 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     EIO_Status status = ConnStatus(NStr::CompareCase(temp, kTest) != 0, svc);
 
     if (status != eIO_Success) {
-        temp.clear();
         char* str = net_info ? SERV_ServiceName(kService) : 0;
         if (str  &&  NStr::strcasecmp(str, kService) == 0) {
             free(str);
@@ -286,6 +304,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 NStr::strcasecmp(SERV_MapperName(iter), "DISPD") != 0) {
                 // Make sure there will be a mapper error printed
                 SERV_Close(iter);
+                temp.clear();
                 iter = 0;
             } else {
                 // kTest service can be located but not kService
@@ -305,15 +324,18 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "]CONN_SERVICE_NAME=";
                 temp += str;
                 temp += " from your configuration\n";
-            } else
+            } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                 temp += "; please contact " NCBI_HELP_DESK "\n";
         }
-        const char* mapper = SERV_MapperName(iter);
-        if (!mapper  ||  NStr::strcasecmp(mapper, "DISPD") != 0) {
-            temp += "Network dispatcher is not enabled as a service locator;"
-                " please review your configuration to purge any occurrences"
-                " of [CONN]DISPD_DISABLE off your settings\n";
-        }
+        if (status != eIO_Timeout) {
+            const char* mapper = SERV_MapperName(iter);
+            if (!mapper  ||  NStr::strcasecmp(mapper, "DISPD") != 0) {
+                temp += "Network dispatcher is not enabled as a service"
+                    " locator; please review your configuration to purge any"
+                    " occurrences of [CONN]DISPD_DISABLE off your settings\n";
+            }
+        } else
+            temp += x_TimeoutMsg();
         SERV_Close(iter);
         if (str)
             free(str);
@@ -392,7 +414,11 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     EIO_Status status = ConnStatus
         ((script.fail()  &&  !script.eof())  ||  m_Fwd.empty(), script);
 
-    if (status == eIO_Success) {
+    if (status == eIO_Timeout) {
+        temp = x_TimeoutMsg();
+        if (m_Timeout > kTimeout)
+            temp += "You may want to contact " NCBI_HELP_DESK;
+    } else if (status == eIO_Success) {
         temp = "OK: " + NStr::UInt8ToString(m_Fwd.size()) + " port";
         temp += &"s"[m_Fwd.size() == 1];
         stable_sort(m_Fwd.begin(), m_Fwd.end()); 
@@ -484,6 +510,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         string temp;
         if (status != eIO_Success) {
             cp->okay = false;
+            if (status == eIO_Timeout)
+                temp += x_TimeoutMsg();
             if (m_FWProxy) {
                 temp += "Non-transparent proxy server '";
                 temp += val;
@@ -601,10 +629,12 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                         " your ";
                     temp += m_FWProxy ? "proxy" : "firewall";
                     temp += " is still blocking ports as reported above\n";
-                } else
+                } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                     temp += "Please contact " NCBI_HELP_DESK "\n";
                 SERV_Close(iter);
             }
+            if (status == eIO_Timeout)
+                temp += x_TimeoutMsg();
         } else if (!str) {
             temp += "Unrecognized response from service"
                 "; please contact " NCBI_HELP_DESK "\n";
