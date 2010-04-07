@@ -107,15 +107,17 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
     }
 
     m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
-    if (m_AllRowIds.size() == 0) {
-        if (m_BlobInfo->size != 0)
-            s_CorruptedDatabase(*m_BlobInfo);
-    }
-    else {
-        size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
-        size_t min_size = max_size - kNCMaxBlobChunkSize;
-        if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
-            s_CorruptedDatabase(*m_BlobInfo);
+    if (!can_write) {
+        if (m_AllRowIds.size() == 0) {
+            if (m_BlobInfo->size != 0)
+                s_CorruptedDatabase(*m_BlobInfo);
+        }
+        else {
+            size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
+            size_t min_size = max_size - kNCMaxBlobChunkSize;
+            if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
+                s_CorruptedDatabase(*m_BlobInfo);
+        }
     }
     m_NextRowIdIt = m_AllRowIds.begin();
 
