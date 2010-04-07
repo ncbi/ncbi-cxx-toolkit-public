@@ -1162,7 +1162,6 @@ CTS	s	Chongqing Teachers College
 CTY	s	Canterbury Literary and Philosophical Institution
 CU	s	Cornell University
 CUAC	s	Clemson University
-CUB	s	Chulalongkorn University
 CUBK	s	Department of Biology, Chonbuk National University
 CUC	c	Cepario de la Universidad de Concepcion de Chile
 CUE	s	Cairo University
@@ -1180,6 +1179,8 @@ CUMV:Mammalogy	s	Cornell University Museum of Vertebrates, Mammalogy Collection
 CUMV:Ornithology	s	Cornell University Museum of Vertebrates, Ornithology Collection
 CUMZ<CAN>	s	Carleton University, Museum of Zoology
 CUMZ<CMR>	s	Cameroon University, Museum of Zoology
+CUMZ<THA>	s	Chulalongkorn University Museum of Natural History
+CUMZ<THA>:R	s	Chulalongkorn University Museum of Natural History, Reptile Collection
 CUMZ<UK>	s	Cambridge University, Museum of Zoology
 CUNRC	s	Universidad Nacional de Rio Cuarto, Coleccion de Mamiferos (Argentina)
 CUP<CHN>	s	Catholic University of Peking
@@ -3619,9 +3620,9 @@ MRST	s	Museo Regionale di Storia Naturale
 MS	s	Universita di Messina, Dipartimento di Scienze Botaniche
 MSA	s	Museum of Science and Art
 MSB	s	Museum of Southwestern Biology
-MSB:Bird	s	Museum of Southwestern Biology, bird collection
-MSB:Fishes	s	Museum of Southwestern Biology, fish collection
-MSB:Mamm	s	Museum of Southwestern Biology, mammal collection
+MSB:Bird	s	Museum of Southwestern Biology, Bird Collection
+MSB:Fishes	s	Museum of Southwestern Biology, Fish Collection
+MSB:Mamm	s	Museum of Southwestern Biology, Mammal Collection
 MSB:Para	s	Museum of Southwestern Biology, Parasitology Collection
 MSB<BGR>	s	Museum Sophia
 MSB<DEU>	s	Ludwig-Maximilians-Universitaet
