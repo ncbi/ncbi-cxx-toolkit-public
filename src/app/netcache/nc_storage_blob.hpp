@@ -156,6 +156,8 @@ public:
     /// Check if blob exists.
     /// Method can be called only after lock is acquired.
     bool IsBlobExists(void) const;
+    /// Check if password provided for accessing the blob was correct
+    bool IsAuthorized(void) const;
     /// Get key of the blob.
     /// Method can be called only after lock is acquired.
     const string& GetBlobKey       (void) const;
@@ -244,6 +246,7 @@ public:
     void PrepareLock(const string&   key,
                      const string&   subkey,
                      int             version,
+                     const string&   password,
                      ENCBlobAccess   access);
     /// Prepare lock for the blob identified by full coordinates information
     /// (including keys). Method only initializes necessary variables, actual
@@ -322,6 +325,8 @@ private:
     /// Full meta-information about locked blob. If blob doesn't exist then
     /// only part of identity information will be valid.
     mutable SNCBlobInfo      m_BlobInfo;
+    /// Password that was used for access to the blob
+    string                   m_Password;
     /// Type of access requested for the blob
     ENCBlobAccess            m_BlobAccess;
     /// Flag if blob meta-information should be written to database when lock
@@ -359,6 +364,8 @@ private:
     bool                     m_LockValid;
     /// Remembered flag if blob exists in database
     bool                     m_BlobExists;
+    /// Flag showing if password for accessing the blob was correct
+    bool                     m_Authorized;
     /// Mutex used for critical operations during acquiring of the lock
     mutable CSpinLock        m_LockAcqMutex;
 };
@@ -448,6 +455,14 @@ CNCBlobLockHolder::IsBlobExists(void) const
     _ASSERT(IsLockAcquired());
 
     return m_BlobExists;
+}
+
+inline bool
+CNCBlobLockHolder::IsAuthorized(void) const
+{
+    _ASSERT(IsLockAcquired());
+
+    return m_Authorized;
 }
 
 inline const string&

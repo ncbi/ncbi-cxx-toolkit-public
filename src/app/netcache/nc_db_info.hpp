@@ -114,6 +114,7 @@ struct SNCBlobInfo : public SNCBlobIdentity
                          ///< deleted yet
     size_t size;         ///< Size of the blob
     Int8   cnt_reads;    ///< Number of reads that was called on the blob
+    string password;     ///< Password that should be used to access the blob
     bool   corrupted;    ///< Special flag pointing that blob information is
                          ///< corrupted in database and need to be deleted.
 

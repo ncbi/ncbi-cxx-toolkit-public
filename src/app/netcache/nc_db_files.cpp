@@ -55,6 +55,7 @@ static const char* kNCBlobInfo_OwnerCol       = "own";
 static const char* kNCBlobInfo_TTLCol         = "ttl";
 static const char* kNCBlobInfo_SizeCol        = "sz";
 static const char* kNCBlobInfo_CntReadsCol    = "rd";
+static const char* kNCBlobInfo_PasswordCol    = "pw";
 
 static const char* kNCBlobChunks_Table        = "NCC";
 static const char* kNCBlobChunks_ChunkIdCol   = "id";
@@ -219,6 +220,7 @@ CNCDBFile::CreateMetaDatabase(void)
                << kNCBlobInfo_TTLCol        << " int not null,"
                << kNCBlobInfo_SizeCol       << " int64 not null,"
                << kNCBlobInfo_CntReadsCol   << " int64 not null,"
+               << kNCBlobInfo_PasswordCol   << " varchar not null,"
                << "unique(" << kNCBlobInfo_DeadTimeCol << ","
                             << kNCBlobInfo_BlobIdCol
                <<       ")"
@@ -251,7 +253,14 @@ CNCDBFile::AdjustMetaDatabase(void)
 
         sql << "alter table " << kNCBlobInfo_Table
             << " add column " << kNCBlobInfo_CntReadsCol
-                                            << " int not64 null default 0";
+                                            << " int64 not null default 0";
+        stmt.SetSql(sql);
+        stmt.Execute();
+
+        sql.Clear();
+        sql << "alter table " << kNCBlobInfo_Table
+            << " add column " << kNCBlobInfo_PasswordCol
+                                            << " varchar not null default ''";
         stmt.SetSql(sql);
         stmt.Execute();
     }
@@ -312,8 +321,9 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                        << kNCBlobInfo_OwnerCol      << ","
                        << kNCBlobInfo_TTLCol        << ","
                        << kNCBlobInfo_SizeCol       << ","
-                       << kNCBlobInfo_CntReadsCol
-                << ")values(?1,?2,?3,?4,?5,?6,?7)";
+                       << kNCBlobInfo_CntReadsCol   << ","
+                       << kNCBlobInfo_PasswordCol
+                << ")values(?1,?2,?3,?4,?5,?6,?7,?8)";
             break;
         case eStmt_SetBlobDeadTime:
             sql << "update " << kNCBlobInfo_Table
@@ -326,7 +336,8 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                              << kNCBlobInfo_OwnerCol      << ","
                              << kNCBlobInfo_TTLCol        << ","
                              << kNCBlobInfo_SizeCol       << ","
-                             << kNCBlobInfo_CntReadsCol
+                             << kNCBlobInfo_CntReadsCol   << ","
+                             << kNCBlobInfo_PasswordCol
                 <<  " from " << kNCBlobInfo_Table
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
@@ -559,6 +570,7 @@ CNCDBFile::WriteBlobInfo(SNCBlobInfo& blob_info, bool move_dead_time)
     stmt->Bind(5, blob_info.ttl);
     stmt->Bind(6, blob_info.size);
     stmt->Bind(7, blob_info.cnt_reads);
+    stmt->Bind(8, blob_info.password.data(), blob_info.password.size());
     stmt->Execute();
 }
 
@@ -590,6 +602,7 @@ CNCDBFile::ReadBlobInfo(SNCBlobInfo* blob_info)
         blob_info->ttl         = stmt->GetInt   (3);
         blob_info->size        = stmt->GetInt   (4);
         blob_info->cnt_reads   = stmt->GetInt   (5);
+        blob_info->password    = stmt->GetString(6);
         return true;
     }
     return false;

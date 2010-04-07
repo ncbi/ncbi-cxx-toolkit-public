@@ -62,38 +62,38 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "key_ver", eNSPT_Int,  eNSPA_Optional, "1" },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "GET2",
         {&CNCMessageHandler::x_DoCmd_Get,
             "GET2",          eWithBlobLock, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "NW",      eNSPT_Id,   eNSPA_Obsolete | fNSPA_Match },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "RMV2",
         {&CNCMessageHandler::x_DoCmd_Remove2,
             "RMV2",          eWithBlobLock, eWrite },
         { { "key",     eNSPT_NCID, eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "HASB",          eNoBlobLock},
         { { "key",     eNSPT_NCID, eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "GetSIZe",       eWithBlobLock, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "STOR",
         {&CNCMessageHandler::x_DoCmd_IC_Store,
             "IC_STOR",       eWithBlobLock, eCreate},
@@ -102,9 +102,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "STRS",
         {&CNCMessageHandler::x_DoCmd_IC_StoreBlob,
             "IC_STRS",       eWithBlobLock, eCreate},
@@ -114,9 +114,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "READ",
         {&CNCMessageHandler::x_DoCmd_Get,
             "IC_READ",       eWithBlobLock, eRead  },
@@ -124,9 +124,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "IC_HASB",       eNoBlobLock},
@@ -134,9 +134,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "REMO",
         {&CNCMessageHandler::x_DoCmd_Remove2,
             "IC_REMOve",     eWithBlobLock, eWrite },
@@ -144,9 +144,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_IC_GetSize,
             "IC_GetSIZe",    eWithBlobLock, eRead  },
@@ -154,9 +154,9 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "pass",    eNSPT_Str,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "A?",     {&CNCMessageHandler::x_DoCmd_Alive,  "A?"} },
     { "HEALTH", {&CNCMessageHandler::x_DoCmd_Health, "HEALTH"} },
     { "PUT2",
@@ -209,12 +209,6 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "ISLK",
-        {&CNCMessageHandler::x_DoCmd_IsLock,
-            "ISLocKed",      eNoBlobLock},
-        { { "key",     eNSPT_NCID, eNSPA_Required },
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "GTOU",
         {&CNCMessageHandler::x_DoCmd_IC_GetBlobsTTL,
@@ -272,6 +266,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
     { "REMK",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_REMK"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
+    { "ISLK",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "ISLocKed"} },
     { NULL }
 };
 
@@ -585,6 +580,7 @@ CNCMessageHandler::x_AssignCmdParams(map<string, string>& params)
     m_BlobKey.clear();
     m_BlobSubkey.clear();
     m_BlobVersion = 0;
+    m_BlobPass.clear();
     m_KeyVersion = 1;
 
     string cache_name(kNCDefCacheName);
@@ -728,11 +724,11 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
                        "Password in the command doesn't match server settings.");
         }
 
-        m_BlobKey += m_BlobPass;
         m_BlobLock = m_Storage->GetBlobAccess(cmd_extra.blob_access,
                                               m_BlobKey,
                                               m_BlobSubkey,
-                                              m_BlobVersion);
+                                              m_BlobVersion,
+                                              m_BlobPass);
         x_SetState(eWaitForBlobLock);
     }
 }
@@ -763,13 +759,32 @@ inline bool
 CNCMessageHandler::x_WaitForBlobLock(void)
 {
     if (m_BlobLock->IsLockAcquired()) {
-        x_SetState(eCommandReceived);
+        x_SetState(m_BlobLock->IsAuthorized()? eCommandReceived: ePasswordFailed);
         return true;
     }
     else {
         m_Server->DeferConnectionProcessing(m_Socket);
         return false;
     }
+}
+
+inline bool
+CNCMessageHandler::x_ProcessBadPassword(void)
+{
+    if (m_BlobLock->GetAccessType() == eCreate) {
+        m_SockBuffer.WriteMessage("ERR:", "Error occurred while writing blob data");
+    }
+    else {
+        m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
+    }
+    m_SockBuffer.Flush();
+    m_DiagContext->SetRequestStatus(eStatus_BadPassword);
+    ERR_POST_X(5, "Incorrect password is used to access the blob");
+    x_SetState(eReadyForCommand);
+    if (m_BlobLock->GetAccessType() == eCreate) {
+        x_CloseConnection();
+    }
+    return true;
 }
 
 inline bool
@@ -853,7 +868,10 @@ CNCMessageHandler::x_FinishCommand(void)
     }
 
     if (x_IsFlagSet(fCommandPrinted)) {
-        if (was_blob_access) {
+        if (was_blob_access
+            &&  (cmd_status == eStatus_OK  ||  (cmd_status == eStatus_BadCmd
+                                                &&  blob_size != 0)))
+        {
             CDiagContext_Extra diag_extra = GetDiagContext().Extra();
             diag_extra.Print("size", NStr::UInt8ToString(blob_size));
         }
@@ -998,7 +1016,7 @@ CNCMessageHandler::x_StartWritingBlob(void)
 {
     if (!m_BlobLock->IsBlobExists()) {
         m_DiagContext->SetRequestStatus(eStatus_NotFound);
-        m_SockBuffer.WriteMessage("ERR:", "BLOB not found. " + m_BlobKey);
+        m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
         return;
     }
 
@@ -1073,6 +1091,7 @@ CNCMessageHandler::GetStateName(int state)
     case eReadyForCommand:     return "eReadyForCommand";
     case eCommandReceived:     return "eCommandReceived";
     case eWaitForBlobLock:     return "eWaitForBlobLock";
+    case ePasswordFailed:      return "ePasswordFailed";
     case eWaitForStorageBlock: return "eWaitForStorageBlock";
     case eWaitForServerBlock:  return "eWaitForServerBlock";
     case eReadBlobSignature:   return "eReadBlobSignature";
@@ -1117,6 +1136,9 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
                 break;
             case eWaitForBlobLock:
                 do_next_step = x_WaitForBlobLock();
+                break;
+            case ePasswordFailed:
+                do_next_step = x_ProcessBadPassword();
                 break;
             case eWaitForStorageBlock:
                 do_next_step = x_WaitForStorageBlock();
@@ -1164,8 +1186,15 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
                 }
                 m_SockBuffer.WriteMessage("ERR:",
                                          NStr::Replace(ex.what(), "\n", ";"));
-                x_SetState(eReadyForCommand);
-                do_next_step = true;
+                if (m_BlobLock.NotNull()  &&  m_BlobLock->GetAccessType() != eCreate)
+                {
+                    x_SetState(eReadyForCommand);
+                    do_next_step = true;
+                }
+                else {
+                    m_SockBuffer.Flush();
+                    x_CloseConnection();
+                }
             }
             else {
                 if (m_DiagContext.NotNull()
@@ -1323,7 +1352,7 @@ CNCMessageHandler::x_DoCmd_GetSize(void)
 {
     if (!m_BlobLock->IsBlobExists()) {
         m_DiagContext->SetRequestStatus(eStatus_NotFound);
-        m_SockBuffer.WriteMessage("ERR:", "BLOB not found. " + m_BlobKey);
+        m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
     }
     else {
         size_t size = m_BlobLock->GetBlobSize();
@@ -1345,20 +1374,6 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
     bool hb = m_Storage->IsBlobFamilyExists(m_BlobKey, m_BlobSubkey);
     m_SockBuffer.WriteMessage("OK:", NStr::IntToString((int)hb));
-    return true;
-}
-
-bool
-CNCMessageHandler::x_DoCmd_IsLock(void)
-{
-    m_BlobLock = m_Storage->GetBlobAccess(eRead, m_BlobKey);
-
-    if (m_BlobLock->IsLockAcquired()) {
-        m_SockBuffer.WriteMessage("OK:", "0");
-    }
-    else {
-        m_SockBuffer.WriteMessage("OK:", "1");
-    }
     return true;
 }
 
@@ -1406,11 +1421,10 @@ CNCMessageHandler::x_DoCmd_IC_Store(void)
 bool
 CNCMessageHandler::x_DoCmd_IC_StoreBlob(void)
 {
-    m_SockBuffer.WriteMessage("OK:", "");
-
     m_BlobLock->SetBlobTTL(m_BlobTTL);
     m_BlobLock->SetBlobOwner(m_ClientName);
 
+    m_SockBuffer.WriteMessage("OK:", "");
     if (m_StoreBlobSize != 0) {
         x_SetFlag(fReadExactBlobSize);
         x_StartReadingBlob();

@@ -159,8 +159,9 @@ public:
     /// Acquire access to the blob identified by key, subkey and version
     TNCBlobLockHolderRef GetBlobAccess(ENCBlobAccess access,
                                        const string& key,
-                                       const string& subkey = kEmptyStr,
-                                       int           version = 0);
+                                       const string& subkey,
+                                       int           version,
+                                       const string& password);
     /// Check if blob with given key and (optionally) subkey exists
     /// in database. More than one blob with given key/subkey can exist.
     bool IsBlobFamilyExists(const string& key, const string& subkey);
@@ -1113,14 +1114,15 @@ CNCBlobStorage::ReturnLockHolder(CNCBlobLockHolder* holder)
 inline TNCBlobLockHolderRef
 CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
                               const string& key,
-                              const string& subkey /* = kEmptyStr */,
-                              int           version /* = 0 */)
+                              const string& subkey,
+                              int           version,
+                              const string& password)
 {
     x_CheckReadOnly(access);
 
     bool need_initialize;
     TNCBlobLockHolderRef holder(x_GetLockHolder(&need_initialize));
-    holder->PrepareLock(key, subkey, version, access);
+    holder->PrepareLock(key, subkey, version, password, access);
     if (need_initialize)
         holder->InitializeLock();
     return holder;

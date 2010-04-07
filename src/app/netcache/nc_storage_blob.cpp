@@ -237,20 +237,22 @@ inline void
 CNCBlobLockHolder::x_OnLockValidated(void)
 {
     m_LockValid = true;
-    if (m_BlobAccess == eCreate) {
+    if (m_BlobAccess == eCreate  &&  m_RWHolder.NotNull()) {
         m_Storage->GetStat()->AddCreatedBlob();
     }
-    else if (!m_LockFromGC) {
-        x_EnsureBlobInfoRead();
-        ++m_BlobInfo.cnt_reads;
-        if (m_BlobAccess == eRead) {
-            m_Storage->WriteBlobInfo(m_BlobInfo);
+    else if (m_BlobExists) {
+        if (!m_LockFromGC) {
+            x_EnsureBlobInfoRead();
+            ++m_BlobInfo.cnt_reads;
+            if (m_BlobAccess == eRead) {
+                m_Storage->WriteBlobInfo(m_BlobInfo);
+            }
+            m_Storage->GetStat()->AddBlobReadAttempt(m_BlobInfo);
         }
-        m_Storage->GetStat()->AddBlobReadAttempt(m_BlobInfo);
-    }
-    else if (m_BlobAccess == eRead) {
-        x_EnsureBlobInfoRead();
-        m_Storage->GetStat()->AddBlobCached(m_BlobInfo);
+        else if (m_BlobAccess == eRead) {
+            x_EnsureBlobInfoRead();
+            m_Storage->GetStat()->AddBlobCached(m_BlobInfo);
+        }
     }
 
     if (!m_BlobExists) {
@@ -275,7 +277,11 @@ CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
     }
     m_BlobExists = moved == CNCBlobStorage::eBlobExists;
     if (m_BlobExists) {
-        if (m_BlobAccess == eCreate) {
+        x_EnsureBlobInfoRead();
+        if (m_Password != m_BlobInfo.password) {
+            m_Authorized = m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
+        }
+        else if (m_BlobAccess == eCreate) {
             // This would be a marker showing that meta-information about blob
             // shouldn't be read from database - it isn't needed and will be
             // re-written anyway (and it even will be impossible to read if
@@ -312,6 +318,7 @@ CNCBlobLockHolder::PrepareLock(const SNCBlobIdentity& identity,
     m_DeleteNotFinalized = false;
     m_LockInitialized    = false;
     m_LockFromGC         = true;
+    m_Authorized         = true;
 
     m_Storage->GetStat()->AddGCLockRequest();
 }
@@ -320,6 +327,7 @@ void
 CNCBlobLockHolder::PrepareLock(const string& key,
                                const string& subkey,
                                int           version,
+                               const string& password,
                                ENCBlobAccess access)
 {
     _ASSERT(!key.empty());
@@ -328,11 +336,13 @@ CNCBlobLockHolder::PrepareLock(const string& key,
     m_BlobInfo.key       = key;
     m_BlobInfo.subkey    = subkey;
     m_BlobInfo.version   = version;
+    m_Password           = password;
     m_BlobAccess         = access;
     m_DeleteNotFinalized = access == eCreate;
     m_SaveInfoOnRelease  = access != eRead;
     m_LockInitialized    = false;
     m_LockFromGC         = false;
+    m_Authorized         = true;
 
     m_Storage->GetStat()->AddLockRequest();
 }
@@ -410,6 +420,7 @@ CNCBlobLockHolder::x_RetakeCreateLock(void)
         if (m_Storage->CreateBlob(m_BlobInfo, &new_coords)) {
             m_LockKnown = m_BlobExists = true;
             m_BlobInfo.ttl = m_Storage->GetDefBlobTTL();
+            m_BlobInfo.password = m_Password;
             x_OnLockValidated();
             return;
         }

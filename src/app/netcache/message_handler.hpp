@@ -275,7 +275,6 @@ public:
     bool x_DoCmd_GetSize(void);
     bool x_DoCmd_GetOwner(void);
     bool x_DoCmd_HasBlob(void);
-    bool x_DoCmd_IsLock(void);
     bool x_DoCmd_Remove(void);
     bool x_DoCmd_Remove2(void);
     bool x_DoCmd_IC_GetBlobsTTL(void);
@@ -297,6 +296,7 @@ private:
         eCommandReceived,      ///< Command received but not parsed yet
         eWaitForBlobLock,      ///< Locking of blob needed for command is in
                                ///< progress
+        ePasswordFailed,       ///< Processing of bad password is needed
         eWaitForStorageBlock,  ///< Locking of storage needed for command is
                                ///< in progress
         eWaitForServerBlock,   ///< Locking of all storages in the server is
@@ -329,9 +329,12 @@ private:
     typedef int TStateFlags;
 
     /// Statuses of commands to be set in diagnostics' request context
+    /// Additional statuses can be taken from
+    /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     enum EHTTPStatus {
         eStatus_OK          = 200,  ///< Command is ok and execution is good
         eStatus_BadCmd      = 400,  ///< Command is incorrect
+        eStatus_BadPassword = 401,  ///< Bad password for accessing the blob
         eStatus_NotFound    = 404,  ///< Blob was not found
         eStatus_NotAllowed  = 405,  ///< Operation not allowed with current
                                     ///< settings
@@ -371,6 +374,8 @@ private:
     /// Process "waiting" for blob locking. In fact just shift to next state
     /// if lock is acquired and just return if not.
     bool x_WaitForBlobLock(void);
+    /// Process the situation when password provided to access blob is incorrect
+    bool x_ProcessBadPassword(void);
     /// Process "waiting" for storage blocking
     bool x_WaitForStorageBlock(void);
     /// Process "waiting" for blocking of all storages in the server
