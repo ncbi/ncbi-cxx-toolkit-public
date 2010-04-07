@@ -150,7 +150,9 @@ done
 # detect datatool program path
 datatool=
 
-if test -n "$NCBI"; then
+if test -x "$NCBI_DATATOOL_PATH/datatool"; then
+    datatool=$NCBI_DATATOOL_PATH/datatool
+else # elif test -n "$NCBI"; then
     ncbi_platform=`COMMON_DetectPlatform`
     inst_root=/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool
     version=`cat $top_srcdir/src/build-system/datatool_version.txt`
@@ -169,12 +171,9 @@ if test -z "$datatool"; then # keep looking
     if test -x "$bindir/datatool"; then
         datatool=$bindir/datatool
         COMMON_AddRunpath "$libdir"
-    elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
-        datatool=$NCBI_DATATOOL_PATH/datatool
-    elif test -x "$NCBI/c++/Release/bin/datatool"; then
-        datatool="$NCBI/c++/Release/bin/datatool"
     else
-        datatool=`command -v datatool`
+        echo "Unable to find datatool." >&2
+        exit 2
     fi
 fi
 
