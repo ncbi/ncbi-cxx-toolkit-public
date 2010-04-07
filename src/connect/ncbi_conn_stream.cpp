@@ -92,6 +92,12 @@ CONN CConn_IOStream::GetCONN(void) const
 }
 
 
+EIO_Status CConn_IOStream::Status(void) const
+{
+    return m_CSb ? m_CSb->Status() : eIO_NotSupported;
+}
+
+
 void CConn_IOStream::Close(void)
 {
     if (m_CSb)

@@ -172,6 +172,12 @@ public:
     ///   CONN, ncbi_connection.h
     CONN GetCONN(void) const;
 
+    /// @return
+    ///   Status of last CONN I/O
+    /// @sa
+    ///   CONN, ncbi_connection.h, EIO_Status
+    EIO_Status Status(void) const;
+
     /// Close CONNection free all internal buffers and underlying structures,
     /// render stream unusable for further I/O.
     void Close(void);
