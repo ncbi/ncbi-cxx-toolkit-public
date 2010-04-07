@@ -109,7 +109,7 @@ public:
         while (st != eIO_Success) {
             // Set backlog to high enough value because Windows actually
             // uses it and we have no reason not to buffer incoming connections
-            if ((st = Listen(m_Port, 100)) == eIO_Success) return;
+            if ((st = Listen(m_Port, 128)) == eIO_Success) return;
             IServer_ConnectionFactory::EListenAction action =
                 m_Factory->OnFailure(&m_Port);
             if (action == IServer_ConnectionFactory::eLAFail)

@@ -67,7 +67,7 @@ void CThreadedServer::StartListening(void)
     if (m_LSock.GetStatus() == eIO_Success) {
         return; // already listening; nothing to do
     }
-    if (m_LSock.Listen(m_Port) != eIO_Success) {
+    if (m_LSock.Listen(m_Port, 128) != eIO_Success) {
         NCBI_THROW(CThreadedServerException, eCouldntListen,
                    "CThreadedServer: Unable to start listening on "
                    + NStr::IntToString(m_Port) + ": "
@@ -103,7 +103,7 @@ void CThreadedServer::Run(void)
             } else {
                 pool.WaitForRoom();
             }
-            m_LSock.Listen(m_Port);
+            m_LSock.Listen(m_Port, 128);
             continue;
         }
         status = m_LSock.Accept(sock, m_AcceptTimeout);

@@ -661,7 +661,7 @@ static string s_UnixError(int error, string& message)
 //
 
 // The maximum length the queue of pending connections may grow to
-const int kListenQueueSize = 32;
+const int kListenQueueSize = 64;
 
 class CNamedPipeHandle
 {

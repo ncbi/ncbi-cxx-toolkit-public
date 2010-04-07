@@ -535,7 +535,7 @@ public:
     /// @param flags
     ///
     CListeningSocket(unsigned short port,
-                     unsigned short backlog = 5,
+                     unsigned short backlog = 64,
                      TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     /// Call Close(), then self-destruct
@@ -554,7 +554,7 @@ public:
     /// @param flags
     ///
     EIO_Status Listen(unsigned short port,
-                      unsigned short backlog = 5,
+                      unsigned short backlog = 64,
                       TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     /// @li <b>NOTE:</b> the created "CSocket" will own its underlying "SOCK"

@@ -74,11 +74,11 @@ public:
     CUNIXListeningSocket(void) { };
 
     CUNIXListeningSocket(const string&  filename,
-                         unsigned short backlog = 5,
+                         unsigned short backlog = 64,
                          TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     EIO_Status Listen(const string&  filename,
-                      unsigned short backlog = 5,
+                      unsigned short backlog = 64,
                       TSOCK_Flags    flags   = fSOCK_LogDefault);
 
 private:
