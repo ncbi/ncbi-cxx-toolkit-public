@@ -779,7 +779,7 @@ CNCMessageHandler::x_ProcessBadPassword(void)
     }
     m_SockBuffer.Flush();
     m_DiagContext->SetRequestStatus(eStatus_BadPassword);
-    ERR_POST_X(5, "Incorrect password is used to access the blob");
+    ERR_POST_X(5, Warning << "Incorrect password is used to access the blob");
     x_SetState(eReadyForCommand);
     if (m_BlobLock->GetAccessType() == eCreate) {
         x_CloseConnection();
