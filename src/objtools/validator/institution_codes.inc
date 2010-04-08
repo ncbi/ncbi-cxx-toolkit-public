@@ -3045,6 +3045,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LISU	s	Museu Nacional de Historia Natural",
 "LISVA	s	Ministerio da Educacao",
 "LIT	s	Okresni vlastivedne muzeum",
+"LIUSP<BRA>	s	Laboratorio de Ictiogenetica, Universidade de Sao Paulo",
 "LIV	s	Liverpool Museum",
 "LIVC	s	Liverpool Botanic Garden",
 "LIVCM	s	Liverpool County Museum",
