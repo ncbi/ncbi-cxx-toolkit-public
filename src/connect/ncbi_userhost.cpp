@@ -43,8 +43,8 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
 {
     CDiagContext& ctx = GetDiagContext();
     if ((flags & fDiag_AddUser) != 0  &&
-        ((flags & fDiag_OverrideExisting) != 0) ||
-        ctx.GetUsername().empty()) {
+        (((flags & fDiag_OverrideExisting) != 0) ||
+        ctx.GetUsername().empty())) {
         const int user_len = 256;
         char user[user_len];
         CORE_GetUsername(user, user_len);
@@ -53,8 +53,8 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
         }
     }
     if ((flags & fDiag_AddHost) != 0  &&
-        ((flags & fDiag_OverrideExisting) != 0)  ||
-        ctx.GetHostname().empty()) {
+        (((flags & fDiag_OverrideExisting) != 0)  ||
+        ctx.GetHostname().empty())) {
         const string& host = CSocketAPI::gethostname();
         if ( !host.empty() ) {
             GetDiagContext().SetHostname(host);

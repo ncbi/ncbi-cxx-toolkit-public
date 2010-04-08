@@ -358,7 +358,7 @@ const int kBlockTEA_BlockSize = kBlockTEA_KeySize*sizeof(Int4)*4;
 
 typedef Int4 TBlockTEA_Key[kBlockTEA_KeySize];
 
-#define TEA_MX ((z >> 5)^(y << 2)) + ((y >> 3)^(z << 4))^(sum^y) + (key[(p & 3)^e]^z);
+#define TEA_MX ((z >> 5)^(y << 2)) + (((y >> 3)^(z << 4))^(sum^y)) + (key[(p & 3)^e]^z);
 
 // Corrected Block TEA encryption
 void BlockTEA_Encode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
