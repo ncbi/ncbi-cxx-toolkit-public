@@ -2839,16 +2839,15 @@ public:
     /// Read file.
     ///
     /// @return
-    ///   On success, the number of bytes read (zero indicates end of file,
-    ///   or that 'count' is zero). On error, -1 is returned. 
-    ssize_t Read(void* buf, size_t count) const;
+    ///   The number of bytes read (zero indicates end of file, 
+    ///   or that 'count' is zero).
+    size_t Read(void* buf, size_t count) const;
 
     /// Write file.
     ///
     /// @return
-    ///   On success, the number of bytes written (zero indicates nothing
-    ///   was written).  On error, -1 is returned. 
-    ssize_t Write(const void* buf, size_t count) const;
+    ///   The number of bytes written. 
+    size_t Write(const void* buf, size_t count) const;
 
     /// Flush file buffers.
     void Flush(void) const;
@@ -2862,11 +2861,17 @@ public:
     /// Get file position.
     ///
     /// @return
-    ///   Current file position. On error, -1 is returned. 
-    ssize_t GetFilePos(void) const;
+    ///   Current file position.
+    size_t GetFilePos(void) const;
 
     /// Set file position.
     void SetFilePos(off_t offset, EPositionMoveMethod move_method) const;
+
+    /// Get file size.
+    ///
+    /// @return
+    ///   Size of the file.
+    size_t GetFileSize(void) const;
 
     /// Set new size for the file.
     ///
@@ -2895,6 +2900,7 @@ private:
     CFileIO(const CFileIO&);
     void operator=(const CFileIO&);
 };
+
 
 
 /////////////////////////////////////////////////////////////////////////////

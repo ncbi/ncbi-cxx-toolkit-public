@@ -111,7 +111,7 @@ BEGIN_NCBI_SCOPE
 #define F_ISSET(flags, mask) ((flags & (mask)) == (mask))
 
 // Default buffer size, used to read/write files
-const size_t kDefaultBufferSize = 32*1024;
+const size_t kDefaultBufferSize = 64*1024;
 
 // List of files for CFileDeleteAtExit class
 static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
@@ -2166,7 +2166,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 {
 #if defined(NCBI_OS_MSWIN)
 
-    // On MS Windows change we can change file owner only
+    // On MS Windows we can change file owner only
     return CWinSecurity::SetFileOwner(GetPath(), owner);
 
 #elif defined(NCBI_OS_UNIX)
@@ -2614,6 +2614,7 @@ Int8 CFile::GetLength(void) const
 #if !defined(NCBI_OS_MSWIN)
 
 // Close file handle
+//
 static int s_CloseFile(int fd)
 {
     int status = 0;
@@ -2630,36 +2631,34 @@ static int s_CloseFile(int fd)
     return 0; 
 }
 
-// Auxiliary function to copy a file
+
+// Copy file "src" to "dst"
+//
 static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
-    // Default buffer size
-    const size_t kDefaultBufSize = 64*1024;
+    int fs      = 0;
+    int fd      = 0;
+    int x_errno = 0;
     
-    int in;
-    int out;
-    int x_errno;
-    
-    if ((in = open(src, O_RDONLY)) == -1) {
+    if ((fs = open(src, O_RDONLY)) == -1) {
         return false;
     }
 
     struct stat st;
-    // NB:  Use extra "out = 0;" to distinguish the failures, when necessary.
-    if (fstat(in, &st) != 0  ||
-        (out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, st.st_mode & 0777))
-        == -1) {
+    // NB:  Use extra "fd = 0;" to distinguish the failures, when necessary.
+    if (fstat(fs, &st) != 0  ||
+        (fd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, st.st_mode & 0777)) == -1) {
         x_errno = errno;
-        s_CloseFile(in);
+        s_CloseFile(fs);
         errno = x_errno;
         return false;
     }
 
-    char* buf;
     // To prevent unnecessary memory (re-)allocations,
     // use the on-stack buffer if either the specified
     // "buf_size" or the size of the copied file is small.
     char  x_buf[4096];
+    char* buf;
 
     if (st.st_size <= 3 * sizeof(x_buf)) {
         // Use on-stack buffer for any files smaller than 3x of buffer size.
@@ -2667,7 +2666,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         buf = x_buf;
     } else {
         if (buf_size == 0) {
-            buf_size = kDefaultBufSize;
+            buf_size = kDefaultBufferSize;
         }
         // Use allocated buffer no bigger than the size of the file to copy.
         if (buf_size > st.st_size) {
@@ -2676,9 +2675,9 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
     }
 
-    x_errno = 0;
+    // Copy files
     do {
-        ssize_t n_read = read(in, buf, buf_size);
+        ssize_t n_read = read(fs, buf, buf_size);
         if (n_read == 0) {
             break;
         }
@@ -2689,9 +2688,10 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             x_errno = errno;
             break;
         }
+        // Write to the output file
         do {
             char* ptr = buf;
-            ssize_t n_written = write(out, ptr, n_read);
+            ssize_t n_written = write(fd, ptr, n_read);
             if (n_written == 0) {
                 x_errno = EINVAL;
                 break;
@@ -2709,8 +2709,8 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         while (n_read);
     } while (!x_errno);
 
-    s_CloseFile(in);
-    int err = s_CloseFile(out);
+    s_CloseFile(fs);
+    int err = s_CloseFile(fd);
     if (x_errno == 0) {
         x_errno = err;
     }
@@ -2817,62 +2817,122 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             return false;
         }
     }
-// #  This code don't need anymore.
-// #  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
-//    } else {
-//        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
-//            return false;
-//        }
+/*    
+    //  This code don't need anymore.
+    //  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
+    if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+        return false;
+    }
+*/
     return true;
 }
 
 
-bool CFile::Compare(const string& file, size_t buf_size) const
+bool CFile::Compare(const string& filename, size_t buf_size) const
 {
-    if ( CFile(GetPath()).GetLength() != CFile(file).GetLength() ) {
-        return false;
-    }
+    // To prevent unnecessary memory (re-)allocations,
+    // use the on-stack buffer if either the specified
+    // "buf_size" or the size of the compared files is small.
+    char   x_buf[4096*2];
+    size_t x_size = sizeof(x_buf)/2;
+    char*  buf1   = 0;
+    char*  buf2   = 0;
+    bool   equal  = false;
+    
+    try {
+        CFileIO f1;
+        CFileIO f2;
+        f1.Open(GetPath(), CFileIO::eOpen, CFileIO::eRead);
+        f2.Open(filename,  CFileIO::eOpen, CFileIO::eRead);
+ 
+        size_t s1 = f1.GetFileSize();
+        size_t s2 = f2.GetFileSize();
+        
+        // Files should have equal sizes
+        if (s1 != s2)
+            return false;
+        if (s1 == 0)
+            return true;
 
-    CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::binary | IOS_BASE::in);
-    CNcbiIfstream f2(file.c_str(),      IOS_BASE::binary | IOS_BASE::in);
-    if (!f1  ||  !f2) {
-        return false;
-    }
-
-    if ( !buf_size ) {
-        buf_size = kDefaultBufferSize;
-    }
-    char* buf1  = new char[buf_size];
-    char* buf2  = new char[buf_size];
-    bool  equal = true;
-
-    do {
-        // Fill buffers
-        f1.read(buf1, buf_size);
-        f2.read(buf2, buf_size);
-        if ( f1.gcount() != f2.gcount() ) {
-            equal = false;
-            break;
+        // Use on-stack buffer for any files smaller than 3x of buffer size.
+        if (s1 <= 3 * x_size) {
+            buf_size = x_size;
+            buf1 = x_buf;
+            buf2 = x_buf + x_size;
+        } else {
+            if (buf_size == 0) {
+                buf_size = kDefaultBufferSize;
+            }
+            // Use allocated buffer no bigger than the size of the file to compare.
+            // Align buffer in memory to 8 byte boundary.
+            if (buf_size > s1) {
+                buf_size = s1 + (8 - s1 % 8);
+            }
+            if (buf_size > x_size) {
+                buf1 = new char[buf_size*2];
+                buf2 = buf1 + buf_size;
+            } else {
+                buf1 = x_buf;
+                buf2 = x_buf + x_size;
+            }
         }
-        // Compare
-        if ( memcmp(buf1, buf2, f1.gcount()) != 0 ) {
-            equal = false;
-            break;
+
+        size_t n1 = 0;
+        size_t n2 = 0;
+        size_t s  = 0;
+
+        // Compare files
+        for (;;) {
+            ssize_t n;
+            if (n1 < buf_size) {
+                n = f1.Read(buf1 + n1, buf_size - n1);
+                if (n == 0) {
+                    break;
+                }
+                n1 += n;
+            }
+            if (n2 < buf_size) {
+                n = f2.Read(buf2 + n2, buf_size - n2);
+                if (n == 0) {
+                    break;
+                }
+                n2 += n;
+            }
+            size_t m = min(n1, n2);
+            if ( memcmp(buf1, buf2, m) != 0 ) {
+                break;
+            }
+            if (n1 > m) {
+                memmove(buf1, buf1 + m, n1 - m);
+                n1 -= m;
+            } else {
+                n1 = 0;
+            }
+            if (n2 > m) {
+                memmove(buf2, buf2 + m, n2 - m);
+                n2 -= m;
+            } else {
+                n2 = 0;
+            }
+            s += m;
         }
-    } while (f1.good()  &&  f2.good());
-
-    // Clean memory
-    delete[] buf1;
-    delete[] buf2;
-
-    // Both files should be in the EOF state
-    return equal  &&  f1.eof()  &&  f2.eof();
+        equal = (s1 == s);
+    }
+    catch (CFileErrnoException& ex) {
+        LOG_ERROR("Error comparing file " << 
+                  GetPath() << " and " << filename <<
+                  " : " << ex.what());
+    }
+    if (buf1 != x_buf) {
+        delete [] buf1;
+    }
+    return equal;
 }
 
 
-static inline char
-x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
-    char* buf, size_t buf_size, char*& pos, streamsize& sizeleft)
+static inline
+char x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
+               char* buf, size_t buf_size, char*& pos, streamsize& sizeleft)
 {
     char c = '\0';
     do {
@@ -2895,7 +2955,7 @@ x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
 }
 
 bool CFile::CompareTextContents(const string& file, ECompareText mode,
-                             size_t buf_size) const
+                                size_t buf_size) const
 {
     CNcbiIfstream f1(GetPath().c_str(), IOS_BASE::in);
     CNcbiIfstream f2(file.c_str(),      IOS_BASE::in);
@@ -2904,21 +2964,23 @@ bool CFile::CompareTextContents(const string& file, ECompareText mode,
     }
     char* buf1  = new char[buf_size];
     char* buf2  = new char[buf_size];
-    streamsize size1=0, size2=0;
-    char *pos1=0, *pos2=0;
+    streamsize size1 = 0, size2 = 0;
+    char *pos1 = 0, *pos2 = 0;
     bool  equal = true;
+
     while ( equal ) {
-        char c1 = x_GetChar(f1,mode,buf1,buf_size,pos1,size1);
-        char c2 = x_GetChar(f2,mode,buf2,buf_size,pos2,size2);
-        equal = c1 == c2;
+        char c1 = x_GetChar(f1, mode, buf1, buf_size, pos1, size1);
+        char c2 = x_GetChar(f2, mode, buf2, buf_size, pos2, size2);
+        equal = (c1 == c2);
         if (!c1 || !c2) {
             break;
         }
     }
     delete[] buf1;
     delete[] buf2;
-    return equal && f1.eof() && f2.eof();
+    return equal  &&  f1.eof()  &&  f2.eof();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -5000,7 +5062,11 @@ CFileIO::~CFileIO()
     if (m_Handle == kInvalidHandle) {
         return;
     }
-    Close();
+    try {
+        Close();
+    }
+    catch (CFileErrnoException&) {
+    }
 }
 
 
@@ -5139,17 +5205,23 @@ void CFileIO::Close(void)
 {
     if (m_CloseHandle) {
 #if defined(NCBI_OS_MSWIN)
-        CloseHandle(m_Handle);
+        if ( !::CloseHandle(m_Handle)) {
+            NCBI_THROW(CFileErrnoException, eFileIO, "CloseHandle() failed");
+        }
 #elif defined(NCBI_OS_UNIX)
-        close(m_Handle);
+        while (close(m_Handle) < 0) {
+            if (errno != EINTR) {
+                NCBI_THROW(CFileErrnoException, eFileIO, "close() failed");
+            }
+        }
 #endif
+        m_CloseHandle = false;
     }
     m_Handle = kInvalidHandle;
-    m_CloseHandle = false;
 }
 
 
-ssize_t CFileIO::Read(void* buf, size_t count) const
+size_t CFileIO::Read(void* buf, size_t count) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
@@ -5157,34 +5229,58 @@ ssize_t CFileIO::Read(void* buf, size_t count) const
         count = ULONG_MAX;
     }
     if ( ::ReadFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
-        return GetLastError() == ERROR_HANDLE_EOF? 0 : -1;
+        if (GetLastError() == ERROR_HANDLE_EOF) {
+            return 0;
+        }
+        NCBI_THROW(CFileErrnoException, eFileIO, "ReadFile() failed");
     }
+    return n;
 #elif defined(NCBI_OS_UNIX)
     ssize_t n = 0;
     while ((n = read(int(m_Handle), buf, count)) < 0) {
         if (errno != EINTR) {
-            return -1;
+            NCBI_THROW(CFileErrnoException, eFileIO, "read() failed");
         }
     }
-#endif
     return n;
+#endif
 }
 
 
-ssize_t CFileIO::Write(const void* buf, size_t count) const
+size_t CFileIO::Write(const void* buf, size_t count) const
 {
+    if (count == 0) {
+        return 0;
+    }
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
     if (count > ULONG_MAX) {
         count = ULONG_MAX;
     }
     if ( WriteFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
-        return -1;
+        NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
     }
-#elif defined(NCBI_OS_UNIX)
-    ssize_t n = write(int(m_Handle), buf, count);
-#endif
     return n;
+#elif defined(NCBI_OS_UNIX)
+    size_t n = count;
+    do {
+        char* ptr = (char*)(buf);
+        ssize_t n_written = write(int(m_Handle), ptr, n);
+        if (n_written == 0) {
+            NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
+        }
+        if ( n_written < 0 ) {
+            if (errno == EINTR) {
+                continue;
+            }
+            NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
+        }
+        n   -= n_written;
+        ptr += n_written;
+    }
+    while (n);
+    return count - n;
+#endif
 }
 
 
@@ -5196,7 +5292,7 @@ void CFileIO::Flush(void) const
 #elif defined(NCBI_OS_UNIX)
     res = (fsync(m_Handle) == 0);
 #endif
-    if ( !res ) {
+    if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO, "Cannot flush");
     }
 }
@@ -5211,7 +5307,7 @@ void CFileIO::SetFileHandle(TFileHandle handle)
 }
 
 
-ssize_t CFileIO::GetFilePos(void) const
+size_t CFileIO::GetFilePos(void) const
 {
 #if defined(NCBI_OS_MSWIN)
     LARGE_INTEGER ofs;
@@ -5220,15 +5316,17 @@ ssize_t CFileIO::GetFilePos(void) const
     pos.QuadPart = 0;
     BOOL res = SetFilePointerEx(m_Handle, ofs, &pos, FILE_CURRENT);
     if (res) {
-        return (ssize_t)pos.QuadPart;
+        return (size_t)pos.QuadPart;
     }
 #elif defined(NCBI_OS_UNIX)
     off_t pos = lseek(m_Handle, 0, SEEK_CUR);
     if (pos != -1) {
-        return (ssize_t)pos;
+        return (size_t)pos;
     }
 #endif
-    return -1;
+    NCBI_THROW(CFileErrnoException, eFileIO, "Cannot get file position");
+    // Unreachable
+    return 0;
 }
 
 
@@ -5252,6 +5350,7 @@ void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method) const
     LARGE_INTEGER ofs;
     ofs.QuadPart = offset;
     bool res = (SetFilePointerEx(m_Handle, ofs, NULL, from) == TRUE);
+
 #elif defined(NCBI_OS_UNIX)
     int from = 0;
     switch (move_method) {
@@ -5269,12 +5368,32 @@ void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method) const
     }
     bool res = (lseek(m_Handle, offset, from) != -1);
 #endif
-    if ( !res ) {
+    if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
-                   "SetFilePos() failed"
+                   "Cannot change file positon"
                    " (offset=" + NStr::Int8ToString(offset) +
                    ", method=" + NStr::IntToString(move_method) + ')');
     }
+}
+
+
+size_t CFileIO::GetFileSize(void) const
+{
+#if defined(NCBI_OS_MSWIN)
+    DWORD size_hi = 0;
+    DWORD size_lo = ::GetFileSize(m_Handle, &size_hi);
+    if (size_lo != INVALID_FILE_SIZE) {
+        return (size_t)((unsigned __int64)size_hi << 32) | size_lo;
+    }
+#elif defined(NCBI_OS_UNIX)
+    struct stat st;
+    if (fstat(m_Handle, &st) != -1) {
+        return st.st_size;
+    }
+#endif
+    NCBI_THROW(CFileErrnoException, eFileIO, "Cannot get file size");
+    // Unreachable
+    return 0;
 }
 
 
@@ -5313,15 +5432,21 @@ void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos) const
         }
     }
 #elif defined(NCBI_OS_UNIX)
-    bool res = (ftruncate(m_Handle, (off_t)length) != -1);
+    bool res = true;
+    while (ftruncate(m_Handle, (off_t)length) < 0) {
+        if (errno != EINTR) {
+            res = false;
+            break;
+        }
+    }
     // POSIX ftruncate() doesn't move file pointer
     if (res  &&  (pos != eCurrent)) {
         SetFilePos(0, pos);
     }
 #endif
-    if ( !res ) {
+    if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
-                   "SetFileSize() failed"
+                   "Cannot change file size"
                    " (length=" + NStr::UInt8ToString(length) + ')');
     }
 }
@@ -5370,8 +5495,11 @@ ERW_Result CFileReader::Read(void* buf, size_t count, size_t* bytes_read)
     if ( !count ) {
         return eRW_Success;
     }
-    ssize_t n = m_File.Read(buf, count);
-    if ( n == -1 ) {
+    size_t n;
+    try {
+        n = m_File.Read(buf, count);
+    }
+    catch (CFileErrnoException&) {
         return eRW_Error;
     }
     if ( bytes_read ) {
@@ -5424,8 +5552,11 @@ ERW_Result CFileWriter::Write(const void* buf,
     if ( !count ) {
         return eRW_Success;
     }
-    ssize_t n = m_File.Write(buf, count);
-    if ( n == -1 ) {
+    size_t n;
+    try {
+        n = m_File.Write(buf, count);
+    }
+    catch (CFileErrnoException&) {
         return eRW_Error;
     }
     if ( bytes_written ) {
@@ -5478,8 +5609,11 @@ ERW_Result CFileReaderWriter::Read(void* buf,
     if ( !count ) {
         return eRW_Success;
     }
-    ssize_t n = m_File.Read(buf, count);
-    if ( n == -1 ) {
+    size_t n;
+    try {
+        n = m_File.Read(buf, count);
+    }
+    catch (CFileErrnoException&) {
         return eRW_Error;
     }
     if ( bytes_read ) {
@@ -5504,8 +5638,11 @@ ERW_Result CFileReaderWriter::Write(const void* buf,
     if ( !count ) {
         return eRW_Success;
     }
-    ssize_t n = m_File.Write(buf, count);
-    if ( n == -1 ) {
+    size_t n;
+    try {
+        n = m_File.Write(buf, count);
+    }
+    catch (CFileErrnoException&) {
         return eRW_Error;
     }
     if ( bytes_written ) {
@@ -5693,8 +5830,7 @@ void CFileLock::Lock(EType type, off_t offset, size_t length)
 
 #endif
     if (!res) {
-        NCBI_THROW(CFileErrnoException, eFileLock, "CFileLock::Lock():"
-                   " Cannot lock");
+        NCBI_THROW(CFileErrnoException, eFileLock, "Cannot lock file");
     }
     m_IsLocked = true;
     return;
@@ -5731,8 +5867,7 @@ void CFileLock::Unlock(void)
 
 #endif
     if (!res) {
-        NCBI_THROW(CFileErrnoException, eFileLock, "CFileLock::Unlock():"
-                   " Cannot unlock");
+        NCBI_THROW(CFileErrnoException, eFileLock, "Cannot unlock");
     }
     m_IsLocked = false;
     return;

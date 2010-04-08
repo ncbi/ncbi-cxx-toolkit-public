@@ -1147,11 +1147,11 @@ static void s_TEST_MemoryFile(void)
 
 static void s_TEST_FileIO(void)
 {
-    const char*   filename = "test_fio.tmp";
-    const char    data[]   = "test data";
-    const ssize_t data_len = sizeof(data) - 1;
-    char          buf[100];
-    ssize_t       n;
+    const char*  filename = "test_fio.tmp";
+    const char   data[]   = "test data";
+    const size_t data_len = sizeof(data) - 1;
+    char         buf[100];
+    size_t       n;
 
     CFileIO fio;
     CFile   f(filename);
@@ -1176,9 +1176,11 @@ static void s_TEST_FileIO(void)
         assert( f.Exists() );
         n = fio.Write(data, data_len);
         assert( n == data_len );
-        // We opened file for write only
-        n = fio.Read(buf, sizeof(buf));
-        assert( n == -1 );
+        try {
+            // We opened file for write only
+            n = fio.Read(buf, sizeof(buf));
+            _TROUBLE;
+        } catch (CFileException&) { }
         fio.Close();
         // Check if the file exists now
         assert( f.Exists() );
@@ -1231,9 +1233,11 @@ static void s_TEST_FileIO(void)
         n = fio.Read(buf, sizeof(buf));
         assert( n == data_len );
         assert( memcmp(buf, data, data_len) == 0 );
-        // We opened file for reading only
-        n = fio.Write(data, data_len);
-        assert( n == -1 );
+        try {
+            // We opened file for reading only
+            n = fio.Write(data, data_len);
+            _TROUBLE;
+        } catch (CFileException&) { }
         fio.Close();
     }}
 
@@ -1273,7 +1277,8 @@ static void s_TEST_FileIO(void)
         assert( fio.GetFilePos() == (data_len*2-1) );
 
         // Go back and read data again
-        fio.SetFilePos(-data_len, CFileIO::eEnd);
+        off_t ofs = data_len;
+        fio.SetFilePos(-ofs, CFileIO::eEnd);
         n = fio.Read(buf, sizeof(buf));
         assert( n == data_len );
         assert( memcmp(buf, data, data_len) == 0 );
@@ -1315,6 +1320,7 @@ static void s_TEST_FileIO(void)
 }
 
 
+
 ////////////////////////////////
 // Test application
 //
@@ -1351,12 +1357,11 @@ int CTest::Run(void)
     s_TEST_Dir();
     // CSymLink
     s_TEST_Link();
-
     // CMemoryFile
     s_TEST_MemoryFile();
     // CFileIO
     s_TEST_FileIO();
-
+    
     cout << endl;
     cout << "TEST execution completed successfully!" << endl << endl;
     return 0;
