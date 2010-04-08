@@ -12,7 +12,7 @@ BEGIN
 
 EXPORTS Annotdesc, Annot-descr, Bioseq, GIBB-mol, Heterogen, MolInfo,
         Numbering, Pubdesc, Seq-annot, Seq-data, Seqdesc, Seq-descr, Seq-ext,
-        Seq-hist, Seq-inst, Seq-literal, Seqdesc, Delta-ext;
+        Seq-hist, Seq-inst, Seq-literal, Seqdesc, Delta-ext, Seq-gap;
 
 IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Seq-align FROM NCBI-Seqalign
