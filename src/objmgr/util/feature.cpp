@@ -978,27 +978,6 @@ namespace {
             next_parent_type = CSeqFeatData::eSubtype_bad;
             break;
         case CSeqFeatData::eSubtype_mRNA:
-            next_parent_type = CSeqFeatData::eSubtype_C_region;
-            break;
-        case CSeqFeatData::eSubtype_C_region:
-            next_parent_type = CSeqFeatData::eSubtype_D_loop;
-            break;
-        case CSeqFeatData::eSubtype_D_loop:
-            next_parent_type = CSeqFeatData::eSubtype_D_segment;
-            break;
-        case CSeqFeatData::eSubtype_D_segment:
-            next_parent_type = CSeqFeatData::eSubtype_J_segment;
-            break;
-        case CSeqFeatData::eSubtype_J_segment:
-            next_parent_type = CSeqFeatData::eSubtype_S_region;
-            break;
-        case CSeqFeatData::eSubtype_S_region:
-            next_parent_type = CSeqFeatData::eSubtype_V_region;
-            break;
-        case CSeqFeatData::eSubtype_V_region:
-            next_parent_type = CSeqFeatData::eSubtype_V_segment;
-            break;
-        case CSeqFeatData::eSubtype_V_segment:
             next_parent_type = CSeqFeatData::eSubtype_gene;
             break;
         default:
