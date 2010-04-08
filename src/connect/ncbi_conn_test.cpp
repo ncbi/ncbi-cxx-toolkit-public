@@ -467,8 +467,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     const char kFWSign[] =
         "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
 
-    _ASSERT(m_Fwd.size());
-
     TSOCK_Flags flags;
     char val[MAXHOSTNAMELEN + 1];
     ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
@@ -491,8 +489,9 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
              " to work correctly, your network must support every port"
              " in the range as documented above\n");
 
-    EIO_Status status;
     unsigned int n = 0;
+    _ASSERT(m_Fwd.size());
+    EIO_Status status = eIO_Success/*avoid a warning*/;
     NON_CONST_ITERATE(vector<CFWConnPoint>, cp, m_Fwd) {
         _ASSERT(cp->okay);
         PreCheck(eFirewallConnections, ++n,
@@ -557,11 +556,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
     const char* summary;
     if (status != eIO_Success) {
-        if (m_Stateless)
-            return status;
-        summary = "Firewall port check FAILED, switching to STATELESS mode\n"
-            "WARNING: Not all services may remain operational";
-        m_Forced = true;
+        if (!m_Stateless) {
+            summary = "Firewall port check FAILED, switching to STATELESS mode"
+                "\nWARNING: Not all services may remain operational";
+            m_Forced = true;
+        }
     } else
         summary = "All firewall ports checked OK";
 
