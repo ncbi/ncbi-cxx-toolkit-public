@@ -180,6 +180,29 @@ public:
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
 
+    /// Override all setters to incorporate cache invalidation.
+    void         SetNull(void);
+    void         SetEmpty(TEmpty& v);
+    TEmpty&      SetEmpty(void);
+    void         SetWhole(TWhole& v);
+    TWhole&      SetWhole(void);
+    void         SetInt(TInt& v);
+    TInt&        SetInt(void);
+    void         SetPacked_int(TPacked_int& v);
+    TPacked_int& SetPacked_int(void);
+    void         SetPnt(TPnt& v);
+    TPnt&        SetPnt(void);
+    void         SetPacked_pnt(TPacked_pnt& v);
+    TPacked_pnt& SetPacked_pnt(void);
+    void         SetMix(TMix& v);
+    TMix&        SetMix(void);
+    void         SetEquiv(TEquiv& v);
+    TEquiv&      SetEquiv(void);
+    void         SetBond(TBond& v);
+    TBond&       SetBond(void);
+    void         SetFeat(TFeat& v);
+    TFeat&       SetFeat(void);
+
     /// Compare locations if they are defined on the same single sequence
     /// or throw exception.
     int Compare(const CSeq_loc& loc) const;
@@ -493,6 +516,41 @@ void CSeq_loc::SetId(const CSeq_id& id)
     m_IdCache = nc_id.GetPointer();
 }
 
+
+inline
+void CSeq_loc::SetNull(void)
+{
+    InvalidateIdCache();
+    Tparent::SetNull();
+}
+
+#define DEFINE_NCBI_SEQ_LOC_SETTERS(x) \
+inline                                 \
+void CSeq_loc::Set##x(T##x& v)         \
+{                                      \
+    x_InvalidateCache();               \
+    Tparent::Set##x(v);                \
+}                                      \
+                                       \
+inline                                 \
+CSeq_loc::T##x& CSeq_loc::Set##x(void) \
+{                                      \
+    x_InvalidateCache();               \
+    return Tparent::Set##x();          \
+}
+
+DEFINE_NCBI_SEQ_LOC_SETTERS(Empty)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Whole)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Int)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Packed_int)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Pnt)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Packed_pnt)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Mix)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Equiv)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Bond)
+DEFINE_NCBI_SEQ_LOC_SETTERS(Feat)
+
+#undef DEFINE_NCBI_SEQ_LOC_SETTERS
 
 inline
 int CSeq_loc::Compare(const CSeq_loc& loc) const
