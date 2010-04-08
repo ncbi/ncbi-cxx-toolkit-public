@@ -19,6 +19,7 @@ internal/mapview/objects
 internal/blast/DistribDbSupport
 internal/blast/GumbelParams
 internal/gpipe/align_db
+misc/grid_cgi$
 misc/third_party_static
 misc/xmlwrapp
 objects
