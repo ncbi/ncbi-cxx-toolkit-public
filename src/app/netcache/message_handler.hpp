@@ -685,7 +685,7 @@ inline bool
 CNCMessageHandler::x_IsMonitored(void)
 {
     return IsVisibleDiagPostLevel(eDiag_Trace)
-           ||  m_Monitor  &&  m_Monitor->IsMonitorActive();
+           ||  (m_Monitor  &&  m_Monitor->IsMonitorActive());
 }
 
 inline void
