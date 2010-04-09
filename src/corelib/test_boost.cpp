@@ -1435,6 +1435,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     }
 
     // This path we'll be if something have gone wrong
+    x_CollectAllTests();
     x_EnableAllTests(false);
 
     return NULL;
