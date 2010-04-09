@@ -161,7 +161,11 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     PreCheck(eHttp, 0/*main*/,
              "Checking whether NCBI is HTTP accessible");
 
-    CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/index.html",
+    string host(net_info ? net_info->host : DEF_CONN_HOST);
+    string port(net_info  &&  net_info->port
+                ? ':' + NStr::UIntToString(net_info->port)
+                : kEmptyStr);
+    CConn_HttpStream http("http://" + host + port + "/Service/index.html",
                           net_info, kEmptyStr/*user_header*/,
                           0/*flags*/, m_Timeout);
     string temp;
@@ -172,11 +176,32 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         temp.clear();
         if (status == eIO_Timeout)
             temp += x_TimeoutMsg();
+        if (host != DEF_CONN_HOST  ||  !port.empty()) {
+            int n = 0;
+            temp += "Make sure that ";
+            if (host != DEF_CONN_HOST) {
+                n++;
+                temp += "[CONN]HOST=\"";
+                temp += host;
+                temp += port.empty() ? "\"" : "\" and ";
+            }
+            if (!port.empty()) {
+                n++;
+                temp += "[CONN]PORT=\"";
+                temp += port.c_str() + 1;
+                temp += '"';
+            }
+            _ASSERT(n);
+            temp += n > 1 ? " are" : " is";
+            temp += " redefined correctly\n";
+        }
         if (m_HttpProxy) {
             temp += "Make sure that the HTTP proxy server \'";
             temp += net_info->http_proxy_host;
-            temp += ':';
-            temp += NStr::UIntToString(net_info->http_proxy_port);
+            if (net_info->http_proxy_port) {
+                temp += ':';
+                temp += NStr::UIntToString(net_info->http_proxy_port);
+            }
             temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT}"
                 " is correct\n";
         } else {
