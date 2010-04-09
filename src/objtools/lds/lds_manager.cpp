@@ -133,15 +133,11 @@ void CLDS_Manager::Index(TFlags flags)
     CLDS_Set files_updated;
 
     CLDS_File aFile(*lds);
-    bool recurse = (flags & fRecurseMask) == fRecurseSubDirs;
-    bool control_sum = (flags & fControlSumMask) == fComputeControlSum;
-
     string file_path = m_SourcePath;
     if ( (flags & fPathMask) == fAbsolutePath ) {
         file_path = CFile::CreateAbsolutePath(file_path);
     }
-    aFile.SyncWithDir(file_path, &files_deleted, &files_updated,
-                      recurse, control_sum);
+    aFile.SyncWithDir(file_path, &files_deleted, &files_updated, flags);
 
     bool check_dup = (flags & fDupliucatesMask) == fCheckDuplicates;
     CLDS_Object obj(*lds, lds->GetObjTypeMap());

@@ -125,6 +125,10 @@ void CLDSIndexerApplication::Init(void)
         ("keep_path",
          "Keep original path to data files");
 
+    arg_desc->AddFlag
+        ("keep_other",
+         "Keep files outside source dir indexed.");
+
     arg_desc->AddOptionalKey
         ("dump_table", "table_name",
          "Dump LDS table content",
@@ -204,6 +208,11 @@ int CLDSIndexerApplication::Run(void)
         if ( mode == GB_RELEASE_MODE_FORCE ) {
             flags |= CLDS_Manager::fForceGBRelease;
         }
+    }
+
+    if ( args["keep_other"] ) {
+        flags = (flags & ~CLDS_Manager::fOtherFilesMask) |
+            CLDS_Manager::fKeepOtherFiles;
     }
 
     CLDS_Manager manager( source_path, lds_path, lds_alias);

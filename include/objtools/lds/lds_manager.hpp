@@ -105,9 +105,16 @@ public:
         fOriginalPath       = 1<<5,
         fPathMask           = 3<<5,
         
-        fDefaultFlags       = fRecurseSubDirs | fComputeControlSum |
-                              fIgnoreDuplicates | fGuessGBRelease |
-                              fAbsolutePath,
+        fDeleteOtherFiles   = 0<<7,
+        fKeepOtherFiles     = 1<<7,
+        fOtherFilesMask     = 1<<7,
+        
+        fDefaultFlags       = (fRecurseSubDirs |
+                               fComputeControlSum |
+                               fIgnoreDuplicates |
+                               fGuessGBRelease |
+                               fAbsolutePath |
+                               fDeleteOtherFiles)
     };
     typedef int TFlags;
 

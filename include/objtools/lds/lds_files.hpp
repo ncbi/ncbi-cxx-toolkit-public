@@ -54,10 +54,17 @@ class NCBI_LDS_EXPORT CLDS_File
 public:
     CLDS_File(CLDS_Database& db);
 
+    // Flags are defined in class CLDS_Manager.
+    typedef int TFlags;
+
     /// Scan the given directory, calculate timestamp and control sums for 
     /// every file, update "File" database table.
     /// Method returns set of row ids deleted from files, and set of row ids
-    /// to be updated.
+    /// to be updated. Flags are defined in class CLDS_Manager.
+    void SyncWithDir(const string& path, 
+                     CLDS_Set* deleted, 
+                     CLDS_Set* updated,
+                     TFlags    flags);
     void SyncWithDir(const string& path, 
                      CLDS_Set* deleted, 
                      CLDS_Set* updated,
@@ -82,8 +89,7 @@ private:
                        CLDS_Set*    deleted, 
                        CLDS_Set*    updated,
                        set<string>* scanned_files,
-                       bool recurse_subdirs,
-                       bool compute_check_sum);
+                       TFlags       flags);
 
 private:
     CLDS_File(const CLDS_File&);

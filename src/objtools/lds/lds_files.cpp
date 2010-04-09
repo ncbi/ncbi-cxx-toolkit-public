@@ -43,6 +43,7 @@
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <objtools/error_codes.hpp>
 
 
@@ -65,6 +66,21 @@ void CLDS_File::SyncWithDir(const string& path,
                             bool          recurse_subdirs,
                             bool          compute_check_sum)
 {
+    SyncWithDir(path, deleted, updated,
+                (recurse_subdirs?
+                 CLDS_Manager::fRecurseSubDirs:
+                 CLDS_Manager::fDontRecurse) |
+                (compute_check_sum?
+                 CLDS_Manager::fComputeControlSum:
+                 CLDS_Manager::fNoControlSum));
+}
+
+
+void CLDS_File::SyncWithDir(const string& path,
+                            CLDS_Set*     deleted,
+                            CLDS_Set*     updated,
+                            TFlags        flags)
+{
     CDir dir(path);
     if (!dir.Exists()) {
         string err("Directory is not found or access denied:");
@@ -81,17 +97,22 @@ void CLDS_File::SyncWithDir(const string& path,
                   deleted,
                   updated,
                   &files,
-                  recurse_subdirs,
-                  compute_check_sum);
+                  flags);
 
     // Scan the database, find deleted files
 
+    bool keep_other_files =
+        (flags & CLDS_Manager::fOtherFilesMask) == CLDS_Manager::fKeepOtherFiles;
     CBDB_FileCursor cur(m_FileDB);
     cur.SetCondition(CBDB_FileCursor::eFirst);
     while (cur.Fetch() == eBDB_Ok) {
         string fname(m_FileDB.file_name);
         set<string>::const_iterator fit = files.find(fname);
         if (fit == files.end()) { // not found
+            if ( keep_other_files && !NStr::StartsWith(fname, path) ) {
+                LOG_POST_X(1, Info << "LDS: Keeping other: " << fname);
+                continue;
+            }
             deleted->set(m_FileDB.file_id);
 
             LOG_POST_X(1, Info << "LDS: File removed: " << fname);
@@ -106,8 +127,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
                               CLDS_Set*     deleted,
                               CLDS_Set*     updated,
                               set<string>*  scanned_files,
-                              bool          recurse_subdirs,
-                              bool          compute_check_sum)
+                              TFlags        flags)
 {
     CDir dir(path);
     if (!dir.Exists()) {
@@ -124,6 +144,9 @@ void CLDS_File::x_SyncWithDir(const string& path,
     // Scan the directory, compare it against File table
     // Here I intentionally take only files, skipping sub-directories,
     // Second pass scans for sub-dirs and implements recursion
+
+    bool compute_check_sum =
+        (flags & CLDS_Manager::fControlSumMask) == CLDS_Manager::fComputeControlSum;
 
     {{
 
@@ -219,7 +242,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
     }}
 
-    if (!recurse_subdirs)
+    if ( (flags & CLDS_Manager::fRecurseMask) == CLDS_Manager::fDontRecurse )
         return;
 
     // Scan sub-directories
@@ -241,8 +264,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
                           deleted,
                           updated,
                           scanned_files,
-                          recurse_subdirs,
-                          compute_check_sum);
+                          flags);
 
         }
     } // ITERATE
