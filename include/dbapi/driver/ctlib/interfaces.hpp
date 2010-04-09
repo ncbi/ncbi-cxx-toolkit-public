@@ -335,6 +335,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class CTL_CmdBase;
     friend class CTL_SendDataCmd;
     friend class CTL_CursorCmdExpl;
+    friend class CTL_RowResult;
 
 protected:
     CTL_Connection(CTLibContext& cntx,
@@ -409,7 +410,7 @@ protected:
 
     bool IsDead(void) const
     {
-        return GetNativeConnection().IsDead();
+        return !IsValid()  ||  GetNativeConnection().IsDead();
     }
     void SetDead(bool flag = true)
     {
@@ -492,6 +493,12 @@ protected:
     void SetDead(bool flag = true)
     {
         GetConnection().SetDead(flag);
+    }
+    void CheckIsDead(void) const
+    {
+        if (IsDead()) {
+            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122010);
+        }
     }
 
     string GetDbgInfo(void) const
@@ -939,6 +946,17 @@ protected:
 
 protected:
     enum ENullValue {eNullUnknown, eIsNull, eIsNotNull};
+
+    bool IsDead(void) const
+    {
+        return GetConnection().IsDead();
+    }
+    void CheckIsDead(void) const
+    {
+        if (IsDead()) {
+            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122011);
+        }
+    }
 
     // data
     CTL_Connection*         m_Connect;

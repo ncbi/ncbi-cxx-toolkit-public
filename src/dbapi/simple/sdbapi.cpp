@@ -34,10 +34,14 @@
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "sdbapi_impl.hpp"
 
 BEGIN_NCBI_SCOPE
+
+#define NCBI_USE_ERRCODE_X  Dbapi_Sdbapi
 
 
 #define SDBAPI_CATCH_LOWLEVEL()                             \
@@ -60,6 +64,7 @@ CSDB_Exception::GetErrCodeString(void) const
     case eNotExist:     return "eNotExist";
     case eOutOfBounds:  return "eOutOfBounds";
     case eLowLevel:     return "eLowLevel";
+    case eWrongParams:  return "eWrongParams";
     default:            return CException::GetErrCodeString();
     }
 }
@@ -702,65 +707,10 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
 }
 
 
-CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string     /* = kEmptyStr */,
-                                           const string& config_section /* = kEmptyStr */)
-    : m_Url(url_string)
-{
-    if (url_string.empty()) {
-        m_Url.SetScheme("dbapi");
-        m_Url.SetIsGeneric(true);
-    }
-    if (m_Url.GetScheme() != "dbapi") {
-        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
-                       "Incorrect URL format - '" << url_string << "'");
-    }
-    if (config_section.empty()  ||  !CNcbiApplication::Instance())
-        return;
-
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    string val = reg.GetString(config_section, "user", kEmptyStr);
-    if (!val.empty())
-        m_Url.SetUser(val);
-    val = reg.GetString(config_section, "password", kEmptyStr);
-    if (!val.empty())
-        m_Url.SetPassword(val);
-    val = reg.GetString(config_section, "server", kEmptyStr);
-    if (!val.empty())
-        m_Url.SetHost(val);
-    val = reg.GetString(config_section, "port", kEmptyStr);
-    if (!val.empty())
-        m_Url.SetPort(val);
-    val = reg.GetString(config_section, "database", kEmptyStr);
-    if (!val.empty())
-        m_Url.SetPath(val);
-    val = reg.GetString(config_section, "args", kEmptyStr);
-    if (!val.empty())
-        m_Url.GetArgs().SetQueryString(val);
-}
-
-string
-CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
-                                                /* = eAllowIncomplete */) const
-{
-    if (allow_incomplete == eThrowIfIncomplete
-        &&  (m_Url.GetHost().empty()  ||  m_Url.GetUser().empty()
-             ||  m_Url.GetPassword().empty()
-             // Missing database actually has pretty legal usage when current
-             // database is set per server defaults.
-             /* ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/" */))
-    {
-        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
-                       "Connection parameters miss one of essential parts"
-                       << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
-    }
-    return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
-}
-
-
 class CDataSourceInitializer
 {
 public:
-    CDataSourceInitializer(const CDBConnParams& params)
+    CDataSourceInitializer(void)
     {
         CNcbiRegistry* reg = NULL;
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -770,6 +720,9 @@ public:
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
 
+        CDBConnParamsBase params;
+        params.SetDriverName("ftds");
+        params.SetEncoding(eEncoding_UTF8);
         IDataSource* ds = CDriverManager::GetInstance().MakeDs(params);
         I_DriverContext* ctx = ds->GetDriverContext();
         ctx->PushCntxMsgHandler(new CDB_UserHandler_Exception, eTakeOwnership);
@@ -778,36 +731,444 @@ public:
 };
 
 
+static CSafeStaticPtr<CDataSourceInitializer> ds_init;
+
+
+static impl::CDriverContext*
+s_GetDBContext(void)
+{
+    ds_init.Get();
+    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
+    return static_cast<impl::CDriverContext*>(ds->GetDriverContext());
+}
+
+
+string
+CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
+                                                /* = eAllowIncomplete */) const
+{
+    if (allow_incomplete == eThrowIfIncomplete
+        &&  (m_Url.GetHost().empty()  ||  m_Url.GetUser().empty()
+             ||  m_Url.GetPassword().empty()
+             ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
+    {
+        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
+                       "Connection parameters miss one of essential parts"
+                       << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
+    }
+    return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
+}
+
+void
+CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
+{
+    impl::SDBConfParams conf_params;
+    bool found_dummy = false;
+    s_GetDBContext()->ReadDBConfParams(m_Url.GetHost(), &conf_params);
+    params->SetServerName  (conf_params.IsServerSet()  ? conf_params.server
+                                                       : m_Url.GetHost());
+    params->SetUserName    (conf_params.IsUsernameSet()? conf_params.username
+                                                       : m_Url.GetUser());
+    params->SetPassword    (conf_params.IsPasswordSet()? conf_params.password
+                                                       : m_Url.GetPassword());
+    if (conf_params.IsDatabaseSet()) {
+        params->SetDatabaseName(conf_params.database);
+    }
+    else {
+        string path(m_Url.GetPath());
+        if (!path.empty())
+            path.erase(0, 1);
+        params->SetDatabaseName(path);
+    }
+    if (conf_params.IsPortSet()  &&  !conf_params.port.empty()) {
+        params->SetPort(NStr::StringToInt(conf_params.port));
+    }
+    else if (!m_Url.GetPort().empty()) {
+        params->SetPort(NStr::StringToInt(m_Url.GetPort()));
+    }
+    if (conf_params.IsLoginTimeoutSet()) {
+        if (conf_params.login_timeout.empty()) {
+            params->SetParam("login_timeout", "default");
+        }
+        else {
+            params->SetParam("login_timeout", conf_params.login_timeout);
+        }
+    }
+    else {
+        params->SetParam("login_timeout",
+                         GetArgs().GetValue("login_timeout", &found_dummy));
+    }
+    if (conf_params.IsIOTimeoutSet()) {
+        if (conf_params.io_timeout.empty()) {
+            params->SetParam("io_timeout", "default");
+        }
+        else {
+            params->SetParam("io_timeout", conf_params.io_timeout);
+        }
+    }
+    else {
+        params->SetParam("io_timeout",
+                         GetArgs().GetValue("io_timeout", &found_dummy));
+    }
+    if (conf_params.IsSingleServerSet()) {
+        if (conf_params.single_server.empty()) {
+            params->SetParam("single_server", "default");
+        }
+        else {
+            params->SetParam("single_server",
+                (NStr::StringToBool(conf_params.single_server)? "true": "false"));
+        }
+    }
+    else {
+        params->SetParam("single_server",
+                         GetArgs().GetValue("exclusive_server", &found_dummy));
+    }
+    if (conf_params.IsPooledSet()) {
+        if (conf_params.is_pooled.empty()) {
+            params->SetParam("is_pooled", "default");
+        }
+        else {
+            params->SetParam("is_pooled",
+                (NStr::StringToBool(conf_params.is_pooled)? "true": "false"));
+        }
+    }
+    else {
+        params->SetParam("is_pooled",
+                         GetArgs().GetValue("use_conn_pool", &found_dummy));
+    }
+    if (conf_params.IsPoolMinSizeSet()) {
+        if (conf_params.pool_minsize.empty()) {
+            params->SetParam("pool_minsize", "default");
+        }
+        else {
+            params->SetParam("pool_minsize", conf_params.pool_minsize);
+        }
+    }
+    else {
+        params->SetParam("pool_minsize",
+                         GetArgs().GetValue("conn_pool_minsize", &found_dummy));
+    }
+    if (conf_params.IsPoolMaxSizeSet()) {
+        if (conf_params.pool_maxsize.empty()) {
+            params->SetParam("pool_maxsize", "default");
+        }
+        else {
+            params->SetParam("pool_maxsize", conf_params.pool_maxsize);
+        }
+    }
+    else {
+        params->SetParam("pool_maxsize",
+                         GetArgs().GetValue("conn_pool_maxsize", &found_dummy));
+    }
+
+    CUrlArgs conf_args(conf_params.args);
+    const CUrlArgs::TArgs& args = m_Url.GetArgs().GetArgs();
+    ITERATE(CUrlArgs::TArgs, it, args) {
+        const string& param_name  = it->name;
+        const string& param_value = it->value;
+        if (param_name == "login_timeout"
+            ||  param_name == "io_timeout"
+            ||  param_name == "exclusive_server"
+            ||  param_name == "use_conn_pool"
+            ||  param_name == "conn_pool_minsize"
+            ||  param_name == "conn_pool_maxsize")
+        {
+            continue;
+        }
+        if (conf_args.IsSetValue(param_name))
+            params->SetParam(param_name, conf_args.GetValue(param_name));
+        else
+            params->SetParam(param_name, param_value);
+    }
+
+    params->SetParam("do_not_read_conf", "true");
+}
+
+
+bool
+CSDBAPI::Init(void)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (!app)
+        return true;
+    const IRegistry& reg = app->GetConfig();
+    bool result = true;
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+    ITERATE(list<string>, it, sections) {
+        const string& name = *it;
+        if (name.size() <= 10
+            ||  NStr::CompareCase(name, name.size() - 10, 10, ".dbservice") != 0)
+        {
+            continue;
+        }
+        impl::CDriverContext* ctx = s_GetDBContext();
+        CDBConnParamsBase lower_params;
+        CSDB_ConnectionParam conn_params(name.substr(0, name.size() - 10));
+        conn_params.x_FillLowerParams(&lower_params);
+        if (lower_params.GetParam("is_pooled") == "true") {
+            result &= ctx->SatisfyPoolMinimum(lower_params);
+        }
+    }
+    return result;
+}
+
+
+typedef list< AutoPtr<IConnection> >  TConnsList;
+
+struct SMirrorInfo
+{
+    AutoPtr<CDBConnParamsBase>  conn_params;
+    list<string>                servers;
+    TConnsList                  conns;
+    string                      master;
+};
+
+typedef map<string, SMirrorInfo>  TMirrorsDataMap;
+
+
+static TMirrorsDataMap s_MirrorsData;
+
+
+class CUpdMirrorServerParams: public CDBConnParamsBase
+{
+public:
+    CUpdMirrorServerParams(const CDBConnParams& other)
+        : m_Other(other)
+    {}
+
+    ~CUpdMirrorServerParams(void)
+    {}
+
+    virtual Uint4 GetProtocolVersion(void) const
+    {
+        return m_Other.GetProtocolVersion();
+    }
+
+    virtual EEncoding GetEncoding(void) const
+    {
+        return m_Other.GetEncoding();
+    }
+
+    virtual string GetServerName(void) const
+    {
+        return CDBConnParamsBase::GetServerName();
+    }
+
+    virtual string GetDatabaseName(void) const
+    {
+        return m_Other.GetDatabaseName();
+    }
+
+    virtual string GetUserName(void) const
+    {
+        return m_Other.GetUserName();
+    }
+
+    virtual string GetPassword(void) const
+    {
+        return m_Other.GetPassword();
+    }
+
+    virtual EServerType GetServerType(void) const
+    {
+        return m_Other.GetServerType();
+    }
+
+    virtual Uint4 GetHost(void) const
+    {
+        return m_Other.GetHost();
+    }
+
+    virtual Uint2 GetPort(void) const
+    {
+        return m_Other.GetPort();
+    }
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const
+    {
+        return m_Other.GetConnValidator();
+    }
+
+    virtual string GetParam(const string& key) const
+    {
+        string result(CDBConnParamsBase::GetParam(key));
+        if (result.empty())
+            return m_Other.GetParam(key);
+        else
+            return result;
+    }
+
+private:
+    const CDBConnParams& m_Other;
+};
+
+
+CSDBAPI::EMirrorStatus
+CSDBAPI::UpdateMirror(const string& dbservice,
+                      list<string>* servers /* = NULL */,
+                      string*       error_message /* = NULL */)
+{
+    if (dbservice.empty()) {
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "Mirrored database service name cannot be empty");
+    }
+
+    SMirrorInfo& mir_info = s_MirrorsData[dbservice];
+    if (!mir_info.conn_params.get()) {
+        mir_info.conn_params.reset(new CDBConnParamsBase);
+    }
+    CDBConnParamsBase& conn_params = *mir_info.conn_params.get();
+    list<string>& serv_info = mir_info.servers;
+    TConnsList& conns = mir_info.conns;
+
+    IDBConnectionFactory* i_factory
+                = CDbapiConnMgr::Instance().GetConnectionFactory().GetPointer();
+    if (conn_params.GetServerName().empty()) {
+        CSDB_ConnectionParam sdb_params(dbservice);
+        sdb_params.x_FillLowerParams(&conn_params);
+        if (conn_params.GetParam("single_server") != "true") {
+            NCBI_THROW(CSDB_Exception, eInconsistent,
+                       "UpdateMirror cannot be used when configuration file "
+                       "doesn't have exclusive_server=true");
+        }
+        CDBConnectionFactory* factory
+                              = dynamic_cast<CDBConnectionFactory*>(i_factory);
+        if (!factory) {
+            NCBI_THROW(CSDB_Exception, eInconsistent,
+                       "UpdateMirror cannot work with non-standard "
+                       "connection factory");
+        }
+    }
+    if (servers)
+        servers->clear();
+    if (error_message)
+        error_message->clear();
+
+    CDBConnectionFactory* factory = static_cast<CDBConnectionFactory*>(i_factory);
+    string service_name(conn_params.GetServerName());
+    string db_name(conn_params.GetDatabaseName());
+    bool need_reread_servers = false;
+    bool servers_reread = false;
+    bool has_master = false;
+    int cnt_switches = 0;
+
+    do {
+        if (conns.empty()) {
+            factory->GetServersList(db_name, service_name, &serv_info);
+            ITERATE(list<string>, it, serv_info) {
+                conns.push_back(AutoPtr<IConnection>());
+            }
+            servers_reread = true;
+        }
+        else if (need_reread_servers) {
+            
+            servers_reread = true;
+        }
+        if (conns.empty()) {
+            factory->WorkWithSingleServer(db_name, service_name, kEmptyStr);
+            ERR_POST_X(3, "No servers for service '" << service_name
+                          << "' are available");
+            if (error_message) {
+                *error_message = "No servers for service '" + service_name
+                                 + "' are available";
+            }
+            return eMirror_Unavailable;
+        }
+
+        list<string>::iterator it_srv = serv_info.end();
+        TConnsList::iterator it_conn = conns.end();
+        while (it_srv != serv_info.begin()) {
+            --it_srv;
+            --it_conn;
+            AutoPtr<IConnection>& conn = *it_conn;
+            if (!conn.get()) {
+                IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
+                conn = ds->CreateConnection(eTakeOwnership);
+            }
+            if (!conn->IsAlive()) {
+                CUpdMirrorServerParams serv_params(conn_params);
+                serv_params.SetServerName(*it_srv);
+                serv_params.SetParam("is_pooled", "false");
+                serv_params.SetParam("do_not_dispatch", "true");
+                try {
+                    conn->Connect(serv_params);
+                }
+                catch (CDB_Exception& ex) {
+                    ERR_POST_X(1, Info << "Error connecting to the server '"
+                                       << *it_srv << "': " << ex);
+                    conn->Close();
+                    need_reread_servers = true;
+                }
+            }
+            bool success = false;
+            if (conn->IsAlive()) {
+                try {
+                    AutoPtr<IStatement> stmt(conn->GetStatement());
+                    stmt->ExecuteUpdate("use " + db_name);
+                    success = true;
+                }
+                catch (CDB_Exception& ex) {
+                    // success is already false
+                    ERR_POST_X(2, Info << "Check for mirror principal state failed: "
+                                       << ex);
+                }
+            }
+            if (!success  &&  *it_srv == mir_info.master) {
+                factory->WorkWithSingleServer(db_name, service_name, kEmptyStr);
+                mir_info.master.clear();
+                need_reread_servers = true;
+                ERR_POST_X(4, "Master server '" << *it_srv << " became inaccessible");
+            }
+            else if (success  &&  *it_srv != mir_info.master) {
+                factory->WorkWithSingleServer(db_name, service_name, *it_srv);
+                s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"));
+                s_GetDBContext()->SatisfyPoolMinimum(conn_params);
+
+                ERR_POST_X(5, "Mirror server '" << *it_srv << " became accessible. "
+                              "Switching the master.");
+                has_master = true;
+                mir_info.master = *it_srv;
+                serv_info.push_front(*it_srv);
+                conns.push_front(conn);
+                list<string>::iterator it_srv_next = it_srv++;
+                TConnsList::iterator it_conn_next = it_conn++;
+                serv_info.erase(it_srv);
+                conns.erase(it_conn);
+                it_srv = --it_srv_next;
+                it_conn = --it_conn_next;
+                need_reread_servers = true;
+
+                if (++cnt_switches == 10) {
+                    NCBI_THROW(CSDB_Exception, eInconsistent,
+                               "Mirror database switches too frequently or "
+                               "it isn't mirrored");
+                }
+            }
+        }
+    }
+    while (need_reread_servers  &&  !servers_reread);
+
+    if (servers)
+        servers->insert(servers->begin(), serv_info.begin(), serv_info.end());
+    if (!has_master) {
+        if (error_message)
+            *error_message = "All database instances are inaccessible";
+        return eMirror_Unavailable;
+    }
+    return cnt_switches == 0? eMirror_Steady: eMirror_NewMaster;
+}
+
+
+
 inline
 CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
 {
-    string server(params.Get(CSDB_ConnectionParam::eServer));
-    string port(params.Get(CSDB_ConnectionParam::ePort));
-    if (!port.empty()) {
-        server += ":";
-        server += port;
-    }
-    CDBDefaultConnParams conn_params(server,
-                                     params.Get(CSDB_ConnectionParam::eUsername),
-                                     params.Get(CSDB_ConnectionParam::ePassword));
-    string db_name(params.Get(CSDB_ConnectionParam::eDatabase));
-    if (!db_name.empty()) {
-        _ASSERT(db_name[0] == '/');
-        conn_params.SetDatabaseName(db_name.substr(1));
-    }
-    conn_params.SetDriverName("ftds");
-    conn_params.SetEncoding(eEncoding_UTF8);
-
-    const CUrlArgs::TArgs& args = params.GetArgs().GetArgs();
-    ITERATE(CUrlArgs::TArgs, it, args) {
-        conn_params.SetParam(it->name, it->value);
-    }
-
-    static CDataSourceInitializer ds_init(conn_params);
-    IDataSource* ds = CDriverManager::GetInstance().MakeDs(conn_params);
-
+    CDBConnParamsBase lower_params;
+    params.x_FillLowerParams(&lower_params);
+    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
     AutoPtr<IConnection> conn = ds->CreateConnection();
-    conn->Connect(conn_params);
+    conn->Connect(lower_params);
     m_Conn.Reset(new TConnHolder(conn.release()));
 }
 
@@ -852,9 +1213,8 @@ CDatabase::CDatabase(const CSDB_ConnectionParam& params)
     : m_Params(params)
 {}
 
-CDatabase::CDatabase(const string& url_string,
-                     const string& config_section /* = kEmptyStr */)
-    : m_Params(url_string, config_section)
+CDatabase::CDatabase(const string& url_string)
+    : m_Params(url_string)
 {}
 
 CDatabase::CDatabase(const CDatabase& db)

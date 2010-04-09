@@ -83,6 +83,13 @@ public:
     unsigned int GetLoginTimeout(void) const;
     void SetLoginTimeout(unsigned int timeout);
 
+    void GetServersList(const string& validator_name,
+                        const string& service_name,
+                        list<string>* serv_list);
+    void WorkWithSingleServer(const string& validator_name,
+                              const string& service_name,
+                              const string& server);
+
 protected:
     // Data
     class CRuntimeData
@@ -136,6 +143,7 @@ protected:
     friend class CRuntimeData;
 
     CRuntimeData& GetRuntimeData(const CRef<IConnValidator> validator);
+    CRuntimeData& GetRuntimeData(const string& validator_name);
 
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(

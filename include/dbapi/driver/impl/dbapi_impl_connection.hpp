@@ -123,6 +123,10 @@ public:
     /// it just checks the status of connection which was set by the last
     /// i/o operation)
     virtual bool IsAlive(void) = 0;
+    bool IsValid(void) const
+    {
+        return m_Valid;
+    }
 
     /// These methods:  LangCmd(), RPC(), BCPIn(), Cursor() and SendDataCmd()
     /// create and return a "command" object, register it for later use with
@@ -153,6 +157,10 @@ public:
 
     /// Reset the connection to the "ready" state (cancel all active commands)
     virtual bool Refresh(void) = 0;
+    void Invalidate(void)
+    {
+        m_Valid = false;
+    }
 
     /// Get the server name, user login name, and password
     const string& ServerName(void) const;
@@ -278,6 +286,7 @@ private:
     string         m_Database;
     const string   m_Pool;
     const bool     m_Reusable;
+    bool           m_Valid;
     const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
     const bool     m_SecureLogin;
     bool           m_Opened;

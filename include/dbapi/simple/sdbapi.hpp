@@ -41,6 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSDBAPI;
 class CDatabase;
 class CDatabaseImpl;
 class CBulkInsertImpl;
@@ -68,8 +69,9 @@ public:
                         ///< limits of requested type
         eNotExist,      ///< Field/parameter with given name/position does not
                         ///< exist
-        eLowLevel       ///< Exception from low level DBAPI was re-thrown with
+        eLowLevel,      ///< Exception from low level DBAPI was re-thrown with
                         ///< this exception class
+        eWrongParams    ///< Wrong parameters provided to the method
     };
 
     /// Translate from the error code value to its string representation.
@@ -564,6 +566,8 @@ CBulkInsert& NullValue(CBulkInsert& bi);
 CBulkInsert& EndRow(CBulkInsert& bi);
   
 
+class CDBConnParamsBase;
+
 /// Convenience class to initialize database connection parameters from
 /// URL-like strings and/or application configuration and/or hard-code.
 class CSDB_ConnectionParam
@@ -575,19 +579,38 @@ public:
     /// @param url_string
     ///   Get connection parameters from this URL-like string, formatted as:
     ///   dbapi://[username[:password]@][server[:port]][/database][?k1=v1;...]
+    ///   or
+    ///   dbapi://[username[:password]@][service][/database][?k1=v1;...]
+    ///   or
+    ///   service
+    ///
     ///   Each token must be URL-encoded.
-    /// @param config_section
-    ///   Look in this section of the application configuration for the
-    ///   following entries, and update the connection parameters (overriding
-    ///   parameters from 'url_string' if they conflict):
-    ///   - user
+    ///
+    ///   Also application configuration is looked for section with name
+    ///   "service.dbservice" ("service" can be passed to the ctor or to Set()
+    ///   method). If such section exists then the following parameters are
+    ///   read from it:
+    ///   - username
     ///   - password
-    ///   - server
+    ///   - service
     ///   - port
     ///   - database
     ///   - args
-    CSDB_ConnectionParam(const string& url_string     = kEmptyStr,
-                         const string& config_section = kEmptyStr);
+    ///   - login_timeout
+    ///   - io_timeout
+    ///   - exclusive_server
+    ///   - use_conn_pool
+    ///   - conn_pool_minsize
+    ///   - conn_pool_maxsize
+    ///
+    ///   Last 6 parameters can be given also via "args" string in configuration
+    ///   file or after question mark in the url form. But individual parameters
+    ///   in ini file always override ones in "args" string and anything in
+    ///   ini file overrides the anything given in application (via ctor or
+    ///   Set() method). Note: if "args" string is given in ini file it overrides
+    ///   arguments given in the url to ctor completely, not on param-by-param
+    ///   base.
+    CSDB_ConnectionParam(const string& url_string = kEmptyStr);
 
     /// Whether to throw an exception if the connection parameters are
     /// incomplete, in the sense that at least one of the "essential" ('user',
@@ -614,9 +637,16 @@ public:
     enum EParam {
         eUsername,
         ePassword,
-        eServer,    ///< Database server (or alias, including LBSM service)
+        eService,   ///< Database server (or alias, including LBSM service)
         ePort,      ///< Database server's port
-        eDatabase
+        eDatabase,
+        eLoginTimeout,
+        eIOTimeout,
+        eExclusiveServer,
+        eUseConnPool,
+        eConnPoolMinSize,
+        eConnPoolMaxSize,
+        eArgsString
     };
 
     /// Get one of the "essential" database connection parameters.
@@ -642,6 +672,13 @@ public:
     CSDB_ConnectionParam& operator= (const CSDB_ConnectionParam& param);
 
 private:
+    friend class CSDBAPI;
+    friend class CDatabaseImpl;
+
+    /// Fill parameters for low-level DBAPI from what is set here and in the
+    /// configuration file.
+    void x_FillLowerParams(CDBConnParamsBase* params) const;
+
     /// Url storing all parameters
     mutable CUrl m_Url;
 };
@@ -658,10 +695,9 @@ public:
     /// Create database object for particular database parameters
     CDatabase(const CSDB_ConnectionParam& param);
     /// Create database object and take database parameters from given URL and
-    /// section of application configuration. See CSDB_ConnectionParam ctor
+    /// application configuration. See CSDB_ConnectionParam ctor
     /// for URL format and rules of overriding.
-    CDatabase(const string& url_string,
-              const string& config_section = kEmptyStr);
+    CDatabase(const string& url_string);
     ~CDatabase(void);
 
     /// Copying of database object.
@@ -712,10 +748,64 @@ private:
 };
 
 
+class CSDBAPI
+{
+public:
+    /// Initialize SDBAPI.
+    /// Creates minimum number of connections required for each pool configured
+    /// in application's configuration file. If openning of some of those
+    /// connections failed then method will return FALSE, otherwise TRUE.
+    static bool Init(void);
+
+    /// @sa UpdateMirror
+    enum EMirrorStatus {
+        eMirror_Steady,      ///< Mirror is working on the same server as before
+        eMirror_NewMaster,   ///< Switched to a new master
+        eMirror_Unavailable  ///< All databases in the mirror are unavailable
+    };
+
+    /// Check for master/mirror switch. If switch is detected or if all databases
+    /// in the mirror become unavailable, then all connections
+    /// to the "old" master server will be immediately invalidated, so that any
+    /// subsequent database operation on them (via objects CQuery and
+    /// CBulkInsert) would cause an error. The affected CDatabase objects will
+    /// be automatically invalidated too. User code will have to explicitly re-connect
+    /// (which will open connection to the new master, if any).
+    /// @note
+    ///   If the database resource is in any way misconfigured, then an exception
+    ///   will be thrown.
+    /// @param dbservice
+    ///   Database resource name 
+    /// @param servers
+    ///   List of database servers, with the master one first.
+    /// @param error_message
+    ///   Detailed error message (if any).
+    /// @return
+    ///   Result code
+    static EMirrorStatus UpdateMirror(const string& dbservice,
+                                      list<string>* servers = NULL,
+                                      string*       error_message = NULL);
+
+private:
+    CSDBAPI(void);
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
+
+inline
+CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string /* = kEmptyStr */)
+{
+    if (NStr::StartsWith(url_string, "dbapi://"))
+        m_Url.SetUrl(url_string);
+    else
+        m_Url.SetUrl("dbapi://" + url_string);
+    // Force arguments to exist
+    m_Url.GetArgs();
+}
 
 inline
 CSDB_ConnectionParam::CSDB_ConnectionParam(const CSDB_ConnectionParam& param)
@@ -738,7 +828,7 @@ CSDB_ConnectionParam::GetArgs(void)
 inline const CUrlArgs&
 CSDB_ConnectionParam::GetArgs(void) const
 {
-    return const_cast<CUrl&>(m_Url).GetArgs();
+    return m_Url.GetArgs();
 }
 
 inline string
@@ -749,12 +839,26 @@ CSDB_ConnectionParam::Get(EParam param) const
         return m_Url.GetUser();
     case ePassword:
         return m_Url.GetPassword();
-    case eServer:
+    case eService:
         return m_Url.GetHost();
     case ePort:
         return m_Url.GetPort();
     case eDatabase:
-        return m_Url.GetPath();
+        return m_Url.GetPath().empty()? kEmptyStr: m_Url.GetPath().substr(1);
+    case eLoginTimeout:
+        return m_Url.GetArgs().GetValue("login_timeout");
+    case eIOTimeout:
+        return m_Url.GetArgs().GetValue("io_timeout");
+    case eExclusiveServer:
+        return m_Url.GetArgs().GetValue("exclusive_server");
+    case eUseConnPool:
+        return m_Url.GetArgs().GetValue("use_conn_pool");
+    case eConnPoolMinSize:
+        return m_Url.GetArgs().GetValue("conn_pool_minsize");
+    case eConnPoolMaxSize:
+        return m_Url.GetArgs().GetValue("conn_pool_maxsize");
+    case eArgsString:
+        return m_Url.GetOriginalArgsString();
     }
     _ASSERT(false);
     return string();
@@ -768,13 +872,28 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
         return m_Url.SetUser(value);
     case ePassword:
         return m_Url.SetPassword(value);
-    case eServer:
+    case eService:
         return m_Url.SetHost(value);
     case ePort:
         return m_Url.SetPort(value);
     case eDatabase:
         return m_Url.SetPath("/" + value);
+    case eLoginTimeout:
+        return m_Url.GetArgs().SetValue("login_timeout", value);
+    case eIOTimeout:
+        return m_Url.GetArgs().SetValue("io_timeout", value);
+    case eExclusiveServer:
+        return m_Url.GetArgs().SetValue("exclusive_server", value);
+    case eUseConnPool:
+        return m_Url.GetArgs().SetValue("use_conn_pool", value);
+    case eConnPoolMinSize:
+        return m_Url.GetArgs().SetValue("conn_pool_minsize", value);
+    case eConnPoolMaxSize:
+        return m_Url.GetArgs().SetValue("conn_pool_maxsize", value);
+    case eArgsString:
+        return m_Url.GetArgs().SetQueryString(value);
     }
+    _ASSERT(false);
 }
 
 

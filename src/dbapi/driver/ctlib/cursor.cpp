@@ -166,6 +166,8 @@ CTL_CursorCmd::OpenCursor()
     // need to close it first
     CloseCursor();
 
+    CheckIsDead();
+
     if (!CursorIsDeclared()) {
         SetHasFailed(false);
 
@@ -279,6 +281,8 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         return false;
     }
 
+    CheckIsDead();
+
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_UPDATE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
                        const_cast<char*> (upd_query.c_str()),  CS_NULLTERM,
@@ -297,6 +301,8 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     if(!CursorIsOpen() || !HaveResult()) {
         return 0;
     }
+
+    CheckIsDead();
 
     while ( static_cast<unsigned int>(GetResult().CurrentItemNo()) < item_num ) {
         if(!GetResult().SkipItem()) return 0;
@@ -345,6 +351,8 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         return false;
     }
 
+    CheckIsDead();
+
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DELETE,
                        const_cast<char*> (table_name.c_str()), CS_NULLTERM,
                        0, CS_UNUSED, CS_UNUSED),
@@ -371,6 +379,11 @@ bool CTL_CursorCmd::CloseCursor(void)
     }
 
     DeleteResult();
+
+    if (IsDead()) {
+        SetCursorOpen(false);
+        return true;
+    }
 
     CheckSFB(ct_cursor(x_GetSybaseCmd(),
                        CS_CURSOR_CLOSE,
@@ -405,7 +418,7 @@ CTL_CursorCmd::CloseForever(void)
 
         CloseCursor();
 
-        if (CursorIsDeclared()) {
+        if (CursorIsDeclared()  &&  !IsDead()) {
             // deallocate the cursor
             switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DEALLOC,
                                0, CS_UNUSED, 0, CS_UNUSED, CS_UNUSED)) ) {
@@ -639,6 +652,7 @@ I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
     if(!CursorIsOpen() || !m_Res.get() || !m_LCmd.get()) {
         return 0;
     }
+    CheckIsDead();
     while(static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num) {
         if(!m_Res->SkipItem()) return 0;
     }

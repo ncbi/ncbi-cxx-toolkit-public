@@ -623,6 +623,10 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
     if ( !size )
         return false;
 
+    if (IsDead()) {
+        DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122012);
+    }
+
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
@@ -969,6 +973,8 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         "Wrong (zero) arguments." + GetDbgInfo(),
         190000 );
 
+    CheckIsDead();
+
     if ( !GetBytes2Go() )
         return 0;
 
@@ -1059,7 +1065,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
 bool CTL_SendDataCmd::Cancel(void)
 {
-    if ( GetBytes2Go() ) {
+    if ( GetBytes2Go()  &&  !IsDead() ) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
         SetBytes2Go(0);
         return true;

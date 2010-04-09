@@ -33,6 +33,7 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <corelib/resource_info.hpp>
 #include <corelib/ncbifile.hpp>
@@ -47,6 +48,8 @@
 
 
 BEGIN_NCBI_SCOPE
+
+#define NCBI_USE_ERRCODE_X  Dbapi_DrvrContext
 
 
 NCBI_PARAM_DEF_EX(bool, dbapi, conn_use_encrypt_data, false, eParam_NoThread, NULL);
@@ -247,7 +250,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         m_InUse.erase(it);
     }
 
-    if ( conn_reusable ) {
+    if ( conn_reusable  &&  conn->IsValid() ) {
         m_NotInUse.push_back(conn);
     } else {
         delete conn;
@@ -315,15 +318,16 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
     if (params.GetParam("is_pooled") == "true") {
         CMutexGuard mg(m_CtxMtx);
 
+        string pool_name(params.GetParam("pool_name"));
         if (!m_NotInUse.empty()) {
-            if (!params.GetParam("pool_name").empty()) {
+            if (!pool_name.empty()) {
                 // use a pool name
-                for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
+                ERASE_ITERATE(TConnPool, it, m_NotInUse) {
                     CConnection* t_con(*it);
 
                     // There is no pool name check here. We assume that a connection
                     // pool contains connections with appropriate server names only.
-                    if (params.GetParam("pool_name").compare(t_con->PoolName()) == 0) {
+                    if (pool_name == t_con->PoolName()) {
                         it = m_NotInUse.erase(it);
                         if(t_con->Refresh()) {
                             /* Future development ...
@@ -340,9 +344,6 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             delete t_con;
                         }
                     }
-                    else {
-                        ++it;
-                    }
                 }
             }
             else {
@@ -352,10 +353,10 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                 }
 
                 // try to use a server name
-                for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
+                ERASE_ITERATE(TConnPool, it, m_NotInUse) {
                     CConnection* t_con(*it);
 
-                    if (params.GetServerName().compare(t_con->ServerName()) == 0) {
+                    if (params.GetServerName() == t_con->ServerName()) {
                         it = m_NotInUse.erase(it);
                         if (t_con->Refresh()) {
                             /* Future development ...
@@ -372,10 +373,24 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             delete t_con;
                         }
                     }
-                    else {
-                        ++it;
-                    }
                 }
+            }
+        }
+
+        // Connection should be created, but we can have limit on number of
+        // connections in the pool.
+        string pool_max_str(params.GetParam("pool_maxsize"));
+        if (!pool_max_str.empty()) {
+            int pool_max = NStr::StringToInt(pool_max_str);
+            if (pool_max != 0) {
+                int total_cnt = 0;
+                ITERATE(TConnPool, it, m_InUse) {
+                    CConnection* t_con(*it);
+                    if (pool_name == t_con->PoolName())
+                        ++total_cnt;
+                }
+                if (total_cnt >= pool_max)
+                    return NULL;
             }
         }
     }
@@ -436,6 +451,91 @@ CDriverContext::DeleteAllConn(void)
     }
     m_InUse.clear();
 }
+
+
+class CMakeConnActualParams: public CDBConnParamsBase
+{
+public:
+    CMakeConnActualParams(const CDBConnParams& other)
+        : m_Other(other)
+    {
+        // Override what is set in CDBConnParamsBase constructor
+        SetParam("secure_login", kEmptyStr);
+        SetParam("is_pooled", kEmptyStr);
+        SetParam("do_not_connect", kEmptyStr);
+    }
+
+    ~CMakeConnActualParams(void)
+    {}
+
+    virtual Uint4 GetProtocolVersion(void) const
+    {
+        return m_Other.GetProtocolVersion();
+    }
+
+    virtual EEncoding GetEncoding(void) const
+    {
+        return m_Other.GetEncoding();
+    }
+
+    virtual string GetServerName(void) const
+    {
+        return CDBConnParamsBase::GetServerName();
+    }
+
+    virtual string GetDatabaseName(void) const
+    {
+        return CDBConnParamsBase::GetDatabaseName();
+    }
+
+    virtual string GetUserName(void) const
+    {
+        return CDBConnParamsBase::GetUserName();
+    }
+
+    virtual string GetPassword(void) const
+    {
+        return CDBConnParamsBase::GetPassword();
+    }
+
+    virtual EServerType GetServerType(void) const
+    {
+        return m_Other.GetServerType();
+    }
+
+    virtual Uint4 GetHost(void) const
+    {
+        return m_Other.GetHost();
+    }
+
+    virtual Uint2 GetPort(void) const
+    {
+        return m_Other.GetPort();
+    }
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const
+    {
+        return m_Other.GetConnValidator();
+    }
+
+    virtual string GetParam(const string& key) const
+    {
+        string result(CDBConnParamsBase::GetParam(key));
+        if (result.empty())
+            return m_Other.GetParam(key);
+        else
+            return result;
+    }
+
+    using CDBConnParamsBase::SetServerName;
+    using CDBConnParamsBase::SetUserName;
+    using CDBConnParamsBase::SetDatabaseName;
+    using CDBConnParamsBase::SetPassword;
+    using CDBConnParamsBase::SetParam;
+
+private:
+    const CDBConnParams& m_Other;
+};
 
 
 struct SLoginData
@@ -520,38 +620,267 @@ s_TransformLoginData(string& server_name, string& user_name,
 }
 
 
+void
+SDBConfParams::Clear(void)
+{
+    flags = 0;
+    server.clear();
+    port.clear();
+    database.clear();
+    username.clear();
+    password.clear();
+    login_timeout.clear();
+    io_timeout.clear();
+    single_server.clear();
+    is_pooled.clear();
+    pool_name.clear();
+    pool_maxsize.clear();
+    args.clear();
+}
+
+void
+CDriverContext::ReadDBConfParams(const string&  service_name,
+                                 SDBConfParams* params)
+{
+    params->Clear();
+    if (service_name.empty())
+        return;
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (!app)
+        return;
+
+    const IRegistry& reg = app->GetConfig();
+    string section_name(service_name);
+    section_name.append(1, '.');
+    section_name.append("dbservice");
+    if (!reg.HasEntry(section_name, kEmptyStr))
+        return;
+
+    if (reg.HasEntry(section_name, "service", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fServerSet;
+        params->server = reg.Get(section_name, "service");
+    }
+    if (reg.HasEntry(section_name, "port", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPortSet;
+        params->port = reg.GetInt(section_name, "port", 0);
+    }
+    if (reg.HasEntry(section_name, "database", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fDatabaseSet;
+        params->database = reg.Get(section_name, "database");
+    }
+    if (reg.HasEntry(section_name, "username", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fUsernameSet;
+        params->username = reg.Get(section_name, "username");
+    }
+    if (reg.HasEntry(section_name, "password", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPasswordSet;
+        params->password = reg.Get(section_name, "password");
+    }
+    if (reg.HasEntry(section_name, "login_timeout", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fLoginTimeoutSet;
+        params->login_timeout = reg.Get(section_name, "login_timeout");
+    }
+    if (reg.HasEntry(section_name, "io_timeout", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fIOTimeoutSet;
+        params->io_timeout = reg.Get(section_name, "io_timeout");
+    }
+    if (reg.HasEntry(section_name, "exclusive_server", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fSingleServerSet;
+        params->single_server = reg.Get(section_name, "exclusive_server");
+    }
+    if (reg.HasEntry(section_name, "use_conn_pool", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fIsPooledSet;
+        params->is_pooled = reg.Get(section_name, "use_conn_pool");
+        params->pool_name = service_name;
+        params->pool_name.append(1, '.');
+        params->pool_name.append("pool");
+    }
+    if (reg.HasEntry(section_name, "conn_pool_minsize", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPoolMinSizeSet;
+        params->pool_minsize = reg.Get(section_name, "conn_pool_minsize");
+    }
+    if (reg.HasEntry(section_name, "conn_pool_maxsize", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPoolMaxSizeSet;
+        params->pool_maxsize = reg.Get(section_name, "conn_pool_maxsize");
+    }
+    if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fArgsSet;
+        params->args = reg.Get(section_name, "args");
+    }
+}
+
+bool
+CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    string pool_min_str = params.GetParam("pool_minsize");
+    if (pool_min_str.empty())
+        return true;
+    int pool_min = NStr::StringToInt(pool_min_str);
+    if (pool_min <= 0)
+        return true;
+
+    string pool_name = params.GetParam("pool_name");
+    int total_cnt = 0;
+    ITERATE(TConnPool, it, m_InUse) {
+        CConnection* t_con(*it);
+        if (pool_name == t_con->PoolName()
+            &&  t_con->IsValid()  &&  t_con->IsAlive())
+        {
+            ++total_cnt;
+        }
+    }
+    ITERATE(TConnPool, it, m_NotInUse) {
+        CConnection* t_con(*it);
+        if (pool_name == t_con->PoolName()  &&  t_con->IsAlive())
+            ++total_cnt;
+    }
+    vector< AutoPtr<CDB_Connection> > conns(pool_min);
+    for (int i = total_cnt; i < pool_min; ++i) {
+        try {
+            conns.push_back(MakeConnection(params));
+        }
+        catch (CDB_Exception& ex) {
+            LOG_POST_X(1, "Error filling connection pool: " << ex);
+            return false;
+        }
+    }
+    return true;
+}
+
 CDB_Connection* 
 CDriverContext::MakeConnection(const CDBConnParams& params)
 {
-    string server_name = params.GetServerName();
-    string user_name = params.GetUserName();
-    string db_name = params.GetDatabaseName();
-    string password = params.GetPassword();
-    s_TransformLoginData(server_name, user_name, db_name, password);
-    CMakeConnActualParams act_params(params, server_name, user_name,
-                                     db_name, password);
+    CMutexGuard mg(m_CtxMtx);
 
-    CDB_Connection* t_con =
-        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-            *this,
-            act_params);
-
-    if((!t_con && act_params.GetParam("do_not_connect") == "true")) {
-        return NULL;
+    CMakeConnActualParams act_params(params);
+    SDBConfParams conf_params;
+    conf_params.Clear();
+    if (params.GetParam("do_not_read_conf") != "true") {
+        ReadDBConfParams(params.GetServerName(), &conf_params);
     }
 
-    if (!t_con) {
-        string err;
+    int was_timeout = GetTimeout();
+    int was_login_timeout = GetLoginTimeout();
+    CDB_Connection* t_con = NULL;
+    try {
+        string server_name = (conf_params.IsServerSet()?   conf_params.server:
+                                                           params.GetServerName());
+        string user_name   = (conf_params.IsUsernameSet()? conf_params.username:
+                                                           params.GetUserName());
+        string db_name     = (conf_params.IsDatabaseSet()? conf_params.database:
+                                                           params.GetDatabaseName());
+        string password    = (conf_params.IsPasswordSet()? conf_params.password:
+                                                           params.GetPassword());
+        if (conf_params.IsLoginTimeoutSet()) {
+            if (conf_params.login_timeout.empty()) {
+                SetLoginTimeout(0);
+            }
+            else {
+                SetLoginTimeout(NStr::StringToInt(conf_params.login_timeout));
+            }
+        }
+        else {
+            string login_timeout(params.GetParam("login_timeout"));
+            if (!login_timeout.empty()) {
+                SetLoginTimeout(NStr::StringToInt(login_timeout));
+            }
+        }
+        if (conf_params.IsIOTimeoutSet()) {
+            if (conf_params.io_timeout.empty()) {
+                SetTimeout(0);
+            }
+            else {
+                SetTimeout(NStr::StringToInt(conf_params.io_timeout));
+            }
+        }
+        else {
+            string io_timeout(params.GetParam("io_timeout"));
+            if (!io_timeout.empty()) {
+                SetTimeout(NStr::StringToInt(io_timeout));
+            }
+        }
+        if (conf_params.IsSingleServerSet()) {
+            if (conf_params.single_server.empty()) {
+                act_params.SetParam("single_server", "true");
+            }
+            else {
+                act_params.SetParam("single_server",
+                                    NStr::BoolToString(NStr::StringToBool(
+                                                conf_params.single_server)));
+            }
+        }
+        if (conf_params.IsPooledSet()) {
+            if (conf_params.is_pooled.empty()) {
+                act_params.SetParam("is_pooled", "false");
+            }
+            else {
+                act_params.SetParam("is_pooled", 
+                                    NStr::BoolToString(NStr::StringToBool(
+                                                    conf_params.is_pooled)));
+                act_params.SetParam("pool_name", conf_params.pool_name);
+            }
+        }
+        if (conf_params.IsPoolMaxSizeSet())
+            act_params.SetParam("pool_maxsize", conf_params.pool_maxsize);
 
-        err += "Cannot connect to the server '" + act_params.GetServerName();
-        err += "' as user '" + act_params.GetUserName() + "'";
-        DATABASE_DRIVER_ERROR( err, 100011 );
+        s_TransformLoginData(server_name, user_name, db_name, password);
+        act_params.SetServerName(server_name);
+        act_params.SetUserName(user_name);
+        act_params.SetDatabaseName(db_name);
+        act_params.SetPassword(password);
+
+        t_con = CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
+                    *this,
+                    act_params);
+
+
+        if((!t_con && act_params.GetParam("do_not_connect") == "true")) {
+            return NULL;
+        }
+
+        if (!t_con) {
+            string err;
+
+            err += "Cannot connect to the server '" + act_params.GetServerName();
+            err += "' as user '" + act_params.GetUserName() + "'";
+            DATABASE_DRIVER_ERROR( err, 100011 );
+        }
+
+        // Set database ...
+        t_con->SetDatabaseName(act_params.GetDatabaseName());
+
     }
-
-    // Set database ...
-    t_con->SetDatabaseName(act_params.GetDatabaseName());
+    catch (exception&) {
+        SetTimeout(was_timeout);
+        SetLoginTimeout(was_login_timeout);
+        throw;
+    }
+    SetTimeout(was_timeout);
+    SetLoginTimeout(was_login_timeout);
 
     return t_con;
+}
+
+void CDriverContext::CloseConnsForPool(const string& pool_name)
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    ITERATE(TConnPool, it, m_InUse) {
+        CConnection* t_con(*it);
+        if (pool_name == t_con->PoolName()) {
+            t_con->Invalidate();
+        }
+    }
+    ERASE_ITERATE(TConnPool, it, m_NotInUse) {
+        CConnection* t_con(*it);
+        if (pool_name == t_con->PoolName()) {
+            m_NotInUse.erase(it);
+            delete t_con;
+        }
+    }
 }
 
 void CDriverContext::DestroyConnImpl(CConnection* impl)

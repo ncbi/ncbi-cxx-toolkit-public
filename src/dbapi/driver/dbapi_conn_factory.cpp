@@ -190,15 +190,19 @@ CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
     return timeout;
 }
 
-CDBConnectionFactory::CRuntimeData&
+inline CDBConnectionFactory::CRuntimeData&
 CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
 {
     string validator_name;
-
     if (validator) {
         validator_name = validator->GetName();
     }
+    return GetRuntimeData(validator_name);
+}
 
+CDBConnectionFactory::CRuntimeData&
+CDBConnectionFactory::GetRuntimeData(const string& validator_name)
+{
     TValidatorSet::iterator it = m_ValidatorSet.find(validator_name);
     if (it != m_ValidatorSet.end()) {
         return it->second;
@@ -301,9 +305,10 @@ CDBConnectionFactory::MakeDBConnection(
         t_con = DispatchServerName(ctx, params);
     } else {
         // Server name is already dispatched ...
+        string single_server(params.GetParam("single_server"));
 
         // We probably need to re-dispatch it ...
-        if (GetMaxNumOfDispatches() &&
+        if (single_server != "true"  &&  GetMaxNumOfDispatches() &&
             rt_data.GetNumOfDispatches(params.GetServerName()) >= GetMaxNumOfDispatches()) {
             // We definitely need to re-dispatch it ...
 
@@ -341,16 +346,17 @@ CDBConnectionFactory::MakeDBConnection(
 
             if (!t_con) {
                 // We couldn't connect ...
+                if (single_server != "true") {
+                    // Server might be temporarily unavailable ...
+                    // Check conn_status ...
+                    if (conn_status == IConnValidator::eTempInvalidConn) {
+                        rt_data.IncNumOfValidationFailures(params.GetServerName(),
+                                                           dsp_srv);
+                    }
 
-                // Server might be temporarily unavailable ...
-                // Check conn_status ...
-                if (conn_status == IConnValidator::eTempInvalidConn) {
-                    rt_data.IncNumOfValidationFailures(params.GetServerName(),
-                                                       dsp_srv);
+                    // Re-dispatch ...
+                    t_con = DispatchServerName(ctx, params);
                 }
-
-                // Re-dispatch ...
-                t_con = DispatchServerName(ctx, params);
             } else {
                 // Dispatched server is already set, but calling of this method
                 // will increase number of successful dispatches.
@@ -378,6 +384,7 @@ CDBConnectionFactory::DispatchServerName(
     CDB_Connection* t_con = NULL;
     // I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
     const string service_name(params.GetServerName());
+    bool do_not_dispatch = params.GetParam("do_not_dispatch") == "true";
     string cur_srv_name;
     Uint4 cur_host = 0;
     Uint2  cur_port = 0;
@@ -391,10 +398,15 @@ CDBConnectionFactory::DispatchServerName(
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
 
+        if (do_not_dispatch) {
+            cur_srv_name = params.GetServerName();
+            cur_host = params.GetHost();
+            cur_port = params.GetPort();
+        }
         // It is possible that a server name won't be provided.
         // This is possible when somebody uses a named connection pool.
         // In this case we even won't try to map it.
-        if (!service_name.empty()) {
+        else if (!service_name.empty()) {
             dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
 
             if (dsp_srv.Empty()) {
@@ -449,7 +461,10 @@ CDBConnectionFactory::DispatchServerName(
             }
         }
 
-        if (!t_con) {
+        if (do_not_dispatch) {
+            return t_con;
+        }
+        else if (!t_con) {
             bool need_exclude = true;
             if (dsp_srv->GetName() == service_name
                 &&  dsp_srv->GetHost() == 0  &&  dsp_srv->GetPort() == 0
@@ -546,6 +561,30 @@ CDBConnectionFactory::MakeValidConnection(
         }
     }
     return conn.release();
+}
+
+void
+CDBConnectionFactory::GetServersList(const string& validator_name,
+                                     const string& service_name,
+                                     list<string>* serv_list)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    const IDBServiceMapper& mapper
+                        = GetRuntimeData(validator_name).GetDBServiceMapper();
+    mapper.GetServersList(service_name, serv_list);
+}
+
+void
+CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
+                                           const string& service_name,
+                                           const string& server)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    CRuntimeData& rt_data = GetRuntimeData(validator_name);
+    TSvrRef svr(new CDBServer(server, 0, 0, numeric_limits<unsigned int>::max()));
+    rt_data.SetDispatchedServer(service_name, svr);
 }
 
 

@@ -447,58 +447,6 @@ private:
 };
 
 
-
-class NCBI_DBAPIDRIVER_EXPORT CMakeConnActualParams :
-    public CDBConnParamsDelegate
-{
-public:
-    CMakeConnActualParams(const CDBConnParams& other,
-                          const string&        srv_name,
-                          const string&        user_name,
-                          const string&        db_name,
-                          const string&        passwd)
-        : CDBConnParamsDelegate(other),
-          m_Other(other),
-          m_SrvName(srv_name),
-          m_UserName(user_name),
-          m_DBName(db_name),
-          m_Password(passwd)
-    {}
-
-    const CDBConnParams& GetPassedParams(void) const
-    {
-        return m_Other;
-    }
-
-    virtual string GetServerName(void) const
-    {
-        return m_SrvName;
-    }
-
-    virtual string GetUserName(void) const
-    {
-        return m_UserName;
-    }
-
-    virtual string GetDatabaseName(void) const
-    {
-        return m_DBName;
-    }
-
-    virtual string GetPassword(void) const
-    {
-        return m_Password;
-    }
-
-private:
-    const CDBConnParams& m_Other;
-    string               m_SrvName;
-    string               m_UserName;
-    string               m_DBName;
-    string               m_Password;
-};
-
-
 END_NCBI_SCOPE
 
 

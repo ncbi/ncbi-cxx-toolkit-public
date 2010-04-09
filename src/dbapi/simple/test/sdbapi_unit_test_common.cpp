@@ -77,7 +77,7 @@ NCBITEST_AUTO_INIT()
 
     try {
         CSDB_ConnectionParam params;
-        params.Set(CSDB_ConnectionParam::eServer,   GetArgs().GetServerName());
+        params.Set(CSDB_ConnectionParam::eService,  GetArgs().GetServerName());
         params.Set(CSDB_ConnectionParam::eUsername, GetArgs().GetUserName());
         params.Set(CSDB_ConnectionParam::ePassword, GetArgs().GetUserPassword());
         params.Set(CSDB_ConnectionParam::eDatabase, GetArgs().GetDatabaseName());

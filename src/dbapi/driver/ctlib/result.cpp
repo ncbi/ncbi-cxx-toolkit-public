@@ -62,6 +62,8 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
     m_EOR(false),
     m_BindedCols(0)
 {
+    CheckIsDead();
+
     CS_INT outlen;
 
     CS_INT nof_cols;
@@ -202,6 +204,8 @@ bool CTL_RowResult::Fetch()
         m_NullValue[nof_items] = eNullUnknown;
     }
 
+    CheckIsDead();
+
     switch ( Check(ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED, CS_UNUSED, 0)) ) {
     case CS_SUCCEED:
         SetCurrentItemNum(0);
@@ -241,6 +245,8 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
                                          CS_INT *outlen,
                                          bool& is_null)
 {
+    CheckIsDead();
+
     is_null = false;
 
     if(item > m_BindedCols) {
@@ -1141,7 +1147,7 @@ void
 CTL_RowResult::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_EOR ) {
+        if (m_EOR  ||  IsDead()) {
             return;
         }
 
@@ -1220,7 +1226,7 @@ bool CTL_CursorResult::SkipItem()
 CTL_CursorResult::~CTL_CursorResult()
 {
     try {
-        if (m_EOR) { // this is not a bug
+        if (m_EOR  &&  !IsDead()) { // this is not a bug
             CS_INT res_type;
             while (Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED) {
                 continue;

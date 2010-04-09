@@ -510,6 +510,9 @@ CTL_LRCmd::MakeResultInternal(void)
         "You need to send a command first." + GetDbgInfo(),
         120010 );
 
+    if (IsDead())
+        return NULL;
+
     for (;;) {
         CS_INT res_type;
         CS_RETCODE rc = 0;
@@ -609,7 +612,7 @@ CTL_LRCmd::Cancel(void)
     if (WasSent()) {
         DeleteResultInternal();
 
-        if (GetConnection().IsAlive()) {
+        if (!IsDead()  &&  GetConnection().IsAlive()) {
             switch (Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL))) {
             case CS_SUCCEED:
                 SetWasSent(false);
@@ -635,6 +638,11 @@ bool
 CTL_LRCmd::SendInternal(void)
 {
     CS_RETCODE rc;
+
+    if (IsDead()) {
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( "Connection has died." + GetDbgInfo(), 121008 );
+    }
 
     try {
         rc = Check(ct_send(x_GetSybaseCmd()));

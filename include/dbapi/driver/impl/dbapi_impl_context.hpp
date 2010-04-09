@@ -55,6 +55,60 @@ namespace impl
 
 class CConnection;
 
+
+struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
+{
+    enum EFlags {
+        fServerSet       = 0x001,
+        fPortSet         = 0x002,
+        fDatabaseSet     = 0x004,
+        fUsernameSet     = 0x008,
+        fPasswordSet     = 0x010,
+        fLoginTimeoutSet = 0x020,
+        fIOTimeoutSet    = 0x040,
+        fSingleServerSet = 0x080,
+        fIsPooledSet     = 0x100,
+        fPoolMinSizeSet  = 0x200,
+        fPoolMaxSizeSet  = 0x400,
+        fArgsSet         = 0x800
+    };
+    typedef unsigned int  TFlags;
+
+    TFlags  flags;
+    string  server;
+    string  port;
+    string  database;
+    string  username;
+    string  password;
+    string  login_timeout;
+    string  io_timeout;
+    string  single_server;
+    string  is_pooled;
+    string  pool_name;
+    string  pool_minsize;
+    string  pool_maxsize;
+    string  args;
+
+
+    bool IsFlagSet(EFlags one_flag) { return (flags & one_flag) != 0; }
+
+    bool IsServerSet(void)       { return IsFlagSet(fServerSet);        }
+    bool IsPortSet(void)         { return IsFlagSet(fPortSet);          }
+    bool IsDatabaseSet(void)     { return IsFlagSet(fDatabaseSet);      }
+    bool IsUsernameSet(void)     { return IsFlagSet(fUsernameSet);      }
+    bool IsPasswordSet(void)     { return IsFlagSet(fPasswordSet);      }
+    bool IsLoginTimeoutSet(void)  { return IsFlagSet(fLoginTimeoutSet);  }
+    bool IsIOTimeoutSet(void)    { return IsFlagSet(fIOTimeoutSet);     }
+    bool IsSingleServerSet(void) { return IsFlagSet(fSingleServerSet);  }
+    bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
+    bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
+    bool IsPoolMaxSizeSet(void)  { return IsFlagSet(fPoolMaxSizeSet);   }
+    bool IsArgsSet(void)         { return IsFlagSet(fArgsSet);          }
+
+    void Clear(void);
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CDriverContext::
@@ -138,6 +192,10 @@ public:
     }
 
     static void ResetEnvSybase(void);
+
+    void ReadDBConfParams  (const string& service_name, SDBConfParams* params);
+    bool SatisfyPoolMinimum(const CDBConnParams& params);
+    void CloseConnsForPool (const string& pool_name);
 
 protected:
     typedef list<CConnection*> TConnPool;

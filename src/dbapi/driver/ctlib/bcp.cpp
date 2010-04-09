@@ -483,6 +483,8 @@ bool CTL_BCPInCmd::Send(void)
     size_t       len = 0;
     char         buff[2048];
 
+    CheckIsDead();
+
     if ( !WasSent() ) {
         // we need to init the bcp
         CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) GetQuery().c_str(), CS_NULLTERM),
@@ -609,6 +611,11 @@ bool CTL_BCPInCmd::Cancel()
 #endif
 
     if(WasSent()) {
+        if (IsDead()) {
+            SetWasSent(false);
+            return true;
+        }
+
         CS_INT outrow = 0;
 
         return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
@@ -621,6 +628,8 @@ bool CTL_BCPInCmd::Cancel()
 bool CTL_BCPInCmd::CommitBCPTrans(void)
 {
     if(!WasSent()) return false;
+
+    CheckIsDead();
 
     CS_INT outrow = 0;
 
@@ -639,6 +648,8 @@ bool CTL_BCPInCmd::CommitBCPTrans(void)
 bool CTL_BCPInCmd::EndBCP(void)
 {
     if(!WasSent()) return false;
+
+    CheckIsDead();
 
     CS_INT outrow = 0;
 

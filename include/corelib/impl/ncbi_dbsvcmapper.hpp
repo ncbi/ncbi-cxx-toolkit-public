@@ -111,6 +111,12 @@ public:
     /// Clean the list of excluded servers for the given service
     virtual void    CleanExcluded(const string&    service) = 0;
 
+    /// Get list of all servers for the given service disregarding any exclusions
+    virtual void GetServersList(const string& service, list<string>* serv_list) const
+    {
+        serv_list->clear();
+    }
+
 
     /// Set up mapping preferences for a service
     /// preference - value between 0 and 100
