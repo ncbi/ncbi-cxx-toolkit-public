@@ -358,7 +358,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                              x_read, &x_read, eIO_ReadPlain);
         if (!x_read) {
             _ASSERT(m_Status != eIO_Success);
-            if (m_Status == eIO_Closed)
+            if (m_Status != eIO_Closed)
                 ERR_POST_X(10, x_Message("xsgetn(): CONN_Read() failed"));
             break;
         }
