@@ -31,7 +31,7 @@
  */
 
 #include "ncbi_config.h"
-#include "version.h"
+#include "version_c.h"
 #include <string.h>
 
 
