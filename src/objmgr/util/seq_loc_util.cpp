@@ -2062,6 +2062,9 @@ Int8 x_GetRangeDiff(const CHandleRange& hrg1,
         hrg1.GetOverlappingRange(strand_flag);
     CRange<TSeqPos> rg2 =
         hrg2.GetOverlappingRange(strand_flag);
+    if ( rg2.Empty() ) {
+        return rg1.GetLength();
+    }
     if ( rg1.GetFrom() <= rg2.GetFrom()  &&
         rg1.GetTo() >= rg2.GetTo() ) {
         return Int8(rg2.GetFrom() - rg1.GetFrom()) +
