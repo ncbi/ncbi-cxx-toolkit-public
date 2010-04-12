@@ -31,8 +31,6 @@
  * File Description:
  *   Daemon collection version number
  *
- *   UNIX only !!!
- *
  */
 
 #ifdef   NCBI_CXX_TOOLKIT
@@ -102,9 +100,14 @@
 #    endif /*NCBI_PLATFORM_BITS==64*/
 #  endif /*!NDEBUG || _DEBUG*/
 
-extern const char* g_VersionStr(const char* revision);
+#else
+
+#  define NETDAEMONS_VERSION        NETDAEMONS_VERSION_STR
 
 # endif /*NCBI_CXX_TOOLKIT*/
+
+
+extern const char* g_VersionStr(const char* revision);
 
 
 #endif /*CONNECT_DAEMONS___VERSION__H*/
