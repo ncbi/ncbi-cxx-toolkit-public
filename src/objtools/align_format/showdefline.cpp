@@ -223,22 +223,35 @@ string
 CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
                                       bool show_gi)
 {
-    string id_str = NcbiEmptyString;
+    string id_string = NcbiEmptyString;
+    bool found_gi = false;
 
-    ITERATE(list<CRef<CSeq_id> >, itr, id) {
-        string id_token;
-        // For local ids, make sure the "lcl|" part is not printed
-        if ((*itr)->IsLocal())
-            (*itr)->GetLabel(&id_token, CSeq_id::eContent, 0);
-        else if (show_gi || !(*itr)->IsGi())
-            id_token = (*itr)->AsFastaString();
-        if (id_token != NcbiEmptyString)
-            id_str += id_token + "|";
+    CRef<CSeq_id> best_id = FindBestChoice(id, CSeq_id::Score);
+
+    if (show_gi) {
+    	ITERATE(list<CRef<CSeq_id> >, itr, id) {
+             if ((*itr)->IsGi()) {
+                id_string += (*itr)->AsFastaString();
+                found_gi = true;
+                break;
+             }
+        }
     }
-    if (id_str.size() > 0)
-        id_str.erase(id_str.size() - 1);
 
-    return id_str;
+    if (best_id.NotEmpty()  &&  !best_id->IsGi() ) {
+         if (found_gi)
+             id_string += "|";
+        
+         if (best_id->IsLocal()) {
+             string id_token;
+             best_id->GetLabel(&id_token, CSeq_id::eContent, 0);
+             id_string += id_token;
+         }
+         else 
+             id_string += best_id->AsFastaString();
+    }
+
+    return id_string;
 }
 
 void 
