@@ -154,6 +154,27 @@ to packed-ints.
 
 /////////////////////////////////////////////////////////////////////
 //
+// CDefault_Mapper_Sequence_Info
+//
+//   Default sequence type/length/synonyms provider - returns unknown type
+//   and length for any sequence, adds no synonyms except the original id.
+
+
+class CDefault_Mapper_Sequence_Info : public IMapper_Sequence_Info
+{
+public:
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh)
+        { return CSeq_loc_Mapper_Base::eSeq_unknown; }
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh)
+        { return kInvalidSeqPos; }
+    virtual void CollectSynonyms(const CSeq_id_Handle& id,
+                                 TSynonyms&            synonyms)
+        { synonyms.push_back(id); }
+};
+
+
+/////////////////////////////////////////////////////////////////////
+//
 // CMappingRange
 //
 //   Helper class for mapping points, ranges, strands and fuzzes
@@ -416,7 +437,7 @@ ENa_strand s_IndexToStrand(size_t idx)
     s_IndexToStrand(idx)
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(void)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -425,12 +446,14 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(void)
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info)
 {
 }
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
+                                           IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -439,13 +462,15 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges)
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(mapping_ranges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
 }
 
 
 CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
-                                           EFeatMapDirection dir)
+                                           EFeatMapDirection dir,
+                                           IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -454,14 +479,16 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeFeat(map_feat, dir);
 }
 
 
 CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
-                                           const CSeq_loc& target)
+                                           const CSeq_loc& target,
+                                           IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -470,7 +497,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeLocs(source, target);
 }
@@ -478,7 +506,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
 
 CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                                            const CSeq_id&    to_id,
-                                           TMapOptions       opts)
+                                           TMapOptions       opts,
+                                           IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -487,7 +516,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_id, opts);
 }
@@ -495,7 +525,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
 
 CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                                            size_t            to_row,
-                                           TMapOptions       opts)
+                                           TMapOptions       opts,
+                                           IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
@@ -504,7 +535,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
-      m_CurrentGroup(0)
+      m_CurrentGroup(0),
+      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeAlign(map_align, to_row, opts);
 }
@@ -1660,17 +1692,37 @@ void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
 //
 
 
-void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
-                                           TSynonyms& synonyms) const
-{
-    synonyms.push_back(id);
-}
-
-
 CSeq_loc_Mapper_Base::ESeqType
 CSeq_loc_Mapper_Base::GetSeqType(const CSeq_id_Handle& idh) const
 {
-    return eSeq_unknown;
+    _ASSERT(m_SeqInfo);
+    ESeqType seqtype = m_SeqInfo->GetSequenceType(idh);
+    if (seqtype != eSeq_unknown) {
+        // Cache sequence type for all synonyms if any
+        TSynonyms synonyms;
+        CollectSynonyms(idh, synonyms);
+        if (synonyms.size() > 1) {
+            ITERATE(TSynonyms, syn_it, synonyms) {
+                SetSeqTypeById(*syn_it, seqtype);
+            }
+        }
+    }
+    return seqtype;
+}
+
+
+void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
+                                           TSynonyms& synonyms) const
+{
+    _ASSERT(m_SeqInfo);
+    m_SeqInfo->CollectSynonyms(id, synonyms);
+}
+
+
+TSeqPos CSeq_loc_Mapper_Base::GetSequenceLength(const CSeq_id& id)
+{
+    _ASSERT(m_SeqInfo);
+    return m_SeqInfo->GetSequenceLength(CSeq_id_Handle::GetHandle(id));
 }
 
 
@@ -1834,12 +1886,6 @@ void CSeq_loc_Mapper_Base::x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
             }
         }
     }
-}
-
-
-TSeqPos CSeq_loc_Mapper_Base::GetSequenceLength(const CSeq_id& id)
-{
-    return kInvalidSeqPos;
 }
 
 

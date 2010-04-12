@@ -51,6 +51,97 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/////////////////////////////////////////////////////////////////////
+//
+// CScope_Mapper_Sequence_Info
+//
+//   Sequence type/length/synonyms provider using CScope to fetch
+//   the information.
+
+
+class CScope_Mapper_Sequence_Info : public IMapper_Sequence_Info
+{
+public:
+    CScope_Mapper_Sequence_Info(CScope* scope);
+
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh);
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    virtual void CollectSynonyms(const CSeq_id_Handle& id,
+                                 TSynonyms&            synonyms);
+private:
+    CHeapScope m_Scope;
+};
+
+
+CScope_Mapper_Sequence_Info::CScope_Mapper_Sequence_Info(CScope* scope)
+    : m_Scope(scope)
+{
+}
+
+
+void CScope_Mapper_Sequence_Info::
+CollectSynonyms(const CSeq_id_Handle& id,
+                TSynonyms&            synonyms)
+{
+    if ( m_Scope.IsNull() ) {
+        synonyms.push_back(id);
+    }
+    else {
+        CConstRef<CSynonymsSet> syns =
+            m_Scope.GetScope().GetSynonyms(id);
+        ITERATE(CSynonymsSet, syn_it, *syns) {
+            synonyms.push_back(CSynonymsSet::GetSeq_id_Handle(syn_it));
+        }
+    }
+}
+
+
+CScope_Mapper_Sequence_Info::TSeqType
+CScope_Mapper_Sequence_Info::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    if ( m_Scope.IsNull() ) {
+        return CSeq_loc_Mapper_Base::eSeq_unknown;
+    }
+    TSeqType seqtype = CSeq_loc_Mapper_Base::eSeq_unknown;
+    CBioseq_Handle handle;
+    try {
+        handle = m_Scope.GetScope().GetBioseqHandle(idh);
+        if ( handle ) {
+            switch ( handle.GetBioseqMolType() ) {
+            case CSeq_inst::eMol_dna:
+            case CSeq_inst::eMol_rna:
+            case CSeq_inst::eMol_na:
+                seqtype = CSeq_loc_Mapper_Base::eSeq_nuc;
+                break;
+            case CSeq_inst::eMol_aa:
+                seqtype = CSeq_loc_Mapper_Base::eSeq_prot;
+                break;
+            default:
+                break;
+            }
+        }
+    } catch (...) {
+    }
+    return seqtype;
+}
+
+
+TSeqPos CScope_Mapper_Sequence_Info::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    CBioseq_Handle h;
+    if ( m_Scope.IsNull() ) {
+        return kInvalidSeqPos;
+    }
+    h = m_Scope.GetScope().GetBioseqHandle(idh);
+    if ( !h ) {
+        NCBI_THROW(CAnnotMapperException, eUnknownLength,
+                    "Can not get sequence length -- unknown seq-id");
+    }
+    return h.GetBioseqLength();
+}
+
+
 /////////////////////////////////////////////////////////////////////
 //
 // CSeq_loc_Mapper
@@ -79,7 +170,8 @@ ENa_strand s_IndexToStrand(size_t idx)
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
                                  CScope*         scope)
-    : CSeq_loc_Mapper_Base(mapping_ranges),
+    : CSeq_loc_Mapper_Base(mapping_ranges,
+                           new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
 }
@@ -88,7 +180,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  EFeatMapDirection dir,
                                  CScope*           scope)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     x_InitializeFeat(map_feat, dir);
 }
@@ -97,7 +190,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
                                  const CSeq_loc& target,
                                  CScope* scope)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     x_InitializeLocs(source, target);
 }
@@ -107,7 +201,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  const CSeq_id&    to_id,
                                  CScope*           scope,
                                  TMapOptions       opts)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_id, opts);
 }
@@ -117,7 +212,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
                                  size_t            to_row,
                                  CScope*           scope,
                                  TMapOptions       opts)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     x_InitializeAlign(map_align, to_row, opts);
 }
@@ -125,7 +221,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
                                  ESeqMapDirection direction)
-    : m_Scope(&target_seq.GetScope())
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
+                           &target_seq.GetScope())),
+      m_Scope(&target_seq.GetScope())
 {
     CConstRef<CSeq_id> top_level_id = target_seq.GetSeqId();
     if ( !top_level_id ) {
@@ -154,7 +252,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     x_InitializeSeqMap(seq_map, top_level_id, direction);
     x_PreserveDestinationLocs();
@@ -164,7 +263,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
                                  SSeqMapSelector  selector)
-    : m_Scope(&target_seq.GetScope())
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
+                           &target_seq.GetScope())),
+      m_Scope(&target_seq.GetScope())
 {
     CConstRef<CSeq_id> top_id = target_seq.GetSeqId();
     if ( !top_id ) {
@@ -193,7 +294,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  SSeqMapSelector  selector,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     selector.SetFlags(CSeqMap::fFindRef).SetLinkUsedTSE();
     x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
@@ -207,7 +309,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
                                  const CBioseq_Handle&  top_level_seq,
                                  ESeqMapDirection       direction)
-    : m_Scope(&top_level_seq.GetScope())
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
+                           &top_level_seq.GetScope())),
+      m_Scope(&top_level_seq.GetScope())
 {
     if (depth > 0) {
         depth--;
@@ -232,7 +336,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope)
-    : m_Scope(scope)
+    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+      m_Scope(scope)
 {
     if (depth > 0) {
         depth--;
@@ -353,74 +458,6 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
 //
 //   Initialization helpers
 //
-
-
-void CSeq_loc_Mapper::CollectSynonyms(const CSeq_id_Handle& id,
-                                      TSynonyms&            synonyms) const
-{
-    if ( m_Scope.IsSet() ) {
-        CConstRef<CSynonymsSet> syns =
-            m_Scope.GetScope().GetSynonyms(id);
-        ITERATE(CSynonymsSet, syn_it, *syns) {
-            synonyms.push_back(CSynonymsSet::GetSeq_id_Handle(syn_it));
-        }
-    }
-    else {
-        synonyms.push_back(id);
-    }
-}
-
-
-CSeq_loc_Mapper::ESeqType
-CSeq_loc_Mapper::GetSeqType(const CSeq_id_Handle& idh) const
-{
-    if ( m_Scope.IsNull() ) {
-        return eSeq_unknown;
-    }
-    ESeqType seqtype = eSeq_unknown;
-    CBioseq_Handle handle;
-    try {
-        handle = m_Scope.GetScope().GetBioseqHandle(idh);
-        if ( handle ) {
-            switch ( handle.GetBioseqMolType() ) {
-            case CSeq_inst::eMol_dna:
-            case CSeq_inst::eMol_rna:
-            case CSeq_inst::eMol_na:
-                seqtype = eSeq_nuc;
-                break;
-            case CSeq_inst::eMol_aa:
-                seqtype = eSeq_prot;
-                break;
-            default:
-                break;
-            }
-        }
-    } catch (...) {
-    }
-    if (seqtype != eSeq_unknown) {
-        // Cache sequence type for all synonyms
-        CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(idh);
-        ITERATE(CSynonymsSet, syn_it, *syns) {
-            SetSeqTypeById(syns->GetSeq_id_Handle(syn_it), seqtype);
-        }
-    }
-    return seqtype;
-}
-
-
-TSeqPos CSeq_loc_Mapper::GetSequenceLength(const CSeq_id& id)
-{
-    CBioseq_Handle h;
-    if ( m_Scope.IsSet() ) {
-        h = m_Scope.GetScope().GetBioseqHandle(id);
-    }
-    if ( !h ) {
-        NCBI_THROW(CAnnotMapperException, eUnknownLength,
-                    "Can not map from minus strand -- "
-                    "unknown sequence length");
-    }
-    return h.GetBioseqLength();
-}
 
 
 CSeq_align_Mapper_Base*

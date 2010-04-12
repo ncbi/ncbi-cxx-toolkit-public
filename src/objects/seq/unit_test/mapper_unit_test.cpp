@@ -100,21 +100,6 @@ NCBITEST_AUTO_FINI()
 }
 
 
-static void s_InitInterval(CSeq_interval& loc,
-                             int gi,
-                             TSeqPos from,
-                             TSeqPos to,
-                             ENa_strand strand = eNa_strand_unknown)
-{
-    loc.SetId().SetGi(gi);
-    loc.SetFrom(from);
-    loc.SetTo(to);
-    if (strand != eNa_strand_unknown) {
-        loc.SetStrand(strand);
-    }
-}
-
-
 // Read two seq-locs, initialize seq-loc mapper.
 CSeq_loc_Mapper_Base* CreateMapperFromSeq_locs(CNcbiIstream& in)
 {
@@ -703,6 +688,7 @@ void TestMapping_ThroughAlignments(CNcbiIstream& in)
         "  Mapping through std-seg",
         "  Mapping through disc",
         "  Mapping through spliced-seg",
+        "  Mapping through spliced-seg, reversed strand",
         "  Mapping through sparse-seg"
     };
 
@@ -717,6 +703,67 @@ void TestMapping_ThroughAlignments(CNcbiIstream& in)
         cout << "    Interval, split" << endl;
         TestMappingSeq_loc(*mapper, in);
     }
+}
+
+
+// Test sequence info provider
+class CTestMapperSeqInfo : public IMapper_Sequence_Info
+{
+public:
+    CTestMapperSeqInfo(void) {}
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh)
+        {
+            if ( !idh.IsGi() ) return CSeq_loc_Mapper_Base::eSeq_unknown;
+            TTypeMap::const_iterator it = m_Types.find(idh.GetGi());
+            return it != m_Types.end() ?
+                it->second : CSeq_loc_Mapper_Base::eSeq_unknown;
+        }
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh)
+        {
+            if ( !idh.IsGi() ) return kInvalidSeqPos;
+            TLenMap::const_iterator it = m_Lengths.find(idh.GetGi());
+            return it != m_Lengths.end() ?
+                it->second : kInvalidSeqPos;
+        }
+    virtual void CollectSynonyms(const CSeq_id_Handle& id,
+                                 TSynonyms&            synonyms)
+        {
+            synonyms.push_back(id);
+        }
+
+    void AddSeq(int gi, TSeqType seqtype, TSeqPos len)
+        {
+            m_Types[gi] = seqtype;
+            m_Lengths[gi] = len;
+        }
+
+private:
+    typedef map<int, TSeqType> TTypeMap;
+    typedef map<int, TSeqPos>  TLenMap;
+
+    TTypeMap m_Types;
+    TLenMap  m_Lengths;
+};
+
+
+void TestMapper_Sequence_Info(CNcbiIstream& in)
+{
+    cout << "Test mapping with sequence info provider" << endl;
+    CRef<CTestMapperSeqInfo> info(new CTestMapperSeqInfo);
+    info->AddSeq(4, CSeq_loc_Mapper_Base::eSeq_nuc, 300);
+    info->AddSeq(5, CSeq_loc_Mapper_Base::eSeq_prot, 100);
+
+    CSeq_loc src, dst;
+    // Read seq-locs first to skip ASN.1 comments
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    auto_ptr<CSeq_loc_Mapper_Base> mapper(
+        new CSeq_loc_Mapper_Base(src, dst, info.GetPointer()));
+
+    cout << "  Test mapping whole, nuc to prot" << endl;
+    TestMappingSeq_loc(*mapper, in);
+    cout << "  Test mapping interval, nuc to prot" << endl;
+    TestMappingSeq_loc(*mapper, in);
 }
 
 
@@ -736,4 +783,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapping_Graph(in);
     TestMapping_AlignmentsToParts(in);
     TestMapping_ThroughAlignments(in);
+    TestMapper_Sequence_Info(in);
 }

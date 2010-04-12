@@ -42574,7 +42574,6 @@ Seq-align ::= {
         }
       }
     },
-    -- poly-a 5382,
     product-length 200
   }
 }
@@ -42651,6 +42650,128 @@ Seq-loc ::= packed-int {
   }
 }
 
+-- ::::: Spliced-seg, to row 0, reversed strand.
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 399,
+        genomic-start 0,
+        genomic-end 199,
+        genomic-strand minus,
+        parts {
+          match 30,
+          mismatch 20,
+          match 25,
+          genomic-ins 10,
+          match 15,
+          product-ins 10,
+          match 100
+        }
+      },
+      {
+        product-start nucpos 100,
+        product-end nucpos 149,
+        genomic-start 200,
+        genomic-end 249,
+        genomic-strand minus,
+        parts {
+          match 20,
+          mismatch 30
+        }
+      }
+    },
+    product-length 200
+  }
+}
+
+-- Whole
+Seq-loc ::= whole gi 4
+Seq-loc ::= packed-int {
+  {
+    from 300,
+    to 399,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 275,
+    to 289,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 274,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 100,
+    to 149,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- Interval, complete
+Seq-loc ::= int {
+  from 5,
+  to 70,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 329,
+  to 394,
+  strand minus,
+  id gi 5
+}
+
+-- Interval, split
+Seq-loc ::= int {
+  from 5,
+  to 270,
+  id gi 4
+}
+Seq-loc ::= packed-int {
+  {
+    from 300,
+    to 394,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 275,
+    to 289,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 274,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 100,
+    to 149,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
 -- ::::: Sparse-seg, to row 0.
 Seq-align ::= {
   type global,
@@ -42721,4 +42842,36 @@ Seq-loc ::= packed-int {
     fuzz-from lim lt,
     fuzz-to lim gt
   }
+}
+
+-- ==================
+-- ! Simple mapping !
+-- ==================
+
+-- Source
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  id gi 4
+}
+Seq-loc ::= whole gi 5
+
+-- Mapping whole seq-loc, nuc to prot
+Seq-loc ::= whole gi 4
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 5
+}
+
+-- Mapping interval, nuc to prot
+Seq-loc ::= int {
+  from 30,
+  to 59,
+  id gi 4
+}
+Seq-loc ::= int {
+  from 10,
+  to 19,
+  id gi 5
 }

@@ -193,17 +193,7 @@ public:
 
     ~CSeq_loc_Mapper(void);
 
-    // Collect synonyms for the given seq-id
-    virtual void CollectSynonyms(const CSeq_id_Handle& id,
-                                 TSynonyms&            synonyms) const;
-
 protected:
-    // Check molecule type
-    virtual ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
-
-    // Get sequence length for the given seq-id
-    virtual TSeqPos GetSequenceLength(const CSeq_id& id);
-
     // Create CSeq_align_Mapper, add any necessary arguments
     virtual CSeq_align_Mapper_Base*
         InitAlignMapper(const CSeq_align& src_align);

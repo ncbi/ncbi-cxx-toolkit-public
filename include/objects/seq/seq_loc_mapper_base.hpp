@@ -64,6 +64,7 @@ class CSeq_feat;
 class CSeq_align;
 class CSeq_align_Mapper_Base;
 class CSeq_graph;
+class IMapper_Sequence_Info;
 
 
 /// CMappingRange - describles a single interval to interval
@@ -291,15 +292,18 @@ public:
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
     ///  ranges. Must be a heap object (will be stored in a CRef<>).
-    CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges);
+    CSeq_loc_Mapper_Base(CMappingRanges*        mapping_ranges,
+                         IMapper_Sequence_Info* seq_info = 0);
 
     /// Mapping through a feature, both location and product must be set.
-    CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
-                         EFeatMapDirection dir);
+    CSeq_loc_Mapper_Base(const CSeq_feat&       map_feat,
+                         EFeatMapDirection      dir,
+                         IMapper_Sequence_Info* seq_info = 0);
 
     /// Mapping between two seq_locs.
-    CSeq_loc_Mapper_Base(const CSeq_loc&   source,
-                         const CSeq_loc&   target);
+    CSeq_loc_Mapper_Base(const CSeq_loc&        source,
+                         const CSeq_loc&        target,
+                         IMapper_Sequence_Info* seq_info = 0);
 
     /// Mapping through an alignment. Need to specify target ID or
     /// target row of the alignment. Any other ID is mapped to the
@@ -309,9 +313,10 @@ public:
     /// 'merge by segment' automatically to merge mapped locations
     /// by exon.
     /// @sa SetMergeBySeg
-    CSeq_loc_Mapper_Base(const CSeq_align& map_align,
-                         const CSeq_id&    to_id,
-                         TMapOptions       opts = 0);
+    CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
+                         const CSeq_id&         to_id,
+                         TMapOptions            opts = 0,
+                         IMapper_Sequence_Info* seq_info = 0);
     /// Sparse alignments require special row indexing since each
     /// row contains two seq-ids. Use options to specify mapping
     /// direction.
@@ -319,9 +324,10 @@ public:
     /// 'merge by segment' automatically to merge mapped locations
     /// by exon.
     /// @sa SetMergeBySeg
-    CSeq_loc_Mapper_Base(const CSeq_align& map_align,
-                         size_t            to_row,
-                         TMapOptions       opts = 0);
+    CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
+                         size_t                 to_row,
+                         TMapOptions            opts = 0,
+                         IMapper_Sequence_Info* seq_info = 0);
 
     ~CSeq_loc_Mapper_Base(void);
 
@@ -396,16 +402,17 @@ public:
     // Collect synonyms for the given seq-id and put them in the container.
     // The default implementation just adds the id to the list of synonyms.
     // Any overriden method should do at least the same.
-    virtual void CollectSynonyms(const CSeq_id_Handle& id,
-                                 TSynonyms&            synonyms) const;
+    void CollectSynonyms(const CSeq_id_Handle& id,
+                         TSynonyms&            synonyms) const;
 
-protected:
     // Sequence type - to recalculate coordinates.
     enum ESeqType {
         eSeq_unknown = 0,
         eSeq_nuc = 1,
         eSeq_prot = 3
     };
+
+protected:
 
     // Get molecule type for the given id. The default implementation
     // returns eSeq_unknown. The overrided methods should return
@@ -415,11 +422,11 @@ protected:
     // It's also a good idea to cache the same sequence type for all
     // synonyms in the overrided method to prevent multiple requests
     // to GetSeqType.
-    virtual ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
+    ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
 
     // Get sequence length for the given seq-id. Returns kInvalidSeqPos
     // if the length is unknown (the default behavior).
-    virtual TSeqPos GetSequenceLength(const CSeq_id& id);
+    TSeqPos GetSequenceLength(const CSeq_id& id);
 
     // Create CSeq_align_Mapper_Base, add any necessary arguments.
     virtual CSeq_align_Mapper_Base*
@@ -732,9 +739,12 @@ protected:
     // (e.g. exon).
     int                  m_CurrentGroup;
 
+    // Sequence info provider
+    mutable CRef<IMapper_Sequence_Info> m_SeqInfo;
+
 public:
     // Initialize the mapper with default values
-    CSeq_loc_Mapper_Base(void);
+    CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo = 0);
 
     // Methods for getting sequence types, use cached types (m_SeqTypes)
     // if possible.
@@ -754,6 +764,32 @@ public:
 
     // Get mapping ranges.
     const CMappingRanges& GetMappingRanges(void) const { return *m_Mappings; }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  IMapper_Sequence_Info
+///
+///  Interface for providing sequence information to CSeq_loc_Mapper_Base.
+///  Returns information about sequence type, length and synonyms.
+
+class IMapper_Sequence_Info : public CObject
+{
+public:
+    typedef CSeq_loc_Mapper_Base::ESeqType  TSeqType;
+    typedef CSeq_loc_Mapper_Base::TSynonyms TSynonyms;
+
+    /// Get information about sequence type (nuc or prot).
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh) = 0;
+
+    /// Get sequence length or kInvalidSeqPos.
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) = 0;
+
+    /// Collect all synonyms for the id including the id itself.
+    /// Any derived class must add at least the original id to the collection.
+    virtual void CollectSynonyms(const CSeq_id_Handle& id,
+                                 TSynonyms&            synonyms) = 0;
 };
 
 
