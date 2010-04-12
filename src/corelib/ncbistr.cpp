@@ -3004,7 +3004,12 @@ bool NStr::NeedsURLEncoding(const CTempString& str, EUrlEncode flag)
 
 bool NStr::IsIPAddress(const CTempStringEx& ip)
 {
-    const char* start = ip.HasZeroAtEnd() ? ip.data() : string(ip).c_str();
+    const char* start = ip.data();
+    auto_ptr<string> temp_ip_str;
+    if ( !ip.HasZeroAtEnd() ) {
+        temp_ip_str.reset(new string(ip));
+        start = temp_ip_str->c_str();
+    }
     const char* c = start;
     unsigned long val;
     int dots = 0;
