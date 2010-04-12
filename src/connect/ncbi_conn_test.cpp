@@ -579,10 +579,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         }
     }
 
-    const char* summary;
+    string summary;
     if (status != eIO_Success) {
+        summary = "Firewall port check FAILED";
         if (!m_Stateless) {
-            summary = "Firewall port check FAILED, switching to STATELESS mode"
+            summary += ", switching to STATELESS mode"
                 "\nWARNING: Not all services may remain operational";
             m_Forced = true;
         }
