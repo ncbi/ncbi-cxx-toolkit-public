@@ -198,6 +198,7 @@ private:
     unsigned int                m_MaxNumOfDispatches;
     unsigned int                m_ConnectionTimeout;
     unsigned int                m_LoginTimeout;
+    bool                        m_TryServerToo;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

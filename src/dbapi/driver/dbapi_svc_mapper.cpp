@@ -228,6 +228,18 @@ CDBServiceMapperCoR::SetPreference(const string&  service,
     }
 }
 
+void
+CDBServiceMapperCoR::GetServersList(const string& service, list<string>* serv_list) const
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    TDelegates::const_reverse_iterator dg_it = m_Delegates.rbegin();
+    TDelegates::const_reverse_iterator dg_end = m_Delegates.rend();
+    for (; serv_list->empty() && dg_it != dg_end; ++dg_it) {
+        (*dg_it)->GetServersList(service, serv_list);
+    }
+}
+
 
 void
 CDBServiceMapperCoR::ConfigureFromRegistry(const IRegistry* registry)

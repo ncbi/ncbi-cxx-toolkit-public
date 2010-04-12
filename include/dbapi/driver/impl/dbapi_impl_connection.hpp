@@ -123,6 +123,14 @@ public:
     /// it just checks the status of connection which was set by the last
     /// i/o operation)
     virtual bool IsAlive(void) = 0;
+    bool IsOpenningFinished(void) const
+    {
+        return m_OpenFinished;
+    }
+    void FinishOpenning(void)
+    {
+        m_OpenFinished = true;
+    }
     bool IsValid(void) const
     {
         return m_Valid;
@@ -286,6 +294,7 @@ private:
     string         m_Database;
     const string   m_Pool;
     const bool     m_Reusable;
+    bool           m_OpenFinished;
     bool           m_Valid;
     const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
     const bool     m_SecureLogin;

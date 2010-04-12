@@ -836,6 +836,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
         params->SetParam("is_pooled",
                          GetArgs().GetValue("use_conn_pool", &found_dummy));
     }
+    params->SetParam("pool_name", conf_params.pool_name);
     if (conf_params.IsPoolMinSizeSet()) {
         if (conf_params.pool_minsize.empty()) {
             params->SetParam("pool_minsize", "default");
@@ -914,13 +915,25 @@ CSDBAPI::Init(void)
 }
 
 
-typedef list< AutoPtr<IConnection> >  TConnsList;
+enum EMirrorConnState {
+    eConnInitializing,
+    eConnNotConnected,
+    eConnEstablished
+};
+
+struct SMirrorServInfo
+{
+    string               server_name;
+    AutoPtr<IConnection> conn;
+    EMirrorConnState     state;
+};
+
+typedef list< AutoPtr<SMirrorServInfo> >  TMirrorServList;
 
 struct SMirrorInfo
 {
     AutoPtr<CDBConnParamsBase>  conn_params;
-    list<string>                servers;
-    TConnsList                  conns;
+    TMirrorServList             servers;
     string                      master;
 };
 
@@ -957,7 +970,7 @@ public:
 
     virtual string GetDatabaseName(void) const
     {
-        return m_Other.GetDatabaseName();
+        return kEmptyStr;
     }
 
     virtual string GetUserName(void) const
@@ -1014,17 +1027,20 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                    "Mirrored database service name cannot be empty");
     }
 
+    bool first_execution = false;
     SMirrorInfo& mir_info = s_MirrorsData[dbservice];
     if (!mir_info.conn_params.get()) {
         mir_info.conn_params.reset(new CDBConnParamsBase);
+        first_execution = true;
     }
     CDBConnParamsBase& conn_params = *mir_info.conn_params.get();
-    list<string>& serv_info = mir_info.servers;
-    TConnsList& conns = mir_info.conns;
+    TMirrorServList& serv_list = mir_info.servers;
 
+    ds_init.Get();
     IDBConnectionFactory* i_factory
                 = CDbapiConnMgr::Instance().GetConnectionFactory().GetPointer();
     if (conn_params.GetServerName().empty()) {
+        first_execution = true;
         CSDB_ConnectionParam sdb_params(dbservice);
         sdb_params.x_FillLowerParams(&conn_params);
         if (conn_params.GetParam("single_server") != "true") {
@@ -1054,19 +1070,49 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     int cnt_switches = 0;
 
     do {
-        if (conns.empty()) {
-            factory->GetServersList(db_name, service_name, &serv_info);
-            ITERATE(list<string>, it, serv_info) {
-                conns.push_back(AutoPtr<IConnection>());
+        if (serv_list.empty()) {
+            list<string> servers;
+            factory->GetServersList(db_name, service_name, &servers);
+            ITERATE(list<string>, it, servers) {
+                serv_list.push_back(new SMirrorServInfo());
+                serv_list.back()->server_name = *it;
+                serv_list.back()->state = eConnInitializing;
             }
             servers_reread = true;
         }
         else if (need_reread_servers) {
-            
+            list<string> new_serv_info;
+            factory->GetServersList(db_name, service_name, &new_serv_info);
+            ERASE_ITERATE(TMirrorServList, old_it, serv_list) {
+                bool found = false;
+                ITERATE(list<string>, it, new_serv_info) {
+                    if (*it == (*old_it)->server_name) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    serv_list.erase(old_it);
+                }
+            }
+            ITERATE(list<string>, new_it, new_serv_info) {
+                bool found = false;
+                ITERATE(TMirrorServList, old_it, serv_list) {
+                    if ((*old_it)->server_name == *new_it) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    serv_list.push_back(new SMirrorServInfo());
+                    serv_list.back()->server_name = *new_it;
+                    serv_list.back()->state = eConnInitializing;
+                }
+            }
             servers_reread = true;
         }
-        if (conns.empty()) {
-            factory->WorkWithSingleServer(db_name, service_name, kEmptyStr);
+        if (serv_list.empty()) {
+            factory->WorkWithSingleServer("", service_name, kEmptyStr);
             ERR_POST_X(3, "No servers for service '" << service_name
                           << "' are available");
             if (error_message) {
@@ -1076,27 +1122,46 @@ CSDBAPI::UpdateMirror(const string& dbservice,
             return eMirror_Unavailable;
         }
 
-        list<string>::iterator it_srv = serv_info.end();
-        TConnsList::iterator it_conn = conns.end();
-        while (it_srv != serv_info.begin()) {
-            --it_srv;
-            --it_conn;
-            AutoPtr<IConnection>& conn = *it_conn;
+        for (TMirrorServList::iterator it = serv_list.end(); it != serv_list.begin(); )
+        {
+            --it;
+            AutoPtr<IConnection>& conn  = (*it)->conn;
+            const string& server_name   = (*it)->server_name;
+            EMirrorConnState& state     = (*it)->state;
             if (!conn.get()) {
                 IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
                 conn = ds->CreateConnection(eTakeOwnership);
             }
             if (!conn->IsAlive()) {
+                if (state == eConnEstablished) {
+                    ERR_POST_X(7, "Connection to server '" << server_name
+                                  << "' for service '" << service_name
+                                  << "' is lost.");
+                    state = eConnNotConnected;
+                }
                 CUpdMirrorServerParams serv_params(conn_params);
-                serv_params.SetServerName(*it_srv);
+                serv_params.SetServerName(server_name);
                 serv_params.SetParam("is_pooled", "false");
                 serv_params.SetParam("do_not_dispatch", "true");
                 try {
+                    conn->Close();
                     conn->Connect(serv_params);
+                    if (state == eConnNotConnected) {
+                        ERR_POST_X(8, "Connection to server '" << server_name
+                                      << "' for service '" << service_name
+                                      << "' is restored.");
+                    }
+                    state = eConnEstablished;
                 }
-                catch (CDB_Exception& ex) {
-                    ERR_POST_X(1, Info << "Error connecting to the server '"
-                                       << *it_srv << "': " << ex);
+                catch (CDB_Exception& /*ex*/) {
+                    //ERR_POST_X(1, Info << "Error connecting to the server '"
+                    //                   << server_name << "': " << ex);
+                    if (state == eConnInitializing) {
+                        ERR_POST_X(9, "Cannot establish connection to server '"
+                                   << server_name << "' for service '"
+                                   << service_name << "'.");
+                        state = eConnNotConnected;
+                    }
                     conn->Close();
                     need_reread_servers = true;
                 }
@@ -1108,35 +1173,35 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                     stmt->ExecuteUpdate("use " + db_name);
                     success = true;
                 }
-                catch (CDB_Exception& ex) {
+                catch (CDB_Exception& /*ex*/) {
                     // success is already false
-                    ERR_POST_X(2, Info << "Check for mirror principal state failed: "
-                                       << ex);
+                    //ERR_POST_X(2, Info << "Check for mirror principal state failed: "
+                    //                   << ex);
                 }
             }
-            if (!success  &&  *it_srv == mir_info.master) {
-                factory->WorkWithSingleServer(db_name, service_name, kEmptyStr);
+            if (!success  &&  server_name == mir_info.master) {
+                ERR_POST_X(4, Warning << "Master server '" << server_name
+                              << "' for service '" << service_name
+                              << "' became inaccessible.");
+
+                factory->WorkWithSingleServer("", service_name, kEmptyStr);
+                s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"));
                 mir_info.master.clear();
                 need_reread_servers = true;
-                ERR_POST_X(4, "Master server '" << *it_srv << " became inaccessible");
             }
-            else if (success  &&  *it_srv != mir_info.master) {
-                factory->WorkWithSingleServer(db_name, service_name, *it_srv);
+            else if (success  &&  server_name != mir_info.master) {
+                ERR_POST_X(5, Warning << "Mirror server '" << server_name
+                              << "' for service '" << service_name
+                              << "' became accessible. Switching the master.");
+                factory->WorkWithSingleServer("", service_name, server_name);
                 s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"));
                 s_GetDBContext()->SatisfyPoolMinimum(conn_params);
 
-                ERR_POST_X(5, "Mirror server '" << *it_srv << " became accessible. "
-                              "Switching the master.");
                 has_master = true;
-                mir_info.master = *it_srv;
-                serv_info.push_front(*it_srv);
-                conns.push_front(conn);
-                list<string>::iterator it_srv_next = it_srv++;
-                TConnsList::iterator it_conn_next = it_conn++;
-                serv_info.erase(it_srv);
-                conns.erase(it_conn);
-                it_srv = --it_srv_next;
-                it_conn = --it_conn_next;
+                mir_info.master = server_name;
+                serv_list.push_front(*it);
+                TMirrorServList::iterator it_del = it++;
+                serv_list.erase(it_del);
                 need_reread_servers = true;
 
                 if (++cnt_switches == 10) {
@@ -1149,8 +1214,18 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     }
     while (need_reread_servers  &&  !servers_reread);
 
-    if (servers)
-        servers->insert(servers->begin(), serv_info.begin(), serv_info.end());
+    if (first_execution  &&  !has_master) {
+        ERR_POST_X(10, "No master database is accessible for service '"
+                       << service_name << "'.");
+        factory->WorkWithSingleServer("", service_name, kEmptyStr);
+        s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"));
+    }
+
+    if (servers) {
+        ITERATE(TMirrorServList, it, serv_list) {
+            servers->push_back((*it)->server_name);
+        }
+    }
     if (!has_master) {
         if (error_message)
             *error_message = "All database instances are inaccessible";
@@ -1635,7 +1710,10 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
 
 CQueryImpl::~CQueryImpl(void)
 {
-    x_Close();
+    try {
+        x_Close();
+    }
+    STD_CATCH_ALL_X(6, "Error destroying CQuery");
     delete m_Stmt;
 }
 

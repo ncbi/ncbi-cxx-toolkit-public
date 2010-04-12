@@ -104,6 +104,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
 , m_Reusable(params.GetParam("is_pooled") == "true")
+, m_OpenFinished(false)
 , m_Valid(true)
 , m_BCPable(isBCPable)
 , m_SecureLogin(params.GetParam("secure_login") == "true")

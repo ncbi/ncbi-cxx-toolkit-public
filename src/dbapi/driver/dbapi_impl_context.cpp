@@ -250,7 +250,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         m_InUse.erase(it);
     }
 
-    if ( conn_reusable  &&  conn->IsValid() ) {
+    if (conn_reusable  &&  conn->IsOpenningFinished()  &&  conn->IsValid()) {
         m_NotInUse.push_back(conn);
     } else {
         delete conn;
@@ -380,7 +380,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
         // Connection should be created, but we can have limit on number of
         // connections in the pool.
         string pool_max_str(params.GetParam("pool_maxsize"));
-        if (!pool_max_str.empty()) {
+        if (!pool_max_str.empty()  &&  pool_max_str != "default") {
             int pool_max = NStr::StringToInt(pool_max_str);
             if (pool_max != 0) {
                 int total_cnt = 0;
@@ -692,7 +692,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
     if (reg.HasEntry(section_name, "use_conn_pool", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fIsPooledSet;
         params->is_pooled = reg.Get(section_name, "use_conn_pool");
-        params->pool_name = service_name;
+        params->pool_name = section_name;
         params->pool_name.append(1, '.');
         params->pool_name.append("pool");
     }
@@ -716,7 +716,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
     CMutexGuard mg(m_CtxMtx);
 
     string pool_min_str = params.GetParam("pool_minsize");
-    if (pool_min_str.empty())
+    if (pool_min_str.empty()  ||  pool_min_str == "default")
         return true;
     int pool_min = NStr::StringToInt(pool_min_str);
     if (pool_min <= 0)
@@ -726,7 +726,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
     int total_cnt = 0;
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
-        if (pool_name == t_con->PoolName()
+        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()
             &&  t_con->IsValid()  &&  t_con->IsAlive())
         {
             ++total_cnt;
@@ -734,8 +734,11 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
     }
     ITERATE(TConnPool, it, m_NotInUse) {
         CConnection* t_con(*it);
-        if (pool_name == t_con->PoolName()  &&  t_con->IsAlive())
+        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()
+            &&  t_con->IsAlive())
+        {
             ++total_cnt;
+        }
     }
     vector< AutoPtr<CDB_Connection> > conns(pool_min);
     for (int i = total_cnt; i < pool_min; ++i) {
@@ -783,9 +786,12 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             }
         }
         else {
-            string login_timeout(params.GetParam("login_timeout"));
-            if (!login_timeout.empty()) {
-                SetLoginTimeout(NStr::StringToInt(login_timeout));
+            string value(params.GetParam("login_timeout"));
+            if (value == "default") {
+                SetLoginTimeout(0);
+            }
+            else if (!value.empty()) {
+                SetLoginTimeout(NStr::StringToInt(value));
             }
         }
         if (conf_params.IsIOTimeoutSet()) {
@@ -797,9 +803,12 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             }
         }
         else {
-            string io_timeout(params.GetParam("io_timeout"));
-            if (!io_timeout.empty()) {
-                SetTimeout(NStr::StringToInt(io_timeout));
+            string value(params.GetParam("io_timeout"));
+            if (value == "default") {
+                SetTimeout(0);
+            }
+            else if (!value.empty()) {
+                SetTimeout(NStr::StringToInt(value));
             }
         }
         if (conf_params.IsSingleServerSet()) {
@@ -812,6 +821,9 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
                                                 conf_params.single_server)));
             }
         }
+        else if (params.GetParam("single_server") == "default") {
+            act_params.SetParam("single_server", "true");
+        }
         if (conf_params.IsPooledSet()) {
             if (conf_params.is_pooled.empty()) {
                 act_params.SetParam("is_pooled", "false");
@@ -823,8 +835,14 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
                 act_params.SetParam("pool_name", conf_params.pool_name);
             }
         }
+        else if (params.GetParam("is_pooled") == "default") {
+            act_params.SetParam("is_pooled", "false");
+        }
         if (conf_params.IsPoolMaxSizeSet())
             act_params.SetParam("pool_maxsize", conf_params.pool_maxsize);
+        else if (params.GetParam("pool_maxsize") == "default") {
+            act_params.SetParam("pool_maxsize", "");
+        }
 
         s_TransformLoginData(server_name, user_name, db_name, password);
         act_params.SetServerName(server_name);
@@ -870,13 +888,13 @@ void CDriverContext::CloseConnsForPool(const string& pool_name)
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
-        if (pool_name == t_con->PoolName()) {
+        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
             t_con->Invalidate();
         }
     }
     ERASE_ITERATE(TConnPool, it, m_NotInUse) {
         CConnection* t_con(*it);
-        if (pool_name == t_con->PoolName()) {
+        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
             m_NotInUse.erase(it);
             delete t_con;
         }

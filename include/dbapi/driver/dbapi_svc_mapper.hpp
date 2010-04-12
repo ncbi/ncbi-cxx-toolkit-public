@@ -94,6 +94,8 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
+    virtual void    GetServersList(const string& service,
+                                   list<string>* serv_list) const;
 
     void Push(const CRef<IDBServiceMapper>& mapper);
     void Pop(void);

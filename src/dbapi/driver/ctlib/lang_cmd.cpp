@@ -510,8 +510,11 @@ CTL_LRCmd::MakeResultInternal(void)
         "You need to send a command first." + GetDbgInfo(),
         120010 );
 
-    if (IsDead())
+    if (IsDead()) {
+        SetHasFailed();
+        SetWasSent(false);
         return NULL;
+    }
 
     for (;;) {
         CS_INT res_type;

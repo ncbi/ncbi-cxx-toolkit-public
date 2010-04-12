@@ -86,6 +86,8 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
             registry->GetInt(section_name, "CONNECTION_TIMEOUT", 0);
         m_LoginTimeout =
             registry->GetInt(section_name, "LOGIN_TIMEOUT", 0);
+        m_TryServerToo =
+            registry->GetBool(section_name, "TRY_SERVER_AFTER_SERVICE", false);
     } else {
         m_MaxNumOfConnAttempts = 1;
         m_MaxNumOfServerAlternatives = 32;
@@ -412,15 +414,40 @@ CDBConnectionFactory::DispatchServerName(
             if (dsp_srv.Empty()) {
                 return NULL;
             }
-            // If connection attempts will take too long mapper can return
-            // the same server once more. Let's not try to connect to it
-            // again.
-            ITERATE(list<TSvrRef>, it, tried_servers) {
-                if (**it == *dsp_srv) {
-                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+            if (dsp_srv->GetName() == service_name
+                &&  dsp_srv->GetHost() == 0  &&  dsp_srv->GetPort() == 0
+                &&  !tried_servers.empty())
+            {
+                if (full_retry_made) {
+                    if (!m_TryServerToo)
+                        return NULL;
+                }
+                else {
+                    _TRACE("List of servers for service " << service_name
+                           << " is exhausted. Giving excluded a try.");
+
+                    rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                    ITERATE(list<TSvrRef>, it, tried_servers) {
+                        rt_data.GetDBServiceMapper().Exclude(service_name, *it);
+                    }
+                    full_retry_made = true;
                     continue;
                 }
             }
+
+            // If connection attempts will take too long mapper can return
+            // the same server once more. Let's not try to connect to it
+            // again.
+            bool found = false;
+            ITERATE(list<TSvrRef>, it, tried_servers) {
+                if (**it == *dsp_srv) {
+                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
+                continue;
 
             // curr_conn_attr.srv_name = dsp_srv->GetName();
             cur_srv_name = dsp_srv->GetName();
@@ -466,28 +493,13 @@ CDBConnectionFactory::DispatchServerName(
         }
         else if (!t_con) {
             bool need_exclude = true;
-            if (dsp_srv->GetName() == service_name
-                &&  dsp_srv->GetHost() == 0  &&  dsp_srv->GetPort() == 0
+            if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
                 &&  (conn_status != IConnValidator::eTempInvalidConn
                         ||  (GetMaxNumOfValidationAttempts()
                              &&  rt_data.GetNumOfValidationFailures(service_name)
                                                >= GetMaxNumOfValidationAttempts())))
             {
-                if (!full_retry_made  &&  tried_servers.size() != 0) {
-                    _TRACE("List of servers for service " << service_name
-                           << " is exhausted. Giving excluded a try.");
-
-                    rt_data.GetDBServiceMapper().CleanExcluded(service_name);
-                    ITERATE(list<TSvrRef>, it, tried_servers) {
-                        rt_data.GetDBServiceMapper().Exclude(service_name, *it);
-                    }
-
-                    full_retry_made = true;
-                    need_exclude = false;
-                }
-                else {
-                    return NULL;
-                }
+                return NULL;
             }
 
             if (need_exclude) {
@@ -560,6 +572,7 @@ CDBConnectionFactory::MakeValidConnection(
             throw;
         }
     }
+    conn->FinishOpenning();
     return conn.release();
 }
 
