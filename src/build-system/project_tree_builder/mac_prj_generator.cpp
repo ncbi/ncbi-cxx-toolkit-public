@@ -131,6 +131,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> lib_dependencies( new CArray);
     CRef<CArray> dataspec_dependencies( new CArray);
     CRef<CArray> products( new CArray);
+
     
 #if USE_VERBOSE_NAMES
     string root_name("ROOT_OBJECT");
@@ -145,6 +146,21 @@ void CMacProjectGenerator::Generate(const string& solution)
         all_projects.push_back(&prj);
     }
     all_projects.sort(s_ProjId_less);
+
+    // generate product IDs
+    m_TargetProduct.clear();
+    m_TargetProductRef.clear();
+    ITERATE(list<const CProjItem*>, p, all_projects) {
+        const CProjItem& prj(**p);
+        string target_id(GetProjId(prj));
+        m_TargetProduct[target_id] = GetUUID();
+        m_TargetProductRef[target_id] = GetUUID();
+    }
+    ITERATE(list<const CProjItem*>, p, all_projects) {
+        const CProjItem& prj(**p);
+        CollectReferencedLibs(prj);
+    }
+    // generate targets
     ITERATE(list<const CProjItem*>, p, all_projects) {
         const CProjItem& prj(**p);
 
@@ -156,6 +172,8 @@ void CMacProjectGenerator::Generate(const string& solution)
         string proj_container( GetUUID());
 #endif
         string explicit_type( GetExplicitType( prj));
+        string target_name(GetTargetName(prj));
+        string target_id(GetProjId(prj));
 
         CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir+m_OutputDir);
         if (!prj_files.CheckProjectConfigs()) {
@@ -215,12 +233,14 @@ void CMacProjectGenerator::Generate(const string& solution)
         if (!proj_cust_script.empty()) {
             AddString( *build_phases, proj_cust_script);
         }
+        // link binary with libraries phase
+        string proj_link(
+            CreateProjectLinkPhase(prj, prj_files, *dict_objects));
+        if (!proj_link.empty()) {
+            AddString( *build_phases, proj_link);
+        }
         // project target and dependencies
-#if USE_VERBOSE_NAMES
-        string proj_product(  GetProjProduct(  prj));
-#else
-        string proj_product(  GetUUID());
-#endif
+        string proj_product( m_TargetProduct[target_id] );
         string proj_target(
             CreateProjectTarget( prj, prj_files, *dict_objects, build_phases,
                                  proj_product));
@@ -242,7 +262,7 @@ void CMacProjectGenerator::Generate(const string& solution)
             AddString( *dict_con, "isa", "PBXContainerItemProxy");
             AddString( *dict_con, "proxyType", "1");
             AddString( *dict_con, "remoteGlobalIDString", proj_target);
-            AddString( *dict_con, "remoteInfo", GetTargetName(prj));
+            AddString( *dict_con, "remoteInfo", target_name);
         }
         // project product
         if (!explicit_type.empty()) {
@@ -259,9 +279,19 @@ void CMacProjectGenerator::Generate(const string& solution)
                 AddString( *dict_product, "path", string("lib") + prj.m_ID + string(".a"));
             }
             AddString( *dict_product, "sourceTree", "BUILT_PRODUCTS_DIR");
+            
+            // project product reference
+            if (prj.m_ProjType == CProjKey::eLib || prj.m_ProjType == CProjKey::eDll) {
+                string product_ref( m_TargetProductRef[target_id] );
+                if (m_RefLibs.find(product_ref) != m_RefLibs.end()) {
+                    CRef<CDict> dict_product_ref( AddDict( *dict_objects, product_ref));
+                    AddString( *dict_product_ref, "fileRef", proj_product);
+                    AddString( *dict_product_ref, "isa", "PBXBuildFile");
+                }
+            }
         }
         // watchers
-        GetApp().RegisterProjectWatcher( GetTargetName(prj), prj.m_SourcesBaseDir, prj.m_Watchers);
+        GetApp().RegisterProjectWatcher( target_name, prj.m_SourcesBaseDir, prj.m_Watchers);
     }
 
 // collect file groups
@@ -611,6 +641,71 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
         AddString( *dict_script, "shellScript",
             GetRelativePath(CDirEntry::ConcatPath(script_loc,info.m_Script)));
         return proj_script;
+    }
+    return kEmptyStr;
+}
+
+void CMacProjectGenerator::CollectReferencedLibs(const CProjItem& prj)
+{
+    if (prj.m_ProjType == CProjKey::eDll || prj.m_ProjType == CProjKey::eApp) {
+        list<CProjItem> ldlibs;
+        ITERATE( list<CProjKey>, d, prj.m_Depends) {
+            CProjectItemsTree::TProjects::const_iterator
+                dp = m_Projects_tree.m_Projects.find( *d);
+            if ( dp != m_Projects_tree.m_Projects.end() &&
+                (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType) &&
+                (dp->first.Type() == CProjKey::eLib || dp->first.Type() == CProjKey::eDll)) {
+
+                if (dp->first.Type() == CProjKey::eLib &&
+                    GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
+                        continue;
+                }
+                ldlibs.push_back(dp->second);
+            }
+        }
+        if (!ldlibs.empty()) {
+            ITERATE( list<CProjItem>, d, ldlibs) {
+                string lib_ref( m_TargetProductRef[ GetProjId(*d)]);
+                _ASSERT(!lib_ref.empty());
+                m_RefLibs.insert(lib_ref);
+            }
+        }
+    }
+}
+
+string CMacProjectGenerator::CreateProjectLinkPhase(
+    const CProjItem& prj, const CProjectFileCollector& prj_files,
+    CDict& dict_objects)
+{
+    if (prj.m_ProjType == CProjKey::eDll || prj.m_ProjType == CProjKey::eApp) {
+        list<CProjItem> ldlibs;
+        ITERATE( list<CProjKey>, d, prj.m_Depends) {
+            CProjectItemsTree::TProjects::const_iterator
+                dp = m_Projects_tree.m_Projects.find( *d);
+            if ( dp != m_Projects_tree.m_Projects.end() &&
+                (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType) &&
+                (dp->first.Type() == CProjKey::eLib || dp->first.Type() == CProjKey::eDll)) {
+
+                if (dp->first.Type() == CProjKey::eLib &&
+                    GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
+                        continue;
+                }
+                ldlibs.push_back(dp->second);
+            }
+        }
+        if (!ldlibs.empty()) {
+            string proj_link( GetUUID());
+
+            CRef<CDict> dict_link( AddDict( dict_objects, proj_link));
+            CRef<CArray> link_libs( AddArray( *dict_link, "files"));
+            ITERATE( list<CProjItem>, d, ldlibs) {
+                string lib_ref( m_TargetProductRef[ GetProjId(*d)]);
+                _ASSERT(!lib_ref.empty());
+                AddString( *link_libs, lib_ref);
+            }
+            AddString( *dict_link, "isa", "PBXFrameworksBuildPhase");
+            return proj_link;
+        }
     }
     return kEmptyStr;
 }
@@ -969,6 +1064,8 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
 // library dependencies
     if (prj.m_ProjType == CProjKey::eDll || prj.m_ProjType == CProjKey::eApp) {
+        string ldlib;
+#if 0
         list<CProjItem> ldlibs;
         ITERATE( list<CProjKey>, d, prj.m_Depends) {
             CProjectItemsTree::TProjects::const_iterator
@@ -985,10 +1082,10 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
             }
         }
         ldlibs.sort(s_ProjItem_less);
-        string ldlib;
         ITERATE( list<CProjItem>, d, ldlibs) {
             ldlib += string(" -l") + GetTargetName(*d);
         }
+#endif
         string add;
         add = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("OTHER_LDFLAGS",cfg);
         if (!add.empty()) {
