@@ -1,5 +1,4 @@
 #! /bin/sh
-
 # $Id$
 # Author:  Vladimir Ivanov, NCBI 
 #
@@ -8,7 +7,7 @@
 # Buid list files to checking in the build tree.
 #
 # Usage: (Run only from Makefile.meta)
-#    check_add.sh <project_srcdir> <project_name> <signature> [<exeextension>]
+#    check_add.sh <project_srcdir> <project_name> <signature>
 #
 # Example:
 #    check_add.sh ~/c++/src/html/test test_jsmenu  \
@@ -29,7 +28,6 @@ x_out=$CHECK_RUN_LIST
 x_srcdir=`(cd "$1"; pwd)`
 x_test=$2
 x_signature=$3
-x_exeext=$4
 x_use_ignore_list=${CHECK_USE_IGNORE_LIST-Y}
 x_delim=" ____ "
 # Default timeout for check (in seconds)
@@ -76,9 +74,6 @@ else
    echo "SKIP -- $x_tpath"
    exit 0
 fi
-
-# Add exe extension if necessry
-x_app=$x_app$x_exeext
 
 # Get cmd-lines to run test
 x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app"`
