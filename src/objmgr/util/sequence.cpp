@@ -800,16 +800,16 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             for ( ;  feat_it;  ++feat_it) {
                 // treat subset as a special case
                 Int8 cur_diff = ( !revert_locations ) ?
-                    TestForOverlap(feat_it->GetLocation(),
-                                   loc,
-                                   overlap_type,
-                                   circular_length,
-                                   &scope) :
-                    TestForOverlap(loc,
-                                   feat_it->GetLocation(),
-                                   overlap_type,
-                                   circular_length,
-                                   &scope);
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
                 if (cur_diff < 0) {
                     continue;
                 }
@@ -824,16 +824,16 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             for ( ;  feat_it;  ++feat_it) {
                 // treat subset as a special case
                 Int8 cur_diff = ( !revert_locations ) ?
-                    TestForOverlap(feat_it->GetLocation(),
-                                   loc,
-                                   overlap_type,
-                                   circular_length,
-                                   &scope) :
-                    TestForOverlap(loc,
-                                   feat_it->GetLocation(),
-                                   overlap_type,
-                                   circular_length,
-                                   &scope);
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
                 if (cur_diff < 0) {
                     continue;
                 }
