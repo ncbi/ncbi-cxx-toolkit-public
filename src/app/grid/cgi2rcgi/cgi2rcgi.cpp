@@ -576,6 +576,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             new CHTMLText(now.AsString(m_DateFormat)));
         string st = grid_ctx.GetEntryValue(kElapsedTime);
         if (!st.empty()) {
+            m_Page->AddTagMap("SINCE_TIME", new CHTMLText(st));
+            m_CustomHTTPHeader->AddTagMap("SINCE_TIME", new CHTMLText(st));
             time_t tt = NStr::StringToInt(st);
             CTime start;
             start.SetTimeT(tt);
