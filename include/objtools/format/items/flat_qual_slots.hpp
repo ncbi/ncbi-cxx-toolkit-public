@@ -206,6 +206,7 @@ enum ESourceQualifier {
     eSQ_lat_lon,
     eSQ_macronuclear,
     eSQ_map,
+    eSQ_metagenomic,
     eSQ_mobile_element,
     eSQ_mol_type,
     eSQ_old_lineage,

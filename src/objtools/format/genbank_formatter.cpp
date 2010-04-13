@@ -148,6 +148,8 @@ void CGenbankFormatter::FormatLocus
     string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
                 "circular" : "linear  ";
 
+    string mol = s_GenbankMol[locus.GetBiomol()];
+
     locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
     locus_line << setw(16) << locus.GetName() << ' ';
     locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
@@ -159,7 +161,7 @@ void CGenbankFormatter::FormatLocus
         << strands[locus.GetStrand()];
     locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
     locus_line
-        << setw(6) << s_GenbankMol[locus.GetBiomol()]
+        << setw(6) << mol
         << "  "
         << topology
         << ' '              

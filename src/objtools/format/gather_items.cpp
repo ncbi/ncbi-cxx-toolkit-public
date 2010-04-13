@@ -1644,24 +1644,33 @@ void s_FixIntervalProtToCds(
     //  [2] Intervals are closed, i.e. [first_in, last_in].
     //  [3] Coordintates are relative to coding region + codon_start.
     //
-    destInt.SetFrom( srcInt.GetFrom() * 3 );    
-    destInt.SetTo( srcInt.GetTo() * 3 + 2 );
 
-    if ( srcFeat.GetData().IsCdregion() ) {
-        const CSeqFeatData::TCdregion& srcCdr = srcFeat.GetData().GetCdregion();
-        if ( srcCdr.CanGetFrame() && (srcCdr.GetFrame() != CSeqFeatData::TCdregion::eFrame_not_set) ) {
-            CCdregion::TFrame frame = srcCdr.GetFrame();
-            destInt.SetFrom( featInt.GetFrom() + destInt.GetFrom() + frame - 1 );
-            destInt.SetTo( featInt.GetFrom() + destInt.GetTo() + frame - 1 );
-        }
+    size_t uRawFrom = srcInt.GetFrom() * 3;
+    size_t uRawTo = srcInt.GetTo() * 3 + 2;
+
+    const CSeqFeatData::TCdregion& srcCdr = srcFeat.GetData().GetCdregion();
+    if ( srcInt.CanGetStrand() ) {
+        destInt.SetStrand( srcInt.GetStrand() );
+    }
+    if ( destInt.CanGetStrand() && destInt.GetStrand() == eNa_strand_minus ) {
+        destInt.SetTo( featInt.GetTo() - uRawFrom );
+        destInt.SetFrom( featInt.GetTo() - uRawTo );
+    }
+    else {
+        destInt.SetFrom( featInt.GetFrom() + uRawFrom );
+        destInt.SetTo( featInt.GetFrom() + uRawTo );
     }
 
-    //
-    //  If the destination feature is fuzzed at the 5', extend it all the way to
-    //  the 5' of the coding region:
-    //
+    if ( srcCdr.CanGetFrame() && (srcCdr.GetFrame() != CSeqFeatData::TCdregion::eFrame_not_set) ) {
+        CCdregion::TFrame frame = srcCdr.GetFrame();
+        destInt.SetFrom( destInt.GetFrom() + frame -1 );
+        destInt.SetTo( destInt.GetTo() + frame -1 );
+    }
+
     if ( srcInt.CanGetFuzz_from() ) {
-        destInt.SetFrom( featInt.GetFrom() );
+        if ( 3 + destInt.GetFrom() - featInt.GetFrom() < 6 ) {
+            destInt.SetFrom( featInt.GetFrom() );
+        }
         CRef<CInt_fuzz> pFuzzFrom( new CInt_fuzz );
         pFuzzFrom->Assign( srcInt.GetFuzz_from() );
         destInt.SetFuzz_from( *pFuzzFrom );
@@ -1670,12 +1679,10 @@ void s_FixIntervalProtToCds(
         destInt.ResetFuzz_from();
     }
 
-    //
-    //  If the destination feature is fuzzed at the 3', extend it all the way to
-    //  the 3' of the coding region:
-    //
     if ( srcInt.CanGetFuzz_to() ) {
-        destInt.SetTo( featInt.GetTo() );
+        if ( 3 + featInt.GetTo() - destInt.GetTo() < 6 ) {
+            destInt.SetTo( featInt.GetTo() );
+        }
         CRef<CInt_fuzz> pFuzzTo( new CInt_fuzz );
         pFuzzTo->Assign( srcInt.GetFuzz_to() );
         destInt.SetFuzz_to( *pFuzzTo );
@@ -1746,6 +1753,11 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         if ( curr.IsSetData() ) {
             const CSeqFeatData& currData = curr.GetData();
             if ( currData.Which() == CSeqFeatData::e_Prot ) {
+                if ( currData.GetSubtype() == CSeqFeatData::eSubtype_sig_peptide ||
+                     currData.GetSubtype() == CSeqFeatData::eSubtype_sig_peptide_aa )
+                {
+                    cerr << "";
+                }
                 s_FixIntervalProtToCds( feat, curr_loc, loc );
             }
         }

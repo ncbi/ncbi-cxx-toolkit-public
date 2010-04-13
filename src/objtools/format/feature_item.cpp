@@ -1194,8 +1194,8 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         s_feat = s_GetGeneFeatureByLocus_tag( ctx, g_ref->GetLocus_tag() );
     }
 
-    if ( s_feat == 0 ) {
-//    if ( g_ref == 0 ) {
+//    if ( s_feat == 0 ) {
+    if ( g_ref == 0 ) {
         if ( ctx.IsProt()  ||  !IsMapped()) {
 
             s_feat = GetBestOverlappingFeat(
@@ -1320,7 +1320,7 @@ void CFeatureItem::x_AddQuals(
 //    if ( GetLoc().IsInt() ) {
 //        size_t uFrom = GetLoc().GetInt().GetFrom();
 //        size_t uTo = GetLoc().GetInt().GetTo();
-//        if ( uFrom == 650 ) {
+//        if ( uFrom == 100880 ) {
 //            cerr << "Break" << endl;
 //        }
 //    }
@@ -1337,6 +1337,13 @@ void CFeatureItem::x_AddQuals(
     const CSeqFeatData& data  = m_Feat->GetData();
     CSeqFeatData::E_Choice type = data.Which();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
+//  /**fl**/>>
+//    if ( subtype == CSeqFeatData::eSubtype_sig_peptide_aa || 
+//        subtype == CSeqFeatData::eSubtype_sig_peptide ) 
+//    {
+//        cerr << "Break" << endl;
+//    }
+//  <</**fl**/
 
     const CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat;
@@ -2328,10 +2335,6 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
-//    if ( ! gene_ref ) {
-//        return;
-//    }
-
     bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?
@@ -2345,12 +2348,13 @@ void CFeatureItem::x_AddQualsGene(
         &gene_ref->GetLocus_tag() : 0;
 
     //  gene:
+//    if ( subtype != CSeqFeatData::eSubtype_repeat_region ) {
     if ( !from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if ( locus != 0 ) {
             m_Gene = *locus;
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         } 
-        else if (desc != NULL) {
+        else if ( ( desc != 0 ) && (subtype != CSeqFeatData::eSubtype_repeat_region) ) {
             m_Gene = *desc;
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         }
@@ -2359,6 +2363,12 @@ void CFeatureItem::x_AddQualsGene(
             m_Gene = syns.front();
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         }
+    }
+    else { // for repeat regions
+//        if ( from_overlap && locus != 0 ) {
+//            m_Gene = *locus;
+//            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
+//        }
     }
 
     //  locus tag:
@@ -4139,6 +4149,7 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(rev_primer_seq);
         DO_SS(fwd_primer_name);
         DO_SS(rev_primer_name);
+        DO_SS(metagenomic);
 #undef DO_SS
     case CSubSource::eSubtype_other:  return eSQ_subsource_note;
     default:                          return eSQ_none;
@@ -4199,6 +4210,10 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             primer_rev_name = (**it).GetName();
             break;
 
+        case eSQ_metagenomic:
+            x_AddQual( eSQ_seqfeat_note, new CFlatStringQVal( "metagenomic" ) );
+            break;
+
         default:
             if (slot != eSQ_none) {
                 x_AddQual(slot, new CFlatSubSourceQVal(**it));
@@ -4206,7 +4221,7 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             break;
         }
     }
-
+ 
     //  ------------------------------------------------------------------------
     //  PCR primer rules:
     //
@@ -4409,6 +4424,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(unstructured);
     }
 
+    DO_NOTE(metagenomic);
     if ( GetContext()->Config().SrcQualsToNote() ) {
         DO_NOTE(type);
         DO_NOTE(subtype);

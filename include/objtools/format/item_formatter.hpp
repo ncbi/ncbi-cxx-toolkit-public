@@ -130,6 +130,7 @@ protected:
     };
 
     static const string s_GenbankMol[];
+    static const string s_EmblMol[];
 
     virtual SIZE_TYPE GetWidth(void) const { return 78; }
 
