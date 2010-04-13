@@ -732,6 +732,14 @@ string CMsvcPrjProjectContext::GetPchHeader(
 {
     string value = m_MsvcProjectMakefile->GetConfigOpt("UsePch","DefaultPch",config);
     if (value.empty()) {
+        if (!m_Project.m_Pch.empty()) {
+            try {
+                NStr::StringToBool(m_Project.m_Pch);
+            }
+            catch (...) {
+                return m_Project.m_Pch;
+            }
+        }
         value = GetApp().GetMetaMakefile().GetUsePchThroughHeader(
             project_id, source_file_full_path, tree_src_dir);
     }
@@ -743,6 +751,15 @@ string CMsvcPrjProjectContext::GetConfigData(
 {
     string value = m_MsvcProjectMakefile->GetConfigOpt(section,entry,config);
     if (value.empty()) {
+        if (section == "UsePch" && entry == "UsePch" && !m_Project.m_Pch.empty()) {
+            try {
+                NStr::StringToBool(m_Project.m_Pch);
+                return m_Project.m_Pch;
+            }
+            catch (...) {
+            }
+            return "true";
+        }
         value = GetApp().GetMetaMakefile().GetConfigOpt(section,entry,config);
     }
     return value;

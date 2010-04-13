@@ -238,6 +238,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         project.m_ProjTags.sort();
                         project.m_ProjTags.unique();
                     }
+                    k = makein_contents.m_Contents.find("USE_PCH");
+                    if ( k != makein_contents.m_Contents.end() ) {
+                        if (project.m_Pch.empty()) {
+                            project.m_Pch = k->second.front();
+                        }
+                    }
                 }
             }
         }

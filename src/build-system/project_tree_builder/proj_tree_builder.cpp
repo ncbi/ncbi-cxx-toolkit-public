@@ -994,6 +994,10 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if ( k != makefile.m_Contents.end() ) {
         project.m_ProjTags = k->second;
     }
+    k = makefile.m_Contents.find("USE_PCH");
+    if ( k != makefile.m_Contents.end() ) {
+        project.m_Pch = k->second.front();
+    }
 
     CProjKey proj_key(CProjKey::eApp, proj_id);
     tree->m_Projects[proj_key] = project;
@@ -1228,6 +1232,10 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("PROJ_TAG");
     if ( k != m->second.m_Contents.end() ) {
         tree->m_Projects[proj_key].m_ProjTags = k->second;
+    }
+    k = m->second.m_Contents.find("USE_PCH");
+    if ( k != m->second.m_Contents.end() ) {
+        tree->m_Projects[proj_key].m_Pch = k->second.front();
     }
 
     if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {

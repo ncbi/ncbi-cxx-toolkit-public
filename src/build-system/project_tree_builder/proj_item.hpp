@@ -129,6 +129,9 @@ public:
 
     /// Base directory of source files (....c++/src/a/ )
     string       m_SourcesBaseDir;
+    
+    /// Precompiled header
+    string m_Pch;
 
     /// List of source files without extension ( *.cpp or *.c ) -
     /// with relative pathes from m_SourcesBaseDir.
