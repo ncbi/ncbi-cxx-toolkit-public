@@ -89,6 +89,11 @@ private:
     TValue* m_RJ;
     TValue* m_RK;
     TValue  m_Seed;
+
+private:
+    // prevent copying
+    CRandom(const CRandom&);
+    CRandom& operator=(const CRandom&);
 };
 
 
