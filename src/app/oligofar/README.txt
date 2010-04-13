@@ -1,5 +1,10 @@
 oligoFAR 3.101                     03-NOV-2009                                1-NCBI
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+This file may be obsolete and will be removed - see man/oligofar.* 
+for documentation
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 NAME 
     oligoFAR version 3.101 - global alignment of single or paired short reads
 

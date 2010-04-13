@@ -15,6 +15,7 @@ public:
     CNcbi8naPrinter( const string& s ) : m_data(s) {}
     const char * data() const { return m_data.c_str(); }
     unsigned size() const { return m_data.size(); }
+    string ToString() const;
 protected:
     const string& m_data;
 };
@@ -91,8 +92,13 @@ protected:
 void COutputFormatter::FormatCore( const CHit * hit ) const
 {
     ASSERT( hit->IsNull() == false );
+#if DEVELOPMENT_VER
+    double score1 = m_flags & fReportRawScore ? hit->GetScore(0) : hit->GetComponentFlags() & CHit::fComponent_1 ? 100*hit->GetScore(0)/hit->GetQuery()->ComputeBestScore(&m_scoreParam, 0) : 0;
+    double score2 = m_flags & fReportRawScore ? hit->GetScore(1) : hit->GetComponentFlags() & CHit::fComponent_2 ? 100*hit->GetScore(1)/hit->GetQuery()->ComputeBestScore(&m_scoreParam, 1) : 0;
+#else
     double score1 = m_flags & fReportRawScore ? hit->GetScore(0) : hit->GetComponentFlags() & CHit::fComponent_1 ? 100*hit->GetScore(0)/hit->GetQuery()->GetBestScore(0) : 0;
     double score2 = m_flags & fReportRawScore ? hit->GetScore(1) : hit->GetComponentFlags() & CHit::fComponent_2 ? 100*hit->GetScore(1)/hit->GetQuery()->GetBestScore(1) : 0;
+#endif
     m_out 
         << hit->GetQuery()->GetId() << "\t"
         << GetSubjectId( hit->GetSeqOrd() ) << "\t" 
@@ -150,7 +156,11 @@ int COutputFormatter::FormatQueryHits( const CQuery * query, int mask, int topCo
             * m_topPct/100;
         double ocutoff=  cutoff;
         if( (m_flags & fReportRawScore) == 0 ) {
+#if DEVELOPMENT_VER
+            ocutoff /= ((mask & 1 ? query->ComputeBestScore(&m_scoreParam, 0) : 0) + (mask & 2 ? query->ComputeBestScore(&m_scoreParam, 1) : 0 ));
+#else
             ocutoff /= ((mask & 1 ? query->GetBestScore(0) : 0) + (mask & 2 ? query->GetBestScore(1) : 0 ));
+#endif
             if( mask == 3 ) ocutoff*=2;
         }
 
@@ -457,6 +467,7 @@ void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepa
     const char * s = hit->GetTarget( matepair );
     const char * q = query->GetData( matepair );
 
+    if( !*s ) return;
     switch( query->GetCoding() ) {
     case CSeqCoding::eCoding_ncbi8na: CoTranslate<CNcbi8naBase>( q, s, t, rank, hit, matepair, flags ); break;
     case CSeqCoding::eCoding_ncbipna: CoTranslate<CNcbipnaBase>( q, s, t, rank, hit, matepair, flags ); break;

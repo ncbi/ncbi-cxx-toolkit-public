@@ -331,7 +331,7 @@ public:
         if( value.GetCount() == 0 ) return *this;
         if( value.GetEvent() == eEvent_NULL ) return *this;
         if( m_data == 0 ) {
-            m_data = (pointer_type)malloc( sizeof( value_type ) * 2 ); // allocate two items at onece - for metadata and for first element
+            m_data = (pointer_type)malloc( sizeof( value_type ) * 2 ); // allocate two items at once - for metadata and for first element
             //m_data = new value_type[kSizeIncrement];
             m_data[0] = value_type( eEvent_NULL, 1 );
             m_data[1] = value;

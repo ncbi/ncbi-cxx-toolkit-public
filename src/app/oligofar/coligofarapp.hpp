@@ -3,10 +3,13 @@
 
 #include "capp.hpp"
 #include "util.hpp"
+#include "string-util.hpp"
 #include "array_set.hpp"
 #include "cpassparam.hpp"
 #include "cshortreader.hpp"
+#include "coligofarcfg.hpp"
 #include "cintron.hpp"
+#include <util/value_convert.hpp>
 #include <corelib/ncbireg.hpp>
 #include <string>
 #include <set>
@@ -16,7 +19,7 @@ BEGIN_OLIGOFAR_SCOPES
 class IAligner;
 class CScoreTbl;
 class CQueryHash;
-class COligoFarApp : public CApp
+class COligoFarApp : public CApp, public COligofarCfg
 {
 public:
     COligoFarApp( int argc, char ** argv );
@@ -25,22 +28,6 @@ public:
         kKiloByte = 1024,
         kMegaByte = 1024*kKiloByte,
         kGigaByte = 1024*kMegaByte
-    };
-    enum ELongOpt { 
-        kLongOptBase = 0x100,
-        kLongOpt_pass0 = kLongOptBase + 0x00,
-        kLongOpt_pass1 = kLongOptBase + 0x01,
-        kLongOpt_min_block_length = kLongOptBase + 0x02,
-        kLongOpt_NaHSO3 = kLongOptBase + 0x03,
-        kLongOpt_maxInsertions = kLongOptBase + 0x04,
-        kLongOpt_maxDeletions = kLongOptBase + 0x05,
-        kLongOpt_maxInsertion = kLongOptBase + 0x07,
-        kLongOpt_maxDeletion = kLongOptBase + 0x08,
-        kLongOpt_addSplice = kLongOptBase + 0x09,
-        kLongOpt_hashBitMask = kLongOptBase + 0x0a,
-        kLongOpt_batchRange = kLongOptBase + 0x0b,
-        kLongOpt_printStatistics = kLongOptBase + 0x0c,
-        kLongOptEnd
     };
     typedef CHashParam::TSkipPositions TSkipPositions;
 
@@ -55,17 +42,29 @@ protected:
     virtual int  Execute();
     virtual int  TestSuite();
     
+    void InitConfig();
+    void SetPass0( const char * );
+    void SetPass1( const char * );
+    void ParseConfig( const char * cfg ) { ParseConfig( string( cfg ) ); }
+    void SetWindowSize( const char * );
+    void PrintWindowSize( ostream& );
+
+
     int RunTestSuite();
     int SetLimits();
     int ProcessData();
     void ParseConfig( const string& cfg );
     void ParseConfig( IRegistry * );
+    bool HasConfigEntry( IRegistry *, const string& section, const string& name ) const;
+    void WriteConfig( const char * );
 
     int GetOutputFlags();
 
-    virtual const option * GetLongOptions() const;
-    virtual const char * GetOptString() const;
     virtual int ParseArg( int, const char *, int );
+    virtual void PrintArgValue( int opt, ostream&, int );
+    virtual int  GetPassCount() const { return m_passParam.size(); }
+    virtual const option * COligoFarApp::GetLongOptions() const;
+    virtual const char * GetOptString() const;
 
     void SetupGeometries( map<string,int>& );
 
@@ -108,6 +107,7 @@ protected:
     bool     m_sodiumBisulfiteCuration;
     bool     m_outputSam;
     bool     m_printStatistics;
+    bool     m_fastaParseIDs;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;

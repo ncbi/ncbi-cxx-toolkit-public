@@ -373,8 +373,8 @@ inline CNcbi8naBase::CNcbi8naBase( const CNcbi8naBase& b, const CColorTwoBase& c
 { m_base = "\x1\x2\x4\x8\x2\x1\x8\x4\x4\x8\x1\x2\x8\x4\x2\x1"[(CNcbi2naBase(b) << 2)|c.GetColorOrd()]; }
 
 inline CNcbi8naBase::CNcbi8naBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? CNcbi8naBase( CNcbi2naBase( b&3 ) ) : Any() ) {}
-inline CNcbi8naBase CNcbi8naBase::Complement() const { return s_complement[(int)m_base]; }
-inline CNcbi2naBase CNcbi8naBase::GetSmallestNcbi2na() const { return s_smallestNcbi2na[int(m_base)]; }
+inline CNcbi8naBase CNcbi8naBase::Complement() const { return s_complement[(int)(unsigned char)m_base]; }
+inline CNcbi2naBase CNcbi8naBase::GetSmallestNcbi2na() const { return CNcbi2naBase( s_smallestNcbi2na[short((unsigned char)m_base)] ); }
 
 ////////////////////////////////////////////////////////////////////////
 

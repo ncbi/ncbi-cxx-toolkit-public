@@ -1,4 +1,4 @@
-APP_PROJ = oligofar fadice wbmask 
+APP_PROJ = oligofar fadice wbmask testsamrecord bmfilter
 #mktest
 
 REQUIRES = objects bdb -Cygwin

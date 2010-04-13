@@ -621,12 +621,17 @@ CMappedAlignment * CMappedAlignment::MakeExtended( IAligner * aligner ) const
     aligner->SetSubjectAnchor( sbb.GetFrom(), sbb.GetTo() );
     aligner->SetSubjectGuideTranscript( GetCigar() );
     if( aligner->Align() ) 
-        if( ( aligner->GetSubjectTo() - aligner->GetSubjectFrom() + 1 ) >= sbb.GetLength() ) 
+        if( ScoreAlignment() <= ScoreAlignment( aligner->GetSubjectTranscript() ) ) // ( aligner->GetSubjectTo() - aligner->GetSubjectFrom() + 1 ) >= sbb.GetLength() ) 
             return new CMappedAlignment( 
                 m_flags & fOwnQuery ? new CSRead( *m_query ) : m_query, 
                 m_flags & fOwnSubject ? new CContig( *m_subject ) : m_subject, 
                 aligner->GetSubjectFrom(), aligner->GetSubjectTranscript(), strand, 
                 m_flags, m_tags ? new TTags( *m_tags ) : 0 );
+        else 
+            cerr << "WARNING: " << m_cigar.ToString() 
+                << " scores " << ScoreAlignment() << ", " << aligner->GetSubjectTranscript().ToString() 
+                << " scores " << ScoreAlignment( aligner->GetSubjectTranscript() ) << "\n";
+    else cerr << "WARNING: alignment failed (distance = " << ComputeDistance( GetCigar() ) << ")\n";
 
     return 0;
 }

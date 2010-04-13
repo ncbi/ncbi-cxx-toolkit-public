@@ -47,7 +47,11 @@ double CFilter::ComputePenaltyLimit( const CHashAtom& m, double bestScore ) cons
     double worstScore = bestScore * m_scoreCutoff / 100;
     if( m_topPct > m_scoreCutoff ) {
         // int p = m.GetQuery()->IsPairedRead() ? 1 : 0;
+#if DEVELOPMENT_VER
+        double p = m.GetQuery()->ComputeBestScore( m_scoringFactory->GetScoreParam(), ! m.GetPairmate() );
+#else
         double p = m.GetQuery()->GetBestScore( ! m.GetPairmate() );
+#endif
         if( CHit * hp = m.GetQuery()->GetTopHit( 3 ) ) 
             worstScore = max( worstScore, (hp->GetTotalScore() * m_topPct/100/*00*/ - p) /* * bestScore */ );
         if( CHit * hs = m.GetQuery()->GetTopHit( m.GetPairmask() ) ) 
@@ -79,7 +83,11 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
      *========================================================================*/
 
     // this is the value for which and below there is no reason to continue alignment
+#if DEVELOPMENT_VER
+    double bestScore = m.GetQuery()->ComputeBestScore( m_scoringFactory->GetScoreParam(), m.GetPairmate() );
+#else
     double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
+#endif
     double penaltyLimit = ComputePenaltyLimit( m, bestScore );
 
     /*========================================================================*
@@ -280,6 +288,13 @@ void CFilter::SequenceBegin( const TSeqIds& id, int oid )
 {
     ASSERT( oid >= 0 );
     ASSERT( m_seqIds );
+    /*
+    cerr << "\n\x1b[31;43m\x1b[K" << oid << "\t";
+    ITERATE( TSeqIds, i, id ) {
+        cerr << " [" << (*i)->AsFastaString() << "]";
+    }
+    cerr << "\x1b[0m\n";
+    */
     m_ord = m_seqIds->Register( id, oid );
 }
 
@@ -315,7 +330,9 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
     ASSERT( hit->GetNextHit() == 0 );
     ASSERT( hit->GetComponentFlags() );
     CHit::C_NextCtl( hit ).SetPurged();
+    ASSERT( hit->IsPurged() == true );
     if( CHit * top = q->GetTopHit( hit->GetComponentMask() ) ) {
+        ASSERT( top->IsNull() || top->IsPurged() );
         double hitscore = hit->GetTotalScore();
         double topscore = top->GetTotalScore();
         double cutscore = topscore * m_topPct/100;
@@ -329,6 +346,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
                 CHit::C_NextCtl( top ).SetNext( 0 );
                 delete top;
                 top = 0;
+                cutscore = ( topscore = hitscore ) * m_topPct/100;
             } else {
                 delete hit; return; // chain was not changed - leave
             }

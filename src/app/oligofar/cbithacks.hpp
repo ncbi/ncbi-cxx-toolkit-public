@@ -76,7 +76,13 @@ public:
 
     template<class word>
     static word PackWord( word data, word mask );
+
+    template<class word>
+    static int LargestBitPos( word data );
     
+    template<class word>
+    static word SmallestFootprint( word data );
+
     template<class word>
     static word DuplicateBits( word in );
 
@@ -387,6 +393,30 @@ inline word CBitHacks::PackWord( word data, word mask ) // TODO: optimize
     return ret;
 }
 
+template<class word>
+inline word CBitHacks::SmallestFootprint( word data ) // TODO: optimize
+{
+    if( data == 0 ) return 0;
+    word mask = 0;
+    while( ( data & mask ) != data ) {
+        (mask <<= 1) |= 1;
+    }
+    return mask;
+}
+
+template<class word>
+inline int CBitHacks::LargestBitPos( word data ) // TODO: optimize
+{
+    if( data == 0 ) return -1;
+    word mask = 0;
+    int ret = -1;
+    while( ( data & mask ) != data ) {
+        (mask <<= 1) |= 1;
+        ++ret;
+    }
+    return ret;
+}
+
 template<>
 inline unsigned short CBitHacks::DuplicateBits<Uint2>( Uint2 in ) 
 {
@@ -413,6 +443,7 @@ inline Uint8 CBitHacks::DuplicateBits<Uint8>( Uint8 in )
 {
     return DuplicateBits<Uint4>( Uint4( in ) ) | ( ( (Uint8)DuplicateBits<Uint4>( Uint4( in >> 16 ) ) ) << 32 );
 }
+
 
 END_OLIGOFAR_SCOPES
 

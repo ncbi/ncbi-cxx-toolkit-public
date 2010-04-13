@@ -8,6 +8,7 @@
 BEGIN_OLIGOFAR_SCOPES
 
 class CQuery;
+class CSamRecord;
 class CHit
 {
 public:
@@ -23,6 +24,9 @@ public:
             double score1, int from1, int to1, int convTbl1, 
             double score2, int from2, int to2, int convTbl2, 
             const TTranscript& tr1, const TTranscript& tr2 );
+    // assumes that a and b are correct and represent paired hit of the same read on the same contig
+    CHit( CQuery *, Uint4 seqord, double score1, double score2, 
+            CSamRecord * a, CSamRecord * b );
 
     void SetPairmate( int pairmate, double score, int from, int to, int convTbl, const TTranscript& tr );
 
@@ -37,7 +41,9 @@ public:
     bool TargetNotSet() const { return m_target[0] == 0 && m_target[1] == 0; }
     void SetTarget( int pairmate, const char * from, const char * to );
 
-    const char * GetTarget( int pairmate ) const { if( char * x = m_target[pairmate] ) return x; else return ""; }
+    const char * GetCachedSam( int pairmate ) const { if( m_flags & fCachesSAMlines ) return m_target[pairmate]; else return ""; }
+    // target is ncbi8na, but can not start with gap (ASCII(0)), so "" is a good indicator that it is not present
+    const char * GetTarget( int pairmate ) const { if( m_flags & fCachesSAMlines ) return ""; if( char * x = m_target[pairmate] ) return x; else return ""; }
     const TTranscript& GetTranscript( int pairmate ) const { return m_transcript[pairmate]; }
 
     /* 
@@ -52,7 +58,7 @@ public:
         // fRead1_reverse,fRead2_reverse, and fOrder_reverse
         // are the smallest bits
         fRead1_reverse   = 0x01,
-        fRead2_reverse   = 0x02,
+        fRead2_reverse   = 0x02, // NB: it is used in x_InitComponent that fact that (fRead1_reverse << 1) == fRead2_reverse
         fOrder_reverse   = 0x04, // means that min( from2, to2 ) < min( from1, to1 )
         fReads_overlap   = 0x08, // this flag indicates ERROR; a number of functions depend on this
         fOther           = 0xf0,
@@ -69,6 +75,9 @@ public:
         kOrder_strand_bit = 2,
         kAlign_convTbl1_bit = 8,
         kAlign_convTbl2_bit = 10,
+        fAlign_convTablesMask = (3 << kAlign_convTbl1_bit) | (3 << kAlign_convTbl2_bit), 
+        fCachesSAMlines = 0x8000,
+        fDeleted = 0x4000,
         kComponents_bit  = 4,
         fNONE            = 0x00
     };
@@ -150,9 +159,14 @@ public:
     };
 
 protected:
-    explicit CHit( const CHit& );
     void x_SetValues( int min1, int max1, int min2, int max2 );
-    
+    void x_InitComponent( int mate, CSamRecord * a );
+    static void x_Register( const CHit * hit, bool on );
+
+private:
+    explicit CHit( const CHit& );
+    CHit& operator = (const CHit& );
+
 private:
     CQuery * m_query;
     CHit * m_next;
@@ -217,6 +231,12 @@ inline int CHit::GetTo( int pairmate ) const
 inline void CHit::C_NextCtl::SetNext( CHit * hit ) const 
 {
     ASSERT( m_hit != 0 && m_hit->IsNull() == false );
+    ASSERT( (m_hit->m_flags & fDeleted) == 0 );
+    ASSERT( (m_hit->m_flags & fPurged) != 0 );
+    if( hit && !hit->IsNull() ) {
+        ASSERT( (hit->m_flags & fDeleted) == 0 );
+        ASSERT( (hit->m_flags & fPurged) != 0 );
+    }
     // Let's stick to simple delegation of permissions
     m_hit->m_next = hit;
 }

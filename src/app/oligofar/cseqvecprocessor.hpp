@@ -7,6 +7,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -34,7 +36,7 @@ public:
         virtual void SequenceEnd() = 0;
     };
     
-    CSeqVecProcessor() : m_tgtCoding( CSeqCoding::eCoding_ncbi8na ) {}
+    CSeqVecProcessor() : m_tgtCoding( CSeqCoding::eCoding_ncbi8na ), m_fastaReaderFlags(0), m_parseTitleForIds( false ) {}
     
     virtual ~CSeqVecProcessor() {}
     template<class Iterator> 
@@ -62,6 +64,9 @@ public:
     // - SequenceBuffer (from higher to lower)
     // - SequenceEnd (from lower to higher)
     void AddCallback( int priority, ICallback * cbk ); 
+    void SetFastaReaderFlags( unsigned flags ) { m_fastaReaderFlags = flags; }
+    void SetFastaReaderFlags( unsigned flags, bool on ) { if( on ) m_fastaReaderFlags |= flags; else m_fastaReaderFlags &= ~flags; }
+    void SetFastaReaderParseId( bool on ) { SetFastaReaderFlags( CFastaReader::fNoParseID, !on ); }
 
     CSeqCoding::ECoding GetTargetCoding() const { return m_tgtCoding; }
     void SetTargetCoding( CSeqCoding::ECoding c ) { m_tgtCoding = c; }
@@ -73,6 +78,8 @@ protected:
 	int    m_oid;
     CSeqCoding::ECoding m_tgtCoding;
     set<string> m_seqid;
+    unsigned m_fastaReaderFlags;
+    bool m_parseTitleForIds;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -106,9 +113,12 @@ inline void CSeqVecProcessor::Process_SeqDB( const string& name )
 
 inline void CSeqVecProcessor::Process_fasta( const string& name )
 {
-    CFastaReader reader( name );
+    CFastaReader reader( name, m_fastaReaderFlags );
     auto_ptr<CSeqDBGiList> giList( CreateGiList() );
+    bool save = m_parseTitleForIds;
+    if( m_fastaReaderFlags & CFastaReader::fNoParseID ) m_parseTitleForIds = true;
     Process( reader, giList.get() );
+    m_parseTitleForIds = save;
 }
 
 inline CSeqDBGiList * CSeqVecProcessor::CreateGiList() 
@@ -163,7 +173,25 @@ inline void CSeqVecProcessor::Process( const CBioseq& bioseq, int oid, CSeqDBGiL
     }
     const CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac;
     CSeqVector vec( bioseq, 0, coding, eNa_strand_plus );
-    Process( ids, vec, oid );
+    if( m_parseTitleForIds || ids.size() == 0 ) {
+        TSeqIds newIds;
+        if( bioseq.IsSetDescr() == false || 
+            bioseq.GetDescr().Get().size() == 0 )
+            THROW( runtime_error, "Failed to get sequence IDS for oid=" << oid );
+        ITERATE( CBioseq::TDescr::Tdata, d, bioseq.GetDescr().Get() ) {
+            if( (*d)->IsTitle() ) {
+                const char * x = bioseq.GetDescr().Get().front()->GetTitle().c_str();
+                while( isspace( *x ) ) ++x;
+                const char * y = x;
+                while( *y > ' ' ) ++y;
+                newIds.push_back( CRef<CSeq_id>( new CSeq_id( CSeq_id::e_Local, string( x, y ) ) ) );
+                break;
+            }
+        }
+        Process( newIds, vec, oid );
+    } else {
+        Process( ids, vec, oid );
+    }
 }
 
 inline void CSeqVecProcessor::Process( const CSeq_entry& entry, int oid, CSeqDBGiList * gilist )

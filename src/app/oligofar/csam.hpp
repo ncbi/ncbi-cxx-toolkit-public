@@ -35,6 +35,14 @@ class CSamBase
             fReadFailedQC  = 0x0200,
             fReadDuplicate = 0x0400
         };
+        enum ESamTagType {
+            eTag_int = 'i',
+            eTag_char = 'A',
+            eTag_float = 'f',
+            eTag_string = 'Z',
+            eTag_hex = 'H',
+            eTag_none = 0
+        };
 };
 
 

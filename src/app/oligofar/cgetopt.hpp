@@ -225,6 +225,29 @@ protected:
 };
 
 template<>
+class COptArg<unsigned> : public COption
+{
+public:
+    COptArg( unsigned& tgt, char opt, const string& longOpt, const string& help ) :
+        COption( eValueRequired, opt, longOpt, help ), m_target( &tgt ), m_cnt(0) {}
+    bool Handle( const char * arg ) { 
+        m_cnt++; 
+        char * oops = 0;
+        if( arg[0] == '0' && arg[1] ) {
+            if( arg[1] == 'x' || arg[1] == 'X' ) *m_target = strtoul( arg + 2, &oops, 16 );
+            else if( arg[1] == 'b' || arg[1] == 'B' ) *m_target = strtoul( arg + 2, &oops, 2 );
+            else *m_target = strtoul( arg + 1, 0, 8 );
+        } else *m_target = strtoul( arg, &oops, 10 );
+        if( oops == 0 || oops[0] != 0 ) THROW( runtime_error, "Failed to convert ``" << arg << "'' to unsigned int (" << arg[1] << ") (" << oops << ")" );
+        return true;
+    }
+    void PrintValue( ostream& o ) const { o << NStr::BoolToString( *m_target ); }
+protected:
+    unsigned * m_target;
+    int m_cnt;
+};
+
+template<>
 template<class T>
 class COptArg<pair<T,T> > : public COption
 {

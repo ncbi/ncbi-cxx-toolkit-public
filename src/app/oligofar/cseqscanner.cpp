@@ -210,7 +210,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
         loop.Update( *x++ );
         if( p && ( pos % 1000 == 0 ) ) p->SetCurrentValue( pos ); //Increment();
     }
-    p->SetCurrentValue( pos );
+    if( p ) p->SetCurrentValue( pos );
 }
     
 template<class NoAmbiq, class Ambiq, class Callback>
@@ -258,17 +258,19 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
         seqname = m_seqIds->GetSeqDef( m_ord ).GetBestIdString();
     } else seqname = "sequence";
 
-    CProgressIndicator p( "Processing " + seqname, "bases" );
-    p.SetFinalValue( A - a );
+    auto_ptr<CProgressIndicator> p( (A - a > 100000)? new CProgressIndicator( "Processing " + seqname, "bases" ) : 0 );
+    if( p.get() ) p->SetFinalValue( A - a );
 
     switch( coding ) {
-    case CSeqCoding::eCoding_ncbi8na: x_RangemapLoop<C_LoopImpl_Ncbi8naNoAmbiguities,C_LoopImpl_Ncbi8naAmbiguities>( rangeMap, matches, callback, &p, a, A, off ); break;
-    case CSeqCoding::eCoding_colorsp: x_RangemapLoop<C_LoopImpl_ColorspNoAmbiguities,C_LoopImpl_ColorspAmbiguities>( rangeMap, matches, callback, &p, a, A, off ); break;
+    case CSeqCoding::eCoding_ncbi8na: x_RangemapLoop<C_LoopImpl_Ncbi8naNoAmbiguities,C_LoopImpl_Ncbi8naAmbiguities>( rangeMap, matches, callback, p.get(), a, A, off ); break;
+    case CSeqCoding::eCoding_colorsp: x_RangemapLoop<C_LoopImpl_ColorspNoAmbiguities,C_LoopImpl_ColorspAmbiguities>( rangeMap, matches, callback, p.get(), a, A, off ); break;
     default: THROW( logic_error, "Subject may be represented exclusively in ncbi8na or colorspace encoding, got " << coding );
     }
 
     m_filter->PurgeQueueToTheEnd();
-    p.SetCurrentValue( A - a );
-    p.Summary();
+    if( p.get() ) {
+        p->SetCurrentValue( A - a );
+        p->Summary();
+    }
 }
 

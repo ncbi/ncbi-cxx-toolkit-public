@@ -2,6 +2,8 @@
 #include "chit.hpp"
 #include "cquery.hpp"
 #include "cbithacks.hpp"
+#include "csamrecords.hpp"
+#include <set>
 
 USING_OLIGOFAR_SCOPES;
 
@@ -10,17 +12,39 @@ Uint8 CHit::s_count = 0;
 static char * gsx_CopyStr( const string& str ) 
 {
     if( char * x = new char[str.length() + 1] ) {
-        strncpy( x, str.c_str(), str.length() + 1 );
+        memcpy( x, str.c_str(), str.length() + 1 );
         x[str.length()] = 0;
         return x;
     } else throw bad_alloc();
 }
 
+//static int s_ordinal = 0;
+
+void CHit::x_Register( const CHit * h, bool on )
+{
+    return;
+    static set<const CHit*> hits;
+    if( on ) {
+        if( hits.find( h ) != hits.end() ) {
+            THROW( logic_error, "Double CHit constructor" );
+        }
+        hits.insert( h );
+    } else {
+        if( hits.find( h ) == hits.end() ) {
+            THROW( logic_error, "Deleting unexisting hit?" );
+        }
+        hits.erase( h );
+    }
+}
+
 CHit::~CHit() { 
     ASSERT( !( IsNull() && m_next )); 
+    ASSERT( (m_flags & fDeleted) == 0 );
+    m_flags |= fDeleted;
+    x_Register( this, false );
     delete m_next; 
-    delete m_target[0];
-    delete m_target[1];
+    delete [] m_target[0];
+    delete [] m_target[1];
 //    if( !IsNull() ) 
         --s_count; 
 }
@@ -28,6 +52,7 @@ CHit::~CHit() {
 CHit::CHit( CQuery* q ) : 
     m_query( q ), m_next( 0 ), m_seqOrd( ~0U ), m_fullFrom( 0 ), m_fullTo( 0 ), m_flags( fNONE )
 {
+    x_Register( this, true );
     m_score[0] = m_score[1] = 0;
     m_length[0] = m_length[1] = 0;
     m_target[0] = m_target[1] = 0;
@@ -39,6 +64,7 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int t
     m_fullFrom( from ), m_fullTo( to ),
     m_flags( ( fComponent_1 << pairmate ) | ( (3&convTbl) << kAlign_convTbl1_bit ) )
 {
+    x_Register( this, true );
     ASSERT( ( pairmate & ~1 ) == 0 );
     m_length[!pairmate] = 0;
     if( to < from ) {
@@ -57,8 +83,11 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int t
 }
 
 CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2, const TTranscript& tr1, const TTranscript& tr2 ) : 
-    m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), m_flags( fPairedHit | ((3&convTbl1) << kAlign_convTbl1_bit) | ((3&convTbl2) << kAlign_convTbl2_bit))
+    m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ),
+    m_fullFrom( -1 ), m_fullTo( -1 ), // explicitely... x_SetValues should set it below in switch
+    m_flags( fPairedHit | ((3&convTbl1) << kAlign_convTbl1_bit) | ((3&convTbl2) << kAlign_convTbl2_bit))
 {
+    x_Register( this, true );
     ASSERT( m_seqOrd != ~0U );
     m_score[0] = float( score1 );
     m_score[1] = float( score2 );
@@ -89,10 +118,59 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int conv
     ++s_count;
 }
 
+CHit::CHit( CQuery * q, Uint4 seqord, double score1, double score2, CSamRecord * a, CSamRecord * b ) :
+    m_query( q ),
+    m_next( 0 ),
+    m_seqOrd( seqord ),
+    m_fullFrom( -1 ),
+    m_fullTo( -1 ),
+    m_flags( fCachesSAMlines )
+{
+    x_Register( this, true );
+    m_score[0] = score1;
+    m_score[1] = score2;
+    m_target[0] = m_target[1] = 0;
+    x_InitComponent( 0, a );
+    x_InitComponent( 1, b );
+    if( a && b ) {
+        int from1 = a->GetRefBounding().GetFrom();
+        int from2 = b->GetRefBounding().GetFrom();
+        int to1 = a->GetRefBounding().GetTo();
+        int to2 = b->GetRefBounding().GetTo();
+        x_SetValues( from1, to1, from2, to2 ); // no switch is required since fromX and toX are already ordered
+    } else if( a ) {
+        m_fullFrom = a->GetRefBounding().GetFrom();
+        m_fullTo = a->GetRefBounding().GetTo();
+    } else if( b ) {
+        m_fullFrom = b->GetRefBounding().GetFrom();
+        m_fullTo = b->GetRefBounding().GetTo();
+    }
+    ++s_count;
+}
+
+void CHit::x_InitComponent( int mate, CSamRecord * a )
+{
+    delete [] m_target[mate];
+    if( a ) {
+        ostringstream o;
+        a->WriteAsSam(o);
+        m_target[mate] = new char[o.str().length() + 1];
+        strcpy( m_target[mate], o.str().c_str() );
+        m_transcript[mate].Assign( a->GetImprovedCigar() );
+        m_length[mate] = a->GetRefBounding().GetLength();
+        if( a->IsReverse() ) m_flags |= (fRead1_reverse<<mate);
+        m_flags |= (fComponent_1 << mate);
+    } else {
+        m_length[mate] = 0;
+        m_target[mate] = 0;
+    }
+}
+
 void CHit::SetPairmate( int pairmate, double score, int from, int to, int convTbl, const TTranscript& tr )
 {
     ASSERT( m_score[pairmate] <= score );
     ASSERT( (pairmate&~1) == 0 );
+    ASSERT( (m_flags & fPurged) == 0 );
     convTbl &= 3;
     m_flags |= pairmate ? ((3&convTbl) << kAlign_convTbl2_bit) : ((2&convTbl) << kAlign_convTbl1_bit);
     if( m_length[pairmate] == 0 ) {
@@ -169,7 +247,8 @@ void CHit::x_SetValues( int min1, int max1, int min2, int max2 )
 
 void CHit::SetTarget( int pairmate, const char * begin, const char * end ) 
 { 
-    if( m_target[pairmate] ) { delete m_target[pairmate]; m_target[pairmate] = 0; }
+    if( m_flags & fCachesSAMlines ) return;
+    if( m_target[pairmate] ) { delete [] m_target[pairmate]; m_target[pairmate] = 0; }
     if( begin == 0 || !HasComponent( pairmate ) ) { return; }
     int b = min( GetFrom( pairmate ), GetTo( pairmate ) );
     int l = abs( GetFrom( pairmate ) - GetTo( pairmate ) ) + 1;
@@ -186,7 +265,9 @@ void CHit::SetTarget( int pairmate, const char * begin, const char * end )
     if( l < 0 || l > 2*(int)m_query->GetLength( pairmate ) ) {
         m_target[pairmate] = gsx_CopyStr( "\xf" ); // indication of bad alignment
     } else {
-        m_target[pairmate] = gsx_CopyStr( string( p, '\xf' ) + string( b + begin, l ) + string( s, '\xf' ) );
+        string x = string( p, '\xf' ) + string( b + begin, l ) + string( s, '\xf' );
+        ASSERT( x.length() );
+        m_target[pairmate] = gsx_CopyStr( x );
     }
 }
 

@@ -8,9 +8,7 @@ USING_OLIGOFAR_SCOPES;
 CBitmaskBuilder::CBitmaskBuilder( int maxamb, int wsize, int wstep ) : 
     CBitmaskBase( maxamb, wsize, wstep ), m_bitCount( 0 ) 
 {
-    m_size = ((UintH(1) << (2*wsize))/Uint8(32)).GetLo();
-    m_data = new Uint4[m_size];
-    fill( m_data, m_data + m_size, 0 );
+    x_SetWordSize( wsize, true );
 }
 
 bool CBitmaskBuilder::Write( const string& name ) const 
@@ -41,13 +39,18 @@ Uint8 CBitmaskBuilder::CountBits()
 
 void CBitmaskBuilder::SequenceBuffer( CSeqBuffer * ncbi8na )
 {
-    CProgressIndicator progress( "Listing "+NStr::IntToString( m_wSize )+"-mers for "+m_seqId );
-    fourplanes::CHashGenerator hgen( m_wSize );
+    CProgressIndicator progress( "Listing "+NStr::IntToString( m_wSize )+"-mers of length "+NStr::IntToString( m_wLength )+" for "+m_seqId );
+    fourplanes::CHashGenerator hgen( m_wLength );
     for( const char * seq = ncbi8na->GetBeginPtr(); seq < ncbi8na->GetEndPtr(); ++seq ) {
         hgen.AddBaseMask( CNcbi8naBase( seq ) );
+        // cerr << CIupacnaBase( CNcbi8naBase( seq ) ) << "\t";
         if( hgen.GetAmbiguityCount() <= (int)m_maxAmb ) {
-            for( fourplanes::CHashIterator h( hgen ); h; ++h ) SetBit( *h );                
-        }
+            for( fourplanes::CHashIterator h( hgen ); h; ++h ) {
+                Uint8 packed = CBitHacks::PackWord( Uint8(*h), m_pattern2na );
+                // cerr << hex << DISPLAY( Uint8(*h) ) << DISPLAY( m_pattern2na ) << DISPLAY( packed ) << dec << "\n";
+                SetBit( packed );                
+            }
+        } //else cerr << "-\n";
         progress.Increment();
     }
     progress.Summary();

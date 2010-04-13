@@ -4,6 +4,7 @@
 #include "cseqbuffer.hpp"
 #include "cqueryhash.hpp"
 #include "cseqvecprocessor.hpp"
+#include "cprogressindicator.hpp"
 #include "dust.hpp"
 #include "fourplanes.hpp"
 
@@ -25,11 +26,15 @@ public:
         m_maxAmbiguities( 4 ), 
         m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_featMap(0), 
         m_inputChunk(0), m_minBlockLength(1000),
-        m_ord(-1)/*, m_bisulfiteCuration(false)*/ {}
+        m_ord(-1),
+        m_progress( new CProgressIndicator( "Processing reference sequences", "seq" ) )/*, m_bisulfiteCuration(false)*/ {}
+    ~CSeqScanner() {
+        m_progress->Summary();
+    }
     
     virtual void SequenceBegin( const TSeqIds& seqIds, int oid );
     virtual void SequenceBuffer( CSeqBuffer* iupacna );
-    virtual void SequenceEnd() {}
+    virtual void SequenceEnd() { m_progress->Increment(); }
 
     void SetMaxAmbiguities( int a ) { m_maxAmbiguities = a; }
 
@@ -155,6 +160,7 @@ protected:
     const TInputChunk * m_inputChunk;
     int  m_minBlockLength;
 	int  m_ord;
+    auto_ptr<CProgressIndicator> m_progress;
     //bool m_bisulfiteCuration;
     //int  m_strands;
 };

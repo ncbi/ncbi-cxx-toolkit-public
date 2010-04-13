@@ -6,6 +6,8 @@
 #include "chit.hpp"
 #include <iterator>
 
+#define DEVELOPMENT_VER 1
+
 BEGIN_OLIGOFAR_SCOPES
 
 class CHit;
@@ -35,6 +37,8 @@ public:
         fReject_BITS = 0xfc,
         fReject_BITS0 = 0x54,
         fReject_BITS1 = 0xa8,
+        fStoresQuality0 = 0x100,
+        fStoresQuality1 = 0x200,
         fNONE = 0
     };
     static Uint4 GetCount() { return s_count; }
@@ -42,6 +46,11 @@ public:
     CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "", int base = kDefaultQualityBase );
     ~CQuery() { for( int i = 0; i < 3; ++i ) delete m_topHit[i]; delete [] m_data; --s_count; }
 
+#if DEVELOPMENT_VER
+    CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& qual1, const string& data2, const string& qual2, int base = kDefaultQualityBase );
+    int GetAppendedPhrapQualityLength(int i) const { return (m_flags & (fStoresQuality0 << i)) ? GetLength(i) : 0; }
+    const char * GetAppendedPhrapQuality(int i) const { return GetData(i) + GetLength(i)*GetBytesPerBase(); }
+#endif
     void SetRejectAsShort( int i, bool on = true ) { if( on ) m_flags |= (fReject_short0 << i ); else m_flags &= ~(fReject_short0 << i); }
     void SetRejectAsLoQual( int i, bool on = true ) { if( on ) m_flags |= (fReject_loQual0 << i ); else m_flags &= ~(fReject_loQual0 << i); }
     void SetRejectAsLoCompl( int i, bool on = true ) { if( on ) m_flags |= (fReject_loCompl0 << i ); else m_flags &= ~(fReject_loCompl0 << i); }
@@ -67,9 +76,13 @@ public:
     void ClearHits() { for( int i = 0; i < 3; ++i ) { delete m_topHit[i]; m_topHit[i] = 0; } }
     bool HasHits() const { return m_topHit[0] || m_topHit[1] || m_topHit[2]; }
 
-    double ComputeBestScore( const CScoreParam * , int component );
+    double ComputeBestScore( const CScoreParam * , int component ) const;
+#if DEVELOPMENT_VER
+    double ComputeBestScore( const CScoreParam * p ) const { return ComputeBestScore( p, 0 ) + ComputeBestScore( p, 1 ); }
+#else
     double GetBestScore(int i) const { return m_bestScore[i]; }
     double GetBestScore() const { return GetBestScore(0) + GetBestScore(1); }
+#endif
 
     void MarkPositionAmbiguous( int component, int pos );
 
@@ -79,6 +92,8 @@ public:
     template<typename Base, typename Iter>
     Iter Export( Iter dest, int component, CSeqCoding::EStrand = CSeqCoding::eStrand_pos ) const;
 
+    ostream& PrintDibaseAsIupac( ostream& dest, int component, CSeqCoding::EStrand ) const;
+
 private:
     explicit CQuery( const CQuery& q );
 
@@ -87,6 +102,7 @@ protected:
     void x_InitNcbiqna( const string& id, const string& data1, const string& data2, int base );
     void x_InitNcbipna( const string& id, const string& data1, const string& data2, int base );
     void x_InitColorspace( const string& id, const string& data1, const string& data2, int base );
+    void x_InitColorspace( const string& id, const string& data1, const string& qual1, const string& data2, const string& qual2, int base );
     unsigned x_ComputeInformativeLength( const string& seq ) const;
 
     template<class iterator>
@@ -98,16 +114,84 @@ protected:
 
 protected:
     unsigned char * m_data; // contains id\0 data1 data2
-    unsigned short  m_offset[2]; // m_offset[1] should always point to next byte after first seq data
+    unsigned short  m_offset[2]; // m_offset[1] should always point to next byte after first seq data, unless quality scores are appended to the data
     unsigned char   m_length[2];
     unsigned short  m_flags;
-    float m_bestScore[2]; // according to new scoring approach, we may not need this
+#if DEVELOPMENT_VER
+
+#else
+    mutable float m_bestScore[2]; // according to new scoring approach, we may not need this
+#endif
     CHit * m_topHit[3];
     static Uint4 s_count;
 };
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation
+
+#if DEVELOPMENT_VER
+
+inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& qual1, const string& data2, const string& qual2, int base ) 
+    : m_data(0), m_flags(0)
+{
+    m_topHit[0] = m_topHit[1] = m_topHit[2] = 0;
+    switch( coding ) {
+    case CSeqCoding::eCoding_ncbi8na: x_InitNcbi8na( id, data1, data2, base ); break; // ignore qualities: TODO: record them
+    case CSeqCoding::eCoding_ncbiqna: x_InitNcbiqna( id, data1 + qual1, data2 + qual2, base ); break; // reuse existing function, use qna encoding
+    case CSeqCoding::eCoding_ncbipna: x_InitNcbipna( id, data1, data2, base ); break; // ignore phrap - we use 4-channel
+    case CSeqCoding::eCoding_colorsp: x_InitColorspace( id, data1, qual1, data2, qual2, base ); break; // that's goal: record qualities after data
+    default: THROW( logic_error, "Invalid coding " << coding );
+    }
+    ++s_count;
+}
+
+inline void CQuery::x_InitColorspace( const string& id, const string& data1, const string& qual1, const string& data2, const string& qual2, int base )
+{
+    m_flags &= ~fCoding_BITS;
+    m_flags |= fCoding_colorsp;
+    ASSERT( data1.length() < 55 );
+    ASSERT( data2.length() < 255 );
+    m_length[0] = data1.length();
+    m_length[1] = data2.length();
+    if( qual1.length() ) m_flags |= fStoresQuality0;
+    if( qual2.length() ) m_flags |= fStoresQuality1;
+    int q0 = qual1.length();
+    int q1 = qual2.length();
+    if( q0 ) {
+        ASSERT( q0 == (int)data1.length() - 1 );
+        ASSERT( q1 );
+    }
+    if( q1 ) {
+        ASSERT( q1 == (int)data2.length() - 1 );
+        ASSERT( q0 );
+    }
+    unsigned sz = id.length() + m_length[0] + m_length[1] + q0 + q1 + 1;
+    m_data = new unsigned char[sz];
+    memset( m_data, 0, sz );
+    strcpy( (char*)m_data, id.c_str() );
+    m_offset[0] = id.length() + 1;
+    m_offset[1] = m_offset[0] + m_length[0] + q0;
+    for( unsigned i = 0, j = m_offset[0]; i < m_length[0]; ) 
+        m_data[j++] = CColorTwoBase( CColorTwoBase::eFromASCII, data1[i++] );
+    for( unsigned i = 0, j = m_offset[0] + m_length[0]; i < qual1.length(); ) 
+        m_data[j++] = qual1[i] + (33 - base); // SAM standard is 33
+    for( unsigned i = 0, j = m_offset[1]; i < m_length[1]; )
+        m_data[j++] = CColorTwoBase( CColorTwoBase::eFromASCII, data2[i++] );
+    for( unsigned i = 0, j = m_offset[1] + m_length[1]; i < qual2.length(); ) 
+        m_data[j++] = qual2[i] + (33 - base); // SAM standard is 33
+    if( m_length[0] ) {
+        m_data[m_offset[0]+1] |= CNcbi8naBase( CNcbi8naBase(  m_data[m_offset[0]] ), CColorTwoBase(m_data[m_offset[0] + 1]) );
+        --m_length[0]; 
+        ++m_offset[0]; 
+    }
+    if( m_length[1] ) {
+        m_data[m_offset[1]+1] |= CNcbi8naBase( CNcbi8naBase(  m_data[m_offset[1]] ), CColorTwoBase(m_data[m_offset[1] + 1]) );
+        --m_length[1]; 
+        ++m_offset[1]; 
+    }
+}
+
+#endif
 
 inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2, int base ) : m_data(0), m_flags(0)
 {
@@ -116,7 +200,11 @@ inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const strin
     case CSeqCoding::eCoding_ncbi8na: x_InitNcbi8na( id, data1, data2, base ); break;
     case CSeqCoding::eCoding_ncbiqna: x_InitNcbiqna( id, data1, data2, base ); break;
     case CSeqCoding::eCoding_ncbipna: x_InitNcbipna( id, data1, data2, base ); break;
+#if DEVELOPMENT_VER
+    case CSeqCoding::eCoding_colorsp: x_InitColorspace( id, data1, "", data2, "", base ); break;
+#else
     case CSeqCoding::eCoding_colorsp: x_InitColorspace( id, data1, data2, base ); break;
+#endif
     default: THROW( logic_error, "Invalid coding " << coding );
     }
     ++s_count;
@@ -260,7 +348,7 @@ inline ostream& CQuery::PrintIupac( ostream& dest, int component, CSeqCoding::ES
         case CSeqCoding::eCoding_ncbi8na: return PrintSeq<CNcbi8naBase>( dest, component, strand );
         case CSeqCoding::eCoding_ncbiqna: return PrintSeq<CNcbiqnaBase>( dest, component, strand );
         case CSeqCoding::eCoding_ncbipna: return PrintSeq<CNcbipnaBase>( dest, component, strand );
-        case CSeqCoding::eCoding_colorsp: return PrintSeq<CColorTwoBase>( dest, component, strand );
+        case CSeqCoding::eCoding_colorsp: return PrintDibaseAsIupac( dest, component, strand );
         default: THROW( logic_error, "Unexpected encoding of sequence: " << GetCoding() );
     }
 }
@@ -280,6 +368,24 @@ inline Iter CQuery::Export( Iter dest, int component, CSeqCoding::EStrand strand
     const char * X = x + GetLength( component ) * incr;
     if( strand ==  CSeqCoding::eStrand_neg ) { incr = - incr; swap( x, X ); x += incr; X += incr; }
     for(; x != X; x += incr ) { *dest++ = CIupacnaBase( Base( x, strand ) ); }
+    return dest;
+}
+
+inline ostream& CQuery::PrintDibaseAsIupac( ostream& dest, int component, CSeqCoding::EStrand strand ) const 
+{
+    vector<char> o(GetLength(component));
+    int incr = GetBytesPerBase();
+    const char * x = GetData( component );
+    const char * X = x + GetLength( component ) * incr;
+    o[0] = CIupacnaBase( CColorTwoBase( x ) ); x += incr;
+    for( int i = 0; x != X; ++i, (x += incr) ) o[i+1] = CIupacnaBase( o[i], CColorTwoBase( x ) );
+    if( strand ==  CSeqCoding::eStrand_neg ) {
+        for( vector<char>::reverse_iterator t = o.rbegin(); t != o.rend(); ++t )
+            dest << CIupacnaBase( *t ).Complement();
+    } else {
+        for( vector<char>::const_iterator t = o.begin(); t != o.end(); ++t )
+            dest << CIupacnaBase( *t );
+    }
     return dest;
 }
 

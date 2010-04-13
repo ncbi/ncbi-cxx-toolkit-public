@@ -54,3 +54,6 @@
 	* Feature files (limit search to the given loci) are added
 	* Colorspace and bisulfite curation are back
 	* A number of small improvements, optimizations and bugfixes
+	* Improved SAM output for colorspace
+	* FASTA Seq-ids are not parsed anymore by default
+	* bmfilter added

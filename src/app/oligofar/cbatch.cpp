@@ -164,7 +164,12 @@ void CBatch::x_Rehash( unsigned pass )
                 if( top->GetTotalScore() < Sm ) rehash = true;
             }
             */
+#if DEVELOPMENT_VER
+            //cerr << DISPLAY( top->GetTotalScore() ) << DISPLAY( top->GetQuery()->ComputeBestScore( m_scoringFactory->GetScoreParam() ) ) << DISPLAY( Pm ) << "\n";
+            if( top->GetTotalScore() - top->GetQuery()->ComputeBestScore( m_scoringFactory->GetScoreParam() ) < -Pm ) rehash = true;
+#else
             if( top->GetTotalScore() - top->GetQuery()->GetBestScore() < -Pm ) rehash = true;
+#endif
         }
         if( rehash ) {
             //(*i)->ClearHits();
