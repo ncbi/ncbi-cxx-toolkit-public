@@ -378,13 +378,14 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
 EIO_Status CConnTest::GetFWConnections(string* reason)
 {
-    const char* user_header = "";
+    const char* user_header = "NCBI-RELAY: UNDEF";
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     if (net_info) {
-        if (!net_info->firewall)
-            user_header = "NCBI-RELAY: TRUE";
-        else
+        if (net_info->firewall) {
+            user_header = "NCBI-RELAY: FALSE";
             m_Firewall = true;
+        } else
+            user_header = "NCBI-RELAY: TRUE";
         if (net_info->stateless)
             m_Stateless = true;
         ConnNetInfo_SetupStandardArgs(net_info, 0/*w/o service*/);
