@@ -71,21 +71,6 @@ namespace ncbi {
 
 namespace TestUtil {
 
-// Random integer generator for use with std::generate
-#if defined(__ICC) || defined(NCBI_OS_IRIX)
-template <int lowest_value = 0, int highest_value = INT_MAX>
-#else
-template <int lowest_value = 0, int highest_value = ncbi::CRandom::GetMax()>
-#endif
-struct CRandomIntGen {
-    CRandomIntGen() : m_Gen(std::time(0)) {}
-    int operator()() {
-        return m_Gen.GetRand(lowest_value, highest_value);
-    }
-private:
-    ncbi::CRandom m_Gen;
-};
-
 std::vector<EBlastProgramType> GetAllBlastProgramTypes();
 
 ncbi::objects::CSeq_id* GenerateRandomSeqid_Gi();
