@@ -2470,9 +2470,10 @@ CCursor::callproc(const pythonpp::CTuple& args)
 
                 if ( pythonpp::CDict::HasSameType(obj) ) {
                     const pythonpp::CDict dict(obj);
-                    SetupParameters(dict, m_CallableStmtHelper);
-                    // Put any number as below only size is used in this case
-                    out_params.push_back(0);
+                    if (SetupParameters(dict, m_CallableStmtHelper)) {
+                        // Put any number as below only size is used in this case
+                        out_params.push_back(0);
+                    }
                 } else  if ( pythonpp::CList::HasSameType(obj)
                              ||  pythonpp::CTuple::HasSameType(obj) )
                 {
@@ -2488,9 +2489,10 @@ CCursor::callproc(const pythonpp::CTuple& args)
         m_CallableStmtHelper.Execute(out_params.size() != 0);
         m_RowsNum = m_CallableStmtHelper.GetRowCount();
 
+        pythonpp::CObject output_args;
         if (args_size > 1  &&  out_params.size() != 0) {
             // If we have input parameters ...
-            pythonpp::CObject output_args( args[1] );
+            output_args.Set(args[1]);
 
             if (m_CallableStmtHelper.MoveToLastRS() && m_CallableStmtHelper.HasRS() ) {
                 // We can have out/inout arguments ...
@@ -2521,19 +2523,19 @@ CCursor::callproc(const pythonpp::CTuple& args)
                     }
                 }
             }
-
-            // Get RowResultSet ...
-            if (m_CallableStmtHelper.MoveToNextRS()) {
-                m_CallableStmtHelper.FillDescription(m_DescrList);
-                m_Description = m_DescrList;
-            }
-            else {
-                m_AllDataFetched = m_AllSetsFetched = true;
-                m_Description = pythonpp::CNone();
-            }
-
-            return output_args;
         }
+
+        // Get RowResultSet ...
+        if (m_CallableStmtHelper.MoveToNextRS()) {
+            m_CallableStmtHelper.FillDescription(m_DescrList);
+            m_Description = m_DescrList;
+        }
+        else {
+            m_AllDataFetched = m_AllSetsFetched = true;
+            m_Description = pythonpp::CNone();
+        }
+
+        return output_args;
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
@@ -2541,19 +2543,6 @@ CCursor::callproc(const pythonpp::CTuple& args)
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
-
-    // Get RowResultSet ...
-    if (m_CallableStmtHelper.MoveToNextRS()) {
-        m_CallableStmtHelper.FillDescription(m_DescrList);
-        m_Description = m_DescrList;
-    }
-    else {
-        m_AllDataFetched = m_AllSetsFetched = true;
-        m_Description = pythonpp::CNone();
-    }
-
-    return pythonpp::CNone();
-
 }
 
 pythonpp::CObject
