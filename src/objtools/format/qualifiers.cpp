@@ -1278,6 +1278,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
         case CSubSource::eSubtype_rearranged:
         case CSubSource::eSubtype_transgenic:
         case CSubSource::eSubtype_environmental_sample:
+        case CSubSource::eSubtype_metagenomic:
             x_AddFQ(q, name, kEmptyStr, CFormatQual::eEmpty);
             break;
 
@@ -1319,7 +1320,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             if (!dbt.IsApproved(ctx.IsRefSeq())) {
                 continue;
             }
-            if ( (flags | IFlatQVal::fIsSource) && db == "dbEST" ) {
+            if ( (flags & IFlatQVal::fIsSource) && db == "dbEST" ) {
                 // approved for features only
                 continue;
             }
