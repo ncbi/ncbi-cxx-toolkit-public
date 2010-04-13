@@ -164,10 +164,10 @@ public:
 
     bool IsPassThrough() const;
 
-    /// if possible, do not output frame-preserving gaps, output frameshifts only
-    /// NOT USED ANYMORE
-    CProSplignOutputOptions& SetEatGaps(bool);
-    bool GetEatGaps() const;
+    /// cut partial codons and adjecent at the beginning and at the end of an alignment
+    /// called at the end of post processing
+    CProSplignOutputOptions& SetCutFlankPartialCodons(bool);
+    bool GetCutFlankPartialCodons() const;
 
     /// any length flank of a good piece should not be worse than this percentage threshold
     CProSplignOutputOptions& SetFlankPositives(int);
@@ -198,7 +198,7 @@ public:
 
 
 
-    /// reward (in # of positives?) for start codon match. Not implemented yet
+    /// reward (in # of positives?) for start codon match. 
     CProSplignOutputOptions& SetStartBonus(int);
     int GetStartBonus() const;
     /// reward for stop codon at the end. Not implemented yet
@@ -206,7 +206,7 @@ public:
     int GetStopBonus() const;
 
 public:
-    static const bool default_eat_gaps = true;
+    static const bool default_cut_flank_partial_codons = true;
 
     static const int default_flank_positives = 55;
     static const int default_total_positives = 70;
@@ -224,7 +224,7 @@ public:
     static const int default_stop_bonus = 8; /// ???
 
 private:
-    bool eat_gaps;
+    bool cut_flank_partial_codons;
     int flank_positives;
     int total_positives;
     int max_bad_len;
