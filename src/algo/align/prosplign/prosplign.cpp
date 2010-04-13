@@ -176,11 +176,11 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
     arg_desc->AddFlag("full", "output global alignment as is (all postprocessing options are ingoned)");
     arg_desc->AddDefaultKey
-        ("eat_gaps",
-         "eat_gaps",
-         "not used anymore",
+        ("cut_flank_partial_codons",
+         "cut_flank_partial_codons",
+         "cut partial codons and adjacent mismatches",
          CArgDescriptions::eBoolean,
-         CProSplignOutputOptions::default_eat_gaps?"true":"false");
+         CProSplignOutputOptions::default_cut_flank_partial_codons?"true":"false");
     arg_desc->AddDefaultKey
         ("flank_positives",
          "flank_positives",
@@ -260,7 +260,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
 {
     switch (mode) {
     case eWithHoles:
-        SetEatGaps(default_eat_gaps);
+        SetCutFlankPartialCodons(default_cut_flank_partial_codons);
 
         SetFlankPositives(default_flank_positives);
         SetTotalPositives(default_total_positives);
@@ -279,7 +279,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
 
         break;
     case ePassThrough:
-        SetEatGaps(false);
+        SetCutFlankPartialCodons(false);
 
         SetFlankPositives(0);
         SetTotalPositives(0);
@@ -301,7 +301,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
 CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplignOptions_Base(args)
 {
     if (args["full"]) {
-        SetEatGaps(false);
+        SetCutFlankPartialCodons(false);
 
         SetFlankPositives(0);
         SetTotalPositives(0);
@@ -318,7 +318,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         SetStartBonus(0);
         SetStopBonus(0);
     } else {
-        SetEatGaps(args["eat_gaps"].AsBoolean());
+        SetCutFlankPartialCodons(args["cut_flank_partial_codons"].AsBoolean());
         SetFlankPositives(args["flank_positives"].AsInteger());
         SetTotalPositives(args["total_positives"].AsInteger());
         SetMaxBadLen(args["max_bad_len"].AsInteger());
@@ -426,14 +426,14 @@ bool CProSplignOutputOptions::IsPassThrough() const
     return GetTotalPositives() == 0 && GetFlankPositives() == 0;
 }
 
-CProSplignOutputOptions& CProSplignOutputOptions::SetEatGaps(bool val)
+CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlankPartialCodons(bool val)
 {
-    eat_gaps = val;
+    cut_flank_partial_codons = val;
     return *this;
 }
-bool CProSplignOutputOptions::GetEatGaps() const
+bool CProSplignOutputOptions::GetCutFlankPartialCodons() const
 {
-    return eat_gaps;
+    return cut_flank_partial_codons;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetMinExonId(int val)
@@ -950,7 +950,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     CProSplignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
     list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
 
-    prosplign::RefineAlignment(scope, *refined_align, good_parts);
+    prosplign::RefineAlignment(scope, *refined_align, good_parts/*, output_options.GetCutFlankPartialCodons()*/);
 
     if (good_parts.size()!=1 || !IsProteinSpanWhole(refined_align->GetSegs().GetSpliced())) {
         refined_align->SetType(CSeq_align::eType_disc);
