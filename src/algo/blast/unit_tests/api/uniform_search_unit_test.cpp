@@ -44,6 +44,7 @@
 #include "test_objmgr.hpp"
 #include "blast_test_util.hpp"
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 // Object utils
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -237,18 +238,22 @@ BOOST_AUTO_TEST_CASE(MultipleProteinSearch) {
 
 BOOST_AUTO_TEST_CASE(SearchDatabase_RestrictionGiList)
 {
-    CSearchDatabase::TGiList gis(1, 5);
+    CSeqDBGiList gis;
+    gis.AddGi(1);
+    gis.AddGi(5);
     CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
-    db.SetGiListLimitation(gis);
-    BOOST_REQUIRE_THROW(db.SetNegativeGiListLimitation(gis), CBlastException);
+    db.SetGiList(&gis);
+    BOOST_REQUIRE_THROW(db.SetNegativeGiList(&gis), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(SearchDatabase_Restriction)
 {
-    CSearchDatabase::TGiList gis(1, 5);
+    CSeqDBGiList gis;
+    gis.AddGi(1);
+    gis.AddGi(5);
     CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
-    db.SetNegativeGiListLimitation(gis);
-    BOOST_REQUIRE_THROW(db.SetGiListLimitation(gis), CBlastException);
+    db.SetNegativeGiList(&gis);
+    BOOST_REQUIRE_THROW(db.SetGiList(&gis), CBlastException);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

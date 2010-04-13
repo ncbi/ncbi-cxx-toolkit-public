@@ -129,21 +129,6 @@ public:
     CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                     const string& entrez_query);
 
-    /// Constructor with allows a gi list to be specified
-    /// @param dbname database name [in]
-    /// @param mol_type molecule type [in]
-    /// @param gilist list of gis [in]
-    CSearchDatabase(const string& dbname, EMoleculeType mol_type,
-                    const TGiList& gilist);
-
-    /// Constructor with allows a gi list and an entrez query to be specified
-    /// @param dbname database name [in]
-    /// @param mol_type molecule type [in]
-    /// @param entrez_query entrez query string [in]
-    /// @param gilist list of gis [in]
-    CSearchDatabase(const string& dbname, EMoleculeType mol_type,
-                    const string& entrez_query, const TGiList& gilist);
-
     /// Mutator for the database name
     /// @param dbname database name [in]
     void SetDatabaseName(const string& dbname);
@@ -168,17 +153,19 @@ public:
 
     /// Mutator for the gi list
     /// @param gilist list of gis [in]
-    void SetGiListLimitation(const TGiList& gilist);
-    /// Mutator for the gi list
-    TGiList& SetGiListLimitation();
+    void SetGiList(CSeqDBGiList * gilist);
     /// Accessor for the gi list
-    const TGiList& GetGiListLimitation() const;
-
+    const CRef<CSeqDBGiList>& GetGiList() const;
+    const TGiList GetGiListLimitation() const;
+    /// Mutator for the negative gi list
+    /// @param gilist list of gis [in]
+    void SetNegativeGiList(CSeqDBGiList * gilist);
+    /// Accessor for the negative gi list
+    const CRef<CSeqDBGiList>& GetNegativeGiList() const;
+    const TGiList GetNegativeGiListLimitation() const;
     /// Mutator for the seqid list
     /// @param gilist list of seqids [in]
-    void SetSeqIdList(CRef<CSeqDBGiList> &seqidlist);
-    /// Mutator for the seqid list
-    CRef<CSeqDBGiList>& SetSeqIdList();
+    void SetSeqIdList(CSeqDBGiList * seqidlist);
     /// Accessor for the seqid list
     const CRef<CSeqDBGiList>& GetSeqIdList() const;
     
@@ -189,33 +176,34 @@ public:
     /// @param filt_algorithm filtering algorithm string [in]
     void SetFilteringAlgorithm(const string &filt_algorithm);
     /// Accessor for the filtering algorithm ID
-    /// @param seqdb the BLAST db the filtering to apply on [in]
-    int GetFilteringAlgorithm(const CRef<CSeqDB> seqdb=CRef<CSeqDB>()) const;
+    int GetFilteringAlgorithm() const;
 
-    /// Mutator for the negative gi list
-    /// @param gilist list of gis [in]
-    void SetNegativeGiListLimitation(const TGiList& gilist);
-    /// Mutator for the negative gi list
-    TGiList& SetNegativeGiListLimitation();
-    /// Accessor for the negative gi list
-    const TGiList& GetNegativeGiListLimitation() const;
+    /// Mutator for the seqdb
+    /// @param seqdb reference to an initialized db [in]
+    void SetSeqDb(CRef<CSeqDB> seqdb);
+    /// Obtain a reference to the database
+    CRef<CSeqDB> GetSeqDb() const;
 
 private:
     string          m_DbName;                   ///< database name
     EMoleculeType   m_MolType;                  ///< molecule type
     string          m_EntrezQueryLimitation;    ///< entrez query
     // N.B.: only one of the 2 below should be specified
-    TGiList         m_GiListLimitation;         ///< gi list
-    TGiList         m_NegativeGiListLimitation; ///< negative gi list
-    CRef<CSeqDBGiList> m_SeqIdList;             ///< seqid list
+    mutable CRef<CSeqDBGiList> m_GiList;         ///< gi list
+    mutable CRef<CSeqDBGiList> m_NegativeGiList; ///< negative gi list
+    mutable CRef<CSeqDBGiList> m_SeqIdList;      ///< seqid list
+    bool            m_GiListSet;
     /// filtering to apply to database sequences
-    mutable int     m_FilteringAlgorithmId;       
     string          m_FilteringAlgorithmString;
+    mutable int     m_FilteringAlgorithmId;       
     mutable bool    m_NeedsFilteringTranslation;
+    mutable bool    m_DbInitialized;
+    mutable CRef<CSeqDB>    m_SeqDb;
 
     /// Translate string algorithm id to numeric id
-    /// @param seqdb the blast database [in]
-    void x_TranslateFilteringAlgorithm(const CRef<CSeqDB> seqdb) const; 
+    void x_TranslateFilteringAlgorithm() const;
+    /// Initialize the database
+    void x_InitializeDb() const;
 };
 
 

@@ -101,65 +101,6 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
     return retval;
 }
 
-/** 
- * @brief Read a gi list by resolving the file name
- * 
- * @param filename name of file containing the gi list
- * 
- * @return CRef containing the gi list
- *
- * @throw CSeqDBException if the filename is not found
- */
-static CRef<CSeqDBGiList> s_ReadGiList(const string& filename)
-{
-    CRef<CSeqDBGiList> retval;
-    _ASSERT( !filename.empty() );
-
-    string file2open(SeqDB_ResolveDbPath(filename));
-    if (file2open.empty()) {
-        NCBI_THROW(CSeqDBException, eFileErr, 
-                   "File '" + filename + "' not found");
-    } 
-    retval.Reset(new CSeqDBFileGiList(file2open));
-    _ASSERT(retval);
-    return retval;
-}
-
-CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args)
-{
-    CRef<CSeqDB> retval;
-    const CSeqDB::ESeqType seq_type = db_args->IsProtein()
-        ? CSeqDB::eProtein
-        : CSeqDB::eNucleotide;
-
-    string gi_list_restriction = db_args->GetGiListFileName();
-    string negative_gi_list = db_args->GetNegativeGiListFileName();
-    _ASSERT(gi_list_restriction.empty() || negative_gi_list.empty());
-
-    if ( !gi_list_restriction.empty() ) {
-        CRef<CSeqDBGiList> gi_list = s_ReadGiList(gi_list_restriction);
-        _ASSERT(gi_list);
-        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type, gi_list));
-    } else if ( !negative_gi_list.empty() ) {
-        CRef<CSeqDBGiList> gi_list = s_ReadGiList(negative_gi_list);
-        _ASSERT(gi_list);
-        vector<int> gis;
-        gi_list->GetGiList(gis);
-        CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
-        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type,
-                                idset));
-    } else if ( (!db_args->GetSearchDatabase().Empty()) &&
-        (!db_args->GetSearchDatabase()->GetSeqIdList().Empty()) &&
-        (!db_args->GetSearchDatabase()->GetSeqIdList()->Empty())) {
-        CRef<CSeqDBGiList> gi_list = db_args->GetSearchDatabase()->GetSeqIdList();
-        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type, gi_list));
-    } else {
-        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type));
-    }
-    _ASSERT(retval.NotEmpty());
-    return retval;
-}
-
 void
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
@@ -206,9 +147,8 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             // Try to open the BLAST database even for remote searches, as if
             // it is available locally, it will be better to fetch the
             // sequence data for formatting from this (local) source
-            CRef<CSeqDB> seqdb = GetSeqDB(db_args); 
-            db_adapter.Reset(new CLocalDbAdapter(seqdb,
-                                 search_db->GetFilteringAlgorithm(seqdb)));
+            CRef<CSeqDB> seqdb = search_db->GetSeqDb();
+            db_adapter.Reset(new CLocalDbAdapter(*search_db));
             scope->AddDataLoader(RegisterOMDataLoader(seqdb));
         } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local
@@ -385,10 +325,11 @@ s_ImportDatabase(const CBlast4_subject& subj,
     }
 
     if (opts_builder.HaveGiList()) {
-        CSearchDatabase::TGiList limit;
-        const list<int>& gilist = opts_builder.GetGiList();
-        copy(gilist.begin(), gilist.end(), back_inserter(limit));
-        search_db->SetGiListLimitation(limit);
+        CSeqDBGiList *gilist = new CSeqDBGiList();
+        ITERATE(list<int>, gi, opts_builder.GetGiList()) {
+            gilist->AddGi(*gi);
+        }
+        search_db->SetGiList(gilist);
     }
 
     if (opts_builder.HasDbFilteringAlgorithmId()) {

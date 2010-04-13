@@ -65,13 +65,6 @@ public:
     CLocalDbAdapter(const CSearchDatabase& dbinfo);
     
     /// Constructor
-    /// @param seqdb 
-    ///     CSeqDB object for an already opened BLAST database
-    /// @param filtering_algorithm 
-    /// filtering algorithm ID applied to the BLAST database, -1 means none [in]
-    CLocalDbAdapter(CRef<CSeqDB> seqdb, int filtering_algorithm = -1);
-
-    /// Constructor
     /// @param subject_sequences
     ///     Set of sequences which should be used as subjects
     /// @param opts_handle
@@ -111,7 +104,7 @@ public:
 
     /// Retrieve the database filtering algorithm
     /// @returns -1 if not none was used, otherwise the filtering algorithm ID
-    int GetFilteringAlgorithm() const;
+    int GetFilteringAlgorithm();
 
     /// Returns true if this object represents protein or nucleotide sequences
     bool IsProtein() const;
@@ -133,9 +126,6 @@ private:
     /// Object containing BLAST database description
     CRef<CSearchDatabase> m_DbInfo;
 
-    /// BLAST database handle
-    CRef<CSeqDB> m_SeqDb;
-
     /// IQueryFactory containing the subject sequences
     CRef<IQueryFactory> m_SubjectFactory;
 
@@ -150,13 +140,6 @@ private:
     /// This is initialized ONLY if this object represents a BLAST database
     const string m_DbName;
     
-    /// Initialize a CSeqDB object from a CSearchDatabase object
-    CRef<CSeqDB> x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo);
-
-    /// List of filtering algorithms to apply to sequences extracted from the
-    /// BlastSeqSrc
-    int m_FilteringAlg;
-
     /// Prohibit copy-constructor
     CLocalDbAdapter(const CLocalDbAdapter&);
     /// Prohibit assignment operator
@@ -164,9 +147,9 @@ private:
 };
 
 inline int
-CLocalDbAdapter::GetFilteringAlgorithm() const
+CLocalDbAdapter::GetFilteringAlgorithm() 
 {
-    return m_FilteringAlg;
+    return (m_DbInfo.Empty() ? -1 : m_DbInfo->GetFilteringAlgorithm());
 }
 
 END_SCOPE(BLAST)

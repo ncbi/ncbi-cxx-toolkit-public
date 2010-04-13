@@ -595,8 +595,6 @@ public:
     /// subjects/databases
     static const int kSubjectsDataLoaderPriority = 10;
 
-    /// alias for a list of gis
-    typedef CSearchDatabase::TGiList TGiList;
     /// alias for the database molecule type
     typedef CSearchDatabase::EMoleculeType EMoleculeType;
 
@@ -623,16 +621,6 @@ public:
 
     /// Is the database/subject protein?
     bool IsProtein() const { return m_IsProtein; }
-
-    /// Get the gi list file name
-    /// The return value of this should be set in the CSeqDB ctor
-    string GetGiListFileName() const { return m_GiListFileName; }
-
-    /// Get the inverted gi list file name
-    /// The return value of this should be set in the CSeqDB ctor
-    string GetNegativeGiListFileName() const { 
-        return m_NegativeGiListFileName; 
-    }
 
     /// Get the BLAST database name
     /// @return empty string in the case of BLAST2Sequences, otherwise the
@@ -676,9 +664,6 @@ public:
 
 private:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
-    string m_GiListFileName;        /**< File name of gi list DB restriction */
-    /** File name of GIs to exclude from BLAST database */
-    string m_NegativeGiListFileName;
     bool m_RequestMoleculeType;     /**< Determines whether the database's
                                       molecule type should be requested in the
                                       command line, true in case of PSI-BLAST

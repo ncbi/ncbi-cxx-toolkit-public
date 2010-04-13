@@ -1282,35 +1282,6 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
-/** 
- * @brief Process gi lists command line arguments
- * 
- * @param args CArgs object representing command line arguments read [in]
- * @param argument_name name of the command line option [in]
- * @param filename the value of the option [out]
- * @param gis the contents of the file, if a remote BLAST search is needed (if
- * not, this will be empty upon function exit [out]
- */
-static void
-s_ProcessGiListArgument(const CArgs& args, 
-                        const string& argument_name, 
-                        string& filename, 
-                        vector<int>& gis)
-{
-    gis.clear();
-    if (args.Exist(argument_name) && args[argument_name]) {
-        filename.assign(args[argument_name].AsString());
-        /// This is only needed if the gi list is to be submitted remotely as
-        /// it needs to be sent over the network OR if we need to export the
-        /// object as a search strategy
-        if ((args.Exist(kArgRemote) && args[kArgRemote] && 
-            CFile(filename).Exists()) ||
-            (args[kArgOutputSearchStrategy].HasValue())) {
-            SeqDB_ReadGiList(filename, gis);
-        }
-    }
-}
-
 void
 CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                             CBlastOptions& opts)
@@ -1325,20 +1296,16 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
                                              mol_type));
 
-        vector<int> gis;
-        s_ProcessGiListArgument(args, kArgGiList, m_GiListFileName, gis);
-        if ( !gis.empty() ) 
-            m_SearchDb->SetGiListLimitation(gis);
-
-        s_ProcessGiListArgument(args, kArgNegativeGiList,
-                                m_NegativeGiListFileName, gis);
-        if ( !gis.empty() ) 
-            m_SearchDb->SetNegativeGiListLimitation(gis);
-
-        if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
-            CRef<CSeqDBGiList> gilist(new CSeqDBFileGiList(args[kArgSeqIdList].AsString(), 
-                                          CSeqDBFileGiList::eSeqIdList));
-            m_SearchDb->SetSeqIdList(gilist);
+        if (args.Exist(kArgGiList) && args[kArgGiList]) {
+            m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new 
+                        CSeqDBFileGiList(args[kArgGiList].AsString())));
+        } else if (args.Exist(kArgNegativeGiList) && args[kArgNegativeGiList]) {
+            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new 
+                        CSeqDBFileGiList(args[kArgNegativeGiList].AsString())));
+        } else if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
+            m_SearchDb->SetSeqIdList(CRef<CSeqDBGiList> (new
+                        CSeqDBFileGiList(args[kArgSeqIdList].AsString(), 
+                                          CSeqDBFileGiList::eSeqIdList)));
         }
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])

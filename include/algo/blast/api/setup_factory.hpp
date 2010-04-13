@@ -282,7 +282,7 @@ public:
     /// Create a BlastSeqSrc from an existing CSeqDB object
     /// @param db Existing CSeqDB object for the searched BLAST database [in]
     static BlastSeqSrc*
-    CreateBlastSeqSrc(CSeqDB * db);
+    CreateBlastSeqSrc(CSeqDB * db, int filt_algo = -1);
 
     /// Initialize a megablast BLAST database index
     /// @param seqsrc The source of subject sequence data [in]

@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/seqsrc_seqdb.hpp>  // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
 #include <algo/blast/api/seqinfosrc_seqvec.hpp> // for CSeqVecSeqInfoSrc
+#include <algo/blast/api/setup_factory.hpp>
 #include "seqsrc_query_factory.hpp"  // for QueryFactoryBlastSeqSrcInit
 #include "psiblast_aux_priv.hpp"    // for CPsiBlastValidate
 #include "seqinfosrc_bioseq.hpp"    // for CBioseqInfoSrc
@@ -54,20 +55,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName()),
-    m_FilteringAlg(dbinfo.GetFilteringAlgorithm())
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName())
 {
     m_DbInfo.Reset(new CSearchDatabase(dbinfo));
-}
-
-CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
-                                 int filtering_algorithm)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb),
-    m_DbName(seqdb->GetDBNameList()), m_FilteringAlg(filtering_algorithm)
-{
-    if (m_SeqDb.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "NULL CSeqDB");
-    }
 }
 
 CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
@@ -137,12 +127,8 @@ BlastSeqSrc*
 CLocalDbAdapter::MakeSeqSrc()
 {
     if ( ! m_SeqSrc ) {
-        if (m_DbInfo.NotEmpty() || m_SeqDb.NotEmpty()) {
-            if (m_SeqDb.Empty()) {
-                m_SeqDb = x_InitSeqDB(m_DbInfo);
-            }
-            m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer(),
-                                            m_FilteringAlg);
+        if (m_DbInfo.NotEmpty()) {
+            m_SeqSrc = CSetupFactory::CreateBlastSeqSrc(*m_DbInfo);
         } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             const EBlastProgramType program =
                                m_OptsHandle->GetOptions().GetProgramType();
@@ -162,59 +148,14 @@ CLocalDbAdapter::MakeSeqSrc()
     return m_SeqSrc;
 }
 
-CRef<CSeqDB>
-CLocalDbAdapter::x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo)
-{
-    _ASSERT(dbinfo.NotEmpty());
-
-    const CSeqDB::ESeqType type = dbinfo->IsProtein()
-        ? CSeqDB::eProtein
-        : CSeqDB::eNucleotide;
-
-    CRef<CSeqDBGiList> gi_list;
-    if ( !dbinfo->GetGiListLimitation().empty() ) {
-        CSeqDBIdSet idset(dbinfo->GetGiListLimitation(), CSeqDBIdSet::eGi);
-        gi_list = idset.GetPositiveList();
-    } else if (!(dbinfo->GetSeqIdList().Empty()) && !(dbinfo->GetSeqIdList()->Empty())) {
-        gi_list = dbinfo->GetSeqIdList();
-    }
-
-    // FIXME: refactor code in SplitDB/LibEntrezCacheEx.cpp ?
-    // Also, the results of this entrez query should be intersected with
-    // gi_list above
-    if ( !dbinfo->GetEntrezQueryLimitation().empty() ) {
-        NCBI_THROW(CException, eUnknown, "Unimplemented");
-    }
-
-    return CRef<CSeqDB>(new CSeqDB(dbinfo->GetDatabaseName(), type, gi_list));
-}
-
-/*** Auxiliary function to initialize CSeqDB with the filtering algorithms used
- * for the database
- * @param dbhandle CSeqDB instance [in]
- * @param filtering_algorithm filtering algorithm ID used for this search
- * [in]
- * @return CSeqDbSeqInfoSrc initialized accordingly
- */
-static CRef<CSeqDbSeqInfoSrc>
-s_InitCSeqDbSeqInfoSrc(CRef<CSeqDB> dbhandle, 
-                       int filtering_algorithm)
-{
-    _ASSERT(dbhandle.NotEmpty());
-    CRef<CSeqDbSeqInfoSrc> retval(new CSeqDbSeqInfoSrc(dbhandle));
-    retval->SetFilteringAlgorithmId(filtering_algorithm);
-    return retval;
-}
-
 IBlastSeqInfoSrc*
 CLocalDbAdapter::MakeSeqInfoSrc()
 {
     if ( !m_SeqInfoSrc ) {
-        if (m_SeqDb.NotEmpty()) {
-            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlg);
-        } else if (m_DbInfo.NotEmpty()) {
-            m_SeqDb = x_InitSeqDB(m_DbInfo);
-            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlg);
+        if (m_DbInfo.NotEmpty()) {
+            m_SeqInfoSrc = new CSeqDbSeqInfoSrc(m_DbInfo->GetSeqDb());
+            dynamic_cast<CSeqDbSeqInfoSrc *>(&*m_SeqInfoSrc)
+                 ->SetFilteringAlgorithmId(m_DbInfo->GetFilteringAlgorithm());
         } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             EBlastProgramType p(m_OptsHandle->GetOptions().GetProgramType());
             if ( !m_Subjects.empty() ) {
@@ -240,9 +181,6 @@ CLocalDbAdapter::IsProtein() const
     bool retval = false;
     if (m_DbInfo) {
         retval = m_DbInfo->IsProtein();
-    } else if (m_SeqDb) {
-        retval = (m_SeqDb->GetSequenceType() == CSeqDB::eProtein) ? true :
-            false;
     } else if (m_OptsHandle) {
         const EBlastProgramType p = m_OptsHandle->GetOptions().GetProgramType();
         retval = Blast_SubjectIsProtein(p) ? true : false;

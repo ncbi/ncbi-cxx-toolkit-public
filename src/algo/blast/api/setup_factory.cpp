@@ -353,24 +353,13 @@ CSetupFactory::CreateHspPipe(const CBlastOptionsMemento* opts_memento,
 BlastSeqSrc*
 CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
 {
-    bool prot = (db.GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein);
-
-    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db.GetDatabaseName(), prot, 0, 0,
-                                               db.GetFilteringAlgorithm());
-    char* error_str = BlastSeqSrcGetInitError(retval);
-    if (error_str) {
-        string msg(error_str);
-        sfree(error_str);
-        retval = BlastSeqSrcFree(retval);
-        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
-    }
-    return retval;
+    return CreateBlastSeqSrc(db.GetSeqDb(), db.GetFilteringAlgorithm());
 }
 
 BlastSeqSrc*
-CSetupFactory::CreateBlastSeqSrc(CSeqDB * db)
+CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo)
 {
-    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db);
+    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db, filt_algo);
     char* error_str = BlastSeqSrcGetInitError(retval);
     if (error_str) {
         string msg(error_str);

@@ -835,7 +835,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
     // note the missing argument to the repeats database
     nucl_handle.SetFilterString("m L; R -d ");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_THROW(Blast_FindRepeatFilterLoc(query_v, &nucl_handle),
-                        CBlastException);
+                        CSeqDBException);
 }
 
 BOOST_AUTO_TEST_CASE(WindowMaskerWithMissingParameter) {

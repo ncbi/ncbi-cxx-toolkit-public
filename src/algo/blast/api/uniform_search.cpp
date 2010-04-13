@@ -51,30 +51,15 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type)
-    : m_DbName(dbname), m_MolType(mol_type), m_FilteringAlgorithmId(-1),
-      m_NeedsFilteringTranslation(false)
+    : m_DbName(dbname), m_MolType(mol_type), m_GiListSet(false),
+      m_FilteringAlgorithmId(-1), m_NeedsFilteringTranslation(false), m_DbInitialized(false)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_EntrezQueryLimitation(entrez_query), m_FilteringAlgorithmId(-1),
-      m_NeedsFilteringTranslation(false)
-{}
-
-CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
-               const TGiList& gilist)
-    : m_DbName(dbname), m_MolType(mol_type),
-      m_GiListLimitation(gilist), m_FilteringAlgorithmId(-1),
-      m_NeedsFilteringTranslation(false)
-{}
-
-CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
-               const string& entrez_query, const TGiList& gilist)
-    : m_DbName(dbname), m_MolType(mol_type),
-      m_EntrezQueryLimitation(entrez_query), m_GiListLimitation(gilist),
-      m_FilteringAlgorithmId(-1),
-      m_NeedsFilteringTranslation(false)
+      m_EntrezQueryLimitation(entrez_query), m_GiListSet(false),
+      m_FilteringAlgorithmId(-1), m_NeedsFilteringTranslation(false), m_DbInitialized(false)
 {}
 
 void 
@@ -114,37 +99,62 @@ CSearchDatabase::GetEntrezQueryLimitation() const
 }
 
 void 
-CSearchDatabase::SetGiListLimitation(const TGiList& gilist) 
+CSearchDatabase::SetGiList(CSeqDBGiList * gilist) 
 {
-    if ( !m_NegativeGiListLimitation.empty() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-               "Cannot have a negative and a regular gi list simultaneously");
-    }
-    m_GiListLimitation = gilist; 
+    if (m_GiListSet) NCBI_THROW(CBlastException, eInvalidArgument,
+          "Cannot have more than one type of id list filtering.");
+    m_GiListSet = true;
+    m_GiList.Reset(gilist); 
 }
 
-CSearchDatabase::TGiList& 
-CSearchDatabase::SetGiListLimitation()
-{ 
-    return m_GiListLimitation; 
+const CRef<CSeqDBGiList>& 
+CSearchDatabase::GetGiList() const
+{
+    return m_GiList;
 }
 
-const CSearchDatabase::TGiList& 
+const CSearchDatabase::TGiList 
 CSearchDatabase::GetGiListLimitation() const 
 { 
-    return m_GiListLimitation; 
+    CSearchDatabase::TGiList retval;
+    if (!m_GiList.Empty() && !m_GiList->Empty()) {
+        m_GiList->GetGiList(retval);
+    }
+    return retval;
 }
 
 void 
-CSearchDatabase::SetSeqIdList(CRef<CSeqDBGiList> & gilist) 
+CSearchDatabase::SetNegativeGiList(CSeqDBGiList * gilist) 
 {
-    m_SeqIdList.Reset(gilist); 
+    if (m_GiListSet) NCBI_THROW(CBlastException, eInvalidArgument,
+          "Cannot have more than one type of id list filtering.");
+    m_GiListSet = true;
+    m_NegativeGiList.Reset(gilist); 
 }
 
-CRef<CSeqDBGiList> & 
-CSearchDatabase::SetSeqIdList()
+const CRef<CSeqDBGiList>& 
+CSearchDatabase::GetNegativeGiList() const
 { 
-    return m_SeqIdList; 
+    return m_NegativeGiList; 
+}
+
+const CSearchDatabase::TGiList 
+CSearchDatabase::GetNegativeGiListLimitation() const 
+{ 
+    CSearchDatabase::TGiList retval;
+    if (!m_NegativeGiList.Empty() && !m_NegativeGiList->Empty()) {
+        m_NegativeGiList->GetGiList(retval);
+    }
+    return retval;
+}
+
+void 
+CSearchDatabase::SetSeqIdList(CSeqDBGiList * gilist) 
+{
+    if (m_GiListSet) NCBI_THROW(CBlastException, eInvalidArgument,
+          "Cannot have more than one type of id list filtering.");
+    m_GiListSet = true;
+    m_SeqIdList.Reset(gilist); 
 }
 
 const CRef<CSeqDBGiList> &
@@ -168,48 +178,64 @@ void
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
 {
     m_FilteringAlgorithmId = filt_algorithm_id;
-}
-
-void
-CSearchDatabase::x_TranslateFilteringAlgorithm(const CRef<CSeqDB> seqdb) const
-{
-    if (seqdb.Empty()) {
-         NCBI_THROW(CBlastException, eInvalidArgument,
-               "String algorithm Id has not been translated");
-    }
-    m_FilteringAlgorithmId = seqdb->GetMaskAlgorithmId(m_FilteringAlgorithmString);
     m_NeedsFilteringTranslation = false;
 }
 
 int 
-CSearchDatabase::GetFilteringAlgorithm(const CRef<CSeqDB> seqdb) const
+CSearchDatabase::GetFilteringAlgorithm() const
 {
     if (m_NeedsFilteringTranslation) {
-        x_TranslateFilteringAlgorithm(seqdb);
+        x_TranslateFilteringAlgorithm();
     } 
     return m_FilteringAlgorithmId;
 }
 
-void 
-CSearchDatabase::SetNegativeGiListLimitation(const TGiList& gilist) 
+void
+CSearchDatabase::x_TranslateFilteringAlgorithm() const
 {
-    if ( !m_GiListLimitation.empty() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-               "Cannot have a regular and a negative gi list simultaneously");
+    if (!m_DbInitialized) {
+        x_InitializeDb();
     }
-    m_NegativeGiListLimitation = gilist; 
+    m_FilteringAlgorithmId = 
+        m_SeqDb->GetMaskAlgorithmId(m_FilteringAlgorithmString);
+    m_NeedsFilteringTranslation = false;
 }
 
-CSearchDatabase::TGiList& 
-CSearchDatabase::SetNegativeGiListLimitation()
-{ 
-    return m_NegativeGiListLimitation; 
+void
+CSearchDatabase::SetSeqDb(CRef<CSeqDB> seqdb) 
+{
+    m_SeqDb.Reset(seqdb);
+    m_DbInitialized = true;
 }
 
-const CSearchDatabase::TGiList& 
-CSearchDatabase::GetNegativeGiListLimitation() const 
-{ 
-    return m_NegativeGiListLimitation; 
+CRef<CSeqDB>
+CSearchDatabase::GetSeqDb() const
+{
+    if (!m_DbInitialized) {
+        x_InitializeDb();
+    }
+    return m_SeqDb;
+}
+
+void 
+CSearchDatabase::x_InitializeDb() const
+{
+    const CSeqDB::ESeqType seq_type = IsProtein() ? CSeqDB::eProtein : CSeqDB::eNucleotide;
+    if (! m_GiList.Empty() && ! m_GiList->Empty()) {
+        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_GiList));
+    } else if (! m_NegativeGiList.Empty() && ! m_NegativeGiList->Empty()) {
+        vector<int> gis;
+        m_NegativeGiList->GetGiList(gis);
+        CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
+        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, idset));
+    } else if (! m_SeqIdList.Empty() && ! m_SeqIdList->Empty()) {
+        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_SeqIdList));
+    } else {
+        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type));
+    }
+      
+    _ASSERT(m_SeqDb.NotEmpty());
+    m_DbInitialized = true;
 }
 
 END_SCOPE(blast)

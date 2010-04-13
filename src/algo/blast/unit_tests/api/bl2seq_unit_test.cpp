@@ -1717,7 +1717,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
     BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
 
     CBl2Seq blaster(*query, *query, opts);
-    BOOST_REQUIRE_THROW(blaster.Run(), CBlastException);
+    BOOST_REQUIRE_THROW(blaster.Run(), CSeqDBException);
 }
 
 BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
