@@ -106,7 +106,7 @@ protected:
     CRef< CBioseq> m_Bioseq;
 
 private:
-    CSeqDB::TSequenceRanges x_ExtractMaskingData();
+    void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges);
     int x_ExtractTaxId();
 };
 
