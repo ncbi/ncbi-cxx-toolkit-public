@@ -1,5 +1,5 @@
-#ifndef CONNECT_DAEMONS___VERSION__H
-#define CONNECT_DAEMONS___VERSION__H
+#ifndef CONNECT___NCBI_VERSION__H
+#define CONNECT___NCBI_VERSION__H
 
 /* $Id$
  * ===========================================================================
@@ -32,6 +32,8 @@
  *   Daemon collection version number
  *
  */
+
+#include "ncbi_config.h"
 
 #ifdef   NCBI_CXX_TOOLKIT
 #  include <common/ncbi_package_ver.h>
@@ -110,4 +112,4 @@
 extern const char* g_VersionStr(const char* revision);
 
 
-#endif /*CONNECT_DAEMONS___VERSION__H*/
+#endif /*CONNECT___NCBI_VERSION__H*/

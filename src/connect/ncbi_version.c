@@ -30,8 +30,7 @@
  *
  */
 
-#include "ncbi_config.h"
-#include "version_c.h"
+#include "ncbi_version.h"
 #include <string.h>
 
 
