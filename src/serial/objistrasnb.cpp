@@ -187,6 +187,7 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
     return name;
 }
 
+inline
 CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::PeekAnyTagFirstByte(void)
 {
@@ -295,6 +296,7 @@ size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
     return length;
 }
 
+inline
 size_t CObjectIStreamAsnBinary::ReadShortLength(void)
 {
     TByte byte = FlushTag();
@@ -304,12 +306,25 @@ size_t CObjectIStreamAsnBinary::ReadShortLength(void)
     return StartTagData(byte);
 }
 
-size_t CObjectIStreamAsnBinary::ReadLength(void)
+inline
+size_t CObjectIStreamAsnBinary::ReadLengthInlined(void)
 {
     TByte byte = FlushTag();
-    if ( byte < 0x80 ) {
-        return StartTagData(byte);
+    if ( byte >= 0x80 ) {
+        return ReadLengthLong(byte);
     }
+    return StartTagData(byte);
+}
+
+size_t CObjectIStreamAsnBinary::ReadLength(void)
+{
+    return ReadLengthInlined();
+}
+
+#define ReadLength ReadLengthInlined
+
+size_t CObjectIStreamAsnBinary::ReadLengthLong(TByte byte)
+{
     size_t lengthLength = byte - 0x80;
     if ( lengthLength == 0 ) {
         ThrowError(fFormatError, "unexpected indefinite length");
@@ -327,6 +342,7 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     return StartTagData(length);
 }
 
+inline
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
     if ( ReadShortLength() != length ) {
@@ -404,6 +420,7 @@ void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
     m_Input.GetChars(str, count);
 }
 
+inline
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
 {
 #if CHECK_INSTREAM_STATE
@@ -903,7 +920,7 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
                                               TObjectPtr classPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-    BeginClass(classType);
+    ExpectContainer(classType->RandomOrder());
 
     ReadClassRandomContentsBegin(classType);
 
@@ -924,7 +941,7 @@ CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
                                              TObjectPtr classPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-    BeginClass(classType);
+    ExpectContainer(classType->RandomOrder());
     ReadClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
@@ -941,7 +958,7 @@ CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
 void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-    BeginClass(classType);
+    ExpectContainer(classType->RandomOrder());
     SkipClassRandomContentsBegin(classType);
 
     TMemberIndex index;
@@ -959,7 +976,7 @@ void
 CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-    BeginClass(classType);
+    ExpectContainer(classType->RandomOrder());
     SkipClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
@@ -1107,25 +1124,43 @@ void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
         "unable to read AnyContent object in ASN binary");
 }
 
-bool CObjectIStreamAsnBinary::SkipAnyContent(void)
+void CObjectIStreamAsnBinary::SkipAnyContent(void)
 {
     TByte byte = PeekAnyTagFirstByte();
     if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
         ExpectIndefiniteLength();
-        if ( SkipAnyContent() ) {
-            while (HaveMoreElements()) {
-                SkipAnyContent();
-            }
-            ExpectEndOfContent();
+    }
+    else {
+        size_t length = ReadLength();
+        if (length) {
+            SkipBytes(length);
         }
-        return true;
+        EndOfTag();
+        return;
     }
-    size_t length = ReadLength();
-    if (length) {
-        SkipBytes(length);
+    int depth = 1;
+    for ( ;; ) {
+        if ( !HaveMoreElements() ) {
+            ExpectEndOfContent();
+            if ( --depth == 0 ) {
+                break;
+            }
+        }
+        else {
+            TByte byte = PeekAnyTagFirstByte();
+            if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
+                ExpectIndefiniteLength();
+                ++depth;
+            }
+            else {
+                size_t length = ReadLength();
+                if (length) {
+                    SkipBytes(length);
+                }
+                EndOfTag();
+            }
+        }
     }
-    EndOfTag();
-    return (length != 0);
 }
 
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
@@ -1188,6 +1223,13 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
         }
     }
     obj.resize( obj.size() - unused);
+    EndOfTag();
+}
+
+inline
+void CObjectIStreamAsnBinary::SkipTagData(void)
+{
+    SkipBytes(ReadLength());
     EndOfTag();
 }
 
@@ -1349,12 +1391,6 @@ void CObjectIStreamAsnBinary::SkipByteBlock(void)
 {
     ExpectSysTag(eOctetString);
     SkipTagData();
-}
-
-void CObjectIStreamAsnBinary::SkipTagData(void)
-{
-    SkipBytes(ReadLength());
-    EndOfTag();
 }
 
 END_NCBI_SCOPE

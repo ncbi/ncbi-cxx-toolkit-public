@@ -112,7 +112,7 @@ public:
     virtual void ReadNull(void);
 
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
-    bool SkipAnyContent(void);
+    void SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
     virtual void SkipAnyContentVariant(void);
 
@@ -269,6 +269,8 @@ public:
     size_t ReadShortLength(void);
 private:
     size_t ReadLength(void);
+    size_t ReadLengthInlined(void);
+    size_t ReadLengthLong(TByte byte);
     size_t StartTagData(size_t length);
     void ExpectShortLength(size_t length);
     void ExpectEndOfContent(void);

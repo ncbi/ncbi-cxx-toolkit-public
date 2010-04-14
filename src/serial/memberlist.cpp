@@ -341,16 +341,19 @@ TMemberIndex CItemsInfo::Find(const CTempString& name, TMemberIndex pos) const
 
 TMemberIndex CItemsInfo::Find(TTag tag) const
 {
-    pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
-    if ( info.first != kInvalidMember ) {
-        TMemberIndex index = tag + m_ZeroTagIndex;
+    TMemberIndex zero_index = m_ZeroTagIndex;
+    if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
+        zero_index = GetItemsByTagInfo().first;
+    }
+    if ( zero_index != kInvalidMember ) {
+        TMemberIndex index = tag + zero_index;
         if ( index < FirstIndex() || index > LastIndex() )
             return kInvalidMember;
         return index;
     }
     else {
-        TItemsByTag::const_iterator mi = info.second->find(tag);
-        if ( mi == info.second->end() )
+        TItemsByTag::const_iterator mi = m_ItemsByTag->find(tag);
+        if ( mi == m_ItemsByTag->end() )
             return kInvalidMember;
         return mi->second;
     }
@@ -358,9 +361,12 @@ TMemberIndex CItemsInfo::Find(TTag tag) const
 
 TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
 {
-    pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
-    if ( info.first != kInvalidMember ) {
-        TMemberIndex index = tag + m_ZeroTagIndex;
+    TMemberIndex zero_index = m_ZeroTagIndex;
+    if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
+        zero_index = GetItemsByTagInfo().first;
+    }
+    if ( zero_index != kInvalidMember ) {
+        TMemberIndex index = tag + zero_index;
         if ( index < pos || index > LastIndex() )
             return kInvalidMember;
         return index;
