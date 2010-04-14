@@ -33,6 +33,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include "ncbi_config.h"
 
 #ifdef   NCBI_CXX_TOOLKIT
@@ -109,7 +110,17 @@
 # endif /*NCBI_CXX_TOOLKIT*/
 
 
-extern const char* g_VersionStr(const char* revision);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+
+extern NCBI_XCONNECT_EXPORT
+const char* g_VersionStr(const char* revision);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /*CONNECT___NCBI_VERSION__H*/

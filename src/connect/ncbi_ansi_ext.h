@@ -32,6 +32,7 @@
  *   Non-ANSI, yet widely used functions
  *
  */
+
 #include <connect/connect_export.h>
 #include "ncbi_config.h"
 #include <stddef.h>
