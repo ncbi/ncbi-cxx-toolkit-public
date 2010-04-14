@@ -75,7 +75,7 @@ CreateMakefile_Builddir()
 
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-builddir = $builddir
+builddir = `echo $builddir | sed -e "s,$NCBI,\\\$(NCBI),"`
 # builddir = \$(NCBI)/c++/Release/build
 EOF
 }
