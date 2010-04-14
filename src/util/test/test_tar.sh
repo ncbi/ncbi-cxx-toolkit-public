@@ -223,13 +223,13 @@ if [ "`uname`" = "Linux" ]; then
   test_tar -X -f $test_base.tar sparse-file > $test_base.2/newdir/sparse-file                           ||  exit 1
 
   temp="`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-  if ["$temp" = "$real" ]; then
-    echo "--- Looks like the sparse file format is not being used, checking plain"
+  if [ "$temp" = "$real" ]; then
+    echo "--- Looks like the sparse file format is not used, checking plain"
     cmp -l               $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
   else
-    echo "--- Sparse file size in the file system: $temp, comparing"
     real="`expr $size - $spabs`"
     nseek="`expr $real / 512 '*' 512`"
+    echo "--- Sparse file size in the file system: $temp, comparing @ $nseek"
     cmp -l -i ${nseek}:0 $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
   fi
 
