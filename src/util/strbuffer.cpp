@@ -430,26 +430,6 @@ void CIStreamBuffer::GetChars(string& str, size_t count)
     }
 }
 
-void CIStreamBuffer::GetChars(size_t count)
-    THROWS1((CIOException))
-{
-    // cache pos
-    const char* pos = m_CurrentPos;
-    for ( ;; ) {
-        size_t c = m_DataEndPos - pos;
-        if ( c >= count ) {
-            // all data is already in buffer -> skip it
-            m_CurrentPos = pos + count;
-            return;
-        }
-        else {
-            count -= c;
-            m_CurrentPos = pos += c;
-            pos = FillBuffer(pos);
-        }
-    }
-}
-
 void CIStreamBuffer::SkipEndOfLine(char lastChar)
     THROWS1((CIOException))
 {

@@ -134,6 +134,27 @@ void CIStreamBuffer::SkipChar(void)
 }
 
 inline
+void CIStreamBuffer::GetChars(size_t count)
+    THROWS1((CIOException))
+{
+    // cache pos
+    const char* pos = m_CurrentPos;
+    for ( ;; ) {
+        size_t c = m_DataEndPos - pos;
+        if ( c >= count ) {
+            // all data is already in buffer -> skip it
+            m_CurrentPos = pos + count;
+            return;
+        }
+        else {
+            count -= c;
+            m_CurrentPos = pos += c;
+            pos = FillBuffer(pos);
+        }
+    }
+}
+
+inline
 const char* CIStreamBuffer::GetCurrentPos(void) const
     THROWS1_NONE
 {
