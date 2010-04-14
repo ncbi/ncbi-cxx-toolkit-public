@@ -3067,15 +3067,6 @@ int NStr::HexChar(char ch)
 }
 
 inline
-bool NStr::MatchesMask(const CTempStringEx& str, 
-                       const CTempStringEx& mask, ECase use_case)
-{
-    return MatchesMask(str.HasZeroAtEnd()  ? str.data()  : string(str).c_str(),
-                       mask.HasZeroAtEnd() ? mask.data() : string(mask).c_str(),
-                       use_case);
-}
-
-inline
 int NStr::strcmp(const char* s1, const char* s2)
 {
     return ::strcmp(s1, s2);
@@ -3160,23 +3151,9 @@ int NStr::CompareCase(const char* s1, const char* s2)
 }
 
 inline
-int NStr::CompareCase(const CTempStringEx& s1, const CTempStringEx& s2)
-{
-    return CompareCase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
-                       s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
-}
-
-inline
 int NStr::CompareNocase(const char* s1, const char* s2)
 {
     return NStr::strcasecmp(s1, s2);
-}
-
-inline
-int NStr::CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2)
-{
-    return CompareNocase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
-                         s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
 }
 
 inline
@@ -3204,9 +3181,7 @@ int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 inline
 int NStr::Compare(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
 {
-    return Compare(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
-                   s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str(),
-                   use_case);
+    return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
 }
 
 inline
@@ -3256,13 +3231,6 @@ bool NStr::EqualNocase(const char* s1, const char* s2)
 }
 
 inline
-bool NStr::EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2)
-{
-    return EqualNocase(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
-                       s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str());
-}
-
-inline
 bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                  const char* pattern, ECase use_case)
 {
@@ -3281,16 +3249,13 @@ bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 inline
 bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
 {
-    return (use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2));
+    return use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2);
 }
-
 
 inline
 bool NStr::Equal(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
 {
-    return Equal(s1.HasZeroAtEnd() ? s1.data() : string(s1).c_str(),
-                 s2.HasZeroAtEnd() ? s2.data() : string(s2).c_str(),
-                 use_case);
+    return use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2);
 }
 
 inline

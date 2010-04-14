@@ -156,6 +156,24 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
+int NStr::CompareCase(const CTempStringEx& str1, const CTempStringEx& str2)
+{
+    const char *s1 = str1.data();
+    const char *s2 = str2.data();
+    auto_ptr<string> tmp_s1;
+    auto_ptr<string> tmp_s2;
+    if ( !str1.HasZeroAtEnd() ) {
+        tmp_s1.reset(new string(str1));
+        s1 = tmp_s1->c_str();
+    }
+    if ( !str2.HasZeroAtEnd() ) {
+        tmp_s2.reset(new string(str2));
+        s2 = tmp_s2->c_str();
+    }
+    return CompareCase(s1, s2);
+}
+
+
 int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                         const char* pattern)
 {
@@ -219,6 +237,40 @@ int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
     return tolower((unsigned char)(*s)) - tolower((unsigned char)(*p));
 }
 
+int NStr::CompareNocase(const CTempStringEx& str1, const CTempStringEx& str2)
+{
+    const char *s1 = str1.data();
+    const char *s2 = str2.data();
+    auto_ptr<string> tmp_s1;
+    auto_ptr<string> tmp_s2;
+    if ( !str1.HasZeroAtEnd() ) {
+        tmp_s1.reset(new string(str1));
+        s1 = tmp_s1->c_str();
+    }
+    if ( !str2.HasZeroAtEnd() ) {
+        tmp_s2.reset(new string(str2));
+        s2 = tmp_s2->c_str();
+    }
+    return CompareNocase(s1, s2);
+}
+
+bool NStr::EqualNocase(const CTempStringEx& str1, const CTempStringEx& str2)
+{
+    const char *s1 = str1.data();
+    const char *s2 = str2.data();
+    auto_ptr<string> tmp_s1;
+    auto_ptr<string> tmp_s2;
+    if ( !str1.HasZeroAtEnd() ) {
+        tmp_s1.reset(new string(str1));
+        s1 = tmp_s1->c_str();
+    }
+    if ( !str2.HasZeroAtEnd() ) {
+        tmp_s2.reset(new string(str2));
+        s2 = tmp_s2->c_str();
+    }
+    return EqualNocase(s1, s2);
+}
+
 
 // NOTE: This code is used also in the CDirEntry::MatchesMask.
 
@@ -273,6 +325,25 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
         }
     }
     return false;
+}
+
+
+bool NStr::MatchesMask(const CTempStringEx& str, 
+                       const CTempStringEx& mask, ECase use_case)
+{
+    const char *s = str.data();
+    const char *m = mask.data();
+    auto_ptr<string> tmp_s;
+    auto_ptr<string> tmp_m;
+    if ( !str.HasZeroAtEnd() ) {
+        tmp_s.reset(new string(str));
+        s = tmp_s->c_str();
+    }
+    if ( !str.HasZeroAtEnd() ) {
+        tmp_m.reset(new string(mask));
+        m = tmp_m->c_str();
+    }
+    return MatchesMask(s, m, use_case);
 }
 
 
@@ -1247,7 +1318,13 @@ void NStr::PtrToString(string& out_str, const void* value)
 const void* NStr::StringToPtr(const CTempStringEx& str)
 {
     void *ptr = NULL;
-    ::sscanf(str.HasZeroAtEnd() ? str.data() : string(str).c_str(), "%p", &ptr);
+    const char *s = str.data();
+    auto_ptr<string> tmp_str;
+    if ( !str.HasZeroAtEnd() ) {
+        tmp_str.reset(new string(str));
+        s = tmp_str->c_str();
+    }
+    ::sscanf(s, "%p", &ptr);
     return ptr;
 }
 
@@ -3005,10 +3082,10 @@ bool NStr::NeedsURLEncoding(const CTempString& str, EUrlEncode flag)
 bool NStr::IsIPAddress(const CTempStringEx& ip)
 {
     const char* start = ip.data();
-    auto_ptr<string> temp_ip_str;
+    auto_ptr<string> tmp_str;
     if ( !ip.HasZeroAtEnd() ) {
-        temp_ip_str.reset(new string(ip));
-        start = temp_ip_str->c_str();
+        tmp_str.reset(new string(ip));
+        start = tmp_str->c_str();
     }
     const char* c = start;
     unsigned long val;
