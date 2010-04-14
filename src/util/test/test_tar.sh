@@ -209,6 +209,7 @@ if [ "`uname`" = "Linux" ]; then
   dd of=$test_base.1/newdir/pre-sparse  bs="$prebs" count=1               if=/dev/urandom               ||  exit 1
   dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" if=/dev/urandom               ||  exit 1
   dd of=$test_base.1/newdir/post-sparse bs="$posbs" count=1               if=/dev/urandom               ||  exit 1
+  ls -l $test_base.1/newdir/*sparse*
 
   real="`ls -l $test_base.1/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
   if [ "$size" != "$real" ]; then
@@ -221,10 +222,12 @@ if [ "`uname`" = "Linux" ]; then
   test_tar -T -f $test_base.tar                                                                         ||  exit 1
   test_tar -X -f $test_base.tar sparse-file > $test_base.2/newdir/sparse-file                           ||  exit 1
 
-  if [ "`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`" = "$real" ]; then
+  temp="`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+  if ["$temp" = "$real" ]; then
     echo "--- Looks like the sparse file format is not being used, checking plain"
     cmp -l               $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
   else
+    echo "--- Sparse file size in the file system: $temp, comparing"
     real="`expr $size - $spabs`"
     nseek="`expr $real / 512 '*' 512`"
     cmp -l -i ${nseek}:0 $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
