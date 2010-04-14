@@ -251,7 +251,7 @@ CReadTagger::ETagValue CReadTagger::PurgeRead()
         //if( tag == eTag_uncertain && (m_actions & fAction_post) ) {}
         //else {
             ofstream& o = GetOutFile( eOutput_tag );
-            o << m_id << "\t" << "120"[tag] << "\n"; // << "FUH"[tag] << "\n";
+            o << m_id << "\t" << "FUH"[tag] << "\n"; //"120"[tag] << "\n"; // << "FUH"[tag] << "\n";
         //}
     }
     if( (m_actions & fAction_post) && GetTagValue() == eTag_uncertain ) {

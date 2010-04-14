@@ -1,6 +1,9 @@
-\documentclass[english]{article}
+\documentclass[english,letter]{article}
 \usepackage{verbatim}
 \usepackage[fancy]{latex2man}
+%\usepackage{fullpage}
+\usepackage{anysize}
+\marginsize{2cm}{2cm}{-1cm}{3cm}
 
 \setVersion{3.101}
 \begin{document}
@@ -12,23 +15,25 @@
 \end{Name}
 
 \section{Synopsis}
-	\Prog{oligofar} \oOptoArg{--help}{=brief|full|extra} \oOpt{-hV} \oOptArg{-C}{~cfgfile}
-	\oOpt{--pass0} \oArg{pass-options} \oOptoArg{--pass1}{~pass-options}
+	\Prog{oligofar} \oOptoArg{--help}{=brief\Bar full\Bar extra} \oOpt{-hV} \oOptArg{-C}{~cfgfile}
+	\oOpt{--pass0} \oArg{pass-options} \oOptoArg{--pass1}{~pass-options} \\
 	\oOptArg{-i}{~infile} \OptArg{-d}{~dbfile} \oOptArg{-b}{~snpdb} \oOptArg{-g}{~guide} \oOptArg{-v}{~feat} \oOptArg{-l}{~gilist}
-	\oOptArg{-1}{~reads1} \oOptArg{-2}{~reads2} \oOptArg{-o}{~outfile} \oOptArg{-y}{~seq-id} \oOptArg{-c}{~yes|no} \oOptArg{-q}{~0|1|4}
-	\oOptArg{-1}{-0~value|+char} \oOptArg{-O}{~flags} \oOptArg{-B}{~bsize} \oOptArg{--batch-range}{=min\Lbr-max\Rbr}
-	\oOptArg{--NaHSO3}{=yes|no} \oOptArg{-s}{~1|2|3} \oOptArg{--hash-bitmap-file}{=hbmfile}
-	\oOptArg{-I}{~score} \oOptArg{-M}{~score} \oOptArg{-G}{~score} \oOptArg{-Q}{~score} \oOptArg{-x}{~score}
-	\oOptArg{-p}{~pctid} \oOptArg{-u}{~topcnt} \oOptArg{-t}{~toppct} \oOptArg{-R}{~value}
-	\oOptArg{-U}{~version} \oOptArg{-L}{~memsz} \oOptArg{-T}{~yes|no} \oOptArg{--fasta-parse-ids}{=yes|no}
+	\oOptArg{-1}{~reads1} \oOptArg{-2}{~reads2} \oOptArg{-o}{~outfile} \oOptArg{-y}{~seq-id} \oOptArg{-c}{~yes\Bar no} \\
+	\oOptArg{-q}{~0\Bar 1\Bar 4} \oOptArg{-0}{~value\Bar +char} \oOptArg{-O}{~flags} \oOptArg{-B}{~bsize} \oOptArg{--batch-range}{=min\Lbr-max\Rbr}
+	\oOptArg{-s}{~1\Bar 2\Bar 3} \\
+	\oOptArg{--NaHSO3}{=yes\Bar no} \oOptArg{--hash-bitmap-file}{=hbmfile}
+	\oOptArg{-I}{~score} \oOptArg{-M}{~score} \oOptArg{-G}{~score} \oOptArg{-Q}{~score} \\
+	\oOptArg{-x}{~score} \oOptArg{-p}{~pctid} \oOptArg{-u}{~topcnt} \oOptArg{-t}{~toppct} 
+	\oOptArg{-R}{~value} \oOptArg{-U}{~version} \oOptArg{-L}{~memsz} \oOptArg{-T}{~yes\Bar no} \\
+	\oOptArg{--fasta-parse-ids}{=yes\Bar no}
 	
 	where \emph{pass-options} are:
-
 	\oOptArg{-w}{~window\Lbr/word\Rbr} \oOptArg{-k}{~pos\Lbr,...\Rbr} \oOptArg{-f}{~bases} \oOptArg{-r}{~bases} 
 	\oOptArg{-S}{~stride} \oOptArg{-H}{~bits} \oOptArg{-N}{~count} \oOptArg{-a}{~amb} \oOptArg{-A}{~amb} \oOptArg{-P}{~score} 
 	\oOptArg{-F}{~simpl} \oOptArg{-n}{~mismatch} \oOptArg{-e}{~len} \oOptArg{-j}{~len} \oOptArg{-J}{~len} \oOptArg{-E}{~cnt}
-	\oOptArg{-K}{~pos} \oOptArg{-X}{~value} \oOptArg{-Y}{~value} \oOptArg{--longest-ins}{=value} 
-	\oOptArg{--longest-del}{=value} \oOptArg{--max-inserted}{=value} \oOptArg{--max-deleted}{=value} 
+	\oOptArg{-K}{~pos} \oOptArg{-X}{~value} \\ 
+	\oOptArg{-Y}{~value} 
+	\oOptArg{--longest-ins}{=value} \oOptArg{--longest-del}{=value} \oOptArg{--max-inserted}{=value} \oOptArg{--max-deleted}{=value} \\
 	\oOptArg{--add-splice}{=pos(\Lbr min:\Rbr max)} \oOptArg{-D}{~min\Lbr-max\Rbr} \oOptArg{-m}{~len}
 
 \section{Examples}
@@ -237,7 +242,7 @@
 
 \subsection{Service options}
 \begin{description}
-\item[\OptoArg{--help}{=brief|full|extended}~~\Opt{-h}] 
+\item[\OptoArg{--help}{=brief\Bar full\Bar extended}~~\Opt{-h}] 
 				Print help to stdout, finish parsing commandline, and then 
                 exit with error code 0. Long version may accept otional 
                 argument which specifies should be printed brief help version
@@ -260,7 +265,7 @@
                 performed, so each config file may contain this check
                 independently.  
 
-\item[\OptArg{--test-suite}{=+|-}~~\OptArg{-T}{+|-}]
+\item[\OptArg{--test-suite}{=+\Bar -}~~\OptArg{-T}{+\Bar -}]
 				Run internal tests for basic operations before doing anything
                 else.
 \item[\OptArg{--memory-limit}{=value}~~\OptArg{-L}{~value}]
@@ -283,7 +288,7 @@
 				or 5 space-separated 
                 columns (see FILE FORMATS); for \OptArg{-q}{4} read only first column 
                 with read IDs.
-\item[\OptArg{--fasta-file}{=filename}~~\OptArg{-d}{~filename}
+\item[\OptArg{--fasta-file}{=filename}~~\OptArg{-d}{~filename}]
 				Sets database file name. If there exists file with given name
                 extended with one of suffixes .nin, .nal -- the suffixed version 
                 is opened as blastdb, otherwise the file itself is expected to
@@ -310,9 +315,9 @@
 \item[\OptArg{--only-seqid}{=seqid}~~\OptArg{-y}{~seqid}]
 				Limits database lookup to this seqid. May appear multiple
                 times -- then list of seqids is used. Does not work with \Opt{-l}.
-                Comparison is pretty strict, so lcl| or .2 are required in
-                'lcl|chr12' and 'NM_012345.2'. 
-\item[\OptArg{--fasta-parse-ids}{=yes|no}]
+                Comparison is pretty strict, so lcl\Bar  or .2 are required in
+                'lcl\Bar chr12' and 'NM\_012345.2'. 
+\item[\OptArg{--fasta-parse-ids}{=yes\Bar no}]
 				Specifies should oligofar try to parse IDs in input fasta or should 
 				use them 'as-is' as plain strings. Default is 'no' to avoid parsing of 
 				Seq-ids with ranges; may be changed to 'yes' to make only one ID of multiple
@@ -328,7 +333,7 @@
 \item[\OptArg{--read-2-file}{=filename}~~\OptArg{-2}{~filename}]
     			In case of paired reads contains pair mate data in the same
                 order and the same format as in file specified by option \Opt{-1}.
-\item[\OptArg{--quality-channels}{=cnt}~~\OptArg{-q}{0|1|4}]
+\item[\OptArg{--quality-channels}{=cnt}~~\OptArg{-q}{0\Bar 1\Bar 4}]
 				What data are expected on input: with \OptArg{-q}{0} it should be either 
                 2 or 3 column file in -i or fasta file(s) in \Opt{-1}, \Opt{-2}; with \OptArg{-q}{1} 
                 it should be either 5-column file in \Opt{-i} or fastq file(s) in
@@ -338,10 +343,10 @@
                 Sets base value for character-encoded phrap quality scores,
                 i.e. integer ASCII value or `+' followed by character which 
                 corresponds to the phrap score of 0.
-\item[\OptArg{--colorspace}{=+|-}~~\OptArg{-c}{+|-}]
+\item[\OptArg{--colorspace}{=+\Bar -}~~\OptArg{-c}{+\Bar -}]
 				Input is in di-base colorspace encoding. Hashing and alignment 
                 will be performed in the colorspace encoding.  Requires \OptArg{-q}{0}.
-\item[\OptArg{--NaHSO3}{=+|-}]
+\item[\OptArg{--NaHSO3}{=+\Bar -}]
                 Turns sodium bisulfite treatment simulation mode on or off.
                 Make sure to use reasonable value for \Opt{-A}.
 \item[\OptArg{--output-flags}{=-huxmtderzZp}~~\OptArg{-O}{-huxmtderzZp}]
@@ -402,7 +407,7 @@
 \item[\OptArg{--max-mismatch}{=mism}~~\OptArg{-n}{~mism}]
 				Sets maximal allowed number of mismatches within hashed word.
                 Reasonable values are 0 and 1, sometimes 2.
-\item[\OptArg{--max-indel}{=0|1|2}~~\OptArg{-e}{~0|1|2}]
+\item[\OptArg{--max-indel}{=0\Bar 1\Bar 2}~~\OptArg{-e}{~0\Bar 1\Bar 2}]
 				Sets maximal number of indels per window. Allowed values are 
                 0, 1, and 2.  Value of 2 allows only single indel of length 
                 up to 2 bases.
@@ -450,7 +455,7 @@
 \item[\OptArg{--max-simplicity}{=dust}~~\OptArg{-F}{~dust}]
 				Maximal dust score of a window for read to be hashed or for
                 the hash lookup to be performed. 
-\item[\OptArg{--strands}{=1|2|3}~~\OptArg{-s}{~1|2|3}]
+\item[\OptArg{--strands}{=1\Bar 2\Bar 3}~~\OptArg{-s}{~1\Bar 2\Bar 3}]
 				Strands of database to scan. 1 - positive only, 2 - negative
                 only, 3 - both.
 \end{description}
@@ -475,7 +480,7 @@
 				Maximal number of inserted on extension bases reliably detectable
 \item[\OptArg{--max-deleted}{=del}]
 				Maximal number of deleted on extension bases reliably detectable
-\item[\OptArg{--add-splice}{=pos(\Lbr min:\Rbr max)}
+\item[\OptArg{--add-splice}{=pos(\Lbr min:\Rbr max)}]
 				Add non-penalized splice position and range for alignment
 \item[\OptArg{--identity-score}{=score}~~\OptArg{-I}{~score}]
 				Set identity score
@@ -515,25 +520,25 @@
                 where a, b, and m are set with \OptArg{-D}{~a-b} \OptArg{-m}{~m} command line parameters.
 \item[\OptArg{--geometry}{=type}~~\OptArg{-R}{~geometry}]
 				Sets allowed mutual orientation of the hits in paired read hits. 
-                Values allowed (synonyms are separated by `|') are:
+                Values allowed (synonyms are separated by `\Bar ') are:
 	\begin{description}
-	\item[p|centripetal|inside|pcr|solexa]
-				reads are oriented so that vectors 5'->3' are pointing to each other
+	\item[p\Bar centripetal\Bar inside\Bar pcr\Bar solexa]
+				reads are oriented so that vectors $5'->3'$ are pointing to each other
 	\begin{verbatim}
                 ex: >>>>>>>   <<<<<<<
 	\end{verbatim}
-	\item[f|centrifugal|outside]
+	\item[f\Bar centrifugal\Bar outside]
 				reads are oriented so that vectors 5'->3' are pointing outside
 	\begin{verbatim}
                 ex: <<<<<<<   >>>>>>>
 	\end{verbatim}
-	\item[i|incr|incremental|solid]
+	\item[i\Bar incr\Bar incremental\Bar solid]
 				reads are on same strand, first preceeds second on this strand
 	\begin{verbatim}
                 ex: >>>1>>>   >>>2>>>
                 or: <<<2<<<   <<<1<<<
 	\end{verbatim}
-	\item[d|decr|decremental]
+	\item[d\Bar decr\Bar decremental]
 				reads are on same strand, first succeeds second on this strand
 	\begin{verbatim}
                 ex: >>>2>>>   >>>1>>>
@@ -541,8 +546,8 @@
 	\end{verbatim}
 	\end{description}
 
-                In examples above the pattern >>>1>>> means first component of 
-                the paired read on plus strand, <<<2<<< means second component 
+                In examples above the pattern $>>>1>>>$ means first component of 
+                the paired read on plus strand, $<<<2<<<$ means second component 
                 on reverse complement strand; if the digit is not set then the
                 component number does not matter for the example.
 
@@ -561,7 +566,7 @@
                 presence of ambiguity characters).  Added to tune 
                 performance when high density of SNPs is provided. Makes
                 no difference with \OptArg{-A}{1}.
-\item[\OptArg{--print-statistics}{=yes|no}]
+\item[\OptArg{--print-statistics}{=yes\Bar no}]
 	Turns on or off some output regarding internal \Prog{oligoFAR} statistics
 \end{description}
 
@@ -581,8 +586,8 @@
 \subsection{Column-based input file}
 
     Input file is two to five column whitespace-separated text file. Empty
-    lines and lines starting with `#' are ignored (note: they are ignored as
-    if not present, so if you use # to comment out a read but provide solexa
+    lines and lines starting with `\#' are ignored (note: they are ignored as
+    if not present, so if you use \# to comment out a read but provide solexa
     file with -1, or if you use guide file, the corespondense of read ids to 
     the scores or to gided hits will be broken).
 
@@ -613,7 +618,7 @@
 	\end{verbatim}
 
     Here in column 4 each char represents a base score for appropriate base in
-    column 2, e.g. ? indicates phrap score of 30, > stands for phrap score of 
+    column 2, e.g. ? indicates phrap score of 30, $>$ stands for phrap score of 
     29, etc.
 
 \subsection{Input file with di-base colorspace reads (SOLiD technology)}
@@ -621,8 +626,7 @@
     Reads may be specified in di-base colorspace encoding.  Option --colorspace=+ 
     should be used, quality scores will be ignored.  SEquence representation should 
     be following: first base is IUPACna, all the rest are digits 0-3 representing 
-    dibases:
-
+    dibases: \\
     0 - AA, CC, GG, or TT\\
     1 - AC, CA, GT, or TG\\
     2 - AG, GA, CT, or TC\\
@@ -709,7 +713,7 @@
 %2  
 \item Number of hits of this rank, or "many" if there are more then it
         can be printed by -u option value, or "none" if there are no hits for 
-        the query line, or "more" if followed after line "many", or "no_more"
+        the query line, or "more" if followed after line "many", or "no\_more"
         for terminator lines (see \OptArg{-O}{t}), or "hit" for unranked hits (see \OptArg{-O}{h}),
         or "diff" for lines that present differences of reads to subject 
         (see \OptArg{-O}{d}). See details below.
@@ -863,7 +867,7 @@
     1  diff  rd1  gi|195  1  95  799071  799071  95  -  -  -  +  C=>G  -
 	\end{verbatim}
 
-    which means that base C at position 799071 of gi|195 is replaced with G in
+    which means that base C at position 799071 of gi\Bar 195 is replaced with G in
     read. Diff lines are always converted to be on positive strand of the
     subject sequence.  Differences longer then one base may be reported,
     IUPACna with ambiguity characters extended with `-' for deletion may be
