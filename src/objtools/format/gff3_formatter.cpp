@@ -324,16 +324,36 @@ void CGFF3_Formatter::Start(IFlatTextOStream& text_os)
     //   such critical information as how phase is represented.
     //
     l.push_back("##gff-version 3");
-    // Add unofficial metadata directives.
-    l.push_back("##gff-spec-version 1.14");
+
+    // Add unofficial "metadata". According to GFF3 specifications (v1.15),
+    // lines preceeded by ## are metadata or directives. However, according
+    // to the de-facto standard of BioPerl's implementation, there are
+    // only directives, no metadata, with the directives using a controlled
+    // vocabulary, and it is an error to use an unsupported directive.
+    //
+    // Thus, we are forced to use comment lines instead (# followed by
+    // any character other than #). To distinguish true comments from
+    // metadata we wish to emit, we are free to adopt our own conventions.
+    // That is, comments do not have any enforced structure according to
+    // GFF3 specifications. Arbitrarily, we adopt #! to indicate such
+    // metadata-as-comments.
+    //
+    // Also, not that a comment may NOT be empty, according to BioPerl.
+    // (Regexp used is /^#[^#]/ which requires 2 characters.)
+    //
+    // @see _handle_directive and next_feature in
+    //  svn://code.open-bio.org/bioperl/bioperl-live/trunk/Bio/FeatureIO/gff.pm
+
+    l.push_back("#!gff-spec-version 1.14"); // A comment, not a directive.
     if ( GetContext().GetConfig().GffForFlybase() ) {
-        l.push_back("##gff-variant flybase");
+        l.push_back("#!gff-variant flybase"); // A comment, not a directive.
         l.push_back("# This variant of GFF3 interprets ambiguities in the");
         l.push_back("# GFF3 specifications in accordance with the views of Flybase.");
         l.push_back("# This impacts the feature tag set, and meaning of the phase.");
     }
-    l.push_back("##source-version NCBI C++ formatter 0.2");
-    l.push_back("##date " + CurrentTime().AsString("Y-M-D"));
+    // All comments, not a directives.
+    l.push_back("#!source-version NCBI C++ formatter 0.2");
+    l.push_back("#!date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
 }
 
@@ -826,18 +846,29 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
 
         // HACK HACK HACK
         // add score attributes
+        string score_text(".");
         if (ds.IsSetScores()) {
             ITERATE (CDense_seg::TScores, score_it, ds.GetScores()) {
                 const CScore& score = **score_it;
                 if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
-                    attrs << ';';
-                    // Not one of the special cases of escaping, so space ok.
-                    x_AppendEncoded(attrs, score.GetId().GetStr(), " ");
-                    attrs << '=';
-                    if (score.GetValue().IsInt()) {
-                        attrs << score.GetValue().GetInt();
+                    if (score.GetId().GetStr() == "score") {
+                        // The generic 'score' score, if present,
+                        // goes to the 6th column.
+                        if (score.GetValue().IsInt()) {
+                            score_text = NStr::IntToString(score.GetValue().GetInt());
+                        } else {
+                            score_text = NStr::DoubleToString(score.GetValue().GetReal());
+                        }
                     } else {
-                        attrs << score.GetValue().GetReal();
+                        attrs << ';';
+                        // Not one of the special cases of escaping, so space ok.
+                        x_AppendEncoded(attrs, score.GetId().GetStr(), " ");
+                        attrs << '=';
+                        if (score.GetValue().IsInt()) {
+                            attrs << score.GetValue().GetInt();
+                        } else {
+                            attrs << score.GetValue().GetReal();
+                        }
                     }
                 }
             }
@@ -853,7 +884,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // as the frame in ASN.1. Confused? Convert as appropriate.
         x_AddFeature(l, loc, source,
                      s_GetMatchType(ref_id, tgt_id, config.GffForFlybase()),
-                     "." /*score*/,
+                     score_text,
                      config.GffForFlybase() ?
                         /* frame vs phase inverted for flybase! */
                         (frame > 0 ? 3 - frame : frame) 
