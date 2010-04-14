@@ -116,5 +116,6 @@ internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
 internal/structure/PubChem/assay         = assay_pch.hpp
 internal/ID/utils                        = -
 
-DoNotUsePch = test_mt test_ncbidiag_p
+DoNotUsePch = test_mt test_ncbidiag_p xmlwrapp
+
 

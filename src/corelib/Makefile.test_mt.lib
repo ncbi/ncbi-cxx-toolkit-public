@@ -5,4 +5,5 @@ LIB    = test_mt
 
 # REQUIRES = MT
 
+USE_PCH = no
 WATCHERS = grichenk

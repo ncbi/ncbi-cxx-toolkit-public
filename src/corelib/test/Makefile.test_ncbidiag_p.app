@@ -6,4 +6,5 @@ LIB = xncbi test_mt
 
 CHECK_CMD =
 
+USE_PCH = no
 WATCHERS = grichenk
