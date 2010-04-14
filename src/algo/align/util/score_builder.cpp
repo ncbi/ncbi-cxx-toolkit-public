@@ -37,8 +37,12 @@
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_options.h>
 
+#include <util/sequtil/sequtil_manip.hpp>
+
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
+#include <objtools/alnmgr/aln_converters.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Std_seg.hpp>
@@ -47,6 +51,9 @@
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
+
+#include <objects/seqfeat/Genetic_code_table.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -160,24 +167,199 @@ CScoreBuilder::~CScoreBuilder()
 ///
 /// calculate mismatches and identities in a seq-align
 ///
+
+static void s_GetNucIdentityMismatch(const vector<string>& data,
+                                     int* identities,
+                                     int* mismatches)
+{
+    for (size_t a = 0;  a < data[0].size();  ++a) {
+        bool is_mismatch = false;
+        for (size_t b = 1;  b < data.size();  ++b) {
+            if (data[b][a] != data[0][a]) {
+                is_mismatch = true;
+                break;
+            }
+        }
+
+        if (is_mismatch) {
+            ++(*mismatches);
+        } else {
+            ++(*identities);
+        }
+    }
+}
+
+
+static void s_GetSplicedSegIdentityMismatch(CScope& scope,
+                                            const CSeq_align& align,
+                                            int* identities,
+                                            int* mismatches)
+{
+    ///
+    /// easy route
+    /// use the alignment manager
+    ///
+    TAlnSeqIdIRef id1(new CAlnSeqId(align.GetSeq_id(0)));
+    TAlnSeqIdIRef id2(new CAlnSeqId(align.GetSeq_id(1)));
+    CRef<CPairwiseAln> pairwise(new CPairwiseAln(id1, id2));
+    ConvertSeqAlignToPairwiseAln(*pairwise, align, 0, 1);
+
+    CBioseq_Handle prod_bsh    = scope.GetBioseqHandle(align.GetSeq_id(0));
+    CBioseq_Handle genomic_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
+    if ( !prod_bsh  ||  !genomic_bsh ) {
+        return;
+    }
+
+    CSeqVector prod(prod_bsh, CBioseq_Handle::eCoding_Iupac);
+
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
+
+    switch (align.GetSegs().GetSpliced().GetProduct_type()) {
+    case CSpliced_seg::eProduct_type_transcript:
+        {{
+             CSeqVector gen(genomic_bsh, CBioseq_Handle::eCoding_Iupac);
+             ITERATE (CPairwiseAln, it, *pairwise) {
+                 const CPairwiseAln::TAlnRng& range = *it;
+                 TSeqRange r1(range.GetFirstFrom(), range.GetFirstTo());
+                 TSeqRange r2(range.GetSecondFrom(), range.GetSecondTo());
+
+                 string prod_data;
+                 prod.GetSeqData(r1.GetFrom(), r1.GetTo() + 1,
+                                 prod_data);
+                 string gen_data;
+                 gen.GetSeqData(r2.GetFrom(), r2.GetTo() + 1,
+                                 gen_data);
+                 if (range.IsReversed()) {
+                     CSeqManip::ReverseComplement(gen_data,
+                                                  CSeqUtil::e_Iupacna,
+                                                  0, gen_data.size());
+                 }
+
+                 string::const_iterator pit = prod_data.begin();
+                 string::const_iterator pit_end = prod_data.end();
+                 string::const_iterator git = gen_data.begin();
+                 string::const_iterator git_end = gen_data.end();
+
+                 for ( ;  pit != pit_end  &&  git != git_end;  ++pit, ++git) {
+                     bool match = (*pit == *git);
+                     *identities +=  match;
+                     *mismatches += !match;
+                 }
+             }
+         }}
+        break;
+
+    case CSpliced_seg::eProduct_type_protein:
+        {{
+             char codon[3];
+             codon[0] = codon[1] = codon[2] = 'N';
+
+             TSeqRange last_r1(0, 0);
+             ITERATE (CPairwiseAln, it, *pairwise) {
+                 const CPairwiseAln::TAlnRng& range = *it;
+                 TSeqRange r1(range.GetFirstFrom(), range.GetFirstTo());
+                 TSeqRange r2(range.GetSecondFrom(), range.GetSecondTo());
+
+                 if (last_r1.GetTo() + 1 != r1.GetFrom()) {
+                     size_t i = last_r1.GetTo() + 1;
+                     size_t count = 0;
+                     for ( ;  i != r1.GetFrom()  &&  count < 3;  ++i, ++count) {
+                         codon[ i % 3 ] = 'N';
+                     }
+                 }
+                 last_r1 = r1;
+
+                 string gen_data;
+                 CSeqVector gen(genomic_bsh, CBioseq_Handle::eCoding_Iupac);
+                 gen.GetSeqData(r2.GetFrom(), r2.GetTo() + 1, gen_data);
+                 if (range.IsReversed()) {
+                     CSeqManip::ReverseComplement(gen_data,
+                                                  CSeqUtil::e_Iupacna,
+                                                  0, gen_data.size());
+
+                     //LOG_POST(Error << "reverse range: [" << r1.GetFrom() << ", " << r1.GetTo() << "] - [" << r2.GetFrom() << ", " << r2.GetTo() << "]");
+                 } else {
+                     //LOG_POST(Error << "forward range: [" << r1.GetFrom() << ", " << r1.GetTo() << "] - [" << r2.GetFrom() << ", " << r2.GetTo() << "]");
+                 }
+
+                 /// compare product range to conceptual translation
+                 TSeqPos prod_pos = r1.GetFrom();
+                 //LOG_POST(Error << "  genomic = " << gen_data);
+                 for (size_t i = 0;  i < gen_data.size();  ++i, ++prod_pos) {
+                     codon[ prod_pos % 3 ] = gen_data[i];
+                     //LOG_POST(Error << "    filling: " << prod_pos << ": " << prod_pos % 3 << ": " << gen_data[i]);
+
+                     if (prod_pos % 3 == 2) {
+                         char residue = tbl.GetCodonResidue
+                             (tbl.SetCodonState(codon[0], codon[1], codon[2]));
+
+                         /// NOTE:
+                         /// we increment identities/mismatches by 3 here,
+                         /// counting identities in nucleotide space!!
+                         bool is_match = false;
+                         if (residue == prod[prod_pos / 3]  &&
+                             residue != 'X'  &&  residue != '-') {
+                             *identities += 3;
+                             is_match = true;
+                         } else {
+                             *mismatches += 3;
+                         }
+
+                         /**
+                         LOG_POST(Error << "  codon = "
+                                  << codon[0] << '-'
+                                  << codon[1] << '-'
+                                  << codon[2]
+                                  << "  residue = " << residue
+                                  << "  actual = " << prod[prod_pos / 3]
+                                  << (is_match ? " (match)" : ""));
+                                  **/
+                     }
+                 }
+             }
+         }}
+        break;
+
+    default:
+        break;
+    }
+
+    /*
+     * NB: leave this here; it's useful for validation
+    int actual_identities = 0;
+    if (align.GetNamedScore("N of matches", actual_identities)) {
+        if (actual_identities != *identities) {
+            LOG_POST(Error << "actual identities: " << actual_identities
+                     << "  computed identities: " << *identities);
+
+            //cerr << MSerial_AsnText << align;
+        }
+    }
+    **/
+}
+
+
 static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                                        int* identities, int* mismatches)
 {
     _ASSERT(identities  &&  mismatches);
+
+    {{
+         ///
+         /// shortcut: if 'num_ident' is present, we trust it
+         ///
+         int num_ident = 0;
+         if (align.GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident)) {
+             size_t len     = align.GetAlignLength(false /*ignore gaps*/);
+             *identities += num_ident;
+             *mismatches += (len - num_ident);
+             return;
+         }
+     }}
+
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         {{
-            ///
-            /// shortcut: if 'num_ident' is present, we trust it
-            ///
-            int num_ident = 0;
-            if (align.GetNamedScore("num_ident", num_ident)) {
-                size_t len     = align.GetAlignLength(false /*ignore gaps*/);
-                *identities += num_ident;
-                *mismatches += (len - num_ident);
-                break;
-            }
-
             const CDense_seg& ds = align.GetSegs().GetDenseg();
             CAlnVec vec(ds, scope);
             for (int seg = 0;  seg < vec.GetNumSegs();  ++seg) {
@@ -199,21 +381,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                 }
 
                 if (data.size() == (size_t)ds.GetDim()) {
-                    for (size_t a = 0;  a < data[0].size();  ++a) {
-                        bool is_mismatch = false;
-                        for (size_t b = 1;  b < data.size();  ++b) {
-                            if (data[b][a] != data[0][a]) {
-                                is_mismatch = true;
-                                break;
-                            }
-                        }
-
-                        if (is_mismatch) {
-                            ++(*mismatches);
-                        } else {
-                            ++(*identities);
-                        }
-                    }
+                    s_GetNucIdentityMismatch(data, identities, mismatches);
                 }
             }
         }}
@@ -230,25 +398,15 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
         break;
 
     case CSeq_align::TSegs::e_Std:
-        {{
-            ///
-            /// shortcut: if 'num_ident' is present, we trust it
-            ///
-            int num_ident = 0;
-            if (align.GetNamedScore("num_ident", num_ident)) {
-                size_t len     = align.GetAlignLength(false /*ignore gaps*/);
-                *identities = num_ident;
-                *mismatches = (len - num_ident);
-                break;
-            }
-         }}
-
         NCBI_THROW(CException, eUnknown,
                    "identity + mismatch function unimplemented for std-seg");
         break;
 
     case CSeq_align::TSegs::e_Spliced:
         {{
+             int aln_identities = 0;
+             int aln_mismatches = 0;
+             bool has_non_standard = false;
              ITERATE (CSpliced_seg::TExons, iter,
                       align.GetSegs().GetSpliced().GetExons()) {
                  const CSpliced_exon& exon = **iter;
@@ -257,10 +415,14 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                          const CSpliced_exon_chunk& chunk = **it;
                          switch (chunk.Which()) {
                          case CSpliced_exon_chunk::e_Match:
-                             *identities += chunk.GetMatch();
+                             aln_identities += chunk.GetMatch();
                              break;
                          case CSpliced_exon_chunk::e_Mismatch:
-                             *mismatches += chunk.GetMismatch();
+                             aln_mismatches += chunk.GetMismatch();
+                             break;
+
+                         case CSpliced_exon_chunk::e_Diag:
+                             has_non_standard = true;
                              break;
 
                          default:
@@ -268,9 +430,19 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                          }
                      }
                  } else {
-                     *identities +=
+                     aln_identities +=
                          exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
                  }
+             }
+
+             if ( !has_non_standard ) {
+                 *identities += aln_identities;
+                 *mismatches += aln_mismatches;
+             } else {
+                 /// we must compute match and mismatch based on first
+                 /// prinicples
+                 s_GetSplicedSegIdentityMismatch(scope, align,
+                                                 identities, mismatches);
              }
          }}
         break;
@@ -402,6 +574,11 @@ static size_t s_GetCoveredBases(const CSeq_align& align,
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                                  double* pct_coverage)
 {
+    if (align.GetNamedScore(CSeq_align::eScore_PercentCoverage,
+                            *pct_coverage)) {
+        return;
+    }
+
     size_t covered_bases = s_GetCoveredBases(align, 0);
     size_t seq_len = 0;
     if (align.GetSegs().IsSpliced()  &&
