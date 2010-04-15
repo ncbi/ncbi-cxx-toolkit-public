@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:  NetCache client test
  *
@@ -398,10 +398,41 @@ void s_ReadUpdateCharTest(const string& service)
 
 }
 
+static
+int s_PasswordTest(const string& service)
+{
+    static const int err_code = 4;
+    CNetCacheAPI nc(service, s_ClientName);
+    CNetCachePasswordGuard pwd_guard(nc, "password");
 
+    static const char data[] = "data";
+    string key = pwd_guard->PutData("data", 4);
+
+    char buffer[4];
+    size_t bytes_read;
+
+    CNetCacheAPI::EReadResult res = nc.GetData(key, buffer, 4, &bytes_read);
+    if (res != CNetCacheAPI::eNotFound) {
+        NcbiCout << "Error: successfully read a password-protected "
+            "blob without supplying a password; key=" << key << NcbiEndl;
+        return err_code;
+    }
+
+    res = pwd_guard->GetData(key, buffer, 4, &bytes_read);
+    if (res != CNetCacheAPI::eReadComplete || bytes_read != 4 ||
+            memcmp(data, buffer, 4) != 0) {
+        NcbiCout << "Error reading a password-protected blob; key=" <<
+            key << NcbiEndl;
+        return err_code;
+    }
+
+    return 0;
+}
 
 int CTestNetCacheClient::Run(void)
 {
+    int error_level = 0;
+
     CArgs args = GetArgs();
     const string& service  = args["service"].AsString();
     int stress_test_repetitions = args["repeat"].AsInteger();
@@ -518,6 +549,7 @@ int CTestNetCacheClient::Run(void)
 
     s_ReadUpdateCharTest(service);
 
+    error_level |= s_PasswordTest(service);
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
@@ -570,7 +602,7 @@ int CTestNetCacheClient::Run(void)
         SleepSec(10);
     }
 
-    return 0;
+    return error_level;
 }
 
 
