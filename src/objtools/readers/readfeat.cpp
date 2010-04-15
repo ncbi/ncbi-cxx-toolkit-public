@@ -368,6 +368,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "V_region",           CSeqFeatData::eSubtype_V_region           ),
     TFeatKey ( "V_segment",          CSeqFeatData::eSubtype_V_segment          ),
     TFeatKey ( "variation",          CSeqFeatData::eSubtype_variation          ),
+    TFeatKey ( "VariationRef",       CSeqFeatData::eSubtype_variation_ref      ),
     TFeatKey ( "virion",             CSeqFeatData::eSubtype_virion             ),
     TFeatKey ( "Xref",               CSeqFeatData::eSubtype_seq                )
 };
