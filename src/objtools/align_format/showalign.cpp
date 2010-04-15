@@ -1006,8 +1006,8 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     string urlLink = NcbiEmptyString;
     char dopt[32], db[32];
     char logstr_moltype[32], logstr_location[32];
-    bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
-    
+    bool hit_not_in_mapviewer = linkout != 0 && !(linkout & eGenomicSeq);
+ 
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
     string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
 
@@ -1025,8 +1025,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     }
     else if (user_url != NcbiEmptyString && 
         !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
-          (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer &&
-          m_AlignOption & eShowSortControls))) { 
+          (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
         //need to use url in configuration file
         string altUrl = NcbiEmptyString;
         urlLink = x_GetDumpgnlLink(ids, row, altUrl, taxid);
