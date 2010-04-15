@@ -406,7 +406,7 @@ int s_PasswordTest(const string& service)
     CNetCachePasswordGuard pwd_guard(nc, "password");
 
     static const char data[] = "data";
-    string key = pwd_guard->PutData("data", 4);
+    string key = pwd_guard->PutData(data, 4);
 
     char buffer[4];
     size_t bytes_read;
