@@ -168,7 +168,7 @@ public:
     CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
         const string& password);
 
-    CNetICacheClient& operator ->() {return m_NetICacheClient;}
+    CNetICacheClient* operator ->() {return &m_NetICacheClient;}
 
 private:
     CNetICacheClient m_NetICacheClient;

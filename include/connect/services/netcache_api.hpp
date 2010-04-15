@@ -287,7 +287,7 @@ public:
     CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
         const string& password);
 
-    CNetCacheAPI& operator ->() {return m_NetCacheAPI;}
+    CNetCacheAPI* operator ->() {return &m_NetCacheAPI;}
 
 private:
     CNetCacheAPI m_NetCacheAPI;
