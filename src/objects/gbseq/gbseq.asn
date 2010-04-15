@@ -3,7 +3,7 @@
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
 -- J.Ostell 2002
--- Updated 15 January 2009
+-- Updated 14 April 2010
 --
 --*********************************************************
 
@@ -27,8 +27,8 @@ BEGIN
 --    fields do not have full substructure defined here where there is
 --    already a standard GenBank format string. For example:
 --
---    Date  DD-Mon-YYYY
---    Authors   LastName, Intials (with periods)
+--   Date  DD-Mon-YYYY
+--   Authors   LastName, Intials (with periods)
 --   Journal   JounalName Volume (issue), page-range (year)
 --   FeatureLocations as per GenBank feature table, but FeatureIntervals
 --    may also be provided as a convenience
@@ -111,22 +111,22 @@ GBSeq ::= SEQUENCE {
     taxonomy VisibleString OPTIONAL ,
     references SEQUENCE OF GBReference OPTIONAL ,
     comment VisibleString OPTIONAL ,
-    tagset GBTagset OPTIONAL ,
+    comment-set SEQUENCE OF GBComment OPTIONAL ,
+    struc-comments SEQUENCE OF GBStrucComment OPTIONAL ,
     primary VisibleString OPTIONAL ,
     source-db VisibleString OPTIONAL ,
     database-reference VisibleString OPTIONAL ,
     feature-table SEQUENCE OF GBFeature OPTIONAL ,
-    sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
-    contig VisibleString OPTIONAL
+    sequence VisibleString OPTIONAL ,  -- Optional for contig, wgs, etc.
+    contig VisibleString OPTIONAL ,
+    alt-seq SEQUENCE OF GBAltSeqData OPTIONAL
 }
-
-GBSecondary-accn ::= VisibleString
 
 GBSeqid ::= VisibleString
 
-GBKeyword ::= VisibleString
+GBSecondary-accn ::= VisibleString
 
-GBAuthor ::= VisibleString
+GBKeyword ::= VisibleString
 
 GBReference ::= SEQUENCE {
     reference VisibleString ,
@@ -135,29 +135,39 @@ GBReference ::= SEQUENCE {
     consortium VisibleString OPTIONAL ,
     title VisibleString OPTIONAL ,
     journal VisibleString ,
-    xref SET OF GBXref OPTIONAL ,
+    xref SEQUENCE OF GBXref OPTIONAL ,
     pubmed INTEGER OPTIONAL ,
     remark VisibleString OPTIONAL
 }
 
+GBAuthor ::= VisibleString
+
 GBXref ::= SEQUENCE {
     dbname VisibleString ,
-    id VisibleString
+    id VisibleString ,
+    db-url VisibleString OPTIONAL ,
+    id-url VisibleString OPTIONAL
 }
 
-GBTagset ::= SEQUENCE {
-    authority VisibleString OPTIONAL ,
-    version VisibleString OPTIONAL ,
-    url VisibleString OPTIONAL ,
-    tags GBTags OPTIONAL
+GBComment ::= SEQUENCE {
+    type VisibleString OPTIONAL ,
+    paragraphs SEQUENCE OF GBParagraph
 }
 
-GBTags ::= SEQUENCE OF GBTag
-
-GBTag ::= SEQUENCE {
-    name VisibleString OPTIONAL ,
+GBParagraph ::= SEQUENCE {
     value VisibleString OPTIONAL ,
-    unit VisibleString OPTIONAL
+    url VisibleString OPTIONAL
+}
+
+GBStrucComment ::= SEQUENCE {
+    name VisibleString OPTIONAL ,
+    items SEQUENCE OF GBStrucCommentItem
+}
+
+GBStrucCommentItem ::= SEQUENCE {
+    tag VisibleString OPTIONAL ,
+    value VisibleString OPTIONAL ,
+    url VisibleString OPTIONAL
 }
 
 GBFeature ::= SEQUENCE {
@@ -167,7 +177,9 @@ GBFeature ::= SEQUENCE {
     operator VisibleString OPTIONAL ,
     partial5 BOOLEAN OPTIONAL ,
     partial3 BOOLEAN OPTIONAL ,
-    quals SEQUENCE OF GBQualifier OPTIONAL
+    quals SEQUENCE OF GBQualifier OPTIONAL ,
+    xrefs SEQUENCE OF GBXref OPTIONAL ,
+    annot-source VisibleString OPTIONAL
 }
 
 GBInterval ::= SEQUENCE {
@@ -184,18 +196,19 @@ GBQualifier ::= SEQUENCE {
     value VisibleString OPTIONAL
 }
 
-GBTagsetRules ::= SEQUENCE {
-    authority VisibleString OPTIONAL ,
-    version VisibleString OPTIONAL ,
-    mandatorytags GBTagNames OPTIONAL ,
-    optionaltags GBTagNames OPTIONAL ,
-    uniquetags GBTagNames OPTIONAL ,
-    extensible BOOLEAN OPTIONAL
+GBAltSeqData ::= SEQUENCE {
+    name VisibleString ,  -- e.g., contig, wgs, scaffold, cage, genome
+    value VisibleString OPTIONAL ,
+    items SEQUENCE OF GBAltSeqItem OPTIONAL
 }
 
-GBTagNames ::= SEQUENCE OF VisibleString
-
-GBTagsetRuleSet ::= SEQUENCE OF GBTagsetRules
+GBAltSeqItem ::= SEQUENCE {
+    interval GBInterval OPTIONAL ,
+    isgap BOOLEAN OPTIONAL ,
+    gaplength INTEGER OPTIONAL ,
+    first-accn VisibleString OPTIONAL ,
+    last-accn VisibleString OPTIONAL
+}
 
 END
 
