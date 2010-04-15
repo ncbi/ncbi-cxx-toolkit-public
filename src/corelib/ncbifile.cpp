@@ -1116,10 +1116,9 @@ static bool s_CheckAccessStat(const CAS_ARG1* p, int amode)
 
     // Check user permissions
     if (uid == st.st_uid) {
-        if ( (!(amode & R_OK)  ||  (st.st_mode & S_IRUSR))  &&
-             (!(amode & W_OK)  ||  (st.st_mode & S_IWUSR))  &&
-             (!(amode & X_OK)  ||  (st.st_mode & S_IXUSR)) )
-            return true;
+        return (!(amode & R_OK)  ||  (st.st_mode & S_IRUSR))  &&
+               (!(amode & W_OK)  ||  (st.st_mode & S_IWUSR))  &&
+               (!(amode & X_OK)  ||  (st.st_mode & S_IXUSR));
     }
 
     // Initialize list of group IDs for effective user
@@ -1144,10 +1143,9 @@ static bool s_CheckAccessStat(const CAS_ARG1* p, int amode)
     // Check group permissions
     for (int i = 0; i < ngroups; i++) {
         if (gids[i] == st.st_gid) {
-            if ( (!(amode & R_OK)  ||  (st.st_mode & S_IRGRP))  &&
-                 (!(amode & W_OK)  ||  (st.st_mode & S_IWGRP))  &&
-                 (!(amode & X_OK)  ||  (st.st_mode & S_IXGRP)) )
-                return true;
+            return  (!(amode & R_OK)  ||  (st.st_mode & S_IRGRP))  &&
+                    (!(amode & W_OK)  ||  (st.st_mode & S_IWGRP))  &&
+                    (!(amode & X_OK)  ||  (st.st_mode & S_IXGRP));
         }
     }
 
