@@ -184,6 +184,8 @@ bool CReadBlastApp::fit_blast
           }
         {
         if(PrintDetails()) NcbiCerr << "added a problem: " << misc_feat.str() << NcbiEndl;
+        if(PrintDetails()) NcbiCerr << "added a problem(left): " << qname << NcbiEndl;
+        if(PrintDetails()) NcbiCerr << "added a problem(right): " << qrname << NcbiEndl;
         problemStr problem = { eFrameShift, buffer.str(),  misc_feat.str(),
           qname, qrname,
           frame_from,
@@ -210,21 +212,46 @@ bool CReadBlastApp::fit_blast
   if(numFit) // this block determines whether it is frameshift or not
     {
 // one of the queries is hypothetical - frameshift!
-    if(qname.find("hypothetical") != string::npos || qrname.find("hypothetical") != string::npos) result = true;
+    if(qname.find("hypothetical") != string::npos || qrname.find("hypothetical") != string::npos) 
+      {
+      if(PrintDetails()) NcbiCerr << "Frameshift or not? (" << qname << ", " << qrname << "): "
+                                  << "one of those is hypo: FRAMESHIFT" << NcbiEndl;
+      result = true;
+      }
     else
       {
 // not enough frameshift evidence - not frameshift!
-      if(numFit<2) result = false;
+      if(numFit<2) 
+        {
+        if(PrintDetails()) NcbiCerr << "Frameshift or not? (" << qname << ", " << qrname << "): "
+                                  << "numFit < 2: NOT A FRAMESHIFT" << NcbiEndl;
+        result = false;
+        }
       else
         {
 // there are truely exhonerating hits - not frameshift!
-        if(left_perfect.size() || right_perfect.size()) result = false;
+        if(left_perfect.size() || right_perfect.size()) 
+          {
+          if(PrintDetails()) NcbiCerr << "Frameshift or not? (" << qname << ", " << qrname << "): "
+                                  << "there are exhonerating hits: NOT A FRAMESHIFT" << NcbiEndl;
+          result = false;
+          }
 // the rest are frameshifts
-        else result = true;
+        else 
+          {
+          if(PrintDetails()) NcbiCerr << "Frameshift or not? (" << qname << ", " << qrname << "): "
+                                  << "there are no exhonerating hits: FRAMESHIFT" << NcbiEndl;
+          result = true;
+          }
         }
       }
     }
-  else result = false;
+  else 
+    {
+    if(PrintDetails()) NcbiCerr << "Frameshift or not? (" << qname << ", " << qrname << "): "
+                                  << "numFit = 0: NOT A FRAMESHIFT" << NcbiEndl;
+    result = false;
+    }
   if(PrintDetails()) NcbiCerr << "after, left  " <<  GetStringDescr (left)  << NcbiEndl;
   if(PrintDetails()) NcbiCerr << "after, right " <<  GetStringDescr (right) << NcbiEndl;
   if(PrintDetails()) NcbiCerr << "perfect hits are : " << left_perfect.size() << " " << right_perfect.size() << NcbiEndl;

@@ -33,6 +33,17 @@
 #include "read_blast_result.hpp"
 #include <objects/seqloc/Seq_point.hpp>
 
+void CReadBlastApp::GetGenomeLen()
+{
+    for (CTypeIterator<CBioseq> seq = Begin();  seq;  ++seq)
+      {
+// check if na
+      if(seq->GetInst().GetMol()!=CSeq_inst::eMol_dna) continue;
+      if(PrintDetails()) NcbiCerr << "GetGenomeLen: found DNA" << NcbiEndl;
+      m_length = seq->GetInst().GetLength(); // let the toolkit take care of exception
+      } // end iteration over all genomic sequences
+}
+
 string CReadBlastApp::GetProtName(const CBioseq& seq)
 {
   ITERATE(CBioseq::TAnnot, annot, seq.GetAnnot())

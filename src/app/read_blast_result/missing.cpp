@@ -301,14 +301,23 @@ int CReadBlastApp::get_neighboring_sequences(
    TSimpleSeqs::iterator seq = first_user_in_range;
    for(; seq !=seqs.end(); seq++)
      {
+     int key = seq->key;
+     int from2 = seq->exons[0].from;
+     int to2   = seq->exons[seq->exons.size()-1].to;
+     if(to2-from2> 50000) 
+       {
+       NcbiCerr << "get_neighboring_sequences: WARNING: span of annotation "
+                << seq->locus_tag << "" 
+                << "[" << seq->name<< "]," 
+                << "[" << seq->description<< "]" 
+                << " is > 50000, probably a break in a circular molecule cutting across the annotation. This annotation will be ignored." << NcbiEndl;
+       continue;
+       }
      if(PrintDetails())
        {
        NcbiCerr << "get_neighboring_sequences: seq = " << printed_range(seq) << NcbiEndl; 
        NcbiCerr << "get_neighboring_sequences: first_in_range_set = " << first_in_range_set << NcbiEndl; 
        }
-     int key = seq->key;
-     int from2 = seq->exons[0].from;
-     int to2   = seq->exons[seq->exons.size()-1].to;
      int proximity = sequence_proximity(from, to, from2, to2, key, max_distance);
      if(proximity<0) continue;
      if (proximity==0) // in the range

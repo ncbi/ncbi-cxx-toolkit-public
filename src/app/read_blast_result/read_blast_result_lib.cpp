@@ -326,25 +326,32 @@ void CReadBlastApp::GetRNAfeats
 
 string GetLocusTag(const CSeq_feat& f, const LocMap& loc_map)
 {
+  if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: start" << NcbiEndl; 
   string loc_string = GetLocationString(f.GetLocation());
+  if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: I" << NcbiEndl; 
   LocMap::const_iterator aname = loc_map.find(loc_string);
   if(aname == loc_map.end())
     {
+    if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: not in locmap" << NcbiEndl; 
     return loc_string;
     }
   else
     {
+    if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: in locmap" << NcbiEndl; 
     const CGene_ref& gene=aname->second->GetData().GetGene();
-    string qname;
-// this is stupid, because it's not unique
-//    aname->second->GetData().GetGene().GetLabel(&qname); 
+    string qname="";
     if(gene.IsSetLocus_tag())
       {
+      if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: getting it" << NcbiEndl; 
       return gene.GetLocus_tag();
       }
 
+    if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: not getting it" << NcbiEndl; 
     return qname;
     }
+
+ if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: INTERNAL ERROR: should be never here" << NcbiEndl; 
+ return loc_string;
 }
 
 CBioseq_set::TSeq_set* get_parent_seqset(const CBioseq& seq)

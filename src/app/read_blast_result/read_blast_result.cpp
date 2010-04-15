@@ -272,6 +272,7 @@ int CReadBlastApp::Run(void)
           NcbiCerr << "FATAL: only tbl, Seq-submit or Seq-entry formats are accepted at this time" << NcbiEndl;
           throw;
           }
+        GetGenomeLen();
          
     }}
 
@@ -391,6 +392,15 @@ int CReadBlastApp::Run(void)
     PushVerbosity();
     simple_overlaps(); // 
     PopVerbosity();
+
+/*
+    NcbiCerr << "Checking short proteins..." << NcbiEndl;
+    PushVerbosity();
+    short_proteins(); //
+    PopVerbosity();
+*/
+
+
 
     NcbiCerr << "Dumping FASTA file for subsequent HTML blast output..." << NcbiEndl;
     PushVerbosity();
@@ -529,6 +539,20 @@ int CReadBlastApp::Run(void)
     }
     PopVerbosity();
 
+    PushVerbosity();
+    {
+    string sout  = base + ".short.protein.log";
+    CNcbiOfstream out( sout.c_str() );
+    if(PrintDetails()) NcbiCerr << "Run: before reportProblems: routine start: "
+                                << eShortProtein
+                                << "(eShortProtein)"
+                                << NcbiEndl;
+    reportProblems(report_and_forget, m_diag, out, eShortProtein);
+    }
+    PopVerbosity();
+
+
+
 
 
     PushVerbosity();
@@ -549,6 +573,7 @@ int CReadBlastApp::Run(void)
     LocMap loc_map;
     map<string,string> problem_names;
     CollectFrameshiftedSeqs(problem_names);
+    m_verbosity_threshold = 300; // debuggging only
     RemoveProblems(problem_names, loc_map); // 
     RemoveProblems(problem_names, loc_map); // second run to do whatever was not picked up by the first run
     PopVerbosity();

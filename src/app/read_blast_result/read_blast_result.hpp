@@ -147,6 +147,7 @@ enum EProblem
      eTRNAAbsent         = (1<<10),
      eRemoveOverlap      = (1<<11),
      eTRNAUndefStrand    = (1<<12),
+     eShortProtein       = (1<<13),
      eRelFrameShift = eFrameShift | eMayBeNotFrameShift,
      eTRNAProblems  =  eTRNAMissing
         | eTRNABadStrand
@@ -309,6 +310,7 @@ private:
 
 
     int simple_overlaps(void);
+    // int short_proteins(void);
 // this is for optimization, do not laugh
     void ugly_simple_overlaps_call(int& n_user_neighbors, int& n_ext_neighbors,
       TSimpleSeqs::iterator& ext_rna,
@@ -316,6 +318,8 @@ private:
       TSimpleSeqs& seqs, int max_distance,
       TSimpleSeqs::iterator& first_ext_in_range, TSimpleSeqs::iterator& first_ext_non_in_range,
       string& bufferstr);
+
+    void addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc);
 
 
 
@@ -412,7 +416,6 @@ public:
                            const int from, const int to, const int key, const int max_distance);
     static void addSimpleTab(strstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna, 
        const int max_distance);
-    static void addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc);
 
 private:
 
@@ -446,7 +449,7 @@ private:
     void reportProblems(const string& qname, diagMap& diag, ostream& out, const EProblem type);
     void reportProblems(const bool report_and_forget, diagMap& diag, ostream& out=NcbiCout, const EProblem type=eAllProblems);
     void reportProblemMessage(const string& message, ostream& out=NcbiCout);
-    string ProblemType(const EProblem type);
+    static string ProblemType(const EProblem type);
 
     void reportProblemType(const EProblem type, ostream& out=NcbiCout);
     void reportProblemSequenceName(const string& name, ostream& out=NcbiCout);
@@ -468,7 +471,7 @@ public:
     static void DecreaseVerbosity(void)  { m_current_verbosity--; }
 private:
 
-
+    void GetGenomeLen();
 // algorithms
     void GetRNAfeats
       (
@@ -535,6 +538,7 @@ private:
     // Member variable to help illustrate our naming conventions
     CSeq_submit m_Submit;
     CSeq_entry  m_Entry;
+    int m_length;
     Ctbl m_tbl;
     ECoreDataType   m_coreDataType;
     map < string, string > m_tagmap;

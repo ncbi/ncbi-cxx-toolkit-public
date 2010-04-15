@@ -157,6 +157,8 @@ BLAST - either standalone or web-based tool, both available at NCBI - to run
   FTP site (ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/all.faa.tar.gz). Instructions
   for creating BLAST databases can be found in the BLAST documents. BLAST output
   must be formatted with the -IT option in order to have subcheck read the results. 
+  For our internal subcheck calculations we use the following parameters:
+  -FT -IT -e 1e-06 -z 500000000
 
 RPSBLAST - either standalone (rpsblast) or web-based 
   (http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi) tool, both available at 

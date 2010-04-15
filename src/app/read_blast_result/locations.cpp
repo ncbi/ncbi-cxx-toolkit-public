@@ -205,7 +205,7 @@ void CReadBlastApp::GetLocMap
   const CSeq_annot::C_Data::TFtable& feats
   )
 {
-//  if(PrintDetails()) NcbiCerr << "GetLocMap starts" << NcbiEndl;
+  if(PrintDetails()) NcbiCerr << "GetLocMap starts" << NcbiEndl;
   loc_map.empty();
   IncreaseVerbosity();
   ITERATE(CSeq_annot::C_Data::TFtable, f, feats)
@@ -215,15 +215,13 @@ void CReadBlastApp::GetLocMap
     string n; (*f)->GetData().GetGene().GetLabel(&n);
     string loc_string = GetLocationString(**f);
     loc_map[loc_string]=*f;
-    // if(PrintDetails()) NcbiCerr << "GetLocMap: stored location (" << loc_string << ")" << NcbiEndl;
+    if(PrintDetails()) NcbiCerr << "GetLocMap: stored location (" << loc_string << ")" << NcbiEndl;
     }
   DecreaseVerbosity();
-/*
   if(PrintDetails()) NcbiCerr << "GetLocMap: locMap size: "
                               << loc_map.size()
                               << NcbiEndl;
   if(PrintDetails()) NcbiCerr << "GetLocMap ends" << NcbiEndl;
-*/
   return;
 }
 

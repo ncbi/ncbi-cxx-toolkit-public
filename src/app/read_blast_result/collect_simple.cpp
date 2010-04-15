@@ -279,6 +279,27 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
        if(seq.key>(int)from) seq.key = (int)from;
        seq.exons.push_back(exon);
        }
+   TSeqPos  from, to;
+   ENa_strand strand;
+   getFromTo(loc, from, to, strand);
+   if(seq.exons.size()>1 && to-from > m_length/2) 
+// over the origin annotation
+     {
+     int i=0;
+     for(CTypeConstIterator<CSeq_interval> inter = ncbi::ConstBegin(loc);
+        inter; ++inter, ++i)
+       {
+       TSeqPos  from, to;
+       ENa_strand strand;
+       getFromTo(*inter, from, to, strand);
+       if(i==0) seq.key = (int)from; // initialize
+       else
+         {
+         if(from-seq.key > m_length/2) seq.key = (int)from; // large gap, make it from here
+         } 
+       }
+
+     }
 }
 
 

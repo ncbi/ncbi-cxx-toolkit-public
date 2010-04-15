@@ -46,17 +46,20 @@ int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::i
      {
      int from2 = seq->exons[0].from;
      int to2   = seq->exons[seq->exons.size()-1].to;
+     bool over_origin = seq->exons.size()>1 && to2-from2 > m_length/2;
      string ext_rna_range2 = printed_range(seq);
      if(PrintDetails()) NcbiCerr << "find_overlap" 
           << "[" << ext_rna_range << "]" 
           << "[" << ext_rna_range2 << "]" << ", trying..." << NcbiEndl;
 
-     if(to2>=from)
+     if(to2>=from || over_origin)
        {
-       if(PrintDetails()) NcbiCerr << "to2>=from" << NcbiEndl;
-       if(from2<=to)
+       if(!over_origin) { if(PrintDetails()) NcbiCerr << "to2>=from" << NcbiEndl; }
+       else             { if(PrintDetails()) NcbiCerr << "over_origin" << NcbiEndl; }
+       if(from2<=to || over_origin)
          {
-         if(PrintDetails()) NcbiCerr << "from2<=to" << NcbiEndl;
+         if(!over_origin) { if(PrintDetails()) NcbiCerr << "from2<=to" << NcbiEndl;}
+         else             { if(PrintDetails()) NcbiCerr << "over_origin 2" << NcbiEndl;}
          TSimpleSeqs::iterator seq2 = seq;
          for(;seq2!=seqs.end(); seq2++)
            {
@@ -74,7 +77,8 @@ int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::i
               << "[" << ext_rna_range2 << "]" << ", overlap = " << this_overlap << NcbiEndl;
            if(this_overlap>0) 
              {
-             best_seq.push_back(*seq);
+//           best_seq.push_back(*seq);  // this is serious.
+             best_seq.push_back(*seq2); 
              }
            }
          }
