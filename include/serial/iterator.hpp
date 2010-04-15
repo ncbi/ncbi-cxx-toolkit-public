@@ -320,6 +320,19 @@ public:
             }
             return loc;
         }
+    
+    /// Check context against filter
+    ///
+    /// @param filter
+    ///   Context filter string
+    bool MatchesContext(const string& filter) const
+    {
+        if (filter.empty()) {
+            return true;
+        }
+        return CPathHook::Match(filter,GetContext());
+    }
+    
     /// Set context filter
     ///
     /// @param filter
@@ -327,8 +340,7 @@ public:
     void SetContextFilter(const string& filter)
         {
             m_ContextFilter = filter;
-            if (!m_ContextFilter.empty() &&
-                !CPathHook::Match(m_ContextFilter,GetContext())) {
+            if (!MatchesContext(filter)) {
                 Next();
             }
         }
@@ -422,8 +434,7 @@ private:
                 }
                 current = m_Stack.top()->Get();
                 if ( CanSelect(current) ) {
-                    if (m_ContextFilter.empty() ||
-                        CPathHook::Match(m_ContextFilter,GetContext())) {
+                    if (MatchesContext(m_ContextFilter)) {
                         m_CurrentObject = current;
                         return;
                     }
