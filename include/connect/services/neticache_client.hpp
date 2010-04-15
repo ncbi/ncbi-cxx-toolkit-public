@@ -162,6 +162,18 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     STimeout  GetCommunicationTimeout() const;
 };
 
+class NCBI_XCONNECT_EXPORT CNetICachePasswordGuard
+{
+public:
+    CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
+        const string& password);
+
+    CNetICacheClient& operator ->() {return m_NetICacheClient;}
+
+private:
+    CNetICacheClient m_NetICacheClient;
+};
+
 extern NCBI_NET_CACHE_EXPORT const char* kNetICacheDriverName;
 
 extern "C"

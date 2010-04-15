@@ -78,11 +78,15 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         const char* buf_ptr,
         size_t buf_size);
 
-    static void AppendClientIPSessionID(string* cmd);
+    void AppendClientIPSessionIDPassword(string* cmd);
+    string MakeCmd(const char* cmd);
+    string MakeCmd(const char* cmd_base, const string& key);
 
     CNetService m_Service;
 
     CNetObjectRef<CNetCacheServerListener> m_Listener;
+
+    string m_Password;
 };
 
 struct SNetCacheAdminImpl : public CNetObject

@@ -281,6 +281,18 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     }
 };
 
+class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard
+{
+public:
+    CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
+        const string& password);
+
+    CNetCacheAPI& operator ->() {return m_NetCacheAPI;}
+
+private:
+    CNetCacheAPI m_NetCacheAPI;
+};
+
 NCBI_DECLARE_INTERFACE_VERSION(SNetCacheAPIImpl,  "xnetcacheapi", 1, 1, 0);
 
 extern NCBI_XCONNECT_EXPORT const char* kNetCacheAPIDriverName;

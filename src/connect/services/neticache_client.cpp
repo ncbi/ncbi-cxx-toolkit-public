@@ -105,7 +105,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     void RegisterUnregisterSession(string cmd, unsigned pid);
 
     void AddKVS(string* out_str, const string& key,
-        int version, const string& subkey) const;
+        int version, const string& subkey);
 
     CNetServerConnection InitiateStoreCmd(const string& key,
         int version, const string& subkey, unsigned time_to_live);
@@ -117,6 +117,17 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     string m_ICacheCmdPrefix;
     CNetServer m_SelectedServer;
 };
+
+CNetICachePasswordGuard::CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
+        const string& password) :
+    m_NetICacheClient(new SNetICacheClientImpl(*ic_client))
+{
+    if (!m_NetICacheClient->m_Password.empty()) {
+        NCBI_THROW(CNetCacheException, eAuthenticationError,
+            "Cannot reuse a password-protected CNetICacheClient object.");
+    }
+    m_NetICacheClient->m_Password = password;
+}
 
 CNetServerConnection SNetICacheClientImpl::InitiateStoreCmd(
     const string& key, int version, const string& subkey, unsigned time_to_live)
@@ -218,7 +229,7 @@ void SNetICacheClientImpl::RegisterUnregisterSession(string cmd, unsigned pid)
     cmd.append(hostname);
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(pid));
-    AppendClientIPSessionID(&cmd);
+    AppendClientIPSessionIDPassword(&cmd);
     StickToServerAndExec(cmd);
 }
 
@@ -251,7 +262,7 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
 int CNetICacheClient::GetTimeout() const
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "GTOU");
-    m_Impl->AppendClientIPSessionID(&cmd);
+    m_Impl->AppendClientIPSessionIDPassword(&cmd);
     return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response);
 }
 
@@ -259,7 +270,7 @@ int CNetICacheClient::GetTimeout() const
 bool CNetICacheClient::IsOpen() const
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "ISOP");
-    m_Impl->AppendClientIPSessionID(&cmd);
+    m_Impl->AppendClientIPSessionIDPassword(&cmd);
     return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response) != 0;
 }
 
@@ -398,7 +409,7 @@ void CNetICacheClient::Remove(const string& key)
     string cmd(m_Impl->m_ICacheCmdPrefix + "REMK \"");
     cmd.append(key);
     cmd.push_back('"');
-    m_Impl->AppendClientIPSessionID(&cmd);
+    m_Impl->AppendClientIPSessionIDPassword(&cmd);
     m_Impl->StickToServerAndExec(cmd);
 }
 
@@ -459,7 +470,7 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 void SNetICacheClientImpl::AddKVS(string*          out_str,
                               const string&    key,
                               int              version,
-                              const string&    subkey) const
+                              const string&    subkey)
 {
     out_str->append(" \"", 2);
     out_str->append(key);
@@ -469,7 +480,7 @@ void SNetICacheClientImpl::AddKVS(string*          out_str,
     out_str->append(subkey);
     out_str->push_back('"');
 
-    AppendClientIPSessionID(out_str);
+    AppendClientIPSessionIDPassword(out_str);
 }
 
 

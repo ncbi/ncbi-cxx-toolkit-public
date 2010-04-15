@@ -72,13 +72,6 @@ static SServerAddress* s_GetFallbackServer()
     return s_FallbackServer->get();
 }
 
-static string s_MkCmd(const char* cmd_base, const string& key)
-{
-    string result(cmd_base + key);
-    SNetCacheAPIImpl::AppendClientIPSessionID(&result);
-    return result;
-}
-
 void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
@@ -133,14 +126,43 @@ CNetServer SNetCacheAPIImpl::GetServer(const string& bid)
     return m_Service->GetServer(key.GetHost(), key.GetPort());
 }
 
-void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
+void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
     cmd->append(" \"");
     cmd->append(req.GetClientIP());
     cmd->append("\" \"");
     cmd->append(req.GetSessionID());
+    if (!m_Password.empty()) {
+        cmd->append("\" pass=\"");
+        cmd->append(m_Password);
+    }
     cmd->append("\"");
+}
+
+string SNetCacheAPIImpl::MakeCmd(const char* cmd)
+{
+    string result(cmd);
+    AppendClientIPSessionIDPassword(&result);
+    return result;
+}
+
+string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const string& key)
+{
+    string result(cmd_base + key);
+    AppendClientIPSessionIDPassword(&result);
+    return result;
+}
+
+CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
+        const string& password) :
+    m_NetCacheAPI(new SNetCacheAPIImpl(*nc_api))
+{
+    if (!m_NetCacheAPI->m_Password.empty()) {
+        NCBI_THROW(CNetCacheException, eAuthenticationError,
+            "Cannot reuse a password-protected NetCache API object.");
+    }
+    m_NetCacheAPI->m_Password = password;
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
@@ -199,11 +221,11 @@ CNetServerConnection SNetCacheAPIImpl::InitiatePutCmd(
     if (!key->empty()) {
         request += *key;
 
-        AppendClientIPSessionID(&request);
+        AppendClientIPSessionIDPassword(&request);
 
         exec_result = GetServer(*key).ExecWithRetry(request);
     } else {
-        AppendClientIPSessionID(&request);
+        AppendClientIPSessionIDPassword(&request);
 
         try {
             exec_result = m_Service.FindServerAndExec(request);
@@ -289,7 +311,8 @@ bool CNetCacheAPI::HasBlob(const string& key)
     CNetServer srv = m_Impl->GetServer(key);
 
     try {
-        return srv.ExecWithRetry(s_MkCmd("HASB ", key)).response[0] == '1';
+        return srv.ExecWithRetry(
+            m_Impl->MakeCmd("HASB ", key)).response[0] == '1';
     } catch (CNetServiceException& e) {
         if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
                 e.GetErrCode() != CNetServiceException::eCommunicationError ||
@@ -302,8 +325,8 @@ bool CNetCacheAPI::HasBlob(const string& key)
 
 size_t CNetCacheAPI::GetBlobSize(const string& key)
 {
-    return (size_t) NStr::StringToULong(
-        m_Impl->GetServer(key).ExecWithRetry(s_MkCmd("GSIZ ", key)).response);
+    return (size_t) NStr::StringToULong(m_Impl->GetServer(key).ExecWithRetry(
+        m_Impl->MakeCmd("GSIZ ", key)).response);
 }
 
 
@@ -311,7 +334,7 @@ void CNetCacheAPI::Remove(const string& key)
 {
     CNetServer srv = m_Impl->GetServer(key);
     try {
-        srv.ExecWithRetry(s_MkCmd("RMV2 ", key));
+        srv.ExecWithRetry(m_Impl->MakeCmd("RMV2 ", key));
     } catch (std::exception& e) {
         ERR_POST("Could not remove blob \"" << key << "\": " << e.what());
     } catch (...) {
@@ -325,7 +348,8 @@ bool CNetCacheAPI::IsLocked(const string& key)
     CNetServer srv = m_Impl->GetServer(key);
 
     try {
-        return srv.ExecWithRetry(s_MkCmd("ISLK ", key)).response[0] == '1';
+        return srv.ExecWithRetry(
+            m_Impl->MakeCmd("ISLK ", key)).response[0] == '1';
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return false;
@@ -338,7 +362,7 @@ string CNetCacheAPI::GetOwner(const string& key)
 {
     CNetServer srv = m_Impl->GetServer(key);
     try {
-        return srv.ExecWithRetry(s_MkCmd("GBOW ", key)).response;
+        return srv.ExecWithRetry(m_Impl->MakeCmd("GBOW ", key)).response;
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return kEmptyStr;
@@ -355,7 +379,7 @@ IReader* CNetCacheAPI::GetData(const string& key,
     if (lock_mode == eLockNoWait)
         cmd += " NW";  // no-wait mode
 
-    SNetCacheAPIImpl::AppendClientIPSessionID(&cmd);
+    m_Impl->AppendClientIPSessionIDPassword(&cmd);
 
     CNetServer::SExecResult exec_result;
 
