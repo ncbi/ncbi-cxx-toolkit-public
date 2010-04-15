@@ -5786,6 +5786,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UGGE	s	Universidad de Guayaquil",
 "UGGG	s	University of Guyana",
 "UGM	s	University of Guam",
+"UGMD	s	Zoology Museum of the University of Ghent",
 "UH	s	University of Hawaii",
 "UHI	s	Ussishkin House, Botany Department",
 "UHM	s	Manoa, College of Tropical Agriculture, Department of Entomology",
