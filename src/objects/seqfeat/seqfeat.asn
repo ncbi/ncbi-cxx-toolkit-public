@@ -579,7 +579,7 @@ Variation-ref ::= SEQUENCE {
 
 -- Variation instance
 Variation-inst ::= SEQUENCE {
-    type ENUMERATED {
+    type INTEGER {
         unknown         (0),
         identity        (1),    -- delta = this
         inv             (2),    -- inversion: delta =
