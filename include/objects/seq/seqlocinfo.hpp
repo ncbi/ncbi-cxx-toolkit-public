@@ -106,8 +106,10 @@ private:
     ETranslationFrame m_Frame;         // For translated nucleotide sequence
 };
 
+typedef list< CRef<CSeqLocInfo> >   TSeqLocInfoCRefList;
+
 /// Collection of masked regions for a single query sequence
-class NCBI_SEQ_EXPORT TMaskedQueryRegions : public list< CRef<CSeqLocInfo> >
+class NCBI_SEQ_EXPORT TMaskedQueryRegions : public TSeqLocInfoCRefList
 {
 public:
     /// Return a new instance of this object that is restricted to the location
