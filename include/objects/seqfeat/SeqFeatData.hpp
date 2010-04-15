@@ -178,7 +178,7 @@ public:
         eSubtype_unsure,
         eSubtype_V_region,
         eSubtype_V_segment,
-        eSubtype_variation,
+        eSubtype_variation, //< old variation (Seq-feat.data.imp = variation)
         eSubtype_virion,
         eSubtype_3clip,
         eSubtype_3UTR,
@@ -205,6 +205,7 @@ public:
         eSubtype_ncRNA,
         eSubtype_tmRNA,
         eSubtype_clone,
+        eSubtype_variation_ref, //< new variation subtype (Seq-feat.data.variant)
         eSubtype_max,
         eSubtype_any = 255
     };

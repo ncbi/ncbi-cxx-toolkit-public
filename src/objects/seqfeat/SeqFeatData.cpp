@@ -157,7 +157,8 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
     FEAT_INFO_PAIR(Het, het, "Het", "misc_binding"),
     FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
-    FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature")
+    FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature"),
+    FEAT_INFO_PAIR(Variation, variation_ref, "Variation", "misc_feature")
 };
 
 typedef CStaticArrayMap<CSeqFeatData::E_Choice,
@@ -441,6 +442,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     table[eSubtype_het] = e_Het;
     table[eSubtype_biosrc] = e_Biosrc;
     table[eSubtype_clone] = e_Clone;
+    table[eSubtype_variation_ref] = e_Variation;
     for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
         table[ESubtype(sub)] = e_Prot;
     }
@@ -2510,6 +2512,7 @@ static CFeatListItem sc_ConfigItemInit[] = {
     CFeatListItem( CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het" ),
     CFeatListItem( CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc" ),
     CFeatListItem( CSeqFeatData::e_Clone,    CSeqFeatData::eSubtype_clone,     "clone",      "clone" ),
+    CFeatListItem( CSeqFeatData::e_Variation, CSeqFeatData::eSubtype_variation_ref, "variation",  "variation" ),
 };
 
 

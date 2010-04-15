@@ -15,6 +15,7 @@ EXPORTS Seq-feat, Feat-id, Genetic-code;
 IMPORTS Gene-ref FROM NCBI-Gene
         Prot-ref FROM NCBI-Protein
         Org-ref FROM NCBI-Organism
+        Variation-ref FROM NCBI-Variation
         BioSource FROM NCBI-BioSource
         RNA-ref FROM NCBI-RNA
         Seq-loc, Giimport-id FROM NCBI-Seqloc
@@ -114,7 +115,8 @@ SeqFeatData ::= CHOICE {
     non-std-residue VisibleString ,  -- non-standard residue here in seq
     het Heterogen ,         -- cofactor, prosthetic grp, etc, bound to seq
     biosrc BioSource,
-    clone Clone-ref
+    clone Clone-ref,
+    variation Variation-ref
 }
 
 SeqFeatXref ::= SEQUENCE {       -- both optional because can have one or both
@@ -234,7 +236,411 @@ Clone-seq ::= SEQUENCE {
 }
 
 
+
+
+
 END 
+
+
+
+
+
+NCBI-Variation DEFINITIONS ::=
+BEGIN
+
+EXPORTS Variation-ref, Variation-inst;
+
+
+IMPORTS Int-fuzz, User-object, Object-id, Dbtag FROM NCBI-General
+        Seq-literal FROM NCBI-Sequence
+        Seq-loc FROM NCBI-Seqloc
+        Pub FROM NCBI-Pub;
+
+
+-- --------------------------------------------------------------------------
+-- Historically, the dbSNP definitions document data structures used in the
+-- processing and annotation of variations by the dbSNP group.  The intention
+-- is to provide information to clients that reflect internal information
+-- produced during the mapping of SNPs
+-- --------------------------------------------------------------------------
+
+VariantProperties ::= SEQUENCE {
+    version INTEGER,
+
+    -- NOTE:
+    -- The format for each of these values is as an integer
+    -- Unless otherwise noted, these integers represent a bitwise OR of the
+    -- possible values, and as such, these values represent the specific bit
+    -- flags that may be set for each of the possible attributes here.
+
+    resource-link INTEGER {    
+        precious         (1), -- Clinical, Pubmed, Cited, (0x01)
+        provisional      (2), -- Provisional Third Party Annotations (0x02)
+        has3D            (4), -- Has 3D strcture SNP3D table (0x04)
+        submitterLinkout (8), -- SNP->SubSNP->Batch link_out (0x08)
+        clinical        (16), -- Clinical if LSDB, OMIM, TPA, Diagnostic
+        genotypeKit     (32)  -- Marker exists on high density genotyping kit
+    } OPTIONAL,
+    
+    gene-function INTEGER {
+        no-change     (0), -- known to cause no functional changes
+                           -- since 0 does not combine with any other bit
+                           -- value, 'no-change' specifically implies that
+                           -- there are no consequences
+        in-gene       (1), -- Sequence intervals covered by a gene ID but not
+                           -- having an aligned transcript (0x01)
+        in-gene-5     (2), -- In Gene near 5' (0x02)
+        in-gene-3     (4), -- In Gene near 3' (0x04)
+        intron        (8), -- In Intron (0x08)
+        donor        (16), -- In donor splice-site (0x10)
+        acceptor     (32), -- In acceptor splice-site (0x20)
+        utr-5        (64), -- In 5' UTR (0x40)
+        utr-3       (128), -- In 3' UTR (0x80)
+        synonymous  (256), -- one allele in the set does not change the encoded
+                           -- amino acid (0x100)
+        nonsense    (512), -- one allele in the set changes to STOP codon
+                           -- (TER).  (0x200)
+        missense   (1024), -- one allele in the set changes protein peptide
+                           -- (0x400)
+        frameshift (2048), -- one allele in the set changes all downstream
+                           -- amino acids (0x800)
+
+        in-start-codon(4096), -- the variant is observed in a start codon (0x1000)
+        up-regulator(8192), -- the variant causes increased transcription
+                           -- (0x2000)
+        down-regulator(16384) -- the variant causes decreased transcription
+                           -- (0x4000)
+    } OPTIONAL,
+    
+    mapping INTEGER {
+        has-other-snp         (1), -- Another SNP has the same mapped positions
+                                   -- on reference assembly (0x01)
+        has-assembly-conflict (2), -- Weight 1 or 2 SNPs that map to different
+                                   -- chromosomes on different assemblies (0x02)
+        is-assembly-specific  (4)  -- Only maps to 1 assembly (0x04)
+    } OPTIONAL,
+    
+    -- This is *NOT* a bitfield
+    weight INTEGER {
+        is-uniquely-placed(1),
+        placed-twice-on-same-chrom(2),
+        placed-twice-on-diff-chrom(3),
+        many-placements(10)
+    } OPTIONAL,
+    
+    allele-freq INTEGER {
+        is-mutation      (1), -- low frequency variation that is cited in journal
+                              -- and other reputable sources (0x01)
+        above-5pct-all   (2), -- >5% minor allele freq in each and all
+                              -- populations (0x02)
+        above-5pct-1plus (4), -- >5% minor allele freq in 1+ populations (0x04)
+        validated        (8)  -- Bit is set if the variant has 2+ minor allele
+                              -- count based on freq or genotype data
+    } OPTIONAL,
+    
+    genotype INTEGER {
+        in-haplotype-set (1), -- Exists in a haplotype tagging set (0x01)
+        has-genotypes    (2)  -- SNP has individual genotype (0x02)
+    } OPTIONAL,
+    
+    hapmap INTEGER {
+        phase1-genotyped (1), -- Phase 1 genotyped; filtered, non-redundant
+                              -- (0x01)
+        phase2-genotyped (2), -- Phase 2 genotyped; filtered, non-redundant
+                              -- (0x02)
+        phase3-genotyped (4)  -- Phase 3 genotyped; filtered, non-redundant
+                              -- (0x04)
+    } OPTIONAL,
+    
+    quality-check INTEGER {
+        contig-allele-missing   (1), -- Reference sequence allele at the mapped
+                                     -- position is not present in the SNP
+                                     -- allele list, adjusted for orientation
+                                     -- (0x01)
+        withdrawn-by-submitter  (2), -- One member SS is withdrawn by submitter
+                                     -- (0x02)
+        non-overlapping-alleles (4), -- RS set has 2+ alleles from different
+                                     -- submissions and these sets share no
+                                     -- alleles in common (0x04)
+        strain-specific         (8), -- Straing specific fixed difference (0x08)
+        genotype-conflict      (16)  -- Has Genotype Conflict (0x10)
+    } OPTIONAL
+}
+
+
+Variation-ref ::= SEQUENCE {
+    -- ids (i.e., SNP rsid / ssid, dbVar nsv/nssv)
+    -- expected values include 'dbSNP|rs12334', 'dbSNP|ss12345', 'dbVar|nsv1'
+    --
+    -- we relate three kinds of IDs here:
+    --  - our current object's id
+    --  - the id of this object's parent, if it exists
+    --  - the sample ID that this item originates from
+    id        Dbtag OPTIONAL,
+    parent-id Dbtag OPTIONAL,
+    sample-id Object-id OPTIONAL,
+    other-ids SET OF Dbtag OPTIONAL,
+
+    -- names and synonyms
+    -- some variants have well-known canonical names and possible accepted
+    -- synonyms
+    name VisibleString OPTIONAL,
+    synonyms SET OF VisibleString OPTIONAL,
+
+    -- tag for comment and descriptions
+    description VisibleString OPTIONAL,
+
+    -- phenotype
+    phenotype SET OF SEQUENCE {
+        source VisibleString OPTIONAL,
+        term VisibleString OPTIONAL,
+        xref SET OF Dbtag OPTIONAL,
+
+        -- does this variant have known clinical significance?
+        clinical-significance INTEGER {
+            unknown                 (0),
+            untested                (1),
+            non-pathogenic          (2),
+            probable-non-pathogenic (3),
+            probable-pathogenic     (4),
+            pathogenic              (5),
+            other                   (255)
+        } OPTIONAL
+    } OPTIONAL,
+
+
+    -- sequencing / acuisition method
+    method SET OF INTEGER {
+        unknown             (0),
+        bac-acgh            (1),
+        computational       (2),
+        curated             (3),
+        digital-array       (4),
+        expression-array    (5),
+        fish                (6),
+        flanking-sequence   (7),
+        maph                (8),
+        mcd-analysis        (9),
+        mlpa                (10),
+        oea-assembly        (11),
+        oligo-acgh          (12),
+        paired-end          (13),
+        pcr                 (14),
+        qpcr                (15),
+        read-depth          (16),
+        roma                (17),
+        rt-pcr              (18),
+        sage                (19),
+        sequence-alignment  (20),
+        sequencing          (21),
+        snp-array           (22),
+        snp-genoytyping     (23),
+        southern            (24),
+        western             (25),
+
+        other               (255)
+    } OPTIONAL,
+
+    -- Note about SNP representation and pretinent fields: allele-frequency,
+    -- population, quality-codes:
+    -- The case of multiple alleles for a SNP would be described by
+    -- parent-feature of type Variation-set.diff-alleles, where the child
+    -- features of type Variation-inst, all at the same location, would
+    -- describe individual alleles.
+
+    -- population data
+    population-data SET OF SEQUENCE {
+        -- assayed population (e.g. HAPMAP-CEU)
+        population VisibleString,
+        genotype-frequency REAL OPTIONAL,
+        chromosomes-tested INTEGER OPTIONAL,
+        sample-ids SET OF Object-id OPTIONAL
+    } OPTIONAL,
+
+    -- variant properties bit fields
+    variant-prop VariantProperties OPTIONAL,
+
+    -- has this variant been validated?
+    validated BOOLEAN OPTIONAL,
+
+    -- link-outs to GeneTests database
+    clinical-test SET OF Dbtag OPTIONAL,
+
+    -- origin of this allele, if known
+    allele-origin INTEGER {
+        unknown         (0),
+        germline        (1),
+        somatic         (2),
+        inherited       (3),
+        paternal        (4),
+        maternal        (5),
+        de-novo         (6),
+        biparental      (7),
+        uniparental     (8),
+        not-tested      (9),
+        tested-inconclusive (10),        
+
+        other           (255)
+    } OPTIONAL,
+
+    -- observed allele state, if known
+    allele-state INTEGER {
+        unknown         (0),
+        homozygous      (1),
+        heterozygous    (2),
+        hemizygous      (3),
+        nullizygous     (4),
+        other           (255)
+    } OPTIONAL,
+
+    allele-frequency REAL OPTIONAL,
+
+    -- is this variant the ancestral allele?
+    is-ancestral-allele BOOLEAN OPTIONAL,
+
+    -- publication support.
+    -- Note: made this pub instead of pub-equiv, since
+    -- Pub can be pub-equiv and pub-equiv is a set of pubs, but it looks like
+    -- Pub is more often used as top-level container
+    pub Pub OPTIONAL,
+
+    data CHOICE {
+        unknown NULL,
+        note    VisibleString, --free-form
+        uniparental-disomy NULL,
+
+        -- actual sequence-edit at feat.location
+        instance        Variation-inst,
+
+        -- Set of related Variations.
+        -- Location of the set equals to the union of member locations
+        set SEQUENCE {
+            type INTEGER {
+                unknown     (0),
+                compound    (1), -- complex change at the same location on the
+                                 -- same molecule
+                products    (2), -- different products arising from the same
+                                 -- variation in a precursor, e.g. r.[13g>a,
+                                 -- 13_88del]
+                haplotype   (3), -- changes on the same allele, e.g
+                                 -- r.[13g>a;15u>c]
+                alleles     (4), -- changes on different alleles in the same
+                                 -- genotype, e.g. g.[476C>T]+[476C>T]
+                mosaic      (5), -- different genotypes in the same individual
+                individual  (6), -- same organism; allele relationship unknown,
+                                 -- e.g. g.[476C>T(+)183G>C]
+                population  (7), -- population
+                other       (255)
+            },
+            variations SET OF Variation-ref,
+            name  VisibleString OPTIONAL
+        }
+    },
+
+    consequence SET OF CHOICE {
+        unknown     NULL,
+        splicing    NULL, --some effect on splicing
+        note        VisibleString,  --freeform
+
+        -- Describe resulting variation in the product, e.g. missense,
+        -- nonsense, silent, neutral, etc in a protein, that arises from
+        -- THIS variation.
+        variation   Variation-ref,
+
+        -- see http://www.hgvs.org/mutnomen/recs-prot.html
+        frameshift SEQUENCE {
+            phase INTEGER OPTIONAL,
+            x-length INTEGER OPTIONAL
+        },
+
+        loss-of-heterozygosity SEQUENCE {
+            -- In germline comparison, it will be reference genome assembly
+            -- (default) or reference/normal population. In somatic mutation,
+            -- it will be a name of the normal tissue.
+            reference VisibleString OPTIONAL,
+
+            -- Name of the testing subject type or the testing tissue.
+            test VisibleString OPTIONAL
+        }
+    } OPTIONAL,
+
+    -- Observed location, if different from the parent set or feature.location.
+    location        Seq-loc OPTIONAL,
+
+    -- reference other locs, e.g. mapped source
+    ext-locs SET OF SEQUENCE {
+        id Object-id,
+        location Seq-loc
+    } OPTIONAL,
+
+    ext             User-object OPTIONAL
+
+}
+
+-- Variation instance
+Variation-inst ::= SEQUENCE {
+    type ENUMERATED {
+        unknown         (0),
+        identity        (1),    -- delta = this
+        inv             (2),    -- inversion: delta =
+                                -- reverse-comp(feat.location)
+        snp             (3),    -- delins where len(del) = len(ins) = 1
+        mnp             (4),    -- delins where len(del) = len(ins) > 1
+        delins          (5),    -- delins where len(del) != len(ins)
+        del             (6),    -- deltaseq is empty
+        ins             (7),    -- deltaseq contains [this, ins] or [ins, this]
+        microsatellite  (8),    -- location describes tandem sequence;
+                                --   delta is the repeat-unit with a multiplier
+        transposon      (9),    -- delta refers to equivalent sequence in
+                                -- another location.
+                                --   ext-loc describes donor sequence, if known
+                                -- (could be location itself)
+        cnv             (10),   -- general CNV class, indicating "local"
+                                -- rearrangement
+
+        -- Below are four possible copy configurations,
+        -- where delta is a seq-loc on the same sequence.
+        -- If the repeat is represented on the sequence, it is
+        -- described like a transposon; if it is a de-novo
+        -- repeat, it is described like an insertion.
+        direct-copy     (11),   -- delta sequence is located upstream, same
+                                -- strand
+        rev-direct-copy (12),   -- delta sequence is downstream, same strand
+        inverted-copy   (13),   -- delta sequence is upstream, opposite strand
+        everted-copy    (14),   -- delta sequence is downstream, opposite strand
+
+        translocation   (15),   -- feat.location is swapped with delta (i.e.
+                                -- reciprocal transposon)
+        prot-missense   (16),
+        prot-nonsense   (17),
+        prot-neutral    (18),
+        prot-silent     (19),
+        prot-other      (20),
+
+        other           (255)
+    },
+
+    -- Sequence that replaces the location, in biological order.
+    delta SEQUENCE OF SEQUENCE {
+        seq CHOICE {
+            literal Seq-literal,
+            loc Seq-loc,
+            this NULL --same location as variation-ref itself
+        },
+
+        -- Multiplier allows representing a tandem, e.g.  ATATAT as AT*3
+        -- This allows describing CNV/SSR where delta=self  with a
+        -- multiplier which specifies the count of the repeat unit.
+
+        multiplier          INTEGER OPTIONAL, --assumed 1 if not specified.
+        multiplier-fuzz     Int-fuzz OPTIONAL
+    }
+}
+
+
+
+END
+
 
 --**********************************************************************
 --
