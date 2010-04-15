@@ -1297,15 +1297,15 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                              mol_type));
 
         if (args.Exist(kArgGiList) && args[kArgGiList]) {
-            m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new 
-                        CSeqDBFileGiList(args[kArgGiList].AsString())));
+            string fn(SeqDB_ResolveDbPath(args[kArgGiList].AsString()));
+            m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn)));
         } else if (args.Exist(kArgNegativeGiList) && args[kArgNegativeGiList]) {
-            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new 
-                        CSeqDBFileGiList(args[kArgNegativeGiList].AsString())));
+            string fn(SeqDB_ResolveDbPath(args[kArgNegativeGiList].AsString()));
+            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn)));
         } else if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
-            m_SearchDb->SetSeqIdList(CRef<CSeqDBGiList> (new
-                        CSeqDBFileGiList(args[kArgSeqIdList].AsString(), 
-                                          CSeqDBFileGiList::eSeqIdList)));
+            string fn(SeqDB_ResolveDbPath(args[kArgSeqIdList].AsString()));
+            m_SearchDb->SetSeqIdList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
+                             CSeqDBFileGiList::eSeqIdList)));
         }
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
