@@ -58,20 +58,6 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-const string CGuideTree::kLabelTag = "label";
-const string CGuideTree::kSeqIDTag = "seq-id";
-const string CGuideTree::kSeqTitleTag = "seq-title";
-const string CGuideTree::kOrganismTag = "organism";
-const string CGuideTree::kAccessionNbrTag = "accession-nbr";        
-const string CGuideTree::kBlastNameTag = "blast-name";    
-const string CGuideTree::kAlignIndexIdTag = "align-index";     
-
-const string CGuideTree::kNodeColorTag = "$NODE_COLOR";
-const string CGuideTree::kLabelColorTag = "$LABEL_COLOR";
-const string CGuideTree::kLabelBgColorTag = "$LABEL_BG_COLOR";
-const string CGuideTree::kLabelTagColor = "$LABEL_TAG_COLOR";
-const string CGuideTree::kCollapseTag = "$NODE_COLLAPSED";
-
 
 CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc) 
 {
@@ -319,9 +305,9 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
         FullyExpand();
         CPhyloTreeNodeGroupper groupper 
             = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
-               CPhyloTreeNodeGroupper(kBlastNameTag,
-                                      kNodeColorTag,
-                                      *m_DataSource));
+                   CPhyloTreeNodeGroupper(CGuideTreeCalc::kBlastNameTag,
+                                        CGuideTreeCalc::kNodeColorTag,
+                                        *m_DataSource));
 
         if (!groupper.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -363,8 +349,9 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
         // Track labels in order to select proper color for collapsed node
         CPhyloTreeLabelTracker 
             tracker = TreeDepthFirstTraverse(*node, CPhyloTreeLabelTracker(
-                                               kBlastNameTag, kNodeColorTag,
-                                               *m_DataSource));
+                                           CGuideTreeCalc::kBlastNameTag,
+                                           CGuideTreeCalc::kNodeColorTag,
+                                           *m_DataSource));
 
         if (!tracker.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -379,7 +366,7 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
         }
         node->SetLabel(label);
         if (tracker.GetNumLabels() == 1) {
-            (**node).SetFeature(kNodeColorTag,
+            (**node).SetFeature(CGuideTreeCalc::kNodeColorTag,
                                 tracker.Begin()->second);
         }
         // Mark collapsed subtree that contains query node
@@ -391,7 +378,7 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
 
         // Expanding
         node->ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-        (**node).SetFeature(kNodeColorTag, "");      
+        (**node).SetFeature(CGuideTreeCalc::kNodeColorTag, "");      
     }
 
     if (refresh) {
@@ -479,10 +466,15 @@ auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
     CLeaveFinder leave_finder = TreeDepthFirstTraverse(*node, CLeaveFinder());
     vector<CPhyloTreeNode*>& leaves = leave_finder.GetLeaves();
 
-    TBioTreeFeatureId fid_blast_name = x_GetFeatureId(kBlastNameTag);
-    TBioTreeFeatureId fid_node_color = x_GetFeatureId(kNodeColorTag);
-    TBioTreeFeatureId fid_seqid = x_GetFeatureId(kSeqIDTag);
-    TBioTreeFeatureId fid_accession = x_GetFeatureId(kAccessionNbrTag);
+    TBioTreeFeatureId fid_blast_name = x_GetFeatureId(
+                                              CGuideTreeCalc::kBlastNameTag);
+
+    TBioTreeFeatureId fid_node_color = x_GetFeatureId(
+                                              CGuideTreeCalc::kNodeColorTag);
+
+    TBioTreeFeatureId fid_seqid = x_GetFeatureId(CGuideTreeCalc::kSeqIDTag);
+    TBioTreeFeatureId fid_accession = x_GetFeatureId(
+                                            CGuideTreeCalc::kAccessionNbrTag);
     
 
     auto_ptr<STreeInfo> info(new STreeInfo);
@@ -694,7 +686,7 @@ void CGuideTree::x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper)
          it != groupper.End(); ++it) {
         it->GetNode()->ExpandCollapse(IPhyGraphicsNode::eHideChilds);
         it->GetNode()->SetLabel(it->GetLabel());
-        it->GetNode()->GetValue().SetFeature(kNodeColorTag, 
+        it->GetNode()->GetValue().SetFeature(CGuideTreeCalc::kNodeColorTag,
                                              it->GetColor());
         if (m_QueryNodeId > -1) {
             x_MarkCollapsedQueryNode(it->GetNode());
@@ -717,13 +709,13 @@ void CGuideTree::x_MarkCollapsedQueryNode(CPhyloTreeNode* node)
         CPhyloTreeNode* query_node = x_GetNode(m_QueryNodeId, node);
 
         const CBioTreeFeatureDictionary& fdict = m_DataSource->GetDictionary();
-        TBioTreeFeatureId fid = fdict.GetId(kLabelBgColorTag);
+        TBioTreeFeatureId fid = fdict.GetId(CGuideTreeCalc::kLabelBgColorTag);
 
         const CBioTreeFeatureList& 
             flist = (**query_node).GetBioTreeFeatureList();
 
         const string& color = flist.GetFeatureValue(fid);
-        (**node).SetFeature(kLabelBgColorTag, color);
+        (**node).SetFeature(CGuideTreeCalc::kLabelBgColorTag, color);
     }
 } 
 
@@ -882,11 +874,11 @@ void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node)
        if(tree_node.IsLeaf()) {
             const CBioTreeFeatureList& featureList = (*tree_node).GetBioTreeFeatureList();
        
-            if (m_ShowQuery && (*tree_node).GetDictionaryPtr()->HasFeature(CGuideTree::kAlignIndexIdTag)){ //"align-index"
+            if (m_ShowQuery && (*tree_node).GetDictionaryPtr()->HasFeature(CGuideTreeCalc::kAlignIndexIdTag)){ //"align-index"
                 int align_index = NStr::StringToInt(
                                    featureList.GetFeatureValue(        
                                        (*tree_node).GetDictionaryPtr()->GetId(
-                                           CGuideTree::kAlignIndexIdTag)));
+                                           CGuideTreeCalc::kAlignIndexIdTag)));
 
                 isQuery = align_index == 0; //s_kPhyloTreeQuerySeqIndex  
             }       
@@ -898,11 +890,11 @@ void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node)
 
             string accessionNbr;
             if ((*tree_node).GetDictionaryPtr()->HasFeature(
-                               CGuideTree::kAccessionNbrTag)){ //accession-nbr
+                               CGuideTreeCalc::kAccessionNbrTag)){ //accession-nbr
 
                 accessionNbr = featureList.GetFeatureValue(
                                   (*tree_node).GetDictionaryPtr()->GetId(
-                                        CGuideTree::kAccessionNbrTag));            
+                                        CGuideTreeCalc::kAccessionNbrTag));            
             }
             string arg = NStr::IntToString(nodeID);
             if(!accessionNbr.empty()) {

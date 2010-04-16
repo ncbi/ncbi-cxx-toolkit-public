@@ -444,6 +444,46 @@ protected:
 
     /// Error/warning messages
     vector<string> m_Messages;    
+
+
+public:
+    // Feature tags for CioTreeContainer
+
+    /// Sequence label feature tag
+    static const string kLabelTag;
+
+    /// Sequence id feature tag
+    static const string kSeqIDTag;
+
+    /// Sequence title feature tag
+    static const string kSeqTitleTag;
+
+    /// Organizm name feature tag
+    static const string kOrganismTag;
+
+    /// Accession number feature tag
+    static const string kAccessionNbrTag;
+
+    /// Blast name feature tag
+    static const string kBlastNameTag;
+
+    /// Alignment index id feature tag
+    static const string kAlignIndexIdTag;
+
+    /// Node color feature tag (used by CPhyloTreeNode)
+    static const string kNodeColorTag;
+
+    /// Node label color feature tag (used by CPhyloTreeNode)
+    static const string kLabelColorTag;
+
+    /// Node label backrground color tag (used by CPhyloTreeNode)
+    static const string kLabelBgColorTag;
+
+    /// Node label tag color tag (used by CPhyloTreeNode)
+    static const string kLabelTagColor;
+
+    /// Node subtree collapse tag (used by CPhyloTreeNode)
+    static const string kCollapseTag;
 };
 
 

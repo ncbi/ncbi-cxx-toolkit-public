@@ -45,7 +45,6 @@
 
 #include <math.h>
 
-#include "guide_tree.hpp"
 #include "guide_tree_calc.hpp"
 
 
@@ -62,6 +61,20 @@ static const string s_kUnknown = "unknown";
 
 // initial value for collapsed subtree feature
 static const string s_kSubtreeDisplayed = "0";
+
+const string CGuideTreeCalc::kLabelTag = "label";
+const string CGuideTreeCalc::kSeqIDTag = "seq-id";
+const string CGuideTreeCalc::kSeqTitleTag = "seq-title";
+const string CGuideTreeCalc::kOrganismTag = "organism";
+const string CGuideTreeCalc::kAccessionNbrTag = "accession-nbr";        
+const string CGuideTreeCalc::kBlastNameTag = "blast-name";    
+const string CGuideTreeCalc::kAlignIndexIdTag = "align-index";     
+
+const string CGuideTreeCalc::kNodeColorTag = "$NODE_COLOR";
+const string CGuideTreeCalc::kLabelColorTag = "$LABEL_COLOR";
+const string CGuideTreeCalc::kLabelBgColorTag = "$LABEL_BG_COLOR";
+const string CGuideTreeCalc::kLabelTagColor = "$LABEL_TAG_COLOR";
+const string CGuideTreeCalc::kCollapseTag = "$NODE_COLLAPSED";
 
 
 CGuideTreeCalc::CDistMatrix::CDistMatrix(int num_elements)
@@ -718,17 +731,17 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
     }
     
     // Add attributes to terminal nodes
-    x_AddFeatureDesc(eSeqIdId, CGuideTree::kSeqIDTag, btc);
-    x_AddFeatureDesc(eOrganismId, CGuideTree::kOrganismTag, btc);
-    x_AddFeatureDesc(eTitleId, CGuideTree::kSeqTitleTag, btc);
-    x_AddFeatureDesc(eAccessionNbrId, CGuideTree::kAccessionNbrTag, btc);
-    x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, btc);
-    x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag, btc);
-    x_AddFeatureDesc(eNodeColorId, CGuideTree::kNodeColorTag, btc);
-    x_AddFeatureDesc(eLabelColorId, CGuideTree::kLabelColorTag, btc);
-    x_AddFeatureDesc(eLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
-    x_AddFeatureDesc(eLabelTagColorId, CGuideTree::kLabelTagColor, btc);
-    x_AddFeatureDesc(eTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
+    x_AddFeatureDesc(eSeqIdId, kSeqIDTag, btc);
+    x_AddFeatureDesc(eOrganismId, kOrganismTag, btc);
+    x_AddFeatureDesc(eTitleId, kSeqTitleTag, btc);
+    x_AddFeatureDesc(eAccessionNbrId, kAccessionNbrTag, btc);
+    x_AddFeatureDesc(eBlastNameId, kBlastNameTag, btc);
+    x_AddFeatureDesc(eAlignIndexId, kAlignIndexIdTag, btc);
+    x_AddFeatureDesc(eNodeColorId, kNodeColorTag, btc);
+    x_AddFeatureDesc(eLabelColorId, kLabelColorTag, btc);
+    x_AddFeatureDesc(eLabelBgColorId, kLabelBgColorTag, btc);
+    x_AddFeatureDesc(eLabelTagColorId, kLabelTagColor, btc);
+    x_AddFeatureDesc(eTreeSimplificationTagId, kCollapseTag, btc);
 
     
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
