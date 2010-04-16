@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(testMegablast)
     BOOST_REQUIRE(import_strat.GetService() == "megablast");
     BOOST_REQUIRE(import_strat.GetProgram() == "blastn");
     BOOST_REQUIRE(import_strat.GetTask() == "megablast");
+    BOOST_REQUIRE(import_strat.GetDBFilteringID() == 40);
 
     CRef<objects::CBlast4_queries> query = import_strat.GetQueries();
     BOOST_REQUIRE(query->IsPssm() == false);

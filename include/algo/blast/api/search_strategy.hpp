@@ -55,6 +55,27 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
+
+/// This is the "mutable" data for CImportStrategy.
+struct CImportStrategyData {
+
+    /// Has the struct been properly filled in?
+    bool valid;
+
+    /// BLAST options.
+    CRef<blast::CBlastOptionsHandle> m_OptionsHandle;
+
+    /// Filtering ID
+    int m_FilteringID;
+
+    /// Range of query.
+    TSeqRange m_QueryRange;
+
+    /// Task, such as megablast, blastn, blastp, etc.
+    string m_Task;
+};
+
+
 /// Class to return parts of the CBlast4_request, or data associated with
 /// a CBlast4_request, such as options.
 class NCBI_XBLAST_EXPORT CImportStrategy : public CObject
@@ -63,11 +84,14 @@ public:
     /// Constructor, imports the CBlast4_request
     CImportStrategy(CRef<objects::CBlast4_request> request);
 
+    /// Destructor
+    ~CImportStrategy();
+
     /// Builds and returns the OptionsHandle
-    CRef<blast::CBlastOptionsHandle> GetOptionsHandle();
+    CRef<blast::CBlastOptionsHandle> GetOptionsHandle() const;
 
     /// Fetches task, such as "megablast", "blastn", etc. 
-    string GetTask();
+    string GetTask() const;
 
     /// Fetches service, such as psiblast, plain, megablast
     string GetService() const;
@@ -79,7 +103,10 @@ public:
     string GetCreatedBy() const;
 
     /// The start and stop on the query (if applicable)
-    TSeqRange GetQueryRange();
+    TSeqRange GetQueryRange() const;
+
+    /// The DB filter ID.
+    int GetDBFilteringID() const;
 
     /// The queries either as Bioseq, seqloc, or pssm.
     CRef<objects::CBlast4_queries> GetQueries();
@@ -97,17 +124,13 @@ public:
 
 private:
 
+    void FetchData() const; /// Fills in CImportStrategyData;
+
+    CImportStrategyData* m_Data;
+
     CRef<objects::CBlast4_request> m_Request;
 
-    CRef<blast::CBlastOptionsHandle> m_OptionsHandle;
-
-    bool m_OptionsSet;
-
-    string m_Task;
-
     string m_Service;
-
-    TSeqRange m_QueryRange;
 };
 
 

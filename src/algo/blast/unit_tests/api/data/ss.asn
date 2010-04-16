@@ -53,6 +53,10 @@ Blast4-request ::= {
       {
         name "RequiredEnd",
         value integer 623
+      },
+      {
+        name "DbFilteringAlgorithmId",
+        value integer 40
       }
     }
   }

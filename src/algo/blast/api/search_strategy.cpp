@@ -55,7 +55,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request)
- : m_Request(request), m_OptionsSet(false)
+ : m_Request(request)
 {
 
     if (m_Request.Empty()) {
@@ -64,12 +64,20 @@ CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request)
     if (m_Request->CanGetBody() && !m_Request->GetBody().IsQueue_search() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, "No body in CBlast4_request");
     }
+    m_Data = new(CImportStrategyData);
+    m_Data->valid = false;
 }
 
-CRef<blast::CBlastOptionsHandle> 
-CImportStrategy::GetOptionsHandle()
+
+CImportStrategy::~CImportStrategy()
 {
-    if (!m_OptionsSet)
+    free(m_Data);
+}
+
+void 
+CImportStrategy::FetchData() const
+{
+    if (m_Data->valid == false)
     {
         const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
 
@@ -88,23 +96,29 @@ CImportStrategy::GetOptionsHandle()
         }
 
         // The option builder is invalid until the next call.
-        m_OptionsHandle = bob.GetSearchOptions(algo_opts, prog_opts, &m_Task);
-        m_QueryRange = bob.GetRestrictedQueryRange();
-        m_OptionsSet = true;
+        m_Data->m_OptionsHandle = bob.GetSearchOptions(algo_opts, prog_opts, &m_Data->m_Task);
+        m_Data->m_QueryRange = bob.GetRestrictedQueryRange();
+        m_Data->m_FilteringID = bob.GetDbFilteringAlgorithmId();
+        m_Data->valid = true;
     }
-    return m_OptionsHandle;
+}
+
+CRef<blast::CBlastOptionsHandle> 
+CImportStrategy::GetOptionsHandle() const
+{
+    if (!m_Data->valid)
+           FetchData();
+    
+    return m_Data->m_OptionsHandle;
 }
 
 string 
-CImportStrategy::GetTask()
+CImportStrategy::GetTask() const
 {
-    if (!m_OptionsSet)
-    {
-        // This populates task;
-        CRef<blast::CBlastOptionsHandle> handle = GetOptionsHandle();
-    }
-
-    return m_Task;
+    if (!m_Data->valid)
+           FetchData();
+    
+    return m_Data->m_Task;
 }
 
 string 
@@ -122,15 +136,21 @@ CImportStrategy::GetCreatedBy() const
 }
 
 TSeqRange 
-CImportStrategy::GetQueryRange()
+CImportStrategy::GetQueryRange() const
 {
-    if (!m_OptionsSet)
-    {
-        // This populates query range;
-        CRef<blast::CBlastOptionsHandle> handle = GetOptionsHandle();
-    }
+    if (!m_Data->valid)
+           FetchData();
+    
+    return m_Data->m_QueryRange;
+}
 
-    return m_QueryRange;
+int 
+CImportStrategy::GetDBFilteringID() const
+{
+    if (!m_Data->valid)
+           FetchData();
+    
+    return m_Data->m_FilteringID;
 }
 
 string 
