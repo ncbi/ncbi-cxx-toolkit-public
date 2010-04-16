@@ -33,6 +33,9 @@
 #include <ncbi_pch.hpp>
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
+#ifdef NCBI_OS_MSWIN
+#  include <corelib/ncbi_system.hpp>
+#endif //NCBI_OS_MSWIN
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -131,6 +134,11 @@ int CTest::Run(void)
         NcbiCout << "NCBI Connectivity Test PASSED!";
     }
     NcbiCout << NcbiEndl << NcbiEndl << NcbiFlush;
+
+#ifdef NCBI_OS_MSWIN
+    NcbiCout << "The program will bail out in 1 minute" << NcbiEndl;
+    SleepSec(60);
+#endif //NCBI_OS_MSWIN
 
     CORE_SetLOG(0);
     return status == eIO_Success ? 0 : 1;
