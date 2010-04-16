@@ -472,9 +472,7 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
             query.SetSql(sql);
             query.Execute();
             ITERATE(CQuery, it, query.SingleSet()) {
-                string cur_value = it[2].AsString();
-
-                BOOST_CHECK( !cur_value.empty() );
+                BOOST_CHECK( !it[2].IsNull() );
             }
         }
     }

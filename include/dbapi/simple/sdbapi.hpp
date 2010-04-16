@@ -184,7 +184,10 @@ public:
         /// should be read completely before any other field is attempted
         /// to be read.
         const vector<unsigned char>& AsVector(void) const;
-        
+
+        /// Check if value is NULL.
+        bool IsNull(void) const;
+
     private:
         friend class CQueryImpl;
         friend struct Deleter<CField>;

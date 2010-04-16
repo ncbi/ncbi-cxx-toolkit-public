@@ -78,6 +78,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
+                    BOOST_CHECK( !it[2].IsNull());
                     dt_value = it[2].AsDateTime();
                     BOOST_CHECK( !dt_value.IsEmpty() );
                 }
@@ -107,6 +108,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
+                    BOOST_CHECK( !it[2].IsNull());
                     CTime dt_value2 = it[2].AsDateTime();
                     BOOST_CHECK_EQUAL( dt_value.AsString(), dt_value2.AsString() );
                 }
@@ -137,8 +139,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
-                    dt_value = it[2].AsDateTime();
-                    BOOST_CHECK( dt_value.IsEmpty() );
+                    BOOST_CHECK( it[2].IsNull());
                 }
             }
         }
@@ -194,6 +195,8 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
 
+                BOOST_CHECK(!it[1].IsNull());
+                BOOST_CHECK(!it[2].IsNull());
                 BOOST_CHECK_EQUAL(it[1].AsString(), str_value);
                 BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
             }
@@ -231,11 +234,10 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
 
-                //
-                {
-                    BOOST_CHECK_EQUAL(it[1].AsString(), str_value);
-                    BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
-                }
+                BOOST_CHECK(!it[1].IsNull());
+                BOOST_CHECK(!it[2].IsNull());
+                BOOST_CHECK_EQUAL(it[1].AsString(), str_value);
+                BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
             }
         }
     }

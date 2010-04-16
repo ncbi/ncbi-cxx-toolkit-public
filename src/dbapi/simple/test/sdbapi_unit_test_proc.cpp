@@ -68,13 +68,13 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             query.ExecuteSP("sp_databases");
             ITERATE(CQuery, it, query.SingleSet()) {
             }
-
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Execute it second time ...
             query.ExecuteSP("sp_databases");
             ITERATE(CQuery, it, query.SingleSet()) {
             }
-
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Same as before but do not retrieve data ...
             query.ExecuteSP("sp_databases");
@@ -100,6 +100,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             BOOST_CHECK(num > 0);
 
             query.PurgeResults();
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
 
         // With parameters.
@@ -112,6 +113,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             query.PurgeResults();
 
             BOOST_CHECK_EQUAL( size_t(29), query.GetRowCount() );
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Set parameter to 1 ...
             query.SetParameter( "@attribute_id", Int4(1) );
@@ -119,6 +121,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             query.PurgeResults();
 
             BOOST_CHECK_EQUAL( size_t(1), query.GetRowCount() );
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
     }
     catch(const CException& ex) {
@@ -139,6 +142,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK(it[1].AsInt4() != 0);
             }
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
 
         // Mismatched types of INT parameters ...
@@ -152,6 +156,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
             query.PurgeResults();
 
             BOOST_CHECK_EQUAL( size_t(1), query.GetRowCount() );
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
     }
     catch(const CException& ex) {
@@ -179,6 +184,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
             }
 
             BOOST_CHECK_EQUAL(result_num, 2);
+            BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
 
         // The same as above, but using statement ...

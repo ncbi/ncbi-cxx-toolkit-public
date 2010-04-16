@@ -1994,10 +1994,6 @@ CQueryImpl::HasMoreResultSets(void)
                 continue;
             switch (m_CurRS->GetResultType()) {
             case eDB_StatusResult:
-                if (m_CallStmt) {
-                    m_CurRS->Next();
-                    m_Status = m_CurRS->GetVariant(1).GetInt4();
-                }
                 delete m_CurRS;
                 break;
             case eDB_ParamResult:
@@ -2024,6 +2020,9 @@ CQueryImpl::HasMoreResultSets(void)
     }
     SDBAPI_CATCH_LOWLEVEL()
 
+    if (m_CallStmt) {
+        m_Status = m_CallStmt->GetReturnStatus();
+    }
     if (m_RowCount == 0) {
         if (m_CurRowNo != 0) {
             m_RowCount = m_CurRowNo;
@@ -2314,6 +2313,12 @@ CQuery::CField::AsIStream(void) const
     m_ValueForStream = var_val.GetString();
     m_Stream.reset(new CNcbiIstrstream(m_ValueForStream.c_str()));
     return *m_Stream;
+}
+
+bool
+CQuery::CField::IsNull(void) const
+{
+    return m_Query->GetFieldValue(*this).IsNull();
 }
 
 

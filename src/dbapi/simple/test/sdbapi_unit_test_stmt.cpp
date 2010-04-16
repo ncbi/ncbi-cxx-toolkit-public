@@ -633,7 +633,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
         }
 
         // Check ...
-        if (true) {
+        {
             CQuery query = GetDatabase().NewQuery();
 
             {
@@ -652,12 +652,14 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     string vc1000_field = it[2].AsString();
 
                     if (ind % 2 == 0) {
+                        BOOST_CHECK(!it[1].IsNull());
                         BOOST_CHECK_EQUAL( int_field, ind );
 
-                        BOOST_CHECK( vc1000_field == "" );
+                        BOOST_CHECK(it[2].IsNull());
                     } else {
-                        BOOST_CHECK( int_field == 0 );
+                        BOOST_CHECK(it[1].IsNull());
 
+                        BOOST_CHECK(!it[2].IsNull());
                         BOOST_CHECK_EQUAL( vc1000_field,
                                            NStr::IntToString(ind) );
                     }
@@ -680,8 +682,9 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     string nvc255_field = it[1].AsString();
 
                     if (ind % 2 == 0) {
-                        BOOST_CHECK( nvc255_field == "" );
+                        BOOST_CHECK(it[1].IsNull());
                     } else {
+                        BOOST_CHECK(!it[1].IsNull());
                         BOOST_CHECK_EQUAL( NStr::TruncateSpaces(
                                                 nvc255_field
                                                 ),
@@ -764,11 +767,13 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     string vc1000_field = it[2].AsString();
 
                     if (ind % 2 == 0) {
+                        BOOST_CHECK(!it[1].IsNull());
                         BOOST_CHECK_EQUAL( int_field, ind );
 
-                        BOOST_CHECK( vc1000_field == "" );
+                        BOOST_CHECK(it[2].IsNull());
                     } else {
-                        BOOST_CHECK( int_field == 0 );
+                        BOOST_CHECK(it[1].IsNull());
+                        BOOST_CHECK(!it[2].IsNull());
                         BOOST_CHECK_EQUAL( vc1000_field, string() );
                     }
                 }
@@ -826,12 +831,14 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     string vc1000_field = it[2].AsString();
 
                     if (ind % 2 == 0) {
+                        BOOST_CHECK(!it[1].IsNull());
                         BOOST_CHECK_EQUAL( int_field, ind );
 
-                        BOOST_CHECK( vc1000_field == "" );
+                        BOOST_CHECK(it[2].IsNull());
                     } else {
-                        BOOST_CHECK( int_field == 0 );
+                        BOOST_CHECK(it[1].IsNull());
 
+                        BOOST_CHECK(!it[2].IsNull());
                         BOOST_CHECK_EQUAL( vc1000_field, string("    ") );
                     }
                 }
@@ -1310,6 +1317,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
             curr_type = it.GetColumnType(1);
             BOOST_CHECK_EQUAL(curr_type, eSDB_Int8);
 
+            BOOST_CHECK(!it[1].IsNull());
             table_id = it[1].AsInt8();
             ++it;
             BOOST_CHECK(it == query.end());
@@ -1325,6 +1333,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
             BOOST_CHECK(query.HasMoreResultSets());
             CQuery::iterator it = query.begin();
             BOOST_CHECK(it != query.end());
+            BOOST_CHECK(!it[1].IsNull());
             identity_id = it[1].AsInt8();
             ++it;
             BOOST_CHECK(it == query.end());
@@ -1345,6 +1354,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
 
             curr_type = it.GetColumnType(1);
             BOOST_CHECK_EQUAL(curr_type, eSDB_String);
+            BOOST_CHECK(!it[1].IsNull());
 
             ++it;
             BOOST_CHECK(it == query.end());
@@ -1533,6 +1543,7 @@ BOOST_AUTO_TEST_CASE(Test_ClearParamList)
                 for (long ind = 0; ind < rec_num; ++ind, ++it) {
                     BOOST_CHECK(it != query.end());
 
+                    BOOST_CHECK(!it[2].IsNull());
                     BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
                 }
 

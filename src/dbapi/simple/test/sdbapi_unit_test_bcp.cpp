@@ -94,6 +94,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
 
+                BOOST_CHECK( !it[2].IsNull() );
+
                 CTime dt_value2 = it[2].AsDateTime();
                 BOOST_CHECK( !dt_value2.IsEmpty() );
                 BOOST_CHECK_EQUAL( dt_value2.AsString(), t.AsString() );
@@ -129,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
 
-                BOOST_CHECK( it[2].AsDateTime().IsEmpty() );
+                BOOST_CHECK( it[2].IsNull() );
             }
         }
     }
@@ -266,6 +268,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
             CQuery::iterator it = query.begin();
             BOOST_CHECK( it != query.end() );
 
+            BOOST_CHECK(!it[1].IsNull());
             string str_value = it[1].AsString();
             BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
         }
@@ -660,9 +663,12 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
             BOOST_CHECK( query.HasMoreResultSets() );
             CQuery::iterator it = query.begin();
             BOOST_CHECK( it != query.end() );
+            BOOST_CHECK( !it[1].IsNull() );
             BOOST_CHECK( it[1].AsByte() );
+            BOOST_CHECK( !it[2].IsNull() );
             BOOST_CHECK( !it[2].AsDateTime().IsEmpty() );
-            BOOST_CHECK( it[3].AsDateTime().IsEmpty() );
+            BOOST_CHECK( it[3].IsNull() );
+            BOOST_CHECK( !it[4].IsNull() );
             BOOST_CHECK( !it[4].AsDateTime().IsEmpty() );
 
             // Dump results ...
