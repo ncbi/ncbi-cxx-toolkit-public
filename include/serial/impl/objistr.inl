@@ -98,7 +98,12 @@ void CObjectIStream::ReadObject(TObjectPtr object, TTypeInfo typeInfo)
 inline
 void CObjectIStream::SkipObject(TTypeInfo typeInfo)
 {
-    typeInfo->SkipData(*this);
+    if ( m_MonitorType && !typeInfo->IsOrMayContainType(m_MonitorType) ) {
+        SkipAnyContentObject();
+    }
+    else {
+        typeInfo->SkipData(*this);
+    }
 }
 
 inline

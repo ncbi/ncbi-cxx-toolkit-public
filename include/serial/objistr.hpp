@@ -453,6 +453,8 @@ public:
     void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
     void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
     void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
+
+    void SetMonitorType(TTypeInfo type);
     
     /// DelayBuffer parsing policy
     enum EDelayBufferParsing {
@@ -980,6 +982,8 @@ private:
     CStreamPathHook<CVariantInfo*,CSkipChoiceVariantHook*> m_PathSkipVariantHooks;
 
     CRef<CObjectMemoryPool> m_MemoryPool;
+
+    TTypeInfo m_MonitorType;
 
 public:
     // read hooks

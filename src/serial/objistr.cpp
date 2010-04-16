@@ -394,7 +394,8 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_SkipUnknown(eSerialSkipUnknown_Default),
       m_SkipUnknownVariants(eSerialSkipUnknown_Default),
       m_Fail(fNotOpen),
-      m_Flags(fFlagNone)
+      m_Flags(fFlagNone),
+      m_MonitorType(0)
 {
 }
 
@@ -532,6 +533,11 @@ void CObjectIStream::Unended(const string& msg)
 void CObjectIStream::UnendedFrame(void)
 {
     Unended("internal error: unended object stack frame");
+}
+
+void CObjectIStream::SetMonitorType(TTypeInfo type)
+{
+    m_MonitorType = type;
 }
 
 void CObjectIStream::x_SetPathHooks(bool set)
