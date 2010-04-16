@@ -413,6 +413,20 @@ public:
         int num_gap;
     };
 
+    /// struct containing annotated gene information
+    struct SIgGene {
+        void Set(int s, int e) {
+            start = s;
+            end = e;
+        }
+        void Reset() {
+            start = -1;
+            end = -1;
+        };
+        int start;
+        int end;
+    };
+
     /// What delimiter to use between fields in each row of the tabular output.
     /// Constructor
     /// @param ostr Stream to write output to [in]
@@ -428,11 +442,24 @@ public:
 
     /// Set fields for master alignment
     int SetMasterFields(const objects::CSeq_align& align, 
-                        objects::CScope& scope, 
-                        CNcbiMatrix<int>* matrix=0);
+                        objects::CScope&           scope, 
+                        const string&              chain_type,
+                        CNcbiMatrix<int>*          matrix=0);
+
+    /// Set fields for all other alignments
+    int SetFields(const objects::CSeq_align& align,
+                  objects::CScope&           scope,
+                  const string&              chain_type,
+                  CNcbiMatrix<int>*          matrix=0);
+
+    /// Override the print method
+    virtual void Print(void);
+
+    /// Print domain information
+    void PrintMasterAlign() const;
 
     /// Set out-of-frame information                                        
-    void SetFrame(const string frame = "NA") { 
+    void SetFrame(const string &frame = "NA") { 
         m_FrameInfo = frame;                               
     };
 
@@ -450,34 +477,35 @@ public:
     };
 
     /// Set gene info
-    void SetVGene(const string &v) {
-        m_VGene = v;
+    void SetVGene(int s, int e) {
+        m_VGene.Set(s,e);
     }
 
     /// Set gene info
-    void SetDGene(const string &d) {
-        m_DGene = d;
+    void SetDGene(int s, int e) {
+        m_DGene.Set(s,e);
     }
 
     /// Set gene info
-    void SetJGene(const string &j) {
-        m_JGene = j;
+    void SetJGene(int s, int e) {
+        m_JGene.Set(s,e);
     }
-
-    /// Print domain information
-    void PrintMasterAlign() const;
 
 protected:
     void x_ResetIgFields();
+    void x_PrintIgGenes() const;
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
+    void x_PrintPartialQuery(int start, int end) const;
 
 private:                                                                    
+    string m_Query;
     bool m_IsMinusStrand;
     string m_FrameInfo;                                                           
-    string m_VGene;
-    string m_DGene;
-    string m_JGene;
+    string m_ChainType;
+    SIgGene m_VGene;
+    SIgGene m_DGene;
+    SIgGene m_JGene;
     vector<SIgDomain *> m_IgDomains;                                        
 };
 

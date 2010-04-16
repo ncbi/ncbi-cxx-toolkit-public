@@ -868,34 +868,59 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
 
 int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align, 
                                  CScope& scope, 
+                                 const string& chain_type,
                                  CNcbiMatrix<int>* matrix)
 {
     int retval = 0;
     bool hasSeq = x_IsFieldRequested(eQuerySeq);
     bool hasQuerySeqId = x_IsFieldRequested(eQuerySeqId);
     bool hasQueryStart = x_IsFieldRequested(eQueryStart);
+
     x_ResetIgFields();
+    const CBioseq_Handle& query_bh = 
+                scope.GetBioseqHandle(align.GetSeq_id(0));
+    int length = query_bh.GetBioseqLength();
+    query_bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac)
+            .GetSeqData(0, length, m_Query);
+
     if (!hasSeq) x_AddFieldToShow(eQuerySeq);
     if (!hasQuerySeqId) x_AddFieldToShow(eQuerySeqId);
     if (!hasQueryStart) x_AddFieldToShow(eQueryStart);
-    retval = SetFields(align, scope, matrix);
+    retval = SetFields(align, scope, chain_type, matrix);
     if (!hasSeq) x_DeleteFieldToShow(eQuerySeq);
     if (!hasQuerySeqId) x_DeleteFieldToShow(eQuerySeqId);
     if (!hasQueryStart) x_DeleteFieldToShow(eQueryStart);
     return retval;
 };            
 
+int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
+                                 CScope& scope, 
+                                 const string& chain_type,
+                                 CNcbiMatrix<int>* matrix)
+{
+    m_ChainType = chain_type;
+    return CBlastTabularInfo::SetFields(align, scope, matrix);
+};
+
+void CIgBlastTabularInfo::Print(void)
+{
+    m_Ostream << m_ChainType << m_FieldDelimiter;
+    CBlastTabularInfo::Print();
+};
+
 void CIgBlastTabularInfo::PrintMasterAlign() const
 {
+    m_Ostream << m_ChainType << m_FieldDelimiter;
+
     x_PrintQuerySeqId();
+
     m_Ostream << m_FieldDelimiter
               << ((m_IsMinusStrand) ? '-' : '+')
               << m_FieldDelimiter
-              << m_FrameInfo;
+              << m_FrameInfo
+              << m_FieldDelimiter;
 
-    m_Ostream << m_FieldDelimiter << m_VGene;
-    m_Ostream << m_FieldDelimiter << m_DGene;
-    m_Ostream << m_FieldDelimiter << m_JGene;
+    x_PrintIgGenes();
 
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
         m_Ostream << m_FieldDelimiter;
@@ -912,12 +937,55 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     }
     m_IgDomains.clear();
     m_FrameInfo = "NA";
+    m_ChainType = "NA";
     m_IsMinusStrand = false;
-    m_VGene = "NA";
-    m_DGene = "NA";
-    m_JGene = "NA";
+    m_VGene.Reset();
+    m_DGene.Reset();
+    m_JGene.Reset();
 };
 
+void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end) const
+{
+    if (start <0 || end <0 || start==end) {
+        m_Ostream << "NA";
+        return;
+    }
+    bool isOverlap = (start > end);
+    if (isOverlap) {
+        int tmp = end;
+        end = start;
+        start = tmp;
+        m_Ostream << '(';
+    }
+    for (int pos = start; pos < end; ++pos) {
+        m_Ostream << m_Query[pos];
+    }
+    if (isOverlap) {
+        m_Ostream << ')';
+    }
+};
+
+void CIgBlastTabularInfo::x_PrintIgGenes() const
+{
+    if (m_VGene.start <0 || m_JGene.end <0) return;
+
+    x_PrintPartialQuery(max(m_VGene.start, m_VGene.end - 5), m_VGene.end);
+    m_Ostream << m_FieldDelimiter;
+
+    if (m_ChainType == "VH") {
+        x_PrintPartialQuery(m_VGene.end, m_DGene.start);
+        m_Ostream << m_FieldDelimiter;
+        x_PrintPartialQuery(m_DGene.start, m_DGene.end);
+        m_Ostream << m_FieldDelimiter;
+        x_PrintPartialQuery(m_DGene.end, m_JGene.start);
+    } else {
+        x_PrintPartialQuery(m_VGene.end, m_JGene.start);
+    }
+
+    m_Ostream << m_FieldDelimiter;
+    x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
+};
+   
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
 {
     int pos = 0;
