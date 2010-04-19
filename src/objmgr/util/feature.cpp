@@ -866,6 +866,88 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 }
 
 
+struct STypeLink
+{
+    STypeLink(CSeqFeatData::ESubtype subtype);
+        
+    bool IsValid(void) const {
+        return m_ParentType != CSeqFeatData::eSubtype_bad;
+    }
+
+    void Next(void);
+        
+    CSeqFeatData::ESubtype m_CurrentType;
+    CSeqFeatData::ESubtype m_ParentType;
+    bool                   m_ByProduct;
+};
+
+
+STypeLink::STypeLink(CSeqFeatData::ESubtype subtype)
+    : m_CurrentType(subtype),
+      m_ParentType(CSeqFeatData::eSubtype_bad),
+      m_ByProduct(false)
+{
+    switch ( subtype ) {
+    case CSeqFeatData::eSubtype_max:
+    case CSeqFeatData::eSubtype_bad:
+        // artificial subtypes
+        m_ParentType = CSeqFeatData::eSubtype_bad;
+        break;
+    case CSeqFeatData::eSubtype_operon:
+    case CSeqFeatData::eSubtype_gap:
+        // operon and gap features do not inherit anything
+        m_ParentType = CSeqFeatData::eSubtype_bad;
+        break;
+    case CSeqFeatData::eSubtype_gene:
+        // Gene features can inherit operon by overlap (CONTAINED_WITHIN)
+        m_ParentType = CSeqFeatData::eSubtype_operon;
+        break;
+    case CSeqFeatData::eSubtype_mat_peptide:
+    case CSeqFeatData::eSubtype_sig_peptide:
+        m_ParentType = CSeqFeatData::eSubtype_prot;
+        break;
+    case CSeqFeatData::eSubtype_cdregion:
+        m_ParentType = CSeqFeatData::eSubtype_mRNA;
+        break;
+    case CSeqFeatData::eSubtype_prot:
+        m_ByProduct = true;
+        m_ParentType = CSeqFeatData::eSubtype_cdregion;
+        break;
+    default:
+        m_ParentType = CSeqFeatData::eSubtype_gene;
+        break;
+    }
+}
+
+
+void STypeLink::Next(void)
+{
+    if ( m_CurrentType == CSeqFeatData::eSubtype_prot ) {
+        // no way to link proteins without cdregion
+        m_ParentType = CSeqFeatData::eSubtype_bad;
+        return;
+    }
+    switch ( m_ParentType ) {
+    case CSeqFeatData::eSubtype_gene:
+        // no inherit of operons if no gene
+        m_ParentType = CSeqFeatData::eSubtype_bad;
+        break;
+    case CSeqFeatData::eSubtype_mRNA:
+        if ( m_ByProduct ) {
+            m_ByProduct = false;
+            m_ParentType = CSeqFeatData::eSubtype_gene;
+        }
+        else {
+            m_ByProduct = true;
+        }
+        break;
+    default:
+        *this = STypeLink(m_ParentType);
+        break;
+    }
+}
+
+
 namespace {
     // Checks if the location has mixed strands or wrong order of intervals
     static
@@ -930,75 +1012,15 @@ namespace {
         }
     }
 
-
-    static
-    CSeqFeatData::ESubtype sx_GetParentType(CSeqFeatData::ESubtype subtype)
-    {
-        switch ( subtype ) {
-        case CSeqFeatData::eSubtype_operon:
-        case CSeqFeatData::eSubtype_gap:
-            // operon and gap features do not inherit anything
-            return CSeqFeatData::eSubtype_bad;
-        case CSeqFeatData::eSubtype_gene:
-            // Gene features can inherit operon by overlap (CONTAINED_WITHIN)
-            return CSeqFeatData::eSubtype_operon;
-        case CSeqFeatData::eSubtype_mat_peptide:
-        case CSeqFeatData::eSubtype_sig_peptide:
-            return CSeqFeatData::eSubtype_prot;
-        case CSeqFeatData::eSubtype_cdregion:
-            return CSeqFeatData::eSubtype_mRNA;
-        case CSeqFeatData::eSubtype_prot:
-            return CSeqFeatData::eSubtype_cdregion;
-        default:
-            return CSeqFeatData::eSubtype_gene;
-        }
-    }
-
-
     static inline
-    bool sx_ByProduct(CSeqFeatData::ESubtype feature_type)
-    {
-        return feature_type == CSeqFeatData::eSubtype_prot;
-    }
-
-
-    static
-    void sx_GetNextParentType(CSeqFeatData::ESubtype& current_type,
-                              CSeqFeatData::ESubtype& parent_type)
-    {
-        if ( current_type == CSeqFeatData::eSubtype_prot ) {
-            // no way to link proteins without cdregion
-            parent_type = CSeqFeatData::eSubtype_bad;
-            return;
-        }
-        CSeqFeatData::ESubtype next_parent_type;
-        switch ( parent_type ) {
-        case CSeqFeatData::eSubtype_gene:
-            // no inherit of operons if no gene
-            next_parent_type = CSeqFeatData::eSubtype_bad;
-            break;
-        case CSeqFeatData::eSubtype_mRNA:
-            next_parent_type = CSeqFeatData::eSubtype_gene;
-            break;
-        default:
-            current_type = parent_type;
-            next_parent_type = sx_GetParentType(parent_type);
-            break;
-        }
-        parent_type = next_parent_type;
-    }
-
-
-    static inline
-    EOverlapType sx_GetOverlapType(CSeqFeatData::ESubtype current_type,
-                                   CSeqFeatData::ESubtype parent_type,
+    EOverlapType sx_GetOverlapType(const STypeLink& link,
                                    const CSeq_loc& loc)
     {
         EOverlapType overlap_type = eOverlap_Contained;
-        if ( current_type == CSeqFeatData::eSubtype_cdregion ) {
+        if ( link.m_CurrentType == CSeqFeatData::eSubtype_cdregion ) {
             overlap_type = eOverlap_CheckIntervals;
         }
-        if ( parent_type == CSeqFeatData::eSubtype_gene &&
+        if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
              sx_IsIrregularLocation(loc) ) {
             // LOCATION_SUBSET if bad order or mixed strand
             // otherwise CONTAINED_WITHIN
@@ -1014,7 +1036,7 @@ namespace {
         int distance = 0;
         while ( type != CSeqFeatData::eSubtype_bad ) {
             ++distance;
-            type = sx_GetParentType(type);
+            type = STypeLink(type).m_ParentType;
         }
         return distance;
     }
@@ -1040,7 +1062,7 @@ namespace {
 
     static
     CMappedFeat sx_GetParentByRef(const CMappedFeat& feat,
-                                  CSeqFeatData::ESubtype parent_type)
+                                  const STypeLink& link)
     {
         if ( !feat.IsSetXref() ) {
             return CMappedFeat();
@@ -1054,13 +1076,13 @@ namespace {
                 const CFeat_id& id = xref.GetId();
                 if ( id.IsLocal() ) {
                     CSeq_feat_Handle feat1 =
-                        tse.GetFeatureWithId(parent_type, id.GetLocal());
+                        tse.GetFeatureWithId(link.m_ParentType, id.GetLocal());
                     if ( feat1 ) {
                         return feat1;
                     }
                 }
             }
-            if ( parent_type == CSeqFeatData::eSubtype_gene &&
+            if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
                  xref.IsSetData() ) {
                 const CSeqFeatData& data = xref.GetData();
                 if ( data.IsGene() ) {
@@ -1077,20 +1099,18 @@ namespace {
 
     static
     CMappedFeat sx_GetParentByOverlap(const CMappedFeat& feat,
-                                      CSeqFeatData::ESubtype current_type,
-                                      CSeqFeatData::ESubtype parent_type)
+                                      const STypeLink& link)
     {
         CMappedFeat best_parent;
 
         const CSeq_loc& c_loc = feat.GetLocation();
 
         // find best suitable parent by overlap score
-        EOverlapType overlap_type =
-            sx_GetOverlapType(current_type, parent_type, c_loc);
+        EOverlapType overlap_type = sx_GetOverlapType(link, c_loc);
     
         Int8 best_overlap = kMax_I8;
-        SAnnotSelector sel(parent_type);
-        sel.SetByProduct(sx_ByProduct(current_type));
+        SAnnotSelector sel(link.m_ParentType);
+        sel.SetByProduct(link.m_ByProduct);
         for (CFeat_CI it(feat.GetScope(), c_loc, sel); it; ++it) {
             Int8 overlap = TestForOverlap64(it->GetLocation(),
                                             c_loc,
@@ -1132,23 +1152,21 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 {
     CMappedFeat best_parent;
 
-    CSeqFeatData::ESubtype current_type = feat.GetFeatSubtype();
-    CSeqFeatData::ESubtype parent_type = sx_GetParentType(current_type);
-    while ( current_type != CSeqFeatData::eSubtype_bad &&
-            parent_type != CSeqFeatData::eSubtype_bad ) {
-        best_parent = sx_GetParentByRef(feat, parent_type);
+    STypeLink link(feat.GetFeatSubtype());
+    while ( link.IsValid() ) {
+        best_parent = sx_GetParentByRef(feat, link);
         if ( best_parent ) {
             // found by Xref
             break;
         }
 
-        best_parent = sx_GetParentByOverlap(feat, current_type, parent_type);
+        best_parent = sx_GetParentByOverlap(feat, link);
         if ( best_parent ) {
             // parent is found by overlap
             break;
         }
 
-        sx_GetNextParentType(current_type, parent_type);
+        link.Next();
     }
     return best_parent;
 }
@@ -1396,9 +1414,9 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
 
 
 void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
-                                     CSeqFeatData::ESubtype parent_type)
+                                     const STypeLink& link)
 {
-    if ( features.empty() || parent_type == CSeqFeatData::eSubtype_bad ) {
+    if ( features.empty() || !link.IsValid() ) {
         return;
     }
     TFeatArray::iterator dst = features.begin();
@@ -1407,7 +1425,8 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
         if ( info.IsSetParent() ) {
             continue;
         }
-        CFeatInfo* parent = x_LookupParentByRef(info, parent_type).second;
+        CFeatInfo* parent =
+            x_LookupParentByRef(info, link.m_ParentType).second;
         if ( parent ) {
             x_SetParent(info, *parent);
         }
@@ -1420,28 +1439,26 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
 
 
 void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
-                                         CSeqFeatData::ESubtype current_type,
+                                         const STypeLink& link,
                                          TFeatArray& parents)
 {
     if ( features.empty() || parents.empty() ) {
         return;
     }
     
-    bool by_product = sx_ByProduct(current_type);
-
     typedef vector<SFeatRangeInfo> TRangeArray;
     TRangeArray pp, cc;
 
     // collect parents parameters
     ITERATE ( TFeatArray, it, parents ) {
         CFeatInfo& feat_info = **it;
-        SFeatRangeInfo range_info(feat_info, by_product);
+        SFeatRangeInfo range_info(feat_info, link.m_ByProduct);
         if ( range_info.m_Id ) {
             pp.push_back(range_info);
         }
         else {
             s_AddRanges(pp, feat_info,
-                        by_product?
+                        link.m_ByProduct?
                         feat_info.m_Feat.GetProduct():
                         feat_info.m_Feat.GetLocation());
         }
@@ -1461,7 +1478,6 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     }
     sort(cc.begin(), cc.end(), PLessByStart());
 
-    CSeqFeatData::ESubtype parent_type = parents[0]->m_Feat.GetFeatSubtype();
     // assign parents in single scan over both lists
     {{
         TRangeArray::iterator pi = pp.begin();
@@ -1505,8 +1521,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                 // child parameters
                 CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
-                EOverlapType overlap_type =
-                    sx_GetOverlapType(current_type, parent_type, c_loc);
+                EOverlapType overlap_type = sx_GetOverlapType(link, c_loc);
 
                 // skip non-overlapping parents
                 while ( pi != pe &&
@@ -1523,7 +1538,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                     }
                     const CMappedFeat& p_feat = pc->m_Info->m_Feat;
                     const CSeq_loc& p_loc =
-                        by_product?
+                        link.m_ByProduct?
                         p_feat.GetProduct():
                         p_feat.GetLocation();
                     Int8 overlap = TestForOverlap64(p_loc,
@@ -1582,8 +1597,8 @@ void CFeatTree::x_AssignParents(void)
             continue;
         }
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
-        CSeqFeatData::ESubtype parent_type = sx_GetParentType(feat_type);
-        if ( parent_type == CSeqFeatData::eSubtype_bad ) {
+        STypeLink link(feat_type);
+        if ( !link.IsValid() ) {
             // no parent
             x_SetNoParent(info);
         }
@@ -1591,7 +1606,7 @@ void CFeatTree::x_AssignParents(void)
             SFeatSet& feat_set = pinfo_map[feat_type];
             if ( feat_set.m_New.empty() ) {
                 feat_set.m_FeatType = feat_type;
-                pinfo_map[parent_type].m_NeedAll = true;
+                pinfo_map[link.m_ParentType].m_NeedAll = true;
             }
             feat_set.m_New.push_back(&info);
             ++new_count;
@@ -1609,29 +1624,26 @@ void CFeatTree::x_AssignParents(void)
             // no work to do
             continue;
         }
-        CSeqFeatData::ESubtype current_type = feat_set.m_FeatType;
-        CSeqFeatData::ESubtype parent_type = sx_GetParentType(current_type);
-        while ( current_type != CSeqFeatData::eSubtype_bad &&
-                parent_type != CSeqFeatData::eSubtype_bad ) {
+        STypeLink link(feat_set.m_FeatType);
+        while ( link.IsValid() ) {
             if ( m_FeatIdMode == eFeatId_by_type ) {
-                x_AssignParentsByRef(feat_set.m_New, parent_type);
+                x_AssignParentsByRef(feat_set.m_New, link);
                 if ( feat_set.m_New.empty() ) {
                     break;
                 }
             }
-            if ( !pinfo_map[parent_type].m_CollectedAll ) {
-                pinfo_map[parent_type].m_NeedAll = true;
+            if ( !pinfo_map[link.m_ParentType].m_CollectedAll ) {
+                pinfo_map[link.m_ParentType].m_NeedAll = true;
                 x_CollectNeeded(pinfo_map);
             }
-            _ASSERT(pinfo_map[parent_type].m_CollectedAll);
-            x_AssignParentsByOverlap(feat_set.m_New,
-                                     current_type,
-                                     pinfo_map[parent_type].m_All);
+            _ASSERT(pinfo_map[link.m_ParentType].m_CollectedAll);
+            x_AssignParentsByOverlap(feat_set.m_New, link,
+                                     pinfo_map[link.m_ParentType].m_All);
             if ( feat_set.m_New.empty() ) {
                 break;
             }
 
-            sx_GetNextParentType(current_type, parent_type);
+            link.Next();
         }
         // all remaining features are without parent
         ITERATE ( TFeatArray, it, feat_set.m_New ) {

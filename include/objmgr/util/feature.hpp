@@ -145,6 +145,8 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat GetParentFeature(const CMappedFeat& feat);
 
+struct STypeLink;
+
 /////////////////////////////////////////////////////////////////////////////
 /// CFeatTree
 /// 
@@ -268,9 +270,9 @@ protected:
 
     void x_AssignParents(void);
     void x_AssignParentsByRef(TFeatArray& features,
-                              CSeqFeatData::ESubtype parent_type);
+                              const STypeLink& link);
     void x_AssignParentsByOverlap(TFeatArray& features,
-                                  CSeqFeatData::ESubtype current_type,
+                                  const STypeLink& link,
                                   TFeatArray& parents);
     bool x_AssignParentByRef(CFeatInfo& info);
 
