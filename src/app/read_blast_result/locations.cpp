@@ -215,7 +215,7 @@ void CReadBlastApp::GetLocMap
     string n; (*f)->GetData().GetGene().GetLabel(&n);
     string loc_string = GetLocationString(**f);
     loc_map[loc_string]=*f;
-    if(PrintDetails()) NcbiCerr << "GetLocMap: stored location (" << loc_string << ")" << NcbiEndl;
+    // if(PrintDetails()) NcbiCerr << "GetLocMap: stored location (" << loc_string << ")" << NcbiEndl; // this is too much
     }
   DecreaseVerbosity();
   if(PrintDetails()) NcbiCerr << "GetLocMap: locMap size: "

@@ -573,7 +573,7 @@ int CReadBlastApp::Run(void)
     LocMap loc_map;
     map<string,string> problem_names;
     CollectFrameshiftedSeqs(problem_names);
-    m_verbosity_threshold = 300; // debuggging only
+    // m_verbosity_threshold = 300; // debuggging only
     RemoveProblems(problem_names, loc_map); // 
     RemoveProblems(problem_names, loc_map); // second run to do whatever was not picked up by the first run
     PopVerbosity();

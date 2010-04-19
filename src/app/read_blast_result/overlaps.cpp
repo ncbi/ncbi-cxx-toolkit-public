@@ -730,6 +730,12 @@ bool CReadBlastApp::overlaps
                    << qrname << NcbiEndl;
           }
         }
+      {
+      problemStr problemO_l = {eCompleteOverlap, buffer.str(), misc_feat_left.str(), "", "", -1, -1, eNa_strand_unknown };
+      problemStr problemO_r = {eCompleteOverlap, "", misc_feat_right.str(), "", "", -1, -1, eNa_strand_unknown };
+      m_diag[qname].problems.push_back(problemO_l);
+      m_diag[qrname].problems.push_back(problemO_r);
+      }
       }
     else                 
       {
