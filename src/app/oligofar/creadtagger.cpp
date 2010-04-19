@@ -61,7 +61,7 @@ CReadTagger::ETagValue CReadTagger::ProcessReadData( const char * id, const char
     // separate read and quality
     string read, qual;
     int l = strlen( data );
-    if( m_qualityChannels > 1 ) {
+    if( m_qualityChannels > 0 ) {
         read.assign( data, l/2 );
         qual.assign( data + l/2 );
     } else read.assign( data );
@@ -251,7 +251,7 @@ CReadTagger::ETagValue CReadTagger::PurgeRead()
         //if( tag == eTag_uncertain && (m_actions & fAction_post) ) {}
         //else {
             ofstream& o = GetOutFile( eOutput_tag );
-            o << m_id << "\t" << "FUH"[tag] << "\n"; //"120"[tag] << "\n"; // << "FUH"[tag] << "\n";
+            o << m_id << "\t" << "FUH"[tag] << "\n"; // << "120"[tag] << "\n";
         //}
     }
     if( (m_actions & fAction_post) && GetTagValue() == eTag_uncertain ) {

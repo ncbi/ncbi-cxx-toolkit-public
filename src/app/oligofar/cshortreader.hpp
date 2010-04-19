@@ -100,6 +100,12 @@ protected:
     bool x_PairedReads() const { return m_dataStream2.second.length() > 0; }
     bool x_FetchIdLine( TFileStream& stream, string& id, char type = '@', const string& compare = "", bool allowComponentDifference = false );
     bool x_FetchReadData( TFileStream& stream, const string& id, string& dest, int expectedLen );
+    string& x_TrimTrailingSpaces( string& buff ) {
+        int l = buff.size();
+        while( l > 0 && isspace( buff[l-1] ) ) --l;
+        buff.resize( l );
+        return buff;
+    }
 protected:
     TFileStream m_dataStream1;
     TFileStream m_dataStream2;

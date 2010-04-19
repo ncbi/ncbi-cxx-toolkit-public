@@ -145,6 +145,7 @@ bool CFastqFileReader::x_FetchIdLine( TFileStream& stream, string& dest, char ty
 {
     string buff;
     while( getline( *stream.first, buff ) ) {
+        x_TrimTrailingSpaces( buff );
         if( buff.length() == 0 ) continue; // it's better to skip empty lines to avoid complications with end of file
         if( buff[0] != type ) 
             THROW( runtime_error, "Error: bad input line of [" << buff << "] in " << stream.second << ": expected to start with ``" << type << "''" );
@@ -176,6 +177,7 @@ bool CFastqFileReader::x_FetchReadData( TFileStream& stream, const string& id, s
             else {
                 string buff;
                 getline( *stream.first, buff );
+                x_TrimTrailingSpaces( buff );
                 dest += buff;
             }
             break;
@@ -194,12 +196,14 @@ bool CFastqFileReader::x_FetchReadData( TFileStream& stream, const string& id, s
                 } else {
                     string buff;
                     getline( *stream.first, buff );
+                    x_TrimTrailingSpaces( buff );
                     dest += buff;
                 }
             } else {
                 do {
                     string buff;
                     getline( *stream.first, buff );
+                    x_TrimTrailingSpaces( buff );
                     dest += buff;
                 } while( expectedLen > (int)dest.length() );
                 if( expectedLen < (int)dest.length() ) 
