@@ -4224,7 +4224,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    esac
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[[0-9]] | 1_[[0-9]]_* | 1_[[0-2]][[0-9]] | 1_[[0-2]][[0-9]]_* ) ;;
-      1_3[[0-3]] | 1_3[[0-4]]_* )
+      1_3[[0-4]] | 1_3[[0-4]]_* )
          AC_MSG_WARN(
             [Your Boost version is too old to use.  (Needed >= 1.35.)])
          if test -n "$with_boost"; then
@@ -4232,7 +4232,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          fi
          with_boost=no
          ;;
-      1_35 | 1_35_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4[[01]] | 1_4[[01]]_* ) ;;
       * )
          AC_MSG_WARN(
             [Untested Boost version; may prove incompatible.])

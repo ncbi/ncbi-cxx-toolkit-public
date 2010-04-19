@@ -23546,7 +23546,7 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
    esac
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[0-9] | 1_[0-9]_* | 1_[0-2][0-9] | 1_[0-2][0-9]_* ) ;;
-      1_3[0-3] | 1_3[0-4]_* )
+      1_3[0-4] | 1_3[0-4]_* )
          { echo "$as_me:$LINENO: WARNING: Your Boost version is too old to use.  (Needed >= 1.35.)" >&5
 echo "$as_me: WARNING: Your Boost version is too old to use.  (Needed >= 1.35.)" >&2;}
          if test -n "$with_boost"; then
@@ -23556,7 +23556,7 @@ echo "$as_me: error: --with-boost:  Boost library is too old" >&2;}
          fi
          with_boost=no
          ;;
-      1_35 | 1_35_* ) ;;
+      1_3[5-9] | 1_3[5-9]_* | 1_4[01] | 1_4[01]_* ) ;;
       * )
          { echo "$as_me:$LINENO: WARNING: Untested Boost version; may prove incompatible." >&5
 echo "$as_me: WARNING: Untested Boost version; may prove incompatible." >&2;}
