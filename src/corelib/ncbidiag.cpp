@@ -4611,16 +4611,8 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 
 bool s_CanOpenLogFile(const string& file_name)
 {
-    CDirEntry entry(CDirEntry::CreateAbsolutePath(file_name));
-    CDirEntry::TMode mode = 0;
-    if ( !entry.GetMode(&mode) ) {
-        // GetMode() failed, use directory instead, must be writable
-        string dir = entry.GetDir();
-        entry = CDirEntry(dir.empty() ? "." : dir);
-        if ( !entry.GetMode(&mode) ) {
-            return false;
-        }
-    }
+    string abs_path = CDirEntry::CreateAbsolutePath(file_name);
+    CDirEntry entry(abs_path);
     // Need at least 20K of free space to write logs
     try {
         if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
@@ -4629,7 +4621,19 @@ bool s_CanOpenLogFile(const string& file_name)
     }
     catch (CException) {
     }
-    return (mode & CDirEntry::fWrite) != 0;
+    int mode = O_WRONLY | O_APPEND | O_CREAT;
+    mode_t perm = CDirEntry::MakeModeT(
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        0);
+    int h = open(CFile::ConvertToOSPath(abs_path).c_str(),
+        mode, perm);
+    if (h == -1) {
+        return false;
+    }
+    close(h);
+    return true;
 }
 
 
