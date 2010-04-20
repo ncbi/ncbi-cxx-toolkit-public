@@ -38,7 +38,6 @@
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
 #include <set>
-#include <stack>
 
 #include <serial/impl/pathhook.hpp>
 
@@ -125,6 +124,10 @@ public:
     virtual ~CConstTreeLevelIterator(void);
 
     virtual bool Valid(void) const = 0;
+    virtual TMemberIndex GetIndex(void) const
+    {
+        return kInvalidMember;
+    }
     virtual void Next(void) = 0;
     virtual bool CanGet(void) const
     {
@@ -150,6 +153,10 @@ public:
     virtual ~CTreeLevelIterator(void);
 
     virtual bool Valid(void) const = 0;
+    virtual TMemberIndex GetIndex(void) const
+    {
+        return kInvalidMember;
+    }
     virtual void Next(void) = 0;
     virtual bool CanGet(void) const
     {
@@ -227,7 +234,7 @@ public:
             m_CurrentObject.Reset();
             m_VisitedObjects.reset(0);
             while ( !m_Stack.empty() )
-                m_Stack.pop();
+                m_Stack.pop_back();
             _ASSERT(!*this);
         }
 
@@ -237,14 +244,14 @@ public:
             m_CurrentObject.Reset();
 
             _ASSERT(!m_Stack.empty());
-            if ( Step(m_Stack.top()->Get()) )
+            if ( Step(m_Stack.back()->Get()) )
                 Walk();
         }
 
     void SkipSubTree(void)
         {
             _ASSERT(CheckValid());
-            m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
+            m_Stack.push_back(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
         }
 
 
@@ -274,19 +281,9 @@ public:
     TIteratorContext GetContextData(void) const
         {
             TIteratorContext stk_info;
-            stack< AutoPtr<LevelIterator> >& stk =
-                const_cast< stack< AutoPtr<LevelIterator> >& >(m_Stack);
-            stack< AutoPtr<LevelIterator> > tmp;
-            while ( !stk.empty() ) {
-                AutoPtr<LevelIterator>& t = stk.top();
-                stk_info.push_front( make_pair( t->Get(), t->GetItemInfo()));
-                tmp.push(t);
-                stk.pop();
-            }
-            while ( !tmp.empty() ) {
-                AutoPtr<LevelIterator>& t = tmp.top();
-                stk.push(t);
-                tmp.pop();
+            typename vector< AutoPtr<LevelIterator> >::const_iterator i;
+            for (i = m_Stack.begin(); i != m_Stack.end(); ++i) {
+                stk_info.push_back( make_pair( (*i)->Get(), (*i)->GetItemInfo()));
             }
             return stk_info;
         }
@@ -345,6 +342,27 @@ public:
             }
         }
 
+    /// Return element index in STL container
+    int GetContainerElementIndex(void) const
+        {
+            TMemberIndex ind = kInvalidMember;
+            if (m_Stack.size() > 1) {
+                LevelIterator* l( m_Stack[ m_Stack.size()-2 ].get());
+                ind = l->GetIndex();
+            }
+            return ind - kInvalidMember - 1;
+        }
+
+    /// Return member index in sequence, or variant index in choice
+    int GetItemIndex(void) const
+        {
+            TMemberIndex ind = kInvalidMember;
+            if (!m_Stack.empty()) {
+                ind = m_Stack.back().get()->GetIndex();
+            }
+            return ind - kInvalidMember - 1;
+        }
+
 protected:
     virtual bool CanSelect(const CConstObjectInfo& obj)
         {
@@ -383,7 +401,7 @@ protected:
                 return;
             if ( beginInfo.m_DetectLoops )
                 m_VisitedObjects.reset(new TVisitedObjects);
-            m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
+            m_Stack.push_back(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
             Walk();
         }
     void Init(const TBeginInfo& beginInfo, const string& filter)
@@ -398,19 +416,19 @@ private:
             if ( CanEnter(current) ) {
                 AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
                 if ( nextLevel && nextLevel->Valid() ) {
-                    m_Stack.push(nextLevel);
+                    m_Stack.push_back(nextLevel);
                     return true;
                 }
             }
             // skip all finished iterators
             _ASSERT(!m_Stack.empty());
             do {
-                m_Stack.top()->Next();
-                if ( m_Stack.top()->Valid() ) {
+                m_Stack.back()->Next();
+                if ( m_Stack.back()->Valid() ) {
                     // next child on this level
                     return true;
                 }
-                m_Stack.pop();
+                m_Stack.pop_back();
             } while ( !m_Stack.empty() );
             return false;
         }
@@ -420,19 +438,19 @@ private:
             _ASSERT(!m_Stack.empty());
             TObjectInfo current;
             do {
-                while (!m_Stack.top()->CanGet()) {
+                while (!m_Stack.back()->CanGet()) {
                     for(;;) {
-                        m_Stack.top()->Next();
-                        if (m_Stack.top()->Valid()) {
+                        m_Stack.back()->Next();
+                        if (m_Stack.back()->Valid()) {
                             break;
                         }
-                        m_Stack.pop();
+                        m_Stack.pop_back();
                         if (m_Stack.empty()) {
                             return;
                         }
                     }
                 }
-                current = m_Stack.top()->Get();
+                current = m_Stack.back()->Get();
                 if ( CanSelect(current) ) {
                     if (MatchesContext(m_ContextFilter)) {
                         m_CurrentObject = current;
@@ -443,7 +461,7 @@ private:
         }
 
     // stack of tree level iterators
-    stack< AutoPtr<LevelIterator> > m_Stack;
+    vector< AutoPtr<LevelIterator> > m_Stack;
     // currently selected object
     TObjectInfo m_CurrentObject;
     auto_ptr<TVisitedObjects> m_VisitedObjects;

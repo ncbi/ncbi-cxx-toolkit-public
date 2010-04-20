@@ -67,6 +67,10 @@ public:
         {
             return m_ItemInfo;
         }
+    TMemberIndex GetIndex(void) const
+        {
+            return m_ItemInfo ? m_ItemInfo->GetIndex() : kInvalidMember;
+        }
 protected:
     void SetItemInfo(const CItemInfo* info)
         {
@@ -100,6 +104,10 @@ public:
     const CItemInfo* GetItemInfo(void) const
         {
             return m_ItemInfo;
+        }
+    TMemberIndex GetIndex(void) const
+        {
+            return m_ItemInfo ? m_ItemInfo->GetIndex() : kInvalidMember;
         }
 protected:
     void SetItemInfo(const CItemInfo* info)
@@ -144,6 +152,10 @@ public:
         {
             return m_Iterator.GetItemInfo();
         }
+    TMemberIndex GetIndex(void) const
+        {
+            return m_Iterator.GetIndex();
+        }
 protected:
     void SetItemInfo(const CItemInfo* /*info*/)
         {
@@ -180,6 +192,10 @@ public:
     const CItemInfo* GetItemInfo(void) const
         {
             return m_Iterator.GetItemInfo();
+        }
+    TMemberIndex GetIndex(void) const
+        {
+            return m_Iterator.GetIndex();
         }
 protected:
     void SetItemInfo(const CItemInfo* /*info*/)
@@ -324,7 +340,7 @@ void CTreeIterator::Erase(void)
     m_CurrentObject.Reset();
 
     _ASSERT(!m_Stack.empty());
-    m_Stack.top()->Erase();
+    m_Stack.back()->Erase();
     Walk();
 }
 

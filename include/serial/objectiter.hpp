@@ -64,6 +64,10 @@ public:
     {
         return GetElement() != obj.GetElement();
     }
+    TMemberIndex GetIndex(void) const
+    {
+        return m_Iterator.GetIndex();
+    }
 
     void Next(void);
     CConstObjectInfoEI& operator++(void);
@@ -107,6 +111,10 @@ public:
     {
         return GetElement() != obj.GetElement();
     }
+    TMemberIndex GetIndex(void) const
+    {
+        return m_Iterator.GetIndex();
+    }
 
     void Next(void);
     CObjectInfoEI& operator++(void);
@@ -147,6 +155,10 @@ public:
     void Next(void);
 
     const CItemInfo* GetItemInfo(void) const;
+    TMemberIndex GetIndex(void) const
+    {
+        return GetItemIndex();
+    }
 
 protected:
     CObjectTypeInfoII(void);

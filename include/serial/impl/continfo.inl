@@ -262,22 +262,24 @@ void CContainerTypeInfo::ReserveElements(TObjectPtr cPtr, size_t count) const
 
 inline
 CContainerElementIterator::CContainerElementIterator(void)
-    : m_ElementType(0), m_Valid(false)
+    : m_ElementType(0), m_ElementIndex(kInvalidMember)
 {
 }
 
 inline
 CContainerElementIterator::CContainerElementIterator(TObjectPtr containerPtr,
                                                      const CContainerTypeInfo* containerType)
-    : m_ElementType(containerType->GetElementType())
+    : m_ElementType(containerType->GetElementType()), m_ElementIndex(kInvalidMember)
 {
-    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
+    if (containerType->InitIterator(m_Iterator, containerPtr)) {
+        ++m_ElementIndex;
+    }
 }
 
 inline
 CContainerElementIterator::CContainerElementIterator(const CContainerElementIterator& src)
     : m_ElementType(src.m_ElementType),
-      m_Valid(src.m_Valid)
+      m_ElementIndex(src.m_ElementIndex)
 {
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
@@ -288,7 +290,7 @@ CContainerElementIterator::CContainerElementIterator(const CContainerElementIter
 inline
 CContainerElementIterator& CContainerElementIterator::operator=(const CContainerElementIterator& src)
 {
-    m_Valid = false;
+    m_ElementIndex = kInvalidMember;
     m_ElementType = src.m_ElementType;
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
@@ -296,7 +298,7 @@ CContainerElementIterator& CContainerElementIterator::operator=(const CContainer
         containerType->CopyIterator(m_Iterator, src.m_Iterator);
     else
         m_Iterator.Reset();
-    m_Valid = src.m_Valid;
+    m_ElementIndex = src.m_ElementIndex;
     return *this;
 }
 
@@ -304,10 +306,12 @@ inline
 void CContainerElementIterator::Init(TObjectPtr containerPtr,
                                      const CContainerTypeInfo* containerType)
 {
-    m_Valid = false;
+    m_ElementIndex = kInvalidMember;
     m_Iterator.Reset();
     m_ElementType = containerType->GetElementType();
-    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
+    if ( containerType->InitIterator(m_Iterator, containerPtr)) {
+        ++m_ElementIndex;
+    }
 }
 
 inline
@@ -319,58 +323,69 @@ TTypeInfo CContainerElementIterator::GetElementType(void) const
 inline
 bool CContainerElementIterator::Valid(void) const
 {
-    return m_Valid;
+    return m_ElementIndex != kInvalidMember;
+}
+
+inline
+TMemberIndex CContainerElementIterator::GetIndex(void) const
+{
+    return m_ElementIndex;
 }
 
 inline
 void CContainerElementIterator::Next(void)
 {
-    _ASSERT(m_Valid);
-    m_Valid = m_Iterator.GetContainerType()->NextElement(m_Iterator);
+    _ASSERT(Valid());
+    m_ElementIndex = m_Iterator.GetContainerType()->NextElement(m_Iterator) ?
+        (m_ElementIndex + 1) : kInvalidMember;
 }
 
 inline
 void CContainerElementIterator::Erase(void)
 {
-    _ASSERT(m_Valid);
-    m_Valid = m_Iterator.GetContainerType()->EraseElement(m_Iterator);
+    _ASSERT(Valid());
+    if ( m_Iterator.GetContainerType()->EraseElement(m_Iterator)) {
+        --m_ElementIndex;
+    }
 }
 
 inline
 void CContainerElementIterator::EraseAll(void)
 {
-    if ( m_Valid ) {
+    if ( Valid() ) {
         m_Iterator.GetContainerType()->EraseAllElements(m_Iterator);
-        m_Valid = false;
+        m_ElementIndex = kInvalidMember;
     }
 }
 
 inline
 pair<TObjectPtr, TTypeInfo> CContainerElementIterator::Get(void) const
 {
-    _ASSERT(m_Valid);
+    _ASSERT( Valid() );
     return make_pair(m_Iterator.GetContainerType()->GetElementPtr(m_Iterator),
                      GetElementType());
 }
 
 inline
 CConstContainerElementIterator::CConstContainerElementIterator(void)
-    : m_ElementType(0), m_Valid(false)
+    : m_ElementType(0), m_ElementIndex(kInvalidMember)
 {
 }
 
 inline
 CConstContainerElementIterator::CConstContainerElementIterator(TConstObjectPtr containerPtr,
                                                                const CContainerTypeInfo* containerType)
-    : m_ElementType(containerType->GetElementType())
+    : m_ElementType(containerType->GetElementType()), m_ElementIndex(kInvalidMember)
 {
-    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
+    if ( containerType->InitIterator(m_Iterator, containerPtr)) {
+        ++m_ElementIndex;
+    }
 }
 
 inline
 CConstContainerElementIterator::CConstContainerElementIterator(const CConstContainerElementIterator& src)
     : m_ElementType(src.m_ElementType),
-      m_Valid(src.m_Valid)
+      m_ElementIndex(src.m_ElementIndex)
 {
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
@@ -382,7 +397,7 @@ inline
 CConstContainerElementIterator&
 CConstContainerElementIterator::operator=(const CConstContainerElementIterator& src)
 {
-    m_Valid = false;
+    m_ElementIndex = kInvalidMember;
     m_ElementType = src.m_ElementType;
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
@@ -390,7 +405,7 @@ CConstContainerElementIterator::operator=(const CConstContainerElementIterator& 
         containerType->CopyIterator(m_Iterator, src.m_Iterator);
     else
         m_Iterator.Reset();
-    m_Valid = src.m_Valid;
+    m_ElementIndex = src.m_ElementIndex;
     return *this;
 }
 
@@ -398,10 +413,12 @@ inline
 void CConstContainerElementIterator::Init(TConstObjectPtr containerPtr,
                                           const CContainerTypeInfo* containerType)
 {
-    m_Valid = false;
+    m_ElementIndex = kInvalidMember;
     m_Iterator.Reset();
     m_ElementType = containerType->GetElementType();
-    m_Valid = containerType->InitIterator(m_Iterator, containerPtr);
+    if ( containerType->InitIterator(m_Iterator, containerPtr)) {
+        ++m_ElementIndex;
+    }
 }
 
 inline
@@ -413,20 +430,27 @@ TTypeInfo CConstContainerElementIterator::GetElementType(void) const
 inline
 bool CConstContainerElementIterator::Valid(void) const
 {
-    return m_Valid;
+    return m_ElementIndex != kInvalidMember;
+}
+
+inline
+TMemberIndex CConstContainerElementIterator::GetIndex(void) const
+{
+    return m_ElementIndex;
 }
 
 inline
 void CConstContainerElementIterator::Next(void)
 {
-    _ASSERT(m_Valid);
-    m_Valid = m_Iterator.GetContainerType()->NextElement(m_Iterator);
+    _ASSERT( Valid() );
+    m_ElementIndex = m_Iterator.GetContainerType()->NextElement(m_Iterator) ?
+        (m_ElementIndex + 1) : kInvalidMember;
 }
 
 inline
 pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 {
-    _ASSERT(m_Valid);
+    _ASSERT( Valid() );
     return make_pair(m_Iterator.GetContainerType()->GetElementPtr(m_Iterator),
                      GetElementType());
 }

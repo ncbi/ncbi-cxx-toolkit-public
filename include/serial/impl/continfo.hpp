@@ -229,6 +229,7 @@ public:
     TTypeInfo GetElementType(void) const;
     
     bool Valid(void) const;
+    TMemberIndex GetIndex(void) const;
     void Next(void);
 
     pair<TConstObjectPtr, TTypeInfo> Get(void) const;
@@ -236,7 +237,7 @@ public:
 private:
     TTypeInfo m_ElementType;
     TIterator m_Iterator;
-    bool m_Valid;
+    TMemberIndex m_ElementIndex;
 };
 
 class NCBI_XSERIAL_EXPORT CContainerElementIterator
@@ -255,6 +256,7 @@ public:
     TTypeInfo GetElementType(void) const;
     
     bool Valid(void) const;
+    TMemberIndex GetIndex(void) const;
     void Next(void);
     void Erase(void);
     void EraseAll(void);
@@ -264,7 +266,7 @@ public:
 private:
     TTypeInfo m_ElementType;
     TIterator m_Iterator;
-    bool m_Valid;
+    TMemberIndex m_ElementIndex;
 };
 
 
