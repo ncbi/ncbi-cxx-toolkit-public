@@ -103,20 +103,16 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
     if ( !*pattern ) {
         return 1;
     }
-
     if (n == NPOS  ||  n > str.length() - pos) {
         n = str.length() - pos;
     }
-
     const char* s = str.data() + pos;
     while (n  &&  *pattern  &&  *s == *pattern) {
         s++;  pattern++;  n--;
     }
-
     if (n == 0) {
         return *pattern ? -1 : 0;
     }
-
     return *s - *pattern;
 }
 
@@ -131,11 +127,9 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
     if (pattern.empty()) {
         return 1;
     }
-
     if (n == NPOS  ||  n > str.length() - pos) {
         n = str.length() - pos;
     }
-
     SIZE_TYPE n_cmp = n;
     if (n_cmp > pattern.length()) {
         n_cmp = pattern.length();
@@ -153,24 +147,6 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     return *s - *p;
-}
-
-
-int NStr::CompareCase(const CTempStringEx& str1, const CTempStringEx& str2)
-{
-    const char *s1 = str1.data();
-    const char *s2 = str2.data();
-    auto_ptr<string> tmp_s1;
-    auto_ptr<string> tmp_s2;
-    if ( !str1.HasZeroAtEnd() ) {
-        tmp_s1.reset(new string(str1));
-        s1 = tmp_s1->c_str();
-    }
-    if ( !str2.HasZeroAtEnd() ) {
-        tmp_s2.reset(new string(str2));
-        s2 = tmp_s2->c_str();
-    }
-    return CompareCase(s1, s2);
 }
 
 
@@ -237,44 +213,10 @@ int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
     return tolower((unsigned char)(*s)) - tolower((unsigned char)(*p));
 }
 
-int NStr::CompareNocase(const CTempStringEx& str1, const CTempStringEx& str2)
-{
-    const char *s1 = str1.data();
-    const char *s2 = str2.data();
-    auto_ptr<string> tmp_s1;
-    auto_ptr<string> tmp_s2;
-    if ( !str1.HasZeroAtEnd() ) {
-        tmp_s1.reset(new string(str1));
-        s1 = tmp_s1->c_str();
-    }
-    if ( !str2.HasZeroAtEnd() ) {
-        tmp_s2.reset(new string(str2));
-        s2 = tmp_s2->c_str();
-    }
-    return CompareNocase(s1, s2);
-}
-
-bool NStr::EqualNocase(const CTempStringEx& str1, const CTempStringEx& str2)
-{
-    const char *s1 = str1.data();
-    const char *s2 = str2.data();
-    auto_ptr<string> tmp_s1;
-    auto_ptr<string> tmp_s2;
-    if ( !str1.HasZeroAtEnd() ) {
-        tmp_s1.reset(new string(str1));
-        s1 = tmp_s1->c_str();
-    }
-    if ( !str2.HasZeroAtEnd() ) {
-        tmp_s2.reset(new string(str2));
-        s2 = tmp_s2->c_str();
-    }
-    return EqualNocase(s1, s2);
-}
-
 
 // NOTE: This code is used also in the CDirEntry::MatchesMask.
-
-bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case) 
+/// @internal
+bool s_MatchesMask(const char* str, const char* mask, NStr::ECase use_case) 
 {
     char c;
     bool infinite = true;
@@ -304,7 +246,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
             }
             // General case, use recursion
             while ( *str ) {
-                if (MatchesMask(str, mask, use_case)) {
+                if (s_MatchesMask(str, mask, use_case)) {
                     return true;
                 }
                 ++str;
@@ -314,7 +256,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
         default:
             // Compare nonpattern character in mask and name
             char s = *str++;
-            if (use_case == eNocase) {
+            if (use_case == NStr::eNocase) {
                 c = tolower((unsigned char) c);
                 s = tolower((unsigned char) s);
             }
@@ -331,19 +273,47 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
 bool NStr::MatchesMask(const CTempStringEx& str, 
                        const CTempStringEx& mask, ECase use_case)
 {
-    const char *s = str.data();
-    const char *m = mask.data();
-    auto_ptr<string> tmp_s;
-    auto_ptr<string> tmp_m;
-    if ( !str.HasZeroAtEnd() ) {
-        tmp_s.reset(new string(str));
-        s = tmp_s->c_str();
+    const char* s_ptr = str.data();
+    const char* m_ptr = mask.data();
+
+    if ( str.HasZeroAtEnd() &&
+         mask.HasZeroAtEnd() ) {
+        // strings has zero at the end already
+        return s_MatchesMask(s_ptr, m_ptr, use_case);
+    }
+
+    // Small temporary buffers on stack for appending zero chars
+    char s_buf[256]; 
+    char m_buf[256]; 
+
+    // 'mask' usually have shorter length, check it first.
+    if ( !mask.HasZeroAtEnd() ) {
+        size_t size = mask.size();
+        if ( size < sizeof(m_buf) ) {
+            memcpy(m_buf, mask.data(), size);
+            m_buf[size] = '\0';
+            m_ptr = m_buf;
+        } else {
+            // 'mask' is long -- very rare case, can assume that 'str'
+            // is long also.
+            // use std::string() to allocate memory for appending zero char
+            return s_MatchesMask(string(str).c_str(),
+                                 string(mask).c_str(), use_case);
+        }
     }
     if ( !str.HasZeroAtEnd() ) {
-        tmp_m.reset(new string(mask));
-        m = tmp_m->c_str();
+        size_t size = str.size();
+        if ( size < sizeof(s_buf) ) {
+            memcpy(s_buf, str.data(), size);
+            s_buf[size] = '\0';
+            s_ptr = s_buf;
+        } else {
+            // use std::string() to allocate memory for appending zero char
+            return s_MatchesMask(string(str).c_str(), m_ptr, use_case);
+        }
     }
-    return MatchesMask(s, m, use_case);
+    // Both strings are zero-terminated now
+    return MatchesMask(s_ptr, m_ptr, use_case);
 }
 
 
@@ -750,8 +720,9 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
 }
 
 
-double NStr::StringToDoubleEx(const char* str, size_t size,
-                              TStringToNumFlags flags)
+/// @internal
+static double s_StringToDouble(const char* str, size_t size,
+                               NStr::TStringToNumFlags flags)
 {
     _ASSERT(flags == 0  ||  flags > 32);
     _ASSERT(str[size] == '\0');
@@ -760,13 +731,14 @@ double NStr::StringToDoubleEx(const char* str, size_t size,
     SIZE_TYPE pos  = 0;
 
     // Skip allowed leading symbols
-    if (flags & fAllowLeadingSymbols) {
-        bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
+    if (flags & NStr::fAllowLeadingSymbols) {
+        bool spaces = ((flags & NStr::fAllowLeadingSymbols) == 
+                       NStr::fAllowLeadingSpaces);
         s_SkipAllowedSymbols(CTempString(str, size), pos,
                              spaces ? eSkipSpacesOnly : eSkipAllAllowed);
     }
     // Check mandatory sign
-    if (flags & fMandatorySign) {
+    if (flags & NStr::fMandatorySign) {
         switch (str[pos]) {
         case '-':
         case '+':
@@ -777,7 +749,7 @@ double NStr::StringToDoubleEx(const char* str, size_t size,
     }
     // For consistency make additional check on incorrect leading symbols.
     // Because strtod() may just skip such symbols.
-    if (!(flags & fAllowLeadingSymbols)) {
+    if (!(flags & NStr::fAllowLeadingSymbols)) {
         char c = str[pos];
         if ( !isdigit((unsigned int)c)  &&  c != '.'  &&  c != '-'  &&  c != '+') {
             S2N_CONVERT_ERROR_INVAL(double);
@@ -803,9 +775,9 @@ double NStr::StringToDoubleEx(const char* str, size_t size,
     pos += s_DiffPtr(endptr, begptr);
 
     // Skip allowed trailing symbols
-    if (flags & fAllowTrailingSymbols) {
-        bool spaces = ((flags & fAllowTrailingSymbols) ==
-                       fAllowTrailingSpaces);
+    if (flags & NStr::fAllowTrailingSymbols) {
+        bool spaces = ((flags & NStr::fAllowTrailingSymbols) ==
+                       NStr::fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
     CHECK_ENDPTR(double);
@@ -818,17 +790,17 @@ double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
     size_t size = str.size();
     if ( str.HasZeroAtEnd() ) {
         // string has zero at the end already
-        return StringToDoubleEx(str.data(), size, flags);
+        return s_StringToDouble(str.data(), size, flags);
     }
-    char buf[256]; // small temporary buffer in stack for appending zero char
+    char buf[256]; // small temporary buffer on stack for appending zero char
     if ( size < sizeof(buf) ) {
         memcpy(buf, str.data(), size);
         buf[size] = '\0';
-        return StringToDoubleEx(buf, size, flags);
+        return s_StringToDouble(buf, size, flags);
     }
     else {
         // use std::string() to allocate memory for appending zero char
-        return StringToDoubleEx(string(str).c_str(), size, flags);
+        return s_StringToDouble(string(str).c_str(), size, flags);
     }
 }
 
@@ -1318,13 +1290,11 @@ void NStr::PtrToString(string& out_str, const void* value)
 const void* NStr::StringToPtr(const CTempStringEx& str)
 {
     void *ptr = NULL;
-    const char *s = str.data();
-    auto_ptr<string> tmp_str;
-    if ( !str.HasZeroAtEnd() ) {
-        tmp_str.reset(new string(str));
-        s = tmp_str->c_str();
+    if ( str.HasZeroAtEnd() ) {
+        ::sscanf(str.data(), "%p", &ptr);
+    } else {
+        ::sscanf(string(str).c_str(), "%p", &ptr);
     }
-    ::sscanf(s, "%p", &ptr);
     return ptr;
 }
 
@@ -3079,15 +3049,12 @@ bool NStr::NeedsURLEncoding(const CTempString& str, EUrlEncode flag)
 }
 
 
-bool NStr::IsIPAddress(const CTempStringEx& ip)
+/// @internal
+bool s_IsIPAddress(const char* str, size_t size)
 {
-    const char* start = ip.data();
-    auto_ptr<string> tmp_str;
-    if ( !ip.HasZeroAtEnd() ) {
-        tmp_str.reset(new string(ip));
-        start = tmp_str->c_str();
-    }
-    const char* c = start;
+    _ASSERT(str[size] == '\0');
+
+    const char* c = str;
     unsigned long val;
     int dots = 0;
 
@@ -3111,10 +3078,30 @@ bool NStr::IsIPAddress(const CTempStringEx& ip)
 
     // Make sure the whole string was checked (it is possible to have \0 chars
     // in the middle of the string).
-    if ((size_t)(c - start) != ip.size()) {
+    if ((size_t)(c - str) != size) {
         return false;
     }
     return !*c  &&  dots == 3  &&  val < 256;
+}
+
+
+bool NStr::IsIPAddress(const CTempStringEx& str)
+{
+    size_t size = str.size();
+    if ( str.HasZeroAtEnd() ) {
+        // string has zero at the end already
+        return s_IsIPAddress(str.data(), size);
+    }
+    char buf[256]; // small temporary buffer on stack for appending zero char
+    if ( size < sizeof(buf) ) {
+        memcpy(buf, str.data(), size);
+        buf[size] = '\0';
+        return s_IsIPAddress(buf, size);
+    }
+    else {
+        // use std::string() to allocate memory for appending zero char
+        return s_IsIPAddress(string(str).c_str(), size);
+    }
 }
 
 

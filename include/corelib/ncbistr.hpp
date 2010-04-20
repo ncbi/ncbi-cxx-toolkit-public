@@ -236,10 +236,6 @@ public:
     static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags    flags = 0);
 
-    /// This version accepts zero-terminated string
-    static double StringToDoubleEx(const char* str, size_t size,
-                                   TStringToNumFlags flags = 0);
-
     /// Convert string to Int8.
     ///
     /// @param str
@@ -856,7 +852,7 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
-    static bool EqualCase(const CTempString& s1, const CTempString& s2);
+    static bool EqualCase(const CTempStringEx& s1, const CTempStringEx& s2);
 
     /// Case-insensitive equality of a substring with a pattern.
     ///
@@ -1068,26 +1064,6 @@ public:
     /// time formats on MS Windows.
     static size_t strftime (char* s, size_t maxsize, const char* format,
                             const struct tm* timeptr);
-
-    /// Match "str" against the "mask".
-    ///
-    /// This function do not use regular expressions.
-    /// @param str
-    ///   String to match.
-    /// @param mask
-    ///   Mask used to match string "str". And can contains next
-    ///   wildcard characters:
-    ///     ? - matches to any one symbol in the string.
-    ///     * - matches to any number of symbols in the string. 
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return
-    ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
-    /// @sa
-    ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(const char *str, const char *mask,
-                            ECase use_case = eCase);
 
     /// Match "str" against the "mask".
     ///
@@ -1684,7 +1660,7 @@ public:
                                 EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// Check if the string contains a valid IP address
-    static bool IsIPAddress(const CTempStringEx& ip);
+    static bool IsIPAddress(const CTempStringEx& str);
 
 
     /// How to wrap the words in a string to a new line.
@@ -3157,6 +3133,24 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 }
 
 inline
+int NStr::CompareCase(const CTempStringEx& s1, const CTempStringEx& s2)
+{
+    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
+        return CompareCase(s1.data(), s2.data());
+    }
+    return CompareCase(s1, 0, s1.length(), s2);
+}
+
+inline
+int NStr::CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2)
+{
+    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
+        return CompareNocase(s1.data(), s2.data());
+    }
+    return CompareNocase(s1, 0, s1.length(), s2);
+}
+
+inline
 int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
@@ -3205,8 +3199,11 @@ bool NStr::EqualCase(const char* s1, const char* s2)
 }
 
 inline
-bool NStr::EqualCase(const CTempString& s1, const CTempString& s2)
+bool NStr::EqualCase(const CTempStringEx& s1, const CTempStringEx& s2)
 {
+    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
+        return EqualCase(s1.data(), s2.data());
+    }
     return s1 == s2;
 }
 
@@ -3228,6 +3225,15 @@ inline
 bool NStr::EqualNocase(const char* s1, const char* s2)
 {
     return NStr::strcasecmp(s1, s2) == 0;
+}
+
+inline
+bool NStr::EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2)
+{
+    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
+        return EqualNocase(s1.data(), s2.data());
+    }
+    return EqualNocase(s1, 0, s1.length(), s2);
 }
 
 inline
