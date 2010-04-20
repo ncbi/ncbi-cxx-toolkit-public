@@ -1,0 +1,10 @@
+# $Id$
+
+# This user makefile ensures that the bundled libraries (when used at all)
+# will be built prior to libxcompress, which lists them in LIB and will as
+# such otherwise run into trouble in --with-dll configurations when using the
+# regular recursive Unix build system, which covers LIB_PROJ before SUB_PROJ.
+
+all clean purge:
+	cd bzip2 && make $@
+	cd zlib  && make $@
