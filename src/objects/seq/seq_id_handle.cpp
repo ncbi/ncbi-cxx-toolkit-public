@@ -142,6 +142,7 @@ void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
 
 void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches) const
 {
+    GetMatchingHandles(matches);
     GetMapper().GetReverseMatchingHandles(*this, matches);
 }
 
