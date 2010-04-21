@@ -46,7 +46,7 @@ USING_SCOPE(Sls);
 
 alp_data::alp_data(//constructor
                    CConstRef<CGumbelParamsOptions>& options_,
-                   CRef<CGumbelParamsRandParams>& rand_params_)
+                   CRef<CGumbelParamsRandDiagnostics>& rand_params_)
 {
 
 
@@ -175,7 +175,7 @@ alp_data::alp_data(//constructor
                 //randomization
                 Uint4 random_factor;
 
-                CRef<CGumbelParamsRandParams> AdvancedParams_tmp
+                CRef<CGumbelParamsRandDiagnostics> AdvancedParams_tmp
                     = rand_params_;
 
                 if(AdvancedParams_tmp.Empty())

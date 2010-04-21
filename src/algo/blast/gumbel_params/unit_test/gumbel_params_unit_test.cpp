@@ -88,7 +88,7 @@ static void s_ReadResidueProbs(const string& filename,
 }
 
 static void s_ReadRandParams(const string& filename,
-                             CRef<CGumbelParamsRandParams> params)
+                             CRef<CGumbelParamsRandDiagnostics> params)
 {
 
     CNcbiIfstream istr(filename.c_str());
@@ -526,8 +526,10 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGappedAlignment)
         string pv_target_file = (string)"data/pvalues_gapped_"
             + NStr::IntToString(i) + ".txt";
 
-        CRef<CGumbelParamsRandParams> params(new CGumbelParamsRandParams());
-          s_ReadRandParams(param_file, params);
+        CRef<CGumbelParamsRandDiagnostics>
+              params(new CGumbelParamsRandDiagnostics());
+
+        s_ReadRandParams(param_file, params);
 
         CGumbelParamsCalc gp_calc(opts, params);
         CRef<CGumbelParamsResult> result = gp_calc.Run();

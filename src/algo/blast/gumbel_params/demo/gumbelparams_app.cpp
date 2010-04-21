@@ -155,7 +155,7 @@ void CGumbelParamsApplication::Init(void)
 
 
 static bool x_ReadRandParams(CNcbiIstream& fintest,
-                             CGumbelParamsRandParams& params)
+                             CGumbelParamsRandDiagnostics& params)
                              
 {
     Int4 param_val;
@@ -219,7 +219,7 @@ static bool x_ReadRandParams(CNcbiIstream& fintest,
 }
 
 static void x_WriteRandParams(CNcbiOstream& fouttest,
-                              const CGumbelParamsRandParams& rand)
+                              const CGumbelParamsRandDiagnostics& rand)
 {
     fouttest << rand.GetRandomSeed() << "\t";
         
@@ -375,7 +375,7 @@ int CGumbelParamsApplication::Run(void)
     opts->SetMaxCalcMemory(args["maxmemory"].AsDouble());
 
     // Load randomization parameters
-    CRef<CGumbelParamsRandParams> rand(new CGumbelParamsRandParams());
+    CRef<CGumbelParamsRandDiagnostics> rand(new CGumbelParamsRandDiagnostics());
     if (args["params"]) {
         if (!x_ReadRandParams(args["params"].AsInputFile(), *rand)) {
             NcbiCerr << "Error: Randomization parameters file is incomplete"

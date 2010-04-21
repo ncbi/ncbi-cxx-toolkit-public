@@ -44,105 +44,7 @@ Contents: Wrapper classes for real time Gumbel parameters computing code
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Options that control random values used in internal parts of Gumbel 
-/// parameter calculation for gapped aligmment. This class should be used 
-/// only for testing. Supplying this class as argument to 
-/// CGumbelParamsCalc::Run() yileds deterministic results.
-///
-class CGumbelParamsRandParams : public CObject
-{
-public:
-
-    /// Constructor
-    CGumbelParamsRandParams(void) {}
-
-    /// Set random seed
-    /// @param val Random seed [in]
-    ///
-    void SetRandomSeed(Uint4 val) {m_RandomSeed = val;}
-
-    /// Get random seed
-    /// @return Random seed
-    ///
-    Uint4 GetRandomSeed(void) const {return m_RandomSeed;}
-
-    /// Set first stage preliminary realizations numbers
-    /// @return Array of first stage preliminary realizations numbers
-    ///
-    vector<Int4>& SetFirstStagePrelimReNumbers(void) 
-    {return m_FirstStagePrelimReNumbers;}
-
-    /// Get first stage preliminary realizations numbers
-    /// @return First stage preliminary realizations numbers
-    ///
-    const vector<Int4>& GetFirstStagePrelimReNumbers(void) const
-    {return m_FirstStagePrelimReNumbers;}
-       
-    /// Set preliminary realizations numbers
-    /// @return Array of preliminary realizations numbers
-    ///
-    vector<Int4>& SetPrelimReNumbers(void) 
-    {return m_PrelimReNumbers;}
-
-    /// Get preliminary realizations numbers
-    /// @return Preliminary realizations numbers
-    ///
-    const vector<Int4>& GetPrelimReNumbers(void) const
-    {return m_PrelimReNumbers;}
-
-    /// Set perliminary realizations numbers killing array
-    /// @return Array of preliminary realizations numbers killing
-    ///
-    vector<Int4>& SetPrelimReNumbersKilling(void) 
-    {return m_PrelimReNumbersKilling;}
-
-    /// Get perliminary realizations numbers killing array
-    /// @return Preliminary realizations numbers killing
-    ///
-    const vector<Int4>& GetPrelimReNumbersKilling(void) const
-    {return m_PrelimReNumbersKilling;}
-
-    /// Set total realizations number
-    /// @param num Total realizations number [in]
-    ///
-    void SetTotalReNumber(Int4 num) {m_TotalReNumber = num;}
-
-    /// Get total realizations number
-    /// @return Total realizations number
-    ///
-    Int4 GetTotalReNumber(void) const {return m_TotalReNumber;}
-
-    /// Set total realizations number killing
-    /// @param num Total realizations number killing [in]
-    /// 
-    void SetTotalReNumberKilling(Int4 num) {m_TotalReNumberKilling = num;}
-
-    /// Get total realizations number killing
-    /// @return Total realizations number killing [in]
-    /// 
-    Int4 GetTotalReNumberKilling(void) const {return m_TotalReNumberKilling;}
-
-
-private:
-    
-    /// Random seed
-    Uint4 m_RandomSeed;
-
-    /// Frist stage preliminary realizations numbers ALP
-    vector<Int4> m_FirstStagePrelimReNumbers;
-
-    // Preliminary realizations numbers ALP
-    vector<Int4> m_PrelimReNumbers;
-
-    /// Preliminary realizations numbers killing
-    vector<Int4> m_PrelimReNumbersKilling;
-
-    /// Total realizations number ALP
-    Int4 m_TotalReNumber;
-
-    // Total realizations number killing
-    Int4 m_TotalReNumberKilling;        
-};
+class CGumbelParamsRandDiagnostics;
 
 
 /// Input parameters for Gumbel parameters calculation
@@ -577,7 +479,7 @@ public:
     /// @param rand_opts Gumbel params randomization parameters
     ///
     CGumbelParamsCalc(const CRef<CGumbelParamsOptions>& opts,
-                      const CRef<CGumbelParamsRandParams>& rand_opts);
+                      const CRef<CGumbelParamsRandDiagnostics>& rand_opts);
 
     //---- Options ----//
 
@@ -585,7 +487,7 @@ public:
     /// makes results predictible. Should be used only for testing.
     /// @param rand_opts Randomization parameters
     ///
-    void SetRandParams(const CRef<CGumbelParamsRandParams>& rand_opts)
+    void SetRandParams(const CRef<CGumbelParamsRandDiagnostics>& rand_opts)
     {m_RandParams = rand_opts;}
 
 
@@ -602,7 +504,7 @@ public:
     /// Get randomization parameters
     /// @return Randomization parameters
     ///
-    CRef<CGumbelParamsRandParams> GetRandParams(void) {return m_RandParams;}
+    CRef<CGumbelParamsRandDiagnostics> GetRandParams(void) {return m_RandParams;}
 
     /// Get claculation options
     /// @return Options
@@ -629,11 +531,111 @@ protected:
 
 protected:
     CConstRef<CGumbelParamsOptions> m_Options;
-    CRef<CGumbelParamsRandParams> m_RandParams;
+    CRef<CGumbelParamsRandDiagnostics> m_RandParams;
 
     CRef<CGumbelParamsResult> m_Result;
 };
 
+
+/// Options that control random values used in internal parts of Gumbel 
+/// parameter calculation for gapped aligmment. This class should be used 
+/// only for diagnostics. Supplying this class as argument to 
+/// CGumbelParamsCalc::Run() yileds deterministic results.
+///
+class CGumbelParamsRandDiagnostics : public CObject
+{
+public:
+
+    /// Constructor
+    CGumbelParamsRandDiagnostics(void) {}
+
+    /// Set random seed
+    /// @param val Random seed [in]
+    ///
+    void SetRandomSeed(Uint4 val) {m_RandomSeed = val;}
+
+    /// Get random seed
+    /// @return Random seed
+    ///
+    Uint4 GetRandomSeed(void) const {return m_RandomSeed;}
+
+    /// Set first stage preliminary realizations numbers
+    /// @return Array of first stage preliminary realizations numbers
+    ///
+    vector<Int4>& SetFirstStagePrelimReNumbers(void) 
+    {return m_FirstStagePrelimReNumbers;}
+
+    /// Get first stage preliminary realizations numbers
+    /// @return First stage preliminary realizations numbers
+    ///
+    const vector<Int4>& GetFirstStagePrelimReNumbers(void) const
+    {return m_FirstStagePrelimReNumbers;}
+       
+    /// Set preliminary realizations numbers
+    /// @return Array of preliminary realizations numbers
+    ///
+    vector<Int4>& SetPrelimReNumbers(void) 
+    {return m_PrelimReNumbers;}
+
+    /// Get preliminary realizations numbers
+    /// @return Preliminary realizations numbers
+    ///
+    const vector<Int4>& GetPrelimReNumbers(void) const
+    {return m_PrelimReNumbers;}
+
+    /// Set perliminary realizations numbers killing array
+    /// @return Array of preliminary realizations numbers killing
+    ///
+    vector<Int4>& SetPrelimReNumbersKilling(void) 
+    {return m_PrelimReNumbersKilling;}
+
+    /// Get perliminary realizations numbers killing array
+    /// @return Preliminary realizations numbers killing
+    ///
+    const vector<Int4>& GetPrelimReNumbersKilling(void) const
+    {return m_PrelimReNumbersKilling;}
+
+    /// Set total realizations number
+    /// @param num Total realizations number [in]
+    ///
+    void SetTotalReNumber(Int4 num) {m_TotalReNumber = num;}
+
+    /// Get total realizations number
+    /// @return Total realizations number
+    ///
+    Int4 GetTotalReNumber(void) const {return m_TotalReNumber;}
+
+    /// Set total realizations number killing
+    /// @param num Total realizations number killing [in]
+    /// 
+    void SetTotalReNumberKilling(Int4 num) {m_TotalReNumberKilling = num;}
+
+    /// Get total realizations number killing
+    /// @return Total realizations number killing [in]
+    /// 
+    Int4 GetTotalReNumberKilling(void) const {return m_TotalReNumberKilling;}
+
+
+private:
+    
+    /// Random seed
+    Uint4 m_RandomSeed;
+
+    /// Frist stage preliminary realizations numbers ALP
+    vector<Int4> m_FirstStagePrelimReNumbers;
+
+    // Preliminary realizations numbers ALP
+    vector<Int4> m_PrelimReNumbers;
+
+    /// Preliminary realizations numbers killing
+    vector<Int4> m_PrelimReNumbersKilling;
+
+    /// Total realizations number ALP
+    Int4 m_TotalReNumber;
+
+    // Total realizations number killing
+    Int4 m_TotalReNumberKilling;        
+};
 
 /// Exception class
 class CGumbelParamsException : public CException

@@ -333,7 +333,7 @@ BEGIN_SCOPE(Sls)
 
                 alp_data(//constructor
                      CConstRef<CGumbelParamsOptions>& options_,
-                     CRef<CGumbelParamsRandParams>& rand_params_);
+                     CRef<CGumbelParamsRandDiagnostics>& rand_params_);
 
 
 

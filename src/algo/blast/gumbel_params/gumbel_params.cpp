@@ -307,7 +307,7 @@ CGumbelParamsCalc::CGumbelParamsCalc(const CRef<CGumbelParamsOptions>& options)
 {}
 
 CGumbelParamsCalc::CGumbelParamsCalc(const CRef<CGumbelParamsOptions>& options,
-                                     const CRef<CGumbelParamsRandParams>& rand)
+                                     const CRef<CGumbelParamsRandDiagnostics>& rand)
     : m_Options(options), m_RandParams(rand)
 {}
 
@@ -424,7 +424,7 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             sbs_arrays.C_sbs[1]=gumbel_params.C+calculation_error;
 
             sbs_arrays.sigma_sbs.resize(2);
-			sbs_arrays.sigma_sbs[0]=gumbel_params.sigma;
+            sbs_arrays.sigma_sbs[0]=gumbel_params.sigma;
             sbs_arrays.sigma_sbs[1]=gumbel_params.sigma + calculation_error;
 
             sbs_arrays.alpha_i_sbs.resize(2);
@@ -447,7 +447,7 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             // not contain one already.
             if (m_RandParams.Empty()) {
 
-                m_RandParams.Reset(new CGumbelParamsRandParams());
+                m_RandParams.Reset(new CGumbelParamsRandDiagnostics());
                 m_RandParams->SetRandomSeed(0);
                 m_RandParams->SetTotalReNumber(0);
                 m_RandParams->SetTotalReNumberKilling(0);
@@ -512,7 +512,7 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             // not contain one already.
             if (m_RandParams.Empty()) {
 
-                m_RandParams.Reset(new CGumbelParamsRandParams());
+                m_RandParams.Reset(new CGumbelParamsRandDiagnostics());
                 m_RandParams->SetRandomSeed(
                               sim_obj.d_alp_data->d_rand_all->d_random_factor);
 
