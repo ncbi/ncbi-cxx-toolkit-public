@@ -117,7 +117,10 @@ public:
     // Checks if prefetch is active in current thread.
     // Throws CPrefetchCanceled exception if the current token is canceled.
     static bool IsActive(void);
-
+    
+    // Clears manager queue and stops all worker threads.
+    void Shutdown(void);
+    
 private:
     CRef<CPrefetchManager_Impl> m_Impl;
 

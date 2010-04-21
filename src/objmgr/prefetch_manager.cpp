@@ -94,6 +94,12 @@ CRef<CPrefetchRequest> CPrefetchManager::AddAction(IPrefetchAction* action,
 }
 
 
+void CPrefetchManager::Shutdown(void)
+{
+    m_Impl->Abort();
+}
+
+
 const char* CPrefetchCanceled::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
