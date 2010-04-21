@@ -1265,7 +1265,10 @@ CDatabaseImpl::Close(void)
 inline
 CDatabaseImpl::~CDatabaseImpl(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    STD_CATCH_ALL_X(11, "CDatabaseImpl::~CDatabaseImpl")
 }
 
 inline bool
@@ -1307,18 +1310,22 @@ CDatabase::operator= (const CDatabase& db)
 
 CDatabase::~CDatabase(void)
 {
-    if (m_Impl)
-        m_Impl->Close();
+    if (m_Impl) {
+        try {
+            m_Impl->Close();
+        }
+        STD_CATCH_ALL_X(12, "CDatabase::~CDatabase");
+    }
 }
 
 void
 CDatabase::Connect(void)
 {
-    if (m_Impl) {
-        m_Impl->Close();
-        m_Impl.Reset();
-    }
     try {
+        if (m_Impl) {
+            m_Impl->Close();
+            m_Impl.Reset();
+        }
         m_Impl.Reset(new CDatabaseImpl(m_Params));
     }
     SDBAPI_CATCH_LOWLEVEL()
@@ -1329,7 +1336,10 @@ CDatabase::Close(void)
 {
     if (!m_Impl)
         return;
-    m_Impl->Close();
+    try {
+        m_Impl->Close();
+    }
+    SDBAPI_CATCH_LOWLEVEL()
     m_Impl.Reset();
 }
 
