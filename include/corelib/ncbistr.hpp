@@ -236,6 +236,12 @@ public:
     static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags    flags = 0);
 
+    /// This version accepts zero-terminated string
+    /// It is unsafe to use this method directly, please use StringToDouble().
+    NCBI_DEPRECATED
+    static double StringToDoubleEx(const char* str, size_t size,
+                                   TStringToNumFlags flags = 0);
+
     /// Convert string to Int8.
     ///
     /// @param str

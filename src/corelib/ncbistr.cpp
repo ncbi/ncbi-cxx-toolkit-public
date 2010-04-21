@@ -785,6 +785,13 @@ static double s_StringToDouble(const char* str, size_t size,
 }
 
 
+double NStr::StringToDoubleEx(const char* str, size_t size,
+                              TStringToNumFlags flags)
+{
+    return s_StringToDouble(str, size, flags);
+}
+
+
 double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
 {
     size_t size = str.size();
