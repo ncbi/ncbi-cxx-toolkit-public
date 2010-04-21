@@ -1452,6 +1452,9 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     // collect parents parameters
     ITERATE ( TFeatArray, it, parents ) {
         CFeatInfo& feat_info = **it;
+        if ( link.m_ByProduct && !feat_info.m_Feat.IsSetProduct() ) {
+            continue;
+        }
         SFeatRangeInfo range_info(feat_info, link.m_ByProduct);
         if ( range_info.m_Id ) {
             pp.push_back(range_info);
