@@ -550,14 +550,16 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     CNcbiOstream& os = job_submitter.GetOStream();
                     // Send the input data.
                     ctx.GetRequest().Serialize(os);
+                    string saved_content(kEmptyStr);
                     try {
-                        const string& content = ctx.GetRequest().GetContent();
-                        os.write(content.data(), content.length());
+                        saved_content = ctx.GetRequest().GetContent();
                     }
                     catch (...) {
                         // An exception is normal when the content
                         // is not saved, disregard the exception.
                     }
+                    if (!saved_content.empty())
+                        os.write(saved_content.data(), saved_content.length());
                     job_key = job_submitter.Submit();
                     grid_ctx.SetJobKey(job_key);
 
