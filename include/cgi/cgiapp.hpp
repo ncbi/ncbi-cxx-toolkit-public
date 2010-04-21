@@ -228,6 +228,16 @@ protected:
                                          int               ifd  = -1,
                                          int               ofd  = -1);
 
+    /// The same, but allows for a custom set of flags to be
+    /// specified in the CCgiRequest constructor.
+    virtual CCgiContext*   CreateContext(CNcbiArguments*   args,
+                                         CNcbiEnvironment* env,
+                                         CNcbiIstream*     inp,
+                                         CNcbiOstream*     out,
+                                         int               ifd,
+                                         int               ofd,
+                                         int               flags);
+
     void                   RegisterDiagFactory(const string& key,
                                                CDiagFactory* fact);
     CDiagFactory*          FindDiagFactory(const string& key);

@@ -286,6 +286,11 @@ public:
     // starting to process a HTTP request or even receiving one.
     virtual void Init();
 
+    // Factory method for the Context object construction.
+    virtual CCgiContext* CreateContext(CNcbiArguments* args,
+        CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
+            int ifd, int ofd, int flags);
+
     // The main method of this CGI application.
     // HTTP requests are processed in this method.
     virtual int ProcessRequest(CCgiContext& ctx);
@@ -391,9 +396,6 @@ void CCgi2RCgiApp::Init()
 
     // Initialize processing of both cmd-line arguments and HTTP entries
 
-    // Disregard the case of CGI arguments
-    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
-
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -437,17 +439,15 @@ void CCgi2RCgiApp::Init()
         m_CancelGoBackDelay = -1;
     }
 
-    bool ignore_query_string =
-        GetConfig().GetBool("cgi2rcgi", "ignore_query_string", true,
-                           IRegistry::eReturn);
+    // Disregard the case of CGI arguments
+    CCgiRequest::TFlags flags = CCgiRequest::fCaseInsensitiveArgs;
 
-    bool donot_parse_content =
-        GetConfig().GetBool("cgi2rcgi", "donot_parse_content", true,
-                           IRegistry::eReturn);
-    CCgiRequest::TFlags flags = 0;
-    if (ignore_query_string)
+    if (GetConfig().GetBool("cgi2rcgi", "ignore_query_string",
+            true, IRegistry::eReturn))
         flags |= CCgiRequest::fIgnoreQueryString;
-    if (donot_parse_content)
+
+    if (GetConfig().GetBool("cgi2rcgi", "donot_parse_content",
+            true, IRegistry::eReturn))
         flags |= CCgiRequest::fDoNotParseContent;
 
     SetRequestFlags(flags);
@@ -457,6 +457,34 @@ void CCgi2RCgiApp::Init()
 
     m_ElapsedTimeFormat =
         GetConfig().GetString("cgi2rcgi", "elapsed_time_format", "S");
+}
+
+CCgiContext* CCgi2RCgiApp::CreateContext(CNcbiArguments* args,
+    CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
+        int ifd, int ofd, int flags)
+{
+    if (flags & CCgiRequest::fDoNotParseContent)
+        return CCgiApplicationCached::CreateContext(args, env,
+            inp, out, ifd, ofd, flags);
+
+    // The 'env' argument is only valid in FastCGI mode.
+    if (env == NULL)
+        env = const_cast<CNcbiEnvironment*>(&GetEnvironment());
+
+    size_t content_length = 0;
+
+    try {
+        content_length = (size_t) NStr::StringToUInt(
+            env->Get(CCgiRequest::GetPropertyName(eCgi_ContentLength)));
+    }
+    catch (...) {
+    }
+
+    // Based on the CONTENT_LENGTH CGI parameter, decide whether to parse
+    // the POST request in search of the job_key parameter.
+    return CCgiApplicationCached::CreateContext(args, env, inp, out, ifd, ofd,
+        flags | (content_length > 0 && content_length < 128 ?
+            CCgiRequest::fSaveRequestContent : CCgiRequest::fDoNotParseContent));
 }
 
 static const string kGridCgiForm =
@@ -522,6 +550,14 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     CNcbiOstream& os = job_submitter.GetOStream();
                     // Send the input data.
                     ctx.GetRequest().Serialize(os);
+                    try {
+                        const string& content = ctx.GetRequest().GetContent();
+                        os.write(content.data(), content.length());
+                    }
+                    catch (...) {
+                        // An exception is normal when the content
+                        // is not saved, disregard the exception.
+                    }
                     job_key = job_submitter.Submit();
                     grid_ctx.SetJobKey(job_key);
 

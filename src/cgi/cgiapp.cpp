@@ -456,6 +456,18 @@ CCgiContext* CCgiApplication::CreateContext
  int               ifd,
  int               ofd)
 {
+    return CreateContext(args, env, inp, out, ifd, ofd, m_RequestFlags);
+}
+
+CCgiContext* CCgiApplication::CreateContext
+(CNcbiArguments*   args,
+ CNcbiEnvironment* env,
+ CNcbiIstream*     inp,
+ CNcbiOstream*     out,
+ int               ifd,
+ int               ofd,
+ int               flags)
+{
     int errbuf_size =
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
@@ -485,7 +497,7 @@ CCgiContext* CCgiApplication::CreateContext
     return
         new CCgiContext(*this, args, env, inp, out, ifd, ofd,
                         (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
-                        m_RequestFlags);
+                        flags);
 }
 
 
