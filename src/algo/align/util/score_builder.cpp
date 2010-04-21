@@ -474,100 +474,6 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 }
 
 
-
-
-///
-/// calculate the length of our alignment
-///
-static size_t s_GetCoveredBases(const CSeq_align& align,
-                                int row)
-{
-    size_t len = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-             const CDense_seg& ds = align.GetSegs().GetDenseg();
-             for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                 int count_covered = 0;
-                 for (CDense_seg::TDim d = 0; d < ds.GetDim(); d++) {
-                     if (ds.GetStarts()[(i * ds.GetDim()) + d] != -1) {
-                         ++count_covered;
-                     }
-                 }
-                 if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1  &&
-                     count_covered >= 2) {
-                     len += ds.GetLens()[i];
-                 }
-             }
-         }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
-                 align.GetSegs().GetDisc().Get()) {
-            len += s_GetCoveredBases(**iter, row);
-        }
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        {{
-             ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
-                 const CStd_seg& seg = **iter;
-
-                 const CSeq_loc& loc = *seg.GetLoc()[row];
-                 if (loc.IsEmpty()) {
-                     /// skip
-                 } else {
-                     len += sequence::GetLength(loc, NULL);
-                 }
-             }
-         }}
-        break;
-
-    case CSeq_align::TSegs::e_Spliced:
-        {{
-            ITERATE (CSpliced_seg::TExons, iter,
-                     align.GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                if (exon.IsSetParts()) {
-                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                        const CSpliced_exon_chunk& chunk = **it;
-                        if (chunk.IsMatch()) {
-                            len += chunk.GetMatch();
-                        } else if (chunk.IsMismatch()) {
-                            len += chunk.GetMismatch();
-                        } else if (chunk.IsDiag()) {
-                            len += chunk.GetDiag();
-                        } else if (row == 0  &&  chunk.IsProduct_ins()) {
-                            len += chunk.GetProduct_ins();
-                        } else if (row == 1  &&  chunk.IsGenomic_ins()) {
-                            len += chunk.GetGenomic_ins();
-                        }
-                    }
-                } else if (row == 0) {
-                    if (exon.GetProduct_end().IsNucpos()) {
-                        len += exon.GetProduct_end().GetNucpos() -
-                            exon.GetProduct_start().GetNucpos() + 1;
-                    } else {
-                        len += exon.GetProduct_end().GetProtpos().GetAmin() -
-                            exon.GetProduct_start().GetProtpos().GetAmin() + 1;
-                    }
-                } else if (row == 1) {
-                    len += exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
-                }
-            }
-        }}
-        break;
-
-    default:
-        _ASSERT(false);
-        break;
-    }
-
-    return len;
-}
-
-
 ///
 /// calculate the percent coverage
 ///
@@ -579,7 +485,7 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         return;
     }
 
-    size_t covered_bases = s_GetCoveredBases(align, 0);
+    size_t covered_bases  = align.GetAlignLength(false /* don't include gaps */);
     size_t seq_len = 0;
     if (align.GetSegs().IsSpliced()  &&
         align.GetSegs().GetSpliced().IsSetPoly_a()) {
@@ -594,11 +500,23 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                 seq_len = bsh.GetBioseqLength() - seq_len;
             }
         }
+
+        if (align.GetSegs().GetSpliced().GetProduct_type() ==
+            CSpliced_seg::eProduct_type_protein) {
+            /// NOTE: alignment length is always reported in nucleotide
+            /// coordinates
+            seq_len *= 3;
+        }
     }
 
     if ( !seq_len ) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
         seq_len = bsh.GetBioseqLength();
+        if (bsh.IsAa()) {
+            /// NOTE: alignment length is always reported in nucleotide
+            /// coordinates
+            seq_len *= 3;
+        }
     }
 
     if (covered_bases) {
