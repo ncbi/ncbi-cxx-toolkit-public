@@ -534,6 +534,14 @@ protected:
     CRef<CGumbelParamsRandDiagnostics> m_RandParams;
 
     CRef<CGumbelParamsResult> m_Result;
+
+public:
+    /// Major version
+    static const int kMajorVersion = 2;
+    /// Minor version
+    static const int kMinorVersion = 0;
+    /// Patch version
+    static const int kPatchVersion = 0;
 };
 
 

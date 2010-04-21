@@ -37,7 +37,6 @@ Contents: Implementation of generalized score matrix
 #include <ncbi_pch.hpp>
 
 #include <math.h>
-//#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/gumbel_params/general_score_matrix.hpp>
 
 

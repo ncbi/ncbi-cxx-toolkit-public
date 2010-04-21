@@ -49,8 +49,32 @@ USING_SCOPE(blast);
 //  CSampleBasicApplication::
 
 
+/// Keeps track of Gumbel params calculation library version
+class CGumbelParamsCalcVersion : public CVersionInfo
+{
+public:
+    CGumbelParamsCalcVersion(void)
+        : CVersionInfo(CGumbelParamsCalc::kMajorVersion,
+                       CGumbelParamsCalc::kMinorVersion,
+                       CGumbelParamsCalc::kPatchVersion)
+    {}
+
+    virtual string Print(void) const {
+        return CVersionInfo::Print();
+    }
+};
+
+/// Application for computing Gumbel parameters
+
 class CGumbelParamsApplication : public CNcbiApplication
 {
+public:
+    CGumbelParamsApplication(void) {
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CGumbelParamsCalcVersion());
+        SetFullVersion(version);
+    }
+
 private:
     virtual void Init(void);
     virtual int  Run(void);
@@ -71,7 +95,7 @@ void CGumbelParamsApplication::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Real time Gumbel parameters estimation" \
-                              " for Blast search demo program");
+                              " for Blast search");
 
     arg_desc->AddOptionalKey("scoremat", "file",
                              "File containing score matrix values",
@@ -84,11 +108,6 @@ void CGumbelParamsApplication::Init(void)
                                               "blosum45", "blosum62",
                                               "blosum80", "pam30", "pam70",
                                               "pam250"));
-
-    arg_desc->AddOptionalKey("params", "file",
-                            "Text file with input randomization parameters",
-                            CArgDescriptions::eInputFile);
-
 
     arg_desc->AddOptionalKey("freqs1", "file",
                              "File containing residue frequencies for"
@@ -140,11 +159,17 @@ void CGumbelParamsApplication::Init(void)
                             " P-values calculation",
                             CArgDescriptions::eInteger, "200");
 
-    arg_desc->AddOptionalKey("paramsout", "file",
-                             "Save randomization parameters",
+    arg_desc->AddOptionalKey("indiags", "file",
+                            "Text file with input randomization parameters, "
+                            "for diagnostics only",
+                            CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey("outdiags", "file",
+                             "Save diagnostics randomization parameters",
                              CArgDescriptions::eOutputFile);
 
-    HideStdArgs(fHideAll);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp
+                | fHideDryRun);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -376,8 +401,8 @@ int CGumbelParamsApplication::Run(void)
 
     // Load randomization parameters
     CRef<CGumbelParamsRandDiagnostics> rand(new CGumbelParamsRandDiagnostics());
-    if (args["params"]) {
-        if (!x_ReadRandParams(args["params"].AsInputFile(), *rand)) {
+    if (args["indiags"]) {
+        if (!x_ReadRandParams(args["outdiags"].AsInputFile(), *rand)) {
             NcbiCerr << "Error: Randomization parameters file is incomplete"
                      << NcbiEndl << NcbiEndl;
             return 1;
@@ -393,7 +418,7 @@ int CGumbelParamsApplication::Run(void)
 
     // Compute Gumbel params
     CRef<CGumbelParamsCalc> gp_calc;
-    if (args["params"]) {
+    if (args["indiags"]) {
         gp_calc.Reset(new CGumbelParamsCalc(opts, rand));
     }
     else {
@@ -402,8 +427,8 @@ int CGumbelParamsApplication::Run(void)
 
     CRef<CGumbelParamsResult> gp_result = gp_calc->Run();
 
-    if (args["paramsout"]) {
-        x_WriteRandParams(args["paramsout"].AsOutputFile(),
+    if (args["outdiags"]) {
+        x_WriteRandParams(args["outdiags"].AsOutputFile(),
                           *gp_calc->GetRandParams());
     }
 
