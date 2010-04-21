@@ -75,20 +75,20 @@ BEGIN_SCOPE(Sls)
                 double a_J;
                 double a_J_error;
 
-                double alpha;
-                double alpha_error;
+                double sigma;
+                double sigma_error;
 
-                double sigma_I;
-                double sigma_I_error;
+                double alpha_I;
+                double alpha_I_error;
 
-                double sigma_J;
-                double sigma_J_error;
+                double alpha_J;
+                double alpha_J_error;
 
                 double a;
                 double a_error;
 
-                double sigma;
-                double sigma_error;
+                double alpha;
+                double alpha_error;
 
                 double gapless_a;
                 double gapless_a_error;
@@ -102,10 +102,10 @@ BEGIN_SCOPE(Sls)
                 std::vector<double > m_KSbs;
                 std::vector<double > m_CSbs;
 
-                std::vector<double > m_AlphaSbs;
+                std::vector<double > m_SigmaSbs;
 
-                std::vector<double > m_SigmaISbs;
-                std::vector<double > m_SigmaJSbs;
+                std::vector<double > m_AlphaISbs;
+                std::vector<double > m_AlphaJSbs;
 
                 std::vector<double > m_AISbs;
                 std::vector<double > m_AJSbs;

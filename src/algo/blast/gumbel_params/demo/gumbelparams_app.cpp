@@ -417,12 +417,12 @@ int CGumbelParamsApplication::Run(void)
              << NcbiEndl;
     NcbiCout << "C\t" << g_params.C << "\t" << g_params.C_error
              << NcbiEndl;
-    NcbiCout << "Alpha\t" << g_params.alpha << "\t" 
-             << g_params.alpha_error << NcbiEndl;
-    NcbiCout << "Sigma_I\t" << g_params.sigma_i << "\t" 
-             << g_params.sigma_i_error << NcbiEndl;
-    NcbiCout << "Sigma_J\t" << g_params.sigma_j << "\t" 
-             << g_params.sigma_j_error << NcbiEndl;
+    NcbiCout << "Sigma\t" << g_params.sigma << "\t" 
+             << g_params.sigma_error << NcbiEndl;
+    NcbiCout << "Alpha_I\t" << g_params.alpha_i << "\t" 
+             << g_params.alpha_i_error << NcbiEndl;
+    NcbiCout << "Alpha_J\t" << g_params.alpha_j << "\t" 
+             << g_params.alpha_j_error << NcbiEndl;
     NcbiCout << "A_I\t" << g_params.ai << "\t"
              << g_params.ai_error << NcbiEndl;
     NcbiCout << "A_J\t" << g_params.aj << "\t" 

@@ -156,12 +156,12 @@ BEGIN_SCOPE(Sls)
                         double &a_I_error_,
                         double &a_J_,
                         double &a_J_error_,
-                        double &alpha_,
-                        double &alpha_error_,
-                        double &sigma_I_,
-                        double &sigma_I_error_,
-                        double &sigma_J_,
-                        double &sigma_J_error_);
+                        double &sigma_,
+                        double &sigma_error_,
+                        double &alpha_I_,
+                        double &alpha_I_error_,
+                        double &alpha_J_,
+                        double &alpha_J_error_);
 
                         void alpha_calculation(
                         double delta_I_aver_,
@@ -270,12 +270,12 @@ BEGIN_SCOPE(Sls)
                         double &a_I_error,
                         double &a_J,
                         double &a_J_error,
-                        double &alpha,
-                        double &alpha_error,
-                        double &sigma_I,
-                        double &sigma_I_error,
-                        double &sigma_J,
-                        double &sigma_J_error,
+                        double &sigma,
+                        double &sigma_error,
+                        double &alpha_I,
+                        double &alpha_I_error,
+                        double &alpha_J,
+                        double &alpha_J_error,
                         double &K,
                         double &K_error);
 
@@ -302,12 +302,12 @@ BEGIN_SCOPE(Sls)
                         double &a_I_error,
                         double &a_J,
                         double &a_J_error,
-                        double &alpha,
-                        double &alpha_error,
-                        double &sigma_I,
-                        double &sigma_I_error,
-                        double &sigma_J,
-                        double &sigma_J_error,
+                        double &sigma,
+                        double &sigma_error,
+                        double &alpha_I,
+                        double &alpha_I_error,
+                        double &alpha_J,
+                        double &alpha_J_error,
                         double &K,
                         double &K_error);
 
@@ -334,12 +334,12 @@ BEGIN_SCOPE(Sls)
                         double &a_I_error,
                         double &a_J,
                         double &a_J_error,
-                        double &alpha,
-                        double &alpha_error,
-                        double &sigma_I,
-                        double &sigma_I_error,
-                        double &sigma_J,
-                        double &sigma_J_error,
+                        double &sigma,
+                        double &sigma_error,
+                        double &alpha_I,
+                        double &alpha_I_error,
+                        double &alpha_J,
+                        double &alpha_J_error,
                         double &K,
                         double &K_error,
                         bool &flag_);
@@ -454,13 +454,13 @@ BEGIN_SCOPE(Sls)
     double m_C;
     double m_CError;
 
-    double m_Alpha;
-    double m_AlphaError;
+    double m_Sigma;
+    double m_SigmaError;
 
-    double m_SigmaI;
-    double m_SigmaIError;
-    double m_SigmaJ;
-    double m_SigmaJError;
+    double m_AlphaI;
+    double m_AlphaIError;
+    double m_AlphaJ;
+    double m_AlphaJError;
 
     double m_AI;
     double m_AIError;
@@ -475,10 +475,10 @@ BEGIN_SCOPE(Sls)
     vector<CGumbelParamsResult::TResult > m_KSbs;
     vector<CGumbelParamsResult::TResult > m_CSbs;
 
-    vector<CGumbelParamsResult::TResult > m_AlphaSbs;
+    vector<CGumbelParamsResult::TResult > m_SigmaSbs;
 
-    vector<CGumbelParamsResult::TResult > m_SigmaISbs;
-    vector<CGumbelParamsResult::TResult > m_SigmaJSbs;
+    vector<CGumbelParamsResult::TResult > m_AlphaISbs;
+    vector<CGumbelParamsResult::TResult > m_AlphaJSbs;
 
     vector<CGumbelParamsResult::TResult > m_AISbs;
     vector<CGumbelParamsResult::TResult > m_AJSbs;

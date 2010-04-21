@@ -452,9 +452,9 @@ typedef struct SGumbelParams
     TParam lambda;
     TParam K;
     TParam C;
-    TParam alpha;
-    TParam sigma_i;
-    TParam sigma_j;
+    TParam sigma;
+    TParam alpha_i;
+    TParam alpha_j;
     TParam ai;
     TParam aj;
 
@@ -462,9 +462,9 @@ typedef struct SGumbelParams
     TParam lambda_error;
     TParam K_error;
     TParam C_error;
-    TParam alpha_error;
-    TParam sigma_i_error;
-    TParam sigma_j_error;
+    TParam sigma_error;
+    TParam alpha_i_error;
+    TParam alpha_j_error;
     TParam ai_error;
     TParam aj_error;
 
@@ -492,9 +492,9 @@ public:
         vector<TResult> lambda_sbs;
         vector<TResult> K_sbs;
         vector<TResult> C_sbs;
-        vector<TResult> alpha_sbs;
-        vector<TResult> sigma_i_sbs;
-        vector<TResult> sigma_j_sbs;
+        vector<TResult> sigma_sbs;
+        vector<TResult> alpha_i_sbs;
+        vector<TResult> alpha_j_sbs;
         vector<TResult> ai_sbs;
         vector<TResult> aj_sbs;
     } SSbsArrays;

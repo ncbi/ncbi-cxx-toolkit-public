@@ -393,14 +393,14 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             gumbel_params.C = local_max_stat_matrix.getC ();;
             gumbel_params.C_error = calculation_error;
 
-            gumbel_params.alpha = gumbel_params.gapless_alpha;
-            gumbel_params.alpha_error = calculation_error;
+            gumbel_params.sigma = gumbel_params.gapless_alpha;
+            gumbel_params.sigma_error = calculation_error;
 
-            gumbel_params.sigma_i = gumbel_params.gapless_alpha;
-            gumbel_params.sigma_i_error = calculation_error;
+            gumbel_params.alpha_i = gumbel_params.gapless_alpha;
+            gumbel_params.alpha_i_error = calculation_error;
 
-            gumbel_params.sigma_j = gumbel_params.gapless_alpha;
-            gumbel_params.sigma_j_error = calculation_error;
+            gumbel_params.alpha_j = gumbel_params.gapless_alpha;
+            gumbel_params.alpha_j_error = calculation_error;
 
             gumbel_params.ai = gumbel_params.gapless_a;
             gumbel_params.ai_error = calculation_error;
@@ -423,17 +423,17 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             sbs_arrays.C_sbs[0]=gumbel_params.C;
             sbs_arrays.C_sbs[1]=gumbel_params.C+calculation_error;
 
-            sbs_arrays.alpha_sbs.resize(2);
-            sbs_arrays.alpha_sbs[0]=gumbel_params.alpha;
-            sbs_arrays.alpha_sbs[1]=gumbel_params.alpha + calculation_error;
+            sbs_arrays.sigma_sbs.resize(2);
+			sbs_arrays.sigma_sbs[0]=gumbel_params.sigma;
+            sbs_arrays.sigma_sbs[1]=gumbel_params.sigma + calculation_error;
 
-            sbs_arrays.sigma_i_sbs.resize(2);
-            sbs_arrays.sigma_i_sbs[0]=gumbel_params.sigma_i;
-            sbs_arrays.sigma_i_sbs[1]=gumbel_params.sigma_i + calculation_error;
+            sbs_arrays.alpha_i_sbs.resize(2);
+            sbs_arrays.alpha_i_sbs[0]=gumbel_params.alpha_i;
+            sbs_arrays.alpha_i_sbs[1]=gumbel_params.alpha_i + calculation_error;
 
-            sbs_arrays.sigma_j_sbs.resize(2);
-            sbs_arrays.sigma_j_sbs[0]=gumbel_params.sigma_j;
-            sbs_arrays.sigma_j_sbs[1]=gumbel_params.sigma_j + calculation_error;
+            sbs_arrays.alpha_j_sbs.resize(2);
+            sbs_arrays.alpha_j_sbs[0]=gumbel_params.alpha_j;
+            sbs_arrays.alpha_j_sbs[1]=gumbel_params.alpha_j + calculation_error;
 
             sbs_arrays.ai_sbs.resize(2);
             sbs_arrays.ai_sbs[0]=gumbel_params.ai;
@@ -480,14 +480,14 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             gumbel_params.C = sim_obj.m_C;
             gumbel_params.C_error = sim_obj.m_CError;
 
-            gumbel_params.alpha = sim_obj.m_Alpha;
-            gumbel_params.alpha_error = sim_obj.m_AlphaError;
+            gumbel_params.sigma = sim_obj.m_Sigma;
+            gumbel_params.sigma_error = sim_obj.m_SigmaError;
 
-            gumbel_params.sigma_i = sim_obj.m_SigmaI;
-            gumbel_params.sigma_i_error = sim_obj.m_SigmaIError;
+            gumbel_params.alpha_i = sim_obj.m_AlphaI;
+            gumbel_params.alpha_i_error = sim_obj.m_AlphaIError;
 
-            gumbel_params.sigma_j = sim_obj.m_SigmaJ;
-            gumbel_params.sigma_j_error = sim_obj.m_SigmaJError;
+            gumbel_params.alpha_j = sim_obj.m_AlphaJ;
+            gumbel_params.alpha_j_error = sim_obj.m_AlphaJError;
 
             gumbel_params.ai = sim_obj.m_AI;
             gumbel_params.ai_error = sim_obj.m_AIError;
@@ -501,9 +501,9 @@ CRef<CGumbelParamsResult> CGumbelParamsCalc::Run(void)
             s_CopyVector(sim_obj.m_LambdaSbs, sbs_arrays.lambda_sbs);
             s_CopyVector(sim_obj.m_KSbs, sbs_arrays.K_sbs);
             s_CopyVector(sim_obj.m_CSbs, sbs_arrays.C_sbs);
-            s_CopyVector(sim_obj.m_AlphaSbs, sbs_arrays.alpha_sbs);
-            s_CopyVector(sim_obj.m_SigmaISbs, sbs_arrays.sigma_i_sbs);
-            s_CopyVector(sim_obj.m_SigmaJSbs, sbs_arrays.sigma_j_sbs);
+            s_CopyVector(sim_obj.m_SigmaSbs, sbs_arrays.sigma_sbs);
+            s_CopyVector(sim_obj.m_AlphaISbs, sbs_arrays.alpha_i_sbs);
+            s_CopyVector(sim_obj.m_AlphaJSbs, sbs_arrays.alpha_j_sbs);
             s_CopyVector(sim_obj.m_AISbs, sbs_arrays.ai_sbs);
             s_CopyVector(sim_obj.m_AJSbs, sbs_arrays.aj_sbs);
 

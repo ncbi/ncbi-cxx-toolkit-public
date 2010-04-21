@@ -288,24 +288,24 @@ bool &area_is_1_flag_)
         double ai_hat_error_=par_.a_I_error;
         double bi_hat_=2.0*par_.G*(par_.gapless_a-par_.a_I); 
         double bi_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_a,par_.gapless_a_error,par_.a_I,par_.a_I_error); 
-        double sigmai_hat_=par_.sigma_I;
-        double sigmai_hat_error_=par_.sigma_I_error;
-        double etai_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma_I); 
-        double etai_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.sigma_I,par_.sigma_I_error); 
+        double alphai_hat_=par_.alpha_I;
+        double alphai_hat_error_=par_.alpha_I_error;
+        double betai_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha_I); 
+        double betai_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.alpha_I,par_.alpha_I_error); 
 
         double aj_hat_=par_.a_J;
         double aj_hat_error_=par_.a_J_error;
         double bj_hat_=2.0*par_.G*(par_.gapless_a-par_.a_J); 
         double bj_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_a,par_.gapless_a_error,par_.a_J,par_.a_J_error); 
-        double sigmaj_hat_=par_.sigma_J;
-        double sigmaj_hat_error_=par_.sigma_J_error;
-        double etaj_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma_J); 
-        double etaj_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.sigma_J,par_.sigma_J_error); 
+        double alphaj_hat_=par_.alpha_J;
+        double alphaj_hat_error_=par_.alpha_J_error;
+        double betaj_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha_J); 
+        double betaj_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.alpha_J,par_.alpha_J_error); 
 
-        double alpha_hat_=par_.alpha;
-        double alpha_hat_error_=par_.alpha_error;
-        double beta_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha);
-         double beta_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.alpha,par_.alpha_error);
+        double sigma_hat_=par_.sigma;
+        double sigma_hat_error_=par_.sigma_error;
+        double tau_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma);
+        double tau_hat_error_=2.0*par_.G*error_of_the_sum(par_.gapless_alpha,par_.gapless_alpha_error,par_.sigma,par_.sigma_error);
  
 
         bool where_it_is_works_flag=false;
@@ -314,20 +314,20 @@ bool &area_is_1_flag_)
 
         if(blast_)
         {
-                sigmai_hat_=0;
-                sigmai_hat_error_=0;
-                etai_hat_=0;
-                etai_hat_error_=0;
+                alphai_hat_=0;
+                alphai_hat_error_=0;
+                betai_hat_=0;
+                betai_hat_error_=0;
 
-                sigmaj_hat_=0;
-                sigmaj_hat_error_=0;
-                etaj_hat_=0;
-                etaj_hat_error_=0;
+                alphaj_hat_=0;
+                alphaj_hat_error_=0;
+                betaj_hat_=0;
+                betaj_hat_error_=0;
 
-                alpha_hat_=0;
-                alpha_hat_error_=0;
-                beta_hat_=0;
-                beta_hat_error_=0;
+                sigma_hat_=0;
+                sigma_hat_error_=0;
+                tau_hat_=0;
+                tau_hat_error_=0;
         };
 
         double const_val=1/sqrt(2.0*3.1415926535897932384626433832795);
@@ -361,11 +361,11 @@ bool &area_is_1_flag_)
 
         if(flag_Mii||blast_)
         {
-                vi_y_error=error_of_the_sum(y_*sigmai_hat_,fabs(y_)*sigmai_hat_error_,etai_hat_,etai_hat_error_);
-                vi_y=alp_data::Tmax(0.0,sigmai_hat_*y_+etai_hat_);
+                vi_y_error=error_of_the_sum(y_*alphai_hat_,fabs(y_)*alphai_hat_error_,betai_hat_,betai_hat_error_);
+                vi_y=alp_data::Tmax(0.0,alphai_hat_*y_+betai_hat_);
                 if(where_it_is_works_flag)
                 {
-                        if(sigmai_hat_*y_+etai_hat_<0)
+                        if(alphai_hat_*y_+betai_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -434,12 +434,12 @@ bool &area_is_1_flag_)
 
         if(flag_Mjj||blast_)
         {
-                vj_y_error=error_of_the_sum(y_*sigmaj_hat_,fabs(y_)*sigmaj_hat_error_,etaj_hat_,etaj_hat_error_);
-                vj_y=alp_data::Tmax(0.0,sigmaj_hat_*y_+etaj_hat_);
+                vj_y_error=error_of_the_sum(y_*alphaj_hat_,fabs(y_)*alphaj_hat_error_,betaj_hat_,betaj_hat_error_);
+                vj_y=alp_data::Tmax(0.0,alphaj_hat_*y_+betaj_hat_);
 
                 if(where_it_is_works_flag)
                 {
-                        if(sigmaj_hat_*y_+etaj_hat_<0)
+                        if(alphaj_hat_*y_+betaj_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -491,12 +491,12 @@ bool &area_is_1_flag_)
 
         if(flag_Mij||blast_)
         {
-                c_y_error=error_of_the_sum(alpha_hat_*y_,alpha_hat_error_*y_,beta_hat_,beta_hat_error_);
-                c_y=alp_data::Tmax(0.0,alpha_hat_*y_+beta_hat_);
+                c_y_error=error_of_the_sum(sigma_hat_*y_,sigma_hat_error_*y_,tau_hat_,tau_hat_error_);
+                c_y=alp_data::Tmax(0.0,sigma_hat_*y_+tau_hat_);
 
                 if(where_it_is_works_flag)
                 {
-                        if(alpha_hat_*y_+beta_hat_<0)
+                        if(sigma_hat_*y_+tau_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -597,16 +597,16 @@ bool &area_is_1_flag_)
 
         double ai_hat_=par_.a_I;
         double bi_hat_=2.0*par_.G*(par_.gapless_a-par_.a_I);
-        double sigmai_hat_=par_.sigma_I;
-        double etai_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma_I);
+        double alphai_hat_=par_.alpha_I;
+        double betai_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha_I);
 
         double aj_hat_=par_.a_J;
         double bj_hat_=2.0*par_.G*(par_.gapless_a-par_.a_J);
-        double sigmaj_hat_=par_.sigma_J;
-        double etaj_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma_J);
+        double alphaj_hat_=par_.alpha_J;
+        double betaj_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha_J);
 
-        double alpha_hat_=par_.alpha;
-        double beta_hat_=2.0*par_.G*(par_.gapless_alpha-par_.alpha);
+        double sigma_hat_=par_.sigma;
+        double tau_hat_=2.0*par_.G*(par_.gapless_alpha-par_.sigma);
 
 
         bool where_it_is_works_flag=false;
@@ -615,14 +615,14 @@ bool &area_is_1_flag_)
 
         if(blast_)
         {
-                sigmai_hat_=0;
-                etai_hat_=0;
+                alphai_hat_=0;
+                betai_hat_=0;
 
-                sigmaj_hat_=0;
-                etaj_hat_=0;
+                alphaj_hat_=0;
+                betaj_hat_=0;
 
-                alpha_hat_=0;
-                beta_hat_=0;
+                sigma_hat_=0;
+                tau_hat_=0;
         };
 
         double const_val=1/sqrt(2.0*3.1415926535897932384626433832795);
@@ -652,10 +652,10 @@ bool &area_is_1_flag_)
 
         if(flag_Mii||blast_)
         {
-                vi_y=alp_data::Tmax(0.0,sigmai_hat_*y_+etai_hat_);
+                vi_y=alp_data::Tmax(0.0,alphai_hat_*y_+betai_hat_);
                 if(where_it_is_works_flag)
                 {
-                        if(sigmai_hat_*y_+etai_hat_<0)
+                        if(alphai_hat_*y_+betai_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -712,11 +712,11 @@ bool &area_is_1_flag_)
 
         if(flag_Mjj||blast_)
         {
-                vj_y=alp_data::Tmax(0.0,sigmaj_hat_*y_+etaj_hat_);
+                vj_y=alp_data::Tmax(0.0,alphaj_hat_*y_+betaj_hat_);
 
                 if(where_it_is_works_flag)
                 {
-                        if(sigmaj_hat_*y_+etaj_hat_<0)
+                        if(alphaj_hat_*y_+betaj_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -758,11 +758,11 @@ bool &area_is_1_flag_)
 
         if(flag_Mij||blast_)
         {
-                c_y=alp_data::Tmax(0.0,alpha_hat_*y_+beta_hat_);
+                c_y=alp_data::Tmax(0.0,sigma_hat_*y_+tau_hat_);
 
                 if(where_it_is_works_flag)
                 {
-                        if(alpha_hat_*y_+beta_hat_<0)
+                        if(sigma_hat_*y_+tau_hat_<0)
                         {
                                 negative_flag=true;
                         };
@@ -873,8 +873,8 @@ bool &area_is_1_flag_)
                 par_tmp.a_error=0;
 
 
-                par_tmp.alpha=par_.m_AlphaSbs[i];
-                par_tmp.alpha_error=0;
+                par_tmp.sigma=par_.m_SigmaSbs[i];
+                par_tmp.sigma_error=0;
 
                 par_tmp.gapless_alpha=par_.gapless_alpha;
                 par_tmp.gapless_alpha_error=par_.gapless_alpha_error;
@@ -890,14 +890,14 @@ bool &area_is_1_flag_)
                 par_tmp.lambda=par_.m_LambdaSbs[i];
                 par_tmp.lambda_error=0;
 
-                par_tmp.sigma_I=par_.m_SigmaISbs[i];
-                par_tmp.sigma_I_error=0;
+                par_tmp.alpha_I=par_.m_AlphaISbs[i];
+                par_tmp.alpha_I_error=0;
 
-                par_tmp.sigma_J=par_.m_SigmaJSbs[i];
-                par_tmp.sigma_J_error=0;
+                par_tmp.alpha_J=par_.m_AlphaJSbs[i];
+                par_tmp.alpha_J_error=0;
 
-                par_tmp.sigma=0.5*(par_tmp.sigma_I+par_tmp.sigma_J);
-                par_tmp.sigma_error=0;
+                par_tmp.alpha=0.5*(par_tmp.alpha_I+par_tmp.alpha_J);
+                par_tmp.alpha_error=0;
 
                 par_tmp.G=par_.G;
 

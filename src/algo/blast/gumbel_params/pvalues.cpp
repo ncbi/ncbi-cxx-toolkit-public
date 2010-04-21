@@ -89,9 +89,9 @@ bool CScorePValuesOptions::Validate(void) const
     size_t size = sbs_params.lambda_sbs.size();
 
     if(size != sbs_params.K_sbs.size() || size != sbs_params.C_sbs.size() ||
-       size != sbs_params.alpha_sbs.size() || 
-       size != sbs_params.sigma_i_sbs.size() ||
-       size != sbs_params.sigma_j_sbs.size() ||
+       size != sbs_params.sigma_sbs.size() || 
+       size != sbs_params.alpha_i_sbs.size() ||
+       size != sbs_params.alpha_j_sbs.size() ||
        size != sbs_params.ai_sbs.size() ||
        size != sbs_params.aj_sbs.size() || size < 2) {
 
@@ -142,14 +142,14 @@ CRef<CScorePValues> CScorePValuesCalc::Run(void)
         parameters_set.a_J = g_params.aj;
         parameters_set.a_J_error = g_params.aj_error;
 
-        parameters_set.alpha = g_params.alpha;
-        parameters_set.alpha_error = g_params.alpha_error;
+        parameters_set.sigma = g_params.sigma;
+        parameters_set.sigma_error = g_params.sigma_error;
 
-        parameters_set.sigma_I = g_params.sigma_i;
-        parameters_set.sigma_I_error = g_params.sigma_i_error;
+        parameters_set.alpha_I = g_params.alpha_i;
+        parameters_set.alpha_I_error = g_params.alpha_i_error;
 
-        parameters_set.sigma_J = g_params.sigma_j;
-        parameters_set.sigma_J_error = g_params.sigma_j_error;
+        parameters_set.alpha_J = g_params.alpha_j;
+        parameters_set.alpha_J_error = g_params.alpha_j_error;
 
         parameters_set.a 
             = (parameters_set.a_I + parameters_set.a_J) * 0.5;
@@ -157,11 +157,11 @@ CRef<CScorePValues> CScorePValuesCalc::Run(void)
         parameters_set.a_error = (parameters_set.a_I_error
                                  + parameters_set.a_J_error)*0.5;
         
-        parameters_set.sigma = (parameters_set.sigma_I
-                               + parameters_set.sigma_J) * 0.5;
+        parameters_set.alpha = (parameters_set.alpha_I
+                               + parameters_set.alpha_J) * 0.5;
 
-        parameters_set.sigma_error = (parameters_set.sigma_I_error
-                                     + parameters_set.sigma_J_error) * 0.5;
+        parameters_set.alpha_error = (parameters_set.alpha_I_error
+                                     + parameters_set.alpha_J_error) * 0.5;
 
 
         parameters_set.gapless_a = g_params.gapless_a;
@@ -182,9 +182,9 @@ CRef<CScorePValues> CScorePValuesCalc::Run(void)
         parameters_set.m_LambdaSbs.resize(size_tmp);
         parameters_set.m_KSbs.resize(size_tmp);
         parameters_set.m_CSbs.resize(size_tmp);
-        parameters_set.m_AlphaSbs.resize(size_tmp);
-        parameters_set.m_SigmaISbs.resize(size_tmp);
-        parameters_set.m_SigmaJSbs.resize(size_tmp);
+        parameters_set.m_SigmaSbs.resize(size_tmp);
+        parameters_set.m_AlphaISbs.resize(size_tmp);
+        parameters_set.m_AlphaJSbs.resize(size_tmp);
         parameters_set.m_AISbs.resize(size_tmp);
         parameters_set.m_AJSbs.resize(size_tmp);
 
@@ -192,9 +192,9 @@ CRef<CScorePValues> CScorePValuesCalc::Run(void)
             parameters_set.m_LambdaSbs[i] = sbs_arrays.lambda_sbs[i];
             parameters_set.m_KSbs[i] = sbs_arrays.K_sbs[i];
             parameters_set.m_CSbs[i] = sbs_arrays.C_sbs[i];
-            parameters_set.m_AlphaSbs[i] = sbs_arrays.alpha_sbs[i];
-            parameters_set.m_SigmaISbs[i] = sbs_arrays.sigma_i_sbs[i];
-            parameters_set.m_SigmaJSbs[i]= sbs_arrays.sigma_j_sbs[i];
+            parameters_set.m_SigmaSbs[i] = sbs_arrays.sigma_sbs[i];
+            parameters_set.m_AlphaISbs[i] = sbs_arrays.alpha_i_sbs[i];
+            parameters_set.m_AlphaJSbs[i]= sbs_arrays.alpha_j_sbs[i];
             parameters_set.m_AISbs[i] = sbs_arrays.ai_sbs[i];
             parameters_set.m_AJSbs[i] = sbs_arrays.aj_sbs[i];
         }

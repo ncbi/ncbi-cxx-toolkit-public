@@ -329,9 +329,9 @@ static void s_CheckGumbelParams(const SGumbelParams& gumbel_params,
     BOOST_REQUIRE(gumbel_params.lambda_error >= 0.0);
     BOOST_REQUIRE(gumbel_params.K_error >= 0.0);
     BOOST_REQUIRE(gumbel_params.C_error > 0.0);
-    BOOST_REQUIRE(gumbel_params.alpha_error >= 0.0);
-    BOOST_REQUIRE(gumbel_params.sigma_i_error >= 0.0);
-    BOOST_REQUIRE(gumbel_params.sigma_j_error >= 0.0);
+    BOOST_REQUIRE(gumbel_params.sigma_error >= 0.0);
+    BOOST_REQUIRE(gumbel_params.alpha_i_error >= 0.0);
+    BOOST_REQUIRE(gumbel_params.alpha_j_error >= 0.0);
     BOOST_REQUIRE(gumbel_params.ai_error >= 0.0);
     BOOST_REQUIRE(gumbel_params.aj_error >= 0.0);
 
@@ -360,22 +360,22 @@ static void s_CheckGumbelParams(const SGumbelParams& gumbel_params,
     BOOST_CHECK_CLOSE(target, gumbel_params.C_error, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.alpha, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.sigma, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.alpha_error, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.sigma_error, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.sigma_i, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.alpha_i, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.sigma_i_error, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.alpha_i_error, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.sigma_j, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.alpha_j, 0.001);
 
     istr_g >> target;
-    BOOST_CHECK_CLOSE(target, gumbel_params.sigma_j_error, 0.001);
+    BOOST_CHECK_CLOSE(target, gumbel_params.alpha_j_error, 0.001);
 
     istr_g >> target;
     BOOST_CHECK_CLOSE(target, gumbel_params.ai, 0.001);
@@ -468,9 +468,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGaplessAlignment)
     size_t ref_size = sbs_arrays.lambda_sbs.size();
     BOOST_REQUIRE_EQUAL(sbs_arrays.K_sbs.size(), ref_size);
     BOOST_REQUIRE_EQUAL(sbs_arrays.C_sbs.size(), ref_size);
-    BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_sbs.size(), ref_size);
-    BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_i_sbs.size(), ref_size);
-    BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_j_sbs.size(), ref_size);
+    BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_sbs.size(), ref_size);
+    BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_i_sbs.size(), ref_size);
+    BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_j_sbs.size(), ref_size);
     BOOST_REQUIRE_EQUAL(sbs_arrays.ai_sbs.size(), ref_size);
     BOOST_REQUIRE_EQUAL(sbs_arrays.aj_sbs.size(), ref_size);
     
@@ -542,9 +542,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGappedAlignment)
         size_t ref_size = sbs_arrays.lambda_sbs.size();
         BOOST_REQUIRE_EQUAL(sbs_arrays.K_sbs.size(), ref_size);
         BOOST_REQUIRE_EQUAL(sbs_arrays.C_sbs.size(), ref_size);
-        BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_sbs.size(), ref_size);
-        BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_i_sbs.size(), ref_size);
-        BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_j_sbs.size(), ref_size);
+        BOOST_REQUIRE_EQUAL(sbs_arrays.sigma_sbs.size(), ref_size);
+        BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_i_sbs.size(), ref_size);
+        BOOST_REQUIRE_EQUAL(sbs_arrays.alpha_j_sbs.size(), ref_size);
         BOOST_REQUIRE_EQUAL(sbs_arrays.ai_sbs.size(), ref_size);
         BOOST_REQUIRE_EQUAL(sbs_arrays.aj_sbs.size(), ref_size);
 
@@ -553,9 +553,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGappedAlignment)
         BOOST_REQUIRE(gp.lambda_error >= 0.0);
         BOOST_REQUIRE(gp.K_error >= 0.0);
         BOOST_REQUIRE(gp.C_error > 0.0);
-        BOOST_REQUIRE(gp.alpha_error >= 0.0);
-        BOOST_REQUIRE(gp.sigma_i_error >= 0.0);
-        BOOST_REQUIRE(gp.sigma_j_error >= 0.0);
+        BOOST_REQUIRE(gp.sigma_error >= 0.0);
+        BOOST_REQUIRE(gp.alpha_i_error >= 0.0);
+        BOOST_REQUIRE(gp.alpha_j_error >= 0.0);
         BOOST_REQUIRE(gp.ai_error >= 0.0);
         BOOST_REQUIRE(gp.aj_error >= 0.0);
 

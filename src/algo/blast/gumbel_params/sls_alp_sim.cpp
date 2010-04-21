@@ -925,12 +925,12 @@ Int4 final_realizations_number_killing_)
                 double a_I_error;
                 double a_J;
                 double a_J_error;
-                double alpha;
-                double alpha_error;
-                double sigma_I;
-                double sigma_I_error;
-                double sigma_J;
-                double sigma_J_error;
+                double sigma;
+                double sigma_error;
+                double alpha_I;
+                double alpha_I_error;
+                double alpha_J;
+                double alpha_J_error;
                 double K;
                 double K_error;
 
@@ -963,12 +963,12 @@ Int4 final_realizations_number_killing_)
                 a_I_error,
                 a_J,
                 a_J_error,
-                alpha,
-                alpha_error,
-                sigma_I,
-                sigma_I_error,
-                sigma_J,
-                sigma_J_error,
+                sigma,
+                sigma_error,
+                alpha_I,
+                alpha_I_error,
+                alpha_J,
+                alpha_J_error,
                 K,
                 K_error,
                 flag);
@@ -1092,12 +1092,12 @@ double &a_I,
 double &a_I_error,
 double &a_J,
 double &a_J_error,
-double &alpha,
-double &alpha_error,
-double &sigma_I,
-double &sigma_I_error,
-double &sigma_J,
-double &sigma_J_error,
+double &sigma,
+double &sigma_error,
+double &alpha_I,
+double &alpha_I_error,
+double &alpha_J,
+double &alpha_J_error,
 double &K,
 double &K_error,
 bool &flag_)
@@ -1121,14 +1121,14 @@ bool &flag_)
         double *a_J_mult=NULL;
         double *a_J_mult_error=NULL;
 
-        double *alpha_mult=NULL;
-        double *alpha_mult_error=NULL;
+        double *sigma_mult=NULL;
+        double *sigma_mult_error=NULL;
 
-        double *sigma_I_mult=NULL;
-        double *sigma_I_mult_error=NULL;
+        double *alpha_I_mult=NULL;
+        double *alpha_I_mult_error=NULL;
 
-        double *sigma_J_mult=NULL;
-        double *sigma_J_mult_error=NULL;
+        double *alpha_J_mult=NULL;
+        double *alpha_J_mult_error=NULL;
 
         double *K_C_mult=NULL;
         double *K_C_mult_error=NULL;
@@ -1197,20 +1197,20 @@ bool &flag_)
                 a_J_mult_error=new double[d_mult_number+1];
                 alp_data::assert_mem(a_J_mult_error);
 
-                alpha_mult=new double[d_mult_number+1];
-                alp_data::assert_mem(alpha_mult);
-                alpha_mult_error=new double[d_mult_number+1];
-                alp_data::assert_mem(alpha_mult_error);
+                sigma_mult=new double[d_mult_number+1];
+                alp_data::assert_mem(sigma_mult);
+                sigma_mult_error=new double[d_mult_number+1];
+                alp_data::assert_mem(sigma_mult_error);
 
-                sigma_I_mult=new double[d_mult_number+1];
-                alp_data::assert_mem(sigma_I_mult);
-                sigma_I_mult_error=new double[d_mult_number+1];
-                alp_data::assert_mem(sigma_I_mult_error);
+                alpha_I_mult=new double[d_mult_number+1];
+                alp_data::assert_mem(alpha_I_mult);
+                alpha_I_mult_error=new double[d_mult_number+1];
+                alp_data::assert_mem(alpha_I_mult_error);
 
-                sigma_J_mult=new double[d_mult_number+1];
-                alp_data::assert_mem(sigma_J_mult);
-                sigma_J_mult_error=new double[d_mult_number+1];
-                alp_data::assert_mem(sigma_J_mult_error);
+                alpha_J_mult=new double[d_mult_number+1];
+                alp_data::assert_mem(alpha_J_mult);
+                alpha_J_mult_error=new double[d_mult_number+1];
+                alp_data::assert_mem(alpha_J_mult_error);
 
                 K_C_mult=new double[d_mult_number+1];
                 alp_data::assert_mem(K_C_mult);
@@ -1228,9 +1228,9 @@ bool &flag_)
                 double K_C_mult2=0;
                 double a_I_mult2=0;
                 double a_J_mult2=0;
-                double alpha_mult2=0;
-                double sigma_I_mult2=0;
-                double sigma_J_mult2=0;
+                double sigma_mult2=0;
+                double alpha_I_mult2=0;
+                double alpha_J_mult2=0;
                 double K_mult2=0;
 
                 double lambda_mult2_error=0;
@@ -1238,9 +1238,9 @@ bool &flag_)
                 double K_C_mult2_error=0;
                 double a_I_mult2_error=0;
                 double a_J_mult2_error=0;
-                double alpha_mult2_error=0;
-                double sigma_I_mult2_error=0;
-                double sigma_J_mult2_error=0;
+                double sigma_mult2_error=0;
+                double alpha_I_mult2_error=0;
+                double alpha_J_mult2_error=0;
                 double K_mult2_error=0;
 
 
@@ -1426,12 +1426,12 @@ bool &flag_)
                         a_I_mult_error[k],
                         a_J_mult[k],
                         a_J_mult_error[k],
-                        alpha_mult[k],
-                        alpha_mult_error[k],
-                        sigma_I_mult[k],
-                        sigma_I_mult_error[k],
-                        sigma_J_mult[k],
-                        sigma_J_mult_error[k]);
+                        sigma_mult[k],
+                        sigma_mult_error[k],
+                        alpha_I_mult[k],
+                        alpha_I_mult_error[k],
+                        alpha_J_mult[k],
+                        alpha_J_mult_error[k]);
 
                         a_I_mult2+=a_I_mult[k];
                         a_I_mult2_error+=a_I_mult[k]*a_I_mult[k];
@@ -1439,14 +1439,14 @@ bool &flag_)
                         a_J_mult2+=a_J_mult[k];
                         a_J_mult2_error+=a_J_mult[k]*a_J_mult[k];
 
-                        alpha_mult2+=alpha_mult[k];
-                        alpha_mult2_error+=alpha_mult[k]*alpha_mult[k];
+                        sigma_mult2+=sigma_mult[k];
+                        sigma_mult2_error+=sigma_mult[k]*sigma_mult[k];
 
-                        sigma_I_mult2+=sigma_I_mult[k];
-                        sigma_I_mult2_error+=sigma_I_mult[k]*sigma_I_mult[k];
+                        alpha_I_mult2+=alpha_I_mult[k];
+                        alpha_I_mult2_error+=alpha_I_mult[k]*alpha_I_mult[k];
 
-                        sigma_J_mult2+=sigma_J_mult[k];
-                        sigma_J_mult2_error+=sigma_J_mult[k]*sigma_J_mult[k];
+                        alpha_J_mult2+=alpha_J_mult[k];
+                        alpha_J_mult2_error+=alpha_J_mult[k]*alpha_J_mult[k];
 
 
                 };
@@ -1464,24 +1464,24 @@ bool &flag_)
                 a_I_error,
                 a_J,
                 a_J_error,
-                alpha,
-                alpha_error,
-                sigma_I,
-                sigma_I_error,
-                sigma_J,
-                sigma_J_error);
+                sigma,
+                sigma_error,
+                alpha_I,
+                alpha_I_error,
+                alpha_J,
+                alpha_J_error);
                 
 
                 a_I_mult[0]=a_I;
                 a_I_mult_error[0]=a_I_error;
                 a_J_mult[0]=a_J;
                 a_J_mult_error[0]=a_J_error;
-                alpha_mult[0]=alpha;
-                alpha_mult_error[0]=alpha_error;
-                sigma_I_mult[0]=sigma_I;
-                sigma_I_mult_error[0]=sigma_I_error;
-                sigma_J_mult[0]=sigma_J;
-                sigma_J_mult_error[0]=sigma_J_error;
+                sigma_mult[0]=sigma;
+                sigma_mult_error[0]=sigma_error;
+                alpha_I_mult[0]=alpha_I;
+                alpha_I_mult_error[0]=alpha_I_error;
+                alpha_J_mult[0]=alpha_J;
+                alpha_J_mult_error[0]=alpha_J_error;
                 
 
                 real_number=(Int4)floor((double)final_realizations_number_killing_/(double)d_mult_number);
@@ -1574,9 +1574,9 @@ bool &flag_)
                 K_C_mult2/=d_mult_number;
                 a_I_mult2/=d_mult_number;
                 a_J_mult2/=d_mult_number;
-                alpha_mult2/=d_mult_number;
-                sigma_I_mult2/=d_mult_number;
-                sigma_J_mult2/=d_mult_number;
+                sigma_mult2/=d_mult_number;
+                alpha_I_mult2/=d_mult_number;
+                alpha_J_mult2/=d_mult_number;
                 K_mult2/=d_mult_number;
 
                 lambda_mult2_error/=d_mult_number;
@@ -1584,9 +1584,9 @@ bool &flag_)
                 K_C_mult2_error/=d_mult_number;
                 a_I_mult2_error/=d_mult_number;
                 a_J_mult2_error/=d_mult_number;
-                alpha_mult2_error/=d_mult_number;
-                sigma_I_mult2_error/=d_mult_number;
-                sigma_J_mult2_error/=d_mult_number;
+                sigma_mult2_error/=d_mult_number;
+                alpha_I_mult2_error/=d_mult_number;
+                alpha_J_mult2_error/=d_mult_number;
                 K_mult2_error/=d_mult_number;
 
 
@@ -1599,9 +1599,9 @@ bool &flag_)
                 K_C_mult2_error=alp_reg::sqrt_for_errors(K_C_mult2_error-K_C_mult2*K_C_mult2)/sqrt((double)mult_number_double_K);
                 a_I_mult2_error=alp_reg::sqrt_for_errors(a_I_mult2_error-a_I_mult2*a_I_mult2)/sqrt((double)mult_number_double_lambda);
                 a_J_mult2_error=alp_reg::sqrt_for_errors(a_J_mult2_error-a_J_mult2*a_J_mult2)/sqrt((double)mult_number_double_lambda);
-                alpha_mult2_error=alp_reg::sqrt_for_errors(alpha_mult2_error-alpha_mult2*alpha_mult2)/sqrt((double)mult_number_double_lambda);
-                sigma_I_mult2_error=alp_reg::sqrt_for_errors(sigma_I_mult2_error-sigma_I_mult2*sigma_I_mult2)/sqrt((double)mult_number_double_lambda);
-                sigma_J_mult2_error=alp_reg::sqrt_for_errors(sigma_J_mult2_error-sigma_J_mult2*sigma_J_mult2)/sqrt((double)mult_number_double_lambda);
+                sigma_mult2_error=alp_reg::sqrt_for_errors(sigma_mult2_error-sigma_mult2*sigma_mult2)/sqrt((double)mult_number_double_lambda);
+                alpha_I_mult2_error=alp_reg::sqrt_for_errors(alpha_I_mult2_error-alpha_I_mult2*alpha_I_mult2)/sqrt((double)mult_number_double_lambda);
+                alpha_J_mult2_error=alp_reg::sqrt_for_errors(alpha_J_mult2_error-alpha_J_mult2*alpha_J_mult2)/sqrt((double)mult_number_double_lambda);
                 K_mult2_error=alp_reg::sqrt_for_errors(K_mult2_error-K_mult2*K_mult2)/sqrt((double)alp_data::Tmin(mult_number_double_lambda,mult_number_double_K));
 
 
@@ -1637,22 +1637,22 @@ bool &flag_)
 
 
                 error_in_calculate_main_parameters2m(
-                alpha,
-                alpha_error,
-                alpha_mult2,
-                alpha_mult2_error);
+                sigma,
+                sigma_error,
+                sigma_mult2,
+                sigma_mult2_error);
 
                 error_in_calculate_main_parameters2m(
-                sigma_I,
-                sigma_I_error,
-                sigma_I_mult2,
-                sigma_I_mult2_error);
+                alpha_I,
+                alpha_I_error,
+                alpha_I_mult2,
+                alpha_I_mult2_error);
 
                 error_in_calculate_main_parameters2m(
-                sigma_J,
-                sigma_J_error,
-                sigma_J_mult2,
-                sigma_J_mult2_error);
+                alpha_J,
+                alpha_J_error,
+                alpha_J_mult2,
+                alpha_J_mult2_error);
 
                 error_in_calculate_main_parameters2m(
                 K,
@@ -1667,8 +1667,8 @@ bool &flag_)
                 this->m_AIError=a_I_error;
                 this->m_AJ=a_J;
                 this->m_AJError=a_J_error;
-                this->m_Alpha=alpha;
-                this->m_AlphaError=alpha_error;
+                this->m_Sigma=sigma;
+                this->m_SigmaError=sigma_error;
                 this->m_C=C;
                 this->m_CError=C_error;
                 this->m_K=K;
@@ -1676,33 +1676,33 @@ bool &flag_)
                 this->m_Lambda=lambda;
                 this->m_LambdaError=lambda_error;
 
-                this->m_SigmaI=sigma_I;
-                this->m_SigmaIError=sigma_I_error;
-                this->m_SigmaJ=sigma_J;
-                this->m_SigmaJError=sigma_J_error;
+                this->m_AlphaI=alpha_I;
+                this->m_AlphaIError=alpha_I_error;
+                this->m_AlphaJ=alpha_J;
+                this->m_AlphaJError=alpha_J_error;
 
                 this->m_AISbs.resize(d_mult_number);
                 this->m_AJSbs.resize(d_mult_number);
-                this->m_AlphaSbs.resize(d_mult_number);
+                this->m_SigmaSbs.resize(d_mult_number);
                 this->m_CSbs.resize(d_mult_number);
                 this->m_KSbs.resize(d_mult_number);
                 this->m_LambdaSbs.resize(d_mult_number);
 
-                this->m_SigmaISbs.resize(d_mult_number);
-                this->m_SigmaJSbs.resize(d_mult_number);
+                this->m_AlphaISbs.resize(d_mult_number);
+                this->m_AlphaJSbs.resize(d_mult_number);
 
 
                 for(k=1;k<=d_mult_number;k++)
                 {
                         this->m_AISbs[k-1]=a_I_mult[k];
                         this->m_AJSbs[k-1]=a_J_mult[k];
-                        this->m_AlphaSbs[k-1]=alpha_mult[k];
+                        this->m_SigmaSbs[k-1]=sigma_mult[k];
                         this->m_CSbs[k-1]=C_mult[k];
                         this->m_KSbs[k-1]=K_mult[k];
                         this->m_LambdaSbs[k-1]=lambda_mult[k];
 
-                        this->m_SigmaISbs[k-1]=sigma_I_mult[k];
-                        this->m_SigmaJSbs[k-1]=sigma_J_mult[k];
+                        this->m_AlphaISbs[k-1]=alpha_I_mult[k];
+                        this->m_AlphaJSbs[k-1]=alpha_J_mult[k];
                 };
 
 
@@ -1803,12 +1803,12 @@ bool &flag_)
         delete[]a_I_mult_error;a_I_mult_error=NULL;
         delete[]a_J_mult;a_J_mult=NULL;
         delete[]a_J_mult_error;a_J_mult_error=NULL;
-        delete[]alpha_mult;alpha_mult=NULL;
-        delete[]alpha_mult_error;alpha_mult_error=NULL;
-        delete[]sigma_I_mult;sigma_I_mult=NULL;
-        delete[]sigma_I_mult_error;sigma_I_mult_error=NULL;
-        delete[]sigma_J_mult;sigma_J_mult=NULL;
-        delete[]sigma_J_mult_error;sigma_J_mult_error=NULL;
+        delete[]sigma_mult;sigma_mult=NULL;
+        delete[]sigma_mult_error;sigma_mult_error=NULL;
+        delete[]alpha_I_mult;alpha_I_mult=NULL;
+        delete[]alpha_I_mult_error;alpha_I_mult_error=NULL;
+        delete[]alpha_J_mult;alpha_J_mult=NULL;
+        delete[]alpha_J_mult_error;alpha_J_mult_error=NULL;
 
         delete[]K_C_mult;K_C_mult=NULL;
         delete[]K_C_mult_error;K_C_mult_error=NULL;
@@ -2450,12 +2450,12 @@ double &a_I_,
 double &a_I_error_,
 double &a_J_,
 double &a_J_error_,
-double &alpha_,
-double &alpha_error_,
-double &sigma_I_,
-double &sigma_I_error_,
-double &sigma_J_,
-double &sigma_J_error_)
+double &sigma_,
+double &sigma_error_,
+double &alpha_I_,
+double &alpha_I_error_,
+double &alpha_J_,
+double &alpha_J_error_)
 {
         bool ee_error_flag=false;
         error ee_error("",0);
@@ -2953,8 +2953,8 @@ double &sigma_J_error_)
                 cov_E_E_aver_error,
                 cov_I_J_aver,
                 cov_I_J_aver_error,
-                alpha_,
-                alpha_error_);
+                sigma_,
+                sigma_error_);
 
 
                 alpha_calculation(
@@ -2968,8 +2968,8 @@ double &sigma_J_error_)
                 cov_E_E_aver_error,
                 cov_I_I_aver,
                 cov_I_I_aver_error,
-                sigma_I_,
-                sigma_I_error_);
+                alpha_I_,
+                alpha_I_error_);
 
 
 
@@ -2984,8 +2984,8 @@ double &sigma_J_error_)
                 cov_E_E_aver_error,
                 cov_J_J_aver,
                 cov_J_J_aver_error,
-                sigma_J_,
-                sigma_J_error_);
+                alpha_J_,
+                alpha_J_error_);
 
 
         }
