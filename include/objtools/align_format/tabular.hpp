@@ -459,7 +459,7 @@ public:
     void PrintMasterAlign() const;
 
     /// Set out-of-frame information                                        
-    void SetFrame(const string &frame = "NA") { 
+    void SetFrame(const string &frame = "N/A") { 
         m_FrameInfo = frame;                               
     };
 

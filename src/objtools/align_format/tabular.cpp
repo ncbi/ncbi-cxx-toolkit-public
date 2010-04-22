@@ -936,8 +936,8 @@ void CIgBlastTabularInfo::x_ResetIgFields()
         delete m_IgDomains[i];
     }
     m_IgDomains.clear();
-    m_FrameInfo = "NA";
-    m_ChainType = "NA";
+    m_FrameInfo = "N/A";
+    m_ChainType = "N/A";
     m_IsMinusStrand = false;
     m_VGene.Reset();
     m_DGene.Reset();
@@ -947,7 +947,7 @@ void CIgBlastTabularInfo::x_ResetIgFields()
 void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end) const
 {
     if (start <0 || end <0 || start==end) {
-        m_Ostream << "NA";
+        m_Ostream << "N/A";
         return;
     }
     bool isOverlap = (start > end);
@@ -1029,10 +1029,10 @@ void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
               << m_FieldDelimiter
               << domain.num_gap;
     } else {
-        m_Ostream  << "NA" << m_FieldDelimiter
-              <<  "NA" << m_FieldDelimiter
-              <<  "NA" << m_FieldDelimiter
-              <<  "NA";
+        m_Ostream  << "N/A" << m_FieldDelimiter
+              <<  "N/A" << m_FieldDelimiter
+              <<  "N/A" << m_FieldDelimiter
+              <<  "N/A";
     }
 };
 
