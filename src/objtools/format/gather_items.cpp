@@ -273,7 +273,10 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
     const CFlatFileConfig& cfg = Config();
     if ( cfg.IsModeRelease() && cfg.IsStyleContig() && 
       ! s_BioSeqHasContig( seq, *m_Context ) ) {
-        NcbiCerr << "Release mode failure." << endl;
+        NCBI_THROW(
+            CFlatException, 
+            eInvalidParam, 
+            "Release mode failure: Given sequence is not contig" );
         return;
     }
 

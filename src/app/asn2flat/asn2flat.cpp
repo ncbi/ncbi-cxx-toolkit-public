@@ -238,137 +238,125 @@ void CAsn2FlatApp::Init(void)
 
 int CAsn2FlatApp::Run(void)
 {
+    int iRetValue( 0 );
+
 	// initialize conn library
 	CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
 
-    // create object manager
-    m_Objmgr = CObjectManager::GetInstance();
-    if ( !m_Objmgr ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
-    }
-    if (args["gbload"]) {
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-    }
+    try {
+        // create object manager
+        m_Objmgr = CObjectManager::GetInstance();
+        if ( !m_Objmgr ) {
+            NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
+        }
+        if (args["gbload"]) {
+            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+        }
 
-    // open the output stream
-    m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-    if ( m_Os == 0 ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
-    }
+        // open the output stream
+        m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+        if ( m_Os == 0 ) {
+            NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
+        }
 
-    // create the flat-file generator
-    m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
+        // create the flat-file generator
+        m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
 
-    auto_ptr<CObjectIStream> is;
-    is.reset( x_OpenIStream( args ) );
-    if (is.get() == NULL) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                        "Unable to read data from stdin";
-        NCBI_THROW(CFlatException, eInternal, msg);
-    }
+        auto_ptr<CObjectIStream> is;
+        is.reset( x_OpenIStream( args ) );
+        if (is.get() == NULL) {
+            string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+                            "Unable to read data from stdin";
+            NCBI_THROW(CFlatException, eInternal, msg);
+        }
 
-    if ( args[ "sub" ] ) {
-        try {
+        if ( args[ "sub" ] ) {
             HandleSeqSubmit( is );
             return 0;
         }
-        catch( CException& e ) {
-            cerr << e.GetMsg() << endl;
-            return 1;
-        }
-    }
     
-    if ( args[ "batch" ] ) {
-        try {
+        if ( args[ "batch" ] ) {
             HandleReleaseFile( is );
             return 0;
-        }
-        catch( CException& e ) {
-            cerr << e.GetMsg() << endl;
-            return 1;
-        }
-    } 
+        } 
 
-    if ( args[ "id" ] ) {
-        if ( ! args[ "gbload" ] ) {
-            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-        }   
-        try {
+        if ( args[ "id" ] ) {
+            if ( ! args[ "gbload" ] ) {
+                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+            }   
             HandleSeqId( args[ "id" ].AsString() );
             return 0;
-        }
-        catch( CException& e ) {
-            cerr << e.GetMsg() << endl;
-            return 1;
-        }
-    } 
+        } 
 
-    string asn_type = args["type"].AsString();
-    CRef<CSeq_entry> se(new CSeq_entry);
-    
-    if ( asn_type == "seq-entry" ) {
-        //
-        //  Straight through processing: Read a seq_entry, then process
-        //  a seq_entry:
-        //
-        if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-            NCBI_THROW( 
-                CFlatException, eInternal, "Unable to construct Seq-entry object" );
-        }
-        HandleSeqEntry(se);
-		//m_Objmgr.Reset();
-	}
-	else if ( asn_type == "bioseq" ) {				
-		//
-		//  Read object as a bioseq, wrap it into a seq_entry, then process
-		//  the wrapped bioseq as a seq_entry:
-		//
-        if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-            NCBI_THROW( 
-                CFlatException, eInternal, "Unable to construct Seq-entry object" );
-        }
-        HandleSeqEntry( se );
-	}
-	else if ( asn_type == "bioseq-set" ) {
-		//
-		//  Read object as a bioseq_set, wrap it into a seq_entry, then 
-		//  process the wrapped bioseq_set as a seq_entry:
-		//
-        if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-            NCBI_THROW( 
-                CFlatException, eInternal, "Unable to construct Seq-entry object" );
-        }
-        HandleSeqEntry( se );
-	}
-    else if ( asn_type == "any" ) {
-        //
-        //  Try the first three in turn:
-        //
-        string strNextTypeName = is->PeekNextTypeName();
+        string asn_type = args["type"].AsString();
+        CRef<CSeq_entry> se(new CSeq_entry);
         
-        if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-            is->Close();
-            is.reset( x_OpenIStream( args ) );
+        if ( asn_type == "seq-entry" ) {
+            //
+            //  Straight through processing: Read a seq_entry, then process
+            //  a seq_entry:
+            //
+            if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+                NCBI_THROW( 
+                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry(se);
+		    //m_Objmgr.Reset();
+	    }
+	    else if ( asn_type == "bioseq" ) {				
+		    //
+		    //  Read object as a bioseq, wrap it into a seq_entry, then process
+		    //  the wrapped bioseq as a seq_entry:
+		    //
+            if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+                NCBI_THROW( 
+                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry( se );
+	    }
+	    else if ( asn_type == "bioseq-set" ) {
+		    //
+		    //  Read object as a bioseq_set, wrap it into a seq_entry, then 
+		    //  process the wrapped bioseq_set as a seq_entry:
+		    //
             if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                NCBI_THROW( 
+                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry( se );
+	    }
+        else if ( asn_type == "any" ) {
+            //
+            //  Try the first three in turn:
+            //
+            string strNextTypeName = is->PeekNextTypeName();
+            
+            if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
                 is->Close();
                 is.reset( x_OpenIStream( args ) );
-                if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, 
-                        "Unable to construct Seq-entry object" 
-                    );
+                if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                    is->Close();
+                    is.reset( x_OpenIStream( args ) );
+                    if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+                        NCBI_THROW( 
+                            CFlatException, eInternal, 
+                            "Unable to construct Seq-entry object" 
+                        );
+                    }
                 }
             }
+            HandleSeqEntry(se);
+            m_Os->flush();
+            is.reset();
         }
-        HandleSeqEntry(se);
     }
-
-    m_Os->flush();
-
-    is.reset();
-    return 0;
+    catch( CFlatException& fe ) {
+        cerr << fe.GetMsg() << endl;
+        iRetValue = fe.GetErrCode();
+    }
+    return iRetValue;
 }
 
 //  ============================================================================
