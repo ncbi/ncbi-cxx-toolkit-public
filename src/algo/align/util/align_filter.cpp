@@ -38,6 +38,8 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
@@ -51,6 +53,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
+//////////////////////////////////////////////////////////////////////////////
 
 class CMD5StreamWriter : public IWriter
 {
@@ -92,9 +96,197 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CScore_AlignLength : public CAlignFilter::IScore
+{
+public:
+    CScore_AlignLength(bool include_gaps)
+        : m_Gaps(include_gaps)
+    {
+    }
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        return align.GetAlignLength(m_Gaps);
+    }
+
+private:
+    bool m_Gaps;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_3PrimeUnaligned : public CAlignFilter::IScore
+{
+public:
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score_value = 0;
+        if (align.GetSegs().IsSpliced()) {
+            score_value = align.GetSegs().GetSpliced().GetProduct_length();
+            if (align.GetSegs().GetSpliced().IsSetPoly_a()) {
+                score_value = align.GetSegs().GetSpliced().GetPoly_a();
+            }
+        } else {
+            if (scope) {
+                CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+                if (bsh) {
+                    score_value = bsh.GetBioseqLength();
+                }
+            }
+        }
+        if (score_value) {
+            score_value -= align.GetSeqStop(0) + 1;
+        }
+        return score_value;
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_AlignStartStop : public CAlignFilter::IScore
+{
+public:
+    CScore_AlignStartStop(int row, bool start)
+        : m_Row(row)
+        , m_Start(start)
+    {
+    }
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        if (m_Start) {
+            return align.GetSeqStart(m_Row);
+        } else {
+            return align.GetSeqStop(m_Row);
+        }
+    }
+
+private:
+    int m_Row;
+    bool m_Start;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_SequenceLength : public CAlignFilter::IScore
+{
+public:
+    CScore_SequenceLength(int row)
+        : m_Row(row)
+    {
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score = numeric_limits<double>::quiet_NaN();
+        if (m_Row == 0  &&  align.GetSegs().IsSpliced()) {
+            score = align.GetSegs().GetSpliced().GetProduct_length();
+        } else {
+            if (scope) {
+                CBioseq_Handle bsh =
+                    scope->GetBioseqHandle(align.GetSeq_id(m_Row));
+                if (bsh) {
+                    score = bsh.GetBioseqLength();
+                }
+            }
+        }
+        return score;
+    }
+
+private:
+    int m_Row;
+    bool m_Start;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_MinExonLength : public CAlignFilter::IScore
+{
+public:
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        double score = numeric_limits<double>::quiet_NaN();
+        if (align.GetSegs().IsSpliced()) {
+            int min_exon_len = 0;
+            ITERATE (CSpliced_seg::TExons, iter,
+                     align.GetSegs().GetSpliced().GetExons()) {
+                const CSpliced_exon& exon = **iter;
+                int this_len =
+                    exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+
+                if ( !min_exon_len ) {
+                    min_exon_len = this_len;
+                } else {
+                    min_exon_len = min(min_exon_len, this_len);
+                }
+            }
+
+            score = min_exon_len;
+        }
+        return score;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 CAlignFilter::CAlignFilter()
     : m_RemoveDuplicates(false)
 {
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("align_length",
+          CIRef<IScore>(new CScore_AlignLength(true /* include gaps */))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("align_length_ungap",
+          CIRef<IScore>(new CScore_AlignLength(false /* include gaps */))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("3prime_unaligned",
+          CIRef<IScore>(new CScore_3PrimeUnaligned)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("min_exon_len",
+          CIRef<IScore>(new CScore_MinExonLength)));
+
+    {{
+         CIRef<IScore> score(new CScore_AlignStartStop(0, true));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("query_start", score));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("5prime_unaligned", score));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("query_end",
+               CIRef<IScore>(new CScore_AlignStartStop(0, false))));
+     }}
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_start",
+          CIRef<IScore>(new CScore_AlignStartStop(1, true))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_end",
+          CIRef<IScore>(new CScore_AlignStartStop(1, false))));
+
+    {{
+         CIRef<IScore> score(new CScore_SequenceLength(0));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("query_length", score));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("product_length", score));
+         m_Scores.insert
+             (TScoreDictionary::value_type
+              ("subject_length",
+               CIRef<IScore>(new CScore_SequenceLength(1))));
+
+     }}
 }
 
 
@@ -279,20 +471,17 @@ bool CAlignFilter::x_IsUnique(const CSeq_align& align)
     return m_UniqueAligns.insert(md5_str).second;
 }
 
-double CAlignFilter::x_GetAlignmentScore(const string& score_name, const objects::CSeq_align& align)
+double CAlignFilter::x_GetAlignmentScore(const string& score_name,
+                                         const objects::CSeq_align& align)
 {
     ///
     /// see if we have this score
     ///
     double score_value = numeric_limits<double>::quiet_NaN();
-    if (NStr::EqualNocase(score_name, "align_length")) {
-        score_value = align.GetAlignLength(true /* include gaps */);
-    } else if (NStr::EqualNocase(score_name, "align_length_ungap")) {
-        score_value = align.GetAlignLength(false /* exclude gaps */);
-    } else if (NStr::EqualNocase(score_name, "product_length")) {
-        if (align.GetSegs().IsSpliced()) {
-            score_value = align.GetSegs().GetSpliced().GetProduct_length();
-        }
+
+    TScoreDictionary::const_iterator it = m_Scores.find(score_name);
+    if (it != m_Scores.end()) {
+        return it->second->Get(align, m_Scope);
     } else if (align.IsSetScore()) {
         ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
             const CScore& score = **iter;

@@ -51,6 +51,15 @@ END_SCOPE(objects)
 class CAlignFilter : public CObject
 {
 public:
+    class IScore : public CObject
+    {
+    public:
+        virtual ~IScore() {}
+        virtual double Get(const objects::CSeq_align& align,
+                           objects::CScope* scope) const = 0;
+    };
+
+public:
     CAlignFilter();
     CAlignFilter(const string& filter_string);
 
@@ -144,6 +153,9 @@ private:
 
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
+
+    typedef map<string, CIRef<IScore> > TScoreDictionary;
+    TScoreDictionary m_Scores;
 };
 
 
