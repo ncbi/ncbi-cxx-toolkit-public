@@ -81,7 +81,7 @@ public:
     ///     sum of all aligned segments and all gaps; this excludes introns and
     ///     discontinuities
     ///
-    /// 'pct_identity'
+    /// percent identity
     ///     percent identity, computed as *UNGAPPED* percent identity.  That
     ///     is, the computation is strictly (matches) / (matches + mismatches)
     ///     NOTE: there are, historically, at least four separate methods of
@@ -95,10 +95,10 @@ public:
     ///                 (matches) / (matches + mismatches + gap count)
     ///         4.  Spidey: compute identity per coverage:
     ///                 (matches) / (stop - start + 1)
-    ///
-    /// 'gapped_pct_identity'
-    ///     percent identity, computed as gapped percent identity (as per
-    ///     BLAST, noted above)
+    ///     Several of these are provided directly, as:
+    ///         pct_identity_gap
+    ///         pct_identity_ungap
+    ///         pct_identity_gapopen_only
     ///
     ///  alignable bases
     ///     More a concept than a score.  The alignable region of a sequence,
@@ -126,6 +126,9 @@ public:
         //< generic 'score'
         eScore_Score,
 
+        //< blast 'score'
+        eScore_Blast,
+
         //< blast-style 'bit_score'
         eScore_BitScore,
 
@@ -148,8 +151,11 @@ public:
         eScore_MismatchCount,
 
         //< percent identity (0.0-100.0) (pct_identity)
-        //< NOTE: this is calculated as *UNGAPPED* identity
-        eScore_PercentIdentity,
+        //< NOTE: there are multiple ways to express this; the default is to
+        //< consider a gap as a mismatch, as noted above.
+        eScore_PercentIdentity_Gapped,
+        eScore_PercentIdentity_Ungapped,
+        eScore_PercentIdentity_GapOpeningOnly,
 
         //< percent coverage (0.0-100.0) (pct_coverage)
         eScore_PercentCoverage,
@@ -158,7 +164,12 @@ public:
         eScore_SumEValue,
 
         //< Composition-adjustment method from BLAST (comp_adjustment_method)
-        eScore_CompAdjMethod
+        eScore_CompAdjMethod,
+
+
+        //< generic percent identity is an alias for gapped percent identity
+        //< (i.e., BLAST-style percent identity)
+        eScore_PercentIdentity = eScore_PercentIdentity_Gapped
     };
 
     /// constructor

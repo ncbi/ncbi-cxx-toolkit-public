@@ -34,6 +34,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/blast_types.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 struct BlastScoreBlk; // C structure
 
@@ -46,7 +47,6 @@ END_SCOPE(blast)
 BEGIN_SCOPE(objects)
 
 class CScope;
-class CSeq_align;
 
 class NCBI_XALGOALIGN_EXPORT CScoreBuilder
 {
@@ -73,8 +73,9 @@ public:
         //< count of ungapped identities as 'num_mismatch'
         eScore_MismatchCount,
 
-        //< percent identity as 'pct_identity', range 0.0-100.0
+        //< percent identity as defined in CSeq_align, range 0.0-100.0
         //< this will also create 'num_ident' and 'num_mismatch'
+        //< NOTE: see Seq_align.hpp for definitions
         eScore_PercentIdentity,
 
         //< percent coverage of query as 'pct_coverage', range 0.0-100.0
@@ -84,18 +85,34 @@ public:
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
 
+    /// deprecated: use CSeq_align::EScoreType directly
+    NCBI_DEPRECATED
     void AddScore(CScope& scope, CSeq_align& align,
                   EScoreType score);
+
+    /// deprecated: use CSeq_align::EScoreType directly
+    NCBI_DEPRECATED
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   EScoreType score);
+
+    void AddScore(CScope& scope, CSeq_align& align,
+                  CSeq_align::EScoreType score);
+    void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
+                  CSeq_align::EScoreType score);
 
     /// @}
 
     /// @name Functions to compute scores without adding
     /// @{
 
-    /// Compute ungapped percent identity (range 0-100)
-    double GetPercentIdentity(CScope& scope, const CSeq_align& align);
+    /// Compute percent identity (range 0-100)
+    enum EPercentIdentityType {
+        eGapped,    //< count gaps as mismatches
+        eUngapped,  //< ignore gaps; only count aligned bases
+        eGBDNA      //< each gap counts as a 1nt mismatch
+    };
+    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
+                              EPercentIdentityType type = eGapped);
 
     /// Compute percent coverage of the query (sequence 0) (range 0-100)
     double GetPercentCoverage(CScope& scope, const CSeq_align& align);

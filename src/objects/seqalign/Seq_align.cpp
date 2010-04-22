@@ -348,6 +348,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
 typedef pair<CSeq_align::EScoreType, string> TScoreNamePair;
 static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_Score,           "score"),
+    TScoreNamePair(CSeq_align::eScore_Blast,           "score"),
     TScoreNamePair(CSeq_align::eScore_BitScore,        "bit_score"),
     TScoreNamePair(CSeq_align::eScore_EValue,          "e_value"),
     TScoreNamePair(CSeq_align::eScore_AlignLength,     "align_length"),
@@ -355,7 +356,9 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_PositiveCount,   "num_positives"),
     TScoreNamePair(CSeq_align::eScore_NegativeCount,   "num_negatives"),
     TScoreNamePair(CSeq_align::eScore_MismatchCount,   "num_mismatch"),
-    TScoreNamePair(CSeq_align::eScore_PercentIdentity, "pct_identity"),
+    TScoreNamePair(CSeq_align::eScore_PercentIdentity_Gapped, "pct_identity_gap"),
+    TScoreNamePair(CSeq_align::eScore_PercentIdentity_Ungapped, "pct_identity_ungap"),
+    TScoreNamePair(CSeq_align::eScore_PercentIdentity_GapOpeningOnly, "pct_identity_gapopen_only"),
     TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),
     TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
     TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method")

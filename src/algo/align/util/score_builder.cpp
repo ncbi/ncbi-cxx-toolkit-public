@@ -462,15 +462,36 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
 static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
                                  int* identities,
                                  int* mismatches,
-                                 double* pct_identity)
+                                 double* pct_identity,
+                                 CScoreBuilder::EPercentIdentityType type)
 {
-    size_t count_aligned = align.GetAlignLength(false /* ungapped */);
+    size_t count_aligned = 0;
+    switch (type) {
+    case CScoreBuilder::eGapped:
+        count_aligned = align.GetAlignLength(true /* include gaps */);
+        break;
+
+    case CScoreBuilder::eUngapped:
+        count_aligned = align.GetAlignLength(false /* omit gaps */);
+        break;
+
+    case CScoreBuilder::eGBDNA:
+        count_aligned  = align.GetAlignLength(false /* omit gaps */);
+        count_aligned += align.GetNumGapOpenings();
+        break;
+    }
+
     s_GetCountIdentityMismatch(scope, align, identities, mismatches);
     if (count_aligned) {
         *pct_identity = 100.0f * double(*identities) / count_aligned;
     } else {
         *pct_identity = 0;
     }
+
+    LOG_POST(Error << "aligned=" << count_aligned
+             << "  identities=" << *identities
+             << "  mismatches=" << *mismatches
+             << "  pident=" << *pct_identity);
 }
 
 
@@ -531,12 +552,14 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
 
 
 double CScoreBuilder::GetPercentIdentity(CScope& scope,
-                                         const CSeq_align& align)
+                                         const CSeq_align& align,
+                                         EPercentIdentityType type)
 {
     int identities = 0;
     int mismatches = 0;
     double pct_identity = 0;
-    s_GetPercentIdentity(scope, align, &identities, &mismatches, &pct_identity);
+    s_GetPercentIdentity(scope, align,
+                         &identities, &mismatches, &pct_identity, type);
     return pct_identity;
 }
 
@@ -762,71 +785,200 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
 
 /////////////////////////////////////////////////////////////////////////////
 
+
+void CScoreBuilder::AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
+                             CSeq_align::EScoreType score)
+{
+    NON_CONST_ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
+        try {
+            AddScore(scope, **iter, score);
+        }
+        catch (CException& e) {
+            LOG_POST(Error
+                << "CScoreBuilder::AddScore(): error computing score: "
+                << e);
+        }
+    }
+}
+
 void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
-                             EScoreType score)
+                             CSeq_align::EScoreType score)
 {
     switch (score) {
-    case eScore_Blast:
+    case CSeq_align::eScore_Score:
         {{
-            align.SetNamedScore(CSeq_align::eScore_Score,
-                                GetBlastScore(scope, align));
-        }}
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "generic 'score' computation is undefined");
+         }}
         break;
 
-    case eScore_Blast_BitScore:
-        {{
-            align.SetNamedScore(CSeq_align::eScore_BitScore,
-                                GetBlastBitScore(scope, align));
-        }}
+    case CSeq_align::eScore_Blast:
+        align.SetNamedScore(CSeq_align::eScore_Score,
+                            GetBlastScore(scope, align));
         break;
 
-    case eScore_Blast_EValue:
+    case CSeq_align::eScore_BitScore:
         {{
-            align.SetNamedScore(CSeq_align::eScore_EValue,
-                                GetBlastEValue(scope, align));
-        }}
+             double d = GetBlastBitScore(scope, align);
+             if (d == numeric_limits<double>::infinity()  ||
+                 d == numeric_limits<double>::quiet_NaN()) {
+                 d = 0;
+             }
+             if (d > 1e35  ||  d < -1e35) {
+                 d = 0;
+             }
+             align.SetNamedScore(CSeq_align::eScore_BitScore, d);
+         }}
         break;
 
-    case eScore_MismatchCount:
+    case CSeq_align::eScore_EValue:
         {{
-            int identities = 0;
-            int mismatches = 0;
-            s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
-            align.SetNamedScore(CSeq_align::eScore_MismatchCount, mismatches);
-        }}
+             double d = GetBlastEValue(scope, align);
+             if (d == numeric_limits<double>::infinity()  ||
+                 d == numeric_limits<double>::quiet_NaN()) {
+                 d = 0;
+             }
+             if (d > 1e35  ||  d < -1e35) {
+                 d = 0;
+             }
+             align.SetNamedScore(CSeq_align::eScore_EValue, d);
+         }}
         break;
 
-    case eScore_IdentityCount:
-        {{
-            int identities = 0;
-            int mismatches = 0;
-            s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
-            align.SetNamedScore(CSeq_align::eScore_IdentityCount, identities);
-        }}
+    case CSeq_align::eScore_IdentityCount:
+        align.SetNamedScore(CSeq_align::eScore_IdentityCount,
+                            GetIdentityCount(scope, align));
         break;
 
-    case eScore_PercentIdentity:
+    case CSeq_align::eScore_PositiveCount:
+        {{
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "positive count algorithm not implemented");
+         }}
+        break;
+
+    case CSeq_align::eScore_NegativeCount:
+        {{
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "negative count algorithm not implemented");
+         }}
+        break;
+
+    case CSeq_align::eScore_MismatchCount:
+        align.SetNamedScore(CSeq_align::eScore_MismatchCount,
+                            GetMismatchCount(scope, align));
+        break;
+
+    case CSeq_align::eScore_AlignLength:
+        align.SetNamedScore(CSeq_align::eScore_AlignLength,
+                            (int)align.GetAlignLength(true /* include gaps */));
+        break;
+
+    case CSeq_align::eScore_PercentIdentity_Gapped:
         {{
             int identities      = 0;
             int mismatches      = 0;
             double pct_identity = 0;
             s_GetPercentIdentity(scope, align,
-                                 &identities, &mismatches, &pct_identity);
-            align.SetNamedScore(CSeq_align::eScore_PercentIdentity, pct_identity);
+                                 &identities, &mismatches, &pct_identity,
+                                 eGapped);
+            align.SetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped, pct_identity);
             align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
             align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
         }}
         break;
-    case eScore_PercentCoverage:
+
+    case CSeq_align::eScore_PercentIdentity_Ungapped:
+        {{
+            int identities      = 0;
+            int mismatches      = 0;
+            double pct_identity = 0;
+            s_GetPercentIdentity(scope, align,
+                                 &identities, &mismatches, &pct_identity,
+                                 eUngapped);
+            align.SetNamedScore(CSeq_align::eScore_PercentIdentity_Ungapped, pct_identity);
+            align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
+            align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
+        }}
+        break;
+
+    case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
+        {{
+            int identities      = 0;
+            int mismatches      = 0;
+            double pct_identity = 0;
+            s_GetPercentIdentity(scope, align,
+                                 &identities, &mismatches, &pct_identity,
+                                 eGBDNA);
+            align.SetNamedScore(CSeq_align::eScore_PercentIdentity_Ungapped, pct_identity);
+            align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
+            align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
+        }}
+        break;
+
+    case CSeq_align::eScore_PercentCoverage:
         {{
             double pct_coverage = 0;
             s_GetPercentCoverage(scope, align, &pct_coverage);
             align.SetNamedScore("pct_coverage", pct_coverage);
         }}
         break;
+
+    case CSeq_align::eScore_SumEValue:
+        {{
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "sum_e not implemented");
+         }}
+        break;
+
+    case CSeq_align::eScore_CompAdjMethod:
+        {{
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "comp_adj_method not implemented");
+         }}
+        break;
     }
 }
 
+
+
+void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
+                             EScoreType score)
+{
+    switch (score) {
+    case eScore_Blast:
+        AddScore(scope, align, CSeq_align::eScore_Blast);
+        break;
+
+    case eScore_Blast_BitScore:
+        AddScore(scope, align, CSeq_align::eScore_BitScore);
+        break;
+
+    case eScore_Blast_EValue:
+        AddScore(scope, align, CSeq_align::eScore_EValue);
+        break;
+
+    case eScore_MismatchCount:
+        AddScore(scope, align, CSeq_align::eScore_MismatchCount);
+        break;
+
+    case eScore_IdentityCount:
+        AddScore(scope, align, CSeq_align::eScore_IdentityCount);
+        break;
+
+    case eScore_PercentIdentity:
+        AddScore(scope, align, CSeq_align::eScore_PercentIdentity);
+        break;
+    case eScore_PercentCoverage:
+        AddScore(scope, align, CSeq_align::eScore_PercentCoverage);
+        break;
+    }
+}
 
 void CScoreBuilder::AddScore(CScope& scope,
                              list< CRef<CSeq_align> >& aligns, EScoreType score)
@@ -838,7 +990,7 @@ void CScoreBuilder::AddScore(CScope& scope,
         catch (CException& e) {
             LOG_POST(Error
                 << "CScoreBuilder::AddScore(): error computing score: "
-                << e.GetMsg());
+                << e);
         }
     }
 }

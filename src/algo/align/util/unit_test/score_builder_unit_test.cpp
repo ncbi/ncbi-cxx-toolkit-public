@@ -145,9 +145,17 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         alignment.GetNamedScore(CSeq_align::eScore_Score,
                                 kExpectedScore);
 
-        double kExpectedPctIdentity = 0;
-        alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity,
-                                kExpectedPctIdentity);
+        double kExpectedPctIdentity_Gapped = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped,
+                                kExpectedPctIdentity_Gapped);
+
+        double kExpectedPctIdentity_Ungapped = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_Ungapped,
+                                kExpectedPctIdentity_Ungapped);
+
+        double kExpectedPctIdentity_GapOpeningOnly = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity_GapOpeningOnly,
+                                kExpectedPctIdentity_GapOpeningOnly);
 
         double kExpectedPctCoverage = 0;
         alignment.GetNamedScore(CSeq_align::eScore_PercentCoverage,
@@ -212,23 +220,73 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              BOOST_CHECK_EQUAL(kExpectedGaps, actual);
          }}
 
-        /// check percent identity
+        /// check percent identity (gapped)
         {{
              double actual =
-                 score_builder.GetPercentIdentity(*scope, alignment);
-             LOG_POST(Error << "Verifying score: pct_identity: "
-                      << kExpectedPctIdentity << " == " << actual);
+                 score_builder.GetPercentIdentity(*scope, alignment,
+                                                  CScoreBuilder::eGapped);
+             LOG_POST(Error << "Verifying score: pct_identity_gap: "
+                      << kExpectedPctIdentity_Gapped << " == " << actual);
 
-             /// machine precision is a problme here
+             /// machine precision is a problem here
              /// we verify to 12 digits of precision
-             Uint8 int_pct_identity_expected = kExpectedPctIdentity * 1e12;
+             Uint8 int_pct_identity_gapped =
+                 kExpectedPctIdentity_Gapped * 1e12;
              Uint8 int_pct_identity_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_pct_identity_expected,
+             BOOST_CHECK_EQUAL(int_pct_identity_gapped,
                                int_pct_identity_actual);
 
              /**
              CScore score;
-             score.SetId().SetStr("pct_identity");
+             score.SetId().SetStr("pct_identity_gap");
+             score.SetValue().SetReal(actual);
+             cerr << MSerial_AsnText << score;
+             **/
+         }}
+
+        /// check percent identity (ungapped)
+        {{
+             double actual =
+                 score_builder.GetPercentIdentity(*scope, alignment,
+                                                  CScoreBuilder::eUngapped);
+             LOG_POST(Error << "Verifying score: pct_identity_ungap: "
+                      << kExpectedPctIdentity_Ungapped << " == " << actual);
+
+             /// machine precision is a problem here
+             /// we verify to 12 digits of precision
+             Uint8 int_pct_identity_ungapped =
+                 kExpectedPctIdentity_Ungapped * 1e12;
+             Uint8 int_pct_identity_actual = actual * 1e12;
+             BOOST_CHECK_EQUAL(int_pct_identity_ungapped,
+                               int_pct_identity_actual);
+
+             /**
+             CScore score;
+             score.SetId().SetStr("pct_identity_ungap");
+             score.SetValue().SetReal(actual);
+             cerr << MSerial_AsnText << score;
+             **/
+         }}
+
+        /// check percent identity (GapOpeningOnly-style)
+        {{
+             double actual =
+                 score_builder.GetPercentIdentity(*scope, alignment,
+                                                  CScoreBuilder::eGBDNA);
+             LOG_POST(Error << "Verifying score: pct_identity_gapopen_only: "
+                      << kExpectedPctIdentity_GapOpeningOnly << " == " << actual);
+
+             /// machine precision is a problem here
+             /// we verify to 12 digits of precision
+             Uint8 int_pct_identity_gbdna =
+                 kExpectedPctIdentity_GapOpeningOnly * 1e12;
+             Uint8 int_pct_identity_actual = actual * 1e12;
+             BOOST_CHECK_EQUAL(int_pct_identity_gbdna,
+                               int_pct_identity_actual);
+
+             /**
+             CScore score;
+             score.SetId().SetStr("pct_identity_gbdna");
              score.SetValue().SetReal(actual);
              cerr << MSerial_AsnText << score;
              **/

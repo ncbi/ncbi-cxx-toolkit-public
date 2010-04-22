@@ -27,8 +27,16 @@ Seq-align ::= {
       value int 74180
     },
     {
-      id str "pct_identity",
+      id str "pct_identity_gap",
+      value real { 995147572453142, 10, -13 }
+    },
+    {
+      id str "pct_identity_ungap",
       value real { 999303900832642, 10, -13 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 998876013594883, 10, -13 }
     },
     {
       id str "pct_coverage",
@@ -240,7 +248,15 @@ Seq-align ::= {
       value int 0
     },
     {
-      id str "pct_identity",
+      id str "pct_identity_gap",
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
       value real { 1, 10, 2 }
     },
     {
@@ -948,8 +964,16 @@ Seq-align ::= {
       value int 0
     },
     {
-      id str "pct_identity",
+      id str "pct_identity_gap",
+      value real {  998330550918197, 10, -13 }
+    },
+    {
+      id str "pct_identity_ungap",
       value real { 1, 10, 2 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 999814229983281, 10, -13 }
     },
     {
       id str "pct_coverage",
@@ -2088,7 +2112,15 @@ Seq-align ::= {
       value int 1
     },
     {
-      id str "pct_identity",
+      id str "pct_identity_gap",
+      value real { 996434937611408, 10, -13 }
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 996434937611408, 10, -13 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
       value real { 996434937611408, 10, -13 }
     },
     {
@@ -2179,8 +2211,16 @@ Seq-align ::= {
       value int 9
     },
     {
-      id str "pct_identity",
+      id str "pct_identity_gap",
+      value real { 980470993681792, 10, -13 }
+    },
+    {
+      id str "pct_identity_ungap",
       value real { 983068417415342, 10, -13 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 982050396962375, 10, -13 }
     },
     {
       id str "pct_coverage",
