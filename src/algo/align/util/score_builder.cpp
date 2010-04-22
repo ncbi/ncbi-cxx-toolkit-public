@@ -487,11 +487,6 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
     } else {
         *pct_identity = 0;
     }
-
-    LOG_POST(Error << "aligned=" << count_aligned
-             << "  identities=" << *identities
-             << "  mismatches=" << *mismatches
-             << "  pident=" << *pct_identity);
 }
 
 
