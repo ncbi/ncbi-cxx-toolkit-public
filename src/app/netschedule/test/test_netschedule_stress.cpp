@@ -109,13 +109,13 @@ void CTestNetScheduleStress::Init(void)
 
 struct SPeriodicTag
 {
-    int   period;
-    int   run;
-    char *name;
+    int         period;
+    int         run;
+    const char* name;
 };
 
 
-SPeriodicTag tags[] = {
+SPeriodicTag s_Tags[] = {
     { 35, 3, "scaffold" },
     { 51, 4, "transcript" },
     { -1 }
@@ -132,11 +132,12 @@ void TestBatchSubmit(const string& service,
     TJobs jobs;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        CNetScheduleJob job("HELLO BSUBMIT", "affinity", CNetScheduleAPI::eExclusiveJob);
-        for (int j = 0; tags[j].period > 0; j++) {
-            int period = tags[j].period;
-            int run    = tags[j].run;
-            job.tags.push_back(CNetScheduleAPI::TJobTag(tags[j].name,
+        CNetScheduleJob job("HELLO BSUBMIT", "affinity",
+                            CNetScheduleAPI::eExclusiveJob);
+        for (int j = 0; s_Tags[j].period > 0; j++) {
+            int period = s_Tags[j].period;
+            int run    = s_Tags[j].run;
+            job.tags.push_back(CNetScheduleAPI::TJobTag(s_Tags[j].name,
                             NStr::UIntToString((i / run) % period)));
         }
         jobs.push_back(job);
