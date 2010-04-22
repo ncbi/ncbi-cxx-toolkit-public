@@ -1672,7 +1672,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
                         "Can not construct spliced-seg "
                         "with different genomic strands in the same exon");
             }
-            // Remember genomic strand.
+        }
+        // Remember genomic strand.
+        if ( gstrand_set ) {
             gen_reverse = IsReverse(gen_strand);
         }
         // Check product strand if it's not a gap.
@@ -1686,7 +1688,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
                         "Can not construct spliced-seg "
                         "with different product strands in the same exon");
             }
-            // Remember product strand.
+        }
+        // Remember product strand.
+        if ( pstrand_set ) {
             prod_reverse = IsReverse(prod_strand);
         }
 
@@ -1768,7 +1772,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 }
             }
             // Save the last part's product coordinates.
-            if (prod_start < 0/*  ||  prod_start > pstart*/) {
+            // The collected prod_start may be less than the current pstart
+            // if product and genomic strands are reverse (product parts
+            // go from right to left).
+            if (prod_start < 0  ||  prod_start > pstart) {
                 prod_start = pstart;
             }
             if (prod_end < pend) {
