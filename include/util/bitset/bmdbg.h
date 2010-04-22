@@ -42,6 +42,12 @@ For more information please visit:  http://bmagic.sourceforge.net
 
 using namespace std;
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4311 4312 4127)
+#endif
+
+
 inline
 void PrintGap(const bm::gap_word_t* gap_buf)
 {
@@ -58,8 +64,10 @@ void PrintGap(const bm::gap_word_t* gap_buf)
 inline
 void PrintDGap(const bm::gap_word_t* gap_buf, unsigned gap_len=0)
 {
+    bm::gap_word_t h;
+    memcpy(&h, gap_buf, sizeof(h));
 
-    unsigned len = gap_len ? gap_len : (*gap_buf >> 3);
+    unsigned len = gap_len ? gap_len : (h >> 3);
     cout << "[" " len=" << len << "] ";
     unsigned i = gap_len ? 0 : 1;
     for (; i < len; ++i)
@@ -106,7 +114,9 @@ inline
 void PrintDGapGamma(const bm::gap_word_t* gap_buf, unsigned gap_len=0)
 {
     unsigned total = 0;
-    unsigned len = gap_len ? gap_len : (*gap_buf >> 3);
+    bm::gap_word_t h;
+    memcpy(&h, gap_buf, sizeof(h));
+    unsigned len = gap_len ? gap_len : (h >> 3);
     cout << "[" " len=" << len << "] ";
     unsigned i = gap_len ? 0 : 1;
     for (; i < len; ++i)
@@ -449,5 +459,10 @@ void print_stat(const BV& bv, unsigned blocks = 0)
 }
 
 #include "bmundef.h"
+
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
 
 #endif

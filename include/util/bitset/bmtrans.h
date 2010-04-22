@@ -26,6 +26,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information please visit:  http://bmagic.sourceforge.net
 
 */
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4311 4312 4127)
+#endif
 
 namespace bm
 {
@@ -442,7 +446,7 @@ void bit_iblock_make_pcv(
         
         // scan for the closest neighbor
         //
-        unsigned rmin = ~0;
+        unsigned rmin = ~0u;
         unsigned rmin_idx = 0;
         for (unsigned j = i + 1; j < BPC; ++j)
         {
@@ -451,7 +455,7 @@ void bit_iblock_make_pcv(
             {
                 if (d == 0) // plain is complete duplicate of j
                 {
-                    pc = ibpc_equiv | (j << 3);
+                    pc = (unsigned char)(ibpc_equiv | (j << 3));
                     break;
                 }
                 rmin = d; rmin_idx = j;
@@ -460,7 +464,7 @@ void bit_iblock_make_pcv(
         
         if ((pc == 0) && rmin_idx && (rmin < row_bitcount)) // neighbor found
         {
-            pc = ibpc_close | (rmin_idx << 3);
+            pc = (unsigned char)(ibpc_close | (rmin_idx << 3));
         }
         pc_vector[i] = pc;
     } // for i
@@ -620,7 +624,7 @@ void tmatrix_restore(TMatrix& tmatrix,
              break;
         case bm::ibpc_all_one:
             for (unsigned i = 0; i < cols; ++i)
-                r1[i] = ~0;
+                r1[i] = (value_type)(~0);
             break;
         case bm::ibpc_equiv:
             {
@@ -652,19 +656,19 @@ void tmatrix_restore(TMatrix& tmatrix,
     \brief Copy GAP block body to bit block with DGap transformation 
     \internal
 */
-template<typename GT, typename BT>
+template<typename GT>//, typename BT>
 void gap_2_bitblock(const GT* BMRESTRICT gap_buf, 
-                          BT* BMRESTRICT block, 
+                          GT* BMRESTRICT block, 
                           unsigned       block_size)
 {
-    GT* dgap_buf = (GT*) block;
-    BT* block_end = block + block_size;
+    GT* dgap_buf = block;
+    GT* block_end = block + block_size;
 
     GT* dgap_end = gap_2_dgap<GT>(gap_buf, dgap_buf, false);
-    GT* block_end2 = (GT*) block_end;
+//    GT* block_end2 = (GT*) block_end;
     
     // zero the tail memory
-    for ( ;dgap_end < block_end2; ++dgap_end)
+    for ( ;dgap_end < block_end; ++dgap_end)
     {
         *dgap_end = 0;
     }
@@ -784,20 +788,18 @@ public:
     
     /// Transpose GAP block through a temp. block of aligned(!) memory
     /// 
-    void transpose(const GT* BMRESTRICT gap_buf, 
-                         BT* BMRESTRICT tmp_block)
+    void transpose(const GT* BMRESTRICT gap_buf)
     {
         const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
 
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
-                
         // load all GAP as D-GAP(but not head word) into aligned bit-block
-        gap_2_bitblock(gap_buf, tmp_block, BLOCK_SIZE);
+        gap_2_bitblock(gap_buf, tmp_gap_block_, BLOCK_SIZE * 2);
         
         // transpose
         vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
-                           ((GT*)tmp_block, arr_size, tmatrix_.value);
+                           (tmp_gap_block_, arr_size, tmatrix_.value);
 
         // calculate number of non-zero columns
         eff_cols_ = find_effective_columns(tmatrix_);        
@@ -806,20 +808,19 @@ public:
 	/// Transpose array of shorts
 	///
 	void transpose(const GT* BMRESTRICT garr,
-		           unsigned garr_size,
-				   BT* BMRESTRICT tmp_block)
+		           unsigned garr_size)
 	{
 		BM_ASSERT(garr_size);
 
-		bit_block_set(tmp_block, 0);
-		::memcpy(tmp_block, garr, sizeof(GT)*garr_size);
+		bit_block_set(tmp_gap_block_, 0);
+		::memcpy(tmp_gap_block_, garr, sizeof(GT)*garr_size);
 
         const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
         // transpose
         vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
-                           ((GT*)tmp_block, arr_size, tmatrix_.value);
+                           (tmp_gap_block_, arr_size, tmatrix_.value);
 
         // calculate number of non-zero columns
         eff_cols_ = find_effective_columns(tmatrix_);        
@@ -857,20 +858,18 @@ public:
     /// Restore GAP block from the transposed matrix
     ///
     void trestore(GT             gap_head, 
-                  GT* BMRESTRICT gap_buf, 
-                  BT* BMRESTRICT tmp_block)
+                  GT* BMRESTRICT gap_buf)
     {
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
   
         // restore into a temp buffer
-        GT* gap_tmp = (GT*)tmp_block;
-        //*gap_tmp++ = gap_head;
+        GT* gap_tmp = tmp_gap_block_;
        
         vect_bit_trestore<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>(tmatrix_.value, gap_tmp);
         
         // D-Gap to GAP block recalculation
-        gap_tmp = (GT*)tmp_block;
+        gap_tmp = tmp_gap_block_;
         dgap_2_gap<GT>(gap_tmp, gap_buf, gap_head);
     }
     
@@ -882,9 +881,16 @@ public:
     unsigned char                 pc_vector_[tmatrix_type::n_rows];
     unsigned                      pc_vector_stat_[bm::ibpc_end];
     typename tmatrix_type::rstat  rstat_vector_[tmatrix_type::n_rows];
+
+    GT  BM_ALIGN16                tmp_gap_block_[BLOCK_SIZE*2] BM_ALIGN16ATTR;
 };
 
 
 } // namespace bm
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
+
 
 #endif

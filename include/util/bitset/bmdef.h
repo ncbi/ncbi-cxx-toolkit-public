@@ -67,16 +67,7 @@
 // aligned and bit 0 is never set. It means we are safe to use it.
 // BM library keeps GAP flag in pointer.
 
-// Note: this hack is not universally portable so if it does not work
-// in some particular case disable it by defining BM_DISBALE_BIT_IN_PTR
 
-#ifdef BM_DISBALE_BIT_IN_PTR
-
-# define BMGAP_PTR(ptr)    ((bm::gap_word_t*)ptr)
-# define BMSET_PTRGAP(ptr) (void(0))
-# define BM_IS_GAP(obj, ptr, idx) ( (obj).is_block_gap(idx) ) 
-
-#else
 
 # if ULONG_MAX != 0xffffffff || defined(_WIN64)  // 64-bit
 
@@ -94,9 +85,9 @@
 
 # define BMGAP_PTR(ptr) ((bm::gap_word_t*)BMPTR_CLEARBIT0(ptr))
 # define BMSET_PTRGAP(ptr) ptr = (bm::word_t*)BMPTR_SETBIT0(ptr)
-# define BM_IS_GAP(obj, ptr, idx) ( BMPTR_TESTBIT0(ptr)!=0 )
+# define BM_IS_GAP(ptr) ( BMPTR_TESTBIT0(ptr)!=0 )
 
-#endif
+
 
 
 

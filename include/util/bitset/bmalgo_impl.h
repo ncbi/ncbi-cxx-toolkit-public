@@ -1,7 +1,7 @@
 #ifndef BMALGO_IMPL__H__INCLUDED__
 #define BMALGO_IMPL__H__INCLUDED__
 /*
-Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2010 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -27,10 +27,12 @@ For more information please visit:  http://bmagic.sourceforge.net
 */
 
 #ifdef _MSC_VER
-#pragma warning( disable : 4311 4312)
+#pragma warning( push )
+#pragma warning( disable : 4311 4312 4127)
 #endif
 
 #include "bmdef.h"
+#include "bmutil.h"
 
 namespace bm
 {
@@ -112,59 +114,50 @@ struct distance_metric_descriptor
 */
 inline
 void combine_count_operation_with_block(const bm::word_t* blk,
-                                        unsigned gap,
                                         const bm::word_t* arg_blk,
-                                        int arg_gap,
-                                        bm::word_t* temp_blk,
                                         distance_metric_descriptor* dmit,
                                         distance_metric_descriptor* dmit_end)
                                             
 {
-     gap_word_t* res=0;
-     
      gap_word_t* g1 = BMGAP_PTR(blk);
      gap_word_t* g2 = BMGAP_PTR(arg_blk);
+
+     unsigned gap = BM_IS_GAP(blk);
+     unsigned arg_gap = BM_IS_GAP(arg_blk);
      
      if (gap) // first block GAP-type
      {
          if (arg_gap)  // both blocks GAP-type
          {
-             // TODO: optimize to avoid temp
-             gap_word_t tmp_buf[bm::gap_equiv_len * 3]; // temporary result
-             
              for (distance_metric_descriptor* it = dmit;it < dmit_end; ++it)
              {
                  distance_metric_descriptor& dmd = *it;
-                 unsigned dsize = 0;
                  
                  switch (dmd.metric)
                  {
                  case bm::COUNT_AND:
-                     res = gap_operation_and(g1, g2, tmp_buf, dsize);
+                     dmd.result += gap_count_and(g1, g2);
                      break;
                  case bm::COUNT_OR:
-                     res = gap_operation_or(g1, g2, tmp_buf, dsize);
+                     dmd.result += gap_count_or(g1, g2);
                      break;
                  case bm::COUNT_SUB_AB:
-                     res = gap_operation_sub(g1, g2, tmp_buf, dsize); 
+                     dmd.result += gap_count_sub(g1, g2);
                      break;
                  case bm::COUNT_SUB_BA:
-                     res = gap_operation_sub(g2, g1, tmp_buf, dsize); 
+                     dmd.result += gap_count_sub(g2, g1);
                      break;
                  case bm::COUNT_XOR:
-                     res = gap_operation_xor(g1, g2, tmp_buf, dsize); 
+                     dmd.result += gap_count_xor(g1, g2);
                     break;
                  case bm::COUNT_A:
-                    res = g1;
+                    dmd.result += gap_bit_count(g1);
                     break;
                  case bm::COUNT_B:
-                    res = g2;
+                    dmd.result += gap_bit_count(g2);
                     break;
                  } // switch
-                 
-                 if (res)
-                     dmd.result += gap_bit_count(res, dsize);
-                    
+                                     
              } // for it
              
              return;
@@ -189,20 +182,20 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                         dmd.result += gap_bitset_or_count(arg_blk, g1); 
                      break;
                  case bm::COUNT_SUB_AB:
-                     gap_convert_to_bitset((bm::word_t*) temp_blk, g1);
+                     {
+                     bm::word_t  BM_ALIGN16 temp_bit_blk[bm::set_block_size] BM_ALIGN16ATTR;
+
+                     gap_convert_to_bitset((bm::word_t*) temp_bit_blk, g1);
                      dmd.result += 
-                       bit_operation_sub_count((bm::word_t*)temp_blk, 
-                          ((bm::word_t*)temp_blk) + bm::set_block_size,
+                       bit_operation_sub_count((bm::word_t*)temp_bit_blk, 
+                          ((bm::word_t*)temp_bit_blk) + bm::set_block_size,
                            arg_blk);
-                 
+                     }
                      break;
                  case bm::COUNT_SUB_BA:
                      dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
                      combine_count_operation_with_block(arg_blk,
-                                                        arg_gap,
                                                         blk,
-                                                        gap,
-                                                        temp_blk,
                                                         it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -259,10 +252,9 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                  case bm::COUNT_SUB_BA:
                      dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
                      combine_count_operation_with_block(arg_blk,
-                                                        arg_gap,
+                                                        //arg_gap,
                                                         blk,
-                                                        gap,
-                                                        temp_blk,
+                                                        //gap,
                                                         it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -296,12 +288,6 @@ void combine_count_operation_with_block(const bm::word_t* blk,
      //
      // Here we combine two plain bitblocks 
 
-     const bm::word_t* blk_end;
-     //const bm::word_t* arg_end;
-
-     blk_end = blk + (bm::set_block_size);
-     //arg_end = arg_blk + (bm::set_block_size);
-
 
      for (distance_metric_descriptor* it = dmit; it < dmit_end; ++it)
      {
@@ -310,7 +296,7 @@ void combine_count_operation_with_block(const bm::word_t* blk,
             operation_functions<true>::bit_operation_count(dmd.metric);
         if (gfunc)
         {
-            dmd.result += (*gfunc)(blk, blk_end, arg_blk);
+            dmd.result += (*gfunc)(blk, blk + bm::set_block_size, arg_blk);
         }
         else
         {
@@ -318,7 +304,7 @@ void combine_count_operation_with_block(const bm::word_t* blk,
             {
             case bm::COUNT_A:
                 if (blk)
-                    dmd.result += bit_block_calc_count(blk, blk_end);
+                    dmd.result += bit_block_calc_count(blk, blk + bm::set_block_size);
                 break;
             case bm::COUNT_B:
                 if (arg_blk)
@@ -335,6 +321,43 @@ void combine_count_operation_with_block(const bm::word_t* blk,
 }
 
 /*!
+\brief Internal function computes AND distance.
+\internal 
+\ingroup  distance
+*/
+inline
+unsigned combine_count_and_operation_with_block(const bm::word_t* blk,
+                                                const bm::word_t* arg_blk)
+{
+    unsigned gap = BM_IS_GAP(blk);
+    unsigned arg_gap = BM_IS_GAP(arg_blk);
+    if (gap) // first block GAP-type
+    {
+        if (arg_gap)  // both blocks GAP-type
+        {
+            return gap_count_and(BMGAP_PTR(blk), BMGAP_PTR(arg_blk));
+        }
+        else // first block - GAP, argument - BITSET
+        {
+            return gap_bitset_and_count(arg_blk, BMGAP_PTR(blk));
+        }
+    } 
+    else // first block is BITSET-type
+    {     
+        if (arg_gap) // second argument block is GAP-type
+        {
+            return gap_bitset_and_count(blk, BMGAP_PTR(arg_blk));
+        }
+    }
+
+    // --------------------------------------------
+    // Here we combine two plain bitblocks 
+
+    return bit_operation_and_count(blk, blk + (bm::set_block_size), arg_blk);
+}
+
+
+/*!
     \brief Internal function computes different existense of distance metric.
     \internal 
     \ingroup  distance
@@ -344,7 +367,6 @@ void combine_any_operation_with_block(const bm::word_t* blk,
                                       unsigned gap,
                                       const bm::word_t* arg_blk,
                                       int arg_gap,
-                                      bm::word_t* temp_blk,
                                       distance_metric_descriptor* dmit,
                                       distance_metric_descriptor* dmit_end)
                                             
@@ -424,12 +446,14 @@ void combine_any_operation_with_block(const bm::word_t* blk,
                         dmd.result += gap_bitset_or_any(arg_blk, g1); 
                      break;
                  case bm::COUNT_SUB_AB:
+                     {
+                     bm::word_t  BM_ALIGN16 temp_blk[bm::set_block_size] BM_ALIGN16ATTR;
                      gap_convert_to_bitset((bm::word_t*) temp_blk, g1);
                      dmd.result += 
                        bit_operation_sub_any((bm::word_t*)temp_blk, 
                           ((bm::word_t*)temp_blk) + bm::set_block_size,
                            arg_blk);
-                 
+                     }
                      break;
                  case bm::COUNT_SUB_BA:
                      dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
@@ -437,7 +461,6 @@ void combine_any_operation_with_block(const bm::word_t* blk,
                                                       arg_gap,
                                                       blk,
                                                       gap,
-                                                      temp_blk,
                                                       it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -501,7 +524,6 @@ void combine_any_operation_with_block(const bm::word_t* blk,
                                                       arg_gap,
                                                       blk,
                                                       gap,
-                                                      temp_blk,
                                                       it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -595,16 +617,13 @@ void combine_any_operation_with_block(const bm::word_t* blk,
 */
 inline
 unsigned combine_count_operation_with_block(const bm::word_t* blk,
-                                            unsigned gap,
                                             const bm::word_t* arg_blk,
-                                            int arg_gap,
-                                            bm::word_t* temp_blk,
                                             distance_metric metric)
 {
     distance_metric_descriptor dmd(metric);
-    combine_count_operation_with_block(blk, gap, 
-                                       arg_blk, arg_gap, 
-                                       temp_blk,
+    combine_count_operation_with_block(blk, //gap, 
+                                       arg_blk, //arg_gap, 
+                                       //temp_blk,
                                        &dmd, &dmd+1);
     return dmd.result;
 }
@@ -620,13 +639,11 @@ unsigned combine_any_operation_with_block(const bm::word_t* blk,
                                           unsigned gap,
                                           const bm::word_t* arg_blk,
                                           int arg_gap,
-                                          bm::word_t* temp_blk,
                                           distance_metric metric)
 {
     distance_metric_descriptor dmd(metric);
     combine_any_operation_with_block(blk, gap, 
                                      arg_blk, arg_gap, 
-                                     temp_blk,
                                      &dmd, &dmd+1);
     return dmd.result;
 }
@@ -638,30 +655,18 @@ unsigned combine_any_operation_with_block(const bm::word_t* blk,
 
     \internal
 */
-template<class BV>
-bm::word_t* distance_stage(const BV&                         bv1,
-                           const distance_metric_descriptor* dmit,
-                           const distance_metric_descriptor* dmit_end,
-                           bool*                             is_all_and)
+inline
+void distance_stage(const distance_metric_descriptor* dmit,
+                    const distance_metric_descriptor* dmit_end,
+                    bool*                             is_all_and)
 {
-    bm::word_t* temp_blk = 0;
     for (const distance_metric_descriptor* it = dmit; it < dmit_end; ++it)
     {
-        // allocate temp block when necessary
-        if (temp_blk == 0)
-        {
-            if (it->metric == bm::COUNT_SUB_AB || 
-                it->metric == bm::COUNT_SUB_BA)
-            {
-                temp_blk = bv1.allocate_tempblock();
-            }
-        }
         if (it->metric != bm::COUNT_AND)
         {
             *is_all_and = false;
         } 
     } // for
-    return temp_blk;
 }
 
 /*!
@@ -694,7 +699,7 @@ void distance_operation(const BV& bv1,
     const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
 
     bool is_all_and = true; // flag is distance operation is just COUNT_AND
-    bm::word_t* temp_blk = distance_stage(bv1, dmit, dmit_end, &is_all_and);
+    distance_stage(dmit, dmit_end, &is_all_and);
 
     bm::word_t*** blk_root = bman1.get_rootblock();
     unsigned block_idx = 0;
@@ -702,8 +707,6 @@ void distance_operation(const BV& bv1,
     
     const bm::word_t* blk;
     const bm::word_t* arg_blk;
-    bool  blk_gap;
-    bool  arg_gap;
 
     BM_SET_MMX_GUARD
 
@@ -732,18 +735,13 @@ void distance_operation(const BV& bv1,
             }
 
             blk = 0;
-            blk_gap = false;
-
             for (j = 0; j < bm::set_array_size; ++j,++block_idx)
             {                
                 arg_blk = bman2.get_block(i, j);
-                arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
-
                 if (!arg_blk) 
                     continue;
-                combine_count_operation_with_block(blk, blk_gap,
-                                                   arg_blk, arg_gap,
-                                                   temp_blk,
+                combine_count_operation_with_block(blk, 
+                                                   arg_blk, 
                                                    dmit, dmit_end);
             } // for j
             continue;
@@ -760,25 +758,73 @@ void distance_operation(const BV& bv1,
             if (blk == 0 && arg_blk == 0)
                 continue;
                 
-            arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
-            blk_gap = BM_IS_GAP(bman1, blk, block_idx);
-            
-            combine_count_operation_with_block(blk, blk_gap,
-                                               arg_blk, arg_gap,
-                                               temp_blk,
+            combine_count_operation_with_block(blk, 
+                                               arg_blk, 
                                                dmit, dmit_end);
             
 
         } // for j
 
     } // for i
-    
-    if (temp_blk)
-    {
-        bv1.free_tempblock(temp_blk);
-    }
-
 }
+
+
+/*!
+\brief Distance AND computing template function.
+
+
+\param bv1      - argument bitvector 1 (A)
+\param bv2      - argument bitvector 2 (B)
+\ingroup  distance
+
+*/
+
+template<class BV>
+unsigned distance_and_operation(const BV& bv1, 
+                                const BV& bv2)
+{
+    const typename BV::blocks_manager_type& bman1 = bv1.get_blocks_manager();
+    const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
+
+    bm::word_t*** blk_root = bman1.get_rootblock();
+    bm::word_t*** blk_root_arg = bman2.get_rootblock();
+
+    unsigned count = 0;
+
+    BM_SET_MMX_GUARD
+
+    unsigned effective_top_block_size = 
+        bm::min_value(bman1.effective_top_block_size(), 
+                      bman2.effective_top_block_size());
+
+    for (unsigned i = 0; i < effective_top_block_size; ++i)
+    {
+        bm::word_t** blk_blk;
+        bm::word_t** blk_blk_arg;
+        if ((blk_blk = blk_root[i]) == 0 || (blk_blk_arg= blk_root_arg[i]) == 0)
+        {
+            continue;
+        }
+        for (unsigned j = 0; j < bm::set_array_size; j+=4)
+        {
+            (blk_blk[j] && blk_blk_arg[j]) ? 
+                count += combine_count_and_operation_with_block(blk_blk[j],blk_blk_arg[j])
+                :0;
+            (blk_blk[j+1] && blk_blk_arg[j+1]) ? 
+                count += combine_count_and_operation_with_block(blk_blk[j+1],blk_blk_arg[j+1])
+                :0;
+            (blk_blk[j+2] && blk_blk_arg[j+2]) ? 
+                count += combine_count_and_operation_with_block(blk_blk[j+2],blk_blk_arg[j+2])
+                :0;
+            (blk_blk[j+3] && blk_blk_arg[j+3]) ? 
+                count += combine_count_and_operation_with_block(blk_blk[j+3],blk_blk_arg[j+3])
+                :0;
+        } // for j
+
+    } // for i
+    return count;
+}
+
 
 
 
@@ -813,7 +859,8 @@ void distance_operation_any(const BV& bv1,
     const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
     
     bool is_all_and = true; // flag is distance operation is just COUNT_AND
-    bm::word_t* temp_blk = distance_stage(bv1, dmit, dmit_end, &is_all_and);
+    //bm::word_t* temp_blk = 
+    distance_stage(dmit, dmit_end, &is_all_and);
   
     bm::word_t*** blk_root = bman1.get_rootblock();
     unsigned block_idx = 0;
@@ -857,13 +904,12 @@ void distance_operation_any(const BV& bv1,
             for (j = 0; j < bm::set_array_size; ++j,++block_idx)
             {                
                 arg_blk = bman2.get_block(i, j);
-                arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
+                arg_gap = BM_IS_GAP(arg_blk);
 
                 if (!arg_blk) 
                     continue;
                 combine_any_operation_with_block(blk, blk_gap,
                                                  arg_blk, arg_gap,
-                                                 temp_blk,
                                                  dmit, dmit_end);
 
                 // check if all distance requests alredy resolved
@@ -879,7 +925,7 @@ void distance_operation_any(const BV& bv1,
                     ++it;
                 } while (it < dmit_end);
                 if (all_resolved)
-                    goto return_proc;
+                    return;
             } // for j
 
             continue;
@@ -896,12 +942,11 @@ void distance_operation_any(const BV& bv1,
             if (blk == 0 && arg_blk == 0)
                 continue;
                 
-            arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
-            blk_gap = BM_IS_GAP(bman1, blk, block_idx);
+            arg_gap = BM_IS_GAP(arg_blk);
+            blk_gap = BM_IS_GAP(blk);
             
             combine_any_operation_with_block(blk, blk_gap,
                                              arg_blk, arg_gap,
-                                             temp_blk,
                                              dmit, dmit_end);
             
             // check if all distance requests alredy resolved
@@ -917,17 +962,11 @@ void distance_operation_any(const BV& bv1,
                 ++it;
             } while (it < dmit_end);
             if (all_resolved)
-                goto return_proc;
+                return;
 
         } // for j
 
     } // for i
-return_proc:    
-    if (temp_blk)
-    {
-        bv1.free_tempblock(temp_blk);
-    }
-
 }
 
 
@@ -942,10 +981,7 @@ return_proc:
 template<class BV>
 bm::id_t count_and(const BV& bv1, const BV& bv2)
 {
-    distance_metric_descriptor dmd(bm::COUNT_AND);
-    
-    distance_operation(bv1, bv2, &dmd, &dmd+1);
-    return dmd.result;
+    return distance_and_operation(bv1, bv2);
 }
 
 /*!
@@ -1408,7 +1444,7 @@ bm::id_t count_intervals(const BV& bv)
 
     bm::word_t*** blk_root = bman.get_rootblock();
     typename BV::blocks_manager_type::block_count_change_func func(bman);
-    for_each_block(blk_root, bman.top_block_size(), bm::set_array_size, func);
+    for_each_block(blk_root, bman.top_block_size(), func);
 
     return func.count();        
 }
@@ -1593,7 +1629,7 @@ void export_array(BV& bv, It first, It last)
 } // namespace bm
 
 #ifdef _MSC_VER
-#pragma warning( default : 4311 4312)
+#pragma warning( pop )
 #endif
 
 #endif

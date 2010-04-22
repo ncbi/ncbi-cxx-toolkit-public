@@ -156,10 +156,12 @@ void random_subset<BV>::sample(BV&       bv_out,
         get_subset(tmp_bv, bv_in, bcnt, delta_count);
         bv_out = bv_in;
         bv_out -= tmp_bv;
+        bv_out.forget_count();
         return;
     }
 
     get_subset(bv_out, bv_in, bcnt, count);
+    bv_out.forget_count();
 }
 
 template<class BV>
@@ -199,7 +201,7 @@ void random_subset<BV>::get_subset(BV&       bv_out,
             }
             else
             if (block_bits_take_[i] > block_counts_[i])
-                block_bits_take_[i] = block_counts_[i];
+                block_bits_take_[i] = (gap_word_t)block_counts_[i];
 
             BM_ASSERT(bman_in.get_block(i));
         }
@@ -234,7 +236,7 @@ void random_subset<BV>::get_subset(BV&       bv_out,
         if (take_count == block_counts_[i])
         {
             // copy the whole src block
-            if (BM_IS_GAP(bman_in, blk_src, i))
+            if (BM_IS_GAP(blk_src))
             {
                 gap_convert_to_bitset(blk_out, BMGAP_PTR(blk_src));
             }
@@ -251,7 +253,7 @@ void random_subset<BV>::get_subset(BV&       bv_out,
         {
             unsigned arr_len;
             // convert source block to bit-block
-            if (BM_IS_GAP(bman_in, blk_src, i))
+            if (BM_IS_GAP(blk_src))
             {
                 arr_len = gap_convert_to_arr(bit_list_,
                                              BMGAP_PTR(blk_src),
@@ -271,7 +273,7 @@ void random_subset<BV>::get_subset(BV&       bv_out,
         else // dense block
         {
             // convert source block to bit-block
-            if (BM_IS_GAP(bman_in, blk_src, i))
+            if (BM_IS_GAP(blk_src))
             {
                 gap_convert_to_bitset(tmp_block, BMGAP_PTR(blk_src));
                 blk_src = tmp_block;

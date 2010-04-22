@@ -26,6 +26,11 @@ For more information please visit:  http://bmagic.sourceforge.net
 
 */
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4100)
+#endif
+
 namespace bm
 {
 
@@ -360,7 +365,7 @@ public:
             idx2 = bvect.get_next(idx2);
         }
 
-        BM_ASSERT(idx1==0 || idx2==0);
+        //BM_ASSERT(idx1==0 || idx2==0);
 
         if (idx1 != idx2)
         {
@@ -496,5 +501,9 @@ private:
 
 
 } // namespace bm
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
 
 #endif

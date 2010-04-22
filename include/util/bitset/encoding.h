@@ -273,7 +273,7 @@ public:
         // Put the value bits
         //
         {
-            unsigned mask = (~0);
+            unsigned mask = (~0u);
             mask >>= acc_bits - logv;
             value &= mask;
         }
@@ -351,7 +351,7 @@ public:
             used ^= used;
         }
         unsigned zero_bits = 0;
-        while (1)
+        while (true)
         {
             if (acc == 0)
             {
@@ -486,7 +486,7 @@ public:
     */
     T operator()(void)
     {
-        return bin_.gamma();
+        return (T)bin_.gamma();
     }
 private:
     gamma_decoder(const gamma_decoder&);
