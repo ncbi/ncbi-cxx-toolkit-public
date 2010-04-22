@@ -1049,7 +1049,7 @@ public:
     ///
     /// Use effective user ID (or process owner) to check the entry
     /// for accessibility accordingly to specified mask.
-    /// NOTE: 
+    /// @note
     ///   - If an entry is a symbolic link, that the access rights
     ///     will be checked for entry to which the link points.
     ///   - Execute bit means 'search' for directories.
@@ -1059,6 +1059,18 @@ public:
     ///   - On some platforms, if the file is currently open for execution,
     ///     the function reports that it is not writable, regardless
     ///     of the setting of its mode.
+    /// @note
+    ///   This method may not work correctly
+    ///     On MS-Windows:
+    ///       - for network shares and mapped network drives.
+    ///     On Unix:
+    ///       - for entries on NFS file systems.
+    /// @note
+    ///   Using CheckAccess() to check if a user is authorized to e.g. open
+    ///   a file before actually doing so creates a security hole, because
+    ///   the user might exploit the short time interval between checking
+    ///   and opening the file to manipulate it. Always is better to try to
+    ///   open a file with necessary permissions and check result.
     /// @access_mode
     ///   Checked access mode (any combination of fRead/fWrite/fExecute).
     /// @return
