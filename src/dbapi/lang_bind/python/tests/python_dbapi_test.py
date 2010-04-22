@@ -145,7 +145,10 @@ cursor.fetchall()
 checkEqual(cursor.get_proc_return_status(), 0)
 
 # check output parameters
-cursor.execute("drop procedure testing")
+try:
+    cursor.execute("drop procedure testing")
+except:
+    pass
 cursor.execute("create procedure testing (@p1 int, @p2 int output) as begin\nset @p1 = 123\nset @p2 = 123\nend")
 out = cursor.callproc('testing', [None, None])
 if isinstance(out[1], str):
