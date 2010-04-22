@@ -6055,6 +6055,20 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    NCBI_FEATURE(check)
 fi
 CHECK_TOOLS=$with_check_tools
+CHECK_OS_NAME=
+case "$host_os" in
+   linux* )
+      if test -x /usr/bin/lsb_release; then
+         CHECK_OS_NAME=`lsb_release -is | tr A-Z a-z`
+      elif test -r /etc/SuSE-release; then
+         CHECK_OS_NAME=suse
+      elif test -r /etc/redhat-release; then
+         CHECK_OS_NAME=`cut -d' ' -f1 /etc/redhat-release | tr A-Z a-z`
+      elif test -d /usr/share/doc/ubuntu-keyring; then
+         CHECK_OS_NAME=ubuntu
+      fi
+      ;;
+esac
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
@@ -6218,6 +6232,7 @@ AC_SUBST(internal)
 AC_SUBST(check)
 AC_SUBST(CHECK_ARG)
 AC_SUBST(CHECK_TOOLS)
+AC_SUBST(CHECK_OS_NAME)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
