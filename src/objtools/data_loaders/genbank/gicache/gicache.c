@@ -51,12 +51,18 @@
 #  endif
 #endif
 
-#define kPageSize 8
-#define kPageMask 0xff
+#define MAX_ACCESSION_LENGTH 64
 
-#define kLocalOffsetMask 0xffff
-#define kFullOffsetMask 0x7fffffff
-#define kTopBit 0x80000000
+#define kPageSize            8
+#define kPageMask            0xff
+
+#define kLocalOffsetMask     0x0000ffff
+#define kFullOffsetMask      0x7fffffff
+#define kTopBit              0x80000000
+
+#define INDEX_CACHE_SIZE     32768
+#define DATA_CACHE_SIZE      8192
+
 
 typedef struct {
     Uint4*  m_GiIndex;
@@ -89,8 +95,6 @@ typedef struct {
  *
  ****************************************************************************/
 
-#define INDEX_CACHE_SIZE 32768
-#define DATA_CACHE_SIZE 8192
 static void x_DumpIndexCache(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndexFile >= 0 && data_index->m_IndexCacheLen > 0) {
@@ -683,9 +687,11 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
     x_CloseFiles(data_index);
     free(data_index->m_IndexCache);
     free(data_index->m_DataCache);
-    if (data_index->m_FreeOnDrop)
-        free(data_index);
-    return NULL;
+    if (data_index->m_FreeOnDrop) {
+      free(data_index);
+      data_index=NULL;
+    }
+    return data_index;
 }
 
 /* Returns data corresponding to a given gi for reading only. */
@@ -954,7 +960,8 @@ static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
                 break;
             }
         }
-
+        if(page<0)
+          return -1;
         if (data_index->m_GiIndex[page] != 0) {
             remainder = page - base;
             gi |= (remainder<<(index*kPageSize+shift));
@@ -991,52 +998,6 @@ static int GiDataIndex_GetMappedSize(SGiDataIndex* data_index)
     return data_index->m_MappedDataLen + data_index->m_MappedIndexLen;
 }
 
-
-/****************************************************************************
- *
- * gicache_lib.c 
- *
- ****************************************************************************/
-
-#define MAX_ACCESSION_LENGTH 64
-
-static SGiDataIndex gi_cache;
-
-static void x_GICacheInit(const char* prefix, Uint1 readonly)
-{
-    char prefix_str[256];
-
-    // First try local files
-    sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
-
-    /* When reading data, use readonly mode. */
-    GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
-
-    if (readonly) {
-        /* Check whether gi cache is available at this location, by trying to
-           map it right away. If local cache isn't found, use default path and
-           try again. */
-        Uint1 cache_found = GiDataIndex_ReMap(&gi_cache, 0);
-        if (!cache_found) {
-            sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
-                    DEFAULT_GI_CACHE_PREFIX);
-            GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
-        }
-    }
-}
-
-void GICache_ReadData(const char *prefix)
-{
-    x_GICacheInit(prefix, 1);
-}
-
-void GICache_ReMap(int delay_in_sec) {
-    /* If this library function is being called, delayed remapping is
-       established, i.e. any future remapping is only done from here, but not on
-       read attempts. */
-    gi_cache.m_RemapOnRead = 0;
-    GiDataIndex_ReMap(&gi_cache, delay_in_sec*1000);
-}
 
 /* When encoding in 4 bytes, top bit serves as control */
 static INLINE int s_EncodeInt4(char* buf, Uint4 val)
@@ -1453,10 +1414,59 @@ s_DecodeGiAccession(const char* inbuf, char* acc, int acc_len)
     return retval;
 }
 
+/****************************************************************************
+ *
+ * gicache_lib.c 
+ *
+ ****************************************************************************/
+
+static SGiDataIndex *gi_cache=NULL;
+
+static void x_GICacheInit(const char* prefix, Uint1 readonly)
+{
+    char prefix_str[256];
+
+    // First try local files
+    sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
+
+    /* When reading data, use readonly mode. */
+    if(gi_cache) return;
+    gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+
+    if (readonly) {
+        /* Check whether gi cache is available at this location, by trying to
+           map it right away. If local cache isn't found, use default path and
+           try again. */
+        Uint1 cache_found = GiDataIndex_ReMap(gi_cache, 0);
+        if (!cache_found) {
+            sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
+                    DEFAULT_GI_CACHE_PREFIX);
+            gi_cache = GiDataIndex_Free(gi_cache);
+            gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+        }
+    }
+}
+
+void GICache_ReadData(const char *prefix)
+{
+    x_GICacheInit(prefix, 1);
+}
+
+void GICache_ReMap(int delay_in_sec) {
+    /* If this library function is being called, delayed remapping is
+       established, i.e. any future remapping is only done from here, but not on
+       read attempts. */
+    if(gi_cache) {
+      gi_cache->m_RemapOnRead = 0;
+      GiDataIndex_ReMap(gi_cache, delay_in_sec*1000);
+    }
+}
+
 int GICache_GetAccession(int gi, char* acc, int acc_len)
 {
     int retval = 0;
-    const char* gi_data = GiDataIndex_GetData(&gi_cache, gi);
+    if(!gi_cache) return 0;
+    const char* gi_data = GiDataIndex_GetData(gi_cache, gi);
     if (gi_data) {
         retval = s_DecodeGiAccession(gi_data, acc, acc_len);
     } else {
@@ -1468,7 +1478,8 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
 int GICache_GetLength(int gi)
 {
     int length = 0;
-    const char *x = GiDataIndex_GetData(&gi_cache, gi);
+    if(!gi_cache) return 0;
+    const char *x = GiDataIndex_GetData(gi_cache, gi);
 
     if(!x) return 0;
 
@@ -1479,7 +1490,8 @@ int GICache_GetLength(int gi)
 
 int GICache_GetMaxGi()
 {
-    return GiDataIndex_GetMaxGi(&gi_cache);
+    if(!gi_cache) return 0;
+    return GiDataIndex_GetMaxGi(gi_cache);
 }
 
 int GICache_LoadStart(const char* cache_prefix)
@@ -1493,6 +1505,8 @@ int GICache_LoadAdd(int gi, int len, const char* acc, int version)
     int acc_len;
 
     static char buf[MAX_ACCESSION_LENGTH];
+    if(!gi_cache) return 0;
+    
     acc_len = s_EncodeGiData(acc, version, len, buf);
     /* Primary accession and length for a given gi never change, hence there
      * is never a need to overwrite gi data if it is already present in
@@ -1502,14 +1516,13 @@ int GICache_LoadAdd(int gi, int len, const char* acc, int version)
      * version. This does not change the encoded data size, so data can be
      * modified in place.
      */
-    GiDataIndex_PutData(&gi_cache, gi, buf, 1, acc_len);
-
-    return 0;
+    return GiDataIndex_PutData(gi_cache, gi, buf, 1, acc_len);
 }
 
 int GICache_LoadEnd()
 {
     /* NB: This will not free the structure, and in particular the prefix name 
        would still be available. */
-    GiDataIndex_Free(&gi_cache);
+    gi_cache = GiDataIndex_Free(gi_cache);
+    return 0;
 }
