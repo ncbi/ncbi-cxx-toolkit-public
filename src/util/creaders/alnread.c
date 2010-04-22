@@ -2447,6 +2447,22 @@ static EBool s_SkippableNexusComment (char *str)
 }
 
 
+static EBool s_IsOnlyNumbersAndSpaces (char *str)
+{
+    if (str == NULL) {
+        return eFalse;
+    }
+
+    while (*str != 0) {
+        if (!isspace (*str) && !isdigit(*str)) {
+            return eFalse;
+        }
+        ++str;
+    }
+    return eTrue;
+}
+
+
 /* This function determines whether the contents of str are "skippable"
  * in that they do not contain sequence data and therefore should not be
  * considered part of any block patterns or sequence data.
@@ -2459,6 +2475,7 @@ static EBool s_SkippableString (char * str)
         ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
         ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
+        ||  s_IsOnlyNumbersAndSpaces (str)
         ||  s_IsConsensusLine (str)
         ||  str [0] == ';') {
         return eTrue;
