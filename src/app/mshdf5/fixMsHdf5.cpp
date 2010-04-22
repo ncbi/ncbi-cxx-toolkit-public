@@ -47,6 +47,9 @@ class CFixMsHdf5Application : public CNcbiApplication
 {
     virtual void Init(void);
     virtual int  Run(void);
+private:
+    void checkInfo(CRef<CMsHdf5> msHdf5, const string& group);
+    bool checkMap(CRef<CMsHdf5> msHdf5, const string& group);
 };
 
 void CFixMsHdf5Application::Init(void)
@@ -69,14 +72,80 @@ void CFixMsHdf5Application::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+void CFixMsHdf5Application::checkInfo(CRef<CMsHdf5> msHdf5, const string& group) 
+{
+    cerr << "  checking /" << group << "/ms1info...";
+    try{
+        DataSet dataset = msHdf5->raw()->openDataSet("/" + group + "/ms1info");
+        DataType datatype = dataset.getDataType();
+        DataSpace dataspace = dataset.getSpace();
+            
+        hsize_t size[2];        // dataset dimensions
+        dataspace.getSimpleExtentDims( size );
+    
+        char *buf = new char[size[0]*size[1]];
+        dataset.read((void*)buf, datatype);
+
+        int modified = 0;
+
+        for (Uint4 i=0; i<size[0]; i++) {
+            Uint4 p = i*size[1];
+            string line(&buf[p]);
+            size_t loc = NStr::Find(line, ">\n/>");
+            if (loc != NPOS) {
+                line = NStr::Replace(line, ">\n/>", "/>", loc);
+                strcpy(&buf[p], line.c_str());
+                modified++;
+            }
+        }
+        if (modified > 0) {
+            dataset.write(buf, datatype);
+            cerr << "corrected " << modified << " lines" << endl;
+        } else {
+            cerr << "no correction needed" << endl;
+        }
+            
+        delete [] buf;
+    } catch (FileIException error) {
+        cerr << "does not exist." << endl;
+        return;
+    }
+}
+
+bool CFixMsHdf5Application::checkMap(CRef<CMsHdf5> msHdf5, const string& group) 
+{
+    bool hasMS1 = false;
+    bool hasParentScan = false;
+    
+    CMsHdf5::TSpecMap specMap;
+    msHdf5->getSpectraMap(group, specMap);
+    
+
+    ITERATE(CMsHdf5::TSpecMap, iMapEntry, specMap) {
+        if ((*iMapEntry).second.msLevel == 1) {
+            hasMS1 = true;
+        }
+        if ((*iMapEntry).second.parentScan > 0) {
+            hasParentScan = true;
+        }
+        if (hasMS1 && hasParentScan) {
+            break;
+        }
+    }
+
+    return (hasMS1 != hasParentScan);
+}
+
+
 int CFixMsHdf5Application::Run(void)
 {
     // Get arguments
     CArgs args = GetArgs();
 
+    set<string> badMaps;
     for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
         string filename = args[extra].AsString();
-
+                
         cerr << "Fixing " << filename << ":" << endl;
 
         CRef<CMsHdf5> msHdf5(new CMsHdf5(filename, H5F_ACC_RDWR));
@@ -86,40 +155,20 @@ int CFixMsHdf5Application::Run(void)
 
         ITERATE(set<string>, iGroup, groups) {
             string group = *iGroup;
-            cerr << "  working on " << group << "/ms1info...";
-        
-            DataSet dataset = msHdf5->raw()->openDataSet("/" + group + "/ms1info");
-            DataType datatype = dataset.getDataType();
-            DataSpace dataspace = dataset.getSpace();
-            
-            hsize_t size[2];        // dataset dimensions
-            dataspace.getSimpleExtentDims( size );
-    
-            char *buf = new char[size[0]*size[1]];
-            dataset.read((void*)buf, datatype);
-
-            int modified = 0;
-            for (Uint4 i=0; i<size[0]; i++) {
-                Uint4 p = i*size[1];
-                string line(&buf[p]);
-                size_t loc = NStr::Find(line, ">\n/>");
-                if (loc != NPOS) {
-                    line = NStr::Replace(line, ">\n/>", "/>", loc);
-                    strcpy(&buf[p], line.c_str());
-                    modified++;
-                }
+            checkInfo(msHdf5, group);
+            if (checkMap(msHdf5, group)) {
+                badMaps.insert(filename + "/" + group + "/map");
             }
-            if (modified > 0) {
-                dataset.write(buf, datatype);
-                cerr << "corrected " << modified << " lines" << endl;
-            } else {
-                cerr << "no correction needed" << endl;
-            }
-            
-            delete [] buf;
         }
     }
 
+    if (badMaps.size() > 0) {
+        cerr << endl << endl << "List of incorrect maps:" << endl << endl;
+        ITERATE(set<string>, iBadMap, badMaps) {
+            cerr << "  " << *iBadMap << endl;
+        }
+    }
+    
     // Exit successfully
     return 0;
 }

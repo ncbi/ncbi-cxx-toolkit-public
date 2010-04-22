@@ -91,6 +91,7 @@ class CMsHdf5 : public CObject {
 
     // input string format: "spectraSetName:scan\tindex"
     void getSpectrum(string src, TSpectrum& spectrum, objects::SPC::CScan& scan, string msLevel="2");
+    void getSpectrum(string src, TSpectrum& spectrum, string& scan, string msLevel="2");
     
     void getSpectraMap(const string &spectraSetName, TSpecMap &specMap);
     void getPrecursorMzs(const string &spectraSetName, TSpecMap &specMap, TSpecPrecursorMap &specPreMap);

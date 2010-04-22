@@ -2,7 +2,7 @@
 # Meta-makefile for project "mshdf5":
 #################################
 
-APP_PROJ = mzXML2hdf5 pkl2hdf5 mshdf2mzXML fixMsHdf5 test_mshdf5
+APP_PROJ = mzXML2hdf5 pkl2hdf5 mshdf2mzXML fixMsHdf5 test_mshdf5 hdf5_speed
 
 REQUIRES = HDF5
 

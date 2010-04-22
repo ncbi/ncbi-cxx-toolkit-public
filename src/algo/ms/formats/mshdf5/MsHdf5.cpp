@@ -41,13 +41,14 @@
 
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
 
-#define AVG_HYD 1.00794
-#define MONO_HYD 1.007825035
-#define MAX_MSLEVEL 3
-#define MSLEVEL_BOUND MAX_MSLEVEL + 1
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(H5);
+
+const double kAvgHydMass = 1.00794;
+const double kMonoHydMass = 1.007825035;
+const Uint4 kMaxMsLevel = 3;
+const Uint4 kMsLevelBoundry = kMaxMsLevel + 1;
+
 
 void CMsHdf5::init(string filename, unsigned int flags) 
 {
@@ -57,8 +58,8 @@ void CMsHdf5::init(string filename, unsigned int flags)
     m_curGroup = NULL;
     m_groups.clear();
     m_pathStack.clear();
-    m_msLevels.resize(MSLEVEL_BOUND);
-    m_msLevelsInfo.resize(MSLEVEL_BOUND);
+    m_msLevels.resize(kMsLevelBoundry);
+    m_msLevelsInfo.resize(kMsLevelBoundry);
 }
 
 CMsHdf5::~CMsHdf5(void)
@@ -76,7 +77,7 @@ void CMsHdf5::newSpectraSet(string name)
     m_pathStack.clear();
     m_path = getCurrentPath();
     m_specMap.clear();
-    for (Uint4 i=0; i<MSLEVEL_BOUND; i++) {
+    for (Uint4 i=0; i<kMsLevelBoundry; i++) {
         m_msLevels[i].clear();
         m_msLevelsInfo[i].clear();
     }
@@ -395,6 +396,14 @@ void CMsHdf5::printSpectra()
 
 void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, objects::SPC::CScan& scan, string msLevel)
 {
+    string scanStr;
+    getSpectrum(src, spectrum, scanStr, msLevel);
+    CNcbiIstrstream bufStream(scanStr.c_str());
+    bufStream >> MSerial_Xml >> scan;
+}
+
+void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, string& scan, string msLevel)
+{
     string spec, idxS;
     NStr::SplitInTwo(src, "\t", spec, idxS);
     int idx = NStr::StringToInt(idxS);
@@ -422,9 +431,18 @@ void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, objects::SPC::CScan& 
     dsInfo.read((void*)bufInfo, dtInfo, mspaceInfo, dspaceInfo);
 
     string valInfo(bufInfo, sizeInfo[1]);
+    scan = valInfo;
 
-    CNcbiIstrstream bufStream(valInfo.c_str());
-    bufStream >> MSerial_Xml >> scan;
+    // use reg expression to decode
+    // sample: peaksCount="628"
+    CRegexp RxpParse(".*peaksCount=\"(\\d+)\".*", CRegexp::fCompile_ignore_case | CRegexp::fCompile_dotall);
+    string value = RxpParse.GetMatch(valInfo, 0, 1);
+    Uint4 numPeaks = NStr::StringToInt(value);; 
+
+    //objects::SPC::CScan scanObj;    
+    //CNcbiIstrstream bufStream(valInfo.c_str());
+    //bufStream >> MSerial_Xml >> scanObj;
+
     delete [] bufInfo;
 
     // Retrieve the spectrum peaks
@@ -436,7 +454,7 @@ void CMsHdf5::getSpectrum(string src, TSpectrum& spectrum, objects::SPC::CScan& 
     dspacePeaks.getSimpleExtentDims(sizePeaks);
     
     //cout << sizePeaks[0] << "X" << sizePeaks[1] << "X" << sizePeaks[2] << endl;
-    Uint4 numPeaks = scan.GetAttlist().GetPeaksCount();
+    //Uint4 numPeaks = scanObj.GetAttlist().GetPeaksCount();
     if (numPeaks > sizePeaks[1]) {
         // should throw exception here
         cerr << "Trying to get more peaks than I should" << endl;
@@ -672,12 +690,12 @@ H5::DataSet CMsHdf5::openDataSet(string spectraSetName, string dataSetName)
 
 double CMsHdf5::mzToAvgMass(double mz, int charge) 
 {
-    return ((mz * charge) - (charge * AVG_HYD));
+    return ((mz * charge) - (charge * kAvgHydMass));
 }
 
 double CMsHdf5::mzToMonoMass(double mz, int charge) 
 {
-    return ((mz * charge) - (charge * MONO_HYD));
+    return ((mz * charge) - (charge * kMonoHydMass));
 }
 
 END_NCBI_SCOPE
