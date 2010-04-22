@@ -72,13 +72,18 @@ enum EMSIonSeries {
     eMSIonTypeX,
     eMSIonTypeY,
     eMSIonTypeZ,
+    eMSIonParent,
+    eMSIonInternal,
+    eMSIonImmonium,
     eMSIonTypeUnknown,
-    eMSIonTypeErr,
+    eMSIonTypeAdot,
+    eMSIonTypeXCO2,
+    eMSIonTypeACO2,
     eMSIonTypeMax
 };
 
 /** ion direction.  1 = N->C, -1 = C->N */
-const int kIonDirection[] = { 1, 1, 1, -1, -1, -1, 0, 0 ,0 };
+const int kIonDirection[] = { 1, 1, 1, -1, -1, -1, 1, 1, 1, 0, 1 , -1, 1 };
 
 
 /** pair of ion series, charge */
@@ -206,7 +211,7 @@ private:
 inline
 CMSBasicMatchedPeak::CMSBasicMatchedPeak(void):
     Charge(-1),
-    Series(eMSIonTypeUnknown),
+    Series(eMSIonType_unknown),
     Number(-1),
     Delta(0)
 {
@@ -215,7 +220,7 @@ CMSBasicMatchedPeak::CMSBasicMatchedPeak(void):
 inline
 CMSBasicMatchedPeak::CMSBasicMatchedPeak(const CMSBasicPeak& BasicPeak):
     Charge(-1),
-    Series(eMSIonTypeUnknown),
+    Series(eMSIonType_unknown),
     Number(-1),
     Delta(0)
 {

@@ -554,6 +554,11 @@ CSearch::ReSearch(const int Number) const
     return true;
 }
 
+int PositiveSign(int input) 
+{ 
+    return abs(input); 
+}
+
 // loads spectra into peaks
 //void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 void CSearch::Spectrum2Peak(CRef<CMSPeakSet> PeakSet)
@@ -568,6 +573,10 @@ void CSearch::Spectrum2Peak(CRef<CMSPeakSet> PeakSet)
             ERR_POST(Error << "omssa: unable to find spectrum");
             return;
         }
+        
+        // reset charges so that they are absolute values.  The charge sign is indicated
+        // by GetSettings()->GetChargehandling().GetNegative()
+        transform(Spectrum->SetCharge().begin(), Spectrum->SetCharge().end(), Spectrum->SetCharge().begin(), PositiveSign);
 
         // if iterative search and spectrum should not be re-search, skip
         if (GetIterative() && !ReSearch(Spectrum->GetNumber()))
@@ -589,8 +598,15 @@ void CSearch::Spectrum2Peak(CRef<CMSPeakSet> PeakSet)
         PeakSet->AddPeak(Peaks);
 
     }
+    int Numisotopes(0);
+    if(GetSettings()->CanGetNumisotopes()) 
+        Numisotopes = GetSettings()->GetNumisotopes();
+    bool Pepppm(false);
+    if(GetSettings()->CanGetPepppm())
+        Pepppm = GetSettings()->GetPepppm();
     MaxMZ = PeakSet->SortPeaks(MSSCALE2INT(GetSettings()->GetPeptol()),
-                              GetSettings()->GetZdep());
+                              GetSettings()->GetZdep(),
+                              Numisotopes, Pepppm, GetSettings()->GetChargehandling().GetNegative());
 
 }
 
@@ -1581,13 +1597,19 @@ void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
 
         // keep a list of redundant peptides
         map <string, CMSHits * > PepDone;
+        int HitNum(0);
         // add to hitset by score
         for (iScoreList = ScoreList.begin();
             iScoreList != ScoreList.end();
-            iScoreList++) {
+            ++iScoreList,++HitNum) {
 
             double Score = iScoreList->first;
-            if (Score > Evalcutoff) continue;
+            if (Score > Evalcutoff)
+                continue;
+            if(GetSettings()->CanGetReportedhitcount())
+                if(GetSettings()->GetReportedhitcount() != 0 && HitNum >= GetSettings()->GetReportedhitcount()) 
+                    continue;
+            
             CMSHits * Hit;
             CMSPepHit * Pephit;
 

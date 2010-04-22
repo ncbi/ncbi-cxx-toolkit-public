@@ -382,7 +382,8 @@ MSChargeHandle ::= SEQUENCE {
         considermult INTEGER DEFAULT 3,       -- at which precursor charge to consider +2 ions?
         plusone REAL,                         -- what % of peaks below precursor needed to call as +1
         maxproductcharge INTEGER OPTIONAL,    -- maximum product ion charge
-        prodlesspre BOOLEAN OPTIONAL          -- product charge always less thanor equal to precursor?
+        prodlesspre BOOLEAN OPTIONAL,         -- product charge always less thanor equal to precursor?
+        negative INTEGER DEFAULT 1            -- negative ion search if -1, positive ion if 1
         }
         
 
@@ -393,7 +394,8 @@ MSSearchType ::= INTEGER {
         average(1),
         monon15(2),
         exact(3),
-        max(4)
+        multiisotope(4),
+        max(5)
         }
         
 -- what is the charge dependence of the mass tolerance?
@@ -477,7 +479,11 @@ MSSearchSettings ::= SEQUENCE {
         libsearchsettings MSLibrarySettings OPTIONAL,  -- library search settings
         noprolineions SEQUENCE OF MSIonType OPTIONAL,  -- which ions to use no proline rule
         reversesearch BOOLEAN OPTIONAL,                -- do reverse search
-        othersettings SEQUENCE OF NameValue OPTIONAL   -- extra search settings
+        othersettings SEQUENCE OF NameValue OPTIONAL,  -- extra search settings
+        numisotopes INTEGER OPTIONAL,                  -- number of isotopic peaks to search when using MSSearchType multiisotope
+        pepppm BOOLEAN OPTIONAL,                       -- search precursor as ppm
+        msmsppm BOOLEAN OPTIONAL,                      -- search product as ppm
+        reportedhitcount INTEGER OPTIONAL              -- the maximum number of hits to report per spectrum, 0=all
         }
 
 MSSerialDataFormat ::= INTEGER {
@@ -538,12 +544,15 @@ MSIonType ::= INTEGER {
         c (2),
         x (3),
         y (4),
-        z (5),
+        z (5),       -- actually zdot
         parent(6),
         internal(7),
         immonium(8),
         unknown(9),
-        max (10)
+        adot (10),
+        x-CO2 (11),
+        adot-CO2 (12),
+        max (13)
         }
         
 -- types of neutral loss

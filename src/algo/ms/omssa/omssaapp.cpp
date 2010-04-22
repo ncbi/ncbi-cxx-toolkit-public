@@ -59,7 +59,7 @@ USING_SCOPE(omssa);
 
 COMSSABase::COMSSABase()
 {
-    SetVersion(CVersionInfo(2, 1, 7));
+    SetVersion(CVersionInfo(2, 1, 8));
 }
 
 
@@ -100,7 +100,10 @@ void COMSSABase::PrintIons(void)
 {
     int i;
     for(i = 0; i < eMSIonType_parent; i++)
-	cout << i << ": " << kIonLabels[i] << endl;
+	    cout << i << ": " << kIonLabels[i] << endl;
+    for(i = eMSIonType_adot; i < eMSIonType_max; i++)
+        cout << i << ": " << kIonLabels[i] << endl;
+    
 }
 
 
@@ -150,14 +153,17 @@ void COMSSABase::Init()
     argDesc->AddFlag("w", "include spectra and search params in search results");
     argDesc->AddDefaultKey("to", "pretol", "product ion m/z tolerance in Da",
 			   CArgDescriptions::eDouble, "0.8");
-    argDesc->AddDefaultKey("te", "protol", "precursor ion m/z tolerance in Da",
+    argDesc->AddDefaultKey("te", "protol", "precursor ion m/z tolerance in Da (or ppm if -teppm flag set)",
 			   CArgDescriptions::eDouble, "2.0");
     argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
                 CArgDescriptions::eInteger, "0");
-    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
+    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact, 4 = multiisotope)",
                 CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
                 CArgDescriptions::eInteger, "0");
+    argDesc->AddDefaultKey("ti", "isotopes", "when doing multiisotope search, number of isotopic peaks to search.  0 = monoisotopic peak only",
+                           CArgDescriptions::eInteger, "0");
+    argDesc->AddFlag("teppm", "search precursor masses in units of ppm");
     argDesc->AddDefaultKey("ta", "autotol", 
                    "automatic mass tolerance adjustment fraction",
                    CArgDescriptions::eDouble, 
@@ -198,8 +204,11 @@ void COMSSABase::Init()
 			   "number of peaks allowed in double charge window",
 			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("hl", "hitlist", 
-			   "maximum number of hits retained per precursor charge state per spectrum",
+			   "maximum number of hits retained per precursor charge state per spectrum during the search",
 			   CArgDescriptions::eInteger, "30");
+    argDesc->AddDefaultKey("hc", "hitcount", 
+                           "maximum number of hits reported per spectrum (0 = all)",
+                           CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("ht", "tophitnum", 
 			   "number of m/z values corresponding to the most intense peaks that must include one match to the theoretical peptide",
 			   CArgDescriptions::eInteger, "6");
@@ -256,6 +265,10 @@ void COMSSABase::Init()
                    "how should precursor charges be determined? (1=believe the input file, 2=use a range)",
                    CArgDescriptions::eInteger, 
                    "2");
+    argDesc->AddDefaultKey("zn", "negions", 
+                           "search using negative or positive ions (1=positive, -1=negative)",
+                           CArgDescriptions::eInteger, 
+                           "1");
     argDesc->AddDefaultKey("pc", "pseudocount", 
                   "minimum number of precursors that match a spectrum",
                   CArgDescriptions::eInteger, 
@@ -437,6 +450,11 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     Settings->SetZdep(args["tez"].AsInteger());
     Settings->SetExactmass(args["tex"].AsDouble());
     Settings->SetAutomassadjust(args["ta"].AsDouble());
+    // new arguments set in spec only if turned on.  allows for backward compatibility with browser
+    if(args["ti"].AsInteger() != 0)
+        Settings->SetNumisotopes(args["ti"].AsInteger());
+    if(args["teppm"]) 
+        Settings->SetPepppm(true);
 
     InsertList(args["i"].AsString(), Settings->SetIonstosearch(), "unknown ion");
     Settings->SetCutlo(args["cl"].AsDouble());
@@ -459,6 +477,8 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     Settings->SetMinspectra(args["hs"].AsInteger());
     Settings->SetScale(MSSCALE); // presently ignored
     Settings->SetCutoff(args["he"].AsDouble());
+    if(args["hc"].AsInteger() != 0)
+        Settings->SetReportedhitcount(args["hc"].AsInteger());
     Settings->SetMaxmods(args["mm"].AsInteger());
     Settings->SetPseudocount(args["pc"].AsInteger());
     Settings->SetSearchb1(args["sb1"].AsInteger());
@@ -480,6 +500,7 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     Settings->SetChargehandling().SetPlusone(args["z1"].AsDouble());
     Settings->SetChargehandling().SetMaxproductcharge(args["zoh"].AsInteger());
     Settings->SetChargehandling().SetCalccharge(args["zcc"].AsInteger());
+    Settings->SetChargehandling().SetNegative(args["zn"].AsInteger());
 
     Settings->SetIterativesettings().SetResearchthresh(args["ii"].AsDouble());
     Settings->SetIterativesettings().SetSubsetthresh(args["is"].AsDouble());

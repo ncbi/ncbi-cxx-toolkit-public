@@ -192,11 +192,14 @@ char const * const kIonLabels[eMSIonType_max] = {
     "c",
     "x", 
     "y", 
-    "z",
+    "zdot",
     "p",
     "n",
     "i",
-    "u"
+    "u",
+    "adot",
+    "x-CO2",
+    "adot-CO2"
 };
 
 /**

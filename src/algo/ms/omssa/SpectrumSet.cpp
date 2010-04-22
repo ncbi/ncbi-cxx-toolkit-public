@@ -297,14 +297,14 @@ bool CSpectrumSet::GetDTAHeader(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectru
     }
 
     // read in charge
-    if(!(DTA >> dummy) || dummy < 0) {
+    if(!(DTA >> dummy) /* || dummy < 0 for negative ETD*/) {
         return false;
     }
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
 
     // correct dta MH+ to true precursor
     if(!isPKL) {
-        precursor = (precursor + (dummy - 1)*kProton ) / dummy;
+        precursor = (precursor + (dummy - 1)*kProton ) / fabs(dummy);
     }
     MySpectrum->SetPrecursormz(MSSCALE2INT(precursor));
 
@@ -528,8 +528,8 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
         else if(NStr::CompareNocase(Line, 0, 8, "END IONS") == 0) {
             return -2;
         }
-        // keep looping while the first character is not numeric
-    } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0);
+        // keep looping while the first character is not numeric or the line is empty
+    } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0 || Line.empty());
 
     if(!GotMass) 
         return 1;

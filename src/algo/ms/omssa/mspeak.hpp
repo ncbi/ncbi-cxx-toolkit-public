@@ -1332,7 +1332,11 @@ typedef deque <CMSPeak *> TPeakSet;
 
 class NCBI_XOMSSA_EXPORT _MassPeak: public CObject {
 public:
-    int Mass, Peptol;
+    int Mass;        // the true mass.  This may contain corrections to the experimentally observed mass, e.g. if the instrument
+                     // has reported the c-13 peak as being the monoisotopic mass, Mass will contain the monoisotopic value.
+    int Peptol;
+    int ExpMass;     // ExpMass is the observed mass.  it may be different from the true mass some situations.  E.g. if
+                     // the instrument has reported a c-13 peak as being the monoisotopic mass.  
     int Charge;
     CMSPeak *Peak;
 };
@@ -1356,11 +1360,17 @@ public:
      *
      * @param Peptol the precursor mass tolerance
      * @param Zdep should the tolerance be charge dependent?
+     * @param Numisotopes the number of isotopic peaks to search. 0 = just one peak.
+     * @param Pepppm search precursor using ppm
+     * @param ChargeSign charge sign of the ion
      * @return maximum m/z value
      */
     int SortPeaks(
         int Peptol,
-        int Zdep
+        int Zdep,
+        int Numisotopes,
+        bool Pepppm,
+        int ChargeSign
         );
     
     TPeakSet& GetPeaks(void);

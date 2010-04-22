@@ -54,6 +54,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // proton mass
 const double kProton = 1.00728;
+// neutron mass
+const double kNeutron = 1.00866;
 
 //! struct for holding a single peak
 typedef struct _InputPeak

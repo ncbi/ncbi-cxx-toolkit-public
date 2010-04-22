@@ -506,6 +506,7 @@ const bool CMSPeak::CompareTop(CLadder& Ladder)
     CRef <CMSPeakList> PeakList = SetPeakLists()[eMSPeakListTop];
 
     for(i = 0; i < PeakList->GetNum(); i++) {
+        cout << PeakList->GetMZI()[i].GetMZ() << " tol " << tol << endl;
         if(Ladder.ContainsFast(PeakList->GetMZI()[i].GetMZ(), tol)) return true;
     }
     return false;
@@ -1247,7 +1248,7 @@ CMSPeakSet::~CMSPeakSet()
  * @param Zdep should the tolerance be charge dependent?
  * @return maximum m/z value
  */
-int CMSPeakSet::SortPeaks(int Peptol, int Zdep)
+int CMSPeakSet::SortPeaks(int Peptol, int Zdep, int Numisotopes, bool Pepppm, int ChargeSign)
 {
     int iCharges;
     CMSPeak* Peaks;
@@ -1271,25 +1272,36 @@ int CMSPeakSet::SortPeaks(int Peptol, int Zdep)
     	for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
     	    // correction for incorrect charge determination.
     	    // see 12/13/02 notebook, pg. 135
-    	    ptol = (Zdep * (Peaks->GetCharges()[iCharges] - 1) + 1) * Peptol;
-            CalcMass = Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
-                MSSCALE2INT(Peaks->GetCharges()[iCharges]*kProton);
-            temp = new TMassPeak;
-    	    temp->Mass = CalcMass;
-    	    temp->Peptol = ptol;
-    	    temp->Charge = Peaks->GetCharges()[iCharges];
-    	    temp->Peak = Peaks;
-            // save the TMassPeak info
-            const CRange<ncbi::TSignedSeqPos> myrange(temp->Mass - temp->Peptol, temp->Mass + temp->Peptol);
-            const ncbi::CConstRef<ncbi::CObject> myobject(static_cast <CObject *> (temp));   
-            MassIntervals.Insert(myrange,
-                                         myobject);
-            // keep track of maximum m/z
-            if(temp->Mass + temp->Peptol > MaxMZ)
-                MaxMZ = temp->Mass + temp->Peptol;
-    	}
-    } 
-
+            if(Pepppm) {
+                ptol = (Zdep * (Peaks->GetCharges()[iCharges] - 1) + 1);
+                ptol *= Peptol;
+                ptol *= MSSCALE2DBL(Peaks->GetPrecursormz()) / 1000000.0;
+            }
+            else
+                ptol = (Zdep * (Peaks->GetCharges()[iCharges] - 1) + 1) * Peptol;
+            int iIsotopes;
+            for(iIsotopes = 0; iIsotopes <= Numisotopes; ++iIsotopes) {
+                temp = new TMassPeak;
+                CalcMass = Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
+                MSSCALE2INT(Peaks->GetCharges()[iCharges]*kProton) * ChargeSign;
+                temp->ExpMass = CalcMass;                
+                CalcMass = CalcMass - MSSCALE2INT(iIsotopes*kNeutron);   // correction for c-13
+                temp->Mass = CalcMass;
+                temp->Peptol = ptol;
+                temp->Charge = Peaks->GetCharges()[iCharges];
+                temp->Peak = Peaks;
+                // save the TMassPeak info
+                const CRange<ncbi::TSignedSeqPos> myrange(temp->Mass - temp->Peptol, temp->Mass + temp->Peptol);
+                const ncbi::CConstRef<ncbi::CObject> myobject(static_cast <CObject *> (temp));   
+                MassIntervals.Insert(myrange,
+                                             myobject);
+                // keep track of maximum m/z
+                if(temp->Mass + temp->Peptol > MaxMZ)
+                    MaxMZ = temp->Mass + temp->Peptol;
+                }   
+            }
+        } 
+    
     return MaxMZ;
 }
 

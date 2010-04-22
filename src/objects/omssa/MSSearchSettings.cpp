@@ -98,7 +98,7 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
     if (CanGetIonstosearch()) {
          TIonstosearch::const_iterator i;
          for (i = GetIonstosearch().begin(); i != GetIonstosearch().end(); i++)
-             if ( *i < 0 || *i >= eMSIonType_parent ) {
+             if ( *i < 0 || *i >= eMSIonType_max ) {
                  Error.push_back("Unknown search ion");
                  retval = 1;
              }
@@ -444,6 +444,11 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
                   Error.push_back("invalid maximum product ion charge");
                   retval = 1;
             }
+            if (GetChargehandling().GetNegative() != 1 &&
+                GetChargehandling().GetNegative() != -1) {
+                Error.push_back("invalid charge sign");
+                retval = 1;
+            }
         }
     }
 
@@ -578,6 +583,20 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
           Error.push_back("unable to get automatic mass tolerance adjustment fraction ");
           retval = 1;
       }
+    
+     if(CanGetNumisotopes()) {
+         if (GetNumisotopes() < 0 || GetNumisotopes() > 10) {
+            Error.push_back("number of isotopes < 0 or > 10");
+            retval = 1;
+        }
+    }
+
+    if(CanGetReportedhitcount()) {
+        if (GetReportedhitcount() < 0 ) {
+            Error.push_back("number of hits to report < 0");
+            retval = 1;
+        }
+    }
 
     return retval;
 }

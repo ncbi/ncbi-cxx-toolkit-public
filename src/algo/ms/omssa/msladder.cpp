@@ -131,7 +131,7 @@ CLadder::CreateLadder(const int IonType,
                       )
 {
     Charge = ChargeIn;
-    int i, j, ion = MSSCALE2INT((kTermMass[IonType] + Charge - 1) / Charge + 
+    int i, j, ion = MSSCALE2INT((kTermMass[IonType] + (Charge * Settings.GetChargehandling().GetNegative() - 1) * kProton) / Charge + 
 				    kIonTypeMass[IonType]/Charge);
     const int *IntMassArray = MassArray.GetIntMass();
     const char * const AAMap(AA.GetMap());
@@ -143,7 +143,7 @@ CLadder::CreateLadder(const int IonType,
     Stop = stop;
     Index = SeqIndex;  // gi or position in blastdb
     Type = IonType;
-    Mass = static_cast <int> (mass - MSSCALE2INT(Charge*kProton));
+    Mass = static_cast <int> (mass - MSSCALE2INT(Charge*kProton) * Settings.GetChargehandling().GetNegative());
 
     int ModIndex;  // index into number of possible mod sites
     int Direction;
@@ -203,6 +203,7 @@ CLadder::CreateLadder(const int IonType,
            Sequence[Offset + Direction * (i + iSkip + ProlineOffset)] != '\x0e')) {
             GetHit()[j] = 0;
             (*this)[j] = ion;
+               cout << IonType << " " << j << " " << ion << endl;
             SetLadderNumber()[j] = i+iSkip;
             j++;
         }
@@ -261,6 +262,7 @@ bool CLadder::ContainsFast(int MassIndex, int Tolerance)
 	MassIndex - Tolerance) 
 	return true;
 #endif
+    cout << MassIndex << " ladder " << (*this)[x] << endl;
     return false;
 }
 
@@ -296,7 +298,7 @@ CLadderContainer::MatchIter(TLadderMap::iterator& Iter,
            CMSMatchedPeakSetMap::Key2Charge(Iter->first) > EndCharge)
             retval = false;
     }
-    if(SeriesType != eMSIonTypeUnknown) {
+    if(SeriesType != eMSIonType_unknown) {
         if(CMSMatchedPeakSetMap::Key2Series(Iter->first) != SeriesType)
             retval = false;
     }
