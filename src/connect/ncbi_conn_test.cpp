@@ -69,7 +69,7 @@ inline bool operator > (const STimeout* t1, const STimeout& t2)
 }
 
 
-CConnTest::CConnTest(const STimeout* timeout, ostream* out)
+CConnTest::CConnTest(const STimeout* timeout, CNcbiOstream* out)
     : m_Out(out), m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
       m_FWProxy(false), m_Forced(false), m_End(false)
 {
