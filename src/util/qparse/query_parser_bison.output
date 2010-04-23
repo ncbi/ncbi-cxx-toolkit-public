@@ -171,57 +171,57 @@ State 71 contains 6 shift/reduce conflicts.
 Grammar
 
   Number, Line, Rule
-    1 121 input -> exp
-    2 123 input -> select_clause
-    3 128 select_clause -> SELECT obj_list FROM obj_list opt_where
-    4 168 opt_where -> /* empty */
-    5 173 opt_where -> WHERE exp
-    6 183 functional -> FUNCTION '(' exp_list ')'
-    7 195 obj_list -> scalar_value
-    8 200 obj_list -> obj_list ',' scalar_value
-    9 210 scalar_value -> NUM_INT
-   10 217 scalar_value -> STRING
-   11 222 scalar_value -> IDENT
-   12 226 scalar_value -> functional
-   13 232 scalar_list -> scalar_value
-   14 237 scalar_list -> scalar_list ',' scalar_value
-   15 244 exp_list -> exp
-   16 249 exp_list -> exp_list ',' exp
-   17 257 in_sub_expr -> scalar_list
-   18 259 in_sub_expr -> select_clause
-   19 263 exp -> scalar_value
-   20 269 exp -> functional
-   21 274 exp -> STRING IDENT
-   22 282 exp -> exp exp
-   23 293 exp -> '(' exp ')'
-   24 303 exp -> exp AND exp
-   25 308 exp -> exp SUB exp
-   26 313 exp -> exp OR exp
-   27 318 exp -> exp XOR exp
-   28 323 exp -> scalar_value BETWEEN scalar_value AND scalar_value
-   29 336 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
-   30 350 exp -> exp RANGE exp
-   31 355 exp -> scalar_value LIKE scalar_value
-   32 360 exp -> scalar_value NOT_LIKE scalar_value
-   33 365 exp -> scalar_value IN '(' in_sub_expr ')'
-   34 376 exp -> scalar_value NOT_IN '(' in_sub_expr ')'
-   35 387 exp -> exp EQ exp
-   36 392 exp -> exp NOTEQ exp
-   37 396 exp -> exp GT exp
-   38 400 exp -> exp GE exp
-   39 404 exp -> exp LT exp
-   40 408 exp -> exp LE exp
-   41 419 exp -> NOT exp
-   42 428 exp -> error STRING
-   43 437 exp -> error IDENT
-   44 446 exp -> error NUM_INT
-   45 455 exp -> exp error
-   46 467 exp -> '(' exp error
-   47 477 exp -> exp OR error
-   48 487 exp -> exp XOR error
-   49 497 exp -> exp NOT error
-   50 507 exp -> exp AND error
-   51 517 exp -> exp SUB error
+    1 127 input -> exp
+    2 129 input -> select_clause
+    3 134 select_clause -> SELECT obj_list FROM obj_list opt_where
+    4 174 opt_where -> /* empty */
+    5 179 opt_where -> WHERE exp
+    6 189 functional -> FUNCTION '(' exp_list ')'
+    7 201 obj_list -> scalar_value
+    8 206 obj_list -> obj_list ',' scalar_value
+    9 216 scalar_value -> NUM_INT
+   10 223 scalar_value -> STRING
+   11 228 scalar_value -> IDENT
+   12 232 scalar_value -> functional
+   13 238 scalar_list -> scalar_value
+   14 243 scalar_list -> scalar_list ',' scalar_value
+   15 250 exp_list -> exp
+   16 255 exp_list -> exp_list ',' exp
+   17 263 in_sub_expr -> scalar_list
+   18 265 in_sub_expr -> select_clause
+   19 269 exp -> scalar_value
+   20 275 exp -> functional
+   21 280 exp -> STRING IDENT
+   22 288 exp -> exp exp
+   23 299 exp -> '(' exp ')'
+   24 309 exp -> exp AND exp
+   25 314 exp -> exp SUB exp
+   26 319 exp -> exp OR exp
+   27 324 exp -> exp XOR exp
+   28 329 exp -> scalar_value BETWEEN scalar_value AND scalar_value
+   29 342 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
+   30 356 exp -> exp RANGE exp
+   31 361 exp -> scalar_value LIKE scalar_value
+   32 366 exp -> scalar_value NOT_LIKE scalar_value
+   33 371 exp -> scalar_value IN '(' in_sub_expr ')'
+   34 382 exp -> scalar_value NOT_IN '(' in_sub_expr ')'
+   35 393 exp -> exp EQ exp
+   36 398 exp -> exp NOTEQ exp
+   37 402 exp -> exp GT exp
+   38 406 exp -> exp GE exp
+   39 410 exp -> exp LT exp
+   40 414 exp -> exp LE exp
+   41 425 exp -> NOT exp
+   42 434 exp -> error STRING
+   43 443 exp -> error IDENT
+   44 452 exp -> error NUM_INT
+   45 461 exp -> exp error
+   46 473 exp -> '(' exp error
+   47 483 exp -> exp OR error
+   48 493 exp -> exp XOR error
+   49 503 exp -> exp NOT error
+   50 513 exp -> exp AND error
+   51 523 exp -> exp SUB error
 
 
 Terminals, with rules where they appear

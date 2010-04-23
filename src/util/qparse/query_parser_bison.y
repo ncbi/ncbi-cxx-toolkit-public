@@ -69,18 +69,24 @@ void AddFunc_Arg(void*                   parm,
                CQueryParseTree::TNode* node)
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
-    CQueryParseTree::TNode* in_node = env->GetIN_Context();
     CQueryParseTree::TNode* func_node = env->GetContext();
     
-    // function is higher priority 
-    // TODO: (strickly speaking IN and FUNC should be separated)
-    //
     if (func_node) {
         func_node->AddNode(node);
-    } else
+    } 
+    env->ForgetPoolNodes(node, 0);
+}
+
+inline static
+void AddIn_Arg(void*                   parm,
+               CQueryParseTree::TNode* node)
+{
+    CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+    CQueryParseTree::TNode* in_node = env->GetIN_Context();
+    
     if (in_node) {
         in_node->AddNode(node);
-    }
+    } 
     env->ForgetPoolNodes(node, 0);
 }
 
@@ -237,7 +243,7 @@ scalar_list:
     | scalar_list ',' scalar_value
     {
         $$ = $1;    
-        AddFunc_Arg(parm, $3);
+        AddIn_Arg(parm, $3);
     }    
 ;
 
