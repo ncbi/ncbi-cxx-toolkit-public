@@ -63,7 +63,6 @@ private:
     string m_SolutionDir;
     string m_OutputDir;
     map<string,string> m_TargetProduct;
-    map<string,string> m_TargetProductRef;
     set<string> m_RefLibs;
 
     void Save(const string& solution_name, ncbi::objects::CPlist& xproj);
@@ -77,7 +76,6 @@ private:
     string CreateProjectCustomScriptPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
-    void CollectReferencedLibs(const CProjItem& prj);
     string CreateProjectLinkPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
