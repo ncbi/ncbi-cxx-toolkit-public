@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     and whether excpetions cause logging (or caught silently).
+///     and whether exceptions cause logging (or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -107,7 +107,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IWriter is destroyed upon stream destruction,
-///     and whether excpetions cause logging (or caught silently).
+///     and whether exceptions cause logging (or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -151,7 +151,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     and whether excpetions cause logging (or caught silently).
+///     and whether exceptions cause logging (or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
