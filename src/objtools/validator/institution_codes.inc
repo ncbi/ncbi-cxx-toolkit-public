@@ -1547,7 +1547,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura",
 "EMPARN	c	Empresa de Pesquisa Agropecuaria do Rio Grande do Norte",
 "EMU	s	Eastern Michigan University, T. L. Hankinson Vertebrate Museum",
-"EMUC	s	Essig Museum, Division of Entomology, University of California",
 "EMUS	s	Utah State University",
 "ENAG	s	Universidad Nacional Agraria, Departamento de Ciencias Basicas",
 "ENCB-IPN	c	Coleccion de cultivos de la Escuela Nacional de Ciencias Biologicas",
