@@ -557,6 +557,7 @@ void CGuideTree::PreComputeImageDimensions()
 
     m_PhyloTreeScheme->SetSize(CPhyloTreeScheme::eNodeSize) = m_NodeSize;
     m_PhyloTreeScheme->SetSize(CPhyloTreeScheme::eLineWidth) = m_LineWidth;
+    m_PhyloTreeScheme->SetLabelStyle(CPhyloTreeScheme::eSimpleLabels);
 
     GLdouble mleft = 10;
     GLdouble mtop = 10;
