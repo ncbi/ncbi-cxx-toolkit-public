@@ -51,6 +51,7 @@
 #include <misc/xmlwrapp/xpath_expression.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
 #include <misc/xmlwrapp/schema.hpp>
+#include <misc/xmlwrapp/dtd.hpp>
 #include <misc/xmlwrapp/errors.hpp>
 
 #endif

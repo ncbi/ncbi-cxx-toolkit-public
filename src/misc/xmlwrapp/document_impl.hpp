@@ -44,7 +44,6 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
-#include "dtd_impl.hpp"
 #include "node_manip.hpp"
 
 // standard includes

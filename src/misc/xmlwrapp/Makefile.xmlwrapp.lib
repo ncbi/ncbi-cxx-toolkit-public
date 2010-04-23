@@ -1,8 +1,8 @@
 # $Id$
 
 SRC = ait_impl document event_parser node_iterator nodes_view tree_parser \
-      xml_init attributes dtd_impl node node_manip stylesheet utility     \
-      xslt_init namespace xpath_expression node_set document_impl schema errors
+      xml_init attributes node node_manip stylesheet utility     \
+      xslt_init namespace xpath_expression node_set document_impl schema errors dtd
 
 
 LIB = xmlwrapp

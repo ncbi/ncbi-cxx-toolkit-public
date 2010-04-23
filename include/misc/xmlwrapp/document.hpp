@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -44,9 +44,13 @@
 #ifndef _xmlwrapp_document_h_
 #define _xmlwrapp_document_h_
 
+// for NCBI_DEPRECATED
+#include <ncbiconf.h>
+
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/errors.hpp>
 
 // standard includes
 #include <iosfwd>
@@ -64,6 +68,8 @@ namespace xslt {
 namespace xml {
 
 // forward declarations
+class dtd;
+class schema;
 class tree_parser;
 
 namespace impl {
@@ -302,45 +308,121 @@ public:
     bool has_external_subset (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Validate this document against the DTD that has been attached to it.
      * This would happen at parse time if there was a !DOCTYPE definition.
      * If the DTD is valid, and the document is valid, this member function
      * will return true.
      *
-     * If it returns false, you may want to send the document through
-     * xmllint to get the actual error messages.
+     * There is no way to get warnings and error messages using this method.
+     * If you need it then you should instantiate an empty xml::dtd object
+     * and then use its validate method. The warnings and error messages
+     * will be available via the xml::dtd object, e.g.:
+     *     dtd   empty_dtd;
+     *     empty_dtd.validate(my_doc);
+     *     error_messages  msgs(empty_dtd.get_validation_messages());
+     *
+     * The method is deprecated. Use xml::document::validate(xml::dtd&)
+     * or xml::dtd::validate(xml::document&) instead.
      *
      * @return True if the document is valid.
      * @return False if there was a problem with the DTD or XML doc.
+     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool validate (void);
 
     //####################################################################
-    /** 
+    /**
      * Parse the given DTD and try to validate this document against it. If
      * the DTD is valid, and the document is valid, this member function
      * will return true.
      *
-     * If it returns false, you may want to send the document through
-     * xmllint to get the actual error messages.
+     * There is no way to get warnings and error messages using this method.
+     * If you need it then you should instantiate an xml::dtd object
+     * and then use its validate method. The warnings and error messages
+     * will be available via the xml::dtd object, e.g.:
+     *     dtd   my_dtd("file.dtd");
+     *     my_dtd.validate(my_doc);
+     *     error_messages  msgs(my_dtd.get_validation_messages());
      *
      * This member function will add the parsed DTD to this document as the
      * external subset after the validation. If there is already an external
      * DTD attached to this document it will be removed and deleted.
      *
+     * The method is deprecated. Use xml::document::validate(xml::dtd&)
+     * or xml::dtd::validate(xml::document&) instead.
+     *
      * @param dtdname A filename or URL for the DTD to use.
      * @return True if the document is valid.
      * @return False if there was a problem with the DTD or XML doc.
+     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool validate (const char *dtdname);
 
     //####################################################################
-    /** 
+    /**
+     * Validate this document against the given DTD. If the document is
+     * valid, this member function will return true.
+     *
+     * This member function will add the parsed DTD to this document as the
+     * external subset after the validation (only if the DTD is constructed
+     * from a file or URL). If there is already an external
+     * DTD attached to this document it will be removed and deleted.
+     *
+     * The warnings and error messages are collected in the given xml::dtd
+     * object and are available upon calling the dtd::get_validation_messages()
+     * method.
+     *
+     * @param dtd_ A DTD constructed from a file or URL or empty DTD. The empty
+     *             DTD is for validating the document against the internal DTD.
+     * @param how How to treat warnings (default: warnings are treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            dtd::get_validation_messages() method.
+     * @return True if the document is valid.
+     * @return False if there was a problem with the DTD or XML doc.
+     * @author Sergey Satskiy
+    **/
+    //####################################################################
+    bool validate (dtd &dtd_,
+                   warnings_as_errors_type how = type_warnings_are_errors);
+
+    //####################################################################
+    /**
+     * Validate this document against the given XSD schema. If the document is
+     * valid, this member function will return true.
+     *
+     * The warnings and error messages are collected in the given xml::schema
+     * object and are available upon calling the schema::get_validation_messages()
+     * method.
+     *
+     * @param xsd_schema A constructed XSD schema.
+     * @param how How to treat warnings (default: warnings are treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            schema::get_validation_messages() method.
+     * @return True if the document is valid.
+     * @return False if there was a problem with the XML doc.
+     * @author Sergey Satskiy
+    **/
+    //####################################################################
+    bool validate (schema &xsd_schema,
+                   warnings_as_errors_type how = type_warnings_are_errors) const;
+
+    //####################################################################
+    /**
      * Returns the number of child nodes of this document. This will always
      * be at least one, since all xmlwrapp documents must have a root node.
      * This member function is useful to find out how many document children
@@ -556,6 +638,7 @@ private:
     friend class tree_parser;
     friend class xslt::stylesheet;
     friend class schema;
+    friend class dtd;
 }; // end xml::document class
 
 } // end xml namespace

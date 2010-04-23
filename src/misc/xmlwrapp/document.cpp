@@ -44,9 +44,10 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/dtd.hpp>
+#include <misc/xmlwrapp/schema.hpp>
 #include "utility.hpp"
 #include "document_impl.hpp"
-#include "dtd_impl.hpp"
 #include "node_manip.hpp"
 
 // standard includes
@@ -238,21 +239,23 @@ bool xml::document::has_external_subset (void) const {
 }
 //####################################################################
 bool xml::document::validate (void) {
-    dtd_impl dtd;
-    return dtd.validate(pimpl_->doc_);
+    dtd     empty_dtd;
+    return empty_dtd.validate(*this, type_warnings_not_errors);
 }
 //####################################################################
 bool xml::document::validate (const char *dtdname) {
-    dtd_impl dtd(dtdname);
-
-    if (!dtd.error_.empty()) return false;
-    if (!dtd.validate(pimpl_->doc_)) return false;
-
-    // remove the old DTD
-    if (pimpl_->doc_->extSubset != 0) xmlFreeDtd(pimpl_->doc_->extSubset);
-    pimpl_->doc_->extSubset = dtd.release();
-
-    return true;
+    dtd     file_dtd(dtdname, type_warnings_not_errors);
+    return file_dtd.validate(*this, type_warnings_not_errors);
+}
+//####################################################################
+bool xml::document::validate (dtd &dtd_,
+                              warnings_as_errors_type how) {
+    return dtd_.validate(*this, how);
+}
+//####################################################################
+bool xml::document::validate (schema &xsd_schema,
+                              warnings_as_errors_type how) const {
+    return xsd_schema.validate(*this, how);
 }
 //####################################################################
 xml::document::size_type xml::document::size (void) const {
