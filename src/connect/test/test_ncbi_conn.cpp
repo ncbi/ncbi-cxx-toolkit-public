@@ -36,14 +36,57 @@
 #ifdef NCBI_OS_MSWIN
 #  include <corelib/ncbi_system.hpp>
 #endif //NCBI_OS_MSWIN
+#include <corelib/rwstream.hpp>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
+#ifdef NCBI_OS_MSWIN
+#  include <conio.h>
+#endif //NCBI_OS_MSWIN
 #include <iomanip>
 #include <math.h>
+#include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
+
+
+// Bad, lazy and incorrect, in general, implementation!
+class CTeeWriter : public IWriter {
+public:
+    CTeeWriter(ostream& os1, ostream& os2)
+        : m_Os1(os1), m_Os2(os2)
+    { }
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0);
+
+    virtual ERW_Result Flush(void);
+
+private:
+    CNcbiOstream& m_Os1;
+    CNcbiOstream& m_Os2;
+};
+
+
+ERW_Result CTeeWriter::Write(const void* buf,
+                             size_t count, size_t* bytes_written)
+{
+    m_Os1.write((const char*) buf, count);
+    m_Os2.write((const char*) buf, count);
+    if (bytes_written)
+        *bytes_written = count;
+    return eRW_Success;
+}
+
+
+ERW_Result CTeeWriter::Flush(void)
+{
+    m_Os1.flush();
+    m_Os2.flush();
+    return eRW_Success;
+}
 
 
 ////////////////////////////////
@@ -53,14 +96,18 @@ BEGIN_NCBI_SCOPE
 class CTest : public CNcbiApplication
 {
 public:
-    CTest(void);
+    CTest(CNcbiOstream& log);
 
     virtual void Init(void);
     virtual int  Run (void);
+
+private:
+    CWStream m_Tee;
 };
 
 
-CTest::CTest(void)
+CTest::CTest(CNcbiOstream& log)
+    : m_Tee(new CTeeWriter(NcbiCout, log), 0, 0, CRWStreambuf::fOwnWriter)
 {
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -112,32 +159,36 @@ int CTest::Run(void)
     } else
         timeout = fabs(args[1].AsDouble());
 
-    NcbiCout << NcbiEndl << "NCBI Connectivity Test (Timeout = "
-             << setprecision(6) << timeout << "s)" << NcbiEndl;
+    m_Tee << NcbiEndl << "NCBI Connectivity Test (Timeout = "
+          << setprecision(6) << timeout << "s)" << NcbiEndl;
 
     STimeout tmo;
     tmo.sec  = (unsigned int)  timeout;
     tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
 
-    CConnTest test(&tmo, &cout);
+    CConnTest test(&tmo, &m_Tee);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
     EIO_Status status = test.Execute(everything);
 
-    NcbiCout << NcbiEndl;
+    m_Tee << NcbiEndl;
     if (status != eIO_Success) {
-        NcbiCout << "Check " << GetLogFile() << " for more information."
-                 << NcbiEndl << "Please remember to make its contents"
+        m_Tee << "Check " << GetLogFile() << " for more information."
+              << NcbiEndl << "Please remember to make its contents"
             " available if contacting NCBI.";
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
-        NcbiCout << "NCBI Connectivity Test PASSED!";
+        m_Tee << "NCBI Connectivity Test PASSED!";
     }
-    NcbiCout << NcbiEndl << NcbiEndl << NcbiFlush;
+    m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
 #ifdef NCBI_OS_MSWIN
-    NcbiCout << "The program will bail out in 1 minute" << NcbiEndl;
-    SleepSec(60);
+    m_Tee << "Press any key or program will bail out in 1 minute" << NcbiEndl;
+    for (n = 0;  n < 120;  n++) {
+        if (_kbhit())
+            break;
+        SleepMilliSec(500);
+    }
 #endif //NCBI_OS_MSWIN
 
     CORE_SetLOG(0);
@@ -150,12 +201,18 @@ END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
+    static const char kLogfile[] = "test_ncbi_conn.log";
     USING_NCBI_SCOPE;
 
-    // Empty log each app start
-    CDiagContext::SetLogTruncate(true);
-    SetLogFile("test_ncbi_conn.log");
+    CNcbiOfstream log(kLogfile);
+    freopen(kLogfile, "a", stderr);
+    SetDiagStream(&log);
 
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_User, 0);
+    int retval = CTest(log).AppMain(argc, argv, 0, eDS_User, 0);
+
+    log.flush();
+    // Make sure CNcbiDiag remains valid after main() returns
+    SetLogFile(kLogfile);
+    return retval;
 }
