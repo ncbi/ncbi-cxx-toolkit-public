@@ -105,7 +105,7 @@ static const SIZE_TYPE NPOS = NCBI_NS_STD::string::npos;
 ///
 /// NStr --
 ///
-/// Encapuslates class-wide string processing functions.
+/// Encapsulates class-wide string processing functions.
 
 class NCBI_XNCBI_EXPORT NStr
 {
@@ -1022,7 +1022,7 @@ public:
     ///   strncmp(), strcasecmp(), strncasecmp()
     static int strcmp(const char* s1, const char* s2);
 
-    /// String compare upto specified number of characters.
+    /// String compare up to specified number of characters.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1038,7 +1038,7 @@ public:
     ///   strcmp(), strcasecmp(), strncasecmp()
     static int strncmp(const char* s1, const char* s2, size_t n);
 
-    /// Case-insensitive string compare.
+    /// Case-insensitive comparison of two zero-terminated strings.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1052,7 +1052,8 @@ public:
     ///   strcmp(), strncmp(), strncasecmp()
     static int strcasecmp(const char* s1, const char* s2);
 
-    /// Case-insensitive string compare upto specfied number of characters.
+    /// Case-insensitive comparison of two zero-terminated strings,
+    /// narrowed to the specified number of characters.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1073,7 +1074,7 @@ public:
 
     /// Match "str" against the "mask".
     ///
-    /// This function do not use regular expressions.
+    /// This function does not use regular expressions.
     /// @param str
     ///   String to match.
     /// @param mask
@@ -1197,7 +1198,7 @@ public:
         eLast               ///< Last occurrence
     };
 
-    /// Find the pattern in the specfied range of a string.
+    /// Find the pattern in the specified range of a string.
     ///
     /// @param str
     ///   String to search.
@@ -1227,7 +1228,7 @@ public:
                           EOccurrence which = eFirst,
                           ECase use_case = eCase);
 
-    /// Find the pattern in the specfied range of a string using a case
+    /// Find the pattern in the specified range of a string using a case
     /// sensitive search.
     ///
     /// @param str
@@ -1254,7 +1255,7 @@ public:
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
-    /// Find the pattern in the specfied range of a string using a case
+    /// Find the pattern in the specified range of a string using a case
     /// insensitive search.
     ///
     /// @param str
@@ -1398,7 +1399,7 @@ public:
     /// if sizes of "search" and "replace" strings are equal.
     /// Otherwise, the performance is mainly the same.
     /// @param src
-    ///   String whre specified substring occurrences are replaced.
+    ///   String where the specified substring occurrences are replaced.
     ///   This value is also returned by the function.
     /// @param search
     ///   Substring value in "src" that is replaced.
@@ -1487,7 +1488,7 @@ public:
     ///   Delimiter used to tokenize string "str".
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
-    ///   The tokens defined in "str" by using delimeter "delim" are added
+    ///   The tokens defined in "str" by using delimiter "delim" are added
     ///   to the list "arr" and also returned by the function. 
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
@@ -1520,7 +1521,7 @@ public:
     ///   The sub-string of "str" after the first character of "delim" found.
     ///   May contain "delim" characters.
     ///   Will be empty if "str" had no "delim" characters or ended
-    ///   with the first "delim" charcter.
+    ///   with the first "delim" character.
     /// @return
     ///   true if a symbol from "delim" was found in "str", false if not.
     ///   This lets you distinguish when there were no delimiters and when
@@ -1531,7 +1532,7 @@ public:
                            const CTempString& delim,
                            string&            str1,
                            string&            str2);
-                         
+
 
     /// Join strings using the specified delimiter.
     ///
@@ -1661,7 +1662,7 @@ public:
     /// URL-decode string to itself
     static void URLDecodeInPlace(string& str,
                                  EUrlDecode flag = eUrlDec_All);
-    /// Check if the string needs the reqested URL-encoding
+    /// Check if the string needs the requested URL-encoding
     static bool NeedsURLEncoding(const CTempString& str,
                                 EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
@@ -1803,7 +1804,7 @@ public:
                            EMergeDelims       merge = eNoMergeDelims);
 
     /// Search for a field
-    /// Avoid memory allocation at the expence of some usage safety.
+    /// Avoid memory allocation at the expense of some usage safety.
     ///
     /// @param str
     ///   C or C++ string to search in.
@@ -1825,7 +1826,7 @@ public:
                                 EMergeDelims       merge = eNoMergeDelims);
 
     /// Search for a field.
-    /// Avoid memory allocation at the expence of some usage safety.
+    /// Avoid memory allocation at the expense of some usage safety.
     ///
     /// @param str
     ///   C or C++ string to search in.
@@ -2376,7 +2377,7 @@ private:
 ///
 /// Define template class for parsing exception. This class is used to define
 /// exceptions for complex parsing tasks and includes an additional m_Pos
-/// data member. The constructor requires that an additional postional
+/// data member. The constructor requires that an additional positional
 /// parameter be supplied along with the description message.
 
 template <class TBase>
@@ -2739,9 +2740,9 @@ public:
     /// @param pairs
     ///   Container with the name/value pairs to be merged.
     /// @param arg_sep
-    ///   Separator to be inserted bewteen pairs.
+    ///   Separator to be inserted between pairs.
     /// @param val_sep
-    ///   Separator to be inserted bewteen name and value.
+    ///   Separator to be inserted between name and value.
     /// @param encoder
     ///   String encoder (Url, Xml etc.)
     /// @param own
