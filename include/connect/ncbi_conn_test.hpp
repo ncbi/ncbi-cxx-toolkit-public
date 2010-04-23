@@ -75,7 +75,7 @@ public:
     ///   test results get posted to the stream pointed to by this parameter;
     ///   no output is produced if "out" is NULL.
     ///
-    CConnTest(const STimeout* timeout = kDefaultTimeout, ostream* out = 0);
+    CConnTest(const STimeout* timeout = kDefaultTimeout, CNcbiOstream* os = 0);
 
     virtual ~CConnTest() { /*nothing*/ }
 
@@ -200,7 +200,7 @@ protected:
     /// As supplied in constructor
     static const STimeout kTimeout;
     const STimeout*       m_Timeout;
-    ostream*              m_Out;
+    CNcbiOstream*         m_Out;
 
     /// Certain properties of communication as determined by configuration
     bool                  m_HttpProxy;
