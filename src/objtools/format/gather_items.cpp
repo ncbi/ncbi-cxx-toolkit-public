@@ -637,6 +637,64 @@ bool s_HasRefTrackStatus(const CBioseq_Handle& bsh) {
     return false;
 }
 
+//  ============================================================================
+bool s_HasIdenticalTo( 
+    const CBioseq_Handle bsh,
+    string& strIdenticalTo )
+//  ============================================================================
+{
+    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        if ( !uo.IsSetType()  ||  !uo.GetType().IsStr() ) {
+            continue;
+        }
+        if ( uo.GetType().GetStr() != "RefGeneTracking" ) {
+            continue;
+        }
+        if ( ! uo.HasField( "IdenticalTo" ) ) {
+            continue;
+        }
+
+        const CUser_field& uf = uo.GetField( "IdenticalTo" );
+        if ( ! uf.GetData().IsFields() ) {
+            continue;
+        }
+        const vector< CRef<  CUser_field  > >& fields = uf.GetData().GetFields();
+        vector< CRef<  CUser_field  > >::const_iterator cit = fields.begin();
+
+        strIdenticalTo.clear();
+        while ( cit != fields.end() ) {
+            if ( ! (*cit)->GetLabel().IsId() ) {
+                continue;
+            }
+            if ( ! (*cit)->GetData().IsFields() ) {
+                continue;
+            }
+            
+            const vector< CRef<  CUser_field  > >& idfields = (*cit)->GetData().GetFields();
+            vector< CRef<  CUser_field  > >::const_iterator citit = idfields.begin();
+            while ( citit != idfields.end() ) {
+                if ( (*citit)->GetLabel().GetStr() == "accession" ) {
+                    if ( (*citit)->GetData().IsStr() ) {
+                        strIdenticalTo = (*citit)->GetData().GetStr();
+                        return true;
+                    }
+                }
+                if ( (*citit)->GetLabel().GetStr() == "gi" ) {
+                    if ( (*citit)->GetData().IsInt() ) {
+                        strIdenticalTo = "gi:";
+                        strIdenticalTo += NStr::UIntToString( (*citit)->GetData().GetInt() );
+                    }
+                }
+            }
+        }
+        if ( ! strIdenticalTo.empty() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 {
@@ -699,6 +757,14 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
         default:
             break;
         }
+    }
+
+    string strIdenticalTo;
+    if ( s_HasIdenticalTo( ctx.GetHandle(), strIdenticalTo ) ) {
+        string strComment( "The reference sequence is identical to " );
+        strComment += strIdenticalTo;
+        strComment += ".~";
+        x_AddComment( new CCommentItem( strComment, ctx ) );
     }
 
     if ( local_id != 0 ) {
