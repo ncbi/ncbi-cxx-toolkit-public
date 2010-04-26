@@ -1,7 +1,7 @@
 # $Id$
 
 APP = blast_format_unit_test
-SRC = seqalignfilter_unit_test blastfmtutil_unit_test build_archive_unit_test
+SRC = seqalignfilter_unit_test blastfmtutil_unit_test build_archive_unit_test vecscreen_run_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)

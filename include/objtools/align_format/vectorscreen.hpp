@@ -44,6 +44,7 @@
 BEGIN_NCBI_SCOPE 
 BEGIN_SCOPE(align_format)
 
+
 /**
  * Example:
  * @code
@@ -117,6 +118,9 @@ public:
     ///@param out: stream for display    
     ///
     void VecscreenPrint(CNcbiOstream& out);
+
+    ///Returns a string concerning the strength of the match for a given enum value
+    static const string& GetStrengthString(MatchType match_type);
  
 protected:
     

@@ -77,6 +77,18 @@ static const TSeqPos kBarHeight = 20;
 static const TSeqPos kNumScales = 5;
 
 
+///Returns a string concerning the strength of the match for a given enum value
+const string&
+CVecscreen::GetStrengthString(CVecscreen::MatchType match_type)
+{
+    if (match_type == CVecscreen::eNoMatch)
+      return NcbiEmptyString;
+
+    return kGifLegend[match_type];
+}
+
+
+
 ///group hsp with same id togather
 ///@param seqalign: the seqalign
 ///
