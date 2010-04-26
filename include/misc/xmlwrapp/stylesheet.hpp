@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -67,7 +67,7 @@ public:
     typedef std::map<std::string, std::string> param_type;
 
     //####################################################################
-    /** 
+    /**
      * Create a new xslt::stylesheet object and load and parse the
      * stylesheet in the given filename.
      *
@@ -78,7 +78,7 @@ public:
     explicit stylesheet (const char *filename);
 
     //####################################################################
-    /** 
+    /**
      * Create a new xslt::stylesheet object from an xml::document object
      * that contains the parsed stylesheet. The given xml::document is
      * passed by value. This is needed because the stylesheet will own the
@@ -91,7 +91,7 @@ public:
     explicit stylesheet (xml::document doc);
 
     //####################################################################
-    /** 
+    /**
      * Clean up after an xslt::stylesheet.
      *
      * @author Peter Jones
@@ -100,7 +100,7 @@ public:
     ~stylesheet (void);
 
     //####################################################################
-    /** 
+    /**
      * Apply this stylesheet to the given XML document. The result document
      * is placed in the second document parameter.
      *
@@ -114,7 +114,7 @@ public:
     bool apply (const xml::document &doc, xml::document &result);
 
     //####################################################################
-    /** 
+    /**
      * Apply this stylesheet to the given XML document. The result document
      * is placed in the second document parameter.
 
@@ -129,10 +129,10 @@ public:
     bool apply (const xml::document &doc, xml::document &result, const param_type &with_params);
 
     //####################################################################
-    /** 
+    /**
      * Apply this stylesheet to the given XML document. The results document
      * is returned. If there is an error during transformation, this
-     * function will throw a std::runtime_error exception.
+     * function will throw a xml::exception exception.
      *
      * Each time you call this member function, the xml::document object
      * that was returned from the last call becomes invalid. That is, of
@@ -146,10 +146,10 @@ public:
     xml::document& apply (const xml::document &doc);
 
     //####################################################################
-    /** 
+    /**
      * Apply this stylesheet to the given XML document. The results document
      * is returned. If there is an error during transformation, this
-     * function will throw a std::runtime_error exception.
+     * function will throw a xml::exception exception.
      *
      * Each time you call this member function, the xml::document object
      * that was returned from the last call becomes invalid. That is, of
@@ -164,14 +164,14 @@ public:
     xml::document& apply (const xml::document &doc, const param_type &with_params);
 
     //####################################################################
-    /** 
+    /**
      * If you used one of the xslt::stylesheet::apply member functions that
      * return a bool, you can use this function to get the text message for
      * the transformation error.
      *
      * If you are using one of the apply member functions that throws
      * exceptions, this function should not be used. The text message for
-     * the transformation error will be given to the std::runtime_error
+     * the transformation error will be given to the xml::exception
      * constructor.
      *
      * @return The last error message.
@@ -187,6 +187,6 @@ private:
     stylesheet (const stylesheet&);
     stylesheet& operator= (const stylesheet&);
 }; // end xslt::stylesheet class
-    
+
 } // end xslt namespace
 #endif

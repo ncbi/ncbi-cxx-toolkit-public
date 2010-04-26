@@ -37,6 +37,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/node_set.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 
 // standard includes
 #include <stdexcept>
@@ -171,7 +172,7 @@ namespace xml
     node_set::iterator::reference node_set::iterator::operator*() const
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kDerefError);
+            throw xml::exception(kDerefError);
         parent_->set_node_data(fake_node_,
                                parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
         return fake_node_;
@@ -180,7 +181,7 @@ namespace xml
     node_set::iterator::pointer node_set::iterator::operator->() const
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kRefError);
+            throw xml::exception(kRefError);
         parent_->set_node_data(fake_node_,
                                parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
         return &fake_node_;
@@ -189,7 +190,7 @@ namespace xml
     node_set::iterator& node_set::iterator::operator++()
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kAdvError);
+            throw xml::exception(kAdvError);
         if (static_cast<size_t>(++current_index_) >= parent_->size())
             current_index_ = -1;
         return *this;
@@ -241,7 +242,7 @@ namespace xml
     node_set::const_iterator::reference node_set::const_iterator::operator* () const
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kDerefError);
+            throw xml::exception(kDerefError);
         parent_->set_node_data(fake_node_,
                                parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
         return fake_node_;
@@ -250,7 +251,7 @@ namespace xml
     node_set::const_iterator::pointer node_set::const_iterator::operator-> () const
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kRefError);
+            throw xml::exception(kRefError);
         parent_->set_node_data(fake_node_,
                                parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
         return &fake_node_;
@@ -259,7 +260,7 @@ namespace xml
     node_set::const_iterator& node_set::const_iterator::operator++ ()
     {
         if (!parent_ || current_index_ == -1)
-            throw std::runtime_error(kAdvError);
+            throw xml::exception(kAdvError);
         if (static_cast<size_t>(++current_index_) >= parent_->size())
             current_index_ = -1;
         return *this;

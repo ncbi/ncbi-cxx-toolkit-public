@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
+ * Copyright (C) 2010 Vaclav Slavik <vslavik@fastmail.fm>
  * All Rights Reserved
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,27 +32,42 @@
 
 /*
  * $Id$
- * NOTE: This file was modified from its original version 0.6.0
+ * NOTE: This file was modified from its original version 0.7.0
  *       to fit the NCBI C++ Toolkit build framework and
  *       API and functionality requirements.
  */
 
-#ifndef _xmlwrapp_xmlwrapp_h_
-#define _xmlwrapp_xmlwrapp_h_
+/** @file
+ * This file contains the definition of the xml::exception class.
+ */
 
-#include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/nodes_view.hpp>
-#include <misc/xmlwrapp/node.hpp>
-#include <misc/xmlwrapp/attributes.hpp>
-#include <misc/xmlwrapp/document.hpp>
-#include <misc/xmlwrapp/tree_parser.hpp>
-#include <misc/xmlwrapp/event_parser.hpp>
-#include <misc/xmlwrapp/namespace.hpp>
-#include <misc/xmlwrapp/xpath_expression.hpp>
-#include <misc/xmlwrapp/node_set.hpp>
-#include <misc/xmlwrapp/schema.hpp>
-#include <misc/xmlwrapp/dtd.hpp>
-#include <misc/xmlwrapp/exception.hpp>
-#include <misc/xmlwrapp/errors.hpp>
 
-#endif
+#ifndef _xmlwrapp_exception_h_
+#define _xmlwrapp_exception_h_
+
+#include <stdexcept>
+#include <string>
+
+/// XML library namespace
+namespace xml
+{
+    /**
+     * This exception class is thrown by xmlwrapp for all runtime XML-related
+     * errors along with the xml::parser_exception.
+     *
+     * @note C++ runtime may still throw other errors when used from xmlwrapp.
+     *       Also, std::bad_alloc() is thrown in out-of-memory situations.
+     *
+     * @since 0.7.0
+     */
+    class exception : public std::runtime_error
+    {
+    public:
+        explicit exception(const std::string& what) : std::runtime_error(what)
+        {}
+    };
+
+} // namespace xml
+
+#endif // _xmlwrapp_exception_h_
+

@@ -2,11 +2,11 @@
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  *               2009      Vaclav Slavik <vslavik@fastmail.fm>
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -16,7 +16,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -32,7 +32,7 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
  *       API and functionality requirements.
@@ -48,6 +48,7 @@
 #include <misc/xmlwrapp/nodes_view.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "utility.hpp"
 #include "ait_impl.hpp"
 #include "node_manip.hpp"
@@ -396,7 +397,7 @@ xml::node::node_type xml::node::get_type (void) const {
 //####################################################################
 xml::attributes& xml::node::get_attributes (void) {
     if (pimpl_->xmlnode_->type != XML_ELEMENT_NODE) {
-	throw std::runtime_error("get_attributes called on non-element node");
+        throw xml::exception("get_attributes called on non-element node");
     }
 
     pimpl_->attrs_.set_data(pimpl_->xmlnode_);
@@ -405,7 +406,7 @@ xml::attributes& xml::node::get_attributes (void) {
 //####################################################################
 const xml::attributes& xml::node::get_attributes (void) const {
     if (pimpl_->xmlnode_->type != XML_ELEMENT_NODE) {
-        throw std::runtime_error("get_attributes called on non-element node");
+        throw xml::exception("get_attributes called on non-element node");
     }
 
     pimpl_->attrs_.set_data(pimpl_->xmlnode_);
@@ -447,7 +448,7 @@ xml::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_sa
 xml::ns xml::node::set_namespace (const char *prefix) {
     if (prefix && prefix[0] == '\0') prefix = NULL;
     xmlNs *  definition(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
-    if (!definition) throw std::runtime_error("Namespace definition is not found");
+    if (!definition) throw xml::exception("Namespace definition is not found");
     pimpl_->xmlnode_->ns = definition;
     return xml::ns(definition);
 }
@@ -466,15 +467,15 @@ xml::ns xml::node::set_namespace (const xml::ns &name_space) {
         if (prefix[0] == '\0') prefix = NULL;
 
         xmlNs *  definition(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
-        if (!definition) throw std::runtime_error("Namespace definition is not found");
-        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw std::runtime_error("Namespace definition URI differs to the given");
+        if (!definition) throw xml::exception("Namespace definition is not found");
+        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw xml::exception("Namespace definition URI differs to the given");
         pimpl_->xmlnode_->ns = definition;
     }
     return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
 xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_definition_adding_type type) {
-    if (name_space.is_void()) throw std::runtime_error("void namespace cannot be added to namespace definitions");
+    if (name_space.is_void()) throw xml::exception("void namespace cannot be added to namespace definitions");
     if (!pimpl_->xmlnode_->nsDef)   return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
 
     // Search in the list of existed
@@ -523,7 +524,7 @@ xml::ns xml::node::add_namespace_def (const char *uri, const char *prefix) {
 }
 //####################################################################
 xml::ns xml::node::add_matched_namespace_def (void *libxml2RawNamespace, const char *uri, ns_definition_adding_type type) {
-    if (type == type_throw_if_exists) throw std::runtime_error("namespace is already defined");
+    if (type == type_throw_if_exists) throw xml::exception("namespace is already defined");
     if (reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href != NULL )
         xmlFree((char*)(reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href));
     reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href = xmlStrdup(reinterpret_cast<const xmlChar*>(uri));
@@ -551,7 +552,7 @@ void xml::node::erase_namespace_definition (const char *prefix) {
     if (!definition) return;    // Not found
 
     if (is_ns_used(pimpl_->xmlnode_, definition))
-        throw std::runtime_error( "Namespace is in use" );
+        throw xml::exception( "Namespace is in use" );
 
     // Update the linked list pointers and free the namespace
     erase_ns_definition(pimpl_->xmlnode_, definition);
@@ -644,7 +645,7 @@ std::string xml::node::get_path (void) const {
         xmlFree(path);
         return node_path;
     }
-    throw std::runtime_error("Cannot get node path");
+    throw xml::exception("Cannot get node path");
 }
 //####################################################################
 bool xml::node::is_text (void) const {
@@ -777,7 +778,7 @@ const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& exp
 //####################################################################
 void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
     if (!pimpl_->xmlnode_ || !pimpl_->xmlnode_->doc) {
-        throw std::runtime_error("cannot create xpath context (reference to document is not set)");
+        throw xml::exception("cannot create xpath context (reference to document is not set)");
     }
     xmlXPathContextPtr  xpath_context(xmlXPathNewContext(pimpl_->xmlnode_->doc));
     if (!xpath_context) {
@@ -787,7 +788,7 @@ void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const 
         if (last_error && last_error->message)
             message += " : " + std::string(last_error->message);
 
-        throw std::runtime_error(message);
+        throw xml::exception(message);
     }
     const ns_list_type& nspaces(expr.get_namespaces());
     for (ns_list_type::const_iterator k(nspaces.begin()); k!=nspaces.end(); ++k) {
@@ -804,7 +805,7 @@ void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const 
                 message += " : " + std::string(last_error->message);
 
             xmlXPathFreeContext(xpath_context);
-            throw std::runtime_error(message);
+            throw xml::exception(message);
         }
     }
     return xpath_context;
@@ -829,7 +830,7 @@ void* xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr, v
             message += " : " + std::string(last_error->message);
 
         xmlXPathFreeContext(reinterpret_cast<xmlXPathContextPtr>(context));
-        throw std::runtime_error(message);
+        throw xml::exception(message);
     }
     return object;
 }

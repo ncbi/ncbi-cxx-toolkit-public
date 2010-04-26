@@ -38,6 +38,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/dtd.hpp>
 #include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "document_impl.hpp"
 #include "utility.hpp"
 
@@ -79,7 +80,7 @@ dtd::dtd () : pimpl_(new dtd_impl)
 dtd::dtd (const char* filename,
           warnings_as_errors_type how) : pimpl_(NULL) {
     if (!filename)
-        throw std::runtime_error("invalid file name");
+        throw xml::exception("invalid file name");
     std::auto_ptr<dtd_impl> ap(pimpl_ = new dtd_impl);
 
     pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
@@ -145,7 +146,7 @@ bool dtd::validate (document& doc, warnings_as_errors_type how) {
 
     xmlDtdPtr   copy = xmlCopyDtd(pimpl_->dtd_);
     if (copy == NULL)
-        throw std::runtime_error("Error copying DTD");
+        throw xml::exception("Error copying DTD");
 
     if (doc.pimpl_->doc_->extSubset != 0) xmlFreeDtd(doc.pimpl_->doc_->extSubset);
     doc.pimpl_->doc_->extSubset = copy;

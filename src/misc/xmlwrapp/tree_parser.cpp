@@ -45,6 +45,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/tree_parser.hpp>
 #include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "utility.hpp"
 
 // libxml includes
@@ -100,7 +101,7 @@ struct xml::impl::tree_impl {
 xml::tree_parser::tree_parser (const char *filename,
                                warnings_as_errors_type how) {
     if (!filename)
-        throw std::runtime_error("invalid file name");
+        throw xml::exception("invalid file name");
 
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
 
@@ -120,7 +121,7 @@ xml::tree_parser::tree_parser (const char *data,
                                size_type size,
                                warnings_as_errors_type how) {
     if (!data)
-        throw std::runtime_error("invalid data pointer");
+        throw xml::exception("invalid data pointer");
 
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
     xmlParserCtxtPtr ctxt;

@@ -38,6 +38,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/schema.hpp>
 #include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "document_impl.hpp"
 #include "utility.hpp"
 
@@ -72,14 +73,14 @@ struct xml::impl::schema_impl {
 schema::schema (const char* filename,
                 warnings_as_errors_type how) {
     if (!filename)
-        throw std::runtime_error("invalid file name");
+        throw xml::exception("invalid file name");
     construct(filename, (size_type)(-1), how);
 }
 
 schema::schema (const char* data, size_type size,
                 warnings_as_errors_type how) {
     if (!data)
-        throw std::runtime_error("invalid data pointer");
+        throw xml::exception("invalid data pointer");
     construct(data, size, how);
 }
 
@@ -120,7 +121,7 @@ void schema::construct (const char* file_or_data, size_type size,
 
     // To be 100% sure that schema was created successfully
     if (pimpl_->schema_ == NULL)
-        throw std::runtime_error("unknown schema parsing error");
+        throw xml::exception("unknown schema parsing error");
 
     ap.release();
     return;
@@ -151,7 +152,7 @@ bool schema::validate (const document& doc,
     xmlSchemaFreeValidCtxt(ctxt);
 
     if (retCode == -1)
-        throw std::runtime_error("internal libxml2 API error");
+        throw xml::exception("internal libxml2 API error");
 
     // There are errors
     if (pimpl_->validation_messages_.has_errors())

@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -46,6 +46,7 @@
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/dtd.hpp>
 #include <misc/xmlwrapp/schema.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "utility.hpp"
 #include "document_impl.hpp"
 #include "node_manip.hpp"
@@ -287,30 +288,30 @@ xml::node::const_iterator xml::document::end (void) const {
 }
 //####################################################################
 void xml::document::push_back (const node &child) {
-    if (child.get_type() == node::type_element) throw std::runtime_error("xml::document::push_back can't take element type nodes");
+    if (child.get_type() == node::type_element) throw xml::exception("xml::document::push_back can't take element type nodes");
     xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0, static_cast<xmlNodePtr>(const_cast<node&>(child).get_node_data()));
 }
 //####################################################################
 xml::node::iterator xml::document::insert (const node &n) {
-    if (n.get_type() == node::type_element) throw std::runtime_error("xml::document::insert can't take element type nodes");
+    if (n.get_type() == node::type_element) throw xml::exception("xml::document::insert can't take element type nodes");
     return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0, static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::insert (node::iterator position, const node &n) {
-    if (n.get_type() == node::type_element) throw std::runtime_error("xml::document::insert can't take element type nodes");
+    if (n.get_type() == node::type_element) throw xml::exception("xml::document::insert can't take element type nodes");
     return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), static_cast<xmlNodePtr>(position.get_raw_node()), static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::replace (node::iterator old_node, const node &new_node) {
     if (old_node->get_type() == node::type_element || new_node.get_type() == node::type_element) {
-	throw std::runtime_error("xml::document::replace can't replace element type nodes");
+        throw xml::exception("xml::document::replace can't replace element type nodes");
     }
 
     return node::iterator(xml::impl::node_replace(static_cast<xmlNodePtr>(old_node.get_raw_node()), static_cast<xmlNodePtr>(const_cast<node&>(new_node).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::erase (node::iterator to_erase) {
-    if (to_erase->get_type() == node::type_element) throw std::runtime_error("xml::document::erase can't erase element type nodes");
+    if (to_erase->get_type() == node::type_element) throw xml::exception("xml::document::erase can't erase element type nodes");
     return node::iterator(xml::impl::node_erase(static_cast<xmlNodePtr>(to_erase.get_raw_node())));
 }
 //####################################################################

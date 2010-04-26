@@ -34,6 +34,7 @@
 **/
 
 #include <misc/xmlwrapp/errors.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 
 using namespace xml;
 
@@ -46,7 +47,7 @@ std::string error_message::message_type_str(message_type mt) {
         case type_warning:      return std::string("warning");
         default: ;
     }
-    throw std::runtime_error("unknown message type");
+    throw xml::exception("unknown message type");
 }
 
 error_message::error_message(const std::string& message,

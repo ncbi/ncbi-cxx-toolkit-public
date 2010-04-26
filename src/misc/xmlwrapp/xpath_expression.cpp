@@ -37,6 +37,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xpath_expression.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 
 // standard includes
 #include <string.h>
@@ -59,7 +60,7 @@ xpath_expression::xpath_expression (const char* xpath,
                                                                compiled_expression_(NULL)
 {
     if (expression_.empty())
-        throw std::runtime_error(kEmptyExpression);
+        throw exception(kEmptyExpression);
     compile_expression();
 }
 
@@ -71,10 +72,10 @@ xpath_expression::xpath_expression (const char* xpath,
                                                                compiled_expression_(NULL)
 {
     if (expression_.empty())
-        throw std::runtime_error(kEmptyExpression);
+        throw xml::exception(kEmptyExpression);
 
     if (strlen(nspace.get_prefix()) == 0)
-        throw std::runtime_error(kDefaultNamespace);
+        throw xml::exception(kDefaultNamespace);
 
     nspace_list_.push_back(nspace);
 
@@ -89,11 +90,11 @@ xpath_expression::xpath_expression (const char* xpath,
                                                                compiled_expression_(NULL)
 {
     if (expression_.empty())
-        throw std::runtime_error(kEmptyExpression);
+        throw xml::exception(kEmptyExpression);
 
     for (ns_list_type::const_iterator  k(nspace_list.begin()); k != nspace_list.end(); ++k)
         if (strlen(k->get_prefix()) == 0)
-            throw std::runtime_error(kDefaultNamespace);
+            throw xml::exception(kDefaultNamespace);
 
     nspace_list_ = nspace_list;
     compile_expression();
@@ -177,7 +178,7 @@ void xpath_expression::compile_expression ()
 
             if (last_error && last_error->message)
                 message += " : " + std::string(last_error->message);
-            throw std::runtime_error(message);
+            throw xml::exception(message);
         }
     }
 }

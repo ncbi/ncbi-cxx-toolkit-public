@@ -37,6 +37,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/namespace.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 
 // standard includes
 #include <stdexcept>
@@ -61,7 +62,7 @@ xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix 
                                                         safety_(ns::type_safe_ns)
 {
     if (uri_.empty())
-        throw std::runtime_error("xml::ns can't have empty uri");
+        throw xml::exception("xml::ns can't have empty uri");
 }
 
 

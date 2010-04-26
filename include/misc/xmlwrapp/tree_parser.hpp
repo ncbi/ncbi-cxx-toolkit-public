@@ -76,10 +76,11 @@ public:
      * constructor will parse that file.
      *
      * There are two options for dealing with XML parsing errors. The
-     * default it to throw an exception (std::runtime_error). The other
-     * option is to pass false for the allow_exceptions flag. This will
-     * prevent an exception from being thrown, instead, a flag will be set
-     * that you can test with the operator! member function.
+     * default it to throw an exception (xml::exception, xml::parser_exception
+     * or std::bad_alloc). The other option is to pass false for the
+     * allow_exceptions flag. This will prevent an exception from being thrown,
+     * instead, a flag will be set that you can test with the operator!
+     * member function.
      *
      * No matter what option you choose, this constructor may still throw
      * exceptions for memory failure or other non-parsing related failures.

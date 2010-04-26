@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +15,7 @@
  * 3. Neither the name of the Author nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -31,10 +31,10 @@
  */
 
 /*
- * $Id$ 
+ * $Id$
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements. 
+ *       API and functionality requirements.
  */
 
 /** @file
@@ -50,6 +50,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "utility.hpp"
 
 // libxml includes
@@ -399,7 +400,7 @@ xml::event_parser::entity_type xml::event_parser::get_entity_type (int type) {
         case XML_INTERNAL_PREDEFINED_ENTITY:        return type_internal_predefined_entity;
         default: ;
     }
-    throw std::runtime_error("Unknown entity type");
+    throw xml::exception("Unknown entity type");
 }
 //####################################################################
 xml::event_parser::attribute_type xml::event_parser::get_attribute_type (int type) {
@@ -416,7 +417,7 @@ xml::event_parser::attribute_type xml::event_parser::get_attribute_type (int typ
         case XML_ATTRIBUTE_NOTATION:    return type_attribute_notation;
         default: ;
     }
-    throw std::runtime_error("Unknown attribute type");
+    throw xml::exception("Unknown attribute type");
 }
 //####################################################################
 xml::event_parser::attribute_default_type xml::event_parser::get_attribute_default_type (int type) {
@@ -427,7 +428,7 @@ xml::event_parser::attribute_default_type xml::event_parser::get_attribute_defau
         case XML_ATTRIBUTE_FIXED:       return type_attribute_fixed;
         default: ;
     }
-    throw std::runtime_error("Unknown attribute default type");
+    throw xml::exception("Unknown attribute default type");
 }
 //####################################################################
 xml::event_parser::element_content_type xml::event_parser::get_element_content_type (int type) {
@@ -439,7 +440,7 @@ xml::event_parser::element_content_type xml::event_parser::get_element_content_t
         case XML_ELEMENT_TYPE_ELEMENT:      return type_element;
         default: ;
     }
-    throw std::runtime_error("Unknown element type");
+    throw xml::exception("Unknown element type");
 }
 //####################################################################
 epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
