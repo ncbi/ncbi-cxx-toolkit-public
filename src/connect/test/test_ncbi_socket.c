@@ -329,7 +329,7 @@ static void TEST__client_2(SOCK sock)
         char        buf1[sizeof(buf)];
         STimeout    w_to, r_to;
         int/*bool*/ w_timeout_on = (int)(i%2); /* if to start from     */
-        int/*bool*/ r_timeout_on = (int)(i%3); /* zero or inf. timeout */
+        int/*bool*/ r_timeout_on = (int)(i%2); /* zero or inf. timeout */
         char*       x_buf;
 
         /* set timeout */
@@ -343,9 +343,11 @@ static void TEST__client_2(SOCK sock)
         if ((i % N_RECONNECT) == 0) {
             size_t j = i / N_RECONNECT;
             do {
+                SOCK_SetDataLogging(sock, eOn);
                 status = SOCK_Reconnect(sock, 0, 0, 0);
+                SOCK_SetDataLogging(sock, eDefault);
                 CORE_LOGF(eLOG_Note,
-                          ("TEST__client_2::reconnect: i=%lu, j=%lu, status=%s",
+                          ("TC2::reconnect: i=%lu, j=%lu, status=%s",
                            (unsigned long) i, (unsigned long) j,
                            IO_StatusStr(status)));
                 assert(status == eIO_Success);
@@ -396,7 +398,7 @@ static void TEST__client_2(SOCK sock)
         /* get back the just sent data */
         r_to.sec  = 0;
         r_to.usec = 0;
-        status = SOCK_SetTimeout(sock, eIO_Read, (r_timeout_on ? &r_to : 0));
+        status = SOCK_SetTimeout(sock, eIO_Read, r_timeout_on ? &r_to : 0);
         assert(status == eIO_Success);
 
         x_buf = buf1;
