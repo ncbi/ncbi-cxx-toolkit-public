@@ -26,7 +26,6 @@ internal/gpipe
 internal/gnomon
 internal/ID/utils$
 internal/blast/DistribDbSupport
-internal/gpipe/align_db
 misc
 objects
 objmgr
