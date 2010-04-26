@@ -98,7 +98,11 @@ public:
 
     // Get a value from a CGI request. if there is no an entry with a
     // given name it returns an empty string.
-    const string& GetEntryValue(const string& entry_name) const;
+    const string& GetPersistentEntryValue(const string& entry_name) const;
+
+    void GetQueryStringEntryValue(const string& entry_name,
+        string& value) const;
+    void GetRequestEntryValue(const string& entry_name, string& value) const;
 
     // Save this entry as a cookie add it to serf url
     void PersistEntry(const string& entry_name);
@@ -119,7 +123,7 @@ public:
     const string& GetJobOutput() const { return m_JobOutput; }
 
 public:
-    // Remove all persisted entries from cookie and self url.
+    // Remove all persistent entries from cookie and self url.
     void Clear();
 
     void SetJobKey(const string& job_key);
@@ -129,13 +133,13 @@ public:
     void SetJobOutput(const string& output) { m_JobOutput = output; }
 
 private:
-    typedef map<string,string>    TPersistedEntries;
+    typedef map<string,string>    TPersistentEntries;
 
     CHTMLPage&                    m_Page;
     CHTMLPage&                    m_CustomHTTPHeader;
     CCgiContext&                  m_CgiContext;
     TCgiEntries                   m_ParsedQueryString;
-    TPersistedEntries             m_PersistedEntries;
+    TPersistentEntries            m_PersistentEntries;
     string                        m_ProgressMsg;
     string                        m_JobInput;
     string                        m_JobOutput;
@@ -162,9 +166,9 @@ string CGridCgiContext::GetSelfURL() const
 {
     string url = m_CgiContext.GetSelfURL();
     bool first = true;
-    TPersistedEntries::const_iterator it;
-    for (it = m_PersistedEntries.begin();
-         it != m_PersistedEntries.end(); ++it) {
+    TPersistentEntries::const_iterator it;
+    for (it = m_PersistentEntries.begin();
+         it != m_PersistentEntries.end(); ++it) {
         const string& name = it->first;
         const string& value = it->second;
         if (!name.empty() && !value.empty()) {
@@ -183,9 +187,9 @@ string CGridCgiContext::GetSelfURL() const
 string CGridCgiContext::GetHiddenFields() const
 {
     string ret;
-    TPersistedEntries::const_iterator it;
-    for (it = m_PersistedEntries.begin();
-         it != m_PersistedEntries.end(); ++it) {
+    TPersistentEntries::const_iterator it;
+    for (it = m_PersistentEntries.begin();
+         it != m_PersistentEntries.end(); ++it) {
         const string& name = it->first;
         const string& value = it->second;
         ret += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + name
@@ -199,17 +203,18 @@ void CGridCgiContext::SetJobKey(const string& job_key)
     PersistEntry("job_key", job_key);
 }
 
-const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
+const string& CGridCgiContext::GetPersistentEntryValue(
+    const string& entry_name) const
 {
-    TPersistedEntries::const_iterator it = m_PersistedEntries.find(entry_name);
-    if (it != m_PersistedEntries.end())
+    TPersistentEntries::const_iterator it = m_PersistentEntries.find(entry_name);
+    if (it != m_PersistentEntries.end())
         return it->second;
     return kEmptyStr;
 }
 
-void CGridCgiContext::PersistEntry(const string& entry_name)
+void CGridCgiContext::GetQueryStringEntryValue(const string& entry_name,
+    string& value) const
 {
-    string value = kEmptyStr;
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
         if (NStr::CompareNocase(entry_name, eit->first) == 0) {
             string v = eit->second;
@@ -217,28 +222,40 @@ void CGridCgiContext::PersistEntry(const string& entry_name)
                 value = v;
         }
     }
-    if (value.empty()) {
-        const TCgiEntries entries = m_CgiContext.GetRequest().GetEntries();
-        ITERATE(TCgiEntries, eit, entries) {
-            if (NStr::CompareNocase(entry_name, eit->first) == 0) {
-                string v = eit->second;
-                if (!v.empty())
-                    value = v;
-            }
+}
+
+void CGridCgiContext::GetRequestEntryValue(const string& entry_name,
+    string& value) const
+{
+    const TCgiEntries entries = m_CgiContext.GetRequest().GetEntries();
+    ITERATE(TCgiEntries, eit, entries) {
+        if (NStr::CompareNocase(entry_name, eit->first) == 0) {
+            string v = eit->second;
+            if (!v.empty())
+                value = v;
         }
     }
+}
+
+void CGridCgiContext::PersistEntry(const string& entry_name)
+{
+    string value = kEmptyStr;
+    GetQueryStringEntryValue(entry_name, value);
+    if (value.empty())
+        GetRequestEntryValue(entry_name, value);
     PersistEntry(entry_name, value);
 }
+
 void CGridCgiContext::PersistEntry(const string& entry_name,
                                    const string& value)
 {
     if (value.empty()) {
-        TPersistedEntries::iterator it =
-              m_PersistedEntries.find(entry_name);
-        if (it != m_PersistedEntries.end())
-            m_PersistedEntries.erase(it);
+        TPersistentEntries::iterator it =
+              m_PersistentEntries.find(entry_name);
+        if (it != m_PersistentEntries.end())
+            m_PersistentEntries.erase(it);
     } else {
-        m_PersistedEntries[entry_name] = value;
+        m_PersistentEntries[entry_name] = value;
     }
 }
 
@@ -254,7 +271,7 @@ void CGridCgiContext::LoadQueryStringTags()
 
 void CGridCgiContext::Clear()
 {
-    m_PersistedEntries.clear();
+    m_PersistentEntries.clear();
 }
 
 void CGridCgiContext::RenderView(const string& view_name)
@@ -317,6 +334,11 @@ public:
     }
 
 private:
+    enum {
+        eUseQueryString = 1,
+        eUseRequestContent = 2
+    };
+
     // This method is called when the worker node reported a failure.
     void OnJobFailed(const string& msg, CGridCgiContext& ctx);
 
@@ -334,6 +356,9 @@ private:
     vector<string> m_HtmlIncs;
 
     string  m_StrPage;
+
+    string m_AffinityName;
+    int m_AffinitySource;
 };
 
 void CCgi2RCgiApp::Init()
@@ -422,7 +447,7 @@ void CCgi2RCgiApp::Init()
     string incs = GetConfig().GetString("cgi2rcgi", "html_template_includes",
                                         "cgi2rcgi.inc.html");
 
-    NStr::Tokenize(incs, ",; ", m_HtmlIncs);
+    NStr::Tokenize(incs, ",; ", m_HtmlIncs, NStr::eMergeDelims);
 
 
     m_FallBackUrl = GetConfig().GetString("cgi2rcgi", "fall_back_url", "");
@@ -439,6 +464,28 @@ void CCgi2RCgiApp::Init()
         m_CancelGoBackDelay = -1;
     }
 
+    m_AffinitySource = 0;
+    m_AffinityName =
+        GetConfig().GetString("cgi2rcgi", "affinity_name", kEmptyStr);
+
+    if (!m_AffinityName.empty()) {
+        vector<string> affinity_methods;
+        NStr::Tokenize(GetConfig().GetString("cgi2rcgi",
+            "affinity_source", "GET"), ", ;&|",
+                affinity_methods, NStr::eMergeDelims);
+        for (vector<string>::const_iterator it = affinity_methods.begin();
+                it != affinity_methods.end(); ++it) {
+            if (*it == "GET")
+                m_AffinitySource |= eUseQueryString;
+            else if (*it == "POST")
+                m_AffinitySource |= eUseRequestContent;
+            else {
+                NCBI_THROW_FMT(CArgException, eConstraint,
+                    "Invalid affinity_source value '" << *it << '\'');
+            }
+        }
+    }
+
     // Disregard the case of CGI arguments
     CCgiRequest::TFlags flags = CCgiRequest::fCaseInsensitiveArgs;
 
@@ -447,7 +494,8 @@ void CCgi2RCgiApp::Init()
         flags |= CCgiRequest::fIgnoreQueryString;
 
     if (GetConfig().GetBool("cgi2rcgi", "donot_parse_content",
-            true, IRegistry::eReturn))
+            true, IRegistry::eReturn) &&
+                !(m_AffinitySource & eUseRequestContent))
         flags |= CCgiRequest::fDoNotParseContent;
 
     SetRequestFlags(flags);
@@ -466,6 +514,10 @@ CCgiContext* CCgi2RCgiApp::CreateContext(CNcbiArguments* args,
     if (flags & CCgiRequest::fDoNotParseContent)
         return CCgiApplicationCached::CreateContext(args, env,
             inp, out, ifd, ofd, flags);
+
+    if (m_AffinitySource & eUseRequestContent)
+        return CCgiApplicationCached::CreateContext(args, env,
+            inp, out, ifd, ofd, flags | CCgiRequest::fSaveRequestContent);
 
     // The 'env' argument is only valid in FastCGI mode.
     if (env == NULL)
@@ -514,7 +566,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     grid_ctx.PersistEntry("job_key");
     grid_ctx.PersistEntry("Cancel");
     grid_ctx.LoadQueryStringTags();
-    string job_key = grid_ctx.GetEntryValue("job_key");
+    string job_key = grid_ctx.GetPersistentEntryValue("job_key");
     try {
         try {
             vector<string>::const_iterator it;
@@ -531,7 +583,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 // Check if job cancellation has been requested
                 // via the user interface(HTML).
                 if (GetArgs()["Cancel"] ||
-                        !grid_ctx.GetEntryValue("Cancel").empty())
+                        !grid_ctx.GetPersistentEntryValue("Cancel").empty())
                     m_GridClient->CancelJob(job_key);
 
                 if (finished)
@@ -544,6 +596,17 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 // Get a job submitter
                 CGridJobSubmitter& job_submitter = m_GridClient->GetJobSubmitter();
                 // Submit a job
+                if (!m_AffinityName.empty()) {
+                    string affinity;
+                    if (m_AffinitySource & eUseQueryString)
+                        grid_ctx.GetQueryStringEntryValue(m_AffinityName,
+                            affinity);
+                    if (affinity.empty() &&
+                            m_AffinitySource & eUseRequestContent)
+                        grid_ctx.GetRequestEntryValue(m_AffinityName, affinity);
+                    if (!affinity.empty())
+                        job_submitter.SetJobAffinity(affinity);
+                }
                 try {
                     // The job is ready to be sent to the queue.
                     // Prepare the input data.
@@ -612,7 +675,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         CTime now(CTime::eCurrent);
         m_Page->AddTagMap("DATE",
             new CHTMLText(now.AsString(m_DateFormat)));
-        string st = grid_ctx.GetEntryValue(kElapsedTime);
+        string st = grid_ctx.GetPersistentEntryValue(kElapsedTime);
         if (!st.empty()) {
             m_Page->AddTagMap("SINCE_TIME", new CHTMLText(st));
             m_CustomHTTPHeader->AddTagMap("SINCE_TIME", new CHTMLText(st));
@@ -680,7 +743,7 @@ void CCgi2RCgiApp::RenderRefresh(const string& url, int idelay)
 
 bool CCgi2RCgiApp::x_CheckJobStatus(CGridCgiContext& grid_ctx)
 {
-    string job_key = grid_ctx.GetEntryValue("job_key");
+    string job_key = grid_ctx.GetPersistentEntryValue("job_key");
     CGridJobStatus& job_status = m_GridClient->GetJobStatus(job_key);
 
     CNetScheduleAPI::EJobStatus status;
