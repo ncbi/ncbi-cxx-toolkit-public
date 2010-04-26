@@ -1184,6 +1184,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             << " MTARGET=$(MTARGET)";
         ofs << endl << endl;
         ofs << target << dotreal << " :";
+        if (hasDataspec) {
+            if (m_Dtdep && !datatool_key.empty()) {
+                ofs << " " << datatool_key << dotreal;
+            }
+	}
         ITERATE(list<string>, d, dependencies) {
             ofs << " " << *d << dotreal;
         }
