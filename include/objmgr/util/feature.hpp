@@ -236,6 +236,7 @@ public:
         
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
+        const string* m_TranscriptId;
         bool m_IsSetParent, m_IsSetChildren;
         enum EIsLinkedToRoot {
             eIsLinkedToRoot_unknown,
@@ -243,6 +244,7 @@ public:
             eIsLinkedToRoot_linking
         };
         Int1 m_IsLinkedToRoot;
+        Uint1 m_ParentQuality;
         CFeatInfo* m_Parent;
         Int8 m_ParentOverlap;
         TChildren m_Children;

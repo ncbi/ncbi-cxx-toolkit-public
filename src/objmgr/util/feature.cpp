@@ -1012,6 +1012,16 @@ namespace {
         }
     }
 
+
+    static inline
+    bool sx_CanHaveTranscriptId(CSeqFeatData::ESubtype type)
+    {
+        return
+            type == CSeqFeatData::eSubtype_mRNA ||
+            type == CSeqFeatData::eSubtype_cdregion;
+    }
+
+
     static inline
     EOverlapType sx_GetOverlapType(const STypeLink& link,
                                    const CSeq_loc& loc)
@@ -1208,7 +1218,16 @@ void CFeatTree::AddFeatures(CFeat_CI it)
 
 void CFeatTree::AddFeature(const CMappedFeat& feat)
 {
-    m_InfoMap[feat.GetSeq_feat_Handle()].m_Feat = feat;
+    CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
+    info.m_Feat = feat;
+    if ( feat.IsSetQual() && sx_CanHaveTranscriptId(feat.GetFeatSubtype()) ) {
+        ITERATE ( CSeq_feat::TQual, it, feat.GetQual() ) {
+            if ( (*it)->GetQual() == "transcript_id" && (*it)->IsSetVal() ) {
+                info.m_TranscriptId = &(*it)->GetVal();
+                break;
+            }
+        }
+    }
 }
 
 
@@ -1544,12 +1563,23 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                         link.m_ByProduct?
                         p_feat.GetProduct():
                         p_feat.GetLocation();
+                    Uint1 quality = 0;
+                    if ( info.m_TranscriptId && pc->m_Info->m_TranscriptId &&
+                         *info.m_TranscriptId == *pc->m_Info->m_TranscriptId ){
+                        quality = 1;
+                    }
                     Int8 overlap = TestForOverlap64(p_loc,
                                                     c_loc,
                                                     overlap_type,
                                                     kInvalidSeqPos,
                                                     &p_feat.GetScope());
-                    if ( overlap >= 0 && overlap < info.m_ParentOverlap ) {
+                    if ( overlap < 0 ) {
+                        continue;
+                    }
+                    if ( quality > info.m_ParentQuality ||
+                         (quality == info.m_ParentQuality &&
+                          overlap < info.m_ParentOverlap) ) {
+                        info.m_ParentQuality = quality;
                         info.m_ParentOverlap = overlap;
                         info.m_Parent = pc->m_Info;
                     }
@@ -1783,9 +1813,11 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
 
 
 CFeatTree::CFeatInfo::CFeatInfo(void)
-    : m_IsSetParent(false),
+    : m_TranscriptId(0),
+      m_IsSetParent(false),
       m_IsSetChildren(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),
+      m_ParentQuality(0),
       m_Parent(0),
       m_ParentOverlap(kMax_I8)
 {
