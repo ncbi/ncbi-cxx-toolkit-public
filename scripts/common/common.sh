@@ -420,7 +420,7 @@ COMMON_LimitTextFileSize()
 #
 COMMON_DetectPlatform()
 {
-    raw_platform=`uname -sp`
+    raw_platform=`uname -sm`
     case "$raw_platform" in
 	*CYGWIN_NT*86   ) echo Win32      ;;
 	*CYGWIN_NT*64   ) echo Win64      ;; # unverified
@@ -430,8 +430,8 @@ COMMON_DetectPlatform()
 	IRIX64\ *       ) echo IRIX64     ;;
 	Linux\ i?86     ) echo Linux32    ;;
 	Linux\ x86_64   ) echo Linux64    ;;
-	SunOS\ i?86     ) echo SunOSx86   ;;
-	SunOS\ sparc    ) echo SunOSSparc ;;
+	SunOS\ i*86*    ) echo SunOSx86   ;;
+	SunOS\ sun4*    ) echo SunOSSparc ;;
 	* )
 	    echo "Platform not defined for $raw_platform -- please fix me" >&2
 	    echo UNKNOWN
