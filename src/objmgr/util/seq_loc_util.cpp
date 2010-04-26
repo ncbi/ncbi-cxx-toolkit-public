@@ -2132,7 +2132,22 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                                                  it2->second,
                                                  CHandleRange::eStrandMinus);
                 if (diff_minus < 0) {
-                    return -1;
+                    // It is possible that we are comparing location on
+                    // plus strand to both/unknown strand. In this case
+                    // the negative diff_minus should be ignored.
+                    CRange<TSeqPos> rg1_minus =
+                        it1->second.GetOverlappingRange(CHandleRange::eStrandMinus);
+                    CRange<TSeqPos> rg2_plus =
+                        it2->second.GetOverlappingRange(CHandleRange::eStrandPlus);
+                    CRange<TSeqPos> rg2_minus =
+                        it2->second.GetOverlappingRange(CHandleRange::eStrandMinus);
+                    if (rg1_minus.Empty()  &&  rg2_plus == rg2_minus) {
+                        // use diff_plus instead of diff_minus
+                        diff_minus = diff_plus;
+                    }
+                    else {
+                        return -1;
+                    }
                 }
                 diff += diff_minus;
             }

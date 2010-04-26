@@ -336,7 +336,8 @@ CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
     if ( m_IsSingleStrand && (m_MoreBefore || m_MoreAfter) ) {
         _ASSERT(!m_Ranges.empty());
         if ( x_IncludesPlus(m_Ranges.front().second) ) {
-            if ( (flags & eStrandPlus) ) {
+            if ( (flags & eStrandPlus)  ||
+                x_IncludesMinus(m_Ranges.front().second) ) {
                 if ( m_MoreBefore ) {
                     ret.SetFrom(TRange::GetWholeFrom());
                 }
