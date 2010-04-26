@@ -1182,7 +1182,9 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
         string expt;
         
         try {
-            m_MemFile = new CMemoryFileMap(*m_Fname);
+            m_MemFile = new CMemoryFileMap(*m_Fname, 
+                                           CMemoryFileMap::eMMP_Read, 
+                                           CMemoryFileMap::eMMS_Private);
             
             // new() should have thrown, but some old implementations are
             // said to be non-compliant in this regard:
