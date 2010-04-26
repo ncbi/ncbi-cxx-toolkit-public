@@ -147,7 +147,7 @@ bool CFlatSeqLoc::x_Add
             break;
         } 
         size_t uLength = gap->GetLength();
-        oss << (uLength==100 ? "gap(unk" : "gap(") << uLength << ")";
+        oss << (uLength==100 ? "gap(" : "gap(") << uLength << ")";
         break;
     }}
     case CSeq_loc::e_Empty:

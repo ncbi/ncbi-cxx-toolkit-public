@@ -88,9 +88,9 @@ void CContigItem::x_GatherInfo(CBioseqContext& ctx)
                 const CSeq_literal& lit = (*it)->GetLiteral();
                 TSeqPos len = lit.CanGetLength() ? lit.GetLength() : 0;
                 // no data or data with 0 length => gap
-                if (!lit.CanGetSeq_data()  ||  len == 0) {
+//                if (!lit.CanGetSeq_data()  ||  len == 0) {
                     data.push_back(TLoc(new CFlatGapLoc(len)));
-                }
+//                }
             }
         }
     }
