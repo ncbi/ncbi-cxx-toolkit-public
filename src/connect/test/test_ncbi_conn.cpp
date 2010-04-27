@@ -176,8 +176,8 @@ int CTest::Run(void)
 
     m_Tee << NcbiEndl;
     if (status != eIO_Success) {
-        m_Tee << "Check " << kLogfile << " for more information."
-              << NcbiEndl << "Please remember to make its contents"
+        m_Tee << "Check " << kLogfile << " for more information." << NcbiEndl
+              << "Please remember to make its contents"
             " available if contacting NCBI.";
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
@@ -186,7 +186,7 @@ int CTest::Run(void)
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
 #ifdef NCBI_OS_MSWIN
-    m_Tee << "Press any key or program will bail out in 1 minute" << NcbiEndl;
+    NcbiCout << "Hit any key or program will bail out in 1 minute" << NcbiEndl;
     for (n = 0;  n < 120;  n++) {
         if (_kbhit())
             break;
@@ -206,7 +206,7 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
-    CNcbiOfstream log(kLogfile);
+    CNcbiOfstream log(kLogfile, IOS_BASE::out|IOS_BASE::trunc|IOS_BASE:app);
     freopen(kLogfile, "a", stderr);
     SetDiagStream(&log);
 
