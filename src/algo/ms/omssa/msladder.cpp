@@ -203,7 +203,7 @@ CLadder::CreateLadder(const int IonType,
            Sequence[Offset + Direction * (i + iSkip + ProlineOffset)] != '\x0e')) {
             GetHit()[j] = 0;
             (*this)[j] = ion;
-               cout << IonType << " " << j << " " << ion << endl;
+//              cout << IonType << " " << j << " " << ion << endl;
             SetLadderNumber()[j] = i+iSkip;
             j++;
         }
@@ -262,7 +262,7 @@ bool CLadder::ContainsFast(int MassIndex, int Tolerance)
 	MassIndex - Tolerance) 
 	return true;
 #endif
-    cout << MassIndex << " ladder " << (*this)[x] << endl;
+//    cout << MassIndex << " ladder " << (*this)[x] << endl;
     return false;
 }
 

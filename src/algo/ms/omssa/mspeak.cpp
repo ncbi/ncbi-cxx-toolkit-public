@@ -506,7 +506,7 @@ const bool CMSPeak::CompareTop(CLadder& Ladder)
     CRef <CMSPeakList> PeakList = SetPeakLists()[eMSPeakListTop];
 
     for(i = 0; i < PeakList->GetNum(); i++) {
-        cout << PeakList->GetMZI()[i].GetMZ() << " tol " << tol << endl;
+//        cout << PeakList->GetMZI()[i].GetMZ() << " tol " << tol << endl;
         if(Ladder.ContainsFast(PeakList->GetMZI()[i].GetMZ(), tol)) return true;
     }
     return false;
