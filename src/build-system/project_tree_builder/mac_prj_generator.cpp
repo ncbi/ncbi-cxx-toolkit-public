@@ -233,6 +233,12 @@ void CMacProjectGenerator::Generate(const string& solution)
         if (!proj_link.empty()) {
             AddString( *build_phases, proj_link);
         }
+        // project copybin script phase
+        string proj_copybin_script(
+            CreateProjectCopyBinScript(prj, prj_files, *dict_objects));
+        if (!proj_copybin_script.empty()) {
+            AddString( *build_phases, proj_copybin_script);
+        }
         // project target and dependencies
         string proj_product( m_TargetProduct[target_id] );
         string proj_target(
@@ -629,6 +635,38 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
     return kEmptyStr;
 }
 
+string CMacProjectGenerator::CreateProjectCopyBinScript(
+    const CProjItem& prj, const CProjectFileCollector& prj_files,
+    CDict& dict_objects)
+{
+    string bins_out_install(m_OutputDir + "bin/${CONFIGURATION}");
+    if (prj.m_ProjType == CProjKey::eApp ||
+        (prj.m_ProjType == CProjKey::eDll && prj.m_IsBundle)) {
+
+        string script;
+        script += "export BUILD_TREE_ROOT=" +
+            CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
+            CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
+                GetApp().GetProjectTreeInfo().m_Compilers,
+                GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
+        script += "export BUILD_TREE_BIN=" + bins_out_install + "\n";
+        script +=  "\"$BUILD_TREE_ROOT/copybin.sh\"";
+        string proj_script(   GetUUID());
+        CRef<CArray> inputs(  new CArray);
+        AddString( *inputs, "$(TARGET_BUILD_DIR)/$(TARGET_NAME)");
+        CRef<CArray> outputs( new CArray);
+        CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
+        AddArray(  *dict_script, "files");
+        AddArray(  *dict_script, "inputPaths",  inputs);
+        AddArray(  *dict_script, "outputPaths", outputs);
+        AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
+        AddString( *dict_script, "shellPath", "/bin/sh");
+        AddString( *dict_script, "shellScript", script);
+        return proj_script;
+    }
+    return kEmptyStr;
+}
+
 string CMacProjectGenerator::CreateProjectLinkPhase(
     const CProjItem& prj, const CProjectFileCollector& prj_files,
     CDict& dict_objects)
@@ -961,9 +999,16 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     const CMsvcMetaMakefile& metamake( GetApp().GetMetaMakefile());
     bool dll_build = GetApp().GetBuildType().GetType() == CBuildType::eDll;
     string def_lib_path(m_OutputDir + "lib/$(CONFIGURATION)");
+
     string libs_out(m_OutputDir + "lib/$(CONFIGURATION)");
-    string bins_out(m_OutputDir + "bin/$(CONFIGURATION)");
+    string libs_out_install(m_OutputDir + "lib/$(CONFIGURATION)");
+// CreateProjectCopyBinScript takes care of copying them into bin; CXX-1609
+//    string bins_out(m_OutputDir + "bin/$(CONFIGURATION)");
+    string bins_out(m_OutputDir + "lib/$(CONFIGURATION)");
+    string bins_out_install(m_OutputDir + "bin/$(CONFIGURATION)");
+
     string proj_dir("$(PROJECT_DIR)/");
+
 //    string temp_dir("$(BUILD_DIR)/$(CONFIGURATION)");
     string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
     string objroot(m_OutputDir + "build");
@@ -989,20 +1034,22 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
-        AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
+        AddString( *settings, "INSTALL_PATH", proj_dir + libs_out_install);
         AddString( *settings, "OBJROOT", objroot);
 
     } else if (prj.m_ProjType == CProjKey::eDll) {
 
         string bld_out(libs_out);
+        string bld_out_install(libs_out_install);
         if (prj.m_IsBundle) {
             bld_out = bins_out;
+            bld_out_install = bins_out_install;
         }
         AddString( *settings, "GCC_SYMBOLS_PRIVATE_EXTERN", "NO");
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bld_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
-        AddString( *settings, "INSTALL_PATH", proj_dir + bld_out);
+        AddString( *settings, "INSTALL_PATH", proj_dir + bld_out_install);
         AddString( *settings, "OBJROOT", objroot);
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
@@ -1012,7 +1059,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bins_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
-        AddString( *settings, "INSTALL_PATH", proj_dir + bins_out);
+        AddString( *settings, "INSTALL_PATH", proj_dir + bins_out_install);
         AddString( *settings, "OBJROOT", objroot);
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);

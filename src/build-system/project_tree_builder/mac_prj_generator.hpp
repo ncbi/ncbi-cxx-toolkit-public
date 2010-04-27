@@ -76,6 +76,9 @@ private:
     string CreateProjectCustomScriptPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
+    string CreateProjectCopyBinScript(
+        const CProjItem& prj, const CProjectFileCollector& prj_files,
+        CDict& dict_objects);
     string CreateProjectLinkPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
