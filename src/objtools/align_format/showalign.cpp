@@ -1006,7 +1006,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     string urlLink = NcbiEmptyString;
     char dopt[32], db[32];
     char logstr_moltype[32], logstr_location[32];
-    bool hit_not_in_mapviewer = linkout != 0 && !(linkout & eGenomicSeq);
+    bool hit_not_in_mapviewer = !m_IsDbNa || (linkout != 0 && !(linkout & eGenomicSeq));
  
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
     string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");

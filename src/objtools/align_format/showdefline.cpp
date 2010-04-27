@@ -152,7 +152,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
     char dopt[32], db[32];
     char logstr_moltype[32], logstr_location[32];
  
-    bool hit_not_in_mapviewer = linkout != 0 && !(linkout & eGenomicSeq);
+    bool hit_not_in_mapviewer = !is_db_na || (linkout != 0 && !(linkout & eGenomicSeq));
  
     if (user_url.find("sra.cgi") != string::npos) {
         
