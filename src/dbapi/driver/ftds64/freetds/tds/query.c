@@ -725,8 +725,8 @@ tds_build_param_def_from_query(TDSSOCKET * tds, const char* query, size_t query_
     char *param_str;
     char *p;
     char declaration[40];
-    int l = 0, i;
-    unsigned int count;
+    int l = 0;
+    unsigned int i, count;
 
     assert(IS_TDS7_PLUS(tds));
     assert(out_len);
@@ -761,7 +761,7 @@ tds_build_param_def_from_query(TDSSOCKET * tds, const char* query, size_t query_
 
         /* get this parameter declaration */
         sprintf(declaration, "@P%d ", i+1);
-        if (params && i < params->num_cols) {
+        if (params && (int)i < params->num_cols) {
             if (tds_get_column_declaration(tds, params->columns[i], declaration + strlen(declaration)) == TDS_FAIL)
                 goto Cleanup;
         } else {
@@ -787,8 +787,8 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
     char *param_str;
     char *p;
     char declaration[40];
-    int l = 0, i;
-    unsigned int count;
+    int l = 0;
+    unsigned int i, count;
 
     assert(IS_TDS7_PLUS(tds));
     assert(out_len);
@@ -819,7 +819,7 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
 
         /* get this parameter declaration */
         sprintf(declaration, "@P%d ", i+1);
-        if (params && i < params->num_cols) {
+        if (params && (int)i < params->num_cols) {
             if (tds_get_column_declaration(tds, params->columns[i], declaration + strlen(declaration)) == TDS_FAIL)
                 goto Cleanup;
         } else {
@@ -907,7 +907,7 @@ tds_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query
 
         /* realloc on insufficient space */
         il = ids[i].p ? ids[i].len : 2 * params->columns[i]->column_namelen;
-        while ((l + (2 * 26) + il) > size) {
+        while ((l + (2 * 26) + (int)il) > size) {
             p = (char *) realloc(param_str, size += 512);
             if (!p)
                 goto Cleanup;
@@ -1014,7 +1014,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
 
         /* realloc on insufficient space */
         il = ids[i].p ? ids[i].len : 2 * params->columns[i]->column_namelen;
-        while ((l + (2 * 26) + il) > size) {
+        while ((l + (2 * 26) + (int)il) > size) {
             p = (char *) realloc(param_str, size += 512);
             if (!p)
                 goto Cleanup;
@@ -1490,7 +1490,7 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
         tds_put_byte(tds, curcol->column_output);   /* status (input) */
     if (!IS_TDS7_PLUS(tds))
         tds_put_int(tds, curcol->column_usertype);  /* usertype */
-    tds_put_byte(tds, curcol->on_server.column_type);
+    tds_put_byte(tds, (unsigned char)curcol->on_server.column_type);
 
     if (is_numeric_type(curcol->on_server.column_type)) {
 #if 1

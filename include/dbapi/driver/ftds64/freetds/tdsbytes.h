@@ -118,8 +118,8 @@
 # define TDS_GET_UA4(ptr) TDS_GET_UA4LE(ptr)
 # undef TDS_GET_A2LE
 # undef TDS_GET_A4LE
-# define TDS_GET_A2LE(ptr) (*((TDS_USMALLINT*)(ptr)))
-# define TDS_GET_A4LE(ptr) (*((TDS_UINT*)(ptr)))
+/*# define TDS_GET_A2LE(ptr) (*((TDS_USMALLINT*)(ptr)))
+# define TDS_GET_A4LE(ptr) (*((TDS_UINT*)(ptr)))*/
 
 # define TDS_PUT_A1(ptr,val)  TDS_PUT_A1LE(ptr,val)
 # define TDS_PUT_UA1(ptr,val) TDS_PUT_UA1LE(ptr,val)

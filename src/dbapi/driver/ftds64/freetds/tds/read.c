@@ -109,14 +109,19 @@ tds_peek(TDSSOCKET * tds)
 TDS_SMALLINT
 tds_get_smallint(TDSSOCKET * tds)
 {
-	unsigned char bytes[2];
+    union {
+	    unsigned char bytes[2];
+        TDS_USMALLINT uint;
+    } u;
 
-	tds_get_n(tds, bytes, 2);
+	tds_get_n(tds, u.bytes, 2);
 #if WORDS_BIGENDIAN
 	if (tds->emul_little_endian)
-		return (TDS_SMALLINT) TDS_GET_A2LE(bytes);
+		return (TDS_SMALLINT) TDS_GET_A2LE(u.bytes);
+    else
+	    return (TDS_SMALLINT) TDS_GET_A2(u.bytes);
 #endif
-	return (TDS_SMALLINT) TDS_GET_A2(bytes);
+    return (TDS_SMALLINT)u.uint;
 }
 
 
@@ -126,14 +131,19 @@ tds_get_smallint(TDSSOCKET * tds)
 TDS_INT
 tds_get_int(TDSSOCKET * tds)
 {
-	unsigned char bytes[4];
+    union {
+	    unsigned char bytes[4];
+        TDS_UINT      uint;
+    } u;
 
-	tds_get_n(tds, bytes, 4);
+	tds_get_n(tds, u.bytes, 4);
 #if WORDS_BIGENDIAN
 	if (tds->emul_little_endian)
-		return (TDS_INT) TDS_GET_A4LE(bytes);
+		return (TDS_INT) TDS_GET_A4LE(u.bytes);
+    else
+	    return (TDS_INT) TDS_GET_A4(u.bytes);
 #endif
-	return (TDS_INT) TDS_GET_A4(bytes);
+    return (TDS_INT)u.uint;
 }
 
 #if ENABLE_EXTRA_CHECKS
@@ -188,7 +198,7 @@ tds_get_string(TDSSOCKET * tds, int string_len, char *dest, size_t dest_size)
 		return read_and_convert(tds, tds->char_convs[client2ucs2], &wire_bytes, &dest, &dest_size);
 	} else {
 		/* FIXME convert to client charset */
-		assert(dest_size >= string_len);
+		assert(dest_size >= (size_t)string_len);
 		tds_get_n(tds, dest, string_len);
 		return string_len;
 	}

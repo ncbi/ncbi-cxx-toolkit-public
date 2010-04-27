@@ -419,7 +419,7 @@ tds_convert_char(int srctype, const TDS_CHAR * src, TDS_UINT srclen, int desttyp
 	case SYBREAL:
 		/* FIXME not null terminated */
 		/* TODO check syntax and overflow */
-		cr->r = atof(src);
+		cr->r = (TDS_REAL)atof(src);
 		return sizeof(TDS_REAL);
 		break;
 	case SYBBIT:
@@ -512,7 +512,7 @@ tds_convert_char(int srctype, const TDS_CHAR * src, TDS_UINT srclen, int desttyp
 
 			if (src[0] == '{') {
 				int last = (src[8+1 + 4+1 + 4+1 + 4 + 1] == '-') ? 32+4+1 : 32+3+1;
-				if (srclen <= last || src[last] != '}')
+				if (srclen <= (TDS_UINT)last || src[last] != '}')
 					return TDS_CONVERT_SYNTAX;
 				++src;
 			}
@@ -1520,7 +1520,7 @@ tds_convert_flt8(int srctype, const TDS_CHAR * src, int desttype, CONV_RESULT * 
 		break;
 	case SYBREAL:
 		/* TODO check overflow */
-		cr->r = the_value;
+		cr->r = (TDS_REAL)the_value;
 		return sizeof(TDS_REAL);
 		break;
 	case SYBFLT8:
@@ -2681,7 +2681,7 @@ tds_strftime(char *buf, size_t maxsize, const char *format, const TDSDATEREC * d
 {
 	struct tm tm;
 
-	int length = 0;
+	size_t length = 0;
 	char *s, *our_format;
 	char millibuf[8];
 

@@ -230,7 +230,7 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	now = start;
 	while ((retval == 0) && ((now - start) < timeout)) {
 		FD_SET(tds->s, &fds);
-		selecttimeout.tv_sec = timeout - (now - start);
+		selecttimeout.tv_sec = (long)timeout - (long)(now - start);
 		selecttimeout.tv_usec = 0;
 		retval = select(tds->s + 1, NULL, &fds, &fds, &selecttimeout);
 		/* on interrupt ignore */
@@ -521,7 +521,7 @@ tds_read_packet(TDSSOCKET * tds)
 	 * If this packet size is the largest we have gotten allocate
 	 * space for it
 	 */
-	if (len > tds->in_buf_max) {
+	if ((unsigned int)len > tds->in_buf_max) {
 		unsigned char *p;
 
 		if (!tds->in_buf) {
@@ -621,7 +621,7 @@ tds_check_socket_write(TDSSOCKET * tds)
 
 	while ((retcode == 0) && ((now - start) < tds->query_timeout)) {
 		FD_SET(tds->s, &fds);
-		selecttimeout.tv_sec = tds->query_timeout - (now - start);
+		selecttimeout.tv_sec = (long)tds->query_timeout - (long)(now - start);
 		selecttimeout.tv_usec = 0;
 		retcode = select(tds->s + 1, NULL, &fds, NULL, &selecttimeout);
 		if (retcode < 0 && sock_errno == TDSSOCK_EINTR) {

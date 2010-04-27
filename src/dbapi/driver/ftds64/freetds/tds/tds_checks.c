@@ -81,7 +81,7 @@ tds_check_tds_extra(const TDSSOCKET * tds)
 	/* TODO remove blocksize from env and use out_len ?? */
 /*	assert(tds->out_pos <= tds->out_len); */
 /* 	assert(tds->out_len == 0 || tds->out_buf != NULL); */
-	assert(tds->out_pos <= tds->env.block_size);
+	assert(tds->out_pos <= (unsigned int)tds->env.block_size);
 	assert(tds->env.block_size == 0 || tds->out_buf != NULL);
 	assert(tds->in_buf_max == 0 || tds->in_buf != NULL);
 

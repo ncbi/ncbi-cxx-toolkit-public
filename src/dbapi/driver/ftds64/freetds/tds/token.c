@@ -552,7 +552,7 @@ tds_process_auth(TDSSOCKET * tds)
     names_blob = (unsigned char*)malloc(names_blob_len);
     memset(names_blob, 0, names_blob_len);
 
-    fill_names_blob_prefix(names_blob);
+    fill_names_blob_prefix((names_blob_prefix_t*)names_blob);
     tds_get_n(tds, names_blob + sizeof(names_blob_prefix_t), target_info_len);
 
     /* Decode Target Info for debuging purposes ...*/

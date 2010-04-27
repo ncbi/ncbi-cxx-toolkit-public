@@ -355,7 +355,7 @@ static int
 tds_packet_check_overflow(TDS_WORD *packet, unsigned int packet_len, unsigned int prec)
 {
 	unsigned int i;
-	int l, stop;
+	unsigned int l, stop;
 	const TDS_WORD *limit = &limits[limit_indexes[prec] + LIMIT_INDEXES_ADJUST * prec];
 	l = limit_indexes[prec+1] - limit_indexes[prec] + LIMIT_INDEXES_ADJUST;
 	stop = prec / (sizeof(TDS_WORD) * 8);
@@ -498,7 +498,7 @@ tds_numeric_change_prec_scale(TDS_NUMERIC * numeric, unsigned char new_prec, uns
 				borrow = Int64div32(&packet[i], borrow, factor);
 #else
 				TDS_DWORD n = (((TDS_DWORD) borrow) << (8 * sizeof(TDS_WORD))) + packet[--i];
-				packet[i] = n / factor;
+				packet[i] = (TDS_WORD)(n / factor);
 				borrow = n % factor;
 #endif
 			}

@@ -267,7 +267,7 @@ tds_put_smallint(TDSSOCKET * tds, TDS_SMALLINT si)
 int
 tds_put_byte(TDSSOCKET * tds, unsigned char c)
 {
-	if (tds->out_pos >= tds->env.block_size)
+	if (tds->out_pos >= (unsigned int)tds->env.block_size)
 		tds_write_packet(tds, 0x0);
 	tds->out_buf[tds->out_pos++] = c;
 	return 0;
