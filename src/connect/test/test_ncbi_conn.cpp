@@ -207,7 +207,9 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
-    CNcbiOfstream log(kLogfile, IOS_BASE::out|IOS_BASE::trunc|IOS_BASE::app);
+    CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
+    if (!log)
+        ERR_POST(Fatal << "Cannot open logfile " << kLogfile);
     freopen(kLogfile, "a", stderr);
     SetDiagStream(&log);
 
