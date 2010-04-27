@@ -239,6 +239,13 @@ void CheckForBlastSeqSrcErrors(const BlastSeqSrc* seqsrc)
     }
 }
 
+namespace {
+    union SUnion14 {
+        char end_bytes[4];
+        Uint4 end_value;
+    };
+};
+
 Uint4
 EndianIndependentBufferHash(const char * buffer,
                             Uint4        byte_length,
@@ -253,10 +260,14 @@ EndianIndependentBufferHash(const char * buffer,
     
     // Insure that the byte_length is a multiple of swap_size
     _ASSERT((byte_length & swap_mask) == 0);
-    
-    Uint1 end_bytes[] = { 0x44, 0x33, 0x22, 0x11 };
-    Uint4 end_value = *((int *) & end_bytes);
-    
+
+    SUnion14 swap_test;
+    swap_test.end_bytes[0] = 0x44;
+    swap_test.end_bytes[1] = 0x33;
+    swap_test.end_bytes[2] = 0x22;
+    swap_test.end_bytes[3] = 0x11;
+    Uint4 end_value = swap_test.end_value;
+
     if (end_value == 0x11223344) {
         // Prevent actual swapping on little endian machinery.
         swap_size = 1;

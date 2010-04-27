@@ -553,10 +553,18 @@ string BlockTEA_Decode(const string& password,
 //
 
 
-Uint4 leftrotate(Uint4 x, Uint4 c)
-{
-    return (x << c) | (x >> (32 - c));
+namespace {
+    union SUnionLenbuf {
+        char lenbuf[8];
+        Uint8 len8;
+    };
+
+    inline Uint4 leftrotate(Uint4 x, Uint4 c)
+    {
+        return (x << c) | (x >> (32 - c));
+    }
 }
+
 
 void CalcMD5(const char* data, size_t len, unsigned char* digest)
 {
@@ -603,13 +611,13 @@ void CalcMD5(const char* data, size_t len, unsigned char* digest)
     buf += char(0x80);
     buf.append(string(padlen - 9, 0));
     Uint8 len8 = len*8;
-    char lenbuf[8];
+    SUnionLenbuf lb;
 #ifdef WORDS_BIGENDIAN
-    CByteSwap::PutInt8((unsigned char*)lenbuf, len8);
+    CByteSwap::PutInt8((unsigned char*)lb.lenbuf, len8);
 #else
-    *(Int8*)(lenbuf) = len8;
+    lb.len8 = len8;
 #endif
-    buf.append(lenbuf, 8);
+    buf.append(lb.lenbuf, 8);
 
     const char* buf_start = buf.c_str();
     const char* buf_end = buf_start + len + padlen;
