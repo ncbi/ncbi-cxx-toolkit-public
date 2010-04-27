@@ -41,6 +41,7 @@
 #  include <fcntl.h>
 #endif
 
+#include <string.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -1406,7 +1407,7 @@ CNCMMDBPage::CNCMMDBPage(void)
       m_NextInLRU(NULL)
 {
     // Required by SQLite if page is new for the cache instance
-    *reinterpret_cast<void**>(m_Data) = NULL;
+    memset(m_Data, 0, sizeof(void*));
 }
 
 inline CNCMMDBPage*
