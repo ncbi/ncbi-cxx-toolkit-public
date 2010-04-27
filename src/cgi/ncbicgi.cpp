@@ -1597,7 +1597,7 @@ EEncodingForm GetCharsetEncodingForm(const string& charset,
     // UTF-16LE
     // UTF-16
     static const unsigned char s_BE_test[2] = {0xFF, 0xFE};
-    static bool s_BE = (*reinterpret_cast<const Uint2*>(&s_BE_test) == 0xFFFE);
+    static bool s_BE = (*static_cast<const Uint2*>(static_cast<const void*>(s_BE_test)) == 0xFFFE);
     if (NStr::CompareNocase(charset, "UTF-16BE") == 0) {
         return s_BE ? eEncodingForm_Utf16Native : eEncodingForm_Utf16Foreign;
     }
