@@ -51,6 +51,9 @@
 BEGIN_NCBI_SCOPE
 
 
+static const char kLogfile[] = "test_ncbi_conn.log";
+
+
 // Bad, lazy and incorrect, in general, implementation!
 class CTeeWriter : public IWriter {
 public:
@@ -173,7 +176,7 @@ int CTest::Run(void)
 
     m_Tee << NcbiEndl;
     if (status != eIO_Success) {
-        m_Tee << "Check " << GetLogFile() << " for more information."
+        m_Tee << "Check " << kLogfile << " for more information."
               << NcbiEndl << "Please remember to make its contents"
             " available if contacting NCBI.";
     } else {
@@ -201,7 +204,6 @@ END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-    static const char kLogfile[] = "test_ncbi_conn.log";
     USING_NCBI_SCOPE;
 
     CNcbiOfstream log(kLogfile);
