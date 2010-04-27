@@ -151,11 +151,13 @@ typedef unsigned char TSOCK_Type;
 /* Event trigger
  */
 typedef struct TRIGGER_tag {
-    TRIGGER_Handle   fd;        /* OS-specific trigger handle                */
-    unsigned int     id;        /* the internal ID (cf. "s_ID_Counter")      */
+    TRIGGER_Handle     fd;      /* OS-specific trigger handle                */
+    unsigned int       id;      /* the internal ID (cf. "s_ID_Counter")      */
 
-    volatile int     isset;     /* trigger state (UNIX only, otherwise MBZ)  */
-    volatile int     isset_;    /* CAUTION: "isset" pointer protrusion area! */
+    union {
+        volatile void* ptr;     /* trigger state (UNIX only, otherwise MBZ)  */
+        int            int_[2]; /* pointer storage area w/proper alignment   */
+    } isset;
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TSOCK_Type          type;   /* eTrigger                                  */
@@ -172,7 +174,7 @@ typedef struct TRIGGER_tag {
     unsigned        reserved:8; /* MBZ                                       */
 
 #ifdef NCBI_OS_UNIX
-    int              out;       /* write end of the pipe                     */
+    int                out;     /* write end of the pipe                     */
 #endif /*NCBI_OS_UNIX*/
 } TRIGGER_struct;
 

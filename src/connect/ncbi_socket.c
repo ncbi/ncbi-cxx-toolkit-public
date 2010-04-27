@@ -655,8 +655,13 @@ extern void SOCK_AllowSigPipeAPI(void)
     return;
 }
 
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+#  if !defined(__GNUC__)  &&  !defined(offsetof)
+#    define offsetof(T, F)  ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
+#  endif
+#endif /*_DEBUG && !NDEBUG*/
 
-#if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
+#if 0/*defined(_DEBUG)  &&  !defined(NDEBUG)*/
 
 #  ifndef   SOCK_HAVE_SHOWDATALAYOUT
 #    define SOCK_HAVE_SHOWDATALAYOUT 1
@@ -665,10 +670,6 @@ extern void SOCK_AllowSigPipeAPI(void)
 #endif /*_DEBUG && !NDEBUG*/
 
 #ifdef SOCK_HAVE_SHOWDATALAYOUT
-
-#  if !defined(__GNUC__)  &&  !defined(offsetof)
-#    define offsetof(T, F)  ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
-#  endif
 
 #  define   extentof(T, F)  (sizeof(((T*) 0)->F))
 
@@ -741,13 +742,6 @@ static void s_ShowDataLayout(void)
                  , infof(SOCK_struct, path)
 #  endif /*NCBI_OS_UNIX*/
                  ));
-
-    assert(offsetof(SOCK_struct, type)    == offsetof(TRIGGER_struct, type));
-    assert(offsetof(SOCK_struct, type)    == offsetof(LSOCK_struct,   type));
-    assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct, context));
-#ifdef NCBI_OS_MSWIN
-    assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct, event));
-#endif /*NCBI_OS_MSWIN*/
 }
 
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
@@ -766,6 +760,16 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #ifdef SOCK_HAVE_SHOWDATALAYOUT
     s_ShowDataLayout();
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
+
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    /* Layout / alignment sanity check */
+    assert(offsetof(SOCK_struct, type)    == offsetof(TRIGGER_struct, type));
+    assert(offsetof(SOCK_struct, type)    == offsetof(LSOCK_struct,   type));
+    assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct, context));
+#  ifdef NCBI_OS_MSWIN
+    assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct, event));
+#  endif /*NCBI_OS_MSWIN*/
+#endif /*_DEBUG && !NDEBUG*/
 
 #if defined(NCBI_OS_MSWIN)
     {{
@@ -1463,7 +1467,7 @@ static EIO_Status s_Select(size_t                n,
             }
 #  endif /*!NCBI_MSWIN && FD_SETSIZE*/
 
-            if (type == eTrigger  &&  *((void**) &((TRIGGER) sock)->isset)) {
+            if (type == eTrigger  &&  ((TRIGGER) sock)->isset.ptr) {
                 polls[i].revent = polls[i].event;
                 ready = 1;
                 continue;
@@ -3323,7 +3327,7 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 
 #  if   defined(NCBI_OS_UNIX)
 
-    if (!NCBI_SwapPointers((void**) &trigger->isset, (void*) 1)) {
+    if (!NCBI_SwapPointers((void**) &trigger->isset.ptr, (void*) 1/*true*/)) {
         if (write(trigger->out, "", 1) < 0  &&  errno != EAGAIN)
             return eIO_Unknown;
     }
@@ -3367,12 +3371,12 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
     ssize_t     x_read;
 
     while ((x_read = read(trigger->fd, x_buf, sizeof(x_buf))) > 0)
-        *((void**) &trigger->isset) = (void*) 1/*true*/;
+        trigger->isset.ptr = (void*) 1/*true*/;
 
     if (x_read == 0/*EOF?*/)
         return eIO_Unknown;
 
-    return *((void**) &trigger->isset) ? eIO_Success : eIO_Closed;
+    return trigger->isset.ptr ? eIO_Success : eIO_Closed;
 
 #  elif defined(NCBI_OS_MSWIN)
 
@@ -3410,7 +3414,7 @@ extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 
 #if   defined(NCBI_OS_UNIX)
 
-	*((void**) &trigger->isset) = 0/*false*/;
+	trigger->isset.ptr = (void*) 0/*false*/;
 
 #elif defined(NCBI_OS_MSWIN)
 
