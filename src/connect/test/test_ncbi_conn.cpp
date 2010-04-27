@@ -186,7 +186,8 @@ int CTest::Run(void)
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
 #ifdef NCBI_OS_MSWIN
-    NcbiCout << "Hit any key or program will bail out in 1 minute" << NcbiEndl;
+    NcbiCout << "Hit any key or program will bail out in 1 minute..."
+             << NcbiFlush;
     for (n = 0;  n < 120;  n++) {
         if (_kbhit())
             break;
