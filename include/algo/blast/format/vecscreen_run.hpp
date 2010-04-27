@@ -74,8 +74,8 @@ public:
      /// Fetches summary list
      list<SVecscreenSummary> GetList() const;
 
-     /// Needs to be implemented.
-     // CRef<objects::CSeq_align_set> GetSeqAlign() const;
+     /// Fetches seqalign-set already processed by vecscreen.
+     CRef<objects::CSeq_align_set> GetSeqalignSet() const;
      
 
 private:
@@ -88,6 +88,8 @@ private:
      CVecscreen* m_Vecscreen;
      /// Database to use (UniVec is default).
      string m_DB;
+     /// Processed Seq-align
+     CRef<objects::CSeq_align_set> m_Seqalign_set;
 
      /// Prohibit copy constructor
      CVecscreenRun(const CVecscreenRun&);

@@ -84,7 +84,7 @@ CVecscreenRun::CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, const s
    m_Vecscreen = new CVecscreen(*((*results)[0].GetSeqAlign()), GetLength(*m_SeqLoc, m_Scope));
 
    // This actually does the vecscreen work.
-   CRef<objects::CSeq_align_set> screen_aln = m_Vecscreen->ProcessSeqAlign();
+   m_Seqalign_set = m_Vecscreen->ProcessSeqAlign();
 }
 
 list<CVecscreenRun::SVecscreenSummary>
@@ -108,4 +108,10 @@ CVecscreenRun::GetList() const
     }
 
     return retval;
+}
+
+CRef<objects::CSeq_align_set>
+CVecscreenRun::GetSeqalignSet() const
+{
+    return m_Seqalign_set;
 }

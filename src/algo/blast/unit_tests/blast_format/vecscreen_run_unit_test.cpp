@@ -78,6 +78,9 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithHits)
     BOOST_REQUIRE(vs_list.size() == 1);
     BOOST_REQUIRE(match.range.GetFrom() == 588);
     BOOST_REQUIRE(match.range.GetTo() == 623);
+
+    CRef<CSeq_align_set> seqalign_set = vs_run.GetSeqalignSet();
+    BOOST_REQUIRE(seqalign_set->Size() == 1);
 }
 
 BOOST_AUTO_TEST_CASE(VecscreenRunWithNoHits)
@@ -96,6 +99,9 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithNoHits)
     list<CVecscreenRun::SVecscreenSummary> vs_list = vs_run.GetList();
 
     BOOST_REQUIRE(vs_list.size() == 0);
+
+    CRef<CSeq_align_set> seqalign_set = vs_run.GetSeqalignSet();
+    BOOST_REQUIRE(seqalign_set->Size() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(VecscreenRunWithNoDataLoader)
