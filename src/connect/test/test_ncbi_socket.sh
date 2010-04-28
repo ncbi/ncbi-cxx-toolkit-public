@@ -17,10 +17,19 @@ outlog()
 }
 
 exit_code=0
+log=test_ncbi_socket.log
 server_log=test_ncbi_socket_server.log
 client_log=test_ncbi_socket_client.log
 
-rm -f $server_log $client_log
+rm -f $log $server_log $client_log
+
+test_ncbi_socket >$log 2>&1
+exit_code=$?
+if [ $exit_code != 0 ]; then
+  outlog $log
+  uptime
+  exit $exit_code
+fi
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 

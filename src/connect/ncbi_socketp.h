@@ -58,10 +58,12 @@
  */
 #include <errno.h>
 
-#if   defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
 typedef SOCKET TSOCK_Handle;
 typedef HANDLE TRIGGER_Handle;
+
+#  pragma pack(push, 4)
 
 #  define SOCK_EINTR          WSAEINTR
 #  define SOCK_EWOULDBLOCK    WSAEWOULDBLOCK/*EAGAIN*/
@@ -112,7 +114,7 @@ typedef int TRIGGER_Handle;
 #  endif /*SHUT_RDWR*/
 #  define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
 
-#endif
+#endif /*NCBI_OS_MSWIN*/
 
 #if   defined(ENFILE)
 #  define SOCK_ETOOMANY       ENFILE
@@ -326,6 +328,13 @@ typedef struct SOCK_tag {
  * not eIO_Closed |       1       |  Read hit EOF (and [maybe later] r_status)
  * ---------------+---------------+--------------------------------------------
  */
+
+
+#ifdef NCBI_OS_MSWIN
+
+#  pragma pack(pop)
+
+#endif /*NCBI_OS_MSWIN*/
 
 
 #endif /* CONNECT___NCBI_SOCKETP__H */

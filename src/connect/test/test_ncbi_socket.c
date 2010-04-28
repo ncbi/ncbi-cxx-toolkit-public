@@ -915,14 +915,6 @@ extern int main(int argc, char** argv)
     argc = 3;
 #endif
 
-    /* Printout local hostname */
-    {{
-        char local_host[64];
-        assert(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
-        CORE_LOGF(eLOG_Note,
-                  ("Running NCBISOCK test on host \"%s\"", local_host));
-    }}
-
     /* Parse cmd.-line args and decide whether it's a client or a server
      */
     switch ( argc ) {
@@ -934,9 +926,16 @@ extern int main(int argc, char** argv)
         CORE_SetLOCK(0);
         CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
                                      TEST_LockHandler, TEST_LockCleanup) );
+
+        SOCK_SetDataLoggingAPI(eOn);
+        assert(SOCK_InitializeAPI() == eIO_Success);
+        SOCK_SetDataLoggingAPI(eDefault);
+
         TEST_gethostby();
 
         TEST_SOCK_isip();
+
+        assert(SOCK_ShutdownAPI() == eIO_Success);
 
         CORE_SetLOCK(0);
         break;

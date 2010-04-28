@@ -661,7 +661,7 @@ extern void SOCK_AllowSigPipeAPI(void)
 #  endif
 #endif /*_DEBUG && !NDEBUG*/
 
-#if 0/*defined(_DEBUG)  &&  !defined(NDEBUG)*/
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
 
 #  ifndef   SOCK_HAVE_SHOWDATALAYOUT
 #    define SOCK_HAVE_SHOWDATALAYOUT 1
@@ -686,6 +686,7 @@ static void s_ShowDataLayout(void)
                  "\thost:      %3u (%u)\n"
                  "\tport:      %3u (%u)\n"
                  "\tmyport:    %3u (%u)\n"
+                 "\tisset:     %3u (%u)\n"
 				 "\ttype:      %3u (%u)\n"
                  "\tbitfield:      (3)\n"
 #  ifdef NCBI_OS_MSWIN
@@ -712,34 +713,35 @@ static void s_ShowDataLayout(void)
                  "\n\tpath:      %3u (%u)"
 #  endif /*NCBI_OS_UNIX*/
                  , (unsigned int) sizeof(SOCK_struct),
-                 infof(SOCK_struct, sock),
-                 infof(SOCK_struct, id),
-                 infof(SOCK_struct, host),
-                 infof(SOCK_struct, port),
-                 infof(SOCK_struct, myport),
-                 infof(SOCK_struct, type),
+                 infof(SOCK_struct,    sock),
+                 infof(SOCK_struct,    id),
+                 infof(SOCK_struct,    host),
+                 infof(SOCK_struct,    port),
+                 infof(SOCK_struct,    myport),
+                 infof(TRIGGER_struct, isset),
+                 infof(SOCK_struct,    type),
 #  ifdef NCBI_OS_MSWIN
-				 infof(SOCK_struct, event),
+				 infof(SOCK_struct,    event),
 #  endif /*NCBI_OS_MSWIN*/
-                 infof(SOCK_struct, session),
-                 infof(SOCK_struct, r_timeout),
-                 infof(SOCK_struct, r_tv),
-                 infof(SOCK_struct, r_to),
-                 infof(SOCK_struct, w_timeout),
-                 infof(SOCK_struct, w_tv),
-                 infof(SOCK_struct, w_to),
-                 infof(SOCK_struct, c_timeout),
-                 infof(SOCK_struct, c_tv),
-                 infof(SOCK_struct, c_to),
-                 infof(SOCK_struct, r_buf),
-                 infof(SOCK_struct, w_buf),
-                 infof(SOCK_struct, w_len),
-                 infof(SOCK_struct, n_read),
-                 infof(SOCK_struct, n_written),
-                 infof(SOCK_struct, n_in),
-                 infof(SOCK_struct, n_out)
+                 infof(SOCK_struct,    session),
+                 infof(SOCK_struct,    r_timeout),
+                 infof(SOCK_struct,    r_tv),
+                 infof(SOCK_struct,    r_to),
+                 infof(SOCK_struct,    w_timeout),
+                 infof(SOCK_struct,    w_tv),
+                 infof(SOCK_struct,    w_to),
+                 infof(SOCK_struct,    c_timeout),
+                 infof(SOCK_struct,    c_tv),
+                 infof(SOCK_struct,    c_to),
+                 infof(SOCK_struct,    r_buf),
+                 infof(SOCK_struct,    w_buf),
+                 infof(SOCK_struct,    w_len),
+                 infof(SOCK_struct,    n_read),
+                 infof(SOCK_struct,    n_written),
+                 infof(SOCK_struct,    n_in),
+                 infof(SOCK_struct,    n_out)
 #  ifdef NCBI_OS_UNIX
-                 , infof(SOCK_struct, path)
+                 , infof(SOCK_struct,  path)
 #  endif /*NCBI_OS_UNIX*/
                  ));
 }
@@ -758,11 +760,13 @@ extern EIO_Status SOCK_InitializeAPI(void)
     }
 
 #ifdef SOCK_HAVE_SHOWDATALAYOUT
-    s_ShowDataLayout();
+    if (s_Log == eOn)
+        s_ShowDataLayout();
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     /* Layout / alignment sanity check */
+    assert(sizeof(TRIGGER_Handle)         == sizeof(TSOCK_Handle));
     assert(offsetof(SOCK_struct, type)    == offsetof(TRIGGER_struct, type));
     assert(offsetof(SOCK_struct, type)    == offsetof(LSOCK_struct,   type));
     assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct, context));
