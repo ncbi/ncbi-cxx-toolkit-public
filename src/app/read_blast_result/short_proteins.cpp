@@ -34,6 +34,7 @@
 
 int CReadBlastApp::short_proteins()
 {
+  int nshort=0;
 
   // m_verbosity_threshold = 300;
   if(PrintDetails()) NcbiCerr << "short_proteins starts: " << NcbiEndl;
@@ -50,7 +51,12 @@ int CReadBlastApp::short_proteins()
 
     if(is_short)
       {
+      bool fuzzy=false;
+// get the nucle seq
+      const CBioseq& seq_nu = get_nucleotide_seq(*(seq->seq));
 // check if it is at the edge,  and that edge is fuzzy
+
+
       strstream bufferstr; 
       strstream misc;
       misc << "Annotation is too short " << seq->name << '\0';
@@ -72,7 +78,8 @@ int CReadBlastApp::short_proteins()
                << NcbiEndl;
       CBioseq_set::TSeq_set* seqs = get_parent_seqset(*(seq->seq));
       if(seqs!=NULL) append_misc_feature(*seqs, diag_name, eShortProtein);
+      nshort++;
       }
     }
-  
+ return nshort;  
 }

@@ -276,6 +276,8 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
        ENa_strand strand;
        getFromTo(*inter, from, to, strand);
        TSimplePair exon; exon.from=from; exon.to=to; exon.strand=strand;
+       exon.fuzzy_from = inter->IsPartialStart(eExtreme_Positional);
+       exon.fuzzy_to   = inter->IsPartialStop (eExtreme_Positional);
        if(seq.key>(int)from) seq.key = (int)from;
        seq.exons.push_back(exon);
        }

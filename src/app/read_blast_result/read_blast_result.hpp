@@ -250,6 +250,8 @@ typedef struct
 typedef struct
   {
   int from, to;
+  bool fuzzy_from;
+  bool fuzzy_to;
   ENa_strand strand;
   } TSimplePair;
 
@@ -352,6 +354,7 @@ private:
     int CopyInfoFromGenesToProteins(void);
     void dump_fasta_for_pretty_blast ( diagMap& diag);
     void append_misc_feature(CBioseq_set::TSeq_set& seqs, const string& name, EProblem problem_type);
+    const CBioseq& get_nucleotide_seq(const CBioseq& seq);
 
 // tools 
     static char *next_w(char *w);
@@ -416,6 +419,7 @@ public:
                            const int from, const int to, const int key, const int max_distance);
     static void addSimpleTab(strstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna, 
        const int max_distance);
+
 
 private:
 

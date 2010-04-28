@@ -354,6 +354,27 @@ string GetLocusTag(const CSeq_feat& f, const LocMap& loc_map)
  if(CReadBlastApp::PrintDetails()) NcbiCerr << "GetLocusTag: INTERNAL ERROR: should be never here" << NcbiEndl; 
  return loc_string;
 }
+const CBioseq& CReadBlastApp::get_nucleotide_seq(const CBioseq& seq)
+{
+  const CBioseq_set::TSeq_set* seqset = get_parent_seqset(seq);
+  const CSeq_loc&  loc = getGenomicLocation(seq);
+  CTypeConstIterator<CSeq_interval> inter = ::ConstBegin(loc); 
+  const CSeq_id& nu_id = inter->GetId();
+  
+  ITERATE(CBioseq_set::TSeq_set, seq_nu, *seqset)
+    {
+    if(!(*seq_nu)->IsSeq()) continue;
+    if(!(*seq_nu)->GetSeq().IsNa()) continue;
+    const CBioseq::TId& nu_ids = (*seq_nu)->GetSeq().GetId();
+    ITERATE(CBioseq::TId, cnu_id , nu_ids)
+      {
+      if((*cnu_id)->Compare(nu_id) == CSeq_id::e_YES) return (*seq_nu)->GetSeq();
+      }
+    }
+  NcbiCerr << "CReadBlastApp::get_nucleotide_seq: INTERNAL FATAL ERROR: could not find nucleotide sequence" << NcbiEndl; 
+  throw;
+  return seq; // formality
+}
 
 CBioseq_set::TSeq_set* get_parent_seqset(const CBioseq& seq)
 {
