@@ -744,6 +744,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
                     "or mismatched molecule types");
     }
 
+    computed_score = max(0, computed_score);
     return computed_score;
 }
 
