@@ -266,7 +266,9 @@ string GetStringDescr(const CBioseq& bioseq)
 {
   string result = CSeq_id::GetStringDescr (bioseq, CSeq_id::eFormat_FastA);
   string locus_tag = CReadBlastApp::getLocusTag(bioseq);
-  if(locus_tag != "") result += "|" + locus_tag;
+// make sure locus_tag does not match result
+
+  if(locus_tag != "" && result.find(locus_tag) == string::npos) result += "|" + locus_tag;
   return result;
 }
 

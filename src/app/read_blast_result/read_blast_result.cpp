@@ -195,6 +195,12 @@ void CReadBlastApp::Init(void)
          "tRNA-scan predictions below that threshold are ignored",
          CArgDescriptions::eDouble, "60");
 
+    arg_desc->AddDefaultKey(
+         "m_shortProteinThreshold", "m_shortProteinThreshold",
+         "proteins shorter than that will be reported and removed",
+         CArgDescriptions::eInteger, "11");
+
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
@@ -229,6 +235,7 @@ int CReadBlastApp::Run(void)
     m_rna_overlapThreshold  = args["m_rna_overlapThreshold"].AsInteger();
     m_cds_overlapThreshold  = args["m_cds_overlapThreshold"].AsInteger();
     m_trnascan_scoreThreshold = args["m_trnascan_scoreThreshold"].AsDouble();
+    m_shortProteinThreshold = args["m_shortProteinThreshold"].AsInteger();
 
 // output control
     // m_align_dir = args["aligndir"].AsString();
@@ -393,12 +400,10 @@ int CReadBlastApp::Run(void)
     simple_overlaps(); // 
     PopVerbosity();
 
-/*
     NcbiCerr << "Checking short proteins..." << NcbiEndl;
     PushVerbosity();
     short_proteins(); //
     PopVerbosity();
-*/
 
 
 
@@ -541,7 +546,7 @@ int CReadBlastApp::Run(void)
 
     PushVerbosity();
     {
-    string sout  = base + ".short.protein.log";
+    string sout  = base + ".short.annotation.log";
     CNcbiOfstream out( sout.c_str() );
     if(PrintDetails()) NcbiCerr << "Run: before reportProblems: routine start: "
                                 << eShortProtein

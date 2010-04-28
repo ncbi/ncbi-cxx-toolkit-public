@@ -195,6 +195,8 @@ string CReadBlastApp::ProblemType(const EProblem type)
       result =  "Evidence absolving from the frame shift accusation found";
    else if(type & ePartial)
       result =  "Potential partial protein annotation found";
+   else if(type & eShortProtein)
+      result =  "Short annotation found";
    else if(type & eTRNAMissing)
       result =  "tRNA is missing in the list of independently annotated tRNAs";
    else if(type & eTRNAAbsent)
@@ -886,6 +888,8 @@ int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)
           (problem->type == eFrameShift && !keep_frameshifted)
           || 
           problem->type == eRemoveOverlap
+          ||
+          problem->type & eShortProtein
         ) 
         { problem_names[name]=ProblemType(problem->type); added=true; }
       if(PrintDetails()) 

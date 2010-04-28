@@ -44,6 +44,7 @@ double CReadBlastApp::m_partThreshold;
 int    CReadBlastApp::m_rna_overlapThreshold;
 int    CReadBlastApp::m_cds_overlapThreshold;
 double CReadBlastApp::m_trnascan_scoreThreshold; 
+int    CReadBlastApp::m_shortProteinThreshold;
 // verbosity
 int    CReadBlastApp::m_verbosity_threshold;
 int    CReadBlastApp::m_current_verbosity;

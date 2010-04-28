@@ -310,7 +310,7 @@ private:
 
 
     int simple_overlaps(void);
-    // int short_proteins(void);
+    int short_proteins(void);
 // this is for optimization, do not laugh
     void ugly_simple_overlaps_call(int& n_user_neighbors, int& n_ext_neighbors,
       TSimpleSeqs::iterator& ext_rna,
@@ -562,6 +562,8 @@ private:
     static int    m_rna_overlapThreshold;
     static int    m_cds_overlapThreshold;
     static double m_trnascan_scoreThreshold;
+    static int    m_shortProteinThreshold;
+    
 
 // verbosity
     static int    m_verbosity_threshold;
