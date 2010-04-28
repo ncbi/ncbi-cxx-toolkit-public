@@ -162,7 +162,10 @@ public:
 
 public:
   pair<iterator, bool> insert(const value_type& __obj)
-    { return _M_ht.insert_unique(__obj); }
+    {
+      pair<_ht_iterator, bool> __p = _M_ht.insert_unique(__obj);
+      return pair<iterator, bool>(__p.first, __p.second);
+    }
 #ifdef _STLP_MEMBER_TEMPLATES
   template <class _InputIterator>
   void insert(_InputIterator __f, _InputIterator __l) 
