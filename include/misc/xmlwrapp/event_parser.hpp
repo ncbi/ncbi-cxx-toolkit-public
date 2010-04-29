@@ -44,8 +44,12 @@
 #ifndef _xmlwrapp_event_parser_h_
 #define _xmlwrapp_event_parser_h_
 
+// for NCBI_DEPRECATED
+#include <ncbiconf.h>
+
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/errors.hpp>
 
 // standard includes
 #include <cstddef>
@@ -146,22 +150,40 @@ public:
      * Call this member function to parse the given file.
      *
      * @param filename The name of the file to parse.
-     * @return True if the file was successfully parsed; false otherwise.
-     * @author Peter Jones
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            get_parser_messages() method.
+     * @return True if the file was successfully parsed and was not interrupted
+     *         by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    bool parse_file (const char *filename);
+    bool parse_file (const char *filename,
+                     warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
     /**
      * Parse what ever data that can be read from the given stream.
      *
      * @param stream The stream to read data from.
-     * @return True if the stream was successfully parsed; false otherwise.
-     * @author Peter Jones
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            get_parser_messages() method.
+     * @return True if the stream was successfully parsed and was not
+     *         interrupted by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    bool parse_stream (std::istream &stream);
+    bool parse_stream (std::istream &stream,
+                       warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
     /**
@@ -170,36 +192,65 @@ public:
      * member function.
      *
      * @param chunk The xml data chuck to parse.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            get_parser_messages() method.
      * @param length The size of the given data chunk
-     * @return True if the chunk was parsed sucessfully; false otherwise.
-     * @author Peter Jones
+     * @return True if the chunk was parsed sucessfully and was not interrupted
+     *         by the user; false otherwise.
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    bool parse_chunk (const char *chunk, size_type length);
+    bool parse_chunk (const char *chunk, size_type length,
+                      warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
     /**
      * Finish parsing chunked data. You only need to call this member
-     * function is you were parsing chunked xml data via the parse_chunk
+     * function if you were parsing chunked xml data via the parse_chunk
      * member function.
      *
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors false is
+     *            returned in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then false is returned
+     *            only when there are errors. The full list of warnings and
+     *            errors can be retrieved by calling the
+     *            get_parser_messages() method.
      * @return True if all parsing was successful; false otherwise.
      * @author Peter Jones
     **/
     //####################################################################
-    bool parse_finish (void);
+    bool parse_finish (warnings_as_errors_type how = type_warnings_not_errors);
 
     //####################################################################
     /**
      * If there was an error parsing the XML data, (indicated by one of the
      * parsing functions returning false), you can call this function to get
-     * a message describing the error.
+     * the last message describing the error.
      *
+     * @deprecated Use get_parser_messages() instead to get complete
+     *             information about all the collected messages.
      * @return A description of the XML parsing error.
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     const std::string& get_error_message (void) const;
+
+    //####################################################################
+    /**
+     * Get the XML document parsing error messages. This may include
+     * warnings, errors and fatal errors.
+     *
+     * @return XML document parser error messages.
+     * @author Sergey Satskiy, NCBI
+    **/
+    const error_messages& get_parser_messages (void) const;
 
 protected:
     /// enum for different types of XML entities
@@ -360,13 +411,29 @@ protected:
      * Override this memeber function to receive parser warnings. The
      * default behaviour is to ignore warnings.
      *
-     * @param message The warning message from the compiler.
+     * @param message The warning message from the parser.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
      * @author Peter Jones
     **/
     //####################################################################
     virtual bool warning (const std::string &message);
+
+    //####################################################################
+    /**
+     * Override this memeber function to receive parser errors. The
+     * default behaviour is to stop parsing.
+     * Note: There could also be fatal errors. The parser will save such fatal
+     * errors in the list (which is available by calling get_parser_messages()
+     * member) and will stop parsing.
+     *
+     * @param message The error message from the parser.
+     * @return You should return true to continue parsing.
+     * @return Return false if you want to stop.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    virtual bool error (const std::string &message);
 
     //####################################################################
     /**
@@ -525,9 +592,11 @@ protected:
      * function, "Unknown Error" will be returned from get_error_message().
      *
      * @param message The message to return from get_error_message().
+     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     void set_error_message (const char *message);
 private:
     friend struct impl::epimpl;
@@ -537,6 +606,15 @@ private:
     attribute_type get_attribute_type (int);
     attribute_default_type get_attribute_default_type (int);
     element_content_type get_element_content_type (int);
+
+    // It is necessary to know if it is required to reset the list of error
+    // messages when the parse_chunk() or parse_stream() are called. The list
+    // must be reset only if the previous parsing is finished i.e. parse_finished()
+    // has been called for the previous document. This flag holds the state of
+    // the whole parsing process.warnings
+    bool    parse_finished_;
+
+    bool is_failure (warnings_as_errors_type how) const;
 
     /*
      * Don't allow anyone to copy construct an event_parser or to call the

@@ -89,8 +89,10 @@ public:
 
     xmlSAXHandler sax_handler_;
     xmlParserCtxt *parser_context_;
-    bool parser_status_;
-    std::string last_error_message_;
+
+    bool            parser_status_;         // true - OK, can continue. false - user interrupted or failed
+    error_messages  parser_messages_;
+    std::string     last_error_message_;
 
     void event_start_document (void);
     void event_end_document (void);
@@ -130,6 +132,7 @@ public:
     void event_entity_reference (const xmlChar *name);
     void event_warning (const std::string &message);
     void event_error (const std::string &message);
+    void event_fatal_error (const std::string &message);
 private:
     event_parser &parent_;
 
@@ -233,34 +236,45 @@ extern "C"
     { static_cast<epimpl*>(parser)->event_entity_reference(name); }
     //####################################################################
     static void cb_warning (void *parser, const char *message, ...) {
-	std::string complete_message;
+        std::string complete_message;
 
-	va_list ap;
-	va_start(ap, message);
-	printf2string(complete_message, message, ap);
-	va_end(ap);
+        va_list ap;
+        va_start(ap, message);
+        printf2string(complete_message, message, ap);
+        va_end(ap);
 
-	static_cast<epimpl*>(parser)->event_warning(complete_message);
+        static_cast<epimpl*>(parser)->event_warning(complete_message);
     }
     //####################################################################
-    static void cb_error (void *parser, const char *message, ...) { 
-	std::string complete_message;
+    static void cb_error (void *parser, const char *message, ...) {
+        std::string complete_message;
 
-	va_list ap;
-	va_start(ap, message);
-	printf2string(complete_message, message, ap);
-	va_end(ap);
+        va_list ap;
+        va_start(ap, message);
+        printf2string(complete_message, message, ap);
+        va_end(ap);
 
-	static_cast<epimpl*>(parser)->event_error(complete_message);
+        static_cast<epimpl*>(parser)->event_error(complete_message);
+    }
+    //####################################################################
+    static void cb_fatal_error (void *parser, const char *message, ...) {
+        std::string complete_message;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(complete_message, message, ap);
+        va_end(ap);
+
+        static_cast<epimpl*>(parser)->event_fatal_error(complete_message);
     }
     //####################################################################
     static void cb_ignore (void*, const xmlChar*, int) {
-	return;
+        return;
     }
 } // extern "C"
 
 //####################################################################
-xml::event_parser::event_parser (sax_handlers_mask mask) {
+xml::event_parser::event_parser (sax_handlers_mask mask) : parse_finished_(true) {
     pimpl_ = new epimpl(*this, mask);
 }
 //####################################################################
@@ -268,38 +282,88 @@ xml::event_parser::~event_parser (void) {
     delete pimpl_;
 }
 //####################################################################
-bool xml::event_parser::parse_file (const char *filename) {
-    std::ifstream file(filename); if (!file) return false;
-    return parse_stream(file);
+bool xml::event_parser::parse_file (const char *filename, warnings_as_errors_type how) {
+    if (!parse_finished_)
+    {
+        parse_finish(how);
+    }
+
+    pimpl_->parser_messages_.get_messages().clear();
+    pimpl_->parser_status_ = true;
+
+    std::ifstream file(filename);
+    if (!file)
+    {
+        pimpl_->parser_status_ = false;
+        std::string message("Cannot open file" + std::string(filename));
+        pimpl_->parser_messages_.get_messages().push_back(error_message(message, error_message::type_error));
+        return false;
+    }
+    return parse_stream(file, how);
 }
 //####################################################################
-bool xml::event_parser::parse_stream (std::istream &stream) {
+bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_type how) {
     char buffer[const_buffer_size];
+
+    if (!parse_finished_)
+    {
+        parse_finish(how);
+    }
+
+    pimpl_->parser_messages_.get_messages().clear();
+    pimpl_->parser_status_ = true;
 
     if (stream && (stream.eof() || stream.peek() == std::istream::traits_type::eof()))
     {
         pimpl_->parser_status_ = false;
         pimpl_->last_error_message_ = "empty xml document";
+        pimpl_->parser_messages_.get_messages().push_back(error_message(pimpl_->last_error_message_, error_message::type_error));
         return false;
     }
 
+    parse_finished_ = false;
     while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
-	pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount());
+        pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount());
 
-    if (!pimpl_->parser_status_) return false;
-    if (!stream && !stream.eof()) return false;
-
-    return parse_finish();
+    if (!stream && !stream.eof()) { parse_finish(how); return false; }
+    return parse_finish(how);
 }
 //####################################################################
-bool xml::event_parser::parse_chunk (const char *chunk, size_type length) {
+bool xml::event_parser::parse_chunk (const char *chunk, size_type length,
+                                     warnings_as_errors_type how) {
+    if (parse_finished_)
+    {
+        // This is first call of the parse_chunk() after parse_finished()
+        pimpl_->parser_messages_.get_messages().clear();
+    }
+    parse_finished_ = false;
+
     xmlParseChunk(pimpl_->parser_context_, chunk, static_cast<int>(length), 0);
-    return pimpl_->parser_status_;
+    if (!pimpl_->parser_status_) return false;
+    if (is_failure(how)) return false;
+    return true;
 }
 //####################################################################
-bool xml::event_parser::parse_finish (void) {
+bool xml::event_parser::parse_finish (warnings_as_errors_type how) {
     xmlParseChunk(pimpl_->parser_context_, 0, 0, 1);
-    return pimpl_->parser_status_;
+
+    parse_finished_ = true;
+
+    // There was an error while parsing or the user interrupted parsing
+    if (!pimpl_->parser_status_) return false;
+    if (is_failure(how)) return false;
+    return true;
+}
+//####################################################################
+bool xml::event_parser::is_failure (warnings_as_errors_type how) const {
+    // if there are fatal errors or errors it is a failure
+    if (pimpl_->parser_messages_.has_errors() ||
+        pimpl_->parser_messages_.has_fatal_errors())
+        return true;
+    if ((how == type_warnings_are_errors) &&
+         pimpl_->parser_messages_.has_warnings())
+        return true;
+    return false;
 }
 //####################################################################
 bool xml::event_parser::start_document () {
@@ -378,16 +442,23 @@ bool xml::event_parser::warning (const std::string&) {
     return true;
 }
 //####################################################################
+bool xml::event_parser::error (const std::string&) {
+    return true;
+}
+//####################################################################
 const std::string& xml::event_parser::get_error_message (void) const {
     if (pimpl_->last_error_message_.empty()) {
-	pimpl_->last_error_message_ = "Unknown Error";
+        pimpl_->last_error_message_ = "Unknown Error";
     }
-
     return pimpl_->last_error_message_;
 }
 //####################################################################
 void xml::event_parser::set_error_message (const char *message) {
     pimpl_->last_error_message_ = message;
+}
+//####################################################################
+const error_messages& xml::event_parser::get_parser_messages (void) const {
+    return pimpl_->parser_messages_;
 }
 //####################################################################
 xml::event_parser::entity_type xml::event_parser::get_entity_type (int type) {
@@ -451,7 +522,7 @@ epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
     // Error handlers are set unconditionally
     sax_handler_.warning                = cb_warning;
     sax_handler_.error                  = cb_error;
-    sax_handler_.fatalError             = cb_error;
+    sax_handler_.fatalError             = cb_fatal_error;
 
     // The rest of SAX handlers depends on the user provided mask
     if (mask & event_parser::start_document_handler)
@@ -523,15 +594,15 @@ void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
 
     try {
 
-	event_parser::attrs_type attrs;
-	const xmlChar **attrp;
+        event_parser::attrs_type attrs;
+        const xmlChar **attrp;
 
-	for (attrp = props; attrp && *attrp; attrp += 2) {
-	    attrs[reinterpret_cast<const char*>(*attrp)] = reinterpret_cast<const char*>(*(attrp+1));
-	}
+        for (attrp = props; attrp && *attrp; attrp += 2) {
+            attrs[reinterpret_cast<const char*>(*attrp)] = reinterpret_cast<const char*>(*(attrp+1));
+        }
 
-	std::string name = reinterpret_cast<const char*>(tag);
-	parser_status_ = parent_.start_element(name, attrs);
+        std::string name = reinterpret_cast<const char*>(tag);
+        parser_status_ = parent_.start_element(name, attrs);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -542,8 +613,8 @@ void epimpl::event_end_element (const xmlChar *tag) {
 
     try {
 
-	std::string name = reinterpret_cast<const char*>(tag);
-	parser_status_ = parent_.end_element(name);
+        std::string name = reinterpret_cast<const char*>(tag);
+        parser_status_ = parent_.end_element(name);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -554,8 +625,8 @@ void epimpl::event_text (const xmlChar *text, int length) {
 
     try {
 
-	std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
-	parser_status_ = parent_.text(contents);
+        std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
+        parser_status_ = parent_.text(contents);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -588,9 +659,9 @@ void epimpl::event_pi (const xmlChar *target, const xmlChar *data) {
 
     try {
 
-	std::string s_target = reinterpret_cast<const char*>(target);
-	std::string s_data = reinterpret_cast<const char*>(data);
-	parser_status_ = parent_.processing_instruction(s_target, s_data);
+        std::string s_target = reinterpret_cast<const char*>(target);
+        std::string s_data = reinterpret_cast<const char*>(data);
+        parser_status_ = parent_.processing_instruction(s_target, s_data);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -601,8 +672,8 @@ void epimpl::event_comment (const xmlChar *text) {
 
     try {
 
-	std::string contents = reinterpret_cast<const char*>(text);
-	parser_status_ = parent_.comment(contents);
+        std::string contents = reinterpret_cast<const char*>(text);
+        parser_status_ = parent_.comment(contents);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -613,8 +684,8 @@ void epimpl::event_cdata (const xmlChar *text, int length) {
 
     try {
 
-	std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
-	parser_status_ = parent_.cdata(contents);
+        std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
+        parser_status_ = parent_.cdata(contents);
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
@@ -763,17 +834,36 @@ void epimpl::event_entity_reference (const xmlChar *name) {
 void epimpl::event_warning (const std::string &message) {
     if (!parser_status_) return;
 
+    parser_messages_.get_messages().push_back(error_message(message, error_message::type_warning));
     try {
 
-	parser_status_ = parent_.warning(message);
-	if (!parser_status_) last_error_message_ = message;
+        parser_status_ = parent_.warning(message);
+        if (!parser_status_) last_error_message_ = message;
 
     } catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
 void epimpl::event_error (const std::string &message) {
-    try { last_error_message_ = message; } catch ( ... ) { }
+    if (!parser_status_) return;
+
+    parser_messages_.get_messages().push_back(error_message(message, error_message::type_error));
+    try {
+
+        parser_status_ = parent_.error(message);
+        if (!parser_status_) last_error_message_ = message;
+
+    } catch ( ... ) { parser_status_ = false; }
+    if (!parser_status_) xmlStopParser(parser_context_);
+}
+//####################################################################
+void epimpl::event_fatal_error (const std::string &message) {
+    if (!parser_status_) return;
+
+    parser_messages_.get_messages().push_back(error_message(message, error_message::type_fatal_error));
+
+    last_error_message_ = message;
     parser_status_ = false;
     xmlStopParser(parser_context_);
 }
+
