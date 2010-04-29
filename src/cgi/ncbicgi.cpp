@@ -206,7 +206,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
 
 
 // Check if the cookie field is valid
-void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
+void CCgiCookie::x_CheckField(const string& str,
+                              EFieldType    ftype,
+                              const char*   banned_symbols)
 {
     if ( banned_symbols ) {
         string::size_type pos = str.find_first_of(banned_symbols);
@@ -214,18 +216,20 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
             NCBI_THROW2(CCgiCookieException, eValue,
                         "Banned symbol '"
                         + NStr::PrintableString(string(1, str[pos]))
-                        + "' in the cookie name: "
+                        + "' in the cookie name or value: "
                         + NStr::PrintableString(str),
                         pos);
         }
     }
+    // Don't check unprintable symbols in value
+    if (ftype == eField_Value) return;
 
     for (const char* s = str.c_str();  *s;  s++) {
         if ( !isprint((unsigned char)(*s)) ) {
             NCBI_THROW2(CCgiCookieException, eValue,
                         "Unprintable symbol '"
                         + NStr::PrintableString(string(1, *s))
-                        + "' in the cookie name: "
+                        + "' in the cookie name or value: "
                         + NStr::PrintableString(str),
                         s - str.c_str());
         }
@@ -354,12 +358,13 @@ void CCgiCookies::Add(const CCgiCookies& cookies)
 
 // Check if the cookie name or value is valid
 CCgiCookies::ECheckResult
-CCgiCookies::x_CheckField(const string& str,
-                          const char*   banned_symbols,
-                          EOnBadCookie  on_bad_cookie)
+CCgiCookies::x_CheckField(const string&          str,
+                          CCgiCookie::EFieldType ftype,
+                          const char*            banned_symbols,
+                          EOnBadCookie           on_bad_cookie)
 {
     try {
-        CCgiCookie::x_CheckField(str, banned_symbols);
+        CCgiCookie::x_CheckField(str, ftype, banned_symbols);
     } catch (CCgiCookieException& ex) {
         switch ( on_bad_cookie ) {
         case eOnBadCookie_ThrowException:
@@ -386,11 +391,31 @@ CCgiCookies::x_CheckField(const string& str,
 }
 
 
+NCBI_PARAM_DECL(string, CGI, Cookie_Name_Banned_Symbols);
+// The old default was " ,;=".
+NCBI_PARAM_DEF_EX(string, CGI, Cookie_Name_Banned_Symbols, " ()<>@,;:\\\"/[]?={}",
+                  eParam_NoThread, CGI_COOKIE_NAME_BANNED_SYMBOLS);
+typedef NCBI_PARAM_TYPE(CGI, Cookie_Name_Banned_Symbols) TCookieNameBannedSymbols;
+
+const char* s_GetCookieNameBannedSymbols(void)
+{
+    static string s_BannedSymbols;
+    static bool s_BannedSymbolsSet = false;
+    if ( !s_BannedSymbolsSet ) {
+        s_BannedSymbols = TCookieNameBannedSymbols::GetDefault();
+        s_BannedSymbolsSet = true;
+    }
+    return s_BannedSymbols.c_str();
+}
+
+
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
     bool need_decode = m_EncodeFlag != NStr::eUrlEnc_None;
     NStr::EUrlDecode dec_flag = m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
         NStr::eUrlDec_Percent : NStr::eUrlDec_All;
+    const char* banned_symbols = s_GetCookieNameBannedSymbols();
+
     SIZE_TYPE pos = str.find_first_not_of(" \t\n");
     for (;;) {
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
@@ -400,7 +425,8 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
         if (pos_mid == NPOS) {
             string name = str.substr(pos_beg);
-            switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            switch ( x_CheckField(name, CCgiCookie::eField_Name,
+                banned_symbols, on_bad_cookie) ) {
             case eCheck_Valid:
                 Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
                     kEmptyStr, on_bad_cookie);
@@ -420,7 +446,8 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         }
         if (str[pos_mid] != '=') {
             string name = str.substr(pos_beg, pos_mid - pos_beg);
-            switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
+            switch ( x_CheckField(name, CCgiCookie::eField_Name,
+                banned_symbols, on_bad_cookie) ) {
             case eCheck_Valid:
                 Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
                     kEmptyStr, on_bad_cookie);
@@ -492,9 +519,10 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         string name = str.substr(pos_beg, pos_mid - pos_beg);
         NStr::TruncateSpacesInPlace(name, NStr::eTrunc_End);
         string val = str.substr(pos_mid + 1, pos_end - pos_mid);
-        ECheckResult valid_name = x_CheckField(name, " ,;=", on_bad_cookie);
+        ECheckResult valid_name = x_CheckField(name, CCgiCookie::eField_Name,
+            banned_symbols, on_bad_cookie);
         ECheckResult valid_value = quoted_value ? eCheck_Valid :
-            x_CheckField(val, ";", on_bad_cookie);
+            x_CheckField(val, CCgiCookie::eField_Value, ";", on_bad_cookie);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
             Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
                 need_decode ? NStr::URLDecode(val, dec_flag) : val,
