@@ -2874,16 +2874,16 @@ public:
     ///
     /// @return
     ///   Current file position.
-    size_t GetFilePos(void) const;
+    Uint8 GetFilePos(void) const;
 
     /// Set file position.
-    void SetFilePos(off_t offset, EPositionMoveMethod move_method) const;
+    void SetFilePos(Uint8 offset, EPositionMoveMethod move_method) const;
 
     /// Get file size.
     ///
     /// @return
     ///   Size of the file.
-    size_t GetFileSize(void) const;
+    Uint8 GetFileSize(void) const;
 
     /// Set new size for the file.
     ///
@@ -2901,7 +2901,7 @@ public:
     /// @param pos
     ///   Defines how to set current file position after changing file size.
     ///   eCurrent means that file position does not change.
-    void SetFileSize(size_t length, EPositionMoveMethod pos = eCurrent) const;
+    void SetFileSize(Uint8 length, EPositionMoveMethod pos = eCurrent) const;
 
 protected:
     TFileHandle  m_Handle;      ///< System file handle.

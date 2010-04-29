@@ -1320,6 +1320,91 @@ static void s_TEST_FileIO(void)
 }
 
 
+static void s_TEST_FileIO_LargeFiles(void)
+{
+    const Uint8  kSize_5GB = NCBI_CONST_UINT8(5*1024*1024*1024);
+    const Uint8  kSize_6GB = NCBI_CONST_UINT8(6*1024*1024*1024);
+    const size_t kSize_Buf = 64*1024;
+
+    const char*  filename = "test_fio.tmp";
+    char         buf_src[kSize_Buf];
+    char         buf_cmp[kSize_Buf];
+    size_t       n;
+
+    // Init buffer size
+    srand((unsigned)time(NULL));
+    for (size_t i=0; i<kSize_Buf; i++) {
+        buf_src[i] = (char)(rand() % sizeof(char));
+    }
+
+    CFileIO fio;
+    CFile   f(filename);
+
+    // Check that file doesn't exists
+    assert( !f.Exists() );
+
+    // Create new file
+    fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
+    assert( fio.GetFilePos() == 0 );
+
+    // Write file >4GB (5GB)
+    for (size_t i = 0; i < (kSize_5GB / kSize_Buf); i++) {
+        n = fio.Write(buf_src, kSize_Buf);
+        assert(n == kSize_Buf);
+    }
+    assert( fio.GetFilePos()  == kSize_5GB);
+    assert( fio.GetFileSize() == kSize_5GB);
+    fio.Close();
+    // We can check real file length via "file name" only after closing
+    assert( f.GetLength() == kSize_5GB );
+
+    fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
+    assert( fio.GetFilePos() == 0 );
+
+    // Read file and compare with buffer
+    for (size_t i = 0; i < (kSize_5GB / kSize_Buf); i++) {
+        // Read next kSize_Buf
+        size_t pos = 0;
+        do {
+            n = fio.Read(buf_cmp + pos, kSize_Buf - pos);
+            assert(n != 0);
+            pos += n;
+        } while (pos < kSize_Buf);
+        // Compare buffers
+        assert(pos == kSize_Buf);
+        assert( memcmp(buf_cmp, buf_src, kSize_Buf) == 0 );
+    }
+    assert( fio.GetFilePos() == kSize_5GB );
+    // EOF
+    n = fio.Read(buf_cmp, kSize_Buf);
+    assert(n == 0);
+    assert( fio.GetFilePos() == kSize_5GB );
+
+    // Extend file size to 6GB
+    fio.SetFileSize(kSize_6GB, CFileIO::eEnd);
+    assert( f.GetLength()     == kSize_6GB );
+    assert( fio.GetFileSize() == kSize_6GB );
+    assert( fio.GetFilePos()  == kSize_6GB );
+    fio.SetFilePos(kSize_6GB - 1, CFileIO::eBegin);
+    assert( fio.GetFilePos() == kSize_6GB - 1 );
+
+    // Shrink file to 100 bytes in size
+    fio.SetFileSize(100);
+    assert( fio.GetFileSize() == 100 );
+    assert( f.GetLength() == 100 );
+    fio.SetFilePos(0, CFileIO::eBegin);
+    n = fio.Read(buf_cmp, kSize_Buf);
+    assert(n == 100);
+    assert( memcmp(buf_cmp, buf_src, n) == 0 );
+
+    // Close file
+    fio.Close();
+
+    // Remove test file
+    assert( f.Remove() );
+}
+
+
 
 ////////////////////////////////
 // Test application
@@ -1341,29 +1426,39 @@ void CTest::Init(void)
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_files",
                        "test file's accessory functions");
+    d->AddFlag("largefiles",
+               "Enable CFileIO test with files > 4Gb (turned off by default).");
+
     SetupArgDescriptions(d.release());
 }
 
 
 int CTest::Run(void)
 {
-    // CDirEntry
-    s_TEST_SplitPath();
-    s_TEST_CheckPath();
-    s_TEST_MatchesMask();
-    // CFile
-    s_TEST_File();
-    // CDir
-    s_TEST_Dir();
-    // CSymLink
-    s_TEST_Link();
-    // CMemoryFile
-    s_TEST_MemoryFile();
-    // CFileIO
-    s_TEST_FileIO();
-    
-    cout << endl;
-    cout << "TEST execution completed successfully!" << endl << endl;
+    // Process command line
+    const CArgs& args = GetArgs();
+
+    if (args["largefiles"]) {
+        // Run as separate test
+        s_TEST_FileIO_LargeFiles();
+    } else {
+        // CDirEntry
+        s_TEST_SplitPath();
+        s_TEST_CheckPath();
+        s_TEST_MatchesMask();
+        // CFile
+        s_TEST_File();
+        // CDir
+        s_TEST_Dir();
+        // CSymLink
+        s_TEST_Link();
+        // CMemoryFile
+        s_TEST_MemoryFile();
+        // CFileIO
+        s_TEST_FileIO();
+    }
+    NcbiCout << endl;
+    NcbiCout << "TEST execution completed successfully!" << endl << endl;
     return 0;
 }
 

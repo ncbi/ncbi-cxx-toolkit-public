@@ -2843,8 +2843,8 @@ bool CFile::Compare(const string& filename, size_t buf_size) const
         f1.Open(GetPath(), CFileIO::eOpen, CFileIO::eRead);
         f2.Open(filename,  CFileIO::eOpen, CFileIO::eRead);
  
-        size_t s1 = f1.GetFileSize();
-        size_t s2 = f2.GetFileSize();
+        Uint8 s1 = f1.GetFileSize();
+        Uint8 s2 = f2.GetFileSize();
         
         // Files should have equal sizes
         if (s1 != s2)
@@ -2864,7 +2864,7 @@ bool CFile::Compare(const string& filename, size_t buf_size) const
             // Use allocated buffer no bigger than the size of the file to compare.
             // Align buffer in memory to 8 byte boundary.
             if (buf_size > s1) {
-                buf_size = s1 + (8 - s1 % 8);
+                buf_size = (size_t)s1 + (8 - s1 % 8);
             }
             if (buf_size > x_size) {
                 buf1 = new char[buf_size*2];
@@ -2881,7 +2881,7 @@ bool CFile::Compare(const string& filename, size_t buf_size) const
 
         // Compare files
         for (;;) {
-            ssize_t n;
+            size_t n;
             if (n1 < buf_size) {
                 n = f1.Read(buf1 + n1, buf_size - n1);
                 if (n == 0) {
@@ -5305,7 +5305,7 @@ void CFileIO::SetFileHandle(TFileHandle handle)
 }
 
 
-size_t CFileIO::GetFilePos(void) const
+Uint8 CFileIO::GetFilePos(void) const
 {
 #if defined(NCBI_OS_MSWIN)
     LARGE_INTEGER ofs;
@@ -5314,12 +5314,12 @@ size_t CFileIO::GetFilePos(void) const
     pos.QuadPart = 0;
     BOOL res = SetFilePointerEx(m_Handle, ofs, &pos, FILE_CURRENT);
     if (res) {
-        return (size_t)pos.QuadPart;
+        return (Uint8)pos.QuadPart;
     }
 #elif defined(NCBI_OS_UNIX)
     off_t pos = lseek(m_Handle, 0, SEEK_CUR);
     if (pos != -1) {
-        return (size_t)pos;
+        return (Uint8)pos;
     }
 #endif
     NCBI_THROW(CFileErrnoException, eFileIO, "Cannot get file position");
@@ -5328,7 +5328,7 @@ size_t CFileIO::GetFilePos(void) const
 }
 
 
-void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method) const
+void CFileIO::SetFilePos(Uint8 offset, EPositionMoveMethod move_method) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD from = 0;
@@ -5364,24 +5364,24 @@ void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method) const
         default:
             _TROUBLE;
     }
-    bool res = (lseek(m_Handle, offset, from) != -1);
+    bool res = (lseek(m_Handle, (off_t)offset, from) != -1);
 #endif
     if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot change file positon"
-                   " (offset=" + NStr::Int8ToString(offset) +
+                   " (offset=" + NStr::UInt8ToString(offset) +
                    ", method=" + NStr::IntToString(move_method) + ')');
     }
 }
 
 
-size_t CFileIO::GetFileSize(void) const
+Uint8 CFileIO::GetFileSize(void) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD size_hi = 0;
     DWORD size_lo = ::GetFileSize(m_Handle, &size_hi);
     if (size_lo != INVALID_FILE_SIZE) {
-        return (size_t)((unsigned __int64)size_hi << 32) | size_lo;
+        return ((unsigned __int64)size_hi << 32) | size_lo;
     }
 #elif defined(NCBI_OS_UNIX)
     struct stat st;
@@ -5395,7 +5395,7 @@ size_t CFileIO::GetFileSize(void) const
 }
 
 
-void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos) const
+void CFileIO::SetFileSize(Uint8 length, EPositionMoveMethod pos) const
 {
 #if defined(NCBI_OS_MSWIN)
     BOOL res = true;
