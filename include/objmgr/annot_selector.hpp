@@ -667,7 +667,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// Ignore strand when testing for range overlap
     SAnnotSelector& SetIgnoreStrand(bool value = true)
         {
-            m_IgnoreStrand = true;
+            m_IgnoreStrand = value;
             return *this;
         }
 
