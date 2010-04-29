@@ -63,7 +63,9 @@
 typedef SOCKET TSOCK_Handle;
 typedef HANDLE TRIGGER_Handle;
 
-#  pragma pack(push, 4)
+#  ifdef _WIN64
+#    pragma pack(push, 4)
+#  endif /*_WIN64*/
 
 #  define SOCK_EINTR          WSAEINTR
 #  define SOCK_EWOULDBLOCK    WSAEWOULDBLOCK/*EAGAIN*/
@@ -330,11 +332,9 @@ typedef struct SOCK_tag {
  */
 
 
-#ifdef NCBI_OS_MSWIN
-
+#if defined(NCBI_OS_MSWIN)  &&  defined(_WIN64)
 #  pragma pack(pop)
-
-#endif /*NCBI_OS_MSWIN*/
+#endif /*NCBI_OS_MSWIN && _WIN64*/
 
 
 #endif /* CONNECT___NCBI_SOCKETP__H */
