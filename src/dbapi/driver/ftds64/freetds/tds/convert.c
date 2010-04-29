@@ -868,11 +868,11 @@ tds_convert_int8(int srctype, const TDS_CHAR * src, int desttype, CONV_RESULT * 
 #elif defined(DOS32X)
 		sprintf(tmp_str, "%Ld", buf);
 #else
-# if SIZEOF_LONG < 8
+/*# if SIZEOF_LONG < 8*/
 		sprintf(tmp_str, "%lld", buf);
-# else
+/*# else
 		sprintf(tmp_str, "%ld", buf);
-# endif
+# endif*/
 #endif
 		return string_to_result(tmp_str, cr);
 		break;
@@ -934,11 +934,11 @@ tds_convert_int8(int srctype, const TDS_CHAR * src, int desttype, CONV_RESULT * 
 #elif defined(DOS32X)
 		sprintf(tmp_str, "%Ld", buf);
 #else
-# if SIZEOF_LONG < 8
+/*# if SIZEOF_LONG < 8*/
 		sprintf(tmp_str, "%lld", buf);
-# else
+/*# else
 		sprintf(tmp_str, "%ld", buf);
-# endif
+# endif*/
 #endif
 		return stringz_to_numeric(tmp_str, cr);
 		break;

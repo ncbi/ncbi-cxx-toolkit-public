@@ -94,10 +94,12 @@
 # define TDS_GET_UA2(ptr) TDS_GET_UA2BE(ptr)
 # define TDS_GET_A4(ptr)  TDS_GET_A4BE(ptr)
 # define TDS_GET_UA4(ptr) TDS_GET_UA4BE(ptr)
+/*
 # undef TDS_GET_A2BE
 # undef TDS_GET_A4BE
 # define TDS_GET_A2BE(ptr) (*((TDS_USMALLINT*)(ptr)))
 # define TDS_GET_A4BE(ptr) (*((TDS_UINT*)(ptr)))
+*/
 
 # define TDS_PUT_A1(ptr,val)  TDS_PUT_A1BE(ptr,val)
 # define TDS_PUT_UA1(ptr,val) TDS_PUT_UA1BE(ptr,val)
@@ -116,10 +118,12 @@
 # define TDS_GET_UA2(ptr) TDS_GET_UA2LE(ptr)
 # define TDS_GET_A4(ptr)  TDS_GET_A4LE(ptr)
 # define TDS_GET_UA4(ptr) TDS_GET_UA4LE(ptr)
+/*
 # undef TDS_GET_A2LE
 # undef TDS_GET_A4LE
 # define TDS_GET_A2LE(ptr) (*((TDS_USMALLINT*)(ptr)))
 # define TDS_GET_A4LE(ptr) (*((TDS_UINT*)(ptr)))
+*/
 
 # define TDS_PUT_A1(ptr,val)  TDS_PUT_A1LE(ptr,val)
 # define TDS_PUT_UA1(ptr,val) TDS_PUT_UA1LE(ptr,val)
@@ -138,20 +142,24 @@
   defined(__powerpc__) || defined(__powerpc64__) || defined(__ppc__) || defined(__ppc64__) ||\
   defined(__s390__) || defined(__s390x__) || defined(__m68k__)
 # ifdef WORDS_BIGENDIAN
+/*
 #  undef TDS_GET_UA2BE
 #  undef TDS_GET_UA4BE
 #  define TDS_GET_UA2BE(ptr) TDS_GET_A2BE(ptr)
 #  define TDS_GET_UA4BE(ptr) TDS_GET_A4BE(ptr)
+*/
 
 #  undef TDS_PUT_UA2BE
 #  undef TDS_PUT_UA4BE
 #  define TDS_PUT_UA2BE(ptr,val) TDS_PUT_A2BE(ptr,val)
 #  define TDS_PUT_UA4BE(ptr,val) TDS_PUT_A4BE(ptr,val)
 # else
+/*
 #  undef TDS_GET_UA2LE
 #  undef TDS_GET_UA4LE
 #  define TDS_GET_UA2LE(ptr) TDS_GET_A2LE(ptr)
 #  define TDS_GET_UA4LE(ptr) TDS_GET_A4LE(ptr)
+*/
 
 #  undef TDS_PUT_UA2LE
 #  undef TDS_PUT_UA4LE
