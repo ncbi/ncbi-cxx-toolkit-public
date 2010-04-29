@@ -661,13 +661,13 @@ extern void SOCK_AllowSigPipeAPI(void)
 #  endif
 #endif /*_DEBUG && !NDEBUG*/
 
-#if defined(_DEBUG)  &&  !defined(NDEBUG)
+#if defined(__GNUC__)  &&  defined(_DEBUG)  &&  !defined(NDEBUG)
 
 #  ifndef   SOCK_HAVE_SHOWDATALAYOUT
 #    define SOCK_HAVE_SHOWDATALAYOUT 1
 #  endif
 
-#endif /*_DEBUG && !NDEBUG*/
+#endif /*__GNUC__ && _DEBUG && !NDEBUG*/
 
 #ifdef SOCK_HAVE_SHOWDATALAYOUT
 
