@@ -5687,7 +5687,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UC<USA-MI>	c	Upjohn Culture Collection",
 "UCAC	s	University of Central Arkansas, Department of Biology",
 "UCAM	s	Universidad Autonoma de Campeche",
-"UCB	s	University of California",
+"UCB	s	University of California at Berkeley",
 "UCBG	s	University of Botswana, Department of Biological Sciences",
 "UCBL	s	Centre de Paleontologie Stratigraphique et Paleoecologie",
 "UCC	s	University of Cincinnati",
