@@ -165,6 +165,8 @@ bool GetAsnDataViaHTTP(
         *inObject >> *asnObject;
         okay = true;
 
+    } catch (ncbi::CSerialException& se) {
+        *err = std::string("Data is not in expected format; error: ") + se.what();
     } catch (std::exception& e) {
         *err = std::string("Network connection failed or data is not in expected format; error: ") + e.what();
     }
