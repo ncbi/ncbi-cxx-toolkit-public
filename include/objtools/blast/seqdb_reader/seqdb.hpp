@@ -1355,10 +1355,11 @@ struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
     inline bool operator<(const SSeqDBInitInfo& rhs) const {
         if (m_BlastDbName < rhs.m_BlastDbName) {
             return true;
-        } else {
+        } else if (m_BlastDbName > rhs.m_BlastDbName) {
             return false;
+        } else {
+            return ((int)m_MoleculeType < (int)rhs.m_MoleculeType);
         }
-        return ((int)m_MoleculeType < (int)rhs.m_MoleculeType);
     }
 
     /// Create a new CSeqDB instance from this object
