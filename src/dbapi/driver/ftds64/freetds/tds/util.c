@@ -471,7 +471,7 @@ tdsdump_dump_buf(const char* file, unsigned int level_line, const char *msg, con
 
 }				/* tdsdump_dump_buf()  */
 
-
+#if 0
 /**
  * This function write a message to the debug log.  
  * \param debug_lvl level of debugging
@@ -523,3 +523,4 @@ tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
 	TDS_MUTEX_UNLOCK(&g_dump_mutex);
     */
 }				/* tdsdump_log()  */
+#endif

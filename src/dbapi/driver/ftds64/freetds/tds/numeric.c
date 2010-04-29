@@ -250,6 +250,7 @@ tds_numeric_to_string(const TDS_NUMERIC * numeric, char *s)
 	int num_bytes;
 	unsigned int remainder, n, i, m;
 
+    tdsdump_log(TDS_DBG_FUNC, "tds_numeric_to_string()\n");
 	/* a bit of debug */
 #if ENABLE_EXTRA_CHECKS
 	memset(packet, 0x55, sizeof(packet));
