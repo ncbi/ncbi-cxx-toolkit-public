@@ -11,9 +11,6 @@
 
 APP: test_diag_parser test_hash test_tempstr
 
-# The -t key prevents inclusion of the tree builder into the release
-SVN_TAG_RELEASE_ADD_FLAGS: -t
-
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
@@ -23,16 +20,18 @@ SVN_TAG_RELEASE_ADD_FLAGS: -t
 # --with-distcc, --with-action etc.
 
 # COPY: $libdir/xncbi.lib  $installdir/lib/
-COPY: $libdir/libxncbi.a  $installdir/lib/
+# COPY: $libdir/libxncbi.a  $installdir/lib/
 POSTBUILD: echo FAKE postbuild COMMAND for $platform
 
 
 
-Linux32-Suse    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Suse    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Suse    : icc     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Suse    : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-Linux64-Suse    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64-Suse    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Suse    : icc     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Suse    : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+Linux64-Centos : gcc : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
