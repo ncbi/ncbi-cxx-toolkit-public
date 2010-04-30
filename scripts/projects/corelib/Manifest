@@ -43,11 +43,3 @@ SunOSSparc : w55-64     : WorkShop55.sh 64 --without-debug --without-mt --with-s
 SunOSSparc : w55-32     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-PowerMAC   : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-PowerMAC   : universal : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-universal
-
-Win32      : plain32   : msvc800_prj  static  32  ReleaseDLL
-Test       : plain32   : msvc800_prj  static  32  ReleaseDLL
-
-Win64      : plain64   : msvc800_prj  static  64  ReleaseDLL
-Win64      : plain32   : msvc710_prj  static  32  ReleaseDLL
