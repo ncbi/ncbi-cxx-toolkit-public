@@ -458,6 +458,9 @@ public:
     /// Print domain information
     void PrintMasterAlign() const;
 
+    /// Print Html style summary
+    void PrintHtmlSummary() const;
+
     /// Set out-of-frame information                                        
     void SetFrame(const string &frame = "N/A") { 
         m_FrameInfo = frame;                               
@@ -494,8 +497,10 @@ public:
 protected:
     void x_ResetIgFields();
     void x_PrintIgGenes() const;
+    void x_PrintIgGenesHtml() const;
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
+    void x_PrintIgDomainHtml(const SIgDomain &domain) const;
     void x_PrintPartialQuery(int start, int end) const;
 
 private:                                                                    

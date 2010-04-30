@@ -899,6 +899,7 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
                                  CNcbiMatrix<int>* matrix)
 {
     m_ChainType = chain_type;
+    if (m_ChainType == "NA") m_ChainType = "N/A";
     return CBlastTabularInfo::SetFields(align, scope, matrix);
 };
 
@@ -928,6 +929,18 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
     }
 
     m_Ostream << "\n";
+};
+
+void CIgBlastTabularInfo::PrintHtmlSummary() const
+{
+    x_PrintIgGenesHtml();
+    m_Ostream << "<pre><table border=1>";
+    m_Ostream << "<tr><td> domain name </td><td> from </td><td> to </td><td> length </td>"
+              << "<td> match </td><td> mismatch </td><td> gap </td></tr>\n";
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        x_PrintIgDomainHtml(*(m_IgDomains[i]));
+    }
+    m_Ostream << "</table></pre>\n";
 };
 
 void CIgBlastTabularInfo::x_ResetIgFields()
@@ -986,6 +999,36 @@ void CIgBlastTabularInfo::x_PrintIgGenes() const
     x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
 };
    
+void CIgBlastTabularInfo::x_PrintIgGenesHtml() const
+{
+    if (m_VGene.start <0 || m_JGene.end <0) return;
+
+    m_Ostream << "<pre><table>";
+    m_Ostream << "<tr><td>Last 5 letters in V: </td><td>";
+    x_PrintPartialQuery(max(m_VGene.start, m_VGene.end - 5), m_VGene.end);
+    m_Ostream << "</td></tr>\n";
+
+    if (m_ChainType == "VH") {
+        m_Ostream << "<tr><td>Letters between V and D: </td><td>";
+        x_PrintPartialQuery(m_VGene.end, m_DGene.start);
+        m_Ostream << "</td></tr>\n";
+        m_Ostream << "<tr><td>Letters in D: </td><td>";
+        x_PrintPartialQuery(m_DGene.start, m_DGene.end);
+        m_Ostream << "</td></tr>\n";
+        m_Ostream << "<tr><td>Letters between D and J: </td><td>";
+        x_PrintPartialQuery(m_DGene.end, m_JGene.start);
+        m_Ostream << "</td></tr>\n";
+    } else {
+        m_Ostream << "<tr><td>Letters between V and J: </td><td>";
+        x_PrintPartialQuery(m_VGene.end, m_JGene.start);
+        m_Ostream << "</td></tr>\n";
+    }
+
+    m_Ostream << "<tr><td>First 5 letters in J: </td><td>";
+    x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
+    m_Ostream << "</td></tr></table></pre>\n";
+};
+
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
 {
     int pos = 0;
@@ -1033,6 +1076,23 @@ void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
               <<  "N/A" << m_FieldDelimiter
               <<  "N/A" << m_FieldDelimiter
               <<  "N/A";
+    }
+};
+
+void CIgBlastTabularInfo::x_PrintIgDomainHtml(const SIgDomain &domain) const
+{
+    m_Ostream << "<tr><td> " << domain.name << " </td>"
+              <<     "<td> " << domain.start+1 << " </td>"
+              <<     "<td> " << domain.end << " </td>";
+    if (domain.length > 0) {
+        m_Ostream  << "<td> " << domain.length << " </td>"
+                   << "<td> " << domain.num_match << " </td>"
+                   << "<td> " << domain.num_mismatch << " </td>"
+                   << "<td> " << domain.num_gap << " </td></tr>\n";
+    } else {
+        m_Ostream  << "<td> N/A </td>" 
+                   << "<td> N/A </td>"
+                   << "<td> N/A </td></tr>\n";
     }
 };
 
