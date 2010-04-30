@@ -200,6 +200,16 @@ CAlignCleanup::CAlignCleanup(CScope& scope)
 }
 
 
+void CAlignCleanup::Cleanup(const TAligns& aligns_in,
+                            TAligns&       aligns_out,
+                            EMode          mode)
+{
+    TConstAligns const_aligns_in;
+    const_aligns_in.insert(const_aligns_in.end(),
+                           aligns_in.begin(), aligns_in.end());
+    Cleanup(const_aligns_in, aligns_out, mode);
+}
+
 void CAlignCleanup::Cleanup(const TConstAligns& aligns_in,
                             TAligns&            aligns_out,
                             EMode               mode)

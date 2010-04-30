@@ -62,6 +62,9 @@ public:
 
         eDefault = eAnchoredAlign
     };
+    void Cleanup(const TAligns& aligns_in,
+                 TAligns&       aligns_out,
+                 EMode          mode = eDefault);
     void Cleanup(const TConstAligns& aligns_in,
                  TAligns&            aligns_out,
                  EMode               mode = eDefault);
