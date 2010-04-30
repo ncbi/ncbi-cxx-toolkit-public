@@ -6322,6 +6322,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WSF	c	Wisconsin Soil Fungi Collection",
 "WSFA	s	Wilmington College, Biology Department",
 "WSM	s	Weston-super-Mare Museum and Art Gallery",
+"WSM<AUS>	c	Western Australian Soil Microbiology culture collection, Murdoch. University",
 "WSNM	s	White Sands National Monument",
 "WSP	s	Washington State University, Plant Pathology Department",
 "WSRP	s	University of Podlasie, Botany Department",
