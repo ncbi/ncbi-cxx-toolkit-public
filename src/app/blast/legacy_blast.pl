@@ -372,6 +372,8 @@ sub handle_blastall($)
 
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, $opt_p);
+    } elsif (not defined $opt_F and $opt_p eq "blastp") {
+        $retval .= &convert_filter_string("T", $opt_p);
     }
 
     return $retval;
