@@ -34,12 +34,9 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <ostream>
 #include <string>
-#include <vector>
 
 /** @addtogroup Utility
  *
@@ -147,10 +144,10 @@ protected:
     /// Each callback receives a stage enumerator and a step within.
     /// At least one step (0) is required, and denotes the main check.
 
-    /// PreCheck gets called before the step starts, and contains
-    /// either:
+    /// PreCheck gets called before the step starts, with "title"
+    /// containing either:
     ///   a single-lined step title; or
-    ///   a multi-lined step description, with first line being the actual
+    ///   a multi-lined step description:  the first line being the actual
     ///   title, and remaining lines -- a verbal explanation.
     /// Lines are separated with "\n", and normally do not have any
     /// ending punctuation (but may be capitalized).
@@ -173,20 +170,20 @@ protected:
     /// while a failing check can supply multiple lines (as an extended
     /// detailed explanation) separated with "\n".
     /// The default callback does the following:
-    ///   For succeeding check it prints the contents of "reason" and returns;
-    ///   For failing check, it prints the word "FAILED" followed by textual
+    ///   For a succeeding check it prints the contents of "reason" and returns;
+    ///   For a failing check, it prints the word "FAILED" followed by textual
     ///     representation of "status" and the return value of GetCheckPoint()
     ///     if non-empty.  It then prints each line of explanation (taken from
     ///     "reason") as a numbered list of justified paragraphs.  If there is
     ///     only a single line results, it won't be enumerated.
     /// Each PostCheck() is expected to set the m_End member to "true",
-    /// so the nested or back-to-back substeps can be distiguished by
-    /// the order of encounter of m_End's value.
+    /// so that the nested or back-to-back substeps can be distiguished
+    /// by the order of encounter of m_End's values.
     ///
     virtual void       PostCheck(EStage stage, unsigned int step,
                                  EIO_Status status, const string& reason);
 
-    /// A helper function that assures to return eIO_Success if the predicate
+    /// Helper function that assures to return eIO_Success if the predicate
     /// "failure" is false;  and other code otherwise:  either taken from the
     /// underlying CONN object, or eIO_Unknown as a fallback.
     /// Also, it sets the m_CheckPoint member to contain the connection

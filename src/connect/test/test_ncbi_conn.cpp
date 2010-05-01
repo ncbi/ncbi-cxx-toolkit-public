@@ -112,7 +112,7 @@ private:
 CTest::CTest(CNcbiOstream& log)
     : m_Tee(new CTeeWriter(NcbiCout, log), 0, 0, CRWStreambuf::fOwnWriter)
 {
-    // Set error posting and tracing on maximum
+    // Set error posting and tracing at maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
@@ -185,16 +185,6 @@ int CTest::Run(void)
     }
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
-#ifdef NCBI_OS_MSWIN
-    NcbiCout << "Hit any key or program will bail out in 1 minute..."
-             << NcbiFlush;
-    for (n = 0;  n < 120;  n++) {
-        if (_kbhit())
-            break;
-        SleepMilliSec(500);
-    }
-#endif //NCBI_OS_MSWIN
-
     CORE_SetLOG(0);
     return status == eIO_Success ? 0 : 1;
 }
@@ -207,17 +197,35 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
-    CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
-    if (!log)
-        ERR_POST(Fatal << "Cannot open logfile " << kLogfile);
-    freopen(kLogfile, "a", stderr);
-    SetDiagStream(&log);
+    int retval = 1/*failure*/;
 
-    // Execute main application function
-    int retval = CTest(log).AppMain(argc, argv, 0, eDS_User, 0);
+    try {
+        CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
+        if (log) {
+            freopen(kLogfile, "a", stderr);
+            SetDiagStream(&log);
 
-    log.flush();
-    // Make sure CNcbiDiag remains valid after main() returns
-    SetLogFile(kLogfile);
+            // Execute main application function
+            int rv = CTest(log).AppMain(argc, argv, 0, eDS_User, 0);
+
+            log.flush();
+            // Make sure CNcbiDiag remains valid when main() returns
+            SetLogFile(kLogfile);
+            retval = rv;
+        } else
+            ERR_POST(Critical << "Cannot open logfile " << kLogfile);
+    }
+    NCBI_CATCH_ALL("Test failed");
+
+#ifdef NCBI_OS_MSWIN
+    NcbiCout << "Hit any key or program will bail out in 1 minute..."
+             << NcbiFlush;
+    for (int n = 0;  n < 120;  n++) {
+        if (_kbhit())
+            break;
+        SleepMilliSec(500);
+    }
+#endif //NCBI_OS_MSWIN
+
     return retval;
 }
