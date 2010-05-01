@@ -36,7 +36,7 @@
 #include "ncbi_config.h"
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
+#if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
 #  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
 #endif /*supported platforms*/
 
@@ -47,12 +47,12 @@
 /* Pull in a minial set of platform-specific system headers here.
  */
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 #  include <winsock2.h>
-#elif defined(NCBI_OS_UNIX)
+#else /*NCBI_OS_UNIX*/
 #  include <sys/socket.h>
 #  include <sys/time.h>
-#endif
+#endif /*NCBI_OS_MSWIN*/
 
 /* Portable error codes.
  */
@@ -84,7 +84,7 @@ typedef HANDLE TRIGGER_Handle;
 #  define SOCK_SHUTDOWN_WR    SD_SEND
 #  define SOCK_SHUTDOWN_RDWR  SD_BOTH
 
-#else
+#else /*NCBI_OS_UNIX*/
 
 typedef int TSOCK_Handle;
 typedef int TRIGGER_Handle;
