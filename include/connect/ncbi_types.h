@@ -67,8 +67,8 @@ extern "C" {
  * @sa CTimeout, g_CTimeoutToSTimeout, g_STimeoutToCTimeout
  */
 typedef struct STimeoutTag {
-    unsigned int sec;  /**< seconds (truncated to the platf.-dep. max. limit)*/
-    unsigned int usec; /**< microseconds (always truncated by mod. 1,000,000)*/
+    unsigned int sec;  /**< seconds                                   */
+    unsigned int usec; /**< microseconds (truncated by mod 1,000,000) */
 } STimeout;
 
 #define kDefaultTimeout  ((const STimeout*)(-1))
