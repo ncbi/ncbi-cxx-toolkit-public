@@ -1240,6 +1240,7 @@ extern EIO_Status URL_ConnectEx
     size_t      hdrsize;
     char        strbuf[80];
     const char* x_args = 0;
+    int/*bool*/ add_host = 1/*true*/;
     size_t      x_args_len = args  &&  *args ? strcspn(args, "#") : 0;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_method; /* "POST "/"GET " */
@@ -1295,14 +1296,23 @@ extern EIO_Status URL_ConnectEx
             x_args = args;
     }
 
-    buf = 0;
-    errno = 0;
+    for (header = user_hdr; header && *header; header = strchr(header, '\n')) {
+        if (header != user_hdr)
+            header++;
+        if (strncasecmp(header, X_HOST, sizeof(X_HOST) - 2) == 0) {
+            add_host = 0/*false*/;
+            break;
+        }
+    }
+
     if (!port) {
-        *strbuf = '\0';
+        hrdsize = 0;
         port = flags & fSOCK_Secure ? 443 : 80;
     } else
-        sprintf(strbuf, ":%hu", port);
+        hdrsize = add_host ? (size_t) sprintf(strbuf, ":%hu", port) : 0;
 
+    buf = 0;
+    errno = 0;
     /* compose HTTP header */
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
         !BUF_Write(&buf, x_req_method, strlen(x_req_method))  ||
@@ -1312,22 +1322,24 @@ extern EIO_Status URL_ConnectEx
               !BUF_Write(&buf, x_args,  x_args_len)))         ||
         !BUF_Write(&buf,       X_REQ_E, sizeof(X_REQ_E) - 1)  ||
 
-        /* Host: host[:port]\r\n */
-        !BUF_Write(&buf, X_HOST, sizeof(X_HOST) - 1)          ||
-        !BUF_Write(&buf, host,   strlen(host))                ||
-        !BUF_Write(&buf, strbuf, strlen(strbuf))              ||
-        !BUF_Write(&buf, "\r\n", 2)                           ||
+        (add_host
+         /* Host: host[:port]\r\n */
+         &&  (!BUF_Write(&buf, X_HOST, sizeof(X_HOST) - 1)    ||
+              !BUF_Write(&buf, host,   strlen(host))          ||
+              !BUF_Write(&buf, strbuf, hdrsize)               ||
+              !BUF_Write(&buf, "\r\n", 2)))                   ||
 
-        /* <user_header> */
-        (user_hdr_len
-         &&  !BUF_Write(&buf, user_hdr, user_hdr_len))        ||
-
-        /* Content-Length: <content_length>\r\n\r\n */
+        /* Content-Length: <content_length>\r\n */
         (req_method != eReqMethod_Get
          &&  (sprintf(strbuf, "Content-Length: %lu\r\n",
                       (unsigned long) content_length) <= 0    ||
               !BUF_Write(&buf, strbuf, strlen(strbuf))))      ||
 
+        /* <user_header> */
+        (user_hdr_len
+         &&  !BUF_Write(&buf, user_hdr, user_hdr_len))        ||
+
+        /* header separator */
         !BUF_Write(&buf, "\r\n", 2)) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(5, eLOG_Error, x_errno,
