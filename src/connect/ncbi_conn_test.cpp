@@ -31,14 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
 #include "ncbi_comm.h"
 #include "ncbi_servicep.h"
-#include <algorithm>
 
 #ifndef   MAXHOSTNAMELEN
 #  define MAXHOSTNAMELEN 255
