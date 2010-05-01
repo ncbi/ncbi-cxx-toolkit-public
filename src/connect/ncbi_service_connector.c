@@ -155,7 +155,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
                     CORE_LOGF_X(2, eLOG_Note,
                                 ("[%s]  Fallback to stateless", uuu->service));
                 }
-#endif
+#endif /*_DEBUG && !NDEBUG*/
             } else {
                 int n;
                 if (sscanf(header, "%u.%u.%u.%u %hu %x%n",
