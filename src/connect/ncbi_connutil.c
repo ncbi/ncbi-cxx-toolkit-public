@@ -1306,7 +1306,7 @@ extern EIO_Status URL_ConnectEx
     }
 
     if (!port) {
-        hrdsize = 0;
+        hdrsize = 0;
         port = flags & fSOCK_Secure ? 443 : 80;
     } else
         hdrsize = add_host ? (size_t) sprintf(strbuf, ":%hu", port) : 0;
