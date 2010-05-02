@@ -205,8 +205,7 @@ void CAlignCleanup::Cleanup(const TAligns& aligns_in,
                             EMode          mode)
 {
     TConstAligns const_aligns_in;
-    const_aligns_in.insert(const_aligns_in.end(),
-                           aligns_in.begin(), aligns_in.end());
+    copy(aligns_in.begin(), aligns_in.end(), back_inserter(const_aligns_in));
     Cleanup(const_aligns_in, aligns_out, mode);
 }
 
