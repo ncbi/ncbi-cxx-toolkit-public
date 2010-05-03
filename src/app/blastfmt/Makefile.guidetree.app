@@ -1,7 +1,7 @@
 APP = guidetree
 SRC = guide_tree guide_tree_calc guide_tree_simplify guide_tree_app
 
-LIB_ = cobalt w_phylo_tree xalgoalignnw xalgophytree fastme \
+LIB_ = w_phylo_tree xalgoalignnw xalgophytree fastme \
 	   gui_glmesa w_gl w_wx w_data \
 	   gui_graph gui_opengl gui_print gui_config gui_objutils gui_utils \
 	   xalgoalignutil xalnmgr ximage xcgi xhtml \

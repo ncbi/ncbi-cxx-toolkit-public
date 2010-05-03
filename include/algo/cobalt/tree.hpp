@@ -172,10 +172,6 @@ public:
 
 private:
     TPhyTreeNode *m_Tree;
-
-    void x_RerootTree(TPhyTreeNode *node);
-    TPhyTreeNode *x_FindLargestEdge(TPhyTreeNode *node,
-                                    TPhyTreeNode *best_node);
 };
 
 END_SCOPE(cobalt)

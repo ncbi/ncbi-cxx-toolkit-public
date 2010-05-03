@@ -36,11 +36,11 @@
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/align_ci.hpp>
 
-#include <algo/cobalt/tree.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 
 #include <math.h>
@@ -434,18 +434,15 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
     for (unsigned int i = 0;i < labels.size();i++) {
         labels[i] = NStr::IntToString(i);
     }
-    
-    // TODO: Re-rooting now handled through CTree class needs to be implemented
-    // in CGuideTreeCalc
-    cobalt::CTree tree;
-
+ 
+    TPhyTreeNode* tree;
     switch (m_TreeMethod) {
     case eNJ :
-        tree.ComputeTree(m_FullDistMatrix, false);
+        tree = CDistMethods::NjTree(m_FullDistMatrix, labels);
         break;
 
     case eFastME :
-        tree.ComputeTree(m_FullDistMatrix, true);
+        tree = CDistMethods::FastMeTree(m_FullDistMatrix, labels);
         break;
 
     default:
@@ -453,21 +450,22 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
                    "Invalid tree reconstruction method");
     };
 
-    // release memory used by full distance matrix
-    m_FullDistMatrix.Resize(1, 1);
-
-    if (!tree.GetTree()) {
+    if (!tree) {
         NCBI_THROW(CGuideTreeCalcException, eTreeComputationProblem,
                    "Tree was not created");
     }
 
-    TPhyTreeNode* ptree = (TPhyTreeNode*)tree.GetTree();
+    tree->GetValue().SetDist(0.0);
+    tree = CDistMethods::RerootTree(tree);
+
+    // release memory used by full distance matrix
+    m_FullDistMatrix.Resize(1, 1);
 
     if (correct) {
-        CDistMethods::ZeroNegativeBranches(ptree);
+        CDistMethods::ZeroNegativeBranches(tree);
     }
 
-    m_TreeContainer = MakeBioTreeContainer(ptree);
+    m_TreeContainer = MakeBioTreeContainer(tree);
 }
 
 

@@ -113,6 +113,23 @@ public:
 
     /// Check a matrix for NaNs and Infs
     static bool AllFinite(const TMatrix& mat);
+
+    /// Reroot tree, new root is placed in the middle of the edge specified
+    /// by node
+    /// @param tree Tree root [in]
+    /// @param node New root, if NULL node with the longest edge will be used
+    /// [in]
+    /// @return New tree root
+    static TTree* RerootTree(TTree* tree, TTree* node = NULL);
+
+private:
+
+    /// Find node with the longest edge in the tree
+    /// @param tree Tree root [in]
+    /// @param best_node Node with longes edge found so far (used in recursion)
+    /// [in]
+    /// @return Node with the longest edge
+    static TTree* x_FindLargestEdge(TTree* tree, TTree* best_node);
 };
 
 /// Conversion from TPhyTreeNode to CBioTreeContainer
