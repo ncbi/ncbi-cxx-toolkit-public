@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
 #ifdef NCBI_OS_MSWIN
 #  include <corelib/ncbi_system.hpp>
 #endif //NCBI_OS_MSWIN
@@ -134,6 +135,9 @@ void CTest::Init(void)
     if (args->Exist ("xmlhelp")) {
         args->Delete("xmlhelp");
     }
+#ifdef NCBI_OS_MSWIN
+    args->AddFlag("nopause", "Do not pause at the end");
+#endif //NCBI_OS_MSWIN
     args->AddExtra(0/*no mandatory*/, 1/*single timeout argument allowed*/,
                    "Timeout", CArgDescriptions::eDouble);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -176,7 +180,8 @@ int CTest::Run(void)
 
     m_Tee << NcbiEndl;
     if (status != eIO_Success) {
-        m_Tee << "Check " << kLogfile << " for more information." << NcbiEndl
+        m_Tee << "Check " << CDirEntry::CreateAbsolutePath(kLogfile)
+              << " for more information." << NcbiEndl
               << "Please remember to make its contents"
             " available if contacting NCBI.";
     } else {
@@ -185,8 +190,14 @@ int CTest::Run(void)
     }
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
-    CORE_SetLOG(0);
-    return status == eIO_Success ? 0 : 1;
+    int retval = status == eIO_Success ? 0 : 1;
+#ifdef NCBI_OS_MSWIN
+    if (args["nopause"].HasValue())
+        retval = ~retval;
+#endif //NCBI_OS_MSWIN
+
+    CORE_SetREG(0);
+    return retval;
 }
 
 
@@ -213,17 +224,22 @@ int main(int argc, const char* argv[])
             SetLogFile(kLogfile);
             retval = rv;
         } else
-            ERR_POST(Critical << "Cannot open logfile " << kLogfile);
+            ERR_POST(Critical << "Cannot open logfile " <<
+                     CDirEntry::CreateAbsolutePath(kLogfile));
     }
     NCBI_CATCH_ALL("Test failed");
 
 #ifdef NCBI_OS_MSWIN
-    NcbiCout << "Hit any key or program will bail out in 1 minute..."
-             << NcbiFlush;
-    for (int n = 0;  n < 120;  n++) {
-        if (_kbhit())
-            break;
-        SleepMilliSec(500);
+    if (retval < 0)
+        retval = ~retval;
+    else {
+        NcbiCout << "Hit any key or program will bail out in 1 minute..."
+                 << NcbiFlush;
+        for (int n = 0;  n < 120;  n++) {
+            if (_kbhit())
+                break;
+            SleepMilliSec(500);
+        }
     }
 #endif //NCBI_OS_MSWIN
 
