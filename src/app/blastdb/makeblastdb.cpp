@@ -245,9 +245,9 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
-#if _DEBUG
+#if _BLAST_DEBUG
     arg_desc->AddFlag("verbose", "Produce verbose output", true);
-#endif /* _DEBUG */
+#endif /* _BLAST_DEBUG */
 
     arg_desc->SetCurrentGroup("Taxonomy options");
     arg_desc->AddOptionalKey("taxid", "TaxID", 
@@ -759,11 +759,11 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   use_gi_mask,
                                   m_LogFile));
 
-#if _DEBUG
+#if _BLAST_DEBUG
     if (args["verbose"]) {
         m_DB->SetVerbosity(true);
     }
-#endif /* _DEBUG */
+#endif /* _BLAST_DEBUG */
     
     // Should we keep the linkout and membership bits?  Sure.
     

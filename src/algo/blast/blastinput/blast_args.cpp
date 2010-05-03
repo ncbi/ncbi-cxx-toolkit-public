@@ -1559,7 +1559,7 @@ CRemoteArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts *
 void
 CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-#if _DEBUG
+#if _BLAST_DEBUG
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)",
                      true);
@@ -1568,13 +1568,13 @@ CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("use_test_remote_service", 
                      "Send remote requests to test servers", true);
     arg_desc.SetCurrentGroup("");
-#endif /* DEBUG */
+#endif /* _BLAST_DEBUG */
 }
 
 void
 CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-#if _DEBUG
+#if _BLAST_DEBUG
     m_DebugOutput = static_cast<bool>(args["verbose"]);
     m_RmtDebugOutput = static_cast<bool>(args["remote_verbose"]);
     if (args["use_test_remote_service"]) {
@@ -1582,7 +1582,7 @@ CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */
         reg.Set("BLAST4", DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME,
                 "blast4_test");
     }
-#endif /* DEBUG */
+#endif /* _BLAST_DEBUG */
 }
 
 void
@@ -1884,7 +1884,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
 
 void CBlastAppArgs::SetTask(const string& task)
 {
-#if _DEBUG
+#if _BLAST_DEBUG
     ThrowIfInvalidTask(task);
 #endif
     m_Task.assign(task);

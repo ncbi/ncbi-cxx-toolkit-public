@@ -116,6 +116,12 @@ NCBI_XBLAST_EXPORT extern const int kUngappedHSPNumMax;
 NCBI_XBLAST_EXPORT
 void __sfree(void** x);
 
+/** This symbol enables the verbose option in makeblastdb and other BLAST+
+ * search command line applications, as well as the option to submit searches
+ * to the test server in NCBI for remote BLAST searches 
+#define _BLAST_DEBUG 1
+*/
+
 #if 0
 /** Define this symbol to enable debugging APIs in the BlastSeqSrc interface to
  * allow diagnostics/debugging to be performed in the composition based
