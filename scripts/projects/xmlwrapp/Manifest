@@ -31,7 +31,8 @@ Linux32-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --w
 Linux64-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-FreeBSD32  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD32      : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD32-v80  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
