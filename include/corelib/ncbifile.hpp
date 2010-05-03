@@ -2876,7 +2876,14 @@ public:
     ///   Current file position.
     Uint8 GetFilePos(void) const;
 
-    /// Set file position.
+    /// Set file position from beginning of the file.
+    void SetFilePos(Uint8 offset) const;
+
+    /// Set file position using 'move_method'.
+    ///
+    /// 'offset' parameter is a number of bytes to move the file pointer.
+    /// A positive value moves the pointer forward in the file and
+    ///  a negative value moves the file pointer backward.
     void SetFilePos(Int8 offset, EPositionMoveMethod move_method) const;
 
     /// Get file size.
