@@ -127,8 +127,8 @@ CMaskWriterBlastDbMaskInfo::x_ConsolidateListOfMasks()
     m_ListOfMasks.swap(consolidated_list);
     m_ListOfMasks.back()->SetMore(false);
     _ASSERT(m_ListOfMasks.size() == 1);
-    _ASSERT(m_ListOfMasks.back()->GetMore() == 
-            m_ListOfMasks.front()->GetMore() == false);
+    _ASSERT(m_ListOfMasks.back()->GetMore() == false);
+    _ASSERT(m_ListOfMasks.front()->GetMore() == false);
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id, 
