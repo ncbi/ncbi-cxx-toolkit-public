@@ -5328,19 +5328,19 @@ Uint8 CFileIO::GetFilePos(void) const
 }
 
 
-void CFileIO::SetFilePos(Uint8 offset) const
+void CFileIO::SetFilePos(Uint8 position) const
 {
 #if defined(NCBI_OS_MSWIN)
     LARGE_INTEGER ofs;
-    ofs.QuadPart = offset;
+    ofs.QuadPart = position;
     bool res = (SetFilePointerEx(m_Handle, ofs, NULL, FILE_BEGIN) == TRUE);
 #elif defined(NCBI_OS_UNIX)
-    bool res = (lseek(m_Handle, (off_t)offset, SEEK_SET) != -1);
+    bool res = (lseek(m_Handle, (off_t)position, SEEK_SET) != -1);
 #endif
     if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot change file positon"
-                   " (offset=" + NStr::UInt8ToString(offset) + ')');
+                   " (position=" + NStr::UInt8ToString(position) + ')');
     }
 }
 

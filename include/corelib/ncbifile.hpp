@@ -2877,7 +2877,7 @@ public:
     Uint8 GetFilePos(void) const;
 
     /// Set file position from beginning of the file.
-    void SetFilePos(Uint8 offset) const;
+    void SetFilePos(Uint8 position) const;
 
     /// Set file position using 'move_method'.
     ///
