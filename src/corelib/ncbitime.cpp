@@ -122,6 +122,32 @@ static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
 // Character used to escape formatted symbols.
 const char kFormatEscapeSymbol = '$';
 
+
+// Macro to check range for time components.
+// See also:
+//      CTime::m_Data
+//      CTime::IsValid
+//      CTime::Set*() methods
+
+#define CHECK_RANGE(value, what, min, max) \
+    if ( value < min  ||  value > max ) {  \
+        NCBI_THROW(CTimeException, eArgument, \
+                   "CTime: " what " value '" + \
+                   NStr::Int8ToString(value) + "' is out of range"); \
+    }
+
+#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_Int)
+#define CHECK_RANGE_MONTH(value) CHECK_RANGE(value, "month", 1, 12)
+#define CHECK_RANGE_DAY(value)   CHECK_RANGE(value, "day", 1, 31)
+#define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "hour", 0, 23)
+#define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
+#define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
+#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, \
+                                             kNanoSecondsPerSecond - 1)
+
+
+//============================================================================
+
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
 {
@@ -185,7 +211,8 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
 // Calc <value> + <offset> on module <bound>.
 // Returns normalized value in <value>. 
 // The <major> will have a remainder after dividing.
-static void s_Offset(long *value, Int8 offset, long bound, int *major)
+static inline
+void s_Offset(long *value, Int8 offset, long bound, int *major)
 {
     Int8 v = *value + offset;
     *major += (int)(v / bound);
@@ -196,27 +223,54 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
     }
 }
 
-// Macro to check range for time components.
-// See also:
-//      CTime::m_Data
-//      CTime::IsValid
-//      CTime::Set*() methods
 
-#define CHECK_RANGE(value, what, min, max) \
-    if ( value < min  ||  value > max ) {  \
-        NCBI_THROW(CTimeException, eArgument, \
-                   "CTime: " what " value '" + \
-                   NStr::Int8ToString(value) + "' is out of range"); \
+// Convert 'value' to string, append result to string 'str'.
+static inline 
+void s_AddInt(string& str, long value)
+{
+    const size_t size = CHAR_BIT * sizeof(value);
+    char   buf[size];
+    size_t pos = size;
+    do {
+        buf[--pos] = char(value % 10) + '0';
+        value /= 10;
+    } while (value);
+	str.append(buf + pos, size - pos);
+}
+
+
+// Convert 'value' to string, add leading '0' to size 'len'.
+// Append result to string 'str'.
+static inline 
+void s_AddZeroPadInt(string& str, long value, size_t len)
+{
+    _ASSERT(value >= 0);
+    _ASSERT((len > 0)  &&  (len < 10));
+    const size_t size = 9;
+    char buf[size];
+    size_t pos = size;
+    do {
+        buf[--pos] = char(value % 10) + '0';
+        value /= 10;
+    } while (value);
+    if (len > (size - pos)) {
+        str.append(len - (size - pos), '0');
     }
+	str.append(buf + pos, size - pos);
+}
 
-#define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_Int)
-#define CHECK_RANGE_MONTH(value) CHECK_RANGE(value, "month", 1, 12)
-#define CHECK_RANGE_DAY(value)   CHECK_RANGE(value, "day", 1, 31)
-#define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "hour", 0, 23)
-#define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
-#define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
-#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, \
-                                             kNanoSecondsPerSecond - 1)
+
+// Optimized variant of s_AddZeroPadInt() for len = 2.
+static inline 
+void s_AddZeroPadInt2(string& str, long value)
+{
+    _ASSERT((value >= 0)  &&  (value <= 99));
+    char buf[2];
+    buf[1] = char(value % 10) + '0';
+    buf[0] = char(value / 10) + '0'; 
+	str.append(buf, 2);
+}
+
 
 
 //============================================================================
@@ -955,16 +1009,6 @@ string CTime::DayOfWeekNumToName(int day, ENameFormat format)
 }
 
 
-static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
-{
-    string s_value = NStr::IntToString(value);
-    if (s_value.length() < len) {
-        str.insert(str.end(), len - s_value.length(), '0');
-    }
-    str += s_value;
-}
-
-
 void CTime::SetFormat(const CTimeFormat& format)
 {
     // Here we do not need to delete a previous value stored in the TLS.
@@ -1043,18 +1087,18 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
             is_format_symbol = false;
         }
         switch ( *it ) {
-        case 'y': s_AddZeroPadInt(str, t->Year() % 100);    break;
+        case 'y': s_AddZeroPadInt2(str, t->Year() % 100);   break;
         case 'Y': s_AddZeroPadInt(str, t->Year(), 4);       break;
-        case 'M': s_AddZeroPadInt(str, t->Month());         break;
+        case 'M': s_AddZeroPadInt2(str, t->Month());        break;
         case 'b': str += kMonthAbbr[t->Month()-1];          break;
         case 'B': str += kMonthFull[t->Month()-1];          break;
-        case 'D': s_AddZeroPadInt(str, t->Day());           break;
+        case 'D': s_AddZeroPadInt2(str, t->Day());          break;
         case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
-        case 'h': s_AddZeroPadInt(str, t->Hour());          break;
-        case 'H': s_AddZeroPadInt(str, (t->Hour()+11) % 12+1);
+        case 'h': s_AddZeroPadInt2(str, t->Hour());         break;
+        case 'H': s_AddZeroPadInt2(str, (t->Hour()+11) % 12+1);
                   break;
-        case 'm': s_AddZeroPadInt(str, t->Minute());        break;
-        case 's': s_AddZeroPadInt(str, t->Second());        break;
+        case 'm': s_AddZeroPadInt2(str, t->Minute());       break;
+        case 's': s_AddZeroPadInt2(str, t->Second());       break;
         case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
                   break;
         case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
@@ -1076,8 +1120,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   str += (tz > 0) ? '-' : '+';
                   if (tz < 0) tz = -tz;
                   int tzh = int(tz / 3600);
-                  s_AddZeroPadInt(str, tzh);
-                  s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
+                  s_AddZeroPadInt2(str, tzh);
+                  s_AddZeroPadInt2(str, (int)(tz - tzh * 3600) / 60);
 #endif
                   break;
                   }
@@ -2191,19 +2235,19 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
                       str += "-";
                   }
                   break;
-        case 'd': s_AddZeroPadInt(str, abs(GetCompleteDays()));
+        case 'd': s_AddInt(str, abs(GetCompleteDays()));
                   break;
-        case 'h': s_AddZeroPadInt(str, abs(x_Hour()));
+        case 'h': s_AddZeroPadInt2(str, abs(x_Hour()));
                   break;
-        case 'H': s_AddZeroPadInt(str, abs(GetCompleteHours()), 0);
+        case 'H': s_AddInt(str, abs(GetCompleteHours()));
                   break;
-        case 'm': s_AddZeroPadInt(str, abs(x_Minute()));
+        case 'm': s_AddZeroPadInt2(str, abs(x_Minute()));
                   break;
-        case 'M': s_AddZeroPadInt(str, abs(GetCompleteMinutes()), 0);
+        case 'M': s_AddInt(str, abs(GetCompleteMinutes()));
                   break;
-        case 's': s_AddZeroPadInt(str, abs(x_Second()));
+        case 's': s_AddZeroPadInt2(str, abs(x_Second()));
                   break;
-        case 'S': s_AddZeroPadInt(str, abs(GetCompleteSeconds()), 0);
+        case 'S': s_AddInt(str, abs(GetCompleteSeconds()));
                   break;
         case 'n': s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9);
                   break;

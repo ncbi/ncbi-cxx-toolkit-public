@@ -1608,7 +1608,6 @@ static void s_DemoStopWatch(void)
 //
 //============================================================================
 
-
 int main()
 {
     // Set err.-posting and tracing to maximum
