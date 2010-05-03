@@ -46,7 +46,7 @@
 #endif //NCBI_OS_MSWIN
 #include <iomanip>
 #include <math.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -135,9 +135,13 @@ void CTest::Init(void)
     if (args->Exist ("xmlhelp")) {
         args->Delete("xmlhelp");
     }
+    args->AddFlag("nopause",
 #ifdef NCBI_OS_MSWIN
-    args->AddFlag("nopause", "Do not pause at the end");
+                  "Do not pause at the end"
+#else
+                  "No effect on this platform"
 #endif //NCBI_OS_MSWIN
+                  );
     args->AddExtra(0/*no mandatory*/, 1/*single timeout argument allowed*/,
                    "Timeout", CArgDescriptions::eDouble);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -213,7 +217,6 @@ int main(int argc, const char* argv[])
     try {
         CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
         if (log) {
-            freopen(kLogfile, "a", stderr);
             SetDiagStream(&log);
 
             // Execute main application function

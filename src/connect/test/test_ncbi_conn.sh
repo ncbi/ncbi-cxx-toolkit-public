@@ -22,7 +22,7 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-$CHECK_EXEC test_ncbi_conn 2>&1
+$CHECK_EXEC test_ncbi_conn -nopause 2>&1
 exit_code=$?
 
 if [ "$exit_code" != "0" ]; then
