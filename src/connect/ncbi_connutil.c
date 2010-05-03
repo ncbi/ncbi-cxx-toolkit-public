@@ -1245,7 +1245,7 @@ extern EIO_Status URL_ConnectEx
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_method; /* "POST "/"GET " */
 
-    /* check the args */
+    /* sanity check first */
     if (!sock  ||  !host  ||  !*host  ||
         (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')) {
         CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad arguments");
