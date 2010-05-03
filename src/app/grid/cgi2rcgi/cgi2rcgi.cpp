@@ -304,7 +304,7 @@ public:
     virtual void Init();
 
     // Factory method for the Context object construction.
-    virtual CCgiContext* CreateContext(CNcbiArguments* args,
+    virtual CCgiContext* CreateContextWithFlags(CNcbiArguments* args,
         CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
             int ifd, int ofd, int flags);
 
@@ -507,16 +507,16 @@ void CCgi2RCgiApp::Init()
         GetConfig().GetString("cgi2rcgi", "elapsed_time_format", "S");
 }
 
-CCgiContext* CCgi2RCgiApp::CreateContext(CNcbiArguments* args,
+CCgiContext* CCgi2RCgiApp::CreateContextWithFlags(CNcbiArguments* args,
     CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
         int ifd, int ofd, int flags)
 {
     if (flags & CCgiRequest::fDoNotParseContent)
-        return CCgiApplicationCached::CreateContext(args, env,
+        return CCgiApplicationCached::CreateContextWithFlags(args, env,
             inp, out, ifd, ofd, flags);
 
     if (m_AffinitySource & eUseRequestContent)
-        return CCgiApplicationCached::CreateContext(args, env,
+        return CCgiApplicationCached::CreateContextWithFlags(args, env,
             inp, out, ifd, ofd, flags | CCgiRequest::fSaveRequestContent);
 
     // The 'env' argument is only valid in FastCGI mode.
@@ -534,9 +534,10 @@ CCgiContext* CCgi2RCgiApp::CreateContext(CNcbiArguments* args,
 
     // Based on the CONTENT_LENGTH CGI parameter, decide whether to parse
     // the POST request in search of the job_key parameter.
-    return CCgiApplicationCached::CreateContext(args, env, inp, out, ifd, ofd,
-        flags | (content_length > 0 && content_length < 128 ?
-            CCgiRequest::fSaveRequestContent : CCgiRequest::fDoNotParseContent));
+    return CCgiApplicationCached::CreateContextWithFlags(args, env, inp,
+        out, ifd, ofd, flags | (content_length > 0 &&
+            content_length < 128 ? CCgiRequest::fSaveRequestContent :
+                CCgiRequest::fDoNotParseContent));
 }
 
 static const string kGridCgiForm =

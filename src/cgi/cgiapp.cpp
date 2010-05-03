@@ -456,10 +456,11 @@ CCgiContext* CCgiApplication::CreateContext
  int               ifd,
  int               ofd)
 {
-    return CreateContext(args, env, inp, out, ifd, ofd, m_RequestFlags);
+    return CreateContextWithFlags(args, env,
+        inp, out, ifd, ofd, m_RequestFlags);
 }
 
-CCgiContext* CCgiApplication::CreateContext
+CCgiContext* CCgiApplication::CreateContextWithFlags
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,
  CNcbiIstream*     inp,
