@@ -108,8 +108,10 @@ private:
 
     string AddAggregateTarget(const string& target_name,
         CDict& dict_objects, CRef<CArray>& dependencies);
+    string AddPreConfigureTarget(CArray& targets, CDict& dict_objects,
+        const string& root_name);
     string AddConfigureTarget(const string& solution_name,
-        CDict& dict_objects, bool gui);
+        CDict& dict_objects, bool gui, const string& preconf_dependency);
     string CreateRootObject(const string& configs_root,
         CDict& dict_objects, CRef<CArray>& targets,
         const string& root_group, const string& root_name,

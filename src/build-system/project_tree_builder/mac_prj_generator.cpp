@@ -309,10 +309,11 @@ void CMacProjectGenerator::Generate(const string& solution)
     app_dependencies->Set().sort(s_String_less);
     all_dependencies->Set().sort(s_String_less);
 // aggregate targets
+    string preconf_dependency(AddPreConfigureTarget(*targets,*dict_objects, root_name));
     InsertString( *targets,
-        AddConfigureTarget(solution_name,  *dict_objects, true));
+        AddConfigureTarget(solution_name,  *dict_objects, true, preconf_dependency));
     InsertString( *targets,
-        AddConfigureTarget(solution_name,  *dict_objects, false));
+        AddConfigureTarget(solution_name,  *dict_objects, false, preconf_dependency));
     InsertString( *targets,
         AddAggregateTarget("DATASPEC_ALL", *dict_objects, dataspec_dependencies));
     InsertString( *targets,
@@ -509,7 +510,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
     // configurable files
     ITERATE ( list<string>, f, prj_files.GetConfigurableSources()) {
         string outfile(GetRelativePath( *f));
-        AddString( *outputs, outfile);
+//        AddString( *outputs, outfile);
         CDirEntry ent(outfile);
         string infile(CDirEntry::ConcatPath( ent.GetDir(), ent.GetBase()));
         infile += ".$CONFIGURATION";
@@ -537,8 +538,8 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
             AddString( *inputs, GetRelativePath(*f));
             AddString( *inputs, spec_base + ".def");
             AddString( *outputs, spec_base + ".files");
-            AddString( *outputs, spec_base + "__.cpp");
-            AddString( *outputs, spec_base + "___.cpp");
+//            AddString( *outputs, spec_base + "__.cpp");
+//            AddString( *outputs, spec_base + "___.cpp");
 #if 0
             script += "echo Using datatool to create a C++ objects from ASN/DTD/Schema " + entry.GetName() + "\n";
             script += m_OutputDir + GetApp().GetDatatoolPathForApp();
@@ -1208,8 +1209,59 @@ string CMacProjectGenerator::AddAggregateTarget(
     return proj_target;
 }
 
+string CMacProjectGenerator::AddPreConfigureTarget(
+    CArray& targets, CDict& dict_objects, const string& root_name)
+{
+    string target_name("_pre_CONFIGURE");
+    string proj_target( GetUUID());
+    string configs_prj(
+        CreateAggregateBuildConfigurations( target_name, dict_objects));
+
+    string build_tree_root (
+        CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
+        CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
+            GetApp().GetProjectTreeInfo().m_Compilers,
+            GetApp().GetRegSettings().m_CompilersSubdir)))));
+    string script("$(PROJECT_DIR)/");
+    script += build_tree_root + "/precfg.sh";
+
+    CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
+    AddString( *dict_target, "buildArgumentsString", script);
+    AddString( *dict_target, "buildConfigurationList", configs_prj);
+    AddArray(  *dict_target, "buildPhases");
+    AddString( *dict_target, "buildToolPath", "/bin/sh");
+    AddArray(  *dict_target, "dependencies");
+    AddString( *dict_target, "isa", "PBXLegacyTarget");
+    AddString( *dict_target, "name", target_name);
+    AddString( *dict_target, "passBuildSettingsInEnvironment", "1");
+    AddString( *dict_target, "productName", target_name);
+
+    InsertString(targets, proj_target);
+
+    string proj_dependency( GetUUID());
+    string proj_container(  GetUUID());
+    // project dependency key
+    {
+        CRef<CDict> dict_dep( AddDict( dict_objects, proj_dependency));
+        AddString( *dict_dep, "isa", "PBXTargetDependency");
+        AddString( *dict_dep, "target", proj_target);
+        AddString( *dict_dep, "targetProxy", proj_container);
+    }
+    // project container
+    {
+        CRef<CDict> dict_con( AddDict( dict_objects, proj_container));
+        AddString( *dict_con, "containerPortal", root_name);
+        AddString( *dict_con, "isa", "PBXContainerItemProxy");
+        AddString( *dict_con, "proxyType", "1");
+        AddString( *dict_con, "remoteGlobalIDString", proj_target);
+        AddString( *dict_con, "remoteInfo", target_name);
+    }
+    return proj_dependency;
+}
+
 string CMacProjectGenerator::AddConfigureTarget(
-    const string& solution_name, CDict& dict_objects, bool gui)
+    const string& solution_name, CDict& dict_objects, bool gui,
+    const string& preconf_dependency)
 {
     string target_name("CONFIGURE");
     if (gui) {
@@ -1254,7 +1306,8 @@ string CMacProjectGenerator::AddConfigureTarget(
     AddString( *dict_target, "buildConfigurationList", configs_prj);
     CRef<CArray> build_phases(AddArray(  *dict_target, "buildPhases"));
     AddString( *build_phases, proj_script);
-    AddArray(  *dict_target, "dependencies");
+    CRef<CArray> dependencies(AddArray(  *dict_target, "dependencies"));
+    AddString( *dependencies, preconf_dependency);
     AddString( *dict_target, "isa", "PBXAggregateTarget");
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);
