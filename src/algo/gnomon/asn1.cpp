@@ -791,10 +791,9 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
         size_t b = 0;
         size_t e = 0;
-        for( CSeqMap_CI ci = map->BeginResolved(&scope); ci; ci.Next() ) {
+        for( CSeqMap_CI ci = map->BeginResolved(&scope); ci; ) {
             TSeqPos len = ci.GetLength() - frame;
             frame = 0;
-            _ASSERT( len%3 == 0 );
             e = b + len/3;
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
@@ -803,6 +802,10 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
                 seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
             }
             b = e;
+
+            ci.Next();
+
+            _ASSERT( len%3 == 0 || !ci );
         }
         _ASSERT( b == strprot.size() + (md.model.HasStop() ? 1 : 0) );
     }
