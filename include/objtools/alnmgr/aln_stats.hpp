@@ -154,19 +154,31 @@ public:
                 /// create in cache
                 TIdVec& aligned_ids_vec = m_AlignedIdsMap[id];
 
-                // create a temp set to eliminate dups
-                typedef set<TAlnSeqIdIRef> TAlignedIdsSet;
-                TAlignedIdsSet aligned_ids_set;
+                /// temp, to keep track of already found aligned ids
+                TBitVec id_bit_vec;
+                id_bit_vec.resize(m_IdVec.size());
 
                 const size_t& id_idx = it->second[0];
                 for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
+
+                    /// if query paricipates in alignment
                     if (m_BitVecVec[id_idx][aln_i]) {
-                        ITERATE(typename TIdVec, id_i, m_AlnIdVec[aln_i]) {
-                            TAlignedIdsSet::iterator it;
-                            if (**id_i != *id  &&
-                                (aligned_ids_set.find(*id_i) == aligned_ids_set.end())) {
-                                aligned_ids_set.insert(*id_i);
-                                aligned_ids_vec.push_back(*id_i);
+
+                        /// find all participating subjects for this alignment
+                        for (size_t aligned_id_idx = 0;
+                             aligned_id_idx < m_BitVecVec.size();
+                             ++aligned_id_idx) {
+
+                            /// if an aligned subject
+                            if (aligned_id_idx != id_idx  &&
+                                m_BitVecVec[aligned_id_idx][aln_i]) {
+
+                                if ( !id_bit_vec[aligned_id_idx] ) {
+                                    /// add only if not already added
+                                    id_bit_vec[aligned_id_idx] = true;
+                                    aligned_ids_vec.push_back
+                                        (m_IdVec[aligned_id_idx]);
+                                }
                             }
                         }
                     }
