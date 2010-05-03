@@ -61,7 +61,6 @@ public:
     typedef vector<size_t> TIdxVec;
     typedef map<TAlnSeqIdIRef, TIdxVec, SAlnSeqIdIRefComp> TIdMap;
 
-
     /// Constructor
     CAlnStats(const TAlnIdVec& aln_id_vec) :
         m_AlnIdVec(aln_id_vec),
@@ -144,6 +143,7 @@ public:
     const TIdVec& GetAlignedIds(const TAlnSeqIdIRef& id) const {
         typename TAlignedIdsMap::const_iterator it = m_AlignedIdsMap.find(id);
         if (it != m_AlignedIdsMap.end()) {
+            /// get from cache
             return it->second;
         } else {
             TIdMap::const_iterator it = m_IdMap.find(id);
@@ -151,9 +151,10 @@ public:
                 NCBI_THROW(CAlnException, eInvalidRequest,
                            "Seq-id not present in map");
             } else {
+                /// create in cache
                 TIdVec& aligned_ids_vec = m_AlignedIdsMap[id];
 
-                // Create a temp set to eliminate dups
+                // create a temp set to eliminate dups
                 typedef set<TAlnSeqIdIRef> TAlignedIdsSet;
                 TAlignedIdsSet aligned_ids_set;
 
@@ -308,16 +309,28 @@ private:
         m_CanBeAnchored = (m_AnchorIdxVec.empty() ? 0 : 1);
     }
 
-    typedef map<TAlnSeqIdIRef, TIdVec> TAlignedIdsMap;
+    const TAlnIdVec& m_AlnIdVec;    ///< vector of ids per alignment
 
-    const TAlnIdVec& m_AlnIdVec;
-    const TAlnVec& m_AlnVec;
-    size_t m_AlnCount;
-    TIdMap m_IdMap;
-    TIdVec m_IdVec;
-    TRowVecVec m_RowVecVec;
-    TBitVecVec m_BitVecVec;
-    mutable TAlignedIdsMap m_AlignedIdsMap;
+    const TAlnVec& m_AlnVec;        ///< vector of alignments
+
+    size_t m_AlnCount;              ///< how many alignments
+
+    TIdVec m_IdVec;                 ///< vector of ids
+
+    TIdMap m_IdMap;                 ///< maps ids to a vector of id
+                                    ///  indexes (within m_IdVec)
+
+    TBitVecVec m_BitVecVec;         ///< bitmap of id indexes and aln
+                                    ///  indexes (i.e. which ids
+                                    ///  participate in which alignments)
+
+    TRowVecVec m_RowVecVec;         ///< like m_BitVecVec but it also
+                                    ///  tells which row the id is on
+                                    ///  within an alignment (or -1 if
+                                    ///  not present)
+
+    typedef map<TAlnSeqIdIRef, TIdVec> TAlignedIdsMap;
+    mutable TAlignedIdsMap m_AlignedIdsMap;  ///< cache for GetAlignedIds
 
     mutable TIdxVec m_AnchorIdxVec; ///< vector of indexes (as
                                     ///  represented in m_RowVecVec
