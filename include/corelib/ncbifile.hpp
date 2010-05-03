@@ -2877,7 +2877,7 @@ public:
     Uint8 GetFilePos(void) const;
 
     /// Set file position.
-    void SetFilePos(Uint8 offset, EPositionMoveMethod move_method) const;
+    void SetFilePos(Int8 offset, EPositionMoveMethod move_method) const;
 
     /// Get file size.
     ///

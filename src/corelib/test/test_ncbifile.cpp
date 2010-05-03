@@ -1322,6 +1322,7 @@ static void s_TEST_FileIO(void)
 
 static void s_TEST_FileIO_LargeFiles(void)
 {
+    const Uint8  kSize_1GB = NCBI_CONST_UINT8(1*1024*1024*1024);
     const Uint8  kSize_5GB = NCBI_CONST_UINT8(5*1024*1024*1024);
     const Uint8  kSize_6GB = NCBI_CONST_UINT8(6*1024*1024*1024);
     const size_t kSize_Buf = 64*1024;
@@ -1385,8 +1386,11 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert( f.GetLength()     == kSize_6GB );
     assert( fio.GetFileSize() == kSize_6GB );
     assert( fio.GetFilePos()  == kSize_6GB );
+    // Move file position back (small and big values)
     fio.SetFilePos(kSize_6GB - 1, CFileIO::eBegin);
     assert( fio.GetFilePos() == kSize_6GB - 1 );
+    fio.SetFilePos(-(Int8)kSize_5GB, CFileIO::eCurrent);
+    assert( fio.GetFilePos() == kSize_1GB - 1 );
 
     // Shrink file to 100 bytes in size
     fio.SetFileSize(100);

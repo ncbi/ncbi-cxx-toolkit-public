@@ -5328,7 +5328,7 @@ Uint8 CFileIO::GetFilePos(void) const
 }
 
 
-void CFileIO::SetFilePos(Uint8 offset, EPositionMoveMethod move_method) const
+void CFileIO::SetFilePos(Int8 offset, EPositionMoveMethod move_method) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD from = 0;
