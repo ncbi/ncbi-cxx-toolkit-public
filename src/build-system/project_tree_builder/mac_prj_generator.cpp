@@ -1046,7 +1046,8 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
             bld_out = bins_out;
             bld_out_install = bins_out_install;
         }
-        AddString( *settings, "GCC_SYMBOLS_PRIVATE_EXTERN", "NO");
+        AddLinkerSetting( *settings, cfg, "GCC_INLINES_ARE_PRIVATE_EXTERN");
+        AddLinkerSetting( *settings, cfg, "GCC_SYMBOLS_PRIVATE_EXTERN");
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bld_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
@@ -1057,6 +1058,9 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "EXECUTABLE_PREFIX", "lib");
 
     } else if (prj.m_ProjType == CProjKey::eApp) {
+
+        AddLinkerSetting( *settings, cfg, "GCC_INLINES_ARE_PRIVATE_EXTERN");
+        AddLinkerSetting( *settings, cfg, "GCC_SYMBOLS_PRIVATE_EXTERN");
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bins_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
