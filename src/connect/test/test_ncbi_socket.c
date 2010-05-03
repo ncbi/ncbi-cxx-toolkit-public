@@ -931,6 +931,13 @@ extern int main(int argc, char** argv)
         assert(SOCK_InitializeAPI() == eIO_Success);
         SOCK_SetDataLoggingAPI(eDefault);
 
+        {{
+            char local_host[64];
+            assert(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
+            CORE_LOGF(eLOG_Note,
+                      ("Running NCBISOCK test on host \"%s\"", local_host));
+        }}
+
         TEST_gethostby();
 
         TEST_SOCK_isip();
