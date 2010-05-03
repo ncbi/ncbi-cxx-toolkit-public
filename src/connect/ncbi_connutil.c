@@ -1234,14 +1234,14 @@ extern EIO_Status URL_ConnectEx
     static const char X_REQ_E[] = " HTTP/1.0\r\n";
     static const char X_HOST[]  = "Host: ";
 
-    EIO_Status  st;
     BUF         buf;
-    char*       header;
-    size_t      hdrsize;
-    char        strbuf[80];
-    const char* x_args = 0;
-    int/*bool*/ add_host = 1/*true*/;
-    size_t      x_args_len = args  &&  *args ? strcspn(args, "#") : 0;
+    char*       hdr;
+    const char* temp;
+    EIO_Status  status;
+    size_t      hdr_len;
+    char        hdr_buf[80];
+    int         add_hdr = 1;
+    size_t      args_len = args  &&  *args ? strcspn(args, "#") : 0;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_method; /* "POST "/"GET " */
 
@@ -1276,40 +1276,41 @@ extern EIO_Status URL_ConnectEx
         return eIO_InvalidArg;
     }
 
+    for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
+        if (temp != user_hdr)
+            temp++;
+        if (strncasecmp(temp, X_HOST, sizeof(X_HOST) - 2) == 0) {
+            add_hdr = 0;
+            break;
+        }
+    }
+
     /* URL-encode "args", if any specified */
-    if (x_args_len) {
-        if ( encode_args ) {
+    if (args_len) {
+        if (encode_args) {
             size_t rd_len, wr_len;
-            size_t size = 3 * x_args_len;
-            char* xx_args = (char*) malloc(size);
-            if (!xx_args) {
+            size_t size = 3 * args_len;
+            char* x_args = (char*) malloc(size);
+            if (!x_args) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("[URL_Connect]  Out of memory (%lu)",
                                    (unsigned long) size));
                 return eIO_Unknown;
             }
-            URL_Encode(args, x_args_len, &rd_len, xx_args, size, &wr_len);
-            assert(x_args_len == rd_len);
-            x_args_len = wr_len;
-            x_args = xx_args;
+            URL_Encode(args, args_len, &rd_len, x_args, size, &wr_len);
+            assert(args_len == rd_len);
+            args_len = wr_len;
+            temp = x_args;
         } else
-            x_args = args;
-    }
-
-    for (header = user_hdr; header && *header; header = strchr(header, '\n')) {
-        if (header != user_hdr)
-            header++;
-        if (strncasecmp(header, X_HOST, sizeof(X_HOST) - 2) == 0) {
-            add_host = 0/*false*/;
-            break;
-        }
-    }
+            temp = args;
+    } else
+        temp = 0;
 
     if (!port) {
-        hdrsize = 0;
+        hdr_len = 0;
         port = flags & fSOCK_Secure ? 443 : 80;
     } else
-        hdrsize = add_host ? (size_t) sprintf(strbuf, ":%hu", port) : 0;
+        hdr_len = (size_t)(add_hdr ? sprintf(hdr_buf, ":%hu", port) : 0);
 
     buf = 0;
     errno = 0;
@@ -1317,23 +1318,24 @@ extern EIO_Status URL_ConnectEx
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
         !BUF_Write(&buf, x_req_method, strlen(x_req_method))  ||
         !BUF_Write(&buf, path,         strlen(path))          ||
-        (x_args_len
+        (args_len
          &&  (!BUF_Write(&buf, X_REQ_Q, sizeof(X_REQ_Q) - 1)  ||
-              !BUF_Write(&buf, x_args,  x_args_len)))         ||
-        !BUF_Write(&buf,       X_REQ_E, sizeof(X_REQ_E) - 1)  ||
+              !BUF_Write(&buf, temp,    args_len)))           ||
+        !BUF_Write      (&buf, X_REQ_E, sizeof(X_REQ_E) - 1)  ||
 
-        (add_host
+        (add_hdr
          /* Host: host[:port]\r\n */
-         &&  (!BUF_Write(&buf, X_HOST, sizeof(X_HOST) - 1)    ||
-              !BUF_Write(&buf, host,   strlen(host))          ||
-              !BUF_Write(&buf, strbuf, hdrsize)               ||
-              !BUF_Write(&buf, "\r\n", 2)))                   ||
+         &&  (!BUF_Write(&buf, X_HOST,  sizeof(X_HOST) - 1)   ||
+              !BUF_Write(&buf, host,    strlen(host))         ||
+              !BUF_Write(&buf, hdr_buf, hdr_len)              ||
+              !BUF_Write(&buf, "\r\n",  2)))                  ||
 
         /* Content-Length: <content_length>\r\n */
         (req_method != eReqMethod_Get
-         &&  (sprintf(strbuf, "Content-Length: %lu\r\n",
-                      (unsigned long) content_length) <= 0    ||
-              !BUF_Write(&buf, strbuf, strlen(strbuf))))      ||
+         &&  ((add_hdr =
+               sprintf(hdr_buf, "Content-Length: %lu\r\n",
+                       (unsigned long) content_length)) < 0   ||
+              !BUF_Write(&buf, hdr_buf, (size_t) add_hdr)))    ||
 
         /* <user_header> */
         (user_hdr_len
@@ -1346,34 +1348,34 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect]  Error building HTTP header for"
                            " %s:%hu", host, port));
         BUF_Destroy(buf);
-        if (x_args  &&  x_args != args)
-            free((void*) x_args);
+        if (temp  &&  temp != args)
+            free((void*) temp);
         return eIO_Unknown;
     }
-    if (x_args  &&  x_args != args)
-        free((void*) x_args);
+    if (temp  &&  temp != args)
+        free((void*) temp);
 
-    if (!(header = (char*) malloc(hdrsize = BUF_Size(buf)))
-        ||  BUF_Read(buf, header, hdrsize) != hdrsize) {
+    if (!(hdr = (char*) malloc(hdr_len = BUF_Size(buf)))
+        ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
                           ("[URL_Connect]  Error storing HTTP header for"
                            " %s:%hu", host, port));
-        if (header)
-            free(header);
+        if (hdr)
+            free(hdr);
         BUF_Destroy(buf);
         return eIO_Unknown;
     }
     BUF_Destroy(buf);
 
     /* connect to HTTPD */
-    st = SOCK_CreateEx(host, port, o_timeout, sock, header, hdrsize, flags);
-    free(header);
+    status = SOCK_CreateEx(host, port, o_timeout, sock, hdr, hdr_len, flags);
+    free(hdr);
 
-    if (st != eIO_Success) {
+    if (status != eIO_Success) {
         char temp[80];
         assert(!*sock);
-        if (st == eIO_Timeout  &&  o_timeout) {
+        if (status == eIO_Timeout  &&  o_timeout) {
             sprintf(temp, "[%u.%06u]",
                     (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
                     (unsigned int)                 (o_timeout->usec%1000000));
@@ -1381,10 +1383,10 @@ extern EIO_Status URL_ConnectEx
             *temp = '\0';
         CORE_LOGF_X(7, eLOG_Error,
                     ("[URL_Connect]  Socket connect to %s:%hu failed: %s%s",
-                     host, port, IO_StatusStr(st), temp));
+                     host, port, IO_StatusStr(status), temp));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
-    return st;
+    return status;
 }
 
 
