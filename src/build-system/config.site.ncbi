@@ -8,7 +8,12 @@
 ncbi_platform=`COMMON_DetectPlatform`
 
 case "$ncbi_platform" in
-    FreeBSD32  ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
+    FreeBSD32  )
+        case "`uname -r`" in
+            6* ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
+            8* ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
+        esac
+        ;;
     Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
     *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
     SunOSx86   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.3.21}   ;;
