@@ -41,6 +41,7 @@
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <util/multi_writer.hpp>
 #ifdef NCBI_OS_MSWIN
 #  include <conio.h>
 #endif //NCBI_OS_MSWIN
@@ -55,41 +56,13 @@ BEGIN_NCBI_SCOPE
 static const char kLogfile[] = "test_ncbi_conn.log";
 
 
-// Bad, lazy and incorrect, in general, implementation!
-class CTeeWriter : public IWriter {
-public:
-    CTeeWriter(ostream& os1, ostream& os2)
-        : m_Os1(os1), m_Os2(os2)
-    { }
-
-    virtual ERW_Result Write(const void* buf,
-                             size_t      count,
-                             size_t*     bytes_written = 0);
-
-    virtual ERW_Result Flush(void);
-
-private:
-    CNcbiOstream& m_Os1;
-    CNcbiOstream& m_Os2;
-};
-
-
-ERW_Result CTeeWriter::Write(const void* buf,
-                             size_t count, size_t* bytes_written)
+static list<CNcbiOstream*> s_MakeList(CNcbiOstream& os1,
+                                      CNcbiOstream& os2)
 {
-    m_Os1.write((const char*) buf, count);
-    m_Os2.write((const char*) buf, count);
-    if (bytes_written)
-        *bytes_written = count;
-    return eRW_Success;
-}
-
-
-ERW_Result CTeeWriter::Flush(void)
-{
-    m_Os1.flush();
-    m_Os2.flush();
-    return eRW_Success;
+    list<CNcbiOstream*> rv;
+    rv.push_front(&os1);
+    rv.push_back (&os2);
+    return rv;
 }
 
 
@@ -111,7 +84,8 @@ private:
 
 
 CTest::CTest(CNcbiOstream& log)
-    : m_Tee(new CTeeWriter(NcbiCout, log), 0, 0, CRWStreambuf::fOwnWriter)
+    : m_Tee(new CMultiWriter(s_MakeList(NcbiCout, log)),
+            0, 0, CRWStreambuf::fOwnWriter)
 {
     // Set error posting and tracing at maximum
     SetDiagTrace(eDT_Enable);
@@ -129,18 +103,15 @@ CTest::CTest(CNcbiOstream& log)
 void CTest::Init(void)
 {
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
-    if (args->Exist ("h")) {
+    if (args->Exist ("h"))
         args->Delete("h");
-    }
-    if (args->Exist ("xmlhelp")) {
+    if (args->Exist ("xmlhelp"))
         args->Delete("xmlhelp");
-    }
     args->AddFlag("nopause",
-#ifdef NCBI_OS_MSWIN
                   "Do not pause at the end"
-#else
-                  "No effect on this platform"
-#endif //NCBI_OS_MSWIN
+#ifndef NCBI_OS_MSWIN
+                  " (MS-WIN only, no effect on this platform)"
+#endif //!NCBI_OS_MSWIN
                   );
     args->AddExtra(0/*no mandatory*/, 1/*single timeout argument allowed*/,
                    "Timeout", CArgDescriptions::eDouble);
