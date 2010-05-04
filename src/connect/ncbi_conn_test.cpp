@@ -390,7 +390,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     }
 
     static const char* kFWExplanation[] = {
-        "This is an obsolete mode that requires to keep a wide port range"
+        "This is an obsolescent mode that requires to keep a wide port range"
         " [4444..4544] (inclusive) open to let through connections to any"
         " NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was designed"
         " for unrestricted networks when firewall port blocking was not an"
