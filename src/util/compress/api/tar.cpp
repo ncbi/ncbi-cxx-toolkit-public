@@ -1672,13 +1672,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             if (usum != (unsigned int) ssum) {
                 message += "either ";
             }
-            if (usum) {
+            if (usum > 7) {
                 message += "0";
             }
             message += NStr::UIntToString(usum, 0, 8);
             if (usum != (unsigned int) ssum) {
                 message += " or ";
-                if (ssum) {
+                if ((unsigned int) ssum > 7) {
                     message += "0";
                 }
                 message += NStr::UIntToString((unsigned int) ssum, 0, 8);
