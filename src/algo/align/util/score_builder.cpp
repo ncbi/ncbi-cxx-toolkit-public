@@ -909,7 +909,7 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
             s_GetPercentIdentity(scope, align,
                                  &identities, &mismatches, &pct_identity,
                                  eGBDNA);
-            align.SetNamedScore(CSeq_align::eScore_PercentIdentity_Ungapped, pct_identity);
+            align.SetNamedScore(CSeq_align::eScore_PercentIdentity_GapOpeningOnly, pct_identity);
             align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
             align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
         }}
