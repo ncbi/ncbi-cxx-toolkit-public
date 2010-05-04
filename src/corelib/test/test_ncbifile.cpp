@@ -37,6 +37,13 @@
 #include <stdio.h>
 #include <limits.h>
 
+// for getrlimit()
+#if defined(NCBI_OS_UNIX)
+#  include <sys/time.h>
+#  include <sys/resource.h>
+#  include <unistd.h>
+#endif       
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -1327,6 +1334,26 @@ static void s_TEST_FileIO_LargeFiles(void)
     const Uint8  kSize_6GB = NCBI_CONST_UINT8(6*1024*1024*1024);
     const size_t kSize_Buf = 64*1024;
 
+    CFileUtil::SFileSystemInfo info;
+    CFileUtil::GetFileSystemInfo(".", &info);
+    
+    // Check free space
+    assert(info.free_space > kSize_6GB);
+
+    // Check file system limits
+    cout << endl;
+    cout << "File system type = " << info.fs_type << endl;
+#if defined(NCBI_OS_MSWIN)
+    assert(info.fs_type == CFileUtil::eNTFS);
+#elif defined(NCBI_OS_UNIX)
+    rlimit rl;
+    assert(getrlimit(RLIMIT_FSIZE, &rl) == 0);
+    cout << "File size limits = (" << rl.rlim_cur << ", " 
+                                   << rl.rlim_max << ")" << endl;
+    assert(rl.rlim_cur > kSize_6GB);
+#endif
+    cout << endl;
+
     const char*  filename = "test_fio.tmp";
     char         buf_src[kSize_Buf];
     char         buf_cmp[kSize_Buf];
@@ -1357,7 +1384,7 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert( fio.GetFileSize() == kSize_5GB);
     fio.Close();
     // We can check real file length via "file name" only after closing
-    assert( f.GetLength() == kSize_5GB );
+    assert( f.GetLength() == (Int8)kSize_5GB );
 
     fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
     assert( fio.GetFilePos() == 0 );
@@ -1383,7 +1410,7 @@ static void s_TEST_FileIO_LargeFiles(void)
 
     // Extend file size to 6GB
     fio.SetFileSize(kSize_6GB, CFileIO::eEnd);
-    assert( f.GetLength()     == kSize_6GB );
+    assert( f.GetLength()     == (Int8)kSize_6GB );
     assert( fio.GetFileSize() == kSize_6GB );
     assert( fio.GetFilePos()  == kSize_6GB );
     // Move file position back (small and big values)
@@ -1436,7 +1463,7 @@ void CTest::Init(void)
     SetupArgDescriptions(d.release());
 }
 
-
+    
 int CTest::Run(void)
 {
     // Process command line
