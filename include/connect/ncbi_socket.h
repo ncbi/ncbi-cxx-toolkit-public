@@ -863,7 +863,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
  */
 typedef struct {
     SOCK      sock;   /** [in]          SOCK to poll (NULL if not to poll)  */
-    EIO_Event event;  /** [in]  one of: eIO_Read, eIO_Write, eIO_ReadWrite  */
+    EIO_Event event;  /** [in]  one of: eIO_Open/Read/Write/ReadWrite       */
     EIO_Event revent; /** [out] one of: eIO_Open/Read/Write/ReadWrite/Close */
 } SSOCK_Poll;
 
@@ -873,24 +873,26 @@ typedef struct {
  * or until timeout expires (wait indefinitely if timeout is passed NULL).
  * Return eIO_Success if at least one socket was found ready;  eIO_Timeout
  * if timeout expired;  eIO_Unknown if underlying system call(s) failed.
- * @li <b>NOTE 1:</b> For a socket found not ready for an operation, eIO_Open
+ * @li <b>NOTE 1:</b> NULL sockets as well as non-NULL sockets with eIO_Open
+ *        requested in their "event" do not get polled;
+ * @li <b>NOTE 2:</b> For a socket found not ready for an operation, eIO_Open
  *        is returned in its "revent"; for a failing socket, eIO_Close
  *        is returned;
- * @li <b>NOTE 2:</b> This call may return eIO_InvalidArg if
+ * @li <b>NOTE 3:</b> This call may return eIO_InvalidArg if
  *        - parameters to the call are inconsistent;
- *        - a non-NULL socket polled with a bad "event" (eIO_Open, eIO_Close).
+ *        - a non-NULL socket polled with a bad "event" (eIO_Close).
  *        With this return code, the calling program cannot rely on "revent"
- *        fields the "polls" array as they might not be properly updated.
- * @li <b>NOTE 3:</b> If either both "n" and "polls" are NULL, or all sockets
+ *        fields in the "polls" array as they might not be properly updated.
+ * @li <b>NOTE 4:</b> If either both "n" and "polls" are NULL, or all sockets
  *        in "polls" are NULL, then the returned result is either:
  *        - eIO_Timeout (after the specified amount of time was spent idle), or
  *        - eIO_Interrupted (if signal came while the waiting was in progress).
- * @li <b>NOTE 4:</b> For datagram sockets, the readiness for reading is
+ * @li <b>NOTE 5:</b> For datagram sockets, the readiness for reading is
  *        determined by message data latched since last message receive call
  *        (DSOCK_RecvMsg).
- * @li <b>NOTE 5:</b> This call allows intermixture of stream and
+ * @li <b>NOTE 6:</b> This call allows intermixture of stream and
  *        datagram sockets.
- * @li <b>NOTE 6:</b> This call can cause some socket I/O in those sockets
+ * @li <b>NOTE 7:</b> This call can cause some socket I/O in those sockets
  *        marked for read-on-write and those with pending connection or
  *        output data.
  * @param n
