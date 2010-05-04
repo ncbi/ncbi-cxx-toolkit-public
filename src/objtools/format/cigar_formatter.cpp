@@ -272,7 +272,7 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
                     m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
                 }
                 count = tgt_piece.GetLength()/width;
-                frameshift = -(tgt_piece.GetLength()%width);
+                frameshift = -(tgt_piece.GetLength()%TSignedSeqPos(width));
                 tgt_piece.SetFrom(tgt_piece.GetFrom()/m_TargetWidth);
                 tgt_piece.SetTo(tgt_piece.GetTo()/m_TargetWidth);
                 m_TargetRange += tgt_piece;
