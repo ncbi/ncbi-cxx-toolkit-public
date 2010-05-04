@@ -846,12 +846,11 @@ bool CGff3Reader::x_GetFeatureById(
 //  ----------------------------------------------------------------------------
 {
     map< string, CRef< CSeq_feat > >::iterator it;
-    for ( it = m_MapIdToFeature.begin(); it != m_MapIdToFeature.end(); ++it ) {
-        if ( it->first == strId ) {
-            pFeature = it->second;
-            return true;
-        }
-    }
+    it = m_MapIdToFeature.find(strId);
+	if(it != m_MapIdToFeature.end()) {
+        pFeature = it->second;
+		return true;
+	}
     return false;
 }
 
