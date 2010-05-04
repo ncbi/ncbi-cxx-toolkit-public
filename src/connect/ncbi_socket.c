@@ -411,6 +411,21 @@ static char* s_WinStrerror(DWORD error)
  */
 
 
+static unsigned short x_GetLocalPort(TSOCK_Handle fd)
+{
+    struct sockaddr_in sin;
+    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
+    memset(&sin, 0, sizeof(sin));
+#ifdef HAVE_SIN_LEN
+    sin.sin_len = sinlen;
+#endif /*HAVE_SIN_LEN*/
+    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) < 0)
+        return 0;
+    assert(sin.sin_family == AF_INET);
+    return ntohs(sin.sin_port);
+}
+
+
 static const char* x_CP(unsigned int host, unsigned short port,
                         const char* path, char* buf, size_t bufsize)
 {
@@ -495,7 +510,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
 static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                     const void* data,  size_t     size, const void* ptr)
 {
-    const struct sockaddr* sa = (const struct sockaddr*) ptr;
+    const struct sockaddr_in* sin;
     char _id[MAXIDLEN];
     const char* what;
     char head[128];
@@ -510,11 +525,10 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
     case eIO_Open:
         assert(sock->type & eSocket);
         if (sock->type == eDatagram) {
-            if (!sa) {
+            if (!(sin = (const struct sockaddr_in*) ptr)) {
                 strcpy(head, "Created");
                 *tail = 0;
             } else {
-                const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
                 if (!data) {
                     if (sin->sin_port) {
                         strcpy(head, "Bound @");
@@ -535,11 +549,13 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             }
         } else {
             if (sock->side == eSOCK_Client)
-                strcpy(head, "Connecting");
-            else if (data)
-                strcpy(head, "Connected");
+                strcpy(head, ptr ? "Connected" : "Connecting");
+            else if (ptr)
+                sprintf(head, "Accepted [%s]", (const char*) ptr);
             else
-                strcpy(head, "Accepted");
+                strcpy(head, "Created");
+            if (!sock->myport)
+                sock->myport = x_GetLocalPort(sock->sock);
             if (sock->myport)
                 sprintf(tail, " @:%hu", sock->myport);
             else
@@ -564,8 +580,8 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
         if (n > 1  &&  what[n - 1] == '.')
             n--;
         if (sock->type == eDatagram) {
-            const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
-            assert(sa  &&  sa->sa_family == AF_INET);
+            sin = (const struct sockaddr_in*) ptr;
+            assert(sin  &&  sin->sin_family == AF_INET);
             SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
                                   head, sizeof(head));
             sprintf(tail, ", msg# %u",
@@ -1720,7 +1736,7 @@ static EIO_Status s_Select(size_t                n,
             EIO_Event  event;
             ESOCK_Type type;
             SOCK       sock;
-            EVENT      ev;
+            HANDLE     ev;
 
             if (!(sock = polls[i].sock)) {
                 assert(!polls[i].revent/*eIO_Open*/);
@@ -2033,21 +2049,6 @@ static EIO_Status s_Select(size_t                n,
 }
 
 
-static unsigned short x_GetLocalPort(TSOCK_Handle fd)
-{
-    struct sockaddr_in sin;
-    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
-    memset(&sin, 0, sizeof(sin));
-#ifdef HAVE_SIN_LEN
-    sin.sin_len = sinlen;
-#endif /*HAVE_SIN_LEN*/
-    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) < 0)
-        return 0;
-    assert(sin.sin_family == AF_INET);
-    return ntohs(sin.sin_port);
-}
-
-
 /* connect() could be async/interrupted by a signal or just cannot
  * establish connection immediately;  yet, it must have been in progress
  * (asynchronous), so wait here for it to succeed (become writeable).
@@ -2106,26 +2107,15 @@ static EIO_Status s_IsConnected(SOCK                  sock,
   
     if (!sock->connected) {
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-        int  mtu;
-        char port[10];
+        int            mtu;
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
         SOCK_socklen_t mtulen = (SOCK_socklen_t) sizeof(mtu);
         if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
 #  endif /*SOL_IP && IP_MTU*/
             mtu = -1;
-#  ifdef NCBI_OS_UNIX
-        if (*sock->path)
-            port[0] = '\0';
-        else
-#  endif /*NCBI_OS_UNIX*/
-        {
-            if (!sock->myport)
-                sock->myport = x_GetLocalPort(sock->sock);
-            sprintf(port, ":%hu", sock->myport);
-        }
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            CORE_TRACEF(("%sConnection established%s%s, MTU = %d",
-                         s_ID(sock, _id), *port ? " @" : "", port, mtu));
+            CORE_TRACEF(("%sConnection established, MTU = %d%s",
+                         s_ID(sock, _id), mtu, mtu < 0 ? " [unknown]" : ""));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (s_ReuseAddress
@@ -3369,10 +3359,6 @@ static EIO_Status s_Connect(SOCK            sock,
     }
 #endif /*SO_OOBINLINE*/
 
-    /* statistics & logging */
-    if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, 0);
-
     /* establish connection to the peer */
     sock->connected = 0;
 #ifdef NCBI_OS_MSWIN
@@ -3391,6 +3377,10 @@ static EIO_Status s_Connect(SOCK            sock,
             break;
         }
     }
+
+    /* statistics & logging */
+    if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, x_error ? 0 : "");
 
     if (x_error) {
         if ((n != 0  ||  x_error != SOCK_EINPROGRESS)  &&
@@ -4381,9 +4371,13 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
 
     /* statistics & logging */
-    if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, *sock, eIO_Open, 0, 0, &addr.sa);
-
+    if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn)){
+        if (!(port = x_GetLocalPort(x_sock)))
+            *_id = '\0';
+        else
+            sprintf(_id, ":%hu", port);
+        s_DoLog(eLOG_Trace, *sock, eIO_Open, 0, 0, _id);
+    }
     return eIO_Success;
 }
 
@@ -4555,14 +4549,6 @@ extern EIO_Status SOCK_CreateUNIX(const char*     path,
 #else
     return eIO_NotSupported;
 #endif /*NCBI_OS_UNIX*/
-}
-
-
-extern EIO_Status SOCK_CreateOnTop(const void* handle,
-                                   size_t      handle_size,
-                                   SOCK*       sock)
-{
-    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
 
@@ -4777,7 +4763,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
  
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, x_sock, eIO_Open, &peer, 0, &peer.sa);
+        s_DoLog(eLOG_Trace, x_sock, eIO_Open, 0, 0, 0);
 
     /* success */
     *sock = x_sock;
@@ -4785,35 +4771,11 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 }
 
 
-static EIO_Status s_Reconnect(SOCK            sock,
-                              const char*     host,
-                              unsigned short  port,
-                              const STimeout* timeout)
+extern EIO_Status SOCK_CreateOnTop(const void* handle,
+                                   size_t      handle_size,
+                                   SOCK*       sock)
 {
-    /* special treatment for server-side socket */
-    if (sock->side == eSOCK_Server) {
-        char _id[MAXIDLEN];
-        if (!host  ||  !port) {
-            CORE_LOGF_X(51, eLOG_Error,
-                        ("%s[SOCK::Reconnect] "
-                         " Attempt to reconnect server-side socket as"
-                         " client one to its peer address",
-                         s_ID(sock, _id)));
-            return eIO_InvalidArg;
-        }
-    }
-
-    /* close the socket if necessary */
-    if (sock->sock != SOCK_INVALID)
-        s_Close(sock, 0/*orderly*/);
-
-    /* connect */
-    sock->id++;
-    sock->myport    = 0;
-    sock->side      = eSOCK_Client;
-    sock->n_read    = 0;
-    sock->n_written = 0;
-    return s_Connect(sock, host, port, timeout);
+    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
 
@@ -4846,7 +4808,29 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     }
 #endif /*NCBI_OS_UNIX*/
 
-    return s_Reconnect(sock, host, port, timeout);
+    /* special treatment for server-side socket */
+    if (sock->side == eSOCK_Server) {
+        if (!host  ||  !port) {
+            CORE_LOGF_X(51, eLOG_Error,
+                        ("%s[SOCK::Reconnect] "
+                         " Attempt to reconnect server-side socket as"
+                         " client one to its peer address",
+                         s_ID(sock, _id)));
+            return eIO_InvalidArg;
+        }
+    }
+
+    /* close the socket if necessary */
+    if (sock->sock != SOCK_INVALID)
+        s_Close(sock, 0/*orderly*/);
+
+    /* connect */
+    sock->id++;
+    sock->myport    = 0;
+    sock->side      = eSOCK_Client;
+    sock->n_read    = 0;
+    sock->n_written = 0;
+    return s_Connect(sock, host, port, timeout);
 }
 
 
@@ -5465,9 +5449,12 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 }
 
 
-extern unsigned short SOCK_GetLocalPort(SOCK          sock,
-                                        ENH_ByteOrder byte_order)
+extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
+                                          int/*bool*/   trueport,
+                                          ENH_ByteOrder byte_order)
 {
+    unsigned short port;
+
     if (sock->sock == SOCK_INVALID)
         return 0;
 
@@ -5476,10 +5463,20 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
         return 0/*UNIX socket*/;
 #endif /*NCBI_OS_UNIX*/
 
-    if (!sock->myport)
-        sock->myport = x_GetLocalPort(sock->sock);
-    return
-        byte_order != eNH_HostByteOrder ? htons(sock->myport) : sock->myport;
+    if (trueport  ||  !sock->myport) {
+        port = x_GetLocalPort(sock->sock);
+        if (!trueport)
+            sock->myport = port;
+    } else
+        port = sock->myport;
+    return byte_order != eNH_HostByteOrder ? htons(port) : port;
+}
+
+
+extern unsigned short SOCK_GetLocalPort(SOCK          sock,
+                                        ENH_ByteOrder byte_order)
+{
+    return SOCK_GetLocalPortEx(sock, 0/*false*/, byte_order);
 }
 
 
@@ -5826,7 +5823,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, (struct sockaddr*) &sin);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, &sin);
 
     sock->myport = port;
     return eIO_Success;
@@ -5914,7 +5911,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, sock, eIO_Open, &peer, 0, (struct sockaddr*)&peer);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, "", 0, &peer);
 
     sock->host = host;
     sock->port = port;
@@ -6005,8 +6002,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(eLOG_Trace, sock, eIO_Write, x_msg, (size_t) x_written,
-                        (struct sockaddr*) &sin);
+                s_DoLog(eLOG_Trace, sock, eIO_Write, x_msg,
+                        (size_t) x_written, &sin);
             }
 
             sock->n_written += x_written;
@@ -6166,8 +6163,8 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(eLOG_Trace, sock, eIO_Read, x_msg, (size_t) x_read,
-                        (struct sockaddr*) &sin);
+                s_DoLog(eLOG_Trace, sock, eIO_Read, x_msg,
+                        (size_t) x_read, &sin);
             }
 
             sock->n_read += x_read;
