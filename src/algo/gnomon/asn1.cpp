@@ -762,14 +762,15 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     CSeqTranslator::Translate(cdregion_feature, scope, strprot, false);
 
     CSeq_inst& seq_inst = sprot->SetSeq().SetInst();
-    seq_inst.SetRepr(CSeq_inst::eRepr_raw);
     seq_inst.SetMol(CSeq_inst::eMol_aa);
     seq_inst.SetLength(strprot.size());
 
     if (model.Continuous()) {
+        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
         CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
         sprot->SetSeq().SetInst().SetSeq_data(*dprot);
     } else {
+        seq_inst.SetRepr(CSeq_inst::eRepr_delta);
         CSeqVector seqv(cdregion_feature.GetLocation(), scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
         map.Reset(&seqv.GetSeqMap());
@@ -840,15 +841,16 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
     string mrna_seq_str((char*)&mrna_seq_vec[0],mrna_seq_vec.size());
 
     CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
-    seq_inst.SetRepr(CSeq_inst::eRepr_raw);
     seq_inst.SetMol(CSeq_inst::eMol_rna);
     seq_inst.SetLength(mrna_seq_str.size());
 
     if (model.Continuous()) {
+        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
         CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
         CSeqportUtil::Pack(dmrna.GetPointer());
         seq_inst.SetSeq_data(*dmrna);
     } else {
+        seq_inst.SetRepr(CSeq_inst::eRepr_delta);
         TSeqPos b = 0;
         TSeqPos e = 0;
 
