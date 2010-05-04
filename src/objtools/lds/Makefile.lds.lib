@@ -10,3 +10,5 @@ SRC = lds lds_reader lds_query \
 
 # Dependencies for shared library
 DLL_LIB = bdb
+
+WATCHERS = vasilche

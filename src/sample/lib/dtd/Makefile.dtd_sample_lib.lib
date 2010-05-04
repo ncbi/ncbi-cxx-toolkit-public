@@ -1,2 +1,4 @@
 LIB = dtd_sample_lib
 SRC = dtd_sample_lib__ dtd_sample_lib___
+
+WATCHERS = gouriano

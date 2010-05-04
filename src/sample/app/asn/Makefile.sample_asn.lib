@@ -8,3 +8,5 @@ SRC = sample_asn__ sample_asn___
 LIB = sample_asn
 
 ASN_DEP = general
+
+WATCHERS = gouriano

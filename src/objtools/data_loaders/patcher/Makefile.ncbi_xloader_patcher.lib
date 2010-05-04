@@ -5,3 +5,5 @@ SRC = loaderpatcher
 
 ASN_DEP = seq seqset seqedit
 
+
+WATCHERS = vasilche

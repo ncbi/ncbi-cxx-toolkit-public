@@ -4,3 +4,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 SRC = ctools asn_connection
 
 LIB    = xctools
+
+WATCHERS = gouriano

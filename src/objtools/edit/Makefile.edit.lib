@@ -9,3 +9,5 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
 LIB    = xobjedit
 
 ASN_DEP = seqset
+
+WATCHERS = bollin

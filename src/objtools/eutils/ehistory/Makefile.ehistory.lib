@@ -2,3 +2,5 @@
 
 LIB = ehistory
 SRC = ehistory__ ehistory___
+
+WATCHERS = grichenk

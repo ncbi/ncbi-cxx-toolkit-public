@@ -8,3 +8,5 @@ LIB = eutils
 # sic; applies equally well to DTDs
 ASN_DEP = einfo esearch egquery epost elink esummary espell uilist \
           ehistory
+
+WATCHERS = grichenk

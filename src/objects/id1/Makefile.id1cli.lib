@@ -2,3 +2,5 @@ ASN_DEP = id1
 
 LIB = id1cli
 SRC = id1_client id1_client_
+
+WATCHERS = vasilche

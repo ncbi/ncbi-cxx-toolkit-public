@@ -1,2 +1,4 @@
 LIB = seqsplit
 SRC = seqsplit__ seqsplit___
+
+WATCHERS = vasilche

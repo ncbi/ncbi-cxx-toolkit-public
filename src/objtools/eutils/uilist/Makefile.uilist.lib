@@ -2,3 +2,5 @@
 
 SRC = uilist__ uilist___
 LIB = uilist
+
+WATCHERS = grichenk

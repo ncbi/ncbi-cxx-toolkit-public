@@ -1,3 +1,5 @@
 #CXXFLAGS = $(ORIG_CXXFLAGS) -DUSE_TEXT_ASN
 LIB = taxon1
 SRC = taxon1__ taxon1___ taxon1 cache utils ctreecont
+
+WATCHERS = domrach

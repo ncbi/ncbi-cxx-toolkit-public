@@ -8,3 +8,5 @@ LIB    = xasn
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
   $(NCBI_C_INCLUDE)
+
+WATCHERS = gouriano

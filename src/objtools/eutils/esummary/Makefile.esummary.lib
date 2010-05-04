@@ -2,3 +2,5 @@
 
 LIB = esummary
 SRC = esummary__ esummary___
+
+WATCHERS = grichenk
