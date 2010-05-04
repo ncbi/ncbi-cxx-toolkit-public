@@ -211,7 +211,7 @@ public:
     ///
     EIO_Status Close(void);
 
-    /// @li <b>NOTE:</b>  use CSocketAPI::Poll() to wait on several sockets
+    /// @li <b>NOTE:</b>  use CSocketAPI::Poll() to wait on multiple sockets
     /// at once
     ///
     /// @param event

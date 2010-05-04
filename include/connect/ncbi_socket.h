@@ -126,6 +126,11 @@
  *  SOCK_StringToHostPort
  *  SOCK_HostPortToString
  *
+ * Utility:
+ *
+ *  SOCK_SetSelectInternalRestartTimeout
+ *  SOCK_SetIOWaitSysAPI
+ *
  *  Secure:
  *
  *  SOCK_SetupSSL
@@ -320,12 +325,41 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
  *  [in]  Break down long waits on I/O into smaller chunks of at most "timeout"
  *  duration each.  This can help recover "hanging" sockets from indefinite
  *  wait and allow them to report an exceptional I/O condition.
+ * @return
+ *   Previous value of the timeout
  * @sa
  *  SOCK_Wait, SOCK_Poll
  */
 extern NCBI_XCONNECT_EXPORT const STimeout*
 SOCK_SetSelectInternalRestartTimeout
 (const STimeout* timeout);
+
+
+/** Selector of I/O wait system API:  auto, poll(), or select().
+ * @sa
+ *  SOCK_SetIOWaitSysAPI
+ */
+typedef enum {
+    eSOCK_IOWaitSysAPIAuto,   /** default; use some euristics to choose API */
+    eSOCK_IOWaitSysAPIPoll,   /** always use poll()                         */
+    eSOCK_IOWaitSysAPISelect  /** always use select()                       */
+} ESOCK_IOWaitSysAPI;
+
+/** This is a helper call that can improve I/O behavior (ignored for Windows).
+ * @param api
+ *  [in]  Default behavior is to wait on I/O such a way that accomodates the
+ *  requested sockets accordingly.  There is a known limitation of select()
+ *  API that requires all sockets to have low-level IO descriptors less than
+ *  1024, but works faster than poll() API that does not have limits on the
+ *  numeric values of the descriptors.  Either API can be enforced here.
+ * @return
+ *  Previous value of the API selector
+ * @sa
+ *  SOCK_Wait, SOCK_Poll
+ */
+extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI
+SOCK_SetIOWaitSysAPI
+(ESOCK_IOWaitSysAPI api);
 
 
 /** By default (on UNIX platforms) the SOCK API functions automagically call
