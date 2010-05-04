@@ -1912,7 +1912,10 @@ void ProjectCDS::operator()(CAlignModel& align)
     cdsinfo.SetStart(start,true);
     cdsinfo.SetStop(stop,true);
 
-    align.FrameShifts().clear();
+    //    align.FrameShifts().clear();
+    CGeneModel b = align;
+    b.FrameShifts().clear();
+    align = CAlignModel(b, b.GetAlignMap());
     align.SetCdsInfo(cdsinfo);
 }
 
