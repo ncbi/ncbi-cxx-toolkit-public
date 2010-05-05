@@ -31,6 +31,7 @@
  * File Description:
  *   Shared utility functions for the various sequtil classes.
  */   
+
 #include <corelib/ncbistd.hpp>
 
 #include <util/sequtil/sequtil.hpp>
@@ -69,7 +70,11 @@ bool OutOfRange(TSeqPos pos, const C& container, CSeqUtil::TCoding coding)
 {
     size_t bases_per_byte = GetBasesPerByte(coding);
     
-    return pos > (container.size() * bases_per_byte) - 1;
+    if ( (pos < 0)  ||  
+        (pos > (container.size() * bases_per_byte) - 1) ) {
+        return true;
+    }
+    return false;
 }
 
 
