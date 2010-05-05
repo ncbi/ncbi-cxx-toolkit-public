@@ -227,22 +227,21 @@ int CGuideTreeApplication::Run(void)
 
         calc->SetMaxDivergence(args["divergence"].AsDouble());
 
-        CGuideTreeCalc::ELabelType labels;
+        CGuideTree::ELabelType labels;
         if (args["labels"].AsString() == "taxname") {
-            labels = CGuideTreeCalc::eTaxName;
+            labels = CGuideTree::eTaxName;
         } else if (args["labels"].AsString() == "seqtitle") {
-            labels = CGuideTreeCalc::eSeqTitle;
+            labels = CGuideTree::eSeqTitle;
         } else if (args["labels"].AsString() == "blastname") {
-            labels = CGuideTreeCalc::eBlastName;
+            labels = CGuideTree::eBlastName;
         } else if (args["labels"].AsString() == "seqid") {
-            labels = CGuideTreeCalc::eSeqId;
+            labels = CGuideTree::eSeqId;
         } else if (args["labels"].AsString() == "seqid_and_blastname") {
-            labels = CGuideTreeCalc::eSeqIdAndBlastName;
+            labels = CGuideTree::eSeqIdAndBlastName;
         } else {
             NcbiCerr << "Error: Unrecognised labels type." << NcbiEndl;
             return 1;
         }
-        calc->SetLabelType(labels);
 
         CGuideTreeCalc::EDistMethod dist;
         if (args["distance"].AsString() == "jukes_cantor") {
@@ -274,7 +273,7 @@ int CGuideTreeApplication::Run(void)
         calc->SetTreeMethod(method);
 
         if (calc->CalcBioTree()) {
-            gtree.reset(new CGuideTree(*calc));
+            gtree.reset(new CGuideTree(*calc, labels));
         }
         else {
             ITERATE(vector<string>, it, calc->GetMessages()) {
@@ -308,7 +307,7 @@ int CGuideTreeApplication::Run(void)
     // Simplify tree
     if (args["simpl"]) {
         if (args["simpl"].AsString() == "blastname") {
-            gtree->SimplifyTree(CGuideTree::eBlastName, false);
+            gtree->SimplifyTree(CGuideTree::eByBlastName, false);
         } else if (args["simpl"].AsString() == "full") {
             gtree->SimplifyTree(CGuideTree::eFullyExpanded, false);
         }

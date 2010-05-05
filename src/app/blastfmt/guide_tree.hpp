@@ -59,7 +59,9 @@ class CGuideTree
 {
 public:
 
-    typedef CGuideTreeCalc::TBlastNameColorMap TBlastNameColorMap;
+    /// Type for BlastName to color map
+    typedef pair<string, string> TBlastNameToColor;
+    typedef vector<TBlastNameToColor> TBlastNameColorMap;
 
     /// Information about tree leaves
     typedef struct STreeInfo {
@@ -75,7 +77,7 @@ public:
 
     /// Tree simplification modes
     enum ETreeSimplifyMode {
-        eNone, eFullyExpanded, eBlastName};
+        eNone, eFullyExpanded, eByBlastName};
 
 
     /// Output formats
@@ -83,29 +85,63 @@ public:
         eImage, eASN, eNewick, eNexus
     };
 
+    /// Information shown as labels in the guide tree
+    ///
+    enum ELabelType {
+        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName
+    };
+
+    /// Feature IDs used in guide tree
+    ///
+    enum EFeatureID {
+        eLabelId = 0,       ///< Node label
+        eDistId,            ///< Edge length from parent to this node
+        eSeqIdId,           ///< Sequence id
+        eOrganismId,        ///< Taxonomic organism id (for sequence)
+        eTitleId,           ///< Sequence title
+        eAccessionNbrId,    ///< Sequence accession
+        eBlastNameId,       ///< Sequence Blast Name
+        eAlignIndexId,      ///< Index of sequence in Seq_align
+        eNodeColorId,       ///< Node color
+        eLabelColorId,      ///< Node label color
+        eLabelBgColorId,    ///< Color for backgroud of node label
+        eLabelTagColorId,
+        eTreeSimplificationTagId, ///< Is subtree collapsed
+        eNumIds             ///< Number of known feature ids
+    };
+
     
 public:
 
     /// Constructor
-    /// @param guide_tree_calc GuideTreeCalc object
+    /// @param guide_tree_calc GuideTreeCalc object [in]
+    /// @param lbl_type Type of labels to be used for tree leaves [in]
+    /// @param mark_query_node If true, query node will be marked with
+    /// different color [in]
     ///
-    CGuideTree(const CGuideTreeCalc& guide_tree_calc);
+    CGuideTree(CGuideTreeCalc& guide_tree_calc,
+               ELabelType lbl_type = eSeqId,
+               bool mark_query_node = true);
 
     /// Constructor
     /// @param btc BioTreeContainer object
     /// @param lbl_type ELabelType
     ///
-    CGuideTree(CBioTreeContainer& btc, CGuideTreeCalc::ELabelType lbl_type
-               = CGuideTreeCalc::eSeqId);
+    CGuideTree(CBioTreeContainer& btc, ELabelType lbl_type
+               = eSeqId);
 
     /// Constructor with initialization of tree features
     /// @param btc BioTreeContainer object [in]
+    /// @param seqids Seq-ids for sequences represented in the tree [in]
+    /// @param scope Scope [in]
+    /// @param query_node_id Id of query node [in]
     /// @param lbl_type Type of lables for tree leaves [in]
     /// @param mark_query_node Query node will be marked if true [in]
     ///
     CGuideTree(CBioTreeContainer& btc, const vector< CRef<CSeq_id> >& seqids,
-               CScope& scope, CGuideTreeCalc::ELabelType lbl_type
-               = CGuideTreeCalc::eSeqId, bool mark_query_node = true);
+               CScope& scope, int query_node_id,
+               ELabelType lbl_type = eSeqId, 
+               bool mark_query_node = true);
 
 
     /// Contructor
@@ -456,10 +492,47 @@ protected:
     void x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper);
 
 
-    void x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelType lblType); 
+    void x_InitTreeLabels(CBioTreeContainer &btc,ELabelType lblType); 
 
 private:
     
+
+    /// Create and initialize tree features. Initializes node labels,
+    /// descriptions, colors, etc.
+    /// @param btc Tree for which features are to be initialized [in|out]
+    /// @param seqids Sequence ids each corresponding to a tree leaf [in]
+    /// @param scope Scope [in]
+    /// @param label_type Type of labels to for tree leaves [in]
+    /// @param mark_query_node Is query node to be marked [in]
+    /// @param bcolormap Blast name to node color map [out]
+    /// @param query_node_id Id of query node (set only if mark_query_node
+    /// equal to true) [out]
+    ///
+    /// Tree leaves must have labels as numbers from zero to number of leaves
+    /// minus 1. This function does not initialize distance feature.
+    static void x_InitTreeFeatures(CBioTreeContainer& btc,
+                                 const vector< CRef<CSeq_id> >& seqids,
+                                 CScope& scope,
+                                 ELabelType label_type,
+                                 bool mark_query_node,
+                                 TBlastNameColorMap& bcolormap,
+                                 int query_node_id);
+
+    /// Add feature descriptor to tree
+    /// @param id Feature id [in]
+    /// @param desc Feature description [in]
+    /// @param btc Tree [in|out]
+    static void x_AddFeatureDesc(int id, const string& desc,
+                                 CBioTreeContainer& btc); 
+
+    /// Add feature to tree node
+    /// @param id Feature id [in]
+    /// @param value Feature value [in]
+    /// @param iter Tree node iterator [in|out]
+    static void x_AddFeature(int id, const string& value,
+                             CNodeSet::Tdata::iterator iter);    
+
+
     // Tree visitor classes used for manipulating the guide tree
 
     /// Tree visitor, finds tree node by id
@@ -509,7 +582,7 @@ private:
             if (delta == 0 || delta == 1) {
                 if (!node.Expanded() && !node.IsLeaf()) {
                     node.ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-                    (*node).SetFeature(CGuideTreeCalc::kNodeColorTag, "");
+                    (*node).SetFeature(kNodeColorTag, "");
                 }
             }
             return eTreeTraverse;
@@ -530,13 +603,12 @@ private:
             const CBioTreeFeatureDictionary& fdict
                 = tree.GetDictionary();
 
-            if (!fdict.HasFeature(CGuideTreeCalc::kBlastNameTag)) {
+            if (!fdict.HasFeature(kBlastNameTag)) {
                 NCBI_THROW(CException, eInvalid, 
                            "No Blast Name feature CBioTreeFeatureDictionary");
             }
             else {
-                m_BlastNameFeatureId = fdict.GetId(
-                                              CGuideTreeCalc::kBlastNameTag);
+                m_BlastNameFeatureId = fdict.GetId(kBlastNameTag);
             }
         }
 
@@ -674,6 +746,46 @@ protected:
     ///Phylo Tree Scheme
     ///
     CRef<CPhyloTreeScheme> m_PhyloTreeScheme;
+
+
+public:
+    // Tree feature tags
+
+    /// Sequence label feature tag
+    static const string kLabelTag;
+
+    /// Sequence id feature tag
+    static const string kSeqIDTag;
+
+    /// Sequence title feature tag
+    static const string kSeqTitleTag;
+
+    /// Organizm name feature tag
+    static const string kOrganismTag;
+
+    /// Accession number feature tag
+    static const string kAccessionNbrTag;
+
+    /// Blast name feature tag
+    static const string kBlastNameTag;
+
+    /// Alignment index id feature tag
+    static const string kAlignIndexIdTag;
+
+    /// Node color feature tag (used by CPhyloTreeNode)
+    static const string kNodeColorTag;
+
+    /// Node label color feature tag (used by CPhyloTreeNode)
+    static const string kLabelColorTag;
+
+    /// Node label backrground color tag (used by CPhyloTreeNode)
+    static const string kLabelBgColorTag;
+
+    /// Node label tag color tag (used by CPhyloTreeNode)
+    static const string kLabelTagColor;
+
+    /// Node subtree collapse tag (used by CPhyloTreeNode)
+    static const string kCollapseTag;
 };
 
 
@@ -687,7 +799,8 @@ public:
         eInvalid,
         eInvalidOptions,    ///< Invalid parameter values
         eNodeNotFound,      ///< Node with desired id not found
-        eTraverseProblem    ///< Problem in one of the tree visitor classes
+        eTraverseProblem,   ///< Problem in one of the tree visitor classes
+        eTaxonomyError      ///< Problem initializing CTax object
     };
 
     NCBI_EXCEPTION_DEFAULT(CGuideTreeException, CException);

@@ -35,6 +35,8 @@
 #include <util/image/image_util.hpp>
 #include <util/image/image_io.hpp>
 
+#include <objects/taxon1/taxon1.hpp>
+
 #include <gui/widgets/phylo_tree/phylo_tree_rect_cladogram.hpp>
 #include <gui/widgets/phylo_tree/phylo_tree_slanted_cladogram.hpp>
 #include <gui/widgets/phylo_tree/phylo_tree_radial.hpp>
@@ -53,30 +55,55 @@
 #include "guide_tree.hpp"
 
 
-
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc) 
+const string CGuideTree::kLabelTag = "label";
+const string CGuideTree::kSeqIDTag = "seq-id";
+const string CGuideTree::kSeqTitleTag = "seq-title";
+const string CGuideTree::kOrganismTag = "organism";
+const string CGuideTree::kAccessionNbrTag = "accession-nbr";        
+const string CGuideTree::kBlastNameTag = "blast-name";    
+const string CGuideTree::kAlignIndexIdTag = "align-index";     
+
+const string CGuideTree::kNodeColorTag = "$NODE_COLOR";
+const string CGuideTree::kLabelColorTag = "$LABEL_COLOR";
+const string CGuideTree::kLabelBgColorTag = "$LABEL_BG_COLOR";
+const string CGuideTree::kLabelTagColor = "$LABEL_TAG_COLOR";
+const string CGuideTree::kCollapseTag = "$NODE_COLLAPSED";
+
+// query node colors
+static const string s_kQueryNodeColor = "255 0 0";
+static const string s_kQueryNodeBgColor = "255 255 0";
+
+// tree leaf label for unknown taxonomy
+static const string s_kUnknown = "unknown";
+
+// initial value for collapsed subtree feature
+static const string s_kSubtreeDisplayed = "0";
+
+
+CGuideTree::CGuideTree(CGuideTreeCalc& guide_tree_calc, ELabelType label_type,
+                       bool mark_query_node) 
 {
     x_Init();
 
-    BioTreeConvertContainer2Dynamic(m_Dyntree, guide_tree_calc.GetSerialTree());
+    CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
+    x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
+                       *guide_tree_calc.GetScope(), 
+                       label_type, mark_query_node,
+                       m_BlastNameColorMap,
+                       guide_tree_calc.GetQueryNodeId());
+
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
     m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 
     m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
-    const CGuideTreeCalc::TBlastNameColorMap map
-        = guide_tree_calc.GetBlastNameColorMap();
-
-    // copy blast name to color map
-    m_BlastNameColorMap.resize(map.size());
-    copy(map.begin(), map.end(), m_BlastNameColorMap.begin());
 }
 
 CGuideTree::CGuideTree(CBioTreeContainer& btc,
-                       CGuideTreeCalc::ELabelType lblType)
+                       CGuideTree::ELabelType lblType)
 {
     x_Init();
 
@@ -89,14 +116,15 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
 CGuideTree::CGuideTree(CBioTreeContainer& btc,
                        const vector< CRef<CSeq_id> >& seqids,
                        CScope& scope,
-                       CGuideTreeCalc::ELabelType lbl_type,
+                       int query_node_id,
+                       CGuideTree::ELabelType lbl_type,
                        bool mark_query_node)
 {
     x_Init();
 
-    CGuideTreeCalc::InitTreeFeatures(btc, seqids, scope, lbl_type,
-                                     mark_query_node, m_BlastNameColorMap,
-                                     m_QueryNodeId);
+    m_QueryNodeId = query_node_id;
+    x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_query_node,
+                       m_BlastNameColorMap, m_QueryNodeId);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
     m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
@@ -305,8 +333,7 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
         FullyExpand();
         CPhyloTreeNodeGroupper groupper 
             = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
-                   CPhyloTreeNodeGroupper(CGuideTreeCalc::kBlastNameTag,
-                                        CGuideTreeCalc::kNodeColorTag,
+                   CPhyloTreeNodeGroupper(kBlastNameTag, kNodeColorTag,
                                         *m_DataSource));
 
         if (!groupper.GetError().empty()) {
@@ -349,9 +376,9 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
         // Track labels in order to select proper color for collapsed node
         CPhyloTreeLabelTracker 
             tracker = TreeDepthFirstTraverse(*node, CPhyloTreeLabelTracker(
-                                           CGuideTreeCalc::kBlastNameTag,
-                                           CGuideTreeCalc::kNodeColorTag,
-                                           *m_DataSource));
+                                                                kBlastNameTag, 
+                                                                kNodeColorTag,
+                                                                *m_DataSource));
 
         if (!tracker.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -366,8 +393,7 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
         }
         node->SetLabel(label);
         if (tracker.GetNumLabels() == 1) {
-            (**node).SetFeature(CGuideTreeCalc::kNodeColorTag,
-                                tracker.Begin()->second);
+            (**node).SetFeature(kNodeColorTag, tracker.Begin()->second);
         }
         // Mark collapsed subtree that contains query node
         if (IsQueryNodeSet()) {
@@ -378,7 +404,7 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
 
         // Expanding
         node->ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-        (**node).SetFeature(CGuideTreeCalc::kNodeColorTag, "");      
+        (**node).SetFeature(kNodeColorTag, "");
     }
 
     if (refresh) {
@@ -466,15 +492,12 @@ auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
     CLeaveFinder leave_finder = TreeDepthFirstTraverse(*node, CLeaveFinder());
     vector<CPhyloTreeNode*>& leaves = leave_finder.GetLeaves();
 
-    TBioTreeFeatureId fid_blast_name = x_GetFeatureId(
-                                              CGuideTreeCalc::kBlastNameTag);
+    TBioTreeFeatureId fid_blast_name = x_GetFeatureId(kBlastNameTag);
 
-    TBioTreeFeatureId fid_node_color = x_GetFeatureId(
-                                              CGuideTreeCalc::kNodeColorTag);
+    TBioTreeFeatureId fid_node_color = x_GetFeatureId(kNodeColorTag);
 
-    TBioTreeFeatureId fid_seqid = x_GetFeatureId(CGuideTreeCalc::kSeqIDTag);
-    TBioTreeFeatureId fid_accession = x_GetFeatureId(
-                                            CGuideTreeCalc::kAccessionNbrTag);
+    TBioTreeFeatureId fid_seqid = x_GetFeatureId(kSeqIDTag);
+    TBioTreeFeatureId fid_accession = x_GetFeatureId(kAccessionNbrTag);
     
 
     auto_ptr<STreeInfo> info(new STreeInfo);
@@ -687,8 +710,7 @@ void CGuideTree::x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper)
          it != groupper.End(); ++it) {
         it->GetNode()->ExpandCollapse(IPhyGraphicsNode::eHideChilds);
         it->GetNode()->SetLabel(it->GetLabel());
-        it->GetNode()->GetValue().SetFeature(CGuideTreeCalc::kNodeColorTag,
-                                             it->GetColor());
+        it->GetNode()->GetValue().SetFeature(kNodeColorTag, it->GetColor());
         if (m_QueryNodeId > -1) {
             x_MarkCollapsedQueryNode(it->GetNode());
         }
@@ -710,13 +732,13 @@ void CGuideTree::x_MarkCollapsedQueryNode(CPhyloTreeNode* node)
         CPhyloTreeNode* query_node = x_GetNode(m_QueryNodeId, node);
 
         const CBioTreeFeatureDictionary& fdict = m_DataSource->GetDictionary();
-        TBioTreeFeatureId fid = fdict.GetId(CGuideTreeCalc::kLabelBgColorTag);
+        TBioTreeFeatureId fid = fdict.GetId(kLabelBgColorTag);
 
         const CBioTreeFeatureList& 
             flist = (**query_node).GetBioTreeFeatureList();
 
         const string& color = flist.GetFeatureValue(fid);
-        (**node).SetFeature(CGuideTreeCalc::kLabelBgColorTag, color);
+        (**node).SetFeature(kLabelBgColorTag, color);
     }
 } 
 
@@ -752,7 +774,8 @@ void CGuideTree::x_PrintNewickTree(CNcbiOstream& ostr,
         ostr << ';';
 }
 
-void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelType lblType) 
+void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,
+                                  CGuideTree::ELabelType lblType) 
 {
    
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
@@ -761,19 +784,19 @@ void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelT
             //int id = (*node)->GetId();
             CRef< CNodeFeature > label_feature_node;
             CRef< CNodeFeature > selected_feature_node;
-            int featureSelectedID = CGuideTreeCalc::eLabelId;
-            if (lblType == CGuideTreeCalc::eSeqId || lblType == CGuideTreeCalc::eSeqIdAndBlastName) {
+            int featureSelectedID = eLabelId;
+            if (lblType == eSeqId || lblType == eSeqIdAndBlastName) {
 //              featureSelectedID = s_kSeqIdId;
-                featureSelectedID = CGuideTreeCalc::eAccessionNbrId;                
+                featureSelectedID = eAccessionNbrId;                
             }
-            else if (lblType == CGuideTreeCalc::eTaxName) {
-                featureSelectedID = CGuideTreeCalc::eOrganismId;
+            else if (lblType == eTaxName) {
+                featureSelectedID = eOrganismId;
             }                
-            else if (lblType == CGuideTreeCalc::eSeqTitle) {
-                featureSelectedID = CGuideTreeCalc::eTitleId;
+            else if (lblType == eSeqTitle) {
+                featureSelectedID = eTitleId;
             }
-            else if (lblType == CGuideTreeCalc::eBlastName) {
-                featureSelectedID = CGuideTreeCalc::eBlastNameId;
+            else if (lblType == eBlastName) {
+                featureSelectedID = eBlastNameId;
             }
             
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
@@ -782,12 +805,12 @@ void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelT
                 
                 //typedef list< CRef< CNodeFeature > > Tdata
 
-                if ((*node_feature)->GetFeatureid() == CGuideTreeCalc::eLabelId) { 
+                if ((*node_feature)->GetFeatureid() == eLabelId) { 
                    label_feature_node = *node_feature;                                       
                 }
                 //If label typ = GI and blast name - get blast name here
-                if ((*node_feature)->GetFeatureid() == CGuideTreeCalc::eBlastNameId && 
-                                    lblType == CGuideTreeCalc::eSeqIdAndBlastName) { 
+                if ((*node_feature)->GetFeatureid() == eBlastNameId && 
+                                    lblType == eSeqIdAndBlastName) { 
                    blastName = (*node_feature)->GetValue();
                 }
             
@@ -801,7 +824,7 @@ void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelT
             if(label_feature_node.NotEmpty() && selected_feature_node.NotEmpty())
             {
                 string  label = selected_feature_node->GetValue();
-                if(lblType == CGuideTreeCalc::eSeqIdAndBlastName) {
+                if(lblType == eSeqIdAndBlastName) {
                     //concatinate with blastName
                     label = label + "(" + blastName + ")";
                 }
@@ -844,12 +867,295 @@ void CGuideTree::SetSelection(int hit)
         }
 }
 
+
 string CGuideTree::GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery,bool showQuery)
                                         
 {
     CGuideTreeCGIMap map_visitor(m_Pane.get(),jsClickNode,jsClickLeaf,jsMouseover,jsMouseout,jsClickQuery,showQuery);    
         map_visitor = TreeDepthFirstTraverse(*m_DataSource->GetTree(), map_visitor);
         return map_visitor.GetMap();
+}
+
+
+// Get SeqID string from CBioseq_Handle such as gi|36537373
+// If getGIFirst tries to get gi. If gi does not exist tries to get be 'Best ID'
+static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
+{
+    CSeq_id_Handle seq_id_handle;
+    bool get_best_id = true;
+
+    if(get_gi_first) {        
+        try {
+            seq_id_handle = sequence::GetId(handle, sequence::eGetId_ForceGi);
+            if(seq_id_handle.IsGi()) get_best_id = false;
+        }
+        catch(CException& e) {
+            //x_TraceLog("sequence::GetId-ForceGi error"  + (string)e.what());
+            //seq_id_handle = sequence::GetId(handle,sequence::eGetId_Best);                 
+        }
+    }
+
+    if(get_best_id) {
+        seq_id_handle = sequence::GetId(handle, sequence::eGetId_Best);                 
+    }
+    CConstRef<CSeq_id> seq_id = seq_id_handle.GetSeqId();
+
+    string id_string;
+    (*seq_id).GetLabel(&id_string);
+
+    return id_string;
+}
+
+// Generate Blast Name-based colors for tree leaves
+// TO DO: This needs to be redesigned
+#define MAX_NODES_TO_COLOR 24
+static string s_GetBlastNameColor(
+                   CGuideTree::TBlastNameColorMap& blast_name_color_map,
+                   string blast_tax_name)
+{
+    string color = "";
+
+    //This should be rewritten in more elegant way
+    string colors[MAX_NODES_TO_COLOR] 
+                   = {"0 0 255", "0 255 0", "191 159 0", "30 144 255",
+                      "255 0 255", "223 11 95", "95 79 95", "143 143 47",
+                      "0 100 0", "128 0 0", "175 127 255", "119 136 153",
+                      "255 69 0", "205 102 0", "0 250 154", "173 255 47",
+                      "139 0 0", "255 131 250", "155 48 255", "205 133 0",
+                      "127 255 212", "255 222 173", "221 160 221", "200 100 0"};
+
+
+    unsigned int i = 0;
+    for(;i < blast_name_color_map.size();i++) {
+        pair<string, string>& map_item = blast_name_color_map[i];
+
+        if(map_item.first == blast_tax_name) {
+            color = map_item.second;
+            break;
+        }
+    }
+    
+    if(color == "") { //blast name not in the map
+        if(blast_name_color_map.size() >= MAX_NODES_TO_COLOR) {
+            i = MAX_NODES_TO_COLOR - 1;
+        }
+        color = colors[i];
+        blast_name_color_map.push_back(make_pair(blast_tax_name, color));
+    }
+    return color;
+}    
+
+
+void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
+                                    const vector< CRef<CSeq_id> >& seqids,
+                                    CScope& scope,
+                                    CGuideTree::ELabelType label_type,
+                                    bool mark_query_node,
+                                    TBlastNameColorMap& bcolormap,
+                                    int query_node_id)
+{
+    CTaxon1 tax;
+
+    bool success = tax.Init();
+    if (!success) {
+        NCBI_THROW(CGuideTreeException, eTaxonomyError,
+                   "Problem initializing taxonomy information.");
+    }
+    
+    // Come up with some labels for the terminal nodes
+    int num_rows = (int)seqids.size();
+    vector<string> labels(num_rows);
+    vector<string> organisms(num_rows);
+    vector<string> accession_nbrs(num_rows);    
+    vector<string> titles(num_rows);
+    vector<string> blast_names(num_rows);    
+    vector<string> tax_node_colors(num_rows);
+    vector<CBioseq_Handle> bio_seq_handles(num_rows);
+
+    for (int i=0;i < num_rows;i++) {
+        bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);
+
+        int tax_id = 0;
+        try{
+            const COrg_ref& org_ref = sequence::GetOrg_ref(bio_seq_handles[i]);                                
+            organisms[i] = org_ref.GetTaxname();
+            tax_id = org_ref.GetTaxId();
+            if (success) {
+                tax.GetBlastName(tax_id, blast_names[i]);
+            }
+            else {
+                blast_names[i] = s_kUnknown;
+            }
+        }
+        catch(CException& e) {            
+            organisms[i] = s_kUnknown;
+            blast_names[i]= s_kUnknown;
+        }
+
+        try{
+            titles[i] = sequence::GetTitle(bio_seq_handles[i]);
+        }
+        catch(CException& e) {
+            titles[i] = s_kUnknown;
+        }
+                   
+        //May be we need here eForceAccession here ???
+        CSeq_id_Handle accession_handle = sequence::GetId(bio_seq_handles[i],
+                                                        sequence::eGetId_Best);
+
+        CConstRef<CSeq_id> accession = accession_handle.GetSeqId();
+        (*accession).GetLabel(&accession_nbrs[i]);
+
+        tax_node_colors[i] = s_GetBlastNameColor(bcolormap,
+                                                 blast_names[i]);
+
+        switch (label_type) {
+        case eTaxName:
+            labels[i] = organisms[i];
+            break;
+
+        case eSeqTitle:
+            labels[i] = titles[i];
+            break;
+
+        case eBlastName:
+            labels[i] = blast_names[i];
+            break;
+
+        case eSeqId:
+            labels[i] = accession_nbrs[i];
+            break;
+
+        case eSeqIdAndBlastName:
+            labels[i] = accession_nbrs[i] + "(" + blast_names[i] + ")";
+            break;
+        }
+
+
+        if (labels[i].empty()) {
+            CSeq_id_Handle best_id_handle = sequence::GetId(bio_seq_handles[i],
+                                                       sequence::eGetId_Best);
+
+            CConstRef<CSeq_id> best_id = best_id_handle.GetSeqId();
+            (*best_id).GetLabel(&labels[i]);            
+        }
+
+    }
+    
+    // Add attributes to terminal nodes
+    x_AddFeatureDesc(eSeqIdId, kSeqIDTag, btc);
+    x_AddFeatureDesc(eOrganismId, kOrganismTag, btc);
+    x_AddFeatureDesc(eTitleId, kSeqTitleTag, btc);
+    x_AddFeatureDesc(eAccessionNbrId, kAccessionNbrTag, btc);
+    x_AddFeatureDesc(eBlastNameId, kBlastNameTag, btc);
+    x_AddFeatureDesc(eAlignIndexId, kAlignIndexIdTag, btc);
+    x_AddFeatureDesc(eNodeColorId, kNodeColorTag, btc);
+    x_AddFeatureDesc(eLabelColorId, kLabelColorTag, btc);
+    x_AddFeatureDesc(eLabelBgColorId, kLabelBgColorTag, btc);
+    x_AddFeatureDesc(eLabelTagColorId, kLabelTagColor, btc);
+    x_AddFeatureDesc(eTreeSimplificationTagId, kCollapseTag, btc);
+
+    
+    NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
+        if ((*node)->CanGetFeatures()) {
+            NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
+                               (*node)->SetFeatures().Set()) {
+                if ((*node_feature)->GetFeatureid() == eLabelId) {
+                    // a terminal node
+                    // figure out which sequence this corresponds to
+                    // from the numerical id we stuck in as a label
+                    
+                    string label_id = (*node_feature)->GetValue();
+                    unsigned int seq_number;
+                    if(!isdigit((unsigned char) label_id[0])) {
+                        const char* ptr = label_id.c_str();
+                        // For some reason there is "N<number>" now, 
+                        // not numerical any more. Need to skip "N" 
+                        seq_number = NStr::StringToInt((string)++ptr);
+                    }
+                    else {
+                        seq_number = NStr::StringToInt(
+                                                 (*node_feature)->GetValue());                    
+                    }
+                    // Replace numeric label with real label
+                    (*node_feature)->SetValue(labels[seq_number]);
+
+                    //Gets gi, if cnnot gets best id
+                    string id_string 
+                        = s_GetSeqIDString(bio_seq_handles[seq_number], true);
+
+                    x_AddFeature(eSeqIdId, id_string, node); 
+
+                    // add organism attribute if possible
+                    if (!organisms[seq_number].empty()) {
+                        x_AddFeature(eOrganismId, organisms[seq_number], node);
+                    }
+
+                    // add seq-title attribute if possible
+                    if (!titles[seq_number].empty()) {
+                        x_AddFeature(eTitleId, titles[seq_number], node); 
+                    }
+                    // add blast-name attribute if possible
+                    if (!accession_nbrs[seq_number].empty()) {
+                        x_AddFeature(eAccessionNbrId, accession_nbrs[seq_number],
+                                     node);
+                    }
+
+                    // add blast-name attribute if possible
+                    if (!blast_names[seq_number].empty()) {
+                        x_AddFeature(eBlastNameId, blast_names[seq_number],
+                                     node);
+                    }                   
+
+                    x_AddFeature(eAlignIndexId, NStr::IntToString(seq_number),
+                                 node); 
+
+                    x_AddFeature(eNodeColorId,
+                                 tax_node_colors[seq_number], node);                         
+
+                    if(seq_number == 0 && mark_query_node) { 
+                        // color for query node
+                        x_AddFeature(eLabelBgColorId,
+                                     s_kQueryNodeBgColor, node); 
+
+                        x_AddFeature(eLabelTagColorId,
+                                     s_kQueryNodeColor, node); 
+
+                        //Not sure if needed
+                        //m_QueryAccessionNbr = accession_nbrs[seq_number];
+
+                        query_node_id = (*node).GetObject().GetId();
+                    }
+                    
+                    // done with this node
+                    break;
+                }
+            }
+            x_AddFeature(eTreeSimplificationTagId, s_kSubtreeDisplayed, node);
+        }
+    }      
+}
+
+
+// Add feature descriptor in bio tree
+void CGuideTree::x_AddFeatureDesc(int id, const string& desc, 
+                                  CBioTreeContainer& btc) 
+{
+    CRef<CFeatureDescr> feat_descr(new CFeatureDescr);
+    feat_descr->SetId(id);
+    feat_descr->SetName(desc);
+    btc.SetFdict().Set().push_back(feat_descr);
+}   
+
+
+// Add feature to a node in bio tree
+void CGuideTree::x_AddFeature(int id, const string& value,
+                              CNodeSet::Tdata::iterator iter) 
+{
+    CRef<CNodeFeature> node_feature(new CNodeFeature);
+    node_feature->SetFeatureid(id);
+    node_feature->SetValue(value);
+    (*iter)->SetFeatures().Set().push_back(node_feature);
 }
 
 
@@ -875,11 +1181,11 @@ void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node)
        if(tree_node.IsLeaf()) {
             const CBioTreeFeatureList& featureList = (*tree_node).GetBioTreeFeatureList();
        
-            if (m_ShowQuery && (*tree_node).GetDictionaryPtr()->HasFeature(CGuideTreeCalc::kAlignIndexIdTag)){ //"align-index"
+            if (m_ShowQuery && (*tree_node).GetDictionaryPtr()->HasFeature(CGuideTree::kAlignIndexIdTag)){ //"align-index"
                 int align_index = NStr::StringToInt(
                                    featureList.GetFeatureValue(        
                                        (*tree_node).GetDictionaryPtr()->GetId(
-                                           CGuideTreeCalc::kAlignIndexIdTag)));
+                                           CGuideTree::kAlignIndexIdTag)));
 
                 isQuery = align_index == 0; //s_kPhyloTreeQuerySeqIndex  
             }       
@@ -891,11 +1197,11 @@ void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node)
 
             string accessionNbr;
             if ((*tree_node).GetDictionaryPtr()->HasFeature(
-                               CGuideTreeCalc::kAccessionNbrTag)){ //accession-nbr
+                               CGuideTree::kAccessionNbrTag)){ //accession-nbr
 
                 accessionNbr = featureList.GetFeatureValue(
                                   (*tree_node).GetDictionaryPtr()->GetId(
-                                        CGuideTreeCalc::kAccessionNbrTag));            
+                                        CGuideTree::kAccessionNbrTag));            
             }
             string arg = NStr::IntToString(nodeID);
             if(!accessionNbr.empty()) {

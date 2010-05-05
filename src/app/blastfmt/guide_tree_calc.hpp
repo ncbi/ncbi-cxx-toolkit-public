@@ -42,8 +42,6 @@
 #include <algo/phy_tree/dist_methods.hpp>
 
 #include <objects/biotree/BioTreeContainer.hpp>
-#include <objects/biotree/NodeSet.hpp>
-
 #include <objtools/alnmgr/alnmix.hpp>
 
 
@@ -71,33 +69,6 @@ public:
         eCobalt   ///< Cobalt tree
     };
 
-
-    /// Information shown as labels in the guide tree
-    ///
-    enum ELabelType {
-        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName
-    };
-
-
-
-    /// Feature IDs used in guide tree
-    ///
-    enum EFeatureID {
-        eLabelId = 0,       ///< Node label
-        eDistId,            ///< Edge length from parent to this node
-        eSeqIdId,           ///< Sequence id
-        eOrganismId,        ///< Taxonomic organism id (for sequence)
-        eTitleId,           ///< Sequence title
-        eAccessionNbrId,    ///< Sequence accession
-        eBlastNameId,       ///< Sequence Blast Name
-        eAlignIndexId,      ///< Index of sequence in Seq_align
-        eNodeColorId,       ///< Node color
-        eLabelColorId,      ///< Node label color
-        eLabelBgColorId,    ///< Color for backgroud of node label
-        eLabelTagColorId,
-        eTreeSimplificationTagId, ///< Is subtree collapsed
-        eNumIds             ///< Number of known feature ids
-    };
 
     /// Distance matrix (square, symmetric with zeros on diagnol)
     class CDistMatrix
@@ -142,10 +113,6 @@ public:
         const double m_Diagnol;
     };
 
-    typedef pair<string, string> TBlastNameToColor;
-    typedef vector<TBlastNameToColor> TBlastNameColorMap;
-
-
 public:
 
     //--- Constructors ---    
@@ -164,7 +131,7 @@ public:
     ///
     CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet, CRef<CScope> scope);
 
-    ~CGuideTreeCalc() {}
+    ~CGuideTreeCalc() {delete m_Tree;}
 
 
     //--- Setters ---
@@ -189,37 +156,37 @@ public:
     void SetTreeMethod(ETreeMethod method) {m_TreeMethod = method;}
 
 
-    /// Set type of labels in guide tree
-    /// @param label_type Label type
-    ///
-    void SetLabelType(ELabelType label_type) {m_LabelType = label_type;}
-
-
-    /// Set marking of query node in the tree
-    /// @param mark If true, query node will be marked
-    ///
-    void SetMarkQueryNode(bool mark) {m_MarkQueryNode = mark;}
-
-
     //--- Getters ---
+
+    /// Get computed tree
+    /// @return Tree
+    ///
+    TPhyTreeNode* GetTree(void) {return m_Tree;}
+
+    /// Get computed tree
+    /// @return Tree
+    ///
+    const TPhyTreeNode* GetTree(void) const {return m_Tree;}
 
     /// Get serial tree
     /// @return Tree
     ///
-    const CBioTreeContainer& GetSerialTree(void) const;
-
-
-    /// Get tree
-    /// @return Tree
-    ///
-    auto_ptr<CBioTreeDynamic> GetTree(void);
-
+    CRef<CBioTreeContainer> GetSerialTree(void) const;
 
     /// Get seq_align that corresponds to current tree
     /// @return Seq_align
     ///
     CRef<CSeq_align> GetSeqAlign(void) const;
 
+    /// Get seq-ids of sequences used in tree construction
+    /// @return Seq-ids
+    ///
+    const vector< CRef<CSeq_id> >& GetSeqIds(void) const;
+
+    /// Get scope
+    /// @return Scope
+    ///
+    CRef<CScope> GetScope(void) {return m_Scope;}
 
     /// Get divergence matrix
     /// @return Divergence matrix
@@ -253,28 +220,10 @@ public:
     int GetQueryNodeId(void) const {return m_QueryNodeId;}
 
 
-    /// Get type of tree labels
-    /// @return Type of tree labels
-    ///
-    ELabelType GetLabelType(void) const {return m_LabelType;}
-
-
-    /// Is query node going to be marked
-    /// @return Query node marked if true, not marked otherwise
-    ///
-    bool GetMarkQueryNode(void) const {return m_MarkQueryNode;}
-
-
     /// Get ids of sequences excluded from tree computation
     /// @return Ids of excluded sequences
     ///
     const vector<string>& GetRemovedSeqIds(void) const {return m_RemovedSeqIds;}
-
-    /// Get BlastName-to-Color map
-    /// @return BlastName-to-color map
-    ///
-    const TBlastNameColorMap& GetBlastNameColorMap(void) const
-    {return m_BlastNameColorMap;}
 
     /// Get error/warning messages
     /// @return List of messages
@@ -294,26 +243,6 @@ public:
     ///
     bool CalcBioTree(void);
 
-    /// Create and initialize tree features. Initializes node labels,
-    /// descriptions, colors, etc.
-    /// @param btc Tree for which features are to be initialized [in|out]
-    /// @param seqids Sequence ids each corresponding to a tree leaf [in]
-    /// @param scope Scope [in]
-    /// @param label_type Type of labels to for tree leaves [in]
-    /// @param mark_query_node Is query node to be marked [in]
-    /// @param bcolormap Blast name to node color map [out]
-    /// @param query_node_id Id of query node (set only if mark_query_node
-    /// equal to true) [out]
-    ///
-    /// Tree leaves must have labels as numbers from zero to number of leaves
-    /// minus 1. This function does not initialize distance feature.
-    static void InitTreeFeatures(CBioTreeContainer& btc,
-                                 const vector< CRef<CSeq_id> >& seqids,
-                                 CScope& scope,
-                                 CGuideTreeCalc::ELabelType label_type,
-                                 bool mark_query_node,
-                                 TBlastNameColorMap& bcolormap,
-                                 int& query_node_id);
 
 protected:
 
@@ -329,25 +258,6 @@ protected:
     /// @param seqAlignSet CSeq_align_set [in]
     /// @return True if success, false otherwise
     bool x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet);
-
-    /// Initialize tree freatures
-    void x_InitTreeFeatures(void);
-
-
-    /// Add feature descriptor to tree
-    /// @param id Feature id [in]
-    /// @param desc Feature description [in]
-    /// @param btc Tree [in|out]
-    static void x_AddFeatureDesc(int id, const string& desc,
-                                 CBioTreeContainer& btc); 
-
-    /// Add feature to tree node
-    /// @param id Feature id [in]
-    /// @param value Feature value [in]
-    /// @param iter Tree node iterator [in|out]
-    static void x_AddFeature(int id, const string& value,
-                             CNodeSet::Tdata::iterator iter);    
-
 
     /// Compute divergence matrix and find sequences to exclude from tree
     /// reconstruction
@@ -417,12 +327,6 @@ protected:
     /// Method of calculating tree
     ETreeMethod m_TreeMethod;
 
-    /// Information shown in tree leaves labels
-    ELabelType m_LabelType;
-
-    /// Should query node be marked
-    bool m_MarkQueryNode;
-
     /// Matrix of percent identities based distances
     CDistMatrix m_DivergenceMatrix;
 
@@ -437,53 +341,10 @@ protected:
     vector<string> m_RemovedSeqIds;
 
     /// Computed tree
-    CRef<CBioTreeContainer> m_TreeContainer;
-
-    /// Blast name to color map
-    TBlastNameColorMap m_BlastNameColorMap;
+    TPhyTreeNode* m_Tree;
 
     /// Error/warning messages
     vector<string> m_Messages;    
-
-
-public:
-    // Feature tags for CioTreeContainer
-
-    /// Sequence label feature tag
-    static const string kLabelTag;
-
-    /// Sequence id feature tag
-    static const string kSeqIDTag;
-
-    /// Sequence title feature tag
-    static const string kSeqTitleTag;
-
-    /// Organizm name feature tag
-    static const string kOrganismTag;
-
-    /// Accession number feature tag
-    static const string kAccessionNbrTag;
-
-    /// Blast name feature tag
-    static const string kBlastNameTag;
-
-    /// Alignment index id feature tag
-    static const string kAlignIndexIdTag;
-
-    /// Node color feature tag (used by CPhyloTreeNode)
-    static const string kNodeColorTag;
-
-    /// Node label color feature tag (used by CPhyloTreeNode)
-    static const string kLabelColorTag;
-
-    /// Node label backrground color tag (used by CPhyloTreeNode)
-    static const string kLabelBgColorTag;
-
-    /// Node label tag color tag (used by CPhyloTreeNode)
-    static const string kLabelTagColor;
-
-    /// Node subtree collapse tag (used by CPhyloTreeNode)
-    static const string kCollapseTag;
 };
 
 
@@ -495,7 +356,6 @@ public:
         eInvalidOptions,
         eTreeComputationProblem,
         eNoTree,
-        eTaxonomyError,
         eDistMatrixError
     };
 
