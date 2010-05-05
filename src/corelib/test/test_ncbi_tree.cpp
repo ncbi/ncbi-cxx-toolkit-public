@@ -230,6 +230,70 @@ struct IdValue
 // }
 
 
+static void s_TEST_CountNodes()
+{
+    typedef CTreeNode<int>  TTree;
+
+    // 0 - 10 - 20
+    //        - 21 - 30
+    //             - 31 - 40
+    //                  - 41
+    //                  - 42
+    //   - 11 - 22
+    //        - 23
+    //        - 24
+    //        - 25
+
+    std::auto_ptr<TTree>    root( new TTree(0) );
+
+    TTree* node10 = root->AddNode(10);
+    node10->AddNode(20);
+
+    TTree* node21 = node10->AddNode(21);
+    node21->AddNode(30);
+
+    TTree* node31 = node21->AddNode(31);
+    node31->AddNode(40);
+    node31->AddNode(41);
+    node31->AddNode(42);
+
+    TTree* node11 = root->AddNode(11);
+    node11->AddNode(22);
+    node11->AddNode(23);
+    node11->AddNode(24);
+    node11->AddNode(25);
+
+    assert( root->CountNodes() == 2 );
+
+    assert( root->CountNodes(0) == 1 );
+    assert( root->CountNodes(0, TTree::fOnlyLeafs) == 0 );
+    assert( root->CountNodes(0, TTree::fOnlyLeafs | TTree::fCumulative) == 0 );
+    assert( root->CountNodes(0, TTree::fCumulative) == 1 );
+
+    assert( root->CountNodes(1) == 2);
+    assert( root->CountNodes(1, TTree::fOnlyLeafs) == 0 );
+    assert( root->CountNodes(1, TTree::fOnlyLeafs | TTree::fCumulative) == 0 );
+    assert( root->CountNodes(1, TTree::fCumulative) == 3 );
+
+    assert( root->CountNodes(2) == 6 );
+    assert( root->CountNodes(2, TTree::fOnlyLeafs) == 5 );
+    assert( root->CountNodes(2, TTree::fOnlyLeafs | TTree::fCumulative) == 5 );
+    assert( root->CountNodes(2, TTree::fCumulative) == 9 );
+
+    assert( root->CountNodes(3) == 2 );
+    assert( root->CountNodes(3, TTree::fOnlyLeafs) == 1 );
+    assert( root->CountNodes(3, TTree::fOnlyLeafs | TTree::fCumulative) == 6 );
+    assert( root->CountNodes(3, TTree::fCumulative) == 11 );
+
+    assert( root->CountNodes(4) == 3 );
+    assert( root->CountNodes(4, TTree::fOnlyLeafs) == 3 );
+    assert( root->CountNodes(4, TTree::fOnlyLeafs | TTree::fCumulative) == 9 );
+    assert( root->CountNodes(4, TTree::fCumulative) == 14 );
+
+    assert( root->CountNodes(100) == 0 );
+    return;
+}
+
 
 int CTestApplication::Run(void)
 {
@@ -254,6 +318,7 @@ int CTestApplication::Run(void)
     */
     
     s_TEST_Tree();
+    s_TEST_CountNodes();
 
     return 0;
 }

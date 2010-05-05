@@ -316,8 +316,24 @@ public:
     /// @param sflag
     ///     ORed ENodeSearchType
     /// @return node pointer or NULL
-    const TTreeType* FindNode(const TKeyType& key, 
+    const TTreeType* FindNode(const TKeyType& key,
                               TNodeSearchMode sflag = eImmediateAndTop) const;
+
+    /// How to count nodes in the tree of which this node is a root.
+    /// @sa CountNodes, TConstNodeList
+    enum ECountNodes {
+        fOnlyLeafs  = (1 << 0),  ///< Only "leaf" nodes
+        fCumulative = (1 << 1)   ///< All nodes up to the specified depth
+    };
+
+    /// @sa CountNodes, ECountNodes
+    typedef int TCountNodes;  ///< Bitwise mask of ECountNodes
+
+    /// Count nodes of the tree of which this node is a root.
+    /// @param how   How to count nodes
+    /// @param depth How many levels of nodes. Zero depth means the node
+    ///        itself.
+    unsigned int CountNodes(unsigned int depth = 1, TCountNodes how = 0) const;
 
 protected:
     void CopyFrom(const TTreeType& tree);
@@ -920,6 +936,40 @@ CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
         }
     }
     return ret;
+}
+
+template<class TValue, class TKeyGetter>
+unsigned int
+CTreeNode<TValue, TKeyGetter>::CountNodes(unsigned int depth,
+                                          TCountNodes how) const
+{
+    unsigned int number_of_nodes = 0;
+
+    if ( IsLeaf() ) {
+        if (how & fCumulative)
+            ++number_of_nodes;
+        else {
+            if (depth == 0) return 1;
+        }
+    } else {
+        if (!(how & fOnlyLeafs)) {
+            if (how & fCumulative)
+                ++number_of_nodes;
+            else {
+                if (depth == 0) return 1;
+            }
+        }
+    }
+
+    if (depth > 0) {
+        TNodeList_CI it = SubNodeBegin();
+        TNodeList_CI it_end = SubNodeEnd();
+
+        for (; it != it_end; ++it)
+            number_of_nodes += (*it)->CountNodes(depth - 1, how);
+    }
+
+    return number_of_nodes;
 }
 
 /* @} */
