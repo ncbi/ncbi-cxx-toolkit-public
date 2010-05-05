@@ -22,7 +22,8 @@ for dir in "$@"; do
                 | test_ncbi_dblb \
                 | *.gz )
                 ;;
-            *test* | *demo* | *sample*)
+            *test* | *demo* | *sample* \
+                | net*che*_c* | ns_*remote_job* | save_to_nc )
                 gzip -Nf $f
                 ;;
             *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
