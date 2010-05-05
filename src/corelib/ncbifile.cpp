@@ -5244,19 +5244,16 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     if (count == 0) {
         return 0;
     }
-#if defined(NCBI_OS_MSWIN)
-    DWORD n = 0;
-    if (count > ULONG_MAX) {
-        count = ULONG_MAX;
-    }
-    if ( ::WriteFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
-    }
-    return n;
-#elif defined(NCBI_OS_UNIX)
     size_t n = count;
     do {
         char* ptr = (char*)(buf);
+#if defined(NCBI_OS_MSWIN)
+        DWORD n_write   = (n > ULONG_MAX) ? ULONG_MAX : n;
+        DWORD n_written = 0;
+        if ( ::WriteFile(m_Handle, buf, n_write, &n_written, NULL) == 0 ) {
+            NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
+        }
+#elif defined(NCBI_OS_UNIX)
         ssize_t n_written = ::write(int(m_Handle), ptr, n);
         if (n_written == 0) {
             NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
@@ -5267,12 +5264,12 @@ size_t CFileIO::Write(const void* buf, size_t count) const
             }
             NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
         }
+#endif
         n   -= n_written;
         ptr += n_written;
     }
     while (n);
     return count - n;
-#endif
 }
 
 

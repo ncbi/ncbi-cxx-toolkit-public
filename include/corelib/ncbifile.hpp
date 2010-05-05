@@ -2857,8 +2857,9 @@ public:
 
     /// Write file.
     ///
+    /// Always write all 'count' bytes of data to the file.
     /// @return
-    ///   The number of bytes written. 
+    ///   The number of bytes written (equal to 'count'). 
     size_t Write(const void* buf, size_t count) const;
 
     /// Flush file buffers.
