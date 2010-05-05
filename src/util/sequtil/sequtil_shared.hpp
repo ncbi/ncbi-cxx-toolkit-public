@@ -69,11 +69,7 @@ bool OutOfRange(TSeqPos pos, const C& container, CSeqUtil::TCoding coding)
 {
     size_t bases_per_byte = GetBasesPerByte(coding);
     
-    if ( (pos < 0)  ||  
-        (pos > (container.size() * bases_per_byte) - 1) ) {
-        return true;
-    }
-    return false;
+    return pos > (container.size() * bases_per_byte) - 1;
 }
 
 
