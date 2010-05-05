@@ -2615,16 +2615,12 @@ Int8 CFile::GetLength(void) const
 //
 static int s_CloseFile(int fd)
 {
-    int status = 0;
-    do {
-        status = close(fd);
-        if ( status < 0 ) {
-            if (errno == EINTR) {
-                continue;
-            }
+    for (;;) {
+        if (close(fd) == 0)
+            break;
+        if (errno != EINTR)
             return errno;
-        }
-    } while (status != 0);
+    }
     // Success
     return 0; 
 }
@@ -2634,9 +2630,8 @@ static int s_CloseFile(int fd)
 //
 static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 {
-    int fs      = 0;
-    int fd      = 0;
-    int x_errno = 0;
+    int fs;  // source file descriptor
+    int fd;  // destination file descriptor
     
     if ((fs = open(src, O_RDONLY)) == -1) {
         return false;
@@ -2646,7 +2641,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     // NB:  Use extra "fd = 0;" to distinguish the failures, when necessary.
     if (fstat(fs, &st) != 0  ||
         (fd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, st.st_mode & 0777)) == -1) {
-        x_errno = errno;
+        int x_errno = errno;
         s_CloseFile(fs);
         errno = x_errno;
         return false;
@@ -2658,7 +2653,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     char  x_buf[4096];
     char* buf;
 
-    if (st.st_size <= 3 * sizeof(x_buf)) {
+    if (3 * sizeof(x_buf) >= (Uint8) st.st_size) {
         // Use on-stack buffer for any files smaller than 3x of buffer size.
         buf_size = sizeof(x_buf);
         buf = x_buf;
@@ -2667,13 +2662,14 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             buf_size = kDefaultBufferSize;
         }
         // Use allocated buffer no bigger than the size of the file to copy.
-        if (buf_size > st.st_size) {
+        if (buf_size > (Uint8) st.st_size) {
             buf_size = st.st_size;
         }
         buf = buf_size > sizeof(x_buf) ? new char[buf_size] : x_buf;
     }
 
     // Copy files
+    int x_errno = 0;
     do {
         ssize_t n_read = read(fs, buf, buf_size);
         if (n_read == 0) {
@@ -5235,7 +5231,7 @@ size_t CFileIO::Read(void* buf, size_t count) const
     return n;
 #elif defined(NCBI_OS_UNIX)
     ssize_t n = 0;
-    while ((n = read(int(m_Handle), buf, count)) < 0) {
+    while ((n = ::read(int(m_Handle), buf, count)) < 0) {
         if (errno != EINTR) {
             NCBI_THROW(CFileErrnoException, eFileIO, "read() failed");
         }
@@ -5255,7 +5251,7 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     if (count > ULONG_MAX) {
         count = ULONG_MAX;
     }
-    if ( WriteFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
+    if ( ::WriteFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
         NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
     }
     return n;
@@ -5263,7 +5259,7 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     size_t n = count;
     do {
         char* ptr = (char*)(buf);
-        ssize_t n_written = write(int(m_Handle), ptr, n);
+        ssize_t n_written = ::write(int(m_Handle), ptr, n);
         if (n_written == 0) {
             NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
         }
