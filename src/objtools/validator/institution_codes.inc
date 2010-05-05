@@ -5690,6 +5690,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCB	s	University of California at Berkeley",
 "UCBG	s	University of Botswana, Department of Biological Sciences",
 "UCBL	s	Centre de Paleontologie Stratigraphique et Paleoecologie",
+"UCBMG	c	University of California Berkeley Mycogarden",
 "UCC	s	University of Cincinnati",
 "UCC<IRL>	s	University College Cork",
 "UCCC	s	Universidad de Concepcion, Museo de Zoologia",
