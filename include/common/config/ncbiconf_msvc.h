@@ -70,6 +70,7 @@
 #define HAVE_SIGNAL_H    1
 
 #define NCBI_DEPRECATED __declspec(deprecated)
+#define NCBI_NORETURN   __declspec(noreturn)
 #define NCBI_FORCEINLINE __forceinline
 #define NCBI_RESTRICT_C
 #define NCBI_RESTRICT_CXX
