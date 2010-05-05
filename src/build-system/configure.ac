@@ -3035,12 +3035,17 @@ AC_LANG_POP(C)
 
 # Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
-   GCC:2* | GCC:3[[01]]* | WorkShop* )
+   GCC:2* | GCC:3[[01]]* )
       ncbi_cv_c_deprecation_syntax=none
       ncbi_cv_c_forceinline=inline
       ;;
    VisualAge:* )
       ncbi_cv_c_forceinline=inline
+      ;;
+   WorkShop* )
+      ncbi_cv_c_deprecation_syntax=none
+      ncbi_cv_c_forceinline=inline
+      ncbi_cv_c_noreturn=none
       ;;
 esac
 
