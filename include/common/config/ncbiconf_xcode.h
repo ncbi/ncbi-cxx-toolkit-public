@@ -629,6 +629,10 @@
    takes (normally 2 or 3). */
 #define NCBI_HAVE_READDIR_R 3
 
+/* Define to whatever syntax, if any, your compiler supports for marking
+   functions that never return. */
+#define NCBI_NORETURN __attribute__((__noreturn__))
+
 /* Define to 1 if `string::compare()' is non-standard. */
 /* #undef NCBI_OBSOLETE_STR_COMPARE */
 

@@ -3141,6 +3141,19 @@ if test -n "$restrict"; then
        `restrict' keyword.])
 fi
 
+AC_CACHE_CHECK([syntax for marking functions that never return],
+   ncbi_cv_c_noreturn,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[void f(void) __attribute__((__noreturn__)); void f(void) { }]],
+       [[f();]])],
+      [ncbi_cv_c_noreturn='__attribute__((__noreturn__))'],
+      [ncbi_cv_c_noreturn=none])])
+noret=$ncbi_cv_c_noreturn
+test "$noret" = "none"  &&  noret=""
+AC_DEFINE_UNQUOTED(NCBI_NORETURN, $noret,
+   [Define to whatever syntax, if any, your compiler supports for marking
+    functions that never return.])
+
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
    ncbi_cv_decl_fionbio_needs_bsd_comp,
