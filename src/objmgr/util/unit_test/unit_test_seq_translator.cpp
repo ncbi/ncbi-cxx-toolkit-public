@@ -85,9 +85,10 @@ extern const char* sc_TestEntry_ShortCDS;
 extern const char* sc_TestEntry_FirstCodon;
 extern const char* sc_TestEntry_FirstCodon2;
 extern const char* sc_TestEntry_GapInSeq1;
-extern const char *sc_TestEntry_GapInSeq2;
-extern const char *sc_TestEntry_GapInSeq3;
-extern const char *sc_TestEntry_GapInSeq4;
+extern const char* sc_TestEntry_GapInSeq2;
+extern const char* sc_TestEntry_GapInSeq3;
+extern const char* sc_TestEntry_GapInSeq4;
+extern const char* sc_TestEntry_CodeBreakForStopCodon;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
@@ -733,7 +734,6 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_TerminalTranslExcept)
                  vec.SetCoding(CSeq_data::e_Ncbieaa);
                  vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
              }}
-            real_prot_seq += '*';
 
             ///
             /// translate the CDRegion directly
@@ -755,6 +755,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_TerminalTranslExcept)
             }
 
             /// use CSeqTranslator::Translate()
+            real_prot_seq += '*';
             tmp.clear();
             CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
                                       scope, tmp,
@@ -1122,6 +1123,79 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_GapInSeq)
     CheckTranslatedBioseq (bioseq, "MPKPK"); 
 }
 
+
+
+BOOST_AUTO_TEST_CASE(Test_Translate_CodeBreakForStopCodon)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_CodeBreakForStopCodon);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CBioseq> prot(new CBioseq);
+    prot->SetId().push_back(CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|912063.p")));
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    for (CBioseq_CI bs_iter(seh);  bs_iter;  ++bs_iter) {
+        CFeat_CI feat_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_cdregion));
+        for ( ;  feat_iter;  ++feat_iter) {
+            ///
+            /// retrieve the actual protein sequence
+            ///
+            string real_prot_seq;
+            {{
+                 CBioseq_Handle bsh =
+                     scope.GetBioseqHandle(feat_iter->GetProduct());
+                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
+             }}
+
+            ///
+            /// translate the CDRegion directly
+            ///
+            string tmp;
+
+            tmp.clear();
+            CSeqTranslator::Translate
+                (feat_iter->GetOriginalFeature(), scope, tmp, false);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+
+
+            /// use CCdregion_translate, include the stop codon
+            //NOTE: the test case lacks a trailing stop!
+            //real_prot_seq += '*';
+            tmp.clear();
+            CSeqTranslator::Translate
+                (feat_iter->GetOriginalFeature(), scope, tmp, true);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+
+            prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+            prot->SetInst().SetMol(CSeq_inst::eMol_aa);
+            prot->SetInst().SetLength(tmp.size());
+            prot->SetInst().SetSeq_data().SetNcbieaa().Set(tmp);
+        }
+    }
+
+    /**
+    CRef<CSeq_entry> nuc_se(new CSeq_entry);
+    nuc_se->Assign(entry);
+
+    CRef<CSeq_entry> prot_se(new CSeq_entry);
+    prot_se->SetSeq(*prot);
+
+    CRef<CSeq_entry> e(new CSeq_entry);
+    e->SetSet().SetSeq_set().push_back(nuc_se);
+    e->SetSet().SetSeq_set().push_back(prot_se);
+    cerr << MSerial_AsnText << *e;
+    **/
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
 
 const char* sc_TestEntry ="\
 Seq-entry ::= set {\
@@ -2235,3 +2309,118 @@ Seq-entry ::= seq {\
               seq-data \
                 iupacna \"CCCAAATAA\" } } } } \
 ";
+
+
+const char* sc_TestEntry_CodeBreakForStopCodon = "\
+Seq-entry ::= set {\
+  seq-set {\
+    seq {\
+      id {\
+        general {\
+          db \"GNOMON\",\
+          tag str \"912063.m\"\
+        }\
+      },\
+      descr {\
+        molinfo {\
+          biomol mRNA,\
+          completeness no-ends\
+        }\
+      },\
+      inst {\
+        repr raw,\
+        mol rna,\
+        length 1674,\
+        seq-data ncbi4na '2481822428821148121184414284124281824121844848888241\
+141141141484144141411144128442828241148441842444141141114121411142142144412884\
+284114118182828124121144121282418824821288821144188824821182484118844842828828\
+241182824121124142488211882218482884844184488821142214412112441144882828824248\
+428821141418214121142184444821114844282118844224414484824284181848284288122182\
+12441411214824288184121121188484218282422214418812488441822112112182112F842882\
+882211824411848824481282482882144484411144121484288214282148121828881282112848\
+242214821282481212828822248282124184181184882842488882888184114111182142411884\
+142214148448188482211881482211844882824821184414282114441824181214418442421241\
+121822281188121182212484112844821141121821142482881824224424142242141114228814\
+282218448121141128822424411141821882111824122242482418884218428184484114884284\
+842884184121121221884141821224148842211821112148411282114188121114141144888844\
+144418841844141428244124141141112242284881824844128122144148182121214181211284\
+821118824824841142844842214411112882484118844142421142144182882182114842822142\
+822118284821828421841428221844842888824184284224418482882421248221288242214144\
+211881282114148828124181422422114141148122842141411144148122822824114882882144\
+282141421142482821281122144282488821822824221141821121114141884818824141121141\
+141144814221884824184188841821111844488884184284182214841141148441144144142111\
+142821142882484118284414111844124114184182814281284824224824114184124114424888\
+228284284241144224884111221142818214428124148122888824411841281822824124888244\
+114114141281121142821821184118244144141141841214142882414842841141141141228442\
+11418288844218414418284412112882288822414282214211141144284142'H\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data cdregion {\
+                frame one,\
+                code {\
+                  id 1\
+                },\
+                code-break {\
+                  {\
+                    loc int {\
+                      from 879,\
+                      to 881,\
+                      strand plus,\
+                      id general {\
+                        db \"GNOMON\",\
+                        tag str \"912063.m\"\
+                      }\
+                    },\
+                    aa ncbieaa 88\
+                  }\
+                }\
+              },\
+              partial TRUE,\
+              product whole general {\
+                db \"GNOMON\",\
+                tag str \"912063.p\"\
+              },\
+              location int {\
+                from 0,\
+                to 1673,\
+                strand plus,\
+                id general {\
+                  db \"GNOMON\",\
+                  tag str \"912063.m\"\
+                },\
+                fuzz-from lim lt,\
+                fuzz-to lim gt\
+              }\
+            }\
+          }\
+        }\
+      }\
+    },\
+    seq {\
+      id {\
+        general {\
+          db \"GNOMON\",\
+          tag str \"912063.p\"\
+        }\
+      },\
+      inst {\
+        repr raw,\
+        mol aa,\
+        length 558,\
+        seq-data ncbieaa \"RIRFKYNGADAIDMVFSKKKSEERKDWLSKWMREKKDRKQQGLAEEYLYDKD\
+TRFVTFKDFVNRELVLFSNLDNERSIPCLVDGFKPGQRKVLFACFKRSDKHGVKVAQLAGGVADMSAYHHGEQSLMTT\
+IVHLAQDYVGSNNINXLLPIGMFGTRLQGGKDSASAQYIFTQLSPVTRTLFPSHDDNVLRFLYEENQRIEPEWYCPIS\
+PMVLVNGAQGIDTGWRTNIPNYNPRELVKNIKRLIAGEPQKALAPWYKNFRGKIIQIDPRRFACYGEVAVLDDNTIEI\
+TELPIKQXTQDYKEKVLEGLMESSDEKKPPVIVDYQEYHTDTTVKFVVKLVPGKLRELERKQDLHQVLQLQSVICMSS\
+MVLFDAAGCLRTSTSPEAITQEFYDSRQEKYLQRKEYLLEVLQAQSKRLTNQARFILAKINKEIVFENKKKVAIVDDL\
+IKMGFDADPVKKWKEEQKLKLRESGEMDEDDLATVAVEDDEGVSSAAKAVETKLSGYEYLFGMTILDVSEEETNKLIN\
+ESEEKMTELRVLKKKTWQDLWHEDLDNFLSELQQRRLS\"\
+      }\
+    }\
+  }\
+}\
+";
+

@@ -2763,6 +2763,19 @@ void x_Translate(const Container& seq,
         }
         prot.resize(sz);
     }
+
+    /**
+    cerr << "source: ";
+    ITERATE (typename Container, it, seq) {
+        cerr << *it;
+    }
+    cerr << endl;
+    cerr << "xlate: ";
+    ITERATE (string, it, prot) {
+        cerr << *it;
+    }
+    cerr << endl;
+    **/
 }
 
 
@@ -3107,15 +3120,21 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
         }
     }
 
+    bool code_break_include_stop = include_stop;
+    if (feat.GetData().IsCdregion()  &&
+        feat.GetData().GetCdregion().IsSetCode_break()) {
+        code_break_include_stop = true;
+    }
+
     CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, frame, code,
                 !feat.GetLocation().IsPartialStart(eExtreme_Biological),
-                include_stop, remove_trailing_X, alt_start);
+                code_break_include_stop, remove_trailing_X, alt_start);
 
 
     // code break substitution
     if (feat.GetData().IsCdregion()  &&
-        feat.GetData().GetCdregion().IsSetCode_break ()) {
+        feat.GetData().GetCdregion().IsSetCode_break()) {
         const CCdregion& cdr = feat.GetData().GetCdregion();
         string::size_type protlen = prot.size();
         ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break()) {
@@ -3138,6 +3157,13 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
                 if (c_aa.IsNcbieaa () && c_aa.GetNcbieaa () == 42) {
                     prot += c_aa.GetNcbieaa ();
                 }
+            }
+        }
+
+        if ( !include_stop ) {
+            SIZE_TYPE sz = prot.find_first_of("*");
+            if (sz != string::npos) {
+                prot.resize(sz);
             }
         }
     }
