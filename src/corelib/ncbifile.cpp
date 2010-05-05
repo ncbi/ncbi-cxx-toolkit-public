@@ -2615,7 +2615,7 @@ Int8 CFile::GetLength(void) const
 //
 static int s_CloseFile(int fd)
 {
-    while (close(fd) < 0) {
+    while (close(fd) != 0) {
         if (errno != EINTR)
             return errno;
     }
@@ -2697,20 +2697,22 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
             }
             n_read -= n_written;
             ptr    += n_written;
-        }
-        while (n_read);
+        } while (n_read);
     } while (!x_errno);
 
     s_CloseFile(fs);
-    int err = s_CloseFile(fd);
+    int xx_err = s_CloseFile(fd);
     if (x_errno == 0) {
-        x_errno = err;
+        x_errno = xx_err;
     }
     if (buf != x_buf) {
         delete [] buf;
     }
-    errno = x_errno;
-    return (x_errno == 0);
+    if (x_errno != 0) {
+        errno = x_errno;
+        return false;
+    }
+    return true;
 }
 
 #endif
