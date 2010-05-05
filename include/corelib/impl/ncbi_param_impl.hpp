@@ -60,7 +60,7 @@ template<class TValue>
 struct SEnumDescription
 {
     const char*  alias; // string representation of enum value
-    const TValue value; // int representation of enum value
+    TValue       value; // int representation of enum value
 };
 
 
@@ -73,12 +73,12 @@ struct SParamEnumDescription
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    const TValue          default_value;
-    const TNcbiParamFlags flags;
+    TValue                default_value;
+    TNcbiParamFlags       flags;
 
     // List of enum values if any
     const SEnumDescription<TValue>* enums;
-    const size_t                    enums_size;
+    size_t                          enums_size;
 };
 
 
