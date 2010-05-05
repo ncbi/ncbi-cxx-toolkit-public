@@ -1746,3 +1746,563 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
+ transcript variant 2, mRNA"
+      },
+      partial TRUE,
+      location int {
+        from 3819588,
+        to 3928074,
+        strand plus,
+        id gi 224514634
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
+ transcript variant 2, mRNA"
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 110611232,
+      location packed-int {
+        {
+          from 3819588,
+          to 3819596,
+          strand plus,
+          id gi 224514634,
+          fuzz-from lim lt
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3928074,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame two,
+        code {
+          id 1,
+          id 1,
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "isoform 2 precursor is encoded by transcript variant 2",
+      product whole gi 110611233,
+      location packed-int {
+        {
+          from 3819588,
+          to 3819596,
+          strand plus,
+          id gi 224514634,
+          fuzz-from lim lt
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3926752,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}

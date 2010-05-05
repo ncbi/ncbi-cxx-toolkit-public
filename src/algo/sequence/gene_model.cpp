@@ -42,26 +42,27 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objects/general/Dbtag.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Spliced_seg.hpp>
-#include <objects/seqalign/Spliced_exon.hpp>
-#include <objects/seqalign/Spliced_exon_chunk.hpp>
-#include <objects/seqalign/Product_pos.hpp>
-#include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Splice_site.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seqport_util.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Object_id.hpp>
 
 
@@ -178,6 +179,20 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         {
             CRef<CSeq_loc> mapped_loc  = m_mapper->Map(loc);
             return mapped_loc;
+        }
+
+        void IncludeSourceLocs(bool b = true)
+        {
+            if (m_mapper) {
+                m_mapper->IncludeSourceLocs(b);
+            }
+        }
+
+        void SetMergeNone()
+        {
+            if (m_mapper) {
+                m_mapper->SetMergeNone();
+            }
         }
 
     private:
@@ -420,6 +435,13 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             cds_feat.Reset(new CSeq_feat());
             cds_feat->Assign(feat_iter->GetOriginalFeature());
 
+            /// from this point on, we will get complex locations back
+            SMapper mapper(align, scope, opts);
+            mapper.IncludeSourceLocs();
+            mapper.SetMergeNone();
+
+            CRef<CSeq_loc> source_loc;
+
             ///
             /// mapping is complex
             /// we try to map each segment of the CDS
@@ -439,14 +461,36 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     (*loc_it.GetSeq_id_Handle().GetSeqId());
 
                 /// map it
-                CRef<CSeq_loc> this_loc_mapped =
-                    mapper.Map(this_loc);
+                CRef<CSeq_loc> equiv = mapper.Map(this_loc);
+                if ( !equiv  ||
+                     equiv->IsNull()  ||
+                     equiv->IsEmpty() ) {
+                    continue;
+                }
 
+
+                /// we are using a special variety that will tell us what
+                /// portion really mapped
+                ///
+                /// the first part is the mapped location
+
+                if (equiv->GetEquiv().Get().size() != 2) {
+                    NCBI_THROW(CException, eUnknown,
+                               "failed to find requisite parts of "
+                               "mapped seq-loc");
+                }
+                CRef<CSeq_loc> this_loc_mapped = equiv->GetEquiv().Get().front();
                 if ( !this_loc_mapped  ||
                      this_loc_mapped->IsNull()  ||
                      this_loc_mapped->IsEmpty() ) {
                     continue;
                 }
+
+                CRef<CSeq_loc> this_loc_source = equiv->GetEquiv().Get().back();
+                if ( !source_loc ) {
+                    source_loc.Reset(new CSeq_loc);
+                }
+                source_loc->SetMix().Set().push_back(this_loc_source);
 
                 /// we take the extreme bounds of the interval only;
                 /// internal details will be recomputed based on intersection
@@ -497,6 +541,53 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     cds_feat->SetPartial(true);
                 }
 
+                /// make sure we set the CDS frame correctly
+                /// if we're 5' partial, we may need to adjust the frame
+                /// to ensure that conceptual translations are in-frame
+                if (is_partial_5prime) {
+                    TSeqRange orig_range = 
+                        feat_iter->GetOriginalFeature().GetLocation().GetTotalRange();
+                    TSeqRange mappable_range = 
+                        source_loc->GetTotalRange();
+
+                    TSeqPos offs = mappable_range.GetFrom() - orig_range.GetFrom();
+                    if (offs) {
+                        int orig_frame = 0;
+                        if (cds_feat->GetData().GetCdregion().IsSetFrame()) {
+                            orig_frame = cds_feat->GetData()
+                                .GetCdregion().GetFrame();
+                            if (orig_frame) {
+                                orig_frame -= 1;
+                            }
+                        }
+                        int frame = (offs - orig_frame) % 3;
+                        if (frame < 0) {
+                            frame = -frame;
+                        }
+                        frame = (3 - frame) % 3;
+                        if (frame != orig_frame) {
+                            switch (frame) {
+                            case 0:
+                                cds_feat->SetData().SetCdregion()
+                                    .SetFrame(CCdregion::eFrame_one);
+                                break;
+                            case 1:
+                                cds_feat->SetData().SetCdregion()
+                                    .SetFrame(CCdregion::eFrame_two);
+                                break;
+                            case 2:
+                                cds_feat->SetData().SetCdregion()
+                                    .SetFrame(CCdregion::eFrame_three);
+                                break;
+
+                            default:
+                                NCBI_THROW(CException, eUnknown,
+                                           "mod 3 out of bounds");
+                            }
+                        }
+                    }
+                }
+
 
                 /// copy any existing dbxrefs
                 if (cds_feat  &&  gene_feat  &&
@@ -516,7 +607,14 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     CCdregion::TCode_break::iterator it =
                         cds.SetCode_break().begin();
                     for ( ;  it != cds.SetCode_break().end();  ) {
+
+                        // NOTE: we changed the mapper; we may get an equiv.
+                        // If we do, do the right thing
                         CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
+                        if (new_cb_loc->IsEquiv()) {
+                            new_cb_loc = new_cb_loc->GetEquiv().Get().front();
+                        }
+
                         if (new_cb_loc  &&  !new_cb_loc->IsNull()) {
                             (*it)->SetLoc(*new_cb_loc);
                             ++it;

@@ -127,13 +127,13 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         for ( ;  actual_iter != actual_end  &&  expected_iter != expected_end;
               ++actual_iter, ++expected_iter) {
 
+            bool display = false;
             const CSeq_feat& f1 = **actual_iter;
             const CSeq_feat& f2 = **expected_iter;
             BOOST_CHECK(f1.GetData().GetSubtype() == f2.GetData().GetSubtype());
             BOOST_CHECK(f1.GetLocation().Equals(f2.GetLocation()));
             if ( !f1.GetLocation().Equals(f2.GetLocation()) ) {
-                cerr << "expected: " << MSerial_AsnText << f2.GetLocation();
-                cerr << "got: " << MSerial_AsnText << f1.GetLocation();
+                display = true;
             }
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct()) {
@@ -144,6 +144,10 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 f2.GetData().IsCdregion()) {
                 BOOST_CHECK(f1.GetData().GetCdregion().IsSetCode_break() ==
                             f2.GetData().GetCdregion().IsSetCode_break());
+                if (f1.GetData().GetCdregion().IsSetCode_break() !=
+                    f2.GetData().GetCdregion().IsSetCode_break()) {
+                    display = true;
+                }
             }
 
             bool f1_except = f1.IsSetExcept()  &&  f1.GetExcept();
@@ -156,6 +160,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             string f2_except_text =
                 f2.IsSetExcept_text() ? f2.GetExcept_text() : kEmptyStr;
             BOOST_CHECK_EQUAL(f1_except_text, f2_except_text);
+
+            if (display) {
+                cerr << "expected: " << MSerial_AsnText << f2;
+                cerr << "got: " << MSerial_AsnText << f1;
+            }
         }
     }
 
