@@ -91,6 +91,14 @@
 #  endif
 #endif
 
+#ifndef NCBI_NORETURN
+#  ifdef __GNUC__
+#    define NCBI_NORETURN __attribute__((__noreturn__))
+#  else
+#    define NCBI_NORETURN
+#  endif
+#endif
+
 
 #endif  /* COMMON___NCBICONF_IMPL__H */
 
