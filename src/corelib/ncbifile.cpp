@@ -2615,9 +2615,7 @@ Int8 CFile::GetLength(void) const
 //
 static int s_CloseFile(int fd)
 {
-    for (;;) {
-        if (close(fd) == 0)
-            break;
+    while (close(fd) < 0) {
         if (errno != EINTR)
             return errno;
     }
