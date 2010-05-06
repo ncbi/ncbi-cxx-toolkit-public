@@ -40,7 +40,7 @@
 #  ifdef NCBI_OS_BSD
 #    include <sys/param.h>
 #    ifdef __FreeBSD_version
-#      if __FreeBSD_version / 10000 == 8
+#      if __FreeBSD_version / 100000 == 8
        /* If client closes a data connection and does some reconnect attempts
         * (connect / close in rather rapid succession), while the server side
         * proceeds with closing the original connection, FreeBSD 8.0 sometimes
@@ -49,7 +49,7 @@
         * disappears if either server or client (or both) get ktrace'd.
         */
 #        define TEST_IGNORE_CLOSE 1
-#      endif /*__FreeBSD_version/10000==8*/
+#      endif /*__FreeBSD_version/100000==8*/
 #    endif /*__FreeBSD_version*/
 #  endif /*NCBI_OS_BSD*/
 #elif defined(NCBI_OS_MSWIN)
