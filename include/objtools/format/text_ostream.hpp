@@ -58,9 +58,6 @@ public:
     virtual void AddLine( const string& line,
                           const CSerialObject* obj = 0) = 0;
                           
-    virtual void AddText( const string& line,
-                          const CSerialObject* obj = 0) = 0;
-                          
     virtual ~IFlatTextOStream(void) {}
 };
 
