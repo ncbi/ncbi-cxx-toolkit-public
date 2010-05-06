@@ -142,7 +142,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    *ret_hsp = NULL;
 
    if (new_hsp == NULL)
-	return -1;
+	return BLASTERR_MEMORY;
 
 
    new_hsp->query.offset = query_start;

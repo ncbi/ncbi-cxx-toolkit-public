@@ -370,6 +370,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    BlastHSPList * orig_hsplist = NULL;
    Boolean fence_error = FALSE;
    SBlastTargetTranslation* target_t = NULL;
+   Int2 status = 0;
    
    if (num_initial_hsps == 0) {
       return 0;
@@ -603,8 +604,10 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             }
             if (!delete_hsp) {
                Blast_HSPAdjustSubjectOffset(hsp, start_shift);
-               BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+               status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
                                        eQueryAndSubject);
+               if (status)
+                  return status;
             } else {
                hsp_array[index] = Blast_HSPFree(hsp);
             }
@@ -658,8 +661,10 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                hsp_array[index] = Blast_HSPFree(hsp);
            }
            else {
-               BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+               status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
                                        eQueryAndSubject);
+               if (status)
+                  return status;
            }
        }
    }

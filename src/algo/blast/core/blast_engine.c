@@ -448,9 +448,11 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
              * are saved.
             */
             /* fence_hit is null, since this is only for prelim stage. */
-            aux_struct->GetGappedScore(program_number, query, query_info, 
+            status = aux_struct->GetGappedScore(program_number, query, query_info, 
                subject, gap_align, score_params, ext_params, hit_params, 
                init_hitlist, &hsp_list, gapped_stats, NULL);
+            if (status)
+                break;
 
             /* Removes redundant HSPs. */
              Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);

@@ -115,8 +115,9 @@ Blast_IntervalTreeReset(BlastIntervalTree *tree);
  * @param tree The tree to update [in][out]
  * @param query_info Structure with query offset information [in]
  * @param index_method How HSP will be indexed within the tree [in]
+ * @return zero if succes, otherwise indicates an error
  */
-void 
+Int2 
 BlastIntervalTreeAddHSP(BlastHSP *hsp, 
                         BlastIntervalTree *tree,
                         const BlastQueryInfo *query_info,

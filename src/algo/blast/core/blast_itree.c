@@ -62,17 +62,26 @@ enum EIntervalDirection {
 static Int4
 s_IntervalNodeInit(BlastIntervalTree *tree, 
                    Int4 parent_index,
-                   enum EIntervalDirection dir)
+                   enum EIntervalDirection dir,
+                   Int2* ret_status)
 {
     Int4 new_index;
     Int4 midpt;
     SIntervalNode *new_node;
     SIntervalNode *parent_node;
 
+    *ret_status = 0;
+
     if (tree->num_used == tree->num_alloc) {
         tree->num_alloc = 2 * tree->num_alloc;
         tree->nodes = (SIntervalNode *)realloc(tree->nodes, tree->num_alloc *
                                                      sizeof(SIntervalNode));
+    }
+
+    if(tree->nodes == NULL)
+    {
+         *ret_status = BLASTERR_MEMORY;
+         return 0;
     }
 
     new_index = tree->num_used++;
@@ -118,12 +127,15 @@ s_IntervalNodeInit(BlastIntervalTree *tree,
  */
 static Int4
 s_IntervalRootNodeInit(BlastIntervalTree *tree, 
-                       Int4 region_start, Int4 region_end)
+                       Int4 region_start, Int4 region_end, Int2* retval)
 {
     Int4 new_index;
     SIntervalNode *new_node;
 
-    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither);
+    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither, retval);
+    if(*retval != 0)
+       return 0;
+
     new_node = tree->nodes + new_index;
     new_node->leftptr = 0;
     new_node->midptr = 0;
@@ -141,16 +153,31 @@ Blast_IntervalTreeInit(Int4 q_start, Int4 q_end,
 {
     Int4 size = 100;
     BlastIntervalTree *tree;
+    Int2 retval=0;
 
     tree = (BlastIntervalTree *)malloc(sizeof(BlastIntervalTree));
+    if (tree == NULL)
+    {
+          return NULL;
+    }
     tree->nodes = (SIntervalNode *)malloc(size * sizeof(SIntervalNode));
+    if (tree->nodes == NULL)
+    {
+          sfree(tree);
+          return NULL;
+    }
     tree->num_alloc = size;
     tree->num_used = 0;
     tree->s_min = s_start;
     tree->s_max = s_end;
 
     /* The first structure in tree->nodes is the root */
-    s_IntervalRootNodeInit(tree, q_start, q_end);
+    s_IntervalRootNodeInit(tree, q_start, q_end, &retval);
+    if(retval)
+    {
+       Blast_IntervalTreeFree(tree);
+       return NULL;
+    }
     return tree;
 }
 
@@ -485,7 +512,7 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
 
 
 /* see blast_itree.h for description */
-void 
+Int2 
 BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                         const BlastQueryInfo *query_info,
                         EITreeIndexMethod index_method)
@@ -504,6 +531,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     Int4 middle;
     enum EIntervalDirection which_half;
     Boolean index_subject_range = FALSE;
+    Int2 retval = 0;
 
     /* Determine the query strand containing the input HSP.
        Only the strand matters for containment purposes,
@@ -541,11 +569,11 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     
         if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
                                          eIntervalTreeLeft)) {
-            return;
+            return retval;
         }
         if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
                                          eIntervalTreeRight)) {
-            return;
+            return retval;
         }
     }
 
@@ -555,7 +583,9 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
     /* encapsulate the input HSP in an SIntervalNode */
     root_index = 0;
-    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither);
+    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither, &retval);
+    if (retval)
+         return retval;
     nodes = tree->nodes;
     nodes[new_index].leftptr = query_start;
     nodes[new_index].midptr = 0;
@@ -578,7 +608,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
             if (nodes[root_index].leftptr == 0) {
                 nodes[root_index].leftptr = new_index;
-                return;
+                return retval;
             }
 
             /* A node is already in this subtree. If it is not a 
@@ -602,7 +632,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
             if (nodes[root_index].rightptr == 0) {
                 nodes[root_index].rightptr = new_index;
-                return;
+                return retval;
             }
 
             /* A node is already in this subtree. If it is not a 
@@ -633,7 +663,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
                 nodes[new_index].midptr = nodes[root_index].midptr;
                 nodes[root_index].midptr = new_index;
-                return;
+                return retval;
             }
             else {
 
@@ -644,7 +674,9 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
                 if (nodes[root_index].midptr == 0) {
                     mid_index = s_IntervalRootNodeInit(tree, tree->s_min,
-                                                       tree->s_max);
+                                                       tree->s_max, &retval);
+                    if (retval)
+                      return retval;   
                     nodes = tree->nodes;
                     nodes[root_index].midptr = mid_index;
                 }
@@ -665,7 +697,9 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
            First allocate the new node. Update the pointer to 
            the pool of nodes, since it may change */
 
-        mid_index = s_IntervalNodeInit(tree, root_index, which_half);
+        mid_index = s_IntervalNodeInit(tree, root_index, which_half, &retval);
+        if (retval)
+          return retval;
         nodes = tree->nodes;
         old_hsp = nodes[old_index].hsp;
 
@@ -716,7 +750,9 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
             }
             else {
                 Int4 mid_index2 = s_IntervalRootNodeInit(tree, tree->s_min,
-                                                         tree->s_max);
+                                                         tree->s_max, &retval);
+                if (retval)
+                      return retval;   
                 old_region_start = old_hsp->subject.offset; 
                 old_region_end =  old_hsp->subject.end;
                 nodes = tree->nodes;
@@ -733,6 +769,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
             }
         }
     }
+    return retval;
 }
 
 /** Determine whether an HSP is contained within another HSP.
