@@ -37,6 +37,21 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  define X_SLEEP(x) /*((void) sleep(x))*/
+#  ifdef NCBI_OS_BSD
+#    include <sys/param.h>
+#    ifdef __FreeBSD_version
+#      if __FreeBSD_version / 10000 == 8
+       /* If client closes a data connection and does some reconnect attempts
+        * (connect / close in rather rapid succession), while the server side
+        * proceeds with closing the original connection, FreeBSD 8.0 sometimes
+        * returns -1 from close() with errno set to "Connection reset by peer".
+        * We consider this behavior as a kernel bug / race condition as it
+        * disappears if either server or client (or both) get ktrace'd.
+        */
+#        define TEST_IGNORE_CLOSE 1
+#      endif /*__FreeBSD_version/10000==8*/
+#    endif /*__FreeBSD_version*/
+#  endif /*NCBI_OS_BSD*/
 #elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
 #  define X_SLEEP(x) /*((void) Sleep(1000 * x))*/
@@ -376,11 +391,10 @@ static void TEST__client_2(SOCK sock)
             CORE_LOGF(eLOG_Note,
                       ("TC2::write:"
                        " i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
-                       " timeout(%d): %5lu sec, %6lu msec",
-                       (int)i, IO_StatusStr(status),
-                       (unsigned long)n_io, (unsigned long)n_io_done,
-                       (int)w_timeout_on,
-                       (unsigned long)w_to.sec, (unsigned long)w_to.usec));
+                       " timeout(%d): %5u.%06us",
+                       (int) i, IO_StatusStr(status),
+                       (unsigned long) n_io, (unsigned long) n_io_done,
+                       (int) w_timeout_on, w_to.sec, w_to.usec));
             if ( !w_timeout_on ) {
                 assert(status == eIO_Success  &&  n_io_done == n_io);
             } else {
@@ -425,12 +439,12 @@ static void TEST__client_2(SOCK sock)
                 CORE_LOG(eLOG_Fatal, "TC2::read: connection closed");
             }
             CORE_LOGF(eLOG_Note,
-                      ("TC2::read:"
+                      ("TC2::read: "
                        " i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
-                       " timeout(%d): %5u sec, %6u usec",
-                       (int)i, IO_StatusStr(status),
-                       (unsigned long)n_io, (unsigned long)n_io_done,
-                       (int)r_timeout_on, r_to.sec, r_to.usec));
+                       " timeout(%d): %5u.%06us",
+                       (int) i, IO_StatusStr(status),
+                       (unsigned long) n_io, (unsigned long) n_io_done,
+                       (int) r_timeout_on, r_to.sec, r_to.usec));
             if ( !r_timeout_on ) {
                 assert(status == eIO_Success  &&  n_io_done > 0);
             } else {
@@ -501,7 +515,9 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
             /* close connection */
             status = SOCK_Close(sock);
+#ifndef TEST_IGNORE_CLOSE
             assert(status == eIO_Success  ||  status == eIO_Closed);
+#endif /*!TEST_IGNORE_CLOSE*/
             /* reconnect */
             if ( !lsock )
                 return;
