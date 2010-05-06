@@ -286,7 +286,8 @@ public:
 
     /// @param byte_order
     ///
-    unsigned short GetLocalPort(ENH_ByteOrder byte_order) const;
+    unsigned short GetLocalPort(ENH_ByteOrder byte_order,
+                                bool trueport = false) const;
 
     /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out
     ///          from obtaining the corresponding value;
@@ -795,9 +796,10 @@ inline EIO_Status CSocket::Close(void)
 }
 
 
-inline unsigned short CSocket::GetLocalPort(ENH_ByteOrder byte_order) const
+inline unsigned short CSocket::GetLocalPort(ENH_ByteOrder byte_order,
+                                            bool          trueport) const
 {
-    return m_Socket ? SOCK_GetLocalPort(m_Socket, byte_order) : 0;
+    return m_Socket ? SOCK_GetLocalPortEx(m_Socket, trueport, byte_order) : 0;
 }
 
 

@@ -75,7 +75,7 @@
  *  SOCK_Status
  *  SOCK_Write
  *  SOCK_Abort
- *  SOCK_GetLocalPort
+ *  SOCK_GetLocalPort[Ex]
  *  SOCK_GetPeerAddress
  *  SOCK_GetPeerAddressString
  *
@@ -1193,7 +1193,37 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  );
 
 
+/** Get local port of the socket (true or cached / stored).
+ * For most users, a simpler SOCK_GetLocalPort() call is going to be the
+ * most suitable.  This call allows to inquire the network level about
+ * a temporary port number assigned when a socket was created as a result
+ * of accepting the connection (otherwise, the listening socket port number
+ * gets returned as the local port).  For connecting sockets, both "trueport"
+ * and no "trueport" results are identical (with the exception that "trueport"
+ * causes an additional system call, and the result is not stored).
+ * @param sock
+ *  [in] socket handle
+ * @param trueport
+ *  [in] non-zero causes to refetch / no-cache port from the network layer
+ * @param byte_order
+ *  [in] port byte order
+ * @return
+ *  If "network_byte_order" is true(non-zero) then return the port in the
+ *  network byte order; otherwise return it in the local host byte order.
+ * @sa
+ *  SOCK_GetLocalPort
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
+(SOCK            sock,
+ int/*bool*/     trueport,
+ ENH_ByteOrder   byte_order          
+ );
+
+
 /** Get local port of the socket.
+ * The returned port number is also cached within "sock" so all following
+ * inquires for the local port do not cause any system calls to occur.
+ * Has exactly same effect as SOCK_GetLocalPortEx(sock, 0, byte_order)
  * @param sock
  *  [in] socket handle
  * @param byte_order
@@ -1201,6 +1231,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  * @return
  *  If "network_byte_order" is true(non-zero) then return the port in the
  *  network byte order; otherwise return it in the local host byte order.
+ * @sa
+ *  SOCK_GetLocalPortEx
  */
 extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
 (SOCK            sock,
