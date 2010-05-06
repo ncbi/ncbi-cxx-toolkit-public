@@ -316,7 +316,9 @@ static void TEST__client_2(SOCK sock)
     size_t     n_io, n_io_done, i;
     char       buf[W_FIELD * N_FIELD + 1];
 
-    CORE_LOG(eLOG_Note, "TEST__client_2(TC2)");
+    CORE_LOGF(eLOG_Note,
+              ("TEST__client_2(TC2) @:%hu",
+               SOCK_GetLocalPort(sock, eNH_HostByteOrder)));
 
     /* fill out a buffer to send to server */
     memset(buf, 0, sizeof(buf));
@@ -347,7 +349,8 @@ static void TEST__client_2(SOCK sock)
                 status = SOCK_Reconnect(sock, 0, 0, 0);
                 SOCK_SetDataLogging(sock, eDefault);
                 CORE_LOGF(eLOG_Note,
-                          ("TC2::reconnect: i=%lu, j=%lu, status=%s",
+                          ("TC2::reconnect @:%hu: i=%lu, j=%lu, status=%s",
+                           SOCK_GetLocalPort(sock, eNH_HostByteOrder),
                            (unsigned long) i, (unsigned long) j,
                            IO_StatusStr(status)));
                 assert(status == eIO_Success);
