@@ -336,7 +336,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   Expected selection.\n";
     }
     code.ClassPublic() <<
-        "    void ThrowInvalidSelection("STATE_ENUM" index) const;\n\n"
+        "    NCBI_NORETURN void ThrowInvalidSelection("STATE_ENUM" index) const;\n\n"
         "    /// Retrieve selection name (for diagnostic purposes).\n";
     if (CClassCode::GetDoxygenComments()) {
         code.ClassPublic() <<
