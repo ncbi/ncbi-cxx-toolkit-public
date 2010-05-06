@@ -527,7 +527,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
         if (sock->type == eDatagram) {
             if (!(sin = (const struct sockaddr_in*) ptr)) {
                 strcpy(head, "Created");
-                *tail = 0;
+                *tail = '\0';
             } else {
                 if (!data) {
                     if (sin->sin_port) {
@@ -548,18 +548,31 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                 }
             }
         } else {
-            if (sock->side == eSOCK_Client)
+            unsigned short port;
+            if (sock->side == eSOCK_Client) {
                 strcpy(head, ptr ? "Connected" : "Connecting");
-            else if (ptr)
-                sprintf(head, "Accepted [%s]", (const char*) ptr);
-            else
+                port = sock->myport;
+            } else if (ptr) {
+                strcpy(head, "Accepted");
+                port = 0;
+            } else {
                 strcpy(head, "Created");
-            if (!sock->myport)
-                sock->myport = x_GetLocalPort(sock->sock);
-            if (sock->myport)
-                sprintf(tail, " @:%hu", sock->myport);
-            else
-                *tail = '\0';
+                port = sock->myport;
+            }
+            if (!port) {
+#ifdef NCBI_OS_UNIX
+                if (!sock->path[0])
+#endif /*NCBI_OS_UNIX*/
+                    port = x_GetLocalPort(sock->sock);
+            }
+            if (port) {
+                sprintf(tail, " @:hu", port);
+                if (!sock->myport) {
+                    /* here: not accepted network sockets only */
+                    assert(sock->side == eSOCK_Client  ||  !ptr);
+                    sock->myport = port;
+                }
+            }
         }
         CORE_LOGF_X(112, level,
                     ("%s%s%s", s_ID(sock, _id), head, tail));
@@ -1368,32 +1381,36 @@ static EIO_Status s_Select_(size_t                n,
         SOCK sock = polls[i].sock;
         if (sock  &&  polls[i].event) {
             TSOCK_Handle fd = sock->sock;
-            if (fd == SOCK_INVALID)
-                polls[i].revent = eIO_Close;
-            else if (polls[i].revent != eIO_Close) {
-#  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
-                if (fd >= FD_SETSIZE)
-                    continue;
-#  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
-                if (!write_only  &&  FD_ISSET(fd, &rfds)) {
-                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
-#  ifdef NCBI_OS_MSWIN
-                    sock->readable = 1/*true*/;
-#  endif /*NCBI_OS_MSWIN*/
-                }
-                if (!read_only   &&  FD_ISSET(fd, &wfds)) {
-                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
-#  ifdef NCBI_OS_MSWIN
-                    sock->writable = 1/*true*/;
-#  endif /*NCBI_OS_MSWIN*/
-                }
-                if (polls[i].revent == eIO_Open) {
-                    if (!FD_ISSET(fd, &efds))
-                        continue;
-                    polls[i].revent = eIO_Close;
-                } else if (sock->type == eTrigger)
-                    polls[i].revent = polls[i].event;
+            if (polls[i].revent == eIO_Close) {
+                nfds++;
+                continue;
             }
+            if (fd == SOCK_INVALID) {
+                polls[i].revent = eIO_Close;
+                nfds++;
+                continue;
+            }
+#  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
+            assert(fd < FD_SETSIZE);
+#  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
+            if (!write_only  &&  FD_ISSET(fd, &rfds)) {
+                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
+#  ifdef NCBI_OS_MSWIN
+                sock->readable = 1/*true*/;
+#  endif /*NCBI_OS_MSWIN*/
+            }
+            if (!read_only   &&  FD_ISSET(fd, &wfds)) {
+                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
+#  ifdef NCBI_OS_MSWIN
+                sock->writable = 1/*true*/;
+#  endif /*NCBI_OS_MSWIN*/
+            }
+            if (polls[i].revent == eIO_Open) {
+                if (!FD_ISSET(fd, &efds))
+                    continue;
+                polls[i].revent = eIO_Close;
+            } else if (sock->type == eTrigger)
+                polls[i].revent = polls[i].event;
             nfds++;
         } else
             assert(polls[i].revent == eIO_Open);
@@ -1619,46 +1636,48 @@ static EIO_Status s_Poll_(size_t                n,
     }
 
     if (status == eIO_Success) {
+        unsigned int seen;
         int nfds = 0;
-        unsigned int seen = 0;
-        for (m = 0, i = 0;  i < n;  i++) {
+        for (m = 0, i = 0, seen = 0;  i < n;  i++) {
             SOCK sock = polls[i].sock;
             if (sock  &&  polls[i].event) {
-                unsigned int j, x_seen;
+                short events, revents;
+                if (polls[i].revent == eIO_Close) {
+                    nfds++;
+                    continue;
+                }
                 if (sock->sock == SOCK_INVALID) {
                     polls[i].revent = eIO_Close;
                     nfds++;
                     continue;
                 }
-                if (polls[i].revent == eIO_Close) {
-                    nfds++;
-                    continue;
-                }
-                if (m >= count  ||  seen >= ready)
-                    continue;
-                x_seen = 0;
-                for (j = m;  j < count;  j++) {
-                    if (x_polls[j].revents)
-                        j == m ? ++seen : ++x_seen;
-                    if (x_polls[j].fd == sock->sock) {
-                        m = j;
-                        break;
+                events = revents = 0;
+                if (seen < ready) {
+                    unsigned int j, x_seen;
+                    assert(m < count);
+                    for (j = m, x_seen = 0;  j < count;  j++) {
+                        if (x_polls[j].revents)
+                            j == m ? ++seen : ++x_seen;
+                        if (x_polls[j].fd == sock->sock) {
+                            events  = x_polls[j].events;
+                            revents = x_polls[j].revents;
+                            seen += x_seen;
+                            m = j;
+                            break;
+                        }
                     }
+                    m++;
                 }
-                m++;
-                if (j >= count)
-                    continue;
-                seen += x_seen;
-                if ((x_polls[j].events & POLLIN)
-                    &&  (x_polls[j].revents & (POLLIN | POLLHUP | POLLPRI))) {
+                if ((events & POLLIN)
+                     &&  (revents & (POLLIN | POLLHUP | POLLPRI))) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
                 }
-                if ((x_polls[j].events & POLLOUT)
-                    &&  (x_polls[j].revents & (POLLOUT | POLLHUP))) {
+                if ((events & POLLOUT)
+                    &&  (revents & (POLLOUT | POLLHUP))) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
                 }
                 if (polls[i].revent == eIO_Open) {
-                    if (!(x_polls[j].revents & (POLLERR | POLLNVAL)))
+                    if (!(revents & (POLLERR | POLLNVAL)))
                         continue;
                     polls[i].revent = eIO_Close;
                 } else if (sock->type == eTrigger)
@@ -4371,13 +4390,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
 
     /* statistics & logging */
-    if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn)){
-        if (!(port = x_GetLocalPort(x_sock)))
-            *_id = '\0';
-        else
-            sprintf(_id, ":%hu", port);
+    if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
         s_DoLog(eLOG_Trace, *sock, eIO_Open, 0, 0, _id);
-    }
+
     return eIO_Success;
 }
 
