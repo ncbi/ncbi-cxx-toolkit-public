@@ -19,3 +19,9 @@ internal/demo$
 internal/demo/misc$
 internal/demo/misc/xmlwrapp
 
+# Make it independent on the pre-installed PTB
+util$
+util/regexp$
+serial$
+serial/datatool$
+
