@@ -59,6 +59,9 @@ public:
 
     virtual void AddLine( const string& line,
                           const CSerialObject* obj = 0);
+
+    virtual void AddText( const string& line,
+                          const CSerialObject* obj = 0);
                           
 private:
     CNcbiOstream&   m_Ostream;

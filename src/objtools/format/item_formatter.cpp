@@ -295,13 +295,25 @@ void
 CFlatItemFormatter::Start(
     IFlatTextOStream& Out )
 {
+    const string strHtmlHead(
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
+        "    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
+        "<html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
+        "<head>\n"
+        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=us-ascii\" />"
+        "<title>GenBank entry</title>\n"
+        "</head>\n"
+        "<body>\n"
+        "<hr /><div class=\"sequence\">" );
+
     if ( m_Ctx->GetConfig().DoHTML() ) {
-        Out.AddLine( "Content-type: text/html" );
-        Out.AddLine( "<HTML>" );
-        Out.AddLine( "<HEAD><TITLE>Entry</TITLE></HEAD>" );
-        Out.AddLine( "<BODY>" );
-        Out.AddLine( "<hr>" );
-        Out.AddLine( "<pre>" );
+//        Out.AddLine( "Content-type: text/html" );
+//        Out.AddLine( "<HTML>" );
+//        Out.AddLine( "<HEAD><TITLE>Entry</TITLE></HEAD>" );
+//        Out.AddLine( "<BODY>" );
+//        Out.AddLine( "<hr>" );
+//        Out.AddLine( "<pre>" );
+        Out.AddLine( strHtmlHead );
     }
 };
 
@@ -310,11 +322,17 @@ void
 CFlatItemFormatter::End(
     IFlatTextOStream& Out )
 {
+    const string strHtmlTail(
+        "</pre></div><hr />\n"
+        "</body>\n"
+        "</html>\n" );
+
     if ( m_Ctx->GetConfig().DoHTML() ) {
-        Out.AddLine( "</pre>" );
-        Out.AddLine( "</hr>" );
-        Out.AddLine( "</BODY>" );
-        Out.AddLine( "</HTML>" );
+//        Out.AddLine( "</pre>" );
+//        Out.AddLine( "</hr>" );
+//        Out.AddLine( "</BODY>" );
+//        Out.AddLine( "</HTML>" );
+        Out.AddLine( strHtmlTail );
     }
 };
 
