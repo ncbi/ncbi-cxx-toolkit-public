@@ -194,7 +194,7 @@ void* CTriggerThread::Main(void)
 
 void CTest::Client()
 {
-    ERR_POST(Info << "Client started...\n");
+    ERR_POST(Info << "Client started...");
 
     CSocket socket("localhost", m_Port);
 
@@ -225,9 +225,9 @@ void CTest::Server(void)
 
     EIO_Status status = lsock.Listen(m_Port);
     if (status == eIO_Closed)
-        ERR_POST("Cannot start server on port " << m_Port << " (port busy)\n");
+        ERR_POST("Cannot start server on port " << m_Port << " (port busy)");
     else
-        ERR_POST(Info << "Server started on port " << m_Port << "...\n");
+        ERR_POST(Info << "Server started on port " << m_Port << "...");
 
     _ASSERT(status == eIO_Success);
 
