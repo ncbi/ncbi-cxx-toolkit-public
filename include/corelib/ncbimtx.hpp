@@ -289,19 +289,19 @@ struct SSystemFastMutex
     // Methods for throwing exceptions, to make inlined methods lighter
 
     /// Throw uninitialized ("eUninitialized") exception.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowUninitialized(void);
 
     /// Throw lock failed("eLocked") exception.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowLockFailed(void);
 
     /// Throw unlock failed("eUnlocked") exception.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowUnlockFailed(void);
 
     /// Throw try lock failed("eTryLock") exception.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowTryLockFailed(void);
 
 #if !defined(NCBI_OS_MSWIN)
@@ -406,7 +406,7 @@ struct SSystemMutex
     // throw exception eOwner
 
     /// Throw not owned("eOwner") exception.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowNotOwned(void);
 
 #if !defined(NCBI_OS_MSWIN)

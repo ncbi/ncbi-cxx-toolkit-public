@@ -101,6 +101,7 @@ CContainerTypeInfo::CContainerTypeInfo(size_t size, const string& name,
 class CContainerTypeInfoFunctions
 {
 public:
+    NCBI_NORETURN
     static void Throw(const char* message)
         {
             NCBI_THROW(CSerialException,eFail, message);

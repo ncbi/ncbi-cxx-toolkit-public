@@ -64,6 +64,7 @@ public:
     static void Copy(CObjectStreamCopier& copier, TTypeInfo objectType);
     static void Skip(CObjectIStream& in, TTypeInfo objectType);
 
+    NCBI_NORETURN
     static void ThrowException(const char* operation, TTypeInfo objectType);
 };
 

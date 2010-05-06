@@ -1029,6 +1029,7 @@ public:
 
 
 /// Throw an exception about expired timeout with standard message
+NCBI_NORETURN
 inline void ThrowSyncQueueTimeout(void) {
     NCBI_THROW(CSyncQueueException, eTimeout,
                "Cannot obtain necessary queue state within a given timeout.");
@@ -1036,6 +1037,7 @@ inline void ThrowSyncQueueTimeout(void) {
 
 
 /// Throw an exception about no room in a queue with standard message
+NCBI_NORETURN
 inline void ThrowSyncQueueNoRoom(void) {
     NCBI_THROW(CSyncQueueException, eNoRoom,
                "The queue has reached its size limit. "
@@ -1044,6 +1046,7 @@ inline void ThrowSyncQueueNoRoom(void) {
 
 
 /// Throw an exception about empty queue with standard message
+NCBI_NORETURN
 inline void ThrowSyncQueueEmpty(void) {
     NCBI_THROW(CSyncQueueException, eEmpty,
                "The queue is empty. Can't pop from it any value.");

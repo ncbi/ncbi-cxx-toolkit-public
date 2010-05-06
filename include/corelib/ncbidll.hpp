@@ -313,6 +313,7 @@ public:
 
 private:
     /// Helper method to throw exception with system-specific error message.
+    NCBI_NORETURN
     void  x_ThrowException(const string& what);
 
     /// Helper method to initialize object.

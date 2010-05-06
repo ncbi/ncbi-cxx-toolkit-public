@@ -70,7 +70,9 @@ public:
                              TTypeInfoCreator2 f);
 
     // throw exceptions
+    NCBI_NORETURN
     static void ThrowDuplicateElementError(void);
+    NCBI_NORETURN
     static void CannotGetElementOfSet(void);
 };
 

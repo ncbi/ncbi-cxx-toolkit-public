@@ -244,9 +244,9 @@ public:
     ///
     /// Static method through which all CRef<> / CConstRef<> null pointer
     /// throws travel.  This is done to avoid an inline throw.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowNullPointerException(void);
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     static void ThrowNullPointerException(const type_info& type);
 
 
@@ -398,7 +398,7 @@ private:
     void InvalidObject(void) const;
 
     /// Report that counter has overflowed.
-    NCBI_XNCBI_EXPORT
+    NCBI_XNCBI_EXPORT NCBI_NORETURN
     void CheckReferenceOverflow(TCount count) const;
 
     mutable TCounter  m_Counter;  ///< The actual reference counter
@@ -767,6 +767,7 @@ public:
             return ptr;
         }
 
+    NCBI_NORETURN
     static void ThrowNullPointerException(void)
         {
             CObject::ThrowNullPointerException(/*typeid(TObjectType*)*/);
@@ -1317,6 +1318,7 @@ public:
             return ptr;
         }
 
+    NCBI_NORETURN
     static void ThrowNullPointerException(void)
         {
             CObject::ThrowNullPointerException(/*typeid(TObjectType*)*/);

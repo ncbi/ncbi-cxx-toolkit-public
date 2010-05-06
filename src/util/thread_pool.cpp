@@ -1564,6 +1564,7 @@ CThreadPool_Impl::x_WaitForPredicate(TWaitPredicate      wait_func,
 
 /// Throw an exception with standard message when AddTask() is called
 /// but ThreadPool is aborted or do not allow new tasks
+NCBI_NORETURN
 static inline void
 ThrowAddProhibited(void)
 {
