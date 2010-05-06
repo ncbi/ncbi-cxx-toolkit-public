@@ -760,6 +760,22 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
              return res;
          }}
 
+    case CQueryParseNode::eNot:
+        {{
+             bool res = false;
+             CQueryParseTree::TNode::TNodeList_CI iter =
+                 node.SubNodeBegin();
+             if (iter != node.SubNodeEnd()) {
+                 res = !x_Match(**iter, align);
+                 ++iter;
+             }
+             for ( ;  iter != node.SubNodeEnd()  &&  res;  ++iter) {
+                 res &= !x_Match(**iter, align);
+             }
+
+             return res;
+         }}
+
     case CQueryParseNode::eOr:
         {{
              bool res = false;
