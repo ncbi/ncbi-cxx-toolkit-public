@@ -357,36 +357,43 @@ namespace xml {
 
 namespace impl {
     //####################################################################
-    xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name) {
-	xmlAttrPtr prop = xmlnode->properties;
+    xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace) {
+        xmlAttrPtr prop = xmlnode->properties;
 
-	for (; prop!=0; prop = prop->next) {
-	    if (xmlStrEqual(prop->name, reinterpret_cast<const xmlChar*>(name))) {
-		return prop;
-	    }
-	}
+        for (; prop!=0; prop = prop->next) {
+            if (xmlStrEqual(prop->name, reinterpret_cast<const xmlChar*>(name))) {
+                if (ns_util::attr_ns_match(prop, nspace))
+                    return prop;
+            }
+        }
 
-	return 0;
+        return 0;
     }
     //####################################################################
-    xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name) {
-	if (xmlnode->doc != 0) {
-	    xmlAttributePtr dtd_attr=0;
+    xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace) {
+        if (xmlnode->doc != 0) {
+            xmlAttributePtr dtd_attr=0;
 
-	    if (xmlnode->doc->intSubset != 0) {
-		dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->intSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
-	    }
+            if (xmlnode->doc->intSubset != 0) {
+                dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->intSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
+                if (dtd_attr)
+                    if (!ns_util::default_attr_ns_match(dtd_attr, nspace))
+                        dtd_attr = 0;
+            }
 
-	    if (dtd_attr == 0 && xmlnode->doc->extSubset != 0) {
-		dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->extSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
-	    }
+            if (dtd_attr == 0 && xmlnode->doc->extSubset != 0) {
+                dtd_attr = xmlGetDtdAttrDesc(xmlnode->doc->extSubset, xmlnode->name, reinterpret_cast<const xmlChar*>(name));
+                if (dtd_attr)
+                    if (!ns_util::default_attr_ns_match(dtd_attr, nspace))
+                        dtd_attr = 0;
+            }
 
-	    if (dtd_attr != 0 && dtd_attr->defaultValue != 0) {
-		return dtd_attr;
-	    }
-	}
+            if (dtd_attr != 0 && dtd_attr->defaultValue != 0) {
+                return dtd_attr;
+            }
+        }
 
-	return 0;
+        return 0;
     }
 }
 

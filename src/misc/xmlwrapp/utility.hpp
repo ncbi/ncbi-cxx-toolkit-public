@@ -47,6 +47,10 @@
 // libxml2 includes
 #include <libxml/tree.h>
 
+// xmlwrapp includes
+#include <misc/xmlwrapp/namespace.hpp>
+#include <misc/xmlwrapp/exception.hpp>
+
 namespace xml {
 
 namespace impl {
@@ -70,6 +74,12 @@ namespace impl {
     };
 
     void printf2string (std::string &s, const char *message, va_list ap);
+
+    struct ns_util {
+        static bool node_ns_match (xmlNode *nd, const ns *nspace);
+        static bool attr_ns_match (xmlAttr *at, const ns *nspace);
+        static bool default_attr_ns_match (xmlAttribute *dat, const ns *nspace);
+    };
 
 } // end impl namespace
 

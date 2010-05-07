@@ -68,6 +68,47 @@ namespace impl {
 	}
     }
     //####################################################################
+    bool ns_util::node_ns_match (xmlNode *nd, const ns *nspace) {
+        if (nd == NULL)
+            throw exception( "Internal logic error. Node must be supplied to check matching a namespace." );
+
+        // NULL namespace matches everything
+        if (nspace == NULL) return true;
+
+        if (nd->ns == NULL)
+            return nspace->is_void();
+
+        return ns(nd->ns) == (*nspace);
+    }
+    //####################################################################
+    bool ns_util::attr_ns_match (xmlAttr *at, const ns *nspace) {
+        if (at == NULL)
+            throw exception( "Internal logic error. Attribute must be supplied to check matching a namespace." );
+
+        // NULL namespace matches everything
+        if (nspace == NULL) return true;
+
+        if (at->ns == NULL)
+            return nspace->is_void();
+
+        return ns(at->ns) == (*nspace);
+    }
+    //####################################################################
+    bool ns_util::default_attr_ns_match (xmlAttribute *dat, const ns *nspace) {
+        if (dat == NULL)
+            throw exception( "Internal logic error. Default attribute must be supplied to check matching a namespace." );
+
+        // NULL namespace matches everything
+        if (nspace == NULL) return true;
+
+        // Default attributes do not have prefix and uri. They have only
+        // prefix.
+        if (dat->prefix == NULL)
+            return nspace->is_void();
+
+        return strcmp(nspace->get_prefix(), reinterpret_cast<const char*>(dat->prefix)) == 0;
+    }
+    //####################################################################
 
 } // end impl namespace
 

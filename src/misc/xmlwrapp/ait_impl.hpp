@@ -46,6 +46,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/namespace.hpp>
 
 #include "pimpl_base.hpp"
 
@@ -84,8 +85,8 @@ private:
 }; // end xml::ait_impl class
 
 // a couple helper functions
-xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name);
-xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name);
+xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);
+xmlAttributePtr find_default_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);
 
 } // end impl namespace
 

@@ -797,50 +797,56 @@ public:
     const_iterator parent (void) const;
 
     //####################################################################
-    /** 
-     * Find the first child node that has the given name. If no such node
-     * can be found, this function will return the same iterator that end()
-     * would return.
+    /**
+     * Find the first child node that has the given name and namespace.
+     * If no such node can be found, this function will return the same
+     * iterator that end() would return.
      *
      * This function is not recursive. That is, it will not search down the
      * tree for the requested node. Instead, it will only search one level
      * deep, only checking the children of this node.
      *
      * @param name The name of the node you want to find.
+     * @param nspace The namespace of the node to find. NULL matches
+     *               any namespace. Void namespace matches node without
+     *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*), find(const char*, iterator)
     **/
     //####################################################################
-    iterator find (const char *name);
+    iterator find (const char *name, const ns *nspace=NULL);
 
     //####################################################################
-    /** 
-     * Find the first child node that has the given name. If no such node
-     * can be found, this function will return the same const_iterator that
-     * end() would return.
+    /**
+     * Find the first child node that has the given name and namespace.
+     * If no such node can be found, this function will return the same
+     * const_iterator that end() would return.
      *
      * This function is not recursive. That is, it will not search down the
      * tree for the requested node. Instead, it will only search one level
      * deep, only checking the children of this node.
      *
      * @param name The name of the node you want to find.
+     * @param nspace The namespace of the node to find. NULL matches
+     *               any namespace. Void namespace matches node without
+     *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*) const, find(const char*, const_iterator) const
     **/
     //####################################################################
-    const_iterator find (const char *name) const;
+    const_iterator find (const char *name, const ns *nspace=NULL) const;
 
     //####################################################################
-    /** 
+    /**
      * Find the first child node, starting with the given iterator, that has
-     * the given name. If no such node can be found, this function will
-     * return the same iterator that end() would return.
+     * the given name and namespace. If no such node can be found, this
+     * function will return the same iterator that end() would return.
      *
      * This function should be given an iterator to one of this node's
      * children. The search will begin with that node and continue with all
@@ -849,20 +855,24 @@ public:
      *
      * @param name The name of the node you want to find.
      * @param start Where to begin the search.
+     * @param nspace The namespace of the node to find. NULL matches
+     *               any namespace. Void namespace matches node without
+     *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*)
     **/
     //####################################################################
-    iterator find (const char *name, const iterator& start);
+    iterator find (const char *name, const iterator& start, const ns *nspace=NULL);
 
     //####################################################################
-    /** 
+    /**
      * Find the first child node, starting with the given const_iterator,
-     * that has the given name. If no such node can be found, this function
-     * will return the same const_iterator that end() would return.
+     * that has the given name and namespace. If no such node can be found,
+     * this function will return the same const_iterator that end() would
+     * return.
      *
      * This function should be given a const_iterator to one of this node's
      * children. The search will begin with that node and continue with all
@@ -871,14 +881,18 @@ public:
      *
      * @param name The name of the node you want to find.
      * @param start Where to begin the search.
+     * @param nspace The namespace of the node to find. NULL matches
+     *               any namespace. Void namespace matches node without
+     *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*) const
     **/
     //####################################################################
-    const_iterator find (const char *name, const const_iterator& start) const;
+    const_iterator find (const char *name, const const_iterator& start,
+                         const ns *nspace=NULL) const;
 
     // Include this functionality only if it is explicitly requested
     #ifdef XMLWRAPP_USE_NODE_VIEW

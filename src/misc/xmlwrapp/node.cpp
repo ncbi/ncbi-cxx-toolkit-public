@@ -159,11 +159,11 @@ namespace {
 	    xmlAttrPtr attr_l, attr_r;
 	    xmlAttributePtr dtd_l(0), dtd_r(0);
 
-	    attr_l = find_prop(lhs, name_);
-	    if (attr_l == 0 && (dtd_l = find_default_prop(lhs, name_)) == 0) return true;
+	    attr_l = find_prop(lhs, name_, NULL);
+	    if (attr_l == 0 && (dtd_l = find_default_prop(lhs, name_, NULL)) == 0) return true;
 
-	    attr_r = find_prop(rhs, name_);
-	    if (attr_r == 0 && (dtd_r = find_default_prop(rhs, name_)) == 0) return false;
+	    attr_r = find_prop(rhs, name_, NULL);
+	    if (attr_r == 0 && (dtd_r = find_default_prop(rhs, name_, NULL)) == 0) return false;
 
 	    xmlChar *value_l, *value_r;
 	    
@@ -194,13 +194,16 @@ namespace {
     };
 
     // an element node finder
-    xmlNodePtr find_element(const char *name, xmlNodePtr first) {
-	while (first != 0) {
-	    if (first->type == XML_ELEMENT_NODE && xmlStrcmp(first->name, reinterpret_cast<const xmlChar*>(name)) == 0) return first;
-	    first = first->next;
-	}
+    xmlNodePtr find_element(const char *name, xmlNodePtr first, const ns *nspace) {
+        while (first != 0) {
+            if (first->type == XML_ELEMENT_NODE && xmlStrcmp(first->name, reinterpret_cast<const xmlChar*>(name)) == 0) {
+                if (ns_util::node_ns_match(first, nspace))
+                    return first;
+            }
+            first = first->next;
+        }
 
-	return 0;
+        return 0;
     }
 
     xmlNodePtr find_element(xmlNodePtr first) {
@@ -697,27 +700,33 @@ xml::node::const_iterator xml::node::parent (void) const {
     return const_iterator();
 }
 //####################################################################
-xml::node::iterator xml::node::find (const char *name) {
-    xmlNodePtr found = find_element(name, pimpl_->xmlnode_->children);
+xml::node::iterator xml::node::find (const char *name,
+                                     const ns *nspace) {
+    xmlNodePtr found = find_element(name, pimpl_->xmlnode_->children, nspace);
     if (found) return iterator(found);
     return end();
 }
 //####################################################################
-xml::node::const_iterator xml::node::find (const char *name) const {
-    xmlNodePtr found = find_element(name, pimpl_->xmlnode_->children);
+xml::node::const_iterator xml::node::find (const char *name,
+                                           const ns *nspace) const {
+    xmlNodePtr found = find_element(name, pimpl_->xmlnode_->children, nspace);
     if (found) return const_iterator(found);
     return end();
 }
 //####################################################################
-xml::node::iterator xml::node::find (const char *name, const iterator& start) {
+xml::node::iterator xml::node::find (const char *name,
+                                     const iterator& start,
+                                     const ns *nspace) {
     xmlNodePtr n = static_cast<xmlNodePtr>(start.get_raw_node());
-    if ( (n = find_element(name, n))) return iterator(n);
+    if ( (n = find_element(name, n, nspace))) return iterator(n);
     return end();
 }
 //####################################################################
-xml::node::const_iterator xml::node::find (const char *name, const const_iterator& start) const {
+xml::node::const_iterator xml::node::find (const char *name,
+                                           const const_iterator& start,
+                                           const ns *nspace) const {
     xmlNodePtr n = static_cast<xmlNodePtr>(start.get_raw_node());
-    if ( (n = find_element(name, n))) return const_iterator(n);
+    if ( (n = find_element(name, n, nspace))) return const_iterator(n);
     return end();
 }
 
@@ -745,7 +754,7 @@ xml::nodes_view xml::node::elements(const char *name)
 {
     return nodes_view
            (
-               find_element(name, pimpl_->xmlnode_->children),
+               find_element(name, pimpl_->xmlnode_->children, NULL),
                new next_named_element_functor(name)
            );
 }
@@ -754,7 +763,7 @@ xml::const_nodes_view xml::node::elements(const char *name) const
 {
     return const_nodes_view
            (
-               find_element(name, pimpl_->xmlnode_->children),
+               find_element(name, pimpl_->xmlnode_->children, NULL),
                new next_named_element_functor(name)
            );
 }

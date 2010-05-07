@@ -42,6 +42,10 @@
 
 namespace xml {
 
+namespace impl {
+    struct ns_util;
+}
+
 
 /**
  * The xml::ns class is used to access and handle namespaces of nodes and
@@ -179,6 +183,7 @@ private:
 
     friend class node;
     friend class attributes;
+    friend struct impl::ns_util;
 };
 
 

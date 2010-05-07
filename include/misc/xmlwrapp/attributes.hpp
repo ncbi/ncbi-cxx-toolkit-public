@@ -362,36 +362,46 @@ public:
     void insert (const char *name, const char *value);
 
     //####################################################################
-    /** 
-     * Find the attribute with the given name. If the attribute is not found
-     * on the current node, the DTD will be searched for a default value.
-     * This is, of course, if there was a DTD parsed with the XML document.
+    /**
+     * Find the attribute with the given name and namespace. If the
+     * attribute is not found on the current node, the DTD will be searched
+     * for a default value. This is, of course, if there was a DTD parsed
+     * with the XML document. If the search comes to DTD and the namespace is
+     * provided then the only namespace prefix is taken into account.
      *
      * @param name The name of the attribute to find.
+     * @param nspace The namespace of the atrribute to find. NULL matches
+     *               any namespace. Void namespace matches attributes without
+     *               namespace set.
      * @return An iterator that points to the attribute with the given name.
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    iterator find (const char *name);
+    iterator find (const char *name, const ns *nspace=NULL);
 
     //####################################################################
-    /** 
-     * Find the attribute with the given name. If the attribute is not found
-     * on the current node, the DTD will be searched for a default value.
-     * This is, of course, if there was a DTD parsed with the XML document.
+    /**
+     * Find the attribute with the given name and namespace. If the
+     * attribute is not found on the current node, the DTD will be searched
+     * for a default value. This is, of course, if there was a DTD parsed
+     * with the XML document. If the search comes to DTD and the namespace is
+     * provided then the only namespace prefix is taken into account.
      *
      * @param name The name of the attribute to find.
+     * @param nspace The namespace of the atrribute to find. NULL matches
+     *               any namespace. Void namespace matches attributes without
+     *               namespace set.
      * @return A const_iterator that points to the attribute with the given name.
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::const_iterator
      * @see xml::attributes::attr
-     * @author Peter Jones
+     * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
-    const_iterator find (const char *name) const;
+    const_iterator find (const char *name, const ns *nspace=NULL) const;
 
     //####################################################################
     /** 

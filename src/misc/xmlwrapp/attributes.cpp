@@ -150,24 +150,26 @@ void xml::attributes::insert (const char *name, const char *value) {
     xmlSetProp(pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(name), reinterpret_cast<const xmlChar*>(value));
 }
 //####################################################################
-xml::attributes::iterator xml::attributes::find(const char *name) {
-    xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name);
+xml::attributes::iterator xml::attributes::find(const char *name,
+                                                const ns *nspace) {
+    xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name, nspace);
     if (prop != 0) return iterator(pimpl_->xmlnode_, prop);
 
-    xmlAttributePtr dtd_prop = find_default_prop(pimpl_->xmlnode_, name);
+    xmlAttributePtr dtd_prop = find_default_prop(pimpl_->xmlnode_, name, nspace);
     if (dtd_prop != 0) return iterator(name, reinterpret_cast<const char*>(dtd_prop->defaultValue), true);
 
     return iterator();
 }
 //####################################################################
-xml::attributes::const_iterator xml::attributes::find (const char *name) const {
-    xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name);
+xml::attributes::const_iterator xml::attributes::find (const char *name,
+                                                       const ns *nspace) const {
+    xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name, nspace);
     if (prop != 0) return const_iterator(pimpl_->xmlnode_, prop);
 
-    xmlAttributePtr dtd_prop = find_default_prop(pimpl_->xmlnode_, name);
+    xmlAttributePtr dtd_prop = find_default_prop(pimpl_->xmlnode_, name, nspace);
 
     if (dtd_prop != 0) {
-	return const_iterator(name, reinterpret_cast<const char*>(dtd_prop->defaultValue), true);
+        return const_iterator(name, reinterpret_cast<const char*>(dtd_prop->defaultValue), true);
     }
 
     return const_iterator();
