@@ -117,6 +117,7 @@ GBSeq ::= SEQUENCE {
     source-db VisibleString OPTIONAL ,
     database-reference VisibleString OPTIONAL ,
     feature-table SEQUENCE OF GBFeature OPTIONAL ,
+    feature-set SEQUENCE OF GBFeatureSet OPTIONAL ,
     sequence VisibleString OPTIONAL ,  -- Optional for contig, wgs, etc.
     contig VisibleString OPTIONAL ,
     alt-seq SEQUENCE OF GBAltSeqData OPTIONAL
@@ -151,10 +152,14 @@ GBXref ::= SEQUENCE {
 
 GBComment ::= SEQUENCE {
     type VisibleString OPTIONAL ,
-    paragraphs SEQUENCE OF GBParagraph
+    paragraphs SEQUENCE OF GBCommentParagraph
 }
 
-GBParagraph ::= SEQUENCE {
+GBCommentParagraph ::= SEQUENCE {
+    items SEQUENCE OF GBCommentItem
+}
+
+GBCommentItem ::= SEQUENCE {
     value VisibleString OPTIONAL ,
     url VisibleString OPTIONAL
 }
@@ -170,6 +175,11 @@ GBStrucCommentItem ::= SEQUENCE {
     url VisibleString OPTIONAL
 }
 
+GBFeatureSet ::= SEQUENCE {
+    annot-source VisibleString OPTIONAL ,
+    features SEQUENCE OF GBFeature
+}
+
 GBFeature ::= SEQUENCE {
     key VisibleString ,
     location VisibleString ,
@@ -178,8 +188,7 @@ GBFeature ::= SEQUENCE {
     partial5 BOOLEAN OPTIONAL ,
     partial3 BOOLEAN OPTIONAL ,
     quals SEQUENCE OF GBQualifier OPTIONAL ,
-    xrefs SEQUENCE OF GBXref OPTIONAL ,
-    annot-source VisibleString OPTIONAL
+    xrefs SEQUENCE OF GBXref OPTIONAL
 }
 
 GBInterval ::= SEQUENCE {
@@ -198,16 +207,19 @@ GBQualifier ::= SEQUENCE {
 
 GBAltSeqData ::= SEQUENCE {
     name VisibleString ,  -- e.g., contig, wgs, scaffold, cage, genome
-    value VisibleString OPTIONAL ,
     items SEQUENCE OF GBAltSeqItem OPTIONAL
 }
 
 GBAltSeqItem ::= SEQUENCE {
     interval GBInterval OPTIONAL ,
     isgap BOOLEAN OPTIONAL ,
-    gaplength INTEGER OPTIONAL ,
+    gap-length INTEGER OPTIONAL ,
+    gap-type VisibleString OPTIONAL ,
+    gap-linkage VisibleString OPTIONAL ,
+    gap-comment VisibleString OPTIONAL ,
     first-accn VisibleString OPTIONAL ,
-    last-accn VisibleString OPTIONAL
+    last-accn VisibleString OPTIONAL ,
+    value VisibleString OPTIONAL
 }
 
 END
