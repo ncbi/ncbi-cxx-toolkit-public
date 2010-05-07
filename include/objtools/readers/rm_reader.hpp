@@ -64,7 +64,9 @@ public:
         fIncludeStatistics   = 0x01,
         fIncludeRepeatName   = 0x02,
         fIncludeRepeatClass  = 0x04,
-
+        fIncludeRepeatExt    = 0x08, // data from repeat masker that we put in seq-feat.ext."RepeatMasker"
+        
+        fIncludeAll          = 0xFF,
         fDefaults = fIncludeRepeatName
     };
     typedef int TFlags;

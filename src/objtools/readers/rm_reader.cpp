@@ -136,6 +136,7 @@ struct CMaskData
     unsigned long sw_score;
     unsigned long outer_pos_begin;
     unsigned long outer_pos_end;
+    int outer_left;
     double perc_div;
     double perc_del;
     double perc_ins;
@@ -143,6 +144,10 @@ struct CMaskData
     string strand;
     string matching_repeat;
     string repeat_class_family;
+    int rpt_pos_begin;
+    int rpt_pos_end;
+    int rpt_left;
+    int repeat_id;
 };
     
 
@@ -269,15 +274,27 @@ bool CRmOutReader::IsHeaderLine( const string& line )
 
 bool CRmOutReader::IsIgnoredLine( const string& line )
 {
-    //
-    //  Currently, the only ignore lines are
-    //  those with only whitespace on them, or the form
-    //  "There were no repetitive sequences detected in <path>".
-    //
-    return ( NStr::TruncateSpaces( line ).length() == 0  ||
-             NStr::StartsWith( line, "There were no repetitive sequences detected in " ) );
+    if ( NStr::StartsWith(line, "There were no repetitive sequences detected in "))
+        return true;
+    if ( NStr::FindCase(line, "only contains ambiguous bases") != NPOS)
+        return true;
+    return ( NStr::TruncateSpaces( line ).length() == 0  );
 }
 
+
+static void StripParens(string& s)
+{
+    SIZE_TYPE b = 0;
+    SIZE_TYPE e = s.size();
+    if (e > 0 && s[b] == '(') {
+        ++b;
+        if (s[e - 1] == ')') --e;
+        if (e == b)
+            s = kEmptyStr;
+        else
+            s = s.substr(b, e - b);
+    }
+}
 
 bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
 {
@@ -320,7 +337,8 @@ bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
         
         // 8: "query (left)"
         ++it;
-        /* not used */
+        StripParens(*it);
+        mask_data.outer_left = NStr::StringToUInt( *it );
         
         // 9: "" (meaning "strand")
         ++it;
@@ -336,19 +354,32 @@ bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
         
         // 12: "position in"
         ++it;
-        /* not used */
+        string field12 = *it;
         
         // 13: "in end"
         ++it;
-        /* not used */
+        mask_data.rpt_pos_end = NStr::StringToUInt( *it );
         
         // 14: "repeat left"
         ++it;
-        /* not used */
+        string field14 = *it;
+
+        // fields position 12 and 14 flip depending on the strand value.
+        string repeat_left;
+        if (mask_data.strand[0] == '+') {
+            mask_data.rpt_pos_begin = NStr::StringToUInt( field12 );
+            repeat_left = field14;
+        } else {
+            mask_data.rpt_pos_begin = NStr::StringToUInt( field14 );
+            repeat_left = field12;
+        }
+
+        StripParens(repeat_left);
+        mask_data.rpt_left = NStr::StringToUInt(repeat_left);
         
         // 15: "ID"
         ++it;
-        /* not used */
+        mask_data.repeat_id = NStr::StringToUInt(*it);
         
     }
     catch( ... ) {
@@ -394,7 +425,7 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
 
     feat->SetLocation( *location );
 
-    //  qualifiers:
+    //  qualifiers & ext's.
     if (flags) {
         CSeq_feat::TQual& qual_list = feat->SetQual();
         
@@ -432,6 +463,17 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
             perc_ins->SetQual( "perc_ins" );
             perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
             qual_list.push_back( perc_ins );
+        }
+
+        if (flags & fIncludeRepeatExt) {
+            CUser_object& uo = feat->SetExt();
+            uo.SetType().SetStr("CombinedFeatureUserObjects");
+            CUser_field& uf = uo.SetField("RepeatMasker");
+            uf.AddField("query_left",    mask_data.outer_left);
+            uf.AddField("rpt_pos_begin", mask_data.rpt_pos_begin);
+            uf.AddField("rpt_pos_end",   mask_data.rpt_pos_end);
+            uf.AddField("rpt_left",      mask_data.rpt_left);
+            uf.AddField("repeat_id",     mask_data.repeat_id);
         }
     }
     
