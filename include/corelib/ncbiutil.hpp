@@ -37,8 +37,6 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.h>
-#include <algorithm>
 #include <memory>
 #include <map>
 
