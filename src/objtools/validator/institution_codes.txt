@@ -4062,8 +4062,8 @@ NMNZ:RE	s	National Museum of New Zealand, Reptiles
 NMNZ:S	s	National Museum of New Zealand, Fossil Vertebrates
 NMNZ:TS	s	National Museum of New Zealand, Tissue Collection
 NMNZ:TSA	s	National Museum of New Zealand, Tissue Collection
-NMP	s	Natal Museum
-NMP<CZE>	s	Narodni Museum Praha
+NMP<CZE>	s	National Museum (Prague)
+NMP<ZAF>	s	Natal Museum
 NMPC	s	National Museum Prague
 NMPG<CHN>	s	Zhejiang Institute of Traditional Chinese Medicine
 NMPG<DEU>	s	Museum der Natur-Gotha
