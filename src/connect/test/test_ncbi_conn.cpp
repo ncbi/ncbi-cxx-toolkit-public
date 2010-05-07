@@ -87,15 +87,6 @@ CTest::CTest(CNcbiOstream& log)
     : m_Tee(new CMultiWriter(s_MakeList(NcbiCout, log)),
             0, 0, CRWStreambuf::fOwnWriter)
 {
-    // Set error posting and tracing at maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
-    UnsetDiagPostFlag(eDPF_Line);
-    UnsetDiagPostFlag(eDPF_File);
-    UnsetDiagPostFlag(eDPF_Location);
-    UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Trace);
-
     HideStdArgs(-1/*everything*/);
 }
 
@@ -183,6 +174,15 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
+    // Set error posting and tracing at maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    SetDiagPostLevel(eDiag_Trace);
+
     int retval = 1/*failure*/;
 
     try {
@@ -197,9 +197,16 @@ int main(int argc, const char* argv[])
             // Make sure CNcbiDiag remains valid when main() returns
             SetLogFile(kLogfile);
             retval = rv;
-        } else
-            ERR_POST(Critical << "Cannot open logfile " <<
-                     CDirEntry::CreateAbsolutePath(kLogfile));
+        } else {
+            int/*bool*/ dynamic = 0/*false*/;
+            const char* msg = NcbiMessagePlusError
+                (&dynamic, ("Cannot open logfile " +
+                            CDirEntry::CreateAbsolutePath(kLogfile)).c_str(),
+                 errno, 0);
+            ERR_POST(Critical << msg);
+            if (dynamic)
+                free((void*) msg);
+        }
     }
     NCBI_CATCH_ALL("Test failed");
 
