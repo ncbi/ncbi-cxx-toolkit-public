@@ -43,6 +43,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 
 #include <algo/blast/format/vecscreen_run.hpp>
 
@@ -53,6 +54,7 @@
 
 
 using namespace ncbi;
+using namespace ncbi::blast;
 using namespace ncbi::objects;
 
 
@@ -60,11 +62,11 @@ BOOST_AUTO_TEST_SUITE(vecscreen_run)
 
 BOOST_AUTO_TEST_CASE(VecscreenRunWithHits)
 {
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*object_manager);
-    CRef<CScope> scope(new CScope(*object_manager));
-    // Add default loaders (GB loader in this demo) to the scope.
-    scope->AddDefaults();
+    const bool is_prot = false;
+    SDataLoaderConfig config(is_prot, SDataLoaderConfig::eUseGenbankDataLoader);
+
+    CBlastScopeSource ss(config);
+    CRef<CScope> scope = ss.NewScope();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     query_loc->SetWhole().SetGi(555);
@@ -85,11 +87,11 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithHits)
 
 BOOST_AUTO_TEST_CASE(VecscreenRunWithNoHits)
 {
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*object_manager);
-    CRef<CScope> scope(new CScope(*object_manager));
-    // Add default loaders (GB loader in this demo) to the scope.
-    scope->AddDefaults();
+    const bool is_prot = false;
+    SDataLoaderConfig config(is_prot, SDataLoaderConfig::eUseGenbankDataLoader);
+
+    CBlastScopeSource ss(config);
+    CRef<CScope> scope = ss.NewScope();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     query_loc->SetWhole().SetGi(405832);
