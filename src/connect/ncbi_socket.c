@@ -566,7 +566,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                     port = x_GetLocalPort(sock->sock);
             }
             if (port) {
-                sprintf(tail, " @:hu", port);
+                sprintf(tail, " @:%hu", port);
                 if (!sock->myport) {
                     /* here: not accepted network sockets only */
                     assert(sock->side == eSOCK_Client  ||  !ptr);
