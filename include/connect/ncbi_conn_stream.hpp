@@ -257,14 +257,14 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-    /// This variant uses existing socket "sock" to build the stream upon it.
-    /// The caller may retain ownership of "sock" by passing "if_to_own" as
-    /// "eNoOwnership" to the stream constructor -- in this case, the socket
-    /// "sock" will not be closed/destroyed upon stream destruction, and can
+    /// This variant uses an existing socket "sock" to build a stream upon it.
+    /// The caller may retain the ownership of "sock" by passing "if_to_own" as
+    /// "eNoOwnership" to the stream constructor -- in that case, the socket
+    /// "sock" will not be closed / destroyed upon stream destruction, and can
     /// further be used (including proper closing when no longer needed).
-    /// Otherwise, "sock" becomes invalid once the stream closed / destroyed.
-    /// NOTE:  "sock" should not be used elsewhere while it is also being
-    ///        in use by the stream.
+    /// Otherwise, "sock" becomes invalid once the stream is closed/destroyed.
+    /// NOTE:  To maintain data integrity and consistency, "sock" should not
+    ///        be used elsewhere while it is also being in use by the stream.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
     /// @param sock
@@ -277,17 +277,16 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-
     /// Defunct ctor -- DANGEROUS, DO NOT USE!  Buggy and obscure:
     /// 1.  It implicitly assumes SOCK ownership by the stream;
-    /// 2.  It silently ignores the "max_try" parameter.
+    /// 2.  It silently ignores the "max_try" parameter (even though
+    ///     it should not have allowed to pass a "0" value in there).
     NCBI_DEPRECATED
     CConn_SocketStream
     (SOCK            sock         /* "sock" is always owned by the stream! */,
      unsigned int    max_try  = 3 /* the value gets always ignored!        */,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
-
 
     /// This variant uses existing CSocket to build the stream upon it.
     /// NOTE:  it revokes all ownership of the sockets internals
