@@ -2455,9 +2455,9 @@ string s_SpecialValueName(CTimeout::EType type)
         return "eDefault";
     case CTimeout::eInfinite:
         return "eInfinity";
-        break;
     case CTimeout::eZero:
-        ; // kEmptySr;
+        // kEmptyStr
+        break;
     }
     return kEmptyStr;
 }
