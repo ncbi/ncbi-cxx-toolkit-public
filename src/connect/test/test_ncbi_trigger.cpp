@@ -228,7 +228,6 @@ void CTest::Server(void)
         ERR_POST("Cannot start server on port " << m_Port << " (port busy)");
     else
         ERR_POST(Info << "Server started on port " << m_Port << "...");
-
     _ASSERT(status == eIO_Success);
 
     // Spawn test thread to activate the trigger
@@ -243,7 +242,7 @@ void CTest::Server(void)
     for (;;) {
         size_t n;
         static const STimeout kTimeout = {DEFAULT_TIMEOUT - 1, 123456};
-        EIO_Status status = CSocketAPI::Poll(polls, &kTimeout, &n);
+        status = CSocketAPI::Poll(polls, &kTimeout, &n);
         if (status == eIO_Timeout) {
             _ASSERT(!n);
             break;

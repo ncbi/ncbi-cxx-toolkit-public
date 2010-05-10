@@ -435,7 +435,7 @@ int CTest::Run(void)
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
-        int exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
+        exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
         string infostr;
         if (exitinfo.IsPresent()) {
             if (exitinfo.IsExited()) {
