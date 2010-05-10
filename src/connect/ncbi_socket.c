@@ -419,10 +419,11 @@ static unsigned short x_GetLocalPort(TSOCK_Handle fd)
 #ifdef HAVE_SIN_LEN
     sin.sin_len = sinlen;
 #endif /*HAVE_SIN_LEN*/
-    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) < 0)
-        return 0;
-    assert(sin.sin_family == AF_INET);
-    return ntohs(sin.sin_port);
+    if (getsockname(fd, (struct sockaddr*) &sin, &sinlen) == 0
+        &&  sin.sin_family == AF_INET) {
+        return ntohs(sin.sin_port);
+    }
+    return 0;
 }
 
 
@@ -568,11 +569,12 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             if (port) {
                 sprintf(tail, " @:%hu", port);
                 if (!sock->myport) {
-                    /* here: not accepted network sockets only */
+                    /* here: not LSOCK_Accept()'d network sockets only */
                     assert(sock->side == eSOCK_Client  ||  !ptr);
                     sock->myport = port;
                 }
-            }
+            } else
+                *tail = '\0';
         }
         CORE_LOGF_X(112, level,
                     ("%s%s%s", s_ID(sock, _id), head, tail));
