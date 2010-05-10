@@ -191,7 +191,8 @@ inline streambuf* CCompressionStreambuf::setbuf(CT_CHAR_TYPE* /* buf */,
 {
     NCBI_THROW(CCompressionException, eCompression,
                "CCompressionStreambuf::setbuf() not allowed");
-    return this;  // notreached
+    /*NOTREACHED*/
+    return this;  // notreached /* NCBI_FAKE_WARNING */
 }
 
 

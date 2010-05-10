@@ -563,7 +563,7 @@ protected:
     virtual void x_Close(void);
 
     // Flush the archive (writing an appropriate EOT if necessary).
-    void x_Flush(bool nothrow = false);
+    void x_Flush(bool no_throw = false);
 
     // Backspace and skip the archive (in terms of blocks).
     void x_Backspace(EAction action, Uint8 blocks);

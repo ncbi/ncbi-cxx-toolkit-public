@@ -1079,7 +1079,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
 CTar::~CTar()
 {
     // Close stream(s)
-    x_Flush(true/*nothrow*/);
+    x_Flush(true/*no_throw*/);
     x_Close();
     delete m_FileStream;
 
@@ -1125,7 +1125,7 @@ void CTar::x_Init(void)
 }
 
 
-void CTar::x_Flush(bool nothrow)
+void CTar::x_Flush(bool no_throw)
 {
     m_Current.m_Name.erase();
     if (!m_Stream  ||  !m_OpenMode  ||  !m_Modified) {
@@ -1136,23 +1136,23 @@ void CTar::x_Flush(bool nothrow)
     size_t pad = m_BufferSize - m_BufferPos;
     // Assure proper blocking factor and pad the archive as necessary
     memset(m_Buffer + m_BufferPos, 0, pad);
-    x_WriteArchive(pad, nothrow ? (const char*)(-1L) : 0);
+    x_WriteArchive(pad, no_throw ? (const char*)(-1L) : 0);
     _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
     _ASSERT(!m_Bad == !m_BufferPos);
     if (!m_Bad
         &&  (pad < BLOCK_SIZE || pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize - pad);
-        x_WriteArchive(m_BufferSize, nothrow ? (const char*)(-1L) : 0);
+        x_WriteArchive(m_BufferSize, no_throw ? (const char*)(-1L) : 0);
         _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         if (!m_Bad  &&  m_BufferSize == BLOCK_SIZE) {
-            x_WriteArchive(BLOCK_SIZE, nothrow ? (const char*)(-1L) : 0);
+            x_WriteArchive(BLOCK_SIZE, no_throw ? (const char*)(-1L) : 0);
             _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         }
     }
     if (!m_Bad  &&  m_Stream->rdbuf()->PUBSYNC() != 0) {
         int x_errno = errno;
-        if (!nothrow) {
+        if (!no_throw) {
             TAR_THROW(this, eWrite,
                       "Archive flush failed" + s_OSReason(x_errno));
         }
