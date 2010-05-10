@@ -97,8 +97,7 @@ private:
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
-    void                x_Init(bool close, const STimeout* timeout,
-                               streamsize buf_size,
+    void                x_Init(const STimeout* timeout, streamsize buf_size,
                                CT_CHAR_TYPE* ptr, size_t size);
 
     void                x_Close(bool close);

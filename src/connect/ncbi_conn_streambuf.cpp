@@ -64,7 +64,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
         return;
     }
     _ASSERT(m_Conn != 0);
-    x_Init(true, timeout, buf_size, ptr, size);
+    x_Init(timeout, buf_size, ptr, size);
 }
 
 
@@ -83,13 +83,12 @@ CConn_Streambuf::CConn_Streambuf(CONN            conn,
         ERR_POST_X(1, x_Message("CConn_Streambuf(): NULL connection"));
         return;
     }
-    x_Init(close, timeout, buf_size, ptr, size);
+    x_Init(timeout, buf_size, ptr, size);
     m_Status = eIO_Success;
 }
 
 
-void CConn_Streambuf::x_Init(bool close, const STimeout* timeout,
-                             streamsize buf_size,
+void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
     if (timeout != kDefaultTimeout) {
@@ -108,7 +107,7 @@ void CConn_Streambuf::x_Init(bool close, const STimeout* timeout,
         setg(m_ReadBuf, m_ReadBuf, m_ReadBuf); // Empty get area
 
     SCONN_Callback cb;
-    cb.func = x_OnClose;
+    cb.func = x_OnClose; /* NCBI_FAKE_WARNING: WorkShop */
     cb.data = this;
     CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
     m_CbValid = true;
