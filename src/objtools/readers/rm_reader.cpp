@@ -137,9 +137,9 @@ struct CMaskData
     unsigned long outer_pos_begin;
     unsigned long outer_pos_end;
     int outer_left;
-    double perc_div;
-    double perc_del;
-    double perc_ins;
+    int perc_div;
+    int perc_del;
+    int perc_ins;
     string query_sequence;
     string strand;
     string matching_repeat;
@@ -313,15 +313,15 @@ bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
         
         // 2: "perc div."
         ++it;
-        mask_data.perc_div = NStr::StringToDouble( *it );
+        mask_data.perc_div = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
         
         // 3: "perc del."
         ++it;
-        mask_data.perc_del = NStr::StringToDouble( *it );
+        mask_data.perc_del = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
         
         // 4: "perc ins."
         ++it;
-        mask_data.perc_ins = NStr::StringToDouble( *it );
+        mask_data.perc_ins = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
         
         // 5: "query sequence"
         ++it;
@@ -386,6 +386,10 @@ bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
         return false;
     }
     
+    if (mask_data.outer_pos_begin == 0 || mask_data.outer_pos_end == 0 ||
+            mask_data.outer_pos_end < mask_data.outer_pos_begin) {
+        return false;
+    }
     return true;
 }
 
@@ -451,17 +455,17 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
             
             CRef<CGb_qual> perc_div( new CGb_qual );
             perc_div->SetQual( "perc_div" );
-            perc_div->SetVal( NStr::DoubleToString( mask_data.perc_div ) );
+            perc_div->SetVal( NStr::IntToString( mask_data.perc_div ) );
             qual_list.push_back( perc_div );
             
             CRef<CGb_qual> perc_del( new CGb_qual );
             perc_del->SetQual( "perc_del" );
-            perc_del->SetVal( NStr::DoubleToString( mask_data.perc_del ) );
+            perc_del->SetVal( NStr::IntToString( mask_data.perc_del ) );
             qual_list.push_back( perc_del );
             
             CRef<CGb_qual> perc_ins( new CGb_qual );
             perc_ins->SetQual( "perc_ins" );
-            perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
+            perc_ins->SetVal( NStr::IntToString( mask_data.perc_ins ) );
             qual_list.push_back( perc_ins );
         }
 
