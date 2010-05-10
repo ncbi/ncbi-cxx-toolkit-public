@@ -98,7 +98,9 @@ static void s_DoServer(unsigned short port, int n_cycle)
 
         /* Close connection */
         status = SOCK_Close(sock);
+#ifndef TEST_IGNORE_CLOSE
         assert(status == eIO_Success  ||  status == eIO_Closed);
+#endif /*TEST_IGNORE_CLOSE*/
     }
 
     /* Close listening socket */

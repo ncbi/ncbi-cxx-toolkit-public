@@ -37,22 +37,6 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  define X_SLEEP(x) /*((void) sleep(x))*/
-#  ifdef NCBI_OS_BSD
-#    include <sys/param.h>
-#    ifdef __FreeBSD_version
-#      if __FreeBSD_version / 100000 == 8
-       /* If a client orderly closes a data connection and does some reconnect
-        * attempts (connect / close in rather rapid succession), while the
-        * server side proceeds with closing the original connection, FreeBSD
-        * 8.0 sometimes returns -1 from the server's close() with errno set to
-        * "Connection reset by peer".
-        * We consider this behavior as a kernel bug / race condition as it
-        * disappears if either server or client (or both) get ktrace'd.
-        */
-#        define TEST_IGNORE_CLOSE 1
-#      endif /*__FreeBSD_version/100000==8*/
-#    endif /*__FreeBSD_version*/
-#  endif /*NCBI_OS_BSD*/
 #elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
 #  define X_SLEEP(x) /*((void) Sleep(1000 * x))*/
