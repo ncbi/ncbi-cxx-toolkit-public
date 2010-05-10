@@ -1838,6 +1838,7 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
     case eSubSat_MGC:
     case eSubSat_tRNA:
     case eSubSat_STS:
+    case eSubSat_microRNA:
     case eSubSat_Exon:
         return blob_id.GetSat() == eSat_ANNOT;
     case eSubSat_CDD:
@@ -1922,6 +1923,11 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         name.SetNamed("STS");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_STS);
         db_name = "Annot:STS";
+        break;
+    case eSubSat_microRNA:
+        name.SetNamed("other");
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_ncRNA);
+        db_name = "Annot:microRNA";
         break;
     case eSubSat_Exon:
         name.SetNamed("Exon");

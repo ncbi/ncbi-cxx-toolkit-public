@@ -68,6 +68,7 @@ public:
         eSubSat_HPRD = 1<<5,
         eSubSat_STS  = 1<<6,
         eSubSat_tRNA = 1<<7,
+        eSubSat_microRNA = 1<<8,
         eSubSat_Exon = 1<<9
     };
     typedef int TSubSat;

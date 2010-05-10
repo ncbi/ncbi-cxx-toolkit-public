@@ -273,6 +273,7 @@ static const TSI sc_SatIndex[] = {
     TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT_CDD,  TRDR::eSubSat_CDD)),
     TSI("ANNOT:EXON", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_Exon)),
     TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
+    TSI("ANNOT:microRNA", TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_microRNA)),
     TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
     TSI("ANNOT:SNP GRAPH",TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph)),
     TSI("ANNOT:STS",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_STS)),
