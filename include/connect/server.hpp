@@ -72,7 +72,7 @@ enum EServIO_Event {
 inline EServIO_Event
 IOEventToServIOEvent(EIO_Event event)
 {
-    return (EServIO_Event)event;
+    return (EServIO_Event) event;
 }
 
 
@@ -146,7 +146,7 @@ protected:
     /// Runs synchronously when no socket activity has occurred in a
     /// while (as determined by m_AcceptTimeout).
     /// @sa m_Parameters->accept_timeout
-    virtual void ProcessTimeout(void) {}
+    virtual void ProcessTimeout(void) { }
 
     /// Runs synchronously between iterations.
     /// @return
@@ -233,7 +233,7 @@ public:
     };
 
     /// The connection has closed (with information on type of closing)
-    virtual void OnClose(EClosePeer peer) { }
+    virtual void OnClose(EClosePeer /*peer*/) { }
 
     /// Runs when a client has been idle for too long, prior to
     /// closing the connection [synchronous].
