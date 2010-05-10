@@ -15,3 +15,5 @@ LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
 # LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 ### END COPIED SETTINGS
+
+WATCHERS = ucko

@@ -26,3 +26,5 @@ ORIG_CPPFLAGS = -I$(includedir) -I$(includedir)/internal $(CONF_CPPFLAGS)
 LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 
+
+WATCHERS = rotmistr

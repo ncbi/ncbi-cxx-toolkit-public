@@ -13,3 +13,5 @@ SRC = soap_server_sample
 LIB = soap_dataobj xsoap_server xsoap xcgi xconnect xser xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
+
+WATCHERS = gouriano

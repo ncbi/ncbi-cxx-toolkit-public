@@ -11,3 +11,5 @@ SRC = test_mzxml
 LIB = mzXML general xconnect xser xutil xncbi
 #                                                                         ###
 #############################################################################
+
+WATCHERS = slottad

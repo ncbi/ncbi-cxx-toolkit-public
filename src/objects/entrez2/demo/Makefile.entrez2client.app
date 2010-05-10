@@ -12,3 +12,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
 
+
+WATCHERS = dicuccio

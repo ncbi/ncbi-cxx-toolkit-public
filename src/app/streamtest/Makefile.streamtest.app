@@ -14,3 +14,5 @@ LIB = xobjutil xcleanup prosplign submit xalgoalignutil xqueryparse xalnmgr \
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects algo
+
+WATCHERS = kans

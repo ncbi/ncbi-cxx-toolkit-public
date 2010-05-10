@@ -16,3 +16,5 @@ LIB = xalnmgr tables $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
+
+WATCHERS = grichenk

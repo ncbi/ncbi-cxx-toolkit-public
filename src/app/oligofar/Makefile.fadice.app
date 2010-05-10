@@ -30,3 +30,5 @@ REQUIRES = objects -Cygwin
 # LDFLAGS  = $(ORIG_LDFLAGS)
 #                                                                         ###
 #############################################################################
+
+WATCHERS = rotmistr

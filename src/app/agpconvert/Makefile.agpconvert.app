@@ -13,3 +13,5 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 REQUIRES = objects algo
+
+WATCHERS = xiangcha

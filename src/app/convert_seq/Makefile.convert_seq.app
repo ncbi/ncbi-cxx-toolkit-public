@@ -8,3 +8,5 @@ LIB = xformat xalnmgr gbseq xobjutil xobjread creaders tables submit \
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
+
+WATCHERS = ucko

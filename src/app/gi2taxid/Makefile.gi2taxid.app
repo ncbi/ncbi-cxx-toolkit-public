@@ -9,3 +9,5 @@ LIB = id1cli id1 taxon1 seqset $(SEQ_LIBS) pub medline biblio general xser xconn
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
+
+WATCHERS = dicuccio

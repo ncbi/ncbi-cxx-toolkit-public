@@ -15,3 +15,5 @@ LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
+
+WATCHERS = bollin

@@ -10,3 +10,5 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
+
+WATCHERS = sapojnik

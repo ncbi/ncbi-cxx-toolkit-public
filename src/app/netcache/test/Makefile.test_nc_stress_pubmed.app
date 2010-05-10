@@ -8,3 +8,5 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = unix
 
+
+WATCHERS = ivanovp

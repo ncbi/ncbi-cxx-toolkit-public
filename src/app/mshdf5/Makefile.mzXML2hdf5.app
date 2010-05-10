@@ -21,3 +21,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(HDF5_INCLUDE)
 
 #                                                                         ###
 #############################################################################
+
+WATCHERS = slottad

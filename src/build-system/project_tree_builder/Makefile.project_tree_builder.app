@@ -39,3 +39,5 @@ LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 # Build even --without-exe, to avoid breaking --with-flat-makefile
 # configurations unable to locate a suitable prebuilt copy.
 APP_OR_NULL = app
+
+WATCHERS = gouriano

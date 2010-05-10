@@ -16,3 +16,5 @@ LIB = ncbi_xloader_lds lds xobjread bdb xobjutil $(SOBJMGR_LIBS)
 
 LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
+
+WATCHERS = vasilche

@@ -16,3 +16,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
 ### END COPIED SETTINGS
+
+WATCHERS = grichenk

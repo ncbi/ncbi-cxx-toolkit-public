@@ -11,3 +11,5 @@ SRC = test_ncbimime
 LIB = ncbimime cdd scoremat cn3d mmdb seqset $(SEQ_LIBS) \
 	pub medline medlars biblio pub general \
 	xser xutil xncbi
+
+WATCHERS = vasilche

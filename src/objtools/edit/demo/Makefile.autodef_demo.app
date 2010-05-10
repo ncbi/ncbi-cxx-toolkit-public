@@ -6,3 +6,5 @@ SRC = autodef_demo
 LIB = xobjedit xobjutil $(SOBJMGR_LIBS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
+
+WATCHERS = bollin

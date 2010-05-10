@@ -15,3 +15,5 @@ LIB = ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb \
       dbapi_driver$(STATIC) $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+
+WATCHERS = vasilche

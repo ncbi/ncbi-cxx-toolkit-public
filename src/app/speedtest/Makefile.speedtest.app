@@ -15,3 +15,5 @@ LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects algo -Cygwin
 
+
+WATCHERS = ludwigf

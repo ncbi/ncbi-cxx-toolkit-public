@@ -17,3 +17,5 @@ LIB = xgridcgi ncbi_xblobstorage_netcache xcgi xhtml xconnserv \
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 ### END COPIED SETTINGS
+
+WATCHERS = kazimird

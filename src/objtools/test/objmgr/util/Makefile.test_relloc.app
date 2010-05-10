@@ -12,3 +12,5 @@ SRC = test_relloc
 LIB = xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+WATCHERS = ucko

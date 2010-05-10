@@ -9,3 +9,5 @@ SRC = agp_renumber
 
 LIB = xobjread seqset $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
+
+WATCHERS = sapojnik

@@ -14,3 +14,5 @@ SRC = test_reader_pubseq
 LIB = $(GENBANK_READER_PUBSEQOS_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
+WATCHERS = vasilche

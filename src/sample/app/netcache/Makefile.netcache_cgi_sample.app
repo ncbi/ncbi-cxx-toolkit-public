@@ -6,3 +6,5 @@ LIB = ncbi_xblobstorage_netcache xconnserv xconnect xcgi xhtml xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+
+WATCHERS = kazimird

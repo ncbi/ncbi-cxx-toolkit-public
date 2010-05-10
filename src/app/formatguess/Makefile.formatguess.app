@@ -13,3 +13,5 @@ LIB = xobjread creaders seqset $(SEQ_LIBS) pub medline biblio general \
 
 REQUIRES = objects -Cygwin
 
+
+WATCHERS = ludwigf
