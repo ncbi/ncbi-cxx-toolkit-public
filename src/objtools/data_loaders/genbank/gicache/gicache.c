@@ -268,17 +268,6 @@ static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
     return (data_index->m_DataFile >= 0);
 }
 
-/* Opens data and index files, including check if they are already open. */
-static Uint1 x_OpenFiles(SGiDataIndex* data_index)
-{
-    if (!x_OpenIndexFiles(data_index))
-        return 0;
-    if (!x_OpenDataFiles(data_index))
-        return 0;
-
-    return 1;
-}
-
 /* hack needed for SGI IRIX where MAP_NORESERVE isn't defined. Dima */
 #ifndef MAP_NORESERVE
 #define MAP_NORESERVE (0)
@@ -321,14 +310,6 @@ static Uint1 x_MapData(SGiDataIndex* data_index)
     }
 
     return (data_index->m_Data != MAP_FAILED);
-}
-
-static Uint1 x_Map(SGiDataIndex* data_index)
-{
-    if (!x_MapIndex(data_index)) return 0;
-    if (!x_MapData(data_index)) return 0;
-
-    return 1;
 }
 
 static Uint1 x_ReMapIndex(SGiDataIndex* data_index)
@@ -700,15 +681,6 @@ static const char* GiDataIndex_GetData(SGiDataIndex* data_index, int gi)
     return x_GetGiData(data_index, gi);
 }
 
-/* Returns data corresponding to a given gi, for possible modification. */
-static char* GiDataIndex_SetData(SGiDataIndex* data_index, int gi)
-{
-    if (data_index->m_ReadOnlyMode)
-        return NULL;
-
-    return x_GetGiData(data_index, gi);
-}
-
 /* Writes data for a gi. */
 static Uint1
 GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
@@ -830,6 +802,16 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     return 1;
 }
 
+#ifdef ALLOW_IN_PLACE_MODIFICATION
+/* Returns data corresponding to a given gi, for possible modification. */
+static char* GiDataIndex_SetData(SGiDataIndex* data_index, int gi)
+{
+    if (data_index->m_ReadOnlyMode)
+        return NULL;
+
+    return x_GetGiData(data_index, gi);
+}
+
 /* Deletes data for a gi. */
 static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
 {
@@ -901,7 +883,6 @@ static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
     }
     return 1;
 }
-
 /* Returns pointer to the start of data in the data file. Needed when
  * the whole data file needs to be read sequentially.
  * NB: This may involve remapping, hence no 'const' qualifier
@@ -930,6 +911,12 @@ GiDataIndex_GetAllData(SGiDataIndex* data_index, const char* *data_ptr,
     *data_ptr = data_index->m_Data + 2*sizeof(int);
     *data_size = data_index->m_DataLen + data_index->m_DataCacheLen - 2*sizeof(int);
 }
+
+static int GiDataIndex_GetMappedSize(SGiDataIndex* data_index)
+{
+    return data_index->m_MappedDataLen + data_index->m_MappedIndexLen;
+}
+#endif
 
 static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
 {
@@ -993,11 +980,51 @@ static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
     return gi;
 }
 
-static int GiDataIndex_GetMappedSize(SGiDataIndex* data_index)
+/****************************************************************************
+ *
+ * gicache_lib.c 
+ *
+ ****************************************************************************/
+
+#define MAX_ACCESSION_LENGTH 64
+
+static SGiDataIndex gi_cache;
+
+static void x_GICacheInit(const char* prefix, Uint1 readonly)
 {
-    return data_index->m_MappedDataLen + data_index->m_MappedIndexLen;
+    char prefix_str[256];
+
+    // First try local files
+    sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
+
+    /* When reading data, use readonly mode. */
+    GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+
+    if (readonly) {
+        /* Check whether gi cache is available at this location, by trying to
+           map it right away. If local cache isn't found, use default path and
+           try again. */
+        Uint1 cache_found = GiDataIndex_ReMap(&gi_cache, 0);
+        if (!cache_found) {
+            sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
+                    DEFAULT_GI_CACHE_PREFIX);
+            GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
+        }
+    }
 }
 
+void GICache_ReadData(const char *prefix)
+{
+    x_GICacheInit(prefix, 1);
+}
+
+void GICache_ReMap(int delay_in_sec) {
+    /* If this library function is being called, delayed remapping is
+       established, i.e. any future remapping is only done from here, but not on
+       read attempts. */
+    gi_cache.m_RemapOnRead = 0;
+    GiDataIndex_ReMap(&gi_cache, delay_in_sec*1000);
+}
 
 /* When encoding in 4 bytes, top bit serves as control */
 static INLINE int s_EncodeInt4(char* buf, Uint4 val)

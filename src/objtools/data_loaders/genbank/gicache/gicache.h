@@ -8,9 +8,15 @@ extern "C" {
 #define DEFAULT_GI_CACHE_PATH "/panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/gi_cache"
 #define DEFAULT_GI_CACHE_PREFIX "gi2acc"
 
-/* Populates the cache */
+/* Populates the cache. One of 3 options are available to determine which gis
+ * to include in cache on this run:
+ * 1. Use provided SQL condition;
+ * 2. Use provided temporary table (in tempdb database) with a list of gis;
+ * 3. Start from the next gi after the maximal gi currently present in cache;
+ */
 int         GICache_PopulateAccessions(char *server, const char *cache_prefix,
-                                       const char *sql_gi_cond);
+                                       const char *sql_gi_cond,
+                                       const char *temptable);
 
 /* Initializes the cache. If cache_prefix argument is not provided, default name
  * is used. If local cache is not available, use default path and prefix. 
