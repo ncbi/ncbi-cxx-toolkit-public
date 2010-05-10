@@ -1533,7 +1533,7 @@ bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
         return true;
     }
     
-    oid = -1u;
+    oid = -1u;  /* NCBI_FAKE_WARNING */
     
     return false;
 }

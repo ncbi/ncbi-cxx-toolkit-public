@@ -68,7 +68,7 @@ void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
         {
             char letter = data[i];
 
-            if( imask != mask.end() && i >= imask->first )
+            if( imask != mask.end() && i >= imask->first ) {
                 if( i <= imask->second ) 
                     letter = tolower((unsigned char) letter);
                 else
@@ -79,6 +79,7 @@ void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
                         && i >= imask->first && i <= imask->second )
                         letter = tolower((unsigned char) letter);
                 }
+            }
 
             accumulator.append( 1, letter );
 
