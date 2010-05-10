@@ -525,30 +525,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
     switch (event) {
     case eIO_Open:
         assert(sock->type & eSocket);
-        if (sock->type == eDatagram) {
-            if (!(sin = (const struct sockaddr_in*) ptr)) {
-                strcpy(head, "Created");
-                *tail = '\0';
-            } else {
-                if (!data) {
-                    if (sin->sin_port) {
-                        strcpy(head, "Bound @");
-                        sprintf(tail, "(:%hu)", ntohs(sin->sin_port));
-                    } else {
-                        strcpy(head, "Unbound");
-                        *tail = '\0';
-                    }
-                } else if (sin->sin_family == AF_INET) {
-                    strcpy(head, "Associated with ");
-                    SOCK_HostPortToString(sin->sin_addr.s_addr,
-                                          ntohs(sin->sin_port),
-                                          tail, sizeof(tail));
-                } else {
-                    strcpy(head, "Disassociated");
-                    *tail = '\0';
-                }
-            }
-        } else {
+        if (sock->type != eDatagram) {
             unsigned short port;
             if (sock->side == eSOCK_Client) {
                 strcpy(head, ptr ? "Connected" : "Connecting");
@@ -575,6 +552,25 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                 }
             } else
                 *tail = '\0';
+        } else if (!(sin = (const struct sockaddr_in*) ptr)) {
+            strcpy(head, "Created");
+            *tail = '\0';
+        } else if (!data) {
+            if (sin->sin_port) {
+                strcpy(head, "Bound @");
+                sprintf(tail, "(:%hu)", ntohs(sin->sin_port));
+            } else {
+                strcpy(head, "Unbound");
+                *tail = '\0';
+            }
+        } else if (sin->sin_family == AF_INET) {
+            strcpy(head, "Associated with ");
+            SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                  ntohs(sin->sin_port),
+                                  tail, sizeof(tail));
+        } else {
+            strcpy(head, "Disassociated");
+            *tail = '\0';
         }
         CORE_LOGF_X(112, level,
                     ("%s%s%s", s_ID(sock, _id), head, tail));
