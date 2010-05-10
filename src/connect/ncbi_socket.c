@@ -1193,8 +1193,8 @@ static EIO_Status s_Select_(size_t                n,
             if (!type || (EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 if (!bad) {
-                    ready = 0;
-                    bad   = 1;
+                    ready = 0/*false*/;
+                    bad   = 1/*true*/;
                 }
                 continue;
             }
@@ -1202,17 +1202,14 @@ static EIO_Status s_Select_(size_t                n,
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
-
-            if ((fd = sock->sock) == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                if (!bad)
-                    ready = 1;
-                continue;
-            }
-
             if (bad)
                 continue;
 
+            if ((fd = sock->sock) == SOCK_INVALID) {
+                polls[i].revent = eIO_Close;
+                ready = 1/*true*/;
+                continue;
+            }
             if (polls[i].revent) {
                 ready = 1;
                 if (polls[i].revent == eIO_Close)
@@ -1225,6 +1222,7 @@ static EIO_Status s_Select_(size_t                n,
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             if (fd >= FD_SETSIZE) {
                 if (!x_TryLowerSockFileno(sock)) {
+                    /* NB: only once here, as this sets "bad" to "1" */
                     CORE_LOGF_ERRNO_X(145, eLOG_Error, errno,
                                       ("%s[SOCK::Select] "
                                        " Socket file descriptor must "
@@ -1290,17 +1288,13 @@ static EIO_Status s_Select_(size_t                n,
                 nfds = (int) fd;
 
 #  ifdef NCBI_OS_MSWIN
-            if (count != (unsigned int)(-1))
-                count++;
             /* check whether FD_SETSIZE has been exceeded */
             if (!FD_ISSET(fd, &efds)) {
-                if (count != (unsigned int)(-1)) {
-                    CORE_LOGF_X(145, eLOG_Error,
-                                ("[SOCK::Select] "
-                                 " Too many sockets in select(),"
-                                 " must be less than %u", count));
-                    count = (unsigned int)(-1);
-                }
+                /* NB: only once here, as this sets "bad" to "1" */
+                CORE_LOGF_X(145, eLOG_Error,
+                            ("[SOCK::Select] "
+                             " Too many sockets in select(),"
+                             " must be less than %u", count));
                 polls[i].revent = eIO_Close;
                 ready = bad = 1;
                 continue;
@@ -1483,6 +1477,14 @@ static EIO_Status s_Poll_(size_t                n,
     unsigned int   m;
     size_t         i;
 
+    if (s_IOWaitSysAPI != eSOCK_IOWaitSysAPIAuto)
+        m = (unsigned int) n;
+    else
+#ifdef FD_SETSIZE
+    if (n > FD_SETSIZE)
+        m = (unsigned int) n;
+    else
+#endif /*FD_SETSIZE*/
     if (!(m = s_CountPolls(n, polls)))
         return s_Select_(n, polls, tv, asis);
 
@@ -1499,8 +1501,9 @@ static EIO_Status s_Poll_(size_t                n,
     status = eIO_Success;
     wait = tv ? (int)(tv->tv_sec * 1000 + (tv->tv_usec + 500) / 1000) : -1;
     for (;;) { /* optionally auto-resume if interrupted / sliced */
-        int x_ready;
-        int slice;
+        int/*bool*/ bad = 0/*false*/;
+        int         x_ready;
+        int         slice;
 
         ready = count = 0;
         for (i = 0;  i < n;  i++) {
@@ -1510,23 +1513,30 @@ static EIO_Status s_Poll_(size_t                n,
             ESOCK_Type   type;
             TSOCK_Handle fd;
 
-            if (!(sock = polls[i].sock))
+            if (!(sock = polls[i].sock)) {
+                assert(!polls[i].revent/*eIO_Open*/);
                 continue;
+            }
 
-            /* params must be all sane -- checked in s_CountPolls() */
-            event = polls[i].event;
-            assert((EIO_Event)(event | eIO_ReadWrite) == eIO_ReadWrite);
-            if (!event)
-                continue;
             type = (ESOCK_Type) sock->type;
-            assert(type);
+            event = polls[i].event;
+            if (!type || (EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+                polls[i].revent = eIO_Close;
+                bad = 1/*true*/;
+                continue;
+            }
+            if (!event) {
+                assert(!polls[i].revent/*eIO_Open*/);
+                continue;
+            }
+            if (bad)
+                continue;
 
             if ((fd = sock->sock) == SOCK_INVALID) {
                 polls[i].revent = eIO_Close;
                 ready++;
                 continue;
             }
-
             if (polls[i].revent) {
                 ready++;
                 if (polls[i].revent == eIO_Close)
@@ -1578,6 +1588,11 @@ static EIO_Status s_Poll_(size_t                n,
             count++;
         }
         assert(i >= n);
+
+        if (bad) {
+            errno = EINVAL;
+            return eIO_InvalidArg;
+        }
 
         if (s_SelectTimeout) {
             slice = ( s_SelectTimeout->tv_sec         * 1000 +
@@ -1741,14 +1756,14 @@ static EIO_Status s_Select(size_t                n,
     DWORD wait = tv? tv->tv_sec * 1000 + (tv->tv_usec + 500) / 1000 : INFINITE;
 
     for (;;) { /* timeslice loop */
-        HANDLE             what[MAXIMUM_WAIT_OBJECTS];
-        long               want[MAXIMUM_WAIT_OBJECTS];
-        char               _id[MAXIDLEN];
-        int/*signed bool*/ ready = 0/*false*/;
-        int/*bool*/        bad = 0/*false*/;
-        DWORD              count = 0;
-        DWORD              slice;
-        size_t             i;
+        HANDLE      what[MAXIMUM_WAIT_OBJECTS];
+        long        want[MAXIMUM_WAIT_OBJECTS];
+        char        _id[MAXIDLEN];
+        int/*bool*/ ready = 0/*false*/;
+        int/*bool*/ bad = 0/*false*/;
+        DWORD       count = 0;
+        DWORD       slice;
+        size_t      i;
 
         for (i = 0;  i < n;  i++) {
             long       bitset;
@@ -1776,17 +1791,14 @@ static EIO_Status s_Select(size_t                n,
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
-
-            if (sock->sock == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                if (!bad)
-                    ready = 1/*true*/;
-                continue;
-            }
-
             if (bad)
                 continue;
 
+            if (sock->sock == SOCK_INVALID) {
+                polls[i].revent = eIO_Close;
+                ready = 1/*true*/;
+                continue;
+            }
             if (polls[i].revent) {
                 ready = 1/*true*/;
                 if (polls[i].revent == eIO_Close)
@@ -1859,13 +1871,12 @@ static EIO_Status s_Select(size_t                n,
                 ev = ((TRIGGER) sock)->fd;
 
             if (count >= sizeof(what)/sizeof(what[0])) {
-                if (count != (DWORD)(-1)) {
-                    CORE_LOGF_X(145, eLOG_Error,
-                                ("[SOCK::Select] "
-                                 " Too many objects, must be less than %u",
-                                 (unsigned int) count));
-                    count = (DWORD)(-1);
-                }
+                /* NB: only once here, as this sets "bad" to "1" */
+                CORE_LOGF_X(145, eLOG_Error,
+                            ("[SOCK::Select] "
+                             " Too many objects, must be less than %u",
+                             (unsigned int) count));
+                polls[i].revent = eIO_Close;
                 ready = bad = 1/*true*/;
                 continue;
             }
@@ -1878,11 +1889,10 @@ static EIO_Status s_Select(size_t                n,
             if (!ready) {
                 errno = EINVAL;
                 return eIO_InvalidArg;
-            } else if (ready > 0) {
+            } else {
                 errno = SOCK_ETOOMANY;
                 return eIO_Unknown;
-            } else
-                return eIO_NotSupported;
+            }
         }
 
         if (s_SelectTimeout) {
