@@ -147,10 +147,22 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 
 
 CConn_SocketStream::CConn_SocketStream(SOCK            sock,
-                                       unsigned int    own_sock,
+                                       EOwnership      if_to_own,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
-    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, own_sock),
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock,if_to_own != eNoOwnership),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+/* FIXME:  To remove! */
+CConn_SocketStream::CConn_SocketStream(SOCK            sock,
+                                       unsigned int    /*max_try*/,
+                                       const STimeout* timeout,
+                                       streamsize      buf_size)
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, 1/*own*/),
                      timeout, buf_size)
 {
     return;
