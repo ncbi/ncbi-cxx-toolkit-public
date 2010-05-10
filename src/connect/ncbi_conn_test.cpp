@@ -73,7 +73,6 @@ CConnTest::CConnTest(const STimeout* timeout, CNcbiOstream* out)
 {
     memset(&m_TimeoutValue, 0, sizeof(m_TimeoutValue));
     if (timeout) {
-        static const STimeout kTimeout = {30, 0};
         m_TimeoutValue = timeout != kDefaultTimeout ? *timeout : kTimeout;
         m_Timeout      = &m_TimeoutValue;
     } else
