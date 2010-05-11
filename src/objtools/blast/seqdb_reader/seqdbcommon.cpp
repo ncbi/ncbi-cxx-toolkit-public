@@ -447,6 +447,13 @@ string SeqDB_ResolveDbPath(const string & filename)
                                    access);
 }
 
+string SeqDB_ResolveDbPathNoExtension(const string & filename, 
+                                      char dbtype /* = '-' */)
+{
+    CSeqDB_SimpleAccessor access;
+    
+    return s_SeqDB_FindBlastDBPath(filename, dbtype, 0, false, access);
+}
 
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
 {

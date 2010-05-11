@@ -36,6 +36,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include "writedb_impl.hpp"
 #include "writedb_convert.hpp"
 #include <iostream>
@@ -238,14 +239,106 @@ void CBinaryListBuilder::Write(CNcbiOstream& outp)
     }
 }
 
+/// Returns true if the BLAST DB exists, otherwise throws a CSeqDBException
+/// @param dbname name of BLAST DB [in]
+/// @param is_prot is the BLAST DB protein? [in]
+static bool 
+s_DoesBlastDbExist(const string& dbname, bool is_protein)
+{
+    char dbtype(is_protein ? 'p' : 'n');
+    string path = SeqDB_ResolveDbPathNoExtension(dbname, dbtype);
+    if (path.empty()) {
+        string msg("Failed to find ");
+        msg += (is_protein ? "protein " : "nucleotide ");
+        msg += dbname + " BLAST database";
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+    return true;
+}
+
+/// Computes the number of sequences and (alias) database length for alias
+/// files
+/// @param dbname Name of the BLAST database over which the alias file is being
+/// created [in]
+/// @param is_prot is the BLAST database protein? [in]
+/// @param gi_file_name File name of the GI file to apply as a filter to the
+/// BLAST database, if empty, it's ignored [in]
+/// @param dbsize (Approximate) number of letters in the BLAST DB [out]
+/// @param num_seqs_found Number of sequences found in the dbname, or the
+/// number of sequences in the intersection between the dbname and the GIs in
+/// the gi_file_name (if applicable) [out]
+/// @param num_seqs_in_gifile Number of sequences in the gi_file_name (if
+/// applicable [out]
+static void
+s_ComputeNumSequencesAndDbLength(const string& dbname,
+                                 bool is_prot,
+                                 Uint8* dbsize,
+                                 int* num_seqs_found,
+                                 const string& gi_file_name = kEmptyStr,
+                                 int* num_seqs_in_gifile = NULL)
+{
+    _ASSERT((dbsize != NULL));
+    _ASSERT(num_seqs_found != NULL);
+    *dbsize = 0u;
+    *num_seqs_found = 0u;
+
+    CSeqDB::ESeqType dbtype(is_prot ? CSeqDB::eProtein : CSeqDB::eNucleotide);
+    CRef<CSeqDBFileGiList> gilist;
+    if ( !gi_file_name.empty() ) {
+        gilist.Reset(new CSeqDBFileGiList(gi_file_name));
+        if (num_seqs_in_gifile) {
+            *num_seqs_in_gifile = gilist->Size();
+        }
+    }
+
+    CRef<CSeqDB> dbhandle(new CSeqDB(dbname, dbtype, gilist.GetPointer()));
+    dbhandle->GetTotals(CSeqDB::eFilteredAll, num_seqs_found, dbsize, true);
+    if (*num_seqs_found == 0) {
+        string msg("No GIs in ");
+        msg += gi_file_name + " were found in ";
+        msg += (is_prot ? "protein " : "nucleotide ");
+        msg += dbname + " BLAST database";
+        NCBI_THROW(CSeqDBException, eArgErr, msg);
+    }
+}
+
+static void
+s_PrintAliasFileCreationLog(const string& dbname,
+                            bool is_protein,
+                            int num_seqs_found,
+                            const string& gi_file_name = kEmptyStr,
+                            int num_seqs_in_gifile = 0)
+{
+    if (gi_file_name != kEmptyStr) {
+        LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
+            dbname << " BLAST (alias) database with " << num_seqs_found 
+            << " sequences (out of " << num_seqs_in_gifile << " in " 
+            << gi_file_name << ", " << setprecision(0) << fixed << 
+            (num_seqs_found*100.0/num_seqs_in_gifile) << "% found)");
+    } else {
+        LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
+            "BLAST (alias) database over " << dbname << " with " << 
+            num_seqs_found << " sequences");
+    }
+}
+
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
                               const string& title)
 {
+    bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
+    s_DoesBlastDbExist(db_name, is_prot);
+    Uint8 dbsize = 0;
+    int num_seqs = 0;
+    int num_gis = 0;
+    s_ComputeNumSequencesAndDbLength(db_name, is_prot, &dbsize, &num_seqs, 
+                                     gi_file_name, &num_gis);
+
+
     CNcbiOstrstream fname;
-    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+    fname << file_name << (is_prot ? ".pal" : ".nal");
 
     ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
     out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
@@ -256,7 +349,11 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
     out << "DBLIST " << db_name << "\n";
     out << "GILIST " << gi_file_name << "\n";
+    out << "NSEQ " << num_seqs << "\n";
+    out << "LENGTH " << dbsize << "\n";
     out.close();
+    s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs, gi_file_name,
+                                num_gis);
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
@@ -264,8 +361,19 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               CWriteDB::ESeqType seq_type,
                               const string& title)
 {
+    string concatenated_blastdb_name;
+    bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
+    ITERATE(vector<string>, itr, databases) {
+        concatenated_blastdb_name += *itr + " ";
+        s_DoesBlastDbExist(*itr, is_prot);
+    }
+
+    Uint8 dbsize = 0;
+    int num_seqs = 0;
+    s_ComputeNumSequencesAndDbLength(concatenated_blastdb_name, is_prot,
+                                     &dbsize, &num_seqs);
     CNcbiOstrstream fname;
-    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+    fname << file_name << (is_prot ? ".pal" : ".nal");
 
     ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
     out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
@@ -280,7 +388,10 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << "\"" << *iter << "\" ";
     }
     out << "\n";
+    out << "NSEQ " << num_seqs << "\n";
+    out << "LENGTH " << dbsize << "\n";
     out.close();
+    s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs);
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
@@ -288,13 +399,29 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               CWriteDB::ESeqType seq_type,
                               const string& title)
 {
+    bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
+    string concatenated_blastdb_name;
     if (num_volumes >= 101) {
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "No more than 100 volumes are supported");
     }
+    vector<string> volume_names(num_volumes, kEmptyStr);
+    for (unsigned int i = 0; i < num_volumes; i++) {
+        CNcbiOstrstream oss;
+        oss << file_name << "." << setfill('0') << setw(2) << i;
+        const string vol_name((string)CNcbiOstrstreamToString(oss));
+        s_DoesBlastDbExist(vol_name, is_prot);
+        volume_names.push_back(vol_name);
+        concatenated_blastdb_name += vol_name + " ";
+    }
+
+    Uint8 dbsize = 0;
+    int num_seqs = 0;
+    s_ComputeNumSequencesAndDbLength(concatenated_blastdb_name, is_prot,
+                                     &dbsize, &num_seqs);
     CNcbiOstrstream fname;
-    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+    fname << file_name << (is_prot ? ".pal" : ".nal");
 
     ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
     out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
@@ -305,13 +432,15 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
 
     out << "DBLIST ";
-    for (unsigned int i = 0; i < num_volumes; i++) {
-        CNcbiOstrstream oss;
-        oss << file_name << "." << setfill('0') << setw(2) << i << " ";
-        out << (string)CNcbiOstrstreamToString(oss);
+    ITERATE(vector<string>, itr, volume_names) {
+        out << *itr << " ";
     }
     out << "\n";
+    out << "NSEQ " << num_seqs << "\n";
+    out << "LENGTH " << dbsize << "\n";
     out.close();
+    s_PrintAliasFileCreationLog(concatenated_blastdb_name, is_prot, num_seqs);
 }
+
 END_NCBI_SCOPE
 

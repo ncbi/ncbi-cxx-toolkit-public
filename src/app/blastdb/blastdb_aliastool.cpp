@@ -232,7 +232,7 @@ int CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
     }
 
     builder.Write(output);
-    LOG_POST("Converted " << builder.Size() << " GIs");
+    LOG_POST("Converted " << builder.Size() << " GIs into binary GI file");
     return 0;
 }
 
@@ -266,6 +266,9 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  title);
     } else {
         string gilist = args["gilist"].AsString();
+        if ( !CFile(gilist).Exists() ) {
+            NCBI_THROW(CSeqDBException, eFileErr, gilist + " not found");
+        }
         if ( !SeqDB_IsBinaryGiList(gilist) ) {
             const char mol_type = args["dbtype"].AsString()[0];
             _ASSERT(mol_type == 'p' || mol_type == 'n');

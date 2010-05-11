@@ -1349,6 +1349,20 @@ struct SSeqDBTaxInfo {
 NCBI_XOBJREAD_EXPORT
 string SeqDB_ResolveDbPath(const string & filename);
 
+/// Resolve a file path using SeqDB's path algorithms.
+///
+/// Identical to SeqDB_ResolveDbPath with the exception that this function does
+/// not require the extension to be provided. This is intended to check whether
+/// a BLAST DB exists or not. 
+///
+/// @param filename Name of file to find.
+/// @param dbtype Determines whether the BLAST DB is protein ('p'), nucleotide
+/// ('n'), or whether the algorithm should guess it ('-')
+/// @return Resolved path or empty string if not found.
+NCBI_XOBJREAD_EXPORT
+string SeqDB_ResolveDbPathNoExtension(const string & filename, 
+                                      char dbtype = '-');
+
 /// Sequence Hashing
 ///
 /// This computes a hash of a sequence.  The sequence is expected to

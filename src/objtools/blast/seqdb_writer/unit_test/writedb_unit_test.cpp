@@ -2032,11 +2032,18 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration)
 {
-    CTmpFile tmpfile;
+    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
+    CTmpFile tmp_aliasfile, tmp_gifile;
     const string kDbName("nr");
-    const string kGiFileName("gifiles.txt");
     const string kTitle("My alias file");
-    string kAliasFileName(tmpfile.GetFileName());
+    string kAliasFileName(tmp_aliasfile.GetFileName());
+    string kGiFileName(tmp_gifile.GetFileName());
+    {
+    CNcbiOstream& gifile = tmp_gifile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    gifile << "129295" << endl;
+    gifile << "555" << endl;
+    gifile << "55" << endl;
+    }
 
     CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
                              kGiFileName, kTitle);
@@ -2047,15 +2054,28 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     ifstream alias_file(kAliasFileName.c_str());
 
     string line;
+    bool title_found = false, dblist_found = false, gilist_found = false,
+         nseq_found = false, length_found = false;
     while (getline(alias_file, line)) {
         if (NStr::Find(line, "TITLE") != NPOS) {
             BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
+            title_found = true;
         }
         if (NStr::Find(line, "DBLIST") != NPOS) {
             BOOST_REQUIRE(NStr::Find(line, kDbName) != NPOS);
+            dblist_found = true;
         }
         if (NStr::Find(line, "GILIST") != NPOS) {
             BOOST_REQUIRE(NStr::Find(line, kGiFileName) != NPOS);
+            gilist_found = true;
+        }
+        if (NStr::Find(line, "NSEQ") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, "1") != NPOS);
+            nseq_found = true;
+        }
+        if (NStr::Find(line, "LENGTH") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, "232") != NPOS);
+            length_found = true;
         }
         if (NStr::Find(line, "Alias file created") != NPOS) {
             // this should be enough granularity
@@ -2064,14 +2084,22 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
             BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
         }
     }
+    BOOST_REQUIRE(title_found);
+    BOOST_REQUIRE(dblist_found);
+    BOOST_REQUIRE(gilist_found);
+    BOOST_REQUIRE(nseq_found);
+    BOOST_REQUIRE(length_found);
+    SetDiagPostLevel(diagseverity);
 }
 
-BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbList)
+BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
 {
+    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmpfile;
     const string kTitle("My alias file");
-    const unsigned int kNumVols(78);
-    const string kMyAliasDb(tmpfile.GetFileName());
+    // nr should have at least two volumes
+    const unsigned int kNumVols(2);
+    const string kMyAliasDb("nr");
     const string kAliasFileName(kMyAliasDb + ".pal");
     CFileDeleteAtExit::Add(kAliasFileName);
 
@@ -2081,15 +2109,19 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbList)
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
     ifstream alias_file(kAliasFileName.c_str());
 
+    bool title_found = false, dblist_found = false, nseq_found = false,
+         length_found = false;
     string line;
     while (getline(alias_file, line)) {
         if (NStr::Find(line, "TITLE") != NPOS) {
             BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
+            title_found = true;
         }
         if (NStr::Find(line, "DBLIST") != NPOS) {
             BOOST_REQUIRE(NStr::Find(line, kMyAliasDb) != NPOS);
             BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols - 1)) != NPOS);
             BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols)) == NPOS);
+            dblist_found = true;
         }
         BOOST_REQUIRE(NStr::Find(line, "GILIST") == NPOS);
         if (NStr::Find(line, "Alias file created") != NPOS) {
@@ -2098,9 +2130,74 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbList)
                 NStr::IntToString(CTime(CTime::eCurrent).Year());
             BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
         }
+        if (NStr::Find(line, "NSEQ") != NPOS)
+            nseq_found = true;
+        if (NStr::Find(line, "LENGTH") != NPOS)
+            length_found = true;
+
     }
+    BOOST_REQUIRE(title_found);
+    BOOST_REQUIRE(dblist_found);
+    BOOST_REQUIRE(nseq_found);
+    BOOST_REQUIRE(length_found);
+    SetDiagPostLevel(diagseverity);
 }
 
+BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
+{
+    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
+    CTmpFile tmpfile;
+    const string kTitle("My alias file");
+    const string kMyAliasDb("est");
+    const string kAliasFileName(kMyAliasDb + ".nal");
+    CFileDeleteAtExit::Add(kAliasFileName);
+    vector<string> dbs2aggregate;
+    dbs2aggregate.push_back("est_human");
+    dbs2aggregate.push_back("est_others");
+    dbs2aggregate.push_back("est_mouse");
+
+    CWriteDB_CreateAliasFile(kMyAliasDb, dbs2aggregate, CWriteDB::eNucleotide,
+                             kTitle);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists());
+    ifstream alias_file(kAliasFileName.c_str());
+
+    bool title_found = false, dblist_found = false, nseq_found = false,
+         length_found = false;
+    string line;
+    while (getline(alias_file, line)) {
+        if (NStr::Find(line, "TITLE") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
+            title_found = true;
+        }
+        if (NStr::Find(line, "DBLIST") != NPOS) {
+            ITERATE(vector<string>, itr, dbs2aggregate) {
+                BOOST_REQUIRE(NStr::Find(line, *itr) != NPOS);
+            }
+            dblist_found = true;
+        }
+        BOOST_REQUIRE(NStr::Find(line, "GILIST") == NPOS);
+        if (NStr::Find(line, "Alias file created") != NPOS) {
+            // this should be enough granularity
+            const string kCurrentYear = 
+                NStr::IntToString(CTime(CTime::eCurrent).Year());
+            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
+        }
+        if (NStr::Find(line, "NSEQ") != NPOS)
+            nseq_found = true;
+        if (NStr::Find(line, "LENGTH") != NPOS)
+            length_found = true;
+
+    }
+    BOOST_REQUIRE(title_found);
+    BOOST_REQUIRE(dblist_found);
+    BOOST_REQUIRE(nseq_found);
+    BOOST_REQUIRE(length_found);
+    SetDiagPostLevel(diagseverity);
+}
+
+/* This is no longer possible as all volumes must exist on alias creation
+ * time
 BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithMaxVolumes)
 {
     CTmpFile tmpfile;
@@ -2135,8 +2232,9 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithMaxVolumes)
         }
     }
 }
+*/
 
-BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_WithVolumes)
+BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_TooManyVolumes)
 {
     CTmpFile tmpfile;
     const string kTitle("My alias file");
@@ -2155,6 +2253,102 @@ BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_WithVolumes)
                          CWriteDBException);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NonExistentDb)
+{
+    CTmpFile tmpfile;
+    const string kTitle("My alias file");
+    const string kMyAliasDb(tmpfile.GetFileName());
+    const string kAliasFileName(kMyAliasDb + ".pal");
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    if (CFile(kAliasFileName).Exists()) {
+        CFile(kAliasFileName).Remove();
+    }
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+
+    BOOST_REQUIRE_THROW( CWriteDB_CreateAliasFile(kMyAliasDb, "dummy",
+                                                  CWriteDB::eProtein,
+                                                  "gifile.txt"),
+                         CSeqDBException);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+}
+
+// All databases exist at NCBI but one, which makes the whose set fail
+BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NonExistentDbAggregation)
+{
+    CTmpFile tmpfile;
+    const string kTitle("My alias file");
+    const string kMyAliasDb(tmpfile.GetFileName());
+    const string kAliasFileName(kMyAliasDb + ".pal");
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    if (CFile(kAliasFileName).Exists()) {
+        CFile(kAliasFileName).Remove();
+    }
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+
+    vector<string> dbs2aggregate;
+    dbs2aggregate.push_back("nr");
+    dbs2aggregate.push_back("pataa");
+    dbs2aggregate.push_back("env_nr");
+    dbs2aggregate.push_back("dummy!");
+    dbs2aggregate.push_back("ecoli");
+
+    BOOST_REQUIRE_THROW( CWriteDB_CreateAliasFile(kMyAliasDb, dbs2aggregate,
+                                                  CWriteDB::eProtein,
+                                                  kTitle),
+                         CSeqDBException);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+}
+
+// All databases exist at NCBI but one, which makes the whose set fail
+BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NonExistentMultiVolDbAggregation)
+{
+    const string kTitle("My alias file");
+    const string kBlastDb("ecoli");
+    const string kAliasFileName(kBlastDb + ".pal");
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    if (CFile(kAliasFileName).Exists()) {
+        CFile(kAliasFileName).Remove();
+    }
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+
+    BOOST_REQUIRE_THROW( CWriteDB_CreateAliasFile(kBlastDb, 10,
+                                                  CWriteDB::eProtein,
+                                                  kTitle),
+                         CSeqDBException);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NoGisInBlastDB)
+{
+    CTmpFile tmp_aliasfile, tmp_gifile;
+    const string kDbName("nr");
+    const string kTitle("My alias file");
+    string kAliasFileName(tmp_aliasfile.GetFileName());
+    string kGiFileName(tmp_gifile.GetFileName());
+    {
+    CNcbiOstream& gifile = tmp_gifile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    // These are nucleotide GIs
+    gifile << "556" << endl;
+    gifile << "555" << endl;
+    }
+
+    BOOST_REQUIRE_THROW(
+        CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
+                                 kGiFileName, kTitle),
+        CSeqDBException);
+                    
+    kAliasFileName += ".pal";
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    BOOST_REQUIRE(!CFile(kAliasFileName).Exists());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
