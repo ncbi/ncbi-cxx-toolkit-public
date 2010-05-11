@@ -111,47 +111,47 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 /// @param exit_code exit code to be returned from main function
 #define CATCH_ALL(exit_code)                                                \
     catch (const CInvalidDataException& e) {                                \
-        cerr << "BLAST options error: " << e.GetMsg() << endl;              \
+        LOG_POST(Error << "BLAST options error: " << e.GetMsg());           \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const blast::CInputException& e) {                               \
-        cerr << "BLAST query/options error: " << e.GetMsg() << endl;        \
+        LOG_POST(Error << "BLAST query/options error: " << e.GetMsg());     \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CArgException& e) {                                        \
-        cerr << "Command line argument error: " << e.GetMsg() << endl;      \
+        LOG_POST(Error << "Command line argument error: " << e.GetMsg());   \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CSeqDBException& e) {                                      \
-        cerr << "BLAST Database error: " << e.GetMsg() << endl;             \
+        LOG_POST(Error << "BLAST Database error: " << e.GetMsg());          \
         exit_code = BLAST_DATABASE_ERROR;                                   \
     }                                                                       \
     catch (const blastdbindex::CDbIndex_Exception& e) {                     \
-        cerr << "Indexed BLAST database error: " << e.GetMsg() << endl;     \
+        LOG_POST(Error << "Indexed BLAST database error: " << e.GetMsg());  \
         exit_code = BLAST_DATABASE_ERROR;                                   \
     }                                                                       \
     catch (const CIndexedDbException& e) {                                  \
-        cerr << "Indexed BLAST database error: " << e.GetMsg() << endl;     \
+        LOG_POST(Error << "Indexed BLAST database error: " << e.GetMsg());  \
         exit_code = BLAST_DATABASE_ERROR;                                   \
     }                                                                       \
     catch (const CWriteDBException& e) {                                    \
-        cerr << "BLAST Database creation error: " << e.GetMsg() << endl;    \
+        LOG_POST(Error << "BLAST Database creation error: " << e.GetMsg()); \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const blast::CBlastException& e) {                               \
-        cerr << "BLAST engine error: " << e.GetMsg() << endl;               \
+        LOG_POST(Error << "BLAST engine error: " << e.GetMsg());            \
         exit_code = BLAST_ENGINE_ERROR;                                     \
     }                                                                       \
     catch (const CException& e) {                                           \
-        cerr << "Error: " << e.what() << endl;                              \
+        LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
     catch (const exception& e) {                                            \
-        cerr << "Error: " << e.what() << endl;                              \
+        LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
     catch (...) {                                                           \
-        cerr << "Unknown exception occurred" << endl;                       \
+        LOG_POST(Error << "Unknown exception occurred");                    \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
     
