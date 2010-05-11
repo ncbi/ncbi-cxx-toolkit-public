@@ -3855,43 +3855,45 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     }
 
     // "<file>"
-    bool print_file = m_File  &&  *m_File;
-    if ( print_file ) {
-        const char* x_file = m_File;
-        if ( !IsSetDiagPostFlag(eDPF_LongFilename, m_Flags) ) {
-            for (const char* s = m_File;  *s;  s++) {
-                if (*s == '/'  ||  *s == '\\'  ||  *s == ':')
-                    x_file = s + 1;
+    if ( !IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
+        bool print_file = m_File  &&  *m_File;
+        if ( print_file ) {
+            const char* x_file = m_File;
+            if ( !IsSetDiagPostFlag(eDPF_LongFilename, m_Flags) ) {
+                for (const char* s = m_File;  *s;  s++) {
+                    if (*s == '/'  ||  *s == '\\'  ||  *s == ':')
+                        x_file = s + 1;
+                }
+            }
+            os << '"' << x_file << '"';
+        }
+        else {
+            os << "\"UNK_FILE\"";
+        }
+        // , line <line>
+        os << ", line " << m_Line;
+        os << ": ";
+
+        // Class::Function
+        bool print_loc = (m_Class && *m_Class ) || (m_Function && *m_Function);
+        if (print_loc) {
+            // Class:: Class::Function() ::Function()
+            if (m_Class  &&  *m_Class) {
+                os << m_Class;
+            }
+            os << "::";
+            if (m_Function  &&  *m_Function) {
+                os << m_Function << "() ";
             }
         }
-        os << '"' << x_file << '"';
-    }
-    else {
-        os << "\"UNK_FILE\"";
-    }
-    // , line <line>
-    os << ", line " << m_Line;
-    os << ": ";
-
-    // Class::Function
-    bool print_loc = (m_Class && *m_Class ) || (m_Function && *m_Function);
-    if (print_loc) {
-        // Class:: Class::Function() ::Function()
-        if (m_Class  &&  *m_Class) {
-            os << m_Class;
+        else {
+            os << "UNK_FUNC ";
         }
-        os << "::";
-        if (m_Function  &&  *m_Function) {
-            os << m_Function << "() ";
-        }
-    }
-    else {
-        os << "UNK_FUNK ";
-    }
 
-    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)  &&
-        !IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
-        os << "--- ";
+        if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)  &&
+            !IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
+            os << "--- ";
+        }
     }
 
     // [<prefix1>::<prefix2>::.....]
