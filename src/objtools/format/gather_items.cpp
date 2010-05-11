@@ -663,7 +663,7 @@ bool s_HasIdenticalTo(
         vector< CRef<  CUser_field  > >::const_iterator cit = fields.begin();
 
         strIdenticalTo.clear();
-        while ( cit != fields.end() ) {
+        for ( /*0*/; cit != fields.end(); cit++ ) {
             if ( ! (*cit)->GetLabel().IsId() ) {
                 continue;
             }
@@ -673,7 +673,7 @@ bool s_HasIdenticalTo(
             
             const vector< CRef<  CUser_field  > >& idfields = (*cit)->GetData().GetFields();
             vector< CRef<  CUser_field  > >::const_iterator citit = idfields.begin();
-            while ( citit != idfields.end() ) {
+            for ( /*0*/; citit != idfields.end(); citit++ ) {
                 if ( (*citit)->GetLabel().GetStr() == "accession" ) {
                     if ( (*citit)->GetData().IsStr() ) {
                         strIdenticalTo = (*citit)->GetData().GetStr();
