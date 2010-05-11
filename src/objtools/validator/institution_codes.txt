@@ -2257,7 +2257,7 @@ IAN	s	Embrapa Amazonia Oriental
 IAPG	s	Institute of Animal Physiology and Genetics, Academy of Sciences of the Czech Republic
 IARI	s	Indian Agricultural Research Institute
 IASI	s	Universitatea Agronomica, Disciplina de Botanica
-IAV	s	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale
+IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale
 IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt
 IB	s	Universitaet Innsbruck
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal
@@ -2304,6 +2304,7 @@ IBUS	s	Universidade Federal do Rio de Janeiro
 IBUT	s	Instituto Butanta
 IBY	s	Botanical Institute of Guangxi
 ICA	s	Instituto Colombiano Agropecuario, Tibaitata
+ICARDA<SYR>	s	International Center for Agricultural Research in the Dry Areas
 ICBB	c	ICBB Culture Collection for Microorganisms and Cell Culture
 ICBU	s	Bishop's University, Natural History Museum
 ICCF	c	Collection of Industrial Microorganisms
@@ -2460,6 +2461,7 @@ INH	s	Institut National d'Horticulture, Departement de Sciences Biologiques
 INHM	s	Iraq Natural History Museum
 INHS	s	Illinois Natural History Survey
 INIA	s	Instituto Nacional de Investigaciones Forestales y Agropecurias
+INIA<ESP>	b	Instituto Nacional de Investigacion y Tecnologia Agraria y Alimentaria
 INIBP	s	Instituto Nacional de Investigaciones Biologico Pesqueras
 INIF	c	Coleccion de Microhongos
 INIFAT	c	INIFAT Fungus Collection
@@ -2494,6 +2496,7 @@ IPBIR	b	Integrated Primate Biomaterials and Information Resource
 IPCN	s	Instituto Patagonico de Ciencias Naturales
 IPEF	s	Institut fuer Pflanzenschutzforschung
 IPFUB	s	Institute for Paleontology of the Freie Universitat
+IPGR<BGR>	b	Institute for Plant Genetic Resources
 IPHG	s	Institut fur Palaeontologie und Historische Geologie
 IPK	s	Institut fuer Pflanzenschutzforschung
 IPKUP	s	Paleontologiscsky Institute
