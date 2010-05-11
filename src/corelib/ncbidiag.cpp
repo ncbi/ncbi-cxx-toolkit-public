@@ -3843,9 +3843,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     bool print_err_id = have_module || m_ErrCode || m_ErrSubCode || m_ErrText;
 
     if (print_err_id) {
-        if ( have_module ) {
-            os << x_GetModule();
-        }
+        os << (have_module ? x_GetModule() : "UNK_MODULE");
         if (m_ErrCode  ||  m_ErrSubCode || m_ErrText) {
             if (m_ErrText) {
                 os << "(" << m_ErrText << ")";
@@ -3868,12 +3866,12 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         }
         os << '"' << x_file << '"';
     }
+    else {
+        os << "\"UNK_FILE\"";
+    }
     // , line <line>
-    if ( m_Line )
-        os << (print_file ? ", line " : "line ") << m_Line;
-    // :
-    if (print_file  ||  m_Line)
-        os << ": ";
+    os << ", line " << m_Line;
+    os << ": ";
 
     // Class::Function
     bool print_loc = (m_Class && *m_Class ) || (m_Function && *m_Function);
@@ -3886,6 +3884,9 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         if (m_Function  &&  *m_Function) {
             os << m_Function << "() ";
         }
+    }
+    else {
+        os << "UNK_FUNK ";
     }
 
     if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)  &&
@@ -5013,10 +5014,10 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
 
 CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
                      EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), 
-      m_ErrCode(0), 
+    : m_Severity(sev),
+      m_ErrCode(0),
       m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), 
+      m_Buffer(GetDiagBuffer()),
       m_PostFlags(ForceImportantFlags(post_flags)),
       m_CheckFilters(true),
       m_CompileInfo(info),

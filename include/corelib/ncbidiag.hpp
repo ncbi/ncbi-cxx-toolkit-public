@@ -214,7 +214,8 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   LOG_POST, LOG_POST_X
 #define LOG_POST_EX(err_code, err_subcode, message)         \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,                  \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
+      eDiag_Error,                                          \
       eDPF_Log | eDPF_IsMessage).GetRef()                   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
