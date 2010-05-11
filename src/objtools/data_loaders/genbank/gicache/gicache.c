@@ -980,52 +980,6 @@ static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
     return gi;
 }
 
-/****************************************************************************
- *
- * gicache_lib.c 
- *
- ****************************************************************************/
-
-#define MAX_ACCESSION_LENGTH 64
-
-static SGiDataIndex gi_cache;
-
-static void x_GICacheInit(const char* prefix, Uint1 readonly)
-{
-    char prefix_str[256];
-
-    // First try local files
-    sprintf(prefix_str, "%s.", (prefix ? prefix : DEFAULT_GI_CACHE_PREFIX));
-
-    /* When reading data, use readonly mode. */
-    GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
-
-    if (readonly) {
-        /* Check whether gi cache is available at this location, by trying to
-           map it right away. If local cache isn't found, use default path and
-           try again. */
-        Uint1 cache_found = GiDataIndex_ReMap(&gi_cache, 0);
-        if (!cache_found) {
-            sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
-                    DEFAULT_GI_CACHE_PREFIX);
-            GiDataIndex_New(&gi_cache, MAX_ACCESSION_LENGTH, prefix_str, readonly, 1);
-        }
-    }
-}
-
-void GICache_ReadData(const char *prefix)
-{
-    x_GICacheInit(prefix, 1);
-}
-
-void GICache_ReMap(int delay_in_sec) {
-    /* If this library function is being called, delayed remapping is
-       established, i.e. any future remapping is only done from here, but not on
-       read attempts. */
-    gi_cache.m_RemapOnRead = 0;
-    GiDataIndex_ReMap(&gi_cache, delay_in_sec*1000);
-}
-
 /* When encoding in 4 bytes, top bit serves as control */
 static INLINE int s_EncodeInt4(char* buf, Uint4 val)
 {
