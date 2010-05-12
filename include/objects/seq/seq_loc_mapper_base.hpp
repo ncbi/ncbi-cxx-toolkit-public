@@ -116,6 +116,7 @@ public:
 private:
     // Get new fuzz value when reversing location's strand.
     CInt_fuzz::ELim x_ReverseFuzzLim(CInt_fuzz::ELim lim) const;
+    void x_Map_Fuzz(TFuzz& fuzz) const;
 
     CSeq_id_Handle      m_Src_id_Handle;
     TSeqPos             m_Src_from;

@@ -304,52 +304,82 @@ CInt_fuzz::ELim CMappingRange::x_ReverseFuzzLim(CInt_fuzz::ELim lim) const
         return CInt_fuzz::eLim_lt;
     case CInt_fuzz::eLim_lt:
         return CInt_fuzz::eLim_gt;
+    /*
     case CInt_fuzz::eLim_tr:
         return CInt_fuzz::eLim_tl;
     case CInt_fuzz::eLim_tl:
         return CInt_fuzz::eLim_tr;
+    */
     default:
         return lim;
     }
 }
 
 
+void CMappingRange::x_Map_Fuzz(TFuzz& fuzz) const
+{
+    if ( !fuzz ) return;
+    switch ( fuzz->Which() ) {
+    case CInt_fuzz::e_Lim:
+        {
+            // gt/lt are swapped when mapping to reverse strand.
+            if ( m_Reverse ) {
+                fuzz->SetLim(x_ReverseFuzzLim(fuzz->GetLim()));
+            }
+            break;
+        }
+    case CInt_fuzz::e_Alt:
+        {
+            // Map each point to the destination sequence.
+            // Discard non-mappable points (???).
+            TFuzz mapped(new CInt_fuzz);
+            CInt_fuzz::TAlt& alt = mapped->SetAlt();
+            ITERATE(CInt_fuzz::TAlt, it, fuzz->GetAlt()) {
+                if ( CanMap(*it, *it, false, eNa_strand_unknown) ) {
+                    alt.push_back(Map_Pos(*it));
+                }
+            }
+            if ( !alt.empty() ) {
+                fuzz = mapped;
+            }
+            else {
+                fuzz.Reset();
+            }
+            break;
+        }
+    case CInt_fuzz::e_Range:
+        {
+            // Map each range, truncate the ends if necessary.
+            // Discard unmappable ranges (???).
+            TRange rg(fuzz->GetRange().GetMin(), fuzz->GetRange().GetMax());
+            if ( CanMap(rg.GetFrom(), rg.GetTo(), false, eNa_strand_unknown) ) {
+                rg = Map_Range(rg.GetFrom(), rg.GetTo());
+                if ( !rg.Empty() ) {
+                    fuzz->SetRange().SetMin(rg.GetFrom());
+                    fuzz->SetRange().SetMax(rg.GetTo());
+                }
+            }
+            else {
+                rg = TRange::GetEmpty();
+            }
+            if ( rg.Empty() ) {
+                fuzz.Reset();
+            }
+            break;
+        }
+    default:
+        // Other types are not converted
+        break;
+    }
+}
+
+
 CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(const TRangeFuzz& fuzz) const
 {
-    // Maps fuzz to reverse strand if possible (fuzz types other than lim
-    // can not be reversed).
-    TRangeFuzz res = fuzz;
-    if ( !m_Reverse ) {
-        // No need to map fuzz if the source and destination strands
-        // are the same.
-        return res;
-    }
-    // Swap ends
-    res = TRangeFuzz(fuzz.second, fuzz.first);
-    if ( res.first ) {
-        switch ( res.first->Which() ) {
-        case CInt_fuzz::e_Lim:
-            {
-                res.first->SetLim(x_ReverseFuzzLim(res.first->GetLim()));
-                break;
-            }
-        default:
-            // Other types are not converted
-            break;
-        }
-    }
-    if ( res.second ) {
-        switch ( res.second->Which() ) {
-        case CInt_fuzz::e_Lim:
-            {
-                res.second->SetLim(x_ReverseFuzzLim(res.second->GetLim()));
-                break;
-            }
-        default:
-            // Other types are not converted
-            break;
-        }
-    }
+    // Maps fuzz if possible.
+    TRangeFuzz res = m_Reverse ? TRangeFuzz(fuzz.second, fuzz.first) : fuzz;
+    x_Map_Fuzz(res.first);
+    x_Map_Fuzz(res.second);
     return res;
 }
 
@@ -2283,20 +2313,17 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
     if ( m_LastTruncated ) {
-        if ( !reverse && !fuzz.first ) {
+        if ( !fuzz.first ) {
+            // lim tl - always indicates left, regardless of the strand
             fuzz.first.Reset(new CInt_fuzz);
             fuzz.first->SetLim(CInt_fuzz::eLim_tl);
-        }
-        else if ( reverse  &&  !fuzz.second ) {
-            fuzz.second.Reset(new CInt_fuzz);
-            fuzz.second->SetLim(CInt_fuzz::eLim_tr);
         }
         // Reset the flag - current range is mapped at least partially.
         m_LastTruncated = false;
     }
 
-    // Map fuzz to the destination. This will adjust fuzz lim value
-    // when strand is reversed by the mapping.
+    // Map fuzz to the destination. This will also adjust fuzz lim value
+    // (just set by truncation) when strand is reversed by the mapping.
     TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(fuzz);
 
     // Map the range and the strand. Fuzz is required to extend mapped
@@ -2750,6 +2777,8 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
             pntA.Reset(new CSeq_loc);
             pntA->SetPnt().Assign(src_bond.GetA());
         }
+        // Reset truncation flag - we are starting new location.
+        m_LastTruncated = false;
         bool resB = false;
         if ( src_bond.IsSetB() ) {
             TRangeFuzz fuzzB(kEmptyFuzz, kEmptyFuzz);

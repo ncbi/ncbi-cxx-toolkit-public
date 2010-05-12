@@ -324,8 +324,7 @@ Seq-loc ::= bond {
   b {
     point 170,
     strand minus,
-    id gi 5,
-    fuzz lim tr
+    id gi 5
   }
 }
 
@@ -42873,5 +42872,502 @@ Seq-loc ::= int {
 Seq-loc ::= int {
   from 10,
   to 19,
+  id gi 5
+}
+
+
+-- ================
+-- ! Fuzz mapping !
+-- ================
+
+-- Source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Destination on plus
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+-- Destination on minus
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-from lim lt
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim lt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim lt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Fuzz-from lim gt
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim gt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim gt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim lt
+}
+
+-- Fuzz-from lim tl
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim tl
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim tl
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim tl
+}
+
+-- Fuzz-from lim tr
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim tr
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim tr
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim tr
+}
+
+-- Fuzz-from alt #1
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from alt {   1,  12,  23,  76,  87,  98, 109 }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from alt {      112, 123, 176, 187, 198      }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to alt {        197, 186, 133, 122, 111      }
+}
+
+-- Fuzz-from alt #2
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from alt { 1, 109 }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-from range #1
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 23,
+    min 1
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 123,
+    min 110
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 199,
+    min 186
+  }
+}
+
+-- Fuzz-from range #2
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 58,
+    min 34
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 158,
+    min 134
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 175,
+    min 151
+  }
+}
+
+-- Fuzz-from range #3
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 108,
+    min 94
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 199,
+    min 194
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 115,
+    min 110
+  }
+}
+
+-- Fuzz-from range #4
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 8,
+    min 1
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-to lim lt
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim lt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim lt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim gt
+}
+
+-- Fuzz-to lim gt
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim gt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim gt
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+-- Fuzz-to lim tl
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim tl
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim tl
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim tl
+}
+
+-- Fuzz-to lim tr
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim tr
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim tr
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim tr
+}
+
+-- Fuzz-to alt #1
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to alt {   1,  12,  23,  76,  87,  98, 109 }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to alt {      112, 123, 176, 187, 198      }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from alt {    197, 186, 133, 122, 111      }
+}
+
+-- Fuzz-to alt #1
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to alt { 1, 109 }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-to range #1
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 23,
+    min 1
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 123,
+    min 110
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 199,
+    min 186
+  }
+}
+
+-- Fuzz-to range #2
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 58,
+    min 34
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 158,
+    min 134
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 175,
+    min 151
+  }
+}
+
+-- Fuzz-to range #3
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 108,
+    min 94
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 199,
+    min 194
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 115,
+    min 110
+  }
+}
+
+-- Fuzz-to range #4
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 8,
+    min 1
+  }
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
   id gi 5
 }

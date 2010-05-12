@@ -767,6 +767,143 @@ void TestMapper_Sequence_Info(CNcbiIstream& in)
 }
 
 
+void TestMapper_Fuzz(CNcbiIstream& in)
+{
+    cout << "Mapping fuzzes" << endl;
+
+    CSeq_loc src, dst_plus, dst_minus;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst_plus;
+    in >> MSerial_AsnText >> dst_minus;
+    CSeq_loc_Mapper_Base mapper_plus(src, dst_plus);
+    CSeq_loc_Mapper_Base mapper_minus(src, dst_minus);
+
+    CSeq_loc orig;
+
+    // Fuzz-from
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from lim lt" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from lim lt, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: lim gt" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: lim gt, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: lim tl" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: lim tl, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: lim tr" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: lim tr, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: alt #1" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: alt #1, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: alt #2" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: alt #2, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: range #1" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: range #1, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: range #2" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: range #2, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: range #3" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: range #3, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-from: range #4" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-from: range #4, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    // Fuzz-to
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: lim lt" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: lim lt, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: lim gt" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: lim gt, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: lim tl" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: lim tl, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: lim tr" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: lim tr, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: alt #1" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: alt #1, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: alt #2" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: alt #2, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: range #1" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: range #1, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: range #2" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: range #2, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: range #3" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: range #3, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Fuzz-to: range #4" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Fuzz-to: range #4, reversed strand" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     CNcbiIfstream in("mapper_unit_test.asn");
@@ -784,4 +921,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapping_AlignmentsToParts(in);
     TestMapping_ThroughAlignments(in);
     TestMapper_Sequence_Info(in);
+    TestMapper_Fuzz(in);
 }
