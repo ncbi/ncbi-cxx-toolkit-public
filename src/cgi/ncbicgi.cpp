@@ -71,6 +71,24 @@ BEGIN_NCBI_SCOPE
 //  CCgiCookie::
 //
 
+
+// Severity level for cookie errors.
+NCBI_PARAM_ENUM_DECL(EDiagSev, CGI, Cookie_Error_Severity);
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, CGI, Cookie_Error_Severity)
+{
+    {"Info", eDiag_Info},
+    {"Warning", eDiag_Warning},
+    {"Error", eDiag_Error},
+    {"Critical", eDiag_Critical},
+    {"Fatal", eDiag_Fatal},
+    {"Trace", eDiag_Trace}
+};
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev, CGI, Cookie_Error_Severity,
+                       eDiag_Error,
+                       eParam_NoThread, CGI_COOKIE_ERROR_SEVERITY);
+typedef NCBI_PARAM_TYPE(CGI, Cookie_Error_Severity) TCookieErrorSeverity;
+
+
 // auxiliary zero "tm" struct
 static const tm kZeroTime = { 0 };
 
@@ -312,7 +330,7 @@ CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
         case eOnBadCookie_StoreAndError:
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST_X(1, cex);
+            ERR_POST_X(1, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return NULL;
         }
         case eOnBadCookie_Store:
@@ -371,14 +389,14 @@ CCgiCookies::x_CheckField(const string&          str,
             throw;
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST_X(2, cex);
+            ERR_POST_X(2, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return eCheck_SkipInvalid;
         }
         case eOnBadCookie_Skip:
             return eCheck_SkipInvalid;
         case eOnBadCookie_StoreAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST_X(3, cex);
+            ERR_POST_X(3, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return eCheck_StoreInvalid;
         }
         case eOnBadCookie_Store:
@@ -491,13 +509,15 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
                         "Missing closing quote in cookie value: " +
                         NStr::PrintableString(str.substr(pos_mid + 1)), pos_mid + 1);
                 case eOnBadCookie_SkipAndError:
-                    ERR_POST_X(9, "Missing closing quote in cookie value: " +
+                    ERR_POST_X(9, Severity(TCookieErrorSeverity::GetDefault()) <<
+                        "Missing closing quote in cookie value: " +
                         NStr::PrintableString(str.substr(pos_mid + 1)));
                     // Do not break, proceed to the next case
                 case eOnBadCookie_Skip:
                     return;
                 case eOnBadCookie_StoreAndError:
-                    ERR_POST_X(10, "Missing closing quote in cookie value: " +
+                    ERR_POST_X(10, Severity(TCookieErrorSeverity::GetDefault()) <<
+                        "Missing closing quote in cookie value: " +
                         NStr::PrintableString(str.substr(pos_mid + 1)));
                     // Do not break, proceed to the next case
                 case eOnBadCookie_Store:
