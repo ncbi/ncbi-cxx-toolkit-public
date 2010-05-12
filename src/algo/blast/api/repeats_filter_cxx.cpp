@@ -318,7 +318,7 @@ CRef<CBlastOptionsHandle> s_CreateRepeatsSearchOptions()
     opts->SetTraditionalBlastnDefaults();
     opts->SetMismatchPenalty(REPEATS_SEARCH_PENALTY);
     opts->SetMatchReward(REPEATS_SEARCH_REWARD);
-    opts->SetEvalueThreshold(REPEATS_SEARCH_EVALUE);
+    opts->SetCutoffScore(REPEATS_SEARCH_MINSCORE);
     opts->SetGapXDropoffFinal(REPEATS_SEARCH_XDROP_FINAL);
     opts->SetXDropoff(REPEATS_SEARCH_XDROP_UNGAPPED);
     opts->SetGapOpeningCost(REPEATS_SEARCH_GAP_OPEN);

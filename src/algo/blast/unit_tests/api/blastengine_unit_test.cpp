@@ -315,7 +315,7 @@ BOOST_AUTO_TEST_CASE(testBlastnWithRepeatsFiltering)
     const int kQueryGi = 186279; // Short human sequence with repeats
     const int kSubjectGi = 29791382; // Contig from human chromosome 1
     const int kNumHsps = 4;
-    const int kMaskedLength = 378;
+    const int kMaskedLength = 311;
     const EBlastProgramType kProgramType = eBlastTypeBlastn;
 
     setupQueryAndSubject(kQueryGi, kSubjectGi);
