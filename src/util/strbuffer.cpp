@@ -812,7 +812,7 @@ void COStreamBuffer::PutInt4(Int4 v)
     if ( v < 0 ) {
         *--pos = '-';
     }
-    int len = b + BSIZE - pos;
+    int len = (int)(b + BSIZE - pos);
     char* dst = Skip(len);
     for ( int i = 0; i < len; ++i ) {
         dst[i] = pos[i];
@@ -830,7 +830,7 @@ void COStreamBuffer::PutUint4(Uint4 v)
         Uint4 a = '0'+n;
         *--pos = a-10*(n/=Uint4(10));
     } while ( n );
-    int len = b + BSIZE - pos;
+    int len = (int)(b + BSIZE - pos);
     char* dst = Skip(len);
     for ( int i = 0; i < len; ++i ) {
         dst[i] = pos[i];
@@ -880,7 +880,7 @@ void COStreamBuffer::PutInt8(Int8 v)
     if ( v < 0 ) {
         *--pos = '-';
     }
-    int len = b + BSIZE - pos;
+    int len = (int)(b + BSIZE - pos);
     char* dst = Skip(len);
     for ( int i = 0; i < len; ++i ) {
         dst[i] = pos[i];
@@ -917,7 +917,7 @@ void COStreamBuffer::PutUint8(Uint8 v)
         *--pos = char(a-10*(n/=10));
     } while ( n );
 #endif
-    int len = b + BSIZE - pos;
+    int len = (int)(b + BSIZE - pos);
     char* dst = Skip(len);
     for ( int i = 0; i < len; ++i ) {
         dst[i] = pos[i];

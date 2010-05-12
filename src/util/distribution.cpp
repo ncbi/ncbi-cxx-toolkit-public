@@ -81,8 +81,8 @@ void CDiscreteDistribution::InitFromParameter(const char* parameter_name,
         if (bound > 9) {
             NCBI_THROW(CInvalidParamException, eNotANumber,
                 string("In configuration parameter '") + parameter_name +
-                    "': not a number at position " +
-                        NStr::UIntToString(pos - parameter_value + 1) + ".");
+                "': not a number at position " +
+                NStr::UIntToString((unsigned long)(pos - parameter_value) + 1) + ".");
         }
 
         unsigned digit;
@@ -114,8 +114,8 @@ void CDiscreteDistribution::InitFromParameter(const char* parameter_name,
         default:
             NCBI_THROW(CInvalidParamException, eInvalidCharacter,
                 string("In configuration parameter '") + parameter_name +
-                    "': invalid character at position " +
-                        NStr::UIntToString(pos - parameter_value + 1) + ".");
+                "': invalid character at position " +
+                NStr::UIntToString((unsigned long)(pos - parameter_value) + 1) + ".");
         }
     }
 }

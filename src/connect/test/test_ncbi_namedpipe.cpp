@@ -74,7 +74,8 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
         status = pipe.Read((char*)buf + n_read_total,
                            size - n_read_total, &x_read);
         ERR_POST(Info <<
-                 "Read from pipe: " + NStr::UIntToString(x_read) + " bytes");
+                 "Read from pipe: " + 
+                 NStr::UIntToString((unsigned int)x_read) + " bytes");
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < size);
     
@@ -98,7 +99,8 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
         status = pipe.Write((char*)buf + n_written_total,
                            size - n_written_total, &x_written);
         ERR_POST(Info <<
-                 "Write to pipe: " + NStr::UIntToString(x_written) + " bytes");
+                 "Write to pipe: " + 
+                 NStr::UIntToString((unsigned int)x_written) + " bytes");
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
     

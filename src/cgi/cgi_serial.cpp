@@ -62,11 +62,11 @@ CCgiEntry CContElemConverter<CCgiEntry>::FromString(const string& str)
 
 string CContElemConverter<CCgiEntry>::ToString  (const CCgiEntry&  elem)
 {
-    string ret = NStr::UIntToString(elem.GetValue().length()) + '|';
+    string ret = NStr::UIntToString((unsigned int)elem.GetValue().length()) + '|';
     ret += elem.GetValue();
-    ret += NStr::UIntToString(elem.GetFilename().length()) + '|';
+    ret += NStr::UIntToString((unsigned int)elem.GetFilename().length()) + '|';
     ret += elem.GetFilename();
-    ret += NStr::UIntToString(elem.GetContentType().length()) + '|';
+    ret += NStr::UIntToString((unsigned int)elem.GetContentType().length()) + '|';
     ret += elem.GetContentType();
     ret += NStr::UIntToString(elem.GetPosition());
     return ret;

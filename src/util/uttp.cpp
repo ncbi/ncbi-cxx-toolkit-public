@@ -70,6 +70,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
             return eEndOfBuffer;
         ++m_Buffer;
         /* FALLTHROUGH */
+
     case eReadChunkLength:
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
             m_LengthAcc = m_LengthAcc * 10 + digit;
@@ -79,16 +80,13 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
                 return eEndOfBuffer;
             ++m_Buffer;
         }
-
         switch (*m_Buffer) {
         case '+':
             m_ChunkContinued = true;
             break;
-
         case ' ':
             m_ChunkContinued = false;
             break;
-
         default:
             m_ChunkPart = m_Buffer;
             m_ChunkPartSize = m_LengthAcc;
@@ -109,14 +107,14 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
             m_BufferSize -= m_LengthAcc;
             m_ChunkPartSize = m_LengthAcc;
             m_Buffer += m_LengthAcc;
-            m_Offset += m_LengthAcc;
+            m_Offset += (off_t)m_LengthAcc;
             // The last part of the chunk has been read - get back to
             // reading control symbols.
             m_State = eReadControlChars;
             return m_ChunkContinued ? eChunkPart : eChunk;
         } else {
             m_ChunkPartSize = m_BufferSize;
-            m_Offset += m_BufferSize;
+            m_Offset += (off_t)m_BufferSize;
             m_LengthAcc -= m_BufferSize;
             m_BufferSize = 0;
             return eChunkPart;
@@ -163,7 +161,7 @@ bool CUTTPWriter::SendChunk(const char* chunk,
     size_t number = chunk_length;
 
     do
-        *--result = number % 10 + '0';
+        *--result = char(number % 10) + '0';
     while (number /= 10);
 
     size_t string_len = m_InternalBuffer + sizeof(m_InternalBuffer) - result;

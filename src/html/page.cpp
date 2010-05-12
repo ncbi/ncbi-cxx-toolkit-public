@@ -481,7 +481,12 @@ void CHTMLPage::x_LoadTemplate(CNcbiIstream& is, string& str)
     // If loading template from the file, get its size first
     if ( m_TemplateFile.size() ) {
         Int8 size = CFile(m_TemplateFile).GetLength();
-        if (size >= numeric_limits<size_t>::max()) {
+        if (size < 0) {
+            NCBI_THROW(CHTMLException, eTemplateAccess,
+                       "CHTMLPage::x_LoadTemplate(): failed to "  \
+                       "open template file '" + m_TemplateFile + "'");
+        }
+        if ((Uint8)size >= numeric_limits<size_t>::max()) {
             NCBI_THROW(CHTMLException, eTemplateTooBig,
                        "CHTMLPage: input template " + m_TemplateFile
                        + " too big to handle");
@@ -620,7 +625,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                     NCBI_THROW(CHTMLException, eTemplateAccess,
                                "CHTMLPage::x_LoadTemplateLib(): failed to "  \
                                "open template file '" + file_name  + "'");
-                } else if (x_size >= numeric_limits<size_t>::max()) {
+                } else if ((Uint8)x_size >= numeric_limits<size_t>::max()) {
                     NCBI_THROW(CHTMLException, eTemplateTooBig,
                                "CHTMLPage::x_LoadTemplateLib(): template " \
                                "file '" + file_name + 
@@ -738,7 +743,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
                 "opening tag \"" + name + "\" not closed, " \
-                "stream pos = " + NStr::IntToString(tag_start));
+                "stream pos = " + NStr::IntToString((long)tag_start));
         }
         if (name_end != name_start) {
             // Tag found
@@ -756,7 +761,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
                 "closing tag \"" + name + "\" not closed, " \
-                "stream pos = " + NStr::IntToString(tag_end));
+                "stream pos = " + NStr::IntToString((long)tag_end));
         }
         if ( name.empty() ) {
             tag_start = s_Find(*pstr, kTagStartBOL.c_str(),

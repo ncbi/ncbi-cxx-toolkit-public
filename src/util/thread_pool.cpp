@@ -879,7 +879,7 @@ CThreadPool_Impl::RequestSuspend(TExclusiveFlags flags)
     }
 
     if (flags & CThreadPool::fFlushThreads) {
-        FinishThreads(m_IdleThreads.size());
+        FinishThreads((unsigned int)m_IdleThreads.size());
     }
 
     CallController(CThreadPool_Controller::eSuspend);
