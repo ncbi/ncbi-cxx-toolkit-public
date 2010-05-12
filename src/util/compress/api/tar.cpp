@@ -1580,7 +1580,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
     m_Current.m_Stat.st_mtime = (time_t) mtime;
     m_Current.m_Stat.st_atime = (time_t) atime;
     m_Current.m_Stat.st_ctime = (time_t) ctime;
-    m_Current.m_Stat.st_size  = /*(?)*/  size;
+    m_Current.m_Stat.st_size  = (off_t)  size;  /*(?)*/
     m_Current.m_Stat.st_uid   = (uid_t)  uid;
     m_Current.m_Stat.st_gid   = (gid_t)  gid;
     m_Current.m_Pos = parsed;
@@ -1735,7 +1735,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry size", h, fmt);
     }
-    m_Current.m_Stat.st_size = /*(?)*/ val;
+    m_Current.m_Stat.st_size = /*(?)*/ (off_t)val;
     if (m_Current.GetSize() != val) {
         ERR_POST_ONCE(Critical << "CAUTION:"
                       " ***"
@@ -2232,7 +2232,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
         }
         m_BufferPos  = off;
     } else
-        m_BufferPos -= gap;
+        m_BufferPos -= (size_t)gap;
 
     // Always set put position here
     if (!m_FileStream->seekp(rec * m_BufferSize)) {
@@ -3117,7 +3117,7 @@ void CTar::x_AppendFile(const string& file)
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
         if (avail > size) {
-            avail = size;
+            avail = (size_t)size;
         }
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, (streamsize) avail)) {

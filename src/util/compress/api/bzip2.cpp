@@ -402,9 +402,8 @@ long CBZip2CompressionFile::Write(const void* buf, size_t len)
             FormatErrorMessage("CBZip2CompressionFile::Write", false));
         return -1;
     }; 
-    return len;
- 
-}
+    return (long)len;
+ }
 
 
 bool CBZip2CompressionFile::Close(void)
@@ -510,8 +509,8 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *in_avail  = STREAM->avail_in;
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseProcessedSize(in_len - *in_avail);
-    IncreaseOutputSize(*out_avail);
+    IncreaseProcessedSize((unsigned long)(in_len - *in_avail));
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
@@ -539,7 +538,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     int errcode = BZ2_bzCompress(STREAM, BZ_FLUSH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseOutputSize(*out_avail);
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
@@ -570,7 +569,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     int errcode = BZ2_bzCompress(STREAM, BZ_FINISH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseOutputSize(*out_avail);
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     switch (errcode) {
     case BZ_FINISH_OK:
@@ -684,8 +683,8 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
             SetError(errcode, GetBZip2ErrorDescription(errcode));
             *in_avail  = STREAM->avail_in;
             *out_avail = out_size - STREAM->avail_out;
-            IncreaseProcessedSize(in_len - *in_avail);
-            IncreaseOutputSize(*out_avail);
+            IncreaseProcessedSize((unsigned long)(in_len - *in_avail));
+            IncreaseOutputSize((unsigned long)(*out_avail));
 
             switch (errcode) {
             case BZ_OK:
@@ -706,8 +705,8 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     memcpy(out_buf, in_buf, n);
     *in_avail  = in_len - n;
     *out_avail = n;
-    IncreaseProcessedSize(n);
-    IncreaseOutputSize(n);
+    IncreaseProcessedSize((unsigned long)n);
+    IncreaseOutputSize((unsigned long)n);
     return eStatus_Success;
 }
 

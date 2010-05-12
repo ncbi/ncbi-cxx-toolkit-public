@@ -357,7 +357,7 @@ bool CZipCompression::CompressBuffer(
         unsigned long crc = crc32(0L, (unsigned char*)src_buf,
                                       (unsigned int)src_len);
         size_t footer_len = s_WriteGZipFooter(
-            (char*)dst_buf + *dst_len, dst_size, src_len, crc);
+            (char*)dst_buf + *dst_len, dst_size, (unsigned long)src_len, crc);
         if ( !footer_len ) {
             SetError(-1, "Cannot write gzip footer");
             ERR_COMPRESS(54, FormatErrorMessage("CZipCompressor::CompressBuffer"));
@@ -469,8 +469,10 @@ bool CZipCompression::DecompressBuffer(
     // Decompression results processing
     SetError(errcode, zError(errcode));
     if ( errcode != Z_OK ) {
-        ERR_COMPRESS(59, FormatErrorMessage("CZipCompression::DecompressBuffer",
-                                            STREAM->next_in - (unsigned char*)src_buf));
+        ERR_COMPRESS(59, 
+			FormatErrorMessage("CZipCompression::DecompressBuffer",
+                               (unsigned long)(
+                                STREAM->next_in - (unsigned char*)src_buf)));
         return false;
     }
     return true;
@@ -500,7 +502,7 @@ long CZipCompression::EstimateCompressionBufferSize(size_t src_len)
         SetError(errcode, zError(errcode));
         return -1;
     }
-    long n = deflateBound(STREAM, src_len) + header_len;
+    long n = (long)(deflateBound(STREAM, (unsigned long)src_len) + header_len);
     deflateEnd(STREAM);
     return n;
 #endif
@@ -799,7 +801,7 @@ long CZipCompressionFile::Read(void* buf, size_t len)
         GetStreamError();
         return -1;
     }
-    streamsize nread = m_Stream->gcount();
+    long nread = (long)m_Stream->gcount();
     if ( nread ) {
         return nread;
     }
@@ -821,11 +823,11 @@ long CZipCompressionFile::Write(const void* buf, size_t len)
     if (len == 0) {
         return 0;
     }
-    LIMIT_SIZE_PARAM_U(len);
+    LIMIT_SIZE_PARAM(len);
 
     m_Stream->write((char*)buf, len);
     if ( m_Stream->good() ) {
-        return len;
+        return (long)len;
     }
     GetStreamError();
     return -1;
@@ -947,8 +949,8 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     SetError(errcode, zError(errcode));
     *in_avail  = STREAM->avail_in;
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseProcessedSize(in_len - *in_avail);
-    IncreaseOutputSize(*out_avail);
+    IncreaseProcessedSize((unsigned long)(in_len - *in_avail));
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     // If we writing in gzip file format
     if ( F_ISSET(fWriteGZipFormat) ) {
@@ -982,7 +984,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
     int errcode = deflate(STREAM, Z_SYNC_FLUSH);
     SetError(errcode, zError(errcode));
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseOutputSize(*out_avail);
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     if ( errcode == Z_OK  ||  errcode == Z_BUF_ERROR ) {
         if ( STREAM->avail_out == 0) {
@@ -1013,7 +1015,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
     int errcode = deflate(STREAM, Z_FINISH);
     SetError(errcode, zError(errcode));
     *out_avail = out_size - STREAM->avail_out;
-    IncreaseOutputSize(*out_avail);
+    IncreaseOutputSize((unsigned long)(*out_avail));
 
     switch (errcode) {
     case Z_OK:
@@ -1027,7 +1029,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
             if ( !footer_len ) {
                 return eStatus_Overflow;
             }
-            IncreaseOutputSize(footer_len);
+            IncreaseOutputSize((unsigned long)footer_len);
             *out_avail += footer_len;
         }
         return eStatus_EndOfData;
@@ -1139,7 +1141,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 size_t n = min(m_Cache.size(), m_SkipInput);
                 m_Cache.erase(0, n);
                 m_SkipInput -= n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
             }
             // And/or from input stream also
             if ( m_SkipInput ) {
@@ -1147,7 +1149,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 x_in_buf += n;
                 x_in_len -= n;
                 m_SkipInput -= n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
                 if ( m_SkipInput ) {
                     // Data block is very small... and was skipped.
                     *in_avail  = x_in_len;
@@ -1190,7 +1192,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 // If gzip header found, skip it
                 if ( header_len ) {
                     m_Cache.erase(0, header_len);
-                    IncreaseProcessedSize(header_len);
+                    IncreaseProcessedSize((unsigned long)header_len);
                     m_DecompressMode = eMode_Decompress;
                     m_IsGZ = true;
                 }
@@ -1259,10 +1261,10 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             if ( from_cache ) {
                 m_Cache.erase(0, old_avail_in - STREAM->avail_in);
                 *in_avail = x_in_len;
-                IncreaseProcessedSize(old_avail_in - STREAM->avail_in);
+                IncreaseProcessedSize((unsigned long)(old_avail_in - STREAM->avail_in));
             } else {
                 *in_avail = STREAM->avail_in;
-                IncreaseProcessedSize(x_in_len - *in_avail);
+                IncreaseProcessedSize((unsigned long)(x_in_len - *in_avail));
                 x_in_len = *in_avail;
             }
             // In case of concatenated .gz files:
@@ -1276,11 +1278,11 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                     x_in_len -= n;
                     m_SkipInput -= n;
                     *in_avail = x_in_len;
-                    IncreaseProcessedSize(n);
+                    IncreaseProcessedSize((unsigned long)n);
                 }
             }
             *out_avail = out_size - STREAM->avail_out;
-            IncreaseOutputSize(*out_avail);
+            IncreaseOutputSize((unsigned long)(*out_avail));
 
             // Analize decompressor status
             switch (errcode) {
@@ -1317,8 +1319,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     }
     *in_avail  = x_in_len;
     *out_avail = total;
-    IncreaseProcessedSize(total);
-    IncreaseOutputSize(total);
+    IncreaseProcessedSize((unsigned long)total);
+    IncreaseOutputSize((unsigned long)total);
     return eStatus_Success;
 }
 

@@ -336,7 +336,7 @@
                                   dst_buf, kBufLen, &dst_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, dst_len);
         assert(result);
-        CNcbiIstrstream is_str(dst_buf, dst_len);
+        CNcbiIstrstream is_str(dst_buf, (int)dst_len);
 
         // Read decompressed data from stream
         CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),

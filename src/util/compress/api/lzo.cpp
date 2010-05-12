@@ -288,9 +288,9 @@ static size_t s_WriteLZOHeader(void* src_buf, size_t buf_size,
     // Set beginning of header:
 
     // Header size, 
-    CCompressionUtil::StoreUI2(buf + kMagicSize, size);
+    CCompressionUtil::StoreUI2(buf + kMagicSize, (unsigned long)size);
     // Block size, used for compression.
-    CCompressionUtil::StoreUI4(buf + kMagicSize + 2, block_size);
+    CCompressionUtil::StoreUI4(buf + kMagicSize + 2, (unsigned long)block_size);
     // Flags
     buf[kMinHeaderSize-1] = flags;
 
@@ -359,7 +359,7 @@ int CLZOCompression::CompressBlockStream(const lzo_bytep src_buf,
     int errcode = CompressBlock(src_buf, src_len, dst_buf + offset, dst_len);
 
     // Write size of compressed block
-    CCompressionUtil::StoreUI4(dst_buf, *dst_len);
+    CCompressionUtil::StoreUI4(dst_buf, (unsigned long)(*dst_len));
     *dst_len += 4;
 
     return errcode;
@@ -875,7 +875,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
 
 long CLZOCompressionFile::Read(void* buf, size_t len)
 {
-    LIMIT_SIZE_PARAM_U(len);
+    LIMIT_SIZE_PARAM(len);
 
     if ( !m_Stream  ||  m_Mode != eMode_Read ) {
         NCBI_THROW(CCompressionException, eCompressionFile, 
@@ -891,7 +891,7 @@ long CLZOCompressionFile::Read(void* buf, size_t len)
         GetStreamError();
         return -1;
     }
-    streamsize nread = m_Stream->gcount();
+    long nread = (long)m_Stream->gcount();
     if ( nread ) {
         return nread;
     }
@@ -913,11 +913,11 @@ long CLZOCompressionFile::Write(const void* buf, size_t len)
     if (len == 0) {
         return 0;
     }
-    LIMIT_SIZE_PARAM_U(len);
+    LIMIT_SIZE_PARAM(len);
 
     m_Stream->write((char*)buf, len);
     if ( m_Stream->good() ) {
-        return len;
+        return (long)len;
     }
     GetStreamError();
     return -1;
@@ -1064,7 +1064,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
         memcpy(m_InBuf + m_InLen, in_buf, n);
         *in_avail = in_len - n;
         m_InLen += n;
-        IncreaseProcessedSize(n);
+        IncreaseProcessedSize((unsigned long)n);
     } else {
         // New data has not processed
         *in_avail = in_len;
@@ -1105,7 +1105,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Flush(
         memcpy(out_buf, m_OutBegPtr, n);
         *out_avail = n;
         m_OutBegPtr += n;
-        IncreaseOutputSize(n);
+        IncreaseOutputSize((unsigned long)n);
         // Here is still some data in the output cache buffer
         if (m_OutBegPtr != m_OutEndPtr) {
             return eStatus_Overflow;
@@ -1259,7 +1259,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 size_t n = min(m_HeaderLen - m_Cache.size(), in_len);
                 m_Cache.append(in_buf, n);
                 *in_avail = in_len - n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
                 if ( m_Cache.size() < kMaxHeaderSize ) {
                     // All data was cached - success state
                     return eStatus_Success;
@@ -1307,10 +1307,10 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 n = min(*in_avail, out_size);
                 memcpy(out_buf, in_buf + in_len - *in_avail, n);
                 *in_avail  -= n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
             }
             *out_avail = n;
-            IncreaseOutputSize(n);
+            IncreaseOutputSize((unsigned long)n);
             return eStatus_Success;
         }
 
@@ -1328,7 +1328,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 memcpy(m_InBuf + m_InLen, in_buf + in_len - *in_avail, n);
                 *in_avail -= n;
                 m_InLen += n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
             }
             if ( m_InLen >= 4 ) {
                 lzo_uint32 block_len = CCompressionUtil::GetUI4(m_InBuf);
@@ -1361,7 +1361,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 memcpy(m_InBuf + m_InLen, in_buf + in_len - *in_avail, n);
                 *in_avail -= n;
                 m_InLen += n;
-                IncreaseProcessedSize(n);
+                IncreaseProcessedSize((unsigned long)n);
             }
             // If the input cache buffer have a full block and
             // no data in the output cache buffer -- decompress it
@@ -1402,7 +1402,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Flush(
         memcpy(out_buf, m_OutBegPtr, n);
         *out_avail = n;
         m_OutBegPtr += n;
-        IncreaseOutputSize(n);
+        IncreaseOutputSize((unsigned long)n);
         // Here is still some data in the output cache buffer
         if (m_OutBegPtr != m_OutEndPtr) {
             return eStatus_Overflow;
