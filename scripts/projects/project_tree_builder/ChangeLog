@@ -105,3 +105,10 @@ version 2.6.0
 Reduced the number of warning messages, eliminated identical ones.
 Added possibility to define precompiled header settings locally.
 
+May 12, 2010
+version 2.7.0
+Modified Xcode project generation to make it re-link applications
+when dependent libraries are changed and to clean helper files
+when cleaning CONFIGURE project.
+Added possibility to define precompiled header settings in makefiles.
+
