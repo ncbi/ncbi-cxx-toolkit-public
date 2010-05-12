@@ -440,6 +440,8 @@ public:
 
     CLoadLockSeq_ids(TMutexSource& src, const string& seq_id);
     CLoadLockSeq_ids(TMutexSource& src, const CSeq_id_Handle& seq_id);
+    CLoadLockSeq_ids(TMutexSource& src, const CSeq_id_Handle& seq_id,
+                     const SAnnotSelector* sel);
 
     TInfo& Get(void)
         {

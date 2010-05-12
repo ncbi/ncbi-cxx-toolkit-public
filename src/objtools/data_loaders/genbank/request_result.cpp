@@ -317,6 +317,19 @@ CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
 }
 
 
+CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
+                                   const CSeq_id_Handle& seq_id,
+                                   const SAnnotSelector* sel)
+    : m_Blob_ids(src, seq_id, sel)
+{
+    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
+    Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
+}
+
+
 void CLoadLockSeq_ids::AddSeq_id(const CSeq_id_Handle& seq_id)
 {
     Get().m_Seq_ids.push_back(seq_id);
@@ -365,11 +378,15 @@ bool CBlob_Info::Matches(const CBlob_id& blob_id,
     }
 
     // only features
-    if ( !sel ||
-         !sel->IsIncludedAnyNamedAnnotAccession() ||
-         GetNamedAnnotNames().empty() ) {
+
+    if ( GetNamedAnnotNames().empty() ) {
         // no filtering by name
         return true;
+    }
+    
+    if ( !sel || !sel->IsIncludedAnyNamedAnnotAccession() ) {
+        // no names included
+        return false;
     }
 
     if ( sel->IsIncludedNamedAnnotAccession("NA*") ) {

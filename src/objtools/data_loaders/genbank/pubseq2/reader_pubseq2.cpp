@@ -296,6 +296,11 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
     }
 
+    if ( GetDebugLevel() >= 2 ) {
+        NcbiCout << "CPubseq2Reader::Connected to " << conn->ServerName()
+                 << NcbiEndl;
+    }
+
     try {
         x_InitConnection(*conn, conn_);
     }

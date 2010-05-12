@@ -280,6 +280,11 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
     if ( !conn.get() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
     }
+    
+    if ( GetDebugLevel() >= 2 ) {
+        NcbiCout << "CPubseqReader::Connected to " << conn->ServerName()
+                 << NcbiEndl;
+    }
 
     {{
         AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
@@ -411,9 +416,9 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 
 bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id,
-                                       const SAnnotSelector* /*sel*/)
+                                       const SAnnotSelector* sel)
 {
-    CLoadLockSeq_ids seq_ids(result, seq_id);
+    CLoadLockSeq_ids seq_ids(result, seq_id, sel);
     CLoadLockBlob_ids& blob_ids = seq_ids.GetBlob_ids();
     if ( blob_ids.IsLoaded() ) {
         return true;
