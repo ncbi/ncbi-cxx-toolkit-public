@@ -540,6 +540,20 @@ void CObjectIStream::SetMonitorType(TTypeInfo type)
     m_MonitorType = type;
 }
 
+void CObjectIStream::AddMonitorType(TTypeInfo type)
+{
+    if (find(m_ReqMonitorType.begin(), m_ReqMonitorType.end(), type) ==
+             m_ReqMonitorType.end()) {
+        m_ReqMonitorType.push_back(type);
+    }
+}
+
+void CObjectIStream::ResetMonitorType()
+{
+    m_ReqMonitorType.clear();
+    m_MonitorType = 0;
+}
+
 void CObjectIStream::x_SetPathHooks(bool set)
 {
     if (!m_PathReadObjectHooks.IsEmpty()) {
@@ -689,6 +703,16 @@ bool CObjectIStream::ShouldParseDelayBuffer(void) const
         !m_PathSkipVariantHooks.IsEmpty();
 }
 
+bool CObjectIStream::x_HavePathHooks() const
+{
+    return (!m_PathReadObjectHooks.IsEmpty() ||
+            !m_PathSkipObjectHooks.IsEmpty() ||
+            !m_PathReadMemberHooks.IsEmpty() ||
+            !m_PathSkipMemberHooks.IsEmpty() ||
+            !m_PathReadVariantHooks.IsEmpty() ||
+            !m_PathSkipVariantHooks.IsEmpty());
+}
+
 void CObjectIStream::UseMemoryPool(void)
 {
     SetMemoryPool(new CObjectMemoryPool);
@@ -786,6 +810,11 @@ CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 // root reader
 void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 {
+    if (!m_MonitorType) {
+        m_MonitorType = (!x_HavePathHooks() && m_ReqMonitorType.size()==1) ?
+            m_ReqMonitorType.front() : 0;
+    }
+
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
     
     string name = ReadFileHeader();
@@ -800,6 +829,7 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 
 void CObjectIStream::EndOfRead(void)
 {
+    m_MonitorType = 0;
     if ( m_Objects )
         m_Objects->Clear();
 }

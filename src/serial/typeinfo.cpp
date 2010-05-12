@@ -310,6 +310,7 @@ void CTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_SkipHookData.SetLocalHook(stream.m_ObjectSkipHookKey, hook);
+    stream.AddMonitorType(this);
 }
 
 void CTypeInfo::ResetGlobalSkipHook(void)

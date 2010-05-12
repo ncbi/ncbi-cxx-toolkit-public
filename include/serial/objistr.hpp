@@ -455,6 +455,8 @@ public:
     void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
 
     void SetMonitorType(TTypeInfo type);
+    void AddMonitorType(TTypeInfo type);
+    void ResetMonitorType(void);
     
     /// DelayBuffer parsing policy
     enum EDelayBufferParsing {
@@ -940,6 +942,7 @@ protected:
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
     virtual void x_SetPathHooks(bool set);
+    bool x_HavePathHooks() const;
 
     CIStreamBuffer m_Input;
     bool m_DiscardCurrObject;
@@ -984,6 +987,7 @@ private:
     CRef<CObjectMemoryPool> m_MemoryPool;
 
     TTypeInfo m_MonitorType;
+    vector<TTypeInfo> m_ReqMonitorType;
 
 public:
     // read hooks

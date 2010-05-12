@@ -34,6 +34,7 @@
 #include <serial/exception.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -150,6 +151,7 @@ void CObjectTypeInfoMI::SetLocalSkipHook(CObjectIStream& stream,
                                          CSkipClassMemberHook* hook) const
 {
     GetNCMemberInfo()->SetLocalSkipHook(stream, hook);
+    stream.AddMonitorType(GetClassType().GetTypeInfo());
 }
 
 void CObjectTypeInfoMI::SetGlobalSkipHook(CSkipClassMemberHook* hook) const
@@ -313,6 +315,7 @@ void CObjectTypeInfoVI::SetLocalSkipHook(CObjectIStream& stream,
                                          CSkipChoiceVariantHook* hook) const
 {
     GetNCVariantInfo()->SetLocalSkipHook(stream, hook);
+    stream.AddMonitorType(GetChoiceType().GetTypeInfo());
 }
 
 void CObjectTypeInfoVI::SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const
