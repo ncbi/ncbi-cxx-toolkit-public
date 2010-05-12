@@ -137,13 +137,16 @@ static bool s_NumToBase256(Uint8 val, char* ptr, size_t len)
 // conventional octal representation (perhaps, with terminating '\0'
 // sacrificed), or -1 if the value converted using base-256.
 static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
-{                                         // Max file size:
-    if (s_NumToOctal  (val, ptr,   len))  //   8GiB-1
+{                                          // Max file size:
+    if (s_NumToOctal  (val, ptr,   len)) { //   8GiB-1
         return  1/*okay*/;
-    if (s_NumToOctal  (val, ptr, ++len))  //   64GiB-1
+    }
+    if (s_NumToOctal  (val, ptr, ++len)) { //   64GiB-1
         return  1/*okay*/;
-    if (s_NumToBase256(val, ptr,   len))  //   up to 2^94-1
+    }
+    if (s_NumToBase256(val, ptr,   len)) { //   up to 2^94-1
         return -1/*okay, base-256*/;
+    }
     return 0/*failure*/;
 }
 
@@ -152,12 +155,14 @@ static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
 static bool s_Base256ToNum(Uint8& val, const char* ptr, size_t len)
 {
     const Uint8 lim = kMax_UI8 >> 8;
-    if (*ptr & '\x40')
-        return false/*negative base-256*/;
+    if (*ptr & '\x40') { /*negative base-256?*/
+        return false;
+    }
     val = *ptr++ & '\x3F';
     while (--len) {
-        if (val > lim)
+        if (val > lim) {
             return false;
+        }
         val <<= 8;
         val  |= (unsigned char)(*ptr++);
     }
@@ -170,10 +175,11 @@ static bool s_Base256ToNum(Uint8& val, const char* ptr, size_t len)
 // or -1 if base-256 representation used.
 static int s_DecodeUint8(Uint8& val, const char* ptr, size_t len)
 {
-    if (*ptr & '\x80')
+    if (*ptr & '\x80') {
         return s_Base256ToNum(val, ptr, len) ? -1/*okay*/ : 0/*failure*/;
-    else
+    } else {
         return s_OctalToNum  (val, ptr, len) ?  1/*okay*/ : 0/*failure*/;
+    }
 }
 
 
@@ -287,8 +293,9 @@ static TTarMode s_ModeToTar(mode_t mode)
 #  else
     mask &= _S_IFMT;
 #  endif
-    if (!(mask & 07777))
+    if (!(mask & 07777)) {
         value |= mask;
+    }
 #endif
     return value;
 }
@@ -581,9 +588,8 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
         unsigned int major = info.GetMajor();
         unsigned int minor = info.GetMinor();
         return s_MajorMinor(major) + ", " + s_MajorMinor(minor);
-    } else {
-        return NStr::UInt8ToString(info.GetSize());
     }
+    return NStr::UInt8ToString(info.GetSize());
 }
 
 
@@ -662,8 +668,9 @@ static bool memcchr(const char* s, char c, size_t len)
 
 static string s_Printable(const char* field, size_t maxsize, bool text)
 {
-    if (!text  &&  maxsize > 1  &&  !*field)
+    if (!text  &&  maxsize > 1  &&  !*field) {
         field++, maxsize--;
+    }
     size_t len = s_Length(field, maxsize);
     return NStr::PrintableString(string(field,
                                         memcchr(field + len, '\0',
@@ -887,22 +894,25 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "legacy (V7)";
         break;
     case eTar_OldGNU:
-        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4)) {
             tname = "old GNU (NCBI)";
-        else
+        } else {
             tname = "old GNU";
+        }
         break;
     case eTar_Ustar:
-        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4)) {
             tname = "ustar (NCBI)";
-        else
+        } else {
             tname = "ustar";
+        }
         break;
     case eTar_Posix:  // aka "pax"
-        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4)) {
             tname = "posix (NCBI)";
-        else
+        } else {
             tname = "posix";
+        }
         break;
     default:
         tname = 0;
@@ -973,8 +983,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += TAR_PRINTABLE(prefix, true);
             tname = h->prefix + sizeof(h->prefix);
         }
-    } else
+    } else {
         tname = h->version + sizeof(h->version);
+    }
 
     size_t n = 0;
     while (&tname[n] < (const char*) h + BLOCK_SIZE) {
@@ -1165,8 +1176,9 @@ void CTar::x_Flush(bool no_throw)
 
 void CTar::x_Close(void)
 {
-    if (!m_OpenMode)
+    if (!m_OpenMode) {
         return;
+    }
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
         m_Stream = 0;
@@ -1469,8 +1481,9 @@ typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 {
-    if (!isdigit((unsigned char)(*str)))
-        return 0;
+    if (!isdigit((unsigned char)(*str))) {
+        return false;
+    }
     char* e;
     errno = 0;
     unsigned long val = strtoul(str, &e, 10);
@@ -1481,8 +1494,10 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
         if (!dot) {
             return false;
         }
-        if (!isdigit((unsigned char)(*e)))
+        if (!isdigit((unsigned char)(*e))) {
             return false;
+        }
+        _ASSERT(!errno);
         strtoul(e, &e, 10);
         if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
             return false;
@@ -1580,7 +1595,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
     m_Current.m_Stat.st_mtime = (time_t) mtime;
     m_Current.m_Stat.st_atime = (time_t) atime;
     m_Current.m_Stat.st_ctime = (time_t) ctime;
-    m_Current.m_Stat.st_size  = (off_t)  size;  /*(?)*/
+    m_Current.m_Stat.st_size  = (off_t)  size;
     m_Current.m_Stat.st_uid   = (uid_t)  uid;
     m_Current.m_Stat.st_gid   = (gid_t)  gid;
     m_Current.m_Pos = parsed;
@@ -1735,7 +1750,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry size", h, fmt);
     }
-    m_Current.m_Stat.st_size = /*(?)*/ (off_t)val;
+    m_Current.m_Stat.st_size = (off_t) val;
     if (m_Current.GetSize() != val) {
         ERR_POST_ONCE(Critical << "CAUTION:"
                       " ***"
@@ -1768,15 +1783,17 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad last access time", h, fmt);
             }
-        } else
+        } else {
             m_Current.m_Stat.st_atime = (time_t) val;
+        }
         if (!s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime))) {
             if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad creation time", h, fmt);
             }
-        } else
+        } else {
             m_Current.m_Stat.st_ctime = (time_t) val;
+        }
     }
 
     // Entry type
@@ -1800,11 +1817,12 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                             : CTarEntryInfo::eSymLink);
         m_Current.m_LinkName.assign(h->linkname,
                                     s_Length(h->linkname,sizeof(h->linkname)));
-        if (!m_Current.GetSize())
+        if (!m_Current.GetSize()) {
             break;
-        if (h->typeflag[0] != '1')
+        }
+        if (h->typeflag[0] != '1') {
             m_Current.m_Stat.st_size = 0;
-        else if (fmt != eTar_Posix) {
+        } else if (fmt != eTar_Posix) {
             TAR_POST(77, Warning,
                      "Non-zero hard-link size ("
                      + NStr::UInt8ToString(m_Current.GetSize())
@@ -1940,10 +1958,11 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 }
                 return x_ParsePAXHeader(buffer);
             }
-            if (m_Current.GetType() == CTarEntryInfo::eGNULongName)
+            if (m_Current.GetType() == CTarEntryInfo::eGNULongName) {
                 m_Current.m_Name.swap(buffer);
-            else
+            } else {
                 m_Current.m_LinkName.swap(buffer);
+            }
             return eContinue;
         }
         /*FALLTHRU*/
@@ -2216,8 +2235,9 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
     _ASSERT(!OFFSET_OF(m_StreamPos));
     Uint8 gap = SIZE_OF(blocks);
     m_StreamPos -= gap;
-    if (m_BufferPos == 0)
+    if (m_BufferPos == 0) {
         m_BufferPos += m_BufferSize;
+    }
     CT_POS_TYPE rec  = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
     size_t      off  = (size_t)     (m_StreamPos % m_BufferSize);
     if (gap > m_BufferPos) {
@@ -2231,8 +2251,9 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
                      + string(temp ? " (EOF)" : ""));
         }
         m_BufferPos  = off;
-    } else
-        m_BufferPos -= (size_t)gap;
+    } else {
+        m_BufferPos -= (size_t) gap;
+    }
 
     // Always set put position here
     if (!m_FileStream->seekp(rec * m_BufferSize)) {
@@ -2473,8 +2494,9 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
                                                (CDirEntry::ConcatPath
                                                 (m_BaseDir,
                                                  m_Current.GetLinkName()))));
-                            if (dst_type != src->GetType())
+                            if (dst_type != src->GetType()) {
                                 extract = false;
+                            }
                         } else if (dst_type != CDirEntry::EType(type)) {
                             extract = false;
                         }
@@ -2733,11 +2755,13 @@ bool CTar::x_ExtractEntry(Uint8& size,
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             mode_t u = umask(0);
-            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode()) != 0)
+            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode()) != 0) {
                 result = false;
+            }
             umask(u);  // NB: always succeeds and does not change errno
-            if (result)
+            if (result) {
                 break;
+            }
             string reason = s_OSReason(errno);
 #else
             string reason = ": Feature not supported by host OS";
@@ -2756,11 +2780,14 @@ bool CTar::x_ExtractEntry(Uint8& size,
             mode_t u = umask(0);
             mode_t m = (m_Current.GetMode() |
                         (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
-            if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.st_rdev))
+            if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.st_rdev)) {
                 result = false;
+
+            }
             umask(u);  // NB: always succeeds and does not clobber errno
-            if (result)
+            if (result) {
                 break;
+            }
             string reason = s_OSReason(errno);
 #else
             string reason = ": Feature not supported by host OS";
@@ -2849,8 +2876,9 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
                 if (mode &   (S_ISUID | S_ISGID)) {
                     mode &= ~(S_ISUID | S_ISGID);
                     failed = chmod(dst->GetPath().c_str(), mode) != 0;
-                } else
+                } else {
                     failed = true;
+                }
             }
         }
 #else
@@ -3008,11 +3036,13 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                         temp = x_ToFilesystemPath(i->GetLinkName());
                         continue;
                     }
-                } else
+                } else {
                     continue;
+                }
                 if (m_Current.GetType() != i->GetType()) {
-                    if (m_Flags & fEqualTypes)
+                    if (m_Flags & fEqualTypes) {
                         goto out;
+                    }
                 } else if (m_Current.GetType() == CTarEntryInfo::eSymLink
                            &&  m_Current.GetLinkName() == i->GetLinkName()) {
                     goto out;
@@ -3117,7 +3147,7 @@ void CTar::x_AppendFile(const string& file)
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
         if (avail > size) {
-            avail = (size_t)size;
+            avail = (size_t) size;
         }
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
@@ -3199,8 +3229,9 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             } else {
                 off += m_Tar->m_BufferSize - BLOCK_SIZE;
             }
-            if (read > count)
+            if (read > count) {
                 read = count;
+            }
             memcpy(buf, m_Tar->m_Buffer + off, read);
             m_Read += read;
             count  -= read;
