@@ -335,8 +335,7 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
             if (of.good()) {
-                CNcbiIstream& is = GetInBlob().GetIStream(blobid);
-                of << is.rdbuf();
+                of << GetInBlob().GetIStream(blobid).rdbuf();
                 GetInBlob().Reset();
                 s_ReplaceArg(args, fname, nfname);
             }

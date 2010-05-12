@@ -414,9 +414,9 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
         list<string> spars;
         NStr::Split(resp, ";", spars);
         bool fast_status = false;
-        ITERATE(list<string>, it, spars) {
+        ITERATE(list<string>, param, spars) {
             string n,v;
-            NStr::SplitInTwo(*it,"=",n,v);
+            NStr::SplitInTwo(*param,"=",n,v);
             if (n == "max_input_size") {
                 size_t val = NStr::StringToInt(v) / 4;
                 if (m_ServerParams->max_input_size > val)
