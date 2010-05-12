@@ -149,7 +149,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
     if ( !empty_period ) {
         x_CleanTimeLine(now);
         if ( m_Mode == eContinuous ) {
-            m_NumRequests = m_TimeLine.size();
+            m_NumRequests = (unsigned int)m_TimeLine.size();
         }
         if ( m_NumRequests >= m_NumRequestsAllowed ) {
             switch(action) {

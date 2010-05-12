@@ -589,11 +589,11 @@ CExprParser::Scan(bool operand)
             if (!ierr && ipos >= fpos) { 
                 m_VStack[m_v_sp].SetType(CExprValue::eINT);
                 m_VStack[m_v_sp].ival = ival;
-                m_Pos = ipos - m_Buf;
+                m_Pos = (int)(ipos - m_Buf);
             } else { 
                 m_VStack[m_v_sp].SetType(CExprValue::eFLOAT);
                 m_VStack[m_v_sp].fval = fval;
-                m_Pos = fpos - m_Buf;
+                m_Pos = (int)(fpos - m_Buf);
             } 
 
             m_VStack[m_v_sp].m_Pos = m_Pos;

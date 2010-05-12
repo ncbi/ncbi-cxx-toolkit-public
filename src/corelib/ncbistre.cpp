@@ -451,7 +451,7 @@ EEncodingForm ReadIntoUtf8(
     const int bom_max = 4;
     memset(tmp,0,bom_max);
     input.read(tmp,bom_max);
-    int n = input.gcount();
+    int n = (int)input.gcount();
     {
         int bom_len=0;
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
@@ -481,7 +481,7 @@ EEncodingForm ReadIntoUtf8(
 
         if (n == 0) {
             input.read(tmp, buf_size);
-            n = input.gcount();
+            n = (int)input.gcount();
             result->reserve(max(result->capacity(), result->size() + n));
         }
         tmp[n] = '\0';
@@ -516,7 +516,7 @@ EEncodingForm ReadIntoUtf8(
             if (what_if_no_bom == eNoBOM_GuessEncoding) {
                 if (n == bom_max) {
                     input.read(tmp + n, buf_size - n);
-                    n += input.gcount();
+                    n += (int)input.gcount();
                     result->reserve(max(result->capacity(), result->size() + n));
                 }
                 tmp[n] = '\0';
@@ -565,7 +565,7 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
         Uint2* us = reinterpret_cast<Uint2*>(tmp);
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
         input.get(tmp[0]);
-        int n = input.gcount();
+        int n = (int)input.gcount();
         if (n == 1 && (uc[0] == 0xEF || uc[0] == 0xFE || uc[0] == 0xFF)) {
             input.get(tmp[1]);
             if (input.gcount()==1) {

@@ -4445,7 +4445,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         ITERATE(TMessages, it, *m_Messages) {
             CNcbiOstrstream str_os;
             str_os << *it;
-            write(m_Handle, str_os.str(), str_os.pcount());
+            write(m_Handle, str_os.str(), (unsigned int)str_os.pcount());
             str_os.rdbuf()->freeze(false);
         }
         m_Messages.reset();
@@ -4473,7 +4473,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 
     CNcbiOstrstream str_os;
     str_os << mess;
-    write(m_Handle, str_os.str(), str_os.pcount());
+    write(m_Handle, str_os.str(), (unsigned int)str_os.pcount());
     str_os.rdbuf()->freeze(false);
 }
 

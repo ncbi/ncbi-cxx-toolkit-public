@@ -5250,7 +5250,7 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     do {
         char* ptr = (char*)(buf);
 #if defined(NCBI_OS_MSWIN)
-        DWORD n_write   = (n > ULONG_MAX) ? ULONG_MAX : n;
+        DWORD n_write   = (n > ULONG_MAX) ? ULONG_MAX : (DWORD)n;
         DWORD n_written = 0;
         if ( ::WriteFile(m_Handle, buf, n_write, &n_written, NULL) == 0 ) {
             NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");

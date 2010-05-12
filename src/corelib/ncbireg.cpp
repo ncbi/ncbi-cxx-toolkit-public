@@ -1608,7 +1608,8 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
     }
 
     for (SIZE_TYPE i = 0;  i < bases.size();  ++i) {
-        x_Add(*bases[i].second, ePriority_MaxUser - initial_num_bases - i,
+        x_Add(*bases[i].second,
+              TPriority(ePriority_MaxUser - initial_num_bases - i),
               sm_BaseRegNamePrefix + bases[i].first);
     }
 

@@ -463,7 +463,7 @@ void GenerateKey(const string& pwd, TBlockTEA_Key& key)
         0x8E, 0x56, 0xF9, 0xD7, 0x00
     };
     string hash = pwd + (char*)kBlockTEA_Salt;
-    int len = hash.size();
+    int len = (int)hash.size();
     // Allocate memory for both digest (16) and salt (20+1)
     char digest[37];
     memcpy(digest + 16, kBlockTEA_Salt, 21);
@@ -499,7 +499,7 @@ string BlockTEA_Encode(const string& password,
     StringToInt4Array(padded.c_str(), buf, padded.size());
 
     // Encode data
-    BlockTEA_Encode_In_Place(buf, buflen, key);
+    BlockTEA_Encode_In_Place(buf, (Int4)buflen, key);
 
     // Convert encoded buffer back to string
     string ret = Int4ArrayToString(buf, buflen);
@@ -526,7 +526,7 @@ string BlockTEA_Decode(const string& password,
     StringToInt4Array(src.c_str(), buf, src.size());
 
     // Decode data
-    BlockTEA_Decode_In_Place(buf, buflen, key);
+    BlockTEA_Decode_In_Place(buf, (Int4)buflen, key);
 
     // Convert decoded buffer back to string
     string ret = Int4ArrayToString(buf, buflen);
@@ -605,7 +605,7 @@ void CalcMD5(const char* data, size_t len, unsigned char* digest)
     // append "0" bits until message length in bits == 448 (mod 512)
     // append bit (not byte) length of unpadded message as 64-bit
     // little-endian integer to message
-    Uint4 padlen = 64 - len % 64;
+    Uint4 padlen = 64 - Uint4(len % 64);
     if (padlen < 9) padlen += 64;
     string buf(data, len);
     buf += char(0x80);

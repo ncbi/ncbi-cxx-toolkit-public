@@ -649,15 +649,15 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
     }
     out << ">" << endl;
 
-    s_WriteXmlLine(         out, "description", GetComment());
+    s_WriteXmlLine(out, "description", GetComment());
     size_t group = GetGroup();
     if (group != 0) {
-        s_WriteXmlLine(     out, "group", NStr::UIntToString(group));
+        s_WriteXmlLine(out, "group", NStr::UIntToString((unsigned long)group));
     }
     const CArgDescSynopsis* syn = 
         dynamic_cast<const CArgDescSynopsis*>(this);
     if (syn && !syn->GetSynopsis().empty()) {
-        s_WriteXmlLine( out, "synopsis", syn->GetSynopsis());
+        s_WriteXmlLine(out, "synopsis", syn->GetSynopsis());
     }
 
 // constraint
