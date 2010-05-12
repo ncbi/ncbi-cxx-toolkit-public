@@ -105,6 +105,10 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/ncbiapp.hpp>
 
+// for writing out tmp files
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
+
 extern const char* sc_TestEntryCollidingLocusTags;
 
 BEGIN_NCBI_SCOPE
@@ -163,6 +167,18 @@ void CheckErrors(const CValidError& eval,
             BOOST_CHECK_EQUAL(expected_errors[err_pos]->GetErrMsg(), "Expected error not found");
         }
         ++err_pos;
+    }
+}
+
+
+void WriteErrors(const CValidError& eval)
+{
+    for ( CValidError_CI vit(eval); vit; ++vit) {
+        string description =  vit->GetAccession() + ":"
+                + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
+                + vit->GetErrCode() + ":"
+                + vit->GetMsg();
+        printf ("%s\n", description.c_str());
     }
 }
 
@@ -1916,8 +1932,6 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "CollidingGeneNames", "Colliding names in gene features"));
-    expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "CollidingGeneNames", "Colliding names in gene features"));
-    expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoMolInfoFound", "No Mol-info applies to this Bioseq"));
@@ -2388,6 +2402,36 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
 }
 
 
+static void WriteOutTemp (CRef<CSeq_entry> entry)
+{
+    // construct a temp file name
+    CNcbiOstrstream oss;
+    oss << "test.asn";
+    string filename = CNcbiOstrstreamToString(oss);
+    string fullPath = CDirEntry::MakePath(".", filename);
+
+    // initialize a binary output stream
+    auto_ptr<CNcbiOstream> outStream;
+    outStream.reset(new CNcbiOfstream(
+        fullPath.c_str(),
+        IOS_BASE::out));
+    if (!(*outStream)) {
+        return;
+    }
+
+    auto_ptr<CObjectOStream> outObject;
+    // Associate ASN.1 text serialization methods with the input
+    outObject.reset(new CObjectOStreamAsn(*outStream));
+
+    // write the asn data
+    try {
+        *outObject << *entry;
+        outStream->flush();
+    } catch (exception& e) {
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
@@ -2398,6 +2442,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("GTGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept(true);
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept_text("unclassified translation discrepancy");
+
+    // write out seq-entry
+    WriteOutTemp(entry);
+
     // list of expected errors
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
@@ -2410,6 +2458,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept();
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept_text();
 
+    // write out seq-entry
+    WriteOutTemp(entry);
+
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
@@ -2417,8 +2468,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+
+    // write out seq-entry
+    WriteOutTemp(entry);
+
     delete expected_errors[1];
     expected_errors[1] = NULL;
     expected_errors[2]->SetErrMsg("3 internal stops. Genetic code [0]");
@@ -5386,6 +5440,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InconsistentBioSources",
                               "Population set contains inconsistent organisms."));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6477,6 +6535,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     SetBiomol (entry, CMolInfo::eBiomol_mRNA);
     expected_errors[0]->SetErrMsg("HIV with mRNA molecule type is rare");
+    expected_errors[0]->SetSeverity(eDiag_Info);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -9898,6 +9957,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtNotSegSet)
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError ("", eDiag_Warning, "MissingSetTitle", 
                                                   "Pop/Phy/Mut/Eco set does not have title"));
+    expected_errors.push_back(new CExpectedError ("", eDiag_Warning, "EmptySet", 
+                                                  "Pop/Phy/Mut/Eco set has no components"));
     expected_errors.push_back(new CExpectedError("", eDiag_Critical, "NucProtNotSegSet",
                                                  "Nuc-prot Bioseq-set contains wrong Bioseq-set, its class is \"eco-set\"."));
     eval = validator.Validate(seh, options);
@@ -9916,6 +9977,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
 
     expected_errors.push_back(new CExpectedError ("part1", eDiag_Warning, "MissingSetTitle", 
                                                   "Pop/Phy/Mut/Eco set does not have title"));
+    expected_errors.push_back(new CExpectedError("part1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("part2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("part3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "SegSetNotParts",
                                                  "Segmented set contains wrong Bioseq-set, its class is \"eco-set\"."));
     eval = validator.Validate(seh, options);
@@ -10098,8 +10165,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 }
 
 
-#define TESTPOPPHYMUTECOWGS(seh, entry) \
+#define TESTPOPPHYMUTECO(seh, entry) \
     entry->SetSet().SetClass(CBioseq_set::eClass_pop_set); \
+    WriteOutTemp(entry); \
     eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors); \
     entry->SetSet().SetClass(CBioseq_set::eClass_phy_set); \
@@ -10110,7 +10178,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     CheckErrors (*eval, expected_errors); \
     entry->SetSet().SetClass(CBioseq_set::eClass_eco_set); \
     eval = validator.Validate(seh, options); \
-    CheckErrors (*eval, expected_errors); \
+    CheckErrors (*eval, expected_errors);
+
+#define TESTWGS(seh, entry) \
     entry->SetSet().SetClass(CBioseq_set::eClass_wgs_set); \
     eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors);
@@ -10136,8 +10206,23 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
     expected_errors[0]->SetAccession("good1");
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[0]->SetErrMsg("Pop/phy/mut/eco set contains inconsistent MolInfo biomols");
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
-    TESTPOPPHYMUTECOWGS (seh, entry)
+    TESTPOPPHYMUTECO (seh, entry)
+
+    delete expected_errors[3];
+    expected_errors.pop_back();
+    delete expected_errors[2];
+    expected_errors.pop_back();
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    TESTWGS (seh, entry);
 
     CLEAR_ERRORS
 }
@@ -10176,7 +10261,23 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InternalGenBankSet",
                                                  "Bioseq-set contains internal GenBank Bioseq-set"));
 
-    TESTPOPPHYMUTECOWGS (seh, entry)
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+
+    TESTPOPPHYMUTECO (seh, entry)
+
+    delete expected_errors[3];
+    expected_errors.pop_back();
+    delete expected_errors[2];
+    expected_errors.pop_back();
+    delete expected_errors[1];
+    expected_errors.pop_back();
+
+    TESTWGS (seh, entry);
 
     CLEAR_ERRORS
 }
@@ -10226,6 +10327,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_INSDRefSeqPackaging)
                                                  "INSD and RefSeq records should not be present in the same set"));
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "NoOrganismInTitle",
                                                  "RefSeq nucleotide title does not start with organism name"));
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10241,12 +10348,48 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
     entry->SetSet().SetSeq_set().push_back(BuildGoodEcoSet());
     entry->SetSet().SetSeq_set().push_back(BuildGoodGenProdSet());
 
+    WriteOutTemp (entry);
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "GPSnonGPSPackaging",
                                                  "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
+                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "MissingSetTitle", 
+                                                  "Pop/Phy/Mut/Eco set does not have title"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
 
-    TESTPOPPHYMUTECOWGS (seh, entry->SetSet().SetSeq_set().front());
+
+    TESTPOPPHYMUTECO (seh, entry)
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "GPSnonGPSPackaging",
+                                                 "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
+                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+
+    TESTWGS (seh, entry);
 
     CLEAR_ERRORS
 }
@@ -10264,8 +10407,15 @@ BOOST_AUTO_TEST_CASE(Test_PKG_RefSeqPopSet)
                                                  "RefSeq nucleotide title does not start with organism name"));
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Critical, "RefSeqPopSet",
                                                  "RefSeq record should not be a Pop-set"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good2", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
+    expected_errors.push_back(new CExpectedError("good3", eDiag_Warning, "ComponentMissingTitle",
+                              "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    WriteErrors (*eval);
 
     CLEAR_ERRORS
 }

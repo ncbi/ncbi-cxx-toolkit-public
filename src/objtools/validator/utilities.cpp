@@ -411,11 +411,15 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
         } else if (obj->GetThisTypeInfo() == CSeq_align::GetTypeInfo()) {
             const CSeq_align& align = dynamic_cast<const CSeq_align&>(*obj);
             try {
-                const CSeq_id& id = align.GetSeq_id(0);
-                CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-                if (bsh) {
-                    return s_GetBioseqAcc(bsh);
+                for (int i = 0; i < align.GetDim(); ++i) {
+                    const CSeq_id& id = align.GetSeq_id(i);
+                    CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+                    if (bsh) {
+                        return s_GetBioseqAcc(bsh);
+                    }
                 }
+                // failed to find resolvable ID, use bare ID
+                return s_GetBioseqAcc(align.GetSeq_id(0));               
             } catch (CException& x) {
             }
         } else if (obj->GetThisTypeInfo() == CSeq_graph::GetTypeInfo()) {
@@ -534,9 +538,7 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
         return eAccessionFormat_too_long;
     } else if (accession.length() < 3 
                || ! isalpha (accession.c_str()[0]) 
-               || ! isupper (accession.c_str()[0])
-               || ! isalpha (accession.c_str()[1])
-               || ! isupper (accession.c_str()[1])) {
+               || ! isupper (accession.c_str()[0])) {
         return eAccessionFormat_no_start_letters;
     }
     

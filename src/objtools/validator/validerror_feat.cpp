@@ -886,7 +886,8 @@ bool CValidError_feat::IsPlastid(int genome)
          genome == CBioSource::eGenome_cyanelle     ||
          genome == CBioSource::eGenome_apicoplast   ||
          genome == CBioSource::eGenome_leucoplast   ||
-         genome == CBioSource::eGenome_proplastid  ) { 
+         genome == CBioSource::eGenome_proplastid   ||
+         genome == CBioSource::eGenome_chromatophore ) { 
         return true;
     }
 
@@ -1059,7 +1060,7 @@ static bool s_MatchPartialType (const CSeq_loc& loc1, const CSeq_loc& loc2, unsi
 }
 
 
-static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned int partial_type, CScope& scope)
+bool CValidError_feat::x_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned int partial_type)
 {
     bool rval = false;
 
@@ -1071,7 +1072,7 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
         // gene is ok if its partialness matches the overlapping coding region or mRNA
         TFeatScores mRNAs;
         GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_Contained, mRNAs, scope);
+            CSeqFeatData::eSubtype_mRNA, eOverlap_Contained, mRNAs, *m_Scope);
         ITERATE (TFeatScores, s, mRNAs) {
             const CSeq_loc& mrna_loc = s->second->GetLocation();
             if (mrna_loc.GetStart(eExtreme_Biological) == gene_start
@@ -1084,7 +1085,7 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
         if (!rval) {
             TFeatScores cds;
             GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Cdregion,
-                CSeqFeatData::eSubtype_cdregion, eOverlap_Contained, cds, scope);
+                CSeqFeatData::eSubtype_cdregion, eOverlap_Contained, cds, *m_Scope);
             ITERATE (TFeatScores, s, cds) {
                 const CSeq_loc& cds_loc = s->second->GetLocation();
                 if (cds_loc.GetStart(eExtreme_Biological) == gene_start
@@ -1099,7 +1100,7 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
         // mRNA is ok if its partialness matches the coding region or gene
         TFeatScores cds;
         GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Cdregion,
-            CSeqFeatData::eSubtype_cdregion, eOverlap_CheckIntervals, cds, scope);
+            CSeqFeatData::eSubtype_cdregion, eOverlap_CheckIntervals, cds, *m_Scope);
         ITERATE (TFeatScores, s, cds) {
             const CSeq_loc& cds_loc = s->second->GetLocation();
             if (s_MatchPartialType(feat.GetLocation(), cds_loc, partial_type)) {
@@ -1112,7 +1113,7 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
             TSeqPos mrna_stop = feat.GetLocation().GetStop(eExtreme_Biological);
             TFeatScores genes;
             GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Gene,
-                CSeqFeatData::eSubtype_gene, eOverlap_Contains, genes, scope);
+                CSeqFeatData::eSubtype_gene, eOverlap_Contains, genes, *m_Scope);
             ITERATE (TFeatScores, s, genes) {
                 const CSeq_loc& gene_loc = s->second->GetLocation();
                 if (gene_loc.GetStart(eExtreme_Biological) == mrna_start
@@ -1124,13 +1125,16 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
             }
         }
     } else if (feat.GetData().IsCdregion()) {
-        // coding region is ok if same as mRNA
+        // coding region is ok if same as mRNA AND partial at splice site or gap
         TFeatScores mRNAs;
         GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntervals, mRNAs, scope);
+            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntervals, mRNAs, *m_Scope);
         ITERATE (TFeatScores, s, mRNAs) {
             const CSeq_loc& mrna_loc = s->second->GetLocation();
-            if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)) {
+            bool bad_seq = false;
+            bool is_gap = false;
+            if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)
+                && IsPartialAtSpliceSiteOrGap(feat.GetLocation(), partial_type, bad_seq, is_gap)) {
                 rval = true;
                 break;
             }
@@ -1139,7 +1143,7 @@ static bool s_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned 
         // exon is ok if its partialness matches the mRNA
         TFeatScores mRNAs;
         GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntRev, mRNAs, scope);
+            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntRev, mRNAs, *m_Scope);
         ITERATE (TFeatScores, s, mRNAs) {
             const CSeq_loc& mrna_loc = s->second->GetLocation();
             if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)) {
@@ -1251,27 +1255,30 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             for ( int j = 0; j < 4; ++j ) {
                 if (partials[i] & errtype) {
                     bool bad_seq = false;
+                    bool is_gap = false;
                     if ( i == 1  &&  j < 2  &&  IsCDDFeat(feat) ) {
                         // supress warning
-                    } else if ( i == 1  &&  j < 2  &&  m_Scope && s_MatchesOverlappingFeaturePartial(feat, errtype, *m_Scope)) {
+                    } else if ( i == 1  &&  j < 2  &&  m_Scope && x_MatchesOverlappingFeaturePartial(feat, errtype)) {
                         // error is suppressed
                     } else if ( i == 1  &&  j < 2  &&
-                        IsPartialAtSpliceSite(feat.GetLocation(), errtype, bad_seq) ) {
-                        if (!feat.GetData().IsCdregion() || SplicingNotExpected (feat)) {
-                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                parterr[i] + ": " + parterrs[j] + 
-                                " (but is at consensus splice site)", feat);
-                        } else if (feat.GetData().IsCdregion()) {
-                            if (m_Scope) {
-                                CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-                                if (bsh) {
-                                    CSeqdesc_CI diter (bsh, CSeqdesc::e_Molinfo);
-                                    if (diter && diter->GetMolinfo().IsSetBiomol()
-                                        && diter->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                            parterr[i] + ": " + parterrs[j] + 
-                                            " (but is at consensus splice site, but is on an mRNA that is already spliced)",
-                                            feat);
+                        IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
+                        if (!is_gap) {
+                            if (!feat.GetData().IsCdregion() || SplicingNotExpected (feat)) {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                    parterr[i] + ": " + parterrs[j] + 
+                                    " (but is at consensus splice site)", feat);
+                            } else if (feat.GetData().IsCdregion()) {
+                                if (m_Scope) {
+                                    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                                    if (bsh) {
+                                        CSeqdesc_CI diter (bsh, CSeqdesc::e_Molinfo);
+                                        if (diter && diter->GetMolinfo().IsSetBiomol()
+                                            && diter->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                                parterr[i] + ": " + parterrs[j] + 
+                                                " (but is at consensus splice site, but is on an mRNA that is already spliced)",
+                                                feat);
+                                        }
                                     }
                                 }
                             }
@@ -1323,7 +1330,9 @@ static int s_GetStrictGenCode(const CBioSource& src)
                 case CBioSource::eGenome_kinetoplast:
                 case CBioSource::eGenome_mitochondrion:
                     // bacteria and plant organelle code
-                    gencode = orn.GetMgcode();
+                    if (orn.IsSetMgcode()) {
+                        gencode = orn.GetMgcode();
+                    }
                     break;
                 case CBioSource::eGenome_chloroplast:
                 case CBioSource::eGenome_chromoplast:
@@ -1336,7 +1345,9 @@ static int s_GetStrictGenCode(const CBioSource& src)
                     gencode = 11;
                     break;
                 default:
-                    gencode = orn.GetGcode();
+                    if (orn.IsSetGcode()) {
+                        gencode = orn.GetGcode();
+                    }
                     break;
             }
         }
@@ -1722,7 +1733,7 @@ void CValidError_feat::ValidateCdregion (
     ValidateBadMRNAOverlap(feat);
     ValidateCommonCDSProduct(feat);
     ValidateCDSPartial(feat);
-    if (DoesCDSHaveShortIntrons(feat)) {
+    if (!feat.IsSetExcept() && DoesCDSHaveShortIntrons(feat)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
                  "Introns should be at least 10 nt long", feat);
     }
@@ -2253,6 +2264,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         for ( CSeq_loc_CI si(loc); si; ++si ) {
             try {
                 const CSeq_loc& part = si.GetSeq_loc();
+                CSeq_loc::TRange range = si.GetRange();
                 CBioseq_Handle bsh_si = m_Scope->GetBioseqHandle (part);
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
@@ -2260,6 +2272,13 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                     string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
                     TSeqPos start = part.GetStart(eExtreme_Biological);
                     TSeqPos stop = part.GetStop(eExtreme_Biological);
+                    if (si.GetStrand() == eNa_strand_minus) {
+                        start = range.GetTo();
+                        stop = range.GetFrom();
+                    } else {
+                        start = range.GetFrom();
+                        stop = range.GetTo();
+                    }
 
                     bool checkExonDonor = false;
                     bool checkExonAcceptor = false;
@@ -3416,7 +3435,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
             if ( range.GetFrom() != range.GetTo() ) {
                 EDiagSev sev = eDiag_Warning;
-                if (m_Imp.IsINSDInSep()) {
+                if (m_Imp.IsRefSeq()) {
                     sev = eDiag_Error;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PolyAsiteNotPoint,
@@ -3853,7 +3872,7 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
         } else if (valid_accession != eAccessionFormat_valid) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                      val + " is not a legal accession for qualifier compare", feat);
-        } else if (m_Imp.IsINSDInSep() && NStr::Find (val, "_") == string::npos) {
+        } else if (m_Imp.IsINSDInSep() && NStr::Find (val, "_") != string::npos) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                      "RefSeq accession " + val + " cannot be used for qualifier compare", feat);
         }
@@ -5174,16 +5193,56 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
         return;
     }
 
-    // look for overlapping genes
-    if (GetOverlappingGene(feat.GetLocation(), *m_Scope)) {
+    // Make a selector to limit features to those of interest.
+    SAnnotSelector sel;
+    sel.SetResolveAll();
+    sel.SetAdaptiveDepth(true);
+
+    // Exclude SNP's and STS's since they won't add anything interesting
+    // but could significantly degrade performance.
+    sel.ExcludeNamedAnnots("SNP");
+    sel.ExcludeNamedAnnots("STS");
+    sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene);
+
+    // Use a CFeat_CI iterator to iterate through all selected features.
+    bool has_containing_gene = false;
+    CFeat_CI feat_it(CFeat_CI(*m_Scope, feat.GetLocation(), sel));
+
+    while (feat_it) {
+        TSeqPos circular_len = kInvalidSeqPos;
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat_it->GetLocation());
+        if (bsh && bsh.IsSetInst_Topology()
+            && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular
+            && bsh.IsSetInst_Length()) {
+            circular_len = bsh.GetInst_Length();
+        }
+        if (TestForOverlap (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, circular_len) >= 0) {
+            has_containing_gene = true;
+            break;
+        }
+        ++feat_it;
+    }
+    if (has_containing_gene) {
         return;
     }
 
-    // look for intersecting genes
-    if (!GetBestOverlappingFeat(feat.GetLocation(),
-                                  CSeqFeatData::e_Gene,
-                                  eOverlap_Simple,
-                                  *m_Scope)) {
+    feat_it.Rewind();
+    bool has_simple_overlap = false;
+    while (feat_it) {
+        TSeqPos circular_len = kInvalidSeqPos;
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat_it->GetLocation());
+        if (bsh && bsh.IsSetInst_Topology()
+            && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular
+            && bsh.IsSetInst_Length()) {
+            circular_len = bsh.GetInst_Length();
+        }
+        if (TestForOverlap (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Simple, circular_len) >= 0) {
+            has_simple_overlap = true;
+            break;
+        }
+        ++feat_it;
+    }
+    if (!has_simple_overlap) {
         return;
     }
 
@@ -5566,6 +5625,8 @@ bool CValidError_feat::ValidateCdRegionTranslation
     size_t internal_stop_count = 0;
 
     bool got_dash = (transl_prot[0] == '-');
+    bool got_x = (transl_prot[0] == 'X' 
+                  && !feat.GetLocation().IsPartialStart(eExtreme_Biological));
     size_t num_x = 0, num_nonx = 0;
 
     ITERATE(string, it, transl_prot) {
@@ -5591,22 +5652,24 @@ bool CValidError_feat::ValidateCdRegionTranslation
     if (internal_stop_count > 0) {
         has_errors = true;
         other_than_mismatch = true;
-        if (got_dash) {
+        if (got_dash || got_x) {
+            string codon_desc = got_dash ? "Illegal" : "Ambiguous";
             if (report_errors  ||  unclassified_except) {
                 EDiagSev sev = eDiag_Error;
                 if (unclassified_except) {
                     sev = eDiag_Warning;
                 } else {                
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
-                        "Illegal start codon (and " + 
+                        codon_desc + " start codon (and " + 
                         NStr::IntToString(internal_stop_count) +
                         " internal stops). Probably wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
                 }
+                NStr::ToLower(codon_desc);
                 PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
                     NStr::IntToString(internal_stop_count) + 
-                    " internal stops (and illegal start codon). Genetic code [" + gccode + "]", feat);
+                    " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
             }
         } else if (report_errors  ||  unclassified_except) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
@@ -5617,17 +5680,34 @@ bool CValidError_feat::ValidateCdRegionTranslation
         if (internal_stop_count > 5) {
             return false;
         }
-    } else if (got_dash) {
+    } else if (got_dash || got_x) {
+        string codon_desc = got_dash ? "Illegal" : "Ambiguous";
         has_errors = true;
         other_than_mismatch = true;
         if (report_errors && !reported_bad_start_codon && !unclassified_except) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
-                "Illegal start codon used. Wrong genetic code [" +
+                codon_desc + " start codon used. Wrong genetic code [" +
                 gccode + "] or protein should be partial", feat);
             reported_bad_start_codon = true;
         }
     }
     return true;
+}
+
+
+static bool s_IsLocAt5End (const CSeq_loc& loc, CScope *scope)
+{
+    bool rval = false;
+
+    if (loc.GetStrand() == eNa_strand_minus) {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
+        if (bsh && loc.GetStart(eExtreme_Biological) == bsh.GetBioseqLength() - 1) {
+            rval = true;
+        }
+    } else if (loc.GetStart(eExtreme_Biological) == 0) {
+        rval = true;
+    }
+    return rval;
 }
 
 
@@ -5707,7 +5787,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 PostErr (sev, eErr_SEQ_FEAT_SuspiciousFrame, 
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
-        } else if ((part_loc & eSeqlocPartial_Start) && !ArePartialsAtSpliceSitesOrGaps (location)) {
+        } else if ((part_loc & eSeqlocPartial_Start) && !s_IsLocAt5End(location, m_Scope) && !ArePartialsAtSpliceSitesOrGaps (location)) {
             EDiagSev sev = eDiag_Info;
             if (s_LocIsNmAccession (location, *m_Scope)) {
                 sev = eDiag_Error;
@@ -5768,9 +5848,12 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
                     CSeqTranslator::Translate(*tmp, bsh, transl_prot, genetic_code, true, false, &alt_start);
                     unable_to_translate = false;
+#if 0
                 } else if (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
                     || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1) {
+                    // figure out
                     // don't translate
+#endif
                 } else {
                     CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
                                                 true,   // include stop codons
@@ -5798,6 +5881,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     // check alternative start codon
     if (alt_start  &&  gc == 1) {
+        // disabled
+#if 0
         EDiagSev sev = eDiag_Warning;
         if (s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope)) {
             sev = eDiag_Info;
@@ -5817,6 +5902,24 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             if (report_errors) {
                 PostErr(sev, eErr_SEQ_FEAT_AltStartCodon,
                     "Alternative start codon used", feat);
+            }
+        }
+#endif
+    } else if (!alt_start && feat.IsSetExcept() && feat.IsSetExcept_text()
+               && NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+        if (bsh) {
+            bool is_refseq_loc = false;
+            FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+                if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+                    && NStr::StartsWith((*id_it)->GetOther().GetAccession(), "NM_")) {
+                    is_refseq_loc = true;
+                    break;
+                }
+            }
+            if (is_refseq_loc) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_AltStartCodon, 
+                         "Unnecessary alternative start codon exception", feat);
             }
         }
     }
@@ -5969,10 +6072,12 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                         "Start of location should probably be partial",
                         feat);
                 }
-            } else if (transl_prot[mismatches.front()] == '-') {
+            } else if (transl_prot[mismatches.front()] == '-' ||
+                       (transl_prot[mismatches.front()] == 'X' && !no_beg)) {
                 if (report_errors && !reported_bad_start_codon && !unclassified_except) {
+                    string codon_desc = transl_prot[mismatches.front()] == '-' ? "Illegal" : "Ambiguous";
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        "Illegal start codon used. Wrong genetic code [" +
+                        codon_desc + " start codon used. Wrong genetic code [" +
                         gccode + "] or protein should be partial", feat);
                 }
             }
@@ -6593,12 +6698,14 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 }
 
 
-bool CValidError_feat::IsPartialAtSpliceSite
+bool CValidError_feat::IsPartialAtSpliceSiteOrGap
 (const CSeq_loc& loc,
  unsigned int tag,
- bool& bad_seq)
+ bool& bad_seq,
+ bool& is_gap)
 {
     bad_seq = false;
+    is_gap = false;
     if ( tag != eSeqlocPartial_Nostart && tag != eSeqlocPartial_Nostop ) {
         return false;
     }
@@ -6638,7 +6745,14 @@ bool CValidError_feat::IsPartialAtSpliceSite
 
     bool result = false;
 
-    
+    if (tag == eSeqlocPartial_Nostop && stop < len - 1 && vec.IsInGap(stop + 1)) {
+        is_gap = true;
+        return true;
+    } else if (tag == eSeqlocPartial_Nostart && start > 0 && vec.IsInGap(start - 1)) {
+        is_gap = true;
+        return true;
+    }
+
     if ( (tag == eSeqlocPartial_Nostop)  &&  (stop < len - 2) ) {
         try {
             CSeqVector::TResidue res1 = vec[stop + 1];

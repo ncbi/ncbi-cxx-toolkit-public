@@ -477,6 +477,9 @@ void CValidError_imp::x_ValidatePages
         return;
     }
 
+    NStr::ReplaceInPlace(start, " ", "");
+    NStr::ReplaceInPlace(stop, " ", "");
+
     try {
         int p1 = NStr::StringToInt (start);
         try {

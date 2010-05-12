@@ -561,6 +561,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_BioSourceNeedsChromosome,
    TErrStrs( "BioSourceNeedsChromosome",
 "Chromosome should be set on a BioSource descriptor in non-viral complete genomes.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+   TErrStrs( "MolInfoConflictsWithBioSource",
+"Viral lineage information conflicts with MolInfo.")),
 
 /* SEQ_GENERIC */
 
@@ -695,6 +698,12 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_NucProtSetHasTitle,
    TErrStrs ("NucProtSetHasTitle",
 "A title descriptor was found on a nuc-prot set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_ComponentMissingTitle,
+   TErrStrs ("ComponentMissingTitle",
+"A title descriptor should be present on the components of a pop/phy/mut/eco set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_SingleItemSet,
+   TErrStrs ("SingleItemSet",
+"Only a single Bioseq was found in this BioseqSet. Is that what was intended?")),
 
 /* SEQ_FEAT */
 

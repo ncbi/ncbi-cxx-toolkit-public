@@ -746,7 +746,8 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype, bool& bad_seq);
+    bool IsPartialAtSpliceSiteOrGap(const CSeq_loc& loc, unsigned int errtype, bool& bad_seq, bool& is_gap);
+    bool x_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned int partial_type);
     bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
@@ -855,6 +856,7 @@ private:
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
+    bool x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2);
     void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
@@ -960,6 +962,8 @@ private:
     void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
     void ValidatePartsSet(const CBioseq_set& seqset);
     void ValidateGenbankSet(const CBioseq_set& seqset);
+    void ValidateSetTitle(const CBioseq_set& seqset);
+    void ValidateSetElements(const CBioseq_set& seqset);
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);

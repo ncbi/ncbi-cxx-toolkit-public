@@ -135,16 +135,47 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
 
 // ================================  Private  ===============================
 
+typedef struct ambchar {
+  char ambig_char;
+  char * match_list;
+} AmbCharData;
+
+static const AmbCharData ambiguity_list[] = {
+ { 'R', "AG" },
+ { 'Y', "CT" },
+ { 'M', "AC" },
+ { 'K', "GT" },
+ { 'S', "CG" },
+ { 'W', "AT" },
+ { 'H', "ACT" },
+ { 'B', "CGT" },
+ { 'V', "ACG" },
+ { 'D', "AGT" }};
+
+static const int num_ambiguities = sizeof (ambiguity_list) / sizeof (AmbCharData);
+
 static bool s_AmbiguousMatch (char a, char b)
 {
     if (a == b) {
         return true;
     } else if (a == 'N' || b == 'N') {
         return true;
+    } else {
+        char search[2];
+        search[1] = 0;
+        for (int i = 0; i < num_ambiguities; i++) {
+            search[0] = b;
+            if (a == ambiguity_list[i].ambig_char
+                && NStr::Find (ambiguity_list[i].match_list, search) != string::npos) {
+                return true;
+            }
+            search[0] = a;
+            if (b == ambiguity_list[i].ambig_char
+                && NStr::Find (ambiguity_list[i].match_list, search) != string::npos) {
+                return true;
+            }
+        }
     }
-
-    // to do - other ambiguities
-
     return false;
 }
 
@@ -153,6 +184,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
 {
     TSignedSeqPos col = 0;
     size_t num_match = 0;
+    size_t match_25 = 0;
 
         // Now calculate Percent Identity
     if (!align.IsSetSegs()) {
@@ -179,47 +211,68 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             return;
         }            
 
-        CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
-        av->SetGapChar('-');
-        av->SetEndChar('.');
+        try {
+            CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
+            av->SetGapChar('-');
+            av->SetEndChar('.');
 
-        TSeqPos aln_len = 0;
-        for (CDense_seg::TLens::const_iterator sit = denseg.GetLens().begin();
-             sit != denseg.GetLens().end();
-             sit++) {
-            aln_len += *sit;
-        }
+            TSeqPos aln_len = av->GetAlnStop() + 1;
 
-        while (col < aln_len) {
-            string column;
-            av->GetColumnVector(column, col + 1);
-            bool match = true;
-            if (internal_gaps && NStr::Find(column, "-") != string::npos) {
-                match = false;
-            } else {
-                // don't care about end gaps, ever
-                NStr::ReplaceInPlace(column, ".", "");            
-                if (!NStr::IsBlank (column)) {
-                    string::iterator it1 = column.begin();
-                    string::iterator it2 = it1;
-                    ++it2;
-                    while (match && it2 != column.end()) {
-                        if (!s_AmbiguousMatch (*it1, *it2)) {
-                            match = false;
-                        }
-                        ++it2;
-                        if (it2 == column.end()) {
-                            ++it1;
-                            it2 = it1;
+            try {
+                while (col < aln_len) {
+                    string column;
+                    av->GetColumnVector(column, col);
+                    bool match = true;
+                    if (internal_gaps && NStr::Find(column, "-") != string::npos) {
+                        match = false;
+                    } else {
+                        // don't care about end gaps, ever
+                        NStr::ReplaceInPlace(column, ".", "");            
+                        // if we cared about internal gaps, it would have been handled above
+                        NStr::ReplaceInPlace(column, "-", "");
+                        if (!NStr::IsBlank (column)) {
+                            string::iterator it1 = column.begin();
+                            string::iterator it2 = it1;
                             ++it2;
+                            while (match && it2 != column.end()) {
+                                if (!s_AmbiguousMatch (*it1, *it2)) {
+                                    match = false;
+                                }
+                                ++it2;
+                                if (it2 == column.end()) {
+                                    ++it1;
+                                    it2 = it1;
+                                    ++it2;
+                                }
+                            }
+                        }
+                        if (match) {
+                            ++num_match;
+                            ++match_25;
                         }
                     }
+                    col++;
+                    if (col % 25 == 0) {
+                        match_25 = 0;
+                    }
                 }
-                if (match) {
-                    ++num_match;
-                }
+	        } catch (CException &x1) {
+                // if sequence is not in scope,
+                // the above is impossible
+                // report 0 %, same as C Toolkit
+                col = aln_len;
+	        } catch (std::exception &x2) {
+                // if sequence is not in scope,
+                // the above is impossible
+                // report 0 %, same as C Toolkit
+                col = aln_len;
             }
-            col++;
+        } catch (CException &x1) {
+            // if AlnVec can't resolve seq id, 
+            // the above is impossible
+            // report 0 %, same as C Toolkit
+            col = 1;
+            num_match = 0;
         }
 
     } else {
@@ -881,22 +934,23 @@ void CValidError_align::x_ValidateFastaLike
 
     if ( !fasta_like.empty() ) {
         CDense_seg::TIds::const_iterator id_it = denseg.GetIds().begin();
-        string context;
-        (*id_it)->GetLabel(&context);
+        string context = (*id_it)->GetSeqIdString();
         CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(**id_it);
         bool is_fasta_like = false;
         if (master_seq) {
             ++id_it;
             while (id_it != denseg.GetIds().end() && !is_fasta_like) {
                 CBioseq_Handle seq = m_Scope->GetBioseqHandle(**id_it);
-                if (s_PercentBioseqMatch (master_seq, seq) < 50) {
+                if (!seq || s_PercentBioseqMatch (master_seq, seq) < 50) {
                     is_fasta_like = true;
                 }
                 ++id_it;
             }
+        } else {
+            is_fasta_like = true;
         }
         if (is_fasta_like) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
+            PostErr(eDiag_Warning, eErr_SEQ_ALIGN_FastaLike,
                     "Fasta: This may be a fasta-like alignment for SeqId: "
                     + fasta_like.front() + " in the context of " + context, align);
         }                    

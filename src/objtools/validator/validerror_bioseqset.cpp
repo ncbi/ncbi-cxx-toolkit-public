@@ -53,8 +53,10 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
-#include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -177,6 +179,9 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         }
         break;
     }
+
+    ValidateSetTitle(seqset);
+    ValidateSetElements(seqset);
 
     // validate annots
     FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
@@ -468,6 +473,93 @@ void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
 }
 
 
+void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset)
+{
+    if (!seqset.IsSetClass()) {
+        return;
+    }
+    if (seqset.GetClass() != CBioseq_set::eClass_eco_set &&
+        seqset.GetClass() != CBioseq_set::eClass_phy_set &&
+        seqset.GetClass() != CBioseq_set::eClass_pop_set &&
+        seqset.GetClass() != CBioseq_set::eClass_mut_set) {
+        return;
+    }
+
+    bool has_title = false;
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+        if ((*it)->IsTitle()) {
+            has_title = true;
+            break;
+        }
+    }
+    if (!has_title) {
+        PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
+            "Pop/Phy/Mut/Eco set does not have title",
+            seqset);
+    }
+}
+
+
+void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
+{
+    if (!seqset.IsSetClass()) {
+        return;
+    }
+    if (seqset.GetClass() == CBioseq_set::eClass_eco_set ||
+        seqset.GetClass() == CBioseq_set::eClass_phy_set ||
+        seqset.GetClass() == CBioseq_set::eClass_pop_set ||
+        seqset.GetClass() == CBioseq_set::eClass_mut_set) {
+
+        if (!seqset.IsSetSeq_set() || seqset.GetSeq_set().size() == 0) {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_EmptySet,
+                "Pop/Phy/Mut/Eco set has no components",
+                seqset);
+        } else if (seqset.GetSeq_set().size() == 1) {
+            bool has_alignment = false;
+            CSeq_annot_CI annot_it (m_Scope->GetBioseq_setHandle(seqset));
+            while (annot_it && !has_alignment) {
+                if (annot_it->IsAlign()) {
+                    has_alignment = true;
+                }
+                ++annot_it;
+            }
+            if (!has_alignment) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_SingleItemSet,
+                    "Pop/Phy/Mut/Eco set has only one component and no alignments",
+                    seqset);
+            }
+        }
+    }
+    if (m_Imp.IsIndexerVersion()) {
+        if (seqset.GetClass() == CBioseq_set::eClass_eco_set ||
+            seqset.GetClass() == CBioseq_set::eClass_phy_set ||
+            seqset.GetClass() == CBioseq_set::eClass_pop_set ||
+            seqset.GetClass() == CBioseq_set::eClass_mut_set) {
+            CBioseq_CI b_i(m_Scope->GetBioseq_setHandle(seqset));
+            while (b_i) {
+                if (b_i->IsNa()) {
+                    const CBioseq& seq = *(b_i->GetCompleteBioseq());
+                    bool has_title = false;
+                    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (d_i, seq) {
+                        if ((*d_i)->IsTitle()) {
+                            has_title = true;
+                            break;
+                        }
+                    }
+                    if (!has_title) {
+                        PostErr(eDiag_Warning, eErr_SEQ_PKG_ComponentMissingTitle,
+                            "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title",
+                            seq);
+                    }
+                }
+                ++b_i;
+            }
+        }
+    }
+}
+
+
+
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
@@ -533,38 +625,12 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
         break;
     }
     CheckForInconsistentBiomols (seqset);
-    bool has_title = false;
-    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
-        if ((*it)->IsTitle()) {
-            has_title = true;
-            break;
-        }
-    }
-    if (!has_title) {
-        PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
-            "Pop/Phy/Mut/Eco set does not have title",
-            seqset);
-    }
 }
 
 
 void CValidError_bioseqset::ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset)
 {
     CheckForInconsistentBiomols (seqset);
-    if (seqset.GetClass() != CBioseq_set::eClass_wgs_set) {
-        bool has_title = false;
-        FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
-            if ((*it)->IsTitle()) {
-                has_title = true;
-                break;
-            }
-        }
-        if (!has_title) {
-            PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
-                "Pop/Phy/Mut/Eco set does not have title",
-                seqset);
-        }
-    }
 }
 
 

@@ -1078,7 +1078,7 @@ void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
                                || (!src.IsSetSubtype() && src_prev.IsSetSubtype())
                                || (src.IsSetSubtype() && src_prev.IsSetSubtype() 
                                    && !lists_match (src.GetSubtype().begin(), src.GetSubtype().end(),
-                                                    src_prev.GetSubtype().begin(), src.GetSubtype().end(),
+                                                    src_prev.GetSubtype().begin(), src_prev.GetSubtype().end(),
                                                     s_SubsourceEquivalent))) {
                         are_identical = false;
                     } else if ((src.IsSetOrg() && !src_prev.IsSetOrg())
@@ -1262,6 +1262,9 @@ void CValidError_bioseq::x_ValidateMultiplePubs(const CBioseq_Handle& bsh)
         if ( otherpub ) {
             bool collision = false;
             if ( muid > 0 ) {
+                if (muids.size() > 0) {
+                    stable_sort (muids.begin(), muids.end());
+                }
                 if ( binary_search(muids.begin(), muids.end(), muid) ) {
                     collision = true;
                 } else {
@@ -1269,6 +1272,9 @@ void CValidError_bioseq::x_ValidateMultiplePubs(const CBioseq_Handle& bsh)
                 }
             }
             if ( pmid > 0 ) {
+                if (pmids.size() > 0) {
+                    stable_sort (pmids.begin(), pmids.end());
+                }
                 if ( binary_search(pmids.begin(), pmids.end(), pmid) ) {
                     collision = true;
                 } else {
@@ -2260,6 +2266,14 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                     size_t dna_len = GetLength (cds->GetLocation(), m_Scope);
                     if (dna_len > 5) {
                         string cds_seq = GetSequenceStringFromLoc (cds->GetLocation(), *m_Scope);
+                        if (cds->GetData().GetCdregion().IsSetFrame()) {
+                            if (cds->GetData().GetCdregion().GetFrame() == 2) {
+                                cds_seq = cds_seq.substr(1);
+                            } else if (cds->GetData().GetCdregion().GetFrame() == 3) {
+                                cds_seq = cds_seq.substr(2);
+                            }
+                        }
+
                         if (!NStr::StartsWith (cds_seq, "NNN")) {
                             leading_x = false;
                         }
@@ -3172,6 +3186,42 @@ static bool s_LocIntervalsSpanOrigin (const CSeq_loc& loc, CBioseq_Handle bsh)
     }
 }
 
+
+static bool s_LocIntervalsCoverSegs (const CSeq_loc& loc)
+{
+    if (loc.GetStrand() == eNa_strand_minus) {
+        int start = loc.GetTotalRange().GetTo();
+        int stop = loc.GetTotalRange().GetFrom();
+        CSeq_loc_CI si(loc);
+        while (si) {
+            if (si.GetRange().GetTo() != start) {
+                return false;
+            }
+            start = si.GetRange().GetFrom() - 1;
+            ++si;
+        }
+        if (start != stop - 1) {
+            return false;
+        }
+    } else {
+        int start = loc.GetTotalRange().GetFrom();
+        int stop = loc.GetTotalRange().GetTo();
+        CSeq_loc_CI si(loc);
+        while (si) {
+            if (si.GetRange().GetFrom() != start) {
+                return false;
+            }
+            start = si.GetRange().GetTo() + 1;
+            ++si;
+        }
+        if (start != stop + 1) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
     try {
@@ -3205,16 +3255,15 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
                 CSeq_loc_Mapper mapper (bsh, CSeq_loc_Mapper::eSeqMap_Up);
                 CConstRef<CSeq_loc> mapped_loc = mapper.Map(fi->GetLocation());
                 if (mapped_loc) {
-                    CSeq_loc_CI si(*mapped_loc);
-                    if (++si) {
-                        if (seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular
+                    if (s_LocIntervalsCoverSegs(*mapped_loc)) {
+                        // covers all the nucleotides
+                    } else if (seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular
                             && s_LocIntervalsSpanOrigin (*mapped_loc, bsh)) {
-                            // spans the origin, can ignore
-                        } else {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_SegmentedGeneProblem,
-                                     "Gene feature on segmented sequence should cover all bases within its extremes",
-                                     fi->GetOriginalFeature());
-                        }
+                        // circular and spans the origin, can ignore
+                    } else {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_SegmentedGeneProblem,
+                                 "Gene feature on segmented sequence should cover all bases within its extremes",
+                                 fi->GetOriginalFeature());
                     }                    
                 }
             } else if (loc_id && seq_first_id && !IsSameBioseq (*loc_id, *seq_first_id, m_Scope)) {
@@ -3488,13 +3537,15 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 switch ( ftype ) {
                 case CSeqFeatData::e_Prot:
                     {
-                        CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
+                        if (IsOneBioseq(fi->GetLocation(), m_Scope)) {
+                            CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
                         
-                        if ( (range.IsWhole()  ||
-                              (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
-                             (!feat.GetData().GetProt().IsSetProcessed() ||
-                              feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ){
-                             num_full_length_prot_ref++;
+                            if ( (range.IsWhole()  ||
+                                  (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
+                                 (!feat.GetData().GetProt().IsSetProcessed() ||
+                                  feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ){
+                                 num_full_length_prot_ref++;
+                            }
                         }
                     }
                     break;
@@ -3598,7 +3649,10 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if ( is_aa  &&  num_full_length_prot_ref == 0) {
             CBioseq_Handle parent = s_GetParent(bsh);
             if ( parent ) {
-                TSeqPos parent_len = parent.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
+                TSeqPos parent_len = 0;
+                if (parent.IsSetInst() && parent.GetInst().IsSetLength()) {
+                    parent_len = parent.GetInst().GetLength();
+                }
                 for ( CFeat_CI it(parent, CSeqFeatData::e_Prot); it; ++it ) {
                     CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
                     
@@ -3963,21 +4017,33 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             overlap_type = eOverlap_SubsetRev;
         }
 
-        TFeatScores scores;
-        GetOverlappingFeatures(cds->GetLocation(),
-                               CSeqFeatData::e_Rna,
-                               CSeqFeatData::eSubtype_mRNA,
-                               overlap_type,
-                               scores, *m_Scope);
+        // Make a selector to limit features to those of interest.
+        SAnnotSelector sel;
+        sel.SetResolveAll();
+        sel.SetAdaptiveDepth(true);
 
-        ITERATE (TFeatScores, s, scores) {
-            if (x_IdXrefsAreReciprocal(cds_feat, *s->second)) {
-                featid_matched = true;
+        // Exclude SNP's and STS's since they won't add anything interesting
+        // but could significantly degrade performance.
+        sel.ExcludeNamedAnnots("SNP");
+        sel.ExcludeNamedAnnots("STS");
+
+        // only want mRNAs
+        sel.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+        // Use a CFeat_CI iterator to iterate through all selected features.
+        CFeat_CI feat_it(CFeat_CI(*m_Scope, cds_feat.GetLocation(), sel));
+        while (feat_it) {
+            if (TestForOverlap (cds_feat.GetLocation(), feat_it->GetLocation(), overlap_type) >= 0) {
+                if (x_IdXrefsAreReciprocal(cds_feat, *(feat_it->GetSeq_feat()))) {
+                    featid_matched = true;
+                }
+                CSeq_feat_Handle mrna_handle = feat_it->GetSeq_feat_Handle();
+                if (mrna_handle) {
+                    mrnas.push_back (mrna_handle);
+                }
             }
-            CSeq_feat_Handle mrna_handle = s_GetSeq_feat_Handle(*m_Scope, *s->second);
-            if (mrna_handle) {
-                mrnas.push_back (mrna_handle);
-            }
+
+            ++feat_it;
         }
 
         if (!featid_matched) {
@@ -4025,25 +4091,28 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             if (featid_matched) {
                 // presence of reciprocal link suppresses warnings
             } else {
-                // look for uniqueness in products
-                bool mrna_products_unique = true;
-                if (mrna_products.size() > 1) {
-                    stable_sort (mrna_products.begin(), mrna_products.end(), s_SeqIdCompare);
-                    mrna_products_unique = seq_mac_is_unique (mrna_products.begin(), mrna_products.end(), s_SeqIdMatch);
-                }
-                if (mrna_products_unique) {
-                    PostErr (eDiag_Info, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
-                             "CDS overlapped by " + NStr::IntToString (mrnas.size())
-                             + " mRNAs, but product locations are unique",
-                             cds->GetOriginalFeature());
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
-                             "CDS overlapped by " + NStr::IntToString (mrnas.size())
-                             + " mRNAs",
-                             cds->GetOriginalFeature());
+                if (!is_genbank) {
+                    // look for uniqueness in products
+                    bool mrna_products_unique = true;
+                    if (mrna_products.size() > 1) {
+                        stable_sort (mrna_products.begin(), mrna_products.end(), s_SeqIdCompare);
+                        mrna_products_unique = seq_mac_is_unique (mrna_products.begin(), mrna_products.end(), s_SeqIdMatch);
+                    }
+                    if (mrna_products_unique) {
+                        PostErr (eDiag_Info, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+                                 "CDS overlapped by " + NStr::IntToString (mrnas.size())
+                                 + " mRNAs, but product locations are unique",
+                                 cds->GetOriginalFeature());
+                    } else {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+                                 "CDS overlapped by " + NStr::IntToString (mrnas.size())
+                                 + " mRNAs",
+                                 cds->GetOriginalFeature());
+                    }
                 }
             }
-        } else if (numgene > 0 && numcds > 0 && nummrna > 0) {
+        } else if (numgene > 0 && numcds > 0 && nummrna > 0 && !is_genbank) {
+            // only look for CDSs without mRNAs if not genbank
             bool pseudo = false;
             if (cds->IsSetPseudo() && cds->GetPseudo()) {
                 pseudo = true;
@@ -4072,14 +4141,30 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             }
             if (!pseudo) {
                 // if the feature is not pseudo, find out if it's part of a repeat_region
-                TFeatScores scores;
-                GetOverlappingFeatures(cds->GetLocation(),
-                                       CSeqFeatData::e_Imp,
-                                       CSeqFeatData::eSubtype_repeat_region,
-                                       eOverlap_Contained,
-                                       scores, *m_Scope);
+                // Make a selector to limit features to those of interest.
+                SAnnotSelector sel;
+                sel.SetResolveAll();
+                sel.SetAdaptiveDepth(true);
 
-                if (scores.size() == 0) {
+                // Exclude SNP's and STS's since they won't add anything interesting
+                // but could significantly degrade performance.
+                sel.ExcludeNamedAnnots("SNP");
+                sel.ExcludeNamedAnnots("STS");
+
+                // only want repeat regions
+                sel.SetFeatSubtype(CSeqFeatData::eSubtype_repeat_region);
+
+                bool is_in_repeat_region = false;
+                // Use a CFeat_CI iterator to iterate through all selected features.
+                CFeat_CI feat_it(CFeat_CI(*m_Scope, cds_feat.GetLocation(), sel));
+                while (feat_it && !is_in_repeat_region) {
+                    if (TestForOverlap (cds_feat.GetLocation(), feat_it->GetLocation(), eOverlap_Contained) >= 0) {
+                        is_in_repeat_region = true;
+                    }
+                    ++feat_it;
+                }
+
+                if (!is_in_repeat_region) {
                     const CSeq_feat* p = &cds_feat;
                     CConstRef<CSeq_feat> ref(p);
                     cds_without_mrna.push_back (ref);
@@ -4113,9 +4198,11 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
     SAnnotSelector count_sel;
     count_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     count_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_3UTR);
+    count_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_5UTR);
     count_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     int num_cds = 0;
     int num_3utr = 0;
+    int num_5utr = 0;
     int num_gene = 0;
     for (CFeat_CI it (seq, count_sel); it; ++it) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
@@ -4124,6 +4211,8 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
             strand = it->GetLocation().GetStrand();
         } else if (subtype == CSeqFeatData::eSubtype_3UTR) {
             num_3utr++;
+        } else if (subtype == CSeqFeatData::eSubtype_5UTR) {
+            num_5utr++;
         } else if (subtype == CSeqFeatData::eSubtype_gene) {
             num_gene++;
         }
@@ -4179,7 +4268,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                     }
                     first_cds = false;
                     cds_right = this_right;
-                } else if (subtype == CSeqFeatData::eSubtype_5UTR) {
+                } else if (subtype == CSeqFeatData::eSubtype_5UTR && num_5utr < 2) {
                     if (it->GetLocation().GetStrand() != eNa_strand_minus) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
                                  "5'UTR is not on minus strand", it->GetOriginalFeature());
@@ -4196,7 +4285,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                 CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
                 int this_left = it->GetLocation().GetStart (eExtreme_Positional);
                 int this_right = it->GetLocation().GetStop (eExtreme_Positional);
-                if (subtype == CSeqFeatData::eSubtype_5UTR) {
+                if (subtype == CSeqFeatData::eSubtype_5UTR && num_5utr < 2) {
                     if (it->GetLocation().GetStrand() == eNa_strand_minus) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
                                  "5'UTR is not on plus strand", it->GetOriginalFeature());
@@ -4848,11 +4937,11 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 }
 
 
-static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CSeqFeatData::ESubtype s1, CSeqFeatData::ESubtype s2)
 {
     bool rval = false;
     
-    if (f1.GetData().IsCdregion() && f2.GetData().IsCdregion()) {
+    if (f1.GetData().GetSubtype() == s1 && f2.GetData().GetSubtype() == s1) {
         CBioseq_Handle bsh = f1.GetScope().GetBioseqHandle(f1.GetLocation());
         if (bsh) {
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
@@ -4866,7 +4955,7 @@ static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
-                            && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                            && feat_it->GetData().GetSubtype() == s2) {
                             mrna1.push_back (feat_id);
                             break;
                         }
@@ -4880,7 +4969,7 @@ static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
-                            && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                            && feat_it->GetData().GetSubtype() == s2) {
                             mrna2.push_back (feat_id);
                         }
                     }
@@ -4904,6 +4993,54 @@ static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_
         }
     }
     return rval;
+}
+
+
+static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
+}
+
+
+bool s_AremRNAsLinkedToDifferentCodingRegions (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_mRNA, CSeqFeatData::eSubtype_cdregion);
+}
+
+
+bool CValidError_bioseq::x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    if (!f1.GetData().IsCdregion() || !f2.GetData().IsCdregion()) {
+        return false;
+    }
+
+    int frame1 = 1, frame2 = 1;
+    if (f1.GetData().GetCdregion().IsSetFrame()) {
+        frame1 = f1.GetData().GetCdregion().GetFrame();
+        if (frame1 == 0) {
+            frame1 = 1;
+        }
+    }
+    if (f2.GetData().GetCdregion().IsSetFrame()) {
+        frame2 = f2.GetData().GetCdregion().GetFrame();
+        if (frame2 == 0) {
+            frame2 = 1;
+        }
+    }
+    if (frame1 == frame2) {
+        return false;
+    }
+
+    CBioseq_Handle bsh1 = m_Scope->GetBioseqHandle(f1.GetLocation());
+    if (!s_IsLocFullLength (f1.GetLocation(), bsh1)) {
+        return false;
+    }
+    CBioseq_Handle bsh2 = m_Scope->GetBioseqHandle(f2.GetLocation());
+    if (!s_IsLocFullLength (f2.GetLocation(), bsh2)) {
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -4938,14 +5075,23 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
                 IsDifferentDbxrefs(feat1.GetDbxref(), feat2.GetDbxref()) ) {
                 // do not report if both have dbxrefs and they are 
                 // different.
+            } else if (!same_label && x_AreFullLengthCodingRegionsWithDifferentFrames(f1, f2)) {
+                // do not report if both coding regions are full length, have different products,
+                // and have different frames
             } else if ( same_annot ) {
                 if (same_label) {
-                    
+                    CConstRef <CSeq_feat> g1 = s_GetGeneForFeature (*(f1.GetSeq_feat()), m_Scope);
+                    CConstRef <CSeq_feat> g2 = s_GetGeneForFeature (*(f2.GetSeq_feat()), m_Scope);
+                    if (g1 != g2) {
+                        severity = eDiag_Warning;
+                    }
                     PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                         "Duplicate feature", feat2);
                 } else if ( feat1_subtype != CSeqFeatData::eSubtype_pub ) {
                     if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
                         // do not report if features are coding regions linked to different mRNAs
+                    } else if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
+                        // do not report if features are mRNAs linked to different coding regions
                     } else if (s_PartialsSame(feat1_loc, feat2_loc)) {
                         // do not report if partial flags are different
                         PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
@@ -5216,7 +5362,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     CConstRef<CSeqdesc> create_desc, update_desc;
     string create_str;
     int biomol = -1;
-	int tech = 0, completeness = 0;
+	int tech = -1, completeness = -1;
     CConstRef<COrg_ref> org;
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -5310,9 +5456,15 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             if ( create_desc ) {
                 if ( create_desc->GetCreate_date().Compare(current) != CDate::eCompare_same ) {
                     string current_str = GetDateString(current);
+                    const CSeq_entry *use_ctx = ctx.GetParentEntry();
+                    if (use_ctx == NULL || !use_ctx->IsSet() 
+                        || !use_ctx->GetSet().IsSetClass()
+                        || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
+                        use_ctx = &ctx;
+                    }
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
                         "Inconsistent create_dates [" + current_str +
-                        "] and [" + create_str + "]", ctx, desc);
+                        "] and [" + create_str + "]", *use_ctx, desc);
                 }
             } else {
                 create_desc = &desc;
@@ -5796,7 +5948,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             }
         }                        
 
-		if (last_tech) {
+		if (last_tech > 0) {
 			if (last_tech != tech) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
 					"Inconsistent Molinfo-tech [" + NStr::IntToString (last_tech)
@@ -5805,10 +5957,20 @@ void CValidError_bioseq::ValidateMolInfoContext
 		} else {
 			last_tech = tech;
 		}
-	}
+    } else {
+		if (last_tech > -1) {
+			if (last_tech != 0) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+					"Inconsistent Molinfo-tech [" + NStr::IntToString (last_tech)
+					+ "] and [0]", ctx, desc);
+			}
+        } else {
+            last_tech = 0;
+        }
+    }
 
 	if (minfo.IsSetCompleteness()) {
-		if (last_completeness) {
+		if (last_completeness > 0) {
 			if (last_completeness != minfo.GetCompleteness()) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
 					"Inconsistent Molinfo-completeness [" + NStr::IntToString (last_completeness)
@@ -5818,7 +5980,17 @@ void CValidError_bioseq::ValidateMolInfoContext
 			last_completeness = minfo.GetCompleteness();
 		}
         x_ValidateCompletness(seq, minfo);
-	}
+    } else {
+        if (last_completeness > -1) {
+            if (last_completeness != 0) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+					"Inconsistent Molinfo-completeness [" + NStr::IntToString (last_completeness)
+					+ "] and [0]", ctx, desc);
+			}
+		} else {
+			last_completeness = 0;
+		}
+    }
 }
 
 
@@ -6021,10 +6193,17 @@ void CValidError_bioseq::ValidateUpdateDateContext
         string create_str = GetDateString(create);
         string update_str = GetDateString(update);
 
+        CSeq_entry *ctx = seq.GetParentEntry();
+        CSeq_entry *use_ctx = ctx->GetParentEntry();
+        if (use_ctx == NULL || !use_ctx->IsSet() 
+            || !use_ctx->GetSet().IsSetClass()
+            || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
+            use_ctx = ctx;
+        }
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
             "Inconsistent create_date [" + create_str + 
             "] and update_date [" + update_str + "]",
-            *seq.GetParentEntry(), desc);
+            *use_ctx, desc);
     }
 }
 
@@ -6046,6 +6225,25 @@ void CValidError_bioseq::ValidateOrgContext
     }
 }
 
+
+static bool s_ReportableCollision (const CGene_ref& g1, const CGene_ref& g2)
+{
+    if (g1.IsSetLocus() && !NStr::IsBlank(g1.GetLocus())
+        && g2.IsSetLocus() && !NStr::IsBlank(g2.GetLocus())
+        && NStr::EqualNocase(g1.GetLocus(), g2.GetLocus())) {
+        return true;
+    } else if (g1.IsSetLocus_tag() && !NStr::IsBlank(g1.GetLocus_tag())
+        && g2.IsSetLocus_tag() && !NStr::IsBlank(g2.GetLocus_tag())
+        && NStr::EqualNocase(g1.GetLocus_tag(), g2.GetLocus_tag())) {
+        return true;
+    } else if (g1.IsSetDesc() && !NStr::IsBlank(g1.GetDesc())
+        && g2.IsSetDesc() && !NStr::IsBlank(g2.GetDesc())
+        && NStr::EqualNocase(g1.GetDesc(), g2.GetDesc())) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 
 void CValidError_bioseq::x_CompareStrings
@@ -6076,7 +6274,8 @@ void CValidError_bioseq::x_CompareStrings
             message = "Colliding " + type + " (with different capitalization) in gene features";
         }
 
-        if (!NStr::IsBlank (message)) {
+        if (!NStr::IsBlank (message)
+            && s_ReportableCollision(feat->GetData().GetGene(), it->second->GetData().GetGene())) {
             if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),
                                                    m_Scope) == eSame) {
@@ -6089,7 +6288,8 @@ void CValidError_bioseq::x_CompareStrings
                          message + ", but underlying sequences are identical", *it->second);
             } else {   
                 if (!reported_first) {
-                    PostErr(sev, err, message, *feat);
+                    // for now, don't report first colliding gene - C Toolkit doesn't
+                    // PostErr(sev, err, message, *feat);
                     reported_first = true;
                 }
 

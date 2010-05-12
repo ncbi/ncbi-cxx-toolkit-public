@@ -216,6 +216,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadStructuredCommentFormatFieldOutOfOrder,
     eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields,
     eErr_SEQ_DESCR_BioSourceNeedsChromosome,
+    eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
@@ -261,6 +262,8 @@ enum EErrType {
     eErr_SEQ_PKG_OrphanedProtein,
     eErr_SEQ_PKG_MissingSetTitle,
     eErr_SEQ_PKG_NucProtSetHasTitle,
+    eErr_SEQ_PKG_ComponentMissingTitle,
+    eErr_SEQ_PKG_SingleItemSet,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,

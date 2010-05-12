@@ -421,6 +421,7 @@ bool CValidError_imp::IsOrganelle (int genome)
         case CBioSource::eGenome_leucoplast:
         case CBioSource::eGenome_proplastid:
         case CBioSource::eGenome_hydrogenosome:
+        case CBioSource::eGenome_chromatophore:
             rval = true;
             break;
         default:
@@ -684,7 +685,8 @@ void CValidError_imp::ValidateBioSource
 						|| genome_from_name == CBioSource::eGenome_plastid
 						|| genome_from_name == CBioSource::eGenome_apicoplast
 						|| genome_from_name == CBioSource::eGenome_leucoplast
-						|| genome_from_name == CBioSource::eGenome_proplastid) {
+						|| genome_from_name == CBioSource::eGenome_proplastid
+                        || genome_from_name == CBioSource::eGenome_chromatophore) {
 					    if (genome_from_name != genome) {
 							string val_name = CBioSource::GetOrganelleByGenome(genome_from_name);
 							if (NStr::StartsWith(val_name, "plastid:")) {
@@ -1633,7 +1635,9 @@ static bool s_CompleteGenomeNeedsChromosome (const CBioSource& source)
 {
     bool rval = false;
 
-    if ((!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_chromosome)) {
+    if (!source.IsSetGenome() 
+        || source.GetGenome() == CBioSource::eGenome_genomic
+        || source.GetGenome() == CBioSource::eGenome_unknown) {
         bool is_viral = false;
         if (source.IsSetOrg()) {
             if (source.GetOrg().IsSetDivision() && NStr::Equal(source.GetOrg().GetDivision(), "PHG")) {
@@ -1696,7 +1700,7 @@ void CValidError_imp::ValidateBioSourceForSeq
 			CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
 			if (mi && mi->GetMolinfo().IsSetBiomol()
                 && mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+				PostObjErr (eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
 					     "HIV with mRNA molecule type is rare", 
                          obj, ctx);
 			}
@@ -1717,7 +1721,8 @@ void CValidError_imp::ValidateBioSourceForSeq
 		               "Non-viral complete genome not labeled as chromosome",
 		               obj, ctx);
         }
-    }       
+    }
+
 
     // validate subsources in context
 
@@ -1880,6 +1885,37 @@ void CValidError_imp::ValidateBioSourceForSeq
 						}
 					}
 				}
+
+                if (!bsh.IsAa()) {
+                    // look for viral taxonomic conflicts
+                    if ((NStr::Find(lineage, " ssRNA viruses; ") != string::npos
+                         || NStr::Find(lineage, " ssRNA negative-strand viruses; ") != string::npos
+                         || NStr::Find(lineage, " ssRNA positive-strand viruses, no DNA stage; ") != string::npos
+                         || NStr::Find(lineage, " unassigned ssRNA viruses; ") != string::npos)
+                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+						            "Taxonomy indicates single-stranded RNA, sequence does not agree.",
+								    obj, ctx);
+                    }
+                    if (NStr::Find(lineage, " dsRNA viruses; ") != string::npos
+                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+						            "Taxonomy indicates double-stranded RNA, sequence does not agree.",
+								    obj, ctx);
+                    }
+                    if (NStr::Find(lineage, " ssDNA viruses; ") != string::npos
+                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+						            "Taxonomy indicates single-stranded DNA, sequence does not agree.",
+								    obj, ctx);
+                    }
+                    if (NStr::Find(lineage, " dsDNA viruses; ") != string::npos
+                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+						            "Taxonomy indicates double-stranded DNA, sequence does not agree.",
+								    obj, ctx);
+                    }
+                }
 			}
 	    }
 	}
