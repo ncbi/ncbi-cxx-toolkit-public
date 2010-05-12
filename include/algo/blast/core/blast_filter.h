@@ -54,6 +54,7 @@ NCBI_XBLAST_EXPORT
 extern const Uint1 kProtMask;
 
 /** Repeats filtering default options. */
+#define REPEATS_SEARCH_EVALUE 0.1       /**< Default e-value threshold, keep for C toolkit */
 #define REPEATS_SEARCH_MINSCORE 26       /**< Default score cutoff */
 #define REPEATS_SEARCH_PENALTY -1       /**< Default mismatch penalty */
 #define REPEATS_SEARCH_REWARD 1       /**< Default match reward */
