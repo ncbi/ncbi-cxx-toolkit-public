@@ -1267,7 +1267,7 @@ CNCMessageHandler::x_PrepareSockStream(void)
     m_Socket->Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
     x_CloseConnection();
 
-    return new CConn_SocketStream(sk);
+    return new CConn_SocketStream(sk, eTakeOwnership);
 }
 
 bool
