@@ -2505,6 +2505,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "INPA	c	Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao",
 "INPC	s	National Pusa Collections",
 "INRA	c	Microbiologie des Sols",
+"INRA<FRA>	b	Institut National de la Recherche Agronomique",
 "INV	s	Inverness Museum and Art Gallery",
 "INVA	s	Invergordon Academy",
 "INVAM	c	International Culture Collection of (Vesicular) Arbuscular Mycorrhizal Fungi",
