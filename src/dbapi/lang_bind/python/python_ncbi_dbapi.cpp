@@ -1583,40 +1583,42 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
     string::size_type pos = stmt.find_first_not_of(" \t\n");
     if (pos != string::npos)
     {
+        string::size_type pos_end = stmt.find_first_of(" \t\n", pos);
+        if (pos_end == string::npos)
+            pos_end = stmt.size();
+        CTempString first_word(&stmt[pos], pos_end - pos);
+
         // "CREATE" should be before DML ...
-        if (NStr::EqualNocase(stmt, pos, sizeof("CREATE") - 1, "CREATE"))
+        if (NStr::EqualNocase(first_word, "CREATE"))
         {
             stmtType = estCreate;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("SELECT") - 1, "SELECT"))
+        } else if (NStr::EqualNocase(first_word, "SELECT"))
         {
             stmtType = estSelect;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("UPDATE") - 1, "UPDATE"))
+        } else if (NStr::EqualNocase(first_word, "UPDATE"))
         {
             stmtType = estUpdate;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("DELETE") - 1, "DELETE"))
+        } else if (NStr::EqualNocase(first_word, "DELETE"))
         {
             stmtType = estDelete;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("INSERT") - 1, "INSERT"))
+        } else if (NStr::EqualNocase(first_word, "INSERT"))
         {
             stmtType = estInsert;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("DROP") - 1, "DROP"))
+        } else if (NStr::EqualNocase(first_word, "DROP"))
         {
             stmtType = estDrop;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("ALTER") - 1, "ALTER"))
+        } else if (NStr::EqualNocase(first_word, "ALTER"))
         {
             stmtType = estAlter;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("BEGIN") - 1, "BEGIN"))
+        } else if (NStr::EqualNocase(first_word, "BEGIN"))
         {
             stmtType = estTransaction;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("COMMIT") - 1, "COMMIT"))
+        } else if (NStr::EqualNocase(first_word, "COMMIT"))
         {
             stmtType = estTransaction;
-        } else if (NStr::EqualNocase(stmt, pos, sizeof("ROLLBACK") - 1, "ROLLBACK"))
+        } else if (NStr::EqualNocase(first_word, "ROLLBACK"))
         {
             stmtType = estTransaction;
-        // } else if (NStr::EqualNocase(stmt, pos, sizeof("EXEC") - 1, "EXEC"))
-        // {
-        //    stmtType = estFunction;
         }
     }
 
