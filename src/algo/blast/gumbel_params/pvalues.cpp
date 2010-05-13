@@ -52,8 +52,8 @@ USING_SCOPE(blast);
 
 //CPValuesOptions
 
-CScorePValuesOptions::CScorePValuesOptions(TParam min_score, TParam max_score, 
-                        TParam seq1_len, TParam seq2_len,
+CScorePValuesOptions::CScorePValuesOptions(Int4 min_score, Int4 max_score, 
+                        Int4 seq1_len, Int4 seq2_len,
                         const CConstRef<CGumbelParamsResult>& gumbel_result)
 
     : m_MinScore(min_score), m_MaxScore(max_score), m_Seq1Len(seq1_len), 

@@ -59,8 +59,8 @@ CGumbelParamsOptions::CGumbelParamsOptions(void)
 
 CGumbelParamsOptions::CGumbelParamsOptions(
                                    const CGeneralScoreMatrix* matrix,
-                                   const vector<TParamReal>& seq1_probs,
-                                   const vector<TParamReal>& seq2_probs)
+                                   const vector<double>& seq1_probs,
+                                   const vector<double>& seq2_probs)
 {
     x_Init();
     m_ScoreMatrix.Reset(matrix);
@@ -102,7 +102,7 @@ bool CGumbelParamsOptions::Validate(void)
     }
 
     double sum_probs_seq1 = 0.0;
-    ITERATE(vector<TParamReal>, it, m_Seq1ResidueProbs) {
+    ITERATE(vector<double>, it, m_Seq1ResidueProbs) {
         if (*it < 0.0) {
             NCBI_THROW(CGumbelParamsException, eInvalidOptions,
                        "Negative probability value for sequence 1");
@@ -115,7 +115,7 @@ bool CGumbelParamsOptions::Validate(void)
     }
 
     double sum_probs_seq2 = 0.0;
-    ITERATE(vector<TParamReal>, it, m_Seq2ResidueProbs) {
+    ITERATE(vector<double>, it, m_Seq2ResidueProbs) {
         if (*it < 0.0) {
             NCBI_THROW(CGumbelParamsException, eInvalidOptions,
                        "Negative probability value for sequence 2");

@@ -74,14 +74,14 @@ static CRef<CGeneralScoreMatrix> s_ReadScoreMatrix(const string& filename)
 }
 
 static void s_ReadResidueProbs(const string& filename,
-                               vector<CGumbelParamsOptions::TParamReal>& probs)
+                               vector<double>& probs)
 {
     probs.clear();
 
     CNcbiIfstream istr(filename.c_str());
     BOOST_REQUIRE(istr);
     while (!istr.eof()) {
-        CGumbelParamsOptions::TParamReal val;
+        double val;
         istr >> val;
         probs.push_back(val);
     }
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
 
     opts = CGumbelParamsOptionsFactory::CreateBasicOptions();
     CRef<CGeneralScoreMatrix> smat = s_ReadScoreMatrix("data/blosum62.txt");
-    vector<CGumbelParamsOptions::TParamReal> probs;
+    vector<double> probs;
     s_ReadResidueProbs("data/freqs.txt", probs);
     opts->SetScoreMatrix(smat);
     opts->SetSeq1ResidueProbs(probs);
@@ -164,13 +164,13 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     // does not pass validation
     CRef<CGumbelParamsOptions> 
         opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
-    opts->SetSeq1ResidueProbs(vector<CGumbelParamsOptions::TParamReal>(1));
+    opts->SetSeq1ResidueProbs(vector<double>(1));
     BOOST_REQUIRE_THROW(opts->Validate(), CGumbelParamsException);
 
     // Incorrect number of elements in residue probabilities array for seq2
     // does not pass validation
     opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
-    opts->SetSeq2ResidueProbs(vector<CGumbelParamsOptions::TParamReal>(1));
+    opts->SetSeq2ResidueProbs(vector<double>(1));
     BOOST_REQUIRE_THROW(opts->Validate(), CGumbelParamsException);
 
     // Incorrect size of the score matrix does not pass validation
@@ -204,8 +204,8 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     opts->SetSeq2ResidueProbs(probs);
 
 
-    CGumbelParamsOptions::TParamInt orig_param_val;
-    CGumbelParamsOptions::TParamReal orig_param_d;
+    Int4 orig_param_val;
+    double orig_param_d;
     opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
 
     // Gap panelty < 0 does not pass validation
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGaplessAlignment)
 
     // set score matrix and backgroud residue frequencies
     CRef<CGeneralScoreMatrix> smat = s_ReadScoreMatrix("data/blosum62.txt");
-    vector<CGumbelParamsOptions::TParamReal> probs;
+    vector<double> probs;
     s_ReadResidueProbs("data/freqs.txt", probs);
     opts->SetScoreMatrix(smat);
     opts->SetSeq1ResidueProbs(probs);
@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGappedAlignment)
         opts = CGumbelParamsOptionsFactory::CreateBasicOptions();
 
     CRef<CGeneralScoreMatrix> smat = s_ReadScoreMatrix("data/blosum62.txt");
-    vector<CGumbelParamsOptions::TParamReal> probs;
+    vector<double> probs;
     s_ReadResidueProbs("data/freqs.txt", probs);
     opts->SetScoreMatrix(smat);
     opts->SetSeq1ResidueProbs(probs);

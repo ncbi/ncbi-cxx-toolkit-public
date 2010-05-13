@@ -471,17 +471,17 @@ BEGIN_SCOPE(Sls)
 
     double m_CalcTime;
 
-        vector<CGumbelParamsResult::TResult > m_LambdaSbs;
-    vector<CGumbelParamsResult::TResult > m_KSbs;
-    vector<CGumbelParamsResult::TResult > m_CSbs;
+    vector<double > m_LambdaSbs;
+    vector<double > m_KSbs;
+    vector<double > m_CSbs;
 
-    vector<CGumbelParamsResult::TResult > m_SigmaSbs;
+    vector<double > m_SigmaSbs;
 
-    vector<CGumbelParamsResult::TResult > m_AlphaISbs;
-    vector<CGumbelParamsResult::TResult > m_AlphaJSbs;
+    vector<double > m_AlphaISbs;
+    vector<double > m_AlphaJSbs;
 
-    vector<CGumbelParamsResult::TResult > m_AISbs;
-    vector<CGumbelParamsResult::TResult > m_AJSbs;
+    vector<double > m_AISbs;
+    vector<double > m_AJSbs;
 
 
 

@@ -1034,7 +1034,7 @@ Int4 &number_of_AA_RR_)
 };
 
 void alp_data::read_RR(
-const vector<CGumbelParamsOptions::TParamReal> &vector_,
+const vector<double> &vector_,
 double *&RR_,
 double *&RR_sum_,
 Int4 *&RR_sum_elements_,

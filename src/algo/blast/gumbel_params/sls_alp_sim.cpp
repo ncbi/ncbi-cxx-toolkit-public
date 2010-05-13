@@ -3865,7 +3865,7 @@ double &test_difference_error_)
         function_type *func=function_for_lambda_calculation;
         void* func_pointer=&tmp_struct;
         double a=0;
-        double b=d_alp_data->d_is->d_lambda*3;
+        double b=d_alp_data->d_is->d_lambda*2;
         Int4 n_partition=30;
         double eps=1e-10;
         std::vector<double> res;
@@ -4035,6 +4035,10 @@ void * data_)
                         Int4 j;
                         for(j=0;j<=tmp->d_dim;j++)
                         {
+                                if(tmp->d_elem[j] <= 0)
+                                {
+                                        continue;
+                                };
                                 double exp_tmp=exp(lambda_*j);
                                 val+=exp_tmp*tmp->d_elem[j];
                                 val_error+=exp_tmp*exp_tmp*tmp_errors->d_elem[j];

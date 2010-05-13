@@ -52,9 +52,7 @@ class CGumbelParamsRandDiagnostics;
 class CGumbelParamsOptions : public CObject
 {
 public:
-    typedef Int4 TParamInt;     /// Type for integer input parameters
-    typedef double TParamReal;  /// Type for real input parameters
-    typedef vector<TParamReal> TFrequencies;
+    typedef vector<double> TFrequencies;
 
 public:
     
@@ -72,8 +70,8 @@ public:
     ///
     /// The score matrix can be non-symmetric
     CGumbelParamsOptions(const CGeneralScoreMatrix* smatrix,
-                         const vector<TParamReal>& seq1_residue_probs,
-                         const vector<TParamReal>& seq2_residue_rpobs);
+                         const vector<double>& seq1_residue_probs,
+                         const vector<double>& seq2_residue_rpobs);
 
     /// Copy constructor
     /// @param  options Options object [in]
@@ -86,22 +84,22 @@ public:
     /// Set the value of gap opening penalty
     /// @param g_open Gap opening penalty [in]
     ///
-    void SetGapOpening(TParamInt g_open) {m_GapOpening = g_open;}
+    void SetGapOpening(Int4 g_open) {m_GapOpening = g_open;}
 
     /// Get gap opening penalty
     /// @return Gap opening penalty
     ///
-    TParamInt GetGapOpening(void) const {return m_GapOpening;}
+    Int4 GetGapOpening(void) const {return m_GapOpening;}
 
     /// Set gap extention penalty
     /// @paran g_exten Gap extension penalty [in]
     ///
-    void SetGapExtension(TParamInt g_exten) {m_GapExtension = g_exten;}
+    void SetGapExtension(Int4 g_exten) {m_GapExtension = g_exten;}
 
     /// Get gap extention penalty
     /// @return Gap extension penalty
     ///
-    TParamInt GetGapExtension(void) const {return m_GapExtension;}
+    Int4 GetGapExtension(void) const {return m_GapExtension;}
 
     /// Set relative error threshold for lambda parameter calculation
     /// for gapped aligmment
@@ -109,7 +107,7 @@ public:
     ///
     /// For gapless regime calculation accuracy for all parameters is
     /// always 1e-06 m_LambdaAccuracy and m_KAccuary are not used.
-    void SetLambdaAccuracy(TParamReal lambda_err) 
+    void SetLambdaAccuracy(double lambda_err) 
     {m_LambdaAccuracy = lambda_err;}
 
     /// Get relative error threshold for lambda parameter calculation
@@ -118,7 +116,7 @@ public:
     ///
     /// For gapless regime calculation accuracy for all parameters is
     /// always 1e-06 m_LambdaAccuracy and m_KAccuary are not used.
-    TParamReal GetLambdaAccuracy(void) const {return m_LambdaAccuracy;}
+    double GetLambdaAccuracy(void) const {return m_LambdaAccuracy;}
 
     /// Set relative error threshold for K parameter calculation for gapped
     /// alignment
@@ -126,7 +124,7 @@ public:
     ///
     /// For gapless regime calculation accuracy for all parameters is
     /// always 1e-06 m_LambdaAccuracy and m_KAccuary are not used.
-    void SetKAccuracy(TParamReal k_err) {m_KAccuracy = k_err;}
+    void SetKAccuracy(double k_err) {m_KAccuracy = k_err;}
 
     /// Get relative error threshold for K parameter calculation for gapped
     /// alignment
@@ -134,7 +132,7 @@ public:
     ///
     /// For gapless regime calculation accuracy for all parameters is
     /// always 1e-06 m_LambdaAccuracy and m_KAccuary are not used.    
-    TParamReal GetKAccuracy(void) const {return m_KAccuracy;}
+    double GetKAccuracy(void) const {return m_KAccuracy;}
 
     /// Set gapped/gapless regime
     /// @param gapped Regime (gapped if true, gapless otherwise) [in]
@@ -161,7 +159,7 @@ public:
     /// Get score matrix
     /// @return Pointer to score matrix
     ///
-    const TParamInt** GetScoreMatrix(void) const 
+    const Int4** GetScoreMatrix(void) const 
     {return (*m_ScoreMatrix).GetMatrix();}
 
     /// Set residue probabilities for sequence 1
@@ -205,7 +203,7 @@ public:
     /// the program uses total allowed calculation time for the gapless
     /// calculation. If there is no result during this time then the program
     /// generates an error.
-    void SetMaxCalcTime(TParamReal time) {m_MaxCalcTime = time;}
+    void SetMaxCalcTime(double time) {m_MaxCalcTime = time;}
 
     /// Get maximum calculation time allowed
     /// @return Maximum calculation time
@@ -223,22 +221,22 @@ public:
     /// the program uses total allowed calculation time for the gapless
     /// calculation. If there is no result during this time then the program
     /// generates an error.
-    TParamReal GetMaxCalcTime(void) const {return m_MaxCalcTime;}
+    double GetMaxCalcTime(void) const {return m_MaxCalcTime;}
 
     /// Set maximum memory allowed for computation
     /// @param Memory limit [in]
     ///
-    void SetMaxCalcMemory(TParamReal mem) {m_MaxCalcMemory = mem;} 
+    void SetMaxCalcMemory(double mem) {m_MaxCalcMemory = mem;} 
 
     /// Get maximum memory allowed for computation
     /// @return Memory limit
     ///
-    TParamReal GetMaxCalcMemory(void) const {return m_MaxCalcMemory;}
+    double GetMaxCalcMemory(void) const {return m_MaxCalcMemory;}
 
     /// Get number of residues in utilized alphabet
     /// @return Number of residues
     ///
-    TParamInt GetNumResidues(void) const {return m_NumResidues;}
+    Int4 GetNumResidues(void) const {return m_NumResidues;}
 
     //---- Options Validation ----//
 
@@ -269,7 +267,7 @@ protected:
     void x_Init(void);
     
     /// Get socre matrix value for i-th and j-th residues
-    TParamInt x_GetScore(Uint4 i, Uint4 j) const 
+    Int4 x_GetScore(Uint4 i, Uint4 j) const 
     {return (*m_ScoreMatrix).GetScore(i, j);}
 
 private:
@@ -280,18 +278,18 @@ private:
 protected:
 
     /// Gap opening penalty
-    TParamInt m_GapOpening;
+    Int4 m_GapOpening;
 
     /// Gap extension penalty
-    TParamInt m_GapExtension;
+    Int4 m_GapExtension;
 
     /// Desired accuracy for lambda computation
     /// only for gapped aligmment
-    TParamReal m_LambdaAccuracy;
+    double m_LambdaAccuracy;
 
     /// Desired accuracy for parameter K computation
     /// only for gapped alignment
-    TParamReal m_KAccuracy;
+    double m_KAccuracy;
 
     /// Gapped/gapless regime, true for gapped, false for gapless.
     /// For gapless regime calculation accuracy for all parameters is
@@ -308,13 +306,13 @@ protected:
     TFrequencies m_Seq2ResidueProbs;
     
     /// Number of residues in alphabet
-    TParamInt m_NumResidues;
+    Int4 m_NumResidues;
 
     /// Maximum allowed calculation time
-    TParamReal m_MaxCalcTime;
+    double m_MaxCalcTime;
 
     /// Maximum allowed calculation memory
-    TParamReal m_MaxCalcMemory;
+    double m_MaxCalcMemory;
 
     /// Warning messages
     vector<string> m_Messages;
@@ -347,38 +345,35 @@ public:
 ///
 typedef struct SGumbelParams 
 {
-    typedef double TParam;
-    typedef Int4 TParamInt;
-
     // Gapped parameters
-    TParam lambda;
-    TParam K;
-    TParam C;
-    TParam sigma;
-    TParam alpha_i;
-    TParam alpha_j;
-    TParam ai;
-    TParam aj;
+    double lambda;
+    double K;
+    double C;
+    double sigma;
+    double alpha_i;
+    double alpha_j;
+    double ai;
+    double aj;
 
     // Estimation errors for gapped parameters
-    TParam lambda_error;
-    TParam K_error;
-    TParam C_error;
-    TParam sigma_error;
-    TParam alpha_i_error;
-    TParam alpha_j_error;
-    TParam ai_error;
-    TParam aj_error;
+    double lambda_error;
+    double K_error;
+    double C_error;
+    double sigma_error;
+    double alpha_i_error;
+    double alpha_j_error;
+    double ai_error;
+    double aj_error;
 
     // Gapless parameters
-    TParam gapless_alpha;
-    TParam gapless_a;
+    double gapless_alpha;
+    double gapless_a;
 
     // Estimation errors for gapless parameters
-    TParam gapless_alpha_error;
-    TParam gapless_a_error;    
+    double gapless_alpha_error;
+    double gapless_a_error;    
 
-    TParamInt G;
+    Int4 G;
 
 } SGumbelParams;
 
@@ -388,18 +383,17 @@ typedef struct SGumbelParams
 class CGumbelParamsResult : public CObject
 {
 public:
-    typedef double TResult;
 
-    typedef struct SSbsArrays {
-        vector<TResult> lambda_sbs;
-        vector<TResult> K_sbs;
-        vector<TResult> C_sbs;
-        vector<TResult> sigma_sbs;
-        vector<TResult> alpha_i_sbs;
-        vector<TResult> alpha_j_sbs;
-        vector<TResult> ai_sbs;
-        vector<TResult> aj_sbs;
-    } SSbsArrays;
+    struct SSbsArrays {
+        vector<double> lambda_sbs;
+        vector<double> K_sbs;
+        vector<double> C_sbs;
+        vector<double> sigma_sbs;
+        vector<double> alpha_i_sbs;
+        vector<double> alpha_j_sbs;
+        vector<double> ai_sbs;
+        vector<double> aj_sbs;
+    };
 
 public:
     //---- Constructors ----//
@@ -435,12 +429,12 @@ public:
     /// Set calculation time
     /// @param time Calculation time [in]
     ///
-    void SetCalcTime(TResult time) {m_CalcTime = time;}
+    void SetCalcTime(double time) {m_CalcTime = time;}
 
     /// Get calculation time
     /// @return calculation time
     ///
-    TResult GetCalcTime(void) const {return m_CalcTime;}
+    double GetCalcTime(void) const {return m_CalcTime;}
 
 protected:
     /// Forbid Copy constructor
@@ -455,7 +449,7 @@ protected:
     SGumbelParams m_GumbelParams;
     SSbsArrays m_SbsArrays;
 
-    TResult m_CalcTime;
+    double m_CalcTime;
 };
 
 

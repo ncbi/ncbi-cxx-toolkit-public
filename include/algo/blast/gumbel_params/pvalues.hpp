@@ -49,10 +49,6 @@ BEGIN_SCOPE(blast)
 class CScorePValuesOptions : public CObject
 {
 public:
-    typedef Int4 TParam;     //Type for integer input parameters
-
-   
-public:
 
     /// Create options
     /// @param min_score Begining of the score range for p-values calculation
@@ -63,8 +59,8 @@ public:
     /// @param gumbel_results Gumbel parameters along with error estimations
     /// [in]
     ///
-    CScorePValuesOptions(TParam min_score, TParam max_score,
-                         TParam seq1_len, TParam seq2_len,
+    CScorePValuesOptions(Int4 min_score, Int4 max_score,
+                         Int4 seq1_len, Int4 seq2_len,
                          const CConstRef<CGumbelParamsResult>& gumbel_results);
 
     
@@ -73,43 +69,43 @@ public:
     /// Set min score for which p-values will be computed
     /// @param score Min score [in]
     ///
-    void SetMinScore(TParam score) {m_MinScore = score;}
+    void SetMinScore(Int4 score) {m_MinScore = score;}
 
     /// Get min score for which p-values will be computed
     /// @return Min score
     ///
-    TParam GetMinScore(void) const {return m_MinScore;}
+    Int4 GetMinScore(void) const {return m_MinScore;}
 
     /// Set max score for which p-values will be computed
     /// @param score Max score [in]
     ///
-    void SetMaxScore(TParam score) {m_MaxScore = score;}
+    void SetMaxScore(Int4 score) {m_MaxScore = score;}
 
     /// Get max score for which p-values will be computed
     /// @return Max score
     ///
-    TParam GetMaxScore(void) const {return m_MaxScore;}
+    Int4 GetMaxScore(void) const {return m_MaxScore;}
 
 
     /// Set length of sequence 1
     /// @param len Sequence length [in]
     ///
-    void SetSeq1Len(TParam len) {m_Seq1Len = len;}
+    void SetSeq1Len(Int4 len) {m_Seq1Len = len;}
 
     /// Get length of sequence 1
     /// @return Sequence length
     ///
-    TParam GetSeq1Len(void) const {return m_Seq1Len;}
+    Int4 GetSeq1Len(void) const {return m_Seq1Len;}
 
     /// Set length of sequence 2
     /// @param len Sequence length [in]
     ///
-    void SetSeq2Len(TParam len) {m_Seq2Len = len;}
+    void SetSeq2Len(Int4 len) {m_Seq2Len = len;}
 
     /// Get length of sequence 2
     /// @return Sequence length
     ///
-    TParam GetSeq2Len(void) const {return m_Seq2Len;}
+    Int4 GetSeq2Len(void) const {return m_Seq2Len;}
 
     /// Set Gumbel parameters calculation results
     /// @param params Gumbel parameters calculation result [in]
@@ -139,14 +135,14 @@ protected:
 
 protected:
     /// P-values will be computed for the range [m_MinScore1,m_MaxScore]
-    TParam m_MinScore;
+    Int4 m_MinScore;
 
     /// P-values will be computed for the range [m_MinScore1,m_MaxScore]
-    TParam m_MaxScore;
+    Int4 m_MaxScore;
 
         //lengths of the sequences
-    TParam m_Seq1Len;
-    TParam m_Seq2Len;
+    Int4 m_Seq1Len;
+    Int4 m_Seq2Len;
 
     //Gumbel parameters calculation results
     CConstRef<CGumbelParamsResult> m_GumbelParams;
