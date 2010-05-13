@@ -935,11 +935,25 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
 {
     x_PrintIgGenesHtml();
     m_Ostream << "<pre><table border=1>";
-    m_Ostream << "<tr><td> domain name </td><td> from </td><td> to </td><td> length </td>"
-              << "<td> match </td><td> mismatch </td><td> gap </td></tr>\n";
+    m_Ostream << "<tr><td> </td><td> from </td><td> to </td><td> length </td>"
+              << "<td> matches </td><td> mismatches </td><td> gaps </td></tr>\n";
+    int length = 0;
+    int num_match = 0;
+    int num_mismatch = 0;
+    int num_gap = 0;
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
         x_PrintIgDomainHtml(*(m_IgDomains[i]));
+        if (m_IgDomains[i]->length > 0) {
+            length += m_IgDomains[i]->length;
+            num_match += m_IgDomains[i]->num_match;
+            num_mismatch += m_IgDomains[i]->num_mismatch;
+            num_gap += m_IgDomains[i]->num_gap;
+        }
     }
+    m_Ostream << "<tr><td> Total </td><td> </td><td> </td><td> " << length << " </td>"
+              <<     "<td> " << num_match << " </td>"
+              <<     "<td> " << num_mismatch << " </td>"
+              <<     "<td> " << num_gap << " </td>\n";
     m_Ostream << "</table></pre>\n";
 };
 
@@ -1003,28 +1017,46 @@ void CIgBlastTabularInfo::x_PrintIgGenesHtml() const
 {
     if (m_VGene.start <0 || m_JGene.end <0) return;
 
+    m_Ostream << "<br><br>V(D)J rearrangement details for query sequence:\n";
     m_Ostream << "<pre><table>";
-    m_Ostream << "<tr><td>Last 5 letters in V: </td><td>";
+    m_Ostream << "<tr><td>bases at the end of V segment: </td><td>";
     x_PrintPartialQuery(max(m_VGene.start, m_VGene.end - 5), m_VGene.end);
     m_Ostream << "</td></tr>\n";
 
     if (m_ChainType == "VH") {
-        m_Ostream << "<tr><td>Letters between V and D: </td><td>";
-        x_PrintPartialQuery(m_VGene.end, m_DGene.start);
+        if (m_VGene.end <= m_DGene.start) {
+            m_Ostream << "<tr><td>bases between V and D segment: </td><td>";
+            x_PrintPartialQuery(m_VGene.end, m_DGene.start);
+        } else {
+            m_Ostream << "<tr><td>overlapping bases between V and D segment: </td><td>";
+            x_PrintPartialQuery(m_DGene.start, m_VGene.end);
+        }
         m_Ostream << "</td></tr>\n";
-        m_Ostream << "<tr><td>Letters in D: </td><td>";
+
+        m_Ostream << "<tr><td>bases in D segment: </td><td>";
         x_PrintPartialQuery(m_DGene.start, m_DGene.end);
         m_Ostream << "</td></tr>\n";
-        m_Ostream << "<tr><td>Letters between D and J: </td><td>";
-        x_PrintPartialQuery(m_DGene.end, m_JGene.start);
+
+        if (m_DGene.end <= m_JGene.start) {
+            m_Ostream << "<tr><td>bases between D and J segment: </td><td>";
+            x_PrintPartialQuery(m_DGene.end, m_JGene.start);
+        } else {
+            m_Ostream << "<tr><td>overlapping bases between D and J segment: </td><td>";
+            x_PrintPartialQuery(m_JGene.start, m_DGene.end);
+        }
         m_Ostream << "</td></tr>\n";
     } else {
-        m_Ostream << "<tr><td>Letters between V and J: </td><td>";
-        x_PrintPartialQuery(m_VGene.end, m_JGene.start);
+        if (m_VGene.end <= m_JGene.start) {
+            m_Ostream << "<tr><td>bases between V and J segment: </td><td>";
+            x_PrintPartialQuery(m_VGene.end, m_JGene.start);
+        } else {
+            m_Ostream << "<tr><td>overlapping bases between V and J segment: </td><td>";
+            x_PrintPartialQuery(m_JGene.start, m_VGene.end);
+        }
         m_Ostream << "</td></tr>\n";
     }
 
-    m_Ostream << "<tr><td>First 5 letters in J: </td><td>";
+    m_Ostream << "<tr><td>bases at the start of J segment: </td><td>";
     x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
     m_Ostream << "</td></tr></table></pre>\n";
 };
@@ -1052,6 +1084,9 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
         }
         ++domain.length;
         ++i;
+    }
+    if (domain.start + domain.length < domain.end) {
+        domain.end = domain.start + domain.length;
     }
 };
 
@@ -1090,9 +1125,7 @@ void CIgBlastTabularInfo::x_PrintIgDomainHtml(const SIgDomain &domain) const
                    << "<td> " << domain.num_mismatch << " </td>"
                    << "<td> " << domain.num_gap << " </td></tr>\n";
     } else {
-        m_Ostream  << "<td> N/A </td>" 
-                   << "<td> N/A </td>"
-                   << "<td> N/A </td></tr>\n";
+        m_Ostream  << "<td> </td><td> </td><td> </td></tr>\n";
     }
 };
 
