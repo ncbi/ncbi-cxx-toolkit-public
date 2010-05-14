@@ -80,16 +80,33 @@ static LinkedHSP * s_HSPFree(LinkedHSP *x) {
     return NULL;
 }
 
-/** test two hsps to see if p dominate y  */
-static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y, Boolean tie_break) {
-    if ( tie_break
-      && p->hsp->score == y->hsp->score
-      && p->begin == y->begin
-      && p->end   == y->end) return TRUE;
-    if ( p->hsp->score <= y->hsp->score
-      || p->begin > y->begin
-      || p->end   < y->end)  return FALSE;
-    return TRUE;
+/** return true if p dominates y  */
+static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y, Boolean drop_y_if_tie) {
+    int b1 = p->begin;
+    int b2 = y->begin;
+    int e1 = p->end;
+    int e2 = y->end;
+    int s1 = p->hsp->score;
+    int s2 = y->hsp->score;
+    int l1 = e1 - b1;
+    int l2 = e2 - b2;
+
+    /* the main criterion:
+       2 * (%diff in score) + 1 * (%diff in length) */
+    int d  = 3*s1*l1 + s1*l2 - s2*l1 - 3*s2*l2; 
+
+    if (d < 0 ||  
+         /* the following is the 50% overlap condition */
+         (e1+b1-2*b2) * (e1+b1-2*e2) > 0
+      && (e2+b2-2*b1) * (e2+b2-2*e1) > 0) return FALSE;
+
+    if (d > 0 || 
+         /* when two hsps are identical, drop the 2nd one */
+         drop_y_if_tie && s1 == s2 && l1 == l2) return TRUE;
+
+    /* non-identical case, use score as tie_break
+       note: when two hsps are identical, drop the 1st one */
+    return (s1 > s2);
 }
 
 /** test hsp y to see if it is dominated by lower merit hsps in list */
@@ -284,7 +301,6 @@ static void s_ForkChildren(CTreeNode * node) {
 static void s_Debug(CTreeNode *node) {
    LinkedHSP *p;
    if(!node) return;
-   printf("Node [%d %d]\n",node->begin, node->end);
    p=node->hsplist;
    while(p) {
       printf(" (%d %d %d %d)",p->begin, p->end, p->hsp->score,p->merit);
@@ -680,7 +696,6 @@ s_BlastHSPCullingNew(void* params, BlastQueryInfo* query_info)
    data->params = params;
    data->query_info = query_info;
    data->num_contexts = query_info->last_context + 1;
-    
    return writer;
 }
 
