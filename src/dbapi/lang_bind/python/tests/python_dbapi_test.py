@@ -144,6 +144,7 @@ cursor.fetchall()
 # Retrieve return status
 checkEqual(cursor.get_proc_return_status(), 0)
 
+
 # check output parameters
 try:
     cursor.execute("drop procedure testing")
@@ -163,6 +164,17 @@ if isinstance(out[1], str):
 if out[0] != 456:
     raise Exception('Invalid value of param1: ' + out[0])
 cursor.execute("drop procedure testing")
+
+
+#check procedure names
+try:
+    cursor.execute("drop procedure create_testing")
+except:
+    pass
+cursor.execute("create procedure create_testing as begin\nselect 1, 2, 3\nend")
+cursor.callproc('create_testing')
+cursor.fetchall()[0]
+
 
 
 conn = connect("ftds", "SYB", "PUBSEQ_OS", "master", "anyone", "allowed")
