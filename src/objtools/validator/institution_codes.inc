@@ -4750,6 +4750,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RIB	c	National Research Institute of Brewing, Tax Administration Agency",
 "RIBM	c	Research Institute for Brewing and Malting",
 "RICK	s	Brigham Young University - Idaho, Department of Biology",
+"RICP<CZE>	c	Crop Research Institute",
 "RIFAV	b	Research Institute for Fruits and Vegetables",
 "RIFFL	s	Research Institute of Freshwater Fisheries",
 "RIFY	c	Institute of Enology and Viticulture, Yamanashi University",
