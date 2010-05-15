@@ -6310,7 +6310,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WOS	s	City Museum and Art Gallery",
 "WOSNH	s	Worcestershire Natural History Society Museum",
 "WPBS	c	WPBS Rhizobium Collection",
-"WPC	c	World Phytophthora Genetic Resource Collection",
+"WPC	cb	World Phytophthora Genetic Resource Collection",
 "WPH	s	Waterton Lakes National Park",
 "WPL	s	Whitechapel Museum",
 "WPMM	s	State Museum of Pennsylvania",
