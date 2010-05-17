@@ -53,10 +53,10 @@ BEGIN_SCOPE(cd_utils)
 	 ~ColumnResidueProfile();
 
 	 void addOccurence(char residue, int row, bool aligned);
-	 inline double calculateColumnWeight(char residue, bool countGap, int numRows)const;
+	 double calculateColumnWeight(char residue, bool countGap, int numRows)const;
 	 //return the total weights for this column, which should be 1
 	 double sumUpColumnWeightsByRow(vector<double>& rowWeights, bool countGap, int numRows) const;
-	 inline double reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const;
+	 double reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const;
 	 int getSumCount() const;
 	char getMostFrequentResidue(int& count) const ;
 	//bool hasRow(int row) const;
@@ -73,8 +73,12 @@ BEGIN_SCOPE(cd_utils)
 	typedef multimap<char, RowStatusPair> ResidueRowsMap;
 
 	double calcInformationContent();
+
  private:
-	 inline ResidueRowsMap::iterator* findRow(int row);
+
+    inline ResidueRowsMap::iterator* findRow(int row) {
+        return (row > (int)(m_residuesByRow.size()-1)) ? 0 : m_residuesByRow[row];
+    };
 	// inline ResidueRowsMap::const_iterator* findRow(int row)const;
 	 //set<int> m_rows;
 	 bool m_masterIn;
@@ -94,7 +98,7 @@ BEGIN_SCOPE(cd_utils)
 	ColumnAddress(int posOnMaster, int gap=0);
 	ColumnAddress();
 	~ColumnAddress();
-	inline bool operator<(const ColumnAddress& rhs) const;
+	bool operator<(const ColumnAddress& rhs) const;
 
 	int mPos;
 	int gap;

@@ -36,7 +36,7 @@ const string ColumnResidueProfile::m_residues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; 
 unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 {
 	unsigned char  ret = m_residues.find(eaa);
-	if(ret < m_residues.size() && ret >= 0)
+	if(ret < m_residues.size())
 		return ret;
 	else
 		return m_residues.find('X');
@@ -50,7 +50,7 @@ ColumnResidueProfile::ColumnResidueProfile()
 
 ColumnResidueProfile::~ColumnResidueProfile()
 {
-	for (int i = 0; i < m_residuesByRow.size(); i++)
+	for (unsigned int i = 0; i < m_residuesByRow.size(); i++)
 		delete m_residuesByRow[i];
 }
 
@@ -66,7 +66,7 @@ void ColumnResidueProfile::addOccurence(char residue, int row, bool aligned)
 	 }
 	 if (m_residueRowsMap.count(residue) == 0) //first time to see this residue
 		 m_residueTypeCount++;
-	 if (m_residuesByRow.size() < row)
+	 if ((int)m_residuesByRow.size() < row)
 	 {
 		 m_residuesByRow.resize(row, 0);
 	 }
@@ -82,7 +82,7 @@ bool ColumnResidueProfile::hasRow(int row) const
 {
 	return m_rows.find(row) != m_rows.end();
 }*/
-
+ /*
 ColumnResidueProfile::ResidueRowsMap::iterator* ColumnResidueProfile::findRow(int row)
 {
 	if (row > (m_residuesByRow.size()-1))
@@ -90,6 +90,7 @@ ColumnResidueProfile::ResidueRowsMap::iterator* ColumnResidueProfile::findRow(in
 	else
 		return m_residuesByRow[row];
 }
+ */
 
 /*ColumnResidueProfile::ResidueRowsMap::const_iterator* ColumnResidueProfile::findRow(int row)const
 {
@@ -103,11 +104,11 @@ int ColumnResidueProfile::getSumCount() const
 
 char ColumnResidueProfile::getMostFrequentResidue(int& count) const
 {
-	int max = 0;
+	unsigned int max = 0;
 	count = m_residueRowsMap.count(m_residues[max]);
-	for (int i = 1; i < m_residues.size(); i++)
+	for (unsigned int i = 1; i < m_residues.size(); i++)
 	{
-		if (m_residueRowsMap.count(m_residues[i]) > count)
+		if ((int)m_residueRowsMap.count(m_residues[i]) > count)
 		{
 			max = i;
 			count = m_residueRowsMap.count(m_residues[i]);
@@ -116,7 +117,7 @@ char ColumnResidueProfile::getMostFrequentResidue(int& count) const
 	return m_residues[max];
 }
 	 
-inline double ColumnResidueProfile::calculateColumnWeight(char residue, bool countGap, int numRows)const
+double ColumnResidueProfile::calculateColumnWeight(char residue, bool countGap, int numRows)const
 {
 	if (m_residueRowsMap.count(residue) == 0)
 		return 0;
@@ -155,7 +156,7 @@ double ColumnResidueProfile::sumUpColumnWeightsByRow(vector<double>& rowWeights,
 		total += colResWeight;
 		rowsUsed.insert(cit->second.first);
 	}
-	if (countGap && (rowsUsed.size() < numRows))
+	if (countGap && ((int)rowsUsed.size() < numRows))
 	{
 		double gapWeight = (1.0 - total) / (numRows - rowsUsed.size());
 		for (int row = 0; row < numRows; row++)
@@ -167,12 +168,12 @@ double ColumnResidueProfile::sumUpColumnWeightsByRow(vector<double>& rowWeights,
 	return 1.0;
 }
 
-inline double ColumnResidueProfile::reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const
+double ColumnResidueProfile::reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const
 {
 	double totalWeight = 0;
 	double maxResWeight = 0;
 	double resWeight = 0;
-	for (int i = 0; i < m_residues.size(); i++)
+	for (unsigned int i = 0; i < m_residues.size(); i++)
 	{
 		pair <ResidueRowsMap::const_iterator, ResidueRowsMap::const_iterator> range =
 			m_residueRowsMap.equal_range(m_residues[i]);
@@ -310,7 +311,7 @@ double ColumnResidueProfile::calcInformationContent()
 	double freqThreshold = 0.0001f;
 	double total = (double) m_residueRowsMap.size();
 	static const double ln2 = log(2.0f);
-	for (int i = 0; i < m_residues.size(); i++)
+	for (unsigned int i = 0; i < m_residues.size(); i++)
 	{
 
 		int count = m_residueRowsMap.count(m_residues[i]);
@@ -379,7 +380,7 @@ void ResidueProfiles::addOneRow(BlockModelPair& bmp, const string& mSeq, const s
 	if (m_seqIds.size() == 0)
 		m_seqIds.push_back(bmp.getMaster().getSeqId());
 	m_seqIds.push_back(bmp.getSlave().getSeqId());
-	for (int bn = 0; bn < mBlocks.size(); bn++)
+	for (unsigned int bn = 0; bn < mBlocks.size(); bn++)
 	{
 		for (int i = 0; i < mBlocks[bn].getLen(); i++)
 		{
@@ -516,7 +517,7 @@ void ResidueProfiles::calculateRowWeights()
 	/*
 	printf("default weight=%.4f; minW=%.4f;maxW=%.4f;colUsed=%d; wieghtSum=%.4f, totalRow=%d\n", defaultWeight, 
 		 minW, maxW, colUsed, weightsSum, m_totalRows);*/
-	for ( int i = 0; i < m_rowWeights.size(); i++)
+	for ( unsigned int i = 0; i < m_rowWeights.size(); i++)
 	{
 		//normalize the weight by weightsSum
 		if (m_rowWeights[i] == 0.0)
@@ -526,7 +527,7 @@ void ResidueProfiles::calculateRowWeights()
 			noWeightRows++;
 		}
 	}
-	for ( int i = 0; i < m_rowWeights.size(); i++)
+	for ( unsigned int i = 0; i < m_rowWeights.size(); i++)
 	{
 		m_rowWeights[i] = m_rowWeights[i]/weightsSum;
 	}
@@ -648,7 +649,7 @@ const string ResidueProfiles::getConsensus(bool inNcbieaa)
 	else
 	{
 		string ncbistd;
-		for (int i = 0; i < m_consensus.size(); i++)
+		for (unsigned int i = 0; i < m_consensus.size(); i++)
 		{
 			ncbistd += ColumnResidueProfile::getNcbiStdCode(m_consensus[i]);
 		}
@@ -877,7 +878,7 @@ bool ResidueProfiles::skipUnalignedSeg(UnalignedSegReader& ucr, int len)
 
 void ResidueProfiles::segsToSet(vector<UnalignedSegReader::Seg>& segs,set<int>& cols)
 {
-	for(int i = 0; i < segs.size(); i++)
+	for(unsigned int i = 0; i < segs.size(); i++)
 	{
 		for(int k = segs[i].first; k <= segs[i].second; k++)
 			cols.insert(k);
@@ -925,7 +926,7 @@ string UnalignedSegReader::subtractLongestSeg(int threshold)
 
 int UnalignedSegReader::getLongUnalignedSegs(int length, vector<Seg>& segs)
 {
-	for(int i = 0; i < m_unalignedSegs.size(); i++)
+	for(unsigned int i = 0; i < m_unalignedSegs.size(); i++)
 		if (getLen(m_unalignedSegs[i]) >= length)
 			segs.push_back(m_unalignedSegs[i]);
 	return segs.size();
