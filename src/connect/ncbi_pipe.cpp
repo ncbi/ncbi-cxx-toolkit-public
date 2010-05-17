@@ -835,7 +835,7 @@ CPipeHandle::~CPipeHandle()
 void s_Exit(int status, int fd)
 {
     int errcode = errno;
-    ::write(fd, &errcode, sizeof(errcode));
+    (void) ::write(fd, &errcode, sizeof(errcode));
     ::close(fd);
     ::_exit(status);
 }
@@ -1050,7 +1050,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 }
                 ::close(pipe_in[1]);
             } else {
-                ::freopen("/dev/null", "r", stdin);
+                (void) ::freopen("/dev/null", "r", stdin);
             }
             if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
                 if (pipe_out[1] != STDOUT_FILENO) {
@@ -1061,7 +1061,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 }
                 ::close(pipe_out[0]);
             } else {
-                ::freopen("/dev/null", "w", stdout);
+                (void) ::freopen("/dev/null", "w", stdout);
             }
             if (  IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
                 if (pipe_err[1] != STDERR_FILENO) {
@@ -1072,7 +1072,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 }
                 ::close(pipe_err[0]);
             } else if ( !IS_SET(create_flags, CPipe::fStdErr_Share) ) {
-                ::freopen("/dev/null", "a", stderr);
+                (void) ::freopen("/dev/null", "a", stderr);
             }
 
             // Restore SIGPIPE signal processing
@@ -1094,7 +1094,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
             // Change current working directory if specified
             if ( !current_dir.empty() ) {
-                ::chdir(current_dir.c_str());
+                (void) ::chdir(current_dir.c_str());
             }
             // Execute the program
             int status;

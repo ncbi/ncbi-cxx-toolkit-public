@@ -115,7 +115,7 @@ static void s_WriteLine(FILE* fs, string str)
     } while (written < size);
     if (written == size) {
         static const char eol[] = { '\n' };
-        ::write(fileno(fs), eol, sizeof(eol));
+        (void) ::write(fileno(fs), eol, sizeof(eol));
     }
 }
 

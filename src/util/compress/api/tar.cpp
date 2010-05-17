@@ -1498,7 +1498,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
             return false;
         }
         _ASSERT(!errno);
-        strtoul(e, &e, 10);
+        (void) strtoul(e, &e, 10);
         if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
             return false;
         }
