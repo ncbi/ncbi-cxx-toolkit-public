@@ -946,6 +946,49 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
         (static_cast<const char*> (first) - static_cast<const char*> (second));
 }
 
+
+
+/// Buffer with an embedded pre-reserved space.
+///
+/// It is convenient to use if you want to avoid allocation in heap
+/// for smaller requested sizes, and use stack for such cases.
+/// @example:
+///    CFastBuffer<2048> buf(some_size);
+
+template <size_t KEmbeddedSize, class TType = char>
+class CFastBuffer
+{
+public:
+    CFastBuffer(size_t size)
+        : m_Size(size),
+          m_Buffer(size <= KEmbeddedSize ? m_EmbeddedBuffer : new TType[size])
+    {}
+    ~CFastBuffer() { if (m_Buffer != m_EmbeddedBuffer) delete[] m_Buffer; }
+
+    TType        operator[] (size_t pos) const { return m_Buffer[pos]; }
+
+    TType&       operator* (void)       { return *m_Buffer; }
+    const TType& operator* (void) const { return *m_Buffer; }
+
+    TType*       operator+ (size_t offset)       { return m_Buffer + offset; }
+    const TType* operator+ (size_t offset) const { return m_Buffer + offset; }
+
+    TType*       begin(void)       { return m_Buffer; }
+    const TType* begin(void) const { return m_Buffer; }
+
+    TType*       end(void)       { return m_Buffer + m_Size; }
+    const TType* end(void) const { return m_Buffer + m_Size; }
+
+    size_t       size(void) const { return m_Size; }
+
+private:
+     size_t m_Size;
+     TType* m_Buffer;
+     TType  m_EmbeddedBuffer[KEmbeddedSize];
+};
+
+
+
 /// Macro used to mark a constructor as deprecated.
 ///
 /// The correct syntax for this varies from compiler to compiler:
