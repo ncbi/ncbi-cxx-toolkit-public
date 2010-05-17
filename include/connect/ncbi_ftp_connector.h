@@ -52,9 +52,10 @@ extern "C" {
 
 
 typedef enum {
-    fFCDC_LogControl = 1,
-    fFCDC_LogData    = 2,
-    fFCDC_LogAll     = fFCDC_LogControl | fFCDC_LogData
+    fFCDC_LogControl  = 1,
+    fFCDC_LogData     = 2,
+    fFCDC_LogAll      = fFCDC_LogControl | fFCDC_LogData,
+    fFCDC_UseFeatures = 8
 } EFCDC_Flags;
 typedef unsigned int TFCDC_Flags;
 
