@@ -108,7 +108,7 @@ void CHookDataBase::ResetGlobalHook(void)
 void CHookDataBase::SetPathHook(CObjectStack* stk, const string& path, THook* hook)
 {
     if (m_PathHooks.SetHook(stk, path, hook)) {
-        m_HookCount.Add(1);
+        m_HookCount.Add(hook ? 1 : -1);
     }
 }
 

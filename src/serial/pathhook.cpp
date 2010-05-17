@@ -67,6 +67,7 @@ bool CPathHook::SetHook(CObjectStack* stk, const string& path, CObject* hook)
             }
             erase(it); // erase existing hook
             state = !state;
+            break;
         }
     }
     if (hook) { // set the new one
