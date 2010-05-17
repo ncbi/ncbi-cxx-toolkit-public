@@ -3394,6 +3394,12 @@ bool SDiagMessage::ParseMessage(const string& message)
                         0 : m_Data->m_Function.c_str();
                 }
             }
+            else {
+                size_t unkf = message.find("UNK_FUNC", pos);
+                if (unkf == pos) {
+                    pos += 9;
+                }
+            }
         }
 
         if (CTempString(message.c_str() + pos, 4) == "--- ") {
