@@ -87,7 +87,7 @@ protected:
     string ParseElementContent(DTDElement* owner, int emb);
     string ParseGroup(DTDElement* owner, int emb);
     void ParseGroupRef(DTDElement& node);
-    void ParseContent(DTDElement& node, bool extended=false);
+    bool ParseContent(DTDElement& node, bool extended=false);
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);

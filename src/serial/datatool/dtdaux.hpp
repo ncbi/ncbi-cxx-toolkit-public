@@ -145,6 +145,7 @@ public:
     const string& GetName(void) const;
 
     void SetType(EType type);
+    void SetTypeIfUnknown( EType type);
     EType GetType(void) const;
     void SetTypeName( const string& name);
     const string& GetTypeName( void) const;

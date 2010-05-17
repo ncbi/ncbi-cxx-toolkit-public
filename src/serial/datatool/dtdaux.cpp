@@ -171,6 +171,14 @@ void DTDAttribute::SetType(EType type)
 {
     m_Type = type;
 }
+
+void DTDAttribute::SetTypeIfUnknown( EType type)
+{
+    if (m_Type == eUnknown) {
+        m_Type = type;
+    }
+}
+
 DTDAttribute::EType DTDAttribute::GetType(void) const
 {
     return m_Type;

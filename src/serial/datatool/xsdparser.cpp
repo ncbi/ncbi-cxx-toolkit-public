@@ -581,12 +581,14 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
         ParseError("endoftag");
     }
+    bool hasContents = false;
     if (tok == K_CLOSING) {
-        ParseContent(m_MapElement[name]);
+        hasContents = ParseContent(m_MapElement[name]);
     }
     m_ExpectLastComment = true;
     if (!ref && !named_type) {
-        m_MapElement[name].SetTypeIfUnknown(DTDElement::eEmpty);
+        m_MapElement[name].SetTypeIfUnknown(
+            hasContents ? DTDElement::eEmpty : DTDElement::eString);
     }
     m_MapElement[name].SetNamespaceName(m_TargetNamespace);
     return name;
@@ -639,24 +641,30 @@ void XSDParser::ParseGroupRef(DTDElement& node)
     PopEntityLexer();
 }
 
-void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
+bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
 {
     DTDElement::EType curr_type;
     int emb=0;
     bool eatEOT= false;
+    bool hasContents= false;
     TToken tok;
     for ( tok=GetNextToken(); ; tok=GetNextToken()) {
         emb= node.GetContent().size();
+        if (tok != T_EOF &&
+            tok != K_ENDOFTAG &&
+            tok != K_ANNOTATION) {
+            hasContents= true;
+        }
         switch (tok) {
         case T_EOF:
-            return;
+            return hasContents;
         case K_ENDOFTAG:
             if (eatEOT) {
                 eatEOT= false;
                 break;
             }
             FixEmbeddedNames(node);
-            return;
+            return hasContents;
         case K_COMPLEXTYPE:
             ParseComplexType(node);
             break;
@@ -784,6 +792,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         }
     }
     FixEmbeddedNames(node);
+    return hasContents;
 }
 
 void XSDParser::ParseContainer(DTDElement& node)
@@ -876,10 +885,12 @@ void XSDParser::ParseAttribute(DTDElement& node)
     DTDAttribute& att = node.GetNonconstAttributes().back();
     att.SetSourceLine(Lexer().CurrentLine());
     SetCommentsIfEmpty(&(att.Comments()));
+    bool ref=false, named_type=false;
 
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("ref")) {
         att.SetName(m_Value);
+        ref=true;
     }
     if (GetAttribute("name")) {
         att.SetName(m_Value);
@@ -887,6 +898,7 @@ void XSDParser::ParseAttribute(DTDElement& node)
     if (GetAttribute("type")) {
         if (!DefineAttributeType(att)) {
             att.SetTypeName(m_Value);
+            named_type = true;
         }
     }
     if (GetAttribute("use")) {
@@ -903,6 +915,9 @@ void XSDParser::ParseAttribute(DTDElement& node)
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
+    }
+    if (!ref && !named_type) {
+        att.SetTypeIfUnknown(DTDAttribute::eString);
     }
     m_ExpectLastComment = true;
 }

@@ -50,9 +50,28 @@ XSDLexer::~XSDLexer(void)
 bool XSDLexer::ProcessDocumentation(void)
 {
     CComment& comment = AddComment();
+    int emb_comment = 0;
     bool allblank = true;
     for (;;) {
         char c = Char();
+        if (c == '<' &&
+            Char(1) == '!' &&
+            Char(2) == '-' &&
+            Char(3) == '-') {
+            SkipChars(4);
+            ++emb_comment;
+            continue;
+        }
+        if (emb_comment) {
+            if ( c == '-' &&
+                Char(1) == '-' &&
+                Char(2) == '>') {
+                SkipChars(2);
+                --emb_comment;
+            }
+            SkipChar();
+            continue;
+        }
         switch ( c ) {
         case '\r':
             SkipChar();
