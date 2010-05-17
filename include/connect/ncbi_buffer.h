@@ -122,8 +122,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
 
 /*!
  * Add new data to the end of "*pBuf" (to be read last).
- * On error (failed memory allocation), return zero value.
- * NOTE:  if "*pBuf" == NULL then create it.
+ * On error (failed memory allocation), return zero value;
+ * otherwise return non-zero (i.e. including when "size" passed as 0).
+ * NOTE:  if "*pBuf" == NULL then create it if necessary (e.g. if size != 0).
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
 (BUF*        pBuf,
@@ -201,6 +202,7 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Read
 
 /*!
  * Make the buffer empty.
+ * NOTE: do nothing if "buf" == NULL
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
 
