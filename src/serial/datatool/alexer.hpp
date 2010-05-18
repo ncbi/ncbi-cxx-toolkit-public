@@ -132,6 +132,7 @@ public:
         {
             return m_TokenStart != 0;
         }
+    void BeginFile(void);
 
 protected:
     virtual TToken LookupToken(void) = 0;

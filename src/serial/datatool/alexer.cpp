@@ -236,4 +236,17 @@ void AbstractLexer::EndCommentBlock()
     }
 }
 
+void AbstractLexer::BeginFile(void)
+{
+// check for UTF8 Byte Order Mark (EF BB BF)
+// http://unicode.org/faq/utf_bom.html#BOM
+    char c = Char();
+    if ((unsigned char)c == 0xEF) {
+        if ((unsigned char)Char(1) == 0xBB &&
+            (unsigned char)Char(2) == 0xBF) {
+            SkipChars(3);
+        }
+    }
+}
+
 END_NCBI_SCOPE

@@ -77,6 +77,7 @@ DTDParser::~DTDParser(void)
 AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
 {
     AutoPtr<CFileModules> modules(new CFileModules(fileName));
+    Lexer().BeginFile();
 
     while( GetNextToken() != T_EOF ) {
         CDirEntry entry(fileName);
@@ -690,6 +691,9 @@ void DTDParser::PushEntityLexer(const string& name)
     Lexer().FlushCommentsTo(*lexer);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
+    if (m_MapEntity[name].IsExternal()) {
+        Lexer().BeginFile();
+    }
 }
 
 bool DTDParser::PopEntityLexer(void)
