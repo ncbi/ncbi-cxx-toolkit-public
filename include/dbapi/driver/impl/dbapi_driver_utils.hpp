@@ -108,8 +108,8 @@ public:
 public:
     virtual unsigned int GetNum(void) const;
     virtual const string& GetName(
-            const CDBParamVariant& param, 
-            CDBParamVariant::ENameFormat format = 
+            const CDBParamVariant& param,
+            CDBParamVariant::ENameFormat format =
                 CDBParamVariant::eSQLServerName) const;
     virtual unsigned int GetIndex(const CDBParamVariant& param) const;
     virtual size_t GetMaxSize(const CDBParamVariant& param) const;
@@ -118,14 +118,14 @@ public:
 
     /// This method stores pointer to data.
     virtual CDBParams& Bind(
-        const CDBParamVariant& param, 
-        CDB_Object* value, 
+        const CDBParamVariant& param,
+        CDB_Object* value,
         bool out_param = false
         );
     /// This method stores copy of data.
     virtual CDBParams& Set(
-        const CDBParamVariant& param, 
-        CDB_Object* value, 
+        const CDBParamVariant& param,
+        CDB_Object* value,
         bool out_param = false
         );
 
@@ -144,11 +144,11 @@ public:
     virtual unsigned int GetNum(void) const;
 
     virtual const string& GetName(
-            const CDBParamVariant& param, 
-            CDBParamVariant::ENameFormat format = 
+            const CDBParamVariant& param,
+            CDBParamVariant::ENameFormat format =
                 CDBParamVariant::eSQLServerName) const;
     virtual unsigned int GetIndex(const CDBParamVariant& param) const;
-    
+
     virtual size_t GetMaxSize(const CDBParamVariant& param) const;
     virtual EDB_Type GetDataType(const CDBParamVariant& param) const;
     virtual EDirection GetDirection(const CDBParamVariant& param) const;
@@ -181,7 +181,7 @@ private:
     // Inline version of virtual function GetNum() ...
     unsigned int GetNumInternal(void) const
     {
-        return m_Info.size();
+        return static_cast<unsigned int>(m_Info.size());
     }
 
     unsigned int FindParamPosInternal(const string& name) const;
@@ -213,7 +213,7 @@ class NCBI_DBAPIDRIVER_EXPORT CRowInfo_SP_SQL_Server : public CCachedRowInfo
 public:
     CRowInfo_SP_SQL_Server(
             const string& sp_name,
-            impl::CConnection& conn, 
+            impl::CConnection& conn,
             impl::CDB_Params& bindings
             );
     virtual ~CRowInfo_SP_SQL_Server(void);

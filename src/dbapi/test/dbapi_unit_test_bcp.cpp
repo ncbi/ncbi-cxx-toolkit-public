@@ -222,8 +222,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK_EQUAL(rec_num, (int)record_num);
+                size_t rec_num = GetNumOfRecords(auto_stmt, table_name);
+                BOOST_CHECK_EQUAL(rec_num, (size_t)record_num);
             }
         }
 
@@ -268,8 +268,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK_EQUAL(rec_num, int(record_num) * int(batch_num));
+                size_t rec_num = GetNumOfRecords(auto_stmt, table_name);
+                BOOST_CHECK_EQUAL(rec_num, size_t(record_num) * size_t(batch_num));
             }
         }
     }
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
             dtypeVal = 106;
 
             CDB_Int dsizeVal;
-            dsizeVal = data.size();
+            dsizeVal = Int4(data.size());
 
             CDB_VarChar dataStrVal;
             dataStrVal.AssignNULL();
@@ -873,7 +873,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
             dtypeVal = 106;
 
             CDB_Int dsizeVal;
-            dsizeVal = data.size();
+            dsizeVal = Int4(data.size());
 
             CDB_VarChar dataStrVal;
             dataStrVal.AssignNULL();
@@ -957,7 +957,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
             dtypeVal = 106;
 
             CDB_Int dsizeVal;
-            dsizeVal = data.size();
+            dsizeVal = Int4(data.size());
 
             CDB_VarChar dataStrVal;
             dataStrVal.AssignNULL();
