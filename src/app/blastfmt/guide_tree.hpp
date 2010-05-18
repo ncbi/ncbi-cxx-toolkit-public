@@ -356,53 +356,25 @@ public:
     /// Group nodes according to user-selected scheme and collapse subtrees
     /// composed of nodes that belong to the same group
     /// @param method Name of the method for simplifying the tree [in]
-    /// @param refresh Should dimensions of the tree be recalculated. [in]
     ///
-    /// Typically tree needs to be refreshed after any manipulation.
-    /// Setting refresh to false may be more efficient if many tree 
-    /// manipulations are done. Refresh() method need to be called at the end
-    /// in such case.
-    ///
-    void SimplifyTree(ETreeSimplifyMode method, bool refresh = true);
+    void SimplifyTree(ETreeSimplifyMode method);
 
     /// Expand or collapse subtree rooted in given node
     /// @param node_id Numerical id of the node to expand or collapse [in]
-    /// @param refresh Should dimensions of the tree be recalculated [in]
     ///
-    /// Typically tree needs to be refreshed after any manipulation.
-    /// Setting refresh to false may be more efficient if many tree 
-    /// manipulations are done. Refresh() method need to be called at the end
-    /// in such case.
-    ///
-    bool ExpandCollapseSubtree(int node_id, bool refresh = true);
+    bool ExpandCollapseSubtree(int node_id);
 
 
     /// Reroot tree
     /// @param new_root_id Node id of the new root [in]
-    /// @param refresh Should dimensions of the tree be recalculated [in]
     ///
-    /// Typically tree needs to be refreshed after any manipulation.
-    /// Setting refresh to false may be more efficient if many tree 
-    /// manipulations are done. Refresh() method need to be called at the end
-    /// in such case.
-    ///
-    void RerootTree(int new_root_id, bool refresh);
+    void RerootTree(int new_root_id);
 
     /// Show subtree
     /// @param root_id Node id of the subtree root [in]
-    /// @param refresh Should dimensions of the tree be recalculated [in]
     ///
-    /// Typically tree needs to be refreshed after any manipulation.
-    /// Setting refresh to false may be more efficient if many tree 
-    /// manipulations are done. Refresh() method need to be called at the end
-    /// in such case.
-    ///
-    bool ShowSubtree(int root_id, bool refresh);
+    bool ShowSubtree(int root_id);
 
-
-    /// Recalculate dimensions of the tree for rendering.
-    ///
-    void Refresh(void);
 
     ///Get map corresponding to tree image
     ///
@@ -443,6 +415,40 @@ protected:
     ///
     CPhyloTreeNode* x_GetNode(int id, CPhyloTreeNode* root = NULL);
 
+    /// Find pointer to a BioTreeDynamic node with given numerical id.
+    /// Throws excepion if node not found.
+    /// @param id Numerical node id [in]
+    /// @return Pointer to the node with desired id
+    ///
+    CBioTreeDynamic::CBioNode* x_GetBioNode(TBioTreeNodeId id);
+
+    /// Check if node is expanded (subtree shown)
+    /// @param node Node [in]
+    /// @return True if node expanded, false otherwise
+    ///
+    static bool x_IsExpanded(const CBioTreeDynamic::CBioNode& node);
+
+    /// Check if node is a leaf or collapsed
+    /// @param node Node [in]
+    /// @return True if node is a leaf or collapsed, false otherwise
+    ///
+    static bool x_IsLeafEx(const CBioTreeDynamic::CBioNode& node);
+
+    /// Collapse node (do not show subtree)
+    /// @param node Node [in|out]
+    ///
+    static void x_Collapse(CBioTreeDynamic::CBioNode& node);
+
+    /// Expand node (show subtree)
+    /// @param node Node [in|out]
+    ///
+    static void x_Expand(CBioTreeDynamic::CBioNode& node);
+
+    /// Get numeric id of feature with given tag. Throws exception is feature
+    /// not found.
+    /// @param tag Feature tag [in]
+    /// @return Numeric feature id
+    ///
     inline TBioTreeFeatureId x_GetFeatureId(const string& tag);
 
     /// Get feature value by tag of selected node
@@ -473,7 +479,7 @@ protected:
     /// @param is_outer_node Controls recursion should be true on first call [in]
     ///
     void x_PrintNewickTree(CNcbiOstream& ostr, 
-                           const CTreeNode<CPhyTreeNode>& node, 
+                           const CBioTreeDynamic::CBioNode& node, 
                            bool is_outer_node = true);
         
 
@@ -481,7 +487,7 @@ protected:
     /// the collapsed subtree and marks the collapse node.
     /// @param node Root of the collapsed subtree [in]
     ///
-    void x_MarkCollapsedQueryNode(CPhyloTreeNode* node);
+    void x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node);
 
     /// Collapse given subtrees
     /// @param groupper Object groupping nodes that contains a list of subtrees
@@ -492,7 +498,11 @@ protected:
     void x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper);
 
 
-    void x_InitTreeLabels(CBioTreeContainer &btc,ELabelType lblType); 
+    /// Init tree leaf labels with selected labels type
+    /// @param btc BioTreeContainer [in|out]
+    /// @param lbl_type Labels type [in]
+    ///
+    void x_InitTreeLabels(CBioTreeContainer& btc, ELabelType lbl_type); 
 
 private:
     
@@ -532,6 +542,13 @@ private:
     static void x_AddFeature(int id, const string& value,
                              CNodeSet::Tdata::iterator iter);    
 
+    /// Add very short length to edges descending directly from root in
+    /// in rendered tree.
+    ///
+    /// The purpose of this function is to avoid zero length edges at root,
+    /// because then the rendered tree is difficult to analyze.
+    void x_ExtendRoot(void);
+
 
     // Tree visitor classes used for manipulating the guide tree
 
@@ -569,6 +586,40 @@ private:
     };
 
 
+    /// Tree visitor, finds BioTreeDynamic node by id
+    class CBioNodeFinder
+    {
+    public:
+
+        /// Constructor
+        /// @param id Node id [in]
+        CBioNodeFinder(TBioTreeNodeId id) : m_NodeId(id), m_Node(NULL) {}
+
+        /// Get pointer to found node
+        /// @return Pointer to node or NULL
+        CBioTreeDynamic::CBioNode* GetNode(void) {return m_Node;}
+
+        /// Check if node has desired id. Function invoked by tree traversal
+        /// function.
+        /// @param node Node [in]
+        /// @param delta Traversal direction [in]
+        ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node, int delta)
+        {
+            if (delta == 0 || delta == 1) {
+                if ((*node).GetId() == m_NodeId) {
+                    m_Node = &node;
+                    return eTreeTraverseStop;
+                }
+            }
+            return eTreeTraverse;
+        }
+
+    protected:
+        TBioTreeNodeId m_NodeId;
+        CBioTreeDynamic::CBioNode* m_Node;
+    };
+
+
     /// Tree visitor class, expands all nodes and corrects node colors
     class CExpander
     {
@@ -577,16 +628,8 @@ private:
         /// @param node Tree root [in]
         /// @param delta Direction of tree traversal [in]
         /// @return Traverse action
-        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
-        {
-            if (delta == 0 || delta == 1) {
-                if (!node.Expanded() && !node.IsLeaf()) {
-                    node.ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-                    (*node).SetFeature(kNodeColorTag, "");
-                }
-            }
-            return eTreeTraverse;
-        }
+        ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node,
+                                     int delta);
     };
 
 
@@ -597,18 +640,15 @@ private:
     public:
 
         /// Constructor
-        CSingleBlastNameExaminer(CPhyloTreeDataSource& tree)
+        CSingleBlastNameExaminer(CBioTreeDynamic& tree)
             : m_IsSingleBlastName(true) 
         {
             const CBioTreeFeatureDictionary& fdict
-                = tree.GetDictionary();
+                = tree.GetFeatureDict();
 
             if (!fdict.HasFeature(kBlastNameTag)) {
                 NCBI_THROW(CException, eInvalid, 
                            "No Blast Name feature CBioTreeFeatureDictionary");
-            }
-            else {
-                m_BlastNameFeatureId = fdict.GetId(kBlastNameTag);
             }
         }
 
@@ -622,21 +662,20 @@ private:
         /// @param node Tree root [in]
         /// @param delta Direction of tree traversal [in]
         /// @return Traverse action
-        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
+        ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node,
+                                     int delta) 
         {
             if (delta == 0 || delta == 1) {
                 if (node.IsLeaf()) {
 
-                    const CBioTreeFeatureList& flist 
-                        = node.GetValue().GetBioTreeFeatureList();
 
                     if (m_CurrentBlastName.empty()) {
-                        m_CurrentBlastName 
-                            = flist.GetFeatureValue(m_BlastNameFeatureId);
+                        m_CurrentBlastName = node.GetFeature(kBlastNameTag);
                     }
                     else {
-                        if (m_CurrentBlastName 
-                            != flist.GetFeatureValue(m_BlastNameFeatureId)) {
+                        if (m_CurrentBlastName
+                            != node.GetFeature(kBlastNameTag)) {
+                          
                             m_IsSingleBlastName = false;
                             return eTreeTraverseStop;
                         }
@@ -649,9 +688,6 @@ private:
     protected:
         /// Is one blast name in the tree
         bool m_IsSingleBlastName;              
-
-        /// Id of feature that holds blast name
-        TBioTreeFeatureId m_BlastNameFeatureId;
 
         /// Last identified blast name
         string m_CurrentBlastName;
@@ -753,6 +789,9 @@ public:
 
     /// Sequence label feature tag
     static const string kLabelTag;
+
+    /// Distance feature tag
+    static const string kDistTag;
 
     /// Sequence id feature tag
     static const string kSeqIDTag;

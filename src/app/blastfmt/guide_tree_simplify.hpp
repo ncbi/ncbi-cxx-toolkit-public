@@ -37,28 +37,28 @@
 
 #include <stack>
 #include <corelib/ncbi_tree.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_algorithm.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_ds.hpp>
-
+#include <algo/phy_tree/bio_tree.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
 ///Tree visitor, finds subtrees that form groups based on tree features
-class CPhyloTreeNodeGroupper : public IPhyloTreeVisitor
+class CPhyloTreeNodeGroupper
 {
 public:
     class CLabeledNode
     {
     public:
-        CLabeledNode(TTreeType* node, const pair<string, string>& label_color)
+        CLabeledNode(CBioTreeDynamic::CBioNode* node,
+                     const pair<string, string>& label_color)
                    : m_Node(node), m_LabelColorPair(label_color) {}
-        TTreeType* GetNode(void) const {return m_Node;}
+
+        CBioTreeDynamic::CBioNode* GetNode(void) const {return m_Node;}
         const string& GetLabel(void) const {return m_LabelColorPair.first;}
         const string& GetColor(void) const {return m_LabelColorPair.second;}
 
     private:
-        TTreeType* m_Node;
+        CBioTreeDynamic::CBioNode* m_Node;
         pair<string, string> m_LabelColorPair;
     };
 
@@ -70,12 +70,12 @@ public:
 public:
     CPhyloTreeNodeGroupper(const string& feature_name,
                            const string& feature_color,
-                           CPhyloTreeDataSource& tree,
+                           CBioTreeDynamic& tree,
                            CNcbiOfstream* ostr = NULL);
 
     virtual ~CPhyloTreeNodeGroupper() {}
     void Init(const string& feature_name, const string& feature_color,
-              CPhyloTreeDataSource& tree);
+              CBioTreeDynamic& tree);
     const string& GetError(void) const {return m_Error;}
     virtual CLabeledNodes& GetLabeledNodes(void) {return m_LabeledNodes;}
     const string& GetFeatureName(void) const {return m_LabelFeatureName;}
@@ -83,25 +83,24 @@ public:
     CLabeledNodes_I Begin(void) {return m_LabeledNodes.begin();}
     CLabeledNodes_I End() {return m_LabeledNodes.end();}
     int GetLabeledNodesNum(void) {return m_LabeledNodes.size();}
+    ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node, int delta);
 
 protected:
-    virtual ETreeTraverseCode x_OnStep(TTreeType& x_node, int delta);
-    virtual ETreeTraverseCode x_OnStepDown(TTreeType& x_node);
-    virtual ETreeTraverseCode x_OnStepLeft(TTreeType& x_node);
-    virtual ETreeTraverseCode x_OnStepRight(TTreeType& x_node);
-    bool x_IsRoot(TTreeType* node) const {return node == m_Root;}
+    ETreeTraverseCode x_OnStepDown(CBioTreeDynamic::CBioNode& x_node);
+    ETreeTraverseCode x_OnStepLeft(CBioTreeDynamic::CBioNode& x_node);
+    ETreeTraverseCode x_OnStepRight(CBioTreeDynamic::CBioNode& x_node);
+    bool x_IsRoot(CBioTreeDynamic::CBioNode* node) const
+    {return node == m_Root;}
 
 
 protected:
     string m_LabelFeatureName;
     string m_ColorFeatureName;
-    TBioTreeFeatureId m_LabelFeatureId;
-    TBioTreeFeatureId m_ColorFeatureId;
     string m_Error;
     CLabeledNodes m_LabeledNodes;
     stack< pair<string, string> > m_LabelStack;
-    stack<IPhyNode::TID> m_ParentIdStack;
-    TTreeType* m_Root;
+    stack<TBioTreeNodeId> m_ParentIdStack;
+    CBioTreeDynamic::CBioNode* m_Root;
 
     CNcbiOfstream* m_Ostr;  //diagnostics
 };
@@ -116,21 +115,26 @@ public:
 
 public:
     CPhyloTreeLabelTracker(const string& label, const string& color,
-                           CPhyloTreeDataSource& tree);
-    ETreeTraverseCode operator() (CPhyloTreeNode& node, int delta);
+                           const string& query_color,
+                           TBioTreeNodeId query_node_id,
+                           CBioTreeDynamic& tree);
+
+    ETreeTraverseCode operator() (CBioTreeDynamic::CBioNode& node, int delta);
     const string& GetError(void) const {return m_Error;}
     TLabelColorMap_I Begin(void) {return m_LabelsColors.begin();}
     TLabelColorMap_I End(void) {return m_LabelsColors.end();}
     unsigned int GetNumLabels(void) const {return m_LabelsColors.size();}
-    CPhyloTreeNode* GetQueryNode(void) {return m_QueryNode;}
+    CBioTreeDynamic::CBioNode* GetQueryNode(void) {return m_QueryNode;}
     const string& GetQueryNodeColor(void) const {return m_QueryNodeColor;}
 
 protected:
-    TBioTreeFeatureId m_LabelFeatureId;
-    TBioTreeFeatureId m_ColorFeatureId;
+    string m_LabelFeatureTag;
+    string m_ColorFeatureTag;
+    string m_QueryNodeColorFeatureTag;
     TLabelColorMap m_LabelsColors;
     string m_Error;
-    CPhyloTreeNode* m_QueryNode;
+    TBioTreeNodeId m_QueryNodeId;
+    CBioTreeDynamic::CBioNode* m_QueryNode;
     string m_QueryNodeColor;
 };
 

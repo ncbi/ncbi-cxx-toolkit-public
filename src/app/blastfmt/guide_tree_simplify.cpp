@@ -39,30 +39,26 @@ static const string s_kDifferentGroups = "$DIFFERENT_GROUPS";
 
 CPhyloTreeNodeGroupper::CPhyloTreeNodeGroupper(const string& feature_name,
                                                const string& feature_color,
-                                               CPhyloTreeDataSource& tree,
+                                               CBioTreeDynamic& tree,
                                                CNcbiOfstream* ostr)
-    : IPhyloTreeVisitor(), m_Root(NULL), m_Ostr(ostr)
+    : m_Root(NULL), m_Ostr(ostr)
 {
     Init(feature_name, feature_color, tree);
 }
 
 void CPhyloTreeNodeGroupper::Init(const string& feature_name,
                                   const string& feature_color,
-                                  CPhyloTreeDataSource& tree)
+                                  CBioTreeDynamic& tree)
 {
     m_LabelFeatureName = feature_name;
     m_ColorFeatureName = feature_color;
 
-    const CBioTreeFeatureDictionary& fdict = tree.GetDictionary();
-    if (!fdict.HasFeature(m_LabelFeatureName) || !fdict.HasFeature(m_ColorFeatureName)) {
+    const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
+    if (!fdict.HasFeature(m_LabelFeatureName)
+        || !fdict.HasFeature(m_ColorFeatureName)) {
+
         m_Error = "Feature not in feature dictionary";
     }
-    else {
-        m_LabelFeatureId = fdict.GetId(m_LabelFeatureName);
-        m_ColorFeatureId = fdict.GetId(m_ColorFeatureName);
-    }
-
-
     m_LabeledNodes.clear();
 
     while (!m_LabelStack.empty()) {
@@ -74,7 +70,9 @@ void CPhyloTreeNodeGroupper::Init(const string& feature_name,
     }
 }
 
-ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStep(TTreeType& x_node, int delta)
+ETreeTraverseCode CPhyloTreeNodeGroupper::operator()(
+                                            CBioTreeDynamic::CBioNode& x_node,
+                                            int delta)
 {
     if (m_Ostr != NULL) {
       *m_Ostr << "stack top: ";
@@ -94,10 +92,17 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStep(TTreeType& x_node, int delta)
     if (m_Root == NULL)
         m_Root = &x_node;
 
-    return IPhyloTreeVisitor::x_OnStep(x_node, delta);
+    switch (delta) {
+    case 0:  return x_OnStepDown(x_node);
+    case 1:  return x_OnStepRight(x_node);
+    case -1: return x_OnStepLeft(x_node);
+    }
+
+    return eTreeTraverse;
 }
 
-ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepRight(TTreeType& x_node)
+ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepRight(
+                                           CBioTreeDynamic::CBioNode& x_node)
 {
     //If leaf, then group name is put on stack
     if (m_Ostr != NULL)
@@ -106,10 +111,10 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepRight(TTreeType& x_node)
     //If this is a leaf, then the group name is saved for comparisons with
     // other nodes
     if (x_node.IsLeaf()) {
-        const CBioTreeFeatureList& flist 
-              = x_node.GetValue().GetBioTreeFeatureList();
-        pair<string, string> label_color = make_pair(flist.GetFeatureValue(m_LabelFeatureId), flist.GetFeatureValue(m_ColorFeatureId));
-
+        pair<string, string> label_color
+            = make_pair(x_node.GetFeature(m_LabelFeatureName),
+                        x_node.GetFeature(m_ColorFeatureName));
+        
         if (label_color.first.empty() || label_color.second.empty()) {
           m_Error = "Leafe node has unset feature, Id: " 
                + NStr::IntToString(x_node.GetValue().GetId());
@@ -130,7 +135,8 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepRight(TTreeType& x_node)
     return eTreeTraverse;
 }
 
-ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepDown(TTreeType& x_node)
+ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepDown(
+                                           CBioTreeDynamic::CBioNode& x_node)
 {
     if (m_Ostr != NULL)
         *m_Ostr << "x_OnStepDown, Id: " 
@@ -148,9 +154,7 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepDown(TTreeType& x_node)
               return eTreeTraverse;
         }
 
-        const CBioTreeFeatureList& flist 
-              = x_node.GetValue().GetBioTreeFeatureList();
-        const string& name = flist.GetFeatureValue(m_LabelFeatureId);
+        const string& name = x_node.GetFeature(m_LabelFeatureName);
 
         if (name == NcbiEmptyString) {
             m_Error = "Leafe node has unset feature, Id: " 
@@ -184,7 +188,8 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepDown(TTreeType& x_node)
     return eTreeTraverse;
 }
 
-ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepLeft(TTreeType& x_node)
+ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepLeft(
+                                            CBioTreeDynamic::CBioNode& x_node)
 {
     if (m_Ostr != NULL)
        *m_Ostr << "x_OnStepLeft, Id: " + NStr::IntToString(x_node.GetValue().GetId()) << NcbiEndl;
@@ -246,23 +251,26 @@ ETreeTraverseCode CPhyloTreeNodeGroupper::x_OnStepLeft(TTreeType& x_node)
 
 CPhyloTreeLabelTracker::CPhyloTreeLabelTracker(const string& label_feature, 
                                                const string& color_feature,
-                                               CPhyloTreeDataSource& tree) 
-  : m_QueryNode(NULL)
+                                               const string& query_color,
+                                               TBioTreeNodeId query_node_id,
+                                               CBioTreeDynamic& tree)
+    : m_LabelFeatureTag(label_feature),
+      m_ColorFeatureTag(color_feature),
+      m_QueryNodeColorFeatureTag(query_color),
+      m_QueryNodeId(query_node_id),
+      m_QueryNode(NULL)
 {
-    const CBioTreeFeatureDictionary& fdict = tree.GetDictionary();
+    const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
         m_Error = "Feature not in feature dictionary";
-    }
-    else {
-        m_LabelFeatureId = fdict.GetId(label_feature);
-        m_ColorFeatureId = fdict.GetId(color_feature);
     }
 
     m_LabelsColors.clear();
 }
 
-ETreeTraverseCode CPhyloTreeLabelTracker::operator() (CPhyloTreeNode& node, 
-                                                      int delta)
+ETreeTraverseCode CPhyloTreeLabelTracker::operator() (
+                                             CBioTreeDynamic::CBioNode& node, 
+                                             int delta)
 {
     if (!m_Error.empty()) {
         return eTreeTraverseStop;
@@ -270,22 +278,16 @@ ETreeTraverseCode CPhyloTreeLabelTracker::operator() (CPhyloTreeNode& node,
 
     if (delta == 0 || delta == 1) {
 
-        //Detecting BLAST query node
-        //TO DO: This needs to be done in a more elegant way
-        if (m_QueryNode == NULL) {
-            if (!(*node).GetLabelBgColor().empty()) {
+        // if query node
+        if (m_QueryNodeId >= 0 && (*node).GetId() == m_QueryNodeId) {
                 m_QueryNode = &node;
-                m_QueryNodeColor = (*node).GetLabelBgColor();
-            }
+                m_QueryNodeColor = node.GetFeature(m_QueryNodeColorFeatureTag);
         }
 
         if (node.IsLeaf()) {
-
-            const CBioTreeFeatureList& flist 
-              = node.GetValue().GetBioTreeFeatureList();
-            const string& label = flist.GetFeatureValue(m_LabelFeatureId);
-            const string& color = flist.GetFeatureValue(m_ColorFeatureId);
-
+            const string& label = node.GetFeature(m_LabelFeatureTag);
+            const string& color = node.GetFeature(m_ColorFeatureTag);
+            
             m_LabelsColors[label] = color;
         }
     }

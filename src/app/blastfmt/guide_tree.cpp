@@ -60,6 +60,7 @@ USING_SCOPE(objects);
 
 
 const string CGuideTree::kLabelTag = "label";
+const string CGuideTree::kDistTag = "dist";
 const string CGuideTree::kSeqIDTag = "seq-id";
 const string CGuideTree::kSeqTitleTag = "seq-title";
 const string CGuideTree::kOrganismTag = "organism";
@@ -97,8 +98,6 @@ CGuideTree::CGuideTree(CGuideTreeCalc& guide_tree_calc, ELabelType label_type,
                        guide_tree_calc.GetQueryNodeId());
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
-    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
-
     m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
 }
 
@@ -107,9 +106,8 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
 {
     x_Init();
 
-    x_InitTreeLabels(btc,lblType);     
+    x_InitTreeLabels(btc,lblType);
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
-    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
@@ -127,16 +125,13 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
                        m_BlastNameColorMap, m_QueryNodeId);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
-    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
 CGuideTree::CGuideTree(const CBioTreeDynamic& tree)
+    : m_Dyntree(tree)
 {
     x_Init();
-
-    m_Dyntree = tree;
-    m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
 }
 
 
@@ -184,8 +179,7 @@ bool CGuideTree::WriteTree(const string& filename)
     CBioTreeDynamic dyntree;
     CBioTreeContainer btc;
 
-    m_DataSource->Save(dyntree);
-    BioTreeConvert2Container(btc, dyntree);
+    BioTreeConvert2Container(btc, m_Dyntree);
     
     // Writing to file
     CNcbiOfstream ostr(filename.c_str());
@@ -202,8 +196,7 @@ string CGuideTree::WriteTreeInNetcache(string netcacheServiceName,string netcach
     CBioTreeDynamic dyntree;
     CBioTreeContainer btc;
 
-    m_DataSource->Save(dyntree);
-    BioTreeConvert2Container(btc, dyntree);
+    BioTreeConvert2Container(btc, m_Dyntree);
         
     //Put contetnts of the tree in memory
     CConn_MemoryStream iostr;
@@ -223,9 +216,6 @@ string CGuideTree::WriteTreeInNetcache(string netcacheServiceName,string netcach
 
 
 
-
-
-
 bool CGuideTree::PrintNewickTree(const string& filename)
 {
     CNcbiOfstream out(filename.c_str());
@@ -237,9 +227,7 @@ bool CGuideTree::PrintNewickTree(const string& filename)
 
 bool CGuideTree::PrintNewickTree(CNcbiOstream& ostr)
 {
-    _ASSERT(m_DataSource->GetTree());
-
-    x_PrintNewickTree(ostr, *m_DataSource->GetTree());
+    x_PrintNewickTree(ostr, *m_Dyntree.GetTreeNode());
     ostr << NcbiEndl;
     return true;
 }
@@ -274,7 +262,7 @@ bool CGuideTree::PrintNexusTree(CNcbiOstream& ostr, const string& tree_name,
         ostr << NcbiEndl;
     }
     ostr <<  "TREE " << tree_name << " = ";
-    x_PrintNewickTree(ostr, *m_DataSource->GetTree());
+    x_PrintNewickTree(ostr, *m_Dyntree.GetTreeNode());
     if (force_win_eol) {
         ostr << "\r\n";
     }
@@ -314,11 +302,11 @@ bool CGuideTree::SaveTreeAs(CNcbiOstream& ostr, ETreeFormat format)
 
 void CGuideTree::FullyExpand(void)
 {
-    TreeDepthFirstTraverse(*m_DataSource->GetTree(), CExpander());
+    TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), CExpander());
 }
 
 
-void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
+void CGuideTree::SimplifyTree(ETreeSimplifyMode method)
 {
 
     switch (method) {
@@ -332,9 +320,9 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
     {
         FullyExpand();
         CPhyloTreeNodeGroupper groupper 
-            = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
+            = TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), 
                    CPhyloTreeNodeGroupper(kBlastNameTag, kNodeColorTag,
-                                        *m_DataSource));
+                                          m_Dyntree));
 
         if (!groupper.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -355,30 +343,26 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
                  "Invalid tree simplify mode");
     }
 
-    if (refresh) {
-        Refresh();
-    }
-
     m_SimplifyMode = method;
 }
 
-bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
+bool CGuideTree::ExpandCollapseSubtree(int node_id)
 {
-    //CPhyloTreeDataSource::GetNode(int) does not return NULL when node 
-    // is not found!
-    CPhyloTreeNode* node = x_GetNode(node_id);
+    CBioTreeDynamic::CBioNode* node = x_GetBioNode(node_id);
     
-    if (node->Expanded()) {
+    if (x_IsExpanded(*node)) {
 
         // Collapsing
-        node->ExpandCollapse(IPhyGraphicsNode::eHideChilds);
+        x_Collapse(*node);
 
         // Track labels in order to select proper color for collapsed node
         CPhyloTreeLabelTracker 
             tracker = TreeDepthFirstTraverse(*node, CPhyloTreeLabelTracker(
                                                                 kBlastNameTag, 
                                                                 kNodeColorTag,
-                                                                *m_DataSource));
+                                                                kLabelBgColorTag,
+                                                                m_QueryNodeId,
+                                                                m_Dyntree));
 
         if (!tracker.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -391,9 +375,9 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
         for (; it != tracker.End(); ++it) {
             label += ", " + it->first;
         }
-        node->SetLabel(label);
+        node->SetFeature(kLabelTag, label);
         if (tracker.GetNumLabels() == 1) {
-            (**node).SetFeature(kNodeColorTag, tracker.Begin()->second);
+            node->SetFeature(kNodeColorTag, tracker.Begin()->second);
         }
         // Mark collapsed subtree that contains query node
         if (IsQueryNodeSet()) {
@@ -403,62 +387,117 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
     else {
 
         // Expanding
-        node->ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-        (**node).SetFeature(kNodeColorTag, "");
-    }
-
-    if (refresh) {
-        Refresh();
+        x_Expand(*node);
+        node->SetFeature(kNodeColorTag, "");
     }
 
     m_SimplifyMode = eNone;
-    return node->Expanded();
+    return x_IsExpanded(*node);
 }
 
-void CGuideTree::RerootTree(int new_root_id, bool refresh)
+// Traverse tree from new root up to old root and change parents to children
+// @param node Parent of new root
+// @param fid Feature id for node's distance (child's edge length)
+void s_RerootUpstream(CBioTreeDynamic::CBioNode* node, TBioTreeFeatureId fid)
 {
-    //    CPhyloTreeNode* node = m_DataSource->GetNode(new_root_id);
-    CPhyloTreeNode* node = x_GetNode(new_root_id);
+    _ASSERT(node);
+
+    CBioTreeDynamic::CBioNode* parent
+        = (CBioTreeDynamic::CBioNode*)node->GetParent();
+
+    if (parent->GetParent()) {
+        s_RerootUpstream((CBioTreeDynamic::CBioNode*)node->GetParent(), fid);
+    }
+
+    parent->GetValue().features.SetFeature(fid,
+                              node->GetValue().features.GetFeatureValue(fid));
+
+    node = parent->DetachNode(node);
+    node->AddNode(parent);    
+}
+
+void CGuideTree::RerootTree(int new_root_id)
+{
+    CBioTreeDynamic::CBioNode* node = x_GetBioNode(new_root_id);
 
     // Collapsed node cannot be a root, so a parent node will be a new
     // root if such node is selected
-    if (node && node->IsLeafEx() && node->GetParent()) {
-        node = (CPhyloTreeNode*)node->GetParent();
+    if (node && x_IsLeafEx(*node) && node->GetParent()) {
+        node = (CBioTreeDynamic::CBioNode*)node->GetParent();
     }
 
-    // node == NULL means that collapsed child of current root was selected
-    if (node) {
-        m_DataSource->RerootTree(node);
-
-        if (refresh) {
-            Refresh();
-        }
+    // if new root is already a root, do nothing
+    if (!node->GetParent()) {
+        return;
     }
+
+    // tree is deleted when new dyntree root is set, hence the old
+    // root node must be copied and its children moved
+    CBioTreeDynamic::CBioNode* old_root = m_Dyntree.GetTreeNodeNonConst();
+
+    // get old root children
+    vector<CBioTreeDynamic::CBioNode*> children;
+    CBioTreeDynamic::CBioNode::TParent::TNodeList_I it
+        = old_root->SubNodeBegin();
+
+    for(; it != old_root->SubNodeEnd();it++) {
+        children.push_back((CBioTreeDynamic::CBioNode*)*it);
+    }
+    NON_CONST_ITERATE (vector<CBioTreeDynamic::CBioNode*>, ch, children) {
+        old_root->DetachNode(*ch);
+    }
+    
+    // copy old root node and attach old root's children
+    CBioTreeDynamic::CBioNode* new_old_root
+        = new CBioTreeDynamic::CBioNode(*old_root);    
+    ITERATE (vector<CBioTreeDynamic::CBioNode*>, ch, children) {
+        new_old_root->AddNode(*ch);
+    }
+  
+    // detach new root from the tree
+    CBioTreeDynamic::CBioNode* parent
+        = (CBioTreeDynamic::CBioNode*)node->GetParent();
+    node = parent->DetachNode(node);
+   
+    // replace child - parent relationship in all parents of the new root
+    s_RerootUpstream(parent, (TBioTreeFeatureId)eDistId);
+
+    // make new root's parent its child and set new tree root
+    node->AddNode(parent);
+    m_Dyntree.SetTreeNode(node);
+    parent->SetFeature(kDistTag, node->GetFeature(kDistTag));
+    node->SetFeature(kDistTag, "0");
 }
 
-bool CGuideTree::ShowSubtree(int root_id, bool refresh)
+bool CGuideTree::ShowSubtree(int root_id)
 {
-    bool collapsed = false;
-    CPhyloTreeNode* node = x_GetNode(root_id);
+    CBioTreeDynamic::CBioNode* node = x_GetBioNode(root_id);
+    _ASSERT(node);
 
     // If a collapsed node is clicked, then it needs to be expanded
     // in order to show the subtree
-    if (!node->Expanded()) {
+    bool collapsed = false;
+    if (!x_IsExpanded(*node)) {
         collapsed = true;
-        m_DataSource->ExpandCollapse(node, IPhyGraphicsNode::eShowChilds);
+        x_Expand(*node);
         m_SimplifyMode = eNone;        
     }
-    m_DataSource->SetSubtree(node);
 
-    if (refresh) {
-        Refresh();
+    // replace root, unused part of the tree will be deleted
+    CBioTreeDynamic::CBioNode::TParent* parent = node->GetParent();
+    if (parent) {
+        parent->DetachNode(node);
+        m_Dyntree.SetTreeNode(node);
     }
+
     return collapsed;
 }
 
 
-void CGuideTree::Refresh(void)
+void CGuideTree::x_ExtendRoot(void)
 {
+    _ASSERT(!m_DataSource.Empty());
+
     // Often the edge starting in root has zero length which
     // does not render well. By setting very small distance this is
     // avoided.
@@ -478,14 +517,19 @@ void CGuideTree::Refresh(void)
 bool CGuideTree::IsSingleBlastName(void)
 {
     CSingleBlastNameExaminer examiner
-        = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
-                                 CSingleBlastNameExaminer(*m_DataSource));
+        = TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), 
+                                 CSingleBlastNameExaminer(m_Dyntree));
     return examiner.IsSingleBlastName();
 }
 
 
 auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
 {
+    if (m_DataSource.Empty()) {
+        NCBI_THROW(CGuideTreeException, eInvalid, "CGuideTree::"
+                   "GetTreeInfo(int) function must be called after tree is "
+                   "rendered");
+    }
     CPhyloTreeNode* node = x_GetNode(node_id);
 
     // find all subtree leaves
@@ -540,6 +584,10 @@ void CGuideTree::x_Init(void)
 
 CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
 {
+    if (m_DataSource.Empty()) {
+        NCBI_THROW(CGuideTreeException, eInvalid, "Empty data source");
+    }
+
     CPhyloTreeNode* tree = root ? root : m_DataSource->GetTree();
     CNodeFinder node_finder = TreeDepthFirstTraverse(*tree, CNodeFinder(id));
 
@@ -549,6 +597,40 @@ CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
     }
 
     return node_finder.GetNode();
+}
+
+CBioTreeDynamic::CBioNode* CGuideTree::x_GetBioNode(TBioTreeNodeId id)
+{
+    CBioNodeFinder finder = TreeDepthFirstTraverse(
+                                            *m_Dyntree.GetTreeNodeNonConst(),
+                                            CBioNodeFinder(id));
+
+    if (!finder.GetNode()) {
+        NCBI_THROW(CGuideTreeException, eNodeNotFound, (string)"Node "
+                   + NStr::IntToString(id) + (string)" not found");
+    }
+
+    return finder.GetNode();
+}
+
+bool CGuideTree::x_IsExpanded(const CBioTreeDynamic::CBioNode& node)
+{
+    return node.GetFeature(kCollapseTag) == s_kSubtreeDisplayed;
+}
+
+bool CGuideTree::x_IsLeafEx(const CBioTreeDynamic::CBioNode& node)
+{
+    return node.IsLeaf() || !x_IsExpanded(node);
+}
+
+void CGuideTree::x_Collapse(CBioTreeDynamic::CBioNode& node)
+{
+    node.SetFeature(kCollapseTag, "1");
+}
+
+void CGuideTree::x_Expand(CBioTreeDynamic::CBioNode& node)
+{
+    node.SetFeature(kCollapseTag, s_kSubtreeDisplayed);
 }
 
 inline
@@ -576,6 +658,10 @@ string CGuideTree::x_GetNodeFeature(const CPhyloTreeNode* node,
 
 void CGuideTree::PreComputeImageDimensions()
 {
+    if (m_DataSource.Empty()) {
+        m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
+        x_ExtendRoot();
+    }
     m_PhyloTreeScheme.Reset(new CPhyloTreeScheme());
 
     m_PhyloTreeScheme->SetSize(CPhyloTreeScheme::eNodeSize) = m_NodeSize;
@@ -606,7 +692,7 @@ void CGuideTree::PreComputeImageDimensions()
 
 void CGuideTree::x_CreateLayout(void)
 {
-    if (m_PhyloTreeScheme.Empty()) {
+    if (m_PhyloTreeScheme.Empty() || m_DataSource.Empty()) {
         PreComputeImageDimensions();
     }
 
@@ -671,6 +757,11 @@ void CGuideTree::x_Render(void)
 
 bool CGuideTree::x_RenderImage(void)
 {
+    if (m_DataSource.Empty()) {
+        m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
+        x_ExtendRoot();
+    }
+
     bool success = false;
    
     try {
@@ -708,9 +799,9 @@ void CGuideTree::x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper)
 {
     for (CPhyloTreeNodeGroupper::CLabeledNodes_I it=groupper.Begin();
          it != groupper.End(); ++it) {
-        it->GetNode()->ExpandCollapse(IPhyGraphicsNode::eHideChilds);
-        it->GetNode()->SetLabel(it->GetLabel());
-        it->GetNode()->GetValue().SetFeature(kNodeColorTag, it->GetColor());
+        x_Collapse(*it->GetNode());
+        it->GetNode()->SetFeature(kLabelTag, it->GetLabel());
+        it->GetNode()->SetFeature(kNodeColorTag, it->GetColor());
         if (m_QueryNodeId > -1) {
             x_MarkCollapsedQueryNode(it->GetNode());
         }
@@ -718,33 +809,26 @@ void CGuideTree::x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper)
 }
 
 
-void CGuideTree::x_MarkCollapsedQueryNode(CPhyloTreeNode* node)
+void CGuideTree::x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node)
 {
     //Check if query node is in the collapsed subtree
     // and marking query node
-    // optimized so that number of visited nodes is decreased
-    // assumes node numbering scheme
-    int root_id = (int)(**node).GetId();
-    if (m_QueryNodeId > root_id
-        && m_QueryNodeId <= root_id + (**node).GetNodesNmb()) {
+    if (m_QueryNodeId >= 0) {
+        CBioNodeFinder finder = TreeDepthFirstTraverse(*node,
+                                               CBioNodeFinder(m_QueryNodeId));
 
-        //CPhyloTreeDataSource::GetNode(int) traverses the tree from root
-        CPhyloTreeNode* query_node = x_GetNode(m_QueryNodeId, node);
-
-        const CBioTreeFeatureDictionary& fdict = m_DataSource->GetDictionary();
-        TBioTreeFeatureId fid = fdict.GetId(kLabelBgColorTag);
-
-        const CBioTreeFeatureList& 
-            flist = (**query_node).GetBioTreeFeatureList();
-
-        const string& color = flist.GetFeatureValue(fid);
-        (**node).SetFeature(kLabelBgColorTag, color);
+        CBioTreeDynamic::CBioNode* query_node = finder.GetNode();
+        if (query_node) {
+            const string& color = query_node->GetFeature(kLabelBgColorTag);
+            node->SetFeature(kLabelBgColorTag, color);
+        }
     }
+
 } 
 
 //Recusrive
 void CGuideTree::x_PrintNewickTree(CNcbiOstream& ostr,
-                                   const CTreeNode<CPhyTreeNode>& node,
+                                   const CBioTreeDynamic::CBioNode& node,
                                    bool is_outer_node)
 {
 
@@ -752,23 +836,23 @@ void CGuideTree::x_PrintNewickTree(CNcbiOstream& ostr,
 
     if (!node.IsLeaf()) {
         ostr << '(';
-        for (CTreeNode<CPhyTreeNode>::TNodeList_CI it = node.SubNodeBegin(); it != node.SubNodeEnd(); ++it) {
+        for (CBioTreeDynamic::CBioNode::TNodeList_CI it = node.SubNodeBegin(); it != node.SubNodeEnd(); ++it) {
             if (it != node.SubNodeBegin())
                 ostr << ", ";
-            x_PrintNewickTree(ostr, **it, false);
+            x_PrintNewickTree(ostr, (CBioTreeDynamic::CBioNode&)**it, false);
         }
         ostr << ')';
     }
 
     if (!is_outer_node) {
-        if (node.IsLeaf() || !node.GetValue().GetLabel().empty()) {
-            label = node.GetValue().GetLabel();
+        label = node.GetFeature(kLabelTag);
+        if (node.IsLeaf() || !label.empty()) {
             for (size_t i=0;i < label.length();i++)
                 if (!isalpha(label.at(i)) && !isdigit(label.at(i)))
                     label.at(i) = '_';
             ostr << label;
         }
-        ostr << ':' << node.GetValue().GetDistance();
+        ostr << ':' << node.GetFeature(kDistTag);
     }
     else
         ostr << ';';
@@ -846,11 +930,8 @@ int CGuideTree::GetRootNodeID()
 
 CRef<CBioTreeContainer> CGuideTree::GetSerialTree(void)
 {
-    CBioTreeDynamic dyntree;
     CRef<CBioTreeContainer> btc(new CBioTreeContainer());
-
-    m_DataSource->Save(dyntree);
-    BioTreeConvert2Container(*btc, dyntree);
+    BioTreeConvert2Container(*btc, m_Dyntree);
 
     return btc;
 }
@@ -859,18 +940,31 @@ CRef<CBioTreeContainer> CGuideTree::GetSerialTree(void)
 //Sets data for display purposes marking the selected node on the tree
 void CGuideTree::SetSelection(int hit)
 {
+    if (m_DataSource.Empty()) {
+        NCBI_THROW(CGuideTreeException, eInvalid, "CGuideTree::"
+                   "SetSelection(int) function must be called after tree is "
+                   "rendered");
+    }
+    
     if ((hit+1) >=0){
-                CPhyloTreeNode * node = m_DataSource->GetNode(hit);
-                if (node) {
-                        m_DataSource->SetSelection(node, true, true, true);
-                }
+        CPhyloTreeNode * node = m_DataSource->GetNode(hit);
+        if (node) {
+            m_DataSource->SetSelection(node, true, true, true);
+            m_DataSource->Save(m_Dyntree);
         }
+    }
 }
 
 
 string CGuideTree::GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery,bool showQuery)
                                         
 {
+    if (m_DataSource.Empty()) {
+        NCBI_THROW(CGuideTreeException, eInvalid, "CGuideTree::"
+                   "GetMap(...) function must be called after tree is "
+                   "rendered");
+    }
+
     CGuideTreeCGIMap map_visitor(m_Pane.get(),jsClickNode,jsClickLeaf,jsMouseover,jsMouseout,jsClickQuery,showQuery);    
         map_visitor = TreeDepthFirstTraverse(*m_DataSource->GetTree(), map_visitor);
         return map_visitor.GetMap();
@@ -1157,6 +1251,21 @@ void CGuideTree::x_AddFeature(int id, const string& value,
     node_feature->SetValue(value);
     (*iter)->SetFeatures().Set().push_back(node_feature);
 }
+
+ETreeTraverseCode
+CGuideTree::CExpander::operator()(CBioTreeDynamic::CBioNode& node, int delta)
+{
+    if (delta == 0 || delta == 1) {
+        if (node.GetFeature(kCollapseTag) != s_kSubtreeDisplayed
+            && !node.IsLeaf()) {
+            
+            node.SetFeature(kCollapseTag, s_kSubtreeDisplayed);
+            node.SetFeature(kNodeColorTag, "");
+        }
+    }
+    return eTreeTraverse;
+}
+
 
 
 void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node) 

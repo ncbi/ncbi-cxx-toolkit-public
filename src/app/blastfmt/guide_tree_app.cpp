@@ -307,25 +307,25 @@ int CGuideTreeApplication::Run(void)
     // Simplify tree
     if (args["simpl"]) {
         if (args["simpl"].AsString() == "blastname") {
-            gtree->SimplifyTree(CGuideTree::eByBlastName, false);
+            gtree->SimplifyTree(CGuideTree::eByBlastName);
         } else if (args["simpl"].AsString() == "full") {
-            gtree->SimplifyTree(CGuideTree::eFullyExpanded, false);
+            gtree->SimplifyTree(CGuideTree::eFullyExpanded);
         }
     }
 
     // Expand or collapse selected subtree
     if (args["expcol"]) {
-        gtree->ExpandCollapseSubtree(args["expcol"].AsInteger(), false);
+        gtree->ExpandCollapseSubtree(args["expcol"].AsInteger());
     }
 
     // Reroot tree
     if (args["reroot"]) {
-        gtree->RerootTree(args["reroot"].AsInteger(), false);
+        gtree->RerootTree(args["reroot"].AsInteger());
     }
 
     // Show subtree
     if (args["subtree"]) {
-        gtree->ShowSubtree(args["subtree"].AsInteger(), false);
+        gtree->ShowSubtree(args["subtree"].AsInteger());
     }
 
     // Select tree rendering
@@ -342,9 +342,6 @@ int CGuideTreeApplication::Run(void)
     if (args["no_dist"]) {
         gtree->SetDistanceMode(false);
     }
-
-    // Redo pre-rendering calculations
-    gtree->Refresh();
 
     CGuideTree::ETreeFormat tree_format;
 
