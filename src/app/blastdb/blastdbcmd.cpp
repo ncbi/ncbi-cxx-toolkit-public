@@ -136,8 +136,8 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
 
     // FASTA / target_only just need one id
     if (m_TargetOnly) {
-        if (!NStr::StringToInt(entry, NStr::fConvErr_NoThrow) 
-         && !CSeq_id(entry).IsGi()) {
+        if (!NStr::StringToInt(entry, NStr::fConvErr_NoThrow)
+         || !CSeq_id(entry).IsGi()) {
             NCBI_THROW(CInputException, eInvalidInput, 
                 "target_only must be used with gi entry.");
         }
