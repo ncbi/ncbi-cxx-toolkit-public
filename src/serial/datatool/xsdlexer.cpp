@@ -186,15 +186,26 @@ TToken XSDLexer::LookupLexeme(void)
     }
     StartToken();
     for (char c = Char(); c != 0; c = Char()) {
+        bool space = isspace((unsigned char)c) != 0;
+        if (!att && space) {
+            for (size_t sp_count=1;; ++sp_count) {
+                char ctest = Char(sp_count);
+                if (!isspace((unsigned char)ctest)) {
+                    if (ctest == '=') {
+                        space = false;
+                    }
+                    break;
+                }
+            }
+        }
         if (att && (c == cOpen)) {
             AddChar();
             if (strncmp(CurrentTokenStart(),"xmlns",5)==0) {
                 return K_XMLNS;
             }
             return K_ATTPAIR;
-        } else if (isspace((unsigned char)c) || c == '>' ||
-                   (c == '/' && Char(1) == '>')) {
-            if (!(att && isspace((unsigned char)c))) {
+        } else if (space || c == '>' || (c == '/' && Char(1) == '>')) {
+            if (!(att && space)) {
                 break;
             }
         }
