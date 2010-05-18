@@ -134,20 +134,28 @@ CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
         return;
     } 
 
+    string lcl_entry = entry;
+    CRef<CSeq_id> sid;
+    try {
+        sid.Reset(new CSeq_id(entry));
+    } catch(CException e) {
+        lcl_entry = "lcl|" + entry;
+        sid.Reset(new CSeq_id(lcl_entry));
+    }
+
     // FASTA / target_only just need one id
     if (m_FASTA || m_TargetOnly) {
-        if (m_TargetOnly && !CSeq_id(entry).IsGi()) {
+        if (m_TargetOnly && !sid->IsGi()) {
             NCBI_THROW(CInputException, eInvalidInput, 
                 "target_only must be used with gi entry.");
         }
-        retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(entry)));
+        retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(lcl_entry)));
         return;
     } 
 
     // Default: find oid first and add all pertinent
-    CSeq_id sid(entry);
     int oid;
-    m_BlastDb->SeqidToOid(sid, oid);
+    m_BlastDb->SeqidToOid(*sid, oid);
     if (oid>=0) {
         x_AddOid(retval, oid);
     }
