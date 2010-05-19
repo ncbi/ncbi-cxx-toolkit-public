@@ -105,7 +105,7 @@ query.fcgi?db=geo&term=%d[gi]&RID=%s&log$=geo%s&blast_rank=%d\"><img border=0 he
 // .ncbirc alias: GENE
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s&log$=gene%s&blast_rank=%d\"><img border=0 height=16 width=16 \
-src=\"images/G.gif\" alt=\"Gene info\"></a>";
+src=\"images/G.gif\" alt=\"Gene info linked to %s\"></a>";
 
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
@@ -124,7 +124,7 @@ src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
   src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
 const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&THE_BLAST_RID=%s&log$=map%s&blast_rank=%d\"><img border=0 height=16 width=16 \
-src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
+src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to %s\"></a>";
 
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
@@ -811,6 +811,11 @@ public:
     ///release memory allocated for the registry object by GetURLFromRegistry
     ///
     static void ReleaseURLRegistry(void);
+
+    static string MapTemplate(string inpString,string tmplParamName,int templParamVal);
+
+
+    static string MapTemplate(string inpString,string tmplParamName,string templParamVal);
 
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
