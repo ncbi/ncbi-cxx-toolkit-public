@@ -67,8 +67,10 @@ MSEnzymes ::= INTEGER {
         aspn-de (19),
         gluc-de (20),
         lysn (21),
-	thermolysin-p (22), 
-        max(23),
+        thermolysin-p (22), 
+        semi-chymotrypsin (23),
+        semi-gluc (24),
+        max(25),
         none (255)
         }
 

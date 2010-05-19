@@ -1088,10 +1088,31 @@ public:
   
 class NCBI_XOMSSA_EXPORT CThermolysinP: public CCleave { 
 public: 
- CThermolysinP(void); 
+    CThermolysinP(void); 
 }; 
  
- 
+/** 
+ *  
+ * Chymotrypsin, cuts N terminal at A,F,I,L,M or V  
+ * 
+ */ 
+
+class NCBI_XOMSSA_EXPORT CSemiChymotrypsin: public CCleave { 
+public: 
+    CSemiChymotrypsin(void); 
+}; 
+
+/** 
+ *  
+ * Glu-C, Cterm of E
+ * 
+ */ 
+
+class NCBI_XOMSSA_EXPORT CSemiGluC: public CCleave { 
+public: 
+    CSemiGluC(void); 
+}; 
+
 
 
 ///

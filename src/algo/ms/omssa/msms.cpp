@@ -501,23 +501,45 @@ CLysN::CLysN(void)
     TopDown = false;
     NonSpecific = false;
 }
-/// CThermolysinP 
-/// 
+
  
 CThermolysinP::CThermolysinP(void) 
 { 
- CleaveAt = "\x01\x06\x09\x0b\x0c\x13"; 
- CleaveOffset = "\x01\x01\x01\x01\x01\x01"; 
- CheckProline = true; 
- kCleave = 6; 
- TopDown = false; 
- NonSpecific = false; 
+    CleaveAt = "\x01\x06\x09\x0b\x0c\x13"; 
+    CleaveOffset = "\x01\x01\x01\x01\x01\x01"; 
+    CheckProline = true; 
+    kCleave = 6; 
+    TopDown = false; 
+    NonSpecific = false; 
 } 
- 
+
+
+CSemiChymotrypsin::CSemiChymotrypsin(void)
+{
+    CleaveAt = "\x06\x16\x14\x0b";
+    CleaveOffset = "\x00\x00\x00\x00";
+    CheckProline = true;
+    kCleave = 4;
+    TopDown = false;
+    NonSpecific = true;
+}
+
+
+CSemiGluC::CSemiGluC(void)
+{
+    CleaveAt = "\x05";
+    CleaveOffset = "\x00";
+    CheckProline = false;
+    kCleave = 1;
+    TopDown = false;
+    NonSpecific = true;
+}
+
+
 /// 
 
 ///
-/// Simple minded factory to return back object for enzyme
+/// Simple factory to return back object for enzyme
 ///
 
 CRef <CCleave>  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)

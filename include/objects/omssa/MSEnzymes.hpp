@@ -56,13 +56,13 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "Trypsin",
     "Arg-C",
     "CNBr",
-    "Chymotrypsin",
+    "Chymotrypsin (FYWL)",
     "Formic Acid",
     "Lys-C",
     "Lys-C, no P rule",
     "Pepsin A",
     "Trypsin+CNBr",
-    "Trypsin+Chymotrypsin",
+    "Trypsin+Chymotrypsin (FYWLKR)",
     "Trypsin, no P rule",
     "Whole protein",
     "Asp-N",
@@ -71,11 +71,13 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "Top-Down",
     "Semi-Tryptic",
     "No Enzyme",
-    "Chymotrypsin, no P rule",
+    "Chymotrypsin, no P rule (FYWL)",
     "Asp-N (DE)",
     "Glu-C (DE)",
     "Lys-N (K)",
-    "Thermolysin, no P rule" 
+    "Thermolysin, no P rule",
+    "Semi-Chymotrypsin (FYWL)",
+    "Semi-Glu-C"
 };
 
 END_objects_SCOPE // namespace ncbi::objects::
