@@ -87,7 +87,7 @@ NCBI_XOBJUTIL_EXPORT
 NCBI_DEPRECATED
 void GetLabel (const CSeq_feat&    feat, 
                string*             label, 
-               feature::ELabelType label_type,
+               ELabelType          label_type,
                CScope*             scope = 0);
 
 /* @} */
@@ -188,6 +188,17 @@ public:
     void AddFeatures(CFeat_CI it);
     /// Add a single feature to the tree.
     void AddFeature(const CMappedFeat& feat);
+
+    /// Add all genes for a mRNA feature.
+    void AddGenesForMrna(const CMappedFeat& mrna_feat);
+    /// Add all genes for a cdregion feature.
+    void AddGenesForCds(const CMappedFeat& cds_feat);
+    /// Add all necessary features for a gene feature.
+    void AddFeaturesForGene(const CMappedFeat& gene_feat);
+    /// Add all necessary features for a mRNA feature.
+    void AddFeaturesForMrna(const CMappedFeat& mrna_feat);
+    /// Add all necessary features for a cdregion feature.
+    void AddFeaturesForCds(const CMappedFeat& cds_feat);
 
     /// Find a corresponding CMappedFeat for a feature already added to a tree.
     /// Will throw an exception if the feature is not in the tree.
@@ -300,6 +311,53 @@ protected:
 
 /* @} */
 
+
+/////////////////////////////////////////////////////////////////////////////
+// Versions of functions with lookup using CFeatTree
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestGeneForMrna(const CMappedFeat& mrna_feat,
+                   CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestGeneForCds(const CMappedFeat& cds_feat,
+                  CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestMrnaForCds(const CMappedFeat& cds_feat,
+                  CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestCdsForMrna(const CMappedFeat& mrna_feat,
+                  CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+void GetMrnasForGene(const CMappedFeat& gene_feat,
+                     list< CMappedFeat >& mrna_feats,
+                     CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+void GetCdssForGene(const CMappedFeat& gene_feat,
+                    list< CMappedFeat >& cds_feats,
+                    CFeatTree* feat_tree = 0);
+
+/*
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestOverlappingFeat(const CMappedFeat& feat,
+                       CSeqFeatData::E_Choice feat_type,
+                       sequence::EOverlapType overlap_type);
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestOverlappingFeat(const CMappedFeat& feat,
+                       CSeqFeatData::ESubtype feat_type,
+                       sequence::EOverlapType overlap_type);
+*/
 
 END_SCOPE(feature)
 END_SCOPE(objects)
