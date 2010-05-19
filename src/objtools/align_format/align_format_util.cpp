@@ -1864,6 +1864,9 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
 {
     list<string> linkout_list;
     int gi = FindGi(ids);
+    CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
+    string label;
+    wid->GetLabel(&label, CSeq_id::eContent);    
     char molType[8]={""};
     if(!is_na){
         sprintf(molType, "[pgi]");
@@ -1898,7 +1901,7 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     if(linkout & eGene){
       string l_GeneUrl = CAlignFormatUtil::GetURLFromRegistry("GENE");
         sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
-                rid.c_str(), for_alignment ? "align" : "top", cur_align);
+                rid.c_str(), for_alignment ? "align" : "top", cur_align, label.c_str());
         linkout_list.push_back(buf);
     }
 
@@ -1910,7 +1913,7 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                            query_number);
                                            if (url_with_parameters != NcbiEmptyString) { */
         sprintf(buf, kMapviwerUrl.c_str(), gi, rid.c_str(),
-                for_alignment? "align" : "top", cur_align);
+                for_alignment? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
         // }
     }
@@ -2281,5 +2284,21 @@ CAlignFormatUtil::GetAsciiProteinMatrix(const char* matrix_name,
     retval('*', '*') = 1; 
 }
 
+
+string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,int templParamVal)
+{
+    string outString;
+    string tmplParam = "<@" + tmplParamName + "@>";
+    NStr::Replace(inpString,tmplParam,NStr::IntToString(templParamVal),outString);
+    return outString;
+}
+
+string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,string templParamVal)
+{
+    string outString;
+    string tmplParam = "<@" + tmplParamName + "@>";
+    NStr::Replace(inpString,tmplParam,templParamVal,outString);
+    return outString;
+}
 END_SCOPE(align_format)
 END_NCBI_SCOPE
