@@ -2039,10 +2039,11 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     string kAliasFileName(tmp_aliasfile.GetFileName());
     string kGiFileName(tmp_gifile.GetFileName());
     {
-    CNcbiOstream& gifile = tmp_gifile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    ofstream gifile(tmp_gifile.GetFileName().c_str());
     gifile << "129295" << endl;
     gifile << "555" << endl;
     gifile << "55" << endl;
+    gifile.close();
     }
 
     CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
@@ -2334,10 +2335,11 @@ BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_NoGisInBlastDB)
     string kAliasFileName(tmp_aliasfile.GetFileName());
     string kGiFileName(tmp_gifile.GetFileName());
     {
-    CNcbiOstream& gifile = tmp_gifile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    ofstream gifile(tmp_gifile.GetFileName().c_str());
     // These are nucleotide GIs
     gifile << "556" << endl;
     gifile << "555" << endl;
+    gifile.close();
     }
 
     BOOST_REQUIRE_THROW(
