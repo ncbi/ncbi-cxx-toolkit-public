@@ -204,6 +204,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
 
     if (type != eType  &&  !GetId().empty()) {
         const CSeq_id* id = 0;
+        CSeq_id worst_id;
         if (!worst) {
             id = GetId().begin()->GetPointer();
         } else {
@@ -213,7 +214,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
                 CNcbiOstrstream wos;
                 wid->WriteAsFasta(wos);
                 string sid = CNcbiOstrstreamToString(wos);
-                CSeq_id worst_id(sid);
+                worst_id.Set(sid);
                 CTextseq_id* tid =
                     const_cast<CTextseq_id*>(worst_id.GetTextseq_Id());
                 if (tid) {
