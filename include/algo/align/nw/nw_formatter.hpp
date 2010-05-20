@@ -107,11 +107,6 @@ public:
 
         float  m_score;   // dynprog score (normalized)
         
-        void ExtendLeft(int extent, const char* seq1, const char* seq2,
-                             CConstRef<CSplicedAligner> aligner);
-        void ExtendRight(int extent, const char* seq1, const char* seq2,
-                             CConstRef<CSplicedAligner> aligner);
-
         void ImproveFromLeft(const char* seq1, const char* seq2,
                              CConstRef<CSplicedAligner> aligner);
         void ImproveFromRight(const char* seq1, const char* seq2,
