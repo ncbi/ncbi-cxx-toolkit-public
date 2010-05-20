@@ -1481,7 +1481,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
     float rv (0);
     size_t cds_start (0), cds_stop (0);
-    const int kMaxShot (5);
     for(size_t i (0); i < map_dim; ++i) {
 
         const SAlnMapElem& zone (m_alnmap[i]);
@@ -1614,40 +1613,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }
 
-    // may need to catch up with cds at terms
-    if(cds_start < cds_stop) {
-        {{
-        TSegmentDeque::iterator ib (segments.begin()),
-            ie (segments.end()), ii (ib);
-        while(ii != ie && !ii->m_exon) ++ii;
-        if(ii != ie) {
-            const int start_undershot (ii->m_box[0] - cds_start);
-            if(0 < start_undershot && start_undershot < kMaxShot) {
-                const int extent (min(start_undershot, int(ii->m_box[2])));
-                if(extent > 0) {
-                    ii->ExtendLeft(extent, Seq1, Seq2, m_aligner);
-                }
-            }
-        }
-        }}
-
-        {{
-        TSegmentDeque::reverse_iterator irb (segments.rbegin()),
-            ire (segments.rend()), iir (irb);
-        while(iir != ire && !iir->m_exon) ++iir;
-        if(iir != ire) {
-            const int stop_undershot (cds_stop - iir->m_box[1]);
-            if(0 < stop_undershot && stop_undershot < kMaxShot) {
-                const int extent (min(stop_undershot,
-                                      int(SeqLen2 - iir->m_box[3] - 1)));
-                if(extent > 0) {
-                    iir->ExtendRight(extent, Seq1, Seq2, m_aligner);
-                }
-            }
-        }
-        }}
-    }
-
     m_segments.resize(0);
     while(true) {
 
@@ -1680,9 +1645,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                        max(m_MinExonIdty, kMinTermExonIdty));
                 
                 const bool b1 (s.m_idty < min_idty || m_endgaps);
-                const bool b2 (cds_start == cds_stop
-                               || cds_start > s.m_box[0] + kMaxShot);
-                if(b1 && b2) {
+                if(b1) {
                     s.ImproveFromLeft(Seq1, Seq2, m_aligner);
                 }
 
@@ -1705,10 +1668,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                        max(m_MinExonIdty, kMinTermExonIdty));
 
                 const bool b1 (s.m_idty < min_idty || m_endgaps);
-                const bool b2 (cds_start == cds_stop 
-                               || cds_stop + kMaxShot < s.m_box[1]);
-
-                if(b1 && b2) {
+                if(b1) {
                     s.ImproveFromRight(Seq1, Seq2, m_aligner);
                 }
 
