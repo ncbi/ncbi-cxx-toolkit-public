@@ -614,7 +614,14 @@ CRef <CCleave>  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
         break;
     case eMSEnzymes_thermolysin_p: 
         return CRef <CCleave> (new CThermolysinP); 
+        break;
+    case eMSEnzymes_semi_chymotrypsin: 
+        return CRef <CCleave> (new CSemiChymotrypsin); 
         break; 
+    case eMSEnzymes_semi_gluc: 
+        return CRef <CCleave> (new CSemiGluC); 
+        break; 
+            
     default:
         return null;
         break;

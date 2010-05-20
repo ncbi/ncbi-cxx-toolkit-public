@@ -2987,4 +2987,35 @@
     </MSModSpec_residues>
     <MSModSpec_unimod>731</MSModSpec_unimod>
   </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod206">206</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>selenocysteine</MSModSpec_name>
+    <MSModSpec_monomass>47.944449</MSModSpec_monomass>
+    <MSModSpec_averagemass>46.8950</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>162</MSModSpec_unimod>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod207">207</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>carboxymethylated selenocysteine</MSModSpec_name>
+    <MSModSpec_monomass>105.949928</MSModSpec_monomass>
+    <MSModSpec_averagemass>104.9311</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
 </MSModSpecSet>
