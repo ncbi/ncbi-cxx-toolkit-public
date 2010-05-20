@@ -792,15 +792,22 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
         size_t b = 0;
         size_t e = 0;
+
         for( CSeqMap_CI ci = map->BeginResolved(&scope); ci; ) {
             TSeqPos len = ci.GetLength() - frame;
             frame = 0;
-            e = b + len/3;
+            e = b + (len+2)/3;
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
             } else {
-                seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
+                if (e > strprot.size()) {
+                    _ASSERT( len%3 != 0 || md.model.HasStop() );
+                    --e;
+                }
+                if (b < e)
+                    seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
+                
             }
             b = e;
 
@@ -808,8 +815,16 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
             _ASSERT( len%3 == 0 || !ci );
         }
-        _ASSERT( b == strprot.size() + (md.model.HasStop() ? 1 : 0) );
+        _ASSERT( b == strprot.size() );
     }
+#ifdef _DEBUG
+    scope.AddTopLevelSeqEntry(*sprot);
+    CBioseq_Handle prot_h = scope.GetBioseqHandle(*md.prot_sid);
+    CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
+    string result;
+    vec.GetSeqData(0, vec.size(), result);
+    _ASSERT( strprot==result );
+#endif
     return sprot;
 }
 
