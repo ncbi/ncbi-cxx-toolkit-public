@@ -182,9 +182,15 @@ public:
                                           unsigned long elapsed);
     virtual
     void test_unit_skipped(ostream& ostr, but::test_unit const& tu);
+#if BOOST_VERSION >= 104200
+    virtual
+    void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
+                                          boost::execution_exception const& ex);
+#else
     virtual
     void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
                                           but::const_string explanation);
+#endif
     virtual
     void log_entry_start  (ostream& ostr, but::log_entry_data const& led,
                                           log_entry_types let);
@@ -1620,12 +1626,21 @@ CNcbiBoostLogger::test_unit_skipped(ostream& ostr, but::test_unit const& tu)
     m_Upper->test_unit_skipped(ostr, tu);
 }
 
+#if BOOST_VERSION >= 104200
+void
+CNcbiBoostLogger::log_exception(ostream& ostr, but::log_checkpoint_data const& lcd,
+                                boost::execution_exception const& ex)
+{
+    m_Upper->log_exception(ostr, lcd, ex);
+}
+#else
 void
 CNcbiBoostLogger::log_exception(ostream& ostr, but::log_checkpoint_data const& lcd,
                                 but::const_string explanation)
 {
     m_Upper->log_exception(ostr, lcd, explanation);
 }
+#endif
 
 void
 CNcbiBoostLogger::log_entry_start(ostream& ostr, but::log_entry_data const& led,
