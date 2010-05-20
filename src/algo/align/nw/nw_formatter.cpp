@@ -211,44 +211,6 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     return seqalign;
 }
 
-
-void CNWFormatter::SSegment::ExtendLeft(int extent,
-                                        const char* seq1,
-                                        const char* seq2,
-                                        CConstRef<CSplicedAligner> aligner)
-{
-    m_details.insert(SIZE_TYPE(0), extent, 'M');
-    while(--extent >= 0) {
-        if(seq1[--m_box[0]] != seq2[--m_box[2]]) {
-            m_details[extent] = 'R';
-        }
-    }
-
-    Update(aligner.GetNonNullPointer());
-    if(m_annot.size() > 2 && m_annot[2] == '<') {
-        m_annot[0] = m_annot[1] = ' ';
-    }
-}
-
-
-void CNWFormatter::SSegment::ExtendRight(int extent,
-                                         const char* seq1,
-                                         const char* seq2,
-                                         CConstRef<CSplicedAligner> aligner)
-{
-    m_details.reserve(m_details.size() + extent);
-    while(--extent >= 0) {
-        m_details.push_back((seq1[++m_box[1]] == seq2[++m_box[3]])? 'M': 'R');
-    }
-    Update(aligner.GetNonNullPointer());
-    const size_t adim (m_annot.size());
-    if(adim > 2 && m_annot[adim - 3] == '>') {
-        m_annot[adim - 1] = m_annot[adim - 2] = ' ';
-    }
-}
-
-
-
 // try improving the segment by cutting it from the left
 void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
                                         CConstRef<CSplicedAligner> aligner)
