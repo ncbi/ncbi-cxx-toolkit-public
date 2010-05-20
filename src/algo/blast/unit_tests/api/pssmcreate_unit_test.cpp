@@ -735,6 +735,8 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
                                    sas, q->scope, 
                                    *opts, 
                                    "BLOSUM80",
+                                   11,
+                                   1,
                                    &request));
         CRef<CPssmEngine> pssm_engine(new CPssmEngine(pssm_strategy));
         CRef<CPssmWithParameters> pssm = pssm_engine->Run();
@@ -768,6 +770,8 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
                                        sas, q->scope, 
                                        *opts, 
                                        "BLOSUM80",
+                                       11,
+                                       1,
                                        &request));
         pssm_engine.Reset(new CPssmEngine(pssm_strategy));
         BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
@@ -785,6 +789,8 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
                                        sas, q->scope, 
                                        *opts, 
                                        "BLOSUM80",
+                                       11,
+                                       1,
                                        &request));
         pssm_engine.Reset(new CPssmEngine(pssm_strategy));
         BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);

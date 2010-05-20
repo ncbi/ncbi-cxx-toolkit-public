@@ -82,7 +82,10 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        CRef<objects::CScope> scope,
                                        const PSIBlastOptions& opts,
                                        const char* matrix_name,
+                                       int gap_existence /* = 0 */,
+                                       int gap_extension /* = 0 */,
                                        const PSIDiagnosticsRequest* diags)
+    : m_GapExistence(gap_existence), m_GapExtension(gap_extension)
 {
     if ( !query ) {
         NCBI_THROW(CBlastException, eInvalidArgument, "NULL query");

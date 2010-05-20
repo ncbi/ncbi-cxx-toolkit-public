@@ -69,6 +69,16 @@ struct IPssmInput_Base : public CObject
         return BLAST_DEFAULT_MATRIX;
     }
 
+    /// Obtain the gap existence value for the underlying matrix used to build the PSSM.
+    virtual int GetGapExistence() {
+        return BLAST_GAP_OPEN_PROT;
+    }
+
+    /// Obtain the gap extension value for the underlying matrix used to build the PSSM.
+    virtual int GetGapExtension() {
+        return BLAST_GAP_EXTN_PROT;
+    }
+
     /// Get a CBioseq object for attachment into the CPssmWithParameters
     /// that CPssmEngine produces (only attached if it's not NULL). This is
     /// required for any PSSM which is intended to be used as a starting point

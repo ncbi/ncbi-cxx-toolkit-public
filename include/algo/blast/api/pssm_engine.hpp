@@ -158,6 +158,8 @@ private:
     /// @param query sequence [in]
     /// @param query_length length of the sequence above [in]
     /// @param matrix_name name of the underlying scoring matrix to use [in]
+    /// @param gap_existence cost to open a gap
+    /// @param gap_extension cost to open a gap
     /// @throws CBlastException if does not have enough memory or if there was
     /// an error when setting up the return value
     /// @todo add an overloaded version of this method which takes an already
@@ -165,7 +167,9 @@ private:
     void
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length,
-                           const char* matrix_name);
+                           const char* matrix_name,
+                           int gap_existence,
+                           int gap_extension);
 
     /// Private interface to retrieve query sequence from its data source
     /// interface
@@ -178,6 +182,12 @@ private:
     /// Private interface to retrieve matrix name from its data source
     /// interface
     const char* x_GetMatrixName() const;
+
+    /// Private interface to retrieve gap existence cost from data source
+    int x_GetGapExistence() const;
+
+    /// Private interface to retrieve gap extension cost from data source
+    int x_GetGapExtension() const;
 
     /// Using IPssmInputData as a delegate to provide input data in the form of
     /// a multiple sequence alignment, creates a PSSM using the CORE C PSSM 

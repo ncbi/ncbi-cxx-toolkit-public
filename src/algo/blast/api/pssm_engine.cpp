@@ -170,14 +170,16 @@ CPssmEngine::CPssmEngine(IPssmInputData* input)
     : m_PssmInput(input), m_PssmInputFreqRatios(NULL)
 {
     s_CheckAgainstNullData(input);
-    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName());
+    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName(),
+           x_GetGapExistence(), x_GetGapExtension());
 }
 
 CPssmEngine::CPssmEngine(IPssmInputFreqRatios* input)
     : m_PssmInput(NULL), m_PssmInputFreqRatios(input)
 {
     s_CheckAgainstNullData(input);
-    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName());
+    x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName(),
+           x_GetGapExistence(), x_GetGapExtension());
 }
 
 CPssmEngine::~CPssmEngine()
@@ -425,7 +427,9 @@ CPssmEngine::SetUngappedStatisticalParams(CConstRef<CBlastAncillaryData>
 void
 CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length,
-                                    const char* matrix_name)
+                                    const char* matrix_name,
+                                    int gap_existence,
+                                    int gap_extension)
 {
     _ASSERT(query);
     _ASSERT(matrix_name);
@@ -442,6 +446,8 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastScoringOptions");
     }
     BlastScoringOptionsSetMatrix(opts, matrix_name);
+    opts->gap_open = gap_existence;
+    opts->gap_extend = gap_extension;
 
     // Setup the sequence block structure
     CBLAST_SequenceBlk query_blk;
@@ -513,6 +519,22 @@ CPssmEngine::x_GetMatrixName() const
     return (m_PssmInput ?
             m_PssmInput->GetMatrixName() :
             m_PssmInputFreqRatios->GetMatrixName());
+}
+
+int
+CPssmEngine::x_GetGapExistence() const
+{
+    return (m_PssmInput ?
+            m_PssmInput->GetGapExistence() :
+            m_PssmInputFreqRatios->GetGapExistence());
+}
+
+int
+CPssmEngine::x_GetGapExtension() const
+{
+    return (m_PssmInput ?
+            m_PssmInput->GetGapExtension() :
+            m_PssmInputFreqRatios->GetGapExtension());
 }
 
 CRef<CPssmWithParameters>

@@ -64,12 +64,16 @@ public:
     /// @param diags diagnostics data requests for the PSSM engine
     /// @param query query sequence for the alignment in ncbistdaa encoding.
     /// @param query_length length of the sequence above.
+    /// @param gap_existence cost to open a gap, if zero default from IPssmInputData used.
+    /// @param gap_extension cost to open a gap, if zero default from IPssmInputData used.
     CPsiBlastInputClustalW(CNcbiIstream& input_file,
                            const PSIBlastOptions& opts,
                            const char* matrix_name = NULL,
                            const PSIDiagnosticsRequest* diags = NULL,
                            const unsigned char* query = NULL,
-                           unsigned int query_length = 0);
+                           unsigned int query_length = 0,
+                           int gap_existence = 0,
+                           int gap_opening = 0);
 
     /// virtual destructor
     virtual ~CPsiBlastInputClustalW();
@@ -99,6 +103,20 @@ public:
             : m_MatrixName.c_str();
     }
 
+   /// Obtain the gap existence value to use when building the PSSM
+    int GetGapExistence() {
+         return m_GapExistence 
+         ? m_GapExistence
+         : IPssmInputData::GetGapExistence();
+    }
+
+    /// Obtain the gap extension value to use when building the PSSM
+    int GetGapExtension() {
+         return m_GapExtension 
+         ? m_GapExtension
+         : IPssmInputData::GetGapExtension();
+    }
+
     /// Obtain the diagnostics data that is requested from the PSSM engine
     const PSIDiagnosticsRequest* GetDiagnosticsRequest() {
         return m_DiagnosticsRequest;
@@ -125,6 +143,10 @@ private:
     PSIDiagnosticsRequest*          m_DiagnosticsRequest;
     /// Underlying matrix to use
     string                          m_MatrixName;
+    /// Gap existence parameter used.
+    int                             m_GapExistence;
+    /// Gap extension parameter used.
+    int                             m_GapExtension; 
     /// CSeq_entry obtained from the multiple sequence alignment
     CRef<objects::CSeq_entry>       m_SeqEntry;
     /// Query as CBioseq for PSSM

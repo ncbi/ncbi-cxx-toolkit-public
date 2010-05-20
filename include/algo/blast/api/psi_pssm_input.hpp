@@ -72,14 +72,20 @@ public:
      * @param query_length length of the query sequence data [in]
      * @param freq_ratios matrix of frequency ratios [in]
      * @param matrix_name name of underlying scoring matrix used [in]
+     * @param gap_existence cost to open a gap, if zero default from IPssmInputData used.
+     * @param gap_extension cost to open a gap, if zero default from IPssmInputData used.
      */
     CPsiBlastInputFreqRatios(const unsigned char* query,
                              unsigned int query_length,
                              const CNcbiMatrix<double>& freq_ratios,
-                             const char* matrix_name = NULL)
+                             const char* matrix_name = NULL,
+                             int gap_existence = 0,
+                             int gap_extension = 0)
         : m_Query(const_cast<unsigned char*>(query)), 
           m_QueryLength(query_length),
           m_MatrixName(matrix_name),
+          m_GapExistence(gap_existence),
+          m_GapExtension(gap_extension),
           m_FreqRatios(freq_ratios)
     {}
 
@@ -98,6 +104,20 @@ public:
             IPssmInputFreqRatios::GetMatrixName();
     }
 
+   /// Obtain the gap existence value to use when building the PSSM
+    int GetGapExistence() {
+         return m_GapExistence
+         ? m_GapExistence
+         : IPssmInputFreqRatios::GetGapExistence();
+    }
+
+    /// Obtain the gap extension value to use when building the PSSM
+    int GetGapExtension() {
+         return m_GapExtension
+         ? m_GapExtension
+         : IPssmInputFreqRatios::GetGapExtension();
+    }
+
     /// Obtain a matrix of frequency ratios with this->GetQueryLength() columns
     /// and BLASTAA_SIZE rows
     const CNcbiMatrix<double>& GetData() {
@@ -111,6 +131,10 @@ private:
     unsigned int        m_QueryLength;
     /// Name of underlying scoring matrix
     const char*         m_MatrixName;
+    /// Gap existence penalty
+    int                 m_GapExistence;
+    /// Gap extension penalty
+    int                 m_GapExtension;
     /// Frequency ratios
     CNcbiMatrix<double> m_FreqRatios;
 };
@@ -133,6 +157,8 @@ public:
     /// @param matrix_name name of the substitution matrix to use to build PSSM
     /// If not provided, the default implementation of
     /// IPssmInputData::GetMatrixName() will be returned
+    /// @param gap_existence cost to open a gap, if zero default from IPssmInputData used.
+    /// @param gap_extension cost to open a gap, if zero default from IPssmInputData used.
     /// @param diags diagnostics data requests for the PSSM engine
     CPsiBlastInputData(const unsigned char* query,
                        unsigned int query_length,
@@ -140,6 +166,8 @@ public:
                        CRef<objects::CScope> scope,
                        const PSIBlastOptions& opts,
                        const char* matrix_name = NULL,
+                       int gap_existence = 0,
+                       int gap_opening = 0,
                        const PSIDiagnosticsRequest* diags = NULL);
 
     /// virtual destructor
@@ -163,6 +191,20 @@ public:
 
     /// Obtain the name of the underlying matrix to use when building the PSSM
     const char* GetMatrixName();
+
+   /// Obtain the gap existence value to use when building the PSSM
+    int GetGapExistence() {
+         return m_GapExistence
+         ? m_GapExistence
+         : IPssmInputData::GetGapExistence();
+    }
+
+    /// Obtain the gap extension value to use when building the PSSM
+    int GetGapExtension() {
+         return m_GapExtension
+         ? m_GapExtension
+         : IPssmInputData::GetGapExtension();
+    }
 
     /// Obtain the diagnostics data that is requested from the PSSM engine
     const PSIDiagnosticsRequest* GetDiagnosticsRequest();
@@ -190,6 +232,10 @@ private:
     PSIDiagnosticsRequest*          m_DiagnosticsRequest;
     /// Underlying matrix to use
     string                          m_MatrixName;
+    /// Gap existence paramter used.
+    int                             m_GapExistence;
+    /// Gap extension paramter used.
+    int                             m_GapExtension;
     /// Query as CBioseq for PSSM
     CRef<objects::CBioseq>          m_QueryBioseq;
 

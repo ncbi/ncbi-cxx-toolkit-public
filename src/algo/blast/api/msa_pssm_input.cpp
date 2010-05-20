@@ -74,8 +74,10 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
          const char* matrix_name /* = NULL */,
          const PSIDiagnosticsRequest* diags /* = NULL */,
          const unsigned char* query /* = NULL */,
-         unsigned int query_length /* = 0 */)
-    : m_Query(0)
+         unsigned int query_length /* = 0 */,
+         int gap_existence /* = 0 */,
+         int gap_extension /* = 0 */)
+    : m_Query(0), m_GapExistence(gap_existence), m_GapExtension(gap_extension)
 {
     if (query) {
         _ASSERT(query_length);

@@ -985,7 +985,9 @@ s_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt,
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(save_ascii_pssm));
     // FIXME: if query is provided, pass it in in ncbistdaa + query length!
     CPsiBlastInputClustalW pssm_input(input_stream, *psiblast_opts,
-                                      opt.GetMatrixName(), diags);
+                                      opt.GetMatrixName(), diags, NULL, 0,
+                                      opt.GetGapOpeningCost(),
+                                      opt.GetGapExtensionCost());
     CPssmEngine pssm_engine(&pssm_input);
     return pssm_engine.Run();
 }

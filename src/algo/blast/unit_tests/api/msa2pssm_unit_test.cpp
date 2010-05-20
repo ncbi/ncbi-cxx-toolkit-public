@@ -56,7 +56,8 @@ BOOST_AUTO_TEST_CASE(QueryNotFoundInMsa)
     BOOST_REQUIRE_THROW(pssm_input.reset(new CPsiBlastInputClustalW(in, *opts,
                                                                     0, 0,
                                                                     kQuery,
-                                                                    kQuerySize)),
+                                                                    kQuerySize,
+                                                                    0, 0)),
                         CBlastException);
 }
 
@@ -97,7 +98,7 @@ BOOST_AUTO_TEST_CASE(AllUpperCaseMsa_WithQuery)
 
     CPSIBlastOptions opts;
     PSIBlastOptionsNew(&opts);
-    CPsiBlastInputClustalW pssm_input(in, *opts, 0, 0, query.get(), kQuerySeq.size());
+    CPsiBlastInputClustalW pssm_input(in, *opts, 0, 0, query.get(), kQuerySeq.size(), 0, 0);
     pssm_input.Process();
 
     PSIMsa* msa = pssm_input.GetData();

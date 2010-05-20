@@ -127,6 +127,8 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                              alignment, database_scope, 
                              *opts.Get(), 
                              opts_handle.GetMatrixName(),
+                             opts_handle.GetGapOpeningCost(),
+                             opts_handle.GetGapExtensionCost(),
                              diagnostics_request);
 
     CPssmEngine engine(&input);
