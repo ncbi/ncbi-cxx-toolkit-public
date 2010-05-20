@@ -190,15 +190,21 @@ public:
     void AddFeature(const CMappedFeat& feat);
 
     /// Add all genes for a mRNA feature.
+    void AddFeaturesFor(const CMappedFeat& feat,
+                        CSeqFeatData::ESubtype bottom_type,
+                        CSeqFeatData::ESubtype top_type);
+    /// Add all necessary features to get genes for a mRNA feature.
     void AddGenesForMrna(const CMappedFeat& mrna_feat);
-    /// Add all genes for a cdregion feature.
+    /// Add all necessary features to get cdregions for a mRNA feature.
+    void AddCdsForMrna(const CMappedFeat& mrna_feat);
+    /// Add all necessary features to get mRNAs for a gene feature.
+    void AddMrnasForGene(const CMappedFeat& gene_feat);
+    /// Add all necessary features to get cdregions for a gene feature.
+    void AddCdsForGene(const CMappedFeat& gene_feat);
+    /// Add all necessary features to get genes for a cdregion feature.
     void AddGenesForCds(const CMappedFeat& cds_feat);
-    /// Add all necessary features for a gene feature.
-    void AddFeaturesForGene(const CMappedFeat& gene_feat);
-    /// Add all necessary features for a mRNA feature.
-    void AddFeaturesForMrna(const CMappedFeat& mrna_feat);
-    /// Add all necessary features for a cdregion feature.
-    void AddFeaturesForCds(const CMappedFeat& cds_feat);
+    /// Add all necessary features to get mRNAs for a cdregion feature.
+    void AddMrnasForCds(const CMappedFeat& cds_feat);
 
     /// Find a corresponding CMappedFeat for a feature already added to a tree.
     /// Will throw an exception if the feature is not in the tree.

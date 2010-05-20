@@ -1835,54 +1835,72 @@ const CTSE_Handle& CFeatTree::CFeatInfo::GetTSE(void) const
 }
 
 
-void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat)
+void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
+                               CSeqFeatData::ESubtype bottom_type,
+                               CSeqFeatData::ESubtype top_type)
 {
-    AddFeature(mrna_feat);
-    SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
+    AddFeature(feat);
+    SAnnotSelector sel(bottom_type);
+    if ( top_type != bottom_type ) {
+        for ( STypeLink link(bottom_type); link.IsValid(); link.Next() ) {
+            CSeqFeatData::ESubtype parent_type = link.m_ParentType;
+            sel.IncludeFeatSubtype(parent_type);
+            if ( parent_type == top_type ) {
+                break;
+            }
+        }
+    }
     sel.SetResolveAll().SetAdaptiveDepth();
-    CFeat_CI feat_it(mrna_feat.GetScope(), mrna_feat.GetLocation(), sel);
+    CFeat_CI feat_it(feat.GetScope(), feat.GetLocation(), sel);
     AddFeatures(feat_it);
 }
 
 
-void CFeatTree::AddFeaturesForMrna(const CMappedFeat& mrna_feat)
+void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat)
 {
-    AddFeature(mrna_feat);
-    SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    CFeat_CI feat_it(mrna_feat.GetScope(), mrna_feat.GetLocation(), sel);
-    AddFeatures(feat_it);
+    AddFeaturesFor(mrna_feat,
+                   CSeqFeatData::eSubtype_gene,
+                   CSeqFeatData::eSubtype_gene);
+}
+
+
+void CFeatTree::AddCdsForMrna(const CMappedFeat& mrna_feat)
+{
+    AddFeaturesFor(mrna_feat,
+                   CSeqFeatData::eSubtype_cdregion,
+                   CSeqFeatData::eSubtype_mRNA);
 }
 
 
 void CFeatTree::AddGenesForCds(const CMappedFeat& cds_feat)
 {
-    AddFeature(cds_feat);
-    SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    CFeat_CI feat_it(cds_feat.GetScope(), cds_feat.GetLocation(), sel);
-    AddFeatures(feat_it);
+    AddFeaturesFor(cds_feat,
+                   CSeqFeatData::eSubtype_mRNA,
+                   CSeqFeatData::eSubtype_gene);
 }
 
 
-void CFeatTree::AddFeaturesForCds(const CMappedFeat& cds_feat)
+void CFeatTree::AddMrnasForCds(const CMappedFeat& cds_feat)
 {
-    AddGenesForCds(cds_feat);
+    AddFeaturesFor(cds_feat,
+                   CSeqFeatData::eSubtype_mRNA,
+                   CSeqFeatData::eSubtype_mRNA);
 }
 
 
-void CFeatTree::AddFeaturesForGene(const CMappedFeat& gene_feat)
+void CFeatTree::AddMrnasForGene(const CMappedFeat& gene_feat)
 {
-    AddFeature(gene_feat);
-    SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    CFeat_CI feat_it(gene_feat.GetScope(), gene_feat.GetLocation(), sel);
-    AddFeatures(feat_it);
+    AddFeaturesFor(gene_feat,
+                   CSeqFeatData::eSubtype_mRNA,
+                   CSeqFeatData::eSubtype_gene);
+}
+
+
+void CFeatTree::AddCdsForGene(const CMappedFeat& gene_feat)
+{
+    AddFeaturesFor(gene_feat,
+                   CSeqFeatData::eSubtype_cdregion,
+                   CSeqFeatData::eSubtype_gene);
 }
 
 
@@ -1919,7 +1937,7 @@ GetBestMrnaForCds(const CMappedFeat& cds_feat,
 {
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddFeaturesForCds(cds_feat);
+        tree.AddMrnasForCds(cds_feat);
         return GetBestMrnaForCds(cds_feat, &tree);
     }
     return feat_tree->GetParent(cds_feat, CSeqFeatData::eSubtype_mRNA);
@@ -1931,7 +1949,7 @@ GetBestCdsForMrna(const CMappedFeat& mrna_feat,
 {
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddFeaturesForMrna(mrna_feat);
+        tree.AddCdsForMrna(mrna_feat);
         return GetBestCdsForMrna(mrna_feat, &tree);
     }
     const vector<CMappedFeat>& children = feat_tree->GetChildren(mrna_feat);
@@ -1949,7 +1967,7 @@ void GetMrnasForGene(const CMappedFeat& gene_feat,
 {
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddFeaturesForGene(gene_feat);
+        tree.AddMrnasForGene(gene_feat);
         GetMrnasForGene(gene_feat, mrna_feats, &tree);
         return;
     }
@@ -1967,7 +1985,7 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
 {
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddFeaturesForGene(gene_feat);
+        tree.AddCdsForGene(gene_feat);
         GetCdssForGene(gene_feat, cds_feats, &tree);
         return;
     }
