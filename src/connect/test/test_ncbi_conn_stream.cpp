@@ -228,12 +228,12 @@ int main(int argc, const char* argv[])
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "Misc/test_ncbi_conn_stream.FTP.data",
-                                "ftp"/*default*/, "none"/*default*/,
+                                "ftp"/*default*/, "-none"/*default*/,
                                 "/toolbox/ncbi_tools++/DATA",
                                 0/*port = default*/, flag,
                                 0/*offset*/, net_info->timeout);
     ConnNetInfo_Destroy(net_info);
-    for (size = 0; ftp.good(); size += ftp.gcount()) {
+    for (size = 0;  ftp.good();  size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
     }

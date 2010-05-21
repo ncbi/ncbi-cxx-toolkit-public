@@ -530,6 +530,23 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 }
 
 
+CConn_FtpStream::CConn_FtpStream(const string&   host,
+                                 const string&   user,
+                                 const string&   pass,
+                                 const string&   path,
+                                 unsigned short  port,
+                                 TFCDC_Flags     flags,
+                                 const STimeout* timeout,
+                                 streamsize      buf_size)
+    : CConn_IOStream(FTP_CreateConnector(host.c_str(), port,
+                                         user.c_str(), pass.c_str(),
+                                         path.c_str(), flags),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
 CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
                                                  const string&   file,
                                                  const string&   user,
@@ -540,10 +557,7 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
                                                  streamsize      offset,
                                                  const STimeout* timeout,
                                                  streamsize      buf_size)
-    : CConn_IOStream(FTP_CreateDownloadConnector(host.c_str(), port,
-                                                 user.c_str(), pass.c_str(),
-                                                 path.c_str(), flags),
-                     timeout, buf_size)
+    : CConn_FtpStream(host, user, pass, path, port, flags, timeout, buf_size)
 {
     if (file != kEmptyStr) {
         if (offset != 0) {
@@ -551,6 +565,29 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
         }
         if (good()) {
             write("RETR ", 5) << file   << endl;
+        }
+    }
+}
+
+
+CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
+                                             const string&   user,
+                                             const string&   pass,
+                                             const string&   file,
+                                             const string&   path,
+                                             unsigned short  port,
+                                             TFCDC_Flags     flags,
+                                             streamsize      offset,
+                                             const STimeout* timeout,
+                                             streamsize      buf_size)
+    : CConn_FtpStream(host, user, pass, path, port, flags, timeout, buf_size)
+{
+    if (file != kEmptyStr) {
+        if (offset != 0) {
+            write("REST ", 5) << offset << endl;
+        }
+        if (good()) {
+            write("STOR ", 5) << file   << endl;
         }
     }
 }

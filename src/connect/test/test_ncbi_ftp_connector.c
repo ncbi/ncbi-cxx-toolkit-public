@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
                              DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
+    flag |= fFCDC_UseFeatures;
 
     if (TEST_PORT) {
         sprintf(buf, ":%hu", TEST_PORT);
@@ -125,13 +126,23 @@ int main(int argc, char* argv[])
     if (CONN_Write(conn, "aaa", 3, &n, eIO_WritePlain) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write FTP command");
 
-    if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Unknown)
+    if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_NotSupported)
         CORE_LOG(eLOG_Fatal, "Test failed in waiting on READ");
-    CORE_LOG(eLOG_Note, "Unrecognized command was correctly rejected");
+    CORE_LOG(eLOG_Note, "Unrecognized command correctly rejected");
 
     if (CONN_Write(conn, "LIST\nSIZE", 9, &n, eIO_WritePlain) != eIO_Unknown)
         CORE_LOG(eLOG_Fatal, "Test failed to reject multiple commands");
-    CORE_LOG(eLOG_Note, "Multiple commands were correctly rejected");
+    CORE_LOG(eLOG_Note, "Multiple commands correctly rejected");
+
+    status = CONN_Write(conn, "SIZE 1GB\n", 9, &n, eIO_WritePersist);
+    if (status == eIO_Success) {
+        char buf[128];
+        CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
+        CORE_LOGF(eLOG_Note, ("SIZE file: %.*s", (int) n, buf));
+    } else {
+        CORE_LOGF(eLOG_Note, ("SIZE command not accepted: %s",
+                              IO_StatusStr(status)));
+    }
 
     if (CONN_Write(conn, "LIST", 4, &n, eIO_WritePlain) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write LIST command");
@@ -162,19 +173,50 @@ int main(int argc, char* argv[])
             printf("%.*s", (int) n, buf);
             first = 0/*false*/;
             fflush(stdout);
-        } else {
+        } else
             assert(status != eIO_Success);
-        }
     } while (status == eIO_Success);
     if (first  ||  status != eIO_Closed) {
         printf("<%s>\n", status != eIO_Success ? IO_StatusStr(status) : "EOF");
         fflush(stdout);
     }
 
+    if (CONN_Write(conn, "SIZE ", 5, &n, eIO_WritePlain) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Cannot write SIZE directory command");
+    size = strlen(kChdir + 4);
+    if (CONN_Write(conn, kChdir + 4, size, &n, eIO_WritePersist)==eIO_Success){
+        char buf[128];
+        CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
+        CORE_LOGF(eLOG_Note, ("SIZE directory returned: %.*s", (int) n, buf));
+    } else {
+        CORE_LOGF(eLOG_Note, ("SIZE directory not accepted: %s",
+                              IO_StatusStr(status)));
+    }
+
     if (CONN_Write(conn, kChdir, sizeof(kChdir) - 1, &n, eIO_WritePlain)
         != eIO_Success) {
         CORE_LOGF(eLOG_Fatal, ("Cannot execute %.*s",
                                (int) sizeof(kChdir) - 2, kChdir));
+    }
+
+    size = strlen(kFile + 5);
+    if ((status = CONN_Write(conn, "MDTM ", 5, &n, eIO_WritePlain))
+        == eIO_Success  &&
+        (status = CONN_Write(conn, kFile + 5, size, &n, eIO_WritePersist))
+        == eIO_Success) {
+        unsigned long val;
+        char buf[128];
+        CONN_ReadLine(conn, buf, sizeof(buf) - 1, &n);
+        if (n  &&  sscanf(buf, "%lu", &val) > 0) {
+            struct tm* tm;
+            time_t t = (time_t) val;
+            if ((tm = localtime(&t)) != 0)
+                n = strftime(buf, sizeof(buf), "%m/%d/%Y %H:%M:%S", tm);
+        }
+        CORE_LOGF(eLOG_Note, ("MDTM returned: %.*s", (int) n, buf));
+    } else {
+        CORE_LOGF(eLOG_Note, ("MDTM command not accepted: %s",
+                              IO_StatusStr(status)));
     }
 
     if (CONN_Write(conn, kFile, sizeof(kFile) - 1, &n, eIO_WritePersist)

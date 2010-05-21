@@ -66,10 +66,11 @@ typedef enum { /* DEPRECATED -- DON'T USE! */
 } EFCDC_OldFlags;
 
 
-/* Create new CONNECTOR structure to handle ftp download transfer.
+/* Create new CONNECTOR structure to handle ftp transfers,
+ * both download and upload.
  * Return NULL on error.
  */
-extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
+extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnector
 (const char*    host,     /* hostname, required                             */
  unsigned short port,     /* port #, 21 [standard] if 0 passed here         */
  const char*    user,     /* username, "ftp" [==anonymous] by default       */
@@ -77,6 +78,19 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
  const char*    path,     /* initial directory to chdir to on open          */
  TFCDC_Flags    flag      /* mostly for logging socket data [optional]      */
 );
+
+
+#ifndef NCBI_DEPRECATED
+#  define NCBI_FTP_CONNECTOR_DEPRECATED
+#else
+#  define NCBI_FTP_CONNECTOR_DEPRECATED NCBI_DEPRECATED
+#endif
+
+/* Same as above:  do not use for the obsolete naming */
+NCBI_FTP_CONNECTOR_DEPRECATED
+extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
+(const char* host, unsigned short port, const char* user,
+ const char* pass, const char*    path, TFCDC_Flags flag);
 
 
 #ifdef __cplusplus
