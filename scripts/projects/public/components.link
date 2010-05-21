@@ -1,13 +1,13 @@
 [components]
-algo            4.0.0
-app             4.0.0
-blast           4.0.0
-core            4.0.0
-dbase           4.0.0
-infrastructure  4.0.0
-misc            4.0.0
-objects         4.0.0
-objtools        4.0.0
-web             4.0.0
-
-
+infrastructure  6.0
+core            6.0
+dbase           6.0
+web             6.0
+objects         6.0
+objtools        6.0
+algo            6.0
+misc            6.0
+blast           6.0
+app             6.0
+sample          6.0
+sra             6.0

@@ -1,6 +1,5 @@
 algo
 app
-bdb
 db
 build-system
 cgi
@@ -15,7 +14,7 @@ misc
 objects
 objmgr
 objtools
-#sample
+sample
 serial
 util
 -app/sample/gui
