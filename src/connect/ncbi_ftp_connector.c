@@ -194,7 +194,7 @@ static EIO_Status s_FTPDrainReply(SFTPConnector* xxx, int* code, int cXX)
     int        quit = *code;
     while ((status = s_FTPReply(xxx, &c, 0, 0, 0)) == eIO_Success) {
         *code = c;
-        if ((quit  &&  quit == code)  ||  (cXX  &&  c / 100 == cXX))
+        if ((quit  &&  quit == c)  ||  (cXX  &&  c / 100 == cXX))
             break;
     }
     return status;
