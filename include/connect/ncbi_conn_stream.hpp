@@ -63,9 +63,9 @@
  *      I/O stream based on NAMEDPIPE connector, which is able to exchange
  *      data to/from another process.
  *
- *   CConn_FTPDownloadStream
+ *   CConn_FtpStream
  *      I/O stream based on FTP connector, which is able to retrieve files
- *      and file lists from remote FTP servers.
+ *      and file lists from remote FTP servers, and upload files as well.
  */
 
 #include <corelib/ncbistd.hpp>
@@ -536,10 +536,31 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CConn_FTPDownloadStream
+/// CConn_FtpStream and its specializations
 ///
 
-class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_FtpStream : public CConn_IOStream
+{
+public:
+    CConn_FtpStream
+    (const string&   host,
+     const string&   user,
+     const string&   pass,
+     const string&   path     = kEmptyStr,
+     unsigned short  port     = 0,
+     TFCDC_Flags     flags    = 0,
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize
+     );
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_FtpStream(const CConn_FtpStream&);
+    CConn_FtpStream& operator= (const CConn_FtpStream&);
+};
+
+
+class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
 public:
     CConn_FTPDownloadStream
@@ -559,6 +580,29 @@ private:
     // Disable copy constructor and assignment.
     CConn_FTPDownloadStream(const CConn_FTPDownloadStream&);
     CConn_FTPDownloadStream& operator= (const CConn_FTPDownloadStream&);
+};
+
+
+class NCBI_XCONNECT_EXPORT CConn_FTPUploadStream : public CConn_FtpStream
+{
+public:
+    CConn_FTPUploadStream
+    (const string&   host,
+     const string&   user,
+     const string&   pass,
+     const string&   file     = kEmptyStr,
+     const string&   path     = kEmptyStr,
+     unsigned short  port     = 0,
+     TFCDC_Flags     flags    = 0,
+     streamsize      offset   = 0,
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize
+     );
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_FTPUploadStream(const CConn_FTPUploadStream&);
+    CConn_FTPUploadStream& operator= (const CConn_FTPUploadStream&);
 };
 
 
