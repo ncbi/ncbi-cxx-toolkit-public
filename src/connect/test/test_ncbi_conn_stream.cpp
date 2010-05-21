@@ -232,7 +232,7 @@ int main(int argc, const char* argv[])
                                 "/toolbox/ncbi_tools++/DATA",
                                 0/*port = default*/, flag,
                                 0/*offset*/, net_info->timeout);
-    ConnNetInfo_Destroy(net_info);
+
     for (size = 0;  ftp.good();  size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
@@ -242,9 +242,39 @@ int main(int argc, const char* argv[])
         LOG_POST("Test 2 completed: " << (unsigned long) size <<
                  " bytes downloaded via FTP\n");
     } else
-        ERR_POST(Fatal << "No file downloaded, test 2 failed");
+        ERR_POST(Fatal << "Test 2 failed: no file downloaded");
 
-#if 1
+#if 0
+    LOG_POST("Test 2-1/2 of 6:  FTP upload");
+    CConn_FTPUploadStream upload("ftp.ncbi.nlm.nih.gov",
+                                 "username", "password",
+                                 "filename.data", "/upload",
+                                 0/*port = default*/, flag,
+                                 0/*offset*/, net_info->timeout);
+    size = 0;
+    while (size < (20<<20)  &&  upload.good()) {
+        char buf[4096];
+        size_t n = rand() % sizeof(buf) + 1;
+        for (size_t i = 0;  i < n;  i++)
+            buf[i] = rand() & 0xFF;
+        if (upload.write(buf, n))
+            size += n;
+    }
+    unsigned long val = 0;
+    if (upload)
+        upload >> val;
+    upload.Close();
+    if (size  &&  val == (unsigned long) size) {
+        LOG_POST("Test 2-1/2 completed: " << (unsigned long) size <<
+                 " bytes uploaded via FTP\n");
+    } else {
+        ERR_POST(Fatal << "Test 2-1/2 failed: "
+                 << val << " out of " << size << " byte(s) uploaded");
+    }
+#endif /*0*/
+
+    ConnNetInfo_Destroy(net_info);
+
     {{
         // Test for timeouts and memory leaks in unused stream
         STimeout tmo = {8, 0};
@@ -252,7 +282,6 @@ int main(int argc, const char* argv[])
             new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
         delete s;
     }}
-#endif
 
     LOG_POST("Test 3 of 6: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
