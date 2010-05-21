@@ -47,10 +47,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef __CYGWIN__
-#  define timezone _timezone
-#  define daylight _daylight
-#else /*__CYGWIN__*/
+#if !defined(NCBI_OS_MSWIN)  &&  !defined(__CYGWIN__)
+#  define _timezone timezone
+#  define _daylight daylight
+#endif /*!NCBI_OS_MSWIN && !__CYGWIN__*/
 
 #define NCBI_USE_ERRCODE_X   Connect_FTP
 
@@ -578,10 +578,10 @@ static EIO_Status x_FTPMdtmParse(SFTPConnector* xxx, const char* timestamp)
         return eIO_Unknown;
 #if !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_BSD)
     /* NB: timezone information is unavailable on Darwin or BSD :-/ */
-    if (t >= timezone)
-        t -= timezone;
-    if (t >= daylight  &&  tm.tm_isdst > 0)
-        t -= daylight;
+    if (t >= _timezone)
+        t -= _timezone;
+    if (t >= _daylight  &&  tm.tm_isdst > 0)
+        t -= _daylight;
 #endif /*!NCBI_OS_DARWIN && !NCBI_OS_BSD*/
     n = sprintf(buf, "%lu%s%s", (unsigned long) t,
                 *timestamp ? "." : "", timestamp);
