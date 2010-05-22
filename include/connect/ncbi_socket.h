@@ -213,10 +213,11 @@ typedef struct TRIGGER_tag* TRIGGER;
  *  CORE_SetLOG
  */
 
-/** By default ("log" == eDefault, which is eOff), data are not logged.
+/** By default data are not logged.
  * @param log
  *  To start logging the data, call this func with "log" == eOn.
  *  To stop  logging the data, call this func with "log" == eOff.
+ *  To get current log switch, call this func with "log" == eDefault.
  * @return
  *  Prior setting
  * @sa
