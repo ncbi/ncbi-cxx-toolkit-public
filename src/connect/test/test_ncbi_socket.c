@@ -122,7 +122,6 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
     assert(strcmp(buf, s_S1) == 0);
 
-    SOCK_SetDataLoggingAPI(eDefault);
     SOCK_SetDataLogging(sock, eDefault);
 
     /* Send a very big binary blob */
@@ -247,7 +246,6 @@ static void TEST__server_1(SOCK sock)
                            &n_io_done, eIO_ReadPersist);
         assert(status == eIO_Success  &&  n_io_done == DO_LOG_SIZE);
         SOCK_SetDataLogging(sock, eDefault);
-        SOCK_SetDataLoggingAPI(eDefault);
 
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
             assert(blob[n_io] == (unsigned char) n_io);
@@ -933,7 +931,7 @@ extern int main(int argc, char** argv)
 
         SOCK_SetDataLoggingAPI(eOn);
         assert(SOCK_InitializeAPI() == eIO_Success);
-        SOCK_SetDataLoggingAPI(eDefault);
+        SOCK_SetDataLoggingAPI(eOff);
 
         {{
             char local_host[64];
