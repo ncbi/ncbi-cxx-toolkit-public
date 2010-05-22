@@ -1,7 +1,7 @@
 #ifndef UTIL_SEQUTIL___SEQUTIL_SHARED__HPP
 #define UTIL_SEQUTIL___SEQUTIL_SHARED__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -70,7 +70,7 @@ bool OutOfRange(TSeqPos pos, const C& container, CSeqUtil::TCoding coding)
 {
     size_t bases_per_byte = GetBasesPerByte(coding);
     
-    if ( (pos < 0)  ||  
+    if ( (pos == kInvalidSeqPos)  ||  
         (pos > (container.size() * bases_per_byte) - 1) ) {
         return true;
     }
