@@ -34,8 +34,7 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_connector.h>
 
-
-#define NCBI_USE_ERRCODE_X  Connect_MetaConn
+#define NCBI_USE_ERRCODE_X   Connect_MetaConn
 
 /* Standard logging message
  */
