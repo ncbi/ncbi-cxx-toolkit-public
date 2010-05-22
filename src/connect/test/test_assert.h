@@ -36,6 +36,7 @@
  */
 
 #include "../ncbi_config.h"
+#if 0
 #ifdef NCBI_OS_BSD
 #  include <sys/param.h>
 #  ifdef __FreeBSD_version
@@ -52,6 +53,7 @@
 #    endif /*__FreeBSD_version/100000==8*/
 #  endif /*__FreeBSD_version*/
 #endif /*NCBI_OS_BSD*/
+#endif
 #include "test_assert_impl.h"
 
 #endif  /* TEST_ASSERT__H */

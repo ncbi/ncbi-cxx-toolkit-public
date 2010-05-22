@@ -2932,20 +2932,16 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     case eIO_Read:
         if (sock->eof) {
             /* hit EOF (and may be not yet shut down) -- so, flag it as been
-             * shut down, but do not call the actual system shutdown(),
-             * as it can cause smart OS'es like Linux to complain
+             * shut down, but do not perform the actual system call,
+             * as it can cause smart OS'es like Linux to complain.
              */
             sock->eof = 0/*false*/;
             sock->r_status = eIO_Closed;
         }
         if (sock->r_status == eIO_Closed)
             return eIO_Success;  /* has been shut down already */
-        how = SOCK_SHUTDOWN_RD;
         sock->r_status = eIO_Closed;
-#ifdef NCBI_OS_MSWIN
-        /* see comments at the end of eIO_Write case */
-        return eIO_Success;
-#endif /*NCBI_OS_MSWIN*/
+        how = SOCK_SHUTDOWN_RD;
         break;
 
     case eIO_ReadWrite:
@@ -2969,7 +2965,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                              " Shutting down for %s with"
                              " output still pending (%s)",
                              s_ID(sock, _id),
-                             dir == eIO_Write ? "write" : "R/W",
+                             dir == eIO_Write ? "write" : "read/write",
                              IO_StatusStr(status)));
             }
 
@@ -2999,14 +2995,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (dir != eIO_Write) {
             sock->eof = 0/*false*/;
             sock->r_status = eIO_Closed;
-            break;
         }
-
-#ifdef NCBI_OS_MSWIN
-        /* on MS-Win, socket shutdown for write apparently messes up (?!) *
-         * with the later reading, esp. when reading a lot of data...    */
-        return status;
-#endif /*NCBI_OS_MSWIN*/
         break;
 
     default:
@@ -3017,29 +3006,44 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         return eIO_InvalidArg;
     }
 
+#ifndef NCBI_OS_MSWIN
+    /* on MS-Win, socket shutdown for write apparently messes up (?!) *
+     * with the later reading, esp. when reading a lot of data...    */
+
+#  ifdef NCBI_OS_BSD
+    /* at least on FreeBSD: shutting down a socket for write (i.e. forcing to
+     * send a FIN) for a socket that has been already closed by another end
+     * (e.g. when it was done writing, so this end has done reading and is
+     * about to close) seems to cause ECONNRESET in the coming close()... */
+    if (dir == eIO_ReadWrite  &&  how != SOCK_SHUTDOWN_RDWR)
+        return status;
+#  endif /*NCBI_OS_BSD*/
+
     if (s_Initialized > 0  &&  SOCK_SHUTDOWN(sock->sock, how) != 0) {
         x_error = SOCK_ERRNO;
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         if (x_error == WSANOTINITIALISED)
             s_Initialized = -1/*deinited*/;
         else
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         if (
-#if   defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
-      defined(NCBI_OS_IRIX)                                        || \
-      defined(NCBI_OS_OSF1)
+#  if   defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
+        defined(NCBI_OS_IRIX)                                        || \
+        defined(NCBI_OS_OSF1)
             x_error != SOCK_ENOTCONN
-#else
+#  else
             x_error != SOCK_ENOTCONN  ||  sock->pending
-#endif /*UNIX flavors*/
-            )
+#  endif /*UNIX flavors*/
+            ) {
             CORE_LOGF_ERRNO_EXX(16, eLOG_Warning,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("%s[SOCK::Shutdown] "
                                  " Failed shutdown(%s)",
                                  s_ID(sock, _id), dir == eIO_Read ? "R" :
                                  dir == eIO_Write ? "W" : "RW"));
+        }
     }
+#endif /*NCBI_OS_MSWIN*/
 
     return status;
 }
