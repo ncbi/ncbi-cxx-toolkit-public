@@ -2225,11 +2225,11 @@ static EIO_Status s_Recv(SOCK    sock,
 
         /* success/EOF? */
         if (x_read >= 0  ||
-            (x_read < 0  &&  ((x_error = SOCK_ERRNO) == SOCK_ENOTCONN      ||
-                              x_error                == SOCK_ETIMEDOUT     ||
-                              x_error                == SOCK_ECONNRESET    ||
-                              x_error                == SOCK_ECONNABORTED  ||
-                              x_error                == SOCK_ENETRESET))) {
+            (x_read < 0  &&  ((x_error = SOCK_ERRNO) == SOCK_ENOTCONN    ||
+                              x_error                == SOCK_ETIMEDOUT   ||
+                              x_error                == SOCK_ENETRESET   ||
+                              x_error                == SOCK_ECONNRESET  ||
+                              x_error                == SOCK_ECONNABORTED))) {
             /* statistics & logging */
             if (x_read < 0  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
@@ -2643,8 +2643,8 @@ static EIO_Status s_Send(SOCK        sock,
             (x_written < 0  &&  ((x_error= SOCK_ERRNO) == SOCK_EPIPE       ||
                                  x_error               == SOCK_ENOTCONN    ||
                                  x_error               == SOCK_ETIMEDOUT   ||
-                                 x_error               == SOCK_ECONNRESET  ||
                                  x_error               == SOCK_ENETRESET   ||
+                                 x_error               == SOCK_ECONNRESET  ||
                                  x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
             if (x_written < 0  ||
@@ -3189,9 +3189,9 @@ static EIO_Status s_Close(SOCK sock, int abort)
 #endif /*NCBI_OS_MSWIN*/
             if (x_error == SOCK_ENOTCONN/*already closed by now*/
                 ||  (!(sock->n_read | sock->n_written)
-                     &&  (x_error == SOCK_ECONNRESET    ||
-                          x_error == SOCK_ECONNABORTED  ||
-                          x_error == SOCK_ENETRESET))) {
+                     &&  (x_error == SOCK_ENETRESET   ||
+                          x_error == SOCK_ECONNRESET  ||
+                          x_error == SOCK_ECONNABORTED))) {
                 break;
             }
             if (abort  ||  x_error != SOCK_EINTR) {
@@ -3201,10 +3201,12 @@ static EIO_Status s_Close(SOCK sock, int abort)
                                      " Failed close()",
                                      s_ID(sock, _id),
                                      abort ? "Abort" : "Close"));
-                if (abort++ > 1  ||  x_error != SOCK_EINTR) {
+                if (abort > 1  ||  x_error != SOCK_EINTR) {
                     status = eIO_Unknown;
                     break;
                 }
+                if (abort)
+                    abort++;
             }
         }
     }
