@@ -31,8 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_process.hpp>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -103,13 +107,14 @@ int main(int argc, const char* argv[])
     reg = s_CreateRegistry();
     CONNECT_Init(reg);
 
-    // short explanatory message
-    LOG_POST(Info << "Test 0: Checking error log setup");
+
+    LOG_POST(Info << "Test 0 of 7: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
-    LOG_POST(Info << "Test 0 completed\n");
+    LOG_POST(Info << "Test 0 passed\n");
 
-    LOG_POST("Test 1 of 6: Memory stream");
+
+    LOG_POST("Test 1 of 7: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
@@ -211,11 +216,12 @@ int main(int argc, const char* argv[])
         LOG_POST("  Micro-test " << (int) n << " of " << (int) m << " finish");
 #endif
     }
-    LOG_POST("Test 1 completed in " <<
+    LOG_POST("Test 1 passed in " <<
              (int) m    << " iteration(s) with " <<
              (int) size << " byte(s) transferred\n");
 
-    LOG_POST("Test 2 of 6:  FTP download");
+
+    LOG_POST("Test 2 of 7:  FTP download");
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
@@ -239,51 +245,77 @@ int main(int argc, const char* argv[])
     }
     ftp.Close();
     if (size) {
-        LOG_POST("Test 2 completed: " << (unsigned long) size <<
-                 " bytes downloaded via FTP\n");
+        LOG_POST("Test 2 passed: "
+                 << size << " bytes downloaded via FTP\n");
     } else
         ERR_POST(Fatal << "Test 2 failed: no file downloaded");
 
-#if 0
-    LOG_POST("Test 2-1/2 of 6:  FTP upload");
-    CConn_FTPUploadStream upload("ftp.ncbi.nlm.nih.gov",
-                                 "username", "password",
-                                 "filename.data", "/upload",
-                                 0/*port = default*/, flag,
-                                 0/*offset*/, net_info->timeout);
-    size = 0;
-    while (size < (20<<20)  &&  upload.good()) {
-        char buf[4096];
-        size_t n = rand() % sizeof(buf) + 1;
-        for (size_t i = 0;  i < n;  i++)
-            buf[i] = rand() & 0xFF;
-        if (upload.write(buf, n))
-            size += n;
-    }
-    unsigned long val = 0;
-    if (upload)
-        upload >> val;
-    upload.Close();
-    if (size  &&  val == (unsigned long) size) {
-        LOG_POST("Test 2-1/2 completed: " << (unsigned long) size <<
-                 " bytes uploaded via FTP\n");
-    } else {
-        ERR_POST(Fatal << "Test 2-1/2 failed: "
-                 << val << " out of " << size << " byte(s) uploaded");
-    }
-#endif /*0*/
+
+    LOG_POST("Test 3 of 7:  FTP upload");
+    ifstream ifs("/am/ncbiapdata/test_data/ftp/test_ncbi_ftp_upload");
+    if (ifs) {
+        string src;
+        ifs >> src;
+        ifs.close();
+        string dst(src.size(), '\0');
+        size_t n_read, n_written;
+        BASE64_Decode(src.c_str(), src.size(), &n_read,
+                      &dst[0], dst.size(), &n_written);
+        dst.resize(n_written);
+        size_t cpos = dst.find_first_of(':');
+        string user, pass;
+        if (cpos != NPOS) {
+            user = dst.substr(0, cpos);
+            pass = dst.substr(cpos + 1);
+        }
+        string filename("test_ncbi_conn_stream");
+        filename += '-' + CSocketAPI::gethostname();
+        filename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
+        filename += '-' + CTime(CTime::eCurrent).AsString("YMDhms");
+        filename += ".dat";
+        CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
+                                     user, pass, filename, "test_upload",
+                                     0/*port = default*/, flag,
+                                     0/*offset*/, net_info->timeout);
+        size = 0;
+        while (size < (10<<20)  &&  upload.good()) {
+            char buf[4096];
+            size_t n = rand() % sizeof(buf) + 1;
+            for (size_t i = 0;  i < n;  i++)
+                buf[i] = rand() & 0xFF;
+            if (upload.write(buf, n))
+                size += n;
+        }
+        unsigned long val = 0;
+        if (upload) {
+            upload >> val;
+            upload.clear();
+            upload << "DELE " << filename << NcbiEndl;
+        }
+        upload.Close();
+        if (size  &&  val == (unsigned long) size) {
+            LOG_POST("Test 3 passed: " <<
+                     size << " bytes uploaded via FTP\n");
+        } else {
+            ERR_POST(Fatal << "Test 3 failed: " <<
+                     val << " out of " << size << " byte(s) uploaded");
+        }
+    } else
+        LOG_POST("Test 3 skipped\n");
 
     ConnNetInfo_Destroy(net_info);
 
+
     {{
-        // Test for timeouts and memory leaks in unused stream
+        // Silent test for timeouts and memory leaks in an unused stream
         STimeout tmo = {8, 0};
         CConn_IOStream* s  =
             new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
         delete s;
     }}
 
-    LOG_POST("Test 3 of 6: Big buffer bounce");
+
+    LOG_POST("Test 4 of 7: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHCC_UrlEncodeArgs | fHCC_AutoReconnect |
                          fHCC_Flushable);
@@ -331,12 +363,13 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST("Test 3 passed\n");
+        LOG_POST("Test 4 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
-    LOG_POST("Test 4 of 6: Random bounce");
+
+    LOG_POST("Test 5 of 7: Random bounce");
 
     if (!(ios << buf1)) {
         ERR_POST("Error sending data");
@@ -380,12 +413,13 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST("Test 4 passed\n");
+        LOG_POST("Test 5 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
-    LOG_POST("Test 5 of 6: Truly binary bounce");
+
+    LOG_POST("Test 6 of 7: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
         buf1[i] = (char)(255/*rand()%256*/);
@@ -417,25 +451,26 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST("Test 5 passed\n");
+        LOG_POST("Test 6 passed\n");
 
     delete[] buf1;
     delete[] buf2;
 
-    LOG_POST("Test 6 of 6: NcbiStreamCopy()");
 
-    ofstream ofs(DEV_NULL);
-    assert(ofs);
+    LOG_POST("Test 7 of 7: NcbiStreamCopy()");
 
-    CConn_HttpStream ifs("http://www.ncbi.nlm.nih.gov"
-                         "/cpp/network/dispatcher.html", 0,
-                        "My-Header: Header\r\n", fHCC_Flushable);
-    ifs << "Sample input -- should be ignored";
+    ofstream null(DEV_NULL);
+    assert(null);
 
-    if (!ifs.good()  ||  !ifs.flush()  ||  !NcbiStreamCopy(ofs, ifs))
+    CConn_HttpStream http("http://www.ncbi.nlm.nih.gov"
+                          "/cpp/network/dispatcher.html", 0,
+                          "My-Header: Header\r\n", fHCC_Flushable);
+    http << "Sample input -- should be ignored";
+
+    if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
         ERR_POST(Fatal << "Test 6 failed");
     else
-        LOG_POST("Test 6 passed\n");
+        LOG_POST("Test 7 passed\n");
 
     CORE_SetREG(0);
     delete reg;
