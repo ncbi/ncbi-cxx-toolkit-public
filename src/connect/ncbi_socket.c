@@ -660,9 +660,8 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
 {
     ESwitch old = s_Log;
-    if (log == eDefault)
-        log = eOff;
-    s_Log = log;
+    if (log != eDefault)
+        s_Log = log;
     return old;
 }
 
