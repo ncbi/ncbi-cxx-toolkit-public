@@ -321,10 +321,11 @@ static EIO_Status x_FTPHelpParse(SFTPConnector* xxx, int code,
 static EIO_Status s_FTPHelp(SFTPConnector* xxx)
 {
     int code;
+    TFTP_Features feat;
     EIO_Status status = s_FTPCommand(xxx, "HELP", 0);
     if (status != eIO_Success)
         return status;
-    TFTP_Features feat = xxx->feat;
+    feat = xxx->feat;
     status = s_FTPReply(xxx, &code, 0, 0, x_FTPHelpParse);
     if (status != eIO_Success  ||  (code != 211  &&  code != 214)) {
         xxx->feat = feat;
@@ -358,12 +359,13 @@ static EIO_Status s_FTPFeat(SFTPConnector* xxx)
 {
     int code;
     EIO_Status status;
+    TFTP_Features feat;
     if (xxx->feat  &&  !(xxx->feat & fFtpFeature_FEAT))
         return eIO_NotSupported;
     status = s_FTPCommand(xxx, "FEAT", 0);
     if (status != eIO_Success)
         return status;
-    TFTP_Features feat = xxx->feat;
+    feat = xxx->feat;
     status = s_FTPReply(xxx, &code, 0, 0, x_FTPFeatParse);
     if (status != eIO_Success  ||  code != 211) {
         xxx->feat = feat;
