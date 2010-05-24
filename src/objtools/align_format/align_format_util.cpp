@@ -1881,7 +1881,7 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
       string l_UnigeneUrl = CAlignFormatUtil::GetURLFromRegistry("UNIGEN");
         sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
                 is_na ? "nucleotide" : "protein", gi, rid.c_str(),
-                for_alignment? "align" : "top", cur_align);
+                for_alignment? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
     }
     if (linkout & eStructure){
@@ -1889,13 +1889,13 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                 gi, cdd_rid.c_str(), structure_linkout_as_group ? "onegroup" : "onepair",
                 (entrez_term == NcbiEmptyString) ? 
                 "none":((char*) entrez_term.c_str()),
-                for_alignment? "align" : "top", cur_align);
+                for_alignment? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
         string l_GeoUrl = CAlignFormatUtil::GetURLFromRegistry("GEO");
         sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str(),
-                for_alignment? "align" : "top", cur_align);
+                for_alignment? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
@@ -1905,27 +1905,20 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
         linkout_list.push_back(buf);
     }
 
-    if((linkout & eAnnotatedInMapviewer) && !(linkout & eGenomicSeq)){
-        /*  string url_with_parameters = 
-            CAlignFormatUtil::BuildUserUrl(ids, taxid, user_url,
-                                           db_name,
-                                           db_is_na, rid,
-                                           query_number);
-                                           if (url_with_parameters != NcbiEmptyString) { */
+    if((linkout & eAnnotatedInMapviewer) && !(linkout & eGenomicSeq)){        
         sprintf(buf, kMapviwerUrl.c_str(), gi, rid.c_str(),
                 for_alignment? "align" : "top", cur_align,label.c_str());
-        linkout_list.push_back(buf);
-        // }
+        linkout_list.push_back(buf);        
     }
     
     if(linkout & eBioAssay && is_na){
       string l_BioAssayUrl = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
-        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
     }
     else if (linkout & eBioAssay && !is_na) {
       string l_BioAssayUrl = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
-        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align,label.c_str());
         linkout_list.push_back(buf);
     }
 
@@ -2300,5 +2293,122 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
     NStr::Replace(inpString,tmplParam,templParamVal,outString);
     return outString;
 }
+
+string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef<CScope> &scopeRef, bool useTemplates)
+{
+    const CBioseq_Handle& handle = scopeRef->GetBioseqHandle(id);
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
+
+    auto_ptr<CNcbiIfstream>  configFile(new CNcbiIfstream(".ncbirc"));    
+    m_Reg = new CNcbiRegistry(*configFile);
+
+    string user_url = m_Reg ? m_Reg->Get(seqUrlInfo->blastType, "TOOL_URL") : kEmptyStr;    
+    seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
+    
+    
+    if(seqUrlInfo->taxid == -1) { //taxid is not set
+        seqUrlInfo->taxid = 0;    
+        if (seqUrlInfo->blastType == "mapview" || seqUrlInfo->blastType == "mapview_prev" || 
+            seqUrlInfo->blastType == "gsfasta" || seqUrlInfo->blastType == "gsfasta_prev") {
+            seqUrlInfo->taxid = GetTaxidForSeqid(id, *scopeRef);        
+        }
+    }
+
+    bool is_db_na = seqUrlInfo->isDbNa; 
+    string db_name = seqUrlInfo->database;
+    string rid = seqUrlInfo->rid;
+    int query_number = seqUrlInfo->queryNumber;
+    int gi = seqUrlInfo->gi;
+    int linkout =  seqUrlInfo->linkout;
+    int cur_align = seqUrlInfo->blast_rank;
+    
+    string url_link = NcbiEmptyString;
+    CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
+    char dopt[32], db[32];
+    char logstr_moltype[32], logstr_location[32];
+ 
+    bool hit_not_in_mapviewer = !is_db_na || (linkout != 0 && !(linkout & eGenomicSeq));
+    
+    if (user_url.find("sra.cgi") != string::npos) {
+        
+        string url_with_parameters = 
+            CAlignFormatUtil::BuildSRAUrl(*ids, user_url);
+
+        if (url_with_parameters != NcbiEmptyString) {
+            if (!useTemplates) url_link += "<a href=\"";
+            url_link += url_with_parameters;
+            if (!useTemplates) url_link += "\">";
+        }
+
+    }
+    else if (user_url != NcbiEmptyString && 
+        !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
+          (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
+        
+        string url_with_parameters = 
+            CAlignFormatUtil::BuildUserUrl(*ids, seqUrlInfo->taxid, user_url,
+                                           db_name,
+                                           is_db_na, rid,
+                                           query_number,
+                                           false);
+        if (url_with_parameters != NcbiEmptyString) {
+            if (!useTemplates)url_link += "<a href=\"";
+            url_link += url_with_parameters;
+            if (!useTemplates) url_link += "\">";
+        }
+    } else { 
+        //use entrez or dbtag specified     
+        char url_buf[2048];
+        if (gi > 0) {
+            if(is_db_na) {
+                strcpy(dopt, "GenBank");
+                strcpy(db, "Nucleotide");
+                strcpy(logstr_moltype, "nucl");
+            } else {
+                strcpy(dopt, "GenPept");
+                strcpy(db, "Protein");
+                strcpy(logstr_moltype, "prot");
+            }    
+            strcpy(logstr_location, "top");
+            
+            if(useTemplates) {
+	            string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_QUERY_CGI");
+                url_link = l_EntrezUrl + "?cmd=Retrieve&db=" + db + "&list_uids=" + NStr::IntToString(gi) + "&dopt=" + dopt + "&RID=" + rid +
+                "&log$=" + logstr_moltype + logstr_location + "&blast_rank=" +  NStr::IntToString(cur_align);
+            }
+            else {
+                string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");
+	            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+                    logstr_moltype, logstr_location, cur_align,
+                    seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
+                url_link = url_buf;
+            }
+            
+            
+        } else {//seqid general, dbtag specified
+            if(wid->Which() == CSeq_id::e_General){
+                const CDbtag& dtg = wid->GetGeneral();
+                const string& dbname = dtg.GetDb();
+                if(NStr::CompareNocase(dbname, "TI") == 0){
+                    string actual_id = CAlignFormatUtil::GetGnlID(dtg);                    
+                    if(useTemplates) {
+                        string l_TraceUrl = CAlignFormatUtil::GetURLFromRegistry("TRACE_CGI");                    
+                        url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + rid;
+                    }
+                    else {                     
+                        sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str(),
+                            rid.c_str());
+                        url_link = url_buf;
+                    }
+                    
+                    
+                }
+            }
+        }
+    }
+    
+    return url_link;
+}
+
 END_SCOPE(align_format)
 END_NCBI_SCOPE
