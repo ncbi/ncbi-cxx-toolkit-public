@@ -275,8 +275,8 @@ bool
 CSeqAlignCmp::x_MeetsEvalueRequirements(double reference, double test)
 {
     if (reference != kInvalidDoubleValue && test != kInvalidDoubleValue &&
-        (reference < m_Opts.GetMaxEvalue() && test < m_Opts.GetMaxEvalue()) ||
-        (reference > m_Opts.GetMinEvalue() && test > m_Opts.GetMinEvalue())) {
+        ((reference < m_Opts.GetMaxEvalue() && test < m_Opts.GetMaxEvalue()) ||
+        (reference > m_Opts.GetMinEvalue() && test > m_Opts.GetMinEvalue()))) {
         return true;
     } else {
         return false;
