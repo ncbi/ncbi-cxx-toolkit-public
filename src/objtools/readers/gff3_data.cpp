@@ -580,15 +580,36 @@ CSeq_feat::TData::ESubtype CGff3Record::x_GetSubtypeOf(
     const CFeat_id& id )
 //  ----------------------------------------------------------------------------
 {
+    const size_t CASHSIZE = 5;
+    static list< CRef< CSeq_feat > > LastHits;
+
+//    size_t count = 0;
+    for ( list< CRef< CSeq_feat > >::reverse_iterator it=LastHits.rbegin(); 
+        it != LastHits.rend(); ++it )
+    {
+        if ( id.Equals( (*it)->GetId() ) ) {
+//            cerr << "+ *" << count << "*" << endl;
+            return (*it)->GetData().GetSubtype();
+        }
+//        count++;
+    }
+
     const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
-    list< CRef< CSeq_feat > >::const_iterator it = table.begin();
-    while ( it != table.end() ) {
+    list< CRef< CSeq_feat > >::const_reverse_iterator it = table.rbegin();
+    unsigned int count2 = 1;
+    while ( it != table.rend() ) {
         if ( (*it)->CanGetId() && (*it)->CanGetData() ) {
             if ( id.Equals( (*it)->GetId() ) ) {
+//                cerr << "+ [" << count2 << "]" << endl;
+                LastHits.push_back( *it );
+                if ( LastHits.size() > CASHSIZE ) {
+                    LastHits.erase( LastHits.begin() );
+                }
                 return (*it)->GetData().GetSubtype();
             }
         }
         ++it;
+        count2++;
     }
     return CSeq_feat::TData::eSubtype_bad;
 }
