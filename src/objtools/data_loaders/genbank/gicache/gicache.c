@@ -98,17 +98,17 @@ typedef struct {
 static void x_DumpIndexCache(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndexFile >= 0 && data_index->m_IndexCacheLen > 0) {
-        assert(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-        assert(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         /* Write to the index file whatever is still left in cache. */
         write(data_index->m_GiIndexFile, data_index->m_IndexCache,
-              data_index->m_IndexCacheLen*sizeof(int));
+              data_index->m_IndexCacheLen*sizeof(Uint4));
         data_index->m_GiIndexLen += data_index->m_IndexCacheLen;
-        assert(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
-        assert(data_index->m_GiIndexLen*sizeof(int) ==
+        assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         data_index->m_IndexCacheLen = 0;
     }
@@ -207,7 +207,7 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
     data_index->m_GiIndexFile = open(buf,flags,0644);
     data_index->m_GiIndexLen = 
         (data_index->m_GiIndexFile >= 0 ? 
-         lseek(data_index->m_GiIndexFile, 0, SEEK_END)/sizeof(int) : 0);
+         lseek(data_index->m_GiIndexFile, 0, SEEK_END)/sizeof(Uint4) : 0);
 
     if (data_index->m_GiIndexLen == 0 && !data_index->m_ReadOnlyMode &&
         data_index->m_GiIndexFile) {
@@ -705,7 +705,7 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
 
     if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kAllOneMask)
         return 0; /* can not map this amount of data anyway */
-    if (data_index->m_DataLen + sizeof(int)*(1<<kPageSize) >= kAllOneMask)
+    if (data_index->m_DataLen + sizeof(Uint4)*(1<<kPageSize) >= kAllOneMask)
         return 0; /* can not map this amount of data anyway */
     
     for (level = 3; level >= 0; --level) {
