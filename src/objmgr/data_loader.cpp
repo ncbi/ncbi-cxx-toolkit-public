@@ -171,11 +171,13 @@ CDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
 {
     TTSE_LockSet ret;
     ITERATE ( CBioseq_Info::TId, it, bioseq.GetId() ) {
-        if ( GetBlobId(*it) ) {
+        if ( !CanGetBlobById() || GetBlobId(*it) ) {
             // correct id is found
             TTSE_LockSet ret2 = GetExternalAnnotRecords(*it, sel);
-            ret.swap(ret2);
-            break;
+            if ( !ret2.empty() ) {
+                ret.swap(ret2);
+                break;
+            }
         }
     }
     return ret;

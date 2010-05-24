@@ -703,6 +703,13 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         CNcbiIfstream str_input(file_name.c_str(), IOS_BASE::binary);
         auto_ptr<CObjectIStream> input(CObjectIStream::Open(stream_format,
                                                             str_input));
+        CRef<CLDS_CollectSeq_idsReader> seq_id_hook(new CLDS_CollectSeq_idsReader);
+        m_Seq_idsCollector = new CLDS_Seq_idsCollector(seq_id_hook);
+        CObjectTypeInfo seq_id_type = CType<CSeq_id>();
+        seq_id_type.SetLocalSkipHook(*input, seq_id_hook);
+        CObjectTypeInfo annot_type = CType<CSeq_annot>();
+        annot_type.FindMember("data").SetLocalReadHook(*input, m_Seq_idsCollector);
+
         sniffer.Probe(*input);
 
         SaveObjects(sniffer, false);
