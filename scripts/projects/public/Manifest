@@ -36,5 +36,5 @@ SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 SunOSSparc : GCC  : GCC.sh 4.1.1 --without-debug --with-mt  <ENV>NCBI=</ENV>
 SunOSSparc : WS32 : WorkShop55.sh 32 --with-debug
 
-PowerMAC : GCC : GCC.sh --without-debug  <ENV>NCBI=</ENV>
+#PowerMAC : GCC : GCC.sh --without-debug  <ENV>NCBI=</ENV>
 IntelMAC : GCC : GCC.sh --with-debug --with-dll --with-mt
