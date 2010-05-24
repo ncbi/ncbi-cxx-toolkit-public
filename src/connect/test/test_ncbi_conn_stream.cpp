@@ -311,7 +311,7 @@ int main(int argc, const char* argv[])
                 double rate  = (val / 1024.0) / (delta ? delta : 1);
                 speed = (" (in "
                          + NStr::UIntToString(delta)
-                         + " sec, @ "
+                         + " sec @ "
                          + NStr::DoubleToString(rate, 2, NStr::fDoubleFixed)
                          + " KB/s)");
             }
