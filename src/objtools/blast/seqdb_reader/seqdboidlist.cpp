@@ -196,13 +196,20 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
                                 mask.GetEnd(),
                                 CSeqDB_BitSet::eAllSet);
             filter->IntersectWith(r2, true);
+        } else if (mask.GetType() == CSeqDB_AliasMask::eMemBit) {
+            vol.Vol()->SetMemBit(mask.GetMemBit());
+            // No filter->IntersectWith here since
+            // MEMBIT can not be done at OID level, therefore,
+            // we delegate to seqdbvol (in x_GetFilteredHeader())
+            // for further process.
         }
     }
     
     ITERATE(TFilters, filt, ft->GetFilters()) {
         const CSeqDB_AliasMask & mask = **filt;
         
-        if (mask.GetType() == CSeqDB_AliasMask::eOidRange)
+        if (mask.GetType() == CSeqDB_AliasMask::eOidRange
+         || mask.GetType() == CSeqDB_AliasMask::eMemBit)
             continue;
         
         CRef<CSeqDB_BitSet> f;
@@ -216,7 +223,6 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
             
         case CSeqDB_AliasMask::eTiList:
             use_tis = true;
-            //ft
             
         case CSeqDB_AliasMask::eGiList:
             idlist = gis.GetNodeIdList(mask.GetPath(),
@@ -226,7 +232,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
             
             f = x_IdsToBitSet(*idlist, vol_start, vol_end);
             break;
-            
+
         case CSeqDB_AliasMask::eOidRange:
             // these should have been handled in the previous loop.
             break;

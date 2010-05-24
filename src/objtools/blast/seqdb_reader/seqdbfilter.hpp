@@ -55,7 +55,8 @@ public:
         eGiList,  ///< GI list.
         eTiList,  ///< TI list.
         eOidList, ///< OID list.
-        eOidRange ///< OID Range [start, end).
+        eOidRange,///< OID Range [start, end).
+        eMemBit   ///< MEMBIT filter.
     };
     
     /// Constructor for file-based filtering.
@@ -65,7 +66,8 @@ public:
         : m_MaskType(mask_type),
           m_Path    (fn),
           m_Begin   (0),
-          m_End     (0)
+          m_End     (0),
+          m_MemBit  (0)
     {
     }
     
@@ -75,10 +77,21 @@ public:
     CSeqDB_AliasMask(int begin, int end)
         : m_MaskType(eOidRange),
           m_Begin   (begin),
-          m_End     (end)
+          m_End     (end),
+          m_MemBit  (0)
     {
     }
     
+    /// Constructor for MEMBIT filter.
+    /// @param mem_bit to filter
+    CSeqDB_AliasMask(int mem_bit)
+        : m_MaskType(eMemBit),
+          m_Begin   (0),
+          m_End     (0),
+          m_MemBit  (mem_bit)
+    {
+    }
+
     /// Build string describing the filtering action.
     /// @return string describing the filtering action.
     string ToString() const
@@ -93,6 +106,7 @@ public:
         case eOidRange: p="eOidRange";
             r = true;
             break;
+        case eMemBit:   p="eMemBit";   break;
         }
         
         string oss;
@@ -135,6 +149,13 @@ public:
         return m_End;
     }
     
+    /// Get Membit
+    /// @return MemBit
+    int GetMemBit() const
+    {
+        return m_MemBit;
+    }
+
 private:
     /// Type of filtering to apply.
     EMaskType m_MaskType;
@@ -147,6 +168,9 @@ private:
     
     /// OID after last included OID.
     int m_End;
+
+    /// Membit to filter
+    int m_MemBit;
 };
 
 

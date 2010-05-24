@@ -513,9 +513,12 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata)
     
     int vol_oid = 0;
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid,
-                              x_GetFiltInfo(locked),
                               target_gi,
                               m_TaxInfo,
                               seqdata,
@@ -702,8 +705,12 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     m_Atlas.Lock(locked);
     m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
+        return vol->GetSeqIDs(vol_oid,  locked);
     }
     
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -770,6 +777,10 @@ int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
 
     m_Atlas.Lock(locked);
 
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         // Try lookup *.nxg first
@@ -777,7 +788,7 @@ int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
         if (gi>=0) return gi;
         // Fall back to parsing deflines
         list< CRef<CSeq_id> > ids = 
-            vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
+            vol->GetSeqIDs(vol_oid, locked);
         ITERATE(list< CRef<CSeq_id> >, id, ids) {
             if ((**id).IsGi()) {
                 return (**id).GetGi();
@@ -914,12 +925,14 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked)
     m_Atlas.Lock(locked);
     m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     int vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetFilteredHeader(vol_oid,
-                                      & x_GetFiltInfo(locked),
-                                      locked);
+        return vol->GetFilteredHeader(vol_oid, locked);
     }
     
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -1012,10 +1025,13 @@ bool CSeqDBImpl::TiToOid(Int8 ti, int & oid)
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
         if (m_VolSet.GetVol(i)->TiToOid(ti,
                                         oid,
-                                        x_GetFiltInfo(locked),
                                         locked)) {
             oid += m_VolSet.GetVolOIDStart(i);
             return true;
@@ -1061,10 +1077,14 @@ bool CSeqDBImpl::OidToGi(int oid, int & gi)
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     int vol_oid(0);
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetGi(vol_oid, x_GetFiltInfo(locked), gi, locked);
+        return vol->GetGi(vol_oid,  gi, locked);
     }
     
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -1076,6 +1096,10 @@ void CSeqDBImpl::AccessionToOids(const string & acc,
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     oids.clear();
     
     vector<int> vol_oids;
@@ -1084,7 +1108,6 @@ void CSeqDBImpl::AccessionToOids(const string & acc,
         // Append any additional OIDs from this volume's indices.
         m_VolSet.GetVol(vol_idx)->AccessionToOids(acc,
                                                   vol_oids,
-                                                  x_GetFiltInfo(locked),
                                                   locked);
         
         if (vol_oids.empty()) {
@@ -1121,6 +1144,10 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     // The lower level functions modify the seqid - namely, changing
     // or clearing certain fields before printing it to a string.
     // Further analysis of data and exception flow might reveal that
@@ -1136,10 +1163,7 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
     
     for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
         // Append any additional OIDs from this volume's indices.
-        m_VolSet.GetVol(vol_idx)->SeqidToOids(seqid,
-                                              vol_oids,
-                                              & x_GetFiltInfo(locked),
-                                              locked);
+        m_VolSet.GetVol(vol_idx)->SeqidToOids(seqid, vol_oids, locked);
         
         if (vol_oids.empty()) {
             continue;
@@ -2242,24 +2266,6 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
     m_NextCacheID = 0;
     m_NumThreads = num_threads;
     m_Atlas.SetMTSliceSize(num_threads);
-}
-
-const CSeqDBFiltInfo & CSeqDBImpl::x_GetFiltInfo(CSeqDBLockHold & locked)
-{
-    if (! m_FiltInfo.IsSet()) {
-        m_Atlas.Lock(locked);
-        
-        if (! m_OidListSetup) {
-            x_GetOidList(locked);
-        }
-        
-        bool have_oidlist = m_OIDList.NotEmpty();
-        int memb_bit = m_Aliases.GetMembBit(m_VolSet);
-        
-        m_FiltInfo.Set(have_oidlist, memb_bit);
-    }
-    
-    return m_FiltInfo;
 }
 
 END_NCBI_SCOPE

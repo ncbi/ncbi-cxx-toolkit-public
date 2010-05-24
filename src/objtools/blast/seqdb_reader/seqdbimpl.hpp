@@ -1197,17 +1197,6 @@ private:
     /// @return The length of the sequence in bases.
     int x_GetSeqLength(int oid, CSeqDBLockHold & locked) const;
     
-    /// Get oid list filtering info struct.
-    ///
-    /// This method returns a struct describing the OID list and
-    /// initializes it if it has not been set up yet.
-    ///
-    /// @param locked
-    ///   The lock hold object for this thread.
-    /// @return
-    ///   A reference to the list filtering info object.
-    const CSeqDBFiltInfo & x_GetFiltInfo(CSeqDBLockHold & locked);
-    
     /// Get local cache ID for current thread.
     ///
     /// @param locked
@@ -1332,9 +1321,6 @@ private:
     /// Algorithm ID mapping.
     CSeqDB_IdRemapper m_AlgorithmIds;
     
-    /// Cached membership bit info.
-    CSeqDBFiltInfo m_FiltInfo;
-
     /// number of thread clients
     int m_NumThreads;
 

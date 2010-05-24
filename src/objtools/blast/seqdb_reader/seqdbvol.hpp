@@ -173,61 +173,6 @@ private:
     int m_RefCount;
 };
 
-
-/// Membership Filtering Info
-/// 
-/// This is a memento produced by the SeqDBImpl layer, indicating how
-/// (and whether) to do membership bit based filtering.  It is needed
-/// by any method which may use the OID list, which includes any
-/// method that gets filtered headers.
-
-class CSeqDBFiltInfo {
-public:
-    /// Constructor.
-    CSeqDBFiltInfo()
-        : m_Init(false), m_HaveOidList(false), m_MembBit(0)
-    {
-    }
-    
-    /// Store the data (may be called only once).
-    /// @param have Is an OID list present. 
-    /// @param mbit The OID list membership bit (or zero for none).
-    void Set(bool have, int mbit)
-    {
-        m_Init = true;
-        m_HaveOidList = have;
-        m_MembBit = mbit;
-    }
-    
-    /// Check if this struct is initialized.
-    /// @return True if Set() has been called.
-    bool IsSet() const
-    {
-        return m_Init;
-    }
-    
-    /// Check for an OID list (Set must be called first).
-    /// @return True if an OID list is present. 
-    bool HaveOidList() const
-    {
-        _ASSERT(m_Init);
-        return m_HaveOidList;
-    }
-    
-    /// Get the membership bit (Set must be called first).
-    /// @return The OID list membership bit (or zero if none).
-    int MembershipBit() const
-    {
-        _ASSERT(m_Init);
-        return m_MembBit;
-    }
-    
-private:
-    bool m_Init;        ///< True if this struct is initialized.
-    bool m_HaveOidList; ///< True if there is an OID list.
-    int  m_MembBit;     ///< The value of the membership bit.
-};
-
 /// CSeqDBVol class.
 /// 
 /// This object defines access to one database volume.  It aggregates
@@ -331,15 +276,12 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
     GetFilteredHeader(int                    oid,
-                      const CSeqDBFiltInfo * filt_info,
                       CSeqDBLockHold       & locked) const;
     
     /// Get the sequence type stored in this database.
@@ -372,8 +314,6 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param pref_gi
     ///   If specified, only return deflines containing this GI. [in]
     /// @param tax_info
@@ -386,7 +326,6 @@ public:
     ///   A CBioseq describing this sequence.
     CRef<CBioseq>
     GetBioseq(int                    oid,
-              const CSeqDBFiltInfo & filt_info,
               int                    pref_gi,
               CRef<CSeqDBTaxInfo>    tax_info,
               bool                   seqdata,
@@ -463,14 +402,11 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The list of Seq-id objects for this sequences.
     list< CRef<CSeq_id> > GetSeqIDs(int                    oid,
-                                    const CSeqDBFiltInfo * filt_info,
                                     CSeqDBLockHold       & locked) const;
     
     /// Get the GI of a sequence
@@ -560,7 +496,6 @@ public:
     ///   True if the TI was found.
     bool TiToOid(Int8                   ti,
                  int                  & oid,
-                 const CSeqDBFiltInfo & filt_info,
                  CSeqDBLockHold       & locked) const;
     
     /// Find the OID given a GI.
@@ -584,8 +519,6 @@ public:
     ///
     /// @param oid
     ///   The oid of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param gi
     ///   The returned GI. [out]
     /// @param locked
@@ -593,7 +526,6 @@ public:
     /// @return
     ///   True if a GI was returned.
     bool GetGi(int                    oid,
-               const CSeqDBFiltInfo & filt_info,
                int                  & gi,
                CSeqDBLockHold       & locked) const;
     
@@ -614,7 +546,6 @@ public:
     ///   The lock holder object for this thread. [in]
     void AccessionToOids(const string         & acc,
                          vector<int>          & oids,
-                         const CSeqDBFiltInfo & filt_info,
                          CSeqDBLockHold       & locked) const;
     
     /// Find OIDs for the specified Seq-id.
@@ -632,7 +563,6 @@ public:
     ///   The lock holder object for this thread. [in]
     void SeqidToOids(CSeq_id              & seqid,
                      vector<int>          & oids,
-                     const CSeqDBFiltInfo * filt_info,
                      CSeqDBLockHold       & locked) const;
     
     /// Find the OID at a given index into the database.
@@ -927,6 +857,26 @@ public:
                        bool             keep,
                        CSeqDBLockHold & locked);
     
+    /// Set the MEMB_BIT fitlering for this volume.
+    ///
+    /// This method sets the MEMB_BIT for the volume.  If the
+    /// MEMB_BIT has already been set, and the new bit is different, 
+    /// exception will be thrown.   This prevents conflicting MEMB_BIT
+    /// settings within an alias tree; nevertheless, it also prevents
+    /// aggregating the same volume with different MEMB_BIT settings,
+    /// such as "DBLIST swissprot pdb".   The latter case is probably
+    /// not desired.  Support for this "paralogous" case will probably
+    /// come later.
+    ///
+    /// @param mbit  The bit to set [in]
+    void SetMemBit(int mbit) const {
+        if (m_MemBit && mbit != m_MemBit) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                   "MEMB_BIT error: conflicting bit found.");
+        }
+        m_MemBit = mbit;
+    }
+
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
@@ -1086,14 +1036,11 @@ private:
     ///   The OID of the sequence. [in]
     /// @param hdr_data
     ///   The returned binary ASN.1 of the Blast-def-line-set. [out]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     void
     x_GetFilteredBinaryHeader(int                    oid,
                               vector<char>         & hdr_data,
-                              const CSeqDBFiltInfo & filt_info,
                               CSeqDBLockHold       & locked) const;
     
     /// Get sequence header information.
@@ -1106,8 +1053,6 @@ private:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param changed
     ///   Indicates whether ASN.1 data needed changes (optional). [out]
     /// @param locked
@@ -1116,7 +1061,6 @@ private:
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
     x_GetFilteredHeader(int                    oid,
-                        const CSeqDBFiltInfo * filt_info,
                         bool                 * changed,
                         CSeqDBLockHold       & locked) const;
     
@@ -1129,14 +1073,11 @@ private:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The CSeqdesc to include in the CBioseq.
     CRef<CSeqdesc> x_GetAsnDefline(int                    oid,
-                                   const CSeqDBFiltInfo & filt_info,
                                    CSeqDBLockHold       & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
@@ -1287,8 +1228,6 @@ private:
     /// 
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list. [in]
     /// @param locked
@@ -1297,7 +1236,6 @@ private:
     ///     The defline set for the specified oid.
     CRef<CBlast_def_line_set>
     x_GetTaxDefline(int                    oid,
-                    const CSeqDBFiltInfo & filt_info,
                     int                    preferred_gi,
                     CSeqDBLockHold       & locked);
     
@@ -1313,8 +1251,6 @@ private:
     /// 
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list. [in]
     /// @param tax_info
@@ -1325,7 +1261,6 @@ private:
     ///     A list of CSeqdesc objects for the specified oid.
     list< CRef<CSeqdesc> >
     x_GetTaxonomy(int                    oid,
-                  const CSeqDBFiltInfo & filt_info,
                   int                    preferred_gi,
                   CRef<CSeqDBTaxInfo>    tax_info,
                   CSeqDBLockHold       & locked);
@@ -1373,13 +1308,10 @@ private:
     ///   An accession or formatted Seq-id for which to search. [in]
     /// @param oids
     ///   A set of OIDs found for this sequence. [out]
-    /// @param filt_info
-    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     void x_CheckVersions(const string         & acc,
                          vector<int>          & oids,
-                         const CSeqDBFiltInfo * filt_info,
                          CSeqDBLockHold       & locked) const;
     
     /// The memory management layer.
@@ -1431,7 +1363,10 @@ private:
     
     /// The volume GI lists, if any exist.
     mutable TGiLists m_VolumeGiLists;
-    
+
+    /// The filtering MEMB_BIT
+    mutable int m_MemBit;
+
     /// Cached/ranged sequence info type.
     typedef map<int, CRef<CSeqDBRangeList> > TRangeCache;
     

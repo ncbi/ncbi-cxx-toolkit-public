@@ -1761,13 +1761,15 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
     TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
     TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
+    TVarList::iterator mbit_iter  = m_Values.find(string("MEMB_BIT"));
     
     if (! m_DBList.empty()) {
         if (oid_iter   != m_Values.end() ||
             gil_iter   != m_Values.end() ||
             til_iter   != m_Values.end() ||
             f_oid_iter != m_Values.end() ||
-            l_oid_iter != m_Values.end()) {
+            l_oid_iter != m_Values.end() ||
+            mbit_iter  != m_Values.end()) {
             
             has_filters = true;
             
@@ -1839,6 +1841,13 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
                 CRef<TMask> mask(new TMask(TMask::eTiList, lst_path));
                 m_NodeMasks.push_back(mask);
             }
+
+            if (mbit_iter != m_Values.end()) {
+                int mbit = NStr::StringToUInt(mbit_iter->second);
+                CRef<TMask> mask(new TMask(mbit));
+                m_NodeMasks.push_back(mask);
+            }
+            
         }
     }
     
