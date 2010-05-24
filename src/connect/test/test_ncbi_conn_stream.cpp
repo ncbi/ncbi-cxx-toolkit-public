@@ -268,11 +268,12 @@ int main(int argc, const char* argv[])
             user = dst.substr(0, cpos);
             pass = dst.substr(cpos + 1);
         }
+        CTime  start(CTime::eCurrent);
         string filename("test_ncbi_conn_stream");
         filename += '-' + CSocketAPI::gethostname();
         filename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
-        filename += '-' + CTime(CTime::eCurrent).AsString("YMDhms");
-        filename += ".dat";
+        filename += '-' + start.AsString("YMDhms");
+        filename += ".tmp";
         CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
                                      user, pass, filename, "test_upload",
                                      0/*port = default*/, flag,
@@ -280,7 +281,7 @@ int main(int argc, const char* argv[])
         size = 0;
         while (size < (10<<20)  &&  upload.good()) {
             char buf[4096];
-            size_t n = rand() % sizeof(buf) + 1;
+            size_t n = (size_t) rand() % sizeof(buf) + 1;
             for (size_t i = 0;  i < n;  i++)
                 buf[i] = rand() & 0xFF;
             if (upload.write(buf, n))
@@ -288,18 +289,36 @@ int main(int argc, const char* argv[])
         }
         unsigned long val = 0;
         unsigned long filesize = 0;
+        CTime stop;
         if (upload) {
+            string time;
             upload >> val;
             upload.clear();
             upload << "SIZE " << filename << NcbiEndl;
             upload >> filesize;
             upload.clear();
+            upload << "MDTM " << filename << NcbiEndl;
+            upload >> time;
+            if (!time.empty())
+                stop.SetTimeT(NStr::StringToUInt(time));
+            upload.clear();
             upload << "DELE " << filename << NcbiEndl;
         }
         if (size  &&  val == (unsigned long) size) {
+            string speed;
+            if (!stop.IsEmpty()) {
+                time_t delta = stop.GetTimeT() - start.GetTimeT();
+                double rate  = (val / 1024.0) / (delta ? delta : 1);
+                speed = (" (in "
+                         + NStr::UIntToString(delta)
+                         + " sec, @ "
+                         + NStr::DoubleToString(rate, 2, NStr::fDoubleFixed)
+                         + " KB/s)");
+            }
             LOG_POST("Test 3 passed: " <<
                      size << " bytes uploaded via FTP" <<
-                     (val == filesize ? " and verified" : "") << '\n');
+                     (val == filesize ? " and verified" : "") <<
+                     speed << '\n');
         } else {
             ERR_POST(Fatal << "Test 3 failed: " <<
                      val << " out of " << size << " byte(s) uploaded");
