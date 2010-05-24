@@ -68,7 +68,7 @@ typedef enum {
     fFtpFeature_REST = 0x20,
     fFtpFeature_SIZE = 0x40,
     fFtpFeature_EPSV = 0x80,
-    fFtpFeature_APSV = 0x100 /* EPSV ALL -- per "APSV" from RFC 1579 */
+    fFtpFeature_APSV = 0x100 /* EPSV ALL -- a la "APSV" from RFC 1579 */
 } EFTP_Feature;
 typedef unsigned int TFTP_Features; /* bitwise OR of EFtpFeature's */
 
@@ -813,7 +813,7 @@ static EIO_Status s_FTPPassive(SFTPConnector*  xxx,
 
     if (xxx->feat & (fFtpFeature_EPSV | fFtpFeature_APSV)) {
         if ((xxx->feat & fFtpFeature_EPSV) && (xxx->feat & fFtpFeature_APSV)) {
-            /* first time here, try set EPSV ALL */
+            /* first time here, try to set EPSV ALL */
             if (s_FTPEpsv(xxx, 0, 0) == eIO_Success)
                 xxx->feat &= ~fFtpFeature_EPSV; /* APSV mode */
             else
@@ -929,8 +929,10 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
     assert(xxx->cntl);
     BUF_Erase(xxx->rbuf);
     verify(size = BUF_Size(xxx->wbuf));
-    if (!(s = (char*) malloc(size + 1)))
+    if (!(s = (char*) malloc(size + 1))) {
+        BUF_Erase(xxx->wbuf);
         return eIO_Unknown;
+    }
     if (BUF_Read(xxx->wbuf, s, size) == size) {
         const char* c;
         assert(!memchr(s, '\n', size));
@@ -942,6 +944,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         else
             size = (size_t)(c - s);
         if (size == 3  ||  size == 4) {
+            /* FIXME: todo X<dir> commands (should be supported per RFC1123) */
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             if        (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
                 /* special-cased non-standard command */
