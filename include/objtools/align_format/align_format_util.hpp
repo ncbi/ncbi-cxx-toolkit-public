@@ -80,15 +80,14 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 // .ncbirc alias: UNIGEN
 const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?\
 db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d&RID=%s&log$=unigene%s&blast_rank=%d\"><img border=0 h\
-eight=16 width=16 src=\"images/U.gif\" alt=\"UniGene info\"></a>";
+eight=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to %s\"></a>";
 
 ///structure
 // .ncbirc alias: STRUCTURE_URL
 const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
 ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
 &blast_view=%s&hsp=0&taxname=%s&client=blast&log$=structure%s&blast_rank=%d\"><img border=0 height=16 width=\
-16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Re\
-lated structures\"></a>";
+16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to %s\"></a>";
 
 ///structure overview
 const string kStructure_Overview = "<a href=\"http://www.ncbi.nlm.nih.\
@@ -99,7 +98,7 @@ RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 // .ncbirc alias: GEO
 const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=geo&term=%d[gi]&RID=%s&log$=geo%s&blast_rank=%d\"><img border=0 height=16 width=16 src=\
-\"images/E.gif\" alt=\"Geo\"></a>";
+\"images/E.gif\" alt=\"Geo info linked to %s\"></a>";
 
 ///Gene
 // .ncbirc alias: GENE
@@ -111,13 +110,13 @@ src=\"images/G.gif\" alt=\"Gene info linked to %s\"></a>";
 // .ncbirc alias: BIOASSAY_PROT
 const string kBioAssayProtURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
 ?db=pcassay&term=%d[PigGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
-src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
+src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to %s\"></a>";
 
 ///Bioassay for nucleotides
 // .ncbirc alias: BIOASSAY_NUC
 const string kBioAssayNucURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
 ?db=pcassay&term=%d[RNATargetGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
-src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
+src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to %s\"></a>";
 
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
@@ -291,7 +290,33 @@ public:
             subset = false;
         }
     };
+
+    ///Structure that holds information needed for creation seqID URL in descriptions
+    /// and alignments
+    struct SSeqURLInfo { 
+        string blastType;    
+        bool isDbNa;
+        string database;    
+        string rid;    
+        int queryNumber;
+        int gi;        
+        int linkout;
+        int blast_rank;
+        bool new_win;
+        int taxid;    
+        
+        /// Constructor        
+        SSeqURLInfo(string bt, bool isnuc,string db, string rid,int qn, 
+                    int gi, int lnk, int blrk,bool nw, int txid = -1)            
+                    : blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
+                    queryNumber(qn), gi(gi),linkout(lnk),blast_rank(blrk),
+                    new_win(nw),taxid (txid){}
+
+    };
     
+    
+
+      
     enum DbSortOrder {
         eNonGenomicFirst = 1,
         eGenomicFirst
@@ -816,7 +841,11 @@ public:
 
 
     static string MapTemplate(string inpString,string tmplParamName,string templParamVal);
-
+    
+    static string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,                                        
+                                             const objects::CSeq_id& id,
+                                             CRef<objects::CScope> &scopeRef,                                         
+                                             bool useTemplates = false);
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
 
