@@ -456,7 +456,7 @@ public:
     ///   nanoseconds will be truncated.
     /// @return
     ///   Time object that is set.
-    CTime& SetTimeT(const time_t& t);
+    CTime& SetTimeT(const time_t t);
 
     /// Get time in time_t format.
     ///
@@ -1960,7 +1960,7 @@ CTime& CTime::AddYear(int years, EDaylight adl)
 }
 
 inline
-CTime& CTime::SetTimeT(const time_t& t) { return x_SetTimeMTSafe(&t); }
+CTime& CTime::SetTimeT(const time_t t) { return x_SetTimeMTSafe(&t); }
 
 inline
 CTime& CTime::SetCurrent(void) { return x_SetTimeMTSafe(); }
