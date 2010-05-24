@@ -461,8 +461,7 @@ static EIO_Status s_FTPDir(SFTPConnector* xxx,
                            const char*    cmd)
 {
     if (cmd  &&  (*cmd == 'P'/*PWD*/  ||
-                  *cmd == 'M'/*MKD*/  ||
-                  *cmd == 'R'/*RMD*/)) {
+                  *cmd == 'M'/*MKD*/)) {
         return eIO_NotSupported; /*yet*/
     }
     if (cmd  ||  xxx->path) {
@@ -478,6 +477,13 @@ static EIO_Status s_FTPDir(SFTPConnector* xxx,
         if (!cmd  ||  *cmd == 'C') { /* CWD, CDUP */
             if (code != 200  &&  code != 250)
                 return eIO_Unknown;
+        } else if (*cmd == 'R') { /* RMD */
+            if (code != 250)
+                return eIO_Unknown;
+        } else {
+            /* 257 is success code: 257<SP>"directory"<SP>comment
+             * For MKD there is 521 for "directory exits, no action taken" */
+            return eIO_NotSupported; /*yet*/
         }
     }
     return eIO_Success;
@@ -1115,8 +1121,7 @@ static EIO_Status s_VT_Write
         return eIO_Unknown;
     } else {
         status = c ? s_FTPExecute(xxx, timeout) : eIO_Success;
-        if (status == eIO_Success)
-            *n_written = size;
+        *n_written = size;
     }
     if (status != eIO_Timeout)
         xxx->w_status = status;
