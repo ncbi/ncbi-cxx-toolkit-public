@@ -66,27 +66,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
-class CAutoDiagnosticsRedirector
-{
-public:
-    CAutoDiagnosticsRedirector(EDiagSev severity = eDiag_Warning) {
-        SetDiagPostLevel(severity);
-        m_DiagStream = GetDiagStream();
-    }
-
-    void Redirect(CNcbiOstrstream& redirect_stream) {
-        SetDiagStream(&redirect_stream);
-    }
-
-    ~CAutoDiagnosticsRedirector() {
-        // Restore diagnostics stream
-        SetDiagStream(m_DiagStream);
-    }
-
-private:
-    CNcbiOstream* m_DiagStream;
-};
-
 static CRef<CBlastInput>
 s_DeclareBlastInput(CNcbiIstream& input_file, 
                     const CBlastInputSourceConfig& iconfig,
@@ -522,11 +501,12 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN_ReadDeltaSeq)
 
 BOOST_AUTO_TEST_CASE(ReadGenbankReport)
 {
-    CAutoDiagnosticsRedirector dr;
+    CDiagRestorer diag_restorer;
 
     // Redirect the output warnings
+    SetDiagPostLevel(eDiag_Warning);
     CNcbiOstrstream error_stream;
-    dr.Redirect(error_stream);
+    SetDiagStream(&error_stream);
 
     // this is gi 555, length 624
     CNcbiIfstream infile("data/gbreport.txt");

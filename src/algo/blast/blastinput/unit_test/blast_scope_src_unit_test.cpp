@@ -468,8 +468,8 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     acf.SetProteinBlastDbDataLoader(SDataLoaderConfig::kDefaultProteinBlastDb);
 
     // Make sure to post warnings
+    CDiagRestorer diag_restorer;
     SetDiagPostLevel(eDiag_Info);
-    CNcbiOstream* diag_stream = GetDiagStream();
 
     // Redirect the output warnings
     CNcbiOstrstream error_stream;
@@ -492,10 +492,6 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     const string kWarnings = CNcbiOstrstreamToString(error_stream);
     const string kExpectedMsg("Error initializing local BLAST database data");
     BOOST_CHECK(kWarnings.find(kExpectedMsg) != NPOS);
-
-    // restore the diagnostic stream
-    SetDiagStream(diag_stream);
-    SetDiagPostLevel(eDiag_Warning);
 
     string data_loader_name("REMOTE_BLASTDB_");
     data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);

@@ -2032,7 +2032,8 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration)
 {
-    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
+    CDiagRestorer diag_restorer;
+    SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmp_aliasfile, tmp_gifile;
     const string kDbName("nr");
     const string kTitle("My alias file");
@@ -2090,12 +2091,12 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     BOOST_REQUIRE(gilist_found);
     BOOST_REQUIRE(nseq_found);
     BOOST_REQUIRE(length_found);
-    SetDiagPostLevel(diagseverity);
 }
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
 {
-    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
+    CDiagRestorer diag_restorer;
+    SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmpfile;
     const string kTitle("My alias file");
     // nr should have at least two volumes
@@ -2141,12 +2142,12 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
     BOOST_REQUIRE(dblist_found);
     BOOST_REQUIRE(nseq_found);
     BOOST_REQUIRE(length_found);
-    SetDiagPostLevel(diagseverity);
 }
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
 {
-    EDiagSev diagseverity = SetDiagPostLevel(eDiag_Fatal);
+    CDiagRestorer diag_restorer;
+    SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmpfile;
     const string kTitle("My alias file");
     const string kMyAliasDb("est");
@@ -2194,7 +2195,6 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
     BOOST_REQUIRE(dblist_found);
     BOOST_REQUIRE(nseq_found);
     BOOST_REQUIRE(length_found);
-    SetDiagPostLevel(diagseverity);
 }
 
 /* This is no longer possible as all volumes must exist on alias creation
