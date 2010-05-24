@@ -137,9 +137,9 @@ struct CMaskData
     unsigned long outer_pos_begin;
     unsigned long outer_pos_end;
     int outer_left;
-    int perc_div;
-    int perc_del;
-    int perc_ins;
+    double perc_div;
+    double perc_del;
+    double perc_ins;
     string query_sequence;
     string strand;
     string matching_repeat;
@@ -313,15 +313,15 @@ bool CRmOutReader::ParseRecord( const string& record, CMaskData& mask_data )
         
         // 2: "perc div."
         ++it;
-        mask_data.perc_div = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
+        mask_data.perc_div = NStr::StringToDouble( *it );
         
         // 3: "perc del."
         ++it;
-        mask_data.perc_del = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
+        mask_data.perc_del = NStr::StringToDouble( *it );
         
         // 4: "perc ins."
         ++it;
-        mask_data.perc_ins = static_cast<int>(NStr::StringToDouble( *it ) * 1000);
+        mask_data.perc_ins = NStr::StringToDouble( *it );
         
         // 5: "query sequence"
         ++it;
@@ -435,7 +435,7 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
         
         if (flags & fIncludeRepeatName) {
             CRef<CGb_qual> repeat( new CGb_qual );
-            repeat->SetQual( "repeat_region" );
+            repeat->SetQual( "rpt_name" );
             repeat->SetVal( mask_data.matching_repeat );
             qual_list.push_back( repeat );
         }
@@ -455,21 +455,26 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
             
             CRef<CGb_qual> perc_div( new CGb_qual );
             perc_div->SetQual( "perc_div" );
-            perc_div->SetVal( NStr::IntToString( mask_data.perc_div ) );
+            perc_div->SetVal( NStr::DoubleToString( mask_data.perc_div ) );
             qual_list.push_back( perc_div );
             
             CRef<CGb_qual> perc_del( new CGb_qual );
             perc_del->SetQual( "perc_del" );
-            perc_del->SetVal( NStr::IntToString( mask_data.perc_del ) );
+            perc_del->SetVal( NStr::DoubleToString( mask_data.perc_del ) );
             qual_list.push_back( perc_del );
             
             CRef<CGb_qual> perc_ins( new CGb_qual );
             perc_ins->SetQual( "perc_ins" );
-            perc_ins->SetVal( NStr::IntToString( mask_data.perc_ins ) );
+            perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
             qual_list.push_back( perc_ins );
         }
 
-        if (flags & fIncludeRepeatExt) {
+        if (flags & fIncludeRepeatPosId) {
+            CRef<CGb_qual> repeat_id( new CGb_qual );
+            repeat_id->SetQual( "repeat_id" );
+            repeat_id->SetVal( NStr::IntToString( mask_data.repeat_id ) );
+            qual_list.push_back( repeat_id );
+
             CUser_object& uo = feat->SetExt();
             uo.SetType().SetStr("CombinedFeatureUserObjects");
             CUser_field& uf = uo.SetField("RepeatMasker");
@@ -477,7 +482,6 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
             uf.AddField("rpt_pos_begin", mask_data.rpt_pos_begin);
             uf.AddField("rpt_pos_end",   mask_data.rpt_pos_end);
             uf.AddField("rpt_left",      mask_data.rpt_left);
-            uf.AddField("repeat_id",     mask_data.repeat_id);
         }
     }
     
