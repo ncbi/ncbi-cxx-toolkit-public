@@ -842,10 +842,10 @@ public:
 
     static string MapTemplate(string inpString,string tmplParamName,string templParamVal);
     
-    static string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,                                        
-                                             const objects::CSeq_id& id,
-                                             CRef<objects::CScope> &scopeRef,                                         
-                                             bool useTemplates = false);
+    static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
+                           const objects::CSeq_id& id,
+                           CRef<objects::CScope> &scopeRef,
+                           bool useTemplates = false);
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
 
