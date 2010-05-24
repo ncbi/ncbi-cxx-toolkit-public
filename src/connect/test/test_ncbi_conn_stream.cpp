@@ -287,15 +287,19 @@ int main(int argc, const char* argv[])
                 size += n;
         }
         unsigned long val = 0;
+        unsigned long filesize = 0;
         if (upload) {
             upload >> val;
             upload.clear();
+            upload << "SIZE " << filename << NcbiEndl;
+            upload >> filesize;
+            upload.clear();
             upload << "DELE " << filename << NcbiEndl;
         }
-        upload.Close();
         if (size  &&  val == (unsigned long) size) {
             LOG_POST("Test 3 passed: " <<
-                     size << " bytes uploaded via FTP\n");
+                     size << " bytes uploaded via FTP" <<
+                     (val == filesize ? " and verified" : "") << '\n');
         } else {
             ERR_POST(Fatal << "Test 3 failed: " <<
                      val << " out of " << size << " byte(s) uploaded");
