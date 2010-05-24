@@ -67,19 +67,23 @@ public:
     bool IsSet(const CFeat_CI& feat_ci) const;
     bool IsSet(const CSeq_annot_Handle& annot, size_t row) const;
 
+    void Get(const CFeat_CI& feat_ci, bool& v) const;
     void Get(const CFeat_CI& feat_ci, int& v) const;
     void Get(const CFeat_CI& feat_ci, double& v) const;
     void Get(const CFeat_CI& feat_ci, string& v) const;
     void Get(const CFeat_CI& feat_ci, vector<char>& v) const;
+    void Get(const CSeq_annot_Handle& annot, size_t row, bool& v) const;
     void Get(const CSeq_annot_Handle& annot, size_t row, int& v) const;
     void Get(const CSeq_annot_Handle& annot, size_t row, double& v) const;
     void Get(const CSeq_annot_Handle& annot, size_t row, string& v) const;
     void Get(const CSeq_annot_Handle& annot, size_t row, vector<char>& v) const;
 
+    bool TryGet(const CFeat_CI& feat_ci, bool& v) const;
     bool TryGet(const CFeat_CI& feat_ci, int& v) const;
     bool TryGet(const CFeat_CI& feat_ci, double& v) const;
     bool TryGet(const CFeat_CI& feat_ci, string& v) const;
     bool TryGet(const CFeat_CI& feat_ci, vector<char>& v) const;
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, bool& v) const;
     bool TryGet(const CSeq_annot_Handle& annot, size_t row, int& v) const;
     bool TryGet(const CSeq_annot_Handle& annot, size_t row, double& v) const;
     bool TryGet(const CSeq_annot_Handle& annot, size_t row, string& v) const;

@@ -126,6 +126,22 @@ bool CTableFieldHandle_Base::IsSet(const CSeq_annot_Handle& annot,
 
 
 bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    bool& v) const
+{
+    return x_GetColumn(feat_ci).TryGetBool(x_GetRow(feat_ci), v);
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 bool& v) const
+{
+    if ( !TryGet(feat_ci, v) ) {
+        x_ThrowUnsetValue();
+    }
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
                                     int& v) const
 {
     return x_GetColumn(feat_ci).TryGetInt(x_GetRow(feat_ci), v);
@@ -136,6 +152,24 @@ void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
                                  int& v) const
 {
     if ( !TryGet(feat_ci, v) ) {
+        x_ThrowUnsetValue();
+    }
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
+                                    size_t row,
+                                    bool& v) const
+{
+    return x_GetColumn(annot).TryGetBool(row, v);
+}
+
+
+void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
+                                 size_t row,
+                                 bool& v) const
+{
+    if ( !TryGet(annot, row, v) ) {
         x_ThrowUnsetValue();
     }
 }
