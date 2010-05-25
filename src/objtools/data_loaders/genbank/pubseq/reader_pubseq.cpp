@@ -286,18 +286,12 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
                  << NcbiEndl;
     }
 
-    {{
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
-        if ( cmd ) {
-            cmd->Send();
-        }
-    }}
-
 #ifdef ALLOW_GZIPPED
     if ( m_AllowGzip ) {
         AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set accept gzip"));
         if ( cmd ) {
             cmd->Send();
+            cmd->DumpResults();
         }
     }
 #endif
@@ -845,6 +839,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                     // gi does not exist
                     not_found = true;
                 }
+                cmd->DumpResults();
                 break;
             }
         
@@ -865,6 +860,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                 if ( in.HaveMoreData() ) {
                     ERR_POST_X(4, "CPubseqReader: extra seqid data");
                 }
+                cmd->DumpResults();
                 break;
             }
         }
@@ -952,6 +948,7 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
             if ( stream.read(buf, 1) || stream.gcount() ) {
                 ERR_POST_X(6, "CPubseqReader: extra blob data");
             }
+            cmd->DumpResults();
         }
         else {
             SetAndSaveNoBlob(result, blob_id, chunk_id);

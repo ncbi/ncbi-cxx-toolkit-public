@@ -315,13 +315,6 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 
 void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
 {
-    {{
-        AutoPtr<CDB_LangCmd> cmd(db_conn.LangCmd("set blob_stream on"));
-        if ( cmd ) {
-            cmd->Send();
-        }
-    }}
-
     // prepare init request
     CID2_Request req;
     req.SetRequest().SetInit();
@@ -395,6 +388,9 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "bad init reply: 'reply' is not 'init'");
     }
+    if ( result->HaveMoreData() ) {
+        ERR_POST_X(1, "More data in reply");
+    }
     // that's it for now
     // TODO: process params
 }
@@ -421,6 +417,15 @@ namespace {
                           AutoPtr<CDB_Result> db_result)
             : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
             {
+            }
+        ~CDB_Result_Reader(void)
+            {
+                try {
+                    m_DB_RPCCmd->DumpResults();
+                }
+                catch ( CException& exc ) {
+                    ERR_POST_X(2, "CDB_Result_Reader: Exception: "<<exc);
+                }
             }
 
         ERW_Result Read(void*   buf,
