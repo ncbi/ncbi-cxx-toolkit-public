@@ -131,93 +131,6 @@ static const string  kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
 ecked_GI\" VALUE=\"%d\">  ";
 
 
-///Return url for seqid
-///@param ids: input seqid list
-///@param gi: gi to use
-///@param user_url: use this user specified url if it's non-empty
-///@param is_db_na: is the database nucleotide or not
-///@param db_name: name of the database
-///@param open_new_window: click the url to open a new window?
-///@param rid: RID
-///@param query_number: the query number
-///@param cur_align: index of the current alignment
-///
-static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
-                         bool is_db_na, string& db_name, bool open_new_window, 
-                         string& rid, int query_number, int taxid, int linkout,
-                         int cur_align)
-{
-    string url_link = NcbiEmptyString;
-    CConstRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-    char dopt[32], db[32];
-    char logstr_moltype[32], logstr_location[32];
- 
-    bool hit_not_in_mapviewer = !is_db_na || (linkout != 0 && !(linkout & eGenomicSeq));
- 
-    if (user_url.find("sra.cgi") != string::npos) {
-        
-        string url_with_parameters = 
-            CAlignFormatUtil::BuildSRAUrl(ids, user_url);
-
-        if (url_with_parameters != NcbiEmptyString) {
-            url_link += "<a href=\"";
-            url_link += url_with_parameters;
-            url_link += "\">";
-        }
-
-    }
-    else if (user_url != NcbiEmptyString && 
-        !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
-          (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
-        
-        string url_with_parameters = 
-            CAlignFormatUtil::BuildUserUrl(ids, taxid, user_url,
-                                           db_name,
-                                           is_db_na, rid,
-                                           query_number,
-                                           false);
-        if (url_with_parameters != NcbiEmptyString) {
-            url_link += "<a href=\"";
-            url_link += url_with_parameters;
-            url_link += "\">";
-        }
-    } else { 
-        //use entrez or dbtag specified     
-        char url_buf[2048];
-        if (gi > 0) {
-            if(is_db_na) {
-                strcpy(dopt, "GenBank");
-                strcpy(db, "Nucleotide");
-                strcpy(logstr_moltype, "nucl");
-            } else {
-                strcpy(dopt, "GenPept");
-                strcpy(db, "Protein");
-                strcpy(logstr_moltype, "prot");
-            }    
-            strcpy(logstr_location, "top");
-
-	        string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");            
-	        sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
-                    logstr_moltype, logstr_location, cur_align,
-                    open_new_window ? "TARGET=\"EntrezView\"" : "");
-            url_link = url_buf;
-        } else {//seqid general, dbtag specified
-            if(wid->Which() == CSeq_id::e_General){
-                const CDbtag& dtg = wid->GetGeneral();
-                const string& dbname = dtg.GetDb();
-                if(NStr::CompareNocase(dbname, "TI") == 0){
-                    string actual_id = CAlignFormatUtil::GetGnlID(dtg);
-                    sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str(),
-                            rid.c_str());
-                    url_link = url_buf;
-                }
-            }
-        }
-    }
-    
-    return url_link;
-}
-
 
 string 
 CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
@@ -409,7 +322,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         }
     }
         
-    //get id
+    //get id (sdl->id, sdl-gi)
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);
         sdl->id = wid;
@@ -489,31 +402,23 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }
     //get score and id url
     if(m_Option & eHtml){
+        bool useTemplates = m_DeflineTemplates != NULL;
         string accession;
         sdl->id->GetLabel(&accession, CSeq_id::eContent);
-        sdl->score_url = "<a href=#";
+        sdl->score_url = !useTemplates ? "<a href=#" : "";
         sdl->score_url += sdl->gi == 0 ? accession : 
             NStr::IntToString(sdl->gi);
-        sdl->score_url += ">";
+        sdl->score_url += !useTemplates ? ">" : "";
 
 		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
-        string type_temp = m_BlastType;
-        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-        int taxid = 0;
-        if (type_temp == "mapview" || type_temp == "mapview_prev" || 
-            type_temp == "gsfasta" || type_temp == "gsfasta_prev") {
-            taxid = 
-                CAlignFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
-        }
-           
-        sdl->id_url = s_GetIdUrl(*ids, sdl->gi, user_url,
-                                 m_IsDbNa, m_Database, 
-                                 (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, taxid, sdl->linkout,
-                                 blast_rank);
+
+        CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
+                                                 m_QueryNumber,sdl->gi, sdl->linkout,
+                                                 blast_rank,(m_Option & eNewTargetWindow) ? true : false); 
+        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,m_ScopeRef,useTemplates);
     }
 
-  
+    //get defline
     sdl->defline = GetTitle(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
     if (!(bdl.empty())) { 
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
@@ -589,6 +494,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
             m_MasterRange = NULL;
         }
     }
+    m_DeflineTemplates = NULL;
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -1067,12 +973,10 @@ void CShowBlastDefline::x_InitDeflineTable(void)
 
 void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 {
-    //This is max number of columns in the table - later should be probably put in enum DisplayOption	
-    //if(!(m_Option & eNoShowHeader)) {
+    //This is max number of columns in the table - later should be probably put in enum DisplayOption	    
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
-            //CAlignFormatUtil::AddSpace(out, m_LineLen + 1);
-			///???
+
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
                     out << kPsiblastNewSeqBackgroundGif;
@@ -1100,23 +1004,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 out << "<div id=\"desctbl\">" << "<table id=\"descs\">" << "\n" << "<thead>" << "\n";
                 out << "<tr class=\"first\">" << "\n" << "<th>Accession</th>" << "\n" << "<th>Description</th>" << "\n";			
             }
-            /*
-            if(m_Option & eHtml){
-                if((m_Option & eShowNewSeqGif)){
-                    out << kPsiblastNewSeqBackgroundGif;
-                    out << kPsiblastCheckedBackgroundGif;
-                }
-                if (m_Option & eCheckbox) {
-                    out << kPsiblastNewSeqBackgroundGif;
-                    out << kPsiblastCheckedBackgroundGif;
-                }
-            }
-			
-			
-            CAlignFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
-            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-			*/
-
+            
             string query_buf; 
             map< string, string> parameters_to_change;
             parameters_to_change.insert(map<string, string>::
@@ -1144,12 +1032,10 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             }else {             
             }
            
-            if(m_Option & eShowSumN){
-                // CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            if(m_Option & eShowSumN){    
                 out << "<th>" << kN << "</th>" << "\n";
                 
-            }
-            //out << "\n\n";
+            }            
             if (m_Option & eLinkout) {
                 out << "<th>Links</th>\n";
                 out << "</tr>\n";
@@ -1304,30 +1190,14 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
         line_component = "  " + sdl->defline; 
         string actual_line_component;
         actual_line_component = line_component;
-        /*
-        if(line_component.size() > m_LineLen){
-            actual_line_component = line_component.substr(0, m_LineLen - 
-                                                          line_length - 3);
-            actual_line_component += kEllipsis;
-        } else {
-            actual_line_component = line_component.substr(0, m_LineLen - 
-                                                          line_length);
-        }
-        */
+        
         if (m_Option & eHtml) {
             out << CHTMLHelper::HTMLEncode(actual_line_component);
 			out << "</div></td><td>";
         } else {
             out << actual_line_component; 
         }
-		/*
-        line_length += actual_line_component.size();
-        //pad the short lines
-		if (!(m_Option & eHtml)) {
-			CAlignFormatUtil::AddSpace(out, m_LineLen - line_length);
-			out << kTwoSpaceMargin;
-		}
-		*/
+		
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << sdl->score_url;
         }
@@ -1561,22 +1431,19 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
         }
         if(m_Option & eHtml){
 			_ASSERT(m_Reg.get());
+
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
-            CBioseq::TId ids;
-            CRef<CSeq_id> id_ref;
-            id_ref = &(const_cast<CSeq_id&>(*id));
-            ids.push_back(id_ref);
-            sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
-                                     m_IsDbNa, m_Database, 
-                                     (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber, 0,
-                                     0, blast_rank);
+
+            CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
+                                                     m_QueryNumber,sdl->gi, 0,blast_rank,(m_Option & eNewTargetWindow) ? true : false,0);
+            sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,m_ScopeRef);
             sdl->score_url = NcbiEmptyString;
         }
     }
     
     return sdl;
 }
+
 
 
 END_SCOPE(align_format)
