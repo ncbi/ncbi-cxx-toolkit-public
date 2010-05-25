@@ -264,6 +264,7 @@ EMyFeatureType get_my_feat_type(const CSeq_feat& feat, const LocMap& loc_map)
 }
 string GetStringDescr(const CBioseq& bioseq)
 {
+
   string result = CSeq_id::GetStringDescr (bioseq, CSeq_id::eFormat_FastA);
   string locus_tag = CReadBlastApp::getLocusTag(bioseq);
 // make sure locus_tag does not match result

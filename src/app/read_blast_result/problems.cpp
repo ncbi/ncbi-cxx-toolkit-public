@@ -778,11 +778,9 @@ int CReadBlastApp::RemoveInterim2(CBioseq::TAnnot& annots)
 
    NON_CONST_ITERATE(CBioseq::TAnnot, gen_feature, annots)
      {
-     bool erased = false;
      if(PrintDetails()) NcbiCerr << "RemoveInterim2(annots): gen_feature start" << NcbiEndl;
      if ( !(*gen_feature)->GetData().IsFtable() ) continue;
      if(PrintDetails()) NcbiCerr << "RemoveInterim2(annots): gen_feature is ftable" << NcbiEndl;
-     int dremoved=0;
      map<string,bool> feat_defined;
      CSeq_annot::C_Data::TFtable& table = (*gen_feature)->SetData().SetFtable();
      for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(), feat = table.begin(); feat != feat_end;)

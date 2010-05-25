@@ -118,7 +118,11 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
 
             do // long protein names are wrapped by BLAST, need to skip the elongation
               {
-              fgets(str, MAXSTR, fpt);
+              if(!fgets(str, MAXSTR, fpt)) 
+                {
+                NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing long protein names" << NcbiEndl;
+                return 0;
+                }
               s = strstr(str, "letters)");
               } while (!s);
             s = strstr(str, "(");
@@ -156,7 +160,11 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             while( (s=strstr(str, "Length = ")) == NULL)
             {
                strcat( bigbuf, str );
-               fgets(str, MAXSTR, fpt);
+               if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing hits" << NcbiEndl;
+                 return 0;
+                 }
                if((s=strstr(str,"gi|")) !=NULL)
                  {
                  gi=atoi(s+3);
@@ -205,7 +213,14 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
                while(*s && (*s != '\n')) {s++; }
 
 // Skip to the Score line
-            while(strstr(str, "Score = ")== NULL) fgets(str, MAXSTR, fpt);
+            while(strstr(str, "Score = ")== NULL) 
+               {
+               if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while skipping to Score line" << NcbiEndl;
+                 return 0;
+                 }
+               }
 
             s = strstr(str, "Score = "); s+=strlen("Score = ");
             double bitscore = atof(s);                  //////////////////////////
@@ -218,7 +233,11 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             double eval = atof(s);	           ////////////////////////////
             blastMap[qName].hits[ihit].eval = eval;
 
-            fgets(str, MAXSTR, fpt); 
+            if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while reading Identities line" << NcbiEndl;
+                 return 0;
+                 }
             s = strstr(str, "Identities = "); s+=strlen("Identities = "); 
             long nident = atoi(s);                ////////////////////////////
             blastMap[qName].hits[ihit].nident = nident;
@@ -239,7 +258,14 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             blastMap[qName].hits[ihit].ppos = ppos;
 
 // Skip to the alignment 
-            while(strstr(str, "Query: ")== NULL) fgets(str, MAXSTR, fpt);
+            while(strstr(str, "Query: ")== NULL) 
+              {
+              if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while skipping to Query: line" << NcbiEndl;
+                 return 0;
+                 }
+              }
             string alignment;                    ////////////////////////////
             alignment+=str;
           
@@ -252,12 +278,20 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             ret = sscanf(str, "%s%ld%s%ld", label, &q_start, seqal, &q_end);
             if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
 
-            fgets(str, MAXSTR, fpt);
+            if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing first alignment line" << NcbiEndl;
+                 return 0;
+                 }
             alignment+=str;
 
             while(strstr(str, "Sbjct: ")== NULL) 
               {
-              fgets(str, MAXSTR, fpt);
+              if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while skipping to Sbjct:line" << NcbiEndl;
+                 return 0;
+                 }
               alignment+=str;
               }
 
@@ -269,19 +303,35 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
 
                if(sbjstart == 0)  sbjstart = tmpstart;         
 
-               fgets(str, MAXSTR, fpt); // skip empty line
+               if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while appending to alignment I" << NcbiEndl;
+                 return 0;
+                 }
                alignment+=str;
-               fgets(str, MAXSTR, fpt); // new Query-line or Next >gi line !
+               if(!fgets(str, MAXSTR, fpt))
+                 {
+                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing Query: line" << NcbiEndl;
+                 return 0;
+                 }
                alignment+=str;
                
                if(strstr(str, "Query: ")) 
                  {
-                   ret = sscanf(str, "%s%ld%s%ld", label, &tmpstart, seqal, &q_end);
-                   if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
-                   fgets(str, MAXSTR, fpt);
-                   alignment+=str;
-                   fgets(str, MAXSTR, fpt); // new Sbjt-line
-                   alignment+=str;
+                 ret = sscanf(str, "%s%ld%s%ld", label, &tmpstart, seqal, &q_end);
+                 if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
+                 if(!fgets(str, MAXSTR, fpt))
+                   {
+                   NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing after Query: line" << NcbiEndl;
+                   return 0;
+                   }
+                 alignment+=str;
+                 if(!fgets(str, MAXSTR, fpt))
+                   {
+                   NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing new Sbjt line" << NcbiEndl;
+                   return 0;
+                   }
+                 alignment+=str;
                  }
                else
                    break;

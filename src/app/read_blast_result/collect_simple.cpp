@@ -119,22 +119,39 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
   TSimpleSeqs::iterator seq = seqs.begin();
   for(TSimpleSeqs::iterator gene = genes.begin(); gene!=genes.end(); )
     {
-    int seq_from=0;
+    string gene_range = printed_range(gene);
+    int seq_from=0, seq_to=0;
     int gene_from = gene->exons[0].from;
+    int gene_to   = gene->exons[0].to;
     for(;seq!=seqs.end(); seq++)
        {
+       string seq_range = printed_range(seq);
        seq_from = seq->exons[0].from;
-       if(gene_from<=seq_from) break;
+       seq_to   = seq->exons[0].to;
+       if(PrintDetails()) 
+         {
+         NcbiCerr << "DEBUG: CollectSimpleSeqs(): sliding seq " << seq_range << "(key: " << seq->key << ") to reach gene " << gene_range << "(key: " << gene->key << "), locus=" << gene->locus_tag << NcbiEndl;
+         }
+       if(gene->key<=seq->key) break; 
        }
-    if(seq==seqs.end()) break;
-    int seq_to  = seq->exons[seq->exons.size()-1].to;
-    int gene_to = gene->exons[gene->exons.size()-1].to;
-    if(seq_to==gene_to && seq_from==gene_from) 
-      { 
-      seq->locus_tag = gene->locus_tag; 
-      gene=genes.erase(gene); 
-      }
-    else gene++;
+    if(seq==seqs.end()) break; 
+
+      seq_from = seq->exons[0].from;
+      seq_to   = seq->exons[0].to;
+      string seq_range = printed_range(seq);
+      if(PrintDetails()) 
+        {
+        NcbiCerr << "DEBUG: CollectSimpleSeqs(): sliding seq " << seq_range << " reached gene " << gene_range << ", locus=" << gene->locus_tag << NcbiEndl;
+        }
+      seq_to  = seq->exons[seq->exons.size()-1].to;
+      gene_to = gene->exons[gene->exons.size()-1].to;
+      if(seq_to==gene_to && seq_from==gene_from)  // match
+        { 
+        seq->locus_tag = gene->locus_tag; 
+        gene=genes.erase(gene++); 
+        }
+      else gene++;
+    
     }
 
 // now try to assign non-exact gene-CDS matches
@@ -147,7 +164,7 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     for(;seq_start!=seqs.end(); seq_start++)
        {
        if(seq->locus_tag != "") continue; // this is done
-       if(gene_from<=seq_start->exons[0].from) break;
+       if(gene_from<=seq_start->exons[0].from) break; // in case there are cross-origin seqs, they will be in the end of seqs list, so they will be tested the last, thus this incorrect sliding should be fine
        }
     if(seq_start==seqs.end()) break; // done with seqs
 // now check if other ends fit
@@ -278,13 +295,17 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
        TSimplePair exon; exon.from=from; exon.to=to; exon.strand=strand;
        exon.fuzzy_from = inter->IsPartialStart(eExtreme_Positional);
        exon.fuzzy_to   = inter->IsPartialStop (eExtreme_Positional);
-       if(seq.key>(int)from) seq.key = (int)from;
+       if(seq.key>(int)from) 
+         {
+         seq.key = (int)from;
+         }
        seq.exons.push_back(exon);
        }
    TSeqPos  from, to;
    ENa_strand strand;
    getFromTo(loc, from, to, strand);
-   if(seq.exons.size()>1 && to-from > m_length/2) 
+   if((int)seq.exons.size()>1 && 
+      (int)to-(int)from > (int)m_length/2) 
 // over the origin annotation
      {
      int i=0;
@@ -297,7 +318,7 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
        if(i==0) seq.key = (int)from; // initialize
        else
          {
-         if(from-seq.key > m_length/2) seq.key = (int)from; // large gap, make it from here
+         if((int)from-seq.key > m_length/2) seq.key = (int)from; // large gap, make it from here
          } 
        }
 

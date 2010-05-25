@@ -229,8 +229,10 @@ int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
        ++right;
        if(!skip_toprot(right, seqs)) {last_right=true; break;}
        if(PrintDetails())
+          {
           NcbiCerr << "AnalyzeSeqs: right: "
                    <<  GetStringDescr ((*right)->GetSeq()) << NcbiEndl;
+          }
 // analyze for overlaps with the next one
        PushVerbosity();
 // if there are overlaps, keep on working on left, iterating through right

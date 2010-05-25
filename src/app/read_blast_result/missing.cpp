@@ -202,7 +202,6 @@ int CReadBlastApp::simple_overlaps()
        int from2, to2;
        from2 = seq2->exons[0].from;  
        to2 = seq2->exons[seq2->exons.size()-1].to;
-       ENa_strand strand2 = seq2->exons[0].strand;
        bool undef_strand = seq2->exons[0].strand == eNa_strand_unknown;
        if(!bufferstr.size())
          {
