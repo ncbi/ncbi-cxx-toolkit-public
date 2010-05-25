@@ -130,4 +130,4 @@ if errorlevel 1 (
 REM -------------------------------------------------------------------------
 REM Run DATATOOL_EXE
 
-%DATATOOL_EXE% %*
+"%DATATOOL_EXE%" %*
