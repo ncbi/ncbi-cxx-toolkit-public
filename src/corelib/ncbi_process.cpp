@@ -354,7 +354,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         if (pid)
             ::_exit(0);
         if (!(flags & fDontChroot))
-            (void) ::chdir("/");        // NB: "/" always exists
+            if (::chdir("/") ) { /*dummy*/ };  // NB: "/" always exists
         if (!(flags & fKeepStdin))
             ::fclose(stdin);
         ::close(fdin);

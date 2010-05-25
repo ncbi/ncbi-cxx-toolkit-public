@@ -162,9 +162,9 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
         close(status_pipe[0]);
         
         if (mode == CExec::eDetach) {
-            freopen("/dev/null", "r", stdin);
-            freopen("/dev/null", "a", stdout);
-            freopen("/dev/null", "a", stderr);
+            if ( freopen("/dev/null", "r", stdin)  ) { /*dummy*/ };
+            if ( freopen("/dev/null", "a", stdout) ) { /*dummy*/ };
+            if ( freopen("/dev/null", "a", stderr) ) { /*dummy*/ };
             setsid();
         } 
 
@@ -187,7 +187,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
         }
         // Error executing exec*(), report error code to parent process
         int errcode = errno;
-        write(status_pipe[1], &errcode, sizeof(errcode));
+        if ( write(status_pipe[1], &errcode, sizeof(errcode)) ) { /*dummy*/};
         close(status_pipe[1]);
         _exit(status);
     }
