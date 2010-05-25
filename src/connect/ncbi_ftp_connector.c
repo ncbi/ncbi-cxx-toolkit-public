@@ -27,7 +27,7 @@
  *
  * File Description:
  *   FTP CONNECTOR
- *   See also:  RFCs 959 (STD 9), 1123 (4.1), 1635 (FYI 24),
+ *   See also:  RFCs 959 (STD 9), 1123 (4.1), 1635 (FYI 24), 2428,
  *   3659 ("Extensions to FTP"), 5797 (FTP Command Registry).
  *
  *   Minimum FTP implementation: RFC 1123 (4.1.2.13)
@@ -38,12 +38,10 @@
  */
 
 #include "ncbi_ansi_ext.h"
-#include "ncbi_assert.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -89,8 +87,8 @@ typedef struct {
     BUF            rbuf;     /* read  buffer       */
     BUF            wbuf;     /* write buffer       */
     size_t         size;     /* uploaded data size */
-    EIO_Status     r_status; /* pertains to data    connection IO */
-    EIO_Status     w_status; /* pertains to control connection IO */
+    EIO_Status     r_status;
+    EIO_Status     w_status;
 } SFTPConnector;
 
 
@@ -307,7 +305,7 @@ static EIO_Status x_FTPHelpParse(SFTPConnector* xxx, int code,
             else
                 xxx->feat &= ~fFtpFeature_SIZE;
         }
-        if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (1579) */
+        if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (cf 1579) */
             if (s[4 + strspn(s + 4, " \t")] != '*')
                 xxx->feat |=  fFtpFeature_EPSV;
             else
@@ -481,7 +479,7 @@ static EIO_Status s_FTPDir(SFTPConnector* xxx,
             if (code != 250)
                 return eIO_Unknown;
         } else {
-            /* 257 is success code: 257<SP>"directory"<SP>comment
+            /* 257 is a success code: 257<SP>"directory"<SP>comment
              * For MKD there is 521 for "directory exits, no action taken" */
             return eIO_NotSupported; /*yet*/
         }
