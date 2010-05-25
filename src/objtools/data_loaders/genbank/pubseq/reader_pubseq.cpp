@@ -479,19 +479,17 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                             // gi does not exist
                             not_found = true;
                         }
-                        break;
                     }
-                    
-                    if ( dbr->ResultType() != eDB_RowResult ) {
-                        continue;
-                    }
-                    
-                    if ( sx_FetchNextItem(*dbr, "accver") ) {
+                    else if ( dbr->ResultType() == eDB_RowResult &&
+                              sx_FetchNextItem(*dbr, "accver") ) {
                         CDB_VarChar accVerGot;
                         dbr->GetItem(&accVerGot);
                         try {
                             CSeq_id id(accVerGot.Value());
                             SetAndSaveSeq_idAccVer(result, seq_id, id);
+                            while ( dbr->Fetch() )
+                                ;
+                            cmd->DumpResults();
                             break;
                         }
                         catch ( CException& /*exc*/ ) {
@@ -503,6 +501,8 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                             */
                         }
                     }
+                    while ( dbr->Fetch() )
+                        ;
                 }
             }}
             conn.Release();
@@ -550,7 +550,13 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
     
         while(cmd->HasMoreResults()) {
             AutoPtr<CDB_Result> dbr(cmd->Result());
-            if ( !dbr.get()  ||  dbr->ResultType() != eDB_RowResult) {
+            if ( !dbr.get() ) {
+                continue;
+            }
+
+            if ( dbr->ResultType() != eDB_RowResult) {
+                while ( dbr->Fetch() )
+                    ;
                 continue;
             }
         
@@ -685,7 +691,13 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
             _TRACE("id_get_annot_types "<<giIn.Value());
             while(cmd->HasMoreResults()) {
                 AutoPtr<CDB_Result> dbr(cmd->Result());
-                if ( !dbr.get() || dbr->ResultType() != eDB_RowResult) {
+                if ( !dbr.get() ) {
+                    continue;
+                }
+
+                if ( dbr->ResultType() != eDB_RowResult) {
+                    while ( dbr->Fetch() )
+                        ;
                     continue;
                 }
                 
@@ -839,15 +851,9 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                     // gi does not exist
                     not_found = true;
                 }
-                cmd->DumpResults();
-                break;
             }
-        
-            if ( dbr->ResultType() != eDB_RowResult ) {
-                continue;
-            }
-
-            if ( sx_FetchNextItem(*dbr, "seqid") ) {
+            else if ( dbr->ResultType() == eDB_RowResult &&
+                      sx_FetchNextItem(*dbr, "seqid") ) {
                 CDB_Result_Reader reader(dbr);
                 CRStream stream(&reader);
                 CObjectIStreamAsnBinary in(stream);
@@ -860,9 +866,13 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                 if ( in.HaveMoreData() ) {
                     ERR_POST_X(4, "CPubseqReader: extra seqid data");
                 }
+                while ( dbr->Fetch() )
+                    ;
                 cmd->DumpResults();
                 break;
             }
+            while ( dbr->Fetch() )
+                ;
         }
         if ( id_count == 0 && !not_found ) {
             // artificially add argument Seq-id if empty set was received
@@ -1000,7 +1010,13 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
         }
         
         AutoPtr<CDB_Result> dbr(cmd.Result());
-        if ( !dbr.get() || dbr->ResultType() != eDB_RowResult ) {
+        if ( !dbr.get() ) {
+            continue;
+        }
+
+        if ( dbr->ResultType() != eDB_RowResult ) {
+            while ( dbr->Fetch() )
+                ;
             continue;
         }
         

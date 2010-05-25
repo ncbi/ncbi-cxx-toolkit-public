@@ -418,15 +418,6 @@ namespace {
             : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
             {
             }
-        ~CDB_Result_Reader(void)
-            {
-                try {
-                    m_DB_RPCCmd->DumpResults();
-                }
-                catch ( CException& exc ) {
-                    ERR_POST_X(2, "CDB_Result_Reader: Exception: "<<exc);
-                }
-            }
 
         ERW_Result Read(void*   buf,
                         size_t  count,
@@ -441,6 +432,7 @@ namespace {
                 size_t ret;
                 while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
                     if ( !sx_FetchNextItem(*m_DB_Result, "asnout") ) {
+                        m_DB_RPCCmd->DumpResults();
                         break;
                     }
                 }
@@ -532,7 +524,13 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
                        "CPubseq2Reader: failed RPC");
         }
         dbr = cmd->Result();
-        if ( !dbr.get() || dbr->ResultType() != eDB_RowResult ) {
+        if ( !dbr.get() ) {
+            continue;
+        }
+        
+        if ( dbr->ResultType() != eDB_RowResult ) {
+            while ( dbr->Fetch() )
+                ;
             continue;
         }
         if ( sx_FetchNextItem(*dbr, "asnout") ) {
