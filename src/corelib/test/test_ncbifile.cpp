@@ -1191,7 +1191,7 @@ static void s_TEST_FileIO(void)
         fio.Close();
         // Check if the file exists now
         assert( f.Exists() );
-        assert( f.GetLength() == data_len );
+        assert( f.GetLength() == (Int8)data_len );
     }}
 
     // Try to create new file, should have exception here,
@@ -1209,7 +1209,7 @@ static void s_TEST_FileIO(void)
         n = fio.Write(data, data_len);
         assert( n == data_len );
         fio.Close();
-        assert( f.GetLength() == data_len );
+        assert( f.GetLength() == (Int8)data_len );
         // Remove file
         assert( f.Remove() );
         assert( !f.Exists() );
@@ -1219,7 +1219,7 @@ static void s_TEST_FileIO(void)
         n = fio.Write(data, data_len);
         assert( n == data_len );
         fio.Close();
-        assert( f.GetLength() == data_len );
+        assert( f.GetLength() == (Int8)data_len );
     }}
 
     // Recreate file with RW permissions
@@ -1231,7 +1231,7 @@ static void s_TEST_FileIO(void)
         fio.Close();
         // Check if the file exists now
         assert( f.Exists() );
-        assert( f.GetLength() == data_len );
+        assert( f.GetLength() == (Int8)data_len );
     }}
 
     // Open test file and read from it
