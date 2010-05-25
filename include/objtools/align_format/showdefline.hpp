@@ -108,6 +108,17 @@ public:
         bool was_checked;              //was this sequence checked before?
     };
 
+    //Data representing templates for defline display 
+    struct SDeflineTemplates {
+        string defLineTmpl;           ///< whole defilne template
+        string subHeaderTmpl;         ///< subheader templates for Transcript/Genomic case
+        string subHeaderSort;         ///< subheader sort template for Transcript/Genomic case        
+        string scoreInfoTmpl;         ///< score info template
+        string seqInfoTmpl;           ///< sequence infor template
+        string psiFirstNewAnchorTmpl; ///< first new seq anchor template (psi blast)
+        string psiGoodGiHiddenTmpl;   ///< good gi hidden field tewmplate (psi blast)
+    };
+
     ///options per DisplayOption
     ///@param option: input option using bit numbers defined in DisplayOption
     ///
@@ -207,6 +218,13 @@ public:
 
     void SetCgiContext (CCgiContext& ctx) {
         m_Ctx = &ctx;
+    }
+
+    ///Set this if defline tempaltes are used 
+    ///Param deflineTemplates: struct containg defline templates info
+    ///
+    void SetDeflineTemplates (SDeflineTemplates *deflineTemplates) {
+        m_DeflineTemplates = deflineTemplates;
     }
 
     /// Creates a '|' delimited string, corresponding to a list of Seq-ids
@@ -363,6 +381,9 @@ protected:
 
     ///blast sub-sequnce query
     CRange<TSeqPos>* m_MasterRange;
+
+    ///blast defline templates
+    SDeflineTemplates *m_DeflineTemplates;
     
     CCgiContext* m_Ctx;
 
@@ -425,6 +446,7 @@ protected:
     ///Display defline table contents for table output
     ///
     void x_DisplayDeflineTableBody(CNcbiOstream & out);
+
     //For internal test
     friend struct ::CShowBlastDeflineTest;
 };
