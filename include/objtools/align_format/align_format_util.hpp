@@ -294,21 +294,22 @@ public:
     ///Structure that holds information needed for creation seqID URL in descriptions
     /// and alignments
     struct SSeqURLInfo { 
-        string blastType;    
-        bool isDbNa;
-        string database;    
-        string rid;    
-        int queryNumber;
-        int gi;        
-        int linkout;
-        int blast_rank;
-        bool new_win;
-        int taxid;    
+        string user_url;        ///< user url TOOL_URL from .ncbirc 
+        string blastType;       ///< blast type refer to blobj->adm->trace->created_by
+        bool isDbNa;            ///< bool indicating if the database is nucleotide or not
+        string database;        ///< name of the database
+        string rid;             ///< blast RID
+        int queryNumber;        ///< the query number
+        int gi;                 ///< gi to use
+        int linkout;            ///< linkout flag
+        int blast_rank;         ///< index of the current alignment
+        bool new_win;           ///< bool indicating if click of the url will open a new window
+        int taxid;              ///< taxid
         
         /// Constructor        
-        SSeqURLInfo(string bt, bool isnuc,string db, string rid,int qn, 
+        SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
                     int gi, int lnk, int blrk,bool nw, int txid = -1)            
-                    : blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
+                    : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi),linkout(lnk),blast_rank(blrk),
                     new_win(nw),taxid (txid){}
 
@@ -837,11 +838,29 @@ public:
     ///
     static void ReleaseURLRegistry(void);
 
+    ///Replace template tags by real data
+    ///@param inpString: string containing template data
+    ///@param tmplParamName:string with template tag name
+    ///@param templParamVal: int value that replaces template
+    ///@return:string containing template data replaced by real data
+    ///
+    ///<@tmplParamName@> is replaced by templParamVal
     static string MapTemplate(string inpString,string tmplParamName,int templParamVal);
 
-
+    ///Replace template tags by real data
+    ///@param inpString: string containing template data
+    ///@param tmplParamName:string with template tag name
+    ///@param templParamVal: string value that replaces template
+    ///@return:string containing template data replaced by real data
+    ///
+    ///<@tmplParamName@> is replaced by templParamVal
     static string MapTemplate(string inpString,string tmplParamName,string templParamVal);
     
+    ///Create URL for seqid
+    ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
+    ///@param id: seqid CSeq_id
+    ///@param scopeRef:scope to fetch sequence
+    ///@param useTemplates:bool indicating if templates are used
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
                            const objects::CSeq_id& id,
                            CRef<objects::CScope> &scopeRef,
