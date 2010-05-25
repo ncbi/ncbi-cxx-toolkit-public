@@ -2294,17 +2294,14 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
     return outString;
 }
 
+
 string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef<CScope> &scopeRef, bool useTemplates)
 {
     const CBioseq_Handle& handle = scopeRef->GetBioseqHandle(id);
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
-
-    auto_ptr<CNcbiIfstream>  configFile(new CNcbiIfstream(".ncbirc"));    
-    m_Reg = new CNcbiRegistry(*configFile);
-
-    string user_url = m_Reg ? m_Reg->Get(seqUrlInfo->blastType, "TOOL_URL") : kEmptyStr;    
-    seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
     
+    string user_url = seqUrlInfo->user_url; 
+    seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
     
     if(seqUrlInfo->taxid == -1) { //taxid is not set
         seqUrlInfo->taxid = 0;    
