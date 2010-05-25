@@ -97,14 +97,17 @@ typedef struct {
 
 static void x_DumpIndexCache(SGiDataIndex* data_index)
 {
+    int bytes_written = 0;
     if (data_index->m_GiIndexFile >= 0 && data_index->m_IndexCacheLen > 0) {
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         /* Write to the index file whatever is still left in cache. */
-        write(data_index->m_GiIndexFile, data_index->m_IndexCache,
-              data_index->m_IndexCacheLen*sizeof(Uint4));
+        bytes_written =
+            write(data_index->m_GiIndexFile, data_index->m_IndexCache,
+                  data_index->m_IndexCacheLen*sizeof(int));
+        assert(bytes_written == data_index->m_IndexCacheLen*sizeof(int));
         data_index->m_GiIndexLen += data_index->m_IndexCacheLen;
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
@@ -116,14 +119,17 @@ static void x_DumpIndexCache(SGiDataIndex* data_index)
 
 static void x_DumpDataCache(SGiDataIndex* data_index)
 {
+    int bytes_written = 0;
     if (data_index->m_DataFile >= 0 && data_index->m_DataCacheLen > 0) {
         assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
         assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_END));
         /* Write to the data file whatever is still left in cache. */
-        write(data_index->m_DataFile, data_index->m_DataCache,
-              data_index->m_DataCacheLen);
+        bytes_written = 
+            write(data_index->m_DataFile, data_index->m_DataCache,
+                  data_index->m_DataCacheLen);
+        assert(bytes_written == data_index->m_DataCacheLen);
         data_index->m_DataLen += data_index->m_DataCacheLen;
         assert(data_index->m_DataLen == 
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
@@ -212,12 +218,14 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
     if (data_index->m_GiIndexLen == 0 && !data_index->m_ReadOnlyMode &&
         data_index->m_GiIndexFile) {
         Uint4* b;
+        int bytes_written = 0;
         /* First page of the index is reserved for the pointers to other pages. */
         data_index->m_GiIndexLen = 1<<kPageSize;
         b = (Uint4*) calloc(data_index->m_GiIndexLen, sizeof(Uint4));
         assert(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
-        write(data_index->m_GiIndexFile, b,
-              data_index->m_GiIndexLen*sizeof(Uint4));
+        bytes_written = write(data_index->m_GiIndexFile, b,
+                              data_index->m_GiIndexLen*sizeof(Uint4));
+        assert(bytes_written == data_index->m_GiIndexLen*sizeof(Uint4));
         free(b);
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
                lseek(data_index->m_GiIndexFile, 0, SEEK_CUR));
@@ -255,9 +263,11 @@ static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
          * binary data, making sure that data is aligned.
          */
         int  b[2];
+        int bytes_written = 0;
         memset(b, 0, sizeof(b));
         assert(0 == lseek(data_index->m_DataFile, 0, SEEK_END));
-        write(data_index->m_DataFile, b, sizeof(b));
+        bytes_written = write(data_index->m_DataFile, b, sizeof(b));
+        assert(bytes_written == sizeof(b));
         data_index->m_DataLen = sizeof(b);
         assert(data_index->m_DataLen ==
                lseek(data_index->m_DataFile, 0, SEEK_CUR));
