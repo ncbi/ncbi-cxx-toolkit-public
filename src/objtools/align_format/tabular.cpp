@@ -934,26 +934,38 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 void CIgBlastTabularInfo::PrintHtmlSummary() const
 {
     x_PrintIgGenesHtml();
+
+    int length = 0;
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        if (m_IgDomains[i]->length > 0) {
+            length += m_IgDomains[i]->length;
+        }
+    }
+    if (!length) return;
+
+    m_Ostream << "<br><br>Alignment summary between query and top germline V gene hit:\n";
     m_Ostream << "<pre><table border=1>";
     m_Ostream << "<tr><td> </td><td> from </td><td> to </td><td> length </td>"
-              << "<td> matches </td><td> mismatches </td><td> gaps </td></tr>\n";
-    int length = 0;
+              << "<td> matches </td><td> mismatches </td><td> gaps </td>"
+              << "<td> identity(%) </td></tr>\n";
+
     int num_match = 0;
     int num_mismatch = 0;
     int num_gap = 0;
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
         x_PrintIgDomainHtml(*(m_IgDomains[i]));
         if (m_IgDomains[i]->length > 0) {
-            length += m_IgDomains[i]->length;
             num_match += m_IgDomains[i]->num_match;
             num_mismatch += m_IgDomains[i]->num_mismatch;
             num_gap += m_IgDomains[i]->num_gap;
         }
     }
-    m_Ostream << "<tr><td> Total </td><td> </td><td> </td><td> " << length << " </td>"
-              <<     "<td> " << num_match << " </td>"
-              <<     "<td> " << num_mismatch << " </td>"
-              <<     "<td> " << num_gap << " </td>\n";
+    m_Ostream << "<tr><td> Total </td><td> </td><td> </td><td>" << length 
+              << "</td><td>" << num_match 
+              << "</td><td>" << num_mismatch
+              << "</td><td>" << num_gap
+              << "</td><td>" << int(num_match*100/length)
+              << "</td></tr>";
     m_Ostream << "</table></pre>\n";
 };
 
@@ -971,10 +983,12 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_JGene.Reset();
 };
 
-void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end) const
+void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end, bool isHtml) const
 {
     if (start <0 || end <0 || start==end) {
-        m_Ostream << "N/A";
+        if (!isHtml) {
+            m_Ostream << "N/A";
+        }
         return;
     }
     bool isOverlap = (start > end);
@@ -1017,48 +1031,79 @@ void CIgBlastTabularInfo::x_PrintIgGenesHtml() const
 {
     if (m_VGene.start <0 || m_JGene.end <0) return;
 
-    m_Ostream << "<br><br>V(D)J rearrangement details for query sequence:\n";
-    m_Ostream << "<pre><table>";
-    m_Ostream << "<tr><td>bases at the end of V segment: </td><td>";
-    x_PrintPartialQuery(max(m_VGene.start, m_VGene.end - 5), m_VGene.end);
-    m_Ostream << "</td></tr>\n";
-
-    if (m_ChainType == "VH") {
-        if (m_VGene.end <= m_DGene.start) {
-            m_Ostream << "<tr><td>bases between V and D segment: </td><td>";
-            x_PrintPartialQuery(m_VGene.end, m_DGene.start);
-        } else {
-            m_Ostream << "<tr><td>overlapping bases between V and D segment: </td><td>";
-            x_PrintPartialQuery(m_DGene.start, m_VGene.end);
-        }
-        m_Ostream << "</td></tr>\n";
-
-        m_Ostream << "<tr><td>bases in D segment: </td><td>";
-        x_PrintPartialQuery(m_DGene.start, m_DGene.end);
-        m_Ostream << "</td></tr>\n";
-
-        if (m_DGene.end <= m_JGene.start) {
-            m_Ostream << "<tr><td>bases between D and J segment: </td><td>";
-            x_PrintPartialQuery(m_DGene.end, m_JGene.start);
-        } else {
-            m_Ostream << "<tr><td>overlapping bases between D and J segment: </td><td>";
-            x_PrintPartialQuery(m_JGene.start, m_DGene.end);
-        }
-        m_Ostream << "</td></tr>\n";
-    } else {
-        if (m_VGene.end <= m_JGene.start) {
-            m_Ostream << "<tr><td>bases between V and J segment: </td><td>";
-            x_PrintPartialQuery(m_VGene.end, m_JGene.start);
-        } else {
-            m_Ostream << "<tr><td>overlapping bases between V and J segment: </td><td>";
-            x_PrintPartialQuery(m_JGene.start, m_VGene.end);
-        }
-        m_Ostream << "</td></tr>\n";
+    m_Ostream << "<br><br>V(D)J rearrangement summary for query sequence:\n";
+    m_Ostream << "<pre><table border=1>\n";
+    m_Ostream << "<tr><td>Top V gene match</td>";
+    if (m_ChainType == "VH") {  
+        m_Ostream << "<td>Top D gene match</td>";
     }
+    m_Ostream << "<td>Top J gene match</td>"
+              << "<td>Chain type</td>"
+              << "<td>Rearrangement status</td>"
+              << "<td>Strand</td></tr>\n";
 
-    m_Ostream << "<tr><td>bases at the start of J segment: </td><td>";
-    x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
-    m_Ostream << "</td></tr></table></pre>\n";
+    m_Ostream << "<tr><td>"  << m_VGene.sid;
+    if (m_ChainType == "VH") { 
+        m_Ostream << "</td><td>" << m_DGene.sid;
+    }
+    m_Ostream << "</td><td>" << m_JGene.sid
+              << "</td><td>" << m_ChainType
+              << "</td><td>";
+    if (m_FrameInfo == "IF") {
+        m_Ostream << "In-frame";
+    } else if (m_FrameInfo == "OF") {
+        m_Ostream << "Out-of-frame";
+    } else if (m_FrameInfo == "IP") {
+        m_Ostream << "In-frame with stop codon";
+    } 
+    m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
+              << "</td></tr></table></pre>\n";
+
+    m_Ostream << "<br><br>Nucleotide details around V(D)J junctions:\n";
+    m_Ostream << "<pre><table border=1>\n";
+    m_Ostream << "<tr><td>V region end</td>";
+    if (m_ChainType == "VH") {
+        m_Ostream << "<td>V-D junction*</td>"
+                  << "<td>D region</td>"
+                  << "<td>D-J junction*</td>";
+    } else {
+        m_Ostream << "<td>V-J junction*</td>";
+    }
+    m_Ostream << "<td>J region start</td></tr>\n";
+
+    int adj_start, adj_end;
+    m_Ostream << "<tr><td>";
+    if (m_ChainType == "VH") {
+        adj_end   = min(m_VGene.end, m_DGene.start);
+        adj_start = max(m_VGene.end, m_DGene.start);
+        x_PrintPartialQuery(max(m_VGene.start, adj_end - 5), adj_end, true);
+        m_Ostream << "</td><td>";
+        x_PrintPartialQuery(m_VGene.end, m_DGene.start, true);
+        m_Ostream << "</td><td>";
+        adj_end   = min(m_DGene.end, m_JGene.start);
+        x_PrintPartialQuery(adj_start, adj_end, true);
+        adj_start = max(m_DGene.end, m_JGene.start);
+        m_Ostream << "</td><td>";
+        x_PrintPartialQuery(m_DGene.end, m_JGene.start, true);
+    } else {
+        adj_end   = min(m_VGene.end, m_JGene.start);
+        adj_start = max(m_VGene.end, m_JGene.start);
+        x_PrintPartialQuery(max(m_VGene.start, adj_end - 5), adj_end, true);
+        m_Ostream << "</td><td>";
+        x_PrintPartialQuery(m_VGene.end, m_JGene.start, true);
+    }
+    m_Ostream << "</td><td>";
+    x_PrintPartialQuery(adj_start, min(m_JGene.end, adj_start + 5), true);
+    m_Ostream << "</td></tr>\n"
+              << "</table></pre>\n";
+
+    m_Ostream << "*: Identical overlapping nucleotides may exist"
+              << " at some V-D or D-J junction (i.e, these nucleotides"
+              << " could be contributed by either joining segment, "
+              << "presumably due to homology-directed rearrangement). "
+              << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
+              << " and will not be included under V, D or J region itself.\n";
+
 };
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
@@ -1123,9 +1168,10 @@ void CIgBlastTabularInfo::x_PrintIgDomainHtml(const SIgDomain &domain) const
         m_Ostream  << "<td> " << domain.length << " </td>"
                    << "<td> " << domain.num_match << " </td>"
                    << "<td> " << domain.num_mismatch << " </td>"
-                   << "<td> " << domain.num_gap << " </td></tr>\n";
+                   << "<td> " << domain.num_gap << " </td>"
+                   << "<td> " << int(domain.num_match*100/domain.length) << " </td></tr>\n";
     } else {
-        m_Ostream  << "<td> </td><td> </td><td> </td></tr>\n";
+        m_Ostream  << "<td> </td><td> </td><td> </td><td> </td></tr>\n";
     }
 };
 

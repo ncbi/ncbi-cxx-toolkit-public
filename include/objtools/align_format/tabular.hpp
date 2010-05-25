@@ -415,14 +415,17 @@ public:
 
     /// struct containing annotated gene information
     struct SIgGene {
-        void Set(int s, int e) {
+        void Set(const string id, int s, int e) {
+            sid = id;
             start = s;
             end = e;
         }
         void Reset() {
+            sid = "";
             start = -1;
             end = -1;
         };
+        string sid;
         int start;
         int end;
     };
@@ -480,18 +483,18 @@ public:
     };
 
     /// Set gene info
-    void SetVGene(int s, int e) {
-        m_VGene.Set(s,e);
+    void SetVGene(const string &id, int s, int e) {
+        m_VGene.Set(id, s,e);
     }
 
     /// Set gene info
-    void SetDGene(int s, int e) {
-        m_DGene.Set(s,e);
+    void SetDGene(const string &id, int s, int e) {
+        m_DGene.Set(id, s,e);
     }
 
     /// Set gene info
-    void SetJGene(int s, int e) {
-        m_JGene.Set(s,e);
+    void SetJGene(const string &id, int s, int e) {
+        m_JGene.Set(id, s,e);
     }
 
 protected:
@@ -501,7 +504,7 @@ protected:
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
     void x_PrintIgDomainHtml(const SIgDomain &domain) const;
-    void x_PrintPartialQuery(int start, int end) const;
+    void x_PrintPartialQuery(int start, int end, bool isHtml=false) const;
 
 private:                                                                    
     string m_Query;
