@@ -15,7 +15,6 @@ cgi$
 cgi/impl$
 html$
 misc/grid_cgi$
-bdb$
 db/bdb$
 db/sqlite
 app/netschedule

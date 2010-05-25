@@ -1,7 +1,6 @@
 algo
 app/netcache
 build-system/project_tree_builder
-bdb
 cgi
 check
 connect
@@ -37,7 +36,6 @@ util
 -.*/omssa
 -.*xblobstorage
 -algo/blast/dbindex/makeindex
--bdb/.*
 -corelib/.*test_mt
 -dbapi/cache/admintool
 -dbapi/driver/ftds64/freetds/ctlib

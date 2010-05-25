@@ -6,7 +6,6 @@ html
 misc
 serial
 db
-bdb
 dbapi
 objects
 objmgr

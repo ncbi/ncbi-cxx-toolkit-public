@@ -2,7 +2,6 @@ corelib$
 util
 connect$
 connect/ext$
-bdb$
 db/bdb$
 dbapi
 serial$
