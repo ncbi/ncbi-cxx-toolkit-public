@@ -36,7 +36,7 @@ DEFDT_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool"
 
 for v in "$DATATOOL_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   if test "$v" = ""; then
-    echo ERROR: required environment variable is missing
+    echo error: required environment variable is missing
     echo DO NOT ATTEMPT to run this script manually
     exit 1
   fi
@@ -70,7 +70,7 @@ else
     if test -x "$PREBUILT_DATATOOL_EXE"; then
       DEF_DT="$PREBUILT_DATATOOL_EXE"
     else
-      echo ERROR: $PREBUILT_DATATOOL_EXE not found
+      echo error: $PREBUILT_DATATOOL_EXE not found
       exit 1
     fi
   else
@@ -101,12 +101,12 @@ else
 fi
 
 if test ! -x "$DATATOOL_EXE"; then
-  echo "ERROR: $DT not found at $DATATOOL_EXE"
+  echo "error: $DT not found at $DATATOOL_EXE"
   exit 1
 fi
 $DATATOOL_EXE -version
 if test $? -ne 0; then
-  echo "ERROR: cannot find working $DT"
+  echo "error: cannot find working $DT"
   exit 1
 fi
 
@@ -114,3 +114,53 @@ fi
 # Run DATATOOL_EXE
 
 $DATATOOL_EXE "$@"
+if test $? -ne 0; then
+  exit 1
+fi
+
+# -------------------------------------------------------------------------
+# Xcode does not realize some CPP files can be changed as the result of
+# this script; so we try to at least warn the user
+infile=0
+modified="no"
+while test $infile -lt $SCRIPT_INPUT_FILE_COUNT
+do
+  inname=`echo SCRIPT_INPUT_FILE_$infile`
+  inname=${!inname}  
+  outfile=0
+  while test $outfile -lt $SCRIPT_OUTPUT_FILE_COUNT
+  do
+    outname=`echo SCRIPT_OUTPUT_FILE_$outfile`
+    outname=${!outname}  
+    if test -e "$inname" -a -e "$outname"; then
+      test "$inname" -nt "$outname" && modified="yes"
+    fi
+    test "$modified" == "yes" && break;
+    outfile=`expr $outfile + 1`
+  done
+  test "$modified" == "yes" && break;
+  infile=`expr $infile + 1`
+done
+test "$TARGETNAME" == "_generate_all_objects" && modified="no"
+if test "$modified" == "yes"; then
+  echo error: $DT has modified sources of $TARGETNAME -  PLEASE BUILD IT AGAIN
+  outfile=0
+  while test $outfile -lt $SCRIPT_OUTPUT_FILE_COUNT
+  do
+    outname=`echo SCRIPT_OUTPUT_FILE_$outfile`
+    outname=${!outname}  
+    if test -e "$outname"; then
+      touch "$outname"
+      dirloc=`dirname $outname`
+      filename=`basename $outname`
+      file1=$dirloc/${filename%\.*}___.cpp
+      test -f "$file1" && touch $file1
+      file2=$dirloc/${filename%\.*}__.cpp
+      test -f "$file2" && touch $file2
+    fi
+    outfile=`expr $outfile + 1`
+  done
+  exit 1
+#  rm -rf $TARGET_TEMP_DIR
+fi
+exit 0
