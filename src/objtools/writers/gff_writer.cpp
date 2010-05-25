@@ -183,7 +183,7 @@ bool CGffWriter::x_AssignObject(
    CGff3RecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    CGff3Record* pRecord = new CGff3Record;
+    CGff3Record* pRecord = new CGff3Record( &m_FeatureCache );
     if ( ! pRecord->AssignFromAsn( annot, feat ) ) {
         return false;
     }

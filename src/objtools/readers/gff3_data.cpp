@@ -49,12 +49,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CGff3Record::CGff3Record():
+CGff3Record::CGff3Record(
+    TFeatureCache* pLastHits ):
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
     m_pdScore( 0 ),
     m_peStrand( 0 ),
-    m_pePhase( 0 )
+    m_pePhase( 0 ),
+    m_pLastHits( pLastHits )
 //  ----------------------------------------------------------------------------
 {};
 
@@ -580,36 +582,39 @@ CSeq_feat::TData::ESubtype CGff3Record::x_GetSubtypeOf(
     const CFeat_id& id )
 //  ----------------------------------------------------------------------------
 {
-    const size_t CASHSIZE = 5;
-    static list< CRef< CSeq_feat > > LastHits;
-
+    const size_t CASHSIZE = 7;
 //    size_t count = 0;
-    for ( list< CRef< CSeq_feat > >::reverse_iterator it=LastHits.rbegin(); 
-        it != LastHits.rend(); ++it )
-    {
-        if ( id.Equals( (*it)->GetId() ) ) {
-//            cerr << "+ *" << count << "*" << endl;
-            return (*it)->GetData().GetSubtype();
+    if ( m_pLastHits ) {
+        for ( list< CRef< CSeq_feat > >::reverse_iterator it=m_pLastHits->rbegin(); 
+            it != m_pLastHits->rend(); 
+            ++it )
+        {
+            if ( id.Equals( (*it)->GetId() ) ) {
+//                cerr << "+ *" << count << "*" << endl;
+                return (*it)->GetData().GetSubtype();
+            }
+//            count++;
         }
-//        count++;
     }
 
     const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
     list< CRef< CSeq_feat > >::const_reverse_iterator it = table.rbegin();
-    unsigned int count2 = 1;
+//    unsigned int count2 = 1;
     while ( it != table.rend() ) {
         if ( (*it)->CanGetId() && (*it)->CanGetData() ) {
             if ( id.Equals( (*it)->GetId() ) ) {
 //                cerr << "+ [" << count2 << "]" << endl;
-                LastHits.push_back( *it );
-                if ( LastHits.size() > CASHSIZE ) {
-                    LastHits.erase( LastHits.begin() );
+                if ( m_pLastHits ) {
+                    m_pLastHits->push_back( *it );
+                    if ( m_pLastHits->size() > CASHSIZE ) {
+                        m_pLastHits->erase( m_pLastHits->begin() );
+                    }
                 }
                 return (*it)->GetData().GetSubtype();
             }
         }
         ++it;
-        count2++;
+//        count2++;
     }
     return CSeq_feat::TData::eSubtype_bad;
 }

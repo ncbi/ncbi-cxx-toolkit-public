@@ -45,9 +45,11 @@ public:
     typedef map<string, string> TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
-
+    typedef list< CRef< CSeq_feat > > TFeatureCache;
 public:
-    CGff3Record();
+    CGff3Record(
+        TFeatureCache* =0
+    );
     ~CGff3Record();
 
     //
@@ -145,7 +147,7 @@ protected:
     bool x_AssignAttributesFromGff(
         const string& );
 
-    static CSeq_feat::TData::ESubtype x_GetSubtypeOf(
+    CSeq_feat::TData::ESubtype x_GetSubtypeOf(
         const CSeq_annot&,
         const CFeat_id& );
         
@@ -166,6 +168,8 @@ protected:
     TFrame* m_pePhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
+
+    TFeatureCache* m_pLastHits;
 };
 
 END_objects_SCOPE

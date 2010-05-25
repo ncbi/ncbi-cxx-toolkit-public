@@ -83,6 +83,8 @@ public:
         fSoQuirks =     1<<15,
     } TFlags;
     
+    typedef list< CRef< CSeq_feat > > TFeatureCache;
+
 public:
     CGffWriter(
         CNcbiOstream&,
@@ -144,7 +146,7 @@ protected:
 
     CNcbiOstream& m_Os;
     TFlags m_uFlags;
-
+    TFeatureCache m_FeatureCache;
 };
 
 END_objects_SCOPE
