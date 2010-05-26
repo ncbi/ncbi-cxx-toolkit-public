@@ -448,36 +448,57 @@ void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
 
 
 bool BadSeqLocSortOrder
-(const CBioseq&, //  seq,
+(const CBioseq_Handle bsh,
+ const CSeq_loc& loc)
+{
+    try {
+        CSeq_loc_Mapper mapper (bsh, CSeq_loc_Mapper::eSeqMap_Up);
+        CConstRef<CSeq_loc> mapped_loc = mapper.Map(loc);
+        if (!mapped_loc) {
+            return false;
+        }
+        
+        // Check that loc segments are in order
+        CSeq_loc::TRange last_range;
+        bool first = true;
+        for (CSeq_loc_CI lit(*mapped_loc); lit; ++lit) {
+            if (first) {
+                last_range = lit.GetRange();
+                first = false;
+                continue;
+            }
+            TSeqPos a = lit.GetRange().GetFrom();
+            TSeqPos b = lit.GetRange().GetTo();
+            TSeqPos c = last_range.GetTo();
+            TSeqPos d = last_range.GetFrom();
+            if (lit.GetStrand() == eNa_strand_minus) {
+                if (last_range.GetTo() < lit.GetRange().GetTo()) {
+                    return true;
+                }
+            } else {
+                if (last_range.GetFrom() > lit.GetRange().GetFrom()) {
+                    return true;
+                }
+            }
+            last_range = lit.GetRange();
+        }
+    } catch (CException& e) {
+        // exception will be thrown if references far sequence and not remote fetching
+    }
+    return false;
+}
+
+
+bool BadSeqLocSortOrder
+(const CBioseq&  seq,
  const CSeq_loc& loc,
  CScope*         scope)
 {
-    ENa_strand strand = GetStrand(loc, scope);
-    if (strand == eNa_strand_unknown  ||  strand == eNa_strand_other) {
+    if (scope) {
+        return BadSeqLocSortOrder (scope->GetBioseqHandle(seq), loc);
+    } else {
         return false;
     }
-    
-    // Check that loc segments are in order
-    CSeq_loc::TRange last_range;
-    bool first = true;
-    for (CSeq_loc_CI lit(loc); lit; ++lit) {
-        if (first) {
-            last_range = lit.GetRange();
-            first = false;
-            continue;
-        }
-        if (strand == eNa_strand_minus) {
-            if (last_range.GetTo() < lit.GetRange().GetTo()) {
-                return true;
-            }
-        } else {
-            if (last_range.GetFrom() > lit.GetRange().GetFrom()) {
-                return true;
-            }
-        }
-        last_range = lit.GetRange();
-    }
-    return false;
 }
 
 

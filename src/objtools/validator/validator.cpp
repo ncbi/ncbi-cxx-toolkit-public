@@ -83,6 +83,14 @@ CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry_Handle& seh,
  Uint4 options)
 {
+    static unsigned int num_e = 0, mult = 0;
+
+    num_e++;
+    if (num_e % 200 == 0) {
+        num_e = 0;
+        mult++;
+    }
+
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);

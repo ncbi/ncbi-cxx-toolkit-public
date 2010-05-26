@@ -79,6 +79,10 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
                                   "Feature key " + feat + " is no longer legal"));
     }
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat", msg));
+    if (NStr::Equal(qual, "rpt_unit_range") && NStr::Equal(feat, "polyA_site")) {
+        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InvalidQualifierValue", 
+                                  "/rpt_unit_range is not within sequence length"));
+    }
     CConstRef<CValidError> eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     misc_feat->SetQual().pop_back();

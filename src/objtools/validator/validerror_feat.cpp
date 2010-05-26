@@ -1737,6 +1737,26 @@ void CValidError_feat::ValidateCdregion (
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
                  "Introns should be at least 10 nt long", feat);
     }
+
+    // look for EC number in comment
+    if (feat.IsSetComment() && HasECnumberPattern(feat.GetComment())) {
+        // suppress if protein has EC numbers
+        bool suppress = false;
+        if (feat.IsSetProduct()) {
+            CBioseq_Handle pbsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+            if (pbsh) {
+                CFeat_CI prot_feat(pbsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+                if (prot_feat && prot_feat->GetData().GetProt().IsSetEc()) {
+                    suppress = true;
+                }
+            }
+        }
+        if (!suppress) {
+            PostErr (eDiag_Info, eErr_SEQ_FEAT_EcNumberProblem,
+                     "Apparent EC number in CDS comment", feat);
+        }
+    }
+
 }
 
 
@@ -2269,7 +2289,12 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
+#if 1
                     string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
+#else
+                    string label;
+                    bsh.GetCompleteBioseq()->GetLabel(&label, CBioseq::eContent, true);
+#endif
                     TSeqPos start = part.GetStart(eExtreme_Biological);
                     TSeqPos stop = part.GetStop(eExtreme_Biological);
                     if (si.GetStrand() == eNa_strand_minus) {
@@ -2572,6 +2597,11 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadProteinName, 
                      "Unknown or hypothetical protein should not have EC number",
                      feat);
+        }
+
+        if (HasECnumberPattern(*it)) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
+                     "Apparent EC number in protein title", feat);
         }
 
         if (m_Imp.DoRubiscoTest()) {
@@ -3832,7 +3862,7 @@ void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_fe
                  "/rpt_unit_range is not a base range", feat);
     } else {
         CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
-        if (from < range.GetFrom() || from > range.GetTo() || to < range.GetFrom() || to > range.GetTo()) {
+        if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                      "/rpt_unit_range is not within sequence length", feat);   
         }
@@ -4454,14 +4484,14 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
 
     if (pos1 < frame && pos2 <= frame && NStr::Equal(key, "sig_peptide")) {
         // ignore sig_peptide that is completely before coding region
-    } else if ( (mod1 != 0)  &&  (mod2 != 0) ) {
+    } else if ( (mod1 != 0)  &&  (mod2 != 2) ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Start and stop of " + key + " are out of frame with CDS codons",
             feat);
     } else if (mod1 != 0) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
             "Start of " + key + " is out of frame with CDS codons", feat);
-    } else if (mod2 != 0) {
+    } else if (mod2 != 2) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Stop of " + key + " is out of frame with CDS codons", feat);
     }
@@ -6503,7 +6533,22 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             }
         }
         if (redundant_xref && overlapping_genes.size() > 1) {
-            redundant_xref = false;
+            size_t num_at_min_length = 0;
+            size_t min_length = 0;
+            TFeatScores::iterator f1 = overlapping_genes.begin();
+            while (f1 != overlapping_genes.end()) {
+                size_t len = GetLength (f1->second->GetLocation(), m_Scope);
+                if (num_at_min_length == 0 || len < min_length) {
+                    num_at_min_length = 1;
+                    min_length = len;
+                } else if (len == min_length) {
+                    num_at_min_length++;
+                }
+                ++f1;
+            }
+            if (num_at_min_length > 1) {
+                redundant_xref = false;
+            }
         }
         if (redundant_xref) {
             if (NStr::IsBlank(label)) {

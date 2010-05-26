@@ -3171,14 +3171,28 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 static bool s_LocIntervalsSpanOrigin (const CSeq_loc& loc, CBioseq_Handle bsh)
 {
     CSeq_loc_CI si(loc);
-    if (si.GetRange().GetTo() < bsh.GetBioseqLength() - 1) {
+    if (!si) {
         return false;
     }
-    ++si;
-    if (!si || si.GetRange().GetFrom() != 0) {
-        return false;
-    }        
-    ++si;
+    if(loc.GetStrand() == eNa_strand_minus) {
+        if (si.GetRange().GetFrom() != 0) {
+            return false;
+        }
+        ++si;
+        if (!si || si.GetRange().GetTo() != bsh.GetBioseqLength() - 1) {
+            return false;
+        }
+        ++si;
+    } else {
+        if (si.GetRange().GetTo() != bsh.GetBioseqLength() - 1) {
+            return false;
+        }
+        ++si;
+        if (!si || si.GetRange().GetFrom() != 0) {
+            return false;
+        }        
+        ++si;
+    }
     if (si) {
         return false;
     } else {
@@ -3985,14 +3999,16 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             }
         }
 
-        ITERATE (TFeatCount, it, cds_count) {
-            SIZE_TYPE cds_num = it->second,
-                      mrna_num = mrna_count[it->first];
-            if (cds_num > 0 && mrna_num > 1 && cds_num != mrna_num) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
-                    "mRNA count (" + NStr::IntToString(mrna_num) + 
-                    ") does not match CDS (" + NStr::IntToString(cds_num) +
-                    ") count for gene", *it->first);
+        if (!is_genbank) {
+            ITERATE (TFeatCount, it, cds_count) {
+                SIZE_TYPE cds_num = it->second,
+                          mrna_num = mrna_count[it->first];
+                if (cds_num > 0 && mrna_num > 1 && cds_num != mrna_num) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                        "mRNA count (" + NStr::IntToString(mrna_num) + 
+                        ") does not match CDS (" + NStr::IntToString(cds_num) +
+                        ") count for gene", *it->first);
+                }
             }
         }
     }
@@ -4295,10 +4311,12 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                     }
                     utr5_right = this_right;
                 } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                    if (utr5_right > 0 && utr5_right + 1 != this_left) {
+                    if (utr5_right > 0 && utr5_right + 1 != this_left && first_cds ) {
+
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS, 
                                  "5'UTR does not abut CDS", it->GetOriginalFeature());
                     }
+                    first_cds = false;
                     cds_right = this_right;
                 } else if (subtype == CSeqFeatData::eSubtype_3UTR) {
                     if (it->GetLocation().GetStrand() == eNa_strand_minus) {
@@ -4308,7 +4326,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS, 
                                  "CDS does not abut 3'UTR", it->GetOriginalFeature());
                     }
-                    if (is_mrna && num_3utr == 1 && this_right != seq.GetBioseqLength() - 1) {
+                    if (is_mrna && num_cds == 1 && num_3utr == 1 && this_right != seq.GetBioseqLength() - 1) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotExtendToEnd, 
                                  "3'UTR does not extend to end of mRNA", it->GetOriginalFeature());
                     }

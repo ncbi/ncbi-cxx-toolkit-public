@@ -173,9 +173,7 @@ CSeqVector GetSequenceFromLoc
 {
     CConstRef<CSeqMap> map = 
         CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
-    ENa_strand strand = sequence::GetStrand(loc, &scope);
-
-    return CSeqVector(*map, scope, coding, strand);
+    return CSeqVector(*map, scope, coding, eNa_strand_plus);
 }
 
 
@@ -1056,6 +1054,82 @@ void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context)
     }
     str += content;
 }
+
+bool HasECnumberPattern (const string& str)
+{
+    bool rval = false;
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+
+    bool is_ambig = false;
+    int  numdashes = 0;
+    int  numdigits = 0;
+    int  numperiods = 0;
+
+    string::const_iterator sit = str.begin();
+    while (sit != str.end() && !rval) {
+        if (isdigit (*sit)) {
+            numdigits++;
+            if (is_ambig) {
+                is_ambig = false;
+                numperiods = 0;
+                numdashes = 0;
+            }
+        } else if (*sit == '-') {
+            numdashes++;
+            is_ambig = true;
+        } else if (*sit == 'n') {
+            numdashes++;
+            is_ambig = true;
+        } else if (*sit == '.') {
+            numperiods++;
+            if (numdigits > 0 && numdashes > 0) {
+                is_ambig = false;
+                numperiods = 0;
+                numdigits = 0;
+                numdashes = 0;
+            } else if (numdigits == 0 && numdashes == 0) {
+                is_ambig = false;
+                numperiods = 0;
+                numdigits = 0;
+                numdashes = 0;
+            } else if (numdashes > 1) {
+                is_ambig = false;
+                numperiods = 0;
+                numdigits = 0;
+                numdashes = 0;
+            }
+            numdigits = 0;
+            numdashes = 0;
+        } else {
+            if (numperiods == 3) {
+                if (numdigits > 0 && numdashes > 0) {
+                    is_ambig = false;
+                    numperiods = 0;
+                    numdigits = 0;
+                    numdashes = 0;
+                } else if (numdigits > 0 || numdashes == 1) {
+                    rval = true;
+                }
+            }
+            is_ambig = false;
+            numperiods = 0;
+            numdigits = 0;
+            numdashes = 0;
+        }
+        ++sit;
+    }
+    if (numperiods == 3) {
+        if (numdigits > 0 && numdashes > 0) {
+            rval = false;
+        } else if (numdigits > 0 || numdashes == 1) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
 
 
 END_SCOPE(validator)

@@ -1837,7 +1837,7 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     // Check for intervals out of order on segmented Bioseq
-    if ( seq  &&  BadSeqLocSortOrder(*seq.GetCompleteBioseq(), loc, m_Scope) ) {
+    if ( seq  &&  BadSeqLocSortOrder(seq, loc) ) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }

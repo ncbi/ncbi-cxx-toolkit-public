@@ -142,10 +142,23 @@ void CExpectedError::Test(const CValidErrItem& err_item)
 }
 
 
+void WriteErrors(const CValidError& eval)
+{
+    for ( CValidError_CI vit(eval); vit; ++vit) {
+        string description =  vit->GetAccession() + ":"
+                + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
+                + vit->GetErrCode() + ":"
+                + vit->GetMsg();
+        printf ("%s\n", description.c_str());
+    }
+}
+
+
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors)
 {
     size_t err_pos = 0;
+    bool   problem_found = false;
 
     for ( CValidError_CI vit(eval); vit; ++vit) {
         while (err_pos < expected_errors.size() && !expected_errors[err_pos]) {
@@ -160,25 +173,18 @@ void CheckErrors(const CValidError& eval,
                 + vit->GetErrCode() + ":"
                 + vit->GetMsg();
             BOOST_CHECK_EQUAL(description, "Unexpected error");
+            problem_found = true;
         }
     }
     while (err_pos < expected_errors.size()) {
         if (expected_errors[err_pos]) {
             BOOST_CHECK_EQUAL(expected_errors[err_pos]->GetErrMsg(), "Expected error not found");
+            problem_found = true;
         }
         ++err_pos;
     }
-}
-
-
-void WriteErrors(const CValidError& eval)
-{
-    for ( CValidError_CI vit(eval); vit; ++vit) {
-        string description =  vit->GetAccession() + ":"
-                + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
-                + vit->GetErrCode() + ":"
-                + vit->GetMsg();
-        printf ("%s\n", description.c_str());
+    if (problem_found) {
+        WriteErrors (eval);
     }
 }
 
@@ -2443,9 +2449,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept(true);
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->SetExcept_text("unclassified translation discrepancy");
 
-    // write out seq-entry
-    WriteOutTemp(entry);
-
     // list of expected errors
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
@@ -2457,9 +2460,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     CLEAR_ERRORS
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept();
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().front()->ResetExcept_text();
-
-    // write out seq-entry
-    WriteOutTemp(entry);
 
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
@@ -3247,6 +3247,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
 
     // list of expected errors
     vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[gb|AY123456|, gb|AY123456|]]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DuplicateSegmentReferences", "Segmented sequence has multiple references to gb|AY123456"));
     CConstRef<CValidError> eval;
 
@@ -3256,8 +3257,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
     seg2->SetInt().SetId().SetGenbank().SetAccession("AY123456");
     seg2->SetInt().SetFrom(0);
     seg2->SetInt().SetTo(484);
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[0]->SetErrMsg("Segmented sequence has multiple references to gb|AY123456 that are not SEQLOC_WHOLE");
+    expected_errors[0]->SetErrMsg("Segmented BioseqIntervals out of order in SeqLoc [[gb|AY123456|, 1-485]]");
+    expected_errors[1]->SetSeverity(eDiag_Warning);
+    expected_errors[1]->SetErrMsg("Segmented sequence has multiple references to gb|AY123456 that are not SEQLOC_WHOLE");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3564,6 +3566,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     loc4->SetWhole().SetLocal().SetStr("part1");
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc4);
     master_seg->SetSeq().SetInst().SetLength(240);
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2, lcl|part3, lcl|part1]]"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "DuplicateSegmentReferences", "Segmented sequence has multiple references to lcl|part1"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set does not contain enough Bioseqs"));
 
@@ -3575,10 +3578,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetLength(120);
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2]]"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set contains too many Bioseqs"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     master_seg->SetSeq().SetInst().ResetExt();
@@ -3594,7 +3600,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     master_seg->SetSeq().SetInst().SetLength(180);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors[0]->SetErrMsg("Segmented bioseq seq_ext does not correspond to parts packaging order");
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Segmented bioseq seq_ext does not correspond to parts packaging order"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -10415,7 +10421,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_RefSeqPopSet)
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    WriteErrors (*eval);
 
     CLEAR_ERRORS
 }
@@ -12384,8 +12389,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS
-
     // now gene xref is redundant
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_feat> gene2 = AddMiscFeature (entry);
@@ -12715,6 +12718,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InvalidForType", 
                       "Peptide processing feature should be converted to the appropriate protein feature subtype"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PeptideFeatOutOfFrame", 
+                      "Stop of sig_peptide is out of frame with CDS codons"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -12725,8 +12730,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
     peptide->SetLocation().SetInt().SetFrom(1);
     peptide->SetData().SetImp().SetKey("sig_peptide");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PeptideFeatOutOfFrame", 
-                      "Start and stop of sig_peptide are out of frame with CDS codons"));
+    expected_errors[1]->SetErrMsg("Start of sig_peptide is out of frame with CDS codons");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -12737,7 +12741,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
     peptide->SetLocation().SetInt().SetFrom(1);
     peptide->SetData().SetImp().SetKey("sig_peptide");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[1]->SetErrMsg("Start of sig_peptide is out of frame with CDS codons");
+    expected_errors[1]->SetErrMsg("Start and stop of sig_peptide are out of frame with CDS codons");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

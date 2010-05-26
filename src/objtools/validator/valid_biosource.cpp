@@ -2060,8 +2060,9 @@ void CValidError_imp::ValidateSourceQualTags
             bool okay = true;
             if ( (int)(i - match_len) >= 0 ) {
                 char ch = str[i - match_len];
-                if ( !isspace((unsigned char) ch) || ch != ';' ) {
+                if ( !isspace((unsigned char) ch) && ch != ';' ) {
                     okay = false;
+#if 0
                     // look to see if there's a longer match in the list
                     for (size_t k = 0; 
                          k < sizeof (CValidError_imp::sm_SourceQualPrefixes) / sizeof (string); 
@@ -2075,6 +2076,7 @@ void CValidError_imp::ValidateSourceQualTags
                              }
                          }
                     }
+#endif
                 }
             }
             if ( okay ) {

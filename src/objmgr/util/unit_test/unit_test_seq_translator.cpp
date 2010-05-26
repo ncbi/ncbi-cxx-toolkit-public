@@ -88,6 +88,7 @@ extern const char* sc_TestEntry_GapInSeq1;
 extern const char* sc_TestEntry_GapInSeq2;
 extern const char* sc_TestEntry_GapInSeq3;
 extern const char* sc_TestEntry_GapInSeq4;
+extern const char* sc_TestEntry_GapInSeq5;
 extern const char* sc_TestEntry_CodeBreakForStopCodon;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
@@ -1103,6 +1104,10 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_GapInSeq)
     // try with 2 leftover nt, no stop codon
     TestOneGapSeq (sc_TestEntry_GapInSeq3, "MPK", "PKI");
 
+    // try with gap of zero legnth
+    TestOneGapSeq (sc_TestEntry_GapInSeq5, 
+                   "MAKSTNHTTHNQSXKWHR", 
+                   "LRNMHFAKKHKKGLKKMQANNAKAMSALAEASRALVKPKEVKPKIPKGVSCELDXLAYIVHPKLGKCACVRIAKGLRLCGPKAKXSTKAQAAAPASVPAQAPPKGSQAPTKASE");
     // try with coding region that has gap in intron
     CSeq_entry entry;
     {{
@@ -2308,6 +2313,44 @@ Seq-entry ::= seq {\
               length 9 , \
               seq-data \
                 iupacna \"CCCAAATAA\" } } } } \
+";
+
+
+const char *sc_TestEntry_GapInSeq5 = "\
+Seq-entry ::= seq { \
+          id { \
+            local \
+              str \"GNOMON\" }, \
+          descr { \
+            molinfo { \
+              biomol mRNA, \
+              completeness partial \
+            } \
+          }, \
+          inst { \
+            repr delta, \
+            mol rna, \
+            length 399, \
+            ext delta { \
+              literal { \
+                length 54, \
+                seq-data iupacna \"ATGGCCAAGTCCACGAACCACACCACACACAACCAGTCCTGAAAATGGCACAGA\" \
+              }, \
+              literal { \
+              length 0, \
+                fuzz lim unk \
+              }, \
+              literal { \
+                length 345, \
+                seq-data iupacna \"CTGAGGAACATGCACTTTGCCAAGAAGCACAAGAAGGGCCTAAAGAAGATGCAGGCCA \
+ACAATGCCAAGGCAATGAGTGCACTTGCTGAGGCTAGCAGGGCCCTCGTAAAGCCCAAGGAGGTTAAGCCCAAGATCCCAAAGGGTGTCAGCT \
+GCGAACTCGATTGACTTGCCTACATTGTCCACCCCAAGCTTGGGAAGTGTGCTTGTGTCCGCATTGCCAAGGGGCTCAGACTGTGTGGGCCAA \
+AGGCCAAGNGATCAACCAAGGCCCAGGCTGCAGCTCCAGCTTCAGTTCCAGCTCAGGCTCCTCCCAAAGGCTCTCAGGCCCCTACAAAGGCTT \
+CGGAGTAG\" \
+              } \
+            } \
+          } \
+} \
 ";
 
 
