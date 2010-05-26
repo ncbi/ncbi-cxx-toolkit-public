@@ -47,10 +47,44 @@ USING_NCBI_SCOPE;
 ///
 class CNetCacheBlobFetchApp : public CCgiApplication
 {
-public:
-    CNetCacheBlobFetchApp() {}
-    virtual int  ProcessRequest(CCgiContext& ctx);
+protected:
+    virtual void Init();
+    virtual int ProcessRequest(CCgiContext& ctx);
+
+private:
+    enum {
+        eNoPassword,
+        ePasswordFromParam,
+        ePasswordFromCookie
+    } m_PasswordSource;
+
+    string m_PasswordSourceName;
 };
+
+void CNetCacheBlobFetchApp::Init()
+{
+    // Standard CGI framework initialization
+    CCgiApplication::Init();
+
+    string password_source = GetConfig().GetString("ncfetch",
+        "password_source", kEmptyStr);
+    if (password_source.empty())
+        m_PasswordSource = eNoPassword;
+    else {
+        string source_type;
+        if (NStr::SplitInTwo(password_source, ":",
+                source_type, m_PasswordSourceName))
+            m_PasswordSource = m_PasswordSourceName.empty() ?
+                eNoPassword : source_type == "cookie" ?
+                    ePasswordFromCookie : ePasswordFromParam;
+        else if (source_type.empty())
+            m_PasswordSource = eNoPassword;
+        else {
+            m_PasswordSource = ePasswordFromParam;
+            m_PasswordSourceName = source_type;
+        }
+    }
+}
 
 int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 {
@@ -58,29 +92,54 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     CCgiResponse&      reply   = ctx.GetResponse();
 
     bool is_found;
+
     string key = request.GetEntry("key", &is_found);
     if (key.empty() || !is_found) {
-        return 0;
+        ERR_POST("CGI entry 'key' is missing");
+        return 1;
     }
+
     string fmt = request.GetEntry("fmt", &is_found);
-    if (fmt.empty() || !is_found) {
+    if (fmt.empty() || !is_found)
         fmt = "image/png";
-    }
 
     reply.SetContentType(fmt);
     reply.WriteHeader();
 
     CNetCacheAPI cli("ncfetch");
     size_t blob_size = 0;
-    auto_ptr<IReader> reader(cli.GetData(key, &blob_size));
-    if (!reader.get()) {
-        return 0;
+    auto_ptr<IReader> reader;
+    if (m_PasswordSource == eNoPassword)
+        reader.reset(cli.GetData(key, &blob_size));
+    else {
+        string password;
+        if (m_PasswordSource == ePasswordFromCookie) {
+            const CCgiCookie* cookie =
+                request.GetCookies().Find(m_PasswordSourceName, "", "");
+            if (!cookie) {
+                ERR_POST("Cookie '" << m_PasswordSourceName << "' not found");
+                return 2;
+            }
+            password = cookie->GetValue();
+        } else {
+            bool password_found = false;
+            password = request.GetEntry(m_PasswordSourceName, &password_found);
+            if (!password_found) {
+                ERR_POST("CGI entry '" << m_PasswordSourceName << "' not found");
+                return 2;
+            }
+        }
+        reader.reset(CNetCachePasswordGuard(cli, password)->GetData(key, &blob_size));
     }
+    if (!reader.get()) {
+        ERR_POST("Could not retrieve blob " << key);
+        return 3;
+    }
+
     LOG_POST(Info << "retrieved data: " << blob_size << " bytes");
-    
-    CRStream strm(reader.get());
-    reply.out() << strm.rdbuf();
-    
+
+    CRStream in_stream(reader.get());
+    NcbiStreamCopy(reply.out(), in_stream);
 
     return 0;
 }
@@ -90,7 +149,5 @@ int main(int argc, const char* argv[])
     SetSplitLogFile(true);
     GetDiagContext().SetOldPostFormat(false);
 
-    return CNetCacheBlobFetchApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CNetCacheBlobFetchApp().AppMain(argc, argv, 0, eDS_Default);
 }
-
-
