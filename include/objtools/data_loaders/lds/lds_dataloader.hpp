@@ -113,6 +113,11 @@ public:
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& id,
                                       const TTSE_LockSet& tse_set);
 
+    virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
+                                               const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel);
+
     void SetDatabase(CLDS_Database& lds_db, EOwnership owner,
                      const string&  dl_name);
     

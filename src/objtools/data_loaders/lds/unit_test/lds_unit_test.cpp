@@ -212,16 +212,16 @@ BOOST_AUTO_TEST_CASE(LDS_Test_conflict)
     s_MakeLDS();
     s_CopyFile("lds_conflict2.asn");
     s_MakeLDS();
-    //BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
-    //BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
     s_RemoveFile("lds_conflict1.asn");
     s_MakeLDS();
-    //BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
-    //BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
     s_CopyFile("lds_conflict1.asn");
     s_MakeLDS();
-    //BOOST_REQUIRE(s_RetrieveFeat(5) == 4);
-    //BOOST_REQUIRE(s_RetrieveFeat(6) == 2);
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 4);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 2);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -730,6 +730,36 @@ CLDS_DataLoader::ResolveConflict(const CSeq_id_Handle& /*id*/,
 }
 
 
+CDataLoader::TTSE_LockSet
+CLDS_DataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
+                                       const SAnnotSelector* /*sel*/)
+{
+    TTSE_LockSet locks = GetRecords(idh, eOrphanAnnot);
+    TTSE_LockSet orphans;
+    ITERATE(TTSE_LockSet, it, locks) {
+        if ( !(*it)->ContainsMatchingBioseq(idh) ) {
+            orphans.insert(*it);
+        }
+    }
+    return orphans;
+}
+
+
+CDataLoader::TTSE_LockSet
+CLDS_DataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                         const SAnnotSelector* /*sel*/)
+{
+    TTSE_LockSet locks = GetRecords(idh, eOrphanAnnot);
+    TTSE_LockSet externals;
+    ITERATE(TTSE_LockSet, it, locks) {
+        if ( !(*it)->ContainsMatchingBioseq(idh) ) {
+            externals.insert(*it);
+        }
+    }
+    return externals;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================
