@@ -195,6 +195,10 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
         string      line;
         CT_INT_TYPE next = (x_DelimitedRead(line) == eRT_EOF ? CT_EOF
                             : m_In.peek());
+        // work around a bug in IE 8 null submission handling
+        if ( line.empty()  &&  !CT_EQ_INT_TYPE(next, CT_EOF) ) {
+            next = (x_DelimitedRead(line) == eRT_EOF ? CT_EOF : m_In.peek());
+        }
         if ( !s_MatchesBoundary(line, m_Boundary)
             ||  (line == m_Boundary  &&  CT_EQ_INT_TYPE(next, CT_EOF))) {
             NCBI_THROW(CCgiRequestException, eFormat,
