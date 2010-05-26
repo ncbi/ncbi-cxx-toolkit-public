@@ -933,7 +933,36 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 
 void CIgBlastTabularInfo::PrintHtmlSummary() const
 {
-    x_PrintIgGenesHtml();
+    if (m_IsNucl) {
+        m_Ostream << "<br><br>V(D)J rearrangement summary for query sequence:\n";
+        m_Ostream << "<pre><table border=1>\n";
+        m_Ostream << "<tr><td>Top V gene match</td>";
+        if (m_ChainType == "VH") {  
+            m_Ostream << "<td>Top D gene match</td>";
+        }
+        m_Ostream << "<td>Top J gene match</td>"
+                  << "<td>Chain type</td>"
+                  << "<td>Rearrangement status</td>"
+                  << "<td>Strand</td></tr>\n";
+
+        m_Ostream << "<tr><td>"  << m_VGene.sid;
+        if (m_ChainType == "VH") { 
+            m_Ostream << "</td><td>" << m_DGene.sid;
+        }
+        m_Ostream << "</td><td>" << m_JGene.sid
+                  << "</td><td>" << m_ChainType
+                  << "</td><td>";
+        if (m_FrameInfo == "IF") {
+            m_Ostream << "In-frame";
+        } else if (m_FrameInfo == "OF") {
+            m_Ostream << "Out-of-frame";
+        } else if (m_FrameInfo == "IP") {
+            m_Ostream << "In-frame with stop codon";
+        } 
+        m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
+                  << "</td></tr></table></pre>\n";
+        x_PrintIgGenes(true);
+    }
 
     int length = 0;
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
@@ -964,7 +993,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
               << "</td><td>" << num_match 
               << "</td><td>" << num_mismatch
               << "</td><td>" << num_gap
-              << "</td><td>" << int(num_match*100/length)
+              << "</td><td>" << std::setprecision(3) << num_match*100.0/length
               << "</td></tr>";
     m_Ostream << "</table></pre>\n";
 };
@@ -985,13 +1014,18 @@ void CIgBlastTabularInfo::x_ResetIgFields()
 
 void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end, bool isHtml) const
 {
+    const bool isOverlap = (start > end);
+
     if (start <0 || end <0 || start==end) {
-        if (!isHtml) {
+        if (isHtml) {
+            m_Ostream << "<td></td>";
+        } else {
             m_Ostream << "N/A";
         }
         return;
     }
-    bool isOverlap = (start > end);
+
+    if (isHtml) m_Ostream << "<td>";
     if (isOverlap) {
         int tmp = end;
         end = start;
@@ -1001,109 +1035,78 @@ void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end, bool isHtml) c
     for (int pos = start; pos < end; ++pos) {
         m_Ostream << m_Query[pos];
     }
-    if (isOverlap) {
-        m_Ostream << ')';
-    }
+    if (isOverlap)  m_Ostream << ')';
+    if (isHtml) m_Ostream << "</td>";
 };
 
-void CIgBlastTabularInfo::x_PrintIgGenes() const
+void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const 
 {
-    if (m_VGene.start <0 || m_JGene.end <0) return;
+    int     a1, a2, a3, a4;
+    int b0, b1, b2, b3, b4, b5;
 
-    x_PrintPartialQuery(max(m_VGene.start, m_VGene.end - 5), m_VGene.end);
-    m_Ostream << m_FieldDelimiter;
+    if (m_VGene.start <0) return;
+
+    b0 = m_VGene.start;
+    b1 = m_VGene.end;
+    b2 = m_DGene.start;
+    b3 = m_DGene.end;
+    b4 = m_JGene.start;
+    b5 = m_JGene.end;
+
+    if (b2 < 0) {
+        b2 = b1;
+        b3 = b1;
+    }
+
+    if (b4 < 0) {
+        b4 = b3;
+        b5 = b3;
+    }
 
     if (m_ChainType == "VH") {
-        x_PrintPartialQuery(m_VGene.end, m_DGene.start);
-        m_Ostream << m_FieldDelimiter;
-        x_PrintPartialQuery(m_DGene.start, m_DGene.end);
-        m_Ostream << m_FieldDelimiter;
-        x_PrintPartialQuery(m_DGene.end, m_JGene.start);
+        a1 = min(b1, b2);
+        a2 = max(b1, b2);
+        a3 = min(b3, b4);
+        a4 = max(b3, b4);
     } else {
-        x_PrintPartialQuery(m_VGene.end, m_JGene.start);
+        a1 = min(b1, b4);
+        a4 = max(b1, b4);
     }
 
-    m_Ostream << m_FieldDelimiter;
-    x_PrintPartialQuery(m_JGene.start, min(m_JGene.end, m_JGene.start + 5));
-};
-   
-void CIgBlastTabularInfo::x_PrintIgGenesHtml() const
-{
-    if (m_VGene.start <0 || m_JGene.end <0) return;
-
-    m_Ostream << "<br><br>V(D)J rearrangement summary for query sequence:\n";
-    m_Ostream << "<pre><table border=1>\n";
-    m_Ostream << "<tr><td>Top V gene match</td>";
-    if (m_ChainType == "VH") {  
-        m_Ostream << "<td>Top D gene match</td>";
+    if (isHtml) {
+        m_Ostream << "<br><br>Nucleotide details around V(D)J junctions:\n";
+        m_Ostream << "<pre><table border=1>\n";
+        m_Ostream << "<tr><td>V region end</td>";
+        if (m_ChainType == "VH") {
+            m_Ostream << "<td>V-D junction*</td>"
+                      << "<td>D region</td>"
+                      << "<td>D-J junction*</td>";
+        } else {
+            m_Ostream << "<td>V-J junction*</td>";
+        }
+        m_Ostream << "<td>J region start</td></tr>\n<tr>";
     }
-    m_Ostream << "<td>Top J gene match</td>"
-              << "<td>Chain type</td>"
-              << "<td>Rearrangement status</td>"
-              << "<td>Strand</td></tr>\n";
 
-    m_Ostream << "<tr><td>"  << m_VGene.sid;
-    if (m_ChainType == "VH") { 
-        m_Ostream << "</td><td>" << m_DGene.sid;
-    }
-    m_Ostream << "</td><td>" << m_JGene.sid
-              << "</td><td>" << m_ChainType
-              << "</td><td>";
-    if (m_FrameInfo == "IF") {
-        m_Ostream << "In-frame";
-    } else if (m_FrameInfo == "OF") {
-        m_Ostream << "Out-of-frame";
-    } else if (m_FrameInfo == "IP") {
-        m_Ostream << "In-frame with stop codon";
-    } 
-    m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
-              << "</td></tr></table></pre>\n";
-
-    m_Ostream << "<br><br>Nucleotide details around V(D)J junctions:\n";
-    m_Ostream << "<pre><table border=1>\n";
-    m_Ostream << "<tr><td>V region end</td>";
+    x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
     if (m_ChainType == "VH") {
-        m_Ostream << "<td>V-D junction*</td>"
-                  << "<td>D region</td>"
-                  << "<td>D-J junction*</td>";
+        x_PrintPartialQuery(b1, b2, isHtml); m_Ostream << m_FieldDelimiter;
+        x_PrintPartialQuery(a2, a3, isHtml); m_Ostream << m_FieldDelimiter;
+        x_PrintPartialQuery(b3, b4, isHtml); m_Ostream << m_FieldDelimiter;
     } else {
-        m_Ostream << "<td>V-J junction*</td>";
+        x_PrintPartialQuery(b1, b4, isHtml); m_Ostream << m_FieldDelimiter;
     }
-    m_Ostream << "<td>J region start</td></tr>\n";
+    x_PrintPartialQuery(a4, min(b5, a4 + 5), isHtml); m_Ostream << m_FieldDelimiter;
 
-    int adj_start, adj_end;
-    m_Ostream << "<tr><td>";
-    if (m_ChainType == "VH") {
-        adj_end   = min(m_VGene.end, m_DGene.start);
-        adj_start = max(m_VGene.end, m_DGene.start);
-        x_PrintPartialQuery(max(m_VGene.start, adj_end - 5), adj_end, true);
-        m_Ostream << "</td><td>";
-        x_PrintPartialQuery(m_VGene.end, m_DGene.start, true);
-        m_Ostream << "</td><td>";
-        adj_end   = min(m_DGene.end, m_JGene.start);
-        x_PrintPartialQuery(adj_start, adj_end, true);
-        adj_start = max(m_DGene.end, m_JGene.start);
-        m_Ostream << "</td><td>";
-        x_PrintPartialQuery(m_DGene.end, m_JGene.start, true);
-    } else {
-        adj_end   = min(m_VGene.end, m_JGene.start);
-        adj_start = max(m_VGene.end, m_JGene.start);
-        x_PrintPartialQuery(max(m_VGene.start, adj_end - 5), adj_end, true);
-        m_Ostream << "</td><td>";
-        x_PrintPartialQuery(m_VGene.end, m_JGene.start, true);
+    if (isHtml) {
+        m_Ostream << "</tr>\n</table></pre>\n";
+
+        m_Ostream << "*: Identical overlapping nucleotides may exist"
+                  << " at some V-D or D-J junction (i.e, these nucleotides"
+                  << " could be contributed by either joining segment, "
+                  << "presumably due to homology-directed rearrangement). "
+                  << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
+                  << " and will not be included under V, D or J region itself.\n";
     }
-    m_Ostream << "</td><td>";
-    x_PrintPartialQuery(adj_start, min(m_JGene.end, adj_start + 5), true);
-    m_Ostream << "</td></tr>\n"
-              << "</table></pre>\n";
-
-    m_Ostream << "*: Identical overlapping nucleotides may exist"
-              << " at some V-D or D-J junction (i.e, these nucleotides"
-              << " could be contributed by either joining segment, "
-              << "presumably due to homology-directed rearrangement). "
-              << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
-              << " and will not be included under V, D or J region itself.\n";
-
 };
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
@@ -1169,7 +1172,8 @@ void CIgBlastTabularInfo::x_PrintIgDomainHtml(const SIgDomain &domain) const
                    << "<td> " << domain.num_match << " </td>"
                    << "<td> " << domain.num_mismatch << " </td>"
                    << "<td> " << domain.num_gap << " </td>"
-                   << "<td> " << int(domain.num_match*100/domain.length) << " </td></tr>\n";
+                   << "<td> " << std::setprecision(3) 
+                   << domain.num_match*100.0/domain.length << " </td></tr>\n";
     } else {
         m_Ostream  << "<td> </td><td> </td><td> </td><td> </td></tr>\n";
     }

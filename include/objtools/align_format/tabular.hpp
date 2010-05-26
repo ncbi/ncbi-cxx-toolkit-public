@@ -474,6 +474,11 @@ public:
         m_IsMinusStrand = minus;
     };
 
+    /// Set sequence type
+    void SetSeqType(bool isNucl) {
+        m_IsNucl = isNucl;
+    };
+
     /// Set domain info
     void AddIgDomain(const string &name, int start, int end) {
         if (start <0 || end <= start) return;
@@ -499,15 +504,15 @@ public:
 
 protected:
     void x_ResetIgFields();
-    void x_PrintIgGenes() const;
-    void x_PrintIgGenesHtml() const;
+    void x_PrintIgGenes(bool isHtml=false) const;
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
     void x_PrintIgDomainHtml(const SIgDomain &domain) const;
     void x_PrintPartialQuery(int start, int end, bool isHtml=false) const;
 
-private:                                                                    
+private:
     string m_Query;
+    bool m_IsNucl;
     bool m_IsMinusStrand;
     string m_FrameInfo;                                                           
     string m_ChainType;
