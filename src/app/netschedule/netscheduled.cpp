@@ -2978,7 +2978,6 @@ private:
 
 void CNetScheduleDApp::Init(void)
 {
-    SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_DateTime);
 
     // Convert multi-line diagnostic messages into one-line ones by default.

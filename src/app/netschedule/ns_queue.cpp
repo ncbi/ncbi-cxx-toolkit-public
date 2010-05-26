@@ -3248,12 +3248,11 @@ void CQueue::x_PrintJobStat(const CJob&   job,
     out << NS_PFNAME("aff_id: ") << aff_id << fsp;
     out << NS_PFNAME("mask: ") << job.GetMask() << fsp;
 
-    out << NS_PFNAME("input: ")  << "'" << job.GetInput()  << "'" << fsp;
-    out << NS_PFNAME("output: ") << "'" << job.GetOutput() << "'" << fsp;
-    //out << NS_PFNAME("tags: ") << "'" << job.GetTags() << "'" << fsp;
+    out << NS_PFNAME("input: ") << job.GetQuotedInput() << fsp;
+    out << NS_PFNAME("output: ") << job.GetQuotedOutput() << fsp;
     if (last_run) {
         out << NS_PFNAME("err_msg: ")
-            << "'" << last_run->GetErrorMsg() << "'" << fsp;
+            << last_run->GetQuotedErrorMsg() << fsp;
     }
     out << NS_PFNAME("progress_msg: ")
         << "'" << job.GetProgressMsg() << "'" << fsp;
@@ -3271,11 +3270,11 @@ void CQueue::x_PrintShortJobStat(const CJob&   job,
     TJobStatus status = job.GetStatus();
     out << CNetScheduleAPI::StatusToString(status) << fsp;
 
-    out << "'" << job.GetInput()    << "'" << fsp;
-    out << "'" << job.GetOutput()   << "'" << fsp;
+    out << job.GetQuotedInput() << fsp;
+    out << job.GetQuotedOutput() << fsp;
     const CJobRun* last_run = job.GetLastRun();
     if (last_run)
-        out << "'" << last_run->GetErrorMsg() << "'" << fsp;
+        out << last_run->GetQuotedErrorMsg() << fsp;
     else
         out << "''" << fsp;
 
@@ -3352,8 +3351,7 @@ void CQueue::PrintQueue(CNcbiOstream& out,
     for (;en.valid(); ++en) {
         CQueueGuard guard(this);
 
-        CJob::EJobFetchResult res = job.Fetch(this, *en);
-        if (res == CJob::eJF_Ok)
+        if (job.Fetch(this, *en) == CJob::eJF_Ok)
             x_PrintShortJobStat(job, host, port, out);
     }
 }

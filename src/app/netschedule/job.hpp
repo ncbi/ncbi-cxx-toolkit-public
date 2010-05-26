@@ -72,6 +72,8 @@ public:
     { return m_NodeId; }
     const string& GetErrorMsg() const
     { return m_ErrorMsg; }
+    const string GetQuotedErrorMsg() const
+    { return "'" + NStr::PrintableString(m_ErrorMsg) + "'"; }
 
     void SetStatus(TJobStatus status);
     void SetTimeStart(time_t t);
@@ -170,8 +172,12 @@ public:
     { return m_Tags; }
     const string&  GetInput() const
     { return m_Input; }
+    const string GetQuotedInput() const
+    { return "'" + NStr::PrintableString(m_Input) + "'"; }
     const string&  GetOutput() const
     { return m_Output; }
+    const string GetQuotedOutput() const
+    { return "'" + NStr::PrintableString(m_Output) + "'"; }
 
     void           SetId(unsigned id);
     void           SetStatus(TJobStatus status);
