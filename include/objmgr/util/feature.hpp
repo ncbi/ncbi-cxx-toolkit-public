@@ -189,10 +189,14 @@ public:
     /// Add a single feature to the tree.
     void AddFeature(const CMappedFeat& feat);
 
-    /// Add all genes for a mRNA feature.
+    /// Add all features from bottom_type to top_type for a feature.
     void AddFeaturesFor(const CMappedFeat& feat,
                         CSeqFeatData::ESubtype bottom_type,
                         CSeqFeatData::ESubtype top_type);
+    void AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
+                        CSeqFeatData::ESubtype bottom_type,
+                        CSeqFeatData::ESubtype top_type,
+                        const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get genes for a mRNA feature.
     void AddGenesForMrna(const CMappedFeat& mrna_feat);
     /// Add all necessary features to get cdregions for a mRNA feature.

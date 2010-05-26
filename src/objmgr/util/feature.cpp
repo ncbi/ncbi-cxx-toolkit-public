@@ -1856,6 +1856,33 @@ void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
 }
 
 
+void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
+                               CSeqFeatData::ESubtype bottom_type,
+                               CSeqFeatData::ESubtype top_type,
+                               const SAnnotSelector* base_sel)
+{
+    SAnnotSelector sel;
+    if ( base_sel ) {
+        sel = *base_sel;
+    }
+    else {
+        sel.SetResolveAll().SetAdaptiveDepth();
+    }
+    sel.SetFeatSubtype(bottom_type);
+    if ( top_type != bottom_type ) {
+        for ( STypeLink link(bottom_type); link.IsValid(); link.Next() ) {
+            CSeqFeatData::ESubtype parent_type = link.m_ParentType;
+            sel.IncludeFeatSubtype(parent_type);
+            if ( parent_type == top_type ) {
+                break;
+            }
+        }
+    }
+    CFeat_CI feat_it(scope, loc, sel);
+    AddFeatures(feat_it);
+}
+
+
 void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat)
 {
     AddFeaturesFor(mrna_feat,
