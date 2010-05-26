@@ -211,14 +211,11 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
             const CSeq_id* wid =
                 FindBestChoice(GetId(), CSeq_id::WorstRank).GetPointer();
             if (wid) {
-                CNcbiOstrstream wos;
-                wid->WriteAsFasta(wos);
-                string sid = CNcbiOstrstreamToString(wos);
-                worst_id.Set(sid);
+                worst_id.Assign(*wid);
                 CTextseq_id* tid =
                     const_cast<CTextseq_id*>(worst_id.GetTextseq_Id());
                 if (tid) {
-                    tid->ResetAccession();
+                    tid->ResetName();
                 }
                 id = &worst_id;
             }
