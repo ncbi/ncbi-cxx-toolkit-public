@@ -3,7 +3,7 @@
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
 -- J.Ostell 2002
--- Updated 14 April 2010
+-- Updated 25 May 2010
 --
 --*********************************************************
 
@@ -145,9 +145,7 @@ GBAuthor ::= VisibleString
 
 GBXref ::= SEQUENCE {
     dbname VisibleString ,
-    id VisibleString ,
-    db-url VisibleString OPTIONAL ,
-    id-url VisibleString OPTIONAL
+    id VisibleString
 }
 
 GBComment ::= SEQUENCE {
