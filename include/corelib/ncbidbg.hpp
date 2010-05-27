@@ -89,7 +89,7 @@ BEGIN_NCBI_SCOPE
     // Use standard _ASSERT macro on MSVC in Debug modes
 #    define NCBI_ASSERT(expr, mess) \
       do { \
-          bool x_expr = (expr); \
+          bool x_expr = ((expr)? true : false); \
           const char* x_mess = (mess); \
           if ( !x_expr ) { \
               NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
