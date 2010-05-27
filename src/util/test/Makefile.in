@@ -11,7 +11,8 @@ APP_PROJ = test_utf8 test_rangemap test_resize_iter \
            test_uttp test_line_reader test_queue_mt test_thread_pool_old \
            test_scheduler test_value_convert example_value_convert \
            formatguess_unit_test test_floating_point_comparison \
-           test_get_console_password test_range_coll test_porter_stemming
+           test_get_console_password test_range_coll test_porter_stemming \
+           test_buffer_writer
 PROJ_TAG = test
 
 srcdir = @srcdir@

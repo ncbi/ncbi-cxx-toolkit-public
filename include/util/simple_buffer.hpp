@@ -29,7 +29,7 @@
  * Authors:  Anatoliy Kuznetsov
  *
  * File Description: Simple (fast) resizable buffer
- *                   
+ *
  */
 
 #include <corelib/ncbistd.hpp>
@@ -44,12 +44,35 @@ public:
                                  size_t requested_size)
     { return requested_size; }
 };
+
 class CAgressiveResizeStrategy
 {
 public:
     static size_t GetNewCapacity(size_t /*cur_capacity*/,
-                                 size_t requested_size) 
-    { return requested_size + requested_size / 2; }
+                                 size_t requested_size)
+    {
+        size_t  new_size = requested_size + requested_size / 2;
+
+        // Overrun
+        if (new_size < requested_size)
+            return std::numeric_limits<size_t>::max();
+        return new_size;
+    }
+};
+
+class CPowerOfTwoResizeStrategy
+{
+public:
+    static size_t GetNewCapacity(size_t /*cur_capacity*/,
+                                 size_t required_size)
+    {
+        size_t  new_size = required_size * 2;
+
+        // Overrun
+        if (new_size < required_size)
+            return std::numeric_limits<size_t>::max();
+        return new_size;
+    }
 };
 
 /// Reallocable memory buffer (no memory copy overhead)
@@ -58,14 +81,14 @@ public:
 ///
 
 template <typename T = unsigned char,
-          typename ResizeStrategy = CSimpleResizeStrategy>
+          typename ResizeStrategy = CPowerOfTwoResizeStrategy>
 class CSimpleBufferT
 {
 public:
     typedef T             value_type;
     typedef size_t        size_type;
 public:
-    explicit CSimpleBufferT(size_type size=0) 
+    explicit CSimpleBufferT(size_type size=0)
     {
         if (size) {
             m_Buffer = x_Allocate(size);
@@ -79,7 +102,7 @@ public:
         x_Deallocate();
     }
 
-    CSimpleBufferT(const CSimpleBufferT& sb) 
+    CSimpleBufferT(const CSimpleBufferT& sb)
     {
         size_type new_size = sb.capacity();
         m_Buffer = x_Allocate(new_size);
@@ -88,7 +111,7 @@ public:
         memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
     }
 
-    CSimpleBufferT& operator=(const CSimpleBufferT& sb) 
+    CSimpleBufferT& operator=(const CSimpleBufferT& sb)
     {
         if (this != &sb) {
             if (sb.size() <= m_Capacity) {
@@ -104,6 +127,15 @@ public:
             }
             memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
         }
+        return *this;
+    }
+
+    CSimpleBufferT& append(const void* buf, size_t len)
+    {
+        size_t offs = m_Size;
+
+        resize( m_Size + len );
+        memcpy( m_Buffer + offs, buf, len );
         return *this;
     }
 
@@ -207,6 +239,8 @@ public:
         return m_Buffer;
     }
 
+
+
 private:
     void x_Fill(value_type* buffer, int value, size_t elem)
     {
@@ -219,7 +253,7 @@ private:
     {
         if (m_Buffer) {
             x_Fill(m_Buffer, 0xfd, m_Capacity);
-            delete [] m_Buffer; 
+            delete [] m_Buffer;
         }
         m_Buffer = NULL;
         m_Size = m_Capacity = 0;
@@ -242,4 +276,4 @@ typedef CSimpleBufferT<> CSimpleBuffer;
 
 END_NCBI_SCOPE
 
-#endif 
+#endif
