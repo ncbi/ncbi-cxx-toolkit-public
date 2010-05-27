@@ -119,14 +119,18 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 };
 
 CNetICachePasswordGuard::CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
-        const string& password) :
-    m_NetICacheClient(new SNetICacheClientImpl(*ic_client))
+    const string& password)
 {
     if (!m_NetICacheClient->m_Password.empty()) {
         NCBI_THROW(CNetCacheException, eAuthenticationError,
             "Cannot reuse a password-protected CNetICacheClient object.");
     }
-    m_NetICacheClient->m_Password = password;
+    if (password.empty())
+        m_NetICacheClient = ic_client;
+    else {
+        m_NetICacheClient = new SNetICacheClientImpl(*ic_client);
+        m_NetICacheClient->m_Password = password;
+    }
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateStoreCmd(

@@ -155,14 +155,18 @@ string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const string& key)
 }
 
 CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
-        const string& password) :
-    m_NetCacheAPI(new SNetCacheAPIImpl(*nc_api))
+    const string& password)
 {
     if (!m_NetCacheAPI->m_Password.empty()) {
         NCBI_THROW(CNetCacheException, eAuthenticationError,
             "Cannot reuse a password-protected NetCache API object.");
     }
-    m_NetCacheAPI->m_Password = password;
+    if (password.empty())
+        m_NetCacheAPI = nc_api;
+    else {
+        m_NetCacheAPI = new SNetCacheAPIImpl(*nc_api);
+        m_NetCacheAPI->m_Password = password;
+    }
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
