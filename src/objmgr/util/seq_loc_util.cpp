@@ -448,7 +448,7 @@ void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
 
 
 bool BadSeqLocSortOrder
-(const CBioseq_Handle bsh,
+(const CBioseq_Handle& bsh,
  const CSeq_loc& loc)
 {
     try {
@@ -467,10 +467,6 @@ bool BadSeqLocSortOrder
                 first = false;
                 continue;
             }
-            TSeqPos a = lit.GetRange().GetFrom();
-            TSeqPos b = lit.GetRange().GetTo();
-            TSeqPos c = last_range.GetTo();
-            TSeqPos d = last_range.GetFrom();
             if (lit.GetStrand() == eNa_strand_minus) {
                 if (last_range.GetTo() < lit.GetRange().GetTo()) {
                     return true;

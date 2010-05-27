@@ -155,8 +155,8 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
 
 /// Returns true if the order of Seq_locs is bad, otherwise, false
 NCBI_XOBJUTIL_EXPORT
-bool BadSeqLocSortOrder(CBioseq_Handle  bsh,
-                        const CSeq_loc& loc);
+bool BadSeqLocSortOrder(const CBioseq_Handle& bsh,
+                        const CSeq_loc&       loc);
 NCBI_XOBJUTIL_EXPORT
 bool BadSeqLocSortOrder(const CBioseq&  seq,
                         const CSeq_loc& loc,
