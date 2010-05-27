@@ -399,8 +399,6 @@ static EIO_Status s_FTPFeatures(SFTPConnector* xxx)
         /* make sure the connection is still good */
         return s_FTPNoop(xxx);
     }
-    /* wild guess */
-    xxx->feat |= fFtpFeature_EPSV;
     return eIO_Success;
 }
 
