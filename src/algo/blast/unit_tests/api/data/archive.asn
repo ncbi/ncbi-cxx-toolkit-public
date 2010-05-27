@@ -76,6 +76,10 @@ E550307D2D79F520FE80D72FD775F6CD58B7A84401D65549738935E25595DF5E1807A55A348928
         value integer 1
       },
       {
+        name "RepeatFilteringDB",
+        value string "repeat/repeat_9606"
+      },
+      {
         name "UngappedMode",
         value boolean FALSE
       },

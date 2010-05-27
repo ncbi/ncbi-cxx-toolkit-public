@@ -351,6 +351,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     case 'R':
         if (B4Param_RepeatFiltering.Match(p)) {
             bo.SetRepeatFiltering(v.GetBoolean());
+        } else if (B4Param_RepeatFilteringDB.Match(p)) {
+            bo.SetRepeatFilteringDB(v.GetString().c_str());
         } else if (B4Param_RequiredStart.Match(p)) {
             m_QueryRange.SetFrom(v.GetInteger());
         } else if (B4Param_RequiredEnd.Match(p)) {

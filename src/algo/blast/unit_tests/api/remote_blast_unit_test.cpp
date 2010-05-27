@@ -1315,7 +1315,9 @@ BOOST_AUTO_TEST_CASE(ReadArchiveFormat)
     CRef<CBlast4_database> blast_db = rb.GetDatabases();
     BOOST_REQUIRE(blast_db->GetName() == "refseq_rna");
     BOOST_REQUIRE(rb.GetDbFilteringAlgorithmId() == -1);
-
+    CBlastNucleotideOptionsHandle* opts_handle = 
+       dynamic_cast<CBlastNucleotideOptionsHandle*> (&*(rb.GetSearchOptions()));
+    BOOST_REQUIRE(string(opts_handle->GetRepeatFilteringDB()) == "repeat/repeat_9606");
 }
 
 BOOST_AUTO_TEST_CASE(ReadBadArchiveFormat)

@@ -677,7 +677,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
         return;
         
     case eBlastOpt_RepeatFilteringDB:
-        //x_SetParam(B4Param_RepeatFilteringDB, v);
+        x_SetParam(B4Param_RepeatFilteringDB, v);
         return;
         
     case eBlastOpt_MatrixName:
