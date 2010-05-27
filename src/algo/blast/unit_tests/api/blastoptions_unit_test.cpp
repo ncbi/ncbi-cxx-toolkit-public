@@ -1280,14 +1280,14 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     
     opts = CBlastOptionsFactory::Create(eTblastn);
     BOOST_REQUIRE(opts.NotEmpty());
-    char* filter_string = opts->GetFilterString();
-    BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
+    char* filter_string = opts->GetFilterString(); /* NCBI_FAKE_WARNING */
+    BOOST_CHECK_EQUAL(string("F"), string(filter_string));
     sfree(filter_string);
 
     opts = CBlastOptionsFactory::Create(eBlastp);
     BOOST_REQUIRE(opts.NotEmpty());
-    filter_string = opts->GetFilterString();
-    BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
+    filter_string = opts->GetFilterString(); /* NCBI_FAKE_WARNING */
+    BOOST_CHECK_EQUAL(string("F"), string(filter_string));
     sfree(filter_string);
 }
 
@@ -1298,7 +1298,7 @@ BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
     optsHandle = CBlastOptionsFactory::Create(eBlastp);
     BOOST_REQUIRE(optsHandle.NotEmpty());
 
-    optsHandle->SetFilterString("L;m;");
+    optsHandle->SetFilterString("L;m;"); /* NCBI_FAKE_WARNING */
     optsHandle->SetDbLength(10000);
     optsHandle->SetOptions().SetPHIPattern("Y-S-[SA]-X-[LVIM]", false);
     //optsHandle->GetOptions().DebugDumpText(NcbiCerr, "BLAST options - original", 1);
@@ -1308,7 +1308,7 @@ BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
     //optsClone->DebugDumpText(NcbiCerr, "BLAST options - clone", 1);
 
     BOOST_CHECK_EQUAL(optsClone->GetDbLength(), 10000);
-    BOOST_CHECK_EQUAL(string(optsClone->GetFilterString()), string("L;m;"));
+    BOOST_CHECK_EQUAL(string(optsClone->GetFilterString()), string("L;m;")); /* NCBI_FAKE_WARNING */
     BOOST_CHECK_EQUAL(string(optsClone->GetPHIPattern()), string("Y-S-[SA]-X-[LVIM]"));
 
     // try setting and unsetting the best hit options (SB-339, issue #4)
