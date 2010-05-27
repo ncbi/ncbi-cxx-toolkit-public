@@ -234,6 +234,8 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
             break;
 
         case CSeqDB_AliasMask::eOidRange:
+        case CSeqDB_AliasMask::eMemBit:
+     
             // these should have been handled in the previous loop.
             break;
         }
