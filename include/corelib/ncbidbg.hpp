@@ -88,17 +88,19 @@ BEGIN_NCBI_SCOPE
 #  ifdef NCBI_COMPILER_MSVC
     // Use standard _ASSERT macro on MSVC in Debug modes
 #    define NCBI_ASSERT(expr, mess) \
-      {{ \
-      bool x_expr = (expr); \
-      const char* x_mess = (mess); \
-      if ( !x_expr ) { \
-          NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Error, NCBI_NS_NCBI::eDPF_Trace) << \
-              "Assertion failed: (" << \
-              (#expr ? #expr : "") << ") " << \
-              (x_mess ? x_mess : "") << NCBI_NS_NCBI::Endm; \
-          _ASSERT_BASE(x_expr, NULL); \
-      } \
-      }}
+      do { \
+          bool x_expr = (expr); \
+          const char* x_mess = (mess); \
+          if ( !x_expr ) { \
+              NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
+                                      NCBI_NS_NCBI::eDiag_Error, \
+                                      NCBI_NS_NCBI::eDPF_Trace) << \
+                  "Assertion failed: (" << \
+                  (#expr ? #expr : "") << ") " << \
+                  (x_mess ? x_mess : "") << NCBI_NS_NCBI::Endm; \
+              _ASSERT_BASE(x_expr, NULL); \
+          } \
+      } while ( 0 )
 #  else  /* NCBI_COMPILER_MSVC */
 #    define NCBI_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
