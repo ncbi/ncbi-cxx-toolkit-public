@@ -418,7 +418,12 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
             }
             
             // Parse '|' seperated ids.
-            CSeq_id::ParseFastaIds(ids, nextid);
+            if ( nextid.find('|') == NPOS 
+              || !isalpha((unsigned char)(nextid[0]))) {
+                 ids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, nextid)));
+            } else {
+                 CSeq_id::ParseFastaIds(ids, nextid);
+            }
         } else {
             T = titles;
         }
@@ -1443,7 +1448,12 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
         
             // Parse '|' seperated ids.
             list< CRef<CSeq_id> > seqids;
-            CSeq_id::ParseFastaIds(seqids, ids);
+            if ( ids.find('|') == NPOS 
+              || !isalpha((unsigned char)(ids[0]))) {
+                 seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
+            } else {
+                 CSeq_id::ParseFastaIds(seqids, ids);
+            }
         
             // Build the actual defline.
         
