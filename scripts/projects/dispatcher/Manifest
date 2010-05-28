@@ -13,7 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS:  Linux32-Suse:ICC  Linux64-Suse:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  IntelMAC:GCC
+DEFAULT_CONFIGURATIONS:  Linux32-Suse:GCC Linux64-Suse:GCC Linux64-Centos:GCC FreeBSD32:GCC FreeBSD32-v80:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
 
 COPY: $bindir/test_mghbn                     $installdir/bin/ncbi_mghbn
 COPY: $bindir/test_ncbi_dblb                 $installdir/bin/ncbi_dblb
@@ -34,10 +34,14 @@ Linux32-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-sta
 Linux32-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-FreeBSD32  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSx86   : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSx86   : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-IntelMAC   : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal
+Linux64-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+Linux64-Centos  : GCC   : GCC.sh 4.4.2   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+FreeBSD32       : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+FreeBSD32-v80   : GCC   : GCC.sh 4.2.1   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+SunOSx86        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSx86        : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+IntelMAC        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal
+
