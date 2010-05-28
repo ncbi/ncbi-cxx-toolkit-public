@@ -1056,6 +1056,9 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
     if (b2 < 0) {
         b2 = b1;
         b3 = b1;
+        if (b3 > b4 && b4 > 0) {
+            b4 = b3;
+        }
     }
 
     if (b4 < 0) {
