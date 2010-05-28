@@ -1056,7 +1056,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
     if (b2 < 0) {
         b2 = b1;
         b3 = b1;
-        if (b3 > b4 && b4 > 0) {
+        if (b3 > b4 && b4 > 0 && m_ChainType == "VH") {
             b4 = b3;
         }
     }
