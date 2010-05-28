@@ -7,4 +7,4 @@ connect/ext
 connect/daemons$
 connect/daemons/mod$
 internal/util/testipub$
-./include/internal/webenv2
+internal/webenv2 update-only
