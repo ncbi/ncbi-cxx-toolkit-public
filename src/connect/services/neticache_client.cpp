@@ -121,7 +121,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 CNetICachePasswordGuard::CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
     const string& password)
 {
-    if (!m_NetICacheClient->m_Password.empty()) {
+    if (!ic_client->m_Password.empty()) {
         NCBI_THROW(CNetCacheException, eAuthenticationError,
             "Cannot reuse a password-protected CNetICacheClient object.");
     }
