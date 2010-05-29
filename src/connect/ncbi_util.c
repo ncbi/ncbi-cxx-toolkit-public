@@ -617,7 +617,7 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
     struct passwd* pw;
 #  if !defined(NCBI_OS_SOLARIS)  &&  defined(NCBI_HAVE_GETPWUID_R)
     struct passwd pwd;
-    char pwdbuf[256];
+    char pwdbuf[1024];
 #  endif
 #elif defined(NCBI_OS_MSWIN)
     char  loginbuf[256 + 1];
@@ -672,12 +672,16 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #  ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
 #  endif
-    if ((pw = getpwuid(getuid())) != 0  &&  pw->pw_name)
-        strncpy0(buf, pw->pw_name, bufsize - 1);
+    if ((pw = getpwuid(getuid())) != 0) {
+        if (pw->pw_name)
+            strncpy0(buf, pw->pw_name, bufsize - 1);
+        else
+            pw = 0;
+    }
 #  ifndef NCBI_OS_SOLARIS
     CORE_UNLOCK;
 #  endif
-    if (pw  &&  pw->pw_name)
+    if (pw)
         return buf;
 #  elif defined(NCBI_HAVE_GETPWUID_R)
 #    if   NCBI_HAVE_GETPWUID_R == 4
