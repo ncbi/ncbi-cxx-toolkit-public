@@ -660,6 +660,7 @@ void CGuideTree::PreComputeImageDimensions()
 {
     if (m_DataSource.Empty()) {
         m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
+        m_DataSource->Relabel("$(label)");
         x_ExtendRoot();
     }
     m_PhyloTreeScheme.Reset(new CPhyloTreeScheme());
@@ -759,6 +760,7 @@ bool CGuideTree::x_RenderImage(void)
 {
     if (m_DataSource.Empty()) {
         m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
+        m_DataSource->Relabel("$(label)");
         x_ExtendRoot();
     }
 
