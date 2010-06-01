@@ -454,7 +454,8 @@ bool CGff3Reader::x_ParseFeatureGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGff3Record record;
+    CSeq_annot_Handle sah;
+    CGff3Record record( sah );
     if ( ! record.AssignFromGff( strLine ) ) {
         return false;
     }

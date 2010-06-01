@@ -33,33 +33,35 @@
 #define OBJTOOLS_READERS___GFF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/readers/gff3_data.hpp>
+#include <objtools/writers/gff3_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ----------------------------------------------------------------------------
-class CGff3RecordSet
+class CGff3WriteRecordSet
 //  ----------------------------------------------------------------------------
 {
 public:
-    typedef vector< CGff3Record* > TRecords;
+    typedef vector< CGff3WriteRecord* > TRecords;
     typedef TRecords::const_iterator TCit;
     typedef TRecords::iterator TIt;
 
 public:
-    CGff3RecordSet() {};
-    ~CGff3RecordSet() {
+    CGff3WriteRecordSet() {};
+    ~CGff3WriteRecordSet() {
         for ( TRecords::iterator it = begin(); it != end(); ++it ) {
             delete *it;
         }
     };
 
     void AddRecord(
-        CGff3Record* pRecord ) { m_Set.push_back( pRecord ); };
+        CGff3WriteRecord* pRecord ) { m_Set.push_back( pRecord ); };
 
     const TRecords& Set() const { return m_Set; };
     TCit begin() const { return Set().begin(); };
@@ -83,8 +85,6 @@ public:
         fSoQuirks =     1<<15,
     } TFlags;
     
-    typedef list< CRef< CSeq_feat > > TFeatureCache;
-
 public:
     CGffWriter(
         CNcbiOstream&,
@@ -100,37 +100,37 @@ protected:
     bool x_WriteAnnotAlign( 
         const CSeq_annot& );
     bool x_WriteRecord( 
-        const CGff3Record& );
+        const CGff3WriteRecord& );
     bool x_WriteRecords( 
-        const CGff3RecordSet& );
+        const CGff3WriteRecordSet& );
     bool x_WriteBrowserLine(
         const CRef< CUser_object > );
     bool x_WriteTrackLine(
         const CRef< CUser_object > );
 
     bool x_AssignObject( 
-        const CSeq_annot&,
+        CSeq_annot_Handle,
         const CSeq_feat&,        
-        CGff3RecordSet& );
+        CGff3WriteRecordSet& );
 
     string x_GffId(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffSource(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffType(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffSeqStart(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffSeqStop(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffScore(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffStrand(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffPhase(
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
     string x_GffAttributes( 
-        const CGff3Record& ) const;
+        const CGff3WriteRecord& ) const;
 
     void x_PriorityProcess(
         const string&,
@@ -146,7 +146,9 @@ protected:
 
     CNcbiOstream& m_Os;
     TFlags m_uFlags;
-    TFeatureCache m_FeatureCache;
+
+    CRef< CObjectManager > m_pObjMngr;
+    CRef< CScope > m_pScope;
 };
 
 END_objects_SCOPE

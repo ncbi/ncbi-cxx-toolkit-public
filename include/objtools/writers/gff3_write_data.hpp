@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef OBJTOOLS_READERS___GFF3DATA__HPP
-#define OBJTOOLS_READERS___GFF3DATA__HPP
+#ifndef OBJTOOLS_WRITERS___GFF3DATA__HPP
+#define OBJTOOLS_WRITERS___GFF3DATA__HPP
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CGff3Record
+class CGff3WriteRecord
 //  ----------------------------------------------------------------------------
 {
 public:
@@ -50,23 +50,26 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGff3Record(
+    CGff3WriteRecord(
         CSeq_annot_Handle sah
     );
-    ~CGff3Record();
+    ~CGff3WriteRecord();
 
     //
     //  Input/output:
     //
-    bool AssignFromGff(
-        const string& );
+//    bool AssignFromGff(
+//        const string& );
+//
+    bool AssignFromAsn(
+        const CSeq_feat& );
 
     bool MakeExon(
-        const CGff3Record&,
+        const CGff3WriteRecord&,
         const CSeq_interval& );
 
     bool MergeRecord(
-        const CGff3Record& );
+        const CGff3WriteRecord& );
 
     //
     // Accessors:
@@ -118,12 +121,37 @@ public:
         string& ) const;
 
 protected:
+    bool x_AssignTypeFromAsn(
+        const CSeq_feat& );
+    bool x_AssignSeqIdFromAsn(
+        const CSeq_feat& );
+    bool x_AssignStartFromAsn(
+        const CSeq_feat& );
+    bool x_AssignStopFromAsn(
+        const CSeq_feat& );
+    bool x_AssignSourceFromAsn(
+        const CSeq_feat& );
+    bool x_AssignScoreFromAsn(
+        const CSeq_feat& );
+    bool x_AssignStrandFromAsn(
+        const CSeq_feat& );
+    bool x_AssignPhaseFromAsn(
+        const CSeq_feat& );
+    bool x_AssignAttributesFromAsnCore(
+        const CSeq_feat& );
+    bool x_AssignAttributesFromAsnExtended(
+        const CSeq_feat& );
+
     static string x_FeatIdString(
         const CFeat_id& id );
 
     bool x_AssignAttributesFromGff(
         const string& );
 
+    CSeq_feat::TData::ESubtype x_GetSubtypeOf(
+//        const CSeq_annot&,
+        const CFeat_id& );
+        
     static bool x_IsParentOf(
         CSeq_feat::TData::ESubtype,
         CSeq_feat::TData::ESubtype );
@@ -148,4 +176,4 @@ protected:
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_READERS___GFF3DATA__HPP
+#endif // OBJTOOLS_WRITERS___GFF3DATA__HPP

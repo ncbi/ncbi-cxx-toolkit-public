@@ -45,7 +45,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
-#include <objtools/readers/gff3_data.hpp>
+#include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +59,8 @@ CGffWriter::CGffWriter(
     m_Os( ostr ),
     m_uFlags( uFlags )
 {
+    m_pObjMngr = CObjectManager::GetInstance();
+    m_pScope.Reset( new CScope( *m_pObjMngr ) );
 };
 
 //  ----------------------------------------------------------------------------
@@ -103,13 +105,16 @@ bool CGffWriter::x_WriteAnnotFTable(
         return false;
     }
 
+    CGff3WriteRecordSet recordSet;
+    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
+
     const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
     list< CRef< CSeq_feat > >::const_iterator it = table.begin();
-    CGff3RecordSet recordSet;
     while ( it != table.end() ) {
-        x_AssignObject( annot, **it, recordSet );
+        x_AssignObject( sah, **it, recordSet );
         it++;
     }
+    m_pScope->RemoveSeq_annot( sah );
     x_WriteRecords( recordSet );
     return true;
 }
@@ -178,13 +183,13 @@ bool CGffWriter::x_WriteTrackLine(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriter::x_AssignObject(
-   const CSeq_annot& annot,
+   CSeq_annot_Handle sah,
    const CSeq_feat& feat,        
-   CGff3RecordSet& set )
+   CGff3WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    CGff3Record* pRecord = new CGff3Record( &m_FeatureCache );
-    if ( ! pRecord->AssignFromAsn( annot, feat ) ) {
+    CGff3WriteRecord* pRecord = new CGff3WriteRecord( sah );
+    if ( ! pRecord->AssignFromAsn( feat ) ) {
         return false;
     }
     if ( pRecord->Type() == "mRNA" ) {
@@ -197,7 +202,7 @@ bool CGffWriter::x_AssignObject(
             list< CRef< CSeq_interval > >::const_iterator it;
             for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
                 const CSeq_interval& subint = **it;
-                CGff3Record* pExon = new CGff3Record;
+                CGff3WriteRecord* pExon = new CGff3WriteRecord( sah );
                 pExon->MakeExon( *pRecord, subint );
                 set.AddRecord( pExon );
             }
@@ -208,7 +213,7 @@ bool CGffWriter::x_AssignObject(
     if ( pRecord->Type() == "exon" ) {
         // only add exon feature if one has not been created before. If one
         // has been created before, migrate the attributes.
-        CGff3RecordSet::TIt it;
+        CGff3WriteRecordSet::TIt it;
         for ( it = set.begin(); it != set.end(); ++it ) {
             if ( (*it)->Type() != pRecord->Type() ) {
                 continue;
@@ -238,10 +243,10 @@ bool CGffWriter::x_AssignObject(
     
 //  ----------------------------------------------------------------------------
 bool CGffWriter::x_WriteRecords(
-    const CGff3RecordSet& set )
+    const CGff3WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    for ( CGff3RecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
+    for ( CGff3WriteRecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
         if ( ! x_WriteRecord( **cit ) ) {
             return false;
         }
@@ -251,7 +256,7 @@ bool CGffWriter::x_WriteRecords(
     
 //  ----------------------------------------------------------------------------
 bool CGffWriter::x_WriteRecord( 
-    const CGff3Record& record )
+    const CGff3WriteRecord& record )
 //  ----------------------------------------------------------------------------
 {
     m_Os << x_GffId( record ) << '\t';
@@ -268,7 +273,7 @@ bool CGffWriter::x_WriteRecord(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffId(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     return record.Id();
@@ -276,7 +281,7 @@ string CGffWriter::x_GffId(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffSource(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     return record.Source();
@@ -284,7 +289,7 @@ string CGffWriter::x_GffSource(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffType(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     string strGffType;
@@ -296,7 +301,7 @@ string CGffWriter::x_GffType(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffSeqStart(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     return NStr::UIntToString( record.SeqStart() + 1 );
@@ -304,7 +309,7 @@ string CGffWriter::x_GffSeqStart(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffSeqStop(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     return NStr::UIntToString( record.SeqStop() + 1 );
@@ -312,7 +317,7 @@ string CGffWriter::x_GffSeqStop(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffScore(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.IsSetScore() ) {
@@ -325,7 +330,7 @@ string CGffWriter::x_GffScore(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffStrand(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.IsSetStrand() ) {
@@ -343,7 +348,7 @@ string CGffWriter::x_GffStrand(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffPhase(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.IsSetPhase() ) {
@@ -361,13 +366,13 @@ string CGffWriter::x_GffPhase(
 
 //  ----------------------------------------------------------------------------
 string CGffWriter::x_GffAttributes(
-    const CGff3Record& record ) const
+    const CGff3WriteRecord& record ) const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-    CGff3Record::TAttributes attrs;
+    CGff3WriteRecord::TAttributes attrs;
     attrs.insert( record.Attributes().begin(), record.Attributes().end() );
-    CGff3Record::TAttrIt it;
+    CGff3WriteRecord::TAttrIt it;
 
     x_PriorityProcess( "ID", attrs, strAttributes );
     x_PriorityProcess( "Name", attrs, strAttributes );
