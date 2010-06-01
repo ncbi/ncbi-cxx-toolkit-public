@@ -168,8 +168,7 @@ inline void
 CNCBlobVerManager::sx_UnlockCacheData(CNCCacheData*      cache_data,
                                       CNCBlobVerManager* new_mgr)
 {
-    CNCBlobVerManager* mgr = cache_data->SetVerManager(new_mgr);
-    _ASSERT(mgr == kLockedManager);
+    _VERIFY(cache_data->SetVerManager(new_mgr) == kLockedManager);
 }
 
 inline CNCBlobVerManager*
@@ -341,7 +340,7 @@ CNCBlobVerManager::x_ReadCurVersion(void)
     }
 }
 
-inline CRef<SNCBlobVerData>
+CRef<SNCBlobVerData>
 CNCBlobVerManager::CreateNewVersion(void)
 {
     if (m_CacheData->IsDeleted())

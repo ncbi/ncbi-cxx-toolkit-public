@@ -76,19 +76,18 @@ CNCStat_Getter::CNCStat_Getter(void)
     TBase::Initialize();
 }
 
-inline
 CNCStat_Getter::~CNCStat_Getter(void)
 {
     TBase::Finalize();
 }
 
-inline CNCStat*
+CNCStat*
 CNCStat_Getter::CreateTlsObject(void)
 {
     return &CNCStat::sm_Instances[g_GetNCThreadIndex() % kNCMaxThreadsCnt];
 }
 
-inline void
+void
 CNCStat_Getter::DeleteTlsObject(void*)
 {}
 
@@ -187,6 +186,62 @@ CNCStat::AddClosedConnection(double conn_span,
                         = x_GetSpanFigure(stat->m_ConnSpanByStat, conn_status);
     it_span->second.AddValue(conn_span);
 
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::AddBlobRead(Uint8 blob_size, Uint8 read_size)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_ReadBlobs;
+    stat->m_ClientReadSize += read_size;
+    ++stat->m_ReadBySize[x_GetSizeIndex(read_size)];
+    if (read_size != blob_size) {
+        ++stat->m_PartialReads;
+    }
+    stat->m_MaxBlobSize = max(stat->m_MaxBlobSize, blob_size);
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::AddChunkRead(size_t size)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    stat->m_DBReadSize += size;
+    ++stat->m_ReadChunks;
+    ++stat->m_ChunksRCntBySize[x_GetSizeIndex(size)];
+    stat->m_MaxChunkSize = max(stat->m_MaxChunkSize, size);
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::AddBlobWritten(Uint8 writen_size, bool completed)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_WrittenBlobs;
+    ++stat->m_WrittenBySize[x_GetSizeIndex(writen_size)];
+    if (completed) {
+        ++stat->m_BlobsByCntReads[0];
+    }
+    else {
+        ++stat->m_PartialWrites;
+    }
+    stat->m_MaxBlobSize = max(stat->m_MaxBlobSize, writen_size);
+    stat->m_ObjLock.Unlock();
+}
+
+void
+CNCStat::AddChunkWritten(size_t size)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    stat->m_WrittenSize += size;
+    ++stat->m_WrittenChunks;
+    ++stat->m_ChunksWCntBySize[x_GetSizeIndex(size)];
+    stat->m_MaxChunkSize = max(stat->m_MaxChunkSize, size);
     stat->m_ObjLock.Unlock();
 }
 
