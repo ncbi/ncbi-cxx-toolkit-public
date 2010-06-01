@@ -157,6 +157,7 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
         new CServer_Connection(listener->m_Factory->Create()));
     if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
         return;
+/*
 #ifdef NCBI_OS_UNIX
     if (conn->Wait(eIO_Write, &kZeroTimeout) == eIO_Unknown) {
         int fd;
@@ -170,6 +171,7 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
         }
     }
 #endif
+*/
     conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
     m_Connection = conn.release();
     _TRACE("Connection accepted " << m_Connection);
@@ -243,7 +245,7 @@ void CServerConnectionRequest::Process(void)
         m_Connection->OnSocketEvent(m_Event);
 //        LOG_POST(Warning << "Request " << m_RequestId << " finished");
         _TRACE("End I/O request");
-    } STD_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
+    } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
                            CServer_ConnectionPool::eInactiveSocket);
@@ -482,10 +484,12 @@ void CServer::Run(void)
                               m_Parameters->idle_timeout, request_id);
             }
         }
-    } catch (...) {
+    } catch (CException& ex) {
+        ERR_POST(ex);
         // Avoid collateral damage from destroying the thread pool
         // while worker threads are active (or, worse, initializing).
         m_ThreadPool->KillAllThreads(true);
+        m_ConnectionPool->Erase();
         throw;
     }
 

@@ -226,7 +226,7 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
             // Here we just clean it up from the connection pool.
             to_delete.push_back(it->first);
         }
-        else if (info.expiration <= now) {
+        else if (info.type == eInactiveSocket  &&  info.expiration <= now) {
             _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
             it->first->OnTimeout();
             conn->OnSocketEvent(eServIO_OurClose);
