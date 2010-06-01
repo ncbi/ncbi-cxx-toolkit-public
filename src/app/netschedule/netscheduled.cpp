@@ -112,12 +112,11 @@ struct SJS_Request
         job_return_code = port = timeout = job_mask = 0;
         job_id = 0;
     }
-    void SetParamFields(map<string, string>& params)
+    void SetParamFields(TNSProtoParams& params)
     {
-        typedef map<string, string> TStrMap;
-        NON_CONST_ITERATE(TStrMap, it, params) {
-            const string& key = it->first;
-            string& val = it->second;
+        NON_CONST_ITERATE(TNSProtoParams, it, params) {
+            const CTempString& key = it->first;
+            string val = it->second;
             if (key.size() == 0) {
                 continue;
             }
@@ -1518,7 +1517,7 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
 
     CJob& job = m_BatchJobs[m_BatchPos];
 
-    map<string, string> params;
+    TNSProtoParams params;
     try {
         m_ReqParser.ParseArguments(msg, sm_BatchArgs, &params);
     }

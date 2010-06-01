@@ -153,6 +153,9 @@ protected:
     ///  whether to shut down service and return from Run.
     virtual bool ShutdownRequested(void) { return false; }
 
+    ///
+    CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }
+
 private:
     void CreateRequest(IServer_ConnectionBase* conn_base,
                        EServIO_Event event,

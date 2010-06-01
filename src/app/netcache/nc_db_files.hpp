@@ -1,5 +1,5 @@
-#ifndef NETCACHE_NC_DB_FILES__HPP
-#define NETCACHE_NC_DB_FILES__HPP
+#ifndef NETCACHE__NC_DB_FILES__HPP
+#define NETCACHE__NC_DB_FILES__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -48,24 +48,19 @@ class CNCDBStat;
 /// Statement types used in CNCDBFile
 enum ENCStmtType
 {
-    eStmt_CreateDBPart,      ///< Create new database part
-    eStmt_DeleteDBPart,      ///< Delete info about old database part
-    eStmt_GetBlobId,         ///< Get id of blob by key, subkey, version
+    eStmt_CreateDBFile,      ///< Create new database part
+    eStmt_DeleteDBFile,      ///< Delete info about old database part
     eStmt_BlobFamilyExists,  ///< Check if blob with given key, subkey exists
-    eStmt_BlobExists,        ///< Check if blob with given key, subkey, version
-                             ///< and id exists
-    eStmt_CreateBlobKey,     ///< Create record about id and key, subkey,
-                             ///< version of the blob
     eStmt_GetBlobsList,      ///< Get part of list of blobs "alive" in
                              ///< the given time frame
+    eStmt_GetBlobShortInfo,  ///<
     eStmt_WriteBlobInfo,     ///< Write all meta-info about blob
-    eStmt_SetBlobDeadTime,   ///< Set blob's expiration time to given value
+    eStmt_UpdateBlobInfo,    ///< Set blob's expiration time to given value
     eStmt_ReadBlobInfo,      ///< Get all meta-info about blob
+    eStmt_DeleteBlobInfo,    ///<
     eStmt_GetChunkIds,       ///< Get ids of all chunks for given blob
     eStmt_CreateChunk,       ///< Create new blob chunk
-    eStmt_DeleteLastChunks,  ///< Delete last chunks for the blob
-    eStmt_CreateChunkData,   ///< Create new record with blob chunk data
-    eStmt_WriteChunkData,    ///< Write blob chunk data into existing chunk
+    eStmt_WriteChunkData,    ///< Create new record with blob chunk data
     eStmt_ReadChunkData      ///< Read blob chunk data
 };
 
@@ -77,6 +72,36 @@ enum ENCStmtType
 class CNCDBFile : public CSQLITE_Connection
 {
 public:
+    virtual ~CNCDBFile(void);
+
+    ///
+    ENCDBFileType GetType(void);
+    ///
+    void LockDB(void);
+    ///
+    void UnlockDB(void);
+    ///
+    Int8 GetFileSize(void);
+
+    ///
+    void AddUsefulBlobs(Uint8 cnt);
+    ///
+    void AddUsefulBlobs(Uint8 cnt, Int8 size);
+    ///
+    void DelUsefulBlobs(Uint8 cnt);
+    ///
+    void SetBlobsGarbaged(Uint8 cnt);
+    ///
+    void SetBlobsGarbaged(Uint8 cnt, Int8 size);
+    ///
+    void GetBlobsCounts(Uint8* useful_cnt,  Uint8* garbage_cnt);
+    ///
+    void GetBlobsSizes (Int8*  useful_size, Int8*  garbage_size);
+    ///
+    void ResetBlobsCounts(void);
+
+    /// Create entire database structure for Index file
+    void CreateDatabase(ENCDBFileType db_type);
     /// Delete the database file along with its journal file.
     /// This is sort of overriding of parent class' method for cleaning all
     /// prepared statements.
@@ -94,53 +119,28 @@ protected:
     ///   Object for gathering database statistics
     CNCDBFile(CTempString     file_name,
               TOperationFlags flags,
-              CNCDBStat*      stat);
-    virtual ~CNCDBFile(void);
-
-    /// Get object gathering database statistics
-    CNCDBStat* GetStat(void) const;
-
-    /// Create entire database structure for Index file
-    void CreateIndexDatabase(void);
-    /// Create entire database structure for Meta file
-    void CreateMetaDatabase(void);
-    /// Create entire database structure for Data file
-    void CreateDataDatabase(void);
-    /// Convert database structure for Meta file from previous version
-    void AdjustMetaDatabase(void);
+              ENCDBFileType   file_type);
 
     /// Create new database part and save information about it.
     /// Creation time in given info structure is set to current time.
-    void CreateDBPart(SNCDBPartInfo* part_info);
+    void NewDBFile(ENCDBFileType file_type,
+                   TNCDBFileId   file_id,
+                   const string& file_name);
     /// Delete database part
-    void DeleteDBPart(TNCDBPartId part_id);
+    void DeleteDBFile(TNCDBFileId part_id);
     /// Read information about all database parts in order of their creation
-    void GetAllDBParts(TNCDBPartsList* parts_list);
+    void GetAllDBFiles(TNCDBFilesMap* files_map);
     /// Clean index database removing information about all database parts.
-    void DeleteAllDBParts(void);
+    void DeleteAllDBFiles(void);
 
     /// Get last blob id used in the database
     TNCBlobId GetLastBlobId(void);
-    /// Get id of existent blob with given key, subkey and version. Only blobs
-    /// alive at the dead_after moment or after that are considered existing.
-    /// Id of the blob is read right into the identity structure.
-    ///
-    /// @return
-    ///   TRUE if blob exists and its id was successfully read from database,
-    ///   FALSE if blob doesn't exist.
-    bool ReadBlobId(SNCBlobIdentity* identity, int dead_after);
     /// Check if blob with given key and subkey exists (more than one blob
     /// with given key and subkey can exist). Only blobs alive at
     /// the dead_after moment or after that are considered existing.
-    bool IsBlobFamilyExists(const string& key,
-                            const string& subkey,
+    bool IsBlobFamilyExists(const string& key_first,
+                            const string& key_last,
                             int           dead_after);
-    /// Check if blob with full given identification (id, key, subkey and
-    /// version) exists. Only blobs alive at the dead_after moment or after
-    /// that are considered existing.
-    bool IsBlobExists(const SNCBlobIdentity& identity, int dead_after);
-    /// Create record for blob's id, key, subkey and version.
-    void CreateBlobKey(const SNCBlobIdentity& identity);
     /// Read part of the full list of existing blobs in database. Only
     /// blobs live at the dead_after moment or after that and before
     /// dead_before moment are considered existing. Information about blobs
@@ -174,82 +174,43 @@ protected:
                       int           max_count,
                       TNCBlobsList* blobs_list);
 
-    /// Write full meta-information for blob
-    void WriteBlobInfo(SNCBlobInfo& blob_info, bool move_dead_time);
-    /// Change "dead time" for the blob, i.e. when blob will expire and after
-    /// what moment it will be considered not existing.
-    void SetBlobDeadTime(TNCBlobId blob_id, int dead_time);
+    ///
+    bool GetBlobShortInfo(const string&     blob_key,
+                          int               dead_after,
+                          SNCBlobShortInfo* blob_info);
     /// Read meta-information about blob - owner, ttl etc.
     ///
     /// @return
     ///   TRUE if meta-information was found in the database, FALSE otherwise
-    bool ReadBlobInfo(SNCBlobInfo* blob_info);
+    bool ReadBlobInfo(SNCBlobVerData* blob_info);
+    /// Write full meta-information for blob
+    void WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info);
+    ///
+    void UpdateBlobInfo(const SNCBlobVerData* blob_info);
+    ///
+    void DeleteBlobInfo(TNCBlobId blob_id);
+    ///
+    void DeleteAllBlobInfos(const string& min_key, const string& max_key);
 
     /// Get ids for all chunks of the given blob
     void GetChunkIds(TNCBlobId blob_id, TNCChunksList* id_list);
     /// Create record with association chunk id -> blob id
     void CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id);
-    /// Delete ids of last chunks for the blob
     ///
-    /// @param blob_id
-    ///   Id of the blob which chunks should be deleted
-    /// @param min_chunk_id
-    ///   Minimum id of chunks to be deleted - all chunks with ids equal or
-    ///   greater than this id will be deleted.
-    void DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id);
-    /// Create new chunk value record with given data
+    void WriteChunkData(TNCChunkId chunk_id, const CNCBlobBuffer* data);
     ///
-    /// @param data
-    ///   Data to write to the chunk
-    /// @return
-    ///   Id of the created chunk data
-    TNCChunkId CreateChunkValue(const TNCBlobBuffer& data);
-    /// Write value of blob chunk
-    ///
-    /// @param chunk_id
-    ///   Id of the chunk to write
-    /// @param data
-    ///   Data to write to the chunk
-    void WriteChunkValue(TNCChunkId chunk_id, const TNCBlobBuffer& data);
-    /// Read blob chunk value
-    ///
-    /// @param chunk_id
-    ///   Id of the chunk to read value from
-    /// @param buffer
-    ///   Buffer for the data to read to
-    /// @return
-    ///   TRUE if chunk was found in the databse, FALSE otherwise (meaning
-    ///   that database was corrupted in some way)
-    bool ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer);
-
-protected:
-    /// Add to the given CREATE TABLE statement definition of subkey and
-    /// version columns and index for all key columns.
-    /// Nothing is done in the base implementation here.
-    virtual void AddSubkeyColsDef(CQuickStrStream& sql);
-    /// Create sql for the statement which behavior depends on the file type
-    /// (for pure NetCache or for ICache).
-    /// Nothing is done in the base implementation here.
-    virtual void GetSpecificStatement(ENCStmtType typ, CQuickStrStream& sql);
-    /// Bind values of subkey and version to the statement if necessary.
-    /// Nothing is done in the base implementation here.
-    virtual void BindBlobSubkey(CSQLITE_Statement*     stmt,
-                                const SNCBlobIdentity& identity);
-    /// Bind value of subkey to the statement if necessary.
-    /// Nothing is done in the base implementation here.
-    virtual void BindBlobSubkey(CSQLITE_Statement*     stmt,
-                                const string&          subkey);
-    /// Read from result set returned by given statement values of subkey and
-    /// version starting from column with number col_num.
-    /// Nothing is done in the base implementation here.
-    virtual void ReadBlobSubkey(CSQLITE_Statement*     stmt,
-                                int                    col_num,
-                                SNCBlobIdentity*       identity);
+    bool ReadChunkData(TNCChunkId chunk_id, CNCBlobBuffer* buffer);
 
 private:
     CNCDBFile(const CNCDBFile&);
     CNCDBFile& operator= (const CNCDBFile&);
 
+    ///
+    void x_CreateIndexDatabase(void);
+    ///
+    void x_CreateMetaDatabase(void);
+    ///
+    void x_CreateDataDatabase(void);
     /// Create or get if already was created statement of given type.
     /// All created and prepared statements will be cached and re-used over
     /// the lifetime of database connection object.
@@ -260,9 +221,21 @@ private:
     typedef map<ENCStmtType, TStatementPtr>  TStmtMap;
 
     /// Map associating statement types to prepared statements
-    TStmtMap     m_Stmts;
-    /// Object for gathering database statistics
-    CNCDBStat*  m_Stat;
+    TStmtMap        m_Stmts;
+    ///
+    ENCDBFileType   m_Type;
+    ///
+    CFastMutex      m_DBLock;
+    ///
+    CSpinLock       m_BlobsCntLock;
+    ///
+    Uint8           m_UsefulBlobs;
+    ///
+    Int8            m_UsefulSize;
+    ///
+    Uint8           m_GarbageBlobs;
+    ///
+    Int8            m_GarbageSize;
 };
 
 
@@ -271,22 +244,22 @@ private:
 class CNCDBIndexFile : public CNCDBFile
 {
 public:
+    ///
+    static ENCDBFileType GetClassType(void);
+
     /// Create connection to index database file
     ///
     /// @param file_name
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDBIndexFile(const string& file_name, CNCDBStat* stat);
+    CNCDBIndexFile(const string& file_name);
     virtual ~CNCDBIndexFile(void);
 
-    /// Create entire database
-    void CreateDatabase(void);
-
-    using CNCDBFile::CreateDBPart;
-    using CNCDBFile::DeleteDBPart;
-    using CNCDBFile::GetAllDBParts;
-    using CNCDBFile::DeleteAllDBParts;
+    using CNCDBFile::NewDBFile;
+    using CNCDBFile::DeleteDBFile;
+    using CNCDBFile::GetAllDBFiles;
+    using CNCDBFile::DeleteAllDBFiles;
 };
 
 
@@ -295,105 +268,31 @@ public:
 class CNCDBMetaFile : public CNCDBFile
 {
 public:
-    virtual ~CNCDBMetaFile(void);
+    ///
+    static ENCDBFileType GetClassType(void);
 
-    /// Create entire database
-    void CreateDatabase(void);
-    /// Check if file contains information about any existing blobs.
-    /// Only blobs alive at the dead_after moment or after that are considered
-    /// existing.
-    bool HasLiveBlobs(int dead_after);
-    /// Check if file contains information about any blobs (existing or not
-    /// existing).
-    bool HasAnyBlobs(void);
-
-    using CNCDBFile::AdjustMetaDatabase;
-
-    using CNCDBFile::GetLastBlobId;
-    using CNCDBFile::ReadBlobId;
-    using CNCDBFile::IsBlobFamilyExists;
-    using CNCDBFile::IsBlobExists;
-    using CNCDBFile::CreateBlobKey;
-    using CNCDBFile::GetBlobsList;
-
-    using CNCDBFile::WriteBlobInfo;
-    using CNCDBFile::SetBlobDeadTime;
-    using CNCDBFile::ReadBlobInfo;
-
-    using CNCDBFile::GetChunkIds;
-    using CNCDBFile::CreateChunk;
-    using CNCDBFile::DeleteLastChunks;
-
-protected:
     /// Create connection to database file with blobs' meta-information
     ///
     /// @param file_name
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDBMetaFile(const string& file_name, CNCDBStat* stat);
-};
+    CNCDBMetaFile(const string& file_name);
+    virtual ~CNCDBMetaFile(void);
 
+    using CNCDBFile::GetLastBlobId;
+    using CNCDBFile::IsBlobFamilyExists;
+    using CNCDBFile::GetBlobsList;
 
-/// Connection to the database file in NetCache storage containing all
-/// meta-information about blobs and their chunks. Class is specific for
-/// ICache blobs storage.
-class CNCDBMetaFile_ICache : public CNCDBMetaFile
-{
-public:
-    /// Create connection to database file with blobs' meta-information - file
-    /// specific for ICache blobs storage.
-    ///
-    /// @param file_name
-    ///   Name of the database file
-    /// @param stat
-    ///   Object for gathering database statistics
-    CNCDBMetaFile_ICache(const string& file_name, CNCDBStat* stat);
-    virtual ~CNCDBMetaFile_ICache(void);
+    using CNCDBFile::GetBlobShortInfo;
+    using CNCDBFile::ReadBlobInfo;
+    using CNCDBFile::WriteBlobInfo;
+    using CNCDBFile::UpdateBlobInfo;
+    using CNCDBFile::DeleteBlobInfo;
+    using CNCDBFile::DeleteAllBlobInfos;
 
-private:
-    /// Add to the given CREATE TABLE statement definition of subkey and
-    /// version columns and index for all key columns.
-    virtual void AddSubkeyColsDef(CQuickStrStream& sql);
-    /// Create sql for the statement which behavior depends on the file type
-    /// (for pure NetCache or for ICache).
-    virtual void GetSpecificStatement(ENCStmtType typ, CQuickStrStream& sql);
-    /// Bind values of subkey and version to the statement if necessary.
-    virtual void BindBlobSubkey(CSQLITE_Statement*     stmt,
-                                const SNCBlobIdentity& identity);
-    /// Bind value of subkey to the statement if necessary.
-    virtual void BindBlobSubkey(CSQLITE_Statement*     stmt,
-                                const string&          subkey);
-    /// Read from result set returned by given statement values of subkey and
-    /// version starting from column with number col_num.
-    virtual void ReadBlobSubkey(CSQLITE_Statement*     stmt,
-                                int                    col_num,
-                                SNCBlobIdentity*       identity);
-};
-
-
-/// Connection to the database file in NetCache storage containing all
-/// meta-information about blobs and their chunks. Class is specific for
-/// pure NetCache blobs storage.
-class CNCDBMetaFile_NCCache : public CNCDBMetaFile
-{
-public:
-    /// Create connection to database file with blobs' meta-information - file
-    /// specific for pure NetCache blobs storage.
-    ///
-    /// @param file_name
-    ///   Name of the database file
-    /// @param stat
-    ///   Object for gathering database statistics
-    CNCDBMetaFile_NCCache(const string& file_name, CNCDBStat* stat);
-    virtual ~CNCDBMetaFile_NCCache(void);
-
-private:
-    /// Add to the given CREATE TABLE statement definition of and index for
-    /// key column.
-    virtual void AddSubkeyColsDef(CQuickStrStream& sql);
-    /// Create sql for the statement which behavior depends on the file type
-    virtual void GetSpecificStatement(ENCStmtType typ, CQuickStrStream& sql);
+    using CNCDBFile::GetChunkIds;
+    using CNCDBFile::CreateChunk;
 };
 
 
@@ -402,168 +301,20 @@ private:
 class CNCDBDataFile : public CNCDBFile
 {
 public:
+    ///
+    static ENCDBFileType GetClassType(void);
+
     /// Create connection to database file with blobs' data
     ///
     /// @param file_name
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDBDataFile(const string& file_name, CNCDBStat* stat);
+    CNCDBDataFile(const string& file_name);
     virtual ~CNCDBDataFile(void);
 
-    /// Create entire database
-    void CreateDatabase(void);
-
-    using CNCDBFile::CreateChunkValue;
-    using CNCDBFile::WriteChunkValue;
-    using CNCDBFile::ReadChunkValue;
-};
-
-
-/// Factory class for creating connections to database files.
-/// Class creates one connection for each thread and deletes them all in
-/// destructor.
-///
-/// @param TFile
-///   Type of file connection to create by this factory.
-template <class TFile>
-class CNCDBFileObjFactory : public CNCTlsObject<CNCDBFileObjFactory<TFile>,
-                                                TFile>
-{
-    typedef CNCTlsObject<CNCDBFileObjFactory<TFile>, TFile>  TBase;
-
-public:
-    /// Both parameters of constructor are passed unchanged to file
-    /// connection constructor.
-    ///
-    /// @param file_name
-    ///   Name of database file all objects will connect to
-    /// @param stat
-    ///   Object collecting database statistics
-    CNCDBFileObjFactory(const string& file_name, CNCDBStat* stat);
-    /// Destructor cleans up all file objects that it created in all threads.
-    ~CNCDBFileObjFactory(void);
-
-    /// Create new object.
-    /// Part of the interface required by CNCTlsObject.
-    TFile* CreateTlsObject(void);
-    /// Delete object.
-    /// Part of the interface required by CNCTlsObject.
-    static void DeleteTlsObject(void* obj_ptr);
-
-    /// Get name of the file all connections will be created to.
-    const string& GetFileName(void) const;
-
-private:
-    /// Name of database file all objects will connect to
-    string       m_FileName;
-    /// Object for collecting database statistics
-    CNCDBStat*   m_Stat;
-    /// Mutex for creation of new file objects (actually for work with
-    /// m_AllFiles).
-    CSpinLock    m_CreateLock;
-    /// List of all file objects created by this factory.
-    list<TFile*> m_AllFiles;
-};
-
-/// Factories for database files with meta-information and with actual data
-typedef CNCDBFileObjFactory<CNCDBMetaFile_ICache>  TNCMetaFileFactory_ICache;
-typedef CNCDBFileObjFactory<CNCDBMetaFile_NCCache> TNCMetaFileFactory_NCCache;
-typedef CNCDBFileObjFactory<CNCDBDataFile>         TNCDataFileFactory;
-
-
-/// Central pool of connections to database files belonging to one database
-/// part. Class created for convenience of implementation of different
-/// template methods and classes. Class is abstract, specific versions
-/// (*_ICache or *_NCCache) should be used.
-class CNCDBFilesPool
-{
-public:
-    virtual ~CNCDBFilesPool(void);
-
-    /// Get file of necessary type from pool.
-    /// Method cannot be made as simple template because GCC 3.0.4 refuses to
-    /// compile calls to such template method.
-    virtual void GetFile(CNCDBMetaFile** file_ptr) = 0;
-    void         GetFile(CNCDBDataFile** file_ptr);
-    /// Return file to the pool
-    void ReturnFile     (CNCDBMetaFile*  file);
-    void ReturnFile     (CNCDBDataFile*  file);
-
-    /// Get name of files this pool is for
-    const string& GetMetaFileName(void) const;
-    const string& GetDataFileName(void) const;
-
-protected:
-    /// Create database part's file pool
-    ///
-    /// @param meta_name
-    ///   Name of meta file in database part
-    /// @param data_name
-    ///   Name of data file in database part
-    /// @param stat
-    ///   Object for gathering database statistics
-    CNCDBFilesPool(const string& meta_name,
-                   const string& data_name,
-                   CNCDBStat*    stat);
-
-private:
-    CNCDBFilesPool(const CNCDBFilesPool&);
-    CNCDBFilesPool& operator= (const CNCDBFilesPool&);
-
-    /// Factory for per-thread data file connections
-    TNCDataFileFactory m_Datas;
-    /// Name of meta file that will be used by this pool
-    string             m_MetaName;
-};
-
-/// Central pool of connections to database files for ICache-related storage.
-class CNCDBFilesPool_ICache : public CNCDBFilesPool
-{
-public:
-    /// Create database part's file pool
-    ///
-    /// @param meta_name
-    ///   Name of meta file in database part
-    /// @param data_name
-    ///   Name of data file in database part
-    /// @param stat
-    ///   Object for gathering database statistics
-    CNCDBFilesPool_ICache(const string& meta_name,
-                          const string& data_name,
-                          CNCDBStat*    stat);
-    virtual ~CNCDBFilesPool_ICache(void);
-    /// Get meta file from pool.
-    virtual void GetFile(CNCDBMetaFile** file_ptr);
-
-private:
-    /// Factory for per-thread meta file connections
-    TNCMetaFileFactory_ICache m_Metas;
-};
-
-/// Central pool of connections to database files for pure NetCache-related
-/// storage.
-class CNCDBFilesPool_NCCache : public CNCDBFilesPool
-{
-public:
-    /// Create database part's file pool
-    ///
-    /// @param meta_name
-    ///   Name of meta file in database part
-    /// @param data_name
-    ///   Name of data file in database part
-    /// @param stat
-    ///   Object for gathering database statistics
-    CNCDBFilesPool_NCCache(const string& meta_name,
-                           const string& data_name,
-                           CNCDBStat*    stat);
-    virtual ~CNCDBFilesPool_NCCache(void);
-    /// Get meta file from pool.
-    virtual void GetFile(CNCDBMetaFile** file_ptr);
-
-private:
-    /// Factory for per-thread meta file connections
-    TNCMetaFileFactory_NCCache m_Metas;
+    using CNCDBFile::WriteChunkData;
+    using CNCDBFile::ReadChunkData;
 };
 
 
@@ -598,6 +349,7 @@ public:
     static void SetDiskInitialized(void);
     /// Check if disk database was initialized.
     static bool IsDiskInitialized(void);
+
     /// Open new database file.
     /// Method is called automatically inside file system but can be called
     /// outside to notify that database file requires synchronous I/O because
@@ -617,6 +369,8 @@ public:
     /// changes will be made to the first page of the file in the future. This
     /// allows to do some good optimizations in file system work.
     static void SetFileInitialized(const string& file_name);
+    ///
+    static Int8 GetFileSize(const string& file_name);
 
 public:
     // For use only internally in nc_db_files.cpp
@@ -830,25 +584,141 @@ private:
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
 
+inline Int8
+CNCFSOpenFile::GetSize(void)
+{
+    return m_Size;
+}
+
+
+inline CNCFSOpenFile*
+CNCFileSystem::FindOpenFile(const string& name)
+{
+    CFastReadGuard guard(sm_FilesListLock);
+
+    TFilesList::const_iterator it = sm_FilesList.find(name);
+    return it == sm_FilesList.end()? NULL: it->second;
+}
+
+inline Int8
+CNCFileSystem::GetFileSize(const string& file_name)
+{
+    return FindOpenFile(file_name)->GetSize();
+}
+
+
 inline
 CNCDBFile::CNCDBFile(CTempString     file_name,
                      TOperationFlags flags,
-                     CNCDBStat*      stat)
+                     ENCDBFileType   file_type)
     // If fSyncOff in here was changed to something else then behavior
-    // in CNCFSVirtFile should have been changed appropriately.
+    // in CNCFSVirtFile should be changed appropriately.
     : CSQLITE_Connection(file_name,
                          flags | fExternalMT   | fSyncOff
                                | fTempToMemory | fWritesSync),
-      m_Stat(stat)
+      m_Type(file_type),
+      m_UsefulBlobs(0),
+      m_UsefulSize(0),
+      m_GarbageBlobs(0),
+      m_GarbageSize(0)
 {
-    _ASSERT(stat);
     SetCacheSize(kNCSQLitePageSize);
 }
 
-inline CNCDBStat*
-CNCDBFile::GetStat(void) const
+inline ENCDBFileType
+CNCDBFile::GetType(void)
 {
-    return m_Stat;
+    return m_Type;
+}
+
+inline void
+CNCDBFile::LockDB(void)
+{
+    m_DBLock.Lock();
+}
+
+inline void
+CNCDBFile::UnlockDB(void)
+{
+    m_DBLock.Unlock();
+}
+
+inline Int8
+CNCDBFile::GetFileSize(void)
+{
+    return CNCFileSystem::GetFileSize(GetFileName());
+}
+
+inline void
+CNCDBFile::AddUsefulBlobs(Uint8 cnt)
+{
+    m_BlobsCntLock.Lock();
+    m_UsefulBlobs += cnt;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::AddUsefulBlobs(Uint8 cnt, Int8 size)
+{
+    m_BlobsCntLock.Lock();
+    m_UsefulBlobs += cnt;
+    m_UsefulSize  += size;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::DelUsefulBlobs(Uint8 cnt)
+{
+    m_BlobsCntLock.Lock();
+    m_UsefulBlobs -= cnt;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::SetBlobsGarbaged(Uint8 cnt)
+{
+    m_BlobsCntLock.Lock();
+    m_UsefulBlobs  -= cnt;
+    m_GarbageBlobs += cnt;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::SetBlobsGarbaged(Uint8 cnt, Int8 size)
+{
+    m_BlobsCntLock.Lock();
+    m_UsefulBlobs  -= cnt;
+    m_GarbageBlobs += cnt;
+    m_UsefulSize   -= size;
+    m_GarbageSize  += size;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::GetBlobsCounts(Uint8* useful_cnt,  Uint8* garbage_cnt)
+{
+    m_BlobsCntLock.Lock();
+    *useful_cnt   = m_UsefulBlobs;
+    *garbage_cnt  = m_GarbageBlobs;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::GetBlobsSizes(Int8*  useful_size, Int8*  garbage_size)
+{
+    m_BlobsCntLock.Lock();
+    *useful_size  = m_UsefulSize;
+    *garbage_size = m_GarbageSize;
+    m_BlobsCntLock.Unlock();
+}
+
+inline void
+CNCDBFile::ResetBlobsCounts(void)
+{
+    //m_BlobsCntLock.Lock();
+    m_UsefulBlobs = m_GarbageBlobs = 0;
+    m_UsefulSize  = m_GarbageSize  = 0;
+    //m_BlobsCntLock.Unlock();
 }
 
 inline void
@@ -859,189 +729,41 @@ CNCDBFile::DeleteDatabase(void)
 }
 
 
-inline
-CNCDBIndexFile::CNCDBIndexFile(const string& file_name, CNCDBStat* stat)
-    : CNCDBFile(file_name, fJournalDelete | fVacuumOn, stat)
-{}
-
-inline void
-CNCDBIndexFile::CreateDatabase(void)
+inline ENCDBFileType
+CNCDBIndexFile::GetClassType(void)
 {
-    CreateIndexDatabase();
+    return eNCIndex;
 }
-
 
 inline
-CNCDBMetaFile::CNCDBMetaFile(const string& file_name, CNCDBStat* stat)
-    : CNCDBFile(file_name, fJournalOff | fVacuumManual, stat)
-{}
-
-inline void
-CNCDBMetaFile::CreateDatabase(void)
-{
-    CreateMetaDatabase();
-}
-
-inline bool
-CNCDBMetaFile::HasLiveBlobs(int dead_after)
-{
-    TNCBlobId id_after = 0;
-    TNCBlobsList blobs_list;
-    GetBlobsList(dead_after, id_after, numeric_limits<int>::max(),
-                 1, &blobs_list);
-    return !blobs_list.empty();
-}
-
-inline bool
-CNCDBMetaFile::HasAnyBlobs(void)
-{
-    int dead_after = 0;
-    TNCBlobId id_after = 0;
-    TNCBlobsList blobs_list;
-    GetBlobsList(dead_after, id_after, numeric_limits<int>::max(),
-                 1, &blobs_list);
-    return !blobs_list.empty();
-}
-
-
-inline
-CNCDBMetaFile_ICache::CNCDBMetaFile_ICache(const string& file_name,
-                                           CNCDBStat*    stat)
-    : CNCDBMetaFile(file_name, stat)
+CNCDBIndexFile::CNCDBIndexFile(const string& file_name)
+    : CNCDBFile(file_name, fJournalDelete | fVacuumOff, eNCIndex)
 {}
 
 
+inline ENCDBFileType
+CNCDBMetaFile::GetClassType(void)
+{
+    return eNCMeta;
+}
+
 inline
-CNCDBMetaFile_NCCache::CNCDBMetaFile_NCCache(const string& file_name,
-                                             CNCDBStat*    stat)
-    : CNCDBMetaFile(file_name, stat)
+CNCDBMetaFile::CNCDBMetaFile  (const string& file_name)
+    : CNCDBFile(file_name, fJournalOff    | fVacuumOff, eNCMeta)
 {}
 
 
+inline ENCDBFileType
+CNCDBDataFile::GetClassType(void)
+{
+    return eNCData;
+}
+
 inline
-CNCDBDataFile::CNCDBDataFile(const string& file_name, CNCDBStat* stat)
-    : CNCDBFile(file_name, fJournalOff | fVacuumManual, stat)
+CNCDBDataFile::CNCDBDataFile  (const string& file_name)
+    : CNCDBFile(file_name, fJournalOff    | fVacuumOff, eNCData)
 {}
 
-inline void
-CNCDBDataFile::CreateDatabase(void)
-{
-    CreateDataDatabase();
-}
-
-
-
-template <class TFile>
-inline
-CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(const string& file_name,
-                                                CNCDBStat*    stat)
-    : m_FileName(file_name),
-      m_Stat(stat)
-{
-    TBase::Initialize();
-}
-
-template <class TFile>
-inline
-CNCDBFileObjFactory<TFile>::~CNCDBFileObjFactory(void)
-{
-    ITERATE(typename list<TFile*>, it, m_AllFiles) {
-        delete *it;
-    }
-    m_AllFiles.clear();
-    TBase::Finalize();
-}
-
-template <class TFile>
-inline TFile*
-CNCDBFileObjFactory<TFile>::CreateTlsObject(void)
-{
-    _ASSERT(!m_FileName.empty()  &&  m_Stat);
-    // Make it a unique object for each thread for now. If it changes then
-    // CNCDBFilesPool::GetFile and CNCDBFilesPool::ReturnFile should be
-    // changed too.
-    TFile* file = new TFile(m_FileName, m_Stat);
-
-    m_CreateLock.Lock();
-    m_AllFiles.push_back(file);
-    m_CreateLock.Unlock();
-
-    return file;
-}
-
-template <class TFile>
-inline void
-CNCDBFileObjFactory<TFile>::DeleteTlsObject(void*)
-{
-    // Nothing to do now because it's static
-}
-
-template <class TFile>
-inline const string&
-CNCDBFileObjFactory<TFile>::GetFileName(void) const
-{
-    return m_FileName;
-}
-
-
-
-inline
-CNCDBFilesPool::CNCDBFilesPool(const string& meta_name,
-                               const string& data_name,
-                               CNCDBStat*    stat)
-    : m_Datas(data_name, stat),
-      m_MetaName(meta_name)
-{}
-
-inline void
-CNCDBFilesPool::GetFile(CNCDBDataFile** file_ptr)
-{
-    *file_ptr = m_Datas.GetObjPtr();
-}
-
-inline void
-CNCDBFilesPool::ReturnFile(CNCDBMetaFile*)
-{
-    // Nothing to be done for now until file objects are re-used for different
-    // threads.
-}
-
-inline void
-CNCDBFilesPool::ReturnFile(CNCDBDataFile*)
-{
-    // Nothing to be done for now until file objects are re-used for different
-    // threads.
-}
-
-inline const string&
-CNCDBFilesPool::GetMetaFileName(void) const
-{
-    return m_MetaName;
-}
-
-inline const string&
-CNCDBFilesPool::GetDataFileName(void) const
-{
-    return m_Datas.GetFileName();
-}
-
-
-inline
-CNCDBFilesPool_ICache::CNCDBFilesPool_ICache(const string& meta_name,
-                                             const string& data_name,
-                                             CNCDBStat*    stat)
-    : CNCDBFilesPool(meta_name, data_name, stat),
-      m_Metas(meta_name, stat)
-{}
-
-
-inline
-CNCDBFilesPool_NCCache::CNCDBFilesPool_NCCache(const string& meta_name,
-                                               const string& data_name,
-                                               CNCDBStat*    stat)
-    : CNCDBFilesPool(meta_name, data_name, stat),
-      m_Metas(meta_name, stat)
-{}
 
 
 inline void
@@ -1063,12 +785,6 @@ CNCFSOpenFile::IsForcedSync(void)
     return (m_Flags & fForcedSync) != 0;
 }
 
-inline Int8
-CNCFSOpenFile::GetSize(void)
-{
-    return m_Size;
-}
-
 inline bool
 CNCFSOpenFile::IsFileOpen(void)
 {
@@ -1086,4 +802,4 @@ CNCFSOpenFile::SetFileOpen(bool value /* = true */)
 
 END_NCBI_SCOPE
 
-#endif /* NETCACHE_NC_DB_FILES__HPP */
+#endif /* NETCACHE__NC_DB_FILES__HPP */

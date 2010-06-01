@@ -112,7 +112,6 @@ void CNetCacheControl::Init()
     arg_desc->AddFlag("getconf",       "Server config");
     arg_desc->AddFlag("health",        "Server health");
     arg_desc->AddFlag("stat",          "Server statistics");
-    arg_desc->AddFlag("monitor",       "Monitor server");
 
     arg_desc->AddOptionalKey("fetch", "key",
         "Retrieve data by key", CArgDescriptions::eString);
@@ -128,9 +127,6 @@ void CNetCacheControl::Init()
 
     arg_desc->AddOptionalKey("password", "password",
         "Password for use with -store and -fetch", CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("owner", "owner",
-        "Get BLOB's owner", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("size", "key",
         "Get BLOB size", CArgDescriptions::eString);
@@ -283,18 +279,6 @@ int CNetCacheControl::Run()
 
         if (!icache_mode)
             NcbiCout << key << NcbiEndl;
-    } else if (args["owner"]) {
-        string key(args["owner"].AsString());
-        string owner;
-        if (!icache_mode)
-            owner = nc_client.GetOwner(key);
-        else {
-            SICacheBlobAddress blob_address;
-            ParseICacheBlobAddress(key, &blob_address);
-            icache_client.GetBlobOwner(blob_address.key,
-                blob_address.version, blob_address.subkey, &owner);
-        }
-        NcbiCout << "BLOB belongs to: [" << owner << "]" << NcbiEndl;
     } else if (args["size"]) {
         string key(args["size"].AsString());
         size_t size;
@@ -311,8 +295,6 @@ int CNetCacheControl::Run()
         admin.PrintConfig(NcbiCout);
     else if (args["health"])
         admin.PrintHealth(NcbiCout);
-    else if (args["monitor"])
-        admin.Monitor(NcbiCout);
     else if (args["stat"])
         admin.PrintStat(NcbiCout);
     else if (args["ver"])

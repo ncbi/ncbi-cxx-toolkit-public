@@ -33,6 +33,7 @@
  */
 
 #include <connect/services/netcache_api_expt.hpp>
+#include <connect/services/netcache_key.hpp>
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
@@ -47,118 +48,9 @@
 BEGIN_NCBI_SCOPE
 
 
-class CNCServerStat;
 class CNetCacheDApp;
 class CNCMessageHandler;
 
-
-/// Name of the cache that can be used in CNetCacheServer::GetBlobStorage()
-/// to acquire instance used for NetCache (as opposed to ICache instances).
-static const string kNCDefCacheName = "nccache";
-
-
-struct SConstCharCompare
-{
-    bool operator() (const char* left, const char* right) const;
-};
-
-
-/// Helper class to maintain different instances of server statistics in
-/// different threads.
-class CNCServerStat_Getter : public CNCTlsObject<CNCServerStat_Getter,
-                                                 CNCServerStat>
-{
-    typedef CNCTlsObject<CNCServerStat_Getter, CNCServerStat>  TBase;
-
-public:
-    CNCServerStat_Getter(void);
-    ~CNCServerStat_Getter(void);
-
-    /// Part of interface required by CNCTlsObject<>
-    CNCServerStat* CreateTlsObject(void);
-    static void DeleteTlsObject(void* obj_ptr);
-};
-
-/// Class collecting statistics about whole server.
-class CNCServerStat
-{
-public:
-    /// Add finished command
-    ///
-    /// @param cmd
-    ///   Command name - should be string constant living through all time
-    ///   application is running.
-    /// @param cmd_span
-    ///   Time command was executed
-    /// @param cmd_status
-    ///   Resultant status code of the command
-    static void AddFinishedCmd(const char* cmd,
-                               double      cmd_span,
-                               int         cmd_status);
-    /// Add closed connection
-    ///
-    /// @param conn_span
-    ///   Time which connection stayed opened
-    static void AddClosedConnection(double conn_span);
-    /// Add opened connection
-    static void AddOpenedConnection(void);
-    /// Remove opened connection (after OnOverflow was called)
-    static void RemoveOpenedConnection(void);
-    /// Add connection that will be closed because of maximum number of
-    /// connections exceeded.
-    static void AddOverflowConnection(void);
-    /// Add command terminated because of timeout
-    static void AddTimedOutCommand(void);
-
-    /// Print statistics
-    static void Print(CPrintTextProxy& proxy);
-
-private:
-    friend class CNCServerStat_Getter;
-
-
-    typedef CNCStatFigure<double>                           TSpanValue;
-    typedef map<const char*, TSpanValue, SConstCharCompare> TCmdsSpansMap;
-    typedef map<int, TCmdsSpansMap>                         TStatCmdsSpansMap;
-
-
-    CNCServerStat(void);
-    /// Get pointer to element in given span map related to given command name.
-    /// If there's no such element then it's created and initialized.
-    static TCmdsSpansMap::iterator x_GetSpanFigure(TCmdsSpansMap&  cmd_span_map,
-                                                   const char*     cmd);
-    /// Collect all statistics from this instance to another
-    void x_CollectTo(CNCServerStat* other);
-
-
-    /// Mutex for working with statistics
-    CSpinLock             m_ObjLock;
-    /// Number of connections opened
-    Uint8                 m_OpenedConns;
-    /// Number of connections closed because of maximum number of opened
-    /// connections limit.
-    Uint8                 m_OverflowConns;
-    /// Sum of times all connections stayed opened
-    CNCStatFigure<double> m_ConnSpan;
-    /// Maximum time one command was executed
-    CNCStatFigure<double> m_CmdSpan;
-    /// Maximum time of each command type executed
-    TStatCmdsSpansMap     m_CmdSpanByCmd;
-    /// Number of commands terminated because of command timeout
-    Uint8                 m_TimedOutCmds;
-
-    /// Object differentiating statistics instances over threads
-    static CNCServerStat_Getter sm_Getter;
-    /// All instances of statistics used in application
-    static CNCServerStat        sm_Instances[kNCMaxThreadsCnt];
-};
-
-/// Types of "request-start" and "request-stop" messages logging
-enum ENCLogCmdsType {
-    eLogAllCmds,    ///< Always log these messages
-    eNoLogHasb,     ///< Log these messages only if command is not HASB
-    eNoLogCmds      ///< Never log these messages
-};
 
 /// Policy for accepting passwords for reading and writing blobs
 enum ENCBlobPassPolicy {
@@ -166,6 +58,31 @@ enum ENCBlobPassPolicy {
     eNCOnlyWithPass,    ///< Only blobs with password are accepted
     eNCOnlyWithoutPass  ///< Only blobs without password are accepted
 };
+
+
+///
+struct SNCSpecificParams : public CObject
+{
+    ///
+    bool                disable;
+    ///
+    unsigned int        conn_timeout;
+    ///
+    unsigned int        cmd_timeout;
+    ///
+    unsigned int        blob_ttl;
+    ///
+    bool                prolong_on_read;
+    ///
+    ENCBlobPassPolicy   pass_policy;
+
+
+    virtual ~SNCSpecificParams(void);
+};
+
+///
+typedef  map<string, string>  TStringMap;
+
 
 /// Netcache server
 class CNetCacheServer : public CServer
@@ -186,88 +103,84 @@ public:
     /// Ask server to stop after receiving given signal
     void RequestShutdown(int signal = 0);
 
-    /// Get monitor for the server
-    CServer_Monitor* GetServerMonitor(void);
-    /// Get storage for the given cache name.
-    /// If cache name is empty then it should be main storage for NetCache,
-    /// otherwise it's storage for ICache implementation
-    CNCBlobStorage* GetBlobStorage(const string& cache_name);
-    /// Get next blob id to incorporate it into generated blob key
-    int GetNextBlobId(void);
-    /// Get configuration registry for the server
-    const IRegistry& GetRegistry(void);
-    /// Get server host
-    const string& GetHost(void) const;
-    /// Get server port
-    unsigned int GetPort(void) const;
+    ///
+    const SNCSpecificParams* GetAppSetup(const TStringMap& client_params);
+    /// 
+    void GenerateBlobKey(unsigned int version, unsigned short port, string* key);
     /// Get inactivity timeout for each connection
-    unsigned GetInactivityTimeout(void) const;
-    /// Get timeout for each executed command
-    unsigned GetCmdTimeout(void) const;
+    unsigned GetDefConnTimeout(void) const;
     /// Get type of logging all commands starting and stopping
-    ENCLogCmdsType GetLogCmdsType(void) const;
+    bool IsLogCmds(void) const;
     /// Get name of client that should be used for administrative commands
     const string& GetAdminClient(void) const;
-    /// Get policy for accepting blobs with/without passwords
-    ENCBlobPassPolicy GetBlobPassPolicy(void) const;
     /// Create CTime object in fast way (via CFastTime)
     CTime GetFastTime(void);
 
-    /// Block all storages available in the server
-    void BlockAllStorages(void);
-    /// Unblock all storages available in the server
-    void UnblockAllStorages(void);
-    /// Check if server is ready for re-reading of the configuration.
-    /// The server is ready when all storages are blocked and all operations in
-    /// them are stopped.
-    bool CanReconfigure(void);
     /// Re-read configuration of the server and all storages
     void Reconfigure(void);
-
     /// Print full server statistics into stream
     void PrintServerStats(CNcbiIostream* ios);
 
 private:
-    /// Read integer configuration value from server's registry
-    int    x_RegReadInt   (const IRegistry& reg,
-                           const char*      value_name,
-                           int              def_value);
-    /// Read boolean configuration value from server's registry
-    bool   x_RegReadBool  (const IRegistry& reg,
-                           const char*      value_name,
-                           bool             def_value);
-    /// Read string configuration value from server's registry
-    string x_RegReadString(const IRegistry& reg,
-                           const char*      value_name,
-                           const string&    def_value);
+    ///
+    typedef set<unsigned int>   TPortsList;
+    typedef vector<string>      TSpecKeysList;
+    ///
+    struct SSpecParamsEntry {
+        string        key;
+        CRef<CObject> value;
 
+        SSpecParamsEntry(const string& key, CObject* value);
+    };
+    ///
+    struct SSpecParamsSet : public CObject {
+        vector<SSpecParamsEntry>  entries;
+
+        virtual ~SSpecParamsSet(void);
+    };
+
+
+    ///
+    virtual void Init(void);
     /// Read server parameters from application's configuration file
     void x_ReadServerParams(void);
-    /// Remove all old storages (that can be left from previous
-    /// re-configuration) and check if some active ones were removed from
-    /// list of sections in application's configuration file.
-    void x_CleanExistingStorages(const list<string>& ini_sections);
-    /// Read storages configuration from registry and adjust list of active
-    /// storages accordingly.
     ///
-    /// @param reg
-    ///   Registry to read configuration for storages
-    /// @param do_reinit
-    ///   Flag if all storages should be forced to reinitialize
-    void x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit);
+    void x_ReadSpecificParams(const IRegistry&   reg,
+                              const string&      section,
+                              SNCSpecificParams* params);
+    ///
+    void x_PutNewParams(SSpecParamsSet*         params_set,
+                        unsigned int            best_index,
+                        const SSpecParamsEntry& entry);
+    ///
+    SSpecParamsSet* x_FindNextParamsSet(const SSpecParamsSet* cur_set,
+                                        const string&         key,
+                                        unsigned int&         best_index);
+
 
     /// Print full server statistics into stream or diagnostics
     void x_PrintServerStats(CPrintTextProxy& proxy);
 
 
-    typedef map<string, AutoPtr<CNCBlobStorage> >   TStorageMap;
-    typedef list< AutoPtr<CNCBlobStorage> >         TStorageList;
-
 
     /// Host name where server runs
-    string                         m_Host;
+    string                         m_HostIP;
+    ///
+    string                         m_PortsConfStr;
     /// Port where server runs
-    unsigned                       m_Port;
+    TPortsList                     m_Ports;
+    /// Type of logging all commands starting and stopping
+    bool                           m_LogCmds;
+    /// Name of client that should be used for administrative commands
+    string                         m_AdminClient;
+    ///
+    TSpecKeysList                  m_SpecPriority;
+    ///
+    CRef<SSpecParamsSet>           m_SpecParams;
+    ///
+    CRef<SSpecParamsSet>           m_OldSpecParams;
+    ///
+    unsigned int                   m_DefConnTimeout;
     /// Time when this server instance was started
     CTime                          m_StartTime;
     // Some variable that should be here because of CServer requirements
@@ -276,31 +189,15 @@ private:
     bool                           m_Shutdown;
     /// Signal which caused the shutdown request
     int                            m_Signal;
-    /// Time to wait for the client on the connection (seconds)
-    unsigned                       m_InactivityTimeout;
-    /// Maximum time span which each command can work in
-    unsigned                       m_CmdTimeout;
-    /// Type of logging all commands starting and stopping
-    ENCLogCmdsType                 m_LogCmdsType;
-    /// Policy for accepting blobs with/without passwords
-    ENCBlobPassPolicy              m_PassPolicy;
-    /// Flag showing if configuration parameter to reinitialize broken storages
-    /// was set.
-    bool                           m_IsReinitBadDB;
-    /// Name of client that should be used for administrative commands
-    string                         m_AdminClient;
     /// Quick local timer
     CFastLocalTime                 m_FastTime;
-    /// Map of strings to blob storages
-    TStorageMap                    m_StorageMap;
-    /// List of storages that were excluded from configuration file and that
-    /// will be deleted on next re-configuration attempt.
-    TStorageList                   m_OldStorages;
     /// Counter for blob id
     CAtomicCounter                 m_BlobIdCounter;
-    /// Server monitor
-    CServer_Monitor                m_Monitor;
 };
+
+
+///
+extern CNetCacheServer* g_NetcacheServer;
 
 
 /// NetCache daemon application
@@ -310,84 +207,6 @@ protected:
     virtual void Init(void);
     virtual int  Run (void);
 };
-
-
-
-inline bool
-SConstCharCompare::operator() (const char* left, const char* right) const
-{
-    return NStr::strcmp(left, right) < 0;
-}
-
-
-inline
-CNCServerStat_Getter::CNCServerStat_Getter(void)
-{
-    TBase::Initialize();
-}
-
-inline
-CNCServerStat_Getter::~CNCServerStat_Getter(void)
-{
-    TBase::Finalize();
-}
-
-inline CNCServerStat*
-CNCServerStat_Getter::CreateTlsObject(void)
-{
-    return &CNCServerStat::sm_Instances[
-                                     g_GetNCThreadIndex() % kNCMaxThreadsCnt];
-}
-
-inline void
-CNCServerStat_Getter::DeleteTlsObject(void*)
-{}
-
-
-inline void
-CNCServerStat::AddClosedConnection(double conn_span)
-{
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_ConnSpan.AddValue(conn_span);
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCServerStat::AddOpenedConnection(void)
-{
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_OpenedConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCServerStat::RemoveOpenedConnection(void)
-{
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    --stat->m_OpenedConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCServerStat::AddOverflowConnection(void)
-{
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_OverflowConns;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCServerStat::AddTimedOutCommand(void)
-{
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_TimedOutCmds;
-    stat->m_ObjLock.Unlock();
-}
 
 
 
@@ -403,20 +222,18 @@ CNetCacheServer::GetSignalCode(void) const
     return m_Signal;
 }
 
-inline int
-CNetCacheServer::GetNextBlobId(void)
+inline void
+CNetCacheServer::GenerateBlobKey(unsigned int   version,
+                                 unsigned short port,
+                                 string*        key)
 {
-    return int(m_BlobIdCounter.Add(1));
-}
-
-inline unsigned int
-CNetCacheServer::GetCmdTimeout(void) const
-{
-    return m_CmdTimeout;
+    CNetCacheKey::GenerateBlobKey(
+                    key, static_cast<unsigned int>(m_BlobIdCounter.Add(1)),
+                    m_HostIP, port, version);
 }
 
 inline void
-CNetCacheServer::RequestShutdown(int sig)
+CNetCacheServer::RequestShutdown(int sig /* = 0 */)
 {
     if (!m_Shutdown) {
         m_Shutdown = true;
@@ -424,46 +241,16 @@ CNetCacheServer::RequestShutdown(int sig)
     }
 }
 
-inline CServer_Monitor*
-CNetCacheServer::GetServerMonitor(void)
-{
-    return &m_Monitor;
-}
-
-inline const IRegistry&
-CNetCacheServer::GetRegistry(void)
-{
-    return CNcbiApplication::Instance()->GetConfig();
-}
-
-inline const string&
-CNetCacheServer::GetHost(void) const
-{
-    return m_Host;
-}
-
 inline unsigned int
-CNetCacheServer::GetPort(void) const
+CNetCacheServer::GetDefConnTimeout(void) const
 {
-    return m_Port;
+    return m_DefConnTimeout;
 }
 
-inline unsigned int
-CNetCacheServer::GetInactivityTimeout(void) const
+inline bool
+CNetCacheServer::IsLogCmds(void) const
 {
-    return m_InactivityTimeout;
-}
-
-inline ENCLogCmdsType
-CNetCacheServer::GetLogCmdsType(void) const
-{
-    return m_LogCmdsType;
-}
-
-inline ENCBlobPassPolicy
-CNetCacheServer::GetBlobPassPolicy(void) const
-{
-    return m_PassPolicy;
+    return m_LogCmds;
 }
 
 inline const string&
@@ -476,16 +263,6 @@ inline CTime
 CNetCacheServer::GetFastTime(void)
 {
     return m_FastTime.GetLocalTime();
-}
-
-inline CNCBlobStorage*
-CNetCacheServer::GetBlobStorage(const string& cache_name)
-{
-    TStorageMap::iterator it = m_StorageMap.find(cache_name);
-    if (it == m_StorageMap.end()) {
-        return NULL;
-    }
-    return it->second.get();
 }
 
 inline void

@@ -39,4 +39,14 @@
 #define NETCACHED_STORAGE_VERSION  "2.0.0"
 #define NETCACHED_PROTOCOL_VERSION "1.0.0"
 
+#define NETCACHED_HUMAN_VERSION \
+    "NCBI NetCache server Version " NETCACHED_VERSION \
+    " build " __DATE__ " " __TIME__
+
+#define NETCACHED_FULL_VERSION \
+    "NCBI NetCache Server version " NETCACHED_VERSION \
+    " Storage version " NETCACHED_STORAGE_VERSION \
+    " Protocol version " NETCACHED_PROTOCOL_VERSION \
+    " build " __DATE__ " " __TIME__
+
 #endif /* NETCACHE_VERSION__HPP */

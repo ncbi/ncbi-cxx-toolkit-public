@@ -37,12 +37,14 @@ BEGIN_NCBI_SCOPE
                                      class         Comparator,      \
                                      unsigned int  NodesMaxFill,    \
                                      unsigned int  DeletionDelay,   \
+                                     unsigned int  DelStoreCapacity,\
                                      unsigned int  MaxTreeHeight>
 #define CONCURMAP          CConcurrentMap<Key,                      \
                                           Value,                    \
                                           Comparator,               \
                                           NodesMaxFill,             \
                                           DeletionDelay,            \
+                                          DelStoreCapacity,         \
                                           MaxTreeHeight>
 
 
@@ -149,9 +151,9 @@ CONCURMAP::CKeyRef::Swap(CKeyRef& other)
 
 CONCURMAP_TEMPLATE
 inline
-CONCURMAP::CNode::CNode(TTree* const   tree,
-                        const CKeyRef& max_key,
-                        unsigned int   deep_level)
+CONCURMAP::CNode::CNode(const TTree* const  tree,
+                        const CKeyRef&      max_key,
+                        unsigned int        deep_level)
     : m_Tree(tree),
       m_MaxKey(max_key),
       m_DeepLevel(deep_level),
@@ -159,9 +161,9 @@ CONCURMAP::CNode::CNode(TTree* const   tree,
       m_RightNode(NULL)
 {
     for (int i = 0; i < kNodesMaxFill; ++i) {
-        m_Keys     [i] = max_key;
-        m_Values   [i] = NULL;
-        m_IsDeleted[i] = true;
+        m_Keys  [i] = max_key;
+        m_Values[i] = NULL;
+        m_Status[i] = eValueDeleted;
     }
 }
 
@@ -216,12 +218,27 @@ CONCURMAP::CNode::GetKey(unsigned int index)
 }
 
 CONCURMAP_TEMPLATE
-inline Value&
+inline Value*
 CONCURMAP::CNode::GetValue(unsigned int index)
 {
-    return *reinterpret_cast<TValue*>(m_Values[index]);
+    return reinterpret_cast<TValue*>(m_Values[index]);
 }
 
+CONCURMAP_TEMPLATE
+inline typename CONCURMAP::EValueStatus
+CONCURMAP::CNode::GetValueStatus(unsigned int index)
+{
+    return m_Status[index];
+}
+
+CONCURMAP_TEMPLATE
+inline void
+CONCURMAP::CNode::SetValueStatus(unsigned int index, EValueStatus status)
+{
+    swap(m_Status[index], status);
+    if (status == eValueDeleted)
+        ++m_CntFilled;
+}
 
 CONCURMAP_TEMPLATE
 inline typename CONCURMAP::CNode*
@@ -244,7 +261,7 @@ CONCURMAP::CNode::GetNextIndex(unsigned int index)
     do {
         ++index;
     }
-    while (index < kNodesMaxFill  &&  m_IsDeleted[index]);
+    while (index < kNodesMaxFill  &&  m_Status[index] == eValueDeleted);
     return index;
 }
 
@@ -268,7 +285,7 @@ inline unsigned int
 CONCURMAP::CNode::x_GetIndexOfMaximum(void)
 {
     unsigned int index = kMaxNodeIndex;
-    while (m_Keys[index].IsMaximum()  &&  m_IsDeleted[index])
+    while (m_Keys[index].IsMaximum()  &&  m_Status[index] == eValueDeleted)
         --index;
     return m_Keys[index].IsMaximum()? index: index + 1;
 }
@@ -278,7 +295,7 @@ inline unsigned int
 CONCURMAP::CNode::FindContainIndex(const TKey& key)
 {
     unsigned int index = x_FindKeyIndex(key);
-    if (index != kNodesMaxFill  &&  m_IsDeleted[index]) {
+    if (index != kNodesMaxFill  &&  m_Status[index] == eValueDeleted) {
         index = GetNextIndex(index);
     }
     return index;
@@ -299,7 +316,6 @@ CONCURMAP::CNode::FindExactIndex(const TKey& key, unsigned int& insert_index)
 {
     insert_index = x_FindKeyIndex(key);
     return insert_index != kNodesMaxFill
-           &&  !m_IsDeleted[insert_index]
            &&  !m_Tree->x_IsKeyLess(key, m_Keys[insert_index]);
 }
 
@@ -323,7 +339,7 @@ CONCURMAP_TEMPLATE
 inline void
 CONCURMAP::CNode::Delete(unsigned int index)
 {
-    m_IsDeleted[index] = true;
+    m_Status[index] = eValueDeleted;
     --m_CntFilled;
 }
 
@@ -332,7 +348,7 @@ inline void
 CONCURMAP::CNode::x_ClearValues(void)
 {
     for (unsigned int i = 0; i < kNodesMaxFill; ++i) {
-        m_IsDeleted[i] = true;
+        m_Status[i] = eValueDeleted;
         delete reinterpret_cast<TValue*>(m_Values[i]);
         m_Values   [i] = NULL;
     }
@@ -344,12 +360,12 @@ inline void
 CONCURMAP::CNode::x_ClearLowerNodes(void)
 {
     for (unsigned int i = 0; i < kNodesMaxFill; ++i) {
-        if (!m_IsDeleted[i]) {
-            m_IsDeleted[i] = true;
+        if (m_Status[i] != eValueDeleted) {
+            m_Status[i] = eValueDeleted;
             CNode* node = m_Values[i];
             m_Values[i] = NULL;
             node->Clear();
-            m_Tree->x_DeleteNode(node);
+            const_cast<TTree*>(m_Tree)->x_DeleteNode(node);
         }
     }
     m_CntFilled = 0;
@@ -370,21 +386,24 @@ inline void
 CONCURMAP::CNode::x_FindInsertSpace(unsigned int& index,
                                     unsigned int& insert_index)
 {
-    if (index != kNodesMaxFill  &&  m_IsDeleted[index]) {
+    if (index != kNodesMaxFill  &&  m_Status[index] == eValueDeleted) {
         insert_index = index;
     }
-    else if (index != 0  &&  m_IsDeleted[index - 1]) {
+    else if (index != 0  &&  m_Status[index - 1] == eValueDeleted) {
         insert_index = index - 1;
     }
     else {
         unsigned int right_index = index + 1;
-        while (right_index < kNodesMaxFill  &&  !m_IsDeleted[right_index])
+        while (right_index < kNodesMaxFill
+               &&  m_Status[right_index] != eValueDeleted)
+        {
             ++right_index;
+        }
         if (right_index < kNodesMaxFill) {
-            m_IsDeleted[right_index] = false;
             for (; right_index != index; --right_index) {
                 swap(m_Values[right_index], m_Values[right_index - 1]);
                 m_Keys[right_index].Swap(m_Keys[right_index - 1]);
+                m_Status[right_index] = m_Status[right_index - 1];
             }
             insert_index = index;
             ++index;
@@ -393,46 +412,47 @@ CONCURMAP::CNode::x_FindInsertSpace(unsigned int& index,
             _ASSERT(index > 1);
             insert_index = index - 1;
             unsigned int left_index = insert_index - 1;
-            while (!m_IsDeleted[left_index]) {
+            while (m_Status[left_index] != eValueDeleted) {
                 _ASSERT(left_index != 0);
                 --left_index;
             }
-            m_IsDeleted[left_index] = false;
             for (; left_index != insert_index; ++left_index) {
                 swap(m_Values[left_index], m_Values[left_index + 1]);
                 m_Keys[left_index].Swap(m_Keys[left_index + 1]);
+                m_Status[left_index] = m_Status[left_index + 1];
             }
         }
     }
 }
 
 CONCURMAP_TEMPLATE
-inline void
+inline Value*
 CONCURMAP::CNode::Insert(unsigned int  index,
                          const TKey&   key,
                          const TValue& value)
 {
     _ASSERT(index == kNodesMaxFill
             ||  m_Tree->x_IsKeyLess(key, m_Keys[index])
-            ||  m_IsDeleted[index]);
+            ||  m_Status[index] == eValueDeleted);
 
     unsigned int insert_index;
     x_FindInsertSpace(index, insert_index);
-    m_IsDeleted[insert_index] = false;
-    m_Keys     [insert_index] = key;
+    m_Status[insert_index] = eValueActive;
+    m_Keys  [insert_index] = key;
     TValue* my_value = reinterpret_cast<TValue*>(m_Values[insert_index]);
     if (my_value)
         *my_value = value;
     else
         m_Values[insert_index] = reinterpret_cast<CNode*>(new TValue(value));
     ++m_CntFilled;
+    return GetValue(insert_index);
 }
 
 CONCURMAP_TEMPLATE
-inline void
+inline Value*
 CONCURMAP::CNode::Insert(const TKey& key, const TValue& value)
 {
-    Insert(x_FindKeyIndex(key), key, value);
+    return Insert(x_FindKeyIndex(key), key, value);
 }
 
 CONCURMAP_TEMPLATE
@@ -445,8 +465,8 @@ CONCURMAP::CNode::Split(void)
     for (unsigned int i = split_index + 1; i < kNodesMaxFill; ++i) {
         m_Keys[i].Swap(right_node->m_Keys[i]);
         swap(m_Values[i], right_node->m_Values[i]);
-        m_IsDeleted[i] = true;
-        right_node->m_IsDeleted[i] = false;
+        right_node->m_Status[i] = m_Status[i];
+        m_Status[i] = eValueDeleted;
     }
     m_CntFilled             = split_index + 1;
     right_node->m_CntFilled = kMaxNodeIndex - split_index;
@@ -466,7 +486,8 @@ CONCURMAP::CNode::AddSplit(const CKeyRef& left_key,
     unsigned int right_index;
     if (right_key.IsMaximum()) {
         right_index = x_GetIndexOfMaximum();
-        _ASSERT(m_Keys[right_index].IsMaximum()  &&  !m_IsDeleted[right_index]);
+        _ASSERT(m_Keys[right_index].IsMaximum()
+                &&  m_Status[right_index] != eValueDeleted);
     }
     else {
         right_index = x_FindKeyIndex(right_key.GetKey());
@@ -477,12 +498,12 @@ CONCURMAP::CNode::AddSplit(const CKeyRef& left_key,
            &&  !m_Tree->x_IsKeyLess(m_Keys[left_index - 1], left_key))
     {
         --left_index;
-        _ASSERT(m_IsDeleted[left_index]);
+        _ASSERT(m_Status[left_index] == eValueDeleted);
     }
-    m_Keys     [left_index]  = left_key;
-    m_Values   [left_index]  = m_Values[right_index];
-    m_Values   [right_index] = right_node;
-    m_IsDeleted[left_index]  = false;
+    m_Keys  [left_index]  = left_key;
+    m_Values[left_index]  = m_Values[right_index];
+    m_Values[right_index] = right_node;
+    m_Status[left_index]  = m_Status[right_index];
     ++m_CntFilled;
 }
 
@@ -498,11 +519,11 @@ CONCURMAP::CNode::AddRootSplit(const CKeyRef& left_key,
     // that for optimization purposes we need to add one new node to the left
     // and another to the right but to be consistent with all other insert and
     // search procedures we need to add to the first 2 elements.
-    m_Keys     [0] = left_key;
-    m_Values   [0] = left_node;
-    m_Values   [1] = right_node;
-    m_IsDeleted[0] = false;
-    m_IsDeleted[1] = false;
+    m_Keys  [0] = left_key;
+    m_Values[0] = left_node;
+    m_Values[1] = right_node;
+    m_Status[0] = eValueActive;
+    m_Status[1] = eValueActive;
     m_CntFilled    = 2;
 }
 
@@ -514,9 +535,9 @@ CONCURMAP::CNode::AddMaxChild(void)
     unsigned int max_index = x_FindKeyIndex(m_MaxKey.GetKey());
     unsigned int insert_index;
     x_FindInsertSpace(max_index, insert_index);
-    m_Keys     [insert_index] = m_MaxKey;
-    m_Values   [insert_index] = m_Tree->x_CreateNode(m_MaxKey, m_DeepLevel - 1);
-    m_IsDeleted[insert_index] = false;
+    m_Keys  [insert_index] = m_MaxKey;
+    m_Values[insert_index] = m_Tree->x_CreateNode(m_MaxKey, m_DeepLevel - 1);
+    m_Status[insert_index] = eValueActive;
     ++m_CntFilled;
     return insert_index;
 }
@@ -584,7 +605,7 @@ CONCURMAP::CTreeWalker::x_AddRootSplit(const CKeyRef& left_key,
         CNode* root_node = m_Tree->x_CreateNode(CKeyRef(), m_DeepLevel);
         m_PathNodes[m_DeepLevel] = root_node;
         root_node->AddRootSplit(left_key, left_node, right_node);
-        m_Tree->x_ChangeRoot(root_node, m_DeepLevel);
+        const_cast<TTree*>(m_Tree)->x_ChangeRoot(root_node, m_DeepLevel);
         return true;
     }
 }
@@ -595,6 +616,9 @@ CONCURMAP::CTreeWalker::x_WaitForKeyAppear(CNode*         search_node,
                                            const CKeyRef& key,
                                            CNode*         key_node)
 {
+#ifdef _DEBUG
+    int cnt = 0;
+#endif
     unsigned int key_index;
     while (!search_node->FindExactIndex(key, key_index)
            ||  search_node->GetLowerNode(key_index) != key_node)
@@ -602,6 +626,10 @@ CONCURMAP::CTreeWalker::x_WaitForKeyAppear(CNode*         search_node,
         // This means that our split node was just created and is not
         // yet added to the parent. So we need to wait and give to another
         // thread a chance to add it.
+#ifdef _DEBUG
+        if (++cnt >= 5)
+            abort();
+#endif
         x_UnlockNode(search_node, eWriteLock);
         NCBI_SCHED_YIELD();
         x_LockNode(search_node, eWriteLock);
@@ -792,26 +820,36 @@ CONCURMAP::CTreeWalker::x_FindKey(void)
 }
 
 CONCURMAP_TEMPLATE
-inline void
+inline Value*
 CONCURMAP::CTreeWalker::Insert(const TValue& value)
 {
+    _ASSERT(m_LockType == eWriteLock  &&  m_LockedNode
+            &&  m_LockedNode == m_PathNodes[0]);
+
     CNode* left_node = m_PathNodes[0];
     if (left_node->GetCntFilled() != kNodesMaxFill) {
-        left_node->Insert(m_KeyIndex, m_Key, value);
-        return;
+        return left_node->Insert(m_KeyIndex, m_Key, value);
     }
-    CNode* right_node = left_node->Split();
-    if (m_Tree->x_IsKeyLess(left_node->GetMaxKey(), m_Key))
-        right_node->Insert(m_Key, value);
-    else
-        left_node->Insert(m_Key, value);
+    CNode*  right_node = left_node->Split();
+    TValue* result;
+    if (m_Tree->x_IsKeyLess(left_node->GetMaxKey(), m_Key)) {
+        m_PathNodes[0] = right_node;
+        result = right_node->Insert(m_Key, value);
+    }
+    else {
+        result = left_node->Insert(m_Key, value);
+    }
     x_AddSplitToAbove(left_node, right_node, 1);
+    return result;
 }
 
 CONCURMAP_TEMPLATE
 inline void
 CONCURMAP::CTreeWalker::Delete(void)
 {
+    _ASSERT(m_LockType == eWriteLock  &&  m_LockedNode
+            &&  m_LockedNode == m_PathNodes[0]);
+
     unsigned int level = 0;
     CNode* prev_node = m_PathNodes[0];
     prev_node->Delete(m_KeyIndex);
@@ -824,7 +862,7 @@ CONCURMAP::CTreeWalker::Delete(void)
         x_UnlockNode(prev_node, eWriteLock);
         // We already have prev_node.m_MaxKey locked and the node itself is
         // used by pointer only, so we can delete it already here.
-        m_Tree->x_DeleteNode(prev_node);
+        const_cast<TTree*>(m_Tree)->x_DeleteNode(prev_node);
         x_LockNode(next_node, eWriteLock);
         unsigned int key_index
                         = x_WaitForKeyAppear(next_node, prev_key, prev_node);
@@ -835,17 +873,24 @@ CONCURMAP::CTreeWalker::Delete(void)
         // As prev_node can be root we need to unlock it before shrinking as
         // it can be already deleted on return.
         x_UnlockNode(prev_node, eWriteLock);
-        m_Tree->x_ShrinkTree();
+        const_cast<TTree*>(m_Tree)->x_ShrinkTree();
     }
 }
 
 CONCURMAP_TEMPLATE
+inline void
+CONCURMAP::CTreeWalker::SetValueStatus(EValueStatus status)
+{
+    m_PathNodes[0]->SetValueStatus(m_KeyIndex, status);
+}
+
+CONCURMAP_TEMPLATE
 inline
-CONCURMAP::CTreeWalker::CTreeWalker(TTree*  const tree,
-                                    CNode** const path_nodes,
-                                    const TKey&   key,
-                                    ERWLockType   lock_type,
-                                    EForceKeyType force_type)
+CONCURMAP::CTreeWalker::CTreeWalker(const TTree* const  tree,
+                                    CNode** const       path_nodes,
+                                    const TKey&         key,
+                                    ERWLockType         lock_type,
+                                    EForceKeyType       force_type)
     : m_Tree(tree),
       m_PathNodes(path_nodes),
       m_Key(key),
@@ -882,94 +927,30 @@ CONCURMAP::CTreeWalker::GetKey(void)
 }
 
 CONCURMAP_TEMPLATE
-inline Value&
+inline Value*
 CONCURMAP::CTreeWalker::GetValue(void)
 {
     return m_PathNodes[0]->GetValue(m_KeyIndex);
 }
 
-
 CONCURMAP_TEMPLATE
-inline
-CONCURMAP::CStorageForDelete::CStorageForDelete(void)
-    : m_Next(NULL)
+inline typename CONCURMAP::EValueStatus
+CONCURMAP::CTreeWalker::GetValueStatus(void)
 {
-    memset(m_Nodes, 0, sizeof(m_Nodes));
-    m_CurIdx.Set(0);
-}
-
-CONCURMAP_TEMPLATE
-inline
-CONCURMAP::CStorageForDelete::~CStorageForDelete(void)
-{
-    _ASSERT(m_CurIdx.Get() == 0);
-}
-
-CONCURMAP_TEMPLATE
-inline void
-CONCURMAP::CStorageForDelete::x_CreateNextAndAddNode(CNode* node)
-{
-    CStorageForDelete* storage = this;
-    unsigned int index;
-    do {
-        {{
-            CSpinGuard guard(storage->m_ObjLock);
-            if (!storage->m_Next)
-                storage->m_Next = new CStorageForDelete();
-            storage = storage->m_Next;
-        }}
-        while (storage->m_Next)
-            storage = storage->m_Next;
-        index = static_cast<unsigned int>(storage->m_CurIdx.Add(1)) - 1;
-    }
-    while (index >= kCntNodesPerStorage);
-    storage->m_Nodes[index] = node;
-}
-
-CONCURMAP_TEMPLATE
-inline void
-CONCURMAP::CStorageForDelete::AddNode(CNode* node)
-{
-    CStorageForDelete* storage = this;
-    while (storage->m_Next)
-        storage = storage->m_Next;
-    unsigned int index = static_cast<unsigned int>(storage->m_CurIdx.Add(1)) - 1;
-    if (index >= kCntNodesPerStorage)
-        storage->x_CreateNextAndAddNode(node);
-    else
-        storage->m_Nodes[index] = node;
-}
-
-CONCURMAP_TEMPLATE
-inline void
-CONCURMAP::CStorageForDelete::Clean(void)
-{
-    if (m_Next) {
-        m_Next->Clean();
-        delete m_Next;
-        m_Next = NULL;
-    }
-    unsigned int max_index = static_cast<unsigned int>(m_CurIdx.Get());
-    if (max_index >= kCntNodesPerStorage)
-        max_index = kCntNodesPerStorage;
-    for (unsigned int i = 0; i < max_index; ++i) {
-        delete m_Nodes[i];
-        m_Nodes[i] = NULL;
-    }
-    m_CurIdx.Set(0);
+    return m_PathNodes[0]->GetValueStatus(m_KeyIndex);
 }
 
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_IsKeyLess(const TKey& left, const TKey& right)
+CONCURMAP::x_IsKeyLess(const TKey& left, const TKey& right) const
 {
     return m_Comparator(left, right);
 }
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const TKey& right)
+CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const TKey& right) const
 {
     if (left_ref.IsMaximum())
         return false;
@@ -978,7 +959,7 @@ CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const TKey& right)
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_IsKeyLess(const TKey& left, const CKeyRef& right_ref)
+CONCURMAP::x_IsKeyLess(const TKey& left, const CKeyRef& right_ref) const
 {
     if (right_ref.IsMaximum())
         return true;
@@ -987,7 +968,7 @@ CONCURMAP::x_IsKeyLess(const TKey& left, const CKeyRef& right_ref)
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const CKeyRef& right_ref)
+CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const CKeyRef& right_ref) const
 {
     if (left_ref.IsMaximum())
         return false;
@@ -998,14 +979,14 @@ CONCURMAP::x_IsKeyLess(const CKeyRef& left_ref, const CKeyRef& right_ref)
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_IsKeyEqual(const CKeyRef& left_ref, const CKeyRef& right_ref)
+CONCURMAP::x_IsKeyEqual(const CKeyRef& left_ref, const CKeyRef& right_ref) const
 {
     return left_ref.IsEqual(right_ref);
 }
 
 CONCURMAP_TEMPLATE
 inline void
-CONCURMAP::x_GetRoot(CNode*& node, unsigned int& deep_level)
+CONCURMAP::x_GetRoot(CNode*& node, unsigned int& deep_level) const
 {
     CSpinReadGuard guard(m_RootLock);
     node       = m_RootNode;
@@ -1025,7 +1006,7 @@ CONCURMAP::x_ChangeRoot(CNode* node, unsigned int deep_level)
 
 CONCURMAP_TEMPLATE
 inline void
-CONCURMAP::x_RemoveRootRef(void)
+CONCURMAP::x_RemoveRootRef(void) const
 {
     m_CntRootRefs.Add(-1);
 }
@@ -1038,17 +1019,15 @@ CONCURMAP::x_Initialize(void)
     m_CntRootRefs.Set(0);
     m_CntNodes.Set(0);
     m_CntValues.Set(0);
+    m_IsDeleting = false;
 
     m_RootNode = x_CreateNode(CKeyRef(), 0);
-    for (unsigned int i = 0; i < kDeletionDelay; ++i) {
-        m_DeleteStore[i] = new CStorageForDelete();
-    }
-    m_CurDelStore = m_DeleteStore[0];
 }
 
 CONCURMAP_TEMPLATE
 inline
 CONCURMAP::CConcurrentMap(void)
+    : m_NodesDeleter(Deleter<CNode>())
 {
     x_Initialize();
 }
@@ -1056,7 +1035,8 @@ CONCURMAP::CConcurrentMap(void)
 CONCURMAP_TEMPLATE
 inline
 CONCURMAP::CConcurrentMap(const TComparator& comparator)
-    : m_Comparator(comparator)
+    : m_Comparator(comparator),
+      m_NodesDeleter(Deleter<CNode>())
 {
     x_Initialize();
 }
@@ -1065,17 +1045,16 @@ CONCURMAP_TEMPLATE
 inline
 CONCURMAP::~CConcurrentMap(void)
 {
+    m_IsDeleting = true;
     m_RootNode->Clear();
-    for (unsigned int i = 0; i < kDeletionDelay; ++i) {
-        m_DeleteStore[i]->Clean();
-        delete m_DeleteStore[i];
-    }
     delete m_RootNode;
+    // We didn't decrease counter for root node, so it should be 1 here
+    _ASSERT(m_CntNodes.Get() == 1);
 }
 
 CONCURMAP_TEMPLATE
 inline typename CONCURMAP::CNode*
-CONCURMAP::x_CreateNode(const CKeyRef& key_ref, unsigned int deep_level)
+CONCURMAP::x_CreateNode(const CKeyRef& key_ref, unsigned int deep_level) const
 {
     m_CntNodes.Add(1);
     return new CNode(this, key_ref, deep_level);
@@ -1086,24 +1065,20 @@ inline void
 CONCURMAP::x_DeleteNode(CNode* node)
 {
     m_CntNodes.Add(-1);
-    m_CurDelStore->AddNode(node);
+    if (!m_IsDeleting)
+        m_NodesDeleter.AddElement(node);
 }
 
 CONCURMAP_TEMPLATE
 inline void
 CONCURMAP::HeartBeat(void)
 {
-    CStorageForDelete* last_store = m_DeleteStore[kDeletionDelay - 1];
-    last_store->Clean();
-    memmove(&m_DeleteStore[1], &m_DeleteStore[0],
-            sizeof(m_DeleteStore) - sizeof(m_DeleteStore[0]));
-    m_DeleteStore[0] = last_store;
-    SwapPointers(reinterpret_cast<void* volatile *>(&m_CurDelStore), last_store);
+    m_NodesDeleter.HeartBeat();
 }
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::x_CanShrinkTree(void)
+CONCURMAP::x_CanShrinkTree(void) const
 {
     return m_DeepLevel != 0  &&  m_RootNode->GetCntFilled() == 1
            &&  m_CntRootRefs.Get() == 1;
@@ -1129,7 +1104,7 @@ CONCURMAP::x_ShrinkTree(void)
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::Get(const TKey& key, TValue* value)
+CONCURMAP::Get(const TKey& key, TValue* value) const
 {
     CNode* path_nodes[kMaxTreeHeight];
     CTreeWalker walker(this, path_nodes, key, eReadLock, eDoNotForceKey);
@@ -1143,19 +1118,131 @@ CONCURMAP::Get(const TKey& key, TValue* value)
 
 CONCURMAP_TEMPLATE
 inline bool
-CONCURMAP::Exists(const TKey& key)
+CONCURMAP::Exists(const TKey& key) const
 {
     return Get(key, NULL);
 }
 
 CONCURMAP_TEMPLATE
-inline bool
-CONCURMAP::GetLowerBound(const TKey& search_key, TKey& stored_key)
+inline Value*
+CONCURMAP::GetPtr(const TKey& key, EGetValueType get_type)
 {
     CNode* path_nodes[kMaxTreeHeight];
-    CTreeWalker walker(this, path_nodes, search_key, eReadLock, eForceBiggerKey);
+    ERWLockType lock_typ    = (get_type == eGetOrCreate? eWriteLock: eReadLock);
+    EForceKeyType force_typ = (get_type == eGetOrCreate? eForceExactKey: eDoNotForceKey);
+    CTreeWalker walker(this, path_nodes, key, lock_typ, force_typ);
     if (walker.IsKeyFound()) {
+        EValueStatus val_status = walker.GetValueStatus();
+        switch (get_type) {
+        case eGetOnlyActive:
+            if (val_status == eValueActive)
+                return walker.GetValue();
+            else
+                return NULL;
+        case eGetActiveAndPassive:
+            if (val_status != eValueDeleted)
+                return walker.GetValue();
+            else
+                return NULL;
+        case eGetOrCreate:
+            switch (val_status) {
+            case eValueDeleted:
+                m_CntValues.Add(1);
+                if (walker.GetValue()) {
+                    walker.SetValueStatus(eValueActive);
+                    return walker.GetValue();
+                }
+                else {
+                    return walker.Insert(TValue());
+                }
+            case eValuePassive:
+                walker.SetValueStatus(eValueActive);
+                // fall through
+            case eValueActive:
+                return walker.GetValue();
+            }
+        }
+    }
+    else if (get_type == eGetOrCreate) {
+        m_CntValues.Add(1);
+        return walker.Insert(TValue());
+    }
+    return NULL;
+}
+
+CONCURMAP_TEMPLATE
+inline bool
+CONCURMAP::InsertOrGetPtr(const TKey&   key,
+                          const TValue& value,
+                          EGetValueType get_type,
+                          TValue**      value_ptr)
+{
+    _ASSERT(get_type != eGetOrCreate);
+    CNode* path_nodes[kMaxTreeHeight];
+    CTreeWalker walker(this, path_nodes, key, eWriteLock, eForceExactKey);
+    if (walker.IsKeyFound()) {
+        switch (walker.GetValueStatus()) {
+        case eValueDeleted:
+            m_CntValues.Add(1);
+            if (walker.GetValue()) {
+                walker.SetValueStatus(eValueActive);
+                *walker.GetValue() = value;
+                *value_ptr = walker.GetValue();
+            }
+            else {
+                *value_ptr = walker.Insert(value);
+            }
+            return true;
+        case eValuePassive:
+            walker.SetValueStatus(eValueActive);
+            if (get_type == eGetOnlyActive)
+                *walker.GetValue() = value;
+            // fall through
+        case eValueActive:
+            *value_ptr = walker.GetValue();
+            return false;
+        }
+    }
+    else {
+        m_CntValues.Add(1);
+        *value_ptr = walker.Insert(value);
+        return true;
+    }
+    // This is never reachable but compiler complains that some return paths
+    // do not return value.
+    abort();
+    return NULL;
+}
+
+CONCURMAP_TEMPLATE
+inline bool
+CONCURMAP::GetLowerBound(const TKey&    search_key,
+                         TKey&          stored_key,
+                         EGetValueType  get_type) const
+{
+    _ASSERT(get_type != eGetOrCreate);
+
+    CNode* path_nodes[kMaxTreeHeight];
+    CTreeWalker walker(this, path_nodes, search_key, eReadLock, eForceBiggerKey);
+    if (walker.IsKeyFound()  &&  (walker.GetValueStatus() == eValueActive
+                                  ||  get_type == eGetActiveAndPassive))
+    {
         stored_key = walker.GetKey();
+        return true;
+    }
+    return false;
+}
+
+CONCURMAP_TEMPLATE
+inline bool
+CONCURMAP::SetValueStatus(const TKey& key, EValueStatus status)
+{
+    _ASSERT(status != eValueDeleted);
+
+    CNode* path_nodes[kMaxTreeHeight];
+    CTreeWalker walker(this, path_nodes, key, eWriteLock, eDoNotForceKey);
+    if (walker.IsKeyFound()  &&  walker.GetValueStatus() != eValueDeleted) {
+        walker.SetValueStatus(status);
         return true;
     }
     return false;
@@ -1184,7 +1271,7 @@ CONCURMAP::Insert(const TKey& key, const TValue& value, TValue* stored_value)
     CTreeWalker walker(this, path_nodes, key, eWriteLock, eForceExactKey);
     if (walker.IsKeyFound()) {
         if (stored_value)
-            *stored_value = walker.GetValue();
+            *stored_value = *walker.GetValue();
         return false;
     }
     else {
@@ -1213,7 +1300,21 @@ CONCURMAP::Erase(const TKey& key)
 {
     CNode* path_nodes[kMaxTreeHeight];
     CTreeWalker walker(this, path_nodes, key, eWriteLock, eDoNotForceKey);
-    if (walker.IsKeyFound()) {
+    if (walker.IsKeyFound()  &&  walker.GetValueStatus() != eValueDeleted) {
+        walker.Delete();
+        m_CntValues.Add(-1);
+        return true;
+    }
+    return false;
+}
+
+CONCURMAP_TEMPLATE
+inline bool
+CONCURMAP::EraseIfPassive(const TKey& key)
+{
+    CNode* path_nodes[kMaxTreeHeight];
+    CTreeWalker walker(this, path_nodes, key, eWriteLock, eDoNotForceKey);
+    if (walker.IsKeyFound()  &&  walker.GetValueStatus() == eValuePassive) {
         walker.Delete();
         m_CntValues.Add(-1);
         return true;
@@ -1225,30 +1326,32 @@ CONCURMAP_TEMPLATE
 inline void
 CONCURMAP::Clear(void)
 {
+    m_IsDeleting = true;
     m_RootNode->Clear();
-    m_CntValues.Set(0);
     x_DeleteNode(m_RootNode);
+    m_IsDeleting = false;
+    m_CntValues.Set(0);
     m_RootNode  = x_CreateNode(CKeyRef(), 0);
     m_DeepLevel = 0;
 }
 
 CONCURMAP_TEMPLATE
 inline unsigned int
-CONCURMAP::CountValues(void)
+CONCURMAP::CountValues(void) const
 {
     return static_cast<unsigned int>(m_CntValues.Get());
 }
 
 CONCURMAP_TEMPLATE
 inline unsigned int
-CONCURMAP::CountNodes(void)
+CONCURMAP::CountNodes(void) const
 {
     return static_cast<unsigned int>(m_CntNodes.Get());
 }
 
 CONCURMAP_TEMPLATE
 inline unsigned int
-CONCURMAP::TreeHeight(void)
+CONCURMAP::TreeHeight(void) const
 {
     return m_DeepLevel + 1;
 }

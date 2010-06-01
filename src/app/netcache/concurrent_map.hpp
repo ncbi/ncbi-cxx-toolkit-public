@@ -36,10 +36,11 @@ BEGIN_NCBI_SCOPE
 ///
 template <class         Key,
           class         Value,
-          class         Comparator    = less<Key>,
-          unsigned int  NodesMaxFill  = 8,
-          unsigned int  DeletionDelay = 3,
-          unsigned int  MaxTreeHeight = 16>
+          class         Comparator       = less<Key>,
+          unsigned int  NodesMaxFill     = 8,
+          unsigned int  DeletionDelay    = 3,
+          unsigned int  DelStoreCapacity = 20,
+          unsigned int  MaxTreeHeight    = 16>
 class CConcurrentMap
 {
 public:
@@ -51,7 +52,6 @@ public:
     ///
     enum {
         kNodesMaxFill  = NodesMaxFill,
-        kDeletionDelay = DeletionDelay,
         kMaxTreeHeight = MaxTreeHeight
     };
 
@@ -63,11 +63,9 @@ public:
     ~CConcurrentMap(void);
 
     ///
-    bool Exists(const TKey& key);
+    bool Exists(const TKey& key) const;
     ///
-    bool Get(const TKey& key, TValue* value);
-    ///
-    bool GetLowerBound(const TKey& search_key, TKey& stored_key);
+    bool Get(const TKey& key, TValue* value) const;
     ///
     void Put(const TKey& key, const TValue& value);
     ///
@@ -80,13 +78,44 @@ public:
     void Clear(void);
 
     ///
+    enum EValueStatus {
+        eValueDeleted,  ///<
+        eValuePassive,  ///<
+        eValueActive    ///<
+    };
+
+    ///
+    bool SetValueStatus(const TKey& key, EValueStatus status);
+    ///
+    bool EraseIfPassive(const TKey& key);
+
+    ///
+    enum EGetValueType {
+        eGetOnlyActive,         ///<
+        eGetActiveAndPassive,   ///<
+        eGetOrCreate            ///<
+    };
+
+    ///
+    TValue* GetPtr(const TKey& key, EGetValueType get_type);
+    ///
+    bool InsertOrGetPtr(const TKey&   key,
+                        const TValue& value,
+                        EGetValueType get_type,
+                        TValue**      value_ptr);
+    ///
+    bool GetLowerBound(const TKey&   search_key,
+                       TKey&         stored_key,
+                       EGetValueType get_type) const;
+
+    ///
     void HeartBeat(void);
     ///
-    unsigned int CountValues(void);
+    unsigned int CountValues(void) const;
     ///
-    unsigned int CountNodes(void);
+    unsigned int CountNodes(void) const;
     ///
-    unsigned int TreeHeight(void);
+    unsigned int TreeHeight(void) const;
 
 private:
     ///
@@ -150,9 +179,9 @@ private:
     {
     public:
         ///
-        CNode(TTree* const   tree,
-              const CKeyRef& max_key,
-              unsigned int   deep_level);
+        CNode(const TTree* const tree,
+              const CKeyRef&     max_key,
+              unsigned int       deep_level);
         ~CNode(void);
 
         ///
@@ -173,24 +202,28 @@ private:
         unsigned int GetNextIndex(unsigned int index);
 
         ///
-        unsigned int    GetCntFilled(void);
+        unsigned int    GetCntFilled  (void);
         ///
-        const CKeyRef&  GetMaxKey   (void);
+        const CKeyRef&  GetMaxKey     (void);
         ///
-        unsigned int    GetDeepLevel(void);
+        unsigned int    GetDeepLevel  (void);
         ///
-        const CKeyRef&  GetKey      (unsigned int index);
+        const CKeyRef&  GetKey        (unsigned int index);
         ///
-        TValue&         GetValue    (unsigned int index);
+        TValue*         GetValue      (unsigned int index);
         ///
-        CNode*          GetLowerNode(unsigned int index);
+        EValueStatus    GetValueStatus(unsigned int index);
         ///
-        CNode*          GetRightNode(void);
+        CNode*          GetLowerNode  (unsigned int index);
+        ///
+        CNode*          GetRightNode  (void);
 
         ///
-        void Insert(unsigned int index, const TKey& key, const TValue& value);
+        void SetValueStatus(unsigned int index, EValueStatus status);
         ///
-        void Insert(const TKey& key, const TValue& value);
+        TValue* Insert(unsigned int index, const TKey& key, const TValue& value);
+        ///
+        TValue* Insert(const TKey& key, const TValue& value);
         ///
         void Delete(unsigned int index);
         ///
@@ -226,23 +259,23 @@ private:
 
 
         ///
-        TTree* const    m_Tree;
+        const TTree* const  m_Tree;
         ///
-        CSpinRWLock     m_NodeLock;
+        CSpinRWLock         m_NodeLock;
         ///
-        CKeyRef         m_MaxKey;
+        CKeyRef             m_MaxKey;
         ///
-        unsigned int    m_DeepLevel;
+        unsigned int        m_DeepLevel;
         ///
-        unsigned int    m_CntFilled;
+        unsigned int        m_CntFilled;
         ///
-        CNode*          m_RightNode;
+        CNode*              m_RightNode;
         ///
-        CKeyRef         m_Keys     [kNodesMaxFill];
+        CKeyRef             m_Keys  [kNodesMaxFill];
         ///
-        CNode*          m_Values   [kNodesMaxFill];
+        CNode*              m_Values[kNodesMaxFill];
         ///
-        bool            m_IsDeleted[kNodesMaxFill];
+        EValueStatus        m_Status[kNodesMaxFill];
     };
 
     ///
@@ -257,11 +290,11 @@ private:
     {
     public:
         ///
-        CTreeWalker(TTree*  const tree,
-                    CNode** const path_nodes,
-                    const TKey&   key,
-                    ERWLockType   lock_type,
-                    EForceKeyType force_type);
+        CTreeWalker(const TTree* const  tree,
+                    CNode** const       path_nodes,
+                    const TKey&         key,
+                    ERWLockType         lock_type,
+                    EForceKeyType       force_type);
         ///
         ~CTreeWalker(void);
 
@@ -270,9 +303,13 @@ private:
         ///
         const TKey& GetKey(void);
         ///
-        TValue& GetValue(void);
+        TValue* GetValue(void);
         ///
-        void Insert(const TValue& value);
+        EValueStatus GetValueStatus(void);
+        ///
+        void SetValueStatus(EValueStatus status);
+        ///
+        TValue* Insert(const TValue& value);
         ///
         void Delete(void);
 
@@ -305,7 +342,7 @@ private:
 
 
         ///
-        TTree* const         m_Tree;
+        const TTree* const   m_Tree;
         ///
         CNode** const        m_PathNodes;
         ///
@@ -324,38 +361,8 @@ private:
         CNode*               m_LockedNode;
     };
 
-    ///
-    class CStorageForDelete
-    {
-    public:
-        ///
-        CStorageForDelete(void);
-        ~CStorageForDelete(void);
-
-        ///
-        void AddNode(CNode* node);
-        ///
-        void Clean(void);
-
-    private:
-        ///
-        CStorageForDelete(const CStorageForDelete&);
-        CStorageForDelete& operator= (const CStorageForDelete&);
-
-        ///
-        void x_CreateNextAndAddNode(CNode* node);
-
-
-        ///
-        enum {
-            kCntNodesPerStorage = 20
-        };
-
-        CNode*                      m_Nodes[kCntNodesPerStorage];
-        CAtomicCounter              m_CurIdx;
-        CSpinLock                   m_ObjLock;
-        CStorageForDelete* volatile m_Next;
-    };
+    typedef CNCDeferredDeleter<CNode*, Deleter<CNode>,
+                               DeletionDelay, DelStoreCapacity> TDeferredDeleter;
 
     friend class CTreeWalker;
     friend class CNode;
@@ -364,46 +371,46 @@ private:
     ///
     void x_Initialize(void);
     ///
-    CNode* x_CreateNode(const CKeyRef& key_ref, unsigned int deep_level);
+    CNode* x_CreateNode(const CKeyRef& key_ref, unsigned int deep_level) const;
     ///
     void x_DeleteNode(CNode* node);
     ///
-    void x_GetRoot(CNode*& node, unsigned int& deep_level);
+    void x_GetRoot(CNode*& node, unsigned int& deep_level) const;
     ///
     void x_ChangeRoot(CNode* node, unsigned int deep_level);
     ///
-    void x_RemoveRootRef(void);
+    void x_RemoveRootRef(void) const;
     ///
-    bool x_CanShrinkTree(void);
+    bool x_CanShrinkTree(void) const;
     ///
     void x_ShrinkTree(void);
     ///
-    bool x_IsKeyLess (const TKey& left, const TKey& right);
-    bool x_IsKeyLess (const CKeyRef& left_ref, const TKey& right);
-    bool x_IsKeyLess (const TKey& left, const CKeyRef& right_ref);
-    bool x_IsKeyLess (const CKeyRef& left_ref, const CKeyRef& right_ref);
+    bool x_IsKeyLess (const TKey& left, const TKey& right) const;
+    bool x_IsKeyLess (const CKeyRef& left_ref, const TKey& right) const;
+    bool x_IsKeyLess (const TKey& left, const CKeyRef& right_ref) const;
+    bool x_IsKeyLess (const CKeyRef& left_ref, const CKeyRef& right_ref) const;
     ///
-    bool x_IsKeyEqual(const CKeyRef& left_ref, const CKeyRef& right_ref);
+    bool x_IsKeyEqual(const CKeyRef& left_ref, const CKeyRef& right_ref) const;
 
 
     ///
-    TComparator                 m_Comparator;
+    TComparator             m_Comparator;
     ///
-    CSpinRWLock                 m_RootLock;
+    mutable CSpinRWLock     m_RootLock;
     ///
-    unsigned int                m_DeepLevel;
+    unsigned int            m_DeepLevel;
     ///
-    CNode*                      m_RootNode;
+    CNode*                  m_RootNode;
     ///
-    CAtomicCounter              m_CntRootRefs;
+    mutable CAtomicCounter  m_CntRootRefs;
     ///
-    CAtomicCounter              m_CntNodes;
+    mutable CAtomicCounter  m_CntNodes;
     ///
-    CAtomicCounter              m_CntValues;
+    CAtomicCounter          m_CntValues;
     ///
-    CStorageForDelete*          m_DeleteStore[kDeletionDelay];
+    bool                    m_IsDeleting;
     ///
-    CStorageForDelete* volatile m_CurDelStore;
+    TDeferredDeleter        m_NodesDeleter;
 };
 
 END_NCBI_SCOPE

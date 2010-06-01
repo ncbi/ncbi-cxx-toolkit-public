@@ -4,7 +4,7 @@
 
 APP = netcached
 SRC = netcached message_handler \
-      nc_storage nc_storage_blob nc_db_files nc_db_stat nc_memory nc_utils
+      nc_storage nc_storage_blob nc_db_files nc_stat nc_memory nc_utils
 
 REQUIRES = MT SQLITE3
 

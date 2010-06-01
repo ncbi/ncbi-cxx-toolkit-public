@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiatomic.hpp>
+#include <util/thread_pool_old.hpp>
 
 #include "nc_utils.hpp"
 
@@ -60,6 +61,185 @@ g_GetNCThreadIndex(void)
         NCTlsSet(s_NCThreadIndexKey, reinterpret_cast<void*>(dummy));
     }
     return index;
+}
+
+
+///
+struct SNCBlockedOpListeners
+{
+    INCBlockedOpListener*  listener;
+    SNCBlockedOpListeners* next;
+};
+
+
+///
+static const unsigned int     kListenStubsCnt = 1000;
+///
+static const unsigned int     kMinListenStubsCnt = 50;
+///
+CStdPoolOfThreads*            s_NotifyThreadPool = NULL;
+///
+static SNCBlockedOpListeners  s_ListenStubs   [kListenStubsCnt];
+///
+static SNCBlockedOpListeners* s_ListenStubPtrs[kListenStubsCnt];
+///
+static CAtomicCounter         s_NextGetPtr;
+///
+static CAtomicCounter         s_NextReturnPtr;
+///
+static CAtomicCounter         s_CntListenStubs;
+///
+static CSpinLock              s_WrappingLock;
+
+
+///
+struct SNCListenStubsInitializer
+{
+    SNCListenStubsInitializer(void) {
+        s_NextGetPtr.Set(0);
+        s_NextReturnPtr.Set(0);
+        s_CntListenStubs.Set(kListenStubsCnt);
+        for (unsigned int i = 0; i < kListenStubsCnt; ++i) {
+            s_ListenStubPtrs[i] = &s_ListenStubs[i];
+        }
+    }
+};
+
+static SNCListenStubsInitializer s_StubsInitializer;
+
+
+///
+class CNCLongOpNotification : public CStdRequest
+{
+public:
+    CNCLongOpNotification(INCBlockedOpListener* listener)
+        : m_Listener(listener)
+    {}
+
+    virtual void Process(void)
+    {
+        m_Listener->OnBlockedOpFinish();
+    }
+
+private:
+    INCBlockedOpListener* m_Listener;
+};
+
+
+void
+INCBlockedOpListener::BindToThreadPool(CStdPoolOfThreads* pool)
+{
+    s_NotifyThreadPool = pool;
+}
+
+void
+INCBlockedOpListener::Notify(void)
+{
+    _ASSERT(s_NotifyThreadPool);
+    s_NotifyThreadPool->AcceptRequest(
+                            CRef<CStdRequest>(new CNCLongOpNotification(this)));
+}
+
+
+static unsigned int
+s_WrapNextGetPtr(void)
+{
+    CSpinGuard guard(s_WrappingLock);
+    if (s_NextGetPtr.Get() >= kListenStubsCnt) {
+        s_NextGetPtr.Set(0);
+        return 0;
+    }
+    else {
+        return s_NextGetPtr.Add(1);
+    }
+}
+
+static unsigned int
+s_WrapNextReturnPtr(void)
+{
+    CSpinGuard guard(s_WrappingLock);
+    if (s_NextReturnPtr.Get() >= kListenStubsCnt) {
+        s_NextReturnPtr.Set(0);
+        return 0;
+    }
+    else {
+        return s_NextReturnPtr.Add(1);
+    }
+}
+
+static inline void
+s_ReturnListenStub(SNCBlockedOpListeners* stub)
+{
+    if (stub >= s_ListenStubs  &&  stub < &s_ListenStubs[kListenStubsCnt]) {
+        unsigned int ind = s_NextReturnPtr.Add(1);
+        if (ind >= kListenStubsCnt)
+            ind = s_WrapNextReturnPtr();
+        s_ListenStubPtrs[ind] = stub;
+        s_CntListenStubs.Add(1);
+    }
+    else {
+        delete stub;
+    }
+}
+
+static SNCBlockedOpListeners*
+s_GetNextListenStub_Overflowed(unsigned int ind)
+{
+    s_ReturnListenStub(s_ListenStubPtrs[ind]);
+    printf("Listener stubs array was overflowed!\n");
+    return new SNCBlockedOpListeners;
+}
+
+static inline SNCBlockedOpListeners*
+s_GetNextListenStub(void)
+{
+    unsigned int ind = s_NextGetPtr.Add(1);
+    if (ind >= kListenStubsCnt)
+        ind = s_WrapNextGetPtr();
+    if (s_CntListenStubs.Add(-1) <= kMinListenStubsCnt)
+        return s_GetNextListenStub_Overflowed(ind);
+    else
+        return s_ListenStubPtrs[ind];
+}
+
+ENCBlockingOpResult
+CNCLongOpTrigger::StartWorking(INCBlockedOpListener* listener)
+{
+    CSpinGuard guard(m_ObjLock);
+    
+    if (m_State == eNCOpInProgress) {
+        SNCBlockedOpListeners* next = s_GetNextListenStub();
+        next->next = m_Listeners;
+        next->listener = listener;
+        m_Listeners = next;
+        return eNCWouldBlock;
+    }
+    else if (m_State != eNCOpCompleted) {
+        m_State = eNCOpInProgress;
+    }
+    return eNCSuccessNoBlock;
+}
+
+void
+CNCLongOpTrigger::OperationCompleted(void)
+{
+    {{
+        // To avoid races with StartWorking()
+        CSpinGuard guard(m_ObjLock);
+        _ASSERT(m_State == eNCOpInProgress);
+        m_State = eNCOpCompleted;
+    }}
+
+    if (m_Listeners) {
+        SNCBlockedOpListeners* listeners = m_Listeners;
+        while (listeners) {
+            listeners->listener->Notify();
+            SNCBlockedOpListeners* next = listeners->next;
+            s_ReturnListenStub(listeners);
+            listeners = next;
+        }
+        m_Listeners = NULL;
+    }
 }
 
 END_NCBI_SCOPE;

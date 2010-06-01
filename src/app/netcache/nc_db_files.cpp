@@ -32,7 +32,7 @@
 #include "nc_memory.hpp"
 #include "nc_db_files.hpp"
 #include "nc_utils.hpp"
-#include "nc_db_stat.hpp"
+#include "nc_stat.hpp"
 #include "error_codes.hpp"
 
 
@@ -40,23 +40,36 @@ BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   NetCache_Storage
 
-
+/*
 static const char* kNCBlobKeys_Table          = "NCB";
 static const char* kNCBlobKeys_BlobIdCol      = "id";
 static const char* kNCBlobKeys_KeyCol         = "key";
 static const char* kNCBlobKeys_SubkeyCol      = "skey";
 static const char* kNCBlobKeys_VersionCol     = "ver";
-
-static const char* kNCBlobInfo_Table          = "NCI";
+*/
+static const char* kNCBlobInfo_Table          = "NCF";
 static const char* kNCBlobInfo_BlobIdCol      = "id";
-static const char* kNCBlobInfo_CreateTimeCol  = "at";
+static const char* kNCBlobInfo_KeyCol         = "k";
+static const char* kNCBlobInfo_CreateTimeCol  = "ct";
 static const char* kNCBlobInfo_DeadTimeCol    = "dt";
-static const char* kNCBlobInfo_OwnerCol       = "own";
-static const char* kNCBlobInfo_TTLCol         = "ttl";
+static const char* kNCBlobInfo_TTLCol         = "tl";
 static const char* kNCBlobInfo_SizeCol        = "sz";
 static const char* kNCBlobInfo_CntReadsCol    = "rd";
 static const char* kNCBlobInfo_PasswordCol    = "pw";
-
+static const char* kNCBlobInfo_DataIdCol      = "di";
+static const char* kNCBlobInfo_OldStyleCol    = "os";
+static const char* kNCBlobInfo_GenerationCol  = "g";
+/*
+static const char* kNCOldBlobInfo_Table         = "NCI";
+static const char* kNCOldBlobInfo_BlobIdCol     = "id";
+static const char* kNCOldBlobInfo_CreateTimeCol = "at";
+static const char* kNCOldBlobInfo_DeadTimeCol   = "dt";
+static const char* kNCOldBlobInfo_OwnerCol      = "own";
+static const char* kNCOldBlobInfo_TTLCol        = "ttl";
+static const char* kNCOldBlobInfo_SizeCol       = "sz";
+static const char* kNCOldBlobInfo_CntReadsCol   = "rd";
+static const char* kNCOldBlobInfo_PasswordCol   = "pw";
+*/
 static const char* kNCBlobChunks_Table        = "NCC";
 static const char* kNCBlobChunks_ChunkIdCol   = "id";
 static const char* kNCBlobChunks_BlobIdCol    = "bid";
@@ -65,13 +78,19 @@ static const char* kNCBlobData_Table          = "NCD";
 static const char* kNCBlobData_ChunkIdCol     = "id";
 static const char* kNCBlobData_BlobCol        = "blob";
 
-static const char* kNCDBIndex_Table           = "NCN";
-static const char* kNCDBIndex_DBIdCol         = "id";
-static const char* kNCDBIndex_MetaNameCol     = "met";
-static const char* kNCDBIndex_DataNameCol     = "dat";
+static const char* kNCDBIndex_Table           = "NCX";
+static const char* kNCDBIndex_FileIdCol       = "id";
+static const char* kNCDBIndex_FileNameCol     = "nm";
+static const char* kNCDBIndex_FileTypeCol     = "tp";
 static const char* kNCDBIndex_CreatedTimeCol  = "tm";
-static const char* kNCDBIndex_VolumesCol      = "vlm";
-
+/*
+static const char* kNCOldDBIndex_Table          = "NCN";
+static const char* kNCOldDBIndex_DBIdCol        = "id";
+static const char* kNCOldDBIndex_MetaNameCol    = "met";
+static const char* kNCOldDBIndex_DataNameCol    = "dat";
+static const char* kNCOldDBIndex_CreatedTimeCol = "tm";
+static const char* kNCOldDBIndex_VolumesCol     = "vlm";
+*/
 
 CFastRWLock               CNCFileSystem::sm_FilesListLock;
 CNCFileSystem::TFilesList CNCFileSystem::sm_FilesList;
@@ -161,69 +180,49 @@ s_SetRealVFS(sqlite3_vfs* vfs)
 
 
 
-void
-CNCDBFile::CreateIndexDatabase(void)
+inline void
+CNCDBFile::x_CreateIndexDatabase(void)
 {
     CQuickStrStream sql;
     CSQLITE_Statement  stmt(this);
 
     sql.Clear();
     sql << "create table if not exists " << kNCDBIndex_Table
-        << "(" << kNCDBIndex_DBIdCol        << " integer primary key,"
-               << kNCDBIndex_MetaNameCol    << " varchar not null,"
-               << kNCDBIndex_DataNameCol    << " varchar not null,"
-               << kNCDBIndex_CreatedTimeCol << " int not null,"
-               << kNCDBIndex_VolumesCol     << " int not null"
+        << "(" << kNCDBIndex_FileIdCol      << " integer primary key,"
+               << kNCDBIndex_FileNameCol    << " varchar not null,"
+               << kNCDBIndex_FileTypeCol    << " int not null,"
+               << kNCDBIndex_CreatedTimeCol << " int not null"
         << ")";
     stmt.SetSql(sql);
     stmt.Execute();
-
-    try {
-        // Try to upgrade from previous version of index database
-        sql.Clear();
-        sql << "alter table " << kNCDBIndex_Table
-            << " add column " << kNCDBIndex_VolumesCol
-                                            << " int not null default 0";
-        stmt.SetSql(sql);
-        stmt.Execute();
-    }
-    catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(15, Info << ex);
-    }
 }
 
-void
-CNCDBFile::CreateMetaDatabase(void)
+inline void
+CNCDBFile::x_CreateMetaDatabase(void)
 {
     CQuickStrStream sql;
     CSQLITE_Statement stmt(this);
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
     stmt.SetSql("BEGIN");
     stmt.Execute();
 
     sql.Clear();
-    sql << "create table " << kNCBlobKeys_Table
-        << "(" << kNCBlobKeys_BlobIdCol  << " integer primary key,"
-               << kNCBlobKeys_KeyCol     << " varchar not null,";
-    AddSubkeyColsDef(sql);
-    sql << ")";
-    stmt.SetSql(sql);
-    stmt.Execute();
-
-    sql.Clear();
     sql << "create table " << kNCBlobInfo_Table
         << "(" << kNCBlobInfo_BlobIdCol     << " integer primary key,"
+               << kNCBlobInfo_KeyCol        << " varchar not null,"
+               << kNCBlobInfo_DataIdCol     << " int not null,"
                << kNCBlobInfo_CreateTimeCol << " int not null,"
                << kNCBlobInfo_DeadTimeCol   << " int not null,"
-               << kNCBlobInfo_OwnerCol      << " varchar not null,"
                << kNCBlobInfo_TTLCol        << " int not null,"
                << kNCBlobInfo_SizeCol       << " int64 not null,"
-               << kNCBlobInfo_CntReadsCol   << " int64 not null,"
-               << kNCBlobInfo_PasswordCol   << " varchar not null,"
+               << kNCBlobInfo_PasswordCol   << " varchar,"
+               << kNCBlobInfo_OldStyleCol   << " int not null default 0,"
+               << kNCBlobInfo_GenerationCol << " int not null,"
+               << kNCBlobInfo_CntReadsCol   << " int not null,"
                << "unique(" << kNCBlobInfo_DeadTimeCol << ","
                             << kNCBlobInfo_BlobIdCol
-               <<       ")"
+               <<       "),"
+               << "unique(" << kNCBlobInfo_KeyCol << ")"
         << ")";
     stmt.SetSql(sql);
     stmt.Execute();
@@ -243,38 +242,11 @@ CNCDBFile::CreateMetaDatabase(void)
     stmt.Execute();
 }
 
-void
-CNCDBFile::AdjustMetaDatabase(void)
-{
-    try {
-        // Try to upgrade from previous version of meta database
-        CQuickStrStream sql;
-        CSQLITE_Statement stmt(this);
-
-        sql << "alter table " << kNCBlobInfo_Table
-            << " add column " << kNCBlobInfo_CntReadsCol
-                                            << " int64 not null default 0";
-        stmt.SetSql(sql);
-        stmt.Execute();
-
-        sql.Clear();
-        sql << "alter table " << kNCBlobInfo_Table
-            << " add column " << kNCBlobInfo_PasswordCol
-                                            << " varchar not null default ''";
-        stmt.SetSql(sql);
-        stmt.Execute();
-    }
-    catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(18, Info << ex);
-    }
-}
-
-void
-CNCDBFile::CreateDataDatabase(void)
+inline void
+CNCDBFile::x_CreateDataDatabase(void)
 {
     CQuickStrStream sql;
     CSQLITE_Statement  stmt(this);
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
     sql.Clear();
     sql << "create table " << kNCBlobData_Table
@@ -285,6 +257,24 @@ CNCDBFile::CreateDataDatabase(void)
     stmt.Execute();
 }
 
+void
+CNCDBFile::CreateDatabase(ENCDBFileType db_type)
+{
+    switch (db_type) {
+    case eNCIndex:
+        x_CreateIndexDatabase();
+        break;
+    case eNCMeta:
+        x_CreateMetaDatabase();
+        break;
+    case eNCData:
+        x_CreateDataDatabase();
+        break;
+    default:
+        _ASSERT(false);
+    }
+}
+
 CSQLITE_Statement*
 CNCDBFile::x_GetStatement(ENCStmtType typ)
 {
@@ -293,52 +283,84 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
         CQuickStrStream sql;
 
         switch (typ) {
-        case eStmt_CreateDBPart:
+        case eStmt_CreateDBFile:
             sql << "insert into " << kNCDBIndex_Table
-                << "(" << kNCDBIndex_DBIdCol        << ","
-                       << kNCDBIndex_MetaNameCol    << ","
-                       << kNCDBIndex_DataNameCol    << ","
-                       << kNCDBIndex_CreatedTimeCol << ","
-                       << kNCDBIndex_VolumesCol
-                << ")values(?1,?2,?3,?4,?5)";
+                << "(" << kNCDBIndex_FileIdCol      << ","
+                       << kNCDBIndex_FileNameCol    << ","
+                       << kNCDBIndex_FileTypeCol    << ","
+                       << kNCDBIndex_CreatedTimeCol
+                << ")values(?1,?2,?3,?4)";
             break;
-        case eStmt_DeleteDBPart:
+        case eStmt_DeleteDBFile:
             sql << "delete from " << kNCDBIndex_Table
-                << " where " << kNCDBIndex_DBIdCol << "=?1";
+                << " where " << kNCDBIndex_FileIdCol << "=?1";
             break;
-        case eStmt_GetBlobId:
         case eStmt_BlobFamilyExists:
-        case eStmt_BlobExists:
-        case eStmt_CreateBlobKey:
+            sql << "select count(*)"
+                <<  " from " << kNCBlobInfo_Table
+                << " where " << kNCBlobInfo_KeyCol    << ">=?1"
+                <<   " and " << kNCBlobInfo_KeyCol    << "<?2"
+                <<   " and " << kNCBlobInfo_DeadTimeCol << ">=?3";
+            break;
         case eStmt_GetBlobsList:
-            GetSpecificStatement(typ, sql);
+            sql << "select " << kNCBlobInfo_BlobIdCol   << ","
+                             << kNCBlobInfo_DataIdCol   << ","
+                             << kNCBlobInfo_DeadTimeCol << ","
+                             << kNCBlobInfo_KeyCol      << ","
+                             << kNCBlobInfo_SizeCol     << ","
+                             << kNCBlobInfo_CntReadsCol
+                <<  " from " << kNCBlobInfo_Table
+                << " where "  << kNCBlobInfo_DeadTimeCol  << ">=?1"
+                <<   " and "  << kNCBlobInfo_DeadTimeCol  << "<?3"
+                <<   " and (" << kNCBlobInfo_DeadTimeCol  << ">?1"
+                <<        " or " << kNCBlobInfo_BlobIdCol << ">?2)"
+                << " order by 3,1"
+                << " limit ?4";
+            break;
+        case eStmt_GetBlobShortInfo:
+            sql << "select " << kNCBlobInfo_BlobIdCol   << ","
+                             << kNCBlobInfo_DataIdCol   << ","
+                             << kNCBlobInfo_SizeCol     << ","
+                             << kNCBlobInfo_CntReadsCol
+                <<  " from " << kNCBlobInfo_Table
+                << " where " << kNCBlobInfo_KeyCol      << "=?1"
+                <<   " and " << kNCBlobInfo_DeadTimeCol << ">=?2";
             break;
         case eStmt_WriteBlobInfo:
             sql << "insert or replace into " << kNCBlobInfo_Table
                 << "(" << kNCBlobInfo_BlobIdCol     << ","
+                       << kNCBlobInfo_DataIdCol     << ","
+                       << kNCBlobInfo_KeyCol        << ","
                        << kNCBlobInfo_CreateTimeCol << ","
                        << kNCBlobInfo_DeadTimeCol   << ","
-                       << kNCBlobInfo_OwnerCol      << ","
                        << kNCBlobInfo_TTLCol        << ","
                        << kNCBlobInfo_SizeCol       << ","
                        << kNCBlobInfo_CntReadsCol   << ","
-                       << kNCBlobInfo_PasswordCol
-                << ")values(?1,?2,?3,?4,?5,?6,?7,?8)";
+                       << kNCBlobInfo_PasswordCol   << ","
+                       << kNCBlobInfo_GenerationCol
+                << ")values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)";
             break;
-        case eStmt_SetBlobDeadTime:
+        case eStmt_UpdateBlobInfo:
             sql << "update " << kNCBlobInfo_Table
-                <<   " set " << kNCBlobInfo_DeadTimeCol << "=?2"
+                <<   " set " << kNCBlobInfo_DeadTimeCol << "=?2,"
+                             << kNCBlobInfo_CntReadsCol << "=?3"
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
         case eStmt_ReadBlobInfo:
-            sql << "select " << kNCBlobInfo_CreateTimeCol << ","
+            sql << "select " << kNCBlobInfo_DataIdCol     << ","
+                             << kNCBlobInfo_CreateTimeCol << ","
                              << kNCBlobInfo_DeadTimeCol   << ","
-                             << kNCBlobInfo_OwnerCol      << ","
                              << kNCBlobInfo_TTLCol        << ","
                              << kNCBlobInfo_SizeCol       << ","
+                             << kNCBlobInfo_OldStyleCol   << ","
                              << kNCBlobInfo_CntReadsCol   << ","
-                             << kNCBlobInfo_PasswordCol
+                             << kNCBlobInfo_PasswordCol   << ","
+                             << kNCBlobInfo_GenerationCol
                 <<  " from " << kNCBlobInfo_Table
+                << " where " << kNCBlobInfo_BlobIdCol << "=?1";
+            break;
+        case eStmt_DeleteBlobInfo:
+            sql << "delete from " << kNCBlobInfo_Table
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
         case eStmt_GetChunkIds:
@@ -347,25 +369,16 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                 << " order by id";
             break;
         case eStmt_CreateChunk:
-            sql << "insert or replace into " << kNCBlobChunks_Table
+            sql << "insert into " << kNCBlobChunks_Table
                 << "(" << kNCBlobChunks_ChunkIdCol << ","
                        << kNCBlobChunks_BlobIdCol
                 << ")values(?1,?2)";
             break;
-        case eStmt_DeleteLastChunks:
-            sql << "delete from " << kNCBlobChunks_Table
-                << " where " << kNCBlobChunks_BlobIdCol  << "=?1"
-                <<   " and " << kNCBlobChunks_ChunkIdCol << ">=?2";
-            break;
-        case eStmt_CreateChunkData:
-            sql << "insert into " << kNCBlobData_Table
-                << "(" << kNCBlobData_BlobCol
-                << ")values(?1)";
-            break;
         case eStmt_WriteChunkData:
-            sql << "update " << kNCBlobData_Table
-                <<   " set " << kNCBlobData_BlobCol    << "=?2"
-                << " where " << kNCBlobData_ChunkIdCol << "=?1";
+            sql << "insert into " << kNCBlobData_Table
+                << "(" << kNCBlobData_ChunkIdCol << ","
+                       << kNCBlobData_BlobCol
+                << ")values(?1,?2)";
             break;
         case eStmt_ReadChunkData:
             sql << "select " << kNCBlobData_BlobCol
@@ -376,69 +389,70 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
             NCBI_TROUBLE("Unknown statement type");
         }
 
-        {{
-            CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
-            stmt = new CSQLITE_Statement(this, sql);
-        }}
+        stmt = new CSQLITE_Statement(this, sql);
     }
     return stmt.get();
 }
 
 void
-CNCDBFile::CreateDBPart(SNCDBPartInfo* part_info)
+CNCDBFile::NewDBFile(ENCDBFileType  file_type,
+                     TNCDBFileId    file_id,
+                     const string&  file_name)
 {
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateDBPart));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateDBFile));
 
-    part_info->last_rot_time = part_info->create_time = int(time(NULL));
-    stmt->Bind(1, part_info->part_id);
-    stmt->Bind(2, part_info->meta_file.data(), part_info->meta_file.size());
-    stmt->Bind(3, part_info->data_file.data(), part_info->data_file.size());
-    stmt->Bind(4, part_info->create_time);
-    stmt->Bind(5, part_info->cnt_volumes);
+    stmt->Bind(1, file_id);
+    stmt->Bind(2, file_name.data(), file_name.size());
+    stmt->Bind(3, file_type);
+    stmt->Bind(4, int(time(NULL)));
     stmt->Execute();
 }
 
 void
-CNCDBFile::DeleteDBPart(TNCDBPartId part_id)
+CNCDBFile::DeleteDBFile(TNCDBFileId file_id)
 {
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteDBPart));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteDBFile));
 
-    stmt->Bind(1, part_id);
+    stmt->Bind(1, file_id);
     stmt->Execute();
 }
 
 void
-CNCDBFile::GetAllDBParts(TNCDBPartsList* parts_list)
+CNCDBFile::GetAllDBFiles(TNCDBFilesMap* files_map)
 {
-    _ASSERT(parts_list);
+    _ASSERT(files_map);
 
     CQuickStrStream sql;
-    sql << "select " << kNCDBIndex_DBIdCol        << ","
-                     << kNCDBIndex_MetaNameCol    << ","
-                     << kNCDBIndex_DataNameCol    << ","
-                     << kNCDBIndex_CreatedTimeCol << ","
-                     << kNCDBIndex_VolumesCol
+    sql << "select " << kNCDBIndex_FileIdCol      << ","
+                     << kNCDBIndex_FileTypeCol    << ","
+                     << kNCDBIndex_FileNameCol    << ","
+                     << kNCDBIndex_CreatedTimeCol
         <<  " from " << kNCDBIndex_Table
         << " order by " << kNCDBIndex_CreatedTimeCol;
 
     CSQLITE_Statement stmt(this, sql);
     while (stmt.Step()) {
-        SNCDBPartInfo* info = new SNCDBPartInfo;
-        info->part_id       = stmt.GetInt8  (0);
-        info->meta_file     = stmt.GetString(1);
-        info->data_file     = stmt.GetString(2);
-        info->create_time   = stmt.GetInt   (3);
-        info->last_rot_time = info->create_time;
-        info->cnt_volumes   = stmt.GetInt   (4);
-
-        parts_list->push_back(info);
+        TNCDBFileId    file_id   = stmt.GetInt(0);
+        ENCDBFileType  file_type = ENCDBFileType(stmt.GetInt(1));
+        SNCDBFileInfo& info      = (*files_map)[file_id];
+        info.file_id = file_id;
+        info.file_name   = stmt.GetString(2);
+        info.create_time = stmt.GetInt   (3);
+        switch (file_type) {
+        case eNCMeta:
+            info.file_obj = new CNCDBMetaFile(info.file_name);
+            break;
+        case eNCData:
+            info.file_obj = new CNCDBDataFile(info.file_name);
+            break;
+        default:
+            _ASSERT(false);
+        }
     }
 }
 
 void
-CNCDBFile::DeleteAllDBParts(void)
+CNCDBFile::DeleteAllDBFiles(void)
 {
     CQuickStrStream sql;
     sql << "delete from " << kNCDBIndex_Table;
@@ -451,158 +465,149 @@ TNCBlobId
 CNCDBFile::GetLastBlobId(void)
 {
     CQuickStrStream sql;
-    sql << "select max(" << kNCBlobKeys_BlobIdCol << ")"
-        << " from " << kNCBlobKeys_Table;
+    sql << "select max(" << kNCBlobInfo_BlobIdCol << ")"
+        << " from " << kNCBlobInfo_Table;
 
     CSQLITE_Statement stmt(this, sql);
     _VERIFY(stmt.Step());
-    return stmt.GetInt8(0);
+    return stmt.GetInt(0);
 }
 
 bool
-CNCDBFile::ReadBlobId(SNCBlobIdentity* identity, int dead_after)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobId));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
-
-    stmt->Bind(1,  identity->key.data(), identity->key.size());
-    BindBlobSubkey(stmt, *identity);
-    stmt->Bind(20, dead_after);
-    if (stmt->Step()) {
-        identity->blob_id = stmt->GetInt8(0);
-        return true;
-    }
-    return false;
-}
-
-bool
-CNCDBFile::IsBlobFamilyExists(const string& key,
-                              const string& subkey,
+CNCDBFile::IsBlobFamilyExists(const string& key_first,
+                              const string& key_last,
                               int           dead_after)
 {
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_BlobFamilyExists));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
-    stmt->Bind(1,  key.data(), key.size());
-    BindBlobSubkey(stmt, subkey);
-    stmt->Bind(20, dead_after);
-    _VERIFY(stmt->Step());
-
-    return stmt->GetInt8(0) > 0;
-}
-
-bool
-CNCDBFile::IsBlobExists(const SNCBlobIdentity& identity,
-                        int                    dead_after)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_BlobExists));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
-
-    // For now we don't allow for moved blob to keep its blob_id, so for exact
-    // existence we need to check it too.
-    stmt->Bind(1,  identity.blob_id);
-    stmt->Bind(2,  identity.key.data(), identity.key.size());
-    BindBlobSubkey(stmt, identity);
-    stmt->Bind(20, dead_after);
+    stmt->Bind(1, key_first.data(), key_first.size());
+    stmt->Bind(2, key_last.data(),  key_last.size());
+    stmt->Bind(3, dead_after);
     _VERIFY(stmt->Step());
 
     return stmt->GetInt8(0) > 0;
 }
 
 void
-CNCDBFile::CreateBlobKey(const SNCBlobIdentity& identity)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateBlobKey));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
-
-    stmt->Bind(1,  identity.blob_id);
-    stmt->Bind(2,  identity.key.data(), identity.key.size());
-    BindBlobSubkey(stmt, identity);
-
-    stmt->Execute();
-}
-
-void
-CNCDBFile::GetBlobsList(int&          dead_after,
-                        TNCBlobId&    id_after,
-                        int           dead_before,
-                        int           max_count,
-                        TNCBlobsList* blobs_list)
+CNCDBFile::GetBlobsList(int&            dead_after,
+                        TNCBlobId&      id_after,
+                        int             dead_before,
+                        int             max_count,
+                        TNCBlobsList*   blobs_list)
 {
     _ASSERT(blobs_list);
     blobs_list->clear();
 
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobsList));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
     stmt->Bind(1, dead_after);
     stmt->Bind(2, id_after);
     stmt->Bind(3, dead_before);
     stmt->Bind(4, max_count);
     while (stmt->Step()) {
-        AutoPtr<SNCBlobIdentity> identity = new SNCBlobIdentity();
-        identity->blob_id = id_after = stmt->GetInt8  (0);
-        dead_after                   = stmt->GetInt   (1);
-        identity->key                = stmt->GetString(2);
-        ReadBlobSubkey(stmt, 3, identity.get());
-        blobs_list->push_back(identity);
+        SNCBlobShortInfo info;
+        info.blob_id = id_after = stmt->GetInt   (0);
+        info.data_id            = stmt->GetInt   (1);
+        dead_after              = stmt->GetInt   (2);
+        info.key                = stmt->GetString(3);
+        info.size               = stmt->GetInt8  (4);
+        info.cnt_reads          = stmt->GetInt8  (5);
+        if (info.data_id != 0  &&  !info.key.empty()) {
+            blobs_list->push_back(info);
+        }
     }
 }
 
 void
-CNCDBFile::WriteBlobInfo(SNCBlobInfo& blob_info, bool move_dead_time)
+CNCDBFile::WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info)
 {
-    int cur_time = int(time(NULL));
-    if (blob_info.create_time == 0) {
-        blob_info.create_time = cur_time;
-    }
-    if (move_dead_time  ||  blob_info.dead_time == 0) {
-        blob_info.dead_time = cur_time + blob_info.ttl;
-    }
-
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_WriteBlobInfo));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
-    stmt->Bind(1, blob_info.blob_id);
-    stmt->Bind(2, blob_info.create_time);
-    stmt->Bind(3, blob_info.dead_time);
-    stmt->Bind(4, blob_info.owner);
-    stmt->Bind(5, blob_info.ttl);
-    stmt->Bind(6, blob_info.size);
-    stmt->Bind(7, blob_info.cnt_reads);
-    stmt->Bind(8, blob_info.password.data(), blob_info.password.size());
+    stmt->Bind(1,  blob_info->coords.blob_id);
+    stmt->Bind(2,  blob_info->coords.data_id);
+    stmt->Bind(3,  blob_key.data(), blob_key.size());
+    stmt->Bind(4,  blob_info->create_time);
+    stmt->Bind(5,  blob_info->dead_time);
+    stmt->Bind(6,  blob_info->ttl);
+    stmt->Bind(7,  blob_info->size);
+    stmt->Bind(8,  blob_info->cnt_reads);
+    stmt->Bind(9,  blob_info->password.data(), blob_info->password.size());
+    stmt->Bind(10, blob_info->generation);
     stmt->Execute();
 }
 
 void
-CNCDBFile::SetBlobDeadTime(TNCBlobId blob_id, int dead_time)
+CNCDBFile::UpdateBlobInfo(const SNCBlobVerData* blob_info)
 {
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_SetBlobDeadTime));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_UpdateBlobInfo));
 
-    stmt->Bind(1, blob_id);
-    stmt->Bind(2, dead_time);
+    stmt->Bind(1, blob_info->coords.blob_id);
+    stmt->Bind(2, blob_info->dead_time);
+    stmt->Bind(3, blob_info->cnt_reads);
     stmt->Execute();
 }
 
 bool
-CNCDBFile::ReadBlobInfo(SNCBlobInfo* blob_info)
+CNCDBFile::ReadBlobInfo(SNCBlobVerData* blob_info)
 {
     _ASSERT(blob_info);
 
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_ReadBlobInfo));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
 
-    stmt->Bind(1, blob_info->blob_id);
+    stmt->Bind(1, blob_info->coords.blob_id);
     if (stmt->Step()) {
-        blob_info->create_time = stmt->GetInt   (0);
-        blob_info->dead_time   = stmt->GetInt   (1);
-        blob_info->expired     = blob_info->dead_time <= int(time(NULL));
-        blob_info->owner       = stmt->GetString(2);
-        blob_info->ttl         = stmt->GetInt   (3);
-        blob_info->size        = stmt->GetInt   (4);
-        blob_info->cnt_reads   = stmt->GetInt   (5);
-        blob_info->password    = stmt->GetString(6);
+        blob_info->coords.data_id = stmt->GetInt (0);
+        blob_info->create_time    = stmt->GetInt8(1);
+        blob_info->dead_time      = stmt->GetInt (2);
+        blob_info->old_dead_time  = blob_info->dead_time;
+        blob_info->ttl            = stmt->GetInt (3);
+        blob_info->size           = stmt->GetInt8(4);
+        blob_info->disk_size      = blob_info->size;
+        blob_info->old_style      = stmt->GetInt (5) != 0;
+        blob_info->cnt_reads      = stmt->GetInt8(6);
+        blob_info->password       = stmt->GetString(7);
+        blob_info->generation     = Uint8(stmt->GetInt8(8));
+        return true;
+    }
+    return false;
+}
+
+void
+CNCDBFile::DeleteBlobInfo(TNCBlobId blob_id)
+{
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteBlobInfo));
+
+    stmt->Bind(1, blob_id);
+    stmt->Execute();
+}
+
+void
+CNCDBFile::DeleteAllBlobInfos(const string& min_key, const string& max_key)
+{
+    CQuickStrStream sql;
+    sql << "delete from " << kNCBlobInfo_Table
+        << " where " << kNCBlobInfo_KeyCol << ">=?1"
+        <<   " and " << kNCBlobInfo_KeyCol << "<?2";
+    CSQLITE_Statement stmt(this, sql);
+    stmt.Bind(1, min_key.data(), min_key.size());
+    stmt.Bind(2, max_key.data(), max_key.size());
+    _VERIFY(!stmt.Step());
+}
+
+bool
+CNCDBFile::GetBlobShortInfo(const string&     blob_key,
+                            int               dead_after,
+                            SNCBlobShortInfo* blob_info)
+{
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetBlobShortInfo));
+
+    stmt->Bind(1, blob_key.data(), blob_key.size());
+    stmt->Bind(2, dead_after);
+    if (stmt->Step()) {
+        blob_info->blob_id   = stmt->GetInt (0);
+        blob_info->data_id   = stmt->GetInt (1);
+        blob_info->size      = stmt->GetInt8(2);
+        blob_info->cnt_reads = stmt->GetInt8(3);
         return true;
     }
     return false;
@@ -615,7 +620,6 @@ CNCDBFile::GetChunkIds(TNCBlobId blob_id, TNCChunksList* id_list)
     id_list->clear();
 
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_GetChunkIds));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoRead);
 
     stmt->Bind(1, blob_id);
     while (stmt->Step()) {
@@ -627,7 +631,6 @@ void
 CNCDBFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 {
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateChunk));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
     stmt->Bind(1, chunk_id);
     stmt->Bind(2, blob_id);
@@ -635,56 +638,24 @@ CNCDBFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 }
 
 void
-CNCDBFile::DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteLastChunks));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
-
-    stmt->Bind(1, blob_id);
-    stmt->Bind(2, min_chunk_id);
-    stmt->Execute();
-
-    GetStat()->AddBlobTruncate();
-}
-
-TNCChunkId
-CNCDBFile::CreateChunkValue(const TNCBlobBuffer& data)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateChunkData));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbChunkWrite);
-
-    stmt->Bind(1, static_cast<const void*>(data.data()), data.size());
-    stmt->Execute();
-    timer.SetChunkSize(data.size());
-    return stmt->GetLastInsertedRowid();
-}
-
-void
-CNCDBFile::WriteChunkValue(TNCChunkId           chunk_id,
-                           const TNCBlobBuffer& data)
+CNCDBFile::WriteChunkData(TNCChunkId chunk_id, const CNCBlobBuffer* data)
 {
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_WriteChunkData));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbChunkWrite);
 
     stmt->Bind(1, chunk_id);
-    stmt->Bind(2, static_cast<const void*>(data.data()), data.size());
+    stmt->Bind(2, static_cast<const void*>(data->GetData()), data->GetSize());
     stmt->Execute();
-    timer.SetChunkSize(data.size());
 }
 
 bool
-CNCDBFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
+CNCDBFile::ReadChunkData(TNCChunkId chunk_id, CNCBlobBuffer* buffer)
 {
-    _ASSERT(buffer->size() == 0);
-
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_ReadChunkData));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbChunkRead);
 
     stmt->Bind(1, chunk_id);
     if (stmt->Step()) {
-        size_t n_read = stmt->GetBlob(0, buffer->data(), buffer->capacity());
-        buffer->resize(n_read);
-        timer.SetChunkSize(n_read);
+        size_t n_read = stmt->GetBlob(0, buffer->GetData(), kNCMaxBlobChunkSize);
+        buffer->Resize(n_read);
         return true;
     }
     return false;
@@ -695,26 +666,6 @@ CNCDBFile::~CNCDBFile(void)
     m_Stmts.clear();
 }
 
-void
-CNCDBFile::AddSubkeyColsDef(CQuickStrStream&)
-{}
-
-void
-CNCDBFile::GetSpecificStatement(ENCStmtType, CQuickStrStream&)
-{}
-
-void
-CNCDBFile::BindBlobSubkey(CSQLITE_Statement*, const SNCBlobIdentity&)
-{}
-
-void
-CNCDBFile::BindBlobSubkey(CSQLITE_Statement*, const string&)
-{}
-
-void
-CNCDBFile::ReadBlobSubkey(CSQLITE_Statement*, int, SNCBlobIdentity*)
-{}
-
 
 CNCDBIndexFile::~CNCDBIndexFile(void)
 {}
@@ -724,226 +675,9 @@ CNCDBMetaFile::~CNCDBMetaFile(void)
 {}
 
 
-CNCDBMetaFile_ICache::~CNCDBMetaFile_ICache(void)
-{}
-
-void
-CNCDBMetaFile_ICache::AddSubkeyColsDef(CQuickStrStream& sql)
-{
-    sql << kNCBlobKeys_SubkeyCol  << " varchar not null,"
-        << kNCBlobKeys_VersionCol << " int not null,"
-        // This index plays significant role at the start of NetCache.
-        // And although start time seems very small and rare and at all
-        // other times index only slows inserts it's still necessary
-        // because without it starting time becomes intolerably bad.
-        << "unique(" << kNCBlobKeys_KeyCol    << ","
-                     << kNCBlobKeys_SubkeyCol << ","
-                     << kNCBlobKeys_VersionCol
-        // id should not be in the unique because we rely on it if we
-        // need to change id for the blob when it is re-created.
-        <<       ")";
-}
-
-void
-CNCDBMetaFile_ICache::GetSpecificStatement(ENCStmtType      typ,
-                                           CQuickStrStream& sql)
-{
-    switch (typ) {
-    case eStmt_GetBlobId:
-        sql << "select a." << kNCBlobKeys_BlobIdCol
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_KeyCol     << "=?1"
-            <<   " and a." << kNCBlobKeys_SubkeyCol  << "=?10"
-            <<   " and a." << kNCBlobKeys_VersionCol << "=?11"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_BlobFamilyExists:
-        sql << "select count(*)"
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_KeyCol    << "=?1"
-            <<   " and a." << kNCBlobKeys_SubkeyCol << "=?10"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_BlobExists:
-        sql << "select count(*)"
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_BlobIdCol  << "=?1"
-            <<   " and a." << kNCBlobKeys_KeyCol     << "=?2"
-            <<   " and a." << kNCBlobKeys_SubkeyCol  << "=?10"
-            <<   " and a." << kNCBlobKeys_VersionCol << "=?11"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_CreateBlobKey:
-        // Replace - in case if blob was recently deleted and now it's
-        // created again when record in database is still exists.
-        sql << "insert or replace into " << kNCBlobKeys_Table
-            << "(" << kNCBlobKeys_BlobIdCol << ","
-                   << kNCBlobKeys_KeyCol    << ","
-                   << kNCBlobKeys_SubkeyCol << ","
-                   << kNCBlobKeys_VersionCol
-            << ")values(?1,?2,?10,?11)";
-        break;
-    case eStmt_GetBlobsList:
-        sql << "select a." << kNCBlobInfo_BlobIdCol   << ","
-            <<        "a." << kNCBlobInfo_DeadTimeCol << ","
-            <<        "b." << kNCBlobKeys_KeyCol      << ","
-            <<        "b." << kNCBlobKeys_SubkeyCol   << ","
-            <<        "b." << kNCBlobKeys_VersionCol
-            <<  " from " << kNCBlobInfo_Table << " a,"
-                         << kNCBlobKeys_Table << " b"
-            << " where a."  << kNCBlobInfo_DeadTimeCol  << ">=?1"
-            <<   " and a."  << kNCBlobInfo_DeadTimeCol  << "<?3"
-            <<   " and (a." << kNCBlobInfo_DeadTimeCol  << ">?1"
-            <<        " or a." << kNCBlobInfo_BlobIdCol << ">?2)"
-            <<   " and b." << kNCBlobKeys_BlobIdCol
-            <<                             "=a." << kNCBlobInfo_BlobIdCol
-            << " order by 2,1"
-            << " limit ?4";
-        break;
-    default:
-        NCBI_TROUBLE("Unknown statement type");
-    }
-}
-
-void
-CNCDBMetaFile_ICache::BindBlobSubkey(CSQLITE_Statement*     stmt,
-                                     const SNCBlobIdentity& identity)
-{
-    stmt->Bind(10, identity.subkey.data(), identity.subkey.size());
-    stmt->Bind(11, identity.version);
-}
-
-void
-CNCDBMetaFile_ICache::BindBlobSubkey(CSQLITE_Statement* stmt,
-                                     const string&      subkey)
-{
-    stmt->Bind(10, subkey.data(), subkey.size());
-}
-
-void
-CNCDBMetaFile_ICache::ReadBlobSubkey(CSQLITE_Statement* stmt,
-                                     int                col_num,
-                                     SNCBlobIdentity*   identity)
-{
-    identity->subkey  = stmt->GetString(col_num);
-    identity->version = stmt->GetInt   (col_num + 1);
-}
-
-
-CNCDBMetaFile_NCCache::~CNCDBMetaFile_NCCache(void)
-{}
-
-void
-CNCDBMetaFile_NCCache::AddSubkeyColsDef(CQuickStrStream& sql)
-{
-    sql // This index plays significant role at the start of NetCache.
-        // And although start time seems very small and rare and at all
-        // other times index only slows inserts it's still necessary
-        // because without it starting time becomes intolerably bad.
-        << "unique(" << kNCBlobKeys_KeyCol
-        // id should not be in the unique because we rely on it if we
-        // need to change id for the blob when it is re-created.
-        <<       ")";
-}
-
-void
-CNCDBMetaFile_NCCache::GetSpecificStatement(ENCStmtType      typ,
-                                            CQuickStrStream& sql)
-{
-    switch (typ) {
-    case eStmt_GetBlobId:
-        sql << "select a." << kNCBlobKeys_BlobIdCol
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_KeyCol     << "=?1"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_BlobFamilyExists:
-        sql << "select count(*)"
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_KeyCol    << "=?1"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_BlobExists:
-        sql << "select count(*)"
-            <<  " from " << kNCBlobKeys_Table << " a,"
-                         << kNCBlobInfo_Table << " b"
-            << " where a." << kNCBlobKeys_BlobIdCol  << "=?1"
-            <<   " and a." << kNCBlobKeys_KeyCol     << "=?2"
-            <<   " and b." << kNCBlobInfo_BlobIdCol
-            <<                             "=a." << kNCBlobKeys_BlobIdCol
-            <<   " and b." << kNCBlobInfo_DeadTimeCol << ">=?20";
-        break;
-    case eStmt_CreateBlobKey:
-        // Replace - in case if blob was recently deleted and now it's
-        // created again when record in database is still exists.
-        sql << "insert or replace into " << kNCBlobKeys_Table
-            << "(" << kNCBlobKeys_BlobIdCol << ","
-                   << kNCBlobKeys_KeyCol
-            << ")values(?1,?2)";
-        break;
-    case eStmt_GetBlobsList:
-        sql << "select a." << kNCBlobInfo_BlobIdCol   << ","
-            <<        "a." << kNCBlobInfo_DeadTimeCol << ","
-            <<        "b." << kNCBlobKeys_KeyCol
-            <<  " from " << kNCBlobInfo_Table << " a,"
-                         << kNCBlobKeys_Table << " b"
-            << " where a."  << kNCBlobInfo_DeadTimeCol  << ">=?1"
-            <<   " and a."  << kNCBlobInfo_DeadTimeCol  << "<?3"
-            <<   " and (a." << kNCBlobInfo_DeadTimeCol  << ">?1"
-            <<        " or a." << kNCBlobInfo_BlobIdCol << ">?2)"
-            <<   " and b." << kNCBlobKeys_BlobIdCol
-            <<                             "=a." << kNCBlobInfo_BlobIdCol
-            << " order by 2,1"
-            << " limit ?4";
-        break;
-    default:
-        NCBI_TROUBLE("Unknown statement type");
-    }
-}
-
-
 CNCDBDataFile::~CNCDBDataFile(void)
 {}
 
-
-
-CNCDBFilesPool::~CNCDBFilesPool(void)
-{}
-
-
-CNCDBFilesPool_ICache::~CNCDBFilesPool_ICache(void)
-{}
-
-void
-CNCDBFilesPool_ICache::GetFile(CNCDBMetaFile** file_ptr)
-{
-    *file_ptr = m_Metas.GetObjPtr();
-}
-
-
-CNCDBFilesPool_NCCache::~CNCDBFilesPool_NCCache(void)
-{}
-
-void
-CNCDBFilesPool_NCCache::GetFile(CNCDBMetaFile** file_ptr)
-{
-    *file_ptr = m_Metas.GetObjPtr();
-}
 
 
 inline int
@@ -1022,9 +756,6 @@ CNCFSOpenFile::ReadFirstPage(Int8 offset, int cnt, void* mem_ptr)
         Int8 left_cnt = m_Size - offset;
         if (left_cnt < copy_cnt)
             copy_cnt = int(left_cnt);
-        /*if (offset != 24 || cnt != 16) {
-            LOG_POST("Reading first page " << cnt << " at " << offset);
-        }*/
         memcpy(mem_ptr, &m_FirstPage[offset], copy_cnt);
         cnt -= copy_cnt;
         mem_ptr = static_cast<char*>(mem_ptr) + copy_cnt;
@@ -1062,7 +793,7 @@ inline void
 CNCFSOpenFile::AdjustSize(Int8 size)
 {
     // This method is called under SQLite's locking, so there shouldn't be
-    // several parallel adjustments. So we don't need mutexes here.
+    // several parallel adjustments, and we don't need any mutexes.
     m_Size = max(m_Size, size);
 }
 
@@ -1090,15 +821,6 @@ CNCFileSystem::Finalize(void)
         // Let's protect against accidental overflow of semaphore's counter.
     }
     sm_BGThread->Join();
-}
-
-inline CNCFSOpenFile*
-CNCFileSystem::FindOpenFile(const string& name)
-{
-    CFastReadGuard guard(sm_FilesListLock);
-
-    TFilesList::const_iterator it = sm_FilesList.find(name);
-    return it == sm_FilesList.end()? NULL: it->second;
 }
 
 CNCFSOpenFile*
@@ -1165,9 +887,6 @@ CNCFileSystem::DeleteFileOnClose(const string& file_name)
     }
     if (need_delete) {
         CFile(file_name).Remove();
-        // For the case of transferring of database from the previous
-        // NetCache version.
-        CFile(file_name + "-journal").Remove();
     }
 }
 
@@ -1225,6 +944,7 @@ CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
         file->WriteFirstPage(offset, &data, cnt);
     }
     else {
+        CNCMemManager::SetDBPageDirty(data);
         CNCMemManager::LockDBPage(data);
     }
     event->data = data;
@@ -1235,6 +955,13 @@ CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
 inline void
 CNCFileSystem::x_DoWriteToFile(SNCFSEvent* event)
 {
+    if (event->offset >= kNCSQLitePageSize) {
+        if (!CNCMemManager::IsDBPageDirty(event->data)) {
+            CNCMemManager::UnlockDBPage(event->data);
+            return;
+        }
+        CNCMemManager::SetDBPageClean(event->data);
+    }
     CNCFSOpenFile* file = event->file;
     file->m_RealFile->pMethods->xWrite(file->m_RealFile,
                                        event->data, event->cnt, event->offset);
@@ -1254,9 +981,6 @@ CNCFileSystem::x_DoCloseFile(SNCFSEvent* event)
     delete file;
     if (need_delete) {
         CFile(file_name).Remove();
-        // For the case of transferring of database from the previous
-        // NetCache version.
-        CFile(file_name + "-journal").Remove();
     }
 }
 

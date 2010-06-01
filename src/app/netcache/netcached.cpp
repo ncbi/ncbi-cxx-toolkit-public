@@ -51,17 +51,8 @@
 #include "netcached.hpp"
 #include "netcache_version.hpp"
 #include "nc_memory.hpp"
+#include "nc_stat.hpp"
 #include "error_codes.hpp"
-
-#define NETCACHED_HUMAN_VERSION \
-    "NCBI NetCache server Version " NETCACHED_VERSION \
-    " build " __DATE__ " " __TIME__
-
-#define NETCACHED_FULL_VERSION \
-    "NCBI NetCache Server version " NETCACHED_VERSION \
-    " Storage version " NETCACHED_STORAGE_VERSION \
-    " Protocol version " NETCACHED_PROTOCOL_VERSION \
-    " build " __DATE__ " " __TIME__
 
 
 
@@ -71,156 +62,141 @@ BEGIN_NCBI_SCOPE
 
 
 static const char* kNCReg_ServerSection       = "server";
-static const char* kNCReg_DefCacheSection     = "nccache";
-static const char* kNCReg_OldCacheSection     = "bdb";
-static const char* kNCReg_ICacheSectionPrefix = "icache";
-static const char* kNCReg_Port                = "port";
-static const char* kNCReg_NetworkTimeout      = "network_timeout";
-static const char* kNCReg_CommandTimeout      = "request_timeout";
-static const char* kNCReg_UseHostname         = "use_hostname";
+static const char* kNCReg_Ports               = "ports";
 static const char* kNCReg_MaxConnections      = "max_connections";
 static const char* kNCReg_MaxThreads          = "max_threads";
-static const char* kNCReg_ReinitBadDB         = "drop_db";
 static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
-static const char* kNCReg_PassPolicy          = "blob_password_policy";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
 static const char* kNCReg_MemLimit            = "memory_limit";
 static const char* kNCReg_MemAlert            = "memory_alert";
+static const char* kNCReg_SpecPriority        = "app_setup_priority";
+static const char* kNCReg_NetworkTimeout      = "network_timeout";
+static const char* kNCReg_DisableClient       = "disable_client";
+static const char* kNCReg_CommandTimeout      = "cmd_timeout";
+static const char* kNCReg_BlobTTL             = "blob_ttl";
+static const char* kNCReg_ProlongOnRead       = "prolong_on_read";
+static const char* kNCReg_PassPolicy          = "blob_password_policy";
+static const char* kNCReg_AppSetupPrefix      = "app_setup_";
+static const char* kNCReg_AppSetupValue       = "setup";
 
 
-CNCServerStat_Getter  CNCServerStat::sm_Getter;
-CNCServerStat         CNCServerStat::sm_Instances[kNCMaxThreadsCnt];
+CNetCacheServer* g_NetcacheServer = NULL;
+CNCBlobStorage*  g_NCStorage      = NULL;
 
 
-static CNetCacheServer* s_NetcacheServer     = NULL;
-
-
-extern "C"
-void NCSignalHandler(int sig)
+extern "C" void
+s_NCSignalHandler(int sig)
 {
-    if (s_NetcacheServer) {
-        s_NetcacheServer->RequestShutdown(sig);
+    if (g_NetcacheServer) {
+        g_NetcacheServer->RequestShutdown(sig);
     }
 }
 
-
-
-CNCServerStat::CNCServerStat(void)
-    : m_OpenedConns(0),
-      m_OverflowConns(0),
-      m_TimedOutCmds(0)
+static inline int
+s_CompareStrings(const string& left, const string& right)
 {
-    m_ConnSpan.Initialize();
-    m_CmdSpan .Initialize();
+    if (left.size() != right.size())
+        return int(left.size()) - int(right.size());
+    else
+        return left.compare(right);
 }
 
-inline CNCServerStat::TCmdsSpansMap::iterator
-CNCServerStat::x_GetSpanFigure(TCmdsSpansMap& cmd_span_map, const char* cmd)
-{
-    TCmdsSpansMap::iterator it_span = cmd_span_map.lower_bound(cmd);
-    if (it_span == cmd_span_map.end()
-        ||  NStr::strcmp(cmd, it_span->first) != 0)
-    {
-        TSpanValue value;
-        value.Initialize();
-        it_span = cmd_span_map.insert(TCmdsSpansMap::value_type(cmd, value)).first;
-    }
-    return it_span;
-}
+
+
+SNCSpecificParams::~SNCSpecificParams(void)
+{}
+
+
+inline
+CNetCacheServer::SSpecParamsEntry::SSpecParamsEntry(const string& key,
+                                                    CObject*      value)
+    : key(key),
+      value(value)
+{}
+
+
+CNetCacheServer::SSpecParamsSet::~SSpecParamsSet(void)
+{}
+
 
 void
-CNCServerStat::AddFinishedCmd(const char* cmd,
-                              double      cmd_span,
-                              int         cmd_status)
+CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
+                                      const string&      section,
+                                      SNCSpecificParams* params)
 {
-    CNCServerStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-
-    stat->m_CmdSpan.AddValue(cmd_span);
-    TCmdsSpansMap& cmd_span_map = stat->m_CmdSpanByCmd[cmd_status];
-    TCmdsSpansMap::iterator it_span = x_GetSpanFigure(cmd_span_map, cmd);
-    it_span->second.AddValue(cmd_span);
-
-    stat->m_ObjLock.Unlock();
+    if (reg.HasEntry(section, kNCReg_DisableClient, IRegistry::fCountCleared)) {
+        params->disable = reg.GetBool(section, kNCReg_DisableClient,
+                                      false, 0, IRegistry::eErrPost);
+    }
+    if (reg.HasEntry(section, kNCReg_CommandTimeout, IRegistry::fCountCleared)) {
+        params->cmd_timeout = reg.GetInt(section, kNCReg_CommandTimeout,
+                                         600, 0, IRegistry::eErrPost);
+    }
+    if (reg.HasEntry(section, kNCReg_NetworkTimeout, IRegistry::fCountCleared)) {
+        params->conn_timeout = reg.GetInt(section, kNCReg_NetworkTimeout,
+                                          10, 0, IRegistry::eErrPost);
+        if (params->conn_timeout == 0) {
+            ERR_POST_X(2, "INI file sets network timeout to 0. Assuming 10 seconds.");
+            params->conn_timeout =  10;
+        }
+    }
+    if (reg.HasEntry(section, kNCReg_BlobTTL, IRegistry::fCountCleared)) {
+        params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL,
+                                      3600, 0, IRegistry::eErrPost);
+    }
+    if (reg.HasEntry(section, kNCReg_ProlongOnRead, IRegistry::fCountCleared)) {
+        params->prolong_on_read = reg.GetBool(section, kNCReg_ProlongOnRead,
+                                              true, 0, IRegistry::eErrPost);
+    }
+    if (reg.HasEntry(section, kNCReg_PassPolicy, IRegistry::fCountCleared)) {
+        string pass_policy = reg.GetString(section, kNCReg_PassPolicy, "any");
+        if (pass_policy == "no_password") {
+            params->pass_policy = eNCOnlyWithoutPass;
+        }
+        else if (pass_policy == "with_password") {
+            params->pass_policy = eNCOnlyWithPass;
+        }
+        else {
+            if (pass_policy != "any") {
+                ERR_POST_X(16, "Incorrect value of '" << kNCReg_PassPolicy
+                               << "' parameter: '" << pass_policy << "'");
+            }
+            params->pass_policy = eNCBlobPassAny;
+        }
+    }
 }
 
 inline void
-CNCServerStat::x_CollectTo(CNCServerStat* other)
+CNetCacheServer::x_PutNewParams(SSpecParamsSet*         params_set,
+                                unsigned int            best_index,
+                                const SSpecParamsEntry& entry)
 {
-    CSpinGuard guard(m_ObjLock);
+    params_set->entries.insert(params_set->entries.begin() + best_index, entry);
+}
 
-    other->m_OpenedConns += m_OpenedConns;
-    other->m_OverflowConns += m_OverflowConns;
-    other->m_ConnSpan.AddValues(m_ConnSpan);
-    other->m_CmdSpan.AddValues(m_CmdSpan);
-    ITERATE(TStatCmdsSpansMap, it_st, m_CmdSpanByCmd) {
-        const TCmdsSpansMap& cmd_span_map = it_st->second;
-        TCmdsSpansMap& other_cmd_span     = other->m_CmdSpanByCmd[it_st->first];
-        ITERATE(TCmdsSpansMap, it_span, cmd_span_map) {
-            TCmdsSpansMap::iterator other_span
-                            = x_GetSpanFigure(other_cmd_span, it_span->first);
-            other_span->second.AddValues(it_span->second);
+CNetCacheServer::SSpecParamsSet*
+CNetCacheServer::x_FindNextParamsSet(const SSpecParamsSet*  cur_set,
+                                     const string&          key,
+                                     unsigned int&          best_index)
+{
+    unsigned int low = 1;
+    unsigned int high = cur_set->entries.size();
+    while (low < high) {
+        unsigned int mid = (low + high) / 2;
+        const SSpecParamsEntry& entry = cur_set->entries[mid];
+        int comp_res = s_CompareStrings(key, entry.key);
+        if (comp_res == 0) {
+            best_index = mid;
+            return static_cast<SSpecParamsSet*>(entry.value.GetNCPointer());
         }
+        else if (comp_res > 0)
+            low = mid + 1;
+        else
+            high = mid;
     }
-    other->m_TimedOutCmds += m_TimedOutCmds;
-}
-
-void
-CNCServerStat::Print(CPrintTextProxy& proxy)
-{
-    CNCServerStat stat;
-    for (unsigned int i = 0; i < kNCMaxThreadsCnt; ++i) {
-        sm_Instances[i].x_CollectTo(&stat);
-    }
-
-    proxy << "Connections - " << stat.m_OpenedConns           << " (open), "
-                              << stat.m_ConnSpan.GetCount()   << " (closed), "
-                              << stat.m_OverflowConns         << " (overflow), "
-                              << stat.m_ConnSpan.GetAverage() << " (avg alive), "
-                              << stat.m_ConnSpan.GetMaximum() << " (max alive)" << endl
-          << "Commands    - " << stat.m_CmdSpan.GetCount()    << " (cnt), "
-                              << stat.m_CmdSpan.GetAverage()  << " (avg time), "
-                              << stat.m_CmdSpan.GetMaximum()  << " (max time), "
-                              << stat.m_TimedOutCmds          << " (t/o)" << endl
-          << "By status and type:" << endl;
-    ITERATE(TStatCmdsSpansMap, it_span_st, stat.m_CmdSpanByCmd) {
-        proxy << it_span_st->first << ":" << endl;
-        ITERATE(TCmdsSpansMap, it_span, it_span_st->second) {
-            proxy << it_span->first << " - "
-                              << it_span->second.GetCount()   << " (cnt), "
-                              << it_span->second.GetAverage() << " (avg time), "
-                              << it_span->second.GetMaximum() << " (max time)" << endl;
-        }
-    }
-}
-
-
-
-inline int
-CNetCacheServer::x_RegReadInt(const IRegistry& reg,
-                              const char*      value_name,
-                              int              def_value)
-{
-    return reg.GetInt(kNCReg_ServerSection, value_name, def_value,
-                      0, IRegistry::eErrPost);
-}
-
-inline bool
-CNetCacheServer::x_RegReadBool(const IRegistry& reg,
-                               const char*      value_name,
-                               bool             def_value)
-{
-    return reg.GetBool(kNCReg_ServerSection, value_name, def_value,
-                       0, IRegistry::eErrPost);
-}
-
-inline string
-CNetCacheServer::x_RegReadString(const IRegistry& reg,
-                                 const char*      value_name,
-                                 const string&    def_value)
-{
-    return reg.GetString(kNCReg_ServerSection, value_name, def_value);
+    best_index = high;
+    return NULL;
 }
 
 void
@@ -228,66 +204,59 @@ CNetCacheServer::x_ReadServerParams(void)
 {
     const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
 
-    m_CmdTimeout        = x_RegReadInt(reg, kNCReg_CommandTimeout, 600);
-    m_InactivityTimeout = x_RegReadInt(reg, kNCReg_NetworkTimeout, 10);
-    if (m_InactivityTimeout <= 0) {
-        ERR_POST_X(2, Warning << "INI file sets network timeout to 0 or less."
-                                 " Assuming 10 seconds.");
-        m_InactivityTimeout =  10;
-    } else {
-        LOG_POST_X(3, "Network IO timeout " << m_InactivityTimeout);
+    string ports_str = reg.Get(kNCReg_ServerSection, kNCReg_Ports);
+    if (ports_str != m_PortsConfStr) {
+        list<string> split_ports;
+        NStr::Split(ports_str, ", \t\r\n", split_ports);
+        TPortsList ports_list;
+        ITERATE(list<string>, it, split_ports) {
+            try {
+                ports_list.insert(NStr::StringToInt(*it));
+            }
+            catch (CException& ex) {
+                ERR_POST_X(17, "Error reading port number from '"
+                               << *it << "': " << ex);
+            }
+        }
+        ITERATE(TPortsList, it, ports_list) {
+            unsigned int port = *it;
+            if (m_Ports.find(port) == m_Ports.end()) {
+                AddListener(new CNCMsgHndlFactory_Proxy(), port);
+                m_Ports.insert(port);
+            }
+        }
+        StartListening();
+        if (ports_list.size() != m_Ports.size()) {
+            ERR_POST_X(18, "After reconfiguration some ports should not be "
+                           "listened anymore. It requires restarting of the server.");
+        }
+        if (m_Ports.size() == 0) {
+            NCBI_THROW(CUtilException, eWrongData,
+                       "No listening ports were configured.");
+        }
+        m_PortsConfStr = ports_str;
+
+        ports_str.clear();
+        ITERATE(TPortsList, it, m_Ports) {
+            ports_str.append(NStr::IntToString(*it));
+            ports_str.append(", ", 2);
+        }
+        ports_str.resize(ports_str.size() - 2);
+        INFO_POST("Server is listening to these ports: " << ports_str);
     }
 
-    bool use_hostname = x_RegReadBool(reg, kNCReg_UseHostname, false);
-    if (use_hostname) {
-        char hostname[256];
-        if (SOCK_gethostname(hostname, sizeof(hostname)) == 0) {
-            m_Host = hostname;
-        }
-    } else {
-        unsigned int host = SOCK_gethostbyname(0);
-        char ipaddr[32];
-        SOCK_ntoa(host, ipaddr, sizeof(ipaddr)-1);
-        m_Host = ipaddr;
-    }
-
-    string log_cmds = x_RegReadString(reg, kNCReg_LogCmds, "all");
-    if (log_cmds == "no") {
-        m_LogCmdsType = eNoLogCmds;
-    }
-    else if (log_cmds == "not_hasb") {
-        m_LogCmdsType = eNoLogHasb;
-    }
-    else {
-        if (log_cmds != "all") {
-            ERR_POST_X(15, "Incorrect value of '" << kNCReg_LogCmds
-                           << "' parameter: '" << log_cmds << "'");
-        }
-        m_LogCmdsType = eLogAllCmds;
-    }
-    m_AdminClient = x_RegReadString(reg, kNCReg_AdminClient,
-                                    kNCReg_DefAdminClient);
-
-    string pass_policy = x_RegReadString(reg, kNCReg_PassPolicy, "any");
-    if (pass_policy == "no_password") {
-        m_PassPolicy = eNCOnlyWithoutPass;
-    }
-    else if (pass_policy == "with_password") {
-        m_PassPolicy = eNCOnlyWithPass;
-    }
-    else {
-        if (pass_policy != "any") {
-            ERR_POST_X(16, "Incorrect value of '" << kNCReg_PassPolicy
-                           << "' parameter: '" << pass_policy << "'");
-        }
-        m_PassPolicy = eNCBlobPassAny;
-    }
+    m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true,
+                                  IRegistry::eErrPost);
+    m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
+                                  kNCReg_DefAdminClient);
 
     SServer_Parameters params;
-    params.max_connections = x_RegReadInt(reg, kNCReg_MaxConnections, 100);
-    params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     20);
+    params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections,
+                                        100, IRegistry::eErrPost);
+    params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads,
+                                        20,  IRegistry::eErrPost);
     // A bit of hard coding but it's really not necessary to create more than
-    // 25 threads in server's thread pool.
+    // 20 threads in server's thread pool.
     if (params.max_threads > 20) {
         ERR_POST(Warning << "NetCache configuration is not optimal. "
                             "Maximum optimal number of threads is 20, "
@@ -302,215 +271,155 @@ CNetCacheServer::x_ReadServerParams(void)
     SetParameters(params);
 
     try {
-        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(
-                                  x_RegReadString(reg, kNCReg_MemLimit, "1Gb")));
-        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(
-                                  x_RegReadString(reg, kNCReg_MemAlert, "4Gb")));
+        string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
+        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
+        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
+        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
         CNCMemManager::SetLimits(mem_limit, mem_alert);
     }
     catch (CStringException& ex) {
         ERR_POST_X(14, "Error in " << kNCReg_MemLimit
                          << " or " << kNCReg_MemAlert << " parameter: " << ex);
     }
-}
 
-inline void
-CNetCacheServer::x_CleanExistingStorages(const list<string>& ini_sections)
-{
-    // A little feature: with second reconfigure storage will go away
-    // completely, so re-configuration should be used carefully.
-    m_OldStorages.clear();
-    ERASE_ITERATE(TStorageMap, it_stor, m_StorageMap) {
-        string section_name(kNCReg_ICacheSectionPrefix);
-        section_name += "_";
-        section_name += it_stor->first;
-        bool is_main = it_stor->first == kNCDefCacheName;
-        bool sec_found = false;
-        ITERATE(list<string>, it_sec, ini_sections) {
-            if ((is_main
-                     &&  (NStr::CompareNocase(*it_sec, kNCReg_DefCacheSection) == 0
-                          ||  NStr::CompareNocase(*it_sec, kNCReg_OldCacheSection) == 0))
-                ||  (!is_main
-                     &&  NStr::CompareNocase(*it_sec, section_name) == 0))
-            {
-                sec_found = true;
-                break;
-            }
-        }
-        if (!sec_found) {
-            m_OldStorages.push_back(it_stor->second);
-            m_StorageMap.erase(it_stor);
-        }
+    m_OldSpecParams = m_SpecParams;
+
+    string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
+    list<string> prty_list;
+    NStr::Split(spec_prty, " \t\r\n", prty_list);
+    m_SpecPriority.assign(prty_list.begin(), prty_list.end());
+
+    SNCSpecificParams* main_params = new SNCSpecificParams;
+    main_params->disable         = false;
+    main_params->cmd_timeout     = 600;
+    main_params->conn_timeout    = 10;
+    main_params->blob_ttl        = 3600;
+    main_params->prolong_on_read = true;
+    main_params->pass_policy     = eNCBlobPassAny;
+    x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
+    m_DefConnTimeout = main_params->conn_timeout;
+    SSpecParamsSet* params_set = new SSpecParamsSet();
+    params_set->entries.push_back(SSpecParamsEntry(kEmptyStr, main_params));
+    for (unsigned int i = 0; i < m_SpecPriority.size(); ++i) {
+        SSpecParamsSet* next_set = new SSpecParamsSet();
+        next_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params_set));
+        params_set = next_set;
     }
-}
+    m_SpecParams = params_set;
 
-inline void
-CNetCacheServer::x_ConfigureStorages(CNcbiRegistry& reg, bool do_reinit)
-{
-    CNCBlobStorage::EReinitMode reinit = CNCBlobStorage::eNoReinit;
-    if (do_reinit) {
-        reinit = CNCBlobStorage::eForceReinit;
-    }
-    else if (m_IsReinitBadDB) {
-        reinit = CNCBlobStorage::eReinitBad;
-    }
-
-    list<string> sections;
-    reg.EnumerateSections(&sections);
-    x_CleanExistingStorages(sections);
-
-    bool found_main_cache = false;
-    ITERATE(list<string>, it, sections) {
-        const string& section_name = *it;
-        string cache_name;
-
-        if (NStr::CompareNocase(section_name, kNCReg_DefCacheSection) == 0
-            ||  NStr::CompareNocase(section_name, kNCReg_OldCacheSection) == 0)
-        {
-            cache_name = kNCDefCacheName;
-            if (found_main_cache) {
-                NCBI_THROW_FMT(CUtilException, eWrongData,
-                               "Cannot have both '" << kNCReg_DefCacheSection
-                               << "' and '" << kNCReg_OldCacheSection
-                               << "' sections in the configuration.");
+    if (m_SpecPriority.size() != 0) {
+        list<string> conf_sections;
+        reg.EnumerateSections(&conf_sections);
+        ITERATE(list<string>, sec_it, conf_sections) {
+            const string& section = *sec_it;
+            if (!NStr::StartsWith(section, kNCReg_AppSetupPrefix, NStr::eNocase))
+                continue;
+            SSpecParamsSet* cur_set  = m_SpecParams;
+            SSpecParamsSet* prev_set = NULL;
+            ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
+                const string& key_name = *prty_it;
+                if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
+                    const string& key_value = reg.Get(section, key_name);
+                    unsigned int next_ind = 0;
+                    SSpecParamsSet* next_set
+                                = x_FindNextParamsSet(cur_set, key_value, next_ind);
+                    if (!next_set) {
+                        if (cur_set->entries.size() == 0) {
+                            cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, static_cast<SSpecParamsSet*>(prev_set->entries[0].value.GetPointer())->entries[0].value));
+                        }
+                        next_set = new SSpecParamsSet();
+                        x_PutNewParams(cur_set, next_ind,
+                                       SSpecParamsEntry(key_value, next_set));
+                    }
+                    prev_set = cur_set;
+                    cur_set = next_set;
+                }
+                else {
+                    cur_set = static_cast<SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
+                }
             }
-            if (NStr::CompareNocase(section_name, kNCReg_OldCacheSection) == 0)
-            {
-                ERR_POST(Warning << "Old section name '"
-                         << kNCReg_OldCacheSection
-                         << "' is used in configuration. "
-                            "It should be changed to '"
-                         << kNCReg_DefCacheSection << "'.");
-            }
-            found_main_cache = true;
-        }
-        else {
-            string sec_prefix;
-            NStr::SplitInTwo(section_name, "_", sec_prefix, cache_name);
-            if (NStr::CompareNocase(sec_prefix, kNCReg_ICacheSectionPrefix) != 0)
-            {
+            if (cur_set->entries.size() != 0) {
+                ERR_POST_X(19, "Section '" << section << "' in configuration file is "
+                               "a duplicate of another section - ignoring it.");
                 continue;
             }
-            if (NStr::CompareNocase(cache_name, kNCDefCacheName) == 0) {
-                NCBI_THROW(CUtilException, eWrongData,
-                           "ICache cache name cannot be equal to 'nccache'");
+            SNCSpecificParams* params = new SNCSpecificParams(*main_params);
+            if (reg.HasEntry(section, kNCReg_AppSetupValue)) {
+                x_ReadSpecificParams(reg, reg.Get(section, kNCReg_AppSetupValue),
+                                     params);
             }
-            NStr::ToLower(cache_name);
-        }
-        TStorageMap::iterator it_stor = m_StorageMap.find(cache_name);
-        if (it_stor == m_StorageMap.end()) {
-            CNCBlobStorage* storage;
-            if (cache_name == kNCDefCacheName)
-                storage = new CNCBlobStorage_NCCache();
-            else
-                storage = new CNCBlobStorage_ICache();
-            storage->Initialize(reg, section_name, reinit);
-            storage->SetMonitor(&m_Monitor);
-            m_StorageMap[cache_name] = storage;
-        }
-        else {
-            it_stor->second->Reconfigure(reg, section_name);
+            cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params));
         }
     }
 }
 
 CNetCacheServer::CNetCacheServer(bool do_reinit)
-    : m_Shutdown(false),
+    : m_SpecParams(NULL),
+      m_OldSpecParams(NULL),
+      m_Shutdown(false),
       m_Signal(0)
 {
-    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    m_Port          = x_RegReadInt (reg, kNCReg_Port,        0);
-    if (m_Port == 0) {
-        NCBI_THROW_FMT(CUtilException, eWrongData,
-                       "'" << kNCReg_Port
-                       << "' setting is mandatory in configuration file.");
-    }
-    m_IsReinitBadDB = x_RegReadBool(reg, kNCReg_ReinitBadDB, false);
-
-#if defined(NCBI_OS_UNIX)
-    // attempt to get server gracefully shutdown on signal
-    signal(SIGINT,  NCSignalHandler);
-    signal(SIGTERM, NCSignalHandler);
-#endif
-
-    // Accept timeout
     m_ServerAcceptTimeout.sec = 1;
     m_ServerAcceptTimeout.usec = 0;
-    x_ReadServerParams();
-    AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
 
-    x_ConfigureStorages(reg, do_reinit);
-    if (m_StorageMap.size() == 0) {
-        NCBI_THROW_FMT(CUtilException, eWrongData,
-                       "No storages exist in configuration. Either '"
-                       << kNCReg_DefCacheSection << "' or '"
-                       << kNCReg_ICacheSectionPrefix
-                       << "_*' sections should exist.");
-    }
+    unsigned int host = SOCK_gethostbyname(0);
+    char ipaddr[32];
+    SOCK_ntoa(host, ipaddr, sizeof(ipaddr)-1);
+    m_HostIP.assign(ipaddr);
+
+    x_ReadServerParams();
+
+    g_NCStorage = new CNCBlobStorage(do_reinit);
     CNCFileSystem::SetDiskInitialized();
 
     m_BlobIdCounter.Set(0);
     m_StartTime = GetFastTime();
 
-    _ASSERT(s_NetcacheServer == NULL);
-    s_NetcacheServer = this;
+    _ASSERT(g_NetcacheServer == NULL);
+    g_NetcacheServer = this;
+}
+
+void
+CNetCacheServer::Init(void)
+{
+    INCBlockedOpListener::BindToThreadPool(GetThreadPool());
 }
 
 CNetCacheServer::~CNetCacheServer()
 {
     CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
-    LOG_POST_X(13, "NetCache server is stopping. Usage statistics:");
+    INFO_POST("NetCache server is destroying. Usage statistics:");
     x_PrintServerStats(proxy);
+
+    delete g_NCStorage;
+    g_NetcacheServer = NULL;
 }
 
-void
-CNetCacheServer::BlockAllStorages(void)
+const SNCSpecificParams*
+CNetCacheServer::GetAppSetup(const TStringMap& client_params)
 {
-    ITERATE(TStorageMap, it, m_StorageMap) {
-        it->second->Block();
+    const SSpecParamsSet* cur_set = m_SpecParams;
+    ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
+        TStringMap::const_iterator it = client_params.find(*key_it);
+        const SSpecParamsSet* next_set = NULL;
+        if (it != client_params.end()) {
+            const string& value = it->second;
+            unsigned int best_index = 0;
+            next_set = x_FindNextParamsSet(cur_set, value, best_index);
+        }
+        if (!next_set)
+            next_set = static_cast<const SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
+        cur_set = next_set;
     }
-}
-
-void
-CNetCacheServer::UnblockAllStorages(void)
-{
-    ITERATE(TStorageMap, it, m_StorageMap) {
-        if (it->second->IsBlocked())
-            it->second->Unblock();
-    }
-    ITERATE(TStorageList, it, m_OldStorages) {
-        (*it)->Unblock();
-    }
-}
-
-bool
-CNetCacheServer::CanReconfigure(void)
-{
-    ITERATE(TStorageMap, it, m_StorageMap) {
-        if (!it->second->CanDoExclusive())
-            return false;
-    }
-    return true;
+    return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
 }
 
 void
 CNetCacheServer::Reconfigure(void)
 {
     CNcbiApplication::Instance()->ReloadConfig();
-    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    // Non-changeable parameters
-    reg.Set(kNCReg_ServerSection, kNCReg_Port,
-            NStr::IntToString(m_Port),
-            IRegistry::fPersistent | IRegistry::fOverride,
-            reg.GetComment(kNCReg_ServerSection, kNCReg_Port));
-    reg.Set(kNCReg_ServerSection, kNCReg_ReinitBadDB,
-            NStr::BoolToString(m_IsReinitBadDB),
-            IRegistry::fPersistent | IRegistry::fOverride,
-            reg.GetComment(kNCReg_ServerSection, kNCReg_ReinitBadDB));
-
-    // Change all others
     x_ReadServerParams();
-    x_ConfigureStorages(reg, false);
+    g_NCStorage->Reconfigure();
 }
 
 void
@@ -523,17 +432,13 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
                        << ", started at " << m_StartTime << endl
           << "Env  - " << CThread::GetThreadsCount() << " (cur thr), "
                        << params.max_threads << " (max thr), "
-                       << params.max_connections << " (max conns), "
-                       << m_CmdTimeout << " (cmd t/o)" << endl
+                       << params.max_connections << " (max conns)" << endl
           << endl;
     CNCMemManager::PrintStats(proxy);
     proxy << endl;
-    CNCServerStat::Print(proxy);
-
-    ITERATE(TStorageMap, it, m_StorageMap) {
-        proxy << endl;
-        it->second->PrintStat(proxy);
-    }
+    g_NCStorage->PrintStat(proxy);
+    proxy << endl;
+    CNCStat::Print(proxy);
 }
 
 
@@ -571,11 +476,11 @@ CNetCacheDApp::Run(void)
         printf(NETCACHED_FULL_VERSION "\n");
         return 0;
     }
-    LOG_POST_X(8, NETCACHED_FULL_VERSION);
+    INFO_POST(NETCACHED_FULL_VERSION);
 
 #ifdef NCBI_OS_UNIX
     if (!args["nodaemon"]) {
-        LOG_POST_X(1, "Entering UNIX daemon mode...");
+        INFO_POST("Entering UNIX daemon mode...");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked
         // process then 0 file descriptor is returned to SQLite after open().
         // But there's assert there which prevents fd to be equal to 0. So
@@ -588,6 +493,10 @@ CNetCacheDApp::Run(void)
             NCBI_THROW(CCoreException, eCore, "Error during daemonization");
         }
     }
+
+    // attempt to get server gracefully shutdown on signal
+    signal(SIGINT,  s_NCSignalHandler);
+    signal(SIGTERM, s_NCSignalHandler);
 #endif
 
     CNCMemManager::InitializeApp();
@@ -596,13 +505,9 @@ CNetCacheDApp::Run(void)
     CNCFileSystem ::Initialize();
     try {
         AutoPtr<CNetCacheServer> server(new CNetCacheServer(args["reinit"]));
-
-        LOG_POST_X(9, "Running server on port " << server->GetPort());
         server->Run();
-
         if (server->GetSignalCode()) {
-            LOG_POST_X(10, "Server got "
-                           << server->GetSignalCode() << " signal.");
+            INFO_POST("Server got " << server->GetSignalCode() << " signal.");
         }
     }
     catch (...) {

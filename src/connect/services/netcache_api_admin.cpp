@@ -69,10 +69,5 @@ void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
         output_stream, CNetService::eSingleLineOutput);
 }
 
-void CNetCacheAdmin::Monitor(CNcbiOstream& out) const
-{
-    m_Impl->m_API->m_Service->Monitor(out, m_Impl->m_API->MakeCmd("MONI"));
-}
-
 
 END_NCBI_SCOPE

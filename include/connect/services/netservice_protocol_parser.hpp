@@ -83,10 +83,10 @@ enum ENSProtoArgType {
 };
 
 struct SNSProtoArgument {
-    const char*      key;
-    ENSProtoArgType  atype;
-    TNSProtoArgFlags flags;
-    const char*      dflt;
+    const char*         key;
+    ENSProtoArgType     atype;
+    TNSProtoArgFlags    flags;
+    const char*         dflt;
 };
 
 enum {
@@ -95,15 +95,17 @@ enum {
 
 template <class Extra>
 struct SNSProtoCmdDef {
-    const char*      cmd;
-    Extra            extra;
-    SNSProtoArgument args[kNSProtoMaxArgs + 1]; // + end of record
+    const char* const   cmd;
+    Extra               extra;
+    SNSProtoArgument    args[kNSProtoMaxArgs + 1]; // + end of record
 };
+
+typedef map<CTempString, CTempString>  TNSProtoParams;
 
 template <class Extra>
 struct SNSProtoParsedCmd {
     const SNSProtoCmdDef<Extra>* command;
-    map<string, string>          params;
+    TNSProtoParams               params;
 };
 
 
@@ -143,7 +145,7 @@ class NCBI_XCONNECT_EXPORT CNetServProtoParserBase {
 public:
     void ParseArguments(CTempString             str,
                         const SNSProtoArgument* arg_descr,
-                        map<string, string>*    params);
+                        TNSProtoParams*         params);
 
 protected:
     CNetServProtoParserBase(const char* const*      cmd_name,
@@ -154,21 +156,19 @@ protected:
                        const SNSProtoArgument* cmd_args,
                        size_t                  cmddef_size);
 
-    void ParseCommand(CTempString          command,
-                      const void**         match_cmd,
-                      map<string, string>* params);
+    void ParseCommand(CTempString     command,
+                      const void**    match_cmd,
+                      TNSProtoParams* params);
 
 private:
     template <class T> T* x_GetNextInCmdMap(T* ptr);
 
     ENSProtoTokenType x_GetToken(const char** str,
-                                 const char*  end,
-                                 const char** tok,
-                                 size_t*      size);
-    bool x_ArgumentMatch(const char*             key,
-                         size_t                  key_size,
-                         ENSProtoTokenType       val_type,
-                         const SNSProtoArgument* arg_descr);
+                                 const char*  str_end,
+                                 CTempString* token);
+    bool x_IsArgumentMatch(const CTempString       key,
+                           ENSProtoTokenType       val_type,
+                           const SNSProtoArgument* arg_descr);
 
 
     const char* const*      m_CmdMapName;
@@ -193,6 +193,28 @@ public:
 //////////////////////////////////////////////////////////////////////////
 // Inline functions
 //////////////////////////////////////////////////////////////////////////
+
+inline void
+CNetServProtoParserBase::SetCommandMap(const char* const* const      cmd_name,
+                                       const SNSProtoArgument* const cmd_args,
+                                       size_t                        cmddef_size)
+{
+    m_CmdMapName = cmd_name;
+    m_CmdMapArgs = cmd_args;
+    m_CmdDefSize = cmddef_size;
+}
+
+inline
+CNetServProtoParserBase::CNetServProtoParserBase
+(
+    const char* const* const      cmd_name,
+    const SNSProtoArgument* const cmd_args,
+    size_t                        cmddef_size
+)
+{
+    SetCommandMap(cmd_name, cmd_args, cmddef_size);
+}
+
 
 template <class Extra>
 inline

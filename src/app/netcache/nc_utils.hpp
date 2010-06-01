@@ -39,6 +39,12 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
 
+#ifdef _DEBUG
+#  undef _ASSERT
+#  define _ASSERT(x)  if (x) ; else abort()
+#  undef _VERIFY
+#  define _VERIFY(x)  if (x) ; else abort()
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -137,6 +143,15 @@ private:
 /// Additional overloaded operator to allow automatic transformation of
 /// CQuickStrStream to string when outputting to any standard stream.
 CNcbiOstream& operator<<(CNcbiOstream& stream, const CQuickStrStream& str);
+
+
+///
+#define INFO_POST(message)                         \
+    ( NCBI_NS_NCBI::CNcbiDiag(                     \
+      eDiag_Error,                                 \
+      eDPF_Log | eDPF_IsMessage).GetRef()          \
+      << message                                   \
+      << NCBI_NS_NCBI::Endm )
 
 
 /// Stream-like class to help unify printing some text messages to diagnostics
@@ -481,6 +496,157 @@ struct SNCFastMutex : public SSystemFastMutex
 };
 
 
+///
+enum ENCBlockingOpResult {
+    eNCSuccessNoBlock,
+    eNCWouldBlock
+};
+
+
+class CStdPoolOfThreads;
+
+///
+struct INCBlockedOpListener
+{
+    ///
+    static void BindToThreadPool(CStdPoolOfThreads* pool);
+
+    ///
+    virtual void OnBlockedOpFinish(void) = 0;
+
+    ///
+    void Notify(void);
+};
+
+
+///
+enum ENCLongOpState {
+    eNCOpNotDone,
+    eNCOpInProgress,
+    eNCOpCompleted
+};
+
+
+struct SNCBlockedOpListeners;
+
+///
+class CNCLongOpTrigger
+{
+public:
+    ///
+    CNCLongOpTrigger(void);
+    ~CNCLongOpTrigger(void);
+    ///
+    void Reset(void);
+
+    ///
+    ENCLongOpState GetState(void);
+    ///
+    void SetState(ENCLongOpState state);
+    ///
+    ENCBlockingOpResult StartWorking(INCBlockedOpListener* listener);
+    ///
+    void OperationCompleted(void);
+
+private:
+    CNCLongOpTrigger(const CNCLongOpTrigger&);
+    CNCLongOpTrigger& operator= (const CNCLongOpTrigger&);
+
+    ///
+    CSpinLock               m_ObjLock;
+    ///
+    ENCLongOpState volatile m_State;
+    ///
+    SNCBlockedOpListeners*  m_Listeners;
+};
+
+
+///
+class CNCLongOpGuard
+{
+public:
+    ///
+    CNCLongOpGuard(CNCLongOpTrigger& trigger);
+    ~CNCLongOpGuard(void);
+
+    ///
+    ENCBlockingOpResult Start(INCBlockedOpListener* listener);
+    ///
+    bool IsCompleted(void);
+
+private:
+    CNCLongOpGuard(const CNCLongOpGuard&);
+    CNCLongOpGuard& operator= (const CNCLongOpGuard&);
+
+    ///
+    CNCLongOpTrigger* m_Trigger;
+};
+
+
+///
+template <class        ElemType,
+          class        FinalDeleter,
+          unsigned int DeleteDelay,
+          unsigned int ElemsPerStorage>
+class CNCDeferredDeleter {
+public:
+    CNCDeferredDeleter(const FinalDeleter& deleter);
+    ~CNCDeferredDeleter(void);
+
+    ///
+    void AddElement(const ElemType& elem);
+    ///
+    void HeartBeat(void);
+
+private:
+    CNCDeferredDeleter(const CNCDeferredDeleter&);
+    CNCDeferredDeleter& operator= (const CNCDeferredDeleter&);
+
+    ///
+    enum {
+        kDeleteDelay     = DeleteDelay,
+        kElemsPerStorage = ElemsPerStorage
+    };
+
+    ///
+    class CStorageForDelete
+    {
+    public:
+        ///
+        CStorageForDelete(void);
+        ~CStorageForDelete(void);
+
+        ///
+        void AddElement(const ElemType& elem);
+        ///
+        void Clean(const FinalDeleter& deleter);
+
+    private:
+        ///
+        CStorageForDelete(const CStorageForDelete&);
+        CStorageForDelete& operator= (const CStorageForDelete&);
+
+        ///
+        void x_CreateNextAndAdd(const ElemType& elem);
+
+
+        ElemType                    m_Elems[kElemsPerStorage];
+        CAtomicCounter              m_CurIdx;
+        CSpinLock                   m_ObjLock;
+        CStorageForDelete* volatile m_Next;
+    };
+
+    ///
+    CStorageForDelete*          m_Stores[kDeleteDelay];
+    ///
+    CStorageForDelete* volatile m_CurStore;
+    ///
+    FinalDeleter                m_FinalDeleter;
+};
+
+
+
+
 /// Initialize system that will acquire thread indexes for each thread.
 /// This function must be called before g_GetNCThreadIndex() is used.
 void
@@ -505,15 +671,13 @@ TLeft g_SafeDiv(TLeft left, TRight right)
 /// are indexed from lowest to highest starting with 0 (e.g. for binary number
 /// 10010001 it will return 7).
 inline unsigned int
-g_GetLogBase2(size_t value)
+g_GetLogBase2(Uint8 value)
 {
     unsigned int result = 0;
-#if SIZEOF_SIZE_T > 4
     if (value > 0xFFFFFFFF) {
         value >>= 32;
         result += 32;
     }
-#endif
     if (value > 0xFFFF) {
         value >>= 16;
         result += 16;
@@ -603,7 +767,7 @@ CSpinRWLock::ReadLock(void)
 inline void
 CSpinRWLock::ReadUnlock(void)
 {
-    m_LockCount.Add(-kReadLockValue);
+    _VERIFY(m_LockCount.Add(-kReadLockValue) + kReadLockValue >= kReadLockValue);
 }
 
 inline void
@@ -631,7 +795,7 @@ CSpinRWLock::WriteLock(void)
 inline void
 CSpinRWLock::WriteUnlock(void)
 {
-    m_LockCount.Add(-kWriteLockValue);
+    _VERIFY(m_LockCount.Add(-kWriteLockValue) + kWriteLockValue >= kWriteLockValue);
 }
 
 
@@ -785,12 +949,14 @@ CPrintTextProxy::operator<< (T x)
 inline CPrintTextProxy&
 CPrintTextProxy::operator<< (TEndlType)
 {
+    const string str(m_LineStream);
     switch (m_PrintMode) {
     case ePrintLog:
-        LOG_POST(string(m_LineStream));
+        if (!str.empty())
+            INFO_POST(str);
         break;
     case ePrintStream:
-        (*m_PrintStream) << string(m_LineStream) << endl;
+        (*m_PrintStream) << str << endl;
         break;
     }
     m_LineStream.Clear();
@@ -1189,6 +1355,192 @@ CNCTlsObject<Derived, ObjType>::GetObjPtr(void)
         NCTlsSet(m_ObjKey, object);
     }
     return object;
+}
+
+
+inline
+CNCLongOpTrigger::CNCLongOpTrigger(void)
+    : m_State(eNCOpNotDone),
+      m_Listeners(NULL)
+{}
+
+inline
+CNCLongOpTrigger::~CNCLongOpTrigger(void)
+{
+    _ASSERT(!m_Listeners);
+}
+
+inline void
+CNCLongOpTrigger::Reset(void)
+{
+    _ASSERT(!m_Listeners);
+    m_State = eNCOpNotDone;
+}
+
+inline ENCLongOpState
+CNCLongOpTrigger::GetState(void)
+{
+    return m_State;
+}
+
+inline void
+CNCLongOpTrigger::SetState(ENCLongOpState state)
+{
+    m_State = state;
+}
+
+
+inline
+CNCLongOpGuard::CNCLongOpGuard(CNCLongOpTrigger& trigger)
+    : m_Trigger(&trigger)
+{}
+
+inline
+CNCLongOpGuard::~CNCLongOpGuard(void)
+{
+    if (m_Trigger)
+        m_Trigger->OperationCompleted();
+}
+
+inline ENCBlockingOpResult
+CNCLongOpGuard::Start(INCBlockedOpListener* listener)
+{
+    ENCBlockingOpResult result = m_Trigger->StartWorking(listener);
+    if (result == eNCWouldBlock  ||  m_Trigger->GetState() == eNCOpCompleted)
+        m_Trigger = NULL;
+    return result;
+}
+
+inline bool
+CNCLongOpGuard::IsCompleted(void)
+{
+    return m_Trigger == NULL;
+}
+
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CStorageForDelete::CStorageForDelete(void)
+    : m_Next(NULL)
+{
+    m_CurIdx.Set(0);
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CStorageForDelete::~CStorageForDelete(void)
+{
+    _ASSERT(m_CurIdx.Get() == 0);
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline void
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CStorageForDelete::x_CreateNextAndAdd(const ElemType& elem)
+{
+    CStorageForDelete* storage = this;
+    unsigned int index;
+    do {
+        while (storage->m_Next) {
+            storage = storage->m_Next;
+        }
+        {{
+            CSpinGuard guard(storage->m_ObjLock);
+            if (!storage->m_Next)
+                storage->m_Next = new CStorageForDelete();
+            storage = storage->m_Next;
+        }}
+        index = static_cast<unsigned int>(storage->m_CurIdx.Add(1)) - 1;
+    }
+    while (index >= kElemsPerStorage);
+    storage->m_Elems[index] = elem;
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline void
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CStorageForDelete::AddElement(const ElemType& elem)
+{
+    CStorageForDelete* storage = this;
+    while (storage->m_Next)
+        storage = storage->m_Next;
+    unsigned int index = static_cast<unsigned int>(storage->m_CurIdx.Add(1)) - 1;
+    if (index >= kElemsPerStorage)
+        storage->x_CreateNextAndAdd(elem);
+    else
+        storage->m_Elems[index] = elem;
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline void
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CStorageForDelete::Clean(const FinalDeleter& deleter)
+{
+    if (m_Next) {
+        m_Next->Clean(deleter);
+        delete m_Next;
+        m_Next = NULL;
+    }
+    unsigned int max_index = static_cast<unsigned int>(m_CurIdx.Get());
+    if (max_index >= kElemsPerStorage)
+        max_index = kElemsPerStorage;
+    for (unsigned int i = 0; i < max_index; ++i) {
+        deleter.Delete(m_Elems[i]);
+    }
+    m_CurIdx.Set(0);
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::CNCDeferredDeleter(const FinalDeleter& deleter)
+    : m_FinalDeleter(deleter)
+{
+    for (unsigned int i = 0; i < kDeleteDelay; ++i) {
+        m_Stores[i] = new CStorageForDelete();
+    }
+    m_CurStore = m_Stores[0];
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::~CNCDeferredDeleter(void)
+{
+    for (unsigned int i = 0; i < kDeleteDelay; ++i) {
+        m_Stores[i]->Clean(m_FinalDeleter);
+        delete m_Stores[i];
+    }
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline void
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::AddElement(const ElemType& elem)
+{
+    m_CurStore->AddElement(elem);
+}
+
+template <class ElemType, class FinalDeleter,
+          unsigned int DeleteDelay, unsigned int ElemsPerStorage>
+inline void
+CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
+                    ::HeartBeat(void)
+{
+    CStorageForDelete* last_store = m_Stores[kDeleteDelay - 1];
+    last_store->Clean(m_FinalDeleter);
+    memmove(&m_Stores[1], &m_Stores[0], sizeof(m_Stores) - sizeof(m_Stores[0]));
+    m_Stores[0] = last_store;
+    SwapPointers(reinterpret_cast<void* volatile *>(&m_CurStore), last_store);
 }
 
 END_NCBI_SCOPE

@@ -1116,7 +1116,10 @@ CNCMMChunksPool::InitInstance(void)
 inline void
 CNCMMChunksPool::AddRef(void)
 {
-    m_RefCnt.Add(1);
+    unsigned int ref_cnt = static_cast<unsigned int>(m_RefCnt.Add(1));
+    if (ref_cnt == 1) {
+        memset(m_Chunks, 0, sizeof(m_Chunks));
+    }
 }
 
 inline unsigned int
@@ -1510,6 +1513,23 @@ CNCMMDBPage::Unlock(void)
         delete this;
 }
 
+inline void
+CNCMMDBPage::SetDirtyFlag(bool value)
+{
+    sm_LRULock.Lock();
+    if (value)
+        m_StateFlags |= fDirty;
+    else
+        m_StateFlags &= ~fDirty;
+    sm_LRULock.Unlock();
+}
+
+inline bool
+CNCMMDBPage::IsDirty(void) const
+{
+    return (m_StateFlags & fDirty) != 0;
+}
+
 
 inline
 CNCMMBlocksSetBase::CNCMMBlocksSetBase(void)
@@ -1665,6 +1685,7 @@ CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
     m_CntFree -= chain.size;
     x_CalcEmptyGrade();
     m_FreeMask.InvertBits(x_GetChunkIndex(chain.start), chain.size);
+    //_ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
     return m_EmptyGrade;
 }
 
@@ -1683,6 +1704,7 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
 
     unsigned int chain_index = x_GetChunkIndex(chain->start);
     m_FreeMask.InvertBits(chain_index, chain->size);
+    //_ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
 
     if (chain_index != 0  &&  m_FreeMask.IsBitSet(chain_index - 1)) {
         chain_left->AssignFromChain(&m_Chunks[chain_index - 1]);
@@ -1708,7 +1730,10 @@ CNCMMChainsPool::InitInstance(void)
 inline void
 CNCMMChainsPool::AddRef(void)
 {
-    m_RefCnt.Add(1);
+    unsigned int ref_cnt = static_cast<unsigned int>(m_RefCnt.Add(1));
+    if (ref_cnt == 1) {
+        memset(m_FreeChains, 0, sizeof(m_FreeChains));
+    }
 }
 
 inline unsigned int
@@ -3247,22 +3272,42 @@ CNCMemManager::PrintStats(CPrintTextProxy& proxy)
     stats_sum.Print(proxy);
 }
 
-void
-CNCMemManager::LockDBPage(const void* data_ptr)
+static inline CNCMMDBPage*
+s_DataPtrToDBPage(const void* data_ptr)
 {
     void* ptr = const_cast<void*>(data_ptr);
     CNCMMSlab* slab = CNCMMCentral::GetSlab(ptr);
-    CNCMMDBPage* page = reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
-    page->Lock();
+    return reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
+}
+
+void
+CNCMemManager::LockDBPage(const void* data_ptr)
+{
+    s_DataPtrToDBPage(data_ptr)->Lock();
 }
 
 void
 CNCMemManager::UnlockDBPage(const void* data_ptr)
 {
-    void* ptr = const_cast<void*>(data_ptr);
-    CNCMMSlab* slab = CNCMMCentral::GetSlab(ptr);
-    CNCMMDBPage* page = reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
-    page->Unlock();
+    s_DataPtrToDBPage(data_ptr)->Unlock();
+}
+
+void
+CNCMemManager::SetDBPageDirty(const void* data_ptr)
+{
+    s_DataPtrToDBPage(data_ptr)->SetDirtyFlag(true);
+}
+
+void
+CNCMemManager::SetDBPageClean(const void* data_ptr)
+{
+    s_DataPtrToDBPage(data_ptr)->SetDirtyFlag(false);
+}
+
+bool
+CNCMemManager::IsDBPageDirty(const void* data_ptr)
+{
+    return s_DataPtrToDBPage(data_ptr)->IsDirty();
 }
 
 END_NCBI_SCOPE

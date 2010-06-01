@@ -72,6 +72,12 @@ public:
     /// LockDBPage() was made. After last unlocking page will be allowed to be
     /// reused for other cache.
     static void UnlockDBPage(const void* data_ptr);
+    ///
+    static void SetDBPageDirty(const void* data_ptr);
+    ///
+    static void SetDBPageClean(const void* data_ptr);
+    ///
+    static bool IsDBPageDirty(const void* data_ptr);
 
 private:
     CNCMemManager(void);
@@ -182,6 +188,10 @@ public:
     /// made. After last call to Unlock() page will be either placed to LRU
     /// list or deleted if no cache owns it already.
     void Unlock(void);
+    ///
+    void SetDirtyFlag(bool value);
+    ///
+    bool IsDirty(void) const;
 
 private:
     friend class CNCMMDBPagesHash;
@@ -207,12 +217,13 @@ private:
 
     /// Flags representing state of database page
     enum EStateFlags {
-        fInLRU  = 1,      ///< Page is in LRU list, i.e. it's not used now by
+        fInLRU       = 1, ///< Page is in LRU list, i.e. it's not used now by
                           ///< SQLite.
-        fPeeked = 2,      ///< Page is extracted from LRU for destruction,
+        fPeeked      = 2, ///< Page is extracted from LRU for destruction,
                           ///< i.e. if page is not needed anymore then only
                           ///< thread that extracted it can delete it.
-        fCounterStep = 4  ///< The incrementing/decrementing step in counting
+        fDirty       = 4, ///< 
+        fCounterStep = 8  ///< The incrementing/decrementing step in counting
                           ///< number of locks made on the page. Value should
                           ///< be greater than all other flags.
     };

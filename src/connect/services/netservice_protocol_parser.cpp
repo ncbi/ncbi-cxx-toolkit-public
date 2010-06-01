@@ -35,8 +35,6 @@
 #include <connect/services/netservice_protocol_parser.hpp>
 #include <connect/services/netcache_key.hpp>
 
-#include <corelib/ncbistl.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -56,43 +54,22 @@ CNSProtoParserException::GetErrCodeString(void) const
 }
 
 
-CNetServProtoParserBase::CNetServProtoParserBase
-(
-    const char* const*      cmd_name,
-    const SNSProtoArgument* cmd_args,
-    size_t                  cmddef_size
-)
-{
-    SetCommandMap(cmd_name, cmd_args, cmddef_size);
-}
-
-void
-CNetServProtoParserBase::SetCommandMap(const char* const*      cmd_name,
-                                       const SNSProtoArgument* cmd_args,
-                                       size_t                  cmddef_size)
-{
-    m_CmdMapName = cmd_name;
-    m_CmdMapArgs = cmd_args;
-    m_CmdDefSize = cmddef_size;
-}
-
 template <class T>
 inline T*
 CNetServProtoParserBase::x_GetNextInCmdMap(T* ptr)
 {
-    return (T*)((Int1*)ptr + m_CmdDefSize);
+    return reinterpret_cast<T*>(reinterpret_cast<const char*>(ptr) + m_CmdDefSize);
 }
 
 ENSProtoTokenType
 CNetServProtoParserBase::x_GetToken(const char** str,
-                                    const char*  end,
-                                    const char** tok,
-                                    size_t*      size)
+                                    const char*  str_end,
+                                    CTempString* token)
 {
     ENSProtoTokenType ttype = eNSTT_None;
     const char* s = *str;
 
-    if (s >= end) {
+    if (s >= str_end) {
         return ttype;
     }
 
@@ -109,12 +86,12 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         }
     }
 
-    for (; s < end; ++s) {
+    for (; s < str_end; ++s) {
         if (ttype == eNSTT_Str) {
             if (*s == '"') {
                 break;
             }
-            else if (*s == '\\'  &&  (s + 1 < end)) {
+            else if (*s == '\\'  &&  (s + 1 < str_end)) {
                 ++s;
             }
         }
@@ -129,28 +106,26 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         ttype = eNSTT_Key;
     }
     else if (ttype == eNSTT_Str  &&  *s != '"') {
-        NCBI_THROW(CNSProtoParserException, eBadToken,
-                   "String is not ended correctly: \""
-                   + string(tok_start, s - tok_start));
+        NCBI_THROW_FMT(CNSProtoParserException, eBadToken,
+                       "String is not ended correctly: \""
+                       << string(tok_start, s - tok_start));
     }
     else if (ttype == eNSTT_Int  &&  s > *str  &&  *(s - 1) == '-') {
         ttype = eNSTT_Id;
     }
 
-    *tok = tok_start;
-    *size = s - tok_start;
+    token->assign(tok_start, s - tok_start);
 
     if (ttype == eNSTT_Id) {
-        if (*size > 4  &&  tok_start[0] == 'I'  &&  tok_start[1] == 'C'
+        if (token->size() > 4  &&  tok_start[0] == 'I'  &&  tok_start[1] == 'C'
             &&  tok_start[2] == '('  &&  *(s - 1) == ')')
         {
             ttype = eNSTT_ICPrefix;
         }
-        else if (CNetCacheKey::IsValidKey(tok_start, *size)) {
+        else if (CNetCacheKey::IsValidKey(tok_start, token->size())) {
             ttype = eNSTT_NCID;
         }
     }
-
     if (ttype == eNSTT_Key) {
         ++s;
     }
@@ -158,7 +133,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         if (ttype == eNSTT_Str) {
             ++s;
         }
-        while ((s < end)  &&  isspace(*s)) {
+        while ((s < str_end)  &&  isspace(*s)) {
             ++s;
         }
     }
@@ -168,35 +143,32 @@ CNetServProtoParserBase::x_GetToken(const char** str,
 }
 
 void
-CNetServProtoParserBase::ParseCommand(CTempString          command,
-                                      const void**         match_cmd,
-                                      map<string, string>* params)
+CNetServProtoParserBase::ParseCommand(CTempString     command,
+                                      const void**    match_cmd,
+                                      TNSProtoParams* params)
 {
-    const char* s = command.data();
-    const char* end = s + command.size();
-    const char* token;
-    const char* cache_name = NULL;
-    size_t tsize, cache_name_sz = 0;
+    const char* str     = command.data();
+    const char* str_end = str + command.size();
+    CTempString token, cache_name;
     ENSProtoTokenType ttype;
 
-    ttype = x_GetToken(&s, end, &token, &tsize);
+    ttype = x_GetToken(&str, str_end, &token);
     if (ttype == eNSTT_ICPrefix) {
-        cache_name    = token + 3;
-        cache_name_sz = tsize - 4;
-        ttype = x_GetToken(&s, end, &token, &tsize);
+        cache_name.assign(token.data() + 3, token.size() - 4);
+        ttype = x_GetToken(&str, str_end, &token);
     }
     if (ttype != eNSTT_Id) {
-        NCBI_THROW(CNSProtoParserException, eNoCommand,
-                   "Command absent in request: '" + string(command) + "'");
+        NCBI_THROW_FMT(CNSProtoParserException, eNoCommand,
+                       "Command name is absent: '" << command << "'");
     }
 
     const char* const* cmd_name = m_CmdMapName;
     const SNSProtoArgument* argsDescr = m_CmdMapArgs;
     while (*cmd_name) {
-        if (strlen(*cmd_name) == tsize
-            &&  strncmp(token, *cmd_name, tsize) == 0
-            &&  ((cache_name  &&  (argsDescr->flags & fNSPA_ICPrefix))
-                 ||  (!cache_name  &&  !(argsDescr->flags & fNSPA_ICPrefix))))
+        if (strlen(*cmd_name) == token.size()
+            &&  strncmp(*cmd_name, token.data(), token.size()) == 0
+            &&  ((!cache_name.empty()  &&  (argsDescr->flags & fNSPA_ICPrefix))
+                 ||  (cache_name.empty()  &&  !(argsDescr->flags & fNSPA_ICPrefix))))
         {
             break;
         }
@@ -204,24 +176,31 @@ CNetServProtoParserBase::ParseCommand(CTempString          command,
         argsDescr = x_GetNextInCmdMap(argsDescr);
     }
     if (!*cmd_name) {
-        NCBI_THROW(CNSProtoParserException, eWrongCommand,
-                   "Unknown command in request: '"
-                   + string(token, tsize) + "'");
+        NCBI_THROW_FMT(CNSProtoParserException, eWrongCommand,
+                       "Unknown command name '" << token << "' in command '"
+                       << command << "'");
     }
     *match_cmd = cmd_name;
 
-    if (cache_name) {
+    if (!cache_name.empty()) {
         _ASSERT(argsDescr->flags & fNSPA_ICPrefix);
 
-        (*params)[argsDescr->key] = string(cache_name, cache_name_sz);
+        (*params)[argsDescr->key] = cache_name;
         ++argsDescr;
     }
 
-    ParseArguments(s, argsDescr, params);
+    try {
+        ParseArguments(CTempString(str, str_end - str), argsDescr, params);
+    }
+    catch (CNSProtoParserException& ex) {
+        ex.AddBacklog(DIAG_COMPILE_INFO,
+                      FORMAT("Command being parsed is '" << command << "'"));
+        throw;
+    }
 }
 
-inline void
-s_SetDefaultValue(map<string, string>*    params,
+static inline void
+s_SetDefaultValue(TNSProtoParams*         params,
                   const SNSProtoArgument* arg_descr)
 {
     const char* from = arg_descr->dflt;
@@ -231,35 +210,31 @@ s_SetDefaultValue(map<string, string>*    params,
 }
 
 void
-CNetServProtoParserBase::ParseArguments(CTempString             str,
+CNetServProtoParserBase::ParseArguments(CTempString             args,
                                         const SNSProtoArgument* arg_descr,
-                                        map<string, string>*    params)
+                                        TNSProtoParams*         params)
 {
-    const char* s = str.data();
-    const char* end = s + str.size();
-    const char* key;
-    const char* val;
-    size_t key_size, val_size;
+    const char* str     = args.data();
+    const char* str_end = str + args.size();
+    CTempString key, val;
     ENSProtoTokenType val_type = eNSTT_None; // if arglist is empty, it should be successful
 
     while (arg_descr->flags != eNSPA_None) // extra arguments are just ignored
     {
-        val_type = x_GetToken(&s, end, &key, &key_size);
+        val_type = x_GetToken(&str, str_end, &key);
         if (val_type == eNSTT_Key) {
-            val_type = x_GetToken(&s, end, &val, &val_size);
+            val_type = x_GetToken(&str, str_end, &val);
             if (val_type == eNSTT_Key) {
-                NCBI_THROW(CNSProtoParserException, eBadToken,
-                           "Second equal sign met in the parameter val: '"
-                           + string(val, val_size + 1) + "'");
+                NCBI_THROW_FMT(CNSProtoParserException, eBadToken,
+                               "Second equal sign met in the parameter value: '"
+                               << string(val.data(), val.size() + 1) << "'");
             }
         }
         else {
-            val      = key;
-            val_size = key_size;
-            key      = NULL;
-            key_size = 0;
+            val = key;
+            key.clear();
         }
-        if (val_type == eNSTT_None  &&  key == NULL) {
+        if (val_type == eNSTT_None  &&  key.empty()) {
             break;
         }
 
@@ -267,18 +242,18 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         bool matched = false;
         while (arg_descr->flags != eNSPA_None) {
             if (arg_descr->flags & fNSPA_Ellipsis) {
-                if (!key) {
+                if (key.empty()) {
                     NCBI_THROW(CNSProtoParserException, eBadToken,
-                        "Only key=value pairs allowed at this place");
+                               "Only key=value pairs allowed at the end of command");
                 }
                 matched = true;
             }
             else if (arg_descr->flags & fNSPA_Match) {
-                matched = strlen(arg_descr->key) == val_size
-                       && strncmp(arg_descr->key, val, val_size) == 0;
+                matched = strlen(arg_descr->key) == val.size()
+                          && strncmp(arg_descr->key, val.data(), val.size()) == 0;
             }
             else {
-                matched = x_ArgumentMatch(key, key_size, val_type, arg_descr);
+                matched = x_IsArgumentMatch(key, val_type, arg_descr);
             }
             if (matched) {
                 break;
@@ -297,9 +272,9 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         }
 
         if (arg_descr->flags & fNSPA_Obsolete) {
-            NCBI_THROW(CNSProtoParserException, eWrongArgument,
-                       "Argument " + string(arg_descr->key) + " is obsolete."
-                       " It cannot be used in command now.");
+            NCBI_THROW_FMT(CNSProtoParserException, eWrongArgument,
+                           "Argument " << arg_descr->key << " is obsolete."
+                           " It cannot be used in command now.");
         }
         else if (arg_descr->flags == eNSPA_None  ||  !matched) {
             break;
@@ -307,11 +282,10 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
 
         // accept argument
         if (arg_descr->flags & fNSPA_Ellipsis) {
-            (*params)[string(key, key_size)] = string(val, val_size);
+            (*params)[key] = val;
         } else {
-            (*params)[arg_descr->key] =
-                (arg_descr->flags & fNSPA_Match) ?
-                "match" : string(val, val_size);
+            (*params)[arg_descr->key]
+                              = (arg_descr->flags & fNSPA_Match)? "match" : val;
         }
         // Process OR by skipping argument descriptions until OR flags is set
         while (arg_descr->flags != eNSPA_None
@@ -335,20 +309,18 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
     }
 
     if (arg_descr->flags != eNSPA_None) {
-        NCBI_THROW(CNSProtoParserException, eArgumentsMissing,
-                   "Not all required parameters given. "
-                   "Next parameter needed - '"
-                   + string(arg_descr->key) + "'");
+        NCBI_THROW_FMT(CNSProtoParserException, eArgumentsMissing,
+                       "Not all required parameters given. "
+                       "Next parameter needed is '" << arg_descr->key << "'");
     }
 }
 
 // Compare actual token type with argument type.
 // Int type IS-A Id type.
 bool
-CNetServProtoParserBase::x_ArgumentMatch(const char*             key,
-                                         size_t                  key_size,
-                                         ENSProtoTokenType       val_type,
-                                         const SNSProtoArgument* arg_descr)
+CNetServProtoParserBase::x_IsArgumentMatch(const CTempString       key,
+                                           ENSProtoTokenType       val_type,
+                                           const SNSProtoArgument* arg_descr)
 {
     if (arg_descr->flags & fNSPA_Clear) {
         return false;
@@ -358,8 +330,8 @@ CNetServProtoParserBase::x_ArgumentMatch(const char*             key,
                    "IC Prefix can be only the first in the arguments list "
                    "of a command map.");
     }
-    if (key != NULL  &&  !(strlen(arg_descr->key) == key_size
-                           &&  strncmp(arg_descr->key, key, key_size) == 0))
+    if (!key.empty()  &&  !(strlen(arg_descr->key) == key.size()
+                           &&  strncmp(arg_descr->key, key.data(), key.size()) == 0))
     {
         return false;
     }

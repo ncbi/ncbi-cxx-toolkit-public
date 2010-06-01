@@ -312,6 +312,12 @@ void CSpinLock::Unlock(void)
     _VERIFY(SwapPointers(&m_Value, NULL) != NULL);
 }
 
+inline
+bool CSpinLock::IsLocked(void) const
+{
+    return m_Value == (void*)1;
+}
+
 
 inline
 CFastRWLock::CFastRWLock(void)

@@ -826,6 +826,9 @@ public:
     /// locked it.
     void Unlock(void);
 
+    ///
+    bool IsLocked(void) const;
+
 private:
     /// Prohibit copying of the object
     CSpinLock(const CSpinLock&);

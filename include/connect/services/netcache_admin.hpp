@@ -70,8 +70,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     // Print server health information
     void PrintHealth(CNcbiOstream& output_stream) const;
 
-    void Monitor(CNcbiOstream & out) const;
-
     void GetServerVersion(CNcbiOstream& output_stream) const;
 };
 
