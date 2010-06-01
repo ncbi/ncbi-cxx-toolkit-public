@@ -152,7 +152,7 @@ sub convert_filter_string($$)
 
     if ($filter_string =~ /F/) {
         if ($program eq "blastp" or $program eq "tblastn" or 
-            $program eq "blastx") {
+            $program eq "blastx" or $program eq "tblastx") {
             return "-seg no ";
         } else {
             return "-dust no ";
