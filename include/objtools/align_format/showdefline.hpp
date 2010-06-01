@@ -447,6 +447,18 @@ protected:
     ///
     void x_DisplayDeflineTableBody(CNcbiOstream & out);
 
+    ///Format headers for Transcrit/Genomic seq set
+    ///
+    string x_FormatSeqSetHeaders(int isGenomic, bool formatHeaderSort);
+    ///Format defline
+    ///
+    string x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new);
+    ///Format PSI blat related data
+    string x_FormatPsi(SDeflineInfo* sdl, bool &first_new);
+    ///Display defline for table output using templates
+    ///
+    void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
+
     //For internal test
     friend struct ::CShowBlastDeflineTest;
 };
