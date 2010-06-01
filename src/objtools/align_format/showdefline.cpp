@@ -533,7 +533,7 @@ void CShowBlastDefline::Display(CNcbiOstream & out)
     }    
     if (formatAsTable) {
         if(newDesign) {
-            x_DisplayDeflineTableBody(out);
+            x_DisplayDeflineTableTemplate(out);
         }
         else {
             x_DisplayDeflineTable(out); 
@@ -1442,6 +1442,146 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
     }
     
     return sdl;
+}
+
+/*************************New functions for template approach *************************/
+void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)                                                    
+{
+    bool first_new =true;
+    int prev_database_type = 0, cur_database_type = 0;
+    bool is_first = true;
+
+    // Mixed db is genomic + transcript and this does not apply to proteins.    
+    bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef) : false;
+    
+    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
+        cur_database_type = (sdl->linkout & eGenomicSeq);
+        string subHeader;        
+        bool formatHeaderSort = !is_first && (prev_database_type != cur_database_type);
+        if (is_mixed_database && (is_first || formatHeaderSort)) {            
+            subHeader = x_FormatSeqSetHeaders(cur_database_type, formatHeaderSort);            
+        }                
+        prev_database_type = cur_database_type;
+        is_first = false;
+                     
+        string defLine = x_FormatDeflineTableLine(sdl,*iter,first_new);
+        if(!subHeader.empty()) {
+            defLine = subHeader + defLine;
+        }
+        out << defLine;
+        
+        delete sdl;
+    }
+}
+
+string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHeaderSort)
+{
+    string seqSetType = isGenomicSeq ? "Genomic sequences" : "Transcripts";    
+    string subHeader = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->subHeaderTmpl,"defl_seqset_type",seqSetType);
+    if (formatHeaderSort) {
+        int database_sort = isGenomicSeq ? CAlignFormatUtil::eGenomicFirst : CAlignFormatUtil::eNonGenomicFirst;
+        string deflnSubHeaderSort = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->subHeaderSort,"database_sort",database_sort);
+        subHeader = CAlignFormatUtil::MapTemplate(subHeader,"defl_header_sort",deflnSubHeaderSort);        
+    }
+    else {
+        subHeader = CAlignFormatUtil::MapTemplate(subHeader,"defl_header_sort","");
+    }
+    return subHeader;            
+}
+
+
+string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
+{
+    string defLine = ((sdl->gi > 0) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
+    string dflGi = (m_Option & eShowGi) && (sdl->gi > 0) ? "gi|" + NStr::IntToString(sdl->gi) + "|" : "";
+    string seqid;
+    if(!sdl->id.Empty()){
+        if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
+            sdl->id->GetLabel(&seqid, CSeq_id::eContent);            
+        }
+    }
+
+    if(sdl->id_url != NcbiEmptyString) {            
+        string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);
+        string trgt = (m_Option & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "";
+        seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"dfln_target",trgt);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_gi",dflGi);    
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_seqid",seqid);        
+    }
+    else {        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",dflGi + seqid);        
+    }
+    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(sdl->defline));
+
+    if(sdl->score_url != NcbiEmptyString) {        
+        string scoreInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->scoreInfoTmpl,"score_url",sdl->score_url);
+        scoreInfo = CAlignFormatUtil::MapTemplate(scoreInfo,"bit_string",iter->bit_string);
+        scoreInfo = CAlignFormatUtil::MapTemplate(scoreInfo,"score_seqid",seqid);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",scoreInfo);        
+    }
+    else {           
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
+    }
+        
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
+		
+    int percent_coverage = 100*iter->master_covered_length/m_QueryLength;
+
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString(percent_coverage));
+
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",iter->evalue_string);
+
+    if(m_Option & eShowPercentIdent){
+        int percent_identity = 100*iter->match/iter->align_length;                                
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(percent_identity));
+    }
+		
+    if(m_Option & eShowSumN){     
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"sum_n",NStr::IntToString(iter->sum_n));
+    }
+	
+    if(m_Option & eLinkout){
+        string links;
+        ITERATE(list<string>, iter_linkout, sdl->linkout_list){        
+            links += *iter_linkout;
+        }
+                                
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"linkout",links);
+    }
+    return defLine;
+}
+
+string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
+{
+    string defline = m_DeflineTemplates->defLineTmpl;
+    string show_new,show_checked,replaceBy;    
+    if((m_Option & eShowNewSeqGif)) {         
+        replaceBy = (sdl->is_new && first_new) ? m_DeflineTemplates->psiFirstNewAnchorTmpl : "";
+        first_new = (sdl->is_new && first_new) ? false : first_new;
+        if (!sdl->is_new) {                 
+            show_new = "hidden";            
+        }
+        
+        if(!sdl->was_checked) {
+            show_checked = "hidden";        
+        }
+
+        defline = CAlignFormatUtil::MapTemplate(defline,"first_new",replaceBy);            
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi",show_new);
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_checked_gi",show_checked);            
+    }
+
+    replaceBy = (m_Option & eCheckboxChecked) ? m_DeflineTemplates->psiGoodGiHiddenTmpl : "";//<@psi_good_gi@>        
+    defline = CAlignFormatUtil::MapTemplate(defline,"psi_good_gi",replaceBy);
+
+    replaceBy = (m_Option & eCheckboxChecked) ? "checked=\"checked\"" : "";
+    defline = CAlignFormatUtil::MapTemplate(defline,"gi_checked",replaceBy);    
+    defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",NStr::IntToString(sdl->gi));
+    
+    return defline;
 }
 
 
