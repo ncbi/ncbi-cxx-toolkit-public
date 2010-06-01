@@ -53,9 +53,9 @@ static const TNCBlobId kNCMaxBlobId = 0xFFFFFFFF;
 /// Should occupy at least 5 bytes, i.e. be greater than kNCMinChunkId.
 typedef Int8                TNCChunkId;
 ///
-static const TNCChunkId kNCMinChunkId = 0x100000000;
+static const TNCChunkId kNCMinChunkId = NCBI_CONST_INT8(0x100000000);
 ///
-static const TNCChunkId kNCMaxChunkId = 0x7FFFFFFFFFFFFFFF;
+static const TNCChunkId kNCMaxChunkId = NCBI_CONST_INT8(0x7FFFFFFFFFFFFFFF);
 /// List of chunk ids
 typedef vector<TNCChunkId>  TNCChunksList;
 
