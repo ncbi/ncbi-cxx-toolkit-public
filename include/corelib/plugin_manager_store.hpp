@@ -135,10 +135,9 @@ public:
 #endif
 
 
-template<class TInterface>
+template<typename TInterface, typename TEntryPoint>
 inline
-void RegisterEntryPoint(typename CPluginManager<TInterface>::
-                        FNCBI_EntryPoint plugin_entry_point)
+void RegisterEntryPoint(TEntryPoint plugin_entry_point)
 {
     typedef CPluginManager<TInterface> TPluginManager;
     CRef<TPluginManager> manager(CPluginManagerGetter<TInterface>::Get());

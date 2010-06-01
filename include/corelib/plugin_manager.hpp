@@ -445,13 +445,15 @@ public:
     /// Register all factories exported by the plugin entry point.
     /// @return true if at least one factory was registered.
     /// @sa RegisterFactory()
-    bool RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point);
+    template <typename TEntryPoint>
+    bool RegisterWithEntryPoint(TEntryPoint plugin_entry_point);
 
     /// Register all compatible factories for the driver with the particular
     /// version exported by the plugin entry point.
     /// @return true if at least one factory was registered.
     /// @sa RegisterFactory()
-    bool RegisterWithEntryPoint(FNCBI_EntryPoint    plugin_entry_point,
+    template <typename TEntryPoint>
+    bool RegisterWithEntryPoint(TEntryPoint         plugin_entry_point,
                                 const string&       driver_name,
                                 const CVersionInfo& driver_version =
                                     CVersionInfo::kLatest);
@@ -967,11 +969,14 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 
 
 template <class TClass>
+template <typename TEntryPoint>
 bool CPluginManager<TClass>::RegisterWithEntryPoint
-(FNCBI_EntryPoint plugin_entry_point)
+(TEntryPoint plugin_entry_point)
 {
     CMutexGuard guard(m_Mutex);
-    if ( !m_EntryPoints.insert(plugin_entry_point).second ) {
+    if ( !m_EntryPoints.insert(
+             reinterpret_cast<FNCBI_EntryPoint>(plugin_entry_point))
+         .second ) {
         // entry point is already registered
         return false;
     }
@@ -1022,13 +1027,16 @@ private:
 };
 
 template <class TClass>
+template <typename TEntryPoint>
 bool CPluginManager<TClass>::RegisterWithEntryPoint
-(FNCBI_EntryPoint    plugin_entry_point,
+(TEntryPoint         plugin_entry_point,
  const string&       driver_name,
  const CVersionInfo& driver_version)
 {
     CMutexGuard guard(m_Mutex);
-    if ( !m_EntryPoints.insert(plugin_entry_point).second ) {
+    if ( !m_EntryPoints.insert(
+             reinterpret_cast<FNCBI_EntryPoint>(plugin_entry_point))
+         .second ) {
         // entry point is already registered
         return false;
     }
