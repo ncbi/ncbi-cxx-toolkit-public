@@ -91,7 +91,7 @@
 
 #include <algorithm>
 
-#include "gff3_data.hpp"
+//#include "gff3_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -454,8 +454,7 @@ bool CGff3Reader::x_ParseFeatureGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CSeq_annot_Handle sah;
-    CGff3Record record( sah );
+    CGff3Record record;
     if ( ! record.AssignFromGff( strLine ) ) {
         return false;
     }

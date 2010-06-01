@@ -33,9 +33,6 @@
 #ifndef OBJTOOLS_READERS___GFF3DATA__HPP
 #define OBJTOOLS_READERS___GFF3DATA__HPP
 
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -50,9 +47,7 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGff3Record(
-        CSeq_annot_Handle sah
-    );
+    CGff3Record();
     ~CGff3Record();
 
     //
@@ -142,7 +137,6 @@ protected:
     string m_strAttributes;    
     TAttributes m_Attributes;
 
-    CSeq_annot_Handle m_Sah;
 };
 
 END_objects_SCOPE

@@ -49,8 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CGff3Record::CGff3Record(
-    CSeq_annot_Handle sah ):
+CGff3Record::CGff3Record():
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
     m_pdScore( 0 ),
@@ -58,7 +57,6 @@ CGff3Record::CGff3Record(
     m_pePhase( 0 )
 //  ----------------------------------------------------------------------------
 {
-    m_Sah = sah;
 };
 
 //  ----------------------------------------------------------------------------
