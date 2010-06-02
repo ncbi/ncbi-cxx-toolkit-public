@@ -410,10 +410,12 @@ protected:
     /// Find pointer to a node with given numerical id. Throws excepion if node
     /// not found.
     /// @param id Numerical node id [in]
+    /// @param throw_if_null If true, throw exception if node not found [in]
     /// @param root Root of the searched subtree, tree root if NULL
     /// @return Pointer to the node with desired id or NULL of node not found
     ///
-    CPhyloTreeNode* x_GetNode(int id, CPhyloTreeNode* root = NULL);
+    CPhyloTreeNode* x_GetNode(int id, bool throw_if_null = true,
+                              CPhyloTreeNode* root = NULL);
 
     /// Find pointer to a BioTreeDynamic node with given numerical id.
     /// Throws excepion if node not found.

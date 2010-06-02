@@ -582,7 +582,8 @@ void CGuideTree::x_Init(void)
 }
 
 
-CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
+CPhyloTreeNode* CGuideTree::x_GetNode(int id, bool throw_if_null,
+                                      CPhyloTreeNode* root)
 {
     if (m_DataSource.Empty()) {
         NCBI_THROW(CGuideTreeException, eInvalid, "Empty data source");
@@ -591,7 +592,7 @@ CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
     CPhyloTreeNode* tree = root ? root : m_DataSource->GetTree();
     CNodeFinder node_finder = TreeDepthFirstTraverse(*tree, CNodeFinder(id));
 
-    if (!node_finder.GetNode()) {
+    if (!node_finder.GetNode() && throw_if_null) {
         NCBI_THROW(CGuideTreeException, eNodeNotFound, (string)"Node "
                    + NStr::IntToString(id) + (string)" not found");
     }
@@ -949,7 +950,7 @@ void CGuideTree::SetSelection(int hit)
     }
     
     if ((hit+1) >=0){
-        CPhyloTreeNode * node = m_DataSource->GetNode(hit);
+        CPhyloTreeNode * node = x_GetNode(hit, false);
         if (node) {
             m_DataSource->SetSelection(node, true, true, true);
             m_DataSource->Save(m_Dyntree);
