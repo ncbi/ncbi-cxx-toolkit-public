@@ -211,6 +211,18 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     return seqalign;
 }
 
+static const char s_kGap [] = "<GAP>";
+
+void CNWFormatter::SSegment::SetToGap()
+{
+    m_exon = false;
+    m_idty = 0;
+    m_len = m_box[1] - m_box[0] + 1;
+    m_annot = s_kGap;
+    m_details.resize(0);
+    m_score = 0;   // no score for <Gap>s 
+}
+
 // try improving the segment by cutting it from the left
 void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
                                         CConstRef<CSplicedAligner> aligner)
@@ -219,6 +231,7 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
     
     int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
     if(i0 < int(min_query_size)) {
+        SetToGap();
         return;
     }
     
@@ -288,10 +301,11 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
             break;
         }
     }
+
+    if(i0_max == 0 && i1_max == 0) return;//no chages
     
     // if the resulting segment is still long enough
-    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size 
-       && (i0_max > 0 || i1_max > 0))
+    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size )
     {
         // resize
         m_box[0] += i0_max;
@@ -310,6 +324,8 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
             char c2 = j2 >= 0? seq2[j2]: ' ';
             m_annot[1] = c2;
         }
+    } else {
+        SetToGap();//just drop it
     }
 }
 
@@ -321,6 +337,7 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
     const size_t min_query_size = 4;
     
     if(m_box[1] - m_box[0] + 1 < min_query_size) {
+        SetToGap();
         return;
     }
     
@@ -398,8 +415,10 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
     dimq += tail;
     dims += tail;
     
+    if(i0_max >= dimq - 1 && i1_max >= dims - 1) return;//no changes
+
     // if the resulting segment is still long enough
-    if(i0_max >= int(min_query_size) && i0_max < dimq - 1) {
+    if(i0_max >= int(min_query_size) ) {
         
         m_box[1] = m_box[0] + i0_max;
         m_box[3] = m_box[2] + i1_max;
@@ -418,6 +437,8 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
             m_annot[adim-2] = c3;
             m_annot[adim-1] = c4;
         }
+    } else {
+        SetToGap();//just drop it
     }
 }
 
