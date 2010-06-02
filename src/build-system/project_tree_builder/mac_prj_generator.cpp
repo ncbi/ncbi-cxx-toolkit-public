@@ -538,8 +538,8 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
             AddString( *inputs, GetRelativePath(*f));
             AddString( *inputs, spec_base + ".def");
             AddString( *outputs, spec_base + ".files");
-//            AddString( *outputs, spec_base + "__.cpp");
-//            AddString( *outputs, spec_base + "___.cpp");
+            AddString( *outputs, spec_base + "__.cpp");
+            AddString( *outputs, spec_base + "___.cpp");
 #if 0
             script += "echo Using datatool to create a C++ objects from ASN/DTD/Schema " + entry.GetName() + "\n";
             script += m_OutputDir + GetApp().GetDatatoolPathForApp();

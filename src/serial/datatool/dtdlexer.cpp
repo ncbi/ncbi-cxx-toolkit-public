@@ -169,6 +169,25 @@ bool DTDLexer::ProcessComment(void)
             if ( Eof() )
                 return false;
             break;
+
+// note:
+// comments inside comments are not allowed by the standard
+// http://www.w3.org/TR/2008/REC-xml-20081126/#sec-comments
+#if 0
+        case '<':
+            if ((Char(1) == '!') && (Char(2) == '-') && (Char(3) == '-')) {
+                if (allblank) {
+                    RemoveLastComment();
+                }
+                LookupComments();
+                return ProcessComment();
+            }
+            allblank = false;
+            comment.AddChar(c);
+            SkipChar();
+            break;
+#endif
+
         case '-':
             if ((Char(1) == '-') && (Char(2) == '>')) {
                 // end of the comment

@@ -423,7 +423,7 @@ void CCodeGenerator::GenerateFileList(
         return;
     }
     string fileName(Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName)));
-    CDelayedOfstream fileList(fileName.c_str());
+    CNcbiOfstream fileList(fileName.c_str());
     if ( !fileList ) {
         ERR_POST_X(4, Fatal <<
                     "cannot create file list file: " << m_FileListFileName);
@@ -572,7 +572,7 @@ void CCodeGenerator::GenerateCombiningFile(
         string fileName = m_CombiningFileName + "__" + suffix;
         fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
         allCpp.push_back(fileName);
-        CDelayedOfstream out(fileName);
+        CNcbiOfstream out(fileName.c_str());
         if ( !out )
             ERR_POST_X(5, Fatal << "Cannot create file: "<<fileName);
         
@@ -604,7 +604,7 @@ void CCodeGenerator::GenerateCombiningFile(
                                 m_CombiningFileName + "__" + suffix));
     allHpp.push_back(fileName);
 
-    CDelayedOfstream out(fileName);
+    CNcbiOfstream out(fileName.c_str());
     if ( !out )
         ERR_POST_X(7, Fatal << "Cannot create file: " << fileName);
 
