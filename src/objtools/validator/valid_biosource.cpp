@@ -1820,6 +1820,7 @@ void CValidError_imp::ValidateBioSourceForSeq
 			    if (NStr::FindNoCase (lineage, "negative-strand viruses") != string::npos) {
 					bool is_ambisense = false;
 					if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
+                        || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
 						|| NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
 						|| NStr::FindNoCase(lineage, "Tospovirus") != string::npos
 						|| NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
@@ -3502,8 +3503,10 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
 	if (lr.Empty()) {
         ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
                    "falling back on built-in data.");
-        for (const char* const* p = kInstitutionCollectionCodeList;  *p;  ++p) {
-            s_ProcessInstitutionCollectionCodeLine(*p);
+        size_t num_codes = sizeof (kInstitutionCollectionCodeList) / sizeof (char *);
+        for (size_t i = 0; i < num_codes; i++) {
+            const char *p = kInstitutionCollectionCodeList[i];
+            s_ProcessInstitutionCollectionCodeLine(p);
         }
 	} else {
         for (++*lr; !lr->AtEOF(); ++*lr) {
