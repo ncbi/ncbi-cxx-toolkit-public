@@ -1460,9 +1460,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     return rv;
 }
 
-
-static const char s_kGap [] = "<GAP>";
-
 // at this level and below, plus strand is assumed for both sequences
 float CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
@@ -1560,21 +1557,16 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         if(i + 1 < map_dim) {
             segments.push_back(TSegment());
             TSegment& g (segments.back());
-            g.m_exon = false;
             g.m_box[0] = zone.m_box[1] + 1;
             g.m_box[1] = m_alnmap[i+1].m_box[0] - 1;
             g.m_box[2] = zone.m_box[3] + 1;
             g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
-            g.m_idty = 0;
-            g.m_len = g.m_box[1] - g.m_box[0] + 1;
-            g.m_annot = s_kGap;
-            g.m_details.resize(0);
-            g.m_score = 0; // no score for <Gap>s
+            g.SetToGap();
         }
     } // zone iterations end
 
 
-//#define DUMP_ORIG_SEGS
+#define DUMP_ORIG_SEGS
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
     ITERATE(TSegmentDeque, ii, segments) {
@@ -1604,11 +1596,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                (ii->m_box[3] < m_BoundingRange.first
                 || ii->m_box[2] > m_BoundingRange.second))
             {
-                ii->m_exon = false;
-                ii->m_idty = 0;
-                ii->m_details.resize(0);
-                ii->m_annot = s_kGap;
-                ii->m_score = 0;
+                ii->SetToGap();
             }
         }
     }
@@ -1643,12 +1631,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 const double min_idty (len >= kMinTermExonSize?
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
-                
-                const bool b1 (s.m_idty < min_idty || m_endgaps);
-                if(b1) {
-                    s.ImproveFromLeft(Seq1, Seq2, m_aligner);
-                }
-
+                s.ImproveFromLeft(Seq1, Seq2, m_aligner);                
                 if(s.m_idty >= min_idty) {
                     break;
                 }
@@ -1666,18 +1649,27 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 const double min_idty (len >= kMinTermExonSize?
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
-
-                const bool b1 (s.m_idty < min_idty || m_endgaps);
-                if(b1) {
-                    s.ImproveFromRight(Seq1, Seq2, m_aligner);
-                }
-
+                s.ImproveFromRight(Seq1, Seq2, m_aligner);
                 if(s.m_idty >= min_idty) {
                     break;
                 }
             }
             --k1;
         }
+        
+
+        //trim exons near <GAP>s
+        for(k0 = 0; k0 < seg_dim; ++k0) {
+            if(!segments[k0].m_exon) {
+                if( k0 > 0 && segments[k0-1].m_exon) {
+                    segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);
+                }
+                if( k0 + 1 < seg_dim && segments[k0+1].m_exon) {
+                    segments[k0+1].ImproveFromLeft(Seq1, Seq2, m_aligner);
+                }
+            }
+        }
+
 
         // turn to gaps exons with low identity
         for(size_t k (0); k < seg_dim; ++k) {
@@ -1709,12 +1701,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
 
             if(drop) {
-                s.m_exon = false;
-                s.m_idty = 0;
-                s.m_len = s.m_box[1] - s.m_box[0] + 1;
-                s.m_annot = s_kGap;
-                s.m_details.resize(0);
-                s.m_score = 0;
+                s.SetToGap();
             }
         }
 
@@ -1772,12 +1759,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     gap_next = !segments[k+1].m_exon;
                 }
                 if(length <= 10 && (gap_prev || gap_next)) {
-                    s.m_exon = false;
-                    s.m_idty = 0;
-                    s.m_len = s.m_box[1] - s.m_box[0] + 1;
-                    s.m_annot = s_kGap;
-                    s.m_details.resize(0);
-                    s.m_score = 0;
+                    s.SetToGap();
                 }
                 gap_prev = false;
             }
@@ -1787,18 +1769,11 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         if(segments[0].m_box[0] > 0) {
             
             TSegment g;
-            g.m_exon = false;
             g.m_box[0] = 0;
             g.m_box[1] = segments[0].m_box[0] - 1;
             g.m_box[2] = 0;
             g.m_box[3] = segments[0].m_box[2] - 1;
-
-            g.m_idty = 0;
-            g.m_len = segments[0].m_box[0];
-            g.m_annot = s_kGap;
-            g.m_details.resize(0);
-            g.m_score = 0;
-
+            g.SetToGap();
             segments.push_front(g);
             ++seg_dim;
         }
@@ -1809,17 +1784,11 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         if(seg_last.m_box[1] + 1 < SeqLen1) {
             
             TSegment g;
-            g.m_exon = false;
             g.m_box[0] = seg_last.m_box[1] + 1;
             g.m_box[1] = SeqLen1 - 1;
             g.m_box[2] = seg_last.m_box[3] + 1;
             g.m_box[3] = SeqLen2 - 1;
-            g.m_idty = 0;
-            g.m_len = g.m_box[1] - g.m_box[0] + 1;
-            g.m_annot = s_kGap;
-            g.m_details.resize(0);
-            g.m_score = 0;
-
+            g.SetToGap();
             segments.push_back(g);
             ++seg_dim;
         }
@@ -2011,12 +1980,8 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
 
             // turn the segment into a gap
             TSegment& s = *(term_segs[0]);
-            s.m_exon = false;
-            s.m_idty = 0;
+            s.SetToGap();
             s.m_len = exon_size;
-            s.m_annot = s_kGap;
-            s.m_details.resize(0);
-            s.m_score = 0;
         }
     }
 
