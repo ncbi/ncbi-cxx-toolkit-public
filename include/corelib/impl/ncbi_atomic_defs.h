@@ -114,7 +114,7 @@ extern "C" {
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#elif defined(NCBI_COMPILER_GCC)  &&  \
+#elif (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC))  &&  \
   ((defined(__sparc) && !defined(__sparcv9))  ||  \
    ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
     !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
