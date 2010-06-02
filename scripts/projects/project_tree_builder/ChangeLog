@@ -112,3 +112,9 @@ when dependent libraries are changed and to clean helper files
 when cleaning CONFIGURE project.
 Added possibility to define precompiled header settings in makefiles.
 
+June 02, 2010
+version 2.7.1
+Corrected file dependencies in Xcode project targets which use
+ASN.1 data specifications
+
+
