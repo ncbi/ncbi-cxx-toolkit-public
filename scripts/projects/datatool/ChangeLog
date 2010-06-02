@@ -16,4 +16,9 @@ Corrected code generation for Schema enumeration.
 Added option to generate sample DEF file.
 
 
-
+June 02, 2010
+version 2.1.0
+Modified C++ code generation to use NORETURN attribute in relevant functions
+and to modify combined files.
+When processing XML schema specifications, corrected documentation parsing,
+setting default types of elements and attributes, skipping byte order marks.
