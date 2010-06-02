@@ -1566,7 +1566,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     } // zone iterations end
 
 
-#define DUMP_ORIG_SEGS
+//#define DUMP_ORIG_SEGS
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
     ITERATE(TSegmentDeque, ii, segments) {
