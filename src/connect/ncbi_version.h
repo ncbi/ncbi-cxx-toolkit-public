@@ -53,7 +53,7 @@
 
 #  define   NETDAEMONS_MAJOR        2
 #  define   NETDAEMONS_MINOR        0
-#  define   NETDAEMONS_PATCH        1
+#  define   NETDAEMONS_PATCH        2
 
 #  ifdef NCBI_CXX_TOOLKIT
 #    define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR    \
@@ -107,7 +107,7 @@
 
 #  define NETDAEMONS_VERSION        NETDAEMONS_VERSION_STR
 
-# endif /*NCBI_CXX_TOOLKIT*/
+#endif /*NCBI_CXX_TOOLKIT*/
 
 
 #ifdef __cplusplus
