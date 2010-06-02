@@ -1,3 +1,4 @@
 ASN_PROJ = genome_collection
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+

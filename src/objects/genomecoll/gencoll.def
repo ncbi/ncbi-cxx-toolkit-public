@@ -1,0 +1,9 @@
+[-]
+_export = NCBI_GENOME_COLLECTION_EXPORT
+clients = gencoll_client
+
+[gencoll_client]
+class       = CGenCollClient
+service     = GENCOLL
+request     = GenColl-Request.body
+reply       = GenColl-Reply.body

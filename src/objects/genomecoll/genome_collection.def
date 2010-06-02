@@ -2,21 +2,6 @@
 _export = NCBI_GENOME_COLLECTION_EXPORT
 
 [GC-Scaf-stats]
-length.total-length._type    = Uint8
-length.ungapped-length._type = Uint8
-length.min-gapped-scaf-length._type = Uint8
-length.max-gapped-scaf-length._type = Uint8
-length.min-ungapped-scaf-length._type = Uint8
-length.max-ungapped-scaf-length._type = Uint8
-composition.active-finishing-bases._type = Uint8
-composition.draft-bases._type = Uint8
-composition.finished-bases._type = Uint8
-composition.whole-genome-finishing-bases._type = Uint8
-composition.other-sequences._type = Uint8
-composition.pre-draft._type = Uint8
-composition.wgs-bases._type = Uint8
-composition.bases-in-spanned_gaps._type = Uint8
-composition.bases-in-unspanned_gaps._type = Uint8
-n50._type = Uint8
+value._type = Uint8
 
 
