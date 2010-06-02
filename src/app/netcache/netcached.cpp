@@ -245,16 +245,16 @@ CNetCacheServer::x_ReadServerParams(void)
         INFO_POST("Server is listening to these ports: " << ports_str);
     }
 
-    m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true,
+    m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true, 0,
                                   IRegistry::eErrPost);
     m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
                                   kNCReg_DefAdminClient);
 
     SServer_Parameters serv_params;
     serv_params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections,
-                                             100, IRegistry::eErrPost);
+                                             100, 0, IRegistry::eErrPost);
     serv_params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads,
-                                             20,  IRegistry::eErrPost);
+                                             20,  0, IRegistry::eErrPost);
     // A bit of hard coding but it's really not necessary to create more than
     // 20 threads in server's thread pool.
     if (serv_params.max_threads > 20) {

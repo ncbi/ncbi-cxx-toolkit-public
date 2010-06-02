@@ -680,4 +680,11 @@ CNCBlobAccessor::DeleteBlob(void)
     m_VerManager->DeleteVersion(m_CurData);
 }
 
+void
+CNCBlobAccessor::CleanOvereatenMemory(void)
+{
+    s_BufferPool.Clear();
+    s_VerDataPool.Clear();
+}
+
 END_NCBI_SCOPE

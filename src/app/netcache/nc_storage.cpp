@@ -1178,6 +1178,7 @@ CNCBlobStorage::x_DoBackgroundWork(void)
 
                 INFO_POST("Caching of blobs info is finished");
 
+                bool first_run = true;
                 for (;;) {
                     for (int i = 0; i < m_GCRunDelay; ++i) {
                         m_StopTrigger.TryWait(1, 0);
@@ -1215,6 +1216,11 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                         INFO_POST("Storage block is in progress");
                     }
                     m_GCInWork = false;
+
+                    if (first_run) {
+                        first_run = false;
+                        CNCBlobAccessor::CleanOvereatenMemory();
+                    }
                 }
             }
             catch (CNCStorage_RecacheException&) {

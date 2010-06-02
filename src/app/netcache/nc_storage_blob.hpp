@@ -287,6 +287,9 @@ public:
     ///
     bool SetCurVerIfNewer(SNCBlobVerData* ver_data);
 
+    ///
+    static void CleanOvereatenMemory(void);
+
 private:
     CNCBlobAccessor(const CNCBlobAccessor&);
     CNCBlobAccessor& operator= (const CNCBlobAccessor&);
