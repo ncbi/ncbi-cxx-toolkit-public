@@ -97,7 +97,7 @@ public:
     struct NCBI_XALGOALIGN_EXPORT SSegment {
         
     public:
-        
+
         bool   m_exon;    // true == exon; false == unaligned
         double m_idty;    // ranges from 0.0 to 1.0
         size_t m_len;     // lenths of the alignment, not of an interval
@@ -115,6 +115,7 @@ public:
         void Update(const CNWAligner* aligner); // recompute members
         const char* GetDonor(void) const;       // raw pointers to parts of annot
         const char* GetAcceptor(void) const;    // or zero if less than 2 chars
+        void SetToGap();//set segment to a gap
 
         static bool s_IsConsensusSplice(const char* donor, const char* acceptor,
                                         bool semi_as_cons = false);
