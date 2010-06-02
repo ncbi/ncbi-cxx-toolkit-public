@@ -140,6 +140,9 @@ INCBlockedOpListener::Notify(void)
                             CRef<CStdRequest>(new CNCLongOpNotification(this)));
 }
 
+INCBlockedOpListener::~INCBlockedOpListener(void)
+{}
+
 
 static unsigned int
 s_WrapNextGetPtr(void)

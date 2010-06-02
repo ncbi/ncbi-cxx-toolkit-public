@@ -131,6 +131,7 @@ private:
                                    CNCBlobVerManager* new_mgr);
     ///
     CNCBlobVerManager(const string& key, CNCCacheData* cache_data);
+    virtual ~CNCBlobVerManager(void);
     ///
     virtual void OnBlockedOpFinish(void);
 
@@ -513,8 +514,8 @@ CNCBlobAccessor::SetPosition(Int8 pos)
     _ASSERT(IsBlobExists()  &&  m_AccessType == eNCReadData);
     _ASSERT(!m_Buffer  &&  pos <= m_CurData->size);
 
-    m_CurChunk = static_cast<unsigned int>(pos / kNCMaxBlobChunkSize);
-    m_ChunkPos = pos % kNCMaxBlobChunkSize;
+    m_CurChunk = static_cast<unsigned int>(Uint8(pos) / kNCMaxBlobChunkSize);
+    m_ChunkPos = static_cast<size_t>(Uint8(pos) % kNCMaxBlobChunkSize);
 }
 
 inline void

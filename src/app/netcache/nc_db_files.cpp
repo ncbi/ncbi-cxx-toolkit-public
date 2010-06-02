@@ -108,6 +108,8 @@ CSemaphore                CNCFileSystem::sm_OnAlertWaiter  (0, 1000000);
 
 
 // Forward declarations
+extern "C" {
+
 static int s_SQLITE_FS_Fullname(sqlite3_vfs*, const char*, int, char*);
 static int s_SQLITE_FS_Access(sqlite3_vfs*, const char*, int, int*);
 static int s_SQLITE_FS_Open(sqlite3_vfs*, const char*, sqlite3_file*, int, int*);
@@ -123,6 +125,8 @@ static int s_SQLITE_FS_Random(sqlite3_vfs*, int, char*);
 static int s_SQLITE_FS_CurTime(sqlite3_vfs*, double*);
 static int s_SQLITE_FS_AboutDevice(sqlite3_file*);
 static int s_SQLITE_FS_Sync(sqlite3_file*, int);
+
+};  // extern "C"
 
 /// All methods of virtual file system exposed to SQLite
 static sqlite3_vfs s_NCVirtualFS = {
@@ -1117,6 +1121,8 @@ CNCFSVirtFile::IsReserved(void)
 }
 
 
+extern "C" {
+
 /// Get fullname of some file
 static int
 s_SQLITE_FS_Fullname(sqlite3_vfs*, const char *name,
@@ -1249,5 +1255,7 @@ s_SQLITE_FS_Sync(sqlite3_file*, int)
 {
     return SQLITE_OK;
 }
+
+};  // extern "C"
 
 END_NCBI_SCOPE

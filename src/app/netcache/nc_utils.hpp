@@ -513,6 +513,8 @@ struct INCBlockedOpListener
 
     ///
     virtual void OnBlockedOpFinish(void) = 0;
+    ///
+    virtual ~INCBlockedOpListener(void);
 
     ///
     void Notify(void);

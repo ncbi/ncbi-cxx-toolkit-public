@@ -146,6 +146,9 @@ CNCBlobVerManager::CNCBlobVerManager(const string& key,
       m_Key(key)
 {}
 
+CNCBlobVerManager::~CNCBlobVerManager(void)
+{}
+
 inline CNCBlobVerManager*
 CNCBlobVerManager::sx_LockCacheData(CNCCacheData* cache_data)
 {

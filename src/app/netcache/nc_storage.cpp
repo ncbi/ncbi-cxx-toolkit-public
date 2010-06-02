@@ -587,8 +587,6 @@ CNCBlobStorage::Reconfigure(void)
 void
 CNCBlobStorage::ReinitializeCache(const string& cache_key)
 {
-    abort();
-
     _ASSERT(IsBlockActive());
 
     x_WaitForGC();
@@ -671,8 +669,8 @@ CNCBlobStorage::IsBlobFamilyExists(const string& key)
         // put 1 we will get key that is greater than any version of given
         // key/subkey
         max_key[max_key.size() - 4] = '\2';
-        // With REVERSE_ITERATE code should look more ugly to be compilable
-        // in WorkShop.
+        //    * With REVERSE_ITERATE code should look more ugly to be
+        //    * compilable in WorkShop.
         NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
             TNCDBFileId file_id = it->first;
             CNCDBFile*  file    = it->second.file_obj.get();
@@ -702,7 +700,9 @@ CNCBlobStorage::x_FindBlobInFiles(const string& key)
         return;
 
     CSpinReadGuard guard(m_DBFilesLock);
-    REVERSE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
+    //    * With REVERSE_ITERATE code should look more ugly to be
+    //    * compilable in WorkShop.
+    NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
         TNCDBFileId file_id = it->first;
         CNCDBFile*  file    = it->second.file_obj.get();
         if (file_id > check_file_id  ||  file->GetType() != eNCMeta)
@@ -987,9 +987,7 @@ CNCBlobStorage::x_GC_CollectFilesStats(void)
     Uint8 useful_cnt_meta = 0, garbage_cnt_meta = 0;
     Uint8 useful_cnt_data = 0, garbage_cnt_data = 0;
     Int8 useful_size_data = 0, garbage_size_data = 0;
-    // With ITERATE code should look more ugly to be
-    // compilable in WorkShop.
-    NON_CONST_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
+    ITERATE(TNCDBFilesMap, it, m_DBFiles) {
         CNCDBFile* file = it->second.file_obj.get();
         Int8 size = file->GetFileSize();
         Uint8 useful_cnt, garbage_cnt;
@@ -1093,13 +1091,13 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                 INFO_POST("Caching of blobs info is started");
                 TUsefulCntMap useful_sizes, useful_blobs;
                 // Nobody else changes m_DBFiles, so iterating right over it.
-                // With REVERSE_ITERATE code should look more ugly to be
-                // compilable in WorkShop.
-                NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
-                    CNCDBFile* file = it->second.file_obj.get();
+                //    * With REVERSE_ITERATE code should look more ugly to be
+                //    * compilable in WorkShop.
+                NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, file_it, m_DBFiles) {
+                    CNCDBFile* file = file_it->second.file_obj.get();
                     if (file->GetType() != eNCMeta)
                         continue;
-                    TNCDBFileId file_id = it->first;
+                    TNCDBFileId file_id = file_it->first;
                     m_NotCachedFileId = file_id;
 
                     Uint8 cnt_blobs = 0;
@@ -1115,8 +1113,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                                                         numeric_limits<int>::max(),
                                                         m_GCBatchSize, &blobs_list);
                             }}
-                            ITERATE(TNCBlobsList, it, blobs_list) {
-                                const SNCBlobShortInfo& blob_info = *it;
+                            ITERATE(TNCBlobsList, blob_it, blobs_list) {
+                                const SNCBlobShortInfo& blob_info = *blob_it;
                                 CNCCacheData new_data(blob_info.blob_id, file_id);
                                 new_data.SetCreatedCaching(true);
                                 CNCCacheData* data_in_cache;
@@ -1165,7 +1163,7 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                     catch (CException& ex) {
                         // Try to recover from any database errors by just
                         // ignoring it and trying to work further.
-                        ERR_POST_X(1, "Database file " << it->second.file_name
+                        ERR_POST_X(1, "Database file " << file_it->second.file_name
                                       << " was not cached properly: " << ex);
                     }
                     file->AddUsefulBlobs(cnt_blobs);

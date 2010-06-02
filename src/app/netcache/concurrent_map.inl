@@ -1208,10 +1208,10 @@ CONCURMAP::InsertOrGetPtr(const TKey&   key,
         *value_ptr = walker.Insert(value);
         return true;
     }
-    // This is never reachable but compiler complains that some return paths
+    // This is never reachable but compiler complains that some execution paths
     // do not return value.
     abort();
-    return NULL;
+    return false;
 }
 
 CONCURMAP_TEMPLATE

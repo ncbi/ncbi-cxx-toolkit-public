@@ -250,25 +250,25 @@ CNetCacheServer::x_ReadServerParams(void)
     m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
                                   kNCReg_DefAdminClient);
 
-    SServer_Parameters params;
-    params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections,
-                                        100, IRegistry::eErrPost);
-    params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads,
-                                        20,  IRegistry::eErrPost);
+    SServer_Parameters serv_params;
+    serv_params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections,
+                                             100, IRegistry::eErrPost);
+    serv_params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads,
+                                             20,  IRegistry::eErrPost);
     // A bit of hard coding but it's really not necessary to create more than
     // 20 threads in server's thread pool.
-    if (params.max_threads > 20) {
+    if (serv_params.max_threads > 20) {
         ERR_POST(Warning << "NetCache configuration is not optimal. "
                             "Maximum optimal number of threads is 20, "
-                            "maximum number given - " << params.max_threads
+                            "maximum number given - " << serv_params.max_threads
                          << ".");
     }
-    if (params.max_threads < 1) {
-        params.max_threads = 1;
+    if (serv_params.max_threads < 1) {
+        serv_params.max_threads = 1;
     }
-    params.init_threads = 1;
-    params.accept_timeout = &m_ServerAcceptTimeout;
-    SetParameters(params);
+    serv_params.init_threads = 1;
+    serv_params.accept_timeout = &m_ServerAcceptTimeout;
+    SetParameters(serv_params);
 
     try {
         string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
@@ -285,9 +285,7 @@ CNetCacheServer::x_ReadServerParams(void)
     m_OldSpecParams = m_SpecParams;
 
     string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
-    list<string> prty_list;
-    NStr::Split(spec_prty, " \t\r\n", prty_list);
-    m_SpecPriority.assign(prty_list.begin(), prty_list.end());
+    NStr::Tokenize(spec_prty, " \t\r\n", m_SpecPriority, NStr::eMergeDelims);
 
     SNCSpecificParams* main_params = new SNCSpecificParams;
     main_params->disable         = false;

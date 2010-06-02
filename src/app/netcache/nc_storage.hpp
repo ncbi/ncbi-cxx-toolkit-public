@@ -106,7 +106,7 @@ public:
     /// @param reinit_mode
     ///   Flag for necessary reinitialization of the database
     CNCBlobStorage(bool do_reinit);
-    ~CNCBlobStorage(void);
+    virtual ~CNCBlobStorage(void);
 
     /// Block all operations on the storage.
     /// Work with all blobs that are blocked already will be finished as usual,
@@ -649,7 +649,7 @@ CNCBlobStorage::sx_GetCurTime(void)
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return (tv.tv_sec << 32) + tv.tv_usec;
+    return (Int8(tv.tv_sec) << 32) + tv.tv_usec;
 #endif
 }
 
