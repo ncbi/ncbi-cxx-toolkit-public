@@ -157,10 +157,12 @@ string CPriorityTaxNodes::getTaxName(const CRef< CCdd_org_ref >& orgRef)
 	if (orgRef->CanGetReference())
 	{
 		const COrg_ref& org = orgRef->GetReference();
-		return org.GetTaxname();
+        if (org.IsSetTaxname()) {
+            return org.GetTaxname();
+        }
 	}
-	else
-		return kEmptyStr;
+
+    return kEmptyStr;
 }
 
 int CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
