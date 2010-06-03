@@ -208,8 +208,10 @@ void CAcceptRequest::Cancel(void)
 {
     // As of now, Cancel can not be called.
     // See comment at CServer::CreateRequest
-    m_Connection->OnOverflow(eOR_RequestQueueFull);
-    delete m_Connection;
+    if (m_Connection) {
+        m_Connection->OnOverflow(eOR_RequestQueueFull);
+        delete m_Connection;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
