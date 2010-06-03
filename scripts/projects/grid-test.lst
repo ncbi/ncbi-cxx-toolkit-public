@@ -1,7 +1,7 @@
 corelib$
 corelib/hash_impl$
 util$
-util/compress$
+util/compress
 util/fileblobstorage$
 util/qparse$
 util/bitset$
