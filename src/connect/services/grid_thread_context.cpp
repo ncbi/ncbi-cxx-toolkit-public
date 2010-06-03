@@ -321,6 +321,7 @@ void CGridThreadContext::CloseStreams()
     if (!m_WriteErrorMessage.empty()) {
         NCBI_THROW(CNetServiceException,
             eCommunicationError, m_WriteErrorMessage);
+        m_WriteErrorMessage = kEmptyStr;
     }
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
