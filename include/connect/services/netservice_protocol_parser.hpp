@@ -95,7 +95,7 @@ enum {
 
 template <class Extra>
 struct SNSProtoCmdDef {
-    const char* const   cmd;
+    const char*         cmd;
     Extra               extra;
     SNSProtoArgument    args[kNSProtoMaxArgs + 1]; // + end of record
 };
