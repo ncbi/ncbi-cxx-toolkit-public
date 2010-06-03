@@ -934,7 +934,7 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 void CIgBlastTabularInfo::PrintHtmlSummary() const
 {
     if (m_IsNucl) {
-        m_Ostream << "<br><br>V(D)J rearrangement summary for query sequence:\n";
+        m_Ostream << "<br><br><br>V(D)J rearrangement summary for query sequence:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";
         if (m_ChainType == "VH") {  
@@ -972,7 +972,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
     }
     if (!length) return;
 
-    m_Ostream << "<br><br>Alignment summary between query and top germline V gene hit:\n";
+    m_Ostream << "<br><br><br>Alignment summary between query and top germline V gene hit:\n";
     m_Ostream << "<pre><table border=1>";
     m_Ostream << "<tr><td> </td><td> from </td><td> to </td><td> length </td>"
               << "<td> matches </td><td> mismatches </td><td> gaps </td>"
@@ -1077,7 +1077,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
     }
 
     if (isHtml) {
-        m_Ostream << "<br><br>Nucleotide details around V(D)J junctions:\n";
+        m_Ostream << "<br>Nucleotide details around V(D)J junctions:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>V region end</td>";
         if (m_ChainType == "VH") {
@@ -1101,12 +1101,12 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
     x_PrintPartialQuery(a4, min(b5, a4 + 5), isHtml); m_Ostream << m_FieldDelimiter;
 
     if (isHtml) {
-        m_Ostream << "</tr>\n</table></pre>\n";
+        m_Ostream << "</tr>\n</table></pre>";
 
-        m_Ostream << "*: Identical overlapping nucleotides may exist"
-                  << " at some V-D or D-J junction (i.e, these nucleotides"
-                  << " could be contributed by either joining segment, "
-                  << "presumably due to homology-directed rearrangement). "
+        m_Ostream << "*: Overlapping nucleotides may exist"
+                  << " at some V-D-J junction (i.e, nucleotides"
+                  << " that could be contributed by either joining segment "
+                  << " due to homology-directed rearrangement). "
                   << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
                   << " and will not be included under V, D or J region itself.\n";
     }
