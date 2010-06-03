@@ -128,8 +128,8 @@ CNetCacheWriter::~CNetCacheWriter()
     try {
         Close();
     } NCBI_CATCH_ALL_X(11, "Error while closing output stream");
-    if (m_ErrorMessage == &m_IgnoredError) {
-        ERR_POST("Error [IGNORED]: " << m_IgnoredError);
+    if (!m_ErrorMessage->empty() && m_ErrorMessage == &m_IgnoredError) {
+        ERR_POST("[IGNORED] " << m_IgnoredError);
     }
 }
 
