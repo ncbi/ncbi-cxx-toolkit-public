@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -33,6 +33,7 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 #include <corelib/rwstream.hpp>
 
@@ -45,8 +46,25 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,
                          bool use_embedded_storage)
-    : m_NSClient(ns_client), m_NSStorage(storage),
+    : m_NSClient(ns_client), m_NetCacheAPI(
+        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI()),
       m_UseEmbeddedStorage(use_embedded_storage)
+{
+    Init(cleanup, progress_msg);
+}
+
+CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                         CNetCacheAPI::TInstance nc_client,
+                         ECleanUp cleanup,
+                         EProgressMsg progress_msg,
+                         bool use_embedded_storage)
+    : m_NSClient(ns_client), m_NetCacheAPI(nc_client),
+      m_UseEmbeddedStorage(use_embedded_storage)
+{
+    Init(cleanup, progress_msg);
+}
+
+void CGridClient::Init(ECleanUp cleanup, EProgressMsg progress_msg)
 {
     m_JobSubmitter.reset(new CGridJobSubmitter(*this,
                                              progress_msg == eProgressMsgOn));
@@ -77,8 +95,8 @@ void CGridClient::CancelJob(const string& job_key)
 }
 void CGridClient::RemoveDataBlob(const string& data_key)
 {
-    if (m_NSStorage.IsKeyValid(data_key))
-        m_NSStorage.DeleteBlob(data_key);
+    if (CNetCacheKey::IsValidKey(data_key))
+        m_NetCacheAPI.Remove(data_key);
 }
 
 size_t CGridClient::GetMaxServerInputSize()
@@ -118,14 +136,15 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
     IWriter* writer =
         new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
-                                       m_GridClient.GetStorage(),
-                                       m_Job.input);
+                                       m_GridClient.GetNetCacheAPI(),
+                                       m_Job.input,
+                                       &m_Job.nc_io_error);
 
     m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
                                              | CRWStreambuf::fLogExceptions));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
-    //    return m_GridClient.GetStorage().CreateOStream(m_Input);
+    //    return m_GridClient.GetNetCacheAPI().CreateOStream(m_Input);
 }
 
 string CGridJobSubmitter::Submit(const string& affinity)
@@ -134,7 +153,8 @@ string CGridJobSubmitter::Submit(const string& affinity)
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
     if (m_UseProgress)
-        m_Job.progress_msg = m_GridClient.GetStorage().CreateEmptyBlob();
+        m_Job.progress_msg =
+            m_GridClient.GetNetCacheAPI().PutData((const void*) NULL, 0);
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Job);
     m_Job.Reset();
     return job_key;
@@ -168,8 +188,9 @@ CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
         PrepareNextJob();
     IWriter* writer =
         new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
-                                       m_GridClient.GetStorage(),
-                                       m_Jobs[m_JobIndex].input);
+                                       m_GridClient.GetNetCacheAPI(),
+                                       m_Jobs[m_JobIndex].input,
+                                       &m_Jobs[m_JobIndex].nc_io_error);
 
     m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
                                              | CRWStreambuf::fLogExceptions));
@@ -270,12 +291,11 @@ CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
     return status;
 }
 
-CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
+CNcbiIstream& CGridJobStatus::GetIStream()
 {
     x_GetJobDetails();
-    IReader* reader = new CStringOrBlobStorageReader(m_Job.output,
-                                                     m_GridClient.GetStorage(),
-                                                     &m_BlobSize, mode);
+    IReader* reader = new CStringOrBlobStorageReader(
+        m_Job.output, m_GridClient.GetNetCacheAPI(), &m_BlobSize);
     m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader
                                           | CRWStreambuf::fLogExceptions));
     m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
@@ -286,8 +306,11 @@ string CGridJobStatus::GetProgressMessage()
 {
     if (m_UseProgress) {
         m_GridClient.GetNSClient().GetProgressMsg(m_Job);
-        if (!m_Job.progress_msg.empty())
-            return m_GridClient.GetStorage().GetBlobAsString(m_Job.progress_msg);
+        if (!m_Job.progress_msg.empty()) {
+            string buffer;
+            m_GridClient.GetNetCacheAPI().ReadData(m_Job.progress_msg, buffer);
+            return buffer;
+        }
     }
     return kEmptyStr;
 }

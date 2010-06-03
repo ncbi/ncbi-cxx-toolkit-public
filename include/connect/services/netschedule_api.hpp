@@ -279,6 +279,7 @@ struct CNetScheduleJob
     string    output;
     string    error_msg;
     string    progress_msg;
+    string    nc_io_error;
 };
 
 struct SNetScheduleSubmitterImpl;
@@ -740,7 +741,7 @@ NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 
 
 /// @internal
-extern NCBI_XCONNECT_EXPORT const char* kNetScheduleAPIDriverName;
+extern NCBI_XCONNECT_EXPORT const char* const kNetScheduleAPIDriverName;
 
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(

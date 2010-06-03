@@ -33,7 +33,7 @@
  */
 
 #include <connect/services/netschedule_api.hpp>
-#include <connect/services/remote_job.hpp>
+#include <connect/services/remote_app.hpp>
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/blob_storage.hpp>
@@ -70,14 +70,14 @@ private:
     void x_Load() const;
 
     CNcbiIstream*               x_CreateStream(const string& blob_or_data) const;
-    CRemoteAppRequest_Executer& x_GetRequest() const;
+    CRemoteAppRequest&          x_GetRequest() const;
     CRemoteAppResult&           x_GetResult() const;
 
     CNetScheduleJob m_Job;
     CNetScheduleAPI::EJobStatus m_Status;
 
     CNSInfoCollector& m_Collector;
-    mutable CRemoteAppRequest_Executer* m_Request;
+    mutable CRemoteAppRequest* m_Request;
     mutable CRemoteAppResult* m_Result;
 
     CNSJobInfo(const CNSJobInfo&);
@@ -90,8 +90,8 @@ class CNSInfoCollector
 {
 public:
     CNSInfoCollector(const string& queue, const string& service_name,
-                     CBlobStorageFactory& factory);
-    explicit CNSInfoCollector(CBlobStorageFactory& factory);
+                     CNetCacheAPI::TInstance nc_api);
+    explicit CNSInfoCollector(CNetCacheAPI::TInstance nc_api);
 
     template<typename TInfo>
     class IAction {
@@ -109,33 +109,32 @@ public:
 
     CNSJobInfo* CreateJobInfo(const string& job_id);
 
-    CNcbiIstream& GetBlobContent(const string& blob_id, size_t* blob_size = NULL);
-    
+    CNcbiIstream* GetBlobContent(const string& blob_id, size_t* blob_size);
+
 private:
 
     friend class CNSJobInfo;
 
-    CNetScheduleAPI m_Services;
-    CNetScheduleAPI x_GetAPI() {
-        if (!m_Services)
+    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleAPI x_GetNetScheduleAPI() {
+        if (!m_NetScheduleAPI)
             throw runtime_error("NetScheduele service is not set");
-        return m_Services; 
+        return m_NetScheduleAPI; 
     }
 
-    CRemoteAppRequest_Executer& x_GetRequest();
+    CRemoteAppRequest& x_GetRequest();
     CRemoteAppResult& x_GetResult();
 
-    IBlobStorage* x_CreateStorage() { return m_Factory.CreateInstance(); }
+    CNetCacheAPI m_NetCacheAPI;
 
-    CBlobStorageFactory& m_Factory;
+    CNetCacheAPI x_GetNetCacheAPI() {
+        if (!m_NetCacheAPI)
+            throw runtime_error("NetCache service is not set");
+        return m_NetCacheAPI;
+    }
 
-    auto_ptr<IBlobStorage> m_Storage;
-    auto_ptr<CRemoteAppRequest_Executer> m_Request;
+    auto_ptr<CRemoteAppRequest> m_Request;
     auto_ptr<CRemoteAppResult> m_Result;
-private:
-    
-    CNSInfoCollector(const CNSInfoCollector&);
-    CNSInfoCollector& operator=(const CNSInfoCollector&);
 };
 
 END_NCBI_SCOPE

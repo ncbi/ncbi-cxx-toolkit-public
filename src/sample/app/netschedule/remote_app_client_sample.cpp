@@ -37,7 +37,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
-#include <connect/services/remote_job.hpp>
+#include <connect/services/remote_app.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 
 
@@ -62,7 +62,8 @@ public:
 
 protected:
 
-    void PrintJobInfo(const string& job_key);
+    void PrintJobInfo(const string& job_key,
+        CNetCacheAPI::TInstance netcache_api);
     void ShowBlob(const string& blob_key);
 
     virtual bool UseProgressMessage() const { return false; }
@@ -108,17 +109,18 @@ const string kData =
     "!====================================================================================================!";
 int CRemoteAppClientSampleApp::Run(void)
 {
-
- 
-
     CArgs args = GetArgs();
 
     if (args["showblob"]) {
         ShowBlob(args["showblob"].AsString());
         return 0;
     }
+
+    CConfig config(GetConfig());
+    CNetCacheAPI netcache_api(&config);
+
     if (args["jobinfo"]) {
-        PrintJobInfo(args["jobinfo"].AsString());
+        PrintJobInfo(args["jobinfo"].AsString(), netcache_api);
         return 0;
     }
 
@@ -132,8 +134,7 @@ int CRemoteAppClientSampleApp::Run(void)
     typedef list<string> TJobKeys;
     TJobKeys job_keys;
 
-    CBlobStorageFactory factory(GetConfig());
-    CRemoteAppRequest request(factory);
+    CRemoteAppRequest request(netcache_api);
     for (int i = 0; i < jobs_number; ++i) {
         CNcbiOstream& os = request.GetStdIn();
 
@@ -152,10 +153,10 @@ int CRemoteAppClientSampleApp::Run(void)
 
         //request.SetStdOutErrFileNames("/tmp/out.txt", "/tmp/err.txt", eLocalFile);
 
-        // Get a job submiter
+        // Get a job submitter
         CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
 
-        // Serialize the requset;
+        // Serialize the request;
         request.Send(job_submiter.GetOStream());
 
         // Submit a job
@@ -165,7 +166,7 @@ int CRemoteAppClientSampleApp::Run(void)
      
     NcbiCout << "Waiting for jobs..." << NcbiEndl;
 
-    CRemoteAppResult result(factory);
+    CRemoteAppResult result(netcache_api);
     TJobKeys failed_jobs;
 
     unsigned int cnt = 0;
@@ -230,7 +231,7 @@ int CRemoteAppClientSampleApp::Run(void)
     LOG_POST("==================== All finished ==================");
     for(TJobKeys::iterator it = job_keys.begin();
         it != job_keys.end(); ++it) {
-        PrintJobInfo(*it);
+        PrintJobInfo(*it, netcache_api);
     }
     return 0;
 }
@@ -245,7 +246,8 @@ void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
     NcbiCout << is.rdbuf() << NcbiEndl;
 }
 
-void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
+void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
+    CNetCacheAPI::TInstance netcache_api)
 {
     CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
     CNetScheduleAPI::EJobStatus status;
@@ -256,8 +258,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
         NcbiCout << "Input : " << job_status.GetJobInput() << NcbiEndl; 
         NcbiCout << "Output : " << job_status.GetJobOutput() << NcbiEndl; 
         NcbiCout << "======================================" << NcbiEndl; 
-        CBlobStorageFactory factory(GetConfig());
-        CRemoteAppResult result(factory);
+        CRemoteAppResult result(netcache_api);
         result.Receive(job_status.GetIStream());
         NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
         NcbiCout << "StdOut : " <<  NcbiEndl;

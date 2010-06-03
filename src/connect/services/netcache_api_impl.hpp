@@ -41,10 +41,9 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
 {
-public:
-    CNetCacheServerListener(const string& client_name) : m_Auth(client_name) {}
-
-private:
+protected:
+    virtual void OnInit(CNetObject* api_impl,
+        CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
@@ -58,13 +57,16 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         const string& service, const string& client_name,
         const string& lbsm_affinity_name);
 
-    IReader* GetReadStream(
+    // For use by SNetICacheClientImpl
+    SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
+
+    static IReader* GetReadStream(
         const CNetServer::SExecResult& exec_result,
         size_t* blob_size);
 
     static CNetCacheAPI::EReadResult ReadBuffer(
         IReader& reader,
-        unsigned char* buf_ptr,
+        char* buf_ptr,
         size_t buf_size,
         size_t* n_read,
         size_t blob_size);
@@ -72,7 +74,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
     CNetServer GetServer(const string& bid);
     CNetServerConnection InitiatePutCmd(string* key, unsigned time_to_live);
 
-    void WriteBuffer(
+    static void WriteBuffer(
         SNetServerConnectionImpl* conn_impl,
         CNetCacheWriter::EServerResponseType response_type,
         const char* buf_ptr,
@@ -83,8 +85,9 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
     string MakeCmd(const char* cmd_base, const string& key);
 
     CNetService m_Service;
-
-    CNetObjectRef<CNetCacheServerListener> m_Listener;
+    string m_TempDir;
+    bool m_CacheInput;
+    bool m_CacheOutput;
 
     string m_Password;
 };

@@ -46,13 +46,6 @@ void CGridClientApp::Init(void)
 
     CNcbiApplication::Init();
 
-    CNetScheduleClientFactory ns_cf(GetConfig());
-    CNetScheduleAPI ns_api = ns_cf.CreateInstance();
-    ns_api.SetProgramVersion(GetProgramVersion());
-
-    CBlobStorageFactory bs_cf(GetConfig());
-    m_NSStorage.reset(bs_cf.CreateInstance());
-
     CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ?
         CGridClient::eAutomaticCleanup :
         CGridClient::eManualCleanup;
@@ -71,8 +64,14 @@ void CGridClientApp::Init(void)
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(), *m_NSStorage,
-                                       cleanup, pmsg, use_embedded_input));
+    CNetScheduleClientFactory ns_cf(GetConfig());
+    CNetScheduleAPI ns_api = ns_cf.CreateInstance();
+    ns_api.SetProgramVersion(GetProgramVersion());
+
+    CNetCacheAPI nc_api(GetConfig());
+
+    m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(),
+        nc_api, cleanup, pmsg, use_embedded_input));
 }
 
 bool CGridClientApp::UseProgressMessage() const

@@ -32,12 +32,12 @@
 #include <ncbi_pch.hpp>
 
 #include "grid_thread_context.hpp"
+#include "grid_debug_context.hpp"
 #include "netservice_params.hpp"
 #include "balancing.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
-#include <connect/services/grid_debug_context.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_control_thread.hpp>
@@ -49,7 +49,6 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -202,10 +201,10 @@ const string& CWorkerNodeJobContext::GetClientName() const
     return m_WorkerNode.GetClientName();
 }
 
-CNcbiIstream& CWorkerNodeJobContext::GetIStream(IBlobStorage::ELockMode mode)
+CNcbiIstream& CWorkerNodeJobContext::GetIStream()
 {
     _ASSERT(m_ThreadContext);
-    return m_ThreadContext->GetIStream(mode);
+    return m_ThreadContext->GetIStream();
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
@@ -859,14 +858,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 
-CGridWorkerNode::CGridWorkerNode(
-                               CNcbiApplication&          app,
-                               IWorkerNodeJobFactory*     job_factory,
-                               IBlobStorageFactory*       storage_factory,
-                               INetScheduleClientFactory* client_factory) :
+CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
+        IWorkerNodeJobFactory* job_factory) :
     m_JobFactory(job_factory),
-    m_StorageFactory(storage_factory),
-    m_ClientFactory(client_factory),
     m_MaxThreads(1),
     m_NSTimeout(30),
     m_CheckStatusPeriod(2),
@@ -898,10 +892,10 @@ void CGridWorkerNode::Init(bool default_merge_lines_value)
 
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
-    if (!m_StorageFactory.get())
-        m_StorageFactory.reset(new CBlobStorageFactory(reg));
-    if (!m_ClientFactory.get())
-        m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
+    CNetScheduleClientFactory ns_factory(reg);
+    m_NetScheduleAPI = ns_factory.CreateInstance();
+
+    m_NetCacheAPI = CNetCacheAPI(reg);
 }
 
 const char* kServerSec = "server";
@@ -1032,8 +1026,8 @@ int CGridWorkerNode::Run()
         debug_mode = CGridDebugContext::eGDC_Execute;
     }
     if (debug_mode != CGridDebugContext::eGDC_NoDebug) {
-        CGridDebugContext& debug_context =
-            CGridDebugContext::Create(debug_mode, *m_StorageFactory);
+        CGridDebugContext& debug_context = CGridDebugContext::Create(
+            debug_mode, m_NetCacheAPI);
         string run_name =
             reg.GetString("gw_debug", "run_name", m_App.GetProgramDisplayName());
         debug_context.SetRunName(run_name);
@@ -1071,11 +1065,10 @@ int CGridWorkerNode::Run()
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
 
-    m_SharedNSClient = m_ClientFactory->CreateInstance();
     m_NSExecuter =
-        m_SharedNSClient.GetExecuter(control_thread->GetControlPort());
+        m_NetScheduleAPI.GetExecuter(control_thread->GetControlPort());
 
-    m_SharedNSClient.SetProgramVersion(m_JobFactory->GetJobVersion());
+    m_NetScheduleAPI.SetProgramVersion(m_JobFactory->GetJobVersion());
 
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
@@ -1359,7 +1352,7 @@ void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
 size_t CGridWorkerNode::GetServerOutputSize() const
 {
     return IsEmeddedStorageUsed() ?
-        GetNSClient().GetServerParams().max_output_size : 0;
+        GetNetScheduleAPI().GetServerParams().max_output_size : 0;
 }
 
 bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
@@ -1388,8 +1381,8 @@ bool CGridWorkerNode::x_AreMastersBusy() const
 
         CNcbiOstrstream os;
         os << GetJobVersion() << endl;
-        os << GetNSClient().GetQueueName()  <<";"
-           << GetNSClient().GetService().GetServiceName();
+        os << GetNetScheduleAPI().GetQueueName()  <<";"
+           << GetNetScheduleAPI().GetService().GetServiceName();
         os << endl;
         os << "GETLOAD" << ends;
         if (socket.Write(os.str(), os.pcount()) != eIO_Success) {
@@ -1423,7 +1416,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
 
 bool CGridWorkerNode::IsTimeToRebalance()
 {
-    if (!m_SharedNSClient.GetService().IsLoadBalanced() ||
+    if (!m_NetScheduleAPI.GetService().IsLoadBalanced() ||
             TWorkerNode_DoNotRebalance::GetDefault())
         return false;
 

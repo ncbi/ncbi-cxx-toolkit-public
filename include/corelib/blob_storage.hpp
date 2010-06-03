@@ -1,5 +1,6 @@
 #ifndef __BLOB_STORAGE_IFACE__HPP
 #define __BLOB_STORAGE_IFACE__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -43,6 +44,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Blob Storage interface
 ///
+NCBI_DEPRECATED
 class NCBI_XNCBI_EXPORT IBlobStorage
 {
 public:

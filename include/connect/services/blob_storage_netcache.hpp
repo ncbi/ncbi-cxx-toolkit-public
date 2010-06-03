@@ -31,126 +31,12 @@
  */
 
 #include <connect/services/netcache_api.hpp>
-#include <connect/services/error_codes.hpp>
-
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/blob_storage.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-/** @addtogroup NetCacheClient
- *
- * @{
- */
-
-///////////////////////////////////////////////////////////////////////////////
-///
-/// CBlobStorage_NetCache ---
-/// Implementation of IBlobStorage interface based on NetCache service
-///
-class NCBI_BLOBSTORAGE_NETCACHE_EXPORT CBlobStorage_NetCache :
-    public IBlobStorage
-{
-public:
-
-    /// Specifies if blobs should be cached on a local fs
-    enum ECacheFlags {
-        eCacheInput = 0x1,  ///< Cache input streams
-        eCacheOutput = 0x2, ///< Cache output streams
-        eCacheBoth = eCacheInput | eCacheOutput
-    };
-    typedef unsigned int TCacheFlags;
-
-    CBlobStorage_NetCache();
-
-    /// Create Blob Storage
-    /// @param[in] nc_client
-    ///  NetCache client - an instance of CNetCacheAPI.
-    /// @param[in] flags
-    ///  Specifies if blobs should be cached on a local fs
-    ///  before they are accessed for read/write.
-    /// @param[in[ temp_dir
-    ///  Specifies where on a local fs those blobs will be cached
-    CBlobStorage_NetCache(CNetCacheAPI::TInstance nc_client,
-                          TCacheFlags flags = 0x0,
-                          const string& temp_dir = ".");
-
-    virtual ~CBlobStorage_NetCache();
-
-
-    virtual bool IsKeyValid(const string& str);
-
-    /// Get a blob content as a string
-    ///
-    /// @param[in] blob_key
-    ///    Blob key to read
-    virtual string        GetBlobAsString(const string& data_id);
-
-    /// Get an input stream to a blob
-    ///
-    /// @param[in] blob_key
-    ///    Blob key to read
-    /// @param[out] blob_size
-    ///    if blob_size if not NULL the size of a blob is returned
-    /// @param[in] lock_mode
-    ///    Blob locking mode
-    virtual CNcbiIstream& GetIStream(const string& data_id,
-                                     size_t* blob_size = 0,
-                                     ELockMode lock_mode = eLockWait);
-
-    /// Get an output stream to a blob
-    ///
-    /// @param[in,out] blob_key
-    ///    Blob key to read. If a blob with a given key does not exist
-    ///    an key of a newly create blob will be assigned to blob_key
-    /// @param[in] lock_mode
-    ///    Blob locking mode
-    virtual CNcbiOstream& CreateOStream(string& data_id,
-                                        ELockMode lock_mode = eLockNoWait);
-
-    /// Create an new blob
-    ///
-    /// @return
-    ///     Newly create blob key
-    virtual string CreateEmptyBlob();
-
-    /// Delete a blob
-    ///
-    /// @param[in] blob_key
-    ///    Blob key to read
-    virtual void DeleteBlob(const string& data_id);
-
-    /// Close all streams and connections.
-    virtual void Reset();
-
-public:
-    static const string sm_InputBlobCachePrefix;
-    static const string sm_OutputBlobCachePrefix;
-
-private:
-    CNetCacheAPI m_NCClient;
-
-    auto_ptr<CNcbiIstream> m_IStream;
-    auto_ptr<CNcbiOstream> m_OStream;
-
-    auto_ptr<IReader> x_GetReader(const string& key,
-        size_t& blob_size,
-        ELockMode lockMode);
-
-    void x_Check(const string& where);
-
-    TCacheFlags m_CacheFlags;
-    string m_CreatedBlobId;
-    string m_TempDir;
-
-    CBlobStorage_NetCache(const CBlobStorage_NetCache&);
-    CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
-};
-
-extern NCBI_BLOBSTORAGE_NETCACHE_EXPORT const char* kBlobStorageNetCacheDriverName;
+extern NCBI_BLOBSTORAGE_NETCACHE_EXPORT
+    const char* const kBlobStorageNetCacheDriverName;
 
 extern "C"
 {

@@ -103,18 +103,14 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-CRemoteCgiApp::CRemoteCgiApp( 
-                   IBlobStorageFactory* storage_factory,
-                   INetScheduleClientFactory* client_factory)
+CRemoteCgiApp::CRemoteCgiApp()
     : m_WorkerNodeContext(NULL)
 {
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
     BlobStorage_RegisterDriver_NetCache(); 
-    m_AppImpl.reset(new  CGridWorkerNode(*this,
-                                             new CCgiWorkerNodeJobFactory(*this),
-                                             storage_factory,
-                                             client_factory));
+    m_AppImpl.reset(new CGridWorkerNode(*this,
+        new CCgiWorkerNodeJobFactory(*this)));
 
 #if defined(NCBI_OS_UNIX)
     // attempt to get server gracefully shutdown on signal
@@ -127,7 +123,6 @@ CRemoteCgiApp::CRemoteCgiApp(
 
 void CRemoteCgiApp::Init(void)
 {
-    //    SetupDiag(eDS_ToStdout);
     CCgiApplication::Init();
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);

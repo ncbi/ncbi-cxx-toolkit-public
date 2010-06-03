@@ -174,7 +174,7 @@ private:
     CNetICacheClient m_NetICacheClient;
 };
 
-extern NCBI_NET_CACHE_EXPORT const char* kNetICacheDriverName;
+extern NCBI_NET_CACHE_EXPORT const char* const kNetICacheDriverName;
 
 extern "C"
 {

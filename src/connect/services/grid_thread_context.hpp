@@ -51,7 +51,7 @@ public:
     void RunJobs(CWorkerNodeJobContext& job_context);
     void CloseStreams();
 
-    CNcbiIstream& GetIStream(IBlobStorage::ELockMode);
+    CNcbiIstream& GetIStream();
     CNcbiOstream& GetOStream();
     void PutProgressMessage(const string& msg, bool send_immediately);
 
@@ -73,12 +73,11 @@ private:
     CRef<IWorkerNodeJob>          m_Job;
     CNetScheduleExecuter          m_NetScheduleExecuter;
 
-    auto_ptr<IBlobStorage>        m_Reader;
+    CNetCacheAPI                  m_NetCacheAPI;
     auto_ptr<CNcbiIstream>        m_RStream;
-    auto_ptr<IBlobStorage>        m_Writer;
     auto_ptr<CNcbiOstream>        m_WStream;
+    string                        m_WriteErrorMessage;
 
-    auto_ptr<IBlobStorage>        m_ProgressWriter;
     CRequestRateControl           m_MsgThrottler;
     long                          m_CheckStatusPeriod;
     CRequestRateControl           m_StatusThrottler;

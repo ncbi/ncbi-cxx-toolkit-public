@@ -71,6 +71,8 @@ public:
 
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
 
+    virtual CNetCacheAPI GetNetCacheAPI() const;
+
 private:
     CNcbiApplication& m_App;
 
@@ -117,8 +119,6 @@ public:
     };
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                   IBlobStorageFactory* storage_factory = NULL,
-                   INetScheduleClientFactory* client_factory = NULL,
                    ESignalHandling signal_handling = eStandardSignalHandling);
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
@@ -166,8 +166,6 @@ protected:
 
 private:
     void Construct(IWorkerNodeJobFactory* job_factory,
-        IBlobStorageFactory* storage_factory = NULL,
-        INetScheduleClientFactory* client_factory = NULL,
         ESignalHandling signal_handling = eStandardSignalHandling);
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;

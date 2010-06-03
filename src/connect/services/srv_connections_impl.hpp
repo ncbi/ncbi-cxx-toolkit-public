@@ -93,6 +93,8 @@ struct SNetServerConnectionImpl : public CNetObject
 class INetServerConnectionListener : public CNetObject
 {
 public:
+    virtual void OnInit(CNetObject* api_impl,
+        CConfig* config, const string& config_section) = 0;
     virtual void OnConnected(CNetServerConnection::TInstance conn) = 0;
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };

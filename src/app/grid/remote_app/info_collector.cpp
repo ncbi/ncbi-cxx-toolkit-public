@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *                   
@@ -79,7 +79,7 @@ const string& CNSJobInfo::GetErrMsg() const
 
 CNcbiIstream& CNSJobInfo::GetStdIn() const
 {
-    return x_GetRequest().GetStdIn();
+    return x_GetRequest().GetStdInForRead();
 }
 CNcbiIstream& CNSJobInfo::GetStdOut() const
 {
@@ -106,7 +106,7 @@ void CNSJobInfo::x_Load()
     if (m_Status != CNetScheduleAPI::eLastStatus)
         return;
 
-    CNetScheduleAPI cln = m_Collector.x_GetAPI();
+    CNetScheduleAPI cln = m_Collector.x_GetNetScheduleAPI();
     m_Status = cln.GetJobDetails(m_Job);
     cln.GetProgressMsg(m_Job);
 }
@@ -117,20 +117,19 @@ void CNSJobInfo::x_Load() const
 
 CNcbiIstream* CNSJobInfo::x_CreateStream(const string& blob_or_data) const
 {
-    auto_ptr<IBlobStorage> storage(m_Collector.x_CreateStorage());
     auto_ptr<IReader> reader(new CStringOrBlobStorageReader(
                                              blob_or_data,
-                                             storage.release()));
-    return new CRStream (reader.release(),0,0,CRWStreambuf::fOwnReader);    
+                                             m_Collector.x_GetNetCacheAPI()));
+    return new CRStream (reader.release(),0,0,CRWStreambuf::fOwnReader);
 }
 
 
-CRemoteAppRequest_Executer& CNSJobInfo::x_GetRequest() const
+CRemoteAppRequest& CNSJobInfo::x_GetRequest() const
 {
-    if(!m_Request) {
+    if (!m_Request) {
         m_Request = &m_Collector.x_GetRequest();
         auto_ptr<CNcbiIstream> stream(x_CreateStream(GetRawInput()));
-        m_Request->Receive(*stream);
+        m_Request->Deserialize(*stream);
     }
     return *m_Request;
 }
@@ -149,14 +148,14 @@ CRemoteAppResult& CNSJobInfo::x_GetResult() const
 //
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
                                    const string& service_name,
-                                   CBlobStorageFactory& factory)
-    : m_Services(service_name, "netschedule_admin", queue),
-      m_Factory(factory)
+                                   CNetCacheAPI::TInstance nc_api)
+    : m_NetScheduleAPI(service_name, "netschedule_admin", queue),
+      m_NetCacheAPI(nc_api)
 {
 }
 
-CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
-    : m_Factory(factory)
+CNSInfoCollector::CNSInfoCollector(CNetCacheAPI::TInstance nc_api)
+    : m_NetCacheAPI(nc_api)
 {
 }
 
@@ -164,7 +163,7 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    for (CNetServerGroupIterator it = x_GetAPI().GetService().DiscoverServers(
+    for (CNetServerGroupIterator it = x_GetNetScheduleAPI().GetService().DiscoverServers(
             CNetService::eIncludePenalized).Iterate(); it; ++it) {
         CNetServerMultilineCmdOutput output((*it).ExecWithRetry("QPRT " +
                 CNetScheduleAPI::StatusToString(status)));
@@ -187,32 +186,29 @@ CNSJobInfo* CNSInfoCollector::CreateJobInfo(const string& job_id)
     return new CNSJobInfo(job_id, *this);
 }
 
-CRemoteAppRequest_Executer& CNSInfoCollector::x_GetRequest()
+CRemoteAppRequest& CNSInfoCollector::x_GetRequest()
 {
-    if(!m_Request.get()) {
-        m_Request.reset(new CRemoteAppRequest_Executer(m_Factory));
-    }
+    if (!m_Request.get())
+        m_Request.reset(new CRemoteAppRequest(m_NetCacheAPI));
     return *m_Request;
 }
 CRemoteAppResult& CNSInfoCollector::x_GetResult()
 {
-    if(!m_Result.get()) {
-        m_Result.reset(new CRemoteAppResult(m_Factory));
-    }
+    if (!m_Result.get())
+        m_Result.reset(new CRemoteAppResult(m_NetCacheAPI));
     return *m_Result;
 }
 
-CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
+CNcbiIstream* CNSInfoCollector::GetBlobContent(const string& blob_id,
                                                size_t* blob_size)
 {
-    m_Storage.reset(x_CreateStorage());
-    return m_Storage->GetIStream(blob_id, blob_size);
+    return m_NetCacheAPI.GetIStream(blob_id, blob_size);
 }
 
 
 void CNSInfoCollector::GetQueues(CNetScheduleAdmin::TQueueList& queues)
 {
-    x_GetAPI().GetAdmin().GetQueueList(queues);
+    x_GetNetScheduleAPI().GetAdmin().GetQueueList(queues);
 }
 
 
@@ -221,7 +217,7 @@ void CNSInfoCollector::TraverseNodes(
 {
     std::list<CNetScheduleAdmin::SWorkerNodeInfo> worker_nodes;
 
-    x_GetAPI().GetAdmin().GetWorkerNodes(worker_nodes);
+    x_GetNetScheduleAPI().GetAdmin().GetWorkerNodes(worker_nodes);
 
     ITERATE(std::list<CNetScheduleAdmin::SWorkerNodeInfo>, it, worker_nodes) {
         action(*it);
@@ -230,12 +226,12 @@ void CNSInfoCollector::TraverseNodes(
 
 void CNSInfoCollector::DropQueue()
 {
-    x_GetAPI().GetAdmin().DropQueue();
+    x_GetNetScheduleAPI().GetAdmin().DropQueue();
 }
 
 void CNSInfoCollector::CancelJob(const std::string& jid)
 {
-    x_GetAPI().GetSubmitter().CancelJob(jid);
+    x_GetNetScheduleAPI().GetSubmitter().CancelJob(jid);
 }
 
 

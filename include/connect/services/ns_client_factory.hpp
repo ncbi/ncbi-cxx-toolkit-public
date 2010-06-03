@@ -33,7 +33,6 @@
 #include <connect/services/netschedule_api.hpp>
 
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbiexpt.hpp>
 
@@ -44,23 +43,8 @@ BEGIN_NCBI_SCOPE
 /// NetSchedule Client Factory interface
 ///
 /// @sa CNetScheduleAPI
-///
-class INetScheduleClientFactory
-{
-public:
-    virtual ~INetScheduleClientFactory() {}
-
-    /// Create a NetSchedule client
-    virtual CNetScheduleAPI CreateInstance() = 0;
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 /// @internal
 class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory
-    : public INetScheduleClientFactory
 {
 public:
     CNetScheduleClientFactory(const IRegistry& reg);

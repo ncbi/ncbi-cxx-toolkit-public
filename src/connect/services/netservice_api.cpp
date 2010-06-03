@@ -82,15 +82,25 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
-SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
-    const string& service_name, const string& client_name,
-    const string& lbsm_affinity_name)
+SNetServiceImpl::SNetServiceImpl(const string& service_name,
+        const string& client_name, INetServerConnectionListener* listener,
+        const string& lbsm_affinity_name) :
+    m_ServiceName(service_name),
+    m_ClientName(client_name),
+    m_Listener(listener),
+    m_LBSMAffinityName(lbsm_affinity_name),
+    m_LBSMAffinityValue(NULL),
+    m_ServiceType(eNotDefined)
 {
-    _ASSERT(!section.empty());
+}
 
-    m_ServiceName = service_name;
-    m_ClientName = client_name;
-    m_LBSMAffinityName = lbsm_affinity_name;
+void SNetServiceImpl::Init(CNetObject* api_impl,
+    CConfig* config, const string& config_section,
+    const char* const* default_config_sections)
+{
+    const char* const* default_section = default_config_sections;
+    string section = !config_section.empty() ?
+        config_section : *default_section++;
 
     auto_ptr<CConfig> app_reg_config;
     auto_ptr<CConfig::TParamTree> param_tree;
@@ -101,13 +111,38 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
         if (app != NULL && (reg = &app->GetConfig()) != NULL) {
             param_tree.reset(CConfig::ConvertRegToTree(*reg));
 
-            const CConfig::TParamTree* section_param_tree =
-                param_tree->FindSubNode(section);
+            for (;;) {
+                const CConfig::TParamTree* section_param_tree =
+                    param_tree->FindSubNode(section);
 
-            app_reg_config.reset(section_param_tree != NULL ?
-                new CConfig(section_param_tree) : new CConfig(*reg));
+                if (section_param_tree != NULL)
+                    app_reg_config.reset(new CConfig(section_param_tree));
+                else if (*default_section == NULL)
+                    app_reg_config.reset(new CConfig(*reg));
+                else {
+                    section = *default_section++;
+                    continue;
+                }
+                break;
+            }
 
             config = app_reg_config.get();
+        }
+    } else {
+        const CConfig::TParamTree* supplied_param_tree = config->GetTree();
+
+        for (;;) {
+            const CConfig::TParamTree* section_param_tree =
+                supplied_param_tree->FindSubNode(section);
+
+            if (section_param_tree != NULL) {
+                app_reg_config.reset(new CConfig(section_param_tree));
+                config = app_reg_config.get();
+            } else if (*default_section != NULL) {
+                section = *default_section++;
+                continue;
+            }
+            break;
         }
     }
 
@@ -271,8 +306,11 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     }
 
     // Get affinity value from the local LBSM configuration file.
-    m_LBSMAffinityValue = m_LBSMAffinityName.empty() ? NULL :
-        LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinityName.c_str());
+    if (!m_LBSMAffinityName.empty())
+        m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
+            m_LBSMAffinityName.c_str());
+
+    m_Listener->OnInit(api_impl, config, section);
 }
 
 const string& CNetService::GetClientName() const

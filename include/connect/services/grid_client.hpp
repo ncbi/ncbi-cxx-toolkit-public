@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  */
 
@@ -36,6 +36,7 @@
 
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/netcache_api.hpp>
 
 #include <connect/connect_export.h>
 
@@ -211,8 +212,7 @@ public:
     /// data storage (NetCache). Size of the input data can be determined
     /// using GetInputBlobSize
     ///
-    CNcbiIstream& GetIStream(IBlobStorage::ELockMode =
-                             IBlobStorage::eLockWait);
+    CNcbiIstream& GetIStream();
 
     /// Get the size of an input stream
     ///
@@ -279,6 +279,23 @@ public:
                 EProgressMsg progress_msg,
                 bool use_embedded_storage = false);
 
+    /// Constructor
+    ///
+    /// @param ns_client
+    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
+    /// @param nc_client
+    ///     NetCache client - an instance of CNetCacheAPI.
+    /// @param auto_cleanup
+    ///     if true the grid client will automatically remove
+    ///     a job's input data from a storage when the job is
+    ///     done or canceled
+    ///
+    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
+                CNetCacheAPI::TInstance nc_client,
+                ECleanUp cleanup,
+                EProgressMsg progress_msg,
+                bool use_embedded_storage = false);
+
     /// Get a job submitter
     ///
     CGridJobSubmitter& GetJobSubmitter();
@@ -309,17 +326,19 @@ public:
     void RemoveDataBlob(const string& data_key);
 
     CNetScheduleSubmitter&  GetNSClient() { return m_NSClient; }
-    IBlobStorage& GetStorage()  { return m_NSStorage; }
+    CNetCacheAPI& GetNetCacheAPI()  { return m_NetCacheAPI; }
 
     size_t GetMaxServerInputSize();
 
 private:
-    CNetScheduleSubmitter  m_NSClient;
-    IBlobStorage& m_NSStorage;
+    void Init(ECleanUp cleanup, EProgressMsg progress_msg);
+
+    CNetScheduleSubmitter m_NSClient;
+    CNetCacheAPI m_NetCacheAPI;
 
     auto_ptr<CGridJobSubmitter> m_JobSubmitter;
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
-    auto_ptr<CGridJobStatus>   m_JobStatus;
+    auto_ptr<CGridJobStatus> m_JobStatus;
 
     bool         m_UseEmbeddedStorage;
 

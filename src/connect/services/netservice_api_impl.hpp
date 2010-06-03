@@ -85,17 +85,16 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 {
 }
 
-struct SNetServiceImpl : public CNetObject
+struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
-    SNetServiceImpl(CConfig* config, const string& section,
-        const string& service_name, const string& client_name,
+    SNetServiceImpl(const string& service_name,
+        const string& client_name, INetServerConnectionListener* listener,
         const string& lbsm_affinity_name);
 
-    // Set up connection event listening. In fact, this
-    // listener implements the authentication part of both
-    // NS and NC protocols.
-    void SetListener(INetServerConnectionListener* listener);
+    void Init(CNetObject* api_impl,
+        CConfig* config, const string& config_section,
+        const char* const* default_config_sections);
 
     SNetServerImpl* FindOrCreateServerImpl(
         const string& host, unsigned short port);
@@ -122,6 +121,8 @@ struct SNetServiceImpl : public CNetObject
     string m_ServiceName;
     string m_ClientName;
 
+    // Connection event listening. In fact, this listener implements
+    // the authentication part of both NS and NC protocols.
     CNetObjectRef<INetServerConnectionListener> m_Listener;
     CNetObjectRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
@@ -160,11 +161,6 @@ struct SNetServiceImpl : public CNetObject
 inline SNetServerGroupImpl::SNetServerGroupImpl(unsigned discovery_iteration) :
     m_DiscoveryIteration(discovery_iteration)
 {
-}
-
-inline void SNetServiceImpl::SetListener(INetServerConnectionListener* listener)
-{
-    m_Listener = listener;
 }
 
 inline CNetServer SNetServiceImpl::GetServer(

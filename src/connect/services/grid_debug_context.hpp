@@ -33,6 +33,8 @@
  *    NetSchedule Worker Node implementation
  */
 
+#include <connect/services/netcache_api.hpp>
+
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -56,7 +58,7 @@ public:
         eGDC_Execute
     };
 
-    static CGridDebugContext& Create(eMode, IBlobStorageFactory& );
+    static CGridDebugContext& Create(eMode, CNetCacheAPI::TInstance);
     static CGridDebugContext* GetInstance();
 
     ~CGridDebugContext();
@@ -79,15 +81,14 @@ public:
 
 
 private:
-    CGridDebugContext(eMode, IBlobStorageFactory&);
+    CGridDebugContext(eMode, CNetCacheAPI::TInstance);
     static auto_ptr<CGridDebugContext> sm_Instance;
 
     eMode m_Mode;
     string m_RunName;
     string m_SPid;
 
-    CMutex                      m_StorageFactoryMutex;
-    IBlobStorageFactory&        m_StorageFactory;
+    CNetCacheAPI m_NetCacheAPI;
 
     map<string,string> m_Blobs;
     map<string,string>::const_iterator m_CurrentJob;
@@ -96,11 +97,7 @@ private:
     CGridDebugContext& operator=(const CGridDebugContext&);
 
     void x_DumpBlob(const string& blob_id, const string& fname);
-    IBlobStorage* CreateStorage()
-    {
-        CMutexGuard guard(m_StorageFactoryMutex);
-        return  m_StorageFactory.CreateInstance();
-    }
+    CNetCacheAPI GetNetCacheAPI() { return  m_NetCacheAPI; }
 
 };
 

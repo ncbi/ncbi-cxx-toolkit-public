@@ -75,20 +75,18 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        const string&       project_name,
                                        const string&       return_url)
 {
-    auto_ptr<IBlobStorage> ns_storage;
     auto_ptr<CGridClient> grid_client;
 
     CNetScheduleClientFactory cfc(app.GetConfig());
     CNetScheduleAPI ns_client = cfc.CreateInstance();
     ns_client.SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
-    CBlobStorageFactory cfs(app.GetConfig());
-    ns_storage.reset(cfs.CreateInstance());
-    grid_client.reset(new CGridClient(ns_client.GetSubmitter(), *ns_storage,
+    CNetCacheAPI netcache_api(app.GetConfig());
+    grid_client.reset(new CGridClient(ns_client.GetSubmitter(), netcache_api,
                                       CGridClient::eManualCleanup,
                                       CGridClient::eProgressMsgOn)
                       );
-    
+
     CGridJobSubmitter& job_submitter = grid_client->GetJobSubmitter();
     CNcbiOstream& job_os = job_submitter.GetOStream();
     cgi_request.Serialize(job_os);
@@ -96,7 +94,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     string url = s_GetCgiTunnel2GridUrl(cgi_request);
     url += "?ctg_project=" + NStr::URLEncode(project_name);
     url += "&job_key=" + job_key;
-    url += "&ctg_error_url=" + NStr::URLEncode(return_url);                   
+    url += "&ctg_error_url=" + NStr::URLEncode(return_url);
     url += "&ctg_time=" + s_GetElapsedTime();
     os << "<html><head><<META HTTP-EQUIV=Refresh CONTENT=\"0;" 
        << url << "\"></head><body></body></html>";

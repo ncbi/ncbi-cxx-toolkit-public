@@ -115,6 +115,8 @@ bool s_CheckExists(CNetCacheAPI   nc_client,
     }
     catch (CNetCacheException& ex)
     {
+        if (ex.GetErrCode() == CNetCacheException::eBlobNotFound)
+            return false;
         cout << ex.what() << endl;
         throw;
     }

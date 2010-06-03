@@ -58,7 +58,19 @@
 
 BEGIN_NCBI_SCOPE
 
-const char* kNetICacheDriverName = "netcache";
+class CNetICacheServerListener : public CNetCacheServerListener
+{
+protected:
+    virtual void OnInit(CNetObject* api_impl,
+        CConfig* config, const string& config_section);
+};
+
+const char* const kNetICacheDriverName = "netcache";
+
+static const char* const s_NetICacheConfigSections[] = {
+    kNetICacheDriverName,
+    NULL
+};
 
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
@@ -68,36 +80,11 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& client_name,
             const string& lbsm_affinity_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(config,
-            section.empty() ? kNetICacheDriverName : section,
-            service_name, client_name, lbsm_affinity_name)
+        SNetCacheAPIImpl(new SNetServiceImpl(service_name, client_name,
+            new CNetICacheServerListener, lbsm_affinity_name)),
+        m_CacheName(cache_name)
     {
-        if (m_Service->m_ClientName.length() < 3) {
-            NCBI_THROW(CNetCacheException,
-                eAuthenticationError, "Client name is too short or empty");
-        }
-
-        if (!cache_name.empty())
-            m_CacheName = cache_name;
-        else {
-            if (config == NULL) {
-                NCBI_THROW(CNetCacheException,
-                    eAuthenticationError, "Cache name is not defined");
-            } else {
-                try {
-                    m_CacheName = config->GetString(section,
-                        "name", CConfig::eErr_Throw, kEmptyStr);
-                }
-                catch (exception&) {
-                    m_CacheName = config->GetString(section,
-                        "cache_name", CConfig::eErr_Throw, "default_cache");
-                }
-            }
-        }
-
-        m_ICacheCmdPrefix = "IC(";
-        m_ICacheCmdPrefix.append(m_CacheName);
-        m_ICacheCmdPrefix.append(") ");
+        m_Service->Init(this, config, section, s_NetICacheConfigSections);
     }
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd);
@@ -115,8 +102,38 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 
     string m_CacheName;
     string m_ICacheCmdPrefix;
+
     CNetServer m_SelectedServer;
 };
+
+void CNetICacheServerListener::OnInit(CNetObject* api_impl,
+    CConfig* config, const string& config_section)
+{
+    CNetCacheServerListener::OnInit(api_impl, config, config_section);
+
+    SNetICacheClientImpl* icache_impl =
+        static_cast<SNetICacheClientImpl*>(api_impl);
+
+    if (icache_impl->m_CacheName.empty()) {
+        if (config == NULL) {
+            NCBI_THROW(CNetCacheException,
+                eAuthenticationError, "ICache database name is not defined");
+        } else {
+            try {
+                icache_impl->m_CacheName = config->GetString(config_section,
+                    "name", CConfig::eErr_Throw, kEmptyStr);
+            }
+            catch (exception&) {
+                icache_impl->m_CacheName = config->GetString(config_section,
+                    "cache_name", CConfig::eErr_Throw, "default_cache");
+            }
+        }
+    }
+
+    icache_impl->m_ICacheCmdPrefix = "IC(";
+    icache_impl->m_ICacheCmdPrefix.append(icache_impl->m_CacheName);
+    icache_impl->m_ICacheCmdPrefix.append(") ");
+}
 
 CNetICachePasswordGuard::CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
     const string& password)
@@ -299,7 +316,7 @@ void CNetICacheClient::Store(const string&  key,
                              unsigned int   time_to_live,
                              const string&  /*owner*/)
 {
-    m_Impl->WriteBuffer(
+    SNetCacheAPIImpl::WriteBuffer(
         m_Impl->InitiateStoreCmd(key, version, subkey, time_to_live),
         CNetCacheWriter::eICache_NoWait, (const char*) data, size);
 }
@@ -359,7 +376,7 @@ bool CNetICacheClient::Read(const string& key,
     if (rdr.get() == 0)
         return false;
 
-    return m_Impl->ReadBuffer(*rdr, (unsigned char*) buf, buf_size,
+    return SNetCacheAPIImpl::ReadBuffer(*rdr, (char*) buf, buf_size,
         NULL, blob_size) == CNetCacheAPI::eReadComplete;
 }
 
@@ -379,8 +396,8 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
 
         if (blob_descr->buf && blob_descr->buf_size >= blob_size) {
             try {
-                m_Impl->ReadBuffer(*blob_descr->reader,
-                    (unsigned char*) blob_descr->buf, blob_descr->buf_size,
+                SNetCacheAPIImpl::ReadBuffer(*blob_descr->reader,
+                    blob_descr->buf, blob_descr->buf_size,
                     NULL, blob_size);
             }
             catch (CNetServiceException&) {
@@ -404,7 +421,7 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
 {
     return new CNetCacheWriter(
         m_Impl->InitiateStoreCmd(key, version, subkey, time_to_live),
-            CNetCacheWriter::eICache_NoWait);
+            CNetCacheWriter::eICache_NoWait, NULL);
 }
 
 

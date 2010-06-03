@@ -128,10 +128,6 @@ struct SNetScheduleAPIImpl : public CNetObject
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
     public:
-        CNetScheduleServerListener(
-            const string& client_name,
-            const string& queue_name);
-
         void SetAuthString(
             const string& client_name,
             const string& program_version,
@@ -141,6 +137,8 @@ struct SNetScheduleAPIImpl : public CNetObject
             unsigned short control_port);
 
     private:
+        virtual void OnInit(CNetObject* api_impl,
+            CConfig* config, const string& config_section);
         virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
@@ -207,8 +205,6 @@ struct SNetScheduleAPIImpl : public CNetObject
     string            m_Queue;
     string            m_ProgramVersion;
 
-    CNetObjectRef<CNetScheduleServerListener> m_Listener;
-
     auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
@@ -259,7 +255,9 @@ inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
 {
     CFastMutexGuard g(ns_api_impl->m_FastMutex);
 
-    ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(m_UID, control_port);
+    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
+        ns_api_impl->m_Service->m_Listener.GetPtr())->MakeWorkerNodeInitCmd(
+            m_UID, control_port);
 }
 
 struct SNetScheduleAdminImpl : public CNetObject

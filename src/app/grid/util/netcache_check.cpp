@@ -158,7 +158,7 @@ int CNetCacheCheckApp::Run(void)
     SleepMilliSec(args["delay"].AsInteger());
 
     memset(data_buf, 0xff, sizeof(data_buf));
-    reader.reset(cl.GetData(key, &blob_size));
+    reader.reset(cl.GetReader(key, &blob_size));
     reader->Read(data_buf, 1024);
     res = strcmp(data_buf, test_data2);
     if (res != 0) {

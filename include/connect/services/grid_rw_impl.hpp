@@ -27,13 +27,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  */
 
+#include <connect/services/netcache_api.hpp>
+
 #include <connect/connect_export.h>
 
-#include <corelib/blob_storage.hpp>
 #include <corelib/reader_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -41,23 +42,19 @@ BEGIN_NCBI_SCOPE
 /// String or Blob Storage Writer
 ///
 /// An implementation of the IWriter interface with a dual behavior.
-/// It writes data into the "data_or_key" paramter until
+/// It writes data into the "data_or_key" parameter until
 /// the total number of written bytes reaches "max_string_size" parameter.
 /// After that all data from "data_or_key" is stored into the Blob Storage
 /// and all next calls to Write method will write data to the Blob Storage.
-/// In this case "data_or_key" paramter holds a blob key for the written data.
+/// In this case "data_or_key" parameter holds a blob key for the written data.
 ///
 class NCBI_XCONNECT_EXPORT CStringOrBlobStorageWriter : public IWriter
 {
 public:
     CStringOrBlobStorageWriter(size_t max_string_size,
-                               IBlobStorage& storage,
-                               string& data_or_key);
-    CStringOrBlobStorageWriter(size_t max_string_size,
-                               IBlobStorage* storage,
-                               string& data_or_key);
-
-    virtual ~CStringOrBlobStorageWriter();
+                               SNetCacheAPIImpl* storage,
+                               string& job_output_ref,
+                               string* error_message);
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -66,29 +63,18 @@ public:
     virtual ERW_Result Flush(void);
 
 private:
-
-    ERW_Result x_WriteToStream(const void* buf,
-                               size_t      count,
-                               size_t*     bytes_written = 0);
-
-    void x_Init(size_t max_string_size);
-
-    size_t        m_MaxBuffSize;
-    IBlobStorage& m_Storage;
-    auto_ptr<IBlobStorage> m_StorageGuard;
-    CNcbiOstream* m_BlobOstr;
-    string&       m_Data;
-
-private:
-    CStringOrBlobStorageWriter(const CStringOrBlobStorageWriter&);
-    CStringOrBlobStorageWriter& operator=(const CStringOrBlobStorageWriter&);
+    CNetCacheAPI m_Storage;
+    auto_ptr<IWriter> m_NetCacheWriter;
+    string& m_Data;
+    size_t m_MaxBuffSize;
+    string* m_ErrorMessage;
 };
 
 
-/// String or Blob Strorage Reader
+/// String or Blob Storage Reader
 ///
-/// An implementaion of the IReader interface with a dual behavior.
-/// If "data_or_key" parameter can be interpered as Blob Storage key and
+/// An implementation of the IReader interface with a dual behavior.
+/// If "data_or_key" parameter can be interpreted as Blob Storage key and
 /// a blob with given key is found in the storage, then the storage is
 /// used as data source. Otherwise "data_or_key" is a data source.
 ///
@@ -96,17 +82,8 @@ class NCBI_XCONNECT_EXPORT CStringOrBlobStorageReader : public IReader
 {
 public:
     CStringOrBlobStorageReader(const string& data_or_key,
-                               IBlobStorage& storage,
-                               size_t* data_size = NULL,
-                               IBlobStorage::ELockMode lock_mode
-                                         = IBlobStorage::eLockWait);
-    CStringOrBlobStorageReader(const string& data_or_key,
-                               IBlobStorage* storage,
-                               size_t* data_size = NULL,
-                               IBlobStorage::ELockMode lock_mode
-                                         = IBlobStorage::eLockWait);
-
-    virtual ~CStringOrBlobStorageReader();
+                               SNetCacheAPIImpl* storage,
+                               size_t* data_size = NULL);
 
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
@@ -115,18 +92,10 @@ public:
     virtual ERW_Result PendingCount(size_t* count);
 
 private:
-
+    CNetCacheAPI m_Storage;
+    auto_ptr<IReader> m_NetCacheReader;
     const string& m_Data;
-    IBlobStorage& m_Storage;
-    auto_ptr<IBlobStorage> m_StorageGuard;
-    CNcbiIstream* m_BlobIstr;
-    string::const_iterator m_CurPos;
-
-    void x_Init(size_t* data_size,
-                IBlobStorage::ELockMode lock_mode);
-private:
-    CStringOrBlobStorageReader(const CStringOrBlobStorageReader&);
-    CStringOrBlobStorageReader& operator=(const CStringOrBlobStorageReader&);
+    size_t m_BytesToRead;
 };
 
 

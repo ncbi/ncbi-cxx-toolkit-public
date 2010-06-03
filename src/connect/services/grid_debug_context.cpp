@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/grid_debug_context.hpp>
+#include "grid_debug_context.hpp"
 
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_process.hpp>
@@ -46,9 +46,9 @@ auto_ptr<CGridDebugContext> CGridDebugContext::sm_Instance;
 
 /// @internal
 CGridDebugContext& CGridDebugContext::Create(eMode mode,
-                                             IBlobStorageFactory& factory)
+    CNetCacheAPI::TInstance netcache_api)
 {
-    sm_Instance.reset(new CGridDebugContext(mode,factory));
+    sm_Instance.reset(new CGridDebugContext(mode, netcache_api));
     return *sm_Instance;
 }
 
@@ -58,8 +58,8 @@ CGridDebugContext* CGridDebugContext::GetInstance()
 }
 
 CGridDebugContext::CGridDebugContext(eMode mode,
-                                     IBlobStorageFactory& factory)
-    : m_Mode(mode), m_StorageFactory(factory)
+                                     CNetCacheAPI::TInstance netcache_api)
+    : m_Mode(mode), m_NetCacheAPI(netcache_api)
 {
     TPid cur_pid = CProcess::GetCurrentPid();
     m_SPid = NStr::UIntToString(cur_pid);
@@ -78,7 +78,7 @@ int CGridDebugContext::SetExecuteList(const string& files)
 {
     vector<string> vfiles;
     NStr::Tokenize(files, " ,;", vfiles);
-    auto_ptr<IBlobStorage> storage(CreateStorage());
+    CNetCacheAPI storage(GetNetCacheAPI());
     m_Blobs.clear();
     ITERATE(vector<string>, it, vfiles) {
         string fname = NStr::TruncateSpaces(*it);
@@ -86,13 +86,13 @@ int CGridDebugContext::SetExecuteList(const string& files)
         if (!ifile.good())
             continue;
         string blob_id;
-        CNcbiOstream& os = storage->CreateOStream(blob_id);
+        auto_ptr<IWriter> writer(storage.PutData(&blob_id));
         char buf[1024];
-        while( !ifile.eof() ) {
+        while (!ifile.eof()) {
             ifile.read(buf, sizeof(buf));
-            os.write(buf, ifile.gcount());
+            writer->Write(buf, ifile.gcount());
         }
-        storage->Reset();
+        writer->Flush();
         m_Blobs[blob_id] = fname;
     }
     m_CurrentJob = m_Blobs.begin();
@@ -176,16 +176,13 @@ void CGridDebugContext::DumpProgressMessage(const string& job_key,
 
 void CGridDebugContext::x_DumpBlob(const string& blob_id, const string& fname)
 {
-    auto_ptr<IBlobStorage> storage(CreateStorage());
     size_t blob_size = 0;
-    CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size,
-                                           IBlobStorage::eLockWait);
-    CNcbiOfstream ofile( fname.c_str() );
+    auto_ptr<IReader> reader(GetNetCacheAPI().GetReader(blob_id, &blob_size));
+    CNcbiOfstream ofile(fname.c_str());
     char buf[1024];
-    while( !is.eof() ) {
-        is.read(buf, sizeof(buf));
-        ofile.write(buf, is.gcount());
-    }
+    size_t bytes_read;
+    while (reader->Read(buf, sizeof(buf), &bytes_read) == eRW_Success)
+        ofile.write(buf, bytes_read);
 }
 
 END_NCBI_SCOPE

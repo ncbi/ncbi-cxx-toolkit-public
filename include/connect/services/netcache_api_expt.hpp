@@ -61,8 +61,6 @@ public:
         eKeyFormatError,
         ///< Server side error
         eServerError,
-        ///< BLOB is locked by another client
-        eBlobLocked,
         ///< Cache name unknown
         eUnknnownCache,
         ///< Blob is not found
@@ -83,7 +81,6 @@ public:
         case eAuthenticationError:      return "eAuthenticationError";
         case eKeyFormatError:           return "eKeyFormatError";
         case eServerError:              return "eServerError";
-        case eBlobLocked:               return "eBlobLocked";
         case eUnknnownCache:            return "eUnknnownCache";
         case eBlobNotFound:             return "eBlobNotFound";
         case eUnknownCommand:           return "eUnknownCommand";

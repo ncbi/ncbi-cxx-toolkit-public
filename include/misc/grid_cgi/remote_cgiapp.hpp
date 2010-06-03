@@ -54,10 +54,7 @@ class CCgiWorkerNodeJob;
 class NCBI_XGRIDCGI_EXPORT CRemoteCgiApp : public CCgiApplication
 {
 public:
-    CRemoteCgiApp( 
-                   IBlobStorageFactory* storage_factory = NULL,
-                   INetScheduleClientFactory* client_factory = NULL);
-
+    CRemoteCgiApp();
 
     virtual void Init(void);
     virtual int Run(void);

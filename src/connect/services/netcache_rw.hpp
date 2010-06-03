@@ -71,7 +71,7 @@ public:
 
 private:
     CNetServerConnection m_Connection;
-    auto_ptr<CSocketReaderWriter> m_Reader;
+    CSocketReaderWriter m_Reader;
     /// Remaining BLOB size to be read
     size_t m_BlobBytesToRead;
 };
@@ -88,7 +88,7 @@ public:
     };
 
     CNetCacheWriter(CNetServerConnection::TInstance connection,
-        EServerResponseType response_type);
+        EServerResponseType response_type, string* error_message);
 
     virtual ~CNetCacheWriter();
 
@@ -103,12 +103,13 @@ public:
 
 private:
     CNetServerConnection m_Connection;
-    auto_ptr<CTransmissionWriter> m_Writer;
-    string m_LastError;
+    CSocketReaderWriter m_SocketReaderWriter;
+    CTransmissionWriter m_TransmissionWriter;
     EServerResponseType m_ResponseType;
+    string m_IgnoredError;
+    string* m_ErrorMessage;
 
     bool x_IsStreamOk();
-    void x_Shutdown();
 };
 
 

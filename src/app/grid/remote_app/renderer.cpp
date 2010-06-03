@@ -258,17 +258,17 @@ void CNSInfoRenderer::RenderBlob(const string& blob_id)
     ITagWriter::TAttributes attrs;
     attrs.push_back(ITagWriter::TAttribute("Id", blob_id));
     size_t bsize = 0;
-    CNcbiIstream& is =  m_Collector.GetBlobContent(blob_id, &bsize);
-    if (!is.good())
+    auto_ptr<CNcbiIstream> is(m_Collector.GetBlobContent(blob_id, &bsize));
+    if (!is->good())
         m_Writer.WriteTag("Blob", attrs);
     else {
         if (bsize < 50) {
             string buf(bsize,0);
-            is.read(&*buf.begin(), bsize);
+            is->read(&*buf.begin(), bsize);
             m_Writer.WriteTag("Blob", attrs, buf);
         } else {
             STagGuard guard(m_Writer, "Blob", attrs);    
-            m_Writer.WriteStream(is);
+            m_Writer.WriteStream(*is);
         }
     }
 }

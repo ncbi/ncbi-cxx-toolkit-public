@@ -63,17 +63,22 @@ IWorkerNodeCleanupEventSource*
     return grid_app->GetWorkerNode()->GetCleanupEventSource();
 }
 
+CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
+{
+    const CGridWorkerApp* grid_app =
+        dynamic_cast<const CGridWorkerApp*>(&m_App);
+
+    return grid_app->GetWorkerNode()->GetNetCacheAPI();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 
 void CGridWorkerApp::Construct(
     IWorkerNodeJobFactory* job_factory,
-    IBlobStorageFactory* storage_factory,
-    INetScheduleClientFactory* client_factory,
     ESignalHandling signal_handling)
 {
-    m_WorkerNode.reset(new CGridWorkerNode(*this,
-        job_factory, storage_factory, client_factory));
+    m_WorkerNode.reset(new CGridWorkerNode(*this, job_factory));
 
     m_MergeLogLines = false;
 
@@ -87,11 +92,9 @@ void CGridWorkerApp::Construct(
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                               IBlobStorageFactory* storage_factory,
-                               INetScheduleClientFactory* client_factory,
                                ESignalHandling signal_handling)
 {
-    Construct(job_factory, storage_factory, client_factory, signal_handling);
+    Construct(job_factory, signal_handling);
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
@@ -137,7 +140,7 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext()
 {
-    if ( !m_WorkerNodeInitContext.get() )
+    if (!m_WorkerNodeInitContext.get())
         m_WorkerNodeInitContext.reset(
                        new CDefaultWorkerNodeInitContext(*this));
     return *m_WorkerNodeInitContext;

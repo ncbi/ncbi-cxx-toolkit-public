@@ -32,6 +32,13 @@
 
 #include <ncbi_pch.hpp>
 
+#ifdef _MSC_VER
+// Disable warning C4191: 'type cast' :
+//     unsafe conversion from 'ncbi::CDll::FEntryPoint'
+//     to 'void (__cdecl *)(...)' [comes from plugin_manager.hpp]
+#pragma warning (disable: 4191)
+#endif
+
 #include "netcache_api_impl.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
@@ -43,6 +50,7 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <memory>
 
@@ -50,6 +58,9 @@
 #define NCBI_USE_ERRCODE_X  ConnServ_NetCache
 
 BEGIN_NCBI_SCOPE
+
+const string s_InputBlobCachePrefix = ".nc_cache_input.";
+const string s_OutputBlobCachePrefix = ".nc_cache_output.";
 
 static bool s_FallbackServer_Initialized = false;
 static CSafeStaticPtr<auto_ptr<SServerAddress> > s_FallbackServer;
@@ -72,6 +83,36 @@ static SServerAddress* s_GetFallbackServer()
     return s_FallbackServer->get();
 }
 
+void CNetCacheServerListener::OnInit(CNetObject* api_impl,
+    CConfig* config, const string& config_section)
+{
+    SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
+
+    m_Auth = nc_impl->m_Service->m_ClientName;
+
+    if (m_Auth.length() < 3) {
+        NCBI_THROW(CNetCacheException,
+            eAuthenticationError, "Client name is too short or empty");
+    }
+
+    string temp_dir = config->GetString(config_section,
+        "tmp_dir", CConfig::eErr_NoThrow, kEmptyStr);
+
+    string default_temp_dir = ".";
+
+    if (temp_dir.empty())
+        temp_dir = config->GetString(config_section,
+            "tmp_path", CConfig::eErr_NoThrow, default_temp_dir);
+
+    nc_impl->m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
+
+    nc_impl->m_CacheInput = config->GetBool(config_section,
+        "cache_input", CConfig::eErr_NoThrow, false);
+
+    nc_impl->m_CacheOutput = config->GetBool(config_section,
+        "cache_output", CConfig::eErr_NoThrow, false);
+}
+
 void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
@@ -90,11 +131,6 @@ void CNetCacheServerListener::OnError(
         sizeof(s_BlobNotFoundMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eBlobNotFound, message);
 
-    static const char s_BlobLockedMsg[] = "BLOB locked";
-    if (NStr::strncmp(err_msg.c_str(), s_BlobLockedMsg,
-        sizeof(s_BlobLockedMsg) - 1) == 0)
-        NCBI_THROW(CNetCacheException, eBlobLocked, message);
-
     static const char s_UnknownCommandMsg[] = "Unknown command";
     if (NStr::strncmp(err_msg.c_str(), s_UnknownCommandMsg,
         sizeof(s_UnknownCommandMsg) - 1) == 0)
@@ -106,18 +142,22 @@ void CNetCacheServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, message);
 }
 
-const char* kNetCacheAPIDriverName = "netcache_api";
+const char* const kNetCacheAPIDriverName = "netcache_api";
+
+static const char* const s_NetCacheConfigSections[] = {
+    kNetCacheAPIDriverName,
+    "netcache_client",
+    "netcache",
+    NULL
+};
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name,
         const string& lbsm_affinity_name) :
-    m_Service(new SNetServiceImpl(config,
-        !section.empty() ? section : kNetCacheAPIDriverName,
-            service, client_name, lbsm_affinity_name))
+    m_Service(new SNetServiceImpl(service, client_name,
+        new CNetCacheServerListener, lbsm_affinity_name))
 {
-    m_Listener = new CNetCacheServerListener(m_Service.GetClientName());
-
-    m_Service->SetListener(m_Listener);
+    m_Service->Init(this, config, section, s_NetCacheConfigSections);
 }
 
 CNetServer SNetCacheAPIImpl::GetServer(const string& bid)
@@ -174,6 +214,13 @@ CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
     m_Impl(new SNetCacheAPIImpl(NULL, conf_section,
         kEmptyStr, kEmptyStr, kEmptyStr))
 {
+}
+
+CNetCacheAPI::CNetCacheAPI(const IRegistry& reg, const string& conf_section)
+{
+    CConfig conf(reg);
+    m_Impl = new SNetCacheAPIImpl(&conf, conf_section,
+        kEmptyStr, kEmptyStr, kEmptyStr);
 }
 
 CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section) :
@@ -281,32 +328,133 @@ string  CNetCacheAPI::PutData(const string& key,
     return k;
 }
 
+CNcbiOstream* CNetCacheAPI::CreateOStream(string& key, unsigned time_to_live)
+{
+    return new CWStream(PutData(&key, time_to_live), 0, NULL,
+        CRWStreambuf::fOwnWriter | CRWStreambuf::fLogExceptions);
+
+/*
+    if (!m_Impl->m_CacheOutput) {
+        auto_ptr<IWriter> writer(PutData(&key));
+        m_OStream.reset( new CWStream(writer.release(), 0,0,
+            CRWStreambuf::fOwnWriter));
+        if (!m_OStream.get() || !m_OStream->good()) {
+            m_OStream.reset();
+            NCBI_THROW(CBlobStorageException, eWriter,
+                "Writer couldn't create an ouput stream. BlobKey: " + key);
+        }
+
+    } else {
+        if (key.empty() || !IsKeyValid(key))
+            key = CreateEmptyBlob();
+        m_CreatedBlobId = key;
+        m_OStream.reset(CFile::CreateTmpFileEx(m_NCClient->m_TempDir,
+            s_OutputBlobCachePrefix));
+        if (!m_OStream.get() || !m_OStream->good()) {
+            m_OStream.reset();
+            NCBI_THROW(CBlobStorageException, eWriter,
+                "Writer couldn't create a temporary file in the \"" +
+                m_NCClient->m_TempDir +
+                "\" directory. Check the \"tmp_dir\" parameter "
+                "in the netcache_api configuration section.");
+        }
+    }
+    return *m_OStream;
+
+    ---------------------------------------
+
+    try {
+        if (m_NCClient->m_CacheOutput &&
+                m_OStream.get() &&
+                !m_CreatedBlobId.empty()) {
+            auto_ptr<IWriter> writer;
+            int try_count = 0;
+            for (;;) {
+                try {
+                    writer.reset(m_NCClient.PutData(&m_CreatedBlobId));
+                    break;
+                }
+                catch (CNetServiceException& ex) {
+                    if (ex.GetErrCode() != CNetServiceException::eTimeout)
+                        throw;
+                    ERR_POST_XX(ConnServ_NetCache, 6,
+                        "Communication Error : " << ex.what());
+                    if (++try_count >= 2)
+                        throw;
+                    SleepMilliSec(1000 + try_count*2000);
+                }
+            }
+            if (!writer.get()) {
+                NCBI_THROW(CBlobStorageException,
+                    eWriter, "Writer couldn't be created.");
+            }
+            fstream* fstr = dynamic_cast<fstream*>(m_OStream.get());
+            if (fstr) {
+                fstr->flush();
+                fstr->seekg(0);
+                char buf[1024];
+                while (fstr->good()) {
+                    fstr->read(buf, sizeof(buf));
+                    if (writer->Write(buf, fstr->gcount()) != eRW_Success)
+                        NCBI_THROW(CBlobStorageException,
+                            eWriter, "Couldn't write to Writer.");
+                }
+            } else {
+                NCBI_THROW(CBlobStorageException,
+                    eWriter, "Wrong cast.");
+            }
+            m_CreatedBlobId = "";
+        }
+
+        if (m_OStream.get() && !m_NCClient->m_CacheOutput) {
+            m_OStream->flush();
+            if (!m_OStream->good()) {
+                NCBI_THROW(CBlobStorageException, eWriter, " ");
+            }
+        }
+    }
+    catch (...) {
+        m_OStream.reset();
+        throw;
+    }
+*/
+
+
+
+}
+
 void SNetCacheAPIImpl::WriteBuffer(SNetServerConnectionImpl* conn_impl,
     CNetCacheWriter::EServerResponseType response_type,
     const char* buf_ptr, size_t buf_size)
 {
-    CNetCacheWriter writer(conn_impl, response_type);
+    string error_message;
+    {
+        CNetCacheWriter writer(conn_impl, response_type, &error_message);
 
-    size_t bytes_written;
+        size_t bytes_written;
 
-    while (buf_size > 0) {
-        ERW_Result io_res = writer.Write(buf_ptr, buf_size, &bytes_written);
-        if (io_res != eRW_Success) {
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                "Communication error");
+        while (buf_size > 0) {
+            ERW_Result io_res = writer.Write(buf_ptr, buf_size, &bytes_written);
+            if (io_res != eRW_Success) {
+                NCBI_THROW(CNetServiceException, eCommunicationError,
+                    "Communication error");
+            }
+            buf_ptr += bytes_written;
+            buf_size -= bytes_written;
         }
-        buf_ptr += bytes_written;
-        buf_size -= bytes_written;
+        writer.Flush();
     }
-    writer.Flush();
-    writer.Close();
+    if (!error_message.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, error_message);
+    }
 }
 
 
-IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
+IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live,
+    string* error_message)
 {
     return new CNetCacheWriter(m_Impl->InitiatePutCmd(key, time_to_live),
-        CNetCacheWriter::eNetCache_Wait);
+        CNetCacheWriter::eNetCache_Wait, error_message);
 }
 
 
@@ -374,28 +522,36 @@ string CNetCacheAPI::GetOwner(const string& key)
     }
 }
 
-IReader* CNetCacheAPI::GetData(const string& key,
-                                  size_t*       blob_size,
-                                  ELockMode     lock_mode)
+IReader* CNetCacheAPI::GetReader(const string& key, size_t* blob_size)
 {
     string cmd = "GET2 " + key;
 
-    if (lock_mode == eLockNoWait)
-        cmd += " NW";  // no-wait mode
-
     m_Impl->AppendClientIPSessionIDPassword(&cmd);
 
-    CNetServer::SExecResult exec_result;
+    return m_Impl->GetReadStream(
+        m_Impl->GetServer(key).ExecWithRetry(cmd), blob_size);
+}
 
+void CNetCacheAPI::ReadData(const string& key, string& buffer)
+{
+    size_t blob_size;
+    auto_ptr<IReader> reader(GetReader(key, &blob_size));
+
+    buffer.resize(blob_size);
+
+    m_Impl->ReadBuffer(*reader, const_cast<char*>(buffer.data()),
+        blob_size, NULL, blob_size);
+}
+
+IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size)
+{
     try {
-        exec_result = m_Impl->GetServer(key).ExecWithRetry(cmd);
+        return GetReader(key, blob_size);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;
         throw;
     }
-
-    return m_Impl->GetReadStream(exec_result, blob_size);
 }
 
 IReader* SNetCacheAPIImpl::GetReadStream(
@@ -436,7 +592,7 @@ CNetCacheAPI::GetData(const string&  key,
         *blob_size = x_blob_size;
 
     return m_Impl->ReadBuffer(*reader,
-        (unsigned char*) buf, buf_size, n_read, x_blob_size);
+        (char*) buf, buf_size, n_read, x_blob_size);
 }
 
 CNetCacheAPI::EReadResult
@@ -450,7 +606,53 @@ CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer)
 
     buffer.resize_mem(x_blob_size);
     return m_Impl->ReadBuffer(*reader,
-        buffer.data(), x_blob_size, NULL, x_blob_size);
+        (char*) buffer.data(), x_blob_size, NULL, x_blob_size);
+}
+
+CNcbiIstream* CNetCacheAPI::GetIStream(const string& key, size_t* blob_size)
+{
+    return new CRStream(GetReader(key, blob_size), 0, NULL,
+        CRWStreambuf::fOwnReader | CRWStreambuf::fLogExceptions);
+
+    /*if (blob_size) *blob_size = 0;
+    size_t b_size = 0;
+    auto_ptr<IReader> reader();
+
+    if (blob_size)
+        *blob_size = b_size;
+
+    if (m_NCClient->m_CacheInput) {
+        auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(m_NCClient->m_TempDir,
+            s_InputBlobCachePrefix));
+
+        if (!fstr.get() || !fstr->good()) {
+            fstr.reset();
+            NCBI_THROW(CBlobStorageException, eReader,
+                "Reader couldn't create a temporary file. BlobKey: " + key);
+        }
+
+        char buf[1024];
+        size_t bytes_read = 0;
+
+        while (reader->Read(buf, sizeof(buf), &bytes_read) == eRW_Success)
+            fstr->write(buf, bytes_read);
+
+        fstr->flush();
+        fstr->seekg(0);
+        m_IStream.reset(fstr.release());
+    } else {
+        m_IStream.reset(new CRStream(reader.release(), 0, 0,
+            CRWStreambuf::fOwnReader | CRWStreambuf::fLogExceptions));
+
+        if (!m_IStream.get() || !m_IStream->good()) {
+            m_IStream.reset();
+            NCBI_THROW(CBlobStorageException, eReader,
+                "Reader couldn't create a input stream. BlobKey: " + key);
+        }
+
+    }
+
+    return *m_IStream;*/
 }
 
 CNetCacheAdmin CNetCacheAPI::GetAdmin()
@@ -466,7 +668,7 @@ CNetService CNetCacheAPI::GetService()
 /* static */
 CNetCacheAPI::EReadResult SNetCacheAPIImpl::ReadBuffer(
     IReader& reader,
-    unsigned char* buf_ptr,
+    char* buf_ptr,
     size_t buf_size,
     size_t* n_read,
     size_t blob_size)
@@ -563,5 +765,64 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcacheapi(
     CHostEntryPointImpl<CNetCacheAPICF>::NCBI_EntryPointImpl(info_list, method);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//
+
+CBlobStorage_NetCache::CBlobStorage_NetCache()
+{
+    _ASSERT(0 && "Cannot create an unitialized CBlobStorage_NetCache object.");
+}
+
+
+CBlobStorage_NetCache::~CBlobStorage_NetCache()
+{
+    try {
+        Reset();
+    }
+    NCBI_CATCH_ALL("CBlobStorage_NetCache_Impl::~CBlobStorage_NetCache()");
+}
+
+bool CBlobStorage_NetCache::IsKeyValid(const string& str)
+{
+    return CNetCacheKey::IsValidKey(str);
+}
+
+CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
+                                             size_t* blob_size,
+                                             ELockMode /*lockMode*/)
+{
+    m_IStream.reset(m_NCClient.GetIStream(key, blob_size));
+    return *m_IStream;
+}
+
+string CBlobStorage_NetCache::GetBlobAsString(const string& data_id)
+{
+    string buf;
+    m_NCClient.ReadData(data_id, buf);
+    return buf;
+}
+
+CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
+                                                   ELockMode /*lockMode*/)
+{
+    m_OStream.reset(m_NCClient.CreateOStream(key));
+    return *m_OStream;
+}
+
+string CBlobStorage_NetCache::CreateEmptyBlob()
+{
+    return m_NCClient.PutData((const void*) NULL, 0);
+}
+
+void CBlobStorage_NetCache::DeleteBlob(const string& data_id)
+{
+    m_NCClient.Remove(data_id);
+}
+
+void CBlobStorage_NetCache::Reset()
+{
+    m_IStream.reset();
+    m_OStream.reset();
+}
 
 END_NCBI_SCOPE

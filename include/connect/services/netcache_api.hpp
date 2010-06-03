@@ -47,6 +47,7 @@
 
 #include <corelib/plugin_manager.hpp>
 #include <corelib/reader_writer.hpp>
+#include <corelib/blob_storage.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -87,19 +88,30 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///   The parameter is not used otherwise.
     /// @param conf_section
     ///   Name of the registry section to look for the configuration
-    ///   parameters in.  If empty string is passed, then section
-    ///   "netcache_api" will be used.
+    ///   parameters in.  If empty string is passed, then the section
+    ///   name "netcache_api" will be used.
     explicit CNetCacheAPI(EAppRegistry use_app_reg,
+        const string& conf_section = kEmptyStr);
+
+    /// Constructs a CNetCacheAPI object and initializes it with
+    /// parameters read from the specified registry object.
+    /// @param reg
+    ///   Registry to get the configuration parameters from.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If empty string is passed, then the section
+    ///   name "netcache_api" will be used.
+    explicit CNetCacheAPI(const IRegistry& reg,
         const string& conf_section = kEmptyStr);
 
     /// Constructs a CNetCacheAPI object and initializes it with
     /// parameters read from the specified configuration object.
     /// @param conf
-    ///   Registry to get the configuration parameters from.
+    ///   A CConfig object to get the configuration parameters from.
     /// @param conf_section
-    ///   Name of the registry section to look for the configuration
-    ///   parameters in.  If empty string is passed, then section
-    ///   "netcache_api" will be used.
+    ///   Name of the configuration section where to look for the
+    ///   parameters.  If empty string is passed, then the section
+    ///   name "netcache_api" will be used.
     explicit CNetCacheAPI(CConfig* conf,
         const string& conf_section = kEmptyStr);
 
@@ -144,18 +156,30 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
     ///
+    /// @param error_message
+    ///    A pointer to a string variable, which will be
+    ///    set to a non-empty error description should an
+    ///    error happen during Write() or in the destructor
+    ///    of the stream object. If this parameter is NULL,
+    ///    errors that happen in the destructor will be ignored.
+    ///
     /// @return
     ///    IWriter* (caller must delete it).
-    IWriter* PutData(string* key, unsigned int  time_to_live = 0);
+    IWriter* PutData(string* key, unsigned int time_to_live = 0,
+        string* error_message = NULL);
 
     /// Update an existing BLOB.  Just like all other PutData
     /// methods, this one is blocking and waits for a confirmation
     /// from NetCache after all data is transferred.
-    ///
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
+
+    /// Create a stream object for sending data to a blob.
+    /// If the string "key" is empty, a new blob will be created
+    /// and its ID will be returned via the "key" parameter.
+    CNcbiOstream* CreateOStream(string& key, unsigned time_to_live = 0);
 
     /// Check if the BLOB identified by the key "key" exists.
     ///
@@ -175,14 +199,23 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    Size of the BLOB in bytes.
     size_t GetBlobSize(const string& key);
 
-    /// BLOB locking mode
-    enum ELockMode {
-        eLockWait,   ///< waits for BLOB to become available
-        eLockNoWait  ///< throws an exception immediately if BLOB locked
-    };
+    /// Get a pointer to the IReader interface to read blob contents.
+    /// This is a safe version of the GetData method having the same
+    /// signature. Unlike GetData, GetReader will throw an exception
+    /// if the requested blob is not found.
+    IReader* GetReader(const string& key, size_t* blob_size = NULL);
 
-    /// Retrieve BLOB from server by key
-    /// If BLOB not found method returns NULL
+    /// Read the blob pointed to by "key" and store its contents
+    /// in "buffer". The output string is resized as required.
+    ///
+    /// @throw CNetCacheException
+    ///    Thrown if either the blob was not found or
+    ///    a protocol error occurred.
+    /// @throw CNetServiceException
+    ///    Thrown if a communication error occurred.
+    void ReadData(const string& key, string& buffer);
+
+    /// Retrieve BLOB from server by key.
     //
     /// Caller is responsible for deletion of the IReader*
     /// IReader* MUST be deleted before destruction of CNetCacheAPI.
@@ -196,15 +229,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @param key
     ///    BLOB key to read (returned by PutData)
     /// @param blob_size
-    ///    Size of the BLOB
-    /// @param lock_mode
-    ///    Blob locking mode
+    ///    Pointer to the memory location where the size
+    ///    of the requested blob will be stored.
     /// @return
-    ///    IReader* (caller must delete this).
-    ///    NULL means that BLOB was not found (expired).
-    IReader* GetData(const string& key,
-                     size_t*       blob_size = 0,
-                     ELockMode     lock_mode = eLockWait);
+    ///    If the requested blob is found, the method returns a pointer
+    ///    to the IReader interface for reading the blob contents (the
+    ///    caller must delete it). If the blob is not found (that is,
+    ///    if it's expired), NULL is returned.
+    IReader* GetData(const string& key, size_t* blob_size = NULL);
 
     /// Status of GetData() call
     /// @sa GetData
@@ -236,6 +268,10 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    eReadComplete if BLOB found (eNotFound otherwise)
     EReadResult GetData(const string& key, CSimpleBuffer& buffer);
 
+    /// Create an istream object for reading blob data.
+    /// @throw CNetCacheException
+    ///    The requested blob does not exist.
+    CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL);
 
     /// NetCache server locks BLOB so only one client can
     /// work with one BLOB at a time. Method returns TRUE
@@ -293,22 +329,93 @@ private:
     CNetCacheAPI m_NetCacheAPI;
 };
 
-NCBI_DECLARE_INTERFACE_VERSION(SNetCacheAPIImpl,  "xnetcacheapi", 1, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(SNetCacheAPIImpl, "xnetcacheapi", 1, 1, 0);
 
-extern NCBI_XCONNECT_EXPORT const char* kNetCacheAPIDriverName;
-
-//extern "C" {
+extern NCBI_XCONNECT_EXPORT const char* const kNetCacheAPIDriverName;
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcacheapi(
      CPluginManager<SNetCacheAPIImpl>::TDriverInfoList&   info_list,
      CPluginManager<SNetCacheAPIImpl>::EEntryPointRequest method);
 
 
-//} // extern C
+/// CBlobStorage_NetCache -- NetCache-based implementation of IBlobStorage
+///
+/// @deprecated Please use CNetCacheAPI directly (see
+///             CNetCacheAPI::GetIStream(), CNetCacheAPI::CreateOStream()).
+///
+NCBI_DEPRECATED
+class NCBI_XCONNECT_EXPORT CBlobStorage_NetCache : public IBlobStorage
+{
+public:
+    CBlobStorage_NetCache();
 
+    /// Create Blob Storage
+    /// @param[in] nc_client
+    ///  NetCache client - an instance of CNetCacheAPI.
+    CBlobStorage_NetCache(CNetCacheAPI::TInstance nc_client) :
+        m_NCClient(nc_client) {}
+
+    virtual ~CBlobStorage_NetCache();
+
+
+    virtual bool IsKeyValid(const string& str);
+
+    /// Get a blob content as a string
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
+    virtual string        GetBlobAsString(const string& data_id);
+
+    /// Get an input stream to a blob
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
+    /// @param[out] blob_size
+    ///    if blob_size if not NULL the size of a blob is returned
+    /// @param[in] lock_mode
+    ///    Blob locking mode
+    virtual CNcbiIstream& GetIStream(const string& data_id,
+                                     size_t* blob_size = 0,
+                                     ELockMode lock_mode = eLockWait);
+
+    /// Get an output stream to a blob
+    ///
+    /// @param[in,out] blob_key
+    ///    Blob key to read. If a blob with a given key does not exist
+    ///    an key of a newly create blob will be assigned to blob_key
+    /// @param[in] lock_mode
+    ///    Blob locking mode
+    virtual CNcbiOstream& CreateOStream(string& data_id,
+                                        ELockMode lock_mode = eLockNoWait);
+
+    /// Create an new blob
+    ///
+    /// @return
+    ///     Newly create blob key
+    virtual string CreateEmptyBlob();
+
+    /// Delete a blob
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
+    virtual void DeleteBlob(const string& data_id);
+
+    /// Close all streams and connections.
+    virtual void Reset();
+
+    CNetCacheAPI GetNetCacheAPI() const {return m_NCClient;}
+
+private:
+    CNetCacheAPI m_NCClient;
+
+    auto_ptr<CNcbiIstream> m_IStream;
+    auto_ptr<CNcbiOstream> m_OStream;
+
+    CBlobStorage_NetCache(const CBlobStorage_NetCache&);
+    CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
+};
 
 /* @} */
-
 
 END_NCBI_SCOPE
 

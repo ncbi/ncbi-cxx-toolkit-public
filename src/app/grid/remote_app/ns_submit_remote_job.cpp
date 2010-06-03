@@ -33,7 +33,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
-#include <connect/services/remote_job.hpp>
+#include <connect/services/remote_app.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 
 #include <corelib/ncbiapp.hpp>
@@ -190,22 +190,18 @@ int CNSSubmitRemoteJobApp::Run(void)
     if (args["q"]) {
         reg.Set(kNetScheduleAPIDriverName, "queue_name", args["q"].AsString());
     }
-    if ( args["ns"]) {
+    if (args["ns"]) {
         reg.Set(kNetScheduleAPIDriverName, "client_name", "ns_submit_remote_job");
         reg.Set(kNetScheduleAPIDriverName, "service", args["ns"].AsString());
         reg.Set(kNetScheduleAPIDriverName, "use_permanent_connection", "true");
         reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
-
-    if ( args["nc"]) {
+    if (args["nc"]) {
         reg.Set(kNetCacheAPIDriverName, "client_name", "ns_submit_remote_job");
         reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
-    if ( args["ncprot"] )
-        reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
     }
 
-    // Don't forget to call it
     CGridClientApp::Init();
 
     CNcbiOstream* out = NULL;
@@ -225,9 +221,8 @@ int CNSSubmitRemoteJobApp::Run(void)
         input_size = input_size - input_size / 10;
     }
 
-    CBlobStorageFactory factory(reg);
-    CRemoteAppRequest request(factory);
-    request.SetMaxInputSize(input_size);
+    CRemoteAppRequest request(m_GridClient->GetNetCacheAPI());
+    request.SetMaxInlineSize(input_size);
     CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
     CNetScheduleAPI::TJobTags jtags;
 
@@ -255,7 +250,7 @@ int CNSSubmitRemoteJobApp::Run(void)
             jerr = args["jerr"].AsString();
         
         if (!jout.empty() && !jerr.empty())
-            request.SetStdOutErrFileNames(jout, jerr);
+            request.SetStdOutErrFileNames(jout, jerr, eLocalFile);
 
         if (args["runtime"]) {
             unsigned int rt = NStr::StringToUInt(args["runtime"].AsString());
@@ -286,7 +281,7 @@ int CNSSubmitRemoteJobApp::Run(void)
         job_submitter.SetJobMask(jmask);
         if (!jtags.empty())
             job_submitter.SetJobTags(jtags);
-        request.Send(job_submitter.GetOStream());        
+        request.Send(job_submitter.GetOStream());
         string job_key = job_submitter.Submit();
         if (out)
             *out << job_key << NcbiEndl;
@@ -325,7 +320,7 @@ int CNSSubmitRemoteJobApp::Run(void)
             string jerr = s_FindParam(line, "jerr=\"");
 
             if (!jout.empty() && !jerr.empty())
-                request.SetStdOutErrFileNames(jout, jerr);
+                request.SetStdOutErrFileNames(jout, jerr, eLocalFile);
 
             string srt = s_FindParam(line, "runtime=\"");
             if (!srt.empty()) {

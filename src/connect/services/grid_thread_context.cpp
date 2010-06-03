@@ -32,9 +32,9 @@
 #include <ncbi_pch.hpp>
 
 #include "grid_thread_context.hpp"
+#include "grid_debug_context.hpp"
 
 #include <connect/services/grid_globals.hpp>
-#include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
@@ -53,27 +53,24 @@ CGridThreadContext::CGridThreadContext(CGridWorkerNode& node) :
     m_Worker(node),
     m_JobContext(NULL),
     m_NetScheduleExecuter(node.GetNSExecuter()),
+    m_NetCacheAPI(node.GetNetCacheAPI()),
     m_MsgThrottler(1),
     m_StatusThrottler(1)
 {
     long check_status_period = node.GetCheckStatusPeriod();
     m_CheckStatusPeriod = check_status_period > 1 ? check_status_period : 1;
     m_StatusThrottler.Reset(1, CTimeSpan(m_CheckStatusPeriod, 0));
-    m_Reader.reset(node.CreateStorage());
-    m_Writer.reset(node.CreateStorage());
-    m_ProgressWriter.reset(node.CreateStorage());
 }
 
 /// @internal
-CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
+CNcbiIstream& CGridThreadContext::GetIStream()
 {
     _ASSERT(m_JobContext);
-    if (m_Reader.get()) {
+    if (m_NetCacheAPI) {
         IReader* reader =
                new CStringOrBlobStorageReader(m_JobContext->GetJobInput(),
-                                              *m_Reader,
-                                              &m_JobContext->SetJobInputBlobSize(),
-                                              mode);
+                                              m_NetCacheAPI,
+                                              &m_JobContext->SetJobInputBlobSize());
         m_RStream.reset(new CRStream(reader, 0,0,
                                      CRWStreambuf::fOwnReader
                                    | CRWStreambuf::fLogExceptions));
@@ -87,13 +84,14 @@ CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
 CNcbiOstream& CGridThreadContext::GetOStream()
 {
     _ASSERT(m_JobContext);
-    if (m_Writer.get()) {
+    if (m_NetCacheAPI) {
         size_t max_data_size =
             m_JobContext->GetWorkerNode().GetServerOutputSize();
         IWriter* writer =
             new CStringOrBlobStorageWriter(max_data_size,
-                                           *m_Writer,
-                                           m_JobContext->SetJobOutput());
+                                           m_NetCacheAPI,
+                                           m_JobContext->SetJobOutput(),
+                                           &m_WriteErrorMessage);
         m_WStream.reset(new CWStream(writer, 0,0, CRWStreambuf::fOwnWriter
                                                 | CRWStreambuf::fLogExceptions));
         m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
@@ -106,8 +104,10 @@ CNcbiOstream& CGridThreadContext::GetOStream()
 void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immediately)
 {
     _ASSERT(m_JobContext);
-    if ( !send_immediately && !m_MsgThrottler.Approve(CRequestRateControl::eErrCode))
+    if (!send_immediately &&
+        !m_MsgThrottler.Approve(CRequestRateControl::eErrCode))
         return;
+
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
         if (!debug_context ||
@@ -116,10 +116,10 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
             if (m_JobContext->m_Job.progress_msg.empty() ) {
                 m_NetScheduleExecuter.GetProgressMsg(m_JobContext->m_Job);
             }
-            if (!m_JobContext->m_Job.progress_msg.empty() && m_ProgressWriter.get()) {
-                CNcbiOstream& os = m_ProgressWriter->CreateOStream(m_JobContext->m_Job.progress_msg);
-                os << msg;
-                m_ProgressWriter->Reset();
+            if (!m_JobContext->m_Job.progress_msg.empty() && m_NetCacheAPI) {
+                auto_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(
+                    m_JobContext->m_Job.progress_msg));
+                *os << msg;
             }
             else {
                 //ERR_POST_X(5, "Couldn't send a progress message.");
@@ -312,13 +312,16 @@ IWorkerNodeJob* CGridThreadContext::GetJob()
 void CGridThreadContext::CloseStreams()
 {
     _ASSERT(m_JobContext);
-    m_RStream.reset(); // Destructor of IReader resets m_Reader also
-    m_WStream.reset(); // Destructor of IWriter resets m_Writer also
 
-    m_ProgressWriter->Reset();
     m_MsgThrottler.Reset(1);
     m_StatusThrottler.Reset(1, CTimeSpan(m_CheckStatusPeriod, 0));
 
+    m_RStream.reset(); // Destructor of IReader resets m_NetCacheAPI also
+    m_WStream.reset(); // Destructor of IWriter resets m_NetCacheAPI also
+    if (!m_WriteErrorMessage.empty()) {
+        NCBI_THROW(CNetServiceException,
+            eCommunicationError, m_WriteErrorMessage);
+    }
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (debug_context) {

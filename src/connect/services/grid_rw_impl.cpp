@@ -39,219 +39,118 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char* const s_Flags[] = {"D ", "K "};
+static const char s_JobOutputPrefixEmbedded[] = "D ";
+static const char s_JobOutputPrefixNetCache[] = "K ";
 
-#define JOB_OUTPUT_PREFIX_EMBEDDED s_Flags[0]
-#define JOB_OUTPUT_PREFIX_NETCACHE s_Flags[1]
 #define JOB_OUTPUT_PREFIX_LEN 2
 
-CStringOrBlobStorageWriter::
-CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage& storage,
-                           string& data)
-    : m_Storage(storage), m_BlobOstr(NULL),
-      m_Data(data)
+CStringOrBlobStorageWriter::CStringOrBlobStorageWriter(size_t max_string_size,
+        SNetCacheAPIImpl* storage, string& job_output_ref,
+        string* error_message) :
+    m_Storage(storage), m_Data(job_output_ref), m_MaxBuffSize(max_string_size),
+    m_ErrorMessage(error_message)
 {
-    x_Init(max_string_size);
+    job_output_ref = s_JobOutputPrefixEmbedded;
 }
-CStringOrBlobStorageWriter::
-CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
-                           string& data)
-    : m_Storage(*storage), m_StorageGuard(storage),
-      m_BlobOstr(NULL), m_Data(data)
-{
-    x_Init(max_string_size);
-}
-
-void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
-{
-    m_MaxBuffSize = max_string_size;
-    m_Data = max_string_size > 0 ?
-        JOB_OUTPUT_PREFIX_EMBEDDED :
-        JOB_OUTPUT_PREFIX_NETCACHE;
-}
-
-CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
-{
-    try {
-        m_Storage.Reset();
-    } NCBI_CATCH_ALL_X(1, "CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()");
-}
-
-namespace {
-class CIOBytesCountGuard
-{
-public:
-    CIOBytesCountGuard(size_t* ret, const size_t& count)
-        : m_Ret(ret), m_Count(count)
-    {}
-
-    ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = m_Count; }
-private:
-    size_t* m_Ret;
-    const size_t& m_Count;
-};
-} // namespace
 
 ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
                                              size_t      count,
                                              size_t*     bytes_written)
 {
-    size_t written = 0;
-    CIOBytesCountGuard guard(bytes_written, written);
-
-    if (count == 0)
-        return eRW_Success;
-
-    if (m_BlobOstr)
-        return x_WriteToStream(buf, count, &written);
+    if (m_NetCacheWriter.get())
+        return m_NetCacheWriter->Write(buf, count, bytes_written);
 
     if (m_Data.size() + count <= m_MaxBuffSize) {
         m_Data.append((const char*) buf, count);
 
-        written = count;
+        if (bytes_written != NULL)
+            *bytes_written = count;
         return eRW_Success;
     }
 
     string key;
-    m_BlobOstr = &m_Storage.CreateOStream(key);
+    m_NetCacheWriter.reset(m_Storage.PutData(&key, 0, m_ErrorMessage));
 
     if (m_Data.size() > JOB_OUTPUT_PREFIX_LEN) {
-        ERW_Result ret = x_WriteToStream(
-            &*m_Data.begin() + JOB_OUTPUT_PREFIX_LEN,
+        ERW_Result ret = m_NetCacheWriter->Write(
+            m_Data.data() + JOB_OUTPUT_PREFIX_LEN,
             m_Data.size() - JOB_OUTPUT_PREFIX_LEN);
 
         if (ret != eRW_Success) {
-            m_Storage.Reset();
-            m_BlobOstr = NULL;
+            m_NetCacheWriter.reset(NULL);
             return ret;
         }
     }
 
-    m_Data = JOB_OUTPUT_PREFIX_NETCACHE + key;
+    m_Data = s_JobOutputPrefixNetCache + key;
 
-    return x_WriteToStream(buf, count, &written);
+    return m_NetCacheWriter->Write(buf, count, bytes_written);
 }
 
 ERW_Result CStringOrBlobStorageWriter::Flush(void)
 {
-    if (m_BlobOstr)
-        m_BlobOstr->flush();
-    return eRW_Success;
-}
-
-
-ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
-                                                       size_t      count,
-                                                       size_t*     bytes_written)
-{
-    _ASSERT(m_BlobOstr);
-    m_BlobOstr->write((const char*)buf, count);
-    if (m_BlobOstr->good()) {
-        if (bytes_written) *bytes_written = count;
-        return eRW_Success;
-    }
-    if (bytes_written) *bytes_written = 0;
-    return eRW_Error;
+    return m_NetCacheWriter.get() ? m_NetCacheWriter->Flush() : eRW_Success;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////
 //
 
-CStringOrBlobStorageReader::
-CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
-                           size_t* data_size,
-                           IBlobStorage::ELockMode lock_mode)
-    : m_Data(data), m_Storage(storage), m_BlobIstr(NULL)
+CStringOrBlobStorageReader::CStringOrBlobStorageReader(const string& data_or_key,
+        SNetCacheAPIImpl* storage, size_t* data_size) :
+    m_Storage(storage), m_Data(data_or_key)
 {
-    x_Init(data_size,lock_mode);
-}
-CStringOrBlobStorageReader::
-CStringOrBlobStorageReader(const string& data, IBlobStorage* storage,
-                           size_t* data_size,
-                           IBlobStorage::ELockMode lock_mode)
-    : m_Data(data), m_Storage(*storage), m_StorageGuard(storage),
-      m_BlobIstr(NULL)
-{
-    x_Init(data_size,lock_mode);
-}
-
-void CStringOrBlobStorageReader::x_Init(size_t* data_size,
-                                        IBlobStorage::ELockMode lock_mode)
-{
-    if (NStr::CompareCase(m_Data, 0, JOB_OUTPUT_PREFIX_LEN,
-            JOB_OUTPUT_PREFIX_NETCACHE) == 0) {
-        m_BlobIstr = &m_Storage.GetIStream(
-            m_Data.data() + JOB_OUTPUT_PREFIX_LEN, data_size, lock_mode);
-    } else if (NStr::CompareCase(m_Data, 0,
-            JOB_OUTPUT_PREFIX_LEN, JOB_OUTPUT_PREFIX_EMBEDDED) == 0) {
-        m_CurPos = m_Data.begin() + JOB_OUTPUT_PREFIX_LEN;
-        if (data_size)
-            *data_size = m_Data.size() - JOB_OUTPUT_PREFIX_LEN;
+    if (NStr::CompareCase(data_or_key, 0, JOB_OUTPUT_PREFIX_LEN,
+            s_JobOutputPrefixNetCache) == 0) {
+        m_NetCacheReader.reset(m_Storage.GetData(
+            data_or_key.data() + JOB_OUTPUT_PREFIX_LEN, data_size));
+    } else if (NStr::CompareCase(data_or_key, 0,
+            JOB_OUTPUT_PREFIX_LEN, s_JobOutputPrefixEmbedded) == 0) {
+        m_BytesToRead = data_or_key.size() - JOB_OUTPUT_PREFIX_LEN;
+        if (data_size != NULL)
+            *data_size = m_BytesToRead;
+    } else if (data_or_key.empty()) {
+        m_BytesToRead = 0;
+        if (data_size != NULL)
+            *data_size = 0;
     } else {
-        if (!m_Data.empty())
-            NCBI_THROW(CStringOrBlobStorageRWException, eInvalidFlag,
-                "Unknown data type " +
-                string(m_Data.begin(), m_Data.begin() + JOB_OUTPUT_PREFIX_LEN));
-        else {
-            m_CurPos = m_Data.begin();
-            if (data_size)
-                *data_size = m_Data.size();
-        }
+        NCBI_THROW_FMT(CStringOrBlobStorageRWException, eInvalidFlag,
+            "Unknown data type \"" <<
+                string(data_or_key.begin(), data_or_key.begin() +
+                    (data_or_key.size() < JOB_OUTPUT_PREFIX_LEN ?
+                    data_or_key.size() : JOB_OUTPUT_PREFIX_LEN)) << '"');
     }
-}
-
-CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
-{
-    try {
-        m_Storage.Reset();
-    } NCBI_CATCH_ALL_X(2, "CStringOrBlobStorageReader::~CStringOrBlobStorageReader()");
 }
 
 ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
                                             size_t  count,
                                             size_t* bytes_read)
 {
-    size_t read = 0;
-    CIOBytesCountGuard guard(bytes_read, read);
-    if (count == 0)
-        return eRW_Success;
+    if (m_NetCacheReader.get())
+        return m_NetCacheReader->Read(buf, count, bytes_read);
 
-    if (m_BlobIstr) {
-        if (m_BlobIstr->eof()) {
-            return eRW_Eof;
-        }
-        if (!m_BlobIstr->good()) {
-            return eRW_Error;
-        }
-        m_BlobIstr->read((char*) buf, count);
-        read = m_BlobIstr->gcount();
-        return eRW_Success;
-    }
-    if (m_CurPos == m_Data.end()) {
+    if (m_BytesToRead == 0) {
+        if (bytes_read != NULL)
+            *bytes_read = 0;
         return eRW_Eof;
     }
-    size_t bytes_rest = m_Data.end() - m_CurPos;
-    if (count > bytes_rest)
-        count = bytes_rest;
-    memcpy(buf, &*m_CurPos, count);
-    advance(m_CurPos, count);
-    read = count;
+
+    if (count > m_BytesToRead)
+        count = m_BytesToRead;
+    memcpy(buf, &*(m_Data.end() - m_BytesToRead), count);
+    m_BytesToRead -= count;
+    if (bytes_read != NULL)
+        *bytes_read = count;
     return eRW_Success;
 }
 
 ERW_Result CStringOrBlobStorageReader::PendingCount(size_t* count)
 {
-    if (m_BlobIstr) {
-        if (m_BlobIstr->good() && !m_BlobIstr->eof())
-            *count = m_BlobIstr->rdbuf()->in_avail();
-        else
-            *count = 0;
-    }
-    else
-        *count = m_Data.end() - m_CurPos;
+    if (m_NetCacheReader.get())
+        return m_NetCacheReader->PendingCount(count);
+
+    *count = m_BytesToRead;
     return eRW_Success;
 }
-
 
 END_NCBI_SCOPE

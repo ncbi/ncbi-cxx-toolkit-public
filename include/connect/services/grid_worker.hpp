@@ -38,6 +38,7 @@
 /// Grid Framework specs.
 ///
 
+#include <connect/services/netcache_api.hpp>
 #include <connect/services/ns_client_factory.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -126,6 +127,10 @@ public:
     /// Get interface for registering clean-up event listeners
     ///
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const = 0;
+
+    /// Get the shared NetCacheAPI object used by the worker node framework.
+    ///
+    virtual CNetCacheAPI GetNetCacheAPI() const = 0;
 };
 
 class CWorkerNodeJobContext;
@@ -209,13 +214,9 @@ public:
 
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined
-    /// using GetInputBlobSize. Will throw a CNetCacheStorageException
-    /// exception with code eBlocked if the mode parameter is set to
-    /// IBlobStorage::eLockNoWait and a blob is blocked by
-    /// another process.
+    /// using GetInputBlobSize.
     ///
-    CNcbiIstream& GetIStream(IBlobStorage::ELockMode mode =
-                             IBlobStorage::eLockWait);
+    CNcbiIstream& GetIStream();
 
     /// Get the size of an input stream
     ///
@@ -551,9 +552,7 @@ public:
     /// Construct a worker node using class factories
     ///
     CGridWorkerNode(CNcbiApplication& app,
-        IWorkerNodeJobFactory* job_factory,
-        IBlobStorageFactory* storage_factory = NULL,
-        INetScheduleClientFactory* client_factory = NULL);
+        IWorkerNodeJobFactory* job_factory);
 
     virtual ~CGridWorkerNode();
 
@@ -565,7 +564,7 @@ public:
 
     void RequestShutdown();
 
-    void ForceSingleThread(){ m_SingleThreadForced = true; }
+    void ForceSingleThread() { m_SingleThreadForced = true; }
 
     void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                           EOwnership owner = eNoOwnership);
@@ -604,9 +603,9 @@ public:
     ///
     const string& GetServiceName() const;
 
-
-    CNetScheduleAPI GetNSClient() const;
-    CNetScheduleExecuter GetNSExecuter() const;
+    CNetCacheAPI GetNetCacheAPI() const { return m_NetCacheAPI; }
+    CNetScheduleAPI GetNetScheduleAPI() const { return m_NetScheduleAPI; }
+    CNetScheduleExecuter GetNSExecuter() const { return m_NSExecuter; }
 
     bool IsTimeToRebalance();
 
@@ -624,11 +623,10 @@ public:
 
 private:
     auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
-    auto_ptr<IBlobStorageFactory>        m_StorageFactory;
-    auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
     auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
-    CNetScheduleAPI m_SharedNSClient;
+    CNetCacheAPI m_NetCacheAPI;
+    CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleExecuter m_NSExecuter;
 
     unsigned int                 m_MaxThreads;
@@ -649,11 +647,6 @@ private:
     {
         CFastMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory->CreateInstance();
-    }
-    IBlobStorage* CreateStorage()
-    {
-        CFastMutexGuard guard(m_StorageFactoryMutex);
-        return  m_StorageFactory->CreateInstance();
     }
     friend class CWorkerNodeJobContext;
 
@@ -683,27 +676,17 @@ private:
 
 inline const string& CGridWorkerNode::GetQueueName() const
 {
-    return GetNSClient().GetQueueName();
+    return GetNetScheduleAPI().GetQueueName();
 }
 
 inline const string& CGridWorkerNode::GetClientName() const
 {
-    return GetNSClient().GetService().GetClientName();
+    return GetNetScheduleAPI().GetService().GetClientName();
 }
 
 inline const string& CGridWorkerNode::GetServiceName() const
 {
-    return GetNSClient().GetService().GetServiceName();
-}
-
-inline CNetScheduleAPI CGridWorkerNode::GetNSClient() const
-{
-    return m_SharedNSClient;
-}
-
-inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
-{
-    return m_NSExecuter;
+    return GetNetScheduleAPI().GetService().GetServiceName();
 }
 
 inline bool CGridWorkerNode::IsExclusiveMode()

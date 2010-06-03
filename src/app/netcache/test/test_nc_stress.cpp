@@ -73,7 +73,7 @@ public:
     typedef deque<STransactionInfo> TTransactionLog;
 
 public:
-    CTestNetCacheStress(CNetCacheAPI& api, CNcbiOstream& os, int num)
+    CTestNetCacheStress(CNetCacheAPI::TInstance api, CNcbiOstream& os, int num)
         : m_API(api), m_Num(num), m_Os(os) {}
 
     int Run(void);
@@ -95,7 +95,7 @@ private:
                        bool                   random,
                        unsigned               count);
 
-    CNetCacheAPI&  GetClient() const { return m_API; }
+    CNetCacheAPI GetClient() const { return m_API; }
 
     unsigned char* AllocateTestBlob(size_t blob_size) const;
 
@@ -107,7 +107,7 @@ private:
     void AddToAppLog(const TTransactionLog& tlog);
 
 private:
-    CNetCacheAPI&  m_API;
+    CNetCacheAPI   m_API;
     int            m_Num;
 
     TTransactionLog m_Log;
@@ -210,11 +210,11 @@ void CTestNetCacheStress::CheckGetBlob(const STransactionInfo& ti,
 }
 
 
-void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog, 
+void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
                                         bool                   random,
                                         unsigned               count)
 {
-    CNetCacheAPI& cl = GetClient();
+    CNetCacheAPI cl = GetClient();
 
     size_t   buf_size = 0;
     unsigned char* buf = 0;
@@ -280,11 +280,11 @@ void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
 }
 
 
-void CTestNetCacheStress::StressTestPut(size_t           blob_size, 
+void CTestNetCacheStress::StressTestPut(size_t           blob_size,
                                         unsigned         bcount,
                                         TTransactionLog* tlog)
 {
-    CNetCacheAPI& cl = GetClient();
+    CNetCacheAPI cl = GetClient();
 
     unsigned char* buf = AllocateTestBlob(blob_size);
     CheckBlob(buf, blob_size); // just in case
@@ -328,13 +328,13 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
 }
 
 
-void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog, 
+void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog,
                                             unsigned         bcount)
 {
     if (!bcount)
         return;
 
-    CNetCacheAPI& cl = GetClient();
+    CNetCacheAPI cl = GetClient();
 
     for (unsigned i = 0; i < bcount; ++i) {
         unsigned idx = rand() % bcount;

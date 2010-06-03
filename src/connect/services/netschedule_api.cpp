@@ -49,13 +49,6 @@ BEGIN_NCBI_SCOPE
 
 /**********************************************************************/
 
-SNetScheduleAPIImpl::CNetScheduleServerListener::CNetScheduleServerListener(
-    const string& client_name,
-    const string& queue_name)
-{
-    SetAuthString(client_name, kEmptyStr, queue_name);
-}
-
 void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
     const string& client_name,
     const string& program_version,
@@ -85,6 +78,24 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
     m_WorkerNodeInitCmd = "INIT " + NStr::UIntToString(control_port);
     m_WorkerNodeInitCmd += ' ';
     m_WorkerNodeInitCmd += uid;
+}
+
+void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
+    CNetObject* api_impl, CConfig* config, const string& config_section)
+{
+    SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
+
+    if (ns_impl->m_Queue.empty()) {
+        if (config == NULL) {
+            NCBI_THROW(CConfigException, eParameterMissing,
+                "Could not get queue name");
+        }
+        ns_impl->m_Queue = config->GetString(config_section,
+            "queue_name", CConfig::eErr_Throw, "noname");
+    }
+
+    SetAuthString(ns_impl->m_Service->m_ClientName,
+        kEmptyStr, ns_impl->m_Queue);
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
@@ -120,35 +131,23 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
-const char* kNetScheduleAPIDriverName = "netschedule_api";
+const char* const kNetScheduleAPIDriverName = "netschedule_api";
+
+static const char* const s_NetScheduleConfigSections[] = {
+    kNetScheduleAPIDriverName,
+    NULL
+};
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-    CConfig* config, const string& section,
-    const string& service_name, const string& client_name,
-    const string& queue_name)
+        CConfig* config, const string& section,
+        const string& service_name, const string& client_name,
+        const string& queue_name) :
+    m_Service(new SNetServiceImpl(service_name, client_name,
+        new CNetScheduleServerListener, kEmptyStr)),
+    m_Queue(queue_name),
+    m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {
-    string driver_name = section.empty() ? kNetScheduleAPIDriverName : section;
-
-    m_Service = new SNetServiceImpl(config, driver_name,
-        service_name, client_name, kEmptyStr);
-
-    if (!queue_name.empty())
-        m_Queue = queue_name;
-    else {
-        if (config == NULL) {
-            NCBI_THROW(CConfigException, eParameterMissing,
-                "Could not get queue name");
-        }
-        m_Queue = config->GetString(driver_name,
-            "queue_name", CConfig::eErr_Throw, "noname");
-    }
-
-    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
-
-    m_Listener = new CNetScheduleServerListener(
-        m_Service.GetClientName(), m_Queue);
-
-    m_Service->SetListener(m_Listener);
+    m_Service->Init(this, config, section, s_NetScheduleConfigSections);
 }
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
@@ -163,8 +162,9 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
 void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
-    m_Impl->m_Listener->SetAuthString(
-        m_Impl->m_Service.GetClientName(), pv, m_Impl->m_Queue);
+    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
+        m_Impl->m_Service->m_Listener.GetPtr())->SetAuthString(
+            m_Impl->m_Service.GetClientName(), pv, m_Impl->m_Queue);
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -300,7 +300,6 @@ CNetScheduleAPI::EJobStatus
         || status == eCanceled || status == eReturned
         || status == eReading || status == eConfirmed
         || status == eReadFailed) {
-        //cerr << str <<endl;
         for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
 
         for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
@@ -319,11 +318,6 @@ CNetScheduleAPI::EJobStatus
                 if (*str == '"' && *(str-1) != '\\') break;
                 job.output.push_back(*str);
             }
-            /*
-            for( ;*str && *str != '"'; ++str) {
-                output->push_back(*str);
-            }
-            */
         }
         job.output = NStr::ParseEscapes(job.output);
 

@@ -35,13 +35,14 @@
 #include "netobject.hpp"
 
 #include <connect/ncbi_socket.hpp>
+#include <corelib/ncbi_config.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 // A host:port pair.
 struct SServerAddress {
-    SServerAddress(string h, unsigned short p) : host(h), port(p) {}
+    SServerAddress(const string& h, unsigned short p) : host(h), port(p) {}
 
     bool operator ==(const SServerAddress& h) const
     {

@@ -34,7 +34,7 @@
 #include "info_collector.hpp"
 #include "renderer.hpp"
 
-#include <connect/services/remote_job.hpp>
+#include <connect/services/remote_app.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/util.hpp>
 
@@ -240,7 +240,7 @@ int CNSRemoveJobControlApp::Run(void)
         out = &args["of"].AsOutputFile();
     }
 
-    CBlobStorageFactory factory(reg);
+    CNetCacheAPI nc_api(reg);
 
     auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
     const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleAPIDriverName);
@@ -261,7 +261,7 @@ int CNSRemoveJobControlApp::Run(void)
                    "\"service\" parameter is not set "
                    "neither in config file nor in cmd line");
 
-    info_collector.reset(new CNSInfoCollector(queue, service, factory));
+    info_collector.reset(new CNSInfoCollector(queue, service, nc_api));
 
     if (args["stdout"]) {
         DumpStdStreams(args["stdout"], info_collector.get(), out, false);

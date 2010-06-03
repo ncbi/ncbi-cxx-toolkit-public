@@ -272,7 +272,7 @@ private:
     bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
     CNetScheduleAPI m_NSClient;
-    auto_ptr<IBlobStorage> m_NSStorage;
+    CNetCacheAPI m_NetCacheAPI;
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
 

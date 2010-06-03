@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbifile.hpp>
 
 #ifdef _MSC_VER
@@ -63,22 +64,18 @@ CNetScheduleAPI CNetScheduleClientFactory::CreateInstance()
     const TPluginManagerParamTree* netschedule_tree =
             param_tree->FindSubNode(kNetScheduleAPIDriverName);
 
-    SNetScheduleAPIImpl* ret = NULL;
-
     if (netschedule_tree) {
-        ret = m_PM_NetSchedule.CreateInstance(
+        SNetScheduleAPIImpl* ret = m_PM_NetSchedule.CreateInstance(
                     kNetScheduleAPIDriverName,
                     TPMNetSchedule::GetDefaultDrvVers(),
                     netschedule_tree);
+
+        if (ret != NULL)
+            return ret;
     }
 
-    if (!ret)
-        NCBI_THROW(CNSClientFactoryException,
-                   eNSClientIsNotCreated,
-                   "Couldn't create NetSchedule client."
-                   "Check registry.");
-
-    return ret;
+    NCBI_THROW(CNSClientFactoryException, eNSClientIsNotCreated,
+        "Couldn't create NetSchedule client. Check registry.");
 }
 
 

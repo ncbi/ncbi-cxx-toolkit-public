@@ -83,8 +83,10 @@ public:
     static
     unsigned int GetBlobId(const string& key_str);
 
-    static
-    bool IsValidKey(const char* key_str, size_t key_len);
+    static bool IsValidKey(const char* key_str, size_t key_len);
+
+    static bool IsValidKey(const string& key)
+        { return IsValidKey(key.c_str(), key.length()); }
 
     unsigned int  GetId     (void) const;
     const string& GetHost   (void) const;

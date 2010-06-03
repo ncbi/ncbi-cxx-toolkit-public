@@ -34,8 +34,7 @@
 #include "exec_helpers.hpp"
 
 #include <connect/services/grid_worker_app.hpp>
-#include <connect/services/remote_app_mb.hpp>
-#include <connect/services/remote_app_sb.hpp>
+#include <connect/services/remote_app.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
@@ -48,8 +47,8 @@
 USING_NCBI_SCOPE;
 
 
-static void s_SetParam(const CRemoteAppRequestMB_Executer& request,
-                       CRemoteAppResultMB_Executer& result)
+static void s_SetParam(const CRemoteAppRequest& request,
+                       CRemoteAppResult& result)
 {
     result.SetStdOutErrFileNames(request.GetStdOutFileName(),
                                  request.GetStdErrFileName(),
@@ -76,39 +75,44 @@ public:
             LOG_POST(context.GetJobKey() << " is received.");
         }
 
-        IRemoteAppRequest_Executer* request = &m_RequestMB;
-        IRemoteAppResult_Executer* result = &m_ResultMB;
+        CRemoteAppRequest m_Request(m_NetCacheAPI);
+        CRemoteAppResult m_Result(m_NetCacheAPI);
 
-        bool is_sb = context.GetJobMask() & CRemoteAppRequestSB::kSingleBlobMask;
-        if (is_sb) {
-            request =  &m_RequestSB;
-            result = &m_ResultSB;
+        m_Request.Deserialize(context.GetIStream());
+
+        s_SetParam(m_Request, m_Result);
+        size_t output_size = context.GetMaxServerOutputSize();
+        if (output_size == 0) {
+            // this means that NS internal storage is not supported and 
+            // we all input params will be save into NC anyway. So we are 
+            // putting all input into one blob.
+            output_size = kMax_UInt;
+        } else {
+            // here we need some empiric to calculate this size
+            // for now just reduce it by 10%
+            output_size = output_size - output_size / 10;
         }
-
-        request->Receive(context.GetIStream());
-
-        if (!is_sb) {
-            s_SetParam(m_RequestMB, m_ResultMB);
-            size_t output_size = context.GetMaxServerOutputSize();
-            if (output_size == 0) {
-                // this means that NS internal storage is not supported and 
-                // we all input params will be save into NC anyway. So we are 
-                // putting all input into one blob.
-                output_size = kMax_UInt;
-            } else {
-                // here we need some empiric to calculate this size
-                // for now just reduce it by 10%
-                output_size = output_size - output_size / 10;
-            }
-            m_ResultMB.SetMaxOutputSize(output_size);
-        }
+        m_Result.SetMaxInlineSize(output_size);
 
         if (context.IsLogRequested()) {
-            request->Log(context.GetJobKey());
+            if (!m_Request.GetInBlobIdOrData().empty()) {
+                LOG_POST(context.GetJobKey()
+                    << " Input data: " << m_Request.GetInBlobIdOrData());
+            }
+            LOG_POST(context.GetJobKey()
+                << " Args: " << m_Request.GetCmdLine());
+            if (!m_Request.GetStdOutFileName().empty()) {
+                LOG_POST(context.GetJobKey()
+                    << " StdOutFile: " << m_Request.GetStdOutFileName());
+            }
+            if (!m_Request.GetStdErrFileName().empty()) {
+                LOG_POST(context.GetJobKey()
+                    << " StdErrFile: " << m_Request.GetStdErrFileName());
+            }
         }
 
         vector<string> args;
-        TokenizeCmdLine(request->GetCmdLine(), args);
+        TokenizeCmdLine(m_Request.GetCmdLine(), args);
 
 
         int ret = -1;
@@ -136,21 +140,21 @@ public:
             }
 
             finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
-                                        request->GetStdIn(),
-                                        result->GetStdOut(),
-                                        result->GetStdErr(),
+                                        m_Request.GetStdInForRead(),
+                                        m_Result.GetStdOutForWrite(),
+                                        m_Result.GetStdErrForWrite(),
                                         ret,
                                         context,
-                                        request->GetAppRunTimeout(),
+                                        m_Request.GetAppRunTimeout(),
                                         &env[0]);
         } catch (...) {
-            request->Reset();
-            result->Reset();
+            m_Request.Reset();
+            m_Result.Reset();
             throw;
         }
 
-        result->SetRetCode(ret); 
-        result->Send(context.GetOStream());
+        m_Result.SetRetCode(ret); 
+        m_Result.Serialize(context.GetOStream());
 
         string stat;
 
@@ -177,20 +181,19 @@ public:
         if (context.IsLogRequested()) {
             LOG_POST("Job " << context.GetJobKey() <<
                 stat << " ExitCode: " << ret);
-            result->Log(context.GetJobKey());
+            if (!m_Result.GetErrBlobIdOrData().empty()) {
+                LOG_POST(context.GetJobKey() << " Err data: " <<
+                    m_Result.GetErrBlobIdOrData());
+            }
         }
-        request->Reset();
-        result->Reset();
+        m_Request.Reset();
+        m_Result.Reset();
         return ret;
     }
 private:
     const char* const* x_GetEnv();
 
-    CBlobStorageFactory m_Factory;
-    CRemoteAppRequestMB_Executer m_RequestMB;
-    CRemoteAppResultMB_Executer  m_ResultMB;
-    CRemoteAppRequestSB_Executer m_RequestSB;
-    CRemoteAppResultSB_Executer  m_ResultSB;
+    CNetCacheAPI m_NetCacheAPI;
     CRemoteAppLauncher m_RemoteAppLauncher;
 
     list<string> m_EnvValues;
@@ -199,7 +202,7 @@ private:
 
 const char* const* CRemoteAppJob:: x_GetEnv()
 {
-    if( !m_Env.empty() )
+    if (!m_Env.empty())
         return &m_Env[0];
 
     typedef map<string,string> TMapStr;
@@ -221,10 +224,8 @@ const char* const* CRemoteAppJob:: x_GetEnv()
     return &m_Env[0];
 }
 
-CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
-    : m_Factory(context.GetConfig()), 
-      m_RequestMB(m_Factory), m_ResultMB(m_Factory),
-      m_RequestSB(m_Factory), m_ResultSB(m_Factory)
+CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context) :
+    m_NetCacheAPI(context.GetConfig())
 {
     const IRegistry& reg = context.GetConfig();
     m_RemoteAppLauncher.LoadParams("remote_app", reg);

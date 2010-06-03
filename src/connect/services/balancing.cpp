@@ -36,7 +36,6 @@
 #include "netservice_params.hpp"
 #include "balancing.hpp"
 
-#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 
