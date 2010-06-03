@@ -45,12 +45,6 @@ Here is a brief description of the containing applications:
     This utility is for querying information about a NetSchedule job.
     It also can be used to stop worker nodes and cancel jobs.
 
-* remote_app_dispatcher.cgi
-
-    CGI interface for running a regular application under remote_app.
-    The application receives its arguments as parameters of the HTTP
-    request and returns its output via HTTP response.
-
 * test_gridclient_stress
 
     An integrated stress test for Grid. It submits and then waits for

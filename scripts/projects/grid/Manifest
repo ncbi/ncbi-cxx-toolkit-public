@@ -15,8 +15,7 @@ ETC: src/app/grid/remote_app/remote_app.ini
 APP: remote_cgi cgi2rcgi
 ETC: src/app/grid/remote_app/remote_cgi.ini src/app/grid/cgi2rcgi/cgi2rcgi.ini
 
-APP: remote_app_dispatcher.cgi$exe cgi_tunnel2grid.cgi$exe
-ETC: src/app/grid/remote_app/remote_app_dispatcher.ini
+APP: cgi_tunnel2grid.cgi$exe
 ETC: src/app/grid/cgi_tunnel2grid/sample/sample.ini
 
 APP: test_gridclient_stress
