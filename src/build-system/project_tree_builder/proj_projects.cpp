@@ -139,6 +139,9 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
 
 string CProjectsLstFileFilter::GetAllowedTagsInfo(const string& file_full_path)
 {
+    if (!CDirEntry(file_full_path).IsFile()) {
+        return kEmptyStr;
+    }
     CNcbiIfstream ifs(file_full_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if (!ifs) {
         return kEmptyStr;
