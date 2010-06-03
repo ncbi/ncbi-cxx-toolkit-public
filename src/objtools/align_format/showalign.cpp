@@ -1085,10 +1085,11 @@ CDisplaySeqalign::SetSubjectMasks(const TSeqLocInfoVector& masks)
     }
 }
 
-void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
-{ 
-    size_t maxIdLen=0, maxStartLen=0, startLen=0, actualLineLen=0;
-    size_t aln_stop=m_AV->GetAlnStop();
+CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
+{
+    size_t maxIdLen=0, maxStartLen=0;
+    //, startLen=0, actualLineLen=0;
+    //size_t aln_stop=m_AV->GetAlnStop();
     const int rowNum=m_AV->GetNumRows();   
     if(m_AlignOption & eMasterAnchored){
         m_AV->SetAnchor(0);
@@ -1100,7 +1101,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     }
     else {
         m_AV->SetEndChar(' ');
-    }
+    }    
     vector<string> sequence(rowNum);
     vector<CAlnMap::TSeqPosList> seqStarts(rowNum);
     vector<CAlnMap::TSeqPosList> seqStops(rowNum);
@@ -1113,11 +1114,11 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     vector<int> frame(rowNum);
     vector<int> taxid(rowNum);
     int max_feature_num = 0;
-    string master_feat_str = NcbiEmptyString;
+    
     
     //Add external query feature info such as phi blast pattern
     vector<TSAlnFeatureInfoList> bioseqFeature;
-    x_GetQueryFeatureList(rowNum, (int)aln_stop, bioseqFeature);
+    x_GetQueryFeatureList(rowNum, (int)m_AV->GetAlnStop(), bioseqFeature);
     _ASSERT((int)bioseqFeature.size() == rowNum);
     // Mask locations for queries (first elem) and subjects (all other rows)
     vector<TSAlnSeqlocInfoList> masked_regions(rowNum);
@@ -1200,28 +1201,36 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
             }
         }
     }  //end of preparing row data
-    bool colorMismatch = false; //color the mismatches
-    //output identities info 
-    if(((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine))
-       && !(m_AlignOption & eMergeAlign)) {
-        int match = 0;
-        int positive = 0;
-        int gap = 0;
-        int identity = 0;
-        x_FillIdentityInfo(sequence[0], sequence[1], match, positive, middleLine);
-        if(m_AlignOption & eShowBlastInfo){
-            identity = (match*100)/((int)aln_stop+1);
-            if(identity >= k_ColorMismatchIdentity && identity <100 &&
-               (m_AlignOption & eColorDifferentBases)){
-                colorMismatch = true;
-            }
-            gap = x_GetNumGaps();
-            s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
-                                  m_AV->StrandSign(0), m_AV->StrandSign(1),
-                                  frame[0], frame[1], 
-                                  ((m_AlignType & eProt) != 0 ? true : false));
-        }
-    }
+    SAlnRowInfo *alnRoInfo = new SAlnRowInfo();
+    alnRoInfo->sequence = sequence;
+    alnRoInfo->seqStarts = seqStarts;
+    alnRoInfo->seqStops = seqStops;
+    alnRoInfo->insertStart = insertStart;
+    alnRoInfo->insertAlnStart = insertAlnStart;
+    alnRoInfo->insertLength = insertLength;
+    alnRoInfo->seqidArray = seqidArray;
+    alnRoInfo->middleLine = middleLine;
+    alnRoInfo->rowRng = rowRng;
+    alnRoInfo->frame = frame;
+    alnRoInfo->taxid = taxid;
+    alnRoInfo->bioseqFeature = bioseqFeature;
+    alnRoInfo->masked_regions = masked_regions;
+    alnRoInfo->seqidArray = seqidArray;
+    alnRoInfo->maxIdLen = maxIdLen;
+    alnRoInfo->maxStartLen = maxStartLen;
+    alnRoInfo->max_feature_num = max_feature_num;    
+    alnRoInfo->colorMismatch = false;
+    alnRoInfo->rowNum = rowNum;
+    return alnRoInfo;
+}
+    
+void CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out)
+{
+    size_t startLen=0, actualLineLen=0;
+    string master_feat_str = NcbiEmptyString;
+    size_t aln_stop=m_AV->GetAlnStop();
+
+    int rowNum = alnRoInfo->rowNum;
     vector<int> prev_stop(rowNum);
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
@@ -1236,27 +1245,27 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         for (int row=0; row<rowNum; row++) {
             bool hasSequence = true;   
             if (!(m_AlignOption & eShowGapOnlyLines)) {
-                hasSequence = curRange.IntersectingWith(rowRng[row]);
+                hasSequence = curRange.IntersectingWith(alnRoInfo->rowRng[row]);
             }
             //only output rows that have sequence
             if (hasSequence){
-                int start = seqStarts[row].front() + 1;  //+1 for 1 based
-                int end = seqStops[row].front() + 1;
+                int start = alnRoInfo->seqStarts[row].front() + 1;  //+1 for 1 based
+                int end = alnRoInfo->seqStops[row].front() + 1;
                 list<string> inserts;
                 string insertPosString;  //the one with "\" to indicate insert
                 if(m_AlignOption & eMasterAnchored){
                     TSInsertInformationList insertList;
-                    x_GetInserts(insertList, insertAlnStart[row], 
-                                 insertStart[row], insertLength[row],  
+                    x_GetInserts(insertList, alnRoInfo->insertAlnStart[row], 
+                                 alnRoInfo->insertStart[row], alnRoInfo->insertLength[row],  
                                  j + (int)m_LineLen);
                     x_FillInserts(row, curRange, j, inserts, insertPosString, 
                                   insertList);
                 }
                 //feature for query
                 if(row == 0){          
-                    x_PrintFeatures(bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen, maxIdLen,
-                                    maxStartLen, max_feature_num, 
+                    x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
+                                    j,(int)actualLineLen, alnRoInfo->maxIdLen,
+                                    alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
                                     master_feat_str, out); 
                 }
 
@@ -1277,7 +1286,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         if(gi > 0){
                             out<<"<a name="<<gi<<"></a>";
                         } else {
-                            out<<"<a name="<<seqidArray[row]<<"></a>";
+                            out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
                         }
                     }
                     //get sequence checkbox
@@ -1290,7 +1299,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         } else {
                             sprintf(checkboxBuf, k_Checkbox.c_str(), gi > 0 ?
                                     NStr::IntToString(gi).c_str() :
-                                    seqidArray[row].c_str(), m_QueryNumber);
+                                    alnRoInfo->seqidArray[row].c_str(), m_QueryNumber);
                         }
                         out << checkboxBuf;        
                     }
@@ -1308,7 +1317,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
                         urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).
                                            GetBioseqCore()->GetId(), gi, 
-                                           row, taxid[row], 
+                                           row, alnRoInfo->taxid[row], 
                                            CAlignFormatUtil::
                                            GetLinkout(m_AV->GetBioseqHandle(row),
                                                       m_AV->GetSeqId(row)));     
@@ -1320,10 +1329,10 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 //change the alignment line to identity style
                 if (row>0 && m_AlignOption & eShowIdentity){
                     for (int index = j; index < j + (int)actualLineLen && 
-                             index < (int)sequence[row].size(); index ++){
-                        if (sequence[row][index] == sequence[0][index] &&
-                            isalpha((unsigned char) sequence[row][index])) {
-                            sequence[row][index] = k_IdentityChar;           
+                             index < (int)alnRoInfo->sequence[row].size(); index ++){
+                        if (alnRoInfo->sequence[row][index] == alnRoInfo->sequence[0][index] &&
+                            isalpha((unsigned char) alnRoInfo->sequence[row][index])) {
+                            alnRoInfo->sequence[row][index] = k_IdentityChar;           
                         } else if (!has_mismatch) {
                             has_mismatch = true;
                         }        
@@ -1336,7 +1345,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                    (m_AlignOption & eColorDifferentBases)){
                     out<< "<font color = \""<<k_ColorRed<<"\"><b>";         
                 }
-                out<<seqidArray[row]; 
+                out<<alnRoInfo->seqidArray[row]; 
                
                 //highlight the seqid for pairwise-with-identity format
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
@@ -1357,7 +1366,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 //print out sequence line
                 //adjust space between id and start
                 CAlignFormatUtil::AddSpace(out, 
-                                           maxIdLen-seqidArray[row].size()+
+                                           alnRoInfo->maxIdLen-alnRoInfo->seqidArray[row].size()+
                                            k_IdStartMargin);
                 //not to display start and stop number for empty row
                 if (j > 0 && end == prev_stop[row] 
@@ -1368,12 +1377,12 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     startLen=NStr::IntToString(start).size();
                 }
 
-                CAlignFormatUtil::AddSpace(out, maxStartLen-startLen+
+                CAlignFormatUtil::AddSpace(out, alnRoInfo->maxStartLen-startLen+
                                            k_StartSequenceMargin);
-                x_OutputSeq(sequence[row], m_AV->GetSeqId(row), j, 
-                            (int)actualLineLen, frame[row], row,
-                            (row > 0 && colorMismatch)?true:false,  
-                            masked_regions[row], out);
+                x_OutputSeq(alnRoInfo->sequence[row], m_AV->GetSeqId(row), j, 
+                            (int)actualLineLen, alnRoInfo->frame[row], row,
+                            (row > 0 && alnRoInfo->colorMismatch)?true:false,  
+                            alnRoInfo->masked_regions[row], out);
                 CAlignFormatUtil::AddSpace(out, k_SeqStopMargin);
 
                  //not to display stop number for empty row in the middle
@@ -1399,9 +1408,9 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                 out << checkboxBuf;
                             }
                             CAlignFormatUtil::AddSpace(out, 
-                                                       maxIdLen
+                                                       alnRoInfo->maxIdLen
                                                        +k_IdStartMargin
-                                                       +maxStartLen
+                                                       +alnRoInfo->maxStartLen
                                                        +k_StartSequenceMargin);
                             out << insertPosString<<"\n";
                         }
@@ -1413,9 +1422,9 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                     m_QueryNumber);
                             out << checkboxBuf;
                         }
-                        CAlignFormatUtil::AddSpace(out, maxIdLen
+                        CAlignFormatUtil::AddSpace(out, alnRoInfo->maxIdLen
                                                    +k_IdStartMargin
-                                                   +maxStartLen
+                                                   +alnRoInfo->maxStartLen
                                                    +k_StartSequenceMargin);
                         out<<*iter<<"\n";
                         insertAlready = true;
@@ -1423,9 +1432,9 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 } 
                 //display subject sequence feature.
                 if(row > 0){ 
-                    x_PrintFeatures(bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen, maxIdLen,
-                                    maxStartLen, max_feature_num, 
+                    x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
+                                    j,(int)actualLineLen, alnRoInfo->maxIdLen,
+                                    alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
                                     master_feat_str, out);
                 }
                 //display middle line
@@ -1433,24 +1442,54 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     && !(m_AlignOption&eMergeAlign)) {
                     CSeq_id no_id;
                     CAlignFormatUtil::
-                        AddSpace(out, maxIdLen + k_IdStartMargin
-                                 + maxStartLen + k_StartSequenceMargin);
-                    x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0,
-                                row, false, masked_regions[row], out);
+                        AddSpace(out, alnRoInfo->maxIdLen + k_IdStartMargin
+                                 + alnRoInfo->maxStartLen + k_StartSequenceMargin);
+                    x_OutputSeq(alnRoInfo->middleLine, no_id, j, (int)actualLineLen, 0,
+                                row, false, alnRoInfo->masked_regions[row], out);
                     out<<"\n";
                 }
                 prev_stop[row] = end; 
             }
-            if(!seqStarts[row].empty()){ //shouldn't need this check
-                seqStarts[row].pop_front();
+            if(!alnRoInfo->seqStarts[row].empty()){ //shouldn't need this check
+                alnRoInfo->seqStarts[row].pop_front();
             }
-            if(!seqStops[row].empty()){
-                seqStops[row].pop_front();
+            if(!alnRoInfo->seqStops[row].empty()){
+                alnRoInfo->seqStops[row].pop_front();
             }
         }
         out<<"\n";
     }//end of displaying rows
-   
+}
+
+void CDisplaySeqalign::x_PrepareIdentityInfo(SAlnInfo* aln_vec_info)
+{
+    size_t aln_stop=m_AV->GetAlnStop();
+    
+    aln_vec_info->match = 0;
+    aln_vec_info->positive = 0;
+    aln_vec_info->gap = 0;
+    aln_vec_info->identity = 0;
+    x_FillIdentityInfo(aln_vec_info->alnRowInfo->sequence[0], 
+                       aln_vec_info->alnRowInfo->sequence[1], 
+                       aln_vec_info->match, 
+                       aln_vec_info->positive, 
+                       aln_vec_info->alnRowInfo->middleLine);
+    if(m_AlignOption & eShowBlastInfo){
+        aln_vec_info->identity = (aln_vec_info->match*100)/((int)aln_stop+1);
+        if(aln_vec_info->identity >= k_ColorMismatchIdentity && aln_vec_info->identity <100 &&
+               (m_AlignOption & eColorDifferentBases)){
+            aln_vec_info->alnRowInfo->colorMismatch = true;
+        }
+        aln_vec_info->gap = x_GetNumGaps();        
+    }
+}
+
+void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
+{ 
+    SAlnRowInfo *alnRoInfo = x_PrepareRowData();    
+
+    x_DisplayRowData(alnRoInfo,out);
+    delete alnRoInfo;
 }
 
 CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
@@ -2816,6 +2855,211 @@ string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
 }
 
 
+
+void CDisplaySeqalign::x_DisplayGeneInfo(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info,CNcbiOstream& out)
+{
+    try
+    {
+        if (x_IsGeneInfoAvailable(aln_vec_info))
+        {
+            if (m_GeneInfoReader.get() == 0)
+            {
+                m_GeneInfoReader.reset(new CGeneInfoFileReader(false));
+            }
+
+            int giForGeneLookup = FindGi(bsp_handle.GetBioseqCore()->GetId());
+
+            CGeneInfoFileReader::TGeneInfoList infoList;
+            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
+
+            CGeneInfoFileReader::TGeneInfoList::const_iterator
+                        itInfo = infoList.begin();
+            if (itInfo != infoList.end())
+                out << "\n";
+            for (; itInfo != infoList.end(); itInfo++)
+            {
+                CRef<CGeneInfo> info = *itInfo;
+                string strUrl = x_GetGeneLinkUrl(info->GetGeneId());
+                string strInfo;
+                info->ToString(strInfo, true, strUrl);
+                out << strInfo << "\n";
+            }
+        }
+    }
+    catch (CException& e)
+    {
+        out << "(Gene info extraction error: "
+        << e.GetMsg() << ")" << "\n";
+    }
+    catch (...)
+    {
+        out << "(Gene info extraction error)" << "\n";
+    }
+}
+
+void CDisplaySeqalign::x_DisplayAlignSortInfo(CNcbiOstream& out,string id_label)
+{
+    string query_buf; 
+    map< string, string> parameters_to_change;
+    parameters_to_change.insert(map<string, string>::value_type("HSP_SORT", ""));
+    CAlignFormatUtil::BuildFormatQueryString(*m_Ctx,parameters_to_change,query_buf);
+    out << "\n";
+    CAlignFormatUtil::AddSpace(out, 57); 
+    out << "Sort alignments for this subject sequence by:\n";
+    CAlignFormatUtil::AddSpace(out, 59); 
+            
+    string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
+    int hsp_sort = hsp_sort_value == NcbiEmptyString ? 0 : NStr::StringToInt(hsp_sort_value);
+           
+    if (hsp_sort != CAlignFormatUtil::eEvalue) {
+        out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+            << "&HSP_SORT="
+            << CAlignFormatUtil::eEvalue
+            << "#" << id_label << "\">";
+     }
+            
+     out << "E value";
+     if (hsp_sort != CAlignFormatUtil::eEvalue) {
+        out << "</a>"; 
+     }
+           
+     CAlignFormatUtil::AddSpace(out, 2);
+
+     if (hsp_sort != CAlignFormatUtil::eScore) {
+        out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+            << "&HSP_SORT="
+            << CAlignFormatUtil::eScore
+            << "#" << id_label << "\">";
+     }
+            
+     out << "Score";
+     if (hsp_sort != CAlignFormatUtil::eScore) {
+        out << "</a>"; 
+     }
+           
+     CAlignFormatUtil::AddSpace(out, 2);
+
+     if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
+        out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+            << "&HSP_SORT="
+            << CAlignFormatUtil::eHspPercentIdentity
+            << "#" << id_label << "\">";
+     }
+     out  << "Percent identity"; 
+     if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
+        out << "</a>"; 
+     }
+     out << "\n";
+     CAlignFormatUtil::AddSpace(out, 59); 
+     if (hsp_sort != CAlignFormatUtil::eQueryStart) {
+        out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+            << "&HSP_SORT="
+            << CAlignFormatUtil::eQueryStart
+            << "#" << id_label << "\">";
+     } 
+     out << "Query start position";
+     if (hsp_sort != CAlignFormatUtil::eQueryStart) {
+        out << "</a>"; 
+     }
+     CAlignFormatUtil::AddSpace(out, 2);
+           
+     if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
+        out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+            << "&HSP_SORT="
+            << CAlignFormatUtil::eSubjectStart
+            << "#" << id_label << "\">";
+     } 
+     out << "Subject start position";
+     if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
+        out << "</a>"; 
+    }
+            
+    out << "\n";
+}
+
+
+void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
+{
+    const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
+    const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+    CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
+    CSeq_id_Handle subject_seqid = GetId(subject_handle, eGetId_Best);
+    int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
+    int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+    
+    char buffer[512];
+    
+    sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
+            query_gi > 0 ? 
+            NStr::IntToString(query_gi).c_str():query_seqid.    \
+            GetSeqId()->AsFastaString().c_str(),
+            subject_gi > 0 ? 
+            NStr::IntToString(subject_gi).c_str():subject_seqid. \
+            GetSeqId()->AsFastaString().c_str()); 
+    out << buffer << "\n";
+}
+
+void CDisplaySeqalign::x_DisplayMpvAnchor(CNcbiOstream& out,SAlnInfo* aln_vec_info)
+{
+    //add id anchor for mapviewer link
+    string type_temp = m_BlastType;
+    type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+    if(m_AlignOption&eHtml && 
+           (type_temp.find("genome") != string::npos ||
+            type_temp == "mapview" || 
+            type_temp == "mapview_prev" || 
+            type_temp == "gsfasta" || type_temp == "gsfasta_prev")){
+        string subj_id_str;
+        char buffer[126];
+        int master_start = m_AV->GetSeqStart(0) + 1;
+        int master_stop = m_AV->GetSeqStop(0) + 1;
+        int subject_start = m_AV->GetSeqStart(1) + 1;
+        int subject_stop = m_AV->GetSeqStop(1) + 1;
+    
+        m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
+    
+        sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d></a>",
+            subj_id_str.c_str(), aln_vec_info->score,
+            min(master_start, master_stop),
+            max(master_start, master_stop),
+            min(subject_start, subject_stop),
+            max(subject_start, subject_stop));
+    
+        out << buffer << "\n"; 
+    }
+}
+
+void CDisplaySeqalign::x_DisplayAlignInfo(CNcbiOstream& out, 
+                                           SAlnInfo* aln_vec_info)
+{
+    string evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf;
+    CAlignFormatUtil::GetScoreString(aln_vec_info->evalue, 
+                                         aln_vec_info->bits, 0, 0, evalue_buf, 
+                                         bit_score_buf, total_bit_buf, raw_score_buf);
+        
+    CRef<CSeq_align> first_aln = m_SeqalignSetRef->Get().front();
+    if (m_SeqalignSetRef->Get().front()->CanGetType() && 
+       m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
+    {
+        out<<" NW Score = "<< aln_vec_info->score;
+    }
+    else
+    {
+        out<<" Score = "<<bit_score_buf<<" ";
+        out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
+        out<<"Expect";
+        if (aln_vec_info->sum_n > 0) {
+        out << "(" << aln_vec_info->sum_n << ")";
+        }
+        out << " = " << evalue_buf;
+        if (aln_vec_info->comp_adj_method == 1)
+        out << ", Method: Composition-based stats.";
+        else if (aln_vec_info->comp_adj_method == 2)
+        out << ", Method: Compositional matrix adjust.";
+    }
+    out << "\n";
+}
+
 void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
                                            SAlnInfo* aln_vec_info,
                                            bool show_defline) 
@@ -2834,313 +3078,180 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
   
     m_AV = aln_vec_info->alnvec;
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-    if(show_defline && (m_AlignOption&eShowBlastInfo)) {
-        string id_label;
+    if(show_defline && (m_AlignOption&eShowBlastInfo)) {        
         if(!(m_AlignOption & eShowNoDeflineInfo)){
-            x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, id_label, out);
+            //1. Display defline(s)
+            x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, aln_vec_info->id_label, out);
             out<<kLengthString<<bsp_handle.GetBioseqLength()<<"\n";
-
-            try
-            {
-                if (x_IsGeneInfoAvailable(aln_vec_info))
-                {
-                    if (m_GeneInfoReader.get() == 0)
-                    {
-                        m_GeneInfoReader.reset(
-                            new CGeneInfoFileReader(false));
-                    }
-
-                    int giForGeneLookup =
-                        FindGi(bsp_handle.GetBioseqCore()->GetId());
-
-                    CGeneInfoFileReader::TGeneInfoList infoList;
-                    m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,
-                                                        infoList);
-
-                    CGeneInfoFileReader::TGeneInfoList::const_iterator
-                        itInfo = infoList.begin();
-                    if (itInfo != infoList.end())
-                        out << "\n";
-                    for (; itInfo != infoList.end(); itInfo++)
-                    {
-                        CRef<CGeneInfo> info = *itInfo;
-                        string strUrl = x_GetGeneLinkUrl(info->GetGeneId());
-                        string strInfo;
-                        info->ToString(strInfo, true, strUrl);
-                        out << strInfo << "\n";
-                    }
-                }
-            }
-            catch (CException& e)
-            {
-                out << "(Gene info extraction error: "
-                    << e.GetMsg() << ")" << "\n";
-            }
-            catch (...)
-            {
-                out << "(Gene info extraction error)" << "\n";
-            }
-        }
-        
-        if(m_AlignOption&eHtml && m_AlignOption & eShowBlastInfo &&
-           m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
-           m_AlignOption & eShowSortControls){
-            string query_buf; 
-            map< string, string> parameters_to_change;
-            parameters_to_change.insert(map<string, string>::
-                                        value_type("HSP_SORT", ""));
-            CAlignFormatUtil::BuildFormatQueryString(*m_Ctx, 
-                                                     parameters_to_change,
-                                                     query_buf);
-            out << "\n";
-            CAlignFormatUtil::AddSpace(out, 57); 
-            out << "Sort alignments for this subject sequence by:\n";
-            CAlignFormatUtil::AddSpace(out, 59); 
             
-            string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
-            int hsp_sort = hsp_sort_value == NcbiEmptyString ? 
-                0 : NStr::StringToInt(hsp_sort_value);
-           
-            if (hsp_sort != CAlignFormatUtil::eEvalue) {
-                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
-                    << "&HSP_SORT="
-                    << CAlignFormatUtil::eEvalue
-                    << "#" << id_label << "\">";
-            }
-            
-            out << "E value";
-            if (hsp_sort != CAlignFormatUtil::eEvalue) {
-                out << "</a>"; 
-            }
-            
-            CAlignFormatUtil::AddSpace(out, 2);
-
-            if (hsp_sort != CAlignFormatUtil::eScore) {
-                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
-                    << "&HSP_SORT="
-                    << CAlignFormatUtil::eScore
-                    << "#" << id_label << "\">";
-            }
-            
-            out << "Score";
-            if (hsp_sort != CAlignFormatUtil::eScore) {
-                out << "</a>"; 
-            }
-            
-            CAlignFormatUtil::AddSpace(out, 2);
-
-          
-
-            if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
-                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
-                    << "&HSP_SORT="
-                    << CAlignFormatUtil::eHspPercentIdentity
-                    << "#" << id_label << "\">";
-            }
-            out  << "Percent identity"; 
-            if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
-                out << "</a>"; 
-            }
-            out << "\n";
-            CAlignFormatUtil::AddSpace(out, 59); 
-            if (hsp_sort != CAlignFormatUtil::eQueryStart) {
-                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
-                    << "&HSP_SORT="
-                    << CAlignFormatUtil::eQueryStart
-                    << "#" << id_label << "\">";
-            } 
-            out << "Query start position";
-            if (hsp_sort != CAlignFormatUtil::eQueryStart) {
-                out << "</a>"; 
-            }
-            CAlignFormatUtil::AddSpace(out, 2);
-           
-            if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
-                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
-                    << "&HSP_SORT="
-                    << CAlignFormatUtil::eSubjectStart
-                    << "#" << id_label << "\">";
-            } 
-            out << "Subject start position";
-            if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
-                out << "</a>"; 
-            }
-            
-            out << "\n";
-        }
+            //2. Display Gene info
+            x_DisplayGeneInfo(bsp_handle,aln_vec_info,out);
+        }       
         
         if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
            && (m_AlignOption&eShowBl2seqLink)) {
-            const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
-            const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
-            CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
-            CSeq_id_Handle subject_seqid =
-                GetId(subject_handle, eGetId_Best);
-            int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
-            int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
-            
-            char buffer[512];
-            
-            sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
-                    query_gi > 0 ? 
-                    NStr::IntToString(query_gi).c_str():query_seqid.    \
-                    GetSeqId()->AsFastaString().c_str(),
-                    subject_gi > 0 ? 
-                    NStr::IntToString(subject_gi).c_str():subject_seqid. \
-                    GetSeqId()->AsFastaString().c_str()); 
-            out << buffer << "\n";
+            //3. Display Bl2Seq TBLASTX link
+            x_DisplayBl2SeqLink(out);
         }
         out << "\n";
-    }
-    
-    //output dynamic feature lines
-    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMergeAlign) 
-       && (m_AlignOption&eDynamicFeature) 
-       && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() 
-       >= k_GetDynamicFeatureSeqLength){ 
-        if(m_DynamicFeature){
-            x_PrintDynamicFeatures(out);
-        } 
     }
     if (m_AlignOption&eShowBlastInfo) {
-        string evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf;
-        CAlignFormatUtil::GetScoreString(aln_vec_info->evalue, 
-                                         aln_vec_info->bits, 0, 0, evalue_buf, 
-                                         bit_score_buf, total_bit_buf, raw_score_buf);
-        //add id anchor for mapviewer link
-        string type_temp = m_BlastType;
-        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-        if(m_AlignOption&eHtml && 
-           (type_temp.find("genome") != string::npos ||
-            type_temp == "mapview" || 
-            type_temp == "mapview_prev" || 
-            type_temp == "gsfasta" || type_temp == "gsfasta_prev")){
-            string subj_id_str;
-            char buffer[126];
-            int master_start = m_AV->GetSeqStart(0) + 1;
-            int master_stop = m_AV->GetSeqStop(0) + 1;
-            int subject_start = m_AV->GetSeqStart(1) + 1;
-            int subject_stop = m_AV->GetSeqStop(1) + 1;
-            
-            m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
-            
-            sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d></a>",
-                    subj_id_str.c_str(), aln_vec_info->score,
-                    min(master_start, master_stop),
-                    max(master_start, master_stop),
-                    min(subject_start, subject_stop),
-                    max(subject_start, subject_stop));
-            
-            out << buffer << "\n"; 
-        }
-    CRef<CSeq_align> first_aln = m_SeqalignSetRef->Get().front();
-        if (m_SeqalignSetRef->Get().front()->CanGetType() && 
-           m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
-        {
-            out<<" NW Score = "<< aln_vec_info->score;
-        }
-        else
-        {
-            out<<" Score = "<<bit_score_buf<<" ";
-            out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
-            out<<"Expect";
-            if (aln_vec_info->sum_n > 0) {
-                out << "(" << aln_vec_info->sum_n << ")";
-            }
-            out << " = " << evalue_buf;
-            if (aln_vec_info->comp_adj_method == 1)
-                out << ", Method: Composition-based stats.";
-            else if (aln_vec_info->comp_adj_method == 2)
-                out << ", Method: Compositional matrix adjust.";
-        }
-        out << "\n";
+        //4. add id anchor for mapviewer link
+        x_DisplayMpvAnchor(out,aln_vec_info);    
     }
-        
-    x_DisplayAlnvec(out);
+
+    //Calculate Dynamic Features in aln_vec_info    
+    x_PrepareDynamicFeatureInfo(aln_vec_info);    
+    //Calculate row data for actual alignment display
+    aln_vec_info->alnRowInfo = x_PrepareRowData();
+
+    //Calculate indentity data in aln_vec_info  
+    if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){
+        x_PrepareIdentityInfo(aln_vec_info);
+    }
+
+    //Displays sorting controls, features, Score, Expect, Idnt,Gaps,strand,positives,frames etc
+    x_DisplayAlignSubsetInfo(out, aln_vec_info,show_defline);
+
+    //Displays actual alignment
+    x_DisplayRowData(aln_vec_info->alnRowInfo,out);
+
+    delete aln_vec_info->alnRowInfo;
+
+    //x_DisplayAlnvec(out);
     out<<"\n";
 }
 
-
-void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) 
+//Displays features, Score Expect, Idnt,Gaps,strand
+void CDisplaySeqalign::x_DisplayAlignSubsetInfo(CNcbiOstream& out, 
+                                                SAlnInfo* aln_vec_info,
+                                                bool firstAlign)  
 {
-    const CSeq_id& subject_seqid = m_AV->GetSeqId(1);
-    const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);
-    CRange<TSeqPos> actual_range = range;
-    if(range.GetFrom() > range.GetTo()){
-        actual_range.Set(range.GetTo(), range.GetFrom());
-    }
-    string id_str;
-    subject_seqid.GetLabel(&id_str, CSeq_id::eBoth);
-    const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
-    int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
-    char urlBuf[2048];
-   
-    SFeatInfo* feat5 = NULL;
-    SFeatInfo* feat3 = NULL;
-    vector<SFeatInfo*>& feat_list 
-        =  m_DynamicFeature->GetFeatInfo(id_str, actual_range, feat5, feat3, 2);
+    if (m_AlignOption&eShowBlastInfo) {            
     
+        if(firstAlign && m_AlignOption&eHtml &&
+           m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
+           m_AlignOption & eShowSortControls){
+            //3. Display sort info
+            x_DisplayAlignSortInfo(out,aln_vec_info->id_label);
+        }
+
+        //output dynamic feature lines
+        if(aln_vec_info->feat_list.size() > 0 || aln_vec_info->feat5 || aln_vec_info->feat3 ){        
+            //6. Display Dynamic Features
+            x_PrintDynamicFeatures(out,aln_vec_info);             
+        }
+        
+        //7. Display score,bits,expect,method
+        x_DisplayAlignInfo(out,aln_vec_info);
+    }
+    
+    if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){
+        //8.Display Identities,positives,frames etc
+        //x_DisplayIdentityInfo(aln_vec_info->alnRowInfo, out);
+        s_DisplayIdentityInfo(out, 
+                              (int)m_AV->GetAlnStop(), 
+                              aln_vec_info->identity, 
+                              aln_vec_info->positive, 
+                              aln_vec_info->match, 
+                              aln_vec_info->gap,
+                              m_AV->StrandSign(0), 
+                              m_AV->StrandSign(1),
+                              aln_vec_info->alnRowInfo->frame[0], 
+                              aln_vec_info->alnRowInfo->frame[1], 
+                              ((m_AlignType & eProt) != 0 ? true : false));
+    }   
+}
+
+void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
+{
+    aln_vec_info->feat5 = NULL;
+    aln_vec_info->feat3 = NULL;
+    aln_vec_info->feat_list.clear();
+    //Calculate Dynamic Features in aln_vec_info               
+    if((m_AlignOption&eDynamicFeature) 
+        && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() 
+        >= k_GetDynamicFeatureSeqLength){
+        if(m_DynamicFeature){
+            const CSeq_id& subject_seqid = m_AV->GetSeqId(1);
+            const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);
+            aln_vec_info->actual_range = range;
+            if(range.GetFrom() > range.GetTo()){
+                aln_vec_info->actual_range.Set(range.GetTo(), range.GetFrom());
+            }
+            string id_str;
+            subject_seqid.GetLabel(&id_str, CSeq_id::eBoth);
+            const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+            aln_vec_info->subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+            aln_vec_info->feat_list  =  m_DynamicFeature->GetFeatInfo(id_str, aln_vec_info->actual_range, aln_vec_info->feat5, aln_vec_info->feat3, 2);
+        } 
+    }
+}
+
+
+void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_vec_info) 
+{
+    char urlBuf[2048];
     string l_EntrezSubseqUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ");
 
-    if(feat_list.size() > 0) { //has feature in this range
+    if(aln_vec_info->feat_list.size() > 0) { //has feature in this range
         out << " Features in this part of subject sequence:" << "\n";
-        ITERATE(vector<SFeatInfo*>, iter, feat_list){
+        ITERATE(vector<SFeatInfo*>, iter, aln_vec_info->feat_list){
             out << "   ";
-            if(m_AlignOption&eHtml && subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), subject_gi,
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
+                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
                         (*iter)->range.GetFrom() +1 , (*iter)->range.GetTo() + 1,
                         m_Rid.c_str());
                 out << urlBuf;
             }  
             out << (*iter)->feat_str;
-            if(m_AlignOption&eHtml && subject_gi > 0){
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
                 out << "</a>";
             }  
             out << "\n";
         }
     } else {  //show flank features
-        if(feat5 || feat3){   
+        if(aln_vec_info->feat5 || aln_vec_info->feat3){   
             out << " Features flanking this part of subject sequence:" << "\n";
         }
-        if(feat5){
+        if(aln_vec_info->feat5){
             out << "   ";
-            if(m_AlignOption&eHtml && subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), subject_gi,
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
+                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat5->range.GetFrom() + 1 , feat5->range.GetTo() + 1,
+                        aln_vec_info->feat5->range.GetFrom() + 1 , aln_vec_info->feat5->range.GetTo() + 1,
                         m_Rid.c_str());
                 out << urlBuf;
             }  
-            out << actual_range.GetFrom() - feat5->range.GetTo() 
-                << " bp at 5' side: " << feat5->feat_str;
-            if(m_AlignOption&eHtml && subject_gi > 0){
+            out << aln_vec_info->actual_range.GetFrom() - aln_vec_info->feat5->range.GetTo() 
+                << " bp at 5' side: " << aln_vec_info->feat5->feat_str;
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
                 out << "</a>";
             }  
             out << "\n";
         }
-        if(feat3){
+        if(aln_vec_info->feat3){
             out << "   ";
-            if(m_AlignOption&eHtml && subject_gi > 0){
-                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), subject_gi,
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
+                sprintf(urlBuf, l_EntrezSubseqUrl.c_str(), aln_vec_info->subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat3->range.GetFrom() + 1 , feat3->range.GetTo() + 1,
+                        aln_vec_info->feat3->range.GetFrom() + 1 , aln_vec_info->feat3->range.GetTo() + 1,
                         m_Rid.c_str());
                 out << urlBuf;
             }
-            out << feat3->range.GetFrom() - actual_range.GetTo() 
-                << " bp at 3' side: " << feat3->feat_str;
+            out << aln_vec_info->feat3->range.GetFrom() - aln_vec_info->actual_range.GetTo() 
+                << " bp at 3' side: " << aln_vec_info->feat3->feat_str;
             if(m_AlignOption&eHtml){
                 out << "</a>";
             }  
             out << "\n";
         }
     }
-    if(feat_list.size() > 0 || feat5 || feat3 ){
+    if(aln_vec_info->feat_list.size() > 0 || aln_vec_info->feat5 || aln_vec_info->feat3 ){
         out << "\n";
     }
 }
-
 
 void 
 CDisplaySeqalign::x_FillLocList(TSAlnSeqlocInfoList& loc_list, 
