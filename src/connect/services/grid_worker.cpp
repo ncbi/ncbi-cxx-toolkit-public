@@ -451,8 +451,13 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
                 job_context.SetJobRetCode(job->Do(job_context));
             } catch (CGridWorkerNodeException& ex) {
                 if (ex.GetErrCode() !=
-                    CGridWorkerNodeException::eExclusiveModeIsAlreadySet)
+                        CGridWorkerNodeException::eExclusiveModeIsAlreadySet) {
+                    try {
+                        CloseStreams();
+                    }
+                    NCBI_CATCH_ALL_X(11, "Could not close IO streams");
                     throw;
+                }
 
                 if (job_context.IsLogRequested()) {
                     LOG_POST_X(21, "Job " << job_context.GetJobKey() <<
@@ -515,8 +520,6 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
         catch (...) {
             x_HandleRunJobError();
         }
-
-        CloseStreams();
 
         _ASSERT(m_JobContext);
         m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
