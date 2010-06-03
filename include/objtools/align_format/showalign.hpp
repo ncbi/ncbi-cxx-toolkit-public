@@ -369,17 +369,6 @@ private:
     };
     typedef list< CRef<SInsertInformation> > TSInsertInformationList;
     
-    /// store alnvec and score info
-    struct SAlnInfo : public CObject {               
-        CRef < objects::CAlnVec > alnvec;
-        int score;
-        double bits;
-        double evalue;
-        list<int> use_this_gi;
-        int comp_adj_method;
-        int sum_n;
-    };
-
     ///store feature information
     struct SAlnFeatureInfo : public CObject {
         CRef<FeatureInfo> feature;
@@ -398,7 +387,56 @@ private:
     /// List of SAlnSeqlocInfo structures
     typedef list< CRef<SAlnSeqlocInfo> > TSAlnSeqlocInfoList;
 
-    /// Definition of std::map of objects::CSeq_ids to masks
+    struct SAlnRowInfo : public CObject {
+        vector<string> sequence;
+        vector<objects::CAlnMap::TSeqPosList> seqStarts;
+        vector<objects::CAlnMap::TSeqPosList> seqStops;
+        vector<objects::CAlnMap::TSeqPosList> insertStart;
+        vector<objects::CAlnMap::TSeqPosList> insertAlnStart;
+        vector<objects::CAlnMap::TSeqPosList> insertLength;
+        vector<string> seqidArray;
+        string middleLine;
+        vector<objects::CAlnMap::TSignedRange> rowRng;
+        vector<int> frame;
+        vector<int> taxid;
+        vector<TSAlnFeatureInfoList> bioseqFeature;
+        vector<TSAlnSeqlocInfoList> masked_regions;        
+        size_t maxIdLen;
+        size_t  maxStartLen;
+        int max_feature_num;
+        bool colorMismatch;
+        int         rowNum;
+    };
+
+    /// store alnvec and score info
+    struct SAlnInfo : public CObject {               
+        CRef < objects::CAlnVec > alnvec;
+        int score;
+        double bits;
+        double evalue;
+        list<int> use_this_gi;
+        int comp_adj_method;
+        int sum_n;
+        string id_label;
+
+        SAlnRowInfo *alnRowInfo;
+
+        //Features calc params
+        vector<objects::SFeatInfo*> feat_list;
+        CRange<TSeqPos> actual_range;
+        int subject_gi;        
+        objects::SFeatInfo* feat5;
+        objects::SFeatInfo* feat3;        
+
+
+        //Identity calc params
+        int match;
+        int positive;
+        int gap;
+        int identity;
+    };
+
+     /// Definition of std::map of objects::CSeq_ids to masks
     typedef map< SSeqIdKey, TMaskedQueryRegions > TSubjectMaskMap;
 
     /// Map of subject masks
@@ -442,7 +480,7 @@ private:
     int m_MasterGeneticCode;
     int m_SlaveGeneticCode;
     CCgiContext* m_Ctx;
-
+    
     /// Gene info reader object, reads Gene info entries from files.
     auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
@@ -615,7 +653,7 @@ private:
     ///output dynamic feature url
     ///@param out: output stream
     ///
-    void x_PrintDynamicFeatures(CNcbiOstream& out);
+    void x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_vec_info);
 
     ///convert the passed seqloc list info using alnment coordinates
     ///@param loc_list: fill the list with seqloc info using aln coordinates
@@ -659,6 +697,48 @@ private:
                          CNcbiOstream& out);
 
     CRef<objects::CAlnVec> x_GetAlnVecForSeqalign(const objects::CSeq_align& align); 
+    ///Display Gene Info
+    ///
+    void x_DisplayGeneInfo(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info,CNcbiOstream& out);
+    
+    ///Dipslay Bl2seq TBLASTX link
+    ///
+    void x_DisplayBl2SeqLink(CNcbiOstream& out);
+
+    ///Display anchor for links from mapview
+    ///
+    void x_DisplayMpvAnchor(CNcbiOstream& out,SAlnInfo* aln_vec_info);
+
+    ///Display Sorting controls
+    ///
+    void x_DisplayAlignSortInfo(CNcbiOstream& out,string id_label);
+
+    ///Display score,bits,expect,method
+    ///
+    void x_DisplayAlignInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info);
+
+    ///Display pairwise alignment
+    ///
+    void x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out);
+
+    ///Display identities,positives,frames etc
+    ///
+    void x_DisplayIdentityInfo(SAlnRowInfo *alnRoInfo, CNcbiOstream& out);
+
+    ///Display Sorting controls,score,bits,expect,method,features identities,positives,frames etc
+    ///
+    void x_DisplayAlignSubsetInfo(CNcbiOstream& out, 
+                                  SAlnInfo* aln_vec_info,bool firstAlign);
+
+    void x_PrepareIdentityInfo(SAlnInfo* aln_vec_info);
+
+    ///Calculate data for feature display
+    ///
+    void x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info);
+
+    ///Calculate data for pairwise alignment display
+    ///
+    SAlnRowInfo *x_PrepareRowData(void);
 
 };
 
