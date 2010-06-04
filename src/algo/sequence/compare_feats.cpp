@@ -776,7 +776,7 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
         
 #if _DEBUG
         string label = "";
-        feature::GetLabel(*feat1, &label, feature::eBoth, m_scope_q);
+        feature::GetLabel(*feat1, &label, feature::fFGL_Both, m_scope_q);
         _TRACE("  " + label);
         
         label = "";
@@ -918,7 +918,7 @@ void CCompareSeqRegions::x_GetPutativeMatches(
     
     if(!had_some_matches) {
         string s = "";
-        feature::GetLabel(*feat1, &s, feature::eBoth);
+        feature::GetLabel(*feat1, &s, feature::fFGL_Both);
         
         CRef<CCompareFeats> cf(new CCompareFeats(
                 *feat1
@@ -1017,10 +1017,10 @@ public:
         } 
 
         s1 = "";
-        feature::GetLabel(*f1, &s1, feature::eBoth);
+        feature::GetLabel(*f1, &s1, feature::fFGL_Both);
         
         s2 = "";
-        feature::GetLabel(*f2, &s2, feature::eBoth);
+        feature::GetLabel(*f2, &s2, feature::fFGL_Both);
         
         return s1 < s2;
     }
@@ -1065,11 +1065,11 @@ void CCompareSeqRegions::SelectMatches(vector<CRef<CCompareFeats> >& vComparison
         const CConstRef<CCompareFeats> best_match = it->second.top();
         
         string s0 = "";
-        feature::GetLabel(*feat, &s0, feature::eBoth);
+        feature::GetLabel(*feat, &s0, feature::fFGL_Both);
         
         string s1 = "";
         if(!best_match.IsNull() && best_match->IsMatch()) {
-            feature::GetLabel(*best_match->GetFeatT(), &s1, feature::eBoth);
+            feature::GetLabel(*best_match->GetFeatT(), &s1, feature::fFGL_Both);
         }
         ERR_POST(Info << "Best match for " << s0 << " : " << s1 << ", out of " << it->second.size());
     ++i;
@@ -1082,11 +1082,11 @@ void CCompareSeqRegions::SelectMatches(vector<CRef<CCompareFeats> >& vComparison
         const CConstRef<CCompareFeats> best_match = it->second.top();
         
         string s0 = "";
-        feature::GetLabel(*feat, &s0, feature::eBoth);
+        feature::GetLabel(*feat, &s0, feature::fFGL_Both);
         
         string s1 = "";
         if(!best_match.IsNull() && best_match->IsMatch()) {
-            feature::GetLabel(*best_match->GetFeatQ(), &s1, feature::eBoth);
+            feature::GetLabel(*best_match->GetFeatQ(), &s1, feature::fFGL_Both);
         }
         ERR_POST(Info << "Best match for " << s0 << " : " << s1 << ", out of " << it->second.size());
     

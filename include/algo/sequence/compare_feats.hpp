@@ -407,7 +407,7 @@ public:
         return s;   
     }
 
-    static string s_GetFeatLabel(const CSeq_feat& gene_feat, feature::ELabelType type = feature::eBoth)
+    static string s_GetFeatLabel(const CSeq_feat& gene_feat, feature::TFeatLabelFlags type = feature::fFGL_Both)
     {
         string gene_label = "";
         feature::GetLabel(gene_feat, &gene_label, type, NULL);  

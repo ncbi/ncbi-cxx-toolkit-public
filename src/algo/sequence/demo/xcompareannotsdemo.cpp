@@ -1370,11 +1370,11 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
                 _ASSERT(!cf->GetMappedLocQ().IsNull());
 
                 string s = "";
-                feature::GetLabel(*cf->GetFeatQ(), &s, feature::eType);
+                feature::GetLabel(*cf->GetFeatQ(), &s, feature::fFGL_Type);
                 NcbiCout << s << "\t";
 
                 s = "";
-                feature::GetLabel(*cf->GetFeatQ(), &s, feature::eContent);
+                feature::GetLabel(*cf->GetFeatQ(), &s, feature::fFGL_Content);
                 NcbiCout << s << "\t";
 
 
@@ -1391,11 +1391,11 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
 
             if(!cf->GetFeatT().IsNull()) {
                 string s = "";
-                feature::GetLabel(*cf->GetFeatT(), &s, feature::eType);
+                feature::GetLabel(*cf->GetFeatT(), &s, feature::fFGL_Type);
                 NcbiCout << s << "\t";
 
                 s = "";
-                feature::GetLabel(*cf->GetFeatT(), &s, feature::eContent);
+                feature::GetLabel(*cf->GetFeatT(), &s, feature::fFGL_Content);
                 NcbiCout << s << "\t";
 
                 NcbiCout << GetIdStartStopStrandStr(*cf->GetSelfLocT(), *m_scope_t, false) << "\t";
