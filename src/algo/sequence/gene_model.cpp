@@ -89,15 +89,17 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                           CScope& scope,
                                           CSeq_annot& annot,
                                           CBioseq_set& seqs,
-                                          TGeneModelCreateFlags flags)
+                                          TGeneModelCreateFlags flags,
+                                          TSeqPos allowed_unaligned)
 {
     struct SMapper
     {
     public:
 
         SMapper(const CSeq_align& aln, CScope& scope,
+                TSeqPos allowed_unaligned = 10,
                 CSeq_loc_Mapper::TMapOptions opts = 0)
-            : m_aln(aln), m_scope(scope)
+            : m_aln(aln), m_scope(scope), m_allowed_unaligned(allowed_unaligned)
         {
             if(aln.GetSegs().IsSpliced()) {
                 //row 1 is always genomic in spliced-segs
@@ -199,12 +201,15 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
         /// This has special logic to set partialness based on alignment
         /// properties
+        /// In addition, we need to interpret partial exons correctly
         CRef<CSeq_loc> x_GetLocFromSplicedExons(const CSeq_align& aln) const
         {
             CRef<CSeq_loc> loc(new CSeq_loc);
             CConstRef<CSpliced_exon> prev_exon;
             CRef<CSeq_interval> prev_int;
-            ITERATE(CSpliced_seg::TExons, it, aln.GetSegs().GetSpliced().GetExons()) {
+
+            const CSpliced_seg& spliced_seg = aln.GetSegs().GetSpliced();
+            ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
                 const CSpliced_exon& exon = **it;
                 CRef<CSeq_interval> genomic_int(new CSeq_interval);
 
@@ -213,7 +218,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 genomic_int->SetTo(exon.GetGenomic_end());
                 genomic_int->SetStrand(
                         exon.IsSetGenomic_strand() ? exon.GetGenomic_strand()
-                      : aln.GetSegs().GetSpliced().IsSetGenomic_strand() ? aln.GetSegs().GetSpliced().GetGenomic_strand()
+                      : spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand()
                       : eNa_strand_plus);
 
                 // check for gaps between exons
@@ -240,14 +245,14 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             }
 
             // set terminal partialness
-            if(m_aln.GetSeqStart(0) > 0) {
+            if(m_aln.GetSeqStart(0) > m_allowed_unaligned) {
                 loc->SetPartialStart(true, eExtreme_Biological);
             }
 
             TSeqPos product_len = aln.GetSegs().GetSpliced().GetProduct_length();
             TSeqPos polya_pos = aln.GetSegs().GetSpliced().CanGetPoly_a() ? aln.GetSegs().GetSpliced().GetPoly_a() : product_len;
 
-            if(m_aln.GetSeqStop(0) + 1 < polya_pos) {
+            if(m_aln.GetSeqStop(0) + 1 + m_allowed_unaligned < polya_pos) {
                 loc->SetPartialStop(true, eExtreme_Biological);
             }
             return loc;
@@ -258,6 +263,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         CRef<CSeq_loc_Mapper> m_mapper;
         CSeq_align::TDim m_genomic_row;
         CRef<CSeq_loc> rna_loc;
+        TSeqPos m_allowed_unaligned;
     };
 
 
@@ -268,7 +274,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    SMapper mapper(align, scope, opts);
+    SMapper mapper(align, scope, allowed_unaligned, opts);
 
     /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
@@ -413,15 +419,13 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         }
 
         if (gene_feat) {
-            if (mrna_feat->IsSetPartial()  &&  mrna_feat->GetPartial()) {
-                gene_feat->SetPartial(true);
-            }
             annot.SetData().SetFtable().push_back(gene_feat);
         }
     }
 
     if (mrna_feat) {
         SetFeatureExceptions(*mrna_feat, scope, &align);
+        /// NOTE: added after gene!
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
 
@@ -479,7 +483,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                "failed to find requisite parts of "
                                "mapped seq-loc");
                 }
-                CRef<CSeq_loc> this_loc_mapped = equiv->GetEquiv().Get().front();
+                CRef<CSeq_loc> this_loc_mapped =
+                    equiv->GetEquiv().Get().front();
                 if ( !this_loc_mapped  ||
                      this_loc_mapped->IsNull()  ||
                      this_loc_mapped->IsEmpty() ) {
@@ -661,6 +666,42 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     seqs.SetSeq_set().push_back(entry);
                 }
             }
+        }
+    }
+
+    ///
+    /// partial flags may require a global analysis - we may need to mark some
+    /// locations partial even if they are not yet partial
+    ///
+    if (mrna_feat  &&  cds_feat  &&
+        cds_feat->IsSetPartial()  &&  cds_feat->GetPartial()) {
+        mrna_feat->SetPartial(true);
+
+        /// in addition to marking the mrna feature partial, we must mark the
+        /// location partial to match the partialness in the CDS
+        CSeq_loc& cds_loc = cds_feat->SetLocation();
+        CSeq_loc& mrna_loc = mrna_feat->SetLocation();
+        if (cds_loc.IsPartialStart(eExtreme_Biological)) {
+            mrna_loc.SetPartialStart(true, eExtreme_Biological);
+        }
+        if (cds_loc.IsPartialStop(eExtreme_Biological)) {
+            mrna_loc.SetPartialStop(true, eExtreme_Biological);
+        }
+    }
+
+    if (gene_feat  &&  mrna_feat  &&
+        mrna_feat->IsSetPartial()  &&  mrna_feat->GetPartial()) {
+        gene_feat->SetPartial(true);
+
+        /// in addition to marking the gene feature partial, we must mark the
+        /// location partial to match the partialness in the mRNA
+        CSeq_loc& mrna_loc = mrna_feat->SetLocation();
+        CSeq_loc& gene_loc = gene_feat->SetLocation();
+        if (mrna_loc.IsPartialStart(eExtreme_Biological)) {
+            gene_loc.SetPartialStart(true, eExtreme_Biological);
+        }
+        if (mrna_loc.IsPartialStop(eExtreme_Biological)) {
+            gene_loc.SetPartialStop(true, eExtreme_Biological);
         }
     }
 

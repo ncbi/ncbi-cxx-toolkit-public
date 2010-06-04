@@ -18,7 +18,8 @@ Seq-annot ::= {
         id other {
           accession "NT_011515",
           version 12
-        }
+        },
+        fuzz-to lim gt
       }
     },
     {
@@ -981,7 +982,8 @@ Seq-annot ::= {
         from 56648,
         to 113905,
         strand plus,
-        id gi 269932227
+        id gi 269932227,
+        fuzz-from lim lt
       }
     },
     {
@@ -1235,7 +1237,8 @@ Seq-annot ::= {
         from 44241,
         to 126305,
         strand plus,
-        id gi 258435077
+        id gi 258435077,
+        fuzz-to lim gt
       }
     },
     {
@@ -1638,7 +1641,7 @@ Seq-annot ::= {
   },
   data ftable {
     {
-      id local id 1,
+      id local id 19,
       data gene {
         locus "Danio rerio dynamin2-like (dnm2l), mRNA"
       },
@@ -1647,11 +1650,12 @@ Seq-annot ::= {
         from 200545,
         to 201822,
         strand plus,
-        id gi 258443136
+        id gi 258443136,
+        fuzz-from lim lt
       }
     },
     {
-      id local id 2,
+      id local id 20,
       data rna {
         type mRNA,
         ext name "Danio rerio dynamin2-like (dnm2l), mRNA"
@@ -1687,11 +1691,12 @@ Seq-annot ::= {
   },
   data ftable {
     {
-      id local id 1,
+      id local id 21,
       data gene {
         locus "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
  mRNA decay factor (C. elegans)cds (smg6 gene)"
       },
+      partial TRUE,
       location int {
         from 195029,
         to 196310,
@@ -1700,12 +1705,13 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local id 22,
       data rna {
         type mRNA,
         ext name "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
  mRNA decay factor (C. elegans)cds (smg6 gene)"
       },
+      partial TRUE,
       product whole gi 240248230,
       location packed-int {
         {
@@ -1717,7 +1723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
+      id local id 23,
       data cdregion {
         frame two,
         code {
@@ -1753,7 +1759,7 @@ Seq-annot ::= {
   },
   data ftable {
     {
-      id local id 1,
+      id local id 24,
       data gene {
         locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
  transcript variant 2, mRNA"
@@ -1763,11 +1769,12 @@ Seq-annot ::= {
         from 3819588,
         to 3928074,
         strand plus,
-        id gi 224514634
+        id gi 224514634,
+        fuzz-from lim lt
       }
     },
     {
-      id local id 2,
+      id local id 25,
       data rna {
         type mRNA,
         ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
@@ -2034,12 +2041,10 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 3,
+      id local id 26,
       data cdregion {
         frame two,
         code {
-          id 1,
-          id 1,
           id 1
         }
       },
@@ -2303,6 +2308,373 @@ Seq-annot ::= {
         }
       },
       except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 27,
+      data gene {
+        locus "Danio rerio polymerase (DNA directed), delta 1, catalytic
+ subunit (pold1), mRNA"
+      },
+      location int {
+        from 2407605,
+        to 2439559,
+        strand minus,
+        id gi 258442493
+      }
+    },
+    {
+      id local id 28,
+      data rna {
+        type mRNA,
+        ext name "Danio rerio polymerase (DNA directed), delta 1, catalytic
+ subunit (pold1), mRNA"
+      },
+      except TRUE,
+      product whole gi 89886292,
+      location packed-int {
+        {
+          from 2439463,
+          to 2439559,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2438131,
+          to 2438329,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2435741,
+          to 2435854,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2435511,
+          to 2435651,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2433102,
+          to 2433227,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2432475,
+          to 2432643,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2432272,
+          to 2432386,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2429109,
+          to 2429238,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2427478,
+          to 2427644,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2426193,
+          to 2426297,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2425473,
+          to 2425613,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2425292,
+          to 2425402,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2421695,
+          to 2421886,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2421508,
+          to 2421596,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2419268,
+          to 2419384,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2418772,
+          to 2418885,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2416099,
+          to 2416246,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2415912,
+          to 2416007,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2415682,
+          to 2415819,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2413847,
+          to 2414022,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2413506,
+          to 2413658,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2411920,
+          to 2412022,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2411716,
+          to 2411848,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408872,
+          to 2408985,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408544,
+          to 2408596,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408210,
+          to 2408307,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2407605,
+          to 2407826,
+          strand minus,
+          id gi 258442493
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 29,
+      data cdregion {
+        frame one,
+        code {
+          id 1,
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 89886293,
+      location packed-int {
+        {
+          from 2438131,
+          to 2438317,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2435741,
+          to 2435854,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2435511,
+          to 2435651,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2433102,
+          to 2433227,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2432475,
+          to 2432643,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2432272,
+          to 2432386,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2429109,
+          to 2429238,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2427478,
+          to 2427644,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2426193,
+          to 2426297,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2425473,
+          to 2425613,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2425292,
+          to 2425402,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2421695,
+          to 2421886,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2421508,
+          to 2421596,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2419268,
+          to 2419384,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2418772,
+          to 2418885,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2416099,
+          to 2416246,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2415912,
+          to 2416007,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2415682,
+          to 2415819,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2413847,
+          to 2414022,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2413506,
+          to 2413658,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2411920,
+          to 2412022,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2411716,
+          to 2411848,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408872,
+          to 2408985,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408544,
+          to 2408596,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2408210,
+          to 2408307,
+          strand minus,
+          id gi 258442493
+        },
+        {
+          from 2407739,
+          to 2407826,
+          strand minus,
+          id gi 258442493
+        }
+      },
+      except-text "mismatches in translation"
     }
   }
 }

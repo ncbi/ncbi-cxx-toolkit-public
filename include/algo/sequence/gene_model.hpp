@@ -69,7 +69,8 @@ public:
                                          objects::CScope& scope,
                                          objects::CSeq_annot& annot,
                                          objects::CBioseq_set& seqs,
-                                         TGeneModelCreateFlags flags = fDefaults);
+                                         TGeneModelCreateFlags flags = fDefaults,
+                                         TSeqPos allowed_unaligned = 10);
 
 
     /// Correctly mark exceptions on a feature
