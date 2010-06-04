@@ -107,6 +107,8 @@ void CNetCacheControl::Init()
     arg_desc->AddOptionalKey("icache", "cache_name",
         "Connect to an ICache database", CArgDescriptions::eString);
 
+    arg_desc->AddFlag("reconf",        "Reload server configuration");
+    arg_desc->AddFlag("reinit",        "Delete all blobs and reset DB");
     arg_desc->AddFlag("shutdown",      "Shutdown server");
     arg_desc->AddFlag("ver",           "Server version");
     arg_desc->AddFlag("getconf",       "Server config");
@@ -302,6 +304,15 @@ int CNetCacheControl::Run()
     else if (args["shutdown"]) {
         admin.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
+    } else if (args["reconf"]) {
+        admin.ReloadServerConfig();
+        NcbiCout << "Reconfigured." << NcbiEndl;
+    } else if (args["reinit"]) {
+        if (icache_mode)
+            admin.Reinitialize(args["icache"].AsString());
+        else
+            admin.Reinitialize();
+        NcbiCout << "Reinitialized." << NcbiEndl;
     }
 
     return 0;

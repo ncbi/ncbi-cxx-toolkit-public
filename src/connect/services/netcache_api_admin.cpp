@@ -45,6 +45,19 @@ void CNetCacheAdmin::ShutdownServer()
         ExecWithRetry(m_Impl->m_API->MakeCmd("SHUTDOWN"));
 }
 
+void CNetCacheAdmin::ReloadServerConfig()
+{
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
+        ExecWithRetry(m_Impl->m_API->MakeCmd("RECONF"));
+}
+
+void CNetCacheAdmin::Reinitialize(const string& cache_name)
+{
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
+        ExecWithRetry(m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
+            string("IC(" + cache_name + ") REINIT").c_str()));
+}
+
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("GETCONF"),

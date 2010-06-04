@@ -61,6 +61,12 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     ///  Protected to avoid a temptation to call it from time to time. :)
     void ShutdownServer();
 
+    /// Reload configuration parameters from the same source.
+    void ReloadServerConfig();
+
+    /// Drop the specified database and then create it anew.
+    void Reinitialize(const string& cache_name = kEmptyStr);
+
     /// Print contents of the configuration file
     void PrintConfig(CNcbiOstream& output_stream) const;
 
