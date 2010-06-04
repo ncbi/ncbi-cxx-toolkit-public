@@ -43,6 +43,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -244,39 +245,14 @@ bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
     m_strId = "<unknown>";
 
     if ( feature.CanGetLocation() ) {
-        const CSeq_loc& location = feature.GetLocation();
-        const CSeq_id* pId = location.GetId();
-        switch ( pId->Which() ) {
-            
-            case CSeq_id::e_Local:
-                if ( pId->GetLocal().IsId() ) {
-                    m_strId = NStr::UIntToString( pId->GetLocal().GetId() );
-                }
-                else {
-                    m_strId = pId->GetLocal().GetStr();
-                }
-                break;
-
-            case CSeq_id::e_Gi:
-                m_strId = NStr::IntToString( pId->GetGi() );
-                break;
-
-            case CSeq_id::e_Other:
-                if ( pId->GetOther().CanGetAccession() ) {
-                    m_strId = pId->GetOther().GetAccession();
-                    if ( pId->GetOther().CanGetVersion() ) {
-                        m_strId += ".";
-                        m_strId += NStr::UIntToString( 
-                            pId->GetOther().GetVersion() ); 
-                    }
-                }
-                break;
-
-            default:
-                break;
+        const CSeq_loc& loc = feature.GetLocation();
+        CScope& scope = m_Sah.GetScope();
+        CSeq_id_Handle idh = sequence::GetIdHandle(loc, &scope );
+        if (idh) {
+            m_strId.clear();
+            idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
         }
     }
-
     return true;
 }
 
