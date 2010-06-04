@@ -47,7 +47,6 @@
 #endif //NCBI_OS_MSWIN
 #include <iomanip>
 #include <math.h>
-#include <stdlib.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -217,8 +216,10 @@ int main(int argc, const char* argv[])
         NcbiCout << "Hit any key or program will bail out in 1 minute..."
                  << NcbiFlush;
         for (int n = 0;  n < 120;  n++) {
-            if (_kbhit())
+            if (_kbhit()) {
+                _getch();
                 break;
+            }
             SleepMilliSec(500);
         }
     }
