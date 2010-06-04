@@ -529,7 +529,7 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
         CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
         seq_len = bsh.GetBioseqLength();
-        if (bsh.IsAa() != subject_bsh.IsAa()) {
+        if (bsh.IsAa() &&  !subject_bsh.IsAa() ) {
             /// NOTE: alignment length is always reported in nucleotide
             /// coordinates
             seq_len *= 3;
