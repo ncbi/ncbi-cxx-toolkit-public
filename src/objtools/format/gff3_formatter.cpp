@@ -353,7 +353,7 @@ void CGFF3_Formatter::Start(IFlatTextOStream& text_os)
     }
     // All comments, not a directives.
     l.push_back("#!source-version NCBI C++ formatter 0.2");
-    l.push_back("#!date " + CurrentTime().AsString("Y-M-D"));
+//    l.push_back("#!date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
 }
 

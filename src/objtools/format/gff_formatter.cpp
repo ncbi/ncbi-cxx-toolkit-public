@@ -67,7 +67,6 @@ void CGFFFormatter::Start(IFlatTextOStream& text_os)
     list<string> l;
     l.push_back("##gff-version 2");
     l.push_back("##source-version NCBI C++ formatter 0.3");
-    l.push_back("##date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
 }
 
