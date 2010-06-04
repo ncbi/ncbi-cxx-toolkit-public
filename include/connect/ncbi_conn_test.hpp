@@ -35,7 +35,6 @@
  */
 
 #include <connect/ncbi_conn_stream.hpp>
-#include <ostream>
 #include <string>
 
 /** @addtogroup Utility

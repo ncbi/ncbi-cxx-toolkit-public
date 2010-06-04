@@ -32,13 +32,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_util.h>
-#include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>

@@ -30,7 +30,6 @@
  *
  */
 
-#include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_ftp_connector.h>
 #include "../ncbi_ansi_ext.h"

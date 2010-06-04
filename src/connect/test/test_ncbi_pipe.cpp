@@ -31,8 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <stdio.h>

@@ -32,12 +32,10 @@
 
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_sendmail.h>
-#include <connect/ncbi_socket.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 /* This header must go last */
 #include "test_assert.h"

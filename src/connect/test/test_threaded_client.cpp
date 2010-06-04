@@ -34,7 +34,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <util/random_gen.hpp>
 #include <util/thread_pool.hpp>
