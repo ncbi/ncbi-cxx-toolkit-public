@@ -513,6 +513,8 @@ NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& product);
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat GetMappedCDSForProduct(const CBioseq_Handle& product);
 
 
 /// Get the mature peptide feature of a protein
