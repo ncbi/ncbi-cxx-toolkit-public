@@ -32,18 +32,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbicntr.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/request_control.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <connect/server.hpp>
 #include <util/random_gen.hpp>
-#include <util/thread_pool.hpp>
 
 #include <common/test_assert.h>  // This header must go last
 

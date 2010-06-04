@@ -32,13 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_process.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
@@ -291,40 +287,38 @@ int main(int argc, const char* argv[])
         }
         unsigned long val = 0;
         unsigned long filesize = 0;
-        CTime stop;
         if (upload) {
-            string time;
             upload >> val;
+        }
+        if (size  &&  val == (unsigned long) size) {
+            string speedstr;
+            string filetime;
             upload.clear();
             upload << "SIZE " << filename << NcbiEndl;
             upload >> filesize;
             upload.clear();
             upload << "MDTM " << filename << NcbiEndl;
-            upload >> time;
-            if (!time.empty())
-                stop.SetTimeT(NStr::StringToUInt(time));
-            upload.clear();
-            upload << "DELE " << filename << NcbiEndl;
-        }
-        if (size  &&  val == (unsigned long) size) {
-            string speed;
-            if (!stop.IsEmpty()) {
-                time_t delta = stop.GetTimeT() - start.GetTimeT();
-                double rate  = (val / 1024.0) / (delta ? delta : 1);
-                speed = (" (in "
-                         + NStr::UIntToString(delta)
-                         + " sec @ "
-                         + NStr::DoubleToString(rate, 2, NStr::fDoubleFixed)
-                         + " KB/s)");
+            upload >> filetime;
+            if (!filetime.empty()) {
+                time_t stop = (time_t) NStr::StringToUInt(filetime);
+                time_t time = stop - start.GetTimeT();
+                double rate = (val / 1024.0) / (time ? time : 1);
+                speedstr = (" in "
+                            + NStr::UIntToString(time)
+                            + " sec @ "
+                            + NStr::DoubleToString(rate, 2, NStr::fDoubleFixed)
+                            + " KB/s");
             }
             LOG_POST("Test 3 passed: " <<
                      size << " bytes uploaded via FTP" <<
                      (val == filesize ? " and verified" : "") <<
-                     speed << '\n');
+                     speedstr << '\n');
         } else {
             ERR_POST(Fatal << "Test 3 failed: " <<
                      val << " out of " << size << " byte(s) uploaded");
         }
+        upload.clear();
+        upload << "DELE " << filename << NcbiEndl;
     } else
         LOG_POST("Test 3 skipped\n");
 
