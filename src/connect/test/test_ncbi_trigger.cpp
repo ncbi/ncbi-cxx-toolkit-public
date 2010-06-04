@@ -31,7 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_core_cxx.hpp>
