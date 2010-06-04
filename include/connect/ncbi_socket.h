@@ -252,11 +252,12 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
  */
 
 /** Control restartability of I/O interrupted by signals.
- * By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
+ * By default I/O is restartable if interrupted.
+ * Pass "on_off" as eDefault to get the current setting.
  * @param on_off
  *  [in]  eOn to cancel I/O on signals;  eOff to restart
  * @return
- *  Prior setting.
+ *  Prior setting
  * @sa
  *  SOCK_SetInterruptOnSignal
  */
@@ -272,7 +273,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
  * @param on_off
  *  [in]  per-socket I/O restart behavior on signals
  * @return
- *  Prior setting.
+ *  Prior setting
  * @sa
  *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
  */
@@ -288,12 +289,13 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
  */
 
 /** Control address reuse for socket addresses taken by the API.
- * By default ("on_off" == eDefault,eOff), address is not marked
- * for reuse in SOCK, but is always reused for LSOCK.
+ * By default address is not marked for reuse in SOCK,
+ * but is always reused for LSOCK.
+ * Pass "on_off" as eDefault to get the current setting.
  * @param on_off
- *  [in]  whether to turn on (eOn), turn off (eOff), or use default (eDefault)
+ *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)
  * @return
- *  Prior setting.
+ *  Prior setting
  * @sa
  *  SOCK_SetReuseAddress
  */
@@ -1314,14 +1316,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
  );
 
 
-/** By default ("on_off" == eDefault,eOff), sockets will not try to read data
- * from inside SOCK_Write(). If you want to automagically upread the data
- * (and cache it in the internal socket buffer) when the write operation
- * is not immediately available, call this func with "on_off" == eOn.
+/** By default, sockets will not try to read data from inside SOCK_Write().
+ * If you want to automagically upread the data (and cache it in the internal
+ * socket buffer) when the write operation is not immediately available,
+ * call this func with "on_off" == eOn.
+ * Pass "on_off" as eDefault to get current setting.
  * @param on_off
  *
  * @return
- *  Prior setting.
+ *  Prior setting
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWriteAPI
 (ESwitch on_off
@@ -1336,7 +1339,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWriteAPI
  * @param on_off
  *
  * @return
- *  Prior setting.
+ *  Prior setting
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 (SOCK    sock,
