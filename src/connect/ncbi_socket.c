@@ -193,7 +193,7 @@ static unsigned int s_ID_Counter = 0;
 static ESwitch s_ReadOnWrite = eOff;        /* no read-on-write by default   */
 
 /* Reuse address flag for newly created stream sockets */
-static int/*bool*/ s_ReuseAddress = 0;      /* off by default                */
+static ESwitch s_ReuseAddress = eOff;       /* off by default                */
 
 /* I/O restart on signals */
 static ESwitch s_InterruptOnSignal = eOff;  /* restart I/O by default        */
@@ -2144,7 +2144,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                          s_ID(sock, _id), mtu, mtu < 0 ? " [unknown]" : ""));
         }
 #endif /*_DEBUG && !NDEBUG*/
-        if (s_ReuseAddress
+        if (s_ReuseAddress == eOn
 #ifdef NCBI_OS_UNIX
             &&  !*sock->path
 #endif /*NCBI_OS_UNIX*/
@@ -4353,7 +4353,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     if ((*sock)->log == eDefault)
         (*sock)->log = lsock->log;
 
-    if (s_ReuseAddress
+    if (s_ReuseAddress == eOn
 #ifdef NCBI_OS_UNIX
         &&  !path[0]
 #endif /*NCBI_OS_UNIX*/
@@ -5600,9 +5600,8 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
 extern ESwitch SOCK_SetReadOnWriteAPI(ESwitch on_off)
 {
     ESwitch old = s_ReadOnWrite;
-    if (on_off == eDefault)
-        on_off = eOff;
-    s_ReadOnWrite = on_off;
+    if (on_off != eDefault)
+        s_ReadOnWrite = on_off;
     return old;
 }
 
@@ -5621,9 +5620,8 @@ extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
 {
     ESwitch old = s_InterruptOnSignal;
-    if (on_off == eDefault)
-        on_off = eOff;
-    s_InterruptOnSignal = on_off;
+    if (on_off != eDefault)
+        s_InterruptOnSignal = on_off;
     return old;
 }
 
@@ -5638,9 +5636,10 @@ extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
 
 extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
 {
-    int old = s_ReuseAddress;
-    s_ReuseAddress = on_off == eOn ? 1 : 0;
-    return old ? eOn : eOff;
+    ESwitch old = s_ReuseAddress;
+    if (on_off != eDefault)
+        s_ReuseAddress = on_off;
+    return old;
 }
 
 
