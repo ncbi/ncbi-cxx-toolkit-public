@@ -1897,6 +1897,22 @@ const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
     return 0;
 }
 
+CMappedFeat GetMappedCDSForProduct(const CBioseq_Handle& bsh)
+{
+    if ( bsh ) {
+        CFeat_CI fi(bsh,
+                    SAnnotSelector(CSeqFeatData::e_Cdregion)
+                    .SetByProduct());
+        if ( fi ) {
+            // return the first one (should be the one packaged on the
+            // nuc-prot set).
+            return *fi;
+        }
+    }
+
+    return CMappedFeat();
+}
+
 
 // Get the mature peptide feature of a protein
 const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope)
