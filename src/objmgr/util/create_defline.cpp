@@ -38,6 +38,7 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/mapped_feat.hpp>
 
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -45,6 +46,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
+USING_SCOPE(feature);
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
@@ -966,19 +968,16 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
 )
 
 {
-    CConstRef<CSeq_feat> cds_feat;
-    CConstRef<CSeq_loc>  cds_loc;
-    CConstRef<CSeq_feat> gene_feat;
     CConstRef<CGene_ref> gene_ref;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
     const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
 
-    cds_feat = GetCDSForProduct (hnd);
+    const CMappedFeat& mapped_cds = GetMappedCDSForProduct (hnd);
 
-    if (cds_feat) {
-        const CSeq_feat& feat = (*cds_feat);
-        FOR_EACH_SEQFEATXREF_ON_FEATURE (xf_itr, feat) {
+    if (mapped_cds) {
+        const CSeq_feat& cds_feat = mapped_cds.GetOriginalFeature();
+        FOR_EACH_SEQFEATXREF_ON_FEATURE (xf_itr, cds_feat) {
             const CSeqFeatXref& sfx = **xf_itr;
             if (sfx.IsSetData()) {
                 const CSeqFeatData& sfd = sfx.GetData();
@@ -992,23 +991,16 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
             return gene_ref;
         }
 
-        cds_loc = &cds_feat->GetLocation();
-        if (cds_loc) {
-            gene_feat = GetBestOverlappingFeat (*cds_loc,
-                                                CSeqFeatData::eSubtype_gene,
-                                                eOverlap_Subset,
-                                                scope);
-            if (gene_feat) {
-                gene_ref = &gene_feat->GetData().GetGene();
-            }
+        CFeatTree tree;
+        tree.AddGenesForCds (mapped_cds);
+        CMappedFeat mapped_gene = GetBestGeneForCds (mapped_cds, &tree);
+        if (mapped_gene) {
+            const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
+            gene_ref = &gene_feat.GetData().GetGene();
         }
     }
 
-    if (gene_ref) {
-        return gene_ref;
-    }
-
-    return CConstRef<CGene_ref> ();
+    return gene_ref;
 }
 
 bool CDeflineGenerator::x_HasSourceFeats (
