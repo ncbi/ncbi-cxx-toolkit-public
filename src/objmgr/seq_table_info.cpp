@@ -675,9 +675,6 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
             if ( !seq_pnt ) {
                 seq_pnt = new CSeq_point();
             }
-            else {
-                seq_pnt->Reset();
-            }
             CSeq_point& point = *seq_pnt;
             if ( id ) {
                 point.SetId(const_cast<CSeq_id&>(*id));
@@ -689,15 +686,16 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
             if ( strand >= 0 ) {
                 point.SetStrand(ENa_strand(strand));
             }
+            else {
+                point.ResetStrand();
+            }
+            point.ResetFuzz();
             loc.SetPnt(point);
         }
         else {
             // interval
             if ( !seq_int ) {
                 seq_int = new CSeq_interval();
-            }
-            else {
-                seq_int->Reset();
             }
             CSeq_interval& interval = *seq_int;
             if ( id ) {
@@ -711,6 +709,11 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
             if ( strand >= 0 ) {
                 interval.SetStrand(ENa_strand(strand));
             }
+            else {
+                interval.ResetStrand();
+            }
+            interval.ResetFuzz_from();
+            interval.ResetFuzz_to();
             loc.SetInt(interval);
         }
     }
