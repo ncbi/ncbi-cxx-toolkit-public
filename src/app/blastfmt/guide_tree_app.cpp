@@ -47,6 +47,7 @@
 
 #include "guide_tree.hpp"
 #include "guide_tree_calc.hpp"
+#include "guide_tree_render.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -328,50 +329,53 @@ int CGuideTreeApplication::Run(void)
         gtree->ShowSubtree(args["subtree"].AsInteger());
     }
 
-    // Select tree rendering
-    if (args["render"].AsString() == "rect") {
-        gtree->SetRenderFormat(CGuideTree::eRect);
-    } else if (args["render"].AsString() == "slanted") {
-        gtree->SetRenderFormat(CGuideTree::eSlanted);
-    } else if (args["render"].AsString() == "radial") {
-        gtree->SetRenderFormat(CGuideTree::eRadial);
-    } else if (args["redenr"].AsString() == "force") {
-        gtree->SetRenderFormat(CGuideTree::eForce);
-    }
-
-    if (args["no_dist"]) {
-        gtree->SetDistanceMode(false);
-    }
-
-    CGuideTree::ETreeFormat tree_format;
-
     if (args["outfmt"].AsString() == "image") {
-        tree_format = CGuideTree::eImage;
-    } else if (args["outfmt"].AsString() == "asn") {
-        tree_format = CGuideTree::eASN;
-    } else if (args["outfmt"].AsString() == "newick") {
-        tree_format = CGuideTree::eNewick;
-    } else if (args["outfmt"].AsString() == "nexus") {
-        tree_format = CGuideTree::eNexus;
-    } else {
-        NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
-        return 1;
-    }
+        CGuideTreeRenderer renderer(*gtree);
 
-    if (tree_format == CGuideTree::eImage) {
-        gtree->PreComputeImageDimensions();
-        gtree->SetImageWidth(args["width"].AsInteger());
+        // Select tree rendering
+        if (args["render"].AsString() == "rect") {
+            renderer.SetRenderFormat(CGuideTreeRenderer::eRect);
+        } else if (args["render"].AsString() == "slanted") {
+            renderer.SetRenderFormat(CGuideTreeRenderer::eSlanted);
+        } else if (args["render"].AsString() == "radial") {
+            renderer.SetRenderFormat(CGuideTreeRenderer::eRadial);
+        } else if (args["redenr"].AsString() == "force") {
+            renderer.SetRenderFormat(CGuideTreeRenderer::eForce);
+        }
+
+        if (args["no_dist"]) {
+            renderer.SetDistanceMode(false);
+        }
+
+        renderer.PreComputeImageDimensions();
+        renderer.SetImageWidth(args["width"].AsInteger());
 
         if (args["best_height"]) {
-            gtree->SetImageHeight(gtree->GetMinHeight());
+            renderer.SetImageHeight(renderer.GetMinHeight());
         }
         else {
-            gtree->SetImageHeight(args["height"].AsInteger());
+            renderer.SetImageHeight(args["height"].AsInteger());
         }
-    }
 
-    // Write tree in selected format
-    gtree->SaveTreeAs(args["o"].AsOutputFile(), tree_format);
+        renderer.WriteImage(args["o"].AsOutputFile());
+    }
+    else {
+
+        CGuideTree::ETreeFormat tree_format;
+        if (args["outfmt"].AsString() == "asn") {
+            tree_format = CGuideTree::eASN;
+        } else if (args["outfmt"].AsString() == "newick") {
+            tree_format = CGuideTree::eNewick;
+        } else if (args["outfmt"].AsString() == "nexus") {
+            tree_format = CGuideTree::eNexus;
+        } else {
+            NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
+            return 1;
+        }
+
+        // Write tree in selected format
+        gtree->SaveTreeAs(args["o"].AsOutputFile(), tree_format);
+    }
 
     return 0;
 }
