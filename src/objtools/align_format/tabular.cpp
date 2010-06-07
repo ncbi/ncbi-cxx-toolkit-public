@@ -942,7 +942,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         }
         m_Ostream << "<td>Top J gene match</td>"
                   << "<td>Chain type</td>"
-                  << "<td>Rearrangement status</td>"
+                  << "<td>V-J Frame</td>"
                   << "<td>Strand</td></tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
