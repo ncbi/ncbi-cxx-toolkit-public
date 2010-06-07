@@ -1,5 +1,5 @@
 APP = guidetree
-SRC = guide_tree guide_tree_calc guide_tree_simplify guide_tree_app
+SRC = guide_tree guide_tree_calc guide_tree_simplify guide_tree_render guide_tree_app
 
 LIB_ = w_phylo_tree xalgoalignnw xalgophytree fastme \
 	   gui_glmesa w_gl w_wx w_data \

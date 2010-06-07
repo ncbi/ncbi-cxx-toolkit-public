@@ -30,22 +30,8 @@
  * 
  */
 
-///@guide_tree.hpp
-///Phylogenetic tree.
-
 #include <corelib/ncbiexpt.hpp>
-
-#include <util/image/image_io.hpp>
-
-#include <gui/opengl/mesa/glcgi_image.hpp>
-#include <gui/opengl/mesa/gloscontext.hpp>
-#include <gui/opengl/glutils.hpp>
-#include <gui/opengl/glpane.hpp>
-
 #include <algo/phy_tree/bio_tree.hpp>
-
-#include <gui/widgets/phylo_tree/phylo_tree_ds.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_render.hpp>
 
 #include "guide_tree_calc.hpp"
 #include "guide_tree_simplify.hpp"
@@ -53,8 +39,8 @@
 
 USING_NCBI_SCOPE;
 
-/// Wrapper around libw_phylo_tree.a classes: CPhloTreeDataSource,
-/// IPhyloTreeRenderer, etc, used for manipulation of phylogenetic tree
+/// Class for adding tree features, maniplating and printing tree in standard
+/// text formats
 class CGuideTree
 {
 public:
@@ -63,26 +49,17 @@ public:
     typedef pair<string, string> TBlastNameToColor;
     typedef vector<TBlastNameToColor> TBlastNameColorMap;
 
-    /// Information about tree leaves
-    typedef struct STreeInfo {
-        TBlastNameColorMap blastname_color_map;
-        vector<string> seq_ids;
-        vector<string> accessions;        
-    } STreeInfo;
-
-    /// Tree rendering formats
-    enum ETreeRenderer {
-        eRect, eSlanted, eRadial, eForce
-    }; 
-
     /// Tree simplification modes
     enum ETreeSimplifyMode {
-        eNone, eFullyExpanded, eByBlastName};
-
+        eNone,             ///< No simplification mode
+        eFullyExpanded,    ///< Tree fully expanded
+        eByBlastName       ///< Subtrees that contain sequences with the
+                           ///< the same Blast Name are collapsed
+    };
 
     /// Output formats
     enum ETreeFormat {
-        eImage, eASN, eNewick, eNexus
+        eASN, eNewick, eNexus
     };
 
     /// Information shown as labels in the guide tree
@@ -156,53 +133,11 @@ public:
 
     // --- Setters ---
 
-    /// Set rendering format
-    /// @param format Rendering format [in]
-    ///
-    void SetRenderFormat(ETreeRenderer format) {m_RenderFormat = format;}
-
-    /// Set distance mode
-    /// @param mode Distance mode, egde lengths will not be shown if false [in]
-    ///
-    void SetDistanceMode(bool mode) {m_DistanceMode = mode;}
-
-    /// Set tree node size
-    /// @param size Node size [in]
-    ///
-    void SetNodeSize(int size) {m_NodeSize = size;}
-
-    /// Set tree edge with
-    /// @param width Edge with [in]
-    ///
-    void SetLineWidth(int width) {m_LineWidth = width;}
-
     /// Set query node id
     /// @param id Query node id [in]
     ///
     /// Query node is marked by different label color
     void SetQueryNodeId(int id) {m_QueryNodeId = id;}
-
-
-    /// Set width of generated image
-    /// @param width Image width [in]
-    ///
-    void SetImageWidth(int width) {m_Width = width;}
-
-    /// Set height of generated image
-    /// @param height Image height [in]
-    ///
-    void SetImageHeight(int height) {m_Height = height;}
-
-    /// Set format of generated image
-    /// @param format Image format [in]
-    ///
-    void SetImageFormat(CImageIO::EType format) {m_ImageFormat = format;}
-
-    /// Initialization related to the selected branch of the tree
-    ///
-    /// @param hit selected node id [in]
-    ///
-    void SetSelection(int hit);
 
     /// Set Blast Name to color map
     /// @return Reference to Blast Name to color map
@@ -227,32 +162,20 @@ public:
     ///
     int GetQueryNodeId(void) const {return m_QueryNodeId;}
 
-    /// Get error message
-    /// @return Error messsage
-    ///
-    string GetErrorMessage(void) const {return m_ErrorMessage;}
-
     /// Get current tree simplification mode
     /// @return tree simplifcation mode
     ///
     ETreeSimplifyMode GetSimplifyMode(void) const {return m_SimplifyMode;}
 
-    ///Get the minimum image height which should be acceptable to output 
-    ///
-    /// @return min height
-    int GetMinHeight(void) const {return m_MinDimRect.Height();}
-
-    /// Get information about leaves (such as seqids, blast name to color map,
-    /// usually used for auxilary information on the web) for selected subtree
-    /// @param node_id Node id of subtree root [in]
-    /// @return Tree information
-    ///
-    auto_ptr<STreeInfo> GetTreeInfo(int node_id);
-
     /// Get tree root node id
-    ///
     /// @return root node id
+    ///
     int GetRootNodeID(void);
+
+    /// Get tree structure
+    /// @return Tree
+    ///
+    const CBioTreeDynamic& GetTree(void) const {return m_Dyntree;}
 
     /// Get serialized tree
     /// @return Biotree container
@@ -271,25 +194,6 @@ public:
     ///
     bool SaveTreeAs(CNcbiOstream& ostr, ETreeFormat format);
 
-
-    /// Write image to stream
-    /// @param out Output stream [in|out]
-    /// @return True on success, false on failure
-    ///
-    bool WriteImage(CNcbiOstream& out);
-
-    /// Write image to file
-    /// @param filename Output file name [in]
-    /// @return True on success, false on failure
-    ///
-    bool WriteImage(const string& filename = "");
-
-    /// Write image to netcache
-    /// @param netcacheServiceName Netcache Service Name [in]
-    /// @param netcacheClientName  Netcache Client Name  [in]
-    /// @return string netcache key
-    ///
-    string WriteImageToNetcache(string netcacheServiceName,string  netcacheClientName);
 
     /// Write tree structure to stream
     /// @param out Output stream [in|out]
@@ -376,23 +280,6 @@ public:
     bool ShowSubtree(int root_id);
 
 
-    ///Get map corresponding to tree image
-    ///
-    ///@param  jsClickNode javascript function name for non-leaf node click
-    ///@param jsClickLeaf javascript function name for leaf node click
-    ///@param  jsMouseover javascript function name for node mouseover
-    ///@param  jsMouseout javascript function name for node mouseout
-    ///@param jsClickQuery javascript function name for query node click
-    ///@param showQuery if true higlight query node
-    ///@return string map
-    ///
-    string GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery = "",bool showQuery = true);
-
-    ///Calculates the minimum width and height of tree image that ensures
-    ///that all nodes are visible
-    ///
-    void PreComputeImageDimensions(void);
-
 protected:    
     
     /// Forbiding copy constructor
@@ -406,16 +293,6 @@ protected:
     /// Init class attributes to default values
     ///
     void x_Init(void);
-
-    /// Find pointer to a node with given numerical id. Throws excepion if node
-    /// not found.
-    /// @param id Numerical node id [in]
-    /// @param throw_if_null If true, throw exception if node not found [in]
-    /// @param root Root of the searched subtree, tree root if NULL
-    /// @return Pointer to the node with desired id or NULL of node not found
-    ///
-    CPhyloTreeNode* x_GetNode(int id, bool throw_if_null = true,
-                              CPhyloTreeNode* root = NULL);
 
     /// Find pointer to a BioTreeDynamic node with given numerical id.
     /// Throws excepion if node not found.
@@ -445,35 +322,6 @@ protected:
     /// @param node Node [in|out]
     ///
     static void x_Expand(CBioTreeDynamic::CBioNode& node);
-
-    /// Get numeric id of feature with given tag. Throws exception is feature
-    /// not found.
-    /// @param tag Feature tag [in]
-    /// @return Numeric feature id
-    ///
-    inline TBioTreeFeatureId x_GetFeatureId(const string& tag);
-
-    /// Get feature value by tag of selected node
-    /// @param node Node [in]
-    /// @param feature_tag Feature tag from tree feature dictionary [in]
-    /// @return Feature value
-    ///
-    inline static string x_GetNodeFeature(const CPhyloTreeNode* node,
-                                   TBioTreeFeatureId fid);
-
-    /// Create layout for image rendering
-    ///
-    void x_CreateLayout(void);
-
-    /// Render image
-    ///
-    void x_Render(void);
-
-    /// Create image
-    /// @return True on success, false on failure
-    ///
-    bool x_RenderImage(void);
-
 
     /// Generates tree in Newick format, recursive
     /// @param ostr Output stream [in|out]
@@ -544,49 +392,8 @@ private:
     static void x_AddFeature(int id, const string& value,
                              CNodeSet::Tdata::iterator iter);    
 
-    /// Add very short length to edges descending directly from root in
-    /// in rendered tree.
-    ///
-    /// The purpose of this function is to avoid zero length edges at root,
-    /// because then the rendered tree is difficult to analyze.
-    void x_ExtendRoot(void);
-
 
     // Tree visitor classes used for manipulating the guide tree
-
-    /// Tree visitor, finds tree node by id
-    class CNodeFinder
-    {
-    public:
-
-        /// Constructor
-        /// @param node_id Id of node to be found [in]
-        CNodeFinder(IPhyNode::TID node_id) : m_NodeId(node_id), m_Node(NULL) {}
-
-        /// Get pointer to found node
-        /// @return Pointer to node or NULL if node not found
-        CPhyloTreeNode* GetNode(void) const {return m_Node;}
-
-        /// Check node id. Function invoked on each node by traversal function.
-        /// @param node Tree root [in]
-        /// @param delta Direction of tree traversal [in]
-        /// @return Traverse action
-        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta)
-        {
-            if (delta == 0 || delta == 1) {
-                if ((*node).GetId() == m_NodeId) {
-                    m_Node = &node;
-                    return eTreeTraverseStop;
-                } 
-            }
-            return eTreeTraverse;
-        }
-
-    protected:
-        IPhyNode::TID m_NodeId;  ///< Id of searched node
-        CPhyloTreeNode* m_Node;  ///< Pointer to node with desired id
-    };
-
 
     /// Tree visitor, finds BioTreeDynamic node by id
     class CBioNodeFinder
@@ -696,94 +503,19 @@ private:
     };
 
 
-    /// Tree visitor, finds pointers to all leaves in a subtree
-    class CLeaveFinder
-    {
-    public:
-        /// Get list of pointers to leave nodes
-        /// @return List of pointers to leave nodes
-        vector<CPhyloTreeNode*>& GetLeaves(void) {return m_Leaves;}
-
-        /// Examine node, find leave nodes and save pointers to them
-        /// @param node Tree node [in]
-        /// @param delta Direction of traversal [in]
-        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta)
-        {
-            if (delta == 0 || delta == 1) {
-                if (node.IsLeaf()) {
-                    m_Leaves.push_back(&node);
-                }
-            }
-            return eTreeTraverse;
-        }
-
-
-    private:
-        /// List of pointers to leave nodes
-        vector<CPhyloTreeNode*> m_Leaves;
-    };
-
-
 protected:
-
-    /// Contains tree structure
-    CRef<CPhyloTreeDataSource> m_DataSource; 
 
     /// Stores tree data
     CBioTreeDynamic m_Dyntree;
 
-    /// Height of output image
-    int m_Height;
-
-    /// Width of outputs image
-    int m_Width;
-
-    /// Format of output image
-    CImageIO::EType m_ImageFormat;
-
-    /// Tree rendering format
-    ETreeRenderer m_RenderFormat;
-
-    /// Should edge lengths be shown in rendered tree
-    bool m_DistanceMode;
-
-    /// Tree node size
-    int m_NodeSize;
-
-    /// Line width for tree edges
-    int m_LineWidth;
-
     /// Id of query node
     int m_QueryNodeId;
 
-    /// GL context
-    CRef<CGlOsContext> m_Context;
-
-    /// GL pane
-    auto_ptr<CGlPane> m_Pane;
-
-    /// Phylogenetic tree renderer
-    auto_ptr<IPhyloTreeRenderer> m_Renderer;
-
-    /// Error message
-    string m_ErrorMessage;
-
     /// Current tree simplification mode
-    ///
     ETreeSimplifyMode m_SimplifyMode;
-
-
-    /// Min image dimensions
-    ///
-    TVPRect m_MinDimRect;    
-
 
     /// Blast Name to color map
     TBlastNameColorMap m_BlastNameColorMap;
-
-    ///Phylo Tree Scheme
-    ///
-    CRef<CPhyloTreeScheme> m_PhyloTreeScheme;
 
 
 public:
@@ -845,62 +577,6 @@ public:
     };
 
     NCBI_EXCEPTION_DEFAULT(CGuideTreeException, CException);
-};
-
-
-
-///Class for creating image map
-///
-class CGuideTreeCGIMap
-{
-public:
-    
-    CGuideTreeCGIMap(CGlPane * x_pane, 
-                     string jsClickNode,
-                     string jsClickLeaf,                     
-                     string jsMouseover,
-                     string jsMouseout,
-                     string jsClickQuery,
-                     bool showQuery) : m_Pane(x_pane), m_Map(""){
-        m_JSClickNodeFunction = jsClickNode;
-        m_JSClickLeafFunction = jsClickLeaf;
-        m_JSMouseoverFunction = jsMouseover;
-        m_JSMouseoutFunction = jsMouseout;
-        m_JSClickQueryFunction = jsClickQuery;
-        m_ShowQuery = showQuery;
-    }
-     
-
-    ///Creates concatinated html <area...> string for tree image
-    ///
-    ///Gets coordinates of the tree nodes from m_DataSource and creats html <area...>
-    ///for each  node with javascript for actions on click and mouseover
-    ///
-    ///@return 
-    /// A string concatinating all "areas" corresponding to the image    
-        const string & GetMap(void) { return m_Map;}
-
-            
-    ETreeTraverseCode operator()(CPhyloTreeNode &  tree_node, int delta)
-    {
-            if (delta==1 || delta==0){
-                                x_FillNodeMapData(tree_node);                                
-            }                
-            return eTreeTraverse;
-    }
-        virtual ~CGuideTreeCGIMap(){}
-protected:
-        virtual void x_FillNodeMapData(CPhyloTreeNode &  tree_node);
-
-        CGlPane * m_Pane;
-    string  m_JSMouseoverFunction; //"javascript:setupPopupMenu(" 
-    string  m_JSMouseoutFunction; //"PopUpMenu2_Hide(0);"
-    string  m_JSClickNodeFunction;// - string(JS_SELECT_NODE_FUNC) - both
-    string  m_JSClickLeafFunction;// - string(JS_SELECT_NODE_FUNC) - blast ,"" - multi
-    string  m_JSClickQueryFunction;// - "" blast, "" multi
-    bool    m_ShowQuery;
-
-        string    m_Map;      
 };
 
 
