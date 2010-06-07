@@ -73,7 +73,8 @@ public:
 ///   connection; .../src/connect/test_threaded_server.cpp illustrates
 ///   how you might do this.
 
-class NCBI_XCONNECT_EXPORT CThreadedServer : public virtual CConnIniter
+NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CThreadedServer
+    : public virtual CConnIniter
 {
 public:
     CThreadedServer(unsigned short port) :
