@@ -726,6 +726,8 @@ static const string sc_ValidRefSeqExceptionText[] = {
     "alternative processing",
     "alternative start codon",
     "artificial frameshift",
+    "mismatches in transcription",
+    "mismatches in translation",
     "modified codon recognition",
     "nonconsensus splice site",
     "rearrangement required for product",
@@ -920,6 +922,7 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
              subtype == CSeqFeatData::eSubtype_tRNA ||
              subtype == CSeqFeatData::eSubtype_preRNA ||
              subtype == CSeqFeatData::eSubtype_otherRNA ||
+             subtype == CSeqFeatData::eSubtype_exon ||
              subtype == CSeqFeatData::eSubtype_3clip ||
              subtype == CSeqFeatData::eSubtype_3UTR ||
              subtype == CSeqFeatData::eSubtype_5clip ||
@@ -1525,6 +1528,7 @@ void CFeatureItem::x_AddQualsRna(
                         m_Feat->IsSetComment() ? m_Feat->GetComment() : kEmptyStr;
                     x_AddQual(eFQ_trna_codons, new CFlatTrnaCodonsQVal(trna, comment));
                 }
+                x_AddQual(eFQ_exception_note, new CFlatStringQVal("tRNA features were annotated by tRNAscan-SE."));
                 break;
             }
             default:
@@ -1654,7 +1658,7 @@ void CFeatureItem::x_AddQualTranslation(
 
     string translation;
     if ( cfg.AlwaysTranslateCDS() || (cfg.TranslateIfNoProduct() && !bsh) ) {
-        CCdregion_translate::TranslateCdregion( translation, *m_Feat, scope );
+        CSeqTranslator::Translate(*m_Feat, scope, translation );
     }
     else if ( bsh ) {
         CSeqVector seqv = bsh.GetSeqVector();

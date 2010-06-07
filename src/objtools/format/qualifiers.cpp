@@ -1449,6 +1449,20 @@ void CFlatModelEvQVal::Format
             if ( field.CanGetData() && field.GetData().IsStr() ) {
                 method = &( field.GetData().GetStr() );
             }
+        } else if (label == "Counts") {
+            ITERATE (CUser_field::TData::TFields, i, field.GetData().GetFields()) {
+                if (!(*i)->IsSetLabel()  &&  (*i)->GetLabel().IsStr()) {
+                    continue;
+                }
+                const string& label = (*i)->GetLabel().GetStr();
+                if (label == "mRNA") {
+                    num_mrna = (*i)->GetData().GetInt();
+                } else if (label == "EST") {
+                    num_est  = (*i)->GetData().GetInt();
+                } else if (label == "Protein") {
+                    num_prot = (*i)->GetData().GetInt();
+                }
+            }
         } else if (label == "mRNA") {
             num_mrna = s_CountAccessions(field);
         } else if (label == "EST") {

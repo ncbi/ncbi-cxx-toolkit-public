@@ -603,11 +603,23 @@ string s_GetGenomeBuildNumber(const CBioseq_Handle& bsh)
         if ( uo.IsSetType()  &&  uo.GetType().IsStr()  &&
              uo.GetType().GetStr() == "GenomeBuild" ) {
             if ( uo.HasField("NcbiAnnotation") ) {
+                string build_num;
                 const CUser_field& uf = uo.GetField("NcbiAnnotation");
                 if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
                      !uf.GetData().GetStr().empty() ) {
-                    return uf.GetData().GetStr();
+                    build_num = uf.GetData().GetStr();
                 }
+
+                if ( uo.HasField("NcbiVersion") ) {
+                    const CUser_field& uf = uo.GetField("NcbiVersion");
+                    if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
+                         !uf.GetData().GetStr().empty() ) {
+                        build_num += " version ";
+                        build_num += uf.GetData().GetStr();
+                    }
+                }
+                return build_num;
+
             } else if ( uo.HasField("Annotation") ) {
                 const CUser_field& uf = uo.GetField("Annotation");
                 if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
