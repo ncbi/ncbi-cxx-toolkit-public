@@ -419,6 +419,17 @@ void CSeq_loc_Conversion::CheckDstPoint(void)
 }
 
 
+inline
+void CSeq_loc_Conversion::CheckDstMix(void)
+{
+    if ( m_LastType != eMappedObjType_Seq_loc_mix ) {
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Wrong last location type");
+    }
+    m_LastType = eMappedObjType_not_set;
+}
+
+
 CRef<CSeq_interval> CSeq_loc_Conversion::GetDstInterval(void)
 {
     CheckDstInterval();
@@ -468,6 +479,51 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
 }
 
 
+void CSeq_loc_Conversion::MakeDstMix(CSeq_loc_mix& dst,
+                                     const CSeq_loc_mix& src) const
+{
+    CSeq_loc_mix::Tdata& dst_mix = dst.Set();
+    const CSeq_loc_mix::Tdata& src_mix = src.Get();
+    ITERATE ( CSeq_loc_mix::Tdata, it, src_mix ) {
+        const CSeq_interval& src_int = (*it)->GetInt();
+        CRef<CSeq_loc> dst_loc(new CSeq_loc);
+        CSeq_interval& dst_int = dst_loc->SetInt();
+        dst_int.SetId(m_Dst_loc_Empty.GetNCObject().SetEmpty());
+        ENa_strand src_strand =
+            src_int.IsSetStrand()? src_int.GetStrand(): eNa_strand_unknown;
+        TSeqPos src_from = src_int.GetFrom(), src_to = src_int.GetTo();
+        ENa_strand dst_strand;
+        TSeqPos dst_from, dst_to;
+        if ( !m_Reverse ) {
+            dst_strand = src_strand;
+            dst_from = m_Shift + src_from;
+            dst_to = m_Shift + src_to;
+        }
+        else {
+            dst_strand = Reverse(src_strand);
+            dst_from = m_Shift - src_from;
+            dst_to = m_Shift - src_to;
+        }
+        if ( dst_strand != eNa_strand_unknown ) {
+            dst_int.SetStrand(dst_strand);
+        }
+        dst_int.SetFrom(dst_from);
+        dst_int.SetTo(dst_to);
+        dst_mix.push_back(dst_loc);
+    }
+}
+
+
+CRef<CSeq_loc_mix> CSeq_loc_Conversion::GetDstMix(void)
+{
+    CRef<CSeq_loc_mix> ret(new CSeq_loc_mix);
+    CheckDstMix();
+    MakeDstMix(*ret, m_SrcLoc->GetMix());
+    m_SrcLoc.Reset();
+    return ret;
+}
+
+
 void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
 {
     CSeq_loc* loc = 0;
@@ -480,6 +536,10 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
         case eMappedObjType_Seq_point:
             dst->Reset(loc = new CSeq_loc);
             loc->SetPnt(*GetDstPoint());
+            break;
+        case eMappedObjType_Seq_loc_mix:
+            dst->Reset(loc = new CSeq_loc);
+            loc->SetMix(*GetDstMix());
             break;
         default:
             _ASSERT(0);
@@ -563,10 +623,112 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
 }
 
 
+bool CSeq_loc_Conversion::ConvertSimpleMix(const CSeq_loc& src)
+{
+    const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
+    if ( src_mix.empty() ) {
+        return false;
+    }
+    const CSeq_loc& first_loc = **src_mix.begin();
+    if ( !first_loc.IsInt() ) {
+        return false;
+    }
+    const CSeq_interval& first_int = first_loc.GetInt();
+    ENa_strand src_strand =
+        first_int.IsSetStrand()? first_int.GetStrand(): eNa_strand_unknown;
+    TSeqPos src_from, src_to;
+    if ( !IsReverse(src_strand) ) {
+        // forward
+        TSeqPos prev_pos = m_Src_from;
+        src_from = first_int.GetFrom();
+        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+            const CSeq_loc& loc = **i;
+            if ( !loc.IsInt() ) {
+                return false;
+            }
+            const CSeq_interval& cur_int = loc.GetInt();
+            if ( cur_int.IsSetFuzz_from() || cur_int.IsSetFuzz_to() ) {
+                return false;
+            }
+            if ( !GoodSrcId(cur_int.GetId()) ) {
+                return false;
+            }
+            ENa_strand strand =
+                cur_int.IsSetStrand()? cur_int.GetStrand(): eNa_strand_unknown;
+            if ( strand != src_strand ) {
+                return false;
+            }
+
+            TSeqPos from = cur_int.GetFrom();
+            TSeqPos to = cur_int.GetTo();
+            if ( to < from || from < prev_pos || to > m_Src_to ) {
+                return false;
+            }
+            prev_pos = to+1;
+        }
+        src_to = prev_pos-1;
+    }
+    else {
+        TSeqPos prev_pos = m_Src_to;
+        src_to = first_int.GetTo();
+        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+            const CSeq_loc& loc = **i;
+            if ( !loc.IsInt() ) {
+                return false;
+            }
+            const CSeq_interval& cur_int = loc.GetInt();
+            if ( cur_int.IsSetFuzz_from() || cur_int.IsSetFuzz_to() ) {
+                return false;
+            }
+            if ( !GoodSrcId(cur_int.GetId()) ) {
+                return false;
+            }
+            ENa_strand strand =
+                cur_int.IsSetStrand()? cur_int.GetStrand(): eNa_strand_unknown;
+            if ( strand != src_strand ) {
+                return false;
+            }
+
+            TSeqPos from = cur_int.GetFrom();
+            TSeqPos to = cur_int.GetTo();
+            if ( to < from || to > prev_pos || from < m_Src_from ) {
+                return false;
+            }
+            prev_pos = from-1;
+        }
+        src_from = prev_pos+1;
+    }
+    ENa_strand dst_strand;
+    TSeqPos dst_from, dst_to;
+    if ( !m_Reverse ) {
+        dst_strand = src_strand;
+        dst_from = m_Shift + src_from;
+        dst_to = m_Shift + src_to;
+    }
+    else {
+        dst_strand = Reverse(src_strand);
+        dst_from = m_Shift - src_from;
+        dst_to = m_Shift - src_to;
+    }
+    m_PartialFlag = 0;
+    m_DstFuzz_from.Reset();
+    m_DstFuzz_to.Reset();
+    m_LastStrand = dst_strand;
+    m_LastType = eMappedObjType_Seq_loc_mix;
+    m_SrcLoc = &src;
+    m_TotalRange += m_LastRange.SetFrom(dst_from).SetTo(dst_to);
+    return true;
+}
+
+
 void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
-                                     CRef<CSeq_loc>* dst)
+                                     CRef<CSeq_loc>* dst,
+                                     EConvertFlag flag)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Mix);
+    if ( flag != eCnvAlways && ConvertSimpleMix(src) ) {
+        return;
+    }
     const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
     CSeq_loc_mix::Tdata* dst_mix = 0;
     CRef<CSeq_loc> dst_loc;
@@ -642,7 +804,8 @@ void CSeq_loc_Conversion::ConvertBond(const CSeq_loc& src,
 }
 
 
-bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
+bool CSeq_loc_Conversion::Convert(const CSeq_loc& src,
+                                  CRef<CSeq_loc>* dst,
                                   EConvertFlag flag)
 {
     dst->Reset();
@@ -710,7 +873,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
     }
     case CSeq_loc::e_Mix:
     {
-        ConvertMix(src, dst);
+        ConvertMix(src, dst, flag);
         break;
     }
     case CSeq_loc::e_Equiv:
@@ -889,12 +1052,30 @@ static inline
 bool NeedFullFeature(const CAnnotObject_Ref& ref,
                      CSeq_loc_Conversion::ELocationType loctype)
 {
-    if ( loctype == CSeq_loc_Conversion::eLocation ) {
-        CSeqFeatData::E_Choice type = ref.GetAnnotObject_Info().GetFeatType();
-        if ( type == CSeqFeatData::e_Cdregion ||
-             type == CSeqFeatData::e_Rna ) {
+    if ( loctype != CSeq_loc_Conversion::eLocation ) {
+        return false;
+    }
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    CSeqFeatData::E_Choice type = obj.GetFeatType();
+
+    if ( type == CSeqFeatData::e_Rna ) {
+        if ( !obj.IsRegular() ) {
             return true;
         }
+        const CSeqFeatData& data = obj.GetFeatFast()->GetData();
+        _ASSERT( data.IsRna() );
+        return data.GetRna().IsSetExt()  &&
+            data.GetRna().GetExt().IsTRNA()  &&
+            data.GetRna().GetExt().GetTRNA().IsSetAnticodon();
+    }
+    else if ( type == CSeqFeatData::e_Cdregion ) {
+        if ( !obj.IsRegular() ) {
+            return true;
+        }
+        const CSeqFeatData& data = obj.GetFeatFast()->GetData();
+        _ASSERT( data.IsCdregion() );
+        return data.GetCdregion().IsSetCode_break();
     }
     return false;
 }
@@ -1043,10 +1224,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
             CRef<CSeq_loc> mapped_loc;
             if ( loctype == eLocation ) {
                 ConvertFeature(ref, *orig_feat, mapped_feat);
-                Convert(orig_feat->GetLocation(), &mapped_loc);
+                Convert(orig_feat->GetLocation(), &mapped_loc, eCnvAlways);
             }
             else {
-                Convert(orig_feat->GetProduct(), &mapped_loc);
+                Convert(orig_feat->GetProduct(), &mapped_loc, eCnvAlways);
             }
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
             if ( mapped_feat ) {
@@ -1127,7 +1308,7 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
             SetDstLoc(&mapped_loc);
             map_info.SetMappedSeq_loc(mapped_loc);
         }
-        else {
+        else if ( m_LastType != eMappedObjType_Seq_loc_mix ) {
             // special interval or point
             map_info.SetMappedSeq_id(GetDstId(),
                 m_LastType == eMappedObjType_Seq_point);
@@ -1138,6 +1319,11 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
             if ( m_PartialFlag & fPartial_to ) {
                 map_info.SetMappedPartial_to();
             }
+        }
+        else {
+            // special mix
+            map_info.SetMappedConverstion(*this);
+            map_info.SetMappedStrand(m_LastStrand);
         }
         m_LastType = eMappedObjType_not_set;
     }

@@ -62,6 +62,7 @@ struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
 class CSeq_loc_Conversion_Set;
 class CSeq_feat_Handle;
+class CMappedFeat;
 class CAnnot_CI;
 class CSeqMap_CI;
 
@@ -82,6 +83,7 @@ public:
         eMappedObjType_Seq_id,
         eMappedObjType_Seq_feat,
         eMappedObjType_Seq_align,
+        eMappedObjType_Seq_loc_Conv,
         eMappedObjType_Seq_loc_Conv_Set
     };
 
@@ -118,6 +120,7 @@ public:
 
     const CSeq_loc& GetMappedSeq_loc(void) const;
     const CSeq_id& GetMappedSeq_id(void) const;
+    CSeq_loc_Conversion& GetMappedSeq_loc_Conv(void) const;
     const CSeq_feat& GetMappedSeq_feat(void) const;
     const CSeq_align& GetMappedSeq_align(const CSeq_align& orig) const;
 
@@ -128,6 +131,7 @@ public:
     void SetMappedPartial_from(void);
     void SetMappedPartial_to(void);
     void SetMappedSeq_id(CSeq_id& id, bool point);
+    void SetMappedConverstion(CSeq_loc_Conversion& cvt);
     void SetMappedSeq_feat(CSeq_feat& feat);
     void SetMappedSeq_align(CSeq_align* align);
     void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
@@ -141,7 +145,8 @@ public:
     void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
     void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
                              CRef<CSeq_point>&    pnt_ref,
-                             CRef<CSeq_interval>& int_ref) const;
+                             CRef<CSeq_interval>& int_ref,
+                             const CMappedFeat&   feat) const;
 
     // Copy non-modified members from original feature
     // (all except partial flag and location/product, depending on mode.
@@ -234,7 +239,8 @@ public:
                        CRef<CSeq_interval>* interval);
 
     CConstRef<CSeq_feat> MakeOriginalFeature(const CSeq_feat_Handle& feat_h);
-    CConstRef<CSeq_loc>  MakeMappedLocation(const CAnnotMapping_Info& map_info);
+    CConstRef<CSeq_loc>  MakeMappedLocation(const CAnnotMapping_Info& map_info,
+                                            const CMappedFeat& feat);
     CConstRef<CSeq_feat> MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
                                            const CAnnotMapping_Info& map_info,
                                            CSeq_loc& mapped_location);
@@ -541,7 +547,8 @@ bool CAnnotMapping_Info::IsMapped(void) const
 inline
 bool CAnnotMapping_Info::MappedSeq_locNeedsUpdate(void) const
 {
-    return GetMappedObjectType() == eMappedObjType_Seq_id;
+    return GetMappedObjectType() == eMappedObjType_Seq_id ||
+        GetMappedObjectType() == eMappedObjType_Seq_loc_Conv;
 }
 
 
@@ -576,6 +583,14 @@ const CSeq_id& CAnnotMapping_Info::GetMappedSeq_id(void) const
 {
     _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
     return static_cast<const CSeq_id&>(*m_MappedObject);
+}
+
+
+inline
+CSeq_loc_Conversion& CAnnotMapping_Info::GetMappedSeq_loc_Conv(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc_Conv);
+    return static_cast<CSeq_loc_Conversion&>(m_MappedObject.GetNCObject());
 }
 
 
@@ -625,6 +640,15 @@ void CAnnotMapping_Info::SetMappedPoint(bool point)
     else {
         m_MappedFlags &= ~fMapped_Seq_point;
     }
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedConverstion(CSeq_loc_Conversion& cvt)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&cvt);
+    m_MappedObjectType = eMappedObjType_Seq_loc_Conv;
 }
 
 

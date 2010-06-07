@@ -175,6 +175,7 @@ public:
     ENa_strand ConvertStrand(ENa_strand strand) const;
 
     void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
+    void MakeDstMix(CSeq_loc_mix& dst, const CSeq_loc_mix& src) const;
 
 protected:
     friend class CAnnot_Collector;
@@ -190,9 +191,11 @@ protected:
 private:
     void CheckDstInterval(void);
     void CheckDstPoint(void);
+    void CheckDstMix(void);
 
     CRef<CSeq_interval> GetDstInterval(void);
     CRef<CSeq_point> GetDstPoint(void);
+    CRef<CSeq_loc_mix> GetDstMix(void);
 
     void SetDstLoc(CRef<CSeq_loc>* loc);
 
@@ -220,7 +223,9 @@ private:
 
     void ConvertPacked_int(const CSeq_loc& src, CRef<CSeq_loc>* dst);
     void ConvertPacked_pnt(const CSeq_loc& src, CRef<CSeq_loc>* dst);
-    void ConvertMix(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    bool ConvertSimpleMix(const CSeq_loc& src);
+    void ConvertMix(const CSeq_loc& src, CRef<CSeq_loc>* dst,
+                    EConvertFlag flag = eCnvDefault);
     void ConvertEquiv(const CSeq_loc& src, CRef<CSeq_loc>* dst);
     void ConvertBond(const CSeq_loc& src, CRef<CSeq_loc>* dst);
 
@@ -259,11 +264,13 @@ private:
         eMappedObjType_not_set,
         eMappedObjType_Seq_loc,
         eMappedObjType_Seq_point,
-        eMappedObjType_Seq_interval
+        eMappedObjType_Seq_interval,
+        eMappedObjType_Seq_loc_mix
     };
     EMappedObjectType m_LastType;
     TRange         m_LastRange;
     ENa_strand     m_LastStrand;
+    CConstRef<CSeq_loc> m_SrcLoc;
 
     // Scope for id resolution:
     CHeapScope     m_Scope;
@@ -352,8 +359,7 @@ private:
 inline
 bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 {
-    return m_LastType == eMappedObjType_Seq_point ||
-        m_LastType == eMappedObjType_Seq_interval;
+    return m_LastType >= eMappedObjType_Seq_point;
 }
 
 

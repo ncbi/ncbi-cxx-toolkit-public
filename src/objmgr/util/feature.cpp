@@ -1840,19 +1840,7 @@ void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
                                CSeqFeatData::ESubtype top_type)
 {
     AddFeature(feat);
-    SAnnotSelector sel(bottom_type);
-    if ( top_type != bottom_type ) {
-        for ( STypeLink link(bottom_type); link.IsValid(); link.Next() ) {
-            CSeqFeatData::ESubtype parent_type = link.m_ParentType;
-            sel.IncludeFeatSubtype(parent_type);
-            if ( parent_type == top_type ) {
-                break;
-            }
-        }
-    }
-    sel.SetResolveAll().SetAdaptiveDepth();
-    CFeat_CI feat_it(feat.GetScope(), feat.GetLocation(), sel);
-    AddFeatures(feat_it);
+    AddFeaturesFor(feat.GetScope(), feat.GetLocation(), bottom_type, top_type);
 }
 
 
@@ -1866,7 +1854,7 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
         sel = *base_sel;
     }
     else {
-        sel.SetResolveAll().SetAdaptiveDepth();
+        sel.SetResolveAll().SetAdaptiveDepth().SetOverlapTotalRange();
     }
     sel.SetFeatSubtype(bottom_type);
     if ( top_type != bottom_type ) {

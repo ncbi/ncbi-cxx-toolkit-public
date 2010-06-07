@@ -54,6 +54,7 @@
 #include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/mapped_feat.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/error_codes.hpp>
@@ -141,6 +142,7 @@ CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
 void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
 {
     _ASSERT(MappedSeq_locNeedsUpdate());
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
     
     CSeq_id& id = const_cast<CSeq_id&>(GetMappedSeq_id());
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
@@ -191,11 +193,11 @@ void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
 
 void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
                                              CRef<CSeq_point>& pnt_ref,
-                                             CRef<CSeq_interval>& int_ref) const
+                                             CRef<CSeq_interval>& int_ref,
+                                             const CMappedFeat& feat) const
 {
     _ASSERT(MappedSeq_locNeedsUpdate());
 
-    CSeq_id& id = const_cast<CSeq_id&>(GetMappedSeq_id());
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
@@ -203,50 +205,60 @@ void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
         loc->Reset();
         loc->InvalidateTotalRangeCache();
     }
-    if ( IsMappedPoint() ) {
-        if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
-            pnt_ref.Reset(new CSeq_point);
-        }
-        CSeq_point& point = *pnt_ref;
-        loc->SetPnt(point);
-        point.SetId(id);
-        point.SetPoint(m_TotalRange.GetFrom());
-        if ( GetMappedStrand() != eNa_strand_unknown )
-            point.SetStrand(GetMappedStrand());
-        else
-            point.ResetStrand();
-        if ( m_MappedFlags & fMapped_Partial_from ) {
-            point.SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+    if ( GetMappedObjectType() == eMappedObjType_Seq_id ) {
+        CSeq_id& id = const_cast<CSeq_id&>(GetMappedSeq_id());
+        if ( IsMappedPoint() ) {
+            if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
+                pnt_ref.Reset(new CSeq_point);
+            }
+            CSeq_point& point = *pnt_ref;
+            loc->SetPnt(point);
+            point.SetId(id);
+            point.SetPoint(m_TotalRange.GetFrom());
+            if ( GetMappedStrand() != eNa_strand_unknown )
+                point.SetStrand(GetMappedStrand());
+            else
+                point.ResetStrand();
+            if ( m_MappedFlags & fMapped_Partial_from ) {
+                point.SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+            }
+            else {
+                point.ResetFuzz();
+            }
         }
         else {
-            point.ResetFuzz();
+            if ( !int_ref || !int_ref->ReferencedOnlyOnce() ) {
+                int_ref.Reset(new CSeq_interval);
+            }
+            CSeq_interval& interval = *int_ref;
+            loc->SetInt(interval);
+            interval.SetId(id);
+            interval.SetFrom(m_TotalRange.GetFrom());
+            interval.SetTo(m_TotalRange.GetTo());
+            if ( GetMappedStrand() != eNa_strand_unknown )
+                interval.SetStrand(GetMappedStrand());
+            else
+                interval.ResetStrand();
+            if ( m_MappedFlags & fMapped_Partial_from ) {
+                interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+            }
+            else {
+                interval.ResetFuzz_from();
+            }
+            if ( m_MappedFlags & fMapped_Partial_to ) {
+                interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+            }
+            else {
+                interval.ResetFuzz_to();
+            }
         }
     }
     else {
-        if ( !int_ref || !int_ref->ReferencedOnlyOnce() ) {
-            int_ref.Reset(new CSeq_interval);
-        }
-        CSeq_interval& interval = *int_ref;
-        loc->SetInt(interval);
-        interval.SetId(id);
-        interval.SetFrom(m_TotalRange.GetFrom());
-        interval.SetTo(m_TotalRange.GetTo());
-        if ( GetMappedStrand() != eNa_strand_unknown )
-            interval.SetStrand(GetMappedStrand());
-        else
-            interval.ResetStrand();
-        if ( m_MappedFlags & fMapped_Partial_from ) {
-            interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-        }
-        else {
-            interval.ResetFuzz_from();
-        }
-        if ( m_MappedFlags & fMapped_Partial_to ) {
-            interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
-        }
-        else {
-            interval.ResetFuzz_to();
-        }
+        CSeq_loc_Conversion& cvt = GetMappedSeq_loc_Conv();
+        const CSeq_feat& src_feat = feat.GetOriginalFeature();
+        const CSeq_loc& src_loc = m_MappedFlags & fMapped_Product?
+            src_feat.GetProduct(): src_feat.GetLocation();
+        cvt.MakeDstMix(loc->SetMix(), src_loc.GetMix());
     }
 }
 
@@ -996,7 +1008,8 @@ CCreatedFeat_Ref::MakeOriginalFeature(const CSeq_feat_Handle& feat_h)
 
 
 CConstRef<CSeq_loc>
-CCreatedFeat_Ref::MakeMappedLocation(const CAnnotMapping_Info& map_info)
+CCreatedFeat_Ref::MakeMappedLocation(const CAnnotMapping_Info& map_info,
+                                     const CMappedFeat& feat)
 {
     CConstRef<CSeq_loc> ret;
     if ( map_info.MappedSeq_locNeedsUpdate() ) {
@@ -1024,7 +1037,8 @@ CCreatedFeat_Ref::MakeMappedLocation(const CAnnotMapping_Info& map_info)
         ReleaseRefsTo(0, &mapped_loc, &created_point, &created_interval);
         map_info.UpdateMappedSeq_loc(mapped_loc,
                                      created_point,
-                                     created_interval);
+                                     created_interval,
+                                     feat);
         ret = mapped_loc;
         ResetRefsFrom(0, &mapped_loc, &created_point, &created_interval);
     }

@@ -123,7 +123,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 
 const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
 {
-    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr);
+    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr, *this);
 }
 
 
