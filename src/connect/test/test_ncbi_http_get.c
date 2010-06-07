@@ -122,11 +122,12 @@ int main(int argc, char* argv[])
     t = time(0);
     do {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
-        if (status == eIO_Timeout
-            &&  ((net_info->timeout  &&
+        if (status == eIO_Timeout) {
+            if  ((net_info->timeout  &&
                   (net_info->timeout->sec | net_info->timeout->usec))
-                 ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)) {
-            CORE_LOG(eLOG_Fatal, "Timed out");
+                 ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT) {
+                CORE_LOG(eLOG_Fatal, "Timed out");
+            }
 #if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
             usleep(500);
 #endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
