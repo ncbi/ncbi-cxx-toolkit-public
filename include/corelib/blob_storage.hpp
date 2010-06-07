@@ -44,8 +44,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Blob Storage interface
 ///
-NCBI_DEPRECATED
-class NCBI_XNCBI_EXPORT IBlobStorage
+NCBI_DEPRECATED_CLASS NCBI_XNCBI_EXPORT IBlobStorage
 {
 public:
     enum ELockMode {
