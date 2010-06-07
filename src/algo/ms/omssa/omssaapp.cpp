@@ -193,15 +193,15 @@ void COMSSABase::Init()
 			   CArgDescriptions::eString, "0");
     argDesc->AddDefaultKey("w1", "window1", 
 			   "single charge window in Da",
-			   CArgDescriptions::eInteger, "20");
+			   CArgDescriptions::eInteger, "27");
     argDesc->AddDefaultKey("w2", "window2", 
 			   "double charge window in Da",
 			   CArgDescriptions::eInteger, "14");
     argDesc->AddDefaultKey("h1", "hit1", 
-			   "number of peaks allowed in single charge window",
+			   "number of peaks allowed in single charge window (0 = number of ion species)",
 			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("h2", "hit2", 
-			   "number of peaks allowed in double charge window",
+			   "number of peaks allowed in double charge window (0 = number of ion species)",
 			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("hl", "hitlist", 
 			   "maximum number of hits retained per precursor charge state per spectrum during the search",

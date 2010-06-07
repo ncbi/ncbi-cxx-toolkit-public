@@ -795,7 +795,8 @@ void CMSPeak::CullPrecursor(CMZI *Temp,
                             int& TempLen,
                             const int Precursor,
                             const int Charge,
-                            bool PrecursorCull)
+                            bool PrecursorCull,
+                            int PrecursorSign)
 {
     // chop out precursors
     int iTemp(0), iMZI;
@@ -841,17 +842,17 @@ void CMSPeak::CullPrecursor(CMZI *Temp,
             if(Temp[iMZI].GetMZ() > Precursor/4 - 3*tol && 
                Temp[iMZI].GetMZ() < Precursor/4 + 3*tol) continue;*/
 	       //Precursor Filter Updated
-	       if(Temp[iMZI].GetMZ() > Precursor + MSSCALE2INT(1)  - MSSCALE2INT(60)) continue; 
-                 if(Temp[iMZI].GetMZ() > Precursor/2  + MSSCALE2INT(1) - MSSCALE2INT(60)/2 -tol && 
-                  Temp[iMZI].GetMZ() < Precursor/2 + MSSCALE2INT(1) + tol + Precursor/500/2 ) continue; 
-                 if(Temp[iMZI].GetMZ() > Precursor/3 + MSSCALE2INT(1) -  MSSCALE2INT(18)/3 -tol && 
-                   Temp[iMZI].GetMZ() <  Precursor/3 + MSSCALE2INT(1) + tol + Precursor/500/3 && Charge>=3) continue; 
-                 if(Temp[iMZI].GetMZ() > Precursor/4 + MSSCALE2INT(1) - MSSCALE2INT(18)/4 -tol &&
-                   Temp[iMZI].GetMZ() <  Precursor/4 + MSSCALE2INT(1) + tol + Precursor/500/4 && Charge>=4) continue; 
-                 if(Temp[iMZI].GetMZ() > Precursor/5 + MSSCALE2INT(1) - MSSCALE2INT(18)/5 -tol &&
-                   Temp[iMZI].GetMZ() <  Precursor/5 + MSSCALE2INT(1) + tol  + Precursor/500/5 && Charge>=5) continue;
-                 if(Temp[iMZI].GetMZ() > Precursor/6 + MSSCALE2INT(1) - MSSCALE2INT(18)/6 -tol &&
-                   Temp[iMZI].GetMZ() < Precursor/6 + MSSCALE2INT(1) + tol + Precursor/500/6 && Charge>=6) continue;
+	       if(Temp[iMZI].GetMZ() > Precursor + MSSCALE2INT(1) * PrecursorSign  - MSSCALE2INT(60)) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/2  + MSSCALE2INT(1) * PrecursorSign - MSSCALE2INT(60)/2 -tol && 
+                  Temp[iMZI].GetMZ() < Precursor/2 + MSSCALE2INT(1) * PrecursorSign + tol + Precursor/500/2 ) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/3 + MSSCALE2INT(1) * PrecursorSign -  MSSCALE2INT(18)/3 -tol && 
+                   Temp[iMZI].GetMZ() <  Precursor/3 + MSSCALE2INT(1) * PrecursorSign + tol + Precursor/500/3 && Charge>=3) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/4 + MSSCALE2INT(1) * PrecursorSign - MSSCALE2INT(18)/4 -tol &&
+                   Temp[iMZI].GetMZ() <  Precursor/4 + MSSCALE2INT(1) * PrecursorSign + tol + Precursor/500/4 && Charge>=4) continue; 
+                 if(Temp[iMZI].GetMZ() > Precursor/5 + MSSCALE2INT(1) * PrecursorSign - MSSCALE2INT(18)/5 -tol &&
+                   Temp[iMZI].GetMZ() <  Precursor/5 + MSSCALE2INT(1) * PrecursorSign + tol  + Precursor/500/5 && Charge>=5) continue;
+                 if(Temp[iMZI].GetMZ() > Precursor/6 + MSSCALE2INT(1) * PrecursorSign - MSSCALE2INT(18)/6 -tol &&
+                   Temp[iMZI].GetMZ() < Precursor/6 + MSSCALE2INT(1) * PrecursorSign + tol + Precursor/500/6 && Charge>=6) continue;
 	       //
         }
 
@@ -939,7 +940,8 @@ void CMSPeak::CullChargeAndWhich(const CMSSearchSettings& Settings)
                       TempLen,
                       CalcPrecursorMass(GetCharges()[iCharges]),
                       GetCharges()[iCharges],
-                      Settings.GetPrecursorcull() != 0);
+                      Settings.GetPrecursorcull() != 0,
+                      Settings.GetChargehandling().GetNegative());
 
 //#define DEBUG_PEAKS1
 #ifdef DEBUG_PEAKS1

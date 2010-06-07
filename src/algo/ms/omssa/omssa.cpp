@@ -997,7 +997,15 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
         // force the mass scale settings to what is currently used.
         SetSettings()->SetScale(MSSCALE);
         SetResponse()->SetScale(MSSCALE);
-
+        
+        // set up automatic number of peaks per bin for noise filter
+        if (GetSettings()->GetSinglenum() == 0) {
+            SetSettings()->SetSinglenum() = GetSettings()->GetIonstosearch().size();
+        }
+        if (GetSettings()->GetDoublenum() == 0) {
+            SetSettings()->SetDoublenum() = GetSettings()->GetIonstosearch().size();
+        }
+        
         SetEnzyme() = CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
                                                     (GetSettings()->GetEnzyme()));
 

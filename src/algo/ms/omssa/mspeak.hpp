@@ -738,12 +738,14 @@ public:
      * @param scaled precursor value
      * @param Charge precursor charge
      * @param PrecursorCull charge reduced culling
+     * @param PrecursorSign sign of the ions
      */
     void CullPrecursor(CMZI *Temp,
                        int& TempLen,
                        const int Precursor,
                        const int Charge,
-                       bool PrecursorCull);
+                       bool PrecursorCull,
+                       int PrecursorSign);
 
     /**
      *  take out peaks below a threshold
