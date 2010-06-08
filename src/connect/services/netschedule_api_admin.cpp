@@ -244,7 +244,7 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
         opt == eStatisticsBrief ? "STAT" : "STAT ALL",
-        output_stream, CNetService::eMultilineOutput);
+        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 

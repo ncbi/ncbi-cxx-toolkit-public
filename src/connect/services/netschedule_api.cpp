@@ -50,24 +50,23 @@ BEGIN_NCBI_SCOPE
 /**********************************************************************/
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
-    const string& client_name,
-    const string& program_version,
-    const string& queue_name)
+    SNetScheduleAPIImpl* impl)
 {
-    string auth = client_name;
-    if (!program_version.empty()) {
+    string auth = impl->m_Service->m_ClientName;
+    if (!impl->m_ProgramVersion.empty()) {
         auth += " prog='";
-        auth += program_version;
+        auth += impl->m_ProgramVersion;
         auth += '\'';
     }
     auth += "\r\n";
 
-    auth += queue_name;
+    auth += impl->m_Queue;
 
     // Make the auth token look like a command to be able to
     // check for potential authentication/initialization errors
     // like the "queue not found" error.
-    auth += "\r\nVERSION";
+    if (!m_WorkerNodeCompatMode)
+        auth += "\r\nVERSION";
 
     m_Auth = auth;
 }
@@ -94,8 +93,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
             "queue_name", CConfig::eErr_Throw, "noname");
     }
 
-    SetAuthString(ns_impl->m_Service->m_ClientName,
-        kEmptyStr, ns_impl->m_Queue);
+    SetAuthString(ns_impl);
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
@@ -103,7 +101,10 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
 {
     CNetServerConnection conn_object(conn);
 
-    conn_object.Exec(m_Auth);
+    if (!m_WorkerNodeCompatMode)
+        conn_object.Exec(m_Auth);
+    else
+        conn->WriteLine(m_Auth);
 
     if (!m_WorkerNodeInitCmd.empty()) {
         try {
@@ -163,8 +164,7 @@ void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
     static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        m_Impl->m_Service->m_Listener.GetPtr())->SetAuthString(
-            m_Impl->m_Service.GetClientName(), pv, m_Impl->m_Queue);
+        m_Impl->m_Service->m_Listener.GetPtr())->SetAuthString(m_Impl);
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -446,6 +446,16 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
     string resp = m_Impl->x_SendJobCmdWaitResponse("MGET", job.job_id);
     job.progress_msg = NStr::ParseEscapes(resp);
+}
+
+void CNetScheduleAPI::EnableWorkerNodeCompatMode()
+{
+    SNetScheduleAPIImpl::CNetScheduleServerListener* listener =
+        static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
+            m_Impl->m_Service->m_Listener.GetPtr());
+
+    listener->m_WorkerNodeCompatMode = true;
+    listener->SetAuthString(m_Impl);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

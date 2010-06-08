@@ -128,23 +128,21 @@ struct SNetScheduleAPIImpl : public CNetObject
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
     public:
-        void SetAuthString(
-            const string& client_name,
-            const string& program_version,
-            const string& queue_name);
+        CNetScheduleServerListener() : m_WorkerNodeCompatMode(false) {}
+
+        void SetAuthString(SNetScheduleAPIImpl* impl);
 
         void MakeWorkerNodeInitCmd(const string& uid,
             unsigned short control_port);
 
-    private:
         virtual void OnInit(CNetObject* api_impl,
             CConfig* config, const string& config_section);
         virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
-    private:
         string m_Auth;
         string m_WorkerNodeInitCmd;
+        bool m_WorkerNodeCompatMode;
     };
 
     SNetScheduleAPIImpl(CConfig* config, const string& section,

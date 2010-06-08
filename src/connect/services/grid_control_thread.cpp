@@ -60,7 +60,7 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE;
+        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE "\n";
     }
 };
 
@@ -83,7 +83,7 @@ public:
         if (node.IsHostInAdminHostsList(m_Host)) {
             return true;
         }
-        os << "ERR:Shutdown access denied.";
+        os << "ERR:Shutdown access denied.\n";
         LOG_POST_X(10, Warning << "Shutdown access denied for host " << m_Host);
         return false;
     }
@@ -102,7 +102,7 @@ public:
                 CNetScheduleAdmin::eNormalShutdown;
             if (request.find("IMMEDIATE") != NPOS)
                 level = CNetScheduleAdmin::eShutdownImmediate;
-            os << "OK:";
+            os << "OK:\n";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
             LOG_POST_X(13, "Shutdown request has been received from host " <<
@@ -123,26 +123,27 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl;
-        os << "Node started at: " << CGridGlobals::GetInstance().GetStartTime().AsString() << endl;
+        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE "\n";
+        os << "Node started at: " <<
+            CGridGlobals::GetInstance().GetStartTime().AsString() << "\n";
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
             os << "Executable path: " << app->GetProgramExecutablePath()
-               << "; PID: " << CProcess::GetCurrentPid() << endl;
+               << "; PID: " << CProcess::GetCurrentPid() << "\n";
 
-        os << "Queue name: " << node.GetQueueName() << endl;
+        os << "Queue name: " << node.GetQueueName() << "\n";
         if (node.GetMaxThreads() > 1)
-            os << "Maximum job threads: " << node.GetMaxThreads() << endl;
+            os << "Maximum job threads: " << node.GetMaxThreads() << "\n";
 
         if (CGridGlobals::GetInstance().IsShuttingDown())
-            os << "The node is shutting down" << endl;
+            os << "The node is shutting down\n";
 
         if (node.IsExclusiveMode())
-            os << "The node is processing an exclusive job" << endl;
+            os << "The node is processing an exclusive job\n";
 
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
 
-        os << "OK:END";
+        os << "OK:END\n";
     }
 };
 
@@ -161,18 +162,18 @@ public:
         string cmp = node.GetClientName() + " prog='" + node.GetJobVersion() + '\'';
         if (auth != cmp) {
             os <<"ERR:Wrong Program. Required: " << node.GetJobVersion()
-               << endl << auth << endl << cmp;
+               << "\n" << auth << "\n" << cmp << "\n";
             return false;
         }
         string qname, connection_info;
         NStr::SplitInTwo(queue, ";", qname, connection_info);
         if (qname != node.GetQueueName()) {
-            os << "ERR:Wrong Queue. Required: " << node.GetQueueName();
+            os << "ERR:Wrong Queue. Required: " << node.GetQueueName() << "\n";
             return false;
         }
         if (connection_info != node.GetServiceName()) {
             os << "ERR:Wrong Connection Info. Required: "
-               << node.GetServiceName();
+               << node.GetServiceName() << "\n";
             return false;
         }
         return true;
@@ -184,7 +185,7 @@ public:
     {
         int load = node.GetMaxThreads() -
             CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
-        os << "OK:" << load;
+        os << "OK:" << load << "\n";
     }
 };
 
@@ -197,7 +198,7 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        os << "ERR:Unknown command -- " << request;
+        os << "ERR:Unknown command -- " << request << "\n";
     }
 };
 
@@ -311,7 +312,6 @@ static void s_HandleError(CSocket& socket, const string& msg)
     ERR_POST_X(15, "Exception in the control server: " << msg);
     string err = "ERR:" + NStr::PrintableString(msg);
     socket.Write(&err[0], err.size());
-    socket.Close();
 }
 void CWNCTConnectionHandler::OnMessage(BUF buffer)
 {
@@ -356,7 +356,6 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
         throw;
     }
     os.freeze(false);
-    socket.Close();
 }
 
 END_NCBI_SCOPE

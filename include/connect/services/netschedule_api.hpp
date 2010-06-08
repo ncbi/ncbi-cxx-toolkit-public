@@ -229,6 +229,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         GetService().SetPermanentConnection(
             conn_mode == eCloseConnection ? eOff : eOn);
     }
+
+    /// This method is for use by the netschedule_control utility only.
+    void EnableWorkerNodeCompatMode();
 };
 
 
