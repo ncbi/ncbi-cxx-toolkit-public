@@ -357,7 +357,7 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d");
     printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_Log(net_info, CORE_GetLOG());
+    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
 
     ConnNetInfo_Destroy(net_info);
 
