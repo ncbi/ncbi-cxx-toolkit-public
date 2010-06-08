@@ -146,9 +146,11 @@ int CTest::Run(void)
     m_Tee << NcbiEndl;
     if (status != eIO_Success) {
         m_Tee << "Check " << CDirEntry::CreateAbsolutePath(kLogfile)
-              << " for more information." << NcbiEndl
-              << "Please remember to make its contents"
-            " available if contacting NCBI.";
+              << " for more information." << NcbiEndl << NcbiEndl <<
+            "  NOTE:  If  you choose to make its contents available to NCBI,\n"
+            "  please  keep  in  mind that the log can contain authorization\n"
+            "  credentials, which you may want to delete from the file prior\n"
+            "  to actually submitting it for review.";
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
         m_Tee << "NCBI Connectivity Test PASSED!";
