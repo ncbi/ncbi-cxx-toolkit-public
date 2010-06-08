@@ -435,6 +435,7 @@ const string CCountries::sm_Countries[] = {
     "Mauritania",
     "Mauritius",
     "Mayotte",
+    "Mediterranean Sea",
     "Mexico",
     "Micronesia",
     "Midway Islands",
