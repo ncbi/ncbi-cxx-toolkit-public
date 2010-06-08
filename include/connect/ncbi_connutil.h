@@ -120,13 +120,18 @@ typedef enum {
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
- * NOTE:       Some fields may not be fully used throughout the library.
+ * NOTE1:      Not every field may be fully utilized throughout the library.
+ * NOTE2:      HTTP passwords can be either clear text or Base64 encoded values
+ *             enclosed in square brackets [] (which are not Base-64 charset).
+ *             For encoding / decoding, one can use command line open ssl:
+ *             echo "password|base64value" | openssl enc {-e|-d} -base64
+ *             or an online tool (search the Web for "base64 online").
  */
 typedef struct {
     char           client_host[256]; /* effective client hostname ('\0'=def) */
     EURLScheme     scheme;           /* only pre-defined types (limited)     */
-    char           user[128];        /* username (if specified)              */
-    char           pass[128];        /* password (if any, clear text!!!)     */
+    char           user[64];         /* username (if specified)              */
+    char           pass[64];         /* password (if any)                    */
     char           host[256];        /* host to connect to                   */
     unsigned short port;             /* port to connect to, host byte order  */
     char           path[1024];       /* service: path(e.g. to  a CGI script) */
@@ -136,6 +141,8 @@ typedef struct {
     unsigned short max_try;          /* max. # of attempts to connect (>= 1) */
     char           http_proxy_host[256]; /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
+    char           http_proxy_user[64];  /* http proxy username              */
+    char           http_proxy_pass[64];  /* http proxy password              */
     char           proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv */
     EDebugPrintout debug_printout;   /* printout some debug info             */
     int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
@@ -190,6 +197,12 @@ typedef struct {
 
 #define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
 #define DEF_CONN_HTTP_PROXY_PORT  ""
+
+#define REG_CONN_HTTP_PROXY_USER  "HTTP_PROXY_USER"
+#define DEF_CONN_HTTP_PROXY_USER  ""
+
+#define REG_CONN_HTTP_PROXY_PASS  "HTTP_PROXY_PASS"
+#define DEF_CONN_HTTP_PROXY_PASS  ""
 
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
@@ -433,7 +446,6 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
  ELOG_Level          sev,
  LOG                 log
  );
-
 
 #define ConnNetInfo_Log(i, l) ConnNetInfo_LogEx((i), eLOG_Trace, (l))
 

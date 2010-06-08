@@ -408,12 +408,16 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
         return 0/*false - not adjusted*/;
 
     if (uuu->user_header) {
+        assert(*uuu->user_header);
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         free((void*) uuu->user_header);
     }
-    uuu->user_header = *user_header ? user_header : 0;
-    if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
-        return 0/*false - not adjusted*/;
+    if (*user_header) {
+        uuu->user_header = user_header;
+        if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
+            return 0/*false - not adjusted*/;
+    } else
+        uuu->user_header = 0;
 
     if (info->type == fSERV_Ncbid  ||  (info->type & fSERV_Http)) {
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
@@ -422,9 +426,10 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
         strcpy(net_info->host, uuu->net_info->host);
         net_info->port = uuu->net_info->port;
     }
-
-    if (net_info->http_proxy_adjusted)
+    if (net_info->http_proxy_adjusted) {
+        ConnNetInfo_DeleteUserHeader(net_info, "Host:");
         net_info->http_proxy_adjusted = 0/*false*/;
+    }
 
     return 1/*true - adjusted*/;
 }
@@ -561,7 +566,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         free((void*) uuu->user_header);
     }
     uuu->user_header = user_header;
-    if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
+    if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0;
 
     if (!second_try) {

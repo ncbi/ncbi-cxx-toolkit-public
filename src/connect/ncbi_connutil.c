@@ -276,8 +276,17 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             info->http_proxy_port = val;
         } else
             info->http_proxy_port = 0/*default*/;
-    } else
-        info->http_proxy_port = 0;
+        /* HTTP proxy username */
+        REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
+                  DEF_CONN_HTTP_PROXY_USER);
+        /* HTTP proxy password */
+        REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
+                  DEF_CONN_HTTP_PROXY_PASS);
+    } else {
+        info->http_proxy_port    =   0;
+        info->http_proxy_user[0] = '\0';
+        info->http_proxy_pass[0] = '\0';
+    }
 
     /* non-transparent CERN-like firewall proxy server? */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
@@ -328,67 +337,96 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
 extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 {
+    static const char kHost[] = "Host: ";
+    int/*bool*/ add_host;
     char   port[10];
     size_t hostlen;
     size_t portlen;
     size_t pathlen;
+    const char* s;
     size_t len;
 
     if (!info)
-        return 0/*false*/;
+        return 0/*failed*/;
 
     if (!*info->http_proxy_host  ||  info->http_proxy_adjusted)
-        return 1/*true*/;
+        return 1/*succeeded*/;
 
     if (info->scheme != eURL_Unspec  &&  info->scheme != eURL_Http) {
+        /* Would require to use HTTP's CONNECT method -- not implemented */
         CORE_LOGF_X(13, eLOG_Error,
                     ("[ConnNetInfo_AdjustForHttpProxy] "
                      " Cannot adjust for scheme \"%s\"",
                      s_Scheme(info->scheme)));
         assert(0);
-        return 0/*false*/;
+        return 0/*failed*/;
     }
 
     hostlen = strlen(info->host);
-    portlen = info->port ? (size_t) sprintf(port, ":%hu", info->port) : 0;
+    portlen = info->port ? (size_t) sprintf(port, ":%hu", info->port) : 0; 
     if (*info->path != '/')
         port[portlen++] = '/';
     pathlen = strlen(info->path);
 
-    len = 7/*http://*/ + hostlen + portlen + pathlen + 1;
+    len = 7/*http://*/ + hostlen + portlen;
 
-    if (len >= sizeof(info->path)) {
+    if (len + pathlen + 1 > sizeof(info->path)) {
         CORE_LOGF_X(14, eLOG_Error,
                     ("[ConnNetInfo_AdjustForHttpProxy] "
-                     "  Adjusted path too long (%lu)",
-                     (unsigned long) len));
+                     "  Adjusted path too long (%lu vs max=%lu)",
+                     (unsigned long)(len + pathlen + 1),
+                     (unsigned long) sizeof(info->path)));
         assert(0);
-        return 0/*false*/;
+        return 0/*failed*/;
     }
-    len -= pathlen + 1;
-    memmove(info->path + len, info->path, pathlen + 1);
-    len -= portlen;
-    memcpy (info->path + len, port,       portlen);
-    assert(len - hostlen == 7);
-    memcpy (info->path + 7,   info->host, hostlen);
-    memcpy (info->path,       "http://",  7);
+
+    add_host = 1/*true*/;
+    for (s = info->http_user_header;  s  &&  *s;  s = strchr(s, '\n')) {
+        if (s != info->http_user_header)
+            s++;
+        if (strncasecmp(s, kHost, sizeof(kHost) - 2) == 0) {
+            add_host = 0/*false*/;
+            break;
+        }
+    }
+
+    memmove(info->path + len,               info->path, pathlen + 1);
+    memcpy (info->path + len - portlen,     port,       portlen);
+    memcpy (info->path + 7,                 info->host, hostlen);
+    assert(info->path[len] == '/');
+    if (add_host) {
+        int failed;
+        info->path[len] = '\0';
+        assert(sizeof(kHost) == 7);
+        memcpy(info->path + 1, kHost, sizeof(kHost) - 1);
+        failed = !ConnNetInfo_OverrideUserHeader(info, info->path + 1);
+        info->path[len] = '/';
+        if (failed) {
+            /* restore path */
+            memmove(info->path, info->path + len, strlen(info->path + len)+1);
+            return 0/*failed*/;
+        }
+    }
+    memcpy (info->path, "http://", 7);
 
     assert(sizeof(info->host) >= sizeof(info->http_proxy_host));
     strncpy0(info->host, info->http_proxy_host, sizeof(info->host) - 1);
     info->port = info->http_proxy_port;
-    info->http_proxy_adjusted = 1/*true*/;
     info->scheme = eURL_Http;
-    return 1/*true*/;
+
+    info->http_proxy_adjusted = 1/*true*/;
+    return 1/*succeeded*/;
 }
 
 
 extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 {
+    int/*bool*/ was_http_proxy_adjusted = info->http_proxy_adjusted;
     const char *s, *a;
     size_t len;
     char* p;
 
-    if (info->http_proxy_adjusted) {
+    if (was_http_proxy_adjusted) {
         /* undo proxy adjustment */
         SConnNetInfo* temp = ConnNetInfo_Create(info->service);
         if (!ConnNetInfo_ParseURL(temp, info->path)) {
@@ -466,6 +504,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             memcpy(info->host, h, sizeof(info->host) - 1);
             info->host[sizeof(info->host) - 1] = '\0';
         }
+        if (len  &&  was_http_proxy_adjusted)
+            ConnNetInfo_DeleteUserHeader(info, "Host:");
     } else
         s = url;
 
@@ -619,8 +659,9 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
         newlinelen = (size_t)
             (eol ? eol - newline + 1 : new_header + newhdrlen - newline);
         if (!eot || eot >= newline + newlinelen ||
-            !(newtaglen = (size_t)(eot - newline)))
+            !(newtaglen = (size_t)(eot - newline))) {
             continue;
+        }
 
         newtagval = newline + newtaglen + 1;
         while (newtagval < newline + newlinelen) {
@@ -992,6 +1033,24 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 }
 
 
+static int/*bool*/ x_PassEncoded(const char* pass)
+{
+    if (*pass) {
+        size_t len;
+        size_t pad;
+        if (pass[0] != '['  ||  pass[len = strlen(pass) - 1] != ']'
+            ||  ((pad = strspn(++pass,
+                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               "abcdefghijklmnopqrstuvwxyz"
+                               "0123456789+/")) != --len
+                 &&  (pad += strspn(pass + pad, "=")) != len)) {
+            return 0/*false*/;
+        }
+    }
+    return 1/*true*/;
+}
+
+
 static const char* s_SchemeStr(EURLScheme scheme, char buf[])
 {
     switch (scheme) {
@@ -1105,7 +1164,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveKeyval(s, "client_host",     "(default)");
     s_SaveString    (s, "scheme",          s_SchemeStr(info->scheme, scheme));
     s_SaveString    (s, "user",            info->user);
-    if (*info->pass)
+    if (*info->pass  &&  (!*info->user  ||  !x_PassEncoded(info->pass)))
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
     else
         s_SaveString(s, "pass",            info->pass);
@@ -1130,6 +1189,11 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
     s_SaveKeyval    (s, "http_proxy_port", s_PortStr(info->http_proxy_port,
                                                      port));
+    s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
+    if (!x_PassEncoded(info->http_proxy_pass))
+        s_SaveKeyval(s, "http_proxy_pass", "(set)");
+    else
+        s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
     s_SaveKeyval    (s, "debug_printout", (info->debug_printout
                                            == eDebugPrintout_None
@@ -1145,20 +1209,12 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
-    s_SaveBool      (s, "[proxy_adjusted]",info->http_proxy_adjusted);
+    s_SaveBool      (s, "[http_proxy_adj]",info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
     assert(strlen(s) < len);
     LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, s, 0, 0);
     free(s);
-}
-
-
-/*FIXME:  To remove*/
-#undef ConnNetInfo_Log
-extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
-{
-    ConnNetInfo_LogEx(info, eLOG_Trace, lg);
 }
 
 

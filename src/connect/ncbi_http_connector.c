@@ -36,6 +36,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
+#include <connect/ncbi_base64.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
 #include <errno.h>
@@ -88,8 +89,9 @@ typedef struct {
     EBCanConnect         can_connect:2;   /* whether more conns permitted    */
     unsigned             read_header:1;   /* whether reading header          */
     unsigned             shut_down:1;     /* whether shut down for write     */
-    unsigned             auth_sent:1;     /* authenticate sent               */
-    unsigned             reserved:7;      /* MBZ                             */
+    unsigned             auth_done:1;     /* website authorization sent      */
+    unsigned       proxy_auth_done:1;     /* proxy authorization sent        */
+    unsigned             reserved:6;      /* MBZ                             */
     unsigned             minor_fault:3;   /* incr each min failure since maj */
     unsigned short       major_fault;     /* incr each maj failure since open*/
     unsigned short       code;            /* last response code              */
@@ -127,6 +129,78 @@ typedef struct {
     ERetry      mode;
     const char* data;
 } SRetry;
+
+
+static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
+                                                  const SRetry*   retry)
+{
+    static const char kProxyAuthorization[] = "Proxy-Authorization: Basic ";
+    static const char kAuthorization[]      = "Authorization: Basic ";
+    char buf[80+sizeof(uuu->net_info->user)*4], *s;
+    size_t taglen, userlen, passlen, len, n;
+    const char *tag, *user, *pass;
+
+    assert(retry  &&  retry->data);
+    assert(strncasecmp(retry->data, "basic", strcspn(retry->data," \t")) == 0);
+    switch (retry->mode) {
+    case eRetry_Authenticate:
+        if (uuu->auth_done)
+            return  1/*failed*/;
+        uuu->auth_done = 1/*true*/;
+        if (uuu->net_info->scheme != eURL_Https
+            &&  !(uuu->flags & fHCC_InsecureRedirect)) {
+            return -1/*prohibited*/;
+        }
+        tag    = kAuthorization;
+        taglen = sizeof(kAuthorization) - 1;
+        user   = uuu->net_info->user;
+        pass   = uuu->net_info->pass;
+        break;
+    case eRetry_ProxyAuthenticate:
+        if (uuu->proxy_auth_done)
+            return 1/*failed*/;
+        uuu->proxy_auth_done = 1/*true*/;
+        tag    = kProxyAuthorization;
+        taglen = sizeof(kProxyAuthorization) - 1;
+        user   = uuu->net_info->http_proxy_user;
+        pass   = uuu->net_info->http_proxy_pass;
+        break;
+    default:
+        assert(0);
+        return 1/*failed*/;
+    }
+    assert(tag  &&  user  &&  pass);
+    if (!*user)
+        return 1/*failed*/;
+    userlen = strlen(user);
+    passlen = strlen(pass);
+    s = buf + sizeof(buf) - passlen;
+    if (pass[0] == '['  &&  pass[passlen - 1] == ']') {
+        if (BASE64_Decode(pass + 1, passlen - 2, &len, s, passlen, &n)
+            &&  len == passlen - 2) {
+            len = n;
+        } else
+            len = 0;
+    } else
+        len = 0;
+    s -= userlen;
+    memcpy(--s, user, userlen);
+    s[userlen++] = ':';
+    if (!len) {
+        memcpy(s + userlen, pass, passlen);
+        len  = userlen + passlen;
+    } else
+        len += userlen;
+    /* usable room */
+    userlen = (size_t)(s - buf);
+    assert(userlen > taglen);
+    userlen -= taglen + 1;
+    BASE64_Encode(s, len, &n, buf + taglen, userlen, &passlen, 0);
+    if (len != n  ||  buf[taglen + passlen])
+        return 1/*failed*/;
+    memcpy(buf, tag, taglen);
+    return !ConnNetInfo_OverrideUserHeader(uuu->net_info, buf);
+}
 
 
 /* Try to fix connection parameters (called for an unconnected connector) */
@@ -172,16 +246,25 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             break;
         case eRetry_Authenticate:
         case eRetry_ProxyAuthenticate:
-            fail = uuu->auth_sent ? 1 : -1;
-            CORE_LOGF_X(3, eLOG_Error,
-                        ("[HTTP]  %s %s %c%s%c",
-                         retry->mode == eRetry_Authenticate
-                         ? "Authorization" : "Proxy authorization",
-                         fail < 0 ? "not yet implemented" : "failed",
-                         "(<"[!retry->data],
-                         retry->data ? retry->data : "NULL",
-                         ")>"[!retry->data]));
-            status = fail < 0 ? eIO_NotSupported : eIO_Closed;
+            if (retry->data  &&  strncasecmp(retry->data, "basic ", 6) == 0) {
+                fail = x_Authorize(uuu, retry);
+                if (fail < 0)
+                    fail = 2;
+            } else
+                fail = -1;
+            if (fail) {
+                CORE_LOGF_X(3, eLOG_Error,
+                            ("[HTTP]  %s %s %c%s%c",
+                             retry->mode == eRetry_Authenticate
+                             ? "Authorization" : "Proxy authorization",
+                             fail < 0 ? "not yet implemented" :
+                             fail > 1 ? "prohibited" : "failed",
+                             "(<"[!retry->data],
+                             retry->data ? retry->data : "NULL",
+                             ")>"[!retry->data]));
+                status = fail < 0 ? eIO_NotSupported : eIO_Closed;
+            } else
+                status = eIO_Success;
             break;
         default:
             status = eIO_Unknown;
@@ -217,8 +300,8 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         }
     }
 
-    ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
-    return eIO_Success;
+    return ConnNetInfo_AdjustForHttpProxy(uuu->net_info)
+        ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -957,9 +1040,10 @@ static EIO_Status s_VT_Open
     /* reset the auto-reconnect feature */
     uuu->can_connect = (uuu->flags & fHCC_AutoReconnect
                         ? eCC_Unlimited : eCC_Once);
-    uuu->major_fault = 0;
-    uuu->minor_fault = 0;
-    uuu->auth_sent   = 0;
+    uuu->major_fault     = 0;
+    uuu->minor_fault     = 0;
+    uuu->auth_done       = 0;
+    uuu->proxy_auth_done = 0;
 
     return eIO_Success;
 }
@@ -1218,8 +1302,8 @@ static CONNECTOR s_CreateConnector
         *fff = '\0';
     if ((xxx->scheme != eURL_Unspec  && 
          xxx->scheme != eURL_Https   &&
-         xxx->scheme != eURL_Http)   ||
-        !ConnNetInfo_AdjustForHttpProxy(xxx)) {
+         xxx->scheme != eURL_Http)
+        ||  !ConnNetInfo_AdjustForHttpProxy(xxx)) {
         ConnNetInfo_Destroy(xxx);
         return 0;
     }
