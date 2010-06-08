@@ -62,6 +62,10 @@
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_VSNPRINTF   1
 
+#if _MSC_VER >= 1600
+#  define HAVE_IS_SORTED   1
+#endif
+
 #if _MSC_VER < 1500
 #  define vsnprintf        _vsnprintf
 #endif
