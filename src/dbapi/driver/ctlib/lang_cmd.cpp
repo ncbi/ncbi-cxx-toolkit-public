@@ -223,12 +223,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         CS_NUMERIC value;
         Int8 v8 = par.Value();
         memset(&value, 0, sizeof(value));
-        value.precision = 20;
-        if (longlong_to_numeric(v8, 20, value.array) == 0) {
+        value.precision = 19;
+        if (longlong_to_numeric(v8, 19, value.array) == 0) {
             return false;
         }
         param_fmt.scale     = 0;
-        param_fmt.precision = 20;
+        param_fmt.precision = 19;
 
         ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, sizeof(value), indicator));
