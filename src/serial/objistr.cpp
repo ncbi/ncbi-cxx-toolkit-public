@@ -1036,7 +1036,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
     switch ( ReadPointerType() ) {
     case eNullPointer:
         _TRACE("CObjectIStream::ReadPointer: null");
-        return pair<TObjectPtr, TTypeInfo>(0, declaredType);
+        return pair<TObjectPtr, TTypeInfo>((TObjectPtr)0, declaredType);
     case eObjectPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: @...");
