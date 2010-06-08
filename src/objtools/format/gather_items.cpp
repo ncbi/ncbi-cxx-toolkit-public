@@ -1383,8 +1383,7 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
         return gap_it;
     }
     
-    // do only near delta (for now)
-    if (!ctx.IsDelta()  ||  !ctx.IsDeltaLitOnly()) {
+    if ( !ctx.IsDelta() ) {
         return gap_it;
     }
 
