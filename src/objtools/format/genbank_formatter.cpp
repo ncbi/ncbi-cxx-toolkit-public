@@ -567,6 +567,27 @@ void CGenbankFormatter::x_Remark
 //
 // COMMENT
 
+void s_OrphanFixup( list< string >& wrapped, size_t uMaxSize = 0 )
+{
+    if ( ! uMaxSize ) {
+        return;
+    }
+    list< string >::iterator it = wrapped.begin();
+    ++it;
+    while ( it != wrapped.end() ) {
+        string strContent = NStr::TruncateSpaces( *it );
+        if ( strContent.size() && strContent.size() <= uMaxSize ) {
+            --it;
+            *it += strContent;
+            list< string >::iterator delete_me = ++it;
+            ++it;
+            wrapped.erase( delete_me );
+        }
+        else {
+            ++it;
+        }
+    }
+}
 
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
@@ -580,6 +601,7 @@ void CGenbankFormatter::FormatComment
         Wrap(l, "COMMENT", comment.GetComment());
     }
 
+    s_OrphanFixup( l, 1 );
     text_os.AddParagraph(l, comment.GetObject());
 }
 

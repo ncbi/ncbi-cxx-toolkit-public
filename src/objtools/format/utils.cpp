@@ -95,7 +95,12 @@ bool IsPartOfUrl(
       "http:",
     };
     DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, vProtocolSpecifiers, sc_ProtocolSpecifiers);
-    if ( vProtocolSpecifiers.find( sentence.substr( left_edge, 5 ) ) == vProtocolSpecifiers.end() ) {
+    size_t colon = sentence.find( ':', left_edge );
+    if ( colon == string::npos ) {
+        return false;
+    }
+    string strMaybeUrl = sentence.substr( left_edge, colon - left_edge + 1 );
+    if ( vProtocolSpecifiers.find( strMaybeUrl ) == vProtocolSpecifiers.end() ) {
         return false;
     }
     
