@@ -172,7 +172,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
         m_FFCtx.GetConfig().SetRefSeqConventions();
     }
 
-    CFeat_CI feat_iter(seq, SetAnnotSelector());
+    CFeat_CI feat_iter(seq.GetTopLevelEntry(), SetAnnotSelector());
     m_FeatTree.AddFeatures(feat_iter);
 }
 
