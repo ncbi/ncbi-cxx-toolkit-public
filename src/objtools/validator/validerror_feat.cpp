@@ -1570,24 +1570,6 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 		}
 	}
 
-    if (gene.IsSetLocus()) {
-        string locus = gene.GetLocus();
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-        if (bsh) {
-            SAnnotSelector sel (CSeqFeatData::e_Gene);
-            CFeat_CI f (bsh, sel);
-            while (f) {
-                if (f->GetData().GetGene().IsSetLocus_tag() 
-                    && NStr::EqualCase (f->GetData().GetGene().GetLocus_tag(), locus)
-                    && (!f->GetData().GetGene().IsSetLocus() 
-                    || !NStr::EqualCase(f->GetData().GetGene().GetLocus(), locus))) {
-		            PostErr (eDiag_Warning, eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
-			            "locus collides with locus_tag in another gene", feat);
-	            }
-                ++f;
-            }
-        }
-    }
 }
 
 
@@ -5965,6 +5947,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             // complete stop, so check for ragged end
             ragged = CheckForRaggedEnd(location, cdregion);
         }
+    } else if (part_loc & eSeqlocPartial_Stop) {
+        no_end = true;
     }
         
     // check for code break not on a codon

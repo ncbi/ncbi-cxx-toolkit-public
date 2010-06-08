@@ -1937,12 +1937,12 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     // list of expected errors
     vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "TerminalNs", "N at end of sequence"));
+    expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "LocusCollidesWithLocusTag", "locus collides with locus_tag in another gene"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "CollidingGeneNames", "Colliding names in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoMolInfoFound", "No Mol-info applies to this Bioseq"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "LocusTagProblem", "Gene locus and locus_tag 'foo' match"));
-    expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Warning, "LocusCollidesWithLocusTag", "locus collides with locus_tag in another gene"));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record."));
     expected_errors.push_back(new CExpectedError("LocusCollidesWithLocusTag", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record."));
 
@@ -4615,13 +4615,6 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "SelfReferentialSequence", "Self-referential delta sequence"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating multi-interval genes."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating Seqfeat Context."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating duplicate/overlapping features."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating source features."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating pub features."));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Exception", "Exeption while validating colliding genes."));
-
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10173,7 +10166,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 
 #define TESTPOPPHYMUTECO(seh, entry) \
     entry->SetSet().SetClass(CBioseq_set::eClass_pop_set); \
-    WriteOutTemp(entry); \
     eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors); \
     entry->SetSet().SetClass(CBioseq_set::eClass_phy_set); \

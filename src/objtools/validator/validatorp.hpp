@@ -857,7 +857,7 @@ private:
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
     bool x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2);
-    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, bool viral, bool htgs);
+    void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, const CSeq_feat& feat1, CSeq_feat_Handle f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
@@ -867,6 +867,7 @@ private:
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
+    bool x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const CTSE_Handle& tse, bool is_genbank, bool have_cds_gene_mrna);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
@@ -942,6 +943,15 @@ private:
     CValidError_annot m_AnnotValidator;
     CValidError_descr m_DescrValidator;
     CValidError_feat  m_FeatValidator;
+
+    // BioseqHandle for bioseq currently being validated - to cut down on overhead
+    CBioseq_Handle m_CurrentHandle;
+
+    // feature iterator for genes on bioseq - to cut down on overhead
+    CFeat_CI *m_GeneIt;
+
+    // feature iterator for all features on bioseq (again, trying to cut down on overhead
+    CFeat_CI *m_AllFeatIt;
 };
 
 
