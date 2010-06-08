@@ -1516,6 +1516,41 @@ void CFeatureItem::x_AddQualsRna(
     const CFlatFileConfig& cfg = ctx.Config();
     CScope& scope = ctx.GetScope();
 
+    ///
+    /// always output transcript_id
+    ///
+    {{
+        EFeatureQualifier slot = 
+            (ctx.IsRefSeq()  ||  cfg.IsModeDump()  ||  cfg.IsModeGBench()) ?
+                eFQ_transcript_id : eFQ_transcript_id_note;
+        try {
+            if (feat.IsSetProduct()) {
+                CConstRef<CSeq_id> sip(feat.GetProduct().GetId());
+                if (sip) {
+                    CBioseq_Handle prod = 
+                        scope.GetBioseqHandleFromTSE(*sip, ctx.GetHandle());
+                    if ( prod ) {
+                        x_AddProductIdQuals(prod, slot);
+                    } else {
+                        if (sip->IsGi()) {
+                            string acc = GetAccessionForGi(sip->GetGi(), scope);
+                            if (!cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
+                                CRef<CSeq_id> acc_id(new CSeq_id(acc));
+                                x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
+                            }
+                            if ( !feat.IsSetDbxref() ) {
+                                x_AddQual(eFQ_db_xref,
+                                          new CFlatSeqIdQVal(*sip, true));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (CObjmgrUtilException&) {
+        }
+     }}
+
     CRNA_ref::TType rna_type = rna.IsSetType() ?
         rna.GetType() : CRNA_ref::eType_unknown;
     switch ( rna_type ) {
@@ -1570,33 +1605,6 @@ void CFeatureItem::x_AddQualsRna(
     }
     case CRNA_ref::eType_mRNA:
     {
-        EFeatureQualifier slot = 
-            (ctx.IsRefSeq()  ||  cfg.IsModeDump()  ||  cfg.IsModeGBench()) ?
-                eFQ_transcript_id : eFQ_transcript_id_note;
-        try {
-            if (feat.IsSetProduct()) {
-                CConstRef<CSeq_id> sip(feat.GetProduct().GetId());
-                if (sip) {
-                    CBioseq_Handle prod = 
-                        scope.GetBioseqHandleFromTSE(*sip, ctx.GetHandle());
-                    if ( prod ) {
-                        x_AddProductIdQuals(prod, slot);
-                    } else {
-                        if (sip->IsGi()) {
-                            string acc = GetAccessionForGi(sip->GetGi(), scope);
-                            if (!cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
-                                CRef<CSeq_id> acc_id(new CSeq_id(acc));
-                                x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
-                            }
-                            if ( !feat.IsSetDbxref() ) {
-                                x_AddQual(eFQ_db_xref,
-                                          new CFlatSeqIdQVal(*sip, true));
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (CObjmgrUtilException&) {}
         if ( !pseudo  &&  cfg.ShowTranscript() ) {
             CSeqVector vec(feat.GetLocation(), scope);
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
