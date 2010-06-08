@@ -653,6 +653,7 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -702,6 +703,7 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -724,6 +726,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -746,6 +749,7 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -767,6 +771,7 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -788,6 +793,7 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -809,6 +815,7 @@ START_SUBTYPE(ncRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -832,6 +839,7 @@ START_SUBTYPE(tmRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -855,6 +863,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1052,6 +1061,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1276,6 +1286,7 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1430,6 +1441,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
+    ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
