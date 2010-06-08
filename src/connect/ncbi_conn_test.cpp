@@ -200,21 +200,18 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 temp += NStr::UIntToString(net_info->http_proxy_port);
             }
             temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT}"
-                " is correct\n";
+                " is correct";
         } else {
             temp += "If your network configuration requires the use of an"
                 " HTTP proxy server, please contact your network administrator"
-                " and set [CONN]HTTP_PROXY_{HOST|PORT} accordingly;"
-                " make sure the proxy does not require authorization\n";
+                " and set [CONN]HTTP_PROXY_{HOST|PORT} accordingly";
         }
+        temp += "  and if your proxy server requires authorization, please"
+            " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} are used\n";
         if (net_info  &&  (*net_info->user  ||  *net_info->pass)) {
             temp += "Make sure there are no stray [CONN]{USER|PASS}"
-                " specified in your configuration";
-            if (m_HttpProxy) {
-                temp += " -- NCBI toolkit does not support proxy"
-                    " authorization; please contact " NCBI_HELP_DESK "\n";
-            } else
-                temp += " -- NCBI services do not require them\n";
+                " specified in your configuration -- NCBI services"
+                " do not require them\n";
         }
     } else
         temp = "OK";
