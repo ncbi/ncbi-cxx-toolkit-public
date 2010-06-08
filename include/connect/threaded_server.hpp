@@ -72,6 +72,8 @@ public:
 ///   You must define Process() to indicate what to do with each incoming
 ///   connection; .../src/connect/test_threaded_server.cpp illustrates
 ///   how you might do this.
+///
+/// @deprecated  Use CServer instead.
 
 NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CThreadedServer
     : public virtual CConnIniter
