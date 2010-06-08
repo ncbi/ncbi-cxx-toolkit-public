@@ -230,13 +230,23 @@ CHTML_tc* CHTML_table::NextCell(ECellType type)
     if ( m_CurrentRow == TIndex(-1) ) {
         m_CurrentRow = 0;
     }
-    return Cell(m_CurrentRow, m_CurrentCol + 1, type);
+    // Move to next cell
+    m_CurrentCol++;
+    CHTML_tr_Cache& rowCache = GetCache().GetRowCache(m_CurrentRow);
+    // Skip all used cells
+    while ( rowCache.GetCellCache(m_CurrentCol).IsUsed() ) {
+        m_CurrentCol++;
+    }
+    // Return/create cell
+    return Cell(m_CurrentRow, m_CurrentCol, type);
 }
 
 inline
 CHTML_tc* CHTML_table::NextRowCell(ECellType type)
 {
-    return Cell(m_CurrentRow + 1, 0, type);
+    m_CurrentRow++;
+    m_CurrentCol = 0;
+    return NextCell(type);
 }
 
 inline
