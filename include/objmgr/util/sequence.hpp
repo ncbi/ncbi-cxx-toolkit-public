@@ -529,6 +529,8 @@ NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& product);
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat GetMappedmRNAForProduct(const CBioseq_Handle& product);
 
 /* @} */
 

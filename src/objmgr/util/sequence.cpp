@@ -1964,6 +1964,23 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
 }
 
 
+CMappedFeat GetMappedmRNAForProduct(const CBioseq_Handle& bsh)
+{
+    if ( bsh ) {
+        CFeat_CI fi(bsh,
+                    SAnnotSelector(CSeqFeatData::eSubtype_mRNA)
+                    .SetByProduct());
+        if ( fi ) {
+            // return the first one (should be the one packaged on the
+            // nuc-prot set).
+            return *fi;
+        }
+    }
+
+    return CMappedFeat();
+}
+
+
 // Get the encoding sequence of a protein
 const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
 {
