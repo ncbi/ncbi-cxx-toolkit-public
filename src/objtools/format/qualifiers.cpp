@@ -434,9 +434,7 @@ void CFlatGeneSynonymsQVal::Format
 
     string qual = "gene_synonym";
     list<string> synonyms = GetValue();
-    for ( list<string>::iterator it = synonyms.begin(); it != synonyms.end(); it++ ) {
-        x_AddFQ( q, qual, *it, m_Style );
-    }
+    x_AddFQ( q, qual, NStr::Join(synonyms, "; "), m_Style );
 }
 
 // === CFlatCodeBreakQVal ===================================================

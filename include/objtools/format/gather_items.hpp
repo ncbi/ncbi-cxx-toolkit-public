@@ -76,7 +76,7 @@ protected:
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
     virtual CFeatureItem* x_NewFeatureItem(
-        const CSeq_feat& feat,
+        const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
         CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped ) const

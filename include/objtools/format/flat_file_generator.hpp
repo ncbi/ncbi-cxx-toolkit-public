@@ -86,7 +86,7 @@ public:
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
-    static string GetSeqFeatText(const CSeq_feat& feat, CScope& scope,
+    static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
         const CFlatFileConfig& cfg);
 
     //void Reset(void);

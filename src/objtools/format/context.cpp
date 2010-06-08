@@ -171,6 +171,9 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     if (IsRefSeq()) {
         m_FFCtx.GetConfig().SetRefSeqConventions();
     }
+
+    CFeat_CI feat_iter(seq, SetAnnotSelector());
+    m_FeatTree.AddFeatures(feat_iter);
 }
 
 

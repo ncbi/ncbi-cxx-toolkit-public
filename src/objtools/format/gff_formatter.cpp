@@ -132,7 +132,7 @@ void CGFFFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
 {
-    const CSeq_feat& seqfeat = f.GetFeat();
+    CMappedFeat      seqfeat = f.GetFeat();
     string           key(f.GetKey()), oldkey;
     bool             gtf     = false;
     CBioseqContext& ctx = *f.GetContext();
@@ -222,7 +222,8 @@ void CGFFFormatter::FormatFeature
                     if (loc_len > frame + 3 * prod_len + 3) {
                         // truncation error
                         string msg("truncation error: ");
-                        feature::GetLabel(seqfeat, &msg, feature::eBoth);
+                        feature::GetLabel(seqfeat.GetOriginalFeature(), &msg,
+                                          feature::fFGL_Both);
                         msg += "; protein: ";
                         seqfeat.GetProduct().GetLabel(&msg);
 
@@ -292,7 +293,7 @@ void CGFFFormatter::FormatFeature
         }
     }
 
-    text_os.AddParagraph(l, &seqfeat);
+    text_os.AddParagraph(l, &seqfeat.GetOriginalFeature());
 }
 
 
@@ -389,7 +390,8 @@ string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
                                   const string& gene,
                                   CBioseqContext& ctx) const
 {
-    const CSeq_feat& seqfeat = feat.GetFeat();
+    //const CSeq_feat& seqfeat = feat.GetFeat();
+    CMappedFeat seqfeat = feat.GetFeat();
 
     string main_acc = ctx.GetAccession();
     if (ctx.IsPart()) {
@@ -403,16 +405,22 @@ string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
         return gene_id;
     }
 
+    /**
     CConstRef<CSeq_feat> gene_feat =
         sequence::GetBestOverlappingFeat(seqfeat, CSeqFeatData::e_Gene,
                                          sequence::eOverlap_Interval,
                                          ctx.GetScope());
+                                         **/
+    CMappedFeat gene_feat =
+        ctx.GetFeatTree().GetParent(seqfeat, CSeqFeatData::e_Gene);
     if (gene_feat) {
         gene_id = main_acc + ':';
-        feature::GetLabel(*gene_feat, &gene_id, feature::eContent);
+        feature::GetLabel(gene_feat.GetOriginalFeature(), &gene_id,
+                          feature::fFGL_Content);
     } else {
         string msg;
-        feature::GetLabel(seqfeat, &msg, feature::eBoth);
+        feature::GetLabel(seqfeat.GetOriginalFeature(), &msg,
+                          feature::fFGL_Both);
         LOG_POST_X(2, Info << "info: no best overlapping feature for " << msg);
     }
 
@@ -426,18 +434,20 @@ string CGFFFormatter::x_GetTranscriptID
  const string& gene_id,
  CBioseqContext& ctx) const
 {
-    const CSeq_feat& seqfeat = feat.GetFeat();
+    //const CSeq_feat& seqfeat = feat.GetFeat();
+    CMappedFeat seqfeat = feat.GetFeat();
 
     // if our feature already is an mRNA, we need look no further
-    CConstRef<CSeq_feat> rna_feat;
+    CMappedFeat rna_feat;
     switch (seqfeat.GetData().Which()) {
     case CSeqFeatData::e_Rna:
-        rna_feat.Reset(&seqfeat);
+        rna_feat = seqfeat;
         break;
 
     case CSeqFeatData::e_Cdregion:
         if (seqfeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-            rna_feat = sequence::GetBestMrnaForCds(seqfeat, ctx.GetScope());
+            //rna_feat = sequence::GetBestMrnaForCds(seqfeat, ctx.GetScope());
+            rna_feat = feature::GetBestMrnaForCds(seqfeat, &ctx.GetFeatTree());
         }
         break;
 
@@ -448,9 +458,9 @@ string CGFFFormatter::x_GetTranscriptID
     //
     // check if the mRNA feature we found has a product
     //
-    if (rna_feat.GetPointer()  &&  rna_feat->IsSetProduct()) {
+    if (rna_feat  &&  rna_feat.IsSetProduct()) {
         try {
-            const CSeq_id& id = sequence::GetId(rna_feat->GetProduct(), 0);
+            const CSeq_id& id = sequence::GetId(rna_feat.GetProduct(), 0);
             CSeq_id_Handle idh = ctx.GetPreferredSynonym(id);
             string transcript_id = idh.GetSeqId()->GetSeqIdString(true);
             return transcript_id;
@@ -465,7 +475,7 @@ string CGFFFormatter::x_GetTranscriptID
 
     // failed to get transcript id, so we fake a globally unique one based
     // on the gene id
-    m_Transcripts[gene_id].push_back(CConstRef<CSeq_feat>(&seqfeat));
+    m_Transcripts[gene_id].push_back(seqfeat);
 
     string transcript_id = gene_id;
     transcript_id += ":unknown_transcript_";
@@ -536,6 +546,7 @@ void CGFFFormatter::x_AddFeature
             si.SetTo(to);
             si.SetStrand(it.GetStrand());
             si.SetId(const_cast<CSeq_id&>(it.GetSeq_id()));
+
             CConstRef<CSeq_feat> exon = sequence::GetBestOverlappingFeat
                 (loc2, CSeqFeatData::eSubtype_exon,
                  sequence::eOverlap_Contains, ctx.GetScope());

@@ -259,7 +259,7 @@ void CFlatFileGenerator::Generate
 
 
 string CFlatFileGenerator::GetSeqFeatText
-(const CSeq_feat& feat,
+(const CMappedFeat& feat,
  CScope& scope,
  const CFlatFileConfig& cfg)
 {

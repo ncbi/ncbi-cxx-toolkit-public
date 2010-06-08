@@ -117,7 +117,7 @@ private:
     mutable string              m_Date;
     mutable CSeq_inst::TStrand  m_Strandedness;
 
-    typedef vector<CConstRef<CSeq_feat> > TFeatVec;
+    typedef vector<CMappedFeat>    TFeatVec;
     mutable map<string, TFeatVec>  m_Genes;
     mutable map<string, TFeatVec>  m_Transcripts;
 };

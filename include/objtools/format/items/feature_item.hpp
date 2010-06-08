@@ -78,15 +78,18 @@ class NCBI_FORMAT_EXPORT CFlatFeature :
 //  ============================================================================
 {
 public:
-    CFlatFeature(const string& key, const CFlatSeqLoc& loc, const CSeq_feat& feat)
-        : m_Key(key), m_Loc(&loc), m_Feat(&feat) { }
+    CFlatFeature(const string& key,
+                 const CFlatSeqLoc& loc,
+                 const CMappedFeat& feat)
+        : m_Key(key), m_Loc(&loc), m_Feat(feat) { }
 
     typedef vector<CRef<CFormatQual> > TQuals;
 
     const string&      GetKey  (void) const { return m_Key;   }
     const CFlatSeqLoc& GetLoc  (void) const { return *m_Loc;  }
     const TQuals&      GetQuals(void) const { return m_Quals; }
-    const CSeq_feat&   GetFeat (void) const { return *m_Feat; }
+    //const CSeq_feat&   GetFeat (void) const { return m_Feat.GetOriginalFeature(); }
+    CMappedFeat        GetFeat (void) const { return m_Feat; }
 
     TQuals& SetQuals(void) { return m_Quals; }
 
@@ -94,7 +97,7 @@ private:
     string                  m_Key;
     CConstRef<CFlatSeqLoc>  m_Loc;
     TQuals                  m_Quals;
-    CConstRef<CSeq_feat>    m_Feat;
+    CMappedFeat             m_Feat;
 };
 
 
@@ -109,26 +112,27 @@ public:
         formatter.FormatFeature(*this, text_os);
     }
     bool operator<(const CFeatureItemBase& f2) const {
-        return m_Feat->Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; 
+        //return m_Feat.Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; 
+        return m_Feat < f2.m_Feat;
     }
-    const CSeq_feat& GetFeat(void)  const { return *m_Feat; }
+    CMappedFeat      GetFeat(void)  const { return m_Feat; }
     const CSeq_loc&  GetLoc(void)   const { return *m_Loc; }
 
     virtual string GetKey(void) const { 
-        return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+        return m_Feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
     }
 
 protected:
 
     // constructor
-    CFeatureItemBase(const CSeq_feat& feat, CBioseqContext& ctx,
+    CFeatureItemBase(const CMappedFeat& feat, CBioseqContext& ctx,
                      const CSeq_loc* loc = 0);
 
     virtual void x_AddQuals(CBioseqContext& ctx) = 0;
     virtual void x_FormatQuals(CFlatFeature& ff) const = 0;
 
-    CConstRef<CSeq_feat>    m_Feat;
-    CConstRef<CSeq_loc>     m_Loc;
+    CMappedFeat         m_Feat;
+    CConstRef<CSeq_loc> m_Loc;
 };
 
 
@@ -147,8 +151,9 @@ public:
     };
 
     // constructors
-    CFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
-        const CSeq_loc* loc, EMapped mapped = eMapped_not_mapped);
+    CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
+                 const CSeq_loc* loc,
+                 EMapped mapped = eMapped_not_mapped);
 
     virtual ~CFeatureItem() {};
 
@@ -171,7 +176,7 @@ protected:
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>& );
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
-        const CProt_ref*&, CConstRef<CSeq_feat>&, CConstRef<CSeq_id>& );
+        const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
     void x_AddQualDbXref(
         CBioseqContext& );
@@ -197,7 +202,7 @@ protected:
     void x_AddQualProteinId( CBioseqContext&, const CBioseq_Handle&, CConstRef<CSeq_id> );  
     void x_AddQualProtComment( const CBioseq_Handle& );
     void x_AddQualProtMethod( const CBioseq_Handle& );
-    void x_AddQualProtNote( const CProt_ref*, CConstRef<CSeq_feat> );
+    void x_AddQualProtNote( const CProt_ref*, const CMappedFeat& );
     void x_AddQualCdsProduct( CBioseqContext&, const CProt_ref* );
     void x_AddQualProtDesc( const CProt_ref* );
     void x_AddQualProtActivity( const CProt_ref* );
@@ -206,9 +211,9 @@ protected:
     bool x_GetPseudo(  const CGene_ref* =0, const CSeq_feat* =0 ) const;
 
     // qualifier collection
-    void x_AddQualsCdregion(const CSeq_feat& cds, CBioseqContext& ctx,
+    void x_AddQualsCdregion(const CMappedFeat& cds, CBioseqContext& ctx,
         bool pseudo);
-    virtual void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
+    virtual void x_AddQualsRna(const CMappedFeat& feat, CBioseqContext& ctx,
          bool pseudo);
     void x_AddQualsExt( const CSeq_feat::TExt& );
     void x_AddQualsBond( CBioseqContext& );
@@ -233,9 +238,9 @@ protected:
     typedef vector< CRef<CFormatQual> > TQualVec;
     void x_AddFTableQuals(CBioseqContext& ctx);
     bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene);
-    void x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx);
-    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContext& ctx);
-    void x_AddFTableProtQuals(const CSeq_feat& prot);
+    void x_AddFTableRnaQuals(const CMappedFeat& feat, CBioseqContext& ctx);
+    void x_AddFTableCdregionQuals(const CMappedFeat& feat, CBioseqContext& ctx);
+    void x_AddFTableProtQuals(const CMappedFeat& prot);
     void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region);
     void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond);
     void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site);
@@ -307,10 +312,10 @@ inline void CFeatureItem::x_AddQualDb(
 inline void CFeatureItem::x_AddQualCitation()
 //  ----------------------------------------------------------------------------
 {
-    if ( ! m_Feat->IsSetCit() ) {
+    if ( ! m_Feat.IsSetCit() ) {
         return;
     }
-    x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat->GetCit() ) );
+    x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat.GetCit() ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -318,7 +323,7 @@ inline void CFeatureItem::x_AddQualsGb(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
-    if (m_Feat->IsSetQual()) {
+    if (m_Feat.IsSetQual()) {
         x_ImportQuals(ctx);
     }
 }
@@ -327,8 +332,8 @@ inline void CFeatureItem::x_AddQualsGb(
 inline void CFeatureItem::x_AddQualExt()
 //  ----------------------------------------------------------------------------
 {
-    if ( m_Feat->IsSetExt() ) {
-        x_AddQualsExt( m_Feat->GetExt() );
+    if ( m_Feat.IsSetExt() ) {
+        x_AddQualsExt( m_Feat.GetExt() );
     }
 }
 
@@ -338,7 +343,7 @@ class CFeatureItemGff: public CFeatureItem
 {
 public:
     CFeatureItemGff(
-        const CSeq_feat& feat,
+        const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
         EMapped mapped )
@@ -347,7 +352,7 @@ public:
     virtual ~CFeatureItemGff() {};
 
 protected:
-    virtual void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
+    virtual void x_AddQualsRna(const CMappedFeat& feat, CBioseqContext& ctx,
          bool pseudo);
 };
 
@@ -360,14 +365,12 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     CSourceFeatureItem(const CBioSource& src, TRange range, CBioseqContext& ctx);
-    CSourceFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
-        const CSeq_loc* loc = NULL);
     CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
         const CSeq_loc* loc = NULL);
 
     bool WasDesc(void) const { return m_WasDesc; }
     const CBioSource& GetSource(void) const {
-        return m_Feat->GetData().GetBiosrc();
+        return m_Feat.GetData().GetBiosrc();
     }
     string GetKey(void) const { return "source"; }
 

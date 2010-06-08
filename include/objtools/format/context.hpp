@@ -45,6 +45,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <util/range.hpp>
 
@@ -84,6 +85,7 @@ public:
     // Get the bioseq's handle
     CBioseq_Handle& GetHandle(void) { return m_Handle; }
     CScope& GetScope(void) { return m_Handle.GetScope(); }
+    feature::CFeatTree& GetFeatTree(void) { return m_FeatTree; }
 
     // -- id information
     CSeq_id* GetPrimaryId(void) { return m_PrimaryId; }
@@ -204,6 +206,7 @@ private:
 
     // data
     CBioseq_Handle        m_Handle;
+    feature::CFeatTree    m_FeatTree;
     CRef<CSeq_id>         m_PrimaryId;
     string                m_Accession;
     string                m_WGSMasterAccn;
