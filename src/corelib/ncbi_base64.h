@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   BASE-64 Encoding/Decoding private header
+ *   BASE-64 Encoding/Decoding private header (C++ Toolkit CORELIB version)
  *
  */
 

@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   BASE-64 Encoding/Decoding
+ *   BASE-64 Encoding/Decoding (C++ Toolkit CONNECT version)
  *
  */
 
