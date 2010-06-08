@@ -133,23 +133,24 @@ int main(int argc, char* argv[])
 #endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
             continue;
         }
-        if (status == eIO_Success) {
+        if (status == eIO_Success)
             status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
-            if (status == eIO_Timeout) {
-                assert(!n);
-                continue;
-            }
-        }
-        if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector))
-            CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
+        else
+            n = 0;
         if (n) {
             connector = 0/*as bool, visited*/;
             fwrite(blk, 1, n, stdout);
-            fputc('\n', stdout);
+            if (status != eIO_Timeout)
+                fputc('\n', stdout);
             fflush(stdout);
             if (n == sizeof(blk)  &&  status != eIO_Closed)
                 CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
         }
+        if (status == eIO_Timeout)
+            continue;
+        if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector))
+            CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
+
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
     ConnNetInfo_Destroy(net_info);
