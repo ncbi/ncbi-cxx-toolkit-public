@@ -191,6 +191,7 @@ public:
         eMsvc710 = 0,
         eMsvc800,
         eMsvc900,
+        eMsvc1000,
         eXCode30,
         eMsvcNone
     };

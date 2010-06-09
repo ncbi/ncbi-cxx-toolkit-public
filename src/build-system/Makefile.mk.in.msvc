@@ -52,6 +52,8 @@ Detect64BitPortabilityProblems=FALSE
 [Compiler.900]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 Detect64BitPortabilityProblems=FALSE
+[Compiler.1000]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
@@ -59,6 +61,9 @@ PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 Optimization=2
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 AdditionalOptions=/MP
+[Compiler.1000.release]
+Optimization=2
+PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 
 
 [Linker]

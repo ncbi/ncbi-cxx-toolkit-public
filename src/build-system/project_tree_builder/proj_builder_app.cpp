@@ -399,7 +399,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,7,1) );
+    SetVersion( CVersionInfo(2,8,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -496,7 +496,7 @@ void CProjBulderApp::Init(void)
                              CArgDescriptions::eString);
 #elif defined(NCBI_COMPILER_MSVC)
     arg_desc->AddOptionalKey("ide", "msvc_version",
-                             "Target version of MS Visual Studio, for example: 800, 900",
+                             "Target version of MS Visual Studio, for example: 800, 900, 1000",
                              CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("arch", "platform",
                              "Target platform, for example: Win32, x64",

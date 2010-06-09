@@ -452,7 +452,11 @@ string CMsvc7RegSettings::sm_MsvcPlatformName = "ppc";
 
 #elif defined(NCBI_COMPILER_MSVC)
 
-#if _MSC_VER >= 1500
+#if _MSC_VER >= 1600
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+    CMsvc7RegSettings::eMsvc1000;
+string CMsvc7RegSettings::sm_MsvcVersionName = "1000";
+#elif _MSC_VER >= 1500
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc900;
 string CMsvc7RegSettings::sm_MsvcVersionName = "900";
@@ -539,6 +543,10 @@ void CMsvc7RegSettings::IdentifyPlatform()
             sm_MsvcVersion = eMsvc900;
             sm_MsvcVersionName = "900";
             break;
+        case 1000:
+            sm_MsvcVersion = eMsvc1000;
+            sm_MsvcVersionName = "1000";
+            break;
         default:
             NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
             break;
@@ -597,6 +605,8 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void)
         return "8.00";
     } else if (GetMsvcVersion() == eMsvc900) {
         return "9.00";
+    } else {
+        return "9.00";
     }
     return "";
 }
@@ -608,6 +618,8 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
         return "9.00";
     } else if (GetMsvcVersion() == eMsvc900) {
         return "10.00";
+    } else if (GetMsvcVersion() == eMsvc1000) {
+        return "11.00";
     }
     return "";
 }
@@ -615,7 +627,11 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
 string CMsvc7RegSettings::GetConfigNameKeyword(void)
 {
     if (GetMsvcPlatform() < eUnix) {
-        return MSVC_CONFIGNAME;
+        if (GetMsvcVersion() < eMsvc1000) {
+            return MSVC_CONFIGNAME;
+        } else {
+            return "$(Configuration)";
+        }
     } else if (GetMsvcPlatform() == eXCode) {
         return XCODE_CONFIGNAME;
     }
