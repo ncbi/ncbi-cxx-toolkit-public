@@ -7,7 +7,7 @@ version  1 # of file format
 3+5  A??  gb_prot
 3+5  B??  ddbj_prot
 3+5  C??  embl_prot *
-3+5  D??  gb_tpa_prot
+3+5  D??  gb_tpa_prot *
 3+5  E??  gb_wgs_prot
 3+5  F??  ddbj_tpa_prot
 3+5  G??  ddbj_wgs_prot
@@ -378,6 +378,15 @@ special  N00088         ddbj_other_nuc
 special  N00090-N00094  ddbj_other_nuc
 special  N18624         gb_other_nuc
 special  N20000-N99999  gb_est
+
+# Some GenBank "TPA" 8-character protein accessions are really native.
+special  DAA00974-DAA00975  gb_prot
+special  DAA01471           gb_prot
+special  DAA01543           gb_prot
+special  DAA06450-DAA06453  gb_prot
+special  DAA06495           gb_prot
+special  DAA06633-DAA06636  gb_prot
+special  DAA12517-DAA33856  gb_prot
 
 # Some "EMBL" 8-character protein accessions are really third party
 # annotations.
