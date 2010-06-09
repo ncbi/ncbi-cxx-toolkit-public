@@ -343,8 +343,8 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcacheapi(
 /// @deprecated Please use CNetCacheAPI directly (see
 ///             CNetCacheAPI::GetIStream(), CNetCacheAPI::CreateOStream()).
 ///
-NCBI_DEPRECATED
-class NCBI_XCONNECT_EXPORT CBlobStorage_NetCache : public IBlobStorage
+NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CBlobStorage_NetCache :
+    public IBlobStorage
 {
 public:
     CBlobStorage_NetCache();
