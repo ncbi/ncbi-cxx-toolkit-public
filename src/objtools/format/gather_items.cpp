@@ -401,12 +401,11 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
          SAnnotSelector sel = m_Current->SetAnnotSelector();
          for (CAnnot_CI annot_it(seq, sel);
               annot_it; ++annot_it) {
-             CConstRef<CSeq_annot> core = annot_it->GetSeq_annotCore();
-             if ( !core->IsSetDesc() ) {
+             if ( !annot_it->Seq_annot_IsSetDesc() ) {
                  continue;
              }
              ITERATE (CSeq_annot::TDesc::Tdata, it,
-                      core->GetDesc().Get()) {
+                      annot_it->Seq_annot_GetDesc().Get()) {
                  if ( !(*it)->IsPub() ) {
                      continue;
                  }
