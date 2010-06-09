@@ -61,6 +61,7 @@
 #include <objects/seqfeat/RNA_qual.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -1207,42 +1208,43 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 {
     s_feat.Reset();
     g_ref = NULL;
+
+    // guard against suppressed gene xrefs
+    if (m_Feat.IsSetXref()) {
+        ITERATE (CSeq_feat::TXref, it, m_Feat.GetXref()) {
+            const CSeqFeatXref& xref = **it;
+            if (xref.IsSetData()  &&
+                xref.GetData().IsGene()  &&
+                xref.GetData().GetGene().IsSuppressed()) {
+                return;
+            }
+        }
+    }
+
     if (m_Feat) {
-        CMappedFeat feat = ctx.GetFeatTree().GetParent(m_Feat,
-                                                       CSeqFeatData::e_Gene);
+        CSeq_id_Handle id1 = ctx.GetHandle().GetSeq_id_Handle();
+        CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
+                                                   &ctx.GetScope());
+
+        CMappedFeat feat;
+        if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
+            feat = ctx.GetFeatTree().GetParent(m_Feat,
+                                               CSeqFeatData::e_Gene);
+        } else {
+            /// slow path
+            SAnnotSelector sel = ctx.SetAnnotSelector();
+            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
+            CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
+            feature::CFeatTree ft(feat_it);
+            feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+        }
+
         if (feat) {
             s_feat.Reset(&feat.GetOriginalFeature());
             g_ref = &( s_feat->GetData().GetGene() );
         }
     }
-
-#if 0
-    if (m_Feat) {
-        SAnnotSelector sel;
-        sel.SetResolveAll()
-            .SetOverlapTotalRange()
-            .IncludeFeatSubtype(m_Feat.GetData().GetSubtype())
-            .IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
-        CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
-        feature::CFeatTree ft(feat_it);
-        CMappedFeat feat;
-        for ( ;  feat_it;  ++feat_it) {
-            if (&feat_it->GetOriginalFeature() == m_Feat) {
-                feat = *feat_it;
-                break;
-            }
-        }
-
-        if (feat) {
-            CMappedFeat gene = ft.GetParent(feat, CSeqFeatData::e_Gene);
-            if (gene) {
-                s_feat = &( gene.GetOriginalFeature() );
-                g_ref = &( s_feat->GetData().GetGene() );
-                return;
-            }
-        }
-    }
-#endif
 }
 
 //  ----------------------------------------------------------------------------
