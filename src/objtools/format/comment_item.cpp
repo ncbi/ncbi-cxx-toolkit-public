@@ -841,7 +841,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 
     CNcbiOstrstream text;
 
-    text << *refseq << " INFORMATION:  ";
+    text << *refseq << " INFORMATION: ";
     if ( !m_GenomeBuildNumber.empty() ) {
          text << "Features on this sequence have been produced for build "
               << m_GenomeBuildNumber << " of the NCBI's genome annotation"
