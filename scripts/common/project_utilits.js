@@ -253,9 +253,7 @@ function FillTreeStructure(oShell, oTree)
         "Makefile.*.msvc",
         "ncbi.rc",
         "ncbilogo.ico",
-        "project_tree_builder.ini",
         "lock_ptb_config.bat",
-        "asn_prebuild.bat",
         "ptb.bat",
         "datatool.bat",
         "msvcvars.bat"
