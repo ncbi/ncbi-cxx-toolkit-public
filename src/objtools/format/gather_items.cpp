@@ -44,6 +44,8 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -62,6 +64,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
@@ -392,6 +395,32 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
         }
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
     }
+
+    // also gather references from annotations
+    {{
+         SAnnotSelector sel = m_Current->SetAnnotSelector();
+         for (CAnnot_CI annot_it(seq, sel);
+              annot_it; ++annot_it) {
+             CConstRef<CSeq_annot> core = annot_it->GetSeq_annotCore();
+             if ( !core->IsSetDesc() ) {
+                 continue;
+             }
+             ITERATE (CSeq_annot::TDesc::Tdata, it,
+                      core->GetDesc().Get()) {
+                 if ( !(*it)->IsPub() ) {
+                     continue;
+                 }
+                 const CPubdesc& pubdesc = (*it)->GetPub();
+                 if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                     continue;
+                 }
+                 CRef<CSeqdesc> desc(new CSeqdesc);
+                 desc->SetPub(const_cast<CPubdesc&>((*it)->GetPub()));
+                 refs.push_back(CBioseqContext::TRef
+                                (new CReferenceItem(*desc, *m_Current)));
+             }
+         }
+     }}
 
     // if near segmented, collect pubs from segments under location
     CSeq_entry_Handle segset =
