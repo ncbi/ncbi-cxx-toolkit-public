@@ -47,9 +47,6 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
-#include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/sseqloc.hpp>
 
 #include <algo/align/ngalign/ngalign_interface.hpp>
 

@@ -54,7 +54,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-    class SSeqLoc;
     class CSearchResultSet;
     class CSearchResults;
 END_SCOPE(blast)

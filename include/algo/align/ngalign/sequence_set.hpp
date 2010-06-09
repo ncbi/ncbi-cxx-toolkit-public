@@ -52,6 +52,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <objtools/blast/seqdb_writer/multisource_util.hpp>
 
 #include <algo/align/ngalign/ngalign_interface.hpp>
 
@@ -66,7 +67,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-    class SSeqLoc;
     class IQueryFactory;
     class CLocalDbAdapter;
     class CSearchDatabase;
@@ -84,6 +84,9 @@ public:
 
     void SetSoftFiltering(int Filter) { m_Filter = Filter; }
 
+    void SetNegativeGiList(const vector<int>& GiList);
+    void SetPositiveGiList(const vector<int>& GiList);
+
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope,
             const blast::CBlastOptionsHandle& BlastOpts);
@@ -98,6 +101,8 @@ public:
 protected:
     string m_BlastDb;
     int m_Filter;
+    CRef<CInputGiList> m_NegativeGiList;
+    CRef<CInputGiList> m_PositiveGiList;
 };
 
 
@@ -109,6 +114,9 @@ public:
 
     list<CRef<objects::CSeq_id> >& SetIdList();
     void SetSeqMasker(CSeqMasker* SeqMasker);
+
+    void GetGiList(vector<int>& GiList, objects::CScope& Scope,
+                   const CAlignResultsSet& Alignments, int Threshold);
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);

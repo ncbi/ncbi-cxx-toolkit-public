@@ -43,8 +43,6 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
-#include <algo/blast/api/sseqloc.hpp>
-
 #include <algo/align/ngalign/ngalign_interface.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -56,12 +54,6 @@ BEGIN_SCOPE(objects)
     class CSeq_id;
     class CDense_seg;
 END_SCOPE(objects)
-
-BEGIN_SCOPE(blast)
-    class SSeqLoc;
-    class CBlastOptionsHandle;
-END_SCOPE(blast)
-
 
 
 
