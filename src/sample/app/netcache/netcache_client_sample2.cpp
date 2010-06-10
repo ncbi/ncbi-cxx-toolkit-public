@@ -25,7 +25,7 @@
  *
  * Authors:  Maxim Didenko
  *
- * File Description:  NetCache Sample (uses CNetCacheNSStorage)
+ * File Description:  NetCache Sample
  *
  */
 
@@ -43,12 +43,9 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/netcache_api.hpp>
 
 USING_NCBI_SCOPE;
-
-    
-///////////////////////////////////////////////////////////////////////
 
 
 /// Sample application
@@ -68,7 +65,7 @@ void CSampleNetCacheClient::Init(void)
 {
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
-    
+
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
@@ -83,7 +80,6 @@ void CSampleNetCacheClient::Init(void)
                              CArgDescriptions::eString);
 
 
-    
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -91,46 +87,37 @@ void CSampleNetCacheClient::Init(void)
 
 int CSampleNetCacheClient::Run(void)
 {
-
     const CArgs& args = GetArgs();
 
     string service_name = args["service"].AsString();
 
     CNetCacheAPI nc_client(service_name, "nc_client_sample2");
 
-    //const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data[] = "1234565 y dog.";
-    CBlobStorage_NetCache storage(nc_client);
 
     // Store the BLOB
     string key;
 
-    CNcbiOstream& os = storage.CreateOStream(key);
-    os << test_data << endl;
+    auto_ptr<CNcbiOstream> os(nc_client.CreateOStream(key));
+    *os << test_data << endl;
 
-    // Reset the storage so we can reuse it to get the data back from 
-    // the NetCache
-    storage.Reset();
+    os.reset();
 
     NcbiCout << key << NcbiEndl;
 
 
-    //SleepMilliSec(500);
-
     // Get the data back
     try {
-        //key = "aaa";
-        CNcbiIstream& is = storage.GetIStream(key);
+        auto_ptr<CNcbiIstream> is(nc_client.GetIStream(key));
         string res;
-        getline(is, res);
+        getline(*is, res);
         NcbiCout << res << NcbiEndl;
-        
-    } catch(CBlobStorageException& ex) {
+    }
+    catch(CNetServiceException& ex) {
         ERR_POST(ex.what());
         return 1;
     }
     return 0;
-
 }
 
 

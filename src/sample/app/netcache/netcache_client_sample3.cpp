@@ -25,15 +25,15 @@
  *
  * Authors:  Maxim Didenko, Vladimir Ivanov, Anatoliy Kuznetsov
  *
- * File Description:  NetCache Sample (uses CNetCacheNSStorage)
+ * File Description:  NetCache Sample
  *
  */
 
 /// @file netcache_client_sample3.cpp
-/// NetCache sample: 
+/// NetCache sample:
 ///    illustrates client creattion and simple store/load scenario
 ///    using C++ compatible streams and ZIP compression.
-///    In some cases compression can dramatically reduce 
+///    In some cases, compression can dramatically reduce
 ///    network and storage overhead of NetCache.
 ///
 
@@ -47,13 +47,9 @@
 #include <corelib/ncbimisc.hpp>
 #include <util/compress/zlib.hpp>
 
-#include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/netcache_api.hpp>
 
 USING_NCBI_SCOPE;
-
-    
-///////////////////////////////////////////////////////////////////////
-
 
 /// Sample application
 ///
@@ -67,12 +63,11 @@ public:
 };
 
 
-
 void CSampleNetCacheClient::Init(void)
 {
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
-    
+
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
@@ -86,7 +81,6 @@ void CSampleNetCacheClient::Init(void)
                              "LBSM service name or host:port",
                              CArgDescriptions::eString);
 
-    
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -101,22 +95,18 @@ int CSampleNetCacheClient::Run(void)
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
-    CBlobStorage_NetCache storage(nc_client);
-    
     // Store the BLOB
     string key;
-    CNcbiOstream& os = storage.CreateOStream(key);
+    auto_ptr<CNcbiOstream> os(nc_client.CreateOStream(key));
 
     // initialize compression stream
     {{
-        CCompressionOStream os_zip(os, new CZipStreamCompressor(),
+        CCompressionOStream os_zip(*os, new CZipStreamCompressor(),
                                 CCompressionStream::fOwnWriter);
         os_zip << test_data;
     }}
 
-    // Reset the storage so we can reuse it to get the data back from 
-    // the NetCache
-    storage.Reset();
+    os.reset();
 
     NcbiCout << key << NcbiEndl;
 
@@ -124,24 +114,23 @@ int CSampleNetCacheClient::Run(void)
 
     // Get the data back
     try {
-        CNcbiIstream& is = storage.GetIStream(key);
+        auto_ptr<CNcbiIstream> is(nc_client.GetIStream(key));
         string res;
         {{
-            // construct decompresion stream
+            // construct decompression stream
             // decompression MUST match compression 
             // CZipStreamCompressor - CZipStreamDecompressor
-            CCompressionIStream is_zip(is, new CZipStreamDecompressor(),
+            CCompressionIStream is_zip(*is, new CZipStreamDecompressor(),
                                        CCompressionStream::fOwnReader);
             getline(is_zip, res);
         }}
         NcbiCout << res << NcbiEndl;
-        
-    } catch(CBlobStorageException& ex) {
+    }
+    catch (CNetServiceException& ex) {
         ERR_POST(ex.what());
         return 1;
     }
     return 0;
-
 }
 
 

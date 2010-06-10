@@ -29,14 +29,16 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/blob_storage.hpp>
+
+#include <connect/services/netcache_api.hpp>
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
 #include <html/html.hpp>
 #include <html/page.hpp>
+
+#include <corelib/ncbireg.hpp>
 
 
 // To get CGI client API (in-house only, optional)
@@ -57,15 +59,13 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 private:
-
-    void x_InitStorage();
     // These 2 functions just demonstrate the use of cmd-line argument parsing
     // mechanism in CGI application -- for the processing of both cmd-line
     // arguments and HTTP entries
     void x_SetupArgs(void);
     void x_LookAtArgs(void);
 
-    auto_ptr<IBlobStorage> m_Storage;
+    CNetCacheAPI m_NetCacheAPI;
     string m_HtmlTempl;
 };
 
@@ -78,20 +78,13 @@ void CCgiSampleApplication::Init()
     m_HtmlTempl = 
         GetConfig().GetString("html", "template", "");
 
-    x_InitStorage();
+    m_NetCacheAPI = CNetCacheAPI("netcache_cgi_sample");
 
-   
     // Describe possible cmd-line and HTTP entries
     // (optional)
     x_SetupArgs();
 }
 
-
-void CCgiSampleApplication::x_InitStorage()
-{
-    CBlobStorageFactory factory(GetConfig());
-    m_Storage.reset(factory.CreateInstance());
-}
 
 const string kSessionId = "nsessionid";
 
@@ -112,7 +105,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     string session_id;
     if (cookie) {
         session_id = cookie->GetValue();
-        message = m_Storage->GetBlobAsString(session_id);
+        m_NetCacheAPI.ReadData(session_id, message);
         if (!message.empty()) 
             message = "'" + message + "'";
         else
@@ -122,10 +115,10 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     bool is_message = false;
     string new_message = request.GetEntry("Message", &is_message);
     if ( is_message && !new_message.empty() ) {       
-        CNcbiOstream& os = m_Storage->CreateOStream(session_id);
-        os << new_message;
+        auto_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(session_id));
+        *os << new_message;
+        os.reset();
         CCgiCookies& rcookies = response.Cookies();
-        m_Storage->Reset();
         rcookies.Add(kSessionId, session_id);
         new_message = "'" +  new_message + "'";
     } else 
@@ -139,7 +132,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
     }
-    
 
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
@@ -224,19 +216,7 @@ void CCgiSampleApplication::x_LookAtArgs()
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN
-//
-extern "C"
-{
-void BlobStorage_RegisterDriver_NetCache(void);
-}
-
 int main(int argc, const char* argv[])
 {
-    BlobStorage_RegisterDriver_NetCache();
-
-    int result = CCgiSampleApplication().AppMain(argc, argv);
-    return result;
+    return CCgiSampleApplication().AppMain(argc, argv);
 }
