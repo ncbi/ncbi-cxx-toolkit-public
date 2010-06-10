@@ -165,8 +165,10 @@ s_GetProteinFrameLength(Int4 nuc_length, Int2 frame)
 /// @param translate2 Is subject translated? [in]
 static void
 s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp, 
-                      unsigned int first, unsigned int nsegs, vector<TSignedSeqPos>& starts, 
-                      vector<TSeqPos>& lengths, vector<ENa_strand>& strands,
+                      unsigned int first, unsigned int nsegs,
+                      CDense_seg::TStarts& starts, 
+                      CDense_seg::TLens& lengths,
+                      CDense_seg::TStrands& strands,
                       Int4 query_length, Int4 subject_length,
                       bool translate1, bool translate2)
 {
@@ -267,8 +269,9 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp,
 static void
 s_CreateDenseg(CDense_seg& dense_seg, 
                CRef<CSeq_id> master, CRef<CSeq_id> slave,
-               vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-               vector<ENa_strand>& strands)
+               CDense_seg::TStarts& starts,
+               CDense_seg::TLens& lengths, 
+               CDense_seg::TStrands& strands)
 {
     _ASSERT(master);
     _ASSERT(slave);
@@ -300,8 +303,10 @@ s_CreateDenseg(CDense_seg& dense_seg,
 /// @return The Std-seg object.
 static CSeq_align::C_Segs::TStd
 s_CreateStdSegs(CRef<CSeq_id> master, CRef<CSeq_id> slave, 
-                vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-                vector<ENa_strand>& strands, bool translate_master, 
+                CDense_seg::TStarts& starts,
+                CDense_seg::TLens& lengths, 
+                CDense_seg::TStrands& strands,
+                bool translate_master, 
                 bool translate_slave)
 {
     _ASSERT(master);
@@ -401,8 +406,10 @@ s_CorrectUASequence(BlastHSP* hsp)
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
 s_CreateSeqAlign(CRef<CSeq_id> master, CRef<CSeq_id> slave,
-    vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
-    vector<ENa_strand> strands, bool translate_master, bool translate_slave)
+                 CDense_seg::TStarts starts,
+                 CDense_seg::TLens lengths,
+                 CDense_seg::TStrands strands,
+                 bool translate_master, bool translate_slave)
 {
     CRef<CSeq_align> sar(new CSeq_align());
     sar->SetType(CSeq_align::eType_partial);
@@ -436,9 +443,9 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 {
     _ASSERT(hsp != NULL);
 
-    vector<TSignedSeqPos> starts;
-    vector<TSeqPos> lengths;
-    vector<ENa_strand> strands;
+    CDense_seg::TStarts starts;
+    CDense_seg::TLens lengths;
+    CDense_seg::TStrands strands;
     bool translate1, translate2;
     bool is_disc_align = false;
 

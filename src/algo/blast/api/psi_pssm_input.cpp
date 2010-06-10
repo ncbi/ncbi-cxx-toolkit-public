@@ -329,8 +329,8 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
     _ASSERT(denseg.GetDim() == 2);
 
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
-    const vector<TSignedSeqPos>& starts = denseg.GetStarts();
-    const vector<TSeqPos>& lengths = denseg.GetLens();
+    const CDense_seg::TStarts& starts = denseg.GetStarts();
+    const CDense_seg::TLens& lengths = denseg.GetLens();
     const int kNumSegments = denseg.GetNumseg();
     const TSeqPos kDimensions = denseg.GetDim();
     TSeqPos query_index = 0;        // index into starts vector
@@ -419,8 +419,8 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
     const TSeqPos kDimensions = ds.GetDim();
     TSeqPos subj_index = 1;                 // index into starts vector
 
-    const vector<TSignedSeqPos>& starts = ds.GetStarts();
-    const vector<TSeqPos>& lengths = ds.GetLens();
+    const CDense_seg::TStarts& starts = ds.GetStarts();
+    const CDense_seg::TLens& lengths = ds.GetLens();
 
     for (int i = 0; i < kNumSegments; i++) {
 
