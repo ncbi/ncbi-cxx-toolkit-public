@@ -512,6 +512,7 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(allele);
     ADD_QUAL(artificial_location);
     ADD_QUAL(citation);
+    ADD_QUAL(coded_by);
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
@@ -543,6 +544,7 @@ END_SUBTYPE
 
 START_SUBTYPE(prot)
     ADD_QUAL(allele);
+    ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
@@ -2105,6 +2107,7 @@ START_SUBTYPE(region)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(region_name);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2171,6 +2174,7 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(site_type);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2300,6 +2304,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_artificial_location, "artificial_location"),
     TQualPair(CSeqFeatData::eQual_bio_material, "bio_material"),
     TQualPair(CSeqFeatData::eQual_bound_moiety, "bound_moiety"),
+    TQualPair(CSeqFeatData::eQual_calculated_mol_wt, "calculated_mol_wt"),
     TQualPair(CSeqFeatData::eQual_cell_line, "cell_line"),
     TQualPair(CSeqFeatData::eQual_cell_type, "cell_type"),
     TQualPair(CSeqFeatData::eQual_chloroplast, "chloroplast"),
@@ -2308,6 +2313,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_citation, "citation"),
     TQualPair(CSeqFeatData::eQual_clone, "clone"),
     TQualPair(CSeqFeatData::eQual_clone_lib, "clone_lib"),
+    TQualPair(CSeqFeatData::eQual_coded_by, "coded_by"),
     TQualPair(CSeqFeatData::eQual_codon, "codon"),
     TQualPair(CSeqFeatData::eQual_codon_start, "codon_start"),
     TQualPair(CSeqFeatData::eQual_collected_by, "collected_by"),
@@ -2374,6 +2380,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_proviral, "proviral"),
     TQualPair(CSeqFeatData::eQual_pseudo, "pseudo"),
     TQualPair(CSeqFeatData::eQual_rearranged, "rearranged"),
+    TQualPair(CSeqFeatData::eQual_region_name, "region_name"),
     TQualPair(CSeqFeatData::eQual_replace, "replace"),
     TQualPair(CSeqFeatData::eQual_ribosomal_slippage, "ribosomal_slippage"),
     TQualPair(CSeqFeatData::eQual_rpt_family, "rpt_family"),
@@ -2387,6 +2394,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_serotype, "serotype"),
     TQualPair(CSeqFeatData::eQual_serovar, "serovar"),
     TQualPair(CSeqFeatData::eQual_sex, "sex"),
+    TQualPair(CSeqFeatData::eQual_site_type, "site_type"),
     TQualPair(CSeqFeatData::eQual_specimen_voucher, "specimen_voucher"),
     TQualPair(CSeqFeatData::eQual_standard_name, "standard_name"),
     TQualPair(CSeqFeatData::eQual_strain, "strain"),
