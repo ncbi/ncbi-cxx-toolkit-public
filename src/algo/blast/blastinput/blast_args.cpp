@@ -1526,6 +1526,9 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            NStr::IntToString(kMinValue));
     arg_desc.SetConstraint(kArgNumThreads, 
                            new CArgAllowValuesGreaterThanOrEqual(kMinValue));
+    arg_desc.SetDependency(kArgNumThreads,
+                           CArgDescriptions::eExcludes,
+                           kArgRemote);
     arg_desc.SetCurrentGroup("");
 }
 
@@ -1543,9 +1546,6 @@ CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddFlag(kArgRemote, "Execute search remotely?", true);
-    arg_desc.SetDependency(kArgRemote,
-                           CArgDescriptions::eExcludes,
-                           kArgNumThreads);
 
     arg_desc.SetCurrentGroup("");
 }
