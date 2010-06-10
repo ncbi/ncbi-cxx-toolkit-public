@@ -445,10 +445,6 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
                                const SAnnotSelector* sel)
 {
     size_t max_request_size = GetMaxChunksRequestSize();
-    if ( LimitChunksRequests(max_request_size) ) {
-        return CReader::LoadBlobs(result, blobs, mask, sel);
-    }
-
     CConn conn(result, this);
     CID2_Request_Packet packet;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
@@ -479,6 +475,11 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
             req->SetRequest().SetGet_blob_info();
         x_SetResolve(req2.SetBlob_id().SetBlob_id(), *blob_id);
         x_SetDetails(req2.SetGet_data(), mask);
+        if ( LimitChunksRequests(max_request_size) &&
+             packet.Get().size() >= max_request_size ) {
+            x_ProcessPacket(result, packet, sel);
+            packet.Set().clear();
+        }
     }
     if ( !packet.Get().empty() ) {
         x_ProcessPacket(result, packet, sel);
