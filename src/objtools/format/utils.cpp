@@ -713,6 +713,15 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
                     me.method = ufp->GetData().GetStr();
                 }
             }
+            if ( moduop->HasField("Counts") ) {
+                ufp = &(moduop->GetField("Counts"));
+                if ( ufp->HasField("mRNA")) {
+                     me.mrnaEv = true;
+                }
+                if ( ufp->HasField("EST")) {
+                     me.estEv = true;
+                }
+            }
             if ( moduop->HasField("mRNA") ) {
                 me.mrnaEv = true;
             }

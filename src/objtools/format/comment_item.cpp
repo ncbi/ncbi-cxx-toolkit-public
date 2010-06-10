@@ -584,10 +584,10 @@ string CCommentItem::GetStringForModelEvidance
     CNcbiOstrstream text;
 
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
-         << "automated computational analysis. This record is derived from"
-         << "an annotated genomic sequence (" << me.name << ")";
+         << "automated computational analysis. This record is derived from "
+         << "a genomic sequence (" << me.name << ")";
     if ( !me.method.empty() ) {
-        text << " using gene prediction method: " << me.method;
+        text << " annotated using gene prediction method: " << me.method;
     }
 
     if ( me.mrnaEv  ||  me.estEv ) {
