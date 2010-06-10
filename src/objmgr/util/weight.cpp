@@ -61,11 +61,11 @@ BEGIN_SCOPE(objects)
 static const int kNumC[] =
 {0,3,4,3,4,5,9,2,6, 6, 6, 6,5,4,5,5, 6,3,4,5,11,0,9,5,3,0,12, 6};
 static const int kNumH[] =
-{0,5,5,5,5,7,9,3,7,11,12,11,9,6,7,8,12,5,7,9,10,0,9,7,5,0,21,11};
+{0,5,5,5,5,7,9,3,7,11,12,11,9,6,7,8,12,5,7,9,10,0,9,7,5,0,19,11};
 static const int kNumN[] =
 {0,1,1,1,1,1,1,1,3, 1, 2, 1,1,2,1,2, 4,1,1,1, 2,0,1,1,1,0, 3, 1};
 static const int kNumO[] =
-{0,1,3,1,3,3,1,1,1, 1, 1, 1,1,2,1,2, 1,2,2,1, 1,0,2,3,1,0, 3, 1};
+{0,1,3,1,3,3,1,1,1, 1, 1, 1,1,2,1,2, 1,2,2,1, 1,0,2,3,1,0, 2, 1};
 static const int kNumS[] =
 {0,0,0,1,0,0,0,0,0, 0, 0, 0,1,0,0,0, 0,0,0,0, 0,0,0,0,0,0, 0, 0};
 static const int kNumSe[] =
@@ -82,7 +82,7 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 
     TSeqPos size = v.size();
 
-    // Don't start with water (H2O)
+    // Start with water (H2O)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
     CSeqVector_CI vit(v);
