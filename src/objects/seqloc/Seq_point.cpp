@@ -35,7 +35,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-//#include <objects/general/Int_fuzz.hpp>
+#include <objects/general/Int_fuzz.hpp>
 
 // generated classes
 

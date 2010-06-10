@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 
 BEGIN_NCBI_SCOPE
