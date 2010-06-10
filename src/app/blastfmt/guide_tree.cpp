@@ -370,9 +370,11 @@ void s_RerootUpstream(CBioTreeDynamic::CBioNode* node, TBioTreeFeatureId fid)
     CBioTreeDynamic::CBioNode* parent
         = (CBioTreeDynamic::CBioNode*)node->GetParent();
 
-    if (parent->GetParent()) {
-        s_RerootUpstream((CBioTreeDynamic::CBioNode*)node->GetParent(), fid);
+    if (!parent) {
+        return;
     }
+
+    s_RerootUpstream(parent, fid);
 
     parent->GetValue().features.SetFeature(fid,
                               node->GetValue().features.GetFeatureValue(fid));
