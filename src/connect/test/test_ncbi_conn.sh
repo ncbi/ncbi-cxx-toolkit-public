@@ -22,6 +22,10 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
+if [ -f /am/ncbiapdata/test_data/proxy/test_ncbi_proxy ]; then
+  . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy
+fi
+
 $CHECK_EXEC test_ncbi_conn -nopause 2>&1
 exit_code=$?
 
