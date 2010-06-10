@@ -288,11 +288,21 @@ typedef struct SOCK_tag {
     size_t           w_len;     /* SOCK: how much data is pending for output */
 
     /* statistics */
-    size_t           n_read;    /* DSOCK: total #; SOCK: last connect/ only  */
-    size_t           n_written; /* DSOCK: total #; SOCK: last /session only  */
-    size_t           n_in;      /* DSOCK: msg #; SOCK: total # of bytes read */
-    size_t           n_out;     /* DSOCK: msg #; SOCK: total # of bytes sent */
-
+    /* FIXME: use Uint8 here */
+    size_t           n_read;    /* DSOCK: total # of bytes read (in all msgs)
+                                   SOCK:  # of bytes read since last connect
+                                */
+    size_t           n_written; /* DSOCK: total # of bytes written (all msgs)
+                                   SOCK:  # of bytes written since last connect
+                                */
+    size_t           n_in;      /* DSOCK: total # of messages received
+                                   SOCK:  total # of bytes read in all
+                                   completed connections in this SOCK so far
+                                */
+    size_t           n_out;     /* DSOCK: total # of messages sent
+                                   SOCK:  total # of bytes written in all
+                                   completed connections in this SOCK so far
+                                */
 #ifdef NCBI_OS_UNIX
     /* pathname for UNIX socket */
     char             path[1];   /* must go last                              */
