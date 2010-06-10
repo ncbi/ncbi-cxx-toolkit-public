@@ -955,8 +955,8 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
                     .ProcessStream(result, blob_id, chunk_id, stream);
             }
             char buf[1];
-            if ( stream.read(buf, 1) || stream.gcount() ) {
-                ERR_POST_X(6, "CPubseqReader: extra blob data");
+            if ( stream.read(buf, 1) && stream.gcount() ) {
+                ERR_POST_X(6, "CPubseqReader: extra blob data: "<<blob_id);
             }
             cmd->DumpResults();
         }
