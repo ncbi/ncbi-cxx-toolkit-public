@@ -40,10 +40,12 @@
 #include <serial/enumvalues.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/misc/error_codes.hpp>
@@ -54,10 +56,8 @@
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqLoc
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
 
 // constructors
 CSeq_loc::CSeq_loc(E_Choice index)
@@ -776,53 +776,56 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Int:
         {
+            const CSeq_interval& seq_int = loc.GetInt();
             SLoc_Info info;
-            info.m_Id = &loc.GetInt().GetId();
-            info.m_Range.Set(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
-            if ( loc.GetInt().IsSetStrand() ) {
-                info.SetStrand(loc.GetInt().GetStrand());
+            info.m_Id = &seq_int.GetId();
+            info.m_Range.Set(seq_int.GetFrom(), seq_int.GetTo());
+            if ( seq_int.IsSetStrand() ) {
+                info.SetStrand(seq_int.GetStrand());
             }
             info.m_Loc = &loc;
-            if (loc.GetInt().IsSetFuzz_from()) {
-                info.m_Fuzz.first = &loc.GetInt().GetFuzz_from();
+            if (seq_int.IsSetFuzz_from()) {
+                info.m_Fuzz.first = &seq_int.GetFuzz_from();
             }
-            if (loc.GetInt().IsSetFuzz_to()) {
-                info.m_Fuzz.second = &loc.GetInt().GetFuzz_to();
+            if (seq_int.IsSetFuzz_to()) {
+                info.m_Fuzz.second = &seq_int.GetFuzz_to();
             }
             m_LocList.push_back(info);
             return;
         }
     case CSeq_loc::e_Pnt:
         {
+            const CSeq_point& pnt = loc.GetPnt();
             SLoc_Info info;
-            info.m_Id = &loc.GetPnt().GetId();
-            info.m_Range.Set(loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint());
-            if ( loc.GetPnt().IsSetStrand() ) {
-                info.SetStrand(loc.GetPnt().GetStrand());
+            info.m_Id = &pnt.GetId();
+            info.m_Range.Set(pnt.GetPoint(), pnt.GetPoint());
+            if ( pnt.IsSetStrand() ) {
+                info.SetStrand(pnt.GetStrand());
             }
             info.m_Loc = &loc;
-            if (loc.GetPnt().IsSetFuzz()) {
-                info.m_Fuzz.first = info.m_Fuzz.second
-                    = &loc.GetPnt().GetFuzz();
+            if (pnt.IsSetFuzz()) {
+                info.m_Fuzz.first = info.m_Fuzz.second = &pnt.GetFuzz();
             }
             m_LocList.push_back(info);
             return;
         }
     case CSeq_loc::e_Packed_int:
         {
-            ITERATE ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+            const CPacked_seqint::Tdata& data = loc.GetPacked_int().Get();
+            ITERATE ( CPacked_seqint::Tdata, ii, data ) {
+                const CSeq_interval& seq_int = **ii;
                 SLoc_Info info;
-                info.m_Id = &(*ii)->GetId();
-                info.m_Range.Set((*ii)->GetFrom(), (*ii)->GetTo());
-                if ( (*ii)->IsSetStrand() ) {
-                    info.SetStrand((*ii)->GetStrand());
+                info.m_Id = &seq_int.GetId();
+                info.m_Range.Set(seq_int.GetFrom(), seq_int.GetTo());
+                if ( seq_int.IsSetStrand() ) {
+                    info.SetStrand(seq_int.GetStrand());
                 }
                 info.m_Loc = &loc;
-                if ((*ii)->IsSetFuzz_from()) {
-                    info.m_Fuzz.first = &(*ii)->GetFuzz_from();
+                if (seq_int.IsSetFuzz_from()) {
+                    info.m_Fuzz.first = &seq_int.GetFuzz_from();
                 }
-                if ((*ii)->IsSetFuzz_to()) {
-                    info.m_Fuzz.second = &(*ii)->GetFuzz_to();
+                if (seq_int.IsSetFuzz_to()) {
+                    info.m_Fuzz.second = &seq_int.GetFuzz_to();
                 }
                 m_LocList.push_back(info);
             }
@@ -830,63 +833,64 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            ITERATE ( CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints() ) {
-                SLoc_Info info;
-                info.m_Id = &loc.GetPacked_pnt().GetId();
+            const CPacked_seqpnt& pack_pnt = loc.GetPacked_pnt();
+            SLoc_Info info;
+            info.m_Id = &pack_pnt.GetId();
+            if ( pack_pnt.IsSetStrand() ) {
+                info.SetStrand(pack_pnt.GetStrand());
+            }
+            if (pack_pnt.IsSetFuzz()) {
+                info.m_Fuzz.first = info.m_Fuzz.second = &pack_pnt.GetFuzz();
+            }
+            info.m_Loc = &loc;
+            ITERATE ( CPacked_seqpnt::TPoints, pi, pack_pnt.GetPoints() ) {
                 info.m_Range.Set(*pi, *pi);
-                if ( loc.GetPacked_pnt().IsSetStrand() ) {
-                    info.SetStrand(loc.GetPacked_pnt().GetStrand());
-                }
-                info.m_Loc = &loc;
-                if (loc.GetPacked_pnt().IsSetFuzz()) {
-                    info.m_Fuzz.first = info.m_Fuzz.second
-                        = &loc.GetPacked_pnt().GetFuzz();
-                }
                 m_LocList.push_back(info);
             }
             return;
         }
     case CSeq_loc::e_Mix:
         {
-            ITERATE(CSeq_loc_mix::Tdata, li, loc.GetMix().Get()) {
+            const CSeq_loc_mix::Tdata& data = loc.GetMix().Get();
+            ITERATE(CSeq_loc_mix::Tdata, li, data) {
                 x_ProcessLocation(**li);
             }
             return;
         }
     case CSeq_loc::e_Equiv:
         {
-            ITERATE(CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get()) {
+            const CSeq_loc_equiv::Tdata& data = loc.GetEquiv().Get();
+            ITERATE(CSeq_loc_equiv::Tdata, li, data) {
                 x_ProcessLocation(**li);
             }
             return;
         }
     case CSeq_loc::e_Bond:
         {
+            const CSeq_bond& bond = loc.GetBond();
+            const CSeq_point& a = bond.GetA();
             SLoc_Info infoA;
-            infoA.m_Id = &loc.GetBond().GetA().GetId();
-            infoA.m_Range.Set(loc.GetBond().GetA().GetPoint(),
-                              loc.GetBond().GetA().GetPoint());
-            if ( loc.GetBond().GetA().IsSetStrand() ) {
-                infoA.SetStrand(loc.GetBond().GetA().GetStrand());
+            infoA.m_Id = &a.GetId();
+            infoA.m_Range.Set(a.GetPoint(), a.GetPoint());
+            if ( a.IsSetStrand() ) {
+                infoA.SetStrand(a.GetStrand());
             }
             infoA.m_Loc = &loc;
-            if (loc.GetBond().GetA().IsSetFuzz()) {
-                infoA.m_Fuzz.first = infoA.m_Fuzz.second
-                    = &loc.GetBond().GetA().GetFuzz();
+            if (a.IsSetFuzz()) {
+                infoA.m_Fuzz.first = infoA.m_Fuzz.second = &a.GetFuzz();
             }
             m_LocList.push_back(infoA);
-            if ( loc.GetBond().IsSetB() ) {
+            if ( bond.IsSetB() ) {
+                const CSeq_point& b = bond.GetB();
                 SLoc_Info infoB;
-                infoB.m_Id = &loc.GetBond().GetB().GetId();
-                infoB.m_Range.Set(loc.GetBond().GetB().GetPoint(),
-                                  loc.GetBond().GetB().GetPoint());
-                if ( loc.GetBond().GetB().IsSetStrand() ) {
-                    infoB.SetStrand(loc.GetBond().GetB().GetStrand());
+                infoB.m_Id = &b.GetId();
+                infoB.m_Range.Set(b.GetPoint(), b.GetPoint());
+                if ( b.IsSetStrand() ) {
+                    infoB.SetStrand(b.GetStrand());
                 }
                 infoB.m_Loc = &loc;
-                if (loc.GetBond().GetB().IsSetFuzz()) {
-                    infoB.m_Fuzz.first = infoB.m_Fuzz.second
-                        = &loc.GetBond().GetB().GetFuzz();
+                if (b.IsSetFuzz()) {
+                    infoB.m_Fuzz.first = infoB.m_Fuzz.second = &b.GetFuzz();
                 }
                 m_LocList.push_back(infoB);
             }
@@ -2002,7 +2006,7 @@ public:
 };
 
 
-inline
+static inline
 bool x_MatchStrand(ENa_strand str1, ENa_strand str2, CSeq_loc::TOpFlags flags)
 {
     return (flags & CSeq_loc::fStrand_Ignore) != 0 ||
@@ -2010,6 +2014,7 @@ bool x_MatchStrand(ENa_strand str1, ENa_strand str2, CSeq_loc::TOpFlags flags)
 }
 
 
+static
 bool x_MergeRanges(TRangeWithFuzz& rg1, ENa_strand str1,
                    const TRangeWithFuzz& rg2, ENa_strand str2,
                    CSeq_loc::TOpFlags flags)
@@ -2068,9 +2073,10 @@ bool x_MergeRanges(TRangeWithFuzz& rg1, ENa_strand str1,
 }
 
 
+static
 void x_PushRange(CSeq_loc& dst,
-                 CSeq_id_Handle idh,
-                 TRangeWithFuzz rg,
+                 const CSeq_id_Handle& idh,
+                 const TRangeWithFuzz& rg,
                  ENa_strand strand)
 {
     if (dst.Which() != CSeq_loc::e_not_set) {
@@ -2081,38 +2087,37 @@ void x_PushRange(CSeq_loc& dst,
     if ( !idh ) {
         // NULL
         if (dst.IsMix()) {
-            CRef<CSeq_loc> null_loc(new CSeq_loc);
-            null_loc->SetNull();
-            dst.SetMix().Set().push_back(null_loc);
+            dst.SetMix().Set().push_back(Ref(new CSeq_loc(CSeq_loc::e_Null)));
         }
         else {
             dst.SetNull();
         }
+        return;
     }
-    else if ( rg.IsWhole() ) {
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(*idh.GetSeqId());
+    if ( rg.IsWhole() ) {
         if (dst.IsMix()) {
             CRef<CSeq_loc> whole(new CSeq_loc);
-            whole->SetWhole().Assign(*idh.GetSeqId());
+            whole->SetWhole(*id);
             dst.SetMix().Set().push_back(whole);
         }
         else {
-            dst.SetWhole().Assign(*idh.GetSeqId());
+            dst.SetWhole(*id);
         }
     }
     else if ( rg.Empty() ) {
         if (dst.IsMix()) {
             CRef<CSeq_loc> empty(new CSeq_loc);
-            empty->SetEmpty().Assign(*idh.GetSeqId());
+            empty->SetEmpty(*id);
             dst.SetMix().Set().push_back(empty);
         }
         else {
-            dst.SetEmpty().Assign(*idh.GetSeqId());
+            dst.SetEmpty(*id);
         }
     }
     else if ( rg.GetLength() == 1 ) {
         // Preserve points
-        CRef<CSeq_id> id(new CSeq_id);
-        id->Assign(*idh.GetSeqId());
         CRef<CSeq_point> pnt(new CSeq_point);
         pnt->SetId(*id);
         pnt->SetPoint(rg.GetFrom());
@@ -2132,8 +2137,6 @@ void x_PushRange(CSeq_loc& dst,
         }
     }
     else {
-        CRef<CSeq_id> id(new CSeq_id);
-        id->Assign(*idh.GetSeqId());
         if (dst.IsMix()) {
             dst.SetMix().AddInterval(*id,
                                     rg.GetFrom(),
@@ -2165,6 +2168,7 @@ void x_PushRange(CSeq_loc& dst,
 }
 
 
+static
 void x_SingleRange(CSeq_loc& dst,
                    const CSeq_loc& src,
                    ISynonymMapper& syn_mapper)
@@ -2214,6 +2218,7 @@ void x_SingleRange(CSeq_loc& dst,
 }
 
 
+static
 void x_RangesToSeq_loc(CSeq_loc& dst,
                        TIdToRangeMap& id_map,
                        ENa_strand default_strand,
@@ -2264,6 +2269,7 @@ void x_RangesToSeq_loc(CSeq_loc& dst,
 }
 
 
+static
 void x_MergeNoSort(CSeq_loc& dst,
                    const CSeq_loc& src,
                    CSeq_loc::TOpFlags flags,
@@ -2303,6 +2309,7 @@ void x_MergeNoSort(CSeq_loc& dst,
 }
 
 
+static
 void x_MergeAndSort(CSeq_loc& dst,
                     const CSeq_loc& src,
                     CSeq_loc::TOpFlags flags,
@@ -2340,6 +2347,7 @@ void x_MergeAndSort(CSeq_loc& dst,
 }
 
 
+static
 void x_SingleRange(CSeq_loc& dst,
                    const CSeq_loc& src,
                    TIdToRangeColl& rg_coll_plus,
@@ -2404,6 +2412,7 @@ void x_SingleRange(CSeq_loc& dst,
 }
 
 
+static
 void x_SubNoSort(CSeq_loc& dst,
                  const CSeq_loc& src,
                  TIdToRangeColl& rg_coll_plus,
@@ -2457,6 +2466,7 @@ void x_SubNoSort(CSeq_loc& dst,
 }
 
 
+static
 void x_SubAndSort(CSeq_loc& dst,
                   const CSeq_loc& src,
                   TIdToRangeColl& rg_coll_plus,
