@@ -167,15 +167,6 @@ const string sm_LegalMonths [] = {
 };
 
 
-static bool s_IsLegalMonth (string str)
-{
-    const string *begin = sm_LegalMonths;
-    const string *end = &(sm_LegalMonths[sizeof(sm_LegalMonths) / sizeof(string)]);
-
-    return find(begin, end, str) != end;
-}
-
-
 CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CException))
 {
 	if (NStr::IsBlank(str)) {
@@ -226,7 +217,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
 
 	int month_val = 0;
 	if (!NStr::IsBlank(month)) {
-		for (int i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
+		for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
 			if (NStr::Equal(month, sm_LegalMonths[i])) {
 				month_val = i + 1;
 				break;
