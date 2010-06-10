@@ -540,6 +540,8 @@ public:
     CBulkInsert& operator<<(double val);
     CBulkInsert& operator<<(bool val);
     CBulkInsert& operator<<(const CTime& val);
+    /// Special case to support inserting into NVARCHAR and NTEXT fields
+    CBulkInsert& operator<<(const TStringUCS2& val);
     /// Special case of putting NullValue or EndRow into the row.
     CBulkInsert& operator<<(CBulkInsert& (*f)(CBulkInsert&));
 

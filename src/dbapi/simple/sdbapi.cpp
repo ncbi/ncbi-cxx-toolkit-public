@@ -450,6 +450,39 @@ s_ConvertValue(const char* from_val, CVariant& to_var)
     s_ConvertValue(string(from_val), to_var);
 }
 
+CONVERTVALUE_STATIC void
+s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
+{
+    switch (to_var.GetType()) {
+    case eDB_Char:
+    case eDB_VarChar:
+    case eDB_LongChar:
+    case eDB_Binary:
+    case eDB_LongBinary:
+    case eDB_VarBinary:
+        s_ConvertValue(string(reinterpret_cast<const char*>(from_val.data()),
+                              from_val.size() * sizeof(TCharUCS2)),
+                       to_var);
+        break;
+    case eDB_Text:
+    case eDB_Image:
+        to_var.Truncate();
+        to_var.Append(reinterpret_cast<const char*>(from_val.data()),
+                      from_val.size() * sizeof(TCharUCS2));
+        break;
+    case eDB_Bit:
+    case eDB_Int:
+    case eDB_BigInt:
+    case eDB_Double:
+    case eDB_DateTime:
+    case eDB_SmallDateTime:
+        s_ConvertValue(CStringUTF8(from_val), to_var);
+        break;
+    default:
+        s_ConvertionNotSupported("UCS2 string", to_var.GetType());
+    }
+}
+
 #undef CONVERTVALUE_STATIC
 
 static void
@@ -1585,6 +1618,13 @@ CBulkInsert::Complete(void)
 
 CBulkInsert&
 CBulkInsert::operator<<(const string& val)
+{
+    m_Impl->WriteVal(val);
+    return *this;
+}
+
+CBulkInsert&
+CBulkInsert::operator<<(const TStringUCS2& val)
 {
     m_Impl->WriteVal(val);
     return *this;
