@@ -40,6 +40,7 @@
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 #include <objects/seqfeat/Prot_ref.hpp>
@@ -50,6 +51,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objmgr/util/weight.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -80,10 +82,37 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 
     TSeqPos size = v.size();
 
-    // Start with water (H2O)
+    // Don't start with water (H2O)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    for (CSeqVector_CI vit(v);  vit.GetPos() < size;  ++vit) {
+    CSeqVector_CI vit(v);
+
+    /// find out if the molecule is complete
+    CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_partial;
+    {{
+         CConstRef<CMolInfo> molinfo(sequence::GetMolInfo(handle));
+         if (molinfo) {
+             comp = molinfo->GetCompleteness();
+         }
+     }}
+
+    switch (comp) {
+    case CMolInfo::eCompleteness_partial:
+    case CMolInfo::eCompleteness_no_left:
+    case CMolInfo::eCompleteness_no_ends:
+        /// molecule is incomplete at the start; any 'M' here should be trusted
+        break;
+
+    default:
+        /// for complete molecules, we skip the leading 'M' since this is
+        /// cleaved as a post-transcriptional modification
+        if (*vit == ('M' - 'A')) {
+            ++vit;
+        }
+        break;
+    }
+
+    for ( ;  vit.GetPos() < size;  ++vit) {
         CSeqVector::TResidue res = *vit;
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             NCBI_THROW(CObjmgrUtilException, eBadResidue,

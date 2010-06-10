@@ -55,6 +55,10 @@
 #include <corelib/test_boost.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -77,7 +81,23 @@ BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 
     /// avoid comparisons as a double
     Int8 val = Int8(wt * 1e10);
+    cerr << "weight = " << wt << " val = " << val << endl;
     BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(667539892500000) /* 66753.98925 */);
+
+    ///
+    /// check after setting completeness
+    ///
+    CRef<CSeqdesc> molinfo(new CSeqdesc());
+    molinfo->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_complete);
+    bs->SetDescr().Set().push_back(molinfo);
+
+    wt = GetProteinWeight(bsh);
+
+    /// avoid comparisons as a double
+    val = Int8(wt * 1e10);
+    cerr << "weight = " << wt << " val = " << val << endl;
+    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(666227923000000) /* 66622.7923 */);
+
 }
 
 const char* sc_TestBioseq_1 = "\
