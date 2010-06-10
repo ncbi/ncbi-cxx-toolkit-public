@@ -4417,6 +4417,8 @@ PGL	s	Preussiche Geologische Landesanstalt
 PGM	s	Pacific Grove Museum of Natural History
 PGMNH	s	Pacific Grove Museum of Natural History
 PGR	c	Plant Gene Resources of Canada national and international base and active collections
+PGRC<CAN>	b	Plant Gene Resources of Canada
+PGRC<CAN>:CN	b	Plant Gene Resources of Canada, Canadian National Plant Germplasm System
 PGSC<USA-NC>	c	Pseudomonas Genetic Stock Center
 PH	s	Academy of Natural Sciences, Botany Department
 PHA	s	Pharmaceutical Society of Great Britain
