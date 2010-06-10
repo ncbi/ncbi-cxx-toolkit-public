@@ -5308,7 +5308,6 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                                *curr_feat,
                                                fruit_fly, viral, htgs);
                 ++curr_it;
-                prev_feat = curr_feat;
             }
             ++prev_it;
         }
