@@ -738,6 +738,10 @@ void CCgi2RCgiApp::RenderRefresh(const string& url, int idelay)
     CHTMLPlainText* h_url = new CHTMLPlainText(url,true);
     m_Page->AddTagMap("REDIRECT_URL", h_url);
     m_CustomHTTPHeader->AddTagMap("REDIRECT_URL", h_url);
+    m_Response->SetHeaderValue("Expires", "0");
+    m_Response->SetHeaderValue("Pragma", "no-cache");
+    m_Response->SetHeaderValue("Cache-Control",
+        "no-cache, no-store, max-age=0, private, must-revalidate");
     m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
 }
 
@@ -745,9 +749,9 @@ void CCgi2RCgiApp::RenderRefresh(const string& url, int idelay)
 bool CCgi2RCgiApp::x_CheckJobStatus(CGridCgiContext& grid_ctx)
 {
     string job_key = grid_ctx.GetPersistentEntryValue("job_key");
-    CGridJobStatus& job_status = m_GridClient->GetJobStatus(job_key);
+    CGridJobStatus& job_status = m_GridClient->GetJobStatus(CNetScheduleAPI);
 
-    CNetScheduleAPI::EJobStatus status;
+    job_key::EJobStatus status;
     status = job_status.GetStatus();
     grid_ctx.SetJobInput(job_status.GetJobInput());
     grid_ctx.SetJobOutput(job_status.GetJobOutput());
