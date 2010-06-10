@@ -53,6 +53,10 @@ class CSeqVector;
 
 /// Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 /// Glx as Glu; throws CObjmgrUtilException on anything else.
+///
+/// NOTE: The molecular weight excludes a leading 'M' on proteins with a known
+/// valid start, provided that the location is omitted or the location begins
+/// at residue 0
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
                         const CSeq_loc* location = 0);
