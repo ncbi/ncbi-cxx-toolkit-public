@@ -733,7 +733,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         {{
             // compare mix locations
             const CSeq_loc_mix* x_mix = x_create.GetMix(x, x_info);
-            const CSeq_loc_mix* y_mix = y_create.GetMix(x, x_info);
+            const CSeq_loc_mix* y_mix = y_create.GetMix(y, y_info);
 
             if ( x_mix ) {
                 if ( y_mix ) {
