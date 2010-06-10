@@ -121,13 +121,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNetCacheAPI(const string& service_name,
         const string& client_name);
 
-    /// This constructor will be retired in favor of the
-    /// constructors with the app registry/CConfig parameters.
-    NCBI_DEPRECATED
-    CNetCacheAPI(const string& service_name,
-        const string& client_name,
-        const string& lbsm_affinity_name);
-
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is
     /// transferred.

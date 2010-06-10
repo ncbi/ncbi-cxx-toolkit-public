@@ -242,14 +242,6 @@ CNetCacheAPI::CNetCacheAPI(const string& service_name,
 {
 }
 
-CNetCacheAPI::CNetCacheAPI(const string& service_name,
-        const string& client_name,
-        const string& lbsm_affinity_name) :
-    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr,
-        service_name, client_name, lbsm_affinity_name))
-{
-}
-
 string CNetCacheAPI::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
