@@ -700,7 +700,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             if (src_total_len == dst_total_len) {
                 // If the lengths are the same, source and destination
-                // have the same sequence type. If at lease one of them
+                // have the same sequence type. If at least one of them
                 // is known, use it for both.
                 if (src_type != eSeq_unknown) {
                     dst_type = src_type;
