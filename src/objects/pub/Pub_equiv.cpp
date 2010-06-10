@@ -109,22 +109,6 @@ void CPub_equiv::GetLabel(string* label) const
 }
 
 
-static bool s_FixInitials(const CPub_equiv& equiv)
-{
-    bool has_id  = false, 
-         has_art = false;
-
-    ITERATE (CPub_equiv::Tdata, it, equiv.Get()) {
-        if ((*it)->IsPmid()  ||  (*it)->IsMuid()) {
-            has_id = true;
-        } else if ((*it)->IsArticle()) {
-            has_art = true;
-        }
-    }
-    return !(has_art  &&  has_id);
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
