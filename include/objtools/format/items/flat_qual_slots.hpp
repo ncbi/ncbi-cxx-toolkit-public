@@ -49,6 +49,7 @@ enum EFeatureQualifier {
     eFQ_bond,
     eFQ_bond_type,
     eFQ_bound_moiety,
+    eFQ_calculated_mol_wt,
     eFQ_cds_product,
     eFQ_citation,
     eFQ_clone,
