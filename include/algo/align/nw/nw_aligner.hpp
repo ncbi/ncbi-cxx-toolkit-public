@@ -157,10 +157,8 @@ public:
         ,eTS_Match        = 'M'
         ,eTS_Replace      = 'R'
         ,eTS_Intron       = 'Z'
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         ,eTS_SlackDelete // unaligned s-w term
         ,eTS_SlackInsert // -- " -- 
-#endif
     };
     typedef vector<ETranscriptSymbol> TTranscript;
 
