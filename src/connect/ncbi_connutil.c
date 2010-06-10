@@ -41,6 +41,9 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
+static const char kHostTag[] = "Host: ";
+
+
 static char* x_StrcatCRLF(char* dst, const char* src)
 {
     size_t dstlen = dst  &&  *dst ? strlen(dst) : 0;
@@ -337,7 +340,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
 extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 {
-    static const char kHost[] = "Host: ";
     int/*bool*/ add_host;
     char   port[10];
     size_t hostlen;
@@ -384,7 +386,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     for (s = info->http_user_header;  s  &&  *s;  s = strchr(s, '\n')) {
         if (s != info->http_user_header)
             s++;
-        if (strncasecmp(s, kHost, sizeof(kHost) - 2) == 0) {
+        if (strncasecmp(s, kHostTag, sizeof(kHostTag) - 2) == 0) {
             add_host = 0/*false*/;
             break;
         }
@@ -397,8 +399,8 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     if (add_host) {
         int failed;
         info->path[len] = '\0';
-        assert(sizeof(kHost) == 7);
-        memcpy(info->path + 1, kHost, sizeof(kHost) - 1);
+        assert(sizeof(kHostTag) == 7);
+        memcpy(info->path + 1, kHostTag, sizeof(kHostTag) - 1);
         failed = !ConnNetInfo_OverrideUserHeader(info, info->path + 1);
         info->path[len] = '/';
         if (failed) {
@@ -505,7 +507,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             info->host[sizeof(info->host) - 1] = '\0';
         }
         if (len  &&  was_http_proxy_adjusted)
-            ConnNetInfo_DeleteUserHeader(info, "Host:");
+            ConnNetInfo_DeleteUserHeader(info, kHostTag);
     } else
         s = url;
 
@@ -1270,7 +1272,6 @@ extern EIO_Status URL_ConnectEx
 {
     static const char X_REQ_Q[] = "?";
     static const char X_REQ_E[] = " HTTP/1.0\r\n";
-    static const char X_HOST[]  = "Host: ";
 
     BUF         buf;
     char*       hdr;
@@ -1317,7 +1318,7 @@ extern EIO_Status URL_ConnectEx
     for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
         if (temp != user_hdr)
             temp++;
-        if (strncasecmp(temp, X_HOST, sizeof(X_HOST) - 2) == 0) {
+        if (strncasecmp(temp, kHostTag, sizeof(kHostTag) - 2) == 0) {
             add_hdr = 0;
             break;
         }
@@ -1354,30 +1355,30 @@ extern EIO_Status URL_ConnectEx
     errno = 0;
     /* compose HTTP header */
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
-        !BUF_Write(&buf, x_req_method, strlen(x_req_method))  ||
-        !BUF_Write(&buf, path,         strlen(path))          ||
+        !BUF_Write(&buf, x_req_method,   strlen(x_req_method))  ||
+        !BUF_Write(&buf, path,           strlen(path))          ||
         (args_len
-         &&  (!BUF_Write(&buf, X_REQ_Q, sizeof(X_REQ_Q) - 1)  ||
-              !BUF_Write(&buf, temp,    args_len)))           ||
-        !BUF_Write      (&buf, X_REQ_E, sizeof(X_REQ_E) - 1)  ||
+         &&  (!BUF_Write(&buf, X_REQ_Q,  sizeof(X_REQ_Q) - 1)   ||
+              !BUF_Write(&buf, temp,     args_len)))            ||
+        !BUF_Write      (&buf, X_REQ_E,  sizeof(X_REQ_E) - 1)   ||
 
         (add_hdr
          /* Host: host[:port]\r\n */
-         &&  (!BUF_Write(&buf, X_HOST,  sizeof(X_HOST) - 1)   ||
-              !BUF_Write(&buf, host,    strlen(host))         ||
-              !BUF_Write(&buf, hdr_buf, hdr_len)              ||
-              !BUF_Write(&buf, "\r\n",  2)))                  ||
+         &&  (!BUF_Write(&buf, kHostTag, sizeof(kHostTag) - 1)  ||
+              !BUF_Write(&buf, host,     strlen(host))          ||
+              !BUF_Write(&buf, hdr_buf,  hdr_len)               ||
+              !BUF_Write(&buf, "\r\n",   2)))                   ||
 
         /* Content-Length: <content_length>\r\n */
         (req_method != eReqMethod_Get
          &&  ((add_hdr =
                sprintf(hdr_buf, "Content-Length: %lu\r\n",
-                       (unsigned long) content_length)) < 0   ||
-              !BUF_Write(&buf, hdr_buf, (size_t) add_hdr)))    ||
+                       (unsigned long) content_length)) < 0     ||
+              !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))    ||
 
         /* <user_header> */
         (user_hdr_len
-         &&  !BUF_Write(&buf, user_hdr, user_hdr_len))        ||
+         &&  !BUF_Write(&buf, user_hdr,  user_hdr_len))         ||
 
         /* header separator */
         !BUF_Write(&buf, "\r\n", 2)) {
