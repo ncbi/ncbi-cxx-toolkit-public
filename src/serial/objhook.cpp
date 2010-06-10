@@ -102,6 +102,12 @@ void CSkipClassMemberHook::SkipMissingClassMember(CObjectIStream& stream,
     member.GetMemberInfo()->DefaultSkipMissingMember(stream);
 }
 
+void CSkipClassMemberHook::DefaultSkip(CObjectIStream& in,
+                                       const CObjectTypeInfoMI& object)
+{
+    in.SkipObject(object.GetMemberType());
+}
+
 CSkipChoiceVariantHook::~CSkipChoiceVariantHook(void)
 {
 }

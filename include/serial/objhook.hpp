@@ -186,8 +186,8 @@ public:
                                  const CObjectTypeInfoMI& member) = 0;
     virtual void SkipMissingClassMember(CObjectIStream& stream,
                                         const CObjectTypeInfoMI& member);
-//    void DefaultSkip(CObjectIStream& stream,
-//                     const CObjectTypeInfoMI& member);
+    void DefaultSkip(CObjectIStream& stream,
+                     const CObjectTypeInfoMI& member);
 };
 
 /// Skip hook for a choice variant (CHOICE)
