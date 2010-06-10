@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/seqloc/Seq_bond_.hpp>
 
+#include <objects/seqloc/Na_strand.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
