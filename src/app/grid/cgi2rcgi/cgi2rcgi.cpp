@@ -749,9 +749,9 @@ void CCgi2RCgiApp::RenderRefresh(const string& url, int idelay)
 bool CCgi2RCgiApp::x_CheckJobStatus(CGridCgiContext& grid_ctx)
 {
     string job_key = grid_ctx.GetPersistentEntryValue("job_key");
-    CGridJobStatus& job_status = m_GridClient->GetJobStatus(CNetScheduleAPI);
+    CGridJobStatus& job_status = m_GridClient->GetJobStatus(job_key);
 
-    job_key::EJobStatus status;
+    CNetScheduleAPI::EJobStatus status;
     status = job_status.GetStatus();
     grid_ctx.SetJobInput(job_status.GetJobInput());
     grid_ctx.SetJobOutput(job_status.GetJobOutput());
