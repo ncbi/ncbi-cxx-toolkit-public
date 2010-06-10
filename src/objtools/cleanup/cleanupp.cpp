@@ -589,7 +589,8 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     
     if (sl.IsWhole()  &&  m_Scope) {
         // change the Seq-loc/whole to a Seq-loc/interval which covers the whole sequence.
-        CRef<CSeq_id> id(&sl.SetWhole());
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(sl.GetWhole());
         CBioseq_Handle bsh;
         try {
             bsh = m_Scope->GetBioseqHandle(*id);

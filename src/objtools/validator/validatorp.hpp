@@ -41,6 +41,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Std_seg.hpp>
@@ -49,7 +50,8 @@
 
 #include <objtools/validator/validator.hpp>
 
-#include <objects/misc/sequence_macros.hpp>
+
+#include <objmgr/util/create_defline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

@@ -1931,7 +1931,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             //is ok
         } else if (strand == eNa_strand_minus) {
             if (end > 0 
-                && IsResidue (vec[end - 1]) && vec[end - 1] == 'A'
+                && IsResidue (vec[end - 1]) && (vec[end - 1] == 'A' || vec[end - 1] == 'G')
                 && IsResidue (vec[end]) && vec[end] == 'C') {
                 // matches donor
             } else if (end == seq_len - 1) {
@@ -1948,7 +1948,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
         } else {
             if (end < seq_len - 1
                 && IsResidue (vec[end]) && vec[end] == 'G'
-                && IsResidue (vec[end + 1]) && vec[end + 1] == 'T') {
+                && IsResidue (vec[end + 1]) && (vec[end + 1] == 'T' || vec[end + 1] == 'C')) {
                 // matches donor
             } else if (end == 0) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -2542,10 +2542,21 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
     }
 
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
-        if (NStr::EndsWith (*it, "]") && !NStr::StartsWith (*it, "[NAD")) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
-                    "Protein name ends with bracket and may contain organism name",
-                    feat);
+        if (NStr::EndsWith (*it, "]")) {
+            bool report_name = true;
+            size_t pos = NStr::Find(*it, "[");
+            if (pos == string::npos) {
+                report_name = false;
+            } else if (it->length() - pos < 5) {
+                // no disqualifying text
+            } else if (NStr::EqualCase(*it, pos, 4, "[NAD")) {
+                report_name = false;
+            }
+            if (report_name) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
+                        "Protein name ends with bracket and may contain organism name",
+                        feat);
+            }
         }
         if (NStr::StartsWith (*it, "hypothetical protein XP_")) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());

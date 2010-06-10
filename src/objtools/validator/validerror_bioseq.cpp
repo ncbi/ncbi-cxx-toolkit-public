@@ -1918,26 +1918,9 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         }
     }
 
-#ifndef GOFAST
-    // specific test for proteins
-    if (seq.IsAa()) {
-        CSeqdesc_CI desc(bsh, CSeqdesc::e_Title);
-        if (desc) {
-            CSeq_entry_Handle entry =
-                bsh.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-            if (entry) {
-                const string& instantiated = desc->GetTitle();
-                sequence::CDeflineGenerator gen;
-                const string & generated = gen.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
-                if (!NStr::EqualNocase(instantiated, generated)) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-                        "Instantiated protein title does not match automatically "
-                        "generated title", seq);
-                }
-            }
-        }
-    }
-#endif
+    // note - test for protein titles was moved to CValidError_bioseqset::ValidateNucProtSet
+    // because it only applied for protein sequences in nuc-prot sets and it's more efficient
+    // to create the defline generator once per nuc-prot set
 }
 
 
@@ -3166,30 +3149,20 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
         return;
     }
 
-#if 1
-    if ( !CSeqdesc_CI( m_CurrentHandle, CSeqdesc::e_Pub) && !CFeat_CI(m_CurrentHandle, CSeqFeatData::e_Pub) ) {
-        m_Imp.AddBioseqWithNoPub(seq);
-    }
-#else
-    if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub) ) {
-        bool has_feat_pub = false;
-        CFeat_CI f(bsh, CSeqFeatData::e_Pub);
-        while (f && !has_feat_pub) {
-            const CSeq_id *id = f->GetLocation().GetId();
-            if (id) {
-                FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-                    if ((*id_it)->Compare(*id) == CSeq_id::e_YES) {
-                        has_feat_pub = true;
-                        break;
-                    }
+    if ( !CSeqdesc_CI( m_CurrentHandle, CSeqdesc::e_Pub)) {
+        // look for pub or feat with cit
+        if (m_AllFeatIt) {
+            (*m_AllFeatIt).Rewind();
+            while ((*m_AllFeatIt)) {
+                if ((*m_AllFeatIt)->IsSetCit() || (*m_AllFeatIt)->GetData().IsPub()) {
+                    return;
                 }
+                ++(*m_AllFeatIt);
             }
         }
-        if (!has_feat_pub) {
-            m_Imp.AddBioseqWithNoPub(seq);
-        }
+
+        m_Imp.AddBioseqWithNoPub(seq);
     }
-#endif
 }
 
 
@@ -5190,6 +5163,9 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, con
                         // do not report if features are mRNAs linked to different coding regions
                     } else if (s_PartialsSame(feat1_loc, feat2_loc)) {
                         // do not report if partial flags are different
+                        if (feat1.GetData().IsImp()) {
+                            severity = eDiag_Warning;
+                        }
                         PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                             "Features have identical intervals, but labels differ",
                             feat2);
@@ -5319,8 +5295,13 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
             CFeat_CI curr_it = prev_it;
             ++curr_it;
             CConstRef<CSeq_feat> prev_feat = prev_it->GetSeq_feat();
+            TSeqPos prev_end = prev_feat->GetLocation().GetStop (eExtreme_Positional);
             while (curr_it) {
                 CConstRef<CSeq_feat>curr_feat = curr_it->GetSeq_feat();
+                TSeqPos curr_start = curr_feat->GetLocation().GetStart(eExtreme_Positional);
+                if (curr_start > prev_end) {
+                    break;
+                }
                 x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
                                                *prev_feat, 
                                                curr_it->GetSeq_feat_Handle(), 

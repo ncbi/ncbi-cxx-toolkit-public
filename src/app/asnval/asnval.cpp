@@ -56,6 +56,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/valid_cmdargs.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -118,6 +119,8 @@ private:
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
 
+    CRef<CScope> BuildScope(void);
+
     void PrintValidError(CConstRef<CValidError> errors, 
         const CArgs& args);
 
@@ -142,6 +145,9 @@ private:
     size_t m_ReportLevel;
 
     bool m_StartXML;
+
+    bool m_DoCleanup;
+    CCleanup m_Cleanup;
 
     EDiagSev m_LowCutoff;
     EDiagSev m_HighCutoff;
@@ -215,6 +221,8 @@ void CAsnvalApp::Init(void)
     arg_desc->AddDefaultKey("v", "Verbosity", "Verbosity", CArgDescriptions::eInteger, "1");
     CArgAllow* v_constraint = new CArgAllow_Integers(eVerbosity_min, eVerbosity_max);
     arg_desc->SetConstraint("v", v_constraint);
+
+    arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
 
     // Program description
     string prog_description = "ASN Validator\n";
@@ -354,6 +362,7 @@ int CAsnvalApp::Run(void)
     m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
+    m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -385,6 +394,15 @@ int CAsnvalApp::Run(void)
 }
 
 
+CRef<CScope> CAsnvalApp::BuildScope (void)
+{
+    CRef<CScope> scope(new CScope (*m_ObjMgr));
+    scope->AddDefaults();
+
+    return scope;
+}
+
+
 void CAsnvalApp::ReadClassMember
 (CObjectIStream& in,
  const CObjectInfo::CMemberIterator& member)
@@ -402,10 +420,15 @@ void CAsnvalApp::ReadClassMember
 
                 // Validate Seq-entry
                 CValidator validator(*m_ObjMgr);
-                CScope scope(*m_ObjMgr);
-                scope.AddDefaults();
+                CRef<CScope> scope = BuildScope();
+                CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
+
+                if (m_DoCleanup) {
+                    m_Cleanup.SetScope (scope);
+                    m_Cleanup.BasicCleanup (*se);
+                }
+
                 if ( m_OnlyAnnots ) {
-                    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
                     for (CSeq_annot_CI ni(seh); ni; ++ni) {
                         const CSeq_annot_Handle& sah = *ni;
                         CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
@@ -415,10 +438,14 @@ void CAsnvalApp::ReadClassMember
                     }
                 } else {
                     // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
-                    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
+                    time_t t1 = time (NULL);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
+                    time_t t2 = time (NULL);
                     if ( eval ) {
                         PrintValidError(eval, GetArgs());
+                    }
+                    if (m_ValidErrorStream) {
+                        *m_ValidErrorStream << "Elapsed time " << NStr::IntToString (t2 - t1) << endl;
                     }
                 }
             } catch (exception e) {
@@ -467,10 +494,14 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
 
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
-    CScope scope(*m_ObjMgr);
-    scope.AddDefaults();
+    CRef<CScope> scope = BuildScope();
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
+    if (m_DoCleanup) {        
+        m_Cleanup.SetScope (scope);
+        m_Cleanup.BasicCleanup (*se);
+    }
+
     if ( m_OnlyAnnots ) {
-        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
             const CSeq_annot_Handle& sah = *ni;
             CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
@@ -480,8 +511,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
         }
         return CConstRef<CValidError>();
     }
-    scope.AddTopLevelSeqEntry(*se);
-    return validator.Validate(*se, &scope, m_Options);
+    return validator.Validate(*se, scope, m_Options);
 }
 
 
@@ -497,6 +527,12 @@ CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
 CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
 {
     CRef<CSeq_feat> feat(ReadSeqFeat());
+
+    if (m_DoCleanup) {
+        CRef<CScope> scope = BuildScope();
+        m_Cleanup.SetScope (scope);
+        m_Cleanup.BasicCleanup (*feat);
+    }
 
     CValidator validator(*m_ObjMgr);
     return validator.Validate(*feat, m_Options);
@@ -549,9 +585,18 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
 
     // Validae Seq-submit
     CValidator validator(*m_ObjMgr);
-    CScope scope(*m_ObjMgr);
-    scope.AddDefaults();
-    return validator.Validate(*ss, &scope, m_Options);
+    CRef<CScope> scope = BuildScope();
+    if (ss->GetData().IsEntrys()) {
+        ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
+            scope->AddTopLevelSeqEntry(**se);
+        }
+    }
+    if (m_DoCleanup) {
+        m_Cleanup.SetScope (scope);
+        m_Cleanup.BasicCleanup (*ss);
+    }
+
+    return validator.Validate(*ss, scope, m_Options);
 }
 
 
@@ -564,9 +609,12 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
 
     // Validae Seq-annot
     CValidator validator(*m_ObjMgr);
-    CScope scope(*m_ObjMgr);
-    scope.AddDefaults();
-    CSeq_annot_Handle sah = scope.AddSeq_annot(*sa);
+    CRef<CScope> scope = BuildScope();
+    if (m_DoCleanup) {
+        m_Cleanup.SetScope (scope);
+        m_Cleanup.BasicCleanup (*sa);
+    }
+    CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
     return validator.Validate(sah, m_Options);
 }
 

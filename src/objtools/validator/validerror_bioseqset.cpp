@@ -55,6 +55,7 @@
 
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 
@@ -263,10 +264,13 @@ void CValidError_bioseqset::ValidateNucProtSet
 
     int prot_biosource = 0;
 
+    sequence::CDeflineGenerator defline_generator;
+
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CBioseq& seq = (*se_list_it)->GetSeq();
-            CBioseq_set_Handle gps = GetGenProdSetParent(m_Scope->GetBioseqHandle(seq));
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+            CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
 			if (seq.IsNa()) {
                 if (gps  &&  !IsMrnaProductInGPS(seq) ) {
                     PostErr(eDiag_Warning,
@@ -286,6 +290,17 @@ void CValidError_bioseqset::ValidateNucProtSet
                 FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
                     if ((*it)->IsSource()) {
                         prot_biosource++;
+                    }
+                }
+                // look for instantiated protein titles that don't match
+                CSeqdesc_CI desc(bsh, CSeqdesc::e_Title);
+                if (desc) {
+                    const string& instantiated = desc->GetTitle();                    
+                    const string & generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+                    if (!NStr::EqualNocase(instantiated, generated)) {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                            "Instantiated protein title does not match automatically "
+                            "generated title", seq);
                     }
                 }
             }

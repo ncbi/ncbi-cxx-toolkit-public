@@ -308,6 +308,116 @@ void CCleanup_imp::x_SubtypeCleanup (
       }
     }
 
+    // erase structured notes that already match value
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
+        CSubSource& ss = **it;
+        if (SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(other))) {
+            bool do_erase = false;
+            string val = ss.GetName();
+            size_t pos = NStr::Find(val, " ");
+            size_t pos2 = NStr::Find(val, "=");
+            if (pos2 < pos) {
+                pos = pos2;
+            }
+            pos2 = NStr::Find(val, ":");
+            if (pos2 < pos) {
+                pos = pos2;
+            }
+            string val_name;
+            if (pos == string::npos) {
+                val_name = val;
+            } else {
+                val_name = val.substr(0, pos);
+            }
+            try {
+                CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(val_name);
+                string otherval = "";
+                if (pos != string::npos) {
+                    otherval = val.substr(pos + 1);
+                    NStr::TruncateSpacesInPlace(otherval);
+                }
+                FOR_EACH_SUBSOURCE_ON_BIOSOURCE(match_it, bs) {
+                    if ((*match_it)->GetSubtype() == subtype
+                        && NStr::EqualCase((*match_it)->GetName(), otherval)) {
+                        do_erase = true;
+                        break;
+                    }
+                }
+            } catch (CSerialException& ) {
+                if (bs.IsSetOrg() && bs.GetOrg().IsSetOrgname()) {
+                    try {
+                        COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val_name);
+                        string otherval = "";
+                        if (pos != string::npos) {
+                            otherval = val.substr(pos + 1);
+                            NStr::TruncateSpacesInPlace(otherval);
+                        }
+                        FOR_EACH_ORGMOD_ON_BIOSOURCE (match_it, bs) {
+                            if ((*match_it)->GetSubtype() == subtype
+                                && NStr::EqualCase((*match_it)->GetSubname(), otherval)) {
+                                do_erase = true;
+                                break;
+                            }
+                        }
+                    } catch (CSerialException& ) {
+                    }
+                }
+            }
+            if (do_erase) {
+                ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
+                ChangeMade (CCleanupChange::eCleanOrgmod);
+            }
+        }
+    }
+
+    if (bs.IsSetOrg() && bs.IsSetOrgname()) {
+        // erase structured notes that already match value
+        EDIT_EACH_ORGMOD_ON_BIOSOURCE (it, bs) {
+            COrgMod& omd = **it;
+            if (omd.GetSubtype() == NCBI_ORGMOD(other)) {
+                bool do_erase = false;
+                string val = omd.GetSubname();
+                size_t pos = NStr::Find(val, " ");
+                size_t pos2 = NStr::Find(val, "=");
+                if (pos2 < pos) {
+                    pos = pos2;
+                }
+                pos2 = NStr::Find(val, ":");
+                if (pos2 < pos) {
+                    pos = pos2;
+                }
+                string val_name;
+                if (pos == string::npos) {
+                    val_name = val;
+                } else {
+                    val_name = val.substr(0, pos);
+                }
+                try {
+                    CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(val_name);
+                    string otherval = "";
+                    if (pos != string::npos) {
+                        otherval = val.substr(pos + 1);
+                        NStr::TruncateSpacesInPlace(otherval);
+                    }
+                    FOR_EACH_SUBSOURCE_ON_BIOSOURCE(match_it, bs) {
+                        if ((*match_it)->GetSubtype() == subtype
+                            && NStr::EqualCase((*match_it)->GetName(), otherval)) {
+                            do_erase = true;
+                            break;
+                        }
+                    }
+                } catch (CSerialException& ) {
+                }
+
+                if (do_erase) {
+                    ERASE_ORGMOD_ON_BIOSOURCE (it, bs);
+                    ChangeMade (CCleanupChange::eCleanOrgmod);
+                }
+            }
+        }
+    }
+
+
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
 
@@ -547,6 +657,52 @@ void CCleanup_imp::BasicCleanup (
         BasicCleanup (omd);
         if (!omd.IsSetSubname() || NStr::IsBlank (omd.GetSubname())) {
             ERASE_ORGMOD_ON_ORGNAME (it, on);
+            ChangeMade (CCleanupChange::eCleanOrgmod);
+        }
+    }
+
+    // erase structured notes that already match value
+    EDIT_EACH_ORGMOD_ON_ORGNAME (it, on) {
+        COrgMod& omd = **it;
+        if (omd.GetSubtype() == NCBI_ORGMOD(other)) {
+            bool do_erase = false;
+            string val = omd.GetSubname();
+            size_t pos = NStr::Find(val, " ");
+            size_t pos2 = NStr::Find(val, "=");
+            if (pos2 < pos) {
+                pos = pos2;
+            }
+            pos2 = NStr::Find(val, ":");
+            if (pos2 < pos) {
+                pos = pos2;
+            }
+            string val_name;
+            if (pos == string::npos) {
+                val_name = val;
+            } else {
+                val_name = val.substr(0, pos);
+            }
+            try {
+                COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val_name);
+                string otherval = "";
+                if (pos != string::npos) {
+                    otherval = val.substr(pos + 1);
+                    NStr::TruncateSpacesInPlace(otherval);
+                }
+                FOR_EACH_ORGMOD_ON_ORGNAME (match_it, on) {
+                    if ((*match_it)->GetSubtype() == subtype
+                        && NStr::EqualCase((*match_it)->GetSubname(), otherval)) {
+                        do_erase = true;
+                        break;
+                    }
+                }
+            } catch (CSerialException& ) {
+            }
+
+            if (do_erase) {
+                ERASE_ORGMOD_ON_ORGNAME (it, on);
+                ChangeMade (CCleanupChange::eCleanOrgmod);
+            }
         }
     }
 

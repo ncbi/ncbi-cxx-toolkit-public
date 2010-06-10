@@ -8505,20 +8505,20 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrganismInTitle)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    scope.RemoveTopLevelSeqEntry(seh);
+    CLEAR_ERRORS
+
+        scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodNucProtSet();
     CRef<CSeq_id> other_id(new CSeq_id());
     other_id->SetOther().SetAccession("NP_123456");
     ChangeProtId (entry, other_id);
     SetTitle(entry->SetSet().SetSeq_set().back(), "Something that does not end with organism");
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    
-    expected_errors[0]->SetAccession("NP_123456");
-    expected_errors[0]->SetErrCode("InconsistentProteinTitle");
-    expected_errors[0]->SetErrMsg("Instantiated protein title does not match automatically generated title");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    seh = scope.AddTopLevelSeqEntry(*entry);    
+
     expected_errors.push_back(new CExpectedError("NP_123456", eDiag_Error, "NoOrganismInTitle",
                                                  "RefSeq protein title does not end with organism name"));
+    expected_errors.push_back(new CExpectedError("NP_123456", eDiag_Warning, "InconsistentProteinTitle",
+                                                 "Instantiated protein title does not match automatically generated title"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
