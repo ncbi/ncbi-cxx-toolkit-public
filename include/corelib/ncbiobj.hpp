@@ -789,15 +789,12 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Data.second();
-            if ( ptr ) {
-                m_Data.second() = 0;
-                m_Data.first().UnlockRelease(ptr);
-                return ptr;
-            }
-            else {
+            if ( !ptr ) {
                 ThrowNullPointerException();
-                return ptr;
             }
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
+            return ptr;
         }
 
     /// Reset reference object to new pointer.
@@ -1340,15 +1337,12 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Data.second();
-            if ( ptr ) {
-                m_Data.second() = 0;
-                m_Data.first().UnlockRelease(ptr);
-                return ptr;
-            }
-            else {
+            if ( !ptr ) {
                 ThrowNullPointerException();
-                return ptr;
             }
+            m_Data.second() = 0;
+            m_Data.first().UnlockRelease(ptr);
+            return ptr;
         }
 
     /// Reset reference object to new pointer.
