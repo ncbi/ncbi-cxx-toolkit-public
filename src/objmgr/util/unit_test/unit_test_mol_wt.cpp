@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 
     /// avoid comparisons as a double
     Int8 val = Int8(wt * 1e10);
-    BOOST_CHECK_EQUAL(val, 667539892500000 /* 66753.98925 */);
+    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(667539892500000) /* 66753.98925 */);
 }
 
 const char* sc_TestBioseq_1 = "\
