@@ -89,12 +89,15 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 
     /// find out if the molecule is complete
     CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_partial;
-    {{
-         CConstRef<CMolInfo> molinfo(sequence::GetMolInfo(handle));
-         if (molinfo) {
-             comp = molinfo->GetCompleteness();
-         }
-     }}
+    if (location  &&  location->GetTotalRange().GetFrom() > 0) {
+        /// we don' want to clip
+        comp = CMolInfo::eCompleteness_partial;
+    } else {
+        CConstRef<CMolInfo> molinfo(sequence::GetMolInfo(handle));
+        if (molinfo) {
+            comp = molinfo->GetCompleteness();
+        }
+    }
 
     switch (comp) {
     case CMolInfo::eCompleteness_partial:
