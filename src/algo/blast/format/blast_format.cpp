@@ -928,9 +928,15 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
     }
 
     if (options.GetGappedMode() == true) {
+        double gap_extension = (double) options.GetGapExtensionCost();
+        if ((m_Program == "megablast" || m_Program == "blastn") && options.GetGapExtensionCost() == 0)
+        { // Formula from PMID 10890397 applies if both gap values are zero.
+               gap_extension = -2*options.GetMismatchPenalty() + options.GetMatchReward();
+               gap_extension /= 2.0;
+        }
         m_Outfile << "Gap Penalties: Existence: "
                 << options.GetGapOpeningCost() << ", Extension: "
-                << options.GetGapExtensionCost() << "\n";
+                << gap_extension << "\n";
     }
     if (options.GetWordThreshold()) {
         m_Outfile << "Neighboring words threshold: " <<
