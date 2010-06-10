@@ -194,6 +194,7 @@ public:
     // two functions are called only when node has children.
     class C4Each {
     public:
+        virtual ~C4Each(void) {}
 	virtual EAction LevelBegin(CTreeContNodeBase* /*pParent*/)
 	{ return eCont; }
 	virtual EAction Execute(CTreeContNodeBase* pNode)= 0;
