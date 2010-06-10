@@ -248,9 +248,27 @@ bool TaxClient::IsTaxDescendant(int taxid1, int taxid2)
         return (ancestor == taxid1); 
     } else 
         return false;
-//	int ancestor = m_taxonomyClient->Join(taxid1, taxid2);
-//	return ancestor == taxid1;
 }
+
+CConstRef< COrg_ref > TaxClient::GetOrgRef(int tax_id, bool& is_species, bool& is_uncultured, string& blast_name)
+{
+    if (IsAlive()) {
+        return m_taxonomyClient->GetOrgRef(tax_id, is_species, is_uncultured, blast_name);
+    } else {
+        //  following the behavior of CTaxon1::GetOrgRef on failure.
+        return ncbi::null;
+    }
+}
+
+int TaxClient::Join(int taxid1, int taxid2)
+{
+    if (IsAlive()) {
+        return m_taxonomyClient->Join(taxid1, taxid2);
+    } else {
+        return 0;
+    }
+}
+
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

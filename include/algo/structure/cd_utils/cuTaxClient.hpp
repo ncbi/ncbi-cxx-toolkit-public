@@ -80,6 +80,10 @@ public:
 
     virtual bool ConnectToTaxServer();  
 
+    //  Wrapper functions to invoke CTaxon1 methods.
+    CConstRef< COrg_ref > GetOrgRef(int tax_id, bool& is_species, bool& is_uncultured, string& blast_name);
+    int Join(int taxid1, int taxid2);
+
 private:
 
     CTaxon1 * m_taxonomyClient;
