@@ -1033,24 +1033,6 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 }
 
 
-static int/*bool*/ x_PassEncoded(const char* pass)
-{
-    if (*pass) {
-        size_t len;
-        size_t pad;
-        if (pass[0] != '['  ||  pass[len = strlen(pass) - 1] != ']'
-            ||  ((pad = strspn(++pass,
-                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                               "abcdefghijklmnopqrstuvwxyz"
-                               "0123456789+/")) != --len
-                 &&  (pad += strspn(pass + pad, "=")) != len)) {
-            return 0/*false*/;
-        }
-    }
-    return 1/*true*/;
-}
-
-
 static const char* s_SchemeStr(EURLScheme scheme, char buf[])
 {
     switch (scheme) {
@@ -1164,7 +1146,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveKeyval(s, "client_host",     "(default)");
     s_SaveString    (s, "scheme",          s_SchemeStr(info->scheme, scheme));
     s_SaveString    (s, "user",            info->user);
-    if (*info->pass  &&  (!*info->user  ||  !x_PassEncoded(info->pass)))
+    if (*info->pass)
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
     else
         s_SaveString(s, "pass",            info->pass);
@@ -1190,7 +1172,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveKeyval    (s, "http_proxy_port", s_PortStr(info->http_proxy_port,
                                                      port));
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
-    if (!x_PassEncoded(info->http_proxy_pass))
+    if (*info->http_proxy_pass)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
     else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
