@@ -115,6 +115,21 @@ public:
     CAlnMap(const CDense_seg& ds);
     CAlnMap(const CDense_seg& ds, TNumrow anchor);
 
+    // Flag indicating how to treat partially overlapping segment
+    // when creating a sub-range of an alignment.
+    enum ESegmentTrimFlag {
+        eSegment_Include, // include whole segment
+        eSegment_Trim,    // trim segment to the requested range
+        eSegment_Remove   // do not include partial segments
+    };
+
+    // Create CAlnMap using a sub-range and rows sub-set of the source
+    // alignment.
+    CRef<CSeq_align> CreateAlignFromRange(const vector<TNumrow>& selected_rows,
+        TSignedSeqPos          aln_from,
+        TSignedSeqPos          aln_to,
+        ESegmentTrimFlag       seg_flag = eSegment_Trim);
+
     // destructor
     ~CAlnMap(void);
 

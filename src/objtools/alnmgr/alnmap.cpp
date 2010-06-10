@@ -1397,5 +1397,105 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
 }
 
 
+CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
+    const vector<TNumrow>& selected_rows,
+    TSignedSeqPos          aln_from,
+    TSignedSeqPos          aln_to,
+    ESegmentTrimFlag       seg_flag)
+{
+    CRef<CSeq_align> ret(new CSeq_align);
+    ret->SetType(CSeq_align::eType_partial);
+    CDense_seg& ds = ret->SetSegs().SetDenseg();
+
+    bool have_strands = !m_Strands.empty();
+    bool have_widths = !m_Widths.empty();
+
+    // Initialize selected rows
+    size_t dim = selected_rows.size();
+    ret->SetDim(dim);
+    ds.SetDim(dim);
+    ds.SetIds().resize(dim);
+    if ( have_widths ) {
+        ds.SetWidths().resize(dim);
+    }
+    for (size_t i = 0; i < dim; i++) {
+        TNumrow r = selected_rows[i];
+        _ASSERT(r < m_NumRows);
+        ds.SetIds()[i] = m_Ids[r];
+        if ( have_widths ) {
+            ds.SetWidths()[i] = m_Widths[r];
+        }
+    }
+    TNumseg from_seg = GetSeg(aln_from);
+    TNumseg to_seg = GetSeg(aln_to);
+    if (from_seg < 0) {
+        from_seg = 0;
+        aln_from = 0;
+    }
+    if (to_seg < 0) {
+        to_seg = m_NumSegs - 1;
+        aln_to = GetAlnStop();
+    }
+
+    TNumseg num_seg = 0;
+    CDense_seg::TStarts& starts = ds.SetStarts();
+    for (TNumseg seg = from_seg; seg <= to_seg; seg++) {
+        TSeqPos len = GetLen(seg);
+
+        // Check trimming of the first segment
+        TSeqPos aln_seg_from = GetAlnStart(seg);
+        TSeqPos from_trim = 0;
+        if (seg == from_seg  &&  aln_from > aln_seg_from) {
+            if (seg_flag == eSegment_Remove) {
+                continue; // ignore incomplete segments
+            }
+            if (seg_flag == eSegment_Trim) {
+                from_trim = aln_from - aln_seg_from;
+                len -= from_trim;
+                aln_seg_from = aln_from;
+            }
+        }
+        // Check trimming of the last segment
+        if (seg == to_seg) {
+            TSeqPos aln_seg_to = GetAlnStop(seg);
+            if (aln_seg_to > aln_to) {
+                if (seg_flag == eSegment_Remove) {
+                    continue; // ignore incomplete segments
+                }
+                if (seg_flag == eSegment_Trim) {
+                    len -= aln_seg_to - aln_to;
+                    aln_seg_to = aln_to;
+                }
+            }
+        }
+        ds.SetLens().push_back(len);
+        // Copy rows to the destination
+        for (TNumrow row = 0; row < selected_rows.size(); row++) {
+            TSignedSeqPos row_start = GetStart(selected_rows[row], seg);
+            if (row_start >= 0) {
+                row_start += from_trim;
+            }
+            starts.push_back(row_start);
+            if ( have_strands ) {
+                ds.SetStrands().push_back(
+                    m_Strands[seg*m_NumRows + selected_rows[row]]);
+            }
+        }
+        num_seg++;
+    }
+
+    // Ignore scores - if anythign was trimmed (and it probably was),
+    // all scores are now useless.
+
+    if (num_seg > 0) {
+        ds.SetNumseg(num_seg);
+    }
+    else {
+        ret.Reset();
+    }
+    return ret;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
