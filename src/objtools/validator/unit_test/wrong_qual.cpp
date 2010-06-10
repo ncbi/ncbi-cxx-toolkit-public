@@ -939,7 +939,6 @@ static const TKeyQualVal s_KeyQualVal[] = {
     { "exon", "sex", "foo" },
     { "exon", "virion", "foo" },
     { "exon", "sub_species", "foo" },
-    { "exon", "exception", "foo" },
     { "exon", "phenotype", "foo" },
     { "exon", "ecotype", "foo" },
     { "GC_signal", "compare", "AY123456.1" },
