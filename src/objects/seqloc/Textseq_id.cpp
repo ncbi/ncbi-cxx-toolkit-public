@@ -39,6 +39,7 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 
 // generated classes
