@@ -498,9 +498,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
             /* close connection */
             status = SOCK_Close(sock);
-#ifndef TEST_IGNORE_CLOSE
             assert(status == eIO_Success  ||  status == eIO_Closed);
-#endif /*!TEST_IGNORE_CLOSE*/
             /* reconnect */
             if ( !lsock )
                 return;
