@@ -2678,3 +2678,3199 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      location int {
+        from 1197549,
+        to 1283086,
+        strand plus,
+        id other {
+          accession "NT_016354",
+          version 19
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_003715",
+        version 2
+      },
+      location packed-int {
+        {
+          from 1197549,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205210,
+          to 1205220,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 1224335,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1283086,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "mismatches in transcription"
+    },
+    {
+      id local id 3,
+      data cdregion {
+        code {
+          id 1,
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 4505541,
+      location packed-int {
+        {
+          from 1197724,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205210,
+          to 1205220,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1224335,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1282168,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 4,
+      data gene {
+        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      location int {
+        from 1197549,
+        to 1283086,
+        strand plus,
+        id other {
+          accession "NT_016354",
+          version 19
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_003715",
+        version 2
+      },
+      location packed-int {
+        {
+          from 1197549,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205211,
+          to 1205219,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 1224337,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1283086,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "mismatches in transcription"
+    },
+    {
+      id local id 6,
+      data cdregion {
+        code {
+          id 1,
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 4505541,
+      location packed-int {
+        {
+          from 1197724,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1205211,
+          to 1205219,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1224337,
+          to 1224355,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1226369,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1282168,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 7,
+      data gene {
+        locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      location int {
+        from 1197549,
+        to 1283086,
+        strand plus,
+        id other {
+          accession "NT_016354",
+          version 19
+        }
+      }
+    },
+    {
+      id local id 8,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
+ (USO1), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_003715",
+        version 2
+      },
+      location packed-int {
+        {
+          from 1197549,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1226371,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1283086,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "mismatches in transcription"
+    },
+    {
+      id local id 9,
+      data cdregion {
+        code {
+          id 1,
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 4505541,
+      location packed-int {
+        {
+          from 1197724,
+          to 1197789,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1226371,
+          to 1226446,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239312,
+          to 1239412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239695,
+          to 1239797,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1239955,
+          to 1240010,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1243549,
+          to 1243669,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1251553,
+          to 1251731,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1255935,
+          to 1256075,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259023,
+          to 1259111,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1259516,
+          to 1259670,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1262563,
+          to 1262774,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1268495,
+          to 1268605,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269224,
+          to 1269342,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269491,
+          to 1269672,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1269952,
+          to 1270073,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1273007,
+          to 1273145,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1274013,
+          to 1274176,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1275359,
+          to 1275445,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1277826,
+          to 1277924,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1279305,
+          to 1279412,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1281033,
+          to 1281248,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        },
+        {
+          from 1282079,
+          to 1282168,
+          strand plus,
+          id other {
+            accession "NT_016354",
+            version 19
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
+ mRNA"
+      },
+      location int {
+        from 27700604,
+        to 27860184,
+        strand minus,
+        id other {
+          accession "NW_923640",
+          version 1
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
+ (COPG2), mRNA"
+      },
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 27860058,
+          to 27860184,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27858908,
+          to 27858960,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27858275,
+          to 27858355,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27854393,
+          to 27854464,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27844284,
+          to 27844363,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27808427,
+          to 27808502,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27804981,
+          to 27805073,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27803590,
+          to 27803676,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27802391,
+          to 27802548,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27754883,
+          to 27755016,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27753892,
+          to 27753959,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27751656,
+          to 27751844,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27745662,
+          to 27745757,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27745106,
+          to 27745349,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27742980,
+          to 27743055,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27741866,
+          to 27741969,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27741149,
+          to 27741274,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27739938,
+          to 27740000,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27739027,
+          to 27739166,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27738298,
+          to 27738469,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27702927,
+          to 27703024,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27702050,
+          to 27702188,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27701639,
+          to 27701737,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27700604,
+          to 27701171,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        }
+      }
+    },
+    {
+      id local id 3,
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 27860058,
+          to 27860094,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27858908,
+          to 27858960,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27858275,
+          to 27858355,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27854393,
+          to 27854464,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27844284,
+          to 27844363,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27808427,
+          to 27808502,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27804981,
+          to 27805073,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27803590,
+          to 27803676,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27802391,
+          to 27802548,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27754883,
+          to 27755016,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27753892,
+          to 27753959,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27751656,
+          to 27751844,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27745662,
+          to 27745757,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27745106,
+          to 27745349,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27742980,
+          to 27743055,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27741866,
+          to 27741969,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27741149,
+          to 27741274,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27739938,
+          to 27740000,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27739027,
+          to 27739166,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27738298,
+          to 27738469,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27702927,
+          to 27703024,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27702050,
+          to 27702188,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27701639,
+          to 27701737,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        },
+        {
+          from 27701041,
+          to 27701171,
+          strand minus,
+          id other {
+            accession "NW_923640",
+            version 1
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 4,
+      data gene {
+        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
+ mRNA"
+      },
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
+ (COPG2), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328666,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320189,
+          to 68320201,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310010,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306563,
+          to 68306574,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68302046,
+          to 68302057,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288040,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181364,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 6,
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328666,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68320189,
+          to 68320201,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68309996,
+          to 68310010,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68306563,
+          to 68306574,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68302046,
+          to 68302057,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68288030,
+          to 68288040,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68181245,
+          to 68181364,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 7,
+      data gene {
+        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
+ mRNA"
+      },
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      }
+    },
+    {
+      id local id 8,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
+ (COPG2), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328825,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 9,
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328825,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "Demo Gene Models",
+    title "Demo Gene Models"
+  },
+  data ftable {
+    {
+      id local id 10,
+      data gene {
+        locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
+ mRNA"
+      },
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      }
+    },
+    {
+      id local id 11,
+      data rna {
+        type mRNA,
+        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
+ (COPG2), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328825,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 12,
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328825,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}
