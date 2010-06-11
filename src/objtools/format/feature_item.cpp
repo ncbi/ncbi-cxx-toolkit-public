@@ -2225,8 +2225,8 @@ void CFeatureItem::x_AddQualsRegion(
         objs.push_back(CConstRef<CUser_object>(&m_Feat.GetExt()));
     }
     if (m_Feat.IsSetExts()) {
-        objs.insert(objs.end(),
-                    m_Feat.GetExts().begin(), m_Feat.GetExts().end());
+        copy(m_Feat.GetExts().begin(), m_Feat.GetExts().end(),
+             back_inserter(objs));
     }
 
     ITERATE (list< CConstRef<CUser_object> >, it, objs) {
