@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -73,17 +74,37 @@ static const int kNumSe[] =
 static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
+template <class Iterator>
+double s_GetProteinWeight(Iterator start, Iterator end)
+{
+    // Start with water (H2O)
+    size_t c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
+
+    Iterator p(start);
+    for ( ;  start != end;  ++start) {
+        unsigned char res = *start;
+        if ( res > kMaxRes  ||  !kNumC[res] ) {
+            NCBI_THROW(CObjmgrUtilException, eBadResidue,
+                "GetProteinWeight: bad residue");
+        }
+        c  += kNumC [res];
+        h  += kNumH [res];
+        n  += kNumN [res];
+        o  += kNumO [res];
+        s  += kNumS [res];
+        se += kNumSe[res];
+    }
+    return 12.01115 * c + 1.0079 * h + 14.0067 * n + 15.9994 * o + 32.064 * s
+        + 78.96 * se;
+}
+
+
 double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 {
     CSeqVector v = (location
                     ? CSeqVector(*location, handle.GetScope())
                     : handle.GetSeqVector());
     v.SetCoding(CSeq_data::e_Ncbistdaa);
-
-    TSeqPos size = v.size();
-
-    // Start with water (H2O)
-    TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
     CSeqVector_CI vit(v);
 
@@ -115,21 +136,19 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
         break;
     }
 
-    for ( ;  vit.GetPos() < size;  ++vit) {
-        CSeqVector::TResidue res = *vit;
-        if ( res >= kMaxRes  ||  !kNumC[res] ) {
-            NCBI_THROW(CObjmgrUtilException, eBadResidue,
-                "GetProteinWeight: bad residue");
-        }
-        c  += kNumC [res];
-        h  += kNumH [res];
-        n  += kNumN [res];
-        o  += kNumO [res];
-        s  += kNumS [res];
-        se += kNumSe[res];
-    }
-    return 12.01115 * c + 1.0079 * h + 14.0067 * n + 15.9994 * o + 32.064 * s
-        + 78.96 * se;
+    return s_GetProteinWeight(vit, v.end());
+}
+
+
+double GetProteinWeight(const string& iupac_aa_sequence)
+{
+    string ncbistdaa;
+    SIZE_TYPE len =
+        CSeqConvert::Convert(iupac_aa_sequence, CSeqUtil::e_Iupacaa,
+                             0, iupac_aa_sequence.size(),
+                             ncbistdaa, CSeqUtil::e_Ncbistdaa);
+    return s_GetProteinWeight(ncbistdaa.begin(),
+                              ncbistdaa.end());
 }
 
 

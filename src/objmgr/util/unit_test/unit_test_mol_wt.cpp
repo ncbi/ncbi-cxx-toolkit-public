@@ -69,7 +69,23 @@ USING_SCOPE(objects);
 
 extern const char *sc_TestBioseq_1;
 
-BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
+BOOST_AUTO_TEST_CASE(Test_RawString)
+{
+    string t1("ABCDEFGHIKLMNPQRSTVWYZUOJ");
+    double wt = GetProteinWeight(t1);
+    Int8 val = Int8(wt * 1e10);
+    cerr << "weight = " << wt << " val = " << val << endl;
+    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(31404601500000) /* 3140.46015 */);
+
+    string t2("MABCDEFGHIKLMNPQRSTVWYZUOJ");
+    wt = GetProteinWeight(t2);
+    val = Int8(wt * 1e10);
+    cerr << "weight = " << wt << " val = " << val << endl;
+    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(32716571000000) /* 3271.6571 */);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_Bioseq)
 {
     CNcbiIstrstream is(sc_TestBioseq_1);
     CRef<CBioseq> bs(new CBioseq);

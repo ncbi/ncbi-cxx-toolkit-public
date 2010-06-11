@@ -61,6 +61,9 @@ NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
                         const CSeq_loc* location = 0);
 
+NCBI_XOBJUTIL_EXPORT
+double GetProteinWeight(const string& iupac_aa_sequence);
+
 typedef map<CConstRef<CSeq_loc>, double> TWeights;
 
 /// Automatically picks reasonable ranges: in decreasing priority order,
