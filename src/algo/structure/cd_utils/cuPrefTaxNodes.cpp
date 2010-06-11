@@ -230,22 +230,24 @@ TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(int taxid, TaxClient* ta
 	TaxidToOrgMap::iterator titEnd = m_selectedTaxNodesMap.end(), tit = titEnd;
     TAncestorMap::iterator ancestorIt;
 
-    //  First see if this taxid has been seen before; if so, retrieve iterator from toMap...
-    ancestorIt = m_ancestralTaxNodeMap.find(taxid);
-    if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= 0) {
-        tit = m_selectedTaxNodesMap.find(ancestorIt->second);
-    }
+    if (taxid != 0) {
+        //  First see if this taxid has been seen before; if so, retrieve iterator from toMap...
+        ancestorIt = m_ancestralTaxNodeMap.find(taxid);
+        if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= 0) {
+            tit = m_selectedTaxNodesMap.find(ancestorIt->second);
+        }
 
-    //  If no ancestralMap, or ancestor not in ancestralMap, use taxClient if present.
-    //  Add ancestral taxid to ancestralMap if found.
-    if (taxClient && tit == titEnd) {
-	    for (tit = m_selectedTaxNodesMap.begin(); tit != titEnd; tit++)
-	    {
-            if (taxClient->IsTaxDescendant(tit->first, taxid)) {
-                m_ancestralTaxNodeMap.insert(TAncestorMap::value_type(taxid, tit->first));
-			    break;
+        //  If no ancestralMap, or ancestor not in ancestralMap, use taxClient if present.
+        //  Add ancestral taxid to ancestralMap if found.
+        if (taxClient && tit == titEnd) {
+            for (tit = m_selectedTaxNodesMap.begin(); tit != titEnd; tit++)
+            {
+                if (taxClient->IsTaxDescendant(tit->first, taxid)) {
+                    m_ancestralTaxNodeMap.insert(TAncestorMap::value_type(taxid, tit->first));
+                    break;
+                }
             }
-	    }
+        }
     }
 
 	return tit;
@@ -257,26 +259,28 @@ bool CPriorityTaxNodes::IsPriorityTaxnode(int taxid)
     return it != m_selectedTaxNodesMap.end();
 }
 
-//  return -1 if fails
+//  return -1 if fails or taxid = 0
 int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient) 
 {
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid), itEnd = m_selectedTaxNodesMap.end();	
 
     orgNode = NULL;
-    if (it != itEnd)
-	{
-		orgNode = &(it->second);
-		return it->second.order;
-	}
-	else // fail to find exact match; try to find ancetral match
-	{
-        it = findAncestor(taxid, taxClient);
-		if (it != itEnd)
-		{
-    		orgNode = &(it->second);
-			return it->second.order;
-		}
-	}
+    if (taxid != 0) {
+        if (it != itEnd)
+        {
+            orgNode = &(it->second);
+            return it->second.order;
+        }
+        else  // fail to find exact match; try to find ancetral match
+        {
+            it = findAncestor(taxid, taxClient);
+            if (it != itEnd)
+            {
+                orgNode = &(it->second);
+                return it->second.order;
+            }
+        }
+    }
 	return -1;
 }
 

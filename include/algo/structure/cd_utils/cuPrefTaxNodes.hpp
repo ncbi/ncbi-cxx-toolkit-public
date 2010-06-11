@@ -112,7 +112,7 @@ public:
     //  not an entry for the taxid in the corresponding ancestral map, use taxClient
     //  to ascend the tax tree to see if one of its ancestors is a match.  Return the 
     //  first such tax node's info.
-    //  Return value itself is OrgNode.order, or -1 if fails.
+    //  Return value itself is OrgNode.order, or -1 on failure or if taxid = 0.
     int GetPriorityTaxnode(int taxid, string& nodeName, TaxClient* taxClient = NULL);
     int GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient = NULL);
 
@@ -147,9 +147,9 @@ private:
     typedef map<int, int>      TAncestorMap;
     TAncestorMap   m_ancestralTaxNodeMap;
 
-    //  Return m_selectedTaxNodesMap.end() if no ancestor found for taxid.  Use taxClient only if
-    //  non-null and the corresponding ancestral map does not contain taxid as a key,
-    //  or if ancestralMap pointer is NULL (to force use of the TaxClient).
+    //  Return m_selectedTaxNodesMap.end() if no ancestor found for taxid, or taxid = 0.  
+    //  Use taxClient only if non-null and the corresponding ancestral map does not contain 
+    //  non-zero taxid as a key, or if ancestralMap pointer is NULL (to force use of the TaxClient).
 	TaxidToOrgMap::iterator findAncestor(int taxid, TaxClient* taxClient);
 
 	void putIntoMap(const CCdd_org_ref_set& orgRefs);
