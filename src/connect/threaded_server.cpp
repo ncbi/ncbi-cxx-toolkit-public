@@ -44,12 +44,12 @@ BEGIN_NCBI_SCOPE
 class CSocketRequest : public CStdRequest
 {
 public:
-    CSocketRequest(CThreadedServer& server, SOCK sock)
+    CSocketRequest(CThreadedServer& server, SOCK sock) // NCBI_FAKE_WARNING
         : m_Server(server), m_Sock(sock) {}
     virtual void Process(void);
 
 private:
-    CThreadedServer& m_Server;
+    CThreadedServer& m_Server; // NCBI_FAKE_WARNING
     SOCK             m_Sock;
 };
 
