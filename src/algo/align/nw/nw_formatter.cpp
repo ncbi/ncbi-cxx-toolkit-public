@@ -577,7 +577,7 @@ void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
         size_t matches (0), exon_aln_size (0), exon_aln_size_x(0);
         int tr_idx_x (-1);
 
-        vector<char>::iterator ii_ex (trans_ex.begin()), ii_ex_x (0);
+        vector<char>::iterator ii_ex (trans_ex.begin()), ii_ex_x;
         size_t cons_dels (0);
         const size_t max_cons_dels (25);
         while(tr_idx >= tr_idx_lo && transcript[tr_idx] < CNWAligner::eTS_Intron) {
