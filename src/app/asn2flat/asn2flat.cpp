@@ -44,6 +44,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
@@ -504,38 +505,14 @@ int CAsn2FlatApp::x_SeqIdToGiNumber(
     const string& seq_id,
     const string database_name )
 {
-    CEntrez2Client m_E2Client;
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
 
-    CRef<CEntrez2_boolean_element> e2_element (new CEntrez2_boolean_element);
-    e2_element->SetStr(seq_id);
-        
-    CEntrez2_eval_boolean eb;
-    eb.SetReturn_UIDs(true);
-    CEntrez2_boolean_exp& query = eb.SetQuery();
-    query.SetExp().push_back(e2_element);
-    query.SetDb() = CEntrez2_db_id( database_name );
-    
-    CRef<CEntrez2_boolean_reply> reply = m_E2Client.AskEval_boolean(eb);
-    
-    switch ( reply->GetCount() ) {
-    
-    case 0:
-        // no hits whatever:
-        return 0;
-        
-    case 1: {
-        //  one hit; the expected outcome:
-        //
-        //  "it" declared here to keep the WorkShop compiler from whining.
-        CEntrez2_id_list::TConstUidIterator it 
-            = reply->GetUids().GetConstUidIterator();
-        return ( *it );
-    }    
-    default:
-        // multiple hits? Unexpected and definitely not a good thing...
-        ERR_POST( Fatal << "Unexpected: The ID " << seq_id.c_str() 
-            << " turned up multiple hits." );
-       break;
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
+    CSeq_id_Handle gi = sequence::GetId(idh, scope,
+                                        sequence::eGetId_ForceGi);
+    if (gi) {
+        return gi.GetGi();
     }
 
     return 0;
