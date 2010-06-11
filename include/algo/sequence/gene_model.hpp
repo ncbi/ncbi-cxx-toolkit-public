@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -62,6 +63,13 @@ public:
     };
     typedef int TGeneModelCreateFlags;
 
+    /// Trim an alignment according to our best guess of its biological
+    /// representation.  Trimming involves adjusting segments to satisfy our
+    /// expectations of partial exonic alignments and account for unaligned
+    /// parts.
+    static CConstRef<objects::CSeq_align>
+    TrimAlignment(const objects::CSeq_align& align,
+                  objects::CScope& scope);
 
     /// Create a gene model from an alignment
     /// this will optionally promote all features through the alignment

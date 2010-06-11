@@ -85,13 +85,16 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 }
 
 
-void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
+void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
                                           CScope& scope,
                                           CSeq_annot& annot,
                                           CBioseq_set& seqs,
                                           TGeneModelCreateFlags flags,
                                           TSeqPos allowed_unaligned)
 {
+    ////////////////////////////////////////////////////////////////////////////
+    ///
+
     struct SMapper
     {
     public:
@@ -158,7 +161,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     CBioseq_Handle handle = m_scope.GetBioseqHandle(id);
                     CRef<CSeq_loc> range_loc =
                         handle.GetRangeSeq_loc(0, 0, eNa_strand_plus); //0-0 meanns whole range
-                    //todo: truncate the range loc not to include polyA, or else the remapped loc will be erroneously partial
+                    //todo: truncate the range loc not to include polyA, or
+                    //else the remapped loc will be erroneously partial
                     //not a huge issue as it only applies to seg alignments only.
                     rna_loc = m_mapper->Map(*range_loc);
                 }
@@ -270,22 +274,28 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         TSeqPos m_allowed_unaligned;
     };
 
-
-
+    ///
     ////////////////////////////////////////////////////////////////////////////
+
+    ///
+    /// before we do anything, trim / stitch / correct the alignment for
+    /// biological purity
+    ///
+    CConstRef<CSeq_align> align = TrimAlignment(align_in, scope);
+
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    SMapper mapper(align, scope, allowed_unaligned, opts);
+    SMapper mapper(*align, scope, allowed_unaligned, opts);
 
     /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
 
 
-    const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
-    const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
+    const CSeq_id& rna_id = align->GetSeq_id(mapper.GetRnaRow());
+    const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
     CBioseq_Handle handle = scope.GetBioseqHandle(rna_id);
 
     /// we always need the mRNA location as a reference
@@ -428,7 +438,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, scope, &align);
+        SetFeatureExceptions(*mrna_feat, scope, align);
         /// NOTE: added after gene!
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
@@ -444,7 +454,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             cds_feat->Assign(feat_iter->GetOriginalFeature());
 
             /// from this point on, we will get complex locations back
-            SMapper mapper(align, scope, opts);
+            SMapper mapper(*align, scope, opts);
             mapper.IncludeSourceLocs();
             mapper.SetMergeNone();
 
@@ -636,7 +646,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     }
                 }
 
-                SetFeatureExceptions(*cds_feat, scope, &align);
+                SetFeatureExceptions(*cds_feat, scope, align);
                 annot.SetData().SetFtable().push_back(cds_feat);
 
                 if (flags & fForceTranslateCds) {
@@ -728,6 +738,19 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             annot.SetData().SetFtable().push_back(feat);
         }
     }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+
+CConstRef<CSeq_align> CGeneModel::TrimAlignment(const CSeq_align& align,
+                                                CScope& scope)
+{
+    ///
+    /// HACK: NO-OP FOR NOW
+    ///
+    return CConstRef<CSeq_align>(&align);
 }
 
 
