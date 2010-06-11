@@ -228,8 +228,12 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                         // if have non-strict consensus splice site - blame it
                         // for partialness. If can't disambiguate on this - set
                         // both.
-                        bool donor_ok = prev_exon->GetDonor_after_exon().GetBases() == "GT";
-                        bool acceptor_ok = exon.GetAcceptor_before_exon().GetBases() == "AG";
+                        bool donor_ok =
+                            (prev_exon->IsSetDonor_after_exon()  &&
+                             prev_exon->GetDonor_after_exon().GetBases() == "GT");
+                        bool acceptor_ok =
+                            (exon.IsSetAcceptor_before_exon()  &&
+                             exon.GetAcceptor_before_exon().GetBases() == "AG");
                         if(donor_ok || !acceptor_ok) {
                             genomic_int->SetPartialStart(true, eExtreme_Biological);
                         }
