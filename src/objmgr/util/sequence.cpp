@@ -407,6 +407,11 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                 if ( !ret ) {
                     ret = x_GetId(scope.GetIds(idh), type);
                 }
+                if ( !ret ) {
+                    /// failed to retrieve IDs
+                    /// assume input is the best that we can do
+                    ret = idh;
+                }
             }
         }
         else if ( (type & eGetId_TypeMask) == eGetId_ForceAcc ) {
