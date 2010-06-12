@@ -1226,7 +1226,8 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     }
 
     if (m_Feat) {
-        CSeq_id_Handle id1 = ctx.GetHandle().GetSeq_id_Handle();
+        CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
+                                             sequence::eGetId_Canonical);
         CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
                                                    &ctx.GetScope());
 
