@@ -1485,12 +1485,18 @@ string CDeflineGenerator::x_SetSuffix (
 }
 
 // main method
-string CDeflineGenerator::GenerateDefline (
-    const CBioseq& bioseq,
-    CScope& scope,
-    TUserFlags flags
-)
+string CDeflineGenerator::GenerateDefline(const CBioseq_Handle& bioseq,
+                                           TUserFlags flags)
+{
+    return GenerateDefline(*bioseq.GetCompleteBioseq(),
+                           bioseq.GetScope(),
+                           flags);
+}
 
+
+string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
+                                          CScope& scope,
+                                          TUserFlags flags)
 {
     string prefix, title, suffix;
 

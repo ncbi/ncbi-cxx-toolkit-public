@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 
 // Forward declarations
 class CScope;
+class CBioseq_Handle;
 
 BEGIN_SCOPE(sequence)
 
@@ -82,6 +83,12 @@ public:
     string GenerateDefline (
         const CBioseq& bioseq,
         CScope& scope,
+        TUserFlags flags = 0
+    );
+
+    /// Main method
+    string GenerateDefline (
+        const CBioseq_Handle& bioseq,
         TUserFlags flags = 0
     );
 
