@@ -68,6 +68,8 @@ class CMolInfo;
 
 BEGIN_SCOPE(sequence)
 
+class CDeflineGenerator;
+
 
 /** @addtogroup ObjUtilSequence
  *
@@ -721,6 +723,7 @@ public:
 
 private:
     CNcbiOstream&       m_Out;
+    auto_ptr<sequence::CDeflineGenerator> m_Gen;
     CConstRef<CSeq_loc> m_SoftMask;
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;

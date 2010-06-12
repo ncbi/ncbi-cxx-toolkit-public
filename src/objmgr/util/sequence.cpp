@@ -44,6 +44,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -2239,6 +2240,7 @@ CFastaOstream::CFastaOstream(CNcbiOstream& out)
       m_Width(70),
       m_Flags(fInstantiateGaps | fAssembleParts)
 {
+    m_Gen.reset(new sequence::CDeflineGenerator);
 }
 
 CFastaOstream::~CFastaOstream()
@@ -2295,36 +2297,15 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     CScope* scope)
 {
-/*    string safe_title;
-    if (bioseq.IsSetDescr()) {
-        ITERATE (CBioseq::TDescr::Tdata, iter, bioseq.GetDescr().Get()) {
-            if ((*iter)->Which() == CSeqdesc::e_Title) {
-                safe_title = (*iter)->GetTitle();
-                break;
-            }
-        }
-    }
-    if ( !safe_title.empty() ) {
-        // originally further down, but moved up to match the C version
-        while ( !safe_title.empty() &&
-                (safe_title[safe_title.size()-1] == '.' ||
-                 safe_title[safe_title.size()-1] == ' ') ) {
-            safe_title.erase(safe_title.size() - 1);
-        }
-    }
-    else if (scope) {
-        CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
-        safe_title = sequence::GetTitle(bsh);
-    }
-*/
-    string safe_title;
     sequence::TGetTitleFlags title_flags = 0;
     if ((m_Flags & fNoExpensiveOps) != 0) {
         title_flags |= sequence::fGetTitle_NoExpensive;
     }
+
+    string safe_title;
     if (scope) {
         CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
-        safe_title = sequence::GetTitle(bsh, title_flags);
+        safe_title = m_Gen->GenerateDefline(bsh);
     } else {
         safe_title = sequence::s_GetFastaTitle(bioseq, title_flags);
     }
@@ -2374,13 +2355,12 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
             delim = ',';
         }
     }
-    if ((m_Flags & fKeepGTSigns) != 0) {
-        m_Out << ' ' << sequence::GetTitle(handle) << '\n';
-    } else {
-        string safe_title;
-        NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
-        m_Out << ' ' << safe_title << '\n';
+
+    string safe_title = m_Gen->GenerateDefline(handle);
+    if ((m_Flags & fKeepGTSigns) == 0) {
+        safe_title = NStr::Replace(safe_title, ">", "_");
     }
+    m_Out << ' ' << safe_title << '\n';
 }
 
 
@@ -3244,15 +3224,8 @@ void CCdregion_translate::TranslateCdregion
         return;
     }
 
-    CCdregion_translate::TranslateCdregion(
-        prot,
-        bsh,
-        cds.GetLocation(),
-        cds.GetData().GetCdregion(),
-        include_stop,
-        remove_trailing_X,
-        alt_start,
-        options);
+    CSeqTranslator::Translate(cds, bsh.GetScope(), prot,
+                              include_stop, remove_trailing_X, alt_start);
 }
 
 
