@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, Mati Shomrat, NCBI
+* Author:  Aaron Ucko, Mati Shomrat, Mike DiCuccio, NCBI
 *
 * File Description:
 *   flat-file generator application
@@ -52,13 +52,6 @@
 #include <objtools/format/flat_expt.hpp>
 #include <objects/seqset/gb_release_file.hpp>
 
-#include <objects/entrez2/Entrez2_boolean_element.hpp>
-#include <objects/entrez2/Entrez2_boolean_reply.hpp>
-#include <objects/entrez2/Entrez2_boolean_exp.hpp>
-#include <objects/entrez2/Entrez2_eval_boolean.hpp>
-#include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/entrez2_client.hpp>
-
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
@@ -72,31 +65,17 @@ public:
     void Init(void);
     int  Run (void);
 
-    bool HandleSeqEntry(
-        CRef<CSeq_entry>& se);
-
-    bool HandleSeqEntryHandle(
-        CScope&,
-        CSeq_entry_Handle );
+    bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSeqEntry(const CSeq_entry_Handle& seh);
 
 protected:
-    void HandleSeqSubmit(
-        auto_ptr<CObjectIStream> is );
-    void HandleReleaseFile( 
-        auto_ptr<CObjectIStream> is );
-    void HandleSeqId(
-        const string& );
-    
-    bool ObtainSeqEntryFromSeqEntry( 
-        auto_ptr<CObjectIStream>& is, 
-        CRef<CSeq_entry>& se );
-    bool ObtainSeqEntryFromBioseq( 
-        auto_ptr<CObjectIStream>& is, 
-        CRef<CSeq_entry>& se );
-    bool ObtainSeqEntryFromBioseqSet( 
-        auto_ptr<CObjectIStream>& is, 
-        CRef<CSeq_entry>& se );
-        
+    void HandleSeqSubmit(CObjectIStream& is );
+    void HandleSeqId(const string& id);
+
+    CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is);
+    CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
+    CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
+
 private:
     // types
     typedef CFlatFileConfig::TFormat    TFormat;
@@ -118,10 +97,10 @@ private:
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
-    int x_SeqIdToGiNumber( const string& seq_id, const string database );
-    
+
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
+    CRef<CScope>                m_Scope;
     CNcbiOstream*               m_Os;           // Output stream
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
 };
@@ -134,239 +113,268 @@ void CAsn2FlatApp::Init(void)
         GetArguments().GetProgramBasename(),
         "Convert an ASN.1 Seq-entry into a flat report",
         false);
-    
+
     // input
     {{
-        // name
-        arg_desc->AddOptionalKey("i", "InputFile", 
-            "Input file name", CArgDescriptions::eInputFile);
-        
-        // input file serial format (AsnText\AsnBinary\XML, default: AsnText)
-        arg_desc->AddOptionalKey("serial", "SerialFormat", "Input file format",
-            CArgDescriptions::eString);
-        arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
-            "text", "binary", "XML"));
-        arg_desc->AddFlag("sub", "Submission");
-        // id
-        arg_desc->AddOptionalKey("id", "ID", 
-            "Specific ID to display", CArgDescriptions::eString);
-            
-        // input type:
-        arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
-            CArgDescriptions::eString, "any" );
-        arg_desc->SetConstraint( "type", 
-            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
-        
-    }}
+         arg_desc->SetCurrentGroup("Input/Output Options");
+         // name
+         arg_desc->AddOptionalKey("i", "InputFile",
+                                  "Input file name",
+                                  CArgDescriptions::eInputFile);
+
+         // input file serial format (AsnText\AsnBinary\XML, default: AsnText)
+         arg_desc->AddOptionalKey("serial", "SerialFormat", "Input file format",
+                                  CArgDescriptions::eString);
+         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
+                                             "text", "binary", "XML"));
+         arg_desc->AddFlag("sub", "Submission");
+         // id
+         arg_desc->AddOptionalKey("id", "ID",
+                                  "Specific ID to display",
+                                  CArgDescriptions::eString);
+
+         // input type:
+         arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
+                                  CArgDescriptions::eString, "any" );
+         arg_desc->SetConstraint( "type",
+                                  &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+
+         // output
+         arg_desc->AddOptionalKey("o", "OutputFile",
+                                  "Output file name",
+                                  CArgDescriptions::eOutputFile);
+     }}
 
     // batch processing
     {{
-        arg_desc->AddFlag("batch", "Process NCBI release file");
-        // compression
-        arg_desc->AddFlag("c", "Compressed file");
-        // propogate top descriptors
-        arg_desc->AddFlag("p", "Propogate top descriptors");
-    }}
-    
-    // output
-    {{ 
-        // name
-        arg_desc->AddOptionalKey("o", "OutputFile", 
-            "Output file name", CArgDescriptions::eOutputFile);
-    }}
-    
+         arg_desc->SetCurrentGroup("Batch Processing Options");
+         arg_desc->AddFlag("batch", "Process NCBI release file");
+         // compression
+         arg_desc->AddFlag("c", "Compressed file");
+         // propogate top descriptors
+         arg_desc->AddFlag("p", "Propogate top descriptors");
+     }}
+
     // report
     {{
-        // format (default: genbank)
-        arg_desc->AddDefaultKey("format", "Format", "Output format",
-            CArgDescriptions::eString, "genbank");
-        arg_desc->SetConstraint("format",
-            &(*new CArgAllow_Strings,
-              "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3"));
+         arg_desc->SetCurrentGroup("Formatting Options");
+         // format (default: genbank)
+         arg_desc->AddDefaultKey("format", "Format",
+                                 "Output format",
+                                 CArgDescriptions::eString, "genbank");
+         arg_desc->SetConstraint("format",
+                                 &(*new CArgAllow_Strings,
+                                   "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3"));
 
-        // mode (default: dump)
-        arg_desc->AddDefaultKey("mode", "Mode", "Restriction level",
-            CArgDescriptions::eString, "gbench");
-        arg_desc->SetConstraint("mode", 
-            &(*new CArgAllow_Strings, "release", "entrez", "gbench", "dump"));
+         // mode (default: dump)
+         arg_desc->AddDefaultKey("mode", "Mode",
+                                 "Restriction level",
+                                 CArgDescriptions::eString, "gbench");
+         arg_desc->SetConstraint("mode",
+                                 &(*new CArgAllow_Strings, "release", "entrez", "gbench", "dump"));
 
-        // style (default: normal)
-        arg_desc->AddDefaultKey("style", "Style", "Formatting style",
-            CArgDescriptions::eString, "normal");
-        arg_desc->SetConstraint("style", 
-            &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
+         // style (default: normal)
+         arg_desc->AddDefaultKey("style", "Style",
+                                 "Formatting style",
+                                 CArgDescriptions::eString, "normal");
+         arg_desc->SetConstraint("style",
+                                 &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
 
-        // flags (default: 0)
-        arg_desc->AddDefaultKey("flags", "Flags", "Custom flags",
-            CArgDescriptions::eInteger, "0");
+         // flags (default: 0)
+         arg_desc->AddDefaultKey("flags", "Flags",
+                                 "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
+                                 "        1 - show HTML report\n"
+                                 "        2 - show contig features\n"
+                                 "        4 - show show contig sources\n"
+                                 "        8 - show far translations\n"
+                                 "       16 - show translations if there are no products\n"
+                                 "       32 - show only near features\n"
+                                 "       64 - show far features on segs\n"
+                                 "      128 - copy CDS feature from cDNA\n"
+                                 "      256 - show contig in master record\n"
+                                 "      512 - hide imported features\n"
+                                 "     1024 - hide remote imported features\n"
+                                 "     2048 - hide SNP features\n"
+                                 "     4096 - hide exon features\n"
+                                 "     8192 - hide intron features\n"
+                                 "    16384 - hide misc features\n"
+                                 "    32768 - hide CDS product features\n"
+                                 "    65536 - hide CDS features\n"
+                                 "   131072 - show transcript sequence\n"
+                                 "   262144 - show peptides\n"
+                                 "   524288 - hide GeneRIFs\n"
+                                 "  1048576 - show only GeneRIFs\n"
+                                 "  2097152 - show only the latest GeneRIFs\n"
+                                 "  4194304 - show contig and sequence\n"
+                                 "  8388608 - hide source features\n"
+                                 " 16777216 - show feature table references\n"
+                                 " 33554432 - hide gap features\n"
+                                 " 67108864 - do not translate the CDS",
 
-        // view (default: nucleotide)
-        arg_desc->AddDefaultKey("view", "View", "View",
-            CArgDescriptions::eString, "nuc");
-        arg_desc->SetConstraint("view", 
-            &(*new CArgAllow_Strings, "all", "prot", "nuc"));
-        
-        // from
-        arg_desc->AddOptionalKey("from", "From",
-            "Begining of shown range", CArgDescriptions::eInteger);
-        
-        // to
-        arg_desc->AddOptionalKey("to", "To",
-            "End of shown range", CArgDescriptions::eInteger);
-        
-        // strand
-        arg_desc->AddDefaultKey("count", "Count", "Number of runs",
-                                CArgDescriptions::eInteger, "1");
-        
-        // accession to extract
+                                 CArgDescriptions::eInteger, "0");
 
-        // html
-        arg_desc->AddFlag("html", "Produce HTML output");
-    }}
-    
+         // view (default: nucleotide)
+         arg_desc->AddDefaultKey("view", "View", "View",
+                                 CArgDescriptions::eString, "nuc");
+         arg_desc->SetConstraint("view",
+                                 &(*new CArgAllow_Strings, "all", "prot", "nuc"));
+
+         // from
+         arg_desc->AddOptionalKey("from", "From",
+                                  "Begining of shown range", CArgDescriptions::eInteger);
+
+         // to
+         arg_desc->AddOptionalKey("to", "To",
+                                  "End of shown range", CArgDescriptions::eInteger);
+
+         // strand
+         arg_desc->AddDefaultKey("count", "Count", "Number of runs",
+                                 CArgDescriptions::eInteger, "1");
+
+         // accession to extract
+
+         // html
+         arg_desc->AddFlag("html", "Produce HTML output");
+     }}
+
     // misc
     {{
-        // no-cleanup
-        arg_desc->AddFlag("nocleanup",
-            "Do not perform data cleanup prior to formatting");
-        // remote
-        arg_desc->AddFlag("gbload", "Use CGBDataLoader");
+         // no-cleanup
+         arg_desc->AddFlag("nocleanup",
+                           "Do not perform data cleanup prior to formatting");
+         // remote
+         arg_desc->AddFlag("gbload", "Use CGBDataLoader");
 
-    }}
+     }}
     SetupArgDescriptions(arg_desc.release());
 }
 
 
 int CAsn2FlatApp::Run(void)
 {
-    int iRetValue( 0 );
-
 	// initialize conn library
 	CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
 
-    try {
-        // create object manager
-        m_Objmgr = CObjectManager::GetInstance();
-        if ( !m_Objmgr ) {
-            NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
+    // create object manager
+    m_Objmgr = CObjectManager::GetInstance();
+    if ( !m_Objmgr ) {
+        NCBI_THROW(CException, eUnknown, "Could not create object manager");
+    }
+    if (args["gbload"]  ||  args["id"]) {
+        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+    }
+    m_Scope.Reset(new CScope(*m_Objmgr));
+    m_Scope->AddDefaults();
+
+    // open the output stream
+    m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+    if ( m_Os == 0 ) {
+        NCBI_THROW(CException, eUnknown, "Could not open output stream");
+    }
+
+    // create the flat-file generator
+    m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
+
+    auto_ptr<CObjectIStream> is;
+    is.reset( x_OpenIStream( args ) );
+    if (is.get() == NULL) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+            "Unable to read data from stdin";
+        NCBI_THROW(CException, eUnknown, msg);
+    }
+
+    if ( args[ "sub" ] ) {
+        HandleSeqSubmit( *is );
+        return 0;
+    }
+
+    if ( args[ "batch" ] ) {
+        CGBReleaseFile in( *is.release() );
+        in.RegisterHandler( this );
+        in.Read();  // HandleSeqEntry will be called from this function
+        return 0;
+    }
+
+    if ( args[ "id" ] ) {
+        HandleSeqId( args[ "id" ].AsString() );
+        return 0;
+    }
+
+    string asn_type = args["type"].AsString();
+
+    if ( asn_type == "seq-entry" ) {
+        //
+        //  Straight through processing: Read a seq_entry, then process
+        //  a seq_entry:
+        //
+        CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
+        if ( !seh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "Unable to construct Seq-entry object" );
         }
-        if (args["gbload"]) {
-            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+        HandleSeqEntry(seh);
+    }
+    else if ( asn_type == "bioseq" ) {				
+        //
+        //  Read object as a bioseq, wrap it into a seq_entry, then process
+        //  the wrapped bioseq as a seq_entry:
+        //
+        CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is);
+        if ( !seh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "Unable to construct Seq-entry object" );
         }
-
-        // open the output stream
-        m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-        if ( m_Os == 0 ) {
-            NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
+        HandleSeqEntry(seh);
+    }
+    else if ( asn_type == "bioseq-set" ) {
+        //
+        //  Read object as a bioseq_set, wrap it into a seq_entry, then
+        //  process the wrapped bioseq_set as a seq_entry:
+        //
+        CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is);
+        if ( !seh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "Unable to construct Seq-entry object" );
         }
+        HandleSeqEntry(seh);
+    }
+    else if ( asn_type == "any" ) {
+        //
+        //  Try the first three in turn:
+        //
+        string strNextTypeName = is->PeekNextTypeName();
 
-        // create the flat-file generator
-        m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
-
-        auto_ptr<CObjectIStream> is;
-        is.reset( x_OpenIStream( args ) );
-        if (is.get() == NULL) {
-            string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                            "Unable to read data from stdin";
-            NCBI_THROW(CFlatException, eInternal, msg);
-        }
-
-        if ( args[ "sub" ] ) {
-            HandleSeqSubmit( is );
-            return 0;
-        }
-    
-        if ( args[ "batch" ] ) {
-            HandleReleaseFile( is );
-            return 0;
-        } 
-
-        if ( args[ "id" ] ) {
-            if ( ! args[ "gbload" ] ) {
-                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-            }   
-            HandleSeqId( args[ "id" ].AsString() );
-            return 0;
-        } 
-
-        string asn_type = args["type"].AsString();
-        CRef<CSeq_entry> se(new CSeq_entry);
-        
-        if ( asn_type == "seq-entry" ) {
-            //
-            //  Straight through processing: Read a seq_entry, then process
-            //  a seq_entry:
-            //
-            if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                NCBI_THROW( 
-                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
-            }
-            HandleSeqEntry(se);
-		    //m_Objmgr.Reset();
-	    }
-	    else if ( asn_type == "bioseq" ) {				
-		    //
-		    //  Read object as a bioseq, wrap it into a seq_entry, then process
-		    //  the wrapped bioseq as a seq_entry:
-		    //
-            if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                NCBI_THROW( 
-                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
-            }
-            HandleSeqEntry( se );
-	    }
-	    else if ( asn_type == "bioseq-set" ) {
-		    //
-		    //  Read object as a bioseq_set, wrap it into a seq_entry, then 
-		    //  process the wrapped bioseq_set as a seq_entry:
-		    //
-            if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                NCBI_THROW( 
-                    CFlatException, eInternal, "Unable to construct Seq-entry object" );
-            }
-            HandleSeqEntry( se );
-	    }
-        else if ( asn_type == "any" ) {
-            //
-            //  Try the first three in turn:
-            //
-            string strNextTypeName = is->PeekNextTypeName();
-            
-            if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+        CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
+        if ( !seh ) {
+            is->Close();
+            is.reset( x_OpenIStream( args ) );
+            seh = ObtainSeqEntryFromBioseqSet(*is);
+            if ( !seh ) {
                 is->Close();
                 is.reset( x_OpenIStream( args ) );
-                if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                    is->Close();
-                    is.reset( x_OpenIStream( args ) );
-                    if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                        NCBI_THROW( 
-                            CFlatException, eInternal, 
-                            "Unable to construct Seq-entry object" 
-                        );
-                    }
+                seh = ObtainSeqEntryFromBioseq(*is);
+                if ( !seh ) {
+                    NCBI_THROW(
+                               CException, eUnknown,
+                               "Unable to construct Seq-entry object"
+                              );
                 }
             }
-            HandleSeqEntry(se);
-            m_Os->flush();
-            is.reset();
         }
+        HandleSeqEntry(seh);
     }
-    catch( CFlatException& fe ) {
-        cerr << fe.GetMsg() << endl;
-        iRetValue = fe.GetErrCode();
-    }
-    return iRetValue;
+
+    return 0;
 }
 
 //  ============================================================================
-void CAsn2FlatApp::HandleSeqSubmit(
-    auto_ptr<CObjectIStream> is )
+void CAsn2FlatApp::HandleSeqSubmit(CObjectIStream& is )
 //  ============================================================================
 {
     CRef<CSeq_submit> sub(new CSeq_submit);
-    *is >> *sub;
+    is >> *sub;
     if (sub->IsSetSub()  &&  sub->IsSetData()) {
         CRef<CScope> scope(new CScope(*m_Objmgr));
         scope->AddDefaults();
@@ -375,56 +383,29 @@ void CAsn2FlatApp::HandleSeqSubmit(
 }
 
 //  ============================================================================
-void CAsn2FlatApp::HandleReleaseFile(
-    auto_ptr<CObjectIStream> is )
-//  ============================================================================
-{
-    CGBReleaseFile in( *is.release() );
-    in.RegisterHandler( this );
-    in.Read();  // HandleSeqEntry will be called from this function
-}
-
-//  ============================================================================
 void CAsn2FlatApp::HandleSeqId(
     const string& strId )
 //  ============================================================================
 {
-    unsigned int gi( 0 );
-    const char* database_names[] = { "Nucleotide", "Protein" };
-    const int num_databases = sizeof( database_names ) / sizeof( const char* );
-    
-    for ( int i=0; (gi == 0) && (i < num_databases); ++ i ) {
-        gi = x_SeqIdToGiNumber( strId, database_names[ i ] );
-    }
-    if ( 0 == gi ) {
-       NCBI_THROW( 
-            CFlatException, eInternal, 
-            "Given ID does not resolve to a GI number" 
-        );
-    }
-
-    CSeq_id id;
-    id.SetGi( gi );
+    CSeq_id id(strId);
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
     CBioseq_Handle bsh = scope->GetBioseqHandle( id );
     if ( ! bsh ) {
-       NCBI_THROW( 
-            CFlatException, eInternal, 
-            "Unable to retrieve data for the given ID" 
+       NCBI_THROW(
+            CException, eUnknown,
+            "Unable to retrieve data for the given ID"
         );
     }
-    
+
     //
     //  ... and use that to generate the flat file:
     //
-    HandleSeqEntryHandle( *scope, bsh.GetTopLevelEntry() );
+    HandleSeqEntry(bsh.GetTopLevelEntry() );
 }
 
 //  ============================================================================
-bool CAsn2FlatApp::HandleSeqEntryHandle(
-    CScope& scope,
-    CSeq_entry_Handle seh )
+bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
@@ -433,8 +414,8 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
         x_GetLocation( seh, args, loc );
-        m_FFGenerator->Generate(loc, scope, *m_Os);
-    } 
+        m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+    }
     else {
         int count = args["count"].AsInteger();
         for ( int i = 0; i < count; ++i ) {
@@ -445,78 +426,50 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(
     return true;
 }
 
-bool CAsn2FlatApp::ObtainSeqEntryFromSeqEntry( 
-    auto_ptr<CObjectIStream>& is, 
-    CRef<CSeq_entry>& se )
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
 {
     try {
-        *is >> *se;
+        CRef<CSeq_entry> se(new CSeq_entry);
+        is >> *se;
         if (se->Which() == CSeq_entry::e_not_set) {
-            return false;
+            NCBI_THROW(CException, eUnknown,
+                       "provided Seq-entry is empty");
         }
-        return true;
+        return m_Scope->AddTopLevelSeqEntry(*se);
     }
-    catch( ... ) {
-        return false;
+    catch (CException& e) {
+        ERR_POST(Error << e);
     }
+    return CSeq_entry_Handle();
 }
 
-bool CAsn2FlatApp::ObtainSeqEntryFromBioseq( 
-    auto_ptr<CObjectIStream>& is, 
-    CRef<CSeq_entry>& se )
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
 {
     try {
-		CRef<CBioseq> bs( new CBioseq );
-		if ( ! bs ) {
-            NCBI_THROW(CFlatException, eInternal, 
-            "Could not allocate Bioseq object");
-		}
-	    *is >> *bs;
-
-        se->SetSeq( bs.GetObject() );
-        return true;
+        CRef<CBioseq> bs(new CBioseq);
+        is >> *bs;
+        CBioseq_Handle bsh = m_Scope->AddBioseq(*bs);
+        return bsh.GetTopLevelEntry();
     }
-    catch( ... ) {
-        return false;
+    catch (CException& e) {
+        ERR_POST(Error << e);
     }
+    return CSeq_entry_Handle();
 }
 
-bool CAsn2FlatApp::ObtainSeqEntryFromBioseqSet( 
-    auto_ptr<CObjectIStream>& is, 
-    CRef<CSeq_entry>& se )
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
 {
     try {
-		CRef<CBioseq_set> bss( new CBioseq_set );
-		if ( ! bss ) {
-            NCBI_THROW(CFlatException, eInternal, 
-            "Could not allocate Bioseq object");
-		}
-	    *is >> *bss;
-
-        se->SetSet( bss.GetObject() );
-        return true;
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        is >> entry->SetSet();
+        return m_Scope->AddTopLevelSeqEntry(*entry);
     }
-    catch( ... ) {
-        return false;
+    catch (CException& e) {
+        ERR_POST(Error << e);
     }
+    return CSeq_entry_Handle();
 }
 
-int CAsn2FlatApp::x_SeqIdToGiNumber( 
-    const string& seq_id,
-    const string database_name )
-{
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
-    CSeq_id_Handle gi = sequence::GetId(idh, scope,
-                                        sequence::eGetId_ForceGi);
-    if (gi) {
-        return gi.GetGi();
-    }
-
-    return 0;
-};
 
 bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
@@ -524,47 +477,24 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
 
-    const CArgs& args = GetArgs();
     string label;
     //se->GetLabel(&label, CSeq_entry::eBoth);
 
-    // create new scope
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    if ( !scope ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-    }
-    scope->AddDefaults();
-
-    // add entry to scope   
-    CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
+    // add entry to scope
+    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
-        NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
+        NCBI_THROW(CException, eUnknown, "Failed to insert entry to scope.");
     }
 
-    return HandleSeqEntryHandle( *scope, entry );
-    // generate flat file
-    if ( args["from"]  ||  args["to"] ) {
-        CSeq_loc loc;
-        x_GetLocation(entry, args, loc);
-        m_FFGenerator->Generate(loc, *scope, *m_Os);
-    } else {
-        try {
-            int count = args["count"].AsInteger();
-            for ( int i = 0; i < count; ++i ) {
-                m_FFGenerator->Generate(entry, *m_Os);
-            }
-        } catch (CException& e) {
-            ERR_POST(e.ReportThis() + " " + label);
-        }
-    }
-
-    return true;
+    bool ret = HandleSeqEntry(entry);
+    m_Scope->RemoveTopLevelSeqEntry(entry);
+    return ret;
 }
 
 
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
-    
+
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
     ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
@@ -578,8 +508,8 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
             serial = eSerial_Xml;
         }
     }
-    
-    // make sure of the underlying input stream. If -i was given on the command line 
+
+    // make sure of the underlying input stream. If -i was given on the command line
     // then the input comes from a file. Otherwise, it comes from stdin:
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
@@ -587,8 +517,8 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
         pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
         bDeleteOnClose = true;
     }
-        
-    // if -c was specified then wrap the input stream into a gzip decompressor before 
+
+    // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
     CObjectIStream* pI = 0;
     if ( args["c"] ) {
@@ -601,7 +531,7 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
     else {
         pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose );
     }
-    
+
     if ( 0 != pI ) {
         pI->UseMemoryPool();
     }
@@ -657,7 +587,7 @@ CAsn2FlatApp::TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
         return CFlatFileConfig::eMode_GBench;
     } else if ( mode == "dump" ) {
         return CFlatFileConfig::eMode_Dump;
-    } 
+    }
 
     // default
     return CFlatFileConfig::eMode_GBench;
@@ -675,7 +605,7 @@ CAsn2FlatApp::TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
         return CFlatFileConfig::eStyle_Master;
     } else if ( style == "contig" ) {
         return CFlatFileConfig::eStyle_Contig;
-    } 
+    }
 
     // default
     return CFlatFileConfig::eStyle_Normal;
@@ -702,7 +632,7 @@ CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
         return CFlatFileConfig::fViewProteins;
     } else if ( view == "nuc" ) {
         return CFlatFileConfig::fViewNucleotides;
-    } 
+    }
 
     // default
     return CFlatFileConfig::fViewNucleotides;
@@ -711,15 +641,15 @@ CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
 
 TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)
 {
-    return args["from"] ? 
+    return args["from"] ?
         static_cast<TSeqPos>(args["from"].AsInteger() - 1) :
-        CRange<TSeqPos>::GetWholeFrom(); 
+        CRange<TSeqPos>::GetWholeFrom();
 }
 
 
 TSeqPos CAsn2FlatApp::x_GetTo(const CArgs& args)
 {
-    return args["to"] ? 
+    return args["to"] ?
         static_cast<TSeqPos>(args["to"].AsInteger() - 1) :
         CRange<TSeqPos>::GetWholeTo();
 }
@@ -731,7 +661,7 @@ void CAsn2FlatApp::x_GetLocation
  CSeq_loc& loc)
 {
     _ASSERT(entry);
-        
+
     CBioseq_Handle h = x_DeduceTarget(entry);
     if ( !h ) {
         NCBI_THROW(CFlatException, eInvalidParam,
@@ -740,7 +670,7 @@ void CAsn2FlatApp::x_GetLocation
     TSeqPos length = h.GetInst_Length();
     TSeqPos from   = x_GetFrom(args);
     TSeqPos to     = min(x_GetTo(args), length);
-    
+
     if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
         // whole
         loc.SetWhole().Assign(*h.GetSeqId());
