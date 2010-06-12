@@ -1355,6 +1355,8 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
                .SetResolveTSE();
         }
     }
+    /// make sure we are sorting correctly
+    sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 }
 
 
@@ -1486,7 +1488,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
-    for (CFeat_CI it(scope, loc, sel); it; ++it) {
+    CFeat_CI it(scope, loc, sel);
+    ctx.GetFeatTree().AddFeatures(it);
+    for ( ;  it;  ++it) {
         try {
             CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
             const CSeq_feat& original_feat = it->GetOriginalFeature();
@@ -1554,7 +1558,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             // post to log, go on to next feature
             LOG_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
-                                << " [" << e.what() << "]");
+                                << " [" << e << "]");
         }
     }  //  end of for loop
 
@@ -1676,7 +1680,9 @@ void CFlatGatherer::x_GatherFeatures(void) const
             prod_sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
             prod_sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
             prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-            for (CFeat_CI it(ctx.GetHandle(), prod_sel); it; ++it) {  
+            CFeat_CI it(ctx.GetHandle(), prod_sel);
+            ctx.GetFeatTree().AddFeatures(it);
+            for ( ;  it;  ++it) {  
                 item.Reset(x_NewFeatureItem(*it,
                                             ctx,
                                             &it->GetProduct(),

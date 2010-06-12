@@ -175,8 +175,10 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     SAnnotSelector sel = SetAnnotSelector();
     sel.SetResolveAll();
 
+    /**
     CFeat_CI feat_iter(seq, sel);
     m_FeatTree.AddFeatures(feat_iter);
+    **/
 }
 
 
