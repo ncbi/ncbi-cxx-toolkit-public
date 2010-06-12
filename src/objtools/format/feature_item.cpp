@@ -49,6 +49,8 @@
 #include <objects/seq/Heterogen.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -1067,20 +1069,30 @@ void CFeatureItem::x_AddQualPseudo(
 void CFeatureItem::x_AddQualSeqfeatNote()
 //  ----------------------------------------------------------------------------
 {
-    if ( ! m_Feat.IsSetComment() ) {
-        return;
-    }
-    string comment = m_Feat.GetComment();
+    if (m_Feat.IsSetComment()) {
+        string comment = m_Feat.GetComment();
 
-    if ( ! comment.empty() ) {
-        bool bAddPeriod = RemovePeriodFromEnd( comment, true );
-        CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
-        if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
-//fl        if ( bAddPeriod ) {
-            seqfeat_note->SetAddPeriod();
+        if ( ! comment.empty() ) {
+            bool bAddPeriod = RemovePeriodFromEnd( comment, true );
+            CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
+            if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
+                seqfeat_note->SetAddPeriod();
+            }
+            x_AddQual( eFQ_seqfeat_note, seqfeat_note );
         }
-        x_AddQual( eFQ_seqfeat_note, seqfeat_note );
     }
+
+    /// also scan the annot to see if there is a comment there
+    if (m_Feat.GetAnnot().Seq_annot_IsSetDesc()) {
+        ITERATE (CSeq_annot::TDesc::Tdata, it,
+                 m_Feat.GetAnnot().Seq_annot_GetDesc().Get()) {
+            if ((*it)->IsComment()) {
+                x_AddQual(eFQ_seqfeat_note,
+                          new CFlatStringQVal((*it)->GetComment()));
+            }
+        }
+    }
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -1398,22 +1410,6 @@ void CFeatureItem::x_AddQuals(
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
 
     //
-    //  Collect qualifiers that are common to most feature types:
-    //
-    x_AddQualPartial( ctx );
-    x_AddQualDbXref( ctx );
-    x_AddQualExt();
-    x_AddQualExpInv( ctx );
-    x_AddQualCitation();
-    x_AddQualExceptions( ctx );
-    x_AddQualNote( gene_feat );
-    x_AddQualOldLocusTag( gene_feat );
-    x_AddQualDb( gene_ref );
-    x_AddQualGeneXref( gene_ref, gene_feat );
-    x_AddQualOperon( ctx, subtype );
-    x_AddQualsGene( gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
-
-    //
     //  Collect qualifiers that are specific to a single or just a few feature
     //  types:
     //
@@ -1439,6 +1435,22 @@ void CFeatureItem::x_AddQuals(
     default:
         break;
     }
+
+    //
+    //  Collect qualifiers that are common to most feature types:
+    //
+    x_AddQualPartial( ctx );
+    x_AddQualDbXref( ctx );
+    x_AddQualExt();
+    x_AddQualExpInv( ctx );
+    x_AddQualCitation();
+    x_AddQualExceptions( ctx );
+    x_AddQualNote( gene_feat );
+    x_AddQualOldLocusTag( gene_feat );
+    x_AddQualDb( gene_ref );
+    x_AddQualGeneXref( gene_ref, gene_feat );
+    x_AddQualOperon( ctx, subtype );
+    x_AddQualsGene( gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
 
     x_AddQualPseudo( ctx, type, subtype, pseudo );
     x_AddQualSeqfeatNote();
@@ -1545,10 +1557,7 @@ void CFeatureItem::x_AddQualsRna(
                                 CRef<CSeq_id> acc_id(new CSeq_id(acc));
                                 x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
                             }
-                            if ( !feat.IsSetDbxref() ) {
-                                x_AddQual(eFQ_db_xref,
-                                          new CFlatSeqIdQVal(*sip, true));
-                            }
+                            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
                         }
                     }
                 }
@@ -2418,6 +2427,7 @@ void CFeatureItem::x_AddQualsGene(
     if ( ! gene_ref && gene_feat ) {
         gene_ref = & gene_feat->GetData().GetGene();
     }
+
     if ( ! gene_ref || gene_ref->IsSuppressed() ) {
         return;
     }
@@ -2438,15 +2448,15 @@ void CFeatureItem::x_AddQualsGene(
     if ( !from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if ( locus != 0 ) {
             m_Gene = *locus;
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         } 
         else if ( ( desc != 0 ) && (subtype != CSeqFeatData::eSubtype_repeat_region) ) {
             m_Gene = *desc;
-            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         }
         else if (syn != NULL) {
             CGene_ref::TSyn syns = *syn;
             m_Gene = syns.front();
+        }
+        if ( !m_Gene.empty() ) {
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
         }
     }
@@ -4170,6 +4180,7 @@ void CSourceFeatureItem::x_AddQuals(CBioseqContext& ctx)
     if (m_Feat.IsSetDbxref()) {
         x_AddQual(eSQ_org_xref, new CFlatXrefQVal(m_Feat.GetDbxref()));
     }
+
     // add qualifiers from biosource fields
     x_AddQuals(data.GetBiosrc(), ctx);
 }
