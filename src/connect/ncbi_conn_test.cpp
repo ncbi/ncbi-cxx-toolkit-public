@@ -67,8 +67,10 @@ inline bool operator > (const STimeout* t1, const STimeout& t2)
 }
 
 
-CConnTest::CConnTest(const STimeout* timeout, CNcbiOstream* out)
-    : m_Out(out), m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
+CConnTest::CConnTest(const STimeout* timeout,
+                     CNcbiOstream* out, SIZE_TYPE linelen)
+    : m_Linelen(linelen), m_Out(out),
+      m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
       m_FWProxy(false), m_Forced(false), m_End(false)
 {
     memset(&m_TimeoutValue, 0, sizeof(m_TimeoutValue));
@@ -671,11 +673,116 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
 }
 
 
-static list<string>& s_Justify(const string& str,
-                               SIZE_TYPE     width,
-                               list<string>& par,
-                               const string* pfx  = 0,
-                               const string* pfx1 = 0)
+void CConnTest::PreCheck(EStage/*stage*/, unsigned int/*step*/,
+                         const string& title)
+{
+    m_End = false;
+
+    if (!m_Out)
+        return;
+
+    list<string> stmt;
+    NStr::Split(title, "\n", stmt);
+    SIZE_TYPE size = stmt.size();
+    *m_Out << NcbiEndl << stmt.front() << '.';
+    stmt.pop_front();
+    if (size > 1) {
+        ERASE_ITERATE(list<string>, str, stmt) {
+            if (str->empty())
+                stmt.erase(str);
+        }
+        if (stmt.size()) {
+            *m_Out << NcbiEndl;
+            NON_CONST_ITERATE(list<string>, str, stmt) {
+                NStr::TruncateSpacesInPlace(*str);
+                str->append(1, '.');
+                list<string> par;
+                Justify(*str, m_Linelen, par, kEmptyStr, string(4, ' '));
+                ITERATE(list<string>, line, par) {
+                    *m_Out << NcbiEndl << *line;
+                }
+            }
+        }
+        *m_Out << NcbiEndl;
+    } else
+        *m_Out << ".." << NcbiFlush;
+}
+
+
+void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
+                          EIO_Status status, const string& reason)
+{
+    bool end = m_End;
+    m_End = true;
+
+    if (!m_Out)
+        return;
+
+    if (status == eIO_Success) {
+        *m_Out << "\n\t"[!end] << reason << '!' << NcbiEndl;
+        return;
+    }
+
+    list<string> stmt;
+    NStr::Split(reason, "\n", stmt);
+    ERASE_ITERATE(list<string>, str, stmt) {
+        if (str->empty())
+            stmt.erase(str);
+    }
+
+    if (!end  ||  !stmt.size()) {
+        *m_Out << "\n\t"[!end] << "FAILED (" << IO_StatusStr(status) << ')';
+        if (stmt.size()) {
+            const string& where = GetCheckPoint();
+            if (!where.empty())
+                *m_Out << ':' << NcbiEndl << string(4, ' ') << where;
+            *m_Out << NcbiEndl;
+        }
+    }
+
+    unsigned int n = 0;
+    NON_CONST_ITERATE(list<string>, str, stmt) {
+        NStr::TruncateSpacesInPlace(*str);
+        str->append(1, '.');
+        string pfx1, pfx;
+        if (!end) {
+            pfx.assign(4, ' ');
+            if (stmt.size() > 1) {
+                char buf[40];
+                pfx1.assign(buf, ::sprintf(buf, "%2d. ", ++n));
+            } else
+                pfx1.assign(pfx);
+        }
+        list<string> par;
+        Justify(*str, m_Linelen, par, pfx, pfx1);
+        ITERATE(list<string>, line, par) {
+            *m_Out << NcbiEndl << *line;
+        }
+    }
+    *m_Out << NcbiEndl;
+}
+
+
+EIO_Status CConnTest::x_CheckTrap(string* reason)
+{
+    EIO_Status status = eIO_NotSupported;
+    string temp("Runaway check");
+    m_CheckPoint.clear();
+
+    PreCheck(EStage(0), 0, temp);
+    PostCheck(EStage(0), 0, status, "Check usage");
+
+    if (reason)
+        reason->clear();
+    return eIO_NotSupported;
+}
+
+
+list<string>& CConnTest::Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string* pfx,
+                                 const string* pfx1)
 {
     if (!pfx)
         pfx = &kEmptyStr;
@@ -739,131 +846,6 @@ static list<string>& s_Justify(const string& str,
         p = pfx;
     }
     return par;
-}
-
-
-static inline list<string> s_Justify(const string& str,
-                                     SIZE_TYPE     width,
-                                     list<string>& par,
-                                     const string& pfx,
-                                     const string* pfx1 = 0)
-{
-    return s_Justify(str, width, par, &pfx, pfx1);
-}
-
-
-static inline list<string> s_Justify(const string& str,
-                                     SIZE_TYPE     width,
-                                     list<string>& par,
-                                     const string& pfx,
-                                     const string& pfx1)
-{
-    return s_Justify(str, width, par, &pfx, &pfx1);
-}
-
-
-void CConnTest::PreCheck(EStage/*stage*/, unsigned int/*step*/,
-                         const string& title)
-{
-    m_End = false;
-
-    if (!m_Out)
-        return;
-
-    list<string> stmt;
-    NStr::Split(title, "\n", stmt);
-    SIZE_TYPE size = stmt.size();
-    *m_Out << NcbiEndl << stmt.front() << '.';
-    stmt.pop_front();
-    if (size > 1) {
-        ERASE_ITERATE(list<string>, str, stmt) {
-            if (str->empty())
-                stmt.erase(str);
-        }
-        if (stmt.size()) {
-            *m_Out << NcbiEndl;
-            NON_CONST_ITERATE(list<string>, str, stmt) {
-                NStr::TruncateSpacesInPlace(*str);
-                str->append(1, '.');
-                list<string> par;
-                s_Justify(*str, 72, par, kEmptyStr, string(4, ' '));
-                ITERATE(list<string>, line, par) {
-                    *m_Out << NcbiEndl << *line;
-                }
-            }
-        }
-        *m_Out << NcbiEndl;
-    } else
-        *m_Out << ".." << NcbiFlush;
-}
-
-
-void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
-                          EIO_Status status, const string& reason)
-{
-    bool end = m_End;
-    m_End = true;
-
-    if (!m_Out)
-        return;
-
-    if (status == eIO_Success) {
-        *m_Out << "\n\t"[!end] << reason << '!' << NcbiEndl;
-        return;
-    }
-
-    list<string> stmt;
-    NStr::Split(reason, "\n", stmt);
-    ERASE_ITERATE(list<string>, str, stmt) {
-        if (str->empty())
-            stmt.erase(str);
-    }
-
-    if (!end  ||  !stmt.size()) {
-        *m_Out << "\n\t"[!end] << "FAILED (" << IO_StatusStr(status) << ')';
-        if (stmt.size()) {
-            const string& where = GetCheckPoint();
-            if (!where.empty())
-                *m_Out << ':' << NcbiEndl << string(4, ' ') << where;
-            *m_Out << NcbiEndl;
-        }
-    }
-
-    unsigned int n = 0;
-    NON_CONST_ITERATE(list<string>, str, stmt) {
-        NStr::TruncateSpacesInPlace(*str);
-        str->append(1, '.');
-        string pfx1, pfx;
-        if (!end) {
-            pfx.assign(4, ' ');
-            if (stmt.size() > 1) {
-                char buf[40];
-                pfx1.assign(buf, ::sprintf(buf, "%2d. ", ++n));
-            } else
-                pfx1.assign(pfx);
-        }
-        list<string> par;
-        s_Justify(*str, 72, par, pfx, pfx1);
-        ITERATE(list<string>, line, par) {
-            *m_Out << NcbiEndl << *line;
-        }
-    }
-    *m_Out << NcbiEndl;
-}
-
-
-EIO_Status CConnTest::x_CheckTrap(string* reason)
-{
-    EIO_Status status = eIO_NotSupported;
-    string temp("Runaway check");
-    m_CheckPoint.clear();
-
-    PreCheck(EStage(0), 0, temp);
-    PostCheck(EStage(0), 0, status, "Check usage");
-
-    if (reason)
-        reason->clear();
-    return eIO_NotSupported;
 }
 
 

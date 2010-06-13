@@ -49,6 +49,9 @@
 #include <math.h>
 
 
+#define PAGE_WIDTH  72
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -138,22 +141,28 @@ int CTest::Run(void)
     tmo.sec  = (unsigned int)  timeout;
     tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
 
-    CConnTest test(&tmo, &m_Tee);
+    CConnTest test(&tmo, &m_Tee, PAGE_WIDTH);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
     EIO_Status status = test.Execute(everything);
 
-    m_Tee << NcbiEndl;
     if (status != eIO_Success) {
-        m_Tee << "Check " << CDirEntry::CreateAbsolutePath(kLogfile)
-              << " for more information." << NcbiEndl << NcbiEndl <<
-            "  NOTE:  If  you choose to make its contents available to NCBI,\n"
-            "  please  keep  in  mind that the log can contain authorization\n"
-            "  credentials, which you may want to delete from the file prior\n"
-            "  to actually submitting it for review.";
+        list<string> msg;
+        CConnTest::Justify("Check " + CDirEntry::CreateAbsolutePath(kLogfile)
+                           + " for more information.", PAGE_WIDTH, msg);
+        msg.push_back(kEmptyStr);
+        CConnTest::Justify("If you choose to make its contents available to"
+                           " NCBI, please keep in mind that the log can"
+                           " contain authorization credentials, which you may"
+                           " want to delete from the file prior to actually"
+                           " submitting it for review.", PAGE_WIDTH, msg,
+                           "      ", "NOTE: ");
+        ITERATE(list<string>, line, msg) {
+            m_Tee << NcbiEndl << *line;
+        }
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
-        m_Tee << "NCBI Connectivity Test PASSED!";
+        m_Tee << NcbiEndl << "NCBI Connectivity Test PASSED!";
     }
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 

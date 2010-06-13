@@ -34,8 +34,10 @@
  *
  */
 
+#include <corelib/ncbistr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <string>
+
 
 /** @addtogroup Utility
  *
@@ -71,7 +73,8 @@ public:
     ///   test results get posted to the stream pointed to by this parameter;
     ///   no output is produced if "out" is NULL.
     ///
-    CConnTest(const STimeout* timeout = kDefaultTimeout, CNcbiOstream* os = 0);
+    CConnTest(const STimeout* timeout = kDefaultTimeout,
+              CNcbiOstream* os = 0, SIZE_TYPE linelen = 72);
 
     virtual ~CConnTest() { /*nothing*/ }
 
@@ -169,7 +172,7 @@ protected:
     /// while a failing check can supply multiple lines (as an extended
     /// detailed explanation) separated with "\n".
     /// The default callback does the following:
-    ///   For a succeeding check it prints the contents of "reason" and returns;
+    ///   For a succeeding check it prints contents of "reason" and returns;
     ///   For a failing check, it prints the word "FAILED" followed by textual
     ///     representation of "status" and the return value of GetCheckPoint()
     ///     if non-empty.  It then prints each line of explanation (taken from
@@ -196,6 +199,7 @@ protected:
     /// As supplied in constructor
     static const STimeout kTimeout;
     const STimeout*       m_Timeout;
+    SIZE_TYPE             m_Linelen;
     CNcbiOstream*         m_Out;
 
     /// Certain properties of communication as determined by configuration
@@ -217,6 +221,32 @@ private:
     EIO_Status x_CheckTrap(string* reason);
     /// Return timeout suggestion
     string     x_TimeoutMsg(void);
+
+public:
+    /// Helpers
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string* pfx  = 0,
+                                 const string* pfx1 = 0);
+
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string& pfx,
+                                 const string* pfx1 = 0)
+    {
+        return Justify(str, width, par, &pfx, pfx1);
+    }
+
+    static list<string>& Justify(const string& str,
+                                 SIZE_TYPE     width,
+                                 list<string>& par,
+                                 const string& pfx,
+                                 const string& pfx1)
+    {
+        return Justify(str, width, par, &pfx, &pfx1);
+    }
 };
 
 
