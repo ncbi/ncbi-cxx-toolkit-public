@@ -42,6 +42,12 @@
  *
  */
 
+#ifdef    _FORTIFY_SOURCE
+/* Cancel __wur (warn unused result) ill effects in GCC */
+#  undef  _FORTIFY_SOURCE
+#  define _FORTIFY_SOURCE 0
+#endif  /*_FORTIFY_SOURCE*/
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbimisc.hpp>

@@ -23,10 +23,18 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Mike DiCuccio, Vladimir Ivanov
+ * Authors:  Anton Lavrentiev, Mike DiCuccio, Vladimir Ivanov
  *
+ * File Description:
+ *   Inter-process pipe with a spawned process.
  *
  */
+
+#ifdef    _FORTIFY_SOURCE
+/* Cancel __wur (warn unused result) ill effects in GCC */
+#  undef  _FORTIFY_SOURCE
+#  define _FORTIFY_SOURCE 0
+#endif  /*_FORTIFY_SOURCE*/
 
 #include <ncbi_pch.hpp>
 #include <connect/error_codes.hpp>
@@ -141,7 +149,7 @@ static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Class CNamedPipeHandle handles forwarded requests from CPipe.
+// Class CPipeHandle handles forwarded requests from CPipe.
 // This class is reimplemented in a platform-specific fashion where needed.
 //
 
