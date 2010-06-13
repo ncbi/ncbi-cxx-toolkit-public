@@ -30,11 +30,11 @@
  *
  */
 
-#ifdef    _FORTIFY_SOURCE
 /* Cancel __wur (warn unused result) ill effects in GCC */
-#  undef  _FORTIFY_SOURCE
-#  define _FORTIFY_SOURCE 0
-#endif  /*_FORTIFY_SOURCE*/
+#ifdef   _FORTIFY_SOURCE
+#  undef _FORTIFY_SOURCE
+#endif /*_FORTIFY_SOURCE*/
+#define  _FORTIFY_SOURCE 0
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
