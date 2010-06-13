@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anton Lavrentiev
+ * Author:  Anton Lavrentiev
  *
  * File Description:
  *   NCBI connectivity test suite.
