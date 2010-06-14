@@ -78,7 +78,7 @@ public:
         eRefTrackStatus_Provisional,
         eRefTrackStatus_Predicted,
         eRefTrackStatus_Validated,
-        eRefTrackStatus_Reviewd,
+        eRefTrackStatus_Reviewed,
         eRefTrackStatus_Model,
         eRefTrackStatus_WGS
     };
