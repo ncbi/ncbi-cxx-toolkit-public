@@ -102,6 +102,30 @@ static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly)
 }
 
 
+static bool s_IsRefSeq_NG(CBioseqContext& ctx)
+{
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
+        const CSeq_id& id = **it;
+        switch (id.Which()) {
+        case CSeq_id::e_Other:
+            {{
+                 const CTextseq_id* tsid = id.GetTextseq_Id();
+                 if (tsid  &&  tsid->IsSetAccession()  &&
+                     NStr::StartsWith(tsid->GetAccession(), "NG_")) {
+                     return true;
+                 }
+             }}
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return false;
+}
+
+
 void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const CUser_object* uo = 0;
@@ -113,7 +137,8 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
             break;
         }
     }
-    if ( !s_IsTPA(ctx, uo != 0) ) {
+    if ( !s_IsTPA(ctx, uo != 0)  &&
+         !(ctx.IsRefSeq()  &&  s_IsRefSeq_NG(ctx)) ) {
         return;
     }
     CBioseq_Handle& seq = ctx.GetHandle();
