@@ -263,7 +263,7 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
         } else if (NStr::EqualNocase(status, "Validated")) {
             retval = eRefTrackStatus_Validated;
         } else if (NStr::EqualNocase(status, "Reviewed")) {
-            retval = eRefTrackStatus_Reviewd;
+            retval = eRefTrackStatus_Reviewed;
         } else if (NStr::EqualNocase(status, "Model")) {
             retval = eRefTrackStatus_Model;
         } else if (NStr::EqualNocase(status, "WGS")) {
@@ -285,19 +285,13 @@ string CCommentItem::GetStringForRefTrack
  ECommentFormat format)
 {
     if ( !uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
-         uo.GetType().GetStr() != "RefGeneTracking" ) {
+         uo.GetType().GetStr() != "RefGeneTracking") {
         return kEmptyStr;
     }
 
     TRefTrackStatus status = eRefTrackStatus_Unknown;
     string status_str;
-    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
-        status = GetRefTrackStatus(uo, &status_str);
-        if (status != eRefTrackStatus_Unknown) {
-            break;
-        }
-    }
-    
+    status = GetRefTrackStatus(uo, &status_str);
     if ( status == eRefTrackStatus_Unknown ) {
         return kEmptyStr;
     }
@@ -335,10 +329,9 @@ string CCommentItem::GetStringForRefTrack
             << "however, the coding sequence is predicted.";
         break;
     case eRefTrackStatus_Validated:
-        oss << "This record has undergone preliminary review of the sequence, "
-            << "but has not yet been subject to final review.";
+        oss << "This record has undergone validation or preliminary review.";
         break;
-    case eRefTrackStatus_Reviewd:
+    case eRefTrackStatus_Reviewed:
         oss << "This record has been curated by " 
             << (collaborator.empty() ? "NCBI staff" : collaborator) << '.';
         break;
@@ -353,7 +346,7 @@ string CCommentItem::GetStringForRefTrack
         break;
     }
 
-    if ( status != eRefTrackStatus_Reviewd  &&  !collaborator.empty() ) {
+    if ( status != eRefTrackStatus_Reviewed  &&  !collaborator.empty() ) {
         oss << " This record has been curated by " << collaborator << '.';
     }
 
@@ -397,6 +390,23 @@ string CCommentItem::GetStringForRefTrack
             NcbiId(oss, acc, format == CCommentItem::eFormat_Html);
         }
         oss << '.';
+    }
+
+    /// check for a concomitant RefSeqGene item
+    for (CSeqdesc_CI desc_it(bsh, CSeqdesc::e_User);
+         desc_it;  ++desc_it) {
+        const CUser_object& obj = desc_it->GetUser();
+        if (obj.IsSetType()  &&  obj.GetType().IsStr()  &&
+            obj.GetType().GetStr() == "RefSeqGene") {
+            CConstRef<CUser_field> f = obj.GetFieldRef("Status");
+            if (f  &&  f->GetData().IsStr()) {
+                const string& status = f->GetData().GetStr();
+                if (status == "Reference Standard") {
+                    oss << "~This sequence is a reference standard in "
+                        "the RefSeqGene project.";
+                }
+            }
+        }
     }
 
     return CNcbiOstrstreamToString(oss);
@@ -922,7 +932,7 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
     case eReplaced_by:
         x_SetComment(s_CreateHistCommentString(
             "[WARNING] On",
-            "this sequence was replaced by a newer version",
+            "this sequence was replaced by ",
             m_Hist->GetReplaced_by(),
             ctx.Config().DoHTML()));
         break;
