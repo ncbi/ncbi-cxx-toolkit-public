@@ -500,13 +500,8 @@ static bool s_SkipFeature(const CMappedFeat& feat,
 
 static bool s_IsLegalECNumber(const string& ec_number)
 {
-    ITERATE (string, it, ec_number) {
-        if (!isdigit((unsigned char)(*it))  &&  *it != '.'  &&  *it != '-') {
-            return false;
-        }
-    }
-
-    return true;
+    string::size_type pos = ec_number.find_first_not_of("0123456789.-");
+    return (pos == string::npos);
 }
 
 
@@ -1717,7 +1712,7 @@ void CFeatureItem::x_AddQualTranslation(
     string translation;
     if ( cfg.AlwaysTranslateCDS() || (cfg.TranslateIfNoProduct() && !bsh) ) {
         CSeqTranslator::Translate(m_Feat.GetOriginalFeature(), scope,
-                                  translation );
+                                  translation, false /* don't include stops */);
     }
     else if ( bsh ) {
         CSeqVector seqv = bsh.GetSeqVector();
@@ -1956,7 +1951,7 @@ void CFeatureItem::x_AddQualProteinId(
     CConstRef<CSeq_id> protId )
 //  ----------------------------------------------------------------------------
 {
-    if ( protHandle || !protId ) {
+    if ( !protHandle || !protId ) {
         return;
     }
 
@@ -2046,7 +2041,7 @@ void CFeatureItem::x_AddQualProtEcNumber(
     const CProt_ref* protRef )
 //  ----------------------------------------------------------------------------
 {
-    if ( !protRef || protRef->GetEc().empty() ) {
+    if ( !protRef || !protRef->IsSetEc()  ||  protRef->GetEc().empty() ) {
         return;
     }
 
@@ -2070,7 +2065,6 @@ void CFeatureItem::x_AddQualsCdregion(
     const CProt_ref* protRef = 0;
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
-    CBioseq_Handle prot;
 
     x_AddQualCodeBreak( cdr, ctx );
     x_AddQualTranslationTable( cdr, ctx );
@@ -2084,11 +2078,13 @@ void CFeatureItem::x_AddQualsCdregion(
 
     // protein qualifiers
     if (m_Feat.IsSetProduct()) {
+        CBioseq_Handle prot =
+            ctx.GetScope().GetBioseqHandle(m_Feat.GetProduct());
         x_GetAssociatedProtInfo( ctx, prot, protRef, protFeat, prot_id );
         x_AddQualProtComment( prot );
         x_AddQualProtMethod( prot );
         x_AddQualProtNote( protRef, protFeat );
-        x_AddQualsProductId( prot );
+        //x_AddQualsProductId( prot );
         x_AddQualProteinId( ctx, prot, prot_id );
         x_AddQualTranslation( prot, ctx, pseudo );
     }
@@ -2247,7 +2243,7 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                x_AddQual(eFQ_exception_note,
+                x_AddQual(eFQ_region,
                           new CFlatStringQVal(f->GetData().GetStr()));
                 found = true;
                 break;
@@ -2608,7 +2604,7 @@ void CFeatureItem::x_AddQualsProt(
                 }
             }
         }
-        if (!pref.GetEc().empty()) {
+        if (pref.IsSetEc()  &&  !pref.GetEc().empty()) {
             ITERATE(CProt_ref::TEc, ec, pref.GetEc()) {
                 if (s_IsLegalECNumber(*ec)) {
                     x_AddQual(eFQ_prot_EC_number, new CFlatStringQVal(*ec));
@@ -2693,7 +2689,7 @@ void CFeatureItem::x_AddQualsProt(
              }
          }}
 
-        if (comp == CMolInfo::eCompleteness_complete) {
+        if (true ||  comp == CMolInfo::eCompleteness_complete) {
             if (!has_mat_peptide  ||  !has_signal_peptide) {
 
                 wt = GetProteinWeight(ctx.GetHandle(), loc);
@@ -2970,6 +2966,14 @@ void CFeatureItem::x_ImportQuals(
 
         case eFQ_rpt_unit_range:
             x_AddQual(slot, new CFlatStringQVal(val, CFormatQual::eUnquoted));
+            break;
+
+        case eFQ_replace:
+            {{
+                 string s(val);
+                 NStr::ToLower(s);
+                 x_AddQual(slot, new CFlatStringQVal(s));
+             }}
             break;
 
         default:
