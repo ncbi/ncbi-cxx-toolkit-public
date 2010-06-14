@@ -657,7 +657,7 @@ public:
     /// Simply invoking the throw keyword with no arguments is a
     /// better option when available (within a catch block), but there
     /// are circumstances in which it is not.
-    void Throw(void) const;
+    NCBI_NORETURN virtual void Throw(void) const;
 
     // ---- Reporting --------------
 
@@ -833,7 +833,7 @@ const TTo* UppermostCast(const TFrom& from)
 }
 
 #define NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
-    virtual void Throw(void) const \
+    NCBI_NORETURN virtual void Throw(void) const \
     { \
         this->x_ThrowSanityCheck(typeid(exception_class), #exception_class); \
         throw *this; \
