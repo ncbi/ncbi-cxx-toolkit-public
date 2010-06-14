@@ -1707,21 +1707,14 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
 
 SAnnotSelector s_GetCdsProductSel(CBioseqContext& ctx)
 {
-    SAnnotSelector sel;
-    bool initialized = false;
-
-    if (!initialized) {
-        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_site)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_bond)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
-           .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
-        initialized = true;
-    }
-    sel.SetLimitTSE(ctx.GetHandle().GetTSE_Handle());
-
+    SAnnotSelector sel = ctx.SetAnnotSelector();
+    sel.SetFeatSubtype(CSeqFeatData::eSubtype_region)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_site)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_bond)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
     return sel;
 }
 
