@@ -583,7 +583,7 @@ CDB_UserHandler_Exception::~CDB_UserHandler_Exception(void)
 bool
 CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
 {
-    if (!ex)
+    if (!ex  ||  ex->GetSeverity() == eDiag_Info)
         return false;
 
     // Ignore errors with ErrorCode set to 0
@@ -598,17 +598,14 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
         return true;
     }
 
-    if (ex->GetSeverity() != eDiag_Info) {
-        string msg =
-            " SERVER: '" + ex->GetServerName() +
-            "' USER: '" + ex->GetUserName() + "'" +
-            (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-             ex->GetExtraMsg() + "'")
-            ;
+    string msg =
+        " SERVER: '" + ex->GetServerName() +
+        "' USER: '" + ex->GetUserName() + "'" +
+        (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+         ex->GetExtraMsg() + "'")
+        ;
 
-        ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
-    }
-
+    ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
     ex->Throw();
 
     return true;
