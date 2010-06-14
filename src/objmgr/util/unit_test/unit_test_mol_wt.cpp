@@ -73,15 +73,13 @@ BOOST_AUTO_TEST_CASE(Test_RawString)
 {
     string t1("ABCDEFGHIKLMNPQRSTVWYZUOJ");
     double wt = GetProteinWeight(t1);
-    Int8 val = Int8(wt * 1e10);
-    cerr << "weight = " << wt << " val = " << val << endl;
-    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(31404601500000) /* 3140.46015 */);
+    cerr << "weight = " << wt << endl;
+    BOOST_CHECK_CLOSE(wt, 3140.46, 0.001);
 
     string t2("MABCDEFGHIKLMNPQRSTVWYZUOJ");
     wt = GetProteinWeight(t2);
-    val = Int8(wt * 1e10);
-    cerr << "weight = " << wt << " val = " << val << endl;
-    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(32716571000000) /* 3271.6571 */);
+    cerr << "weight = " << wt << endl;
+    BOOST_CHECK_CLOSE(wt, 3271.65, 0.001);
 
 }
 
@@ -94,11 +92,7 @@ BOOST_AUTO_TEST_CASE(Test_Bioseq)
     CScope scope(*CObjectManager::GetInstance());
     CBioseq_Handle bsh = scope.AddBioseq(*bs);
     double wt = GetProteinWeight(bsh);
-
-    /// avoid comparisons as a double
-    Int8 val = Int8(wt * 1e10);
-    cerr << "weight = " << wt << " val = " << val << endl;
-    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(667539892500000) /* 66753.98925 */);
+    BOOST_CHECK_CLOSE(wt, 66753.98925, 0.001);
 
     ///
     /// check after setting completeness
@@ -108,11 +102,8 @@ BOOST_AUTO_TEST_CASE(Test_Bioseq)
     bs->SetDescr().Set().push_back(molinfo);
 
     wt = GetProteinWeight(bsh);
-
-    /// avoid comparisons as a double
-    val = Int8(wt * 1e10);
-    cerr << "weight = " << wt << " val = " << val << endl;
-    BOOST_CHECK_EQUAL(val, NCBI_CONST_INT8(666227923000000) /* 66622.7923 */);
+    cerr << "weight = " << wt << endl;
+    BOOST_CHECK_CLOSE(wt, 66622.7923, 0.001);
 
 }
 
