@@ -3235,6 +3235,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                 continue;
             }
          } else if (is_greedy) {
+            if (init_hsp->ungapped_data) {
+                init_hsp->offsets.qs_offsets.q_off = 
+                    init_hsp->ungapped_data->q_start + init_hsp->ungapped_data->length/2;
+                init_hsp->offsets.qs_offsets.s_off = 
+                    init_hsp->ungapped_data->s_start + init_hsp->ungapped_data->length/2;
+            }
             status = BLAST_GreedyGappedAlignment(
                          query_tmp.sequence, subject->sequence, 
                          query_tmp.length, subject->length, 
