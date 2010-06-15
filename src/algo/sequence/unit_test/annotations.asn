@@ -5116,7 +5116,7 @@ Seq-annot ::= {
         },
         {
           from 68328668,
-          to 68328825,
+          to 68328823,
           strand minus,
           id other {
             accession "NT_007933",
@@ -5320,7 +5320,7 @@ Seq-annot ::= {
         },
         {
           from 68328668,
-          to 68328825,
+          to 68328823,
           strand minus,
           id other {
             accession "NT_007933",
@@ -5540,7 +5540,7 @@ Seq-annot ::= {
         },
         {
           from 68328668,
-          to 68328825,
+          to 68328823,
           strand minus,
           id other {
             accession "NT_007933",
@@ -5754,7 +5754,7 @@ Seq-annot ::= {
         },
         {
           from 68328668,
-          to 68328825,
+          to 68328823,
           strand minus,
           id other {
             accession "NT_007933",

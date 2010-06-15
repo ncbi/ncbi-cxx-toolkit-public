@@ -9043,7 +9043,7 @@ Seq-align ::= {
         product-start nucpos 669,
         product-end nucpos 824,
         genomic-start 68328668,
-        genomic-end 68328825,
+        genomic-end 68328823,
         parts {
           match 156
         },
@@ -9659,7 +9659,7 @@ Seq-align ::= {
         product-start nucpos 669,
         product-end nucpos 824,
         genomic-start 68328668,
-        genomic-end 68328825,
+        genomic-end 68328823,
         parts {
           match 156
         },
