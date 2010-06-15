@@ -45,5 +45,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_PASSWORD "password"
 /* DBAPI driver name */
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_DRIVER   "driver"
+/* exclude WGS master descriptors */
+#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_EXCL_WGS_MASTER "exclude_wgs_master"
 
 #endif

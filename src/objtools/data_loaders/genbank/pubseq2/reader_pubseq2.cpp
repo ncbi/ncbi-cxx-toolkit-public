@@ -80,6 +80,7 @@
 #define DEFAULT_DB_DRIVER   "ftds;ctlib"
 #define DEFAULT_NUM_CONN    2
 #define MAX_MT_CONN         5
+#define DEFAULT_EXCL_WGS_MASTER false
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq2
 
@@ -99,7 +100,8 @@ CPubseq2Reader::CPubseq2Reader(int max_connections,
                                const string& dbapi_driver)
     : m_Server(server) , m_User(user), m_Password(pswd),
       m_DbapiDriver(dbapi_driver),
-      m_Context(0)
+      m_Context(0),
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
 {
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
@@ -128,7 +130,8 @@ CPubseq2Reader::CPubseq2Reader(int max_connections,
 
 CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
                              const string& driver_name)
-    : m_Context(0)
+    : m_Context(0),
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
 {
     CConfig conf(params);
     m_Server = conf.GetString(
@@ -159,6 +162,11 @@ CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
                    "without MT-safe DB library");
     }
 #endif
+    m_ExclWGSMaster = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ2_PARAM_EXCL_WGS_MASTER,
+        CConfig::eErr_NoThrow,
+        DEFAULT_EXCL_WGS_MASTER);
 
     CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
@@ -299,6 +307,14 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
     if ( GetDebugLevel() >= 2 ) {
         NcbiCout << "CPubseq2Reader::Connected to " << conn->ServerName()
                  << NcbiEndl;
+    }
+
+    if ( m_ExclWGSMaster ) {
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set exclude_wgs_master on"));
+        if ( cmd ) {
+            cmd->Send();
+            cmd->DumpResults();
+        }
     }
 
     try {

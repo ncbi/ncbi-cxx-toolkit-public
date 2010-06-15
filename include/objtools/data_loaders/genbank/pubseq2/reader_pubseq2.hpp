@@ -95,6 +95,8 @@ private:
 
     typedef map<TConn, SConnection> TConnections;
     TConnections                    m_Connections;
+
+    bool                      m_ExclWGSMaster;
 };
 
 END_SCOPE(objects)
