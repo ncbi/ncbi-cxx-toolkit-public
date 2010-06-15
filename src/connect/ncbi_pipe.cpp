@@ -30,13 +30,12 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 /* Cancel __wur (warn unused result) ill effects in GCC */
 #ifdef   _FORTIFY_SOURCE
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
-
-#include <ncbi_pch.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <connect/ncbi_socket.h>
