@@ -132,6 +132,10 @@ public:
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 
+    /// Get Bioseq handle from the TSE of this Seq-entry
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id) const;
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id) const;
+
     /// Get 'edit' version of handle
     CSeq_entry_EditHandle GetEditHandle(void) const;
 

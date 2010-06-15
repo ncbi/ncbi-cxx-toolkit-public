@@ -132,6 +132,18 @@ CSeq_entry_Handle CSeq_entry_Handle::GetTopLevelEntry(void) const
 }
 
 
+CBioseq_Handle CSeq_entry_Handle::GetBioseqHandle(const CSeq_id& id) const
+{
+    return GetTSE_Handle().GetBioseqHandle(id);
+}
+
+
+CBioseq_Handle CSeq_entry_Handle::GetBioseqHandle(const CSeq_id_Handle& id) const
+{
+    return GetTSE_Handle().GetBioseqHandle(id);
+}
+
+
 CSeq_entry_Handle CSeq_entry_Handle::GetSingleSubEntry(void) const
 {
     if ( !IsSet() ) {
