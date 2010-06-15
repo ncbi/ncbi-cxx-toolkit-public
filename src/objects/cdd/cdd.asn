@@ -280,7 +280,19 @@ Align-annot ::= SEQUENCE {
                                         -- be used for labels in visualization
   evidence      SEQUENCE OF Feature-evidence OPTIONAL,  -- evidence we can
                                                         -- compute with
-  type          INTEGER OPTIONAL        -- for typing annotated features
+  type          INTEGER OPTIONAL,       -- for typing annotated features
+                                        -- 0 .. no type assigned
+                                        -- 1 .. active site
+                                        -- 2 .. polypeptide binding site
+                                        -- 3 .. nucleic acid binding site
+                                        -- 4 .. ion binding site
+                                        -- 5 .. chemical binding site
+                                        -- 6 .. posttranslational modification site
+  aliases       SEQUENCE OF VisibleString OPTIONAL, -- adding more names for indexing
+  motif         VisibleString OPTIONAL, -- to validate mapping of sites
+  motifuse      INTEGER OPTIONAL        -- 0 for validation,
+                                        -- 1 for motif somewhere in seqloc
+                                        -- 2 for multiple motifs in seqloc
 }
 
 Align-annot-set ::= SEQUENCE OF Align-annot
@@ -480,7 +492,12 @@ Cdd-Project ::= SEQUENCE {
   cdcolor       SEQUENCE OF INTEGER,      -- colors  
   viewers       SEQUENCE OF Cdd-Viewer,   -- Sequence viewers
   log           VisibleString,            -- log
-  scripts       SEQUENCE OF Cdd-Script OPTIONAL    -- command scripts
+  scripts       SEQUENCE OF Cdd-Script OPTIONAL,    -- command scripts
+  id            Cdd-id-set  OPTIONAL,               -- to assign unique project id
+  rids          SEQUENCE OF VisibleString OPTIONAL, -- to store request IDs for batch CD-Searches
+  create-date   Date OPTIONAL,
+  update-date   Date OPTIONAL,
+  project-id    INTEGER OPTIONAL          -- for temporary tracking in the database
 }
 
 END
