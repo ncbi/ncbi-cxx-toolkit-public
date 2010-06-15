@@ -66,6 +66,9 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddKey("data-expected", "InputData",
                      "Expected Seq-annots produced from input alignments",
                      CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("data-out", "OutputData",
+                     "Seq-annots produced from input alignments",
+                     CArgDescriptions::eOutputFile);
 }
 
 BOOST_AUTO_TEST_CASE(TestUsingArg)
@@ -83,6 +86,14 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                                                            align_istr));
     auto_ptr<CObjectIStream> annot_is(CObjectIStream::Open(eSerial_AsnText,
                                                            annot_istr));
+    auto_ptr<CObjectOStream> annot_os;
+    if (args["data-out"]) {
+        CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
+        annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            annot_ostr));
+    }
+
+    int count = 0;
 
     while (align_istr  &&  annot_istr) {
 
@@ -105,14 +116,23 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             break;
         }
 
+        cerr << "Alignment "<< ++count <<  endl;
+
+        BOOST_CHECK_NO_THROW(align.Validate(true));
+
         CBioseq_set seqs;
         CSeq_annot actual_annot;
-        CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                             actual_annot, seqs);
+        BOOST_CHECK_NO_THROW(
+                             CGeneModel::CreateGeneModelFromAlign(align, scope,
+                                                                  actual_annot, seqs)
+                             );
 
         //cerr << MSerial_AsnText << actual_annot;
 
         *annot_is >> expected_annot;
+        if (annot_os.get() != NULL) {
+            *annot_os << actual_annot;
+        }
 
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
             actual_annot.GetData().GetFtable().begin();
