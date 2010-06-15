@@ -245,12 +245,39 @@ bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
     m_strId = "<unknown>";
 
     if ( feature.CanGetLocation() ) {
-        const CSeq_loc& loc = feature.GetLocation();
-        CScope& scope = m_Sah.GetScope();
-        CSeq_id_Handle idh = sequence::GetIdHandle(loc, &scope );
-        if (idh) {
-            m_strId.clear();
-            idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
+        const CSeq_loc& location = feature.GetLocation();
+        const CSeq_id* pId = location.GetId();
+        if(pId == NULL)
+            return true;    
+		switch ( pId->Which() ) {
+            
+            case CSeq_id::e_Local:
+                if ( pId->GetLocal().IsId() ) {
+                    m_strId = NStr::UIntToString( pId->GetLocal().GetId() );
+                }
+                else {
+                    m_strId = pId->GetLocal().GetStr();
+                }
+                break;
+
+            case CSeq_id::e_Gi:
+                m_strId = NStr::IntToString( pId->GetGi() );
+                break;
+
+            /*case CSeq_id::e_Other:
+                if ( pId->GetOther().CanGetAccession() ) {
+                    m_strId = pId->GetOther().GetAccession();
+                    if ( pId->GetOther().CanGetVersion() ) {
+                        m_strId += ".";
+                        m_strId += NStr::UIntToString( 
+                            pId->GetOther().GetVersion() ); 
+                    }
+                }
+                break;
+            */
+            default:
+			    m_strId = pId->GetSeqIdString(true);
+                break;
         }
     }
     return true;
@@ -500,12 +527,16 @@ CSeq_feat::TData::ESubtype CGff3WriteRecord::x_GetSubtypeOf(
 //  ----------------------------------------------------------------------------
 {
     CSeq_feat::TData::ESubtype subtype( CSeq_feat::TData::eSubtype_bad );
-    if ( id.Which() == CFeat_id::e_Local ) { 
-        CSeq_entry_Handle seh = m_Sah.GetTopLevelEntry();
-        CSeq_feat_Handle sfh = seh.GetTSE_Handle().GetFeatureWithId( 
-            CSeqFeatData::e_not_set, id.GetLocal() );
-        subtype = sfh.GetFeatSubtype();
-    }
+	if ( id.Which() == CFeat_id::e_Local ) { 
+       	CSeq_entry_Handle seh = m_Sah.GetTopLevelEntry();
+       	CSeq_feat_Handle sfh = seh.GetTSE_Handle().GetFeatureWithId( 
+           	CSeqFeatData::e_not_set, id.GetLocal() );
+       	if(sfh) {
+			subtype = sfh.GetFeatSubtype();
+		} else {
+        	ERR_POST(Warning << "CGff3WriteRecord::x_GetSubtypeOf: Feature could not be found.");
+		}
+	}
     return subtype;
 }
 
