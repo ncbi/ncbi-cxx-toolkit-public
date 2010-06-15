@@ -272,6 +272,7 @@ typedef pair<const char*, TSK> TSI;
 static const TSI sc_SatIndex[] = {
     TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT_CDD,  TRDR::eSubSat_CDD)),
     TSI("ANNOT:EXON", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_Exon)),
+    TSI("ANNOT:HPRD", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_HPRD)),
     TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
     TSI("ANNOT:microRNA", TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_microRNA)),
     TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),

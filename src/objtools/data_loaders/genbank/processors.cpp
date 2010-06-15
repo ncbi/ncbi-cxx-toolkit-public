@@ -1836,6 +1836,7 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
     case eSubSat_SNP:
     case eSubSat_SNP_graph:
     case eSubSat_MGC:
+    case eSubSat_HPRD:
     case eSubSat_tRNA:
     case eSubSat_STS:
     case eSubSat_microRNA:
@@ -1898,31 +1899,36 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         type.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
         db_name = "Annot:SNP";
         break;
+    case eSubSat_SNP_graph:
+        name.SetNamed("SNP");
+        type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+        db_name = "Annot:SNP graph";
+        break;
     case eSubSat_CDD:
         name.SetNamed("CDD");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
         more_types.push_back(SAnnotTypeSelector(CSeqFeatData::eSubtype_site));
         db_name = "Annot:CDD";
         break;
-    case eSubSat_SNP_graph:
-        name.SetNamed("SNP");
-        type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
-        db_name = "Annot:SNP graph";
-        break;
     case eSubSat_MGC:
         name.SetNamed("MGC");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
         db_name = "Annot:MGC";
         break;
-    case eSubSat_tRNA:
-        name.SetNamed("tRNA");
-        type.SetFeatSubtype(CSeqFeatData::eSubtype_tRNA);
-        db_name = "Annot:tRNA";
+    case eSubSat_HPRD:
+        name.SetNamed("HPRD");
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_site);
+        db_name = "Annot:HPRD";
         break;
     case eSubSat_STS:
         name.SetNamed("STS");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_STS);
         db_name = "Annot:STS";
+        break;
+    case eSubSat_tRNA:
+        name.SetNamed("tRNA");
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_tRNA);
+        db_name = "Annot:tRNA";
         break;
     case eSubSat_microRNA:
         name.SetNamed("other");
