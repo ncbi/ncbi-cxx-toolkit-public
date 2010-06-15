@@ -51,6 +51,14 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     const CSeq_loc&  loc = getGenomicLocation(s->GetSeq());
     addLoctoSimpleSeq(seq, loc);
     seqs.push_back(seq);
+    if(PrintDetails())
+      {
+      NcbiCerr << "DEBUG: CollectSimpleSeqs(): added loc to CDS: " 
+               << "(" << seq.name  << ")"
+               << "(" << printed_range(loc) << ")"
+               << "(" << seq.key << ":" << printed_range(seq) << ")"
+               <<  NcbiEndl;
+      }
     }
 // collect features from RNAs and genes
   string name;
@@ -69,6 +77,14 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
       gene.locus_tag = name;
       addLoctoSimpleSeq(gene, loc);
       genes.push_back(gene);
+      if(PrintDetails())
+      {
+      NcbiCerr << "DEBUG: CollectSimpleSeqs(): added loc to gene: " 
+               << "(" << name << ")"
+               << "(" << printed_range(loc) << ")"
+               << "(" << gene.key << ":" << printed_range(gene) << ")"
+               <<  NcbiEndl;
+      }
       continue;
       }
     else if(!f->GetData().IsRna()) continue;
@@ -141,9 +157,14 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
       string seq_range = printed_range(seq);
       if(PrintDetails()) 
         {
-        NcbiCerr << "DEBUG: CollectSimpleSeqs(): sliding seq " << seq_range << " reached gene " << gene_range << ", locus=" << gene->locus_tag << NcbiEndl;
+        NcbiCerr << "DEBUG: CollectSimpleSeqs(): sliding seq " << seq_range << "(key: " << seq->key << ") reached gene " << gene_range << "(key: " << gene->key << "), locus=" << gene->locus_tag << NcbiEndl;
         }
       seq_to  = seq->exons[seq->exons.size()-1].to;
+      if(seq->exons[0].strand != eNa_strand_plus) // JIRA-PR-147
+        {
+        seq_to   = seq->exons[0].to;
+        seq_from= seq->exons[seq->exons.size()-1].from;
+        }
       gene_to = gene->exons[gene->exons.size()-1].to;
       if(seq_to==gene_to && seq_from==gene_from)  // match
         { 
@@ -153,25 +174,42 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
       else gene++;
     
     }
-
+/////////////////////////////
 // now try to assign non-exact gene-CDS matches
+/////////////////////////////
   seq=seqs.begin();
   for(TSimpleSeqs::iterator gene = genes.begin(); gene!=genes.end(); )
     {
+    string gene_printed_range = printed_range(gene);
+    if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches: gene: " << gene_printed_range << NcbiEndl;
     int gene_from = gene->exons[0].from;
 // find first sequence that could match a gene
     TSimpleSeqs::iterator seq_start=seq;
     for(;seq_start!=seqs.end(); seq_start++)
        {
-       if(seq->locus_tag != "") continue; // this is done
-       if(gene_from<=seq_start->exons[0].from) break; // in case there are cross-origin seqs, they will be in the end of seqs list, so they will be tested the last, thus this incorrect sliding should be fine
+       if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: trying seq_start: " 
+                                   << printed_range(seq_start) << NcbiEndl;
+       if(seq_start->locus_tag != "") 
+         {
+         if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: " 
+                                     << seq->locus_tag << ", continue..."<<NcbiEndl;
+         continue; // this is done
+         }
+
+       int seq_from = seq_start->exons[0].strand == eNa_strand_plus ? seq_start->exons[0].from : seq_start->exons[seq_start->exons.size()-1].from;
+       if(gene_from<=seq_from) break; // in case there are cross-origin seqs, they will be in the end of seqs list, so they will be tested the last, thus this incorrect sliding should be fine
        }
     if(seq_start==seqs.end()) break; // done with seqs
 // now check if other ends fit
-    int seq_to = seq_start->exons[seq_start->exons.size()-1].to;
+    if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: found seq_start: " << printed_range(seq_start) << NcbiEndl;
+    int seq_to =  seq_start->exons[0].strand == eNa_strand_plus 
+      ? seq_start->exons[seq_start->exons.size()-1].to
+      : seq_start->exons[0].to;
     int gene_to = gene->exons[gene->exons.size()-1].to;
+    if ( gene->exons[0].strand != eNa_strand_plus ) gene_to = gene->exons[0].to;
     if (seq_to > gene_to) 
       {
+      if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: sequences jumped over this gene, this gene does not fit any sequence, will be flagged later"  << NcbiEndl;
 // sequences jumped over this gene, this gene does not fit any sequence, will be flagged later
       gene++;
       continue;
@@ -181,17 +219,41 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     TSimpleSeqs::iterator seq_end = seq_start;
     int nmatches=0;
     for(;seq_end!=seqs.end() &&
-         gene_to >= seq_end->exons[seq_end->exons.size()-1].to;
+         gene_to >= (seq_end->exons[0].strand == eNa_strand_plus 
+           ? seq_end->exons[seq_end->exons.size()-1].to
+           : seq_end->exons[0].to);
         seq_end++)
        {
-       if(seq->type == "CDS" && seq->locus_tag == "" ) nmatches++;
+       if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: trying to find: current_seq_end " 
+                                   << printed_range(seq_end)  
+                                   << ", gene_to = " << gene_to
+                                   << ", seq_end.to = " << (seq_end->exons[0].strand == eNa_strand_plus
+                                                           ? seq_end->exons[seq_end->exons.size()-1].to
+                                                           : seq_end->exons[0].to)
+                                   << NcbiEndl;
+
+       if(seq_end->type == "CDS" && seq_end->locus_tag == "" ) nmatches++;
        }
     if(seq_end!=seqs.end() ) seq_end++;
+    if(PrintDetails()) 
+      {
+      if(seq_end!=seqs.end() ) 
+        NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: found seq_end: " << printed_range(seq_start) << NcbiEndl;
+      else
+        NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: found seq_end: end()"  << NcbiEndl;
+      }
 // end find first sequence that does not match a gene
+    if(PrintDetails()) 
+       {
+       if(seq_end!=seqs.end() )
+         NcbiCerr << "non-exact gene-CDS matches(" << nmatches << "): seq_end: " << printed_range(seq_end) << NcbiEndl;
+       else
+         NcbiCerr << "non-exact gene-CDS matches(" << nmatches << "): seq_end: end()" << NcbiEndl;
+       }
     if(nmatches>1)
       {
       string range = printed_range(gene);
-      NcbiCerr << "CReadBlastApp::CollectSimpleSeqs: WARNING: gene matches several (" << nmatches << ") CDS features: "
+      NcbiCerr << "CReadBlastApp::CollectSimpleSeqs: WARNING: gene["<<gene_printed_range<<"] matches several (" << nmatches << ") CDS features: "
          << "locus = " << gene->locus_tag << ", "
          << "[" << range << "]" << NcbiEndl;
       }
@@ -202,8 +264,13 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     TSimpleSeqs::iterator best_seq=seqs.end();
     int best_gene_feat_fit = 0x0FFFFFFF; // intentionally less than the const in gene_feat_fit function
     for(seq=seq_start; seq!=seq_end; seq++)
-      {
+      { 
+      if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: match: " << printed_range(seq)  << NcbiEndl;
       if(seq->locus_tag != "") continue; // this is done already
+      if(PrintDetails()) NcbiCerr << "non-exact gene-CDS matches["<<gene_printed_range<<"]: match: " << printed_range(seq)  
+         << " does not have a locus tag yet"
+         << NcbiEndl;
+/*
       if(seq->type != "CDS" )
         {
         string range = printed_range(seq);
@@ -213,6 +280,7 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
          << "[" << range << "]" << NcbiEndl;
         }
       else 
+*/
         {
         int fit=gene_feat_fit(seq, gene_from, gene_to);
         if(fit <= best_gene_feat_fit )
@@ -276,6 +344,12 @@ int gene_feat_fit(TSimpleSeqs::iterator& seq, int from, int to)
   int r=0xFFFFFFFF;
   int from2 = seq->exons[0].from;
   int to2   = seq->exons[seq->exons.size()-1].to;
+  if(seq->exons[0].strand != eNa_strand_plus)
+    {  
+    from2 = seq->exons[seq->exons.size()-1].from;
+    to2   = seq->exons[0].to;
+    }
+// feature seq should be within gene
   if(from2<from) return r; // no fit at all
   if(to2>to    ) return r; // no fit at all
 
@@ -298,6 +372,10 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
        if(seq.key>(int)from) 
          {
          seq.key = (int)from;
+         }
+       if(PrintDetails())
+         {
+         NcbiCerr << "addLoctoSimpleSeq(): exon ("<< printed_range(exon) << ")" << NcbiEndl;
          }
        seq.exons.push_back(exon);
        }
