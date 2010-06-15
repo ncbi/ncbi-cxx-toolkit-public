@@ -1560,7 +1560,7 @@ string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
 
         if (title.empty()) {
             // last resort title created here
-            title = "No definition line found";
+            //title = "No definition line found";
         }
     }
 
