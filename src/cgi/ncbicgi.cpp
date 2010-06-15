@@ -1088,9 +1088,6 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
         client = x_GetPropertyByName("PROXIED_IP");
     }
     if ( client.empty() ) {
-        client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteHost));
-    }
-    if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
     }
     if ( !client.empty() ) {
