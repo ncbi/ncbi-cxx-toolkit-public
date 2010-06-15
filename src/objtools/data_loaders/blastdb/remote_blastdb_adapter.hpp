@@ -192,8 +192,17 @@ public:
     virtual CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0);
 	/** @inheritDoc */
     virtual CRef<CSeq_data> GetSequence(int oid, int begin = 0, int end = 0);
+    /// Batch-version of GetSequence
+    void GetSequenceBatch(const vector<int>& oids, 
+                          vector< CRef<CSeq_data> >& sequence_data,
+                          vector<TSeqRange>& ranges = vector<TSeqRange>());
 	/** @inheritDoc */
     virtual bool SeqidToOid(const CSeq_id & id, int & oid);
+    /// Batch-version of SeqidToOid
+    /// @param ids Seq-IDs to fetch [in]
+    /// @param oids the OIDs to which the IDs correspond [out]
+    bool SeqidToOidBatch(const vector< CRef<CSeq_id> >& ids, 
+                         vector<int>& oids);
     
 private:
 	/// BLAST database name
@@ -213,6 +222,9 @@ private:
     /// @param begin starting offset of the sequence of interest [in]
     /// @param end ending offset of the sequence of interst [in]
     void x_FetchData(int oid, int begin, int end);
+
+    void x_FetchDataByBatch(const vector<int>& oids, 
+                            const vector<TSeqRange>& ranges);
 };
 
 END_SCOPE(objects)

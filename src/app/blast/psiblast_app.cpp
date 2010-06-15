@@ -293,6 +293,7 @@ int CPsiBlastApp::Run(void)
             // exit code
 
             CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
+            formatter.PreFetchSequenceData(results);
             ITERATE(CSearchResultSet, result, *results) {
                 formatter.PrintOneResultSet(**result, query);
             }
@@ -351,11 +352,13 @@ int CPsiBlastApp::Run(void)
                    CLocalBlast lcl_blast(query_factory, CRef<CBlastOptionsHandle>(phi_opts), db_adapter);
                    lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                    results = lcl_blast.Run();
+                   formatter.PreFetchSequenceData(results);
                    formatter.PrintPhiResult(*results, query, itr.GetIterationNumber(),  itr.GetPreviouslyFoundSeqIds());
                 }
                 else
                 {
                    results = psiblast->Run();
+                   formatter.PreFetchSequenceData(results);
                    ITERATE(CSearchResultSet, result, *results) {
                        formatter.PrintOneResultSet(**result, query,
                                                 itr.GetIterationNumber(),

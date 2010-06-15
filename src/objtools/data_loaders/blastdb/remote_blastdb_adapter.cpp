@@ -147,6 +147,49 @@ void CRemoteBlastDbAdapter::x_FetchData(int oid, int begin, int end)
     _ASSERT(cached_seqdata.HasSequenceData(begin, end));
 }
 
+void CRemoteBlastDbAdapter::x_FetchDataByBatch(const vector<int>& oids, 
+                                               const vector<TSeqRange>& ranges)
+{
+    const char seqtype = (GetSequenceType() == CSeqDB::eProtein) ? 'p' : 'n';
+
+    CBlastServices::TSeqIntervalVector seqids;
+    seqids.reserve(oids.size());
+    for (vector<int>::size_type i = 0; i < oids.size(); i++) {
+        CCachedSeqDataForRemote& cached_seqdata = m_Cache[oids[i]];
+        _ASSERT( !cached_seqdata.HasSequenceData(ranges[i].GetFrom(),
+                                                 ranges[i].GetToOpen()) );
+        _ASSERT( cached_seqdata.GetLength() != 0 );
+        _ASSERT( !cached_seqdata.GetIdList().empty() );
+        _ASSERT( cached_seqdata.IsValid() );
+    
+        CRef<CSeq_interval> seq_int
+            (new CSeq_interval(*cached_seqdata.GetIdList().front(), 
+                               ranges[i].GetFrom(), ranges[i].GetToOpen()));
+        seqids.push_back(seq_int);
+    }
+
+    CBlastServices::TSeqIdVector ids;
+    CBlastServices::TSeqDataVector seq_data;
+    string errors, warnings;
+    const bool kVerbose = (getenv("VERBOSE") ? true : false);
+
+    CBlastServices::GetSequenceParts(seqids, m_DbName, seqtype, ids, seq_data,
+                                   errors, warnings, kVerbose);
+    if (seq_data.empty() || !errors.empty() || !warnings.empty() || 
+        ids.empty() ) {
+        RemoteBlastDbLoader_ErrorHandler(errors, warnings);
+    }
+    _ASSERT(seqids.size() == ids.size());
+    _ASSERT(ids.size() == seq_data.size());
+
+    for (vector<int>::size_type i = 0; i < oids.size(); i++) {
+        CCachedSeqDataForRemote& cached_seqdata = m_Cache[oids[i]];
+        cached_seqdata.GetSeqDataChunk(ranges[i].GetFrom(), 
+                                       ranges[i].GetToOpen()) = seq_data[i];
+        _ASSERT(cached_seqdata.HasSequenceData(ranges[i].GetFrom(),
+                                               ranges[i].GetToOpen()));
+    }
+}
 
 CRef<CSeq_data> 
 CRemoteBlastDbAdapter::GetSequence(int oid, 
@@ -159,6 +202,50 @@ CRemoteBlastDbAdapter::GetSequence(int oid,
         x_FetchData(oid, begin, end);
     }
     return cached_seqdata.GetSeqDataChunk(begin, end);
+}
+
+void
+CRemoteBlastDbAdapter::GetSequenceBatch(const vector<int>& oids,
+                                        vector< CRef<CSeq_data> >&
+                                        sequence_data,
+                                        vector<TSeqRange>& ranges)
+{
+    if ( !ranges.empty() ) {
+        _ASSERT(oids.size() == ranges.size());
+    }
+    sequence_data.clear();
+
+    vector<int> oids2fetch;
+    vector<TSeqRange> ranges2fetch;
+    for (vector<int>::size_type i = 0; i < oids.size(); i++) {
+        CCachedSeqDataForRemote& cached_seqdata = m_Cache[oids[i]]; 
+        _ASSERT(cached_seqdata.IsValid());
+        // default is to fetch the entire sequence
+        int begin = 0, end = cached_seqdata.GetLength();
+        if (ranges[i] != TSeqRange::GetEmpty()) {   // get partial sequence
+            begin = ranges[i].GetFrom();
+            end = ranges[i].GetToOpen();
+        }
+        if ( !cached_seqdata.HasSequenceData(begin, end) ) {
+            oids2fetch.push_back(oids[i]);
+            ranges2fetch.push_back(TSeqRange(begin, end));
+        }
+    }
+
+    x_FetchDataByBatch(oids, ranges);
+
+    // Populate the return value
+    sequence_data.reserve(oids.size());
+    for (vector<int>::size_type i = 0; i < oids.size(); i++) {
+        CCachedSeqDataForRemote& cached_seqdata = m_Cache[oids[i]]; 
+        _ASSERT(cached_seqdata.IsValid());
+        int begin = 0, end = cached_seqdata.GetLength();
+        if (ranges[i] != TSeqRange::GetEmpty()) {
+            begin = ranges[i].GetFrom();
+            end = ranges[i].GetToOpen();
+        }
+        sequence_data.push_back(cached_seqdata.GetSeqDataChunk(begin, end));
+    }
 }
 
 // N.B.: this method should be called when the BLAST database data loader
@@ -192,6 +279,48 @@ CRemoteBlastDbAdapter::SeqidToOid(const CSeq_id & id, int & oid)
     cached_seqdata.SetIdList(bioseqs.front()->SetId());
     cached_seqdata.SetBioseq(bioseqs.front());
     return cached_seqdata.IsValid();
+}
+
+bool 
+CRemoteBlastDbAdapter::SeqidToOidBatch(const vector< CRef<CSeq_id> >& ids, 
+                                       vector<int>& oids)
+{
+    // N.B.: This method doesn't get any sequence data from the server side.
+    const char seqtype = (GetSequenceType() == CSeqDB::eProtein) ? 'p' : 'n';
+
+    if (ids.empty()) {
+        return true;
+    }
+
+    oids.clear();
+    oids.reserve(ids.size());
+    for (vector<int>::size_type i = 0; i < ids.size(); i++) {
+        oids.push_back(m_NextLocalId++);
+    }
+    
+    // Return types
+    CBlastServices::TBioseqVector bioseqs;
+    const bool kVerbose = (getenv("VERBOSE") ? true : false);
+    string errors, warnings;
+    
+    CBlastServices::GetSequencesInfo
+        (const_cast< vector< CRef<CSeq_id> >& >(*&ids), m_DbName, seqtype,
+         bioseqs, errors, warnings, kVerbose);
+    if ( !errors.empty() || !warnings.empty() || bioseqs.empty() ) {
+        return RemoteBlastDbLoader_ErrorHandler(errors, warnings);
+    }
+    _ASSERT(bioseqs.size() == ids.size());
+    
+    // cache the retrieved information
+    for (vector<int>::size_type i = 0; i < oids.size(); i++) {
+        CCachedSeqDataForRemote& cached_seqdata = m_Cache[oids[i]];
+        cached_seqdata.SetLength(bioseqs[i]->GetLength(),
+                                 m_UseFixedSizeSlices);
+        cached_seqdata.SetIdList(bioseqs[i]->SetId());
+        cached_seqdata.SetBioseq(bioseqs[i]);
+        _ASSERT(cached_seqdata.IsValid());
+    }
+    return true;
 }
 
 END_SCOPE(objects)

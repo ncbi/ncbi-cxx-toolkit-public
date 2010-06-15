@@ -303,6 +303,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
         CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
         formatter.WriteArchive(*query_factory, *opts_handle, *results);
     } else {
+        formatter.PreFetchSequenceData(results);
     	ITERATE(CSearchResultSet, result, *results) {
        	   formatter.PrintOneResultSet(**result, queries);
     	}

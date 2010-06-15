@@ -41,6 +41,7 @@ static char const rcsid[] = "$Id$";
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include "remote_blastdb_adapter.hpp"
+#include <objects/seq/Seq_literal.hpp>
 
 //=======================================================================
 // BlastDbDataLoader Public interface 
@@ -95,10 +96,10 @@ CRemoteBlastDbDataLoader::EDbType SeqTypeToDbType(CSeqDB::ESeqType seq_type)
     }
 }
 
-static const string kPrefix = "REMOTE_BLASTDB_";
+const string CRemoteBlastDbDataLoader::kNamePrefix("REMOTE_BLASTDB_");
 string CRemoteBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
-    return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
+    return kNamePrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
 }
 
 CRemoteBlastDbDataLoader::CRemoteBlastDbDataLoader(const string& loader_name, 
@@ -142,6 +143,9 @@ struct PConvertToString<TBlastDbId>
 /// Type definition consistent with those defined in objmgr/blob_id.hpp
 typedef CBlobIdFor<TBlastDbId> CBlobIdBlastDb;
 
+// Note: this method cannot be just removed even though it's identical to its
+// parent class' implementation with the exception of the last argument to
+// x_LoadData, some refactoring is needed
 CRemoteBlastDbDataLoader::TTSE_Lock
 CRemoteBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
 {
@@ -152,6 +156,102 @@ CRemoteBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
         x_LoadData(id.second, id.first, lock, kRmtSequenceSliceSize);
     }
     return lock;
+}
+
+void
+CRemoteBlastDbDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
+{
+    if (tse_sets.empty()) {
+        return;
+    }
+
+    // Collect the Seq-ids for batch retrieval
+    vector< CRef<CSeq_id> > ids2fetch;
+    ids2fetch.reserve(tse_sets.size());
+    NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {
+        const CSeq_id_Handle& idh = tse_set->first;
+        CConstRef<CSeq_id> const_id = idh.GetSeqId();
+        CRef<CSeq_id> id(const_cast<CSeq_id*>(const_id.GetPointer()));
+        ids2fetch.push_back(id);
+    }
+
+    CRemoteBlastDbAdapter* rmt_blastdb_svc =
+        dynamic_cast<CRemoteBlastDbAdapter*>(&*m_BlastDb);
+    _ASSERT( rmt_blastdb_svc != NULL );
+
+    vector<int> oids;
+    if ( !rmt_blastdb_svc->SeqidToOidBatch(ids2fetch, oids) ) {
+        LOG_POST(Error << "Failed to fetch sequences in batch mode");
+        return;
+    }
+    _ASSERT(oids.size() == tse_sets.size());
+
+    vector<int>::size_type i = 0; 
+    NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {
+        const CSeq_id_Handle& idh = tse_set->first;
+        TBlobId blob_id = new CBlobIdBlastDb(TBlastDbId(oids[i], idh));
+        i++;
+        TTSE_Lock lock = GetBlobById(blob_id);
+        tse_set->second.insert(lock);
+    }
+    _ASSERT(tse_sets.size() == i);
+}
+
+void
+CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks)
+{
+    static const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
+
+    if (chunks.empty()) {
+        return;
+    }
+
+    vector<int> oids;
+    vector<TSeqRange> ranges;
+    vector< CRef<CSeq_data> > sequence_data;
+
+    ITERATE(TChunkSet, chunk_itr, chunks) {
+        TChunk chunk = *chunk_itr;
+        _ASSERT(!chunk->IsLoaded());
+        int oid = x_GetOid(chunk->GetBlobId());
+        oids.push_back(oid);
+
+        ITERATE (CTSE_Chunk_Info::TLocationSet, it, 
+                 chunk->GetSeq_dataInfos() ) {
+            ranges.push_back(it->second);
+        }
+    }
+
+    CRemoteBlastDbAdapter* rmt_blastdb_svc =
+        dynamic_cast<CRemoteBlastDbAdapter*>(&*m_BlastDb);
+    _ASSERT( rmt_blastdb_svc != NULL );
+    rmt_blastdb_svc->GetSequenceBatch(oids,
+                                  sequence_data,
+                                  ranges);
+    _ASSERT(sequence_data.size() <= oids.size());
+
+    int seq_data_idx = 0;
+    ITERATE(TChunkSet, chunk_itr, chunks) {
+        TChunk chunk = *chunk_itr;
+        _ASSERT(!chunk->IsLoaded());
+        ITERATE (CTSE_Chunk_Info::TLocationSet, it, 
+                 chunk->GetSeq_dataInfos() ) {
+            const CSeq_id_Handle& sih = it->first;
+            TSeqPos start = it->second.GetFrom();
+
+            CRef<CSeq_literal> lit(new CSeq_literal);
+            _ASSERT(it->second.GetLength() == (it->second.GetToOpen() - start));
+            lit->SetLength(it->second.GetLength());
+            lit->SetSeq_data(*sequence_data[seq_data_idx]);
+            seq_data_idx++;
+
+            CTSE_Chunk_Info::TSequence seq;
+            seq.push_back(lit);
+            chunk->x_LoadSequence(TPlace(sih, kIgnored), start, seq);
+        }
+        // Mark chunk as loaded
+        chunk->SetLoaded();
+    }
 }
 
 void

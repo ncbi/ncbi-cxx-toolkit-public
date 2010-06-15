@@ -182,6 +182,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
         if (e.GetMsg().find("No alias or index file found ") != NPOS) {
             ERR_POST(Info << "Error initializing local BLAST database "
                           << "data loader: '" << e.GetMsg() << "'");
+            _TRACE("Error initializing local BLAST database "
+                          << "data loader: '" << e.GetMsg() << "'");
         }
         m_BlastDbLoaderName = CRemoteBlastDbDataLoader::RegisterInObjectManager
                 (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,

@@ -167,10 +167,10 @@ int CRPSTBlastnApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            if (fmt_args->ArchiveFormatRequested(args))
-            {
+            if (fmt_args->ArchiveFormatRequested(args)) {
                 formatter.WriteArchive(*queries, *opts_hndl, *results);
             } else {
+                formatter.PreFetchSequenceData(results);
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query_batch);
                 }

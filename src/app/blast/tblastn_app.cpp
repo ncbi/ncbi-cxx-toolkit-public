@@ -184,13 +184,13 @@ int CTblastnApp::Run(void)
                     results = lcl_blast.Run();
                 }
 
-                if (fmt_args->ArchiveFormatRequested(args))
-                {
-                      formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+                if (fmt_args->ArchiveFormatRequested(args)) {
+                    formatter.WriteArchive(*query_factory, *opts_hndl, *results);
                 } else {
-                      ITERATE(CSearchResultSet, result, *results) {
-                          formatter.PrintOneResultSet(**result, query);
-                     }
+                    formatter.PreFetchSequenceData(results);
+                    ITERATE(CSearchResultSet, result, *results) {
+                        formatter.PrintOneResultSet(**result, query);
+                    }
                 }
             }
 
@@ -218,10 +218,10 @@ int CTblastnApp::Run(void)
                 results = psiblast->Run(); 
             }
 
-            if (fmt_args->ArchiveFormatRequested(args))
-            {
+            if (fmt_args->ArchiveFormatRequested(args)) {
                 formatter.WriteArchive(*query_factory, *opts_hndl, *results);
             } else {
+                formatter.PreFetchSequenceData(results);
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query);
                 }

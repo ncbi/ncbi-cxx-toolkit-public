@@ -58,7 +58,15 @@ public:
     
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    /// All BLAST DB data loader instances have a name that starts with
+    /// kNamePrefix
+    static const string kNamePrefix;
     static string GetLoaderNameFromArgs(const SBlastDbParam& param);
+
+    /// Support for fetching the sequence length by batch
+    virtual void GetBlobs(TTSE_LockSets& tse_sets);
+    /// Support for fetching the sequence chunks by batch
+    virtual void GetChunks(const TChunkSet& chunks);
 
     /// For a given TBlobId, get the TTSE_Lock.
     ///
