@@ -117,6 +117,7 @@ private:
     TConnections              m_Connections;
 
     bool                      m_AllowGzip;
+    bool                      m_ExclWGSMaster;
 };
 
 END_SCOPE(objects)

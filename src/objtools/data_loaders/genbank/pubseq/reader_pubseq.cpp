@@ -71,6 +71,7 @@
 #define DEFAULT_NUM_CONN    2
 #define MAX_MT_CONN         5
 #define DEFAULT_ALLOW_GZIP  true
+#define DEFAULT_EXCL_WGS_MASTER false
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq
 
@@ -110,7 +111,9 @@ CPubseqReader::CPubseqReader(int max_connections,
                              const string& dbapi_driver)
     : m_Server(server) , m_User(user), m_Password(pswd),
       m_DbapiDriver(dbapi_driver),
-      m_Context(0), m_AllowGzip(false)
+      m_Context(0),
+      m_AllowGzip(DEFAULT_ALLOW_GZIP),
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
 {
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
@@ -139,7 +142,9 @@ CPubseqReader::CPubseqReader(int max_connections,
 
 CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
                              const string& driver_name)
-    : m_Context(0), m_AllowGzip(false)
+    : m_Context(0),
+      m_AllowGzip(DEFAULT_ALLOW_GZIP),
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
 {
     CConfig conf(params);
     m_Server = conf.GetString(
@@ -169,6 +174,11 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         DEFAULT_ALLOW_GZIP);
 #endif
+    m_ExclWGSMaster = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER,
+        CConfig::eErr_NoThrow,
+        DEFAULT_EXCL_WGS_MASTER);
 
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
@@ -295,6 +305,13 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         }
     }
 #endif
+    if ( m_ExclWGSMaster ) {
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set exclude_wgs_master on"));
+        if ( cmd ) {
+            cmd->Send();
+            cmd->DumpResults();
+        }
+    }
     
     m_Connections[conn_].reset(conn.release());
 }

@@ -47,5 +47,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_DRIVER   "driver"
 /* allow gzip compression */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP     "gzip"
+/* exclude WGS master descriptors */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER "exclude_wgs_master"
 
 #endif
