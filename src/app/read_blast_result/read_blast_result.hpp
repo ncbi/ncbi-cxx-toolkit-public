@@ -604,6 +604,7 @@ string printed_ranges(const CSeq_loc& seq_interval);
 string printed_range(const CBioseq& seq);
 string get_title(const CBioseq& seq);
 string printed_range(const TSimpleSeqs::iterator& ext_rna);
+string printed_range(const TSimplePair& apair);
 string printed_range(const TSimpleSeq& ext_rna);
 string printed_range(const TSimpleSeqs::iterator& ext_rna, const TSimpleSeqs::iterator& end);
 string printed_range(const TSimpleSeqs::iterator& ext_rna, TSimpleSeqs& seqs);
