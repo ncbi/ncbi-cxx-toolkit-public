@@ -501,8 +501,8 @@ void CSeq_loc_Conversion::MakeDstMix(CSeq_loc_mix& dst,
         }
         else {
             dst_strand = Reverse(src_strand);
-            dst_from = m_Shift - src_from;
-            dst_to = m_Shift - src_to;
+            dst_from = m_Shift - src_to;
+            dst_to = m_Shift - src_from;
         }
         if ( dst_strand != eNa_strand_unknown ) {
             dst_int.SetStrand(dst_strand);
