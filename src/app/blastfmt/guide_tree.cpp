@@ -760,7 +760,8 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
             if (success) {
                 tax.GetBlastName(tax_id, blast_names[i]);
             }
-            else {
+
+            if (!success || blast_names[i].empty()) {
                 blast_names[i] = s_kUnknown;
             }
         }
