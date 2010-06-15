@@ -435,6 +435,7 @@ string let1_2_let3(char let1)
     case 'B': return "Asx"; break;
     case 'N': return "Asn"; break;
     case 'M': return "Met"; break;
+    case 'O': return "Pyl"; break;
     default: break;
     }
   NcbiCerr << "let1_2_let3: ERROR: char " << let1 << "(" << (int)let1 << ") is not handled" << NcbiEndl;
