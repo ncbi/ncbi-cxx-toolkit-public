@@ -337,11 +337,27 @@ string printed_range(const TSimpleSeqs::iterator& ext_rna)
 */
 }
 
+string printed_range(const TSimplePair& apair)
+{
+   return printed_range(apair.from, apair.to);
+
+}
+
 
 string printed_range(const TSimpleSeq& ext_rna)
 {
-   int from = ext_rna.exons[0].from;
-   int to   = ext_rna.exons[ext_rna.exons.size()-1].to;
+   int from,to;
+   if(ext_rna.exons[0].strand == eNa_strand_plus)
+     {
+     from = ext_rna.exons[0].from;
+     to   = ext_rna.exons[ext_rna.exons.size()-1].to;
+     }
+   else
+    {
+     to   = ext_rna.exons[0].to;
+     from = ext_rna.exons[ext_rna.exons.size()-1].from;
+     }
+
    return printed_range(from, to);
 }
 
