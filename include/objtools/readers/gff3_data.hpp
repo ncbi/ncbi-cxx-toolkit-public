@@ -119,6 +119,10 @@ protected:
     bool x_AssignAttributesFromGff(
         const string& );
 
+	bool x_SplitGffAttributes(
+		const string&,
+		vector< string >& ) const;
+
     static bool x_IsParentOf(
         CSeq_feat::TData::ESubtype,
         CSeq_feat::TData::ESubtype );

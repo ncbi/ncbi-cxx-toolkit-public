@@ -79,7 +79,7 @@ bool CGff3Record::AssignFromGff(
     for ( size_t i=0; i < 8 && ! strLeftOver.empty(); ++i ) {
         string strFront;
         NStr::SplitInTwo( strLeftOver, " \t", strFront, strLeftOver );
-        columns.push_back( strFront );
+		columns.push_back( strFront );
         NStr::TruncateSpacesInPlace( strLeftOver, NStr::eTrunc_Begin );
     }
     columns.push_back( strLeftOver );
@@ -163,8 +163,9 @@ bool CGff3Record::x_AssignAttributesFromGff(
 //  ----------------------------------------------------------------------------
 {
     vector< string > attributes;
-    NStr::Tokenize( strRawAttributes, ";", attributes, NStr::eMergeDelims );
-    for ( size_t u=0; u < attributes.size(); ++u ) {
+    //NStr::Tokenize( strRawAttributes, ";", attributes, NStr::eMergeDelims );
+    x_SplitGffAttributes(strRawAttributes, attributes);
+	for ( size_t u=0; u < attributes.size(); ++u ) {
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
@@ -174,7 +175,7 @@ bool CGff3Record::x_AssignAttributesFromGff(
         }
         NStr::TruncateSpacesInPlace( strKey );
         NStr::TruncateSpacesInPlace( strValue );
-        if ( strKey.empty() && strValue.empty() ) {
+		if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 
             continue;
@@ -224,6 +225,43 @@ bool CGff3Record::x_AssignAttributesFromGff(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGff3Record::x_SplitGffAttributes(
+    const string& strRawAttributes,
+	vector< string >& attributes) const
+{
+	string strCurrAttrib;
+	bool inQuotes = false;
+
+	ITERATE (string, iterChar, strRawAttributes) {
+		if (inQuotes) {
+			if (*iterChar == '\"') {
+				inQuotes = false;
+			}  
+			strCurrAttrib += *iterChar;
+		} else { // not in quotes
+			if (*iterChar == ';') {
+				NStr::TruncateSpacesInPlace( strCurrAttrib );
+				if(!strCurrAttrib.empty())
+					attributes.push_back(strCurrAttrib);
+				strCurrAttrib.clear();
+			} else {
+				if(*iterChar == '\"') {
+					inQuotes = true;
+				}
+				strCurrAttrib += *iterChar;
+			}
+		}
+	}
+
+	NStr::TruncateSpacesInPlace( strCurrAttrib );
+	if (!strCurrAttrib.empty())
+		attributes.push_back(strCurrAttrib);
+
+	return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Record::MakeExon(

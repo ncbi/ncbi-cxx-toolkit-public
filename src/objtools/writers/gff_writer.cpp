@@ -391,13 +391,21 @@ string CGffWriter::x_GffAttributes(
             continue;
         }
 
+		bool quote = it->second.empty() || 
+				    (it->second.find(';') != string::npos &&
+		             it->second.find('\"') == string::npos);
+
         if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
             strAttributes += ";";
         }
         strAttributes += strKey;
         strAttributes += "=";
-        strAttributes += it->second;
-        if ( m_uFlags & fSoQuirks ) {
+        if ( quote )
+			strAttributes += "\"";
+		strAttributes += it->second;
+		if ( quote )
+            strAttributes += "\"";
+		if ( m_uFlags & fSoQuirks ) {
             strAttributes += "; ";
         }
     }
@@ -471,11 +479,21 @@ void CGffWriter::x_PriorityProcess(
         if ( m_uFlags & fSoQuirks ) {
             NStr::ToUpper( strKeyMod );
         }
+
+		bool quote = it->second.empty() ||
+        	        (it->second.find(';') != string::npos &&
+			         it->second.find('\"') == string::npos);
+										   
         strAttributes += strKeyMod;
         strAttributes += "=";
-        strAttributes += it->second;
-        attrs.erase( it );
-        if ( m_uFlags & fSoQuirks ) {
+        //strAttributes += it->second;
+        if ( quote )
+			strAttributes += "\"";
+		strAttributes += it->second;
+		attrs.erase(it);
+		if ( quote )
+            strAttributes += "\"";
+		if ( m_uFlags & fSoQuirks ) {
             strAttributes += "; ";
         }
     }
