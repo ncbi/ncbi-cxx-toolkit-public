@@ -16,7 +16,7 @@ case "$ncbi_platform" in
         ;;
     Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
     *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
-    SunOSx86   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.3.21}   ;;
+    SunOSx86   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
     SunOSSparc ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
 esac
 
