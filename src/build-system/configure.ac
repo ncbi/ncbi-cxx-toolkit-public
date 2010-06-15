@@ -1118,6 +1118,11 @@ if test "${with_universal-no}" != "no" ; then
    AC_DEFINE(NCBI_UNIVERSAL_BUILD, 1,
              [Define to 1 if building universal (multi-architecture) binaries.])
    with_distcc=no
+   # These tools produce bogus '(for' entries when processing universal
+   # binaries on 10.6, and are of sufficiently marginal use nowadays that it
+   # makes more sense to bypass them altogether than to filter the entries out.
+   LORDER=echo
+   TSORT=cat
 elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
