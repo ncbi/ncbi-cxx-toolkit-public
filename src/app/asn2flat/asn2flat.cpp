@@ -213,6 +213,9 @@ void CAsn2FlatApp::Init(void)
 
                                  CArgDescriptions::eInteger, "0");
 
+         arg_desc->AddFlag("no-external",
+                           "Disable all external annotation sources");
+
          // view (default: nucleotide)
          arg_desc->AddDefaultKey("view", "View", "View",
                                  CArgDescriptions::eString, "nuc");
@@ -243,7 +246,7 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddFlag("nocleanup",
                            "Do not perform data cleanup prior to formatting");
          // remote
-         arg_desc->AddFlag("gbload", "Use CGBDataLoader");
+         arg_desc->AddFlag("gbload", "Use GenBank data loader");
 
      }}
     SetupArgDescriptions(arg_desc.release());
@@ -276,6 +279,10 @@ int CAsn2FlatApp::Run(void)
 
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
+    if (args["no-external"]) {
+        m_FFGenerator->SetAnnotSelector()
+            .SetExcludeExternal(true);
+    }
 
     auto_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
@@ -401,7 +408,7 @@ void CAsn2FlatApp::HandleSeqId(
     //
     //  ... and use that to generate the flat file:
     //
-    HandleSeqEntry(bsh.GetTopLevelEntry() );
+    HandleSeqEntry(bsh.GetParentEntry() );
 }
 
 //  ============================================================================
@@ -618,6 +625,23 @@ CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
     if (args["html"]) {
         flags |= CFlatFileConfig::fDoHTML;
     }
+
+#if 0
+    flags &=
+        ~(CFlatFileConfig::fHideSNPFeatures |
+          CFlatFileConfig::fHideCDSProdFeatures |
+          CFlatFileConfig::fNeverTranslateCDS |
+          CFlatFileConfig::fHideCDDFeatures);
+
+    flags |= CFlatFileConfig::fAlwaysTranslateCDS;
+    /**
+    flags =
+        CFlatFileConfig::fHideSNPFeatures |
+        CFlatFileConfig::fHideCDDFeatures;
+        **/
+
+    LOG_POST(Error << "flags = " << flags);
+#endif
 
     return flags;
 }
