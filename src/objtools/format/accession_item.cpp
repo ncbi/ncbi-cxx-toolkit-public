@@ -122,8 +122,16 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
                 m_ExtraAccessions.push_back(*it);
             }
         }
-        sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
     }
+
+    /// add GPipe accessions as extra
+    ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
+        if ((*it)->IsGpipe()) {
+            m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
+        }
+    }
+
+    sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
 
     if ( !ctx.GetLocation().IsWhole() ) {
         // specific region is set
