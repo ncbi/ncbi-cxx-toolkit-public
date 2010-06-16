@@ -38,11 +38,9 @@
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objtools/alnmgr/alnmap.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/alnmgr/alnmap.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -102,46 +100,37 @@ static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly)
 }
 
 
-static bool s_IsRefSeq_NG(CBioseqContext& ctx)
-{
-    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
-        const CSeq_id& id = **it;
-        switch (id.Which()) {
-        case CSeq_id::e_Other:
-            {{
-                 const CTextseq_id* tsid = id.GetTextseq_Id();
-                 if (tsid  &&  tsid->IsSetAccession()  &&
-                     NStr::StartsWith(tsid->GetAccession(), "NG_")) {
-                     return true;
-                 }
-             }}
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    return false;
-}
-
-
 void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    const CUser_object* uo = 0;
-    for ( CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User); desc; ++desc ) {
+    bool has_tpa_assembly = false;
+    bool has_tsa = false;
+    for ( CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);
+          desc  &&  !has_tpa_assembly  &&  !has_tsa;
+          ++desc ) {
         const CUser_object& o = desc->GetUser();
-        if ( o.CanGetType()  &&  o.GetType().IsStr()  &&
-             o.GetType().GetStr() == "TpaAssembly" ) {
-            uo = &o;
-            break;
+        if ( o.CanGetType()  &&  o.GetType().IsStr()) {
+             if (o.GetType().GetStr() == "TpaAssembly" ) {
+                 has_tpa_assembly = true;
+             }
+             else if (o.GetType().GetStr() == "TSA") {
+                 has_tsa = true;
+             }
         }
     }
-    if ( !s_IsTPA(ctx, uo != 0)  &&
-         !(ctx.IsRefSeq()  &&  s_IsRefSeq_NG(ctx)) ) {
+
+    if (has_tsa) {
+        /// FIXME:
+        /// do TSA thingies here
         return;
     }
+
     CBioseq_Handle& seq = ctx.GetHandle();
+    bool has_hist_assembly =
+        seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty();
+
+    if ( !s_IsTPA(ctx, has_tpa_assembly)  &&  !has_hist_assembly ) {
+        return;
+    }
     if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
         x_GetStrForPrimary(ctx);   
     }
@@ -161,21 +150,70 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 {
     CBioseq_Handle& seq = ctx.GetHandle();
 
-    TDense_seg_Map segmap;
+    TAlnMap segmap;
     x_CollectSegments(segmap, seq.GetInst_Hist().GetAssembly());
     
     string str;
     string s;
+    s.reserve(80);
     CConstRef<CSeq_id> other_id;
 
-    ITERATE (TDense_seg_Map, it, segmap) {
+    TSignedSeqPos last_stop = -1;
+
+    ITERATE (TAlnMap, it, segmap) {
         s.erase();
-        CAlnMap alnmap(*it->second);
-        
-        s += NStr::IntToString(alnmap.GetSeqStart(0) + 1) + '-' +
-             NStr::IntToString(alnmap.GetSeqStop(0) + 1);
+        const CSeq_align& align = *it->second;
+
+        TSeqPos this_start = align.GetSeqStart(0);
+        TSeqPos this_stop = align.GetSeqStop(0);
+
+        if (last_stop != -1) {
+            if (this_start - last_stop > 1) {
+                if (this_start - last_stop < 15) {
+                    s += NStr::IntToString(last_stop + 2) + '-' +
+                        NStr::IntToString(this_start);
+                    s.resize(20, ' ');
+                    s += '"';
+
+                    string ss;
+                    CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
+                    v.GetSeqData(last_stop + 1, this_start, ss);
+                    s += ss;
+                    s += '"';
+                    s.resize(39, ' ');
+
+                    s += "1-" + NStr::IntToString(this_start - last_stop - 1);
+                } else {
+                    s += NStr::IntToString(last_stop + 2) + '-' +
+                        NStr::IntToString(this_start);
+                    s.resize(20, ' ');
+                    s += '"';
+
+                    string ss;
+                    CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
+                    v.GetSeqData(last_stop + 1, last_stop + 4, ss);
+                    s += ss;
+                    s += "...";
+
+                    v.GetSeqData(this_start - 3, this_start, ss);
+                    s += ss;
+                    s += '"';
+                    s.resize(39, ' ');
+
+                    s += "1-" + NStr::IntToString(this_start - last_stop - 1);
+                }
+
+                str += '\n';
+                str += s;
+                s.erase();
+            }
+        }
+        last_stop = this_stop;
+
+        s += NStr::IntToString(this_start + 1) + '-' +
+             NStr::IntToString(this_stop + 1);
         s.resize(20, ' ');
-        other_id.Reset(&alnmap.GetSeqId(1));
+        other_id.Reset(&align.GetSeq_id(1));
         if (!other_id) {
             continue;
         }
@@ -193,13 +231,14 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
         }
         s += other_id->GetSeqIdString(true);
         s.resize(39, ' ');
-        s += NStr::IntToString(alnmap.GetSeqStart(1) + 1) + '-' +
-            NStr::IntToString(alnmap.GetSeqStop(1) + 1);
-        if (alnmap.IsNegativeStrand(0)  ||  alnmap.IsNegativeStrand(1)) {
-            if (!(alnmap.IsNegativeStrand(0)  &&  alnmap.IsNegativeStrand(1))) {
-                s.resize(59, ' ');
-                s += 'c';
-            }
+        s += NStr::IntToString(align.GetSeqStart(1) + 1) + '-' +
+            NStr::IntToString(align.GetSeqStop(1) + 1);
+
+        ENa_strand s0 = align.GetSeqStrand(0);
+        ENa_strand s1 = align.GetSeqStrand(1);
+        if (s0 != s1) {
+            s.resize(59, ' ');
+            s += 'c';
         }
 
         if (!s.empty()) {
@@ -216,7 +255,7 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 
 
 void CPrimaryItem::x_CollectSegments
-(TDense_seg_Map& segmap,
+(TAlnMap& segmap,
  const TAlnList& aln_list)
 {
     ITERATE (TAlnList, it, aln_list) {
@@ -226,19 +265,16 @@ void CPrimaryItem::x_CollectSegments
 
 
 void CPrimaryItem::x_CollectSegments
-(TDense_seg_Map& segmap, const CSeq_align& aln)
+(TAlnMap& segmap, const CSeq_align& aln)
 {
     if ( !aln.CanGetSegs() ) {
         return;
     }
 
-    const CSeq_align::C_Segs& segs = aln.GetSegs();
-    if ( segs.IsDenseg() ) {
-        const CDense_seg& dseg = segs.GetDenseg();
-        CAlnMap alnmap(dseg);
-        segmap.insert(TDense_seg_Map::value_type(alnmap.GetSeqRange(0), TDenseRef(&dseg)));
-    } else if ( segs.IsDisc() ) {
-        x_CollectSegments(segmap, segs.GetDisc().Get());
+    if ( aln.GetSegs().IsDenseg() ) {
+        segmap.insert(TAlnMap::value_type(aln.GetSeqRange(0), TAln(&aln)));
+    } else if ( aln.GetSegs().IsDisc() ) {
+        x_CollectSegments(segmap, aln.GetSegs().GetDisc().Get());
     }
 }
 
