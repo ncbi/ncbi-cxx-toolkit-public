@@ -155,6 +155,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     CSeq_id::EAccessionInfo ai = CSeq_id::IdentifyAccession("DAAA02000001");
     BOOST_CHECK_EQUAL(ai, CSeq_id::eAcc_gb_tpa_wgs_nuc);
     BOOST_CHECK_EQUAL(ai & CSeq_id::eAcc_division_mask, CSeq_id::eAcc_wgs);
+
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("DAAA02000000"),
+                      CSeq_id::eAcc_gb_tpa_wgsm_nuc);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("AACN010000000"),
+                      CSeq_id::eAcc_gb_wgsm_nuc);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("AACN011000000"),
+                      CSeq_id::eAcc_gb_wgs_nuc);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)

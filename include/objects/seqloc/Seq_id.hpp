@@ -157,7 +157,8 @@ public:
         fAcc_prot      = 0x40000000,
         fAcc_predicted = 0x20000000, // only for refseq
         fAcc_specials  = 0x10000000, // has special cases; only used internally
-        eAcc_flag_mask = 0xf0000000,
+        fAcc_master    = 0x08000000,
+        eAcc_flag_mask = 0xf8000000,
 
         // Divisions and categories (multiples of 1 << 8; always
         // globally unique nowadays, no matter how specialized)
@@ -194,6 +195,10 @@ public:
         eAcc_sts           = 136 << 8, // sequence tagged site
         eAcc_mga           = 137 << 8, // Mass sequence for Genome Annotation
         eAcc_division_mask = 0xff00,
+
+        // Internal values combinining a division and a flag for convenience.
+        eAcc_wgs_master          = eAcc_wgs          | fAcc_master,
+        eAcc_wgs_intermed_master = eAcc_wgs_intermed | fAcc_master,
 
         // Actual return values with EXAMPLE prefixes (to be followed
         // by digits) or IDs, grouped by Seq-id type.  In most cases,
@@ -238,6 +243,8 @@ public:
         eAcc_gb_con         = e_Genbank | eAcc_con        | fAcc_nuc,  // CH
         eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,  // AAAA
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
+        eAcc_gb_wgsm_nuc    = e_Genbank | eAcc_wgs_master | fAcc_nuc,
+        eAcc_gb_wgsm_prot   = e_Genbank | eAcc_wgs_master | fAcc_prot,
         eAcc_gb_sts         = e_Genbank | eAcc_sts        | fAcc_nuc,  // G
         eAcc_gb_mga         = e_Genbank | eAcc_mga        | fAcc_nuc,  // unused
 
@@ -253,6 +260,8 @@ public:
         eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,  // AN
         eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,  // CAAA
         eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot, // unused
+        eAcc_embl_wgsm_nuc  = e_Embl | eAcc_wgs_master | fAcc_nuc, 
+        eAcc_embl_wgsm_prot = e_Embl | eAcc_wgs_master | fAcc_prot,
         eAcc_embl_mga       = e_Embl | eAcc_mga        | fAcc_nuc,  // unused
 
         eAcc_pir       = e_Pir       | eAcc_other | fAcc_prot,
@@ -267,9 +276,12 @@ public:
         eAcc_refseq_contig      = e_Other | eAcc_con          | fAcc_nuc, //NT_
         eAcc_refseq_wgs_nuc     = e_Other | eAcc_wgs          | fAcc_nuc, //NZ_
         eAcc_refseq_wgs_prot    = e_Other | eAcc_wgs          | fAcc_prot,//ZP_
+        eAcc_refseq_wgsm_nuc    = e_Other | eAcc_wgs_master   | fAcc_nuc,
+        eAcc_refseq_wgsm_prot   = e_Other | eAcc_wgs_master   | fAcc_prot,
         eAcc_refseq_chromosome  = e_Other | eAcc_chromosome   | fAcc_nuc, //NC_
         eAcc_refseq_genomic     = e_Other | eAcc_genomic_rgn  | fAcc_nuc, //NG_
         eAcc_refseq_wgs_intermed= e_Other | eAcc_wgs_intermed | fAcc_nuc, //NW_
+        eAcc_refseq_wgsm_intermed=e_Other | eAcc_wgs_intermed_master | fAcc_nuc,
         eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted, //XP_
         eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted, //XM_
         eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted, //XR_
@@ -294,6 +306,8 @@ public:
         eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,  // BA
         eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
         eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
+        eAcc_ddbj_wgsm_nuc  = e_Ddbj | eAcc_wgs_master | fAcc_nuc,
+        eAcc_ddbj_wgsm_prot = e_Ddbj | eAcc_wgs_master | fAcc_prot,
         eAcc_ddbj_mga       = e_Ddbj | eAcc_mga        | fAcc_nuc,  // AAAAA
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
@@ -304,6 +318,8 @@ public:
         eAcc_gb_tpa_con        = e_Tpg | eAcc_con        | fAcc_nuc,  // GJ
         eAcc_gb_tpa_wgs_nuc    = e_Tpg | eAcc_wgs        | fAcc_nuc,  // DAAA
         eAcc_gb_tpa_wgs_prot   = e_Tpg | eAcc_wgs        | fAcc_prot, // HAA
+        eAcc_gb_tpa_wgsm_nuc   = e_Tpg | eAcc_wgs_master | fAcc_nuc,
+        eAcc_gb_tpa_wgsm_prot  = e_Tpg | eAcc_wgs_master | fAcc_prot,
         eAcc_gb_tpa_chromosome = e_Tpg | eAcc_chromosome | fAcc_nuc,  // GK
 
         eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
