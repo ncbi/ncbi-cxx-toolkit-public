@@ -54,6 +54,296 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+/// Process error messages from a reply object.
+///
+/// Every reply object from blast4 has a space for error and warning
+/// messages.  This function extracts such messages and returns them
+/// to the user in two strings.  All warnings are returned in one
+/// string, concatenated together with a newline as the delimiter, and
+/// all error messages are concatenated together in another string in
+/// the same way.  If there are no warnings or errors, the resulting
+/// strings will be empty.
+///
+/// @param reply The reply object from blast4.
+/// @param errors Concatenated error messages (if any).
+/// @param warnings Concatenated warning messages (if any).
+static void
+s_ProcessErrorsFromReply(CRef<objects::CBlast4_reply> reply,
+                         string& errors,
+                         string& warnings)
+{
+    static const string no_msg("<no message>");
+
+    if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
+        ITERATE(list< CRef< CBlast4_error > >, iter, reply->GetErrors()) {
+
+            // Determine the message source and destination.
+
+            const string & message((*iter)->CanGetMessage()
+                                   ? (*iter)->GetMessage()
+                                   : no_msg);
+
+            string & dest
+                (((*iter)->GetCode() & eBlast4_error_flags_warning)
+                 ? warnings
+                 : errors);
+
+            // Attach the message (and possibly delimiter) to dest.
+
+            if (! dest.empty()) {
+                dest += "\n";
+            }
+
+            dest += message;
+        }
+    }
+}
+
+/// Get bioseqs from a sequence fetching reply.
+///
+/// This method reads the reply from a sequence fetching request
+/// and extracts the bioseqs, errors and warnings from it.
+///
+/// @param reply
+///     The reply from a sequence fetching request.
+/// @param bioseqs
+///     The returned list of bioseqs from the request.
+/// @param errors
+///     Returned string containing any errors encountered.
+/// @param warnings
+///     Returned string containing any warnigns encountered.
+static void
+s_GetSeqsFromReply(CRef<objects::CBlast4_reply> reply,
+                                 CBlastServices::TBioseqVector                & bioseqs,  // out
+                                 string                       & errors,   // out
+                                 string                       & warnings) // out
+{
+    // Read the data from the reply into the output arguments.
+
+    bioseqs.clear();
+
+    s_ProcessErrorsFromReply(reply, errors, warnings);
+
+    if (reply->CanGetBody() && reply->GetBody().IsGet_sequences()) {
+        list< CRef<CBioseq> > & bslist =
+            reply->SetBody().SetGet_sequences().Set();
+
+        bioseqs.reserve(bslist.size());
+
+        ITERATE(list< CRef<CBioseq> >, iter, bslist) {
+            bioseqs.push_back(*iter);
+        }
+    }
+}
+
+static EBlast4_residue_type
+s_SeqTypeToResidue(char p, string & errors)
+{
+    EBlast4_residue_type retval = eBlast4_residue_type_unknown;
+
+    switch(p) {
+    case 'p':
+        retval = eBlast4_residue_type_protein;
+        break;
+
+    case 'n':
+        retval = eBlast4_residue_type_nucleotide;
+        break;
+
+    default:
+        errors = "Error: invalid residue type specified.";
+    }
+
+    return retval;
+}
+
+/// Build Sequence Fetching Request
+///
+/// This method builds a blast4 request designed to fetch a list
+/// of bioseqs from the blast4 server.
+///
+/// @param seqids
+///     The seqids of the sequences to fetch.
+/// @param database
+///     The database or databases containing the desired sequences.
+/// @param seqtype
+///     Either 'p' or 'n' for protein or nucleotide.
+/// @param errors
+///     Returned string containing any errors encountered.
+/// @param skip_seq_data
+///     If true, the sequence data will NOT be fetched
+/// @return
+///     The blast4 sequence fetching request object.
+static CRef<objects::CBlast4_request>
+s_BuildGetSeqRequest(CBlastServices::TSeqIdVector& seqids,   // in
+                     const string& database, // in
+                     char          seqtype,  // 'p' or 'n'
+                     bool    skip_seq_data,  // in
+                     string&       errors)  // out
+{
+    // This will be returned in an Empty() state if an error occurs.
+    CRef<CBlast4_request> request;
+
+    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
+
+    if (database.empty()) {
+        errors = "Error: database name may not be blank.";
+        return request;
+    }
+
+    if (seqids.empty()) {
+        errors = "Error: no sequences requested.";
+        return request;
+    }
+
+    // Build ASN.1 request objects and link them together.
+
+    request.Reset(new CBlast4_request);
+
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_database>     db  (new CBlast4_database);
+
+    request->SetBody(*body);
+    body->SetGet_sequences().SetDatabase(*db);
+    body->SetGet_sequences().SetSkip_seq_data(skip_seq_data);
+
+    // Fill in db values
+
+    db->SetName(database);
+    db->SetType(rtype);
+
+    // Link in the list of requests.
+
+    list< CRef< CSeq_id > > & seqid_list =
+        body->SetGet_sequences().SetSeq_ids();
+
+    ITERATE(CBlastServices::TSeqIdVector, iter, seqids) {
+        seqid_list.push_back(*iter);
+    }
+
+    return request;
+}
+
+/// Main function to issue a Blast4-get-sequences-request and collect its
+/// results from the remote BLAST server.
+///
+/// @param seqids
+///     The seqids of the sequences to fetch. [in]
+/// @param database
+///     The database or databases containing the desired sequences. [in]
+/// @param seqtype
+///     Either 'p' or 'n' for protein or nucleotide. [in]
+/// @param bioseqs
+///     The vector used to return the requested Bioseqs. [out]
+/// @param errors
+///     Returned string containing any errors encountered. [out]
+/// @param warnings
+///     A null-separated list of warning. [out]
+/// @param skip_seq_data
+///     If true, the sequence data will NOT be fetched [in]
+/// @param verbose  Produce verbose output. [in]
+static void
+s_GetSequences(CBlastServices::TSeqIdVector & seqids,
+                             const string & database,
+                             char           seqtype,
+                             bool           skip_seq_data,
+                             CBlastServices::TBioseqVector& bioseqs,
+                             string       & errors,
+                             string       & warnings,
+                             bool           verbose)
+{
+    // Build the request
+
+    CRef<CBlast4_request> request =
+        s_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors);
+
+    if (request.Empty()) {
+        return;
+    }
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *request << endl;
+    }
+
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+
+    try {
+        // Send request
+        CBlast4Client().Ask(*request, *reply);
+    }
+    catch(const CEofException &) {
+        NCBI_THROW(CBlastServicesException, eRequestErr,
+                   "No response from server, cannot complete request.");
+    }
+
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *reply << endl;
+    }
+    s_GetSeqsFromReply(reply, bioseqs, errors, warnings);
+}
+
+/// Build Sequence Parts Fetching Request
+///
+/// This method builds a blast4 request designed to fetch sequence
+/// data
+///
+/// @param seqids
+///     The seqids and ranges of the sequences to fetch.
+/// @param database
+///     The database or databases containing the desired sequences.
+/// @param seqtype
+///     Either 'p' or 'n' for protein or nucleotide.
+/// @param errors
+///     Returned string containing any errors encountered.
+/// @return
+///     The blast4 sequence fetching request object.
+static CRef<objects::CBlast4_request> 
+s_BuildGetSeqPartsRequest(const CBlastServices::TSeqIntervalVector & seqids,    // in
+                          const string             & database,  // in
+                          char                       seqtype,   // 'p' or 'n'
+                          string                   & errors)    // out
+{
+    errors.erase();
+
+    // This will be returned in an Empty() state if an error occurs.
+    CRef<CBlast4_request> request;
+
+    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
+
+    if (errors.size()) {
+        return request;
+    }
+
+    if (database.empty()) {
+        errors = "Error: database name may not be blank.";
+        return request;
+    }
+    if (seqids.empty()) {
+        errors = "Error: no sequences requested.";
+        return request;
+    }
+
+    // Build ASN.1 request objects and link them together.
+
+    request.Reset(new CBlast4_request);
+
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_database>     db  (new CBlast4_database);
+
+    request->SetBody(*body);
+
+    CBlast4_get_seq_parts_request & req =
+        body->SetGet_sequence_parts();
+    copy(seqids.begin(), seqids.end(), back_inserter(req.SetSeq_locations()));
+
+    req.SetDatabase(*db);
+
+    // Fill in db values
+    db->SetName(database);
+    db->SetType(rtype);
+    return request;
+}
+
+
 bool
 CBlastServices::IsValidBlastDb(const string& dbname, bool is_protein)
 {
@@ -141,7 +431,7 @@ CBlastServices::GetSequencesInfo(TSeqIdVector & seqids,   // in
                                string       & warnings, // out
                                bool           verbose)  // in
 {
-    x_GetSequences(seqids, database, seqtype, true, bioseqs, errors, warnings,
+    s_GetSequences(seqids, database, seqtype, true, bioseqs, errors, warnings,
                    verbose);
 }
 
@@ -154,9 +444,41 @@ CBlastServices::GetSequences(TSeqIdVector & seqids,   // in
                            string       & warnings, // out
                            bool           verbose)  // in
 {
-    x_GetSequences(seqids, database, seqtype, false, bioseqs, errors, warnings,
+    s_GetSequences(seqids, database, seqtype, false, bioseqs, errors, warnings,
                    verbose);
 }   
+
+
+/// Extract information from the get-seq-parts reply object.
+/// @param reply The reply object from blast4.
+/// @param ids All Seq-ids for the requested sequences.
+/// @param seq_data Seq_data for the sequences in question.
+/// @param errors Any error messages found in the reply.
+/// @param warnings Any warnings found in the reply.
+static void
+s_GetPartsFromReply(CRef<objects::CBlast4_reply>   reply,    // in
+                    CBlastServices::TSeqIdVector & ids,      // out
+                    CBlastServices::TSeqDataVector  & seq_data, // out
+                    string                       & errors,   // out
+                    string                       & warnings) // out
+{
+    seq_data.clear();
+    ids.clear();
+
+    s_ProcessErrorsFromReply(reply, errors, warnings);
+
+    if (reply->CanGetBody() && reply->GetBody().IsGet_sequence_parts()) {
+        CBlast4_get_seq_parts_reply::Tdata& parts_rep =
+            reply->SetBody().SetGet_sequence_parts().Set();
+        ids.reserve(parts_rep.size());
+        seq_data.reserve(parts_rep.size());
+
+        NON_CONST_ITERATE(CBlast4_get_seq_parts_reply::Tdata, itr, parts_rep) {
+            ids.push_back(CRef<CSeq_id>(&(*itr)->SetId()));
+            seq_data.push_back(CRef<CSeq_data>(&(*itr)->SetData()));
+        }
+    }
+}
 
 void CBlastServices::
 GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
@@ -171,7 +493,7 @@ GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
     // Build the request
 
     CRef<CBlast4_request> request =
-            x_BuildGetSeqPartsRequest(seqids, database, seqtype, errors);
+            s_BuildGetSeqPartsRequest(seqids, database, seqtype, errors);
 
     if (request.Empty()) {
         return;
@@ -194,261 +516,8 @@ GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
     if (verbose) {
         NcbiCout << MSerial_AsnText << *reply << endl;
     }
-    x_GetPartsFromReply(reply, ids, seq_data, errors, warnings);
+    s_GetPartsFromReply(reply, ids, seq_data, errors, warnings);
 }
-
-/// Process error messages from a reply object.
-///
-/// Every reply object from blast4 has a space for error and warning
-/// messages.  This function extracts such messages and returns them
-/// to the user in two strings.  All warnings are returned in one
-/// string, concatenated together with a newline as the delimiter, and
-/// all error messages are concatenated together in another string in
-/// the same way.  If there are no warnings or errors, the resulting
-/// strings will be empty.
-///
-/// @param reply The reply object from blast4.
-/// @param errors Concatenated error messages (if any).
-/// @param warnings Concatenated warning messages (if any).
-static void
-s_ProcessErrorsFromReply(CRef<objects::CBlast4_reply> reply,
-                         string& errors,
-                         string& warnings)
-{
-    static const string no_msg("<no message>");
-
-    if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
-        ITERATE(list< CRef< CBlast4_error > >, iter, reply->GetErrors()) {
-
-            // Determine the message source and destination.
-
-            const string & message((*iter)->CanGetMessage()
-                                   ? (*iter)->GetMessage()
-                                   : no_msg);
-
-            string & dest
-                (((*iter)->GetCode() & eBlast4_error_flags_warning)
-                 ? warnings
-                 : errors);
-
-            // Attach the message (and possibly delimiter) to dest.
-
-            if (! dest.empty()) {
-                dest += "\n";
-            }
-
-            dest += message;
-        }
-    }
-}
-
-void
-CBlastServices::
-x_GetPartsFromReply(CRef<objects::CBlast4_reply>   reply,    // in
-                    TSeqIdVector                 & ids,      // out
-                    TSeqDataVector               & seq_data, // out
-                    string                       & errors,   // out
-                    string                       & warnings) // out
-{
-    seq_data.clear();
-    ids.clear();
-
-    s_ProcessErrorsFromReply(reply, errors, warnings);
-
-    if (reply->CanGetBody() && reply->GetBody().IsGet_sequence_parts()) {
-        CBlast4_get_seq_parts_reply::Tdata& parts_rep =
-            reply->SetBody().SetGet_sequence_parts().Set();
-        ids.reserve(parts_rep.size());
-        seq_data.reserve(parts_rep.size());
-
-        NON_CONST_ITERATE(CBlast4_get_seq_parts_reply::Tdata, itr, parts_rep) {
-            ids.push_back(CRef<CSeq_id>(&(*itr)->SetId()));
-            seq_data.push_back(CRef<CSeq_data>(&(*itr)->SetData()));
-        }
-    }
-}
-
-void
-CBlastServices::x_GetSeqsFromReply(CRef<objects::CBlast4_reply> reply,
-                                 TBioseqVector                & bioseqs,  // out
-                                 string                       & errors,   // out
-                                 string                       & warnings) // out
-{
-    // Read the data from the reply into the output arguments.
-
-    bioseqs.clear();
-
-    s_ProcessErrorsFromReply(reply, errors, warnings);
-
-    if (reply->CanGetBody() && reply->GetBody().IsGet_sequences()) {
-        list< CRef<CBioseq> > & bslist =
-            reply->SetBody().SetGet_sequences().Set();
-
-        bioseqs.reserve(bslist.size());
-
-        ITERATE(list< CRef<CBioseq> >, iter, bslist) {
-            bioseqs.push_back(*iter);
-        }
-    }
-}
-
-static EBlast4_residue_type
-s_SeqTypeToResidue(char p, string & errors)
-{
-    EBlast4_residue_type retval = eBlast4_residue_type_unknown;
-
-    switch(p) {
-    case 'p':
-        retval = eBlast4_residue_type_protein;
-        break;
-
-    case 'n':
-        retval = eBlast4_residue_type_nucleotide;
-        break;
-
-    default:
-        errors = "Error: invalid residue type specified.";
-    }
-
-    return retval;
-}
-
-CRef<objects::CBlast4_request> CBlastServices::
-x_BuildGetSeqRequest(TSeqIdVector& seqids,   // in
-                     const string& database, // in
-                     char          seqtype,  // 'p' or 'n'
-                     bool    skip_seq_data,  // in
-                     string&       errors)  // out
-{
-    // This will be returned in an Empty() state if an error occurs.
-    CRef<CBlast4_request> request;
-
-    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
-
-    if (database.empty()) {
-        errors = "Error: database name may not be blank.";
-        return request;
-    }
-
-    if (seqids.empty()) {
-        errors = "Error: no sequences requested.";
-        return request;
-    }
-
-    // Build ASN.1 request objects and link them together.
-
-    request.Reset(new CBlast4_request);
-
-    CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    CRef<CBlast4_database>     db  (new CBlast4_database);
-
-    request->SetBody(*body);
-    body->SetGet_sequences().SetDatabase(*db);
-    body->SetGet_sequences().SetSkip_seq_data(skip_seq_data);
-
-    // Fill in db values
-
-    db->SetName(database);
-    db->SetType(rtype);
-
-    // Link in the list of requests.
-
-    list< CRef< CSeq_id > > & seqid_list =
-        body->SetGet_sequences().SetSeq_ids();
-
-    ITERATE(TSeqIdVector, iter, seqids) {
-        seqid_list.push_back(*iter);
-    }
-
-    return request;
-}
-
-void
-CBlastServices::x_GetSequences(TSeqIdVector & seqids,
-                             const string & database,
-                             char           seqtype,
-                             bool           skip_seq_data,
-                             TBioseqVector& bioseqs,
-                             string       & errors,
-                             string       & warnings,
-                             bool           verbose)
-{
-    // Build the request
-
-    CRef<CBlast4_request> request =
-        x_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors);
-
-    if (request.Empty()) {
-        return;
-    }
-    if (verbose) {
-        NcbiCout << MSerial_AsnText << *request << endl;
-    }
-
-    CRef<CBlast4_reply> reply(new CBlast4_reply);
-
-    try {
-        // Send request
-        CBlast4Client().Ask(*request, *reply);
-    }
-    catch(const CEofException &) {
-        NCBI_THROW(CBlastServicesException, eRequestErr,
-                   "No response from server, cannot complete request.");
-    }
-
-    if (verbose) {
-        NcbiCout << MSerial_AsnText << *reply << endl;
-    }
-    x_GetSeqsFromReply(reply, bioseqs, errors, warnings);
-}
-
-CRef<objects::CBlast4_request> CBlastServices::
-x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqids,    // in
-                          const string             & database,  // in
-                          char                       seqtype,   // 'p' or 'n'
-                          string                   & errors)    // out
-{
-    errors.erase();
-
-    // This will be returned in an Empty() state if an error occurs.
-    CRef<CBlast4_request> request;
-
-    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
-
-    if (errors.size()) {
-        return request;
-    }
-
-    if (database.empty()) {
-        errors = "Error: database name may not be blank.";
-        return request;
-    }
-    if (seqids.empty()) {
-        errors = "Error: no sequences requested.";
-        return request;
-    }
-
-    // Build ASN.1 request objects and link them together.
-
-    request.Reset(new CBlast4_request);
-
-    CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    CRef<CBlast4_database>     db  (new CBlast4_database);
-
-    request->SetBody(*body);
-
-    CBlast4_get_seq_parts_request & req =
-        body->SetGet_sequence_parts();
-    copy(seqids.begin(), seqids.end(), back_inserter(req.SetSeq_locations()));
-
-    req.SetDatabase(*db);
-
-    // Fill in db values
-    db->SetName(database);
-    db->SetType(rtype);
-    return request;
-}
-
 
 END_NCBI_SCOPE
 
