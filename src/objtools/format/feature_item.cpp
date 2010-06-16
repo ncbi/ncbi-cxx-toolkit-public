@@ -1605,7 +1605,7 @@ void CFeatureItem::x_AddQualsRna(
                         m_Feat.IsSetComment() ? m_Feat.GetComment() : kEmptyStr;
                     x_AddQual(eFQ_trna_codons, new CFlatTrnaCodonsQVal(trna, comment));
                 }
-                x_AddQual(eFQ_exception_note, new CFlatStringQVal("tRNA features were annotated by tRNAscan-SE."));
+                //x_AddQual(eFQ_exception_note, new CFlatStringQVal("tRNA features were annotated by tRNAscan-SE."));
                 break;
             }
             default:
