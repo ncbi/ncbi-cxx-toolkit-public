@@ -187,7 +187,7 @@ int CTblastnApp::Run(void)
                 if (fmt_args->ArchiveFormatRequested(args)) {
                     formatter.WriteArchive(*query_factory, *opts_hndl, *results);
                 } else {
-                    formatter.PreFetchSequenceData(results);
+                    BlastFormatter_PreFetchSequenceData(*results, scope);
                     ITERATE(CSearchResultSet, result, *results) {
                         formatter.PrintOneResultSet(**result, query);
                     }
@@ -221,7 +221,7 @@ int CTblastnApp::Run(void)
             if (fmt_args->ArchiveFormatRequested(args)) {
                 formatter.WriteArchive(*query_factory, *opts_hndl, *results);
             } else {
-                formatter.PreFetchSequenceData(results);
+                BlastFormatter_PreFetchSequenceData(*results, scope);
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query);
                 }

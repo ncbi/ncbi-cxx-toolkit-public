@@ -171,6 +171,16 @@ SaveSearchStrategy(const CArgs& args,
                    CRef<objects::CPssmWithParameters> pssm 
                      = CRef<objects::CPssmWithParameters>());
 
+/// This method needs to be invoked for optimizing the retrieval of
+/// sequence data from the remote BLAST database data loader (exercised
+/// when there are no locally available BLAST databases)
+/// @param results BLAST results [in]
+/// @param scope CScope object from which the sequence data will be fetched
+/// [in]
+void 
+BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
+                                    results, CRef<CScope> scope);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

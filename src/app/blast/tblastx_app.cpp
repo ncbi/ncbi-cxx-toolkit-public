@@ -166,7 +166,7 @@ int CTblastxApp::Run(void)
             if (fmt_args->ArchiveFormatRequested(args)) {
                 formatter.WriteArchive(*queries, *opts_hndl, *results);
             } else {
-                formatter.PreFetchSequenceData(results);
+                BlastFormatter_PreFetchSequenceData(*results, scope);
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query_batch);
                 }

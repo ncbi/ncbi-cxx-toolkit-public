@@ -210,11 +210,6 @@ public:
     /// than when using other output formats.
     void ResetScopeHistory();
     
-    /// This method needs to be invoked for optimizing the retrieval of
-    /// sequence data from the remote BLAST database data loader (exercised
-    /// when there are no locally available BLAST databases)
-    void PreFetchSequenceData(const CRef<blast::CSearchResultSet>& results);
-
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;

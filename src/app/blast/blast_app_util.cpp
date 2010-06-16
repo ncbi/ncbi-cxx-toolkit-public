@@ -53,6 +53,12 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <serial/typeinfo.hpp>      // for CTypeInfo, needed by SerialClone
+#include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
@@ -460,6 +466,125 @@ SaveSearchStrategy(const CArgs& args,
     s_ExportSearchStrategy(out, queries, opts_hndl, 
                            cmdline_args->GetBlastDatabaseArgs(), 
                            pssm);
+}
+
+struct CConstRefCSeqId_LessThan
+{
+    bool operator() (const CConstRef<CSeq_id>& a, const CConstRef<CSeq_id>& b) const {
+        if (a.Empty() && b.NotEmpty()) {
+            return true;
+        } else if (a.NotEmpty() && b.Empty()) {
+            return false;
+        } else if (a.Empty() && b.Empty()) {
+            return true;
+        } else {
+            _ASSERT(a.NotEmpty() && b.NotEmpty());
+            return *a < *b;
+        }
+    }
+};
+
+/// Extracts the subject sequence IDs and ranges from the BLAST results
+/// @note if this ever needs to be refactored for popular developer
+/// consumption, this function should operate on CSeq_align_set as opposed to
+/// blast::CSearchResultSet
+static void 
+s_ExtractSeqidsAndRanges(const blast::CSearchResultSet& results,
+                         CScope::TIds& ids, vector<TSeqRange>& ranges)
+{
+    static const CSeq_align::TDim kSubjRow = 1;
+    ids.clear();
+    ranges.clear();
+
+    typedef map< CConstRef<CSeq_id>, 
+                 vector<TSeqRange>, 
+                 CConstRefCSeqId_LessThan
+               > TSeqIdRanges;
+    TSeqIdRanges id_ranges;
+
+    ITERATE(blast::CSearchResultSet, result, results) {
+        if ( !(*result)->HasAlignments() ) {
+            continue;
+        }
+        ITERATE(CSeq_align_set::Tdata, aln, (*result)->GetSeqAlign()->Get()) {
+            CConstRef<CSeq_id> subj(&(*aln)->GetSeq_id(kSubjRow));
+            id_ranges[subj].push_back((*aln)->GetSeqRange(kSubjRow));
+        }
+    }
+
+    ITERATE(TSeqIdRanges, itr, id_ranges) {
+        ITERATE(vector<TSeqRange>, range, itr->second) {
+            ids.push_back(CSeq_id_Handle::GetHandle(*itr->first));
+            ranges.push_back(*range);
+        }
+    }
+    _ASSERT(ids.size() == ranges.size());
+}
+
+/// Returns true if the remote BLAST DB data loader is being used
+static bool
+s_IsUsingRemoteBlastDbDataLoader()
+{
+    CObjectManager::TRegisteredNames data_loaders;
+    CObjectManager::GetInstance()->GetRegisteredNames(data_loaders);
+    ITERATE(CObjectManager::TRegisteredNames, name, data_loaders) {
+        if (NStr::StartsWith(*name, objects::CRemoteBlastDbDataLoader::kNamePrefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
+                                         results, CRef<CScope> scope)
+{
+    _ASSERT(scope.NotEmpty());
+    if (results.size() == 0) {
+        return;
+    }
+    // Only useful if we're dealing with then remote BLAST DB data loader
+    if (! s_IsUsingRemoteBlastDbDataLoader() ) {
+        return;
+    }
+
+    CScope::TIds ids;
+    vector<TSeqRange> ranges;
+    s_ExtractSeqidsAndRanges(results, ids, ranges);
+
+    CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
+
+    // Per Eugene Vasilchenko's suggestion, via email on 6/8/10:
+    // "With the current API you can make artificial delta sequence referencing
+    // several other sequences and use its CSeqMap to load them all in one
+    // call. There is no straightforward way to do this, sorry."
+
+    // Create virtual delta sequence
+    CRef<CBioseq> top_seq(new CBioseq);
+    CSeq_inst& inst = top_seq->SetInst();
+    inst.SetRepr(CSeq_inst::eRepr_virtual);
+    inst.SetMol(CSeq_inst::eMol_not_set);
+    CDelta_ext& delta = inst.SetExt().SetDelta();
+    int i = 0;
+    ITERATE(CScope::TBioseqHandles, it, bhs) {
+        CRef<CDelta_seq> seq(new CDelta_seq);
+        CSeq_interval& interval = seq->SetLoc().SetInt();
+        interval.SetId
+            (*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
+        interval.SetFrom(ranges[i].GetFrom());
+        interval.SetTo(ranges[i].GetTo());
+        i++;
+        delta.Set().push_back(seq);
+    }
+
+    // Add it to the scope
+    CBioseq_Handle top_bh = scope->AddBioseq(*top_seq);
+
+    // prepare selector. SetLinkUsedTSE() is necessary for batch loading
+    SSeqMapSelector sel(CSeqMap::fFindAnyLeaf, kInvalidSeqPos);
+    sel.SetLinkUsedTSE(top_bh.GetTSE_Handle());
+
+    // and get all sequence data in batch mode
+    top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
 }
 
 END_NCBI_SCOPE

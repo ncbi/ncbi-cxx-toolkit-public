@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CRemoteBlastDbDataLoader 
+class NCBI_XLOADER_BLASTDB_EXPORT CRemoteBlastDbDataLoader 
     : public CBlastDbDataLoader
 {
 public:
