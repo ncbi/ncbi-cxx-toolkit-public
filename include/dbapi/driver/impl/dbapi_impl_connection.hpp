@@ -58,7 +58,7 @@ class CCommand;
 ///  CConnection::
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT CConnection
+class NCBI_DBAPIDRIVER_EXPORT CConnection : public I_ConnectionExtra
 {
     friend class impl::CDriverContext;
     friend class ncbi::CDB_Connection; // Because of AttachTo
@@ -211,6 +211,8 @@ public:
 
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
+
+    virtual TSockHandle GetLowLevelHandle(void) const;
 
     CDBConnParams::EServerType GetServerType(void);
 

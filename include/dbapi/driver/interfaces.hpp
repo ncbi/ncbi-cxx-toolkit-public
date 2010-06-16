@@ -37,7 +37,9 @@
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_MSWIN
+#  include <winsock2.h>
+#else // NCBI_OS_UNIX
 #  include <unistd.h>
 #endif
 
@@ -1081,6 +1083,8 @@ private:
 
 
 
+class I_ConnectionExtra;
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  I_Connection::
@@ -1295,6 +1299,9 @@ protected:
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
 
+    /// Get interface for extra features that could be implemented in the driver.
+    virtual I_ConnectionExtra& GetExtraFeatures(void) = 0;
+
 public:
     // Deprecated legacy methods.
 
@@ -1322,6 +1329,20 @@ public:
         return Cursor(cursor_name, query, batch_size);
     }
 
+};
+
+
+class NCBI_DBAPIDRIVER_EXPORT I_ConnectionExtra
+{
+public:
+#ifdef NCBI_OS_MSWIN
+    typedef SOCKET  TSockHandle;
+#else
+    typedef int     TSockHandle;
+#endif
+
+    /// Get OS handle of the socket represented by the connection
+    virtual TSockHandle GetLowLevelHandle(void) const = 0;
 };
 
 

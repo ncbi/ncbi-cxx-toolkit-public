@@ -424,6 +424,8 @@ protected:
 
     virtual void SetTimeout(size_t nof_secs);
 
+    virtual TSockHandle GetLowLevelHandle(void) const;
+
 private:
     void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);

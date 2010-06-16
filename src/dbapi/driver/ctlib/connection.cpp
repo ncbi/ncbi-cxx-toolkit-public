@@ -381,6 +381,17 @@ CTL_Connection::SetTimeout(size_t nof_secs)
 }
 
 
+I_ConnectionExtra::TSockHandle
+CTL_Connection::GetLowLevelHandle(void) const
+{
+#ifdef FTDS_IN_USE
+    return x_GetSybaseConn()->tds_socket->s;
+#else
+    return impl::CConnection::GetLowLevelHandle();
+#endif
+}
+
+
 CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";

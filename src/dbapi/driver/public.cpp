@@ -414,6 +414,12 @@ void CDB_Connection::SetTimeout(size_t nof_secs)
     m_ConnImpl->SetTimeout(nof_secs);
 }
 
+I_ConnectionExtra& CDB_Connection::GetExtraFeatures(void)
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return *m_ConnImpl;
+}
+
 void CDB_Connection::FinishOpenning(void)
 {
     CHECK_CONNECTION(m_ConnImpl);

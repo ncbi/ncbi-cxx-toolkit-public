@@ -351,6 +351,12 @@ CConnection::GetDatabaseName(void) const
     return m_Database;
 }
 
+I_ConnectionExtra::TSockHandle
+CConnection::GetLowLevelHandle(void) const
+{
+    DATABASE_DRIVER_ERROR("GetLowLevelHandle is not implemented", 500001);
+}
+
 
 } // namespace impl
 
