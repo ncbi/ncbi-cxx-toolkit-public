@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-bool less<CGff3WriteRecord*>( 
+bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()( 
 	const CGff3WriteRecord* x, 
 	const CGff3WriteRecord* y ) 
 {

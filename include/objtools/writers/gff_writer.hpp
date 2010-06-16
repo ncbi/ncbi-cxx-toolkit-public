@@ -73,8 +73,13 @@ public:
 
 protected:
     TRecords m_Set;
-	
-	typedef map< const CGff3WriteRecord*, CGff3WriteRecord* > TMergeMap;
+
+	struct PGff3WriteRecordPtrLess {
+    	bool operator()(const CGff3WriteRecord* x, const CGff3WriteRecord* y); 
+	};
+
+	typedef map< const CGff3WriteRecord*, CGff3WriteRecord*, 
+				 PGff3WriteRecordPtrLess > TMergeMap;
 	TMergeMap m_MergeMap;
 };
 
