@@ -206,9 +206,8 @@ CRemoteBlastDbAdapter::GetSequence(int oid,
 
 void
 CRemoteBlastDbAdapter::GetSequenceBatch(const vector<int>& oids,
-                                        vector< CRef<CSeq_data> >&
-                                        sequence_data,
-                                        vector<TSeqRange>& ranges)
+            vector< CRef<CSeq_data> >& sequence_data,
+            vector<TSeqRange> ranges /* = vector<TSeqRange>() */ )
 {
     if ( !ranges.empty() ) {
         _ASSERT(oids.size() == ranges.size());

@@ -195,7 +195,7 @@ public:
     /// Batch-version of GetSequence
     void GetSequenceBatch(const vector<int>& oids, 
                           vector< CRef<CSeq_data> >& sequence_data,
-                          vector<TSeqRange>& ranges = vector<TSeqRange>());
+                          vector<TSeqRange> ranges = vector<TSeqRange>());
 	/** @inheritDoc */
     virtual bool SeqidToOid(const CSeq_id & id, int & oid);
     /// Batch-version of SeqidToOid
