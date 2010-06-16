@@ -1368,7 +1368,7 @@ void CFeatureItem::x_AddQuals(
 //    if ( GetLoc().IsInt() ) {
 //        size_t uFrom = GetLoc().GetInt().GetFrom();
 //        size_t uTo = GetLoc().GetInt().GetTo();
-//        if ( uFrom == 100880 ) {
+//        if ( uFrom == 25887 ) {
 //            cerr << "Break" << endl;
 //        }
 //    }
@@ -1467,10 +1467,12 @@ static const string s_TrnaList[] = {
   "tRNA-Gly",
   "tRNA-His",
   "tRNA-Ile",
+  "tRNA-Xle",
   "tRNA-Lys",
   "tRNA-Leu",
   "tRNA-Met",
   "tRNA-Asn",
+  "tRNA-Pyl",
   "tRNA-Pro",
   "tRNA-Gln",
   "tRNA-Arg",
@@ -1488,21 +1490,14 @@ static const string s_TrnaList[] = {
 
 static const string& s_AaName(int aa)
 {
-    int shift = 0, idx = 255;
+    int idx = 255;
 
-    if ( aa <= 74 ) {
-        shift = 0;
-    } else if (aa > 79) {
-        shift = 2;
-    } else {
-        shift = 1;
-    }
     if (aa != '*') {
-        idx = aa - (64 + shift);
+        idx = aa - 64;
     } else {
         idx = 25;
     }
-    if ( idx > 0 && idx < 26 ) {
+    if ( idx > 0 && idx < 28 ) {
         return s_TrnaList [idx];
     }
     return kEmptyStr;
