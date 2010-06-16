@@ -51,6 +51,42 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
+bool less<CGff3WriteRecord*>( 
+	const CGff3WriteRecord* x, 
+	const CGff3WriteRecord* y ) 
+{
+	if( x->Type() < y->Type() )
+		return true;
+	
+	else if( x->Id() < y->Id() )
+		return true;
+	
+	else if( x->SeqStart() < y->SeqStart() )
+		return true;
+	
+	else if( x->SeqStop() < y->SeqStop() )
+		return true;
+
+	return false;
+}
+
+//  ---------------------------------------------------------------------------
+
+void CGff3WriteRecordSet::AddOrMergeRecord(
+	CGff3WriteRecord* pRecord )
+{
+	TMergeMap::iterator merge = m_MergeMap.find(pRecord);
+
+	if( merge != m_MergeMap.end() ) {
+		merge->second->MergeRecord( *pRecord );
+		delete pRecord;
+	} else {
+		m_MergeMap[pRecord] = pRecord;
+		m_Set.push_back( pRecord );
+	}
+}
+
 //  ----------------------------------------------------------------------------
 CGffWriter::CGffWriter(
     CNcbiOstream& ostr,
@@ -211,10 +247,15 @@ bool CGffWriter::x_AssignObject(
     }
 
     if ( pRecord->Type() == "exon" ) {
-        // only add exon feature if one has not been created before. If one
+     
+	    set.AddOrMergeRecord( pRecord );
+		return true;
+
+		/*
+		// only add exon feature if one has not been created before. If one
         // has been created before, migrate the attributes.
         CGff3WriteRecordSet::TIt it;
-        for ( it = set.begin(); it != set.end(); ++it ) {
+		for ( it = set.begin(); it != set.end(); ++it ) {
             if ( (*it)->Type() != pRecord->Type() ) {
                 continue;
             }
@@ -234,6 +275,7 @@ bool CGffWriter::x_AssignObject(
             delete pRecord;
         }
         return true;
+		*/
     }
 
     // default behavior:
@@ -370,6 +412,7 @@ string CGffWriter::x_GffAttributes(
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
+	strAttributes.reserve(256);
     CGff3WriteRecord::TAttributes attrs;
     attrs.insert( record.Attributes().begin(), record.Attributes().end() );
     CGff3WriteRecord::TAttrIt it;
@@ -391,20 +434,18 @@ string CGffWriter::x_GffAttributes(
             continue;
         }
 
-		bool quote = it->second.empty() || 
-				    (it->second.find(';') != string::npos &&
-		             it->second.find('\"') == string::npos);
-
         if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
             strAttributes += ";";
         }
         strAttributes += strKey;
         strAttributes += "=";
-        if ( quote )
-			strAttributes += "\"";
+		
+		bool quote = x_NeedsQuoting(it->second);
+		if ( quote )
+			strAttributes += '\"';		
 		strAttributes += it->second;
 		if ( quote )
-            strAttributes += "\"";
+			strAttributes += '\"';
 		if ( m_uFlags & fSoQuirks ) {
             strAttributes += "; ";
         }
@@ -452,8 +493,13 @@ bool CGffWriter::x_NeedsQuoting(
     const string& str )
 //  ----------------------------------------------------------------------------
 {
-    for ( size_t u=0; u < str.length(); ++u ) {
-        if ( str[u] == ' ' ) {
+    if( str.empty() )
+		return true;
+
+	for ( size_t u=0; u < str.length(); ++u ) {
+        if ( str[u] == '\"' )
+			return false;
+		if ( str[u] == ' ' || str[u] == ';' ) {
             return true;
         }
     }
@@ -480,19 +526,15 @@ void CGffWriter::x_PriorityProcess(
             NStr::ToUpper( strKeyMod );
         }
 
-		bool quote = it->second.empty() ||
-        	        (it->second.find(';') != string::npos &&
-			         it->second.find('\"') == string::npos);
-										   
         strAttributes += strKeyMod;
         strAttributes += "=";
-        //strAttributes += it->second;
-        if ( quote )
-			strAttributes += "\"";
+       	bool quote = x_NeedsQuoting(it->second);
+		if ( quote )
+			strAttributes += '\"';		
 		strAttributes += it->second;
 		attrs.erase(it);
 		if ( quote )
-            strAttributes += "\"";
+			strAttributes += '\"';
 		if ( m_uFlags & fSoQuirks ) {
             strAttributes += "; ";
         }

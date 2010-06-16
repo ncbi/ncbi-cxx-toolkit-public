@@ -59,9 +59,11 @@ public:
             delete *it;
         }
     };
-
+ 
     void AddRecord(
         CGff3WriteRecord* pRecord ) { m_Set.push_back( pRecord ); };
+
+	void AddOrMergeRecord( CGff3WriteRecord* );
 
     const TRecords& Set() const { return m_Set; };
     TCit begin() const { return Set().begin(); };
@@ -71,6 +73,9 @@ public:
 
 protected:
     TRecords m_Set;
+	
+	typedef map< const CGff3WriteRecord*, CGff3WriteRecord* > TMergeMap;
+	TMergeMap m_MergeMap;
 };
 
 
