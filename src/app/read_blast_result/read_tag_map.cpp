@@ -39,7 +39,14 @@ int CReadBlastApp::ReadTagMap(const char *file)
   while(!in.eof())
     {
     in >> key >> value;
-    if(!in.eof()) m_tagmap[key]=value;
+    if(!in.eof()) 
+      {
+      if(m_tagmap.find(key) != m_tagmap.end())
+        {
+        NcbiCerr << "ReadTagMap("<<file<<"): ERROR: m_tagmap["<<key<<"]="<<m_tagmap[key]<<" has been already defined, discarding new value " << value << NcbiEndl;
+        }
+      else m_tagmap[key]=value;
+      }
     }
 
   return m_tagmap.size();
