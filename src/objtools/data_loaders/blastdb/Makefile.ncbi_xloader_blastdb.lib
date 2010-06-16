@@ -5,3 +5,4 @@ SRC = bdbloader cached_sequence local_blastdb_adapter
 
 ASN_DEP = blastdb seqset
 
+WATCHERS = camacho

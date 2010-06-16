@@ -5,3 +5,4 @@ SRC = bdbloader_rmt remote_blastdb_adapter
 
 ASN_DEP = blastdb xnetblast
 
+WATCHERS = camacho
