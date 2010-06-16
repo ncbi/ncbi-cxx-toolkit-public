@@ -245,40 +245,12 @@ bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
     m_strId = "<unknown>";
 
     if ( feature.CanGetLocation() ) {
-        const CSeq_loc& location = feature.GetLocation();
-        const CSeq_id* pId = location.GetId();
-        if(pId == NULL)
-            return true;    
-		switch ( pId->Which() ) {
-            
-            case CSeq_id::e_Local:
-                if ( pId->GetLocal().IsId() ) {
-                    m_strId = NStr::UIntToString( pId->GetLocal().GetId() );
-                }
-                else {
-                    m_strId = pId->GetLocal().GetStr();
-                }
-                break;
-
-            case CSeq_id::e_Gi:
-                m_strId = NStr::IntToString( pId->GetGi() );
-                break;
-
-            /*case CSeq_id::e_Other:
-                if ( pId->GetOther().CanGetAccession() ) {
-                    m_strId = pId->GetOther().GetAccession();
-                    if ( pId->GetOther().CanGetVersion() ) {
-                        m_strId += ".";
-                        m_strId += NStr::UIntToString( 
-                            pId->GetOther().GetVersion() ); 
-                    }
-                }
-                break;
-            */
-            default:
-			    m_strId = pId->GetSeqIdString(true);
-                break;
-        }
+    	const CSeq_loc& loc = feature.GetLocation();
+	    CConstRef<CSeq_id> id(loc.GetId());
+		if (id) {
+			m_strId.clear();
+			id->GetLabel(&m_strId, CSeq_id::eContent);
+		}
     }
     return true;
 }
