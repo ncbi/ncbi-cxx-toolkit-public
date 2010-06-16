@@ -193,3 +193,18 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 }
 
 
+BOOST_AUTO_TEST_SUITE(TestSuiteTrimAlignment)
+BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CScope scope(*om);
+    scope.AddDefaults();
+    
+    CSeq_align align;
+    CConstRef<CSeq_align> trimmed_align;
+    BOOST_CHECK_NO_THROW(
+                         trimmed_align = CGeneModel::TrimAlignment(align, scope)
+                         );
+}
+BOOST_AUTO_TEST_SUITE_END();

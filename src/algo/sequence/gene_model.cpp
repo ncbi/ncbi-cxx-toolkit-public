@@ -92,6 +92,21 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
                                           TGeneModelCreateFlags flags,
                                           TSeqPos allowed_unaligned)
 {
+    CConstRef<CSeq_align> trimmed_align = TrimAlignment(align_in, scope);
+    ConvertAlignToGeneModel(*trimmed_align,
+                            scope,
+                            annot,
+                            seqs,
+                            flags,
+                            allowed_unaligned);
+}
+void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
+                                         objects::CScope& scope,
+                                         objects::CSeq_annot& annot,
+                                         objects::CBioseq_set& seqs,
+                                         TGeneModelCreateFlags flags,
+                                         TSeqPos allowed_unaligned)
+{
     ////////////////////////////////////////////////////////////////////////////
     ///
 
@@ -280,25 +295,19 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
     ///
     ////////////////////////////////////////////////////////////////////////////
 
-    ///
-    /// before we do anything, trim / stitch / correct the alignment for
-    /// biological purity
-    ///
-    CConstRef<CSeq_align> align = TrimAlignment(align_in, scope);
-
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    SMapper mapper(*align, scope, allowed_unaligned, opts);
+    SMapper mapper(align, scope, allowed_unaligned, opts);
 
     /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
 
 
-    const CSeq_id& rna_id = align->GetSeq_id(mapper.GetRnaRow());
-    const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
+    const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
+    const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
     CBioseq_Handle handle = scope.GetBioseqHandle(rna_id);
 
     /// we always need the mRNA location as a reference
@@ -441,7 +450,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, scope, align);
+        SetFeatureExceptions(*mrna_feat, scope, &align);
         /// NOTE: added after gene!
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
@@ -457,7 +466,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
             cds_feat->Assign(feat_iter->GetOriginalFeature());
 
             /// from this point on, we will get complex locations back
-            SMapper mapper(*align, scope, opts);
+            SMapper mapper(align, scope, opts);
             mapper.IncludeSourceLocs();
             mapper.SetMergeNone();
 
@@ -649,7 +658,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
                     }
                 }
 
-                SetFeatureExceptions(*cds_feat, scope, align);
+                SetFeatureExceptions(*cds_feat, scope, &align);
                 annot.SetData().SetFtable().push_back(cds_feat);
 
                 if (flags & fForceTranslateCds) {

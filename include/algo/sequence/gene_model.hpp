@@ -71,8 +71,18 @@ public:
     TrimAlignment(const objects::CSeq_align& align,
                   objects::CScope& scope);
 
+    /// Cconvert an alignment to a gene model
+    /// this will optionally promote all features through the alignment
+    static void ConvertAlignToGeneModel(const objects::CSeq_align& align,
+                                         objects::CScope& scope,
+                                         objects::CSeq_annot& annot,
+                                         objects::CBioseq_set& seqs,
+                                         TGeneModelCreateFlags flags = fDefaults,
+                                         TSeqPos allowed_unaligned = 10);
+
     /// Create a gene model from an alignment
     /// this will optionally promote all features through the alignment
+    /// just calls TrimAlignment and ConvertAlignToGeneModel
     static void CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                          objects::CScope& scope,
                                          objects::CSeq_annot& annot,
