@@ -5656,7 +5656,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68178921,

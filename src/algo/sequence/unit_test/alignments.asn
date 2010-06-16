@@ -9953,9 +9953,6 @@ Seq-align ::= {
         },
         acceptor-before-exon {
           bases "AG"
-        },
-        donor-after-exon {
-          bases "GT"
         }
       },
       {

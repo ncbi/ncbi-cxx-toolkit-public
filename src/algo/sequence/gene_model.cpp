@@ -227,16 +227,19 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
 
                 // check for gaps between exons
                 if(!prev_exon.IsNull()) {
-                    if(prev_exon->GetProduct_end().GetNucpos() + 1 != exon.GetProduct_start().GetNucpos()) {
+                    bool donor_set = prev_exon->IsSetDonor_after_exon();
+                    bool acceptor_set = exon.IsSetAcceptor_before_exon();
+
+                    if(!(donor_set && acceptor_set) || prev_exon->GetProduct_end().GetNucpos() + 1 != exon.GetProduct_start().GetNucpos()) {
                         // gap between exons on rna. But which exon is partial?
                         // if have non-strict consensus splice site - blame it
                         // for partialness. If can't disambiguate on this - set
                         // both.
                         bool donor_ok =
-                            (prev_exon->IsSetDonor_after_exon()  &&
+                            (donor_set  &&
                              prev_exon->GetDonor_after_exon().GetBases() == "GT");
                         bool acceptor_ok =
-                            (exon.IsSetAcceptor_before_exon()  &&
+                            (acceptor_set  &&
                              exon.GetAcceptor_before_exon().GetBases() == "AG");
                         if(donor_ok || !acceptor_ok) {
                             genomic_int->SetPartialStart(true, eExtreme_Biological);
