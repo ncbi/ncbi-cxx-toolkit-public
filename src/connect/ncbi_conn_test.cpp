@@ -400,7 +400,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         "This mode requires to have your firewall configured such a way"
         " that it allows outbound connections to the port range ["
         _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX) "]"
-        " at the two fixed NCBI hosts, 130.14.29.110 and 165.112.7.12\n"
+        " at the two fixed NCBI hosts, 130.14.29.112 and 165.112.7.12\n"
         "In order to configure that correctly, please have your network"
         " administrator read the following (if they have not yet done so): "
         NCBI_FW_URL "\n"
