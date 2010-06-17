@@ -575,6 +575,24 @@ void CServer::CreateRequest(IServer_ConnectionBase* conn_base,
     }
 }
 
+void CServer::AddConnectionToPool(CServer_Connection* conn)
+{
+    if (!m_ConnectionPool->Add(conn, CServer_ConnectionPool::eInactiveSocket)) {
+        NCBI_THROW(CServer_Exception, ePoolOverflow,
+                   "Cannot add connection, pool has overflowed.");
+    }
+}
+
+void CServer::RemoveConnectionFromPool(CServer_Connection* conn)
+{
+    m_ConnectionPool->Remove(conn);
+}
+
+void CServer::WakeUpPollCycle(void)
+{
+    m_ConnectionPool->PingControlConnection();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // SServer_Parameters implementation
 
@@ -596,6 +614,7 @@ const char* CServer_Exception::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eBadParameters: return "eBadParameters";
     case eCouldntListen: return "eCouldntListen";
+    case ePoolOverflow:  return "ePoolOverflow";
     default:             return CException::GetErrCodeString();
     }
 }

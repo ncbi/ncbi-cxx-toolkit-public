@@ -76,6 +76,8 @@ IOEventToServIOEvent(EIO_Event event)
 }
 
 
+class CNetCacheDApp;
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CServer::
@@ -129,6 +131,21 @@ public:
     void CloseConnection(IServer_ConnectionBase* conn);
     void CloseConnection(CSocket* sock);
 
+    /// Add externally created connection to the connection pool which server
+    /// polls on. Throws exception if pool is full.
+    /// NOTE: events to this connection can come theoretically even
+    /// NOTE: if connection gets some error or its peer closes it then conn
+    /// object will be deleted after processing OnClose event. If you don't
+    /// want that you have to call RemoveConnectionFromPool while handling
+    /// OnClose.
+    void AddConnectionToPool(CServer_Connection* conn);
+    /// Remove externally created connection from pool.
+    void RemoveConnectionFromPool(CServer_Connection* conn);
+    /// Force poll cycle to make another iteration.
+    /// Should be called if IsReadyToProcess() for some connection handler
+    /// became true.
+    void WakeUpPollCycle(void);
+
 protected:
     /// Initialize the server
     ///
@@ -153,14 +170,14 @@ protected:
     ///  whether to shut down service and return from Run.
     virtual bool ShutdownRequested(void) { return false; }
 
-    ///
-    CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }
-
 private:
     void CreateRequest(IServer_ConnectionBase* conn_base,
                        EServIO_Event event,
                        const STimeout* timeout,
                        int request_id);
+
+    friend class CNetCacheDApp;
+    CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }
 
     auto_ptr<CStdPoolOfThreads> m_ThreadPool;
     SServer_Parameters*         m_Parameters;
@@ -428,7 +445,8 @@ class NCBI_XCONNECT_EXPORT CServer_Exception
 public:
     enum EErrCode {
         eBadParameters, ///< Out-of-range parameters given
-        eCouldntListen  ///< Unable to bind listening port
+        eCouldntListen, ///< Unable to bind listening port
+        ePoolOverflow   ///< Connection pool overflowed
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CServer_Exception, CConnException);

@@ -82,6 +82,8 @@ public:
     }
 
     bool Add(TConnBase* conn, EConnType type);
+    void Remove(TConnBase* conn);
+    void PingControlConnection(void);
 
     /// Guard connection from out-of-order packet processing by
     /// pulling eActiveSocket's from poll vector
@@ -114,7 +116,7 @@ public:
 
 private:
     typedef map<TConnBase*, SPerConnInfo> TData;
-    volatile TData                        m_Data;
+    TData                                 m_Data;
     mutable CMutex                        m_Mutex;
     unsigned int                          m_MaxConnections;
     CSocket                               m_ControlSocket;

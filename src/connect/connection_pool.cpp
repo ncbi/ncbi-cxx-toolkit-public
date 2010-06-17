@@ -144,6 +144,12 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
     return true;
 }
 
+void CServer_ConnectionPool::Remove(TConnBase* conn)
+{
+    CMutexGuard guard(m_Mutex);
+    m_Data.erase(conn);
+}
+
 
 void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
 {
@@ -177,6 +183,17 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
                        << "SetConnType: failed to write to control socket: "
                        << IO_StatusStr(status));
         }
+    }
+}
+
+void CServer_ConnectionPool::PingControlConnection(void)
+{
+    CMutexGuard guard(m_Mutex);
+    EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
+    if (status != eIO_Success) {
+        ERR_POST_X(4, Warning
+                   << "PingControlConnection: failed to write to control socket: "
+                   << IO_StatusStr(status));
     }
 }
 
