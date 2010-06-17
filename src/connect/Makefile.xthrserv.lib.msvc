@@ -1,3 +1,3 @@
 [AddToProject]
-HeadersInInclude = threaded_server.hpp server.hpp server_monitor.hpp
-HeadersInSrc = server_connection.hpp connection_pool.hpp
+HeadersInInclude = threaded_server.hpp server.hpp server_monitor.hpp impl/server_connection.hpp
+HeadersInSrc = connection_pool.hpp

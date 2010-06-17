@@ -34,7 +34,7 @@
 /// Internal header for threaded server connection pools.
 
 
-#include "server_connection.hpp"
+#include <connect/impl/server_connection.hpp>
 
 
 /** @addtogroup ThreadedServer

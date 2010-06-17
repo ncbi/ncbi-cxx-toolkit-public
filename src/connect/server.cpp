@@ -371,16 +371,10 @@ void CServer::StartListening(void)
 }
 
 
-void CServer::CloseConnection(IServer_ConnectionBase* conn)
-{
-    m_ConnectionPool->CloseConnection(conn);
-}
-
-
 void CServer::CloseConnection(CSocket* sock)
 {
-    CloseConnection(static_cast<IServer_ConnectionBase*>(
-                    static_cast<CServer_Connection*>(sock)));
+    m_ConnectionPool->CloseConnection(static_cast<IServer_ConnectionBase*>(
+                                      static_cast<CServer_Connection*>(sock)));
 }
 
 

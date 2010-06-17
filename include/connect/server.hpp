@@ -53,6 +53,7 @@ class  IServer_ConnectionFactory;
 class  IServer_ConnectionBase;
 struct SServer_Parameters;
 class  CServer_ConnectionPool;
+class  CServer_Connection;
 class  CStdPoolOfThreads;
 
 
@@ -128,7 +129,6 @@ public:
     /// eServIO_OurClose.
     ///
     /// @sa EServIO_Event
-    void CloseConnection(IServer_ConnectionBase* conn);
     void CloseConnection(CSocket* sock);
 
     /// Add externally created connection to the connection pool which server
