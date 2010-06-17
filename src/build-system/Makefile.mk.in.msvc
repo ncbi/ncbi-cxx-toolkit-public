@@ -19,6 +19,34 @@ DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
 AdditionalOptions=
 
+[Compiler.800]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+Detect64BitPortabilityProblems=FALSE
+
+[Compiler.900]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+Detect64BitPortabilityProblems=FALSE
+
+[Compiler.1000]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+WarningLevel=Level3
+OptimizeForProcessor=
+StructMemberAlignment=Default
+UsePrecompiledHeader=
+CallingConvention=Cdecl
+CompileAs=Default
+IgnoreStandardIncludePath=false
+StringPooling=false
+MinimalRebuild=
+ExceptionHandling=
+BufferSecurityCheck=true
+RuntimeTypeInfo=true
+DisableSpecificWarnings=
+UndefinePreprocessorDefinitions=
+AdditionalOptions=
+
+
+
 [Compiler.debug]
 DebugInformationFormat=3
 Optimization=0
@@ -31,6 +59,20 @@ OmitFramePointers=FALSE
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=FALSE
+
+[Compiler.1000.debug]
+DebugInformationFormat=ProgramDatabase
+Optimization=Disabled
+MinimalRebuild=true
+GlobalOptimizations=false
+InlineFunctionExpansion=Disabled
+FavorSizeOrSpeed=Neither
+OmitFramePointers=false
+BasicRuntimeChecks=Default
+BrowseInformation=false
+EnableFunctionLevelLinking=false
+
+
 
 [Compiler.release]
 DebugInformationFormat=0
@@ -45,25 +87,28 @@ BasicRuntimeChecks=0
 BrowseInformation=0
 EnableFunctionLevelLinking=TRUE
 
-
-[Compiler.800]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=FALSE
-[Compiler.900]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=FALSE
-[Compiler.1000]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
+
 [Compiler.900.release]
 Optimization=2
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 AdditionalOptions=/MP
+
 [Compiler.1000.release]
-Optimization=2
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
+DebugInformationFormat=
+OptimizeForProcessor=
+Optimization=MaxSpeed
+MinimalRebuild=false
+GlobalOptimizations=true
+InlineFunctionExpansion=OnlyExplicitInline
+FavorSizeOrSpeed=Speed
+OmitFramePointers=true
+BasicRuntimeChecks=
+BrowseInformation=true
+EnableFunctionLevelLinking=true
+
 
 
 [Linker]
@@ -100,6 +145,11 @@ IgnoreAllDefaultLibraries=FALSE
 IgnoreDefaultLibraryNames=FALSE
 AdditionalLibraryDirectories=
 
+[Librarian.1000]
+AdditionalOptions=
+IgnoreAllDefaultLibraries=false
+IgnoreDefaultLibraryNames=false
+AdditionalLibraryDirectories=
 
 
 [ResourceCompiler]
