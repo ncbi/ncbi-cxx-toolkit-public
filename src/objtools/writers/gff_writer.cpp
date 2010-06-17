@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 
 bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()( 
 	const CGff3WriteRecord* x, 
-	const CGff3WriteRecord* y ) 
+	const CGff3WriteRecord* y ) const
 {
 	if( x->Type() < y->Type() )
 		return true;

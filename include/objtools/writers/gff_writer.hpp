@@ -75,7 +75,7 @@ protected:
     TRecords m_Set;
 
 	struct PGff3WriteRecordPtrLess {
-    	bool operator()(const CGff3WriteRecord* x, const CGff3WriteRecord* y); 
+    	bool operator()(const CGff3WriteRecord* x, const CGff3WriteRecord* y) const; 
 	};
 
 	typedef map< const CGff3WriteRecord*, CGff3WriteRecord*, 
