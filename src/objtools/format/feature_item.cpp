@@ -1950,6 +1950,17 @@ void CFeatureItem::x_AddQualProteinId(
         return;
     }
 
+    if ( ! protId->IsGi()  &&
+        ! protId->IsEmbl()  &&
+        ! protId->IsDdbj()  &&
+        ! protId->IsOther()  &&
+        ! protId->IsTpg()  &&
+        ! protId->IsTpe()  &&
+        ! protId->IsTpd()  &&
+        ! protId->IsGpipe() )
+    {
+        return;
+    }
     CScope& scope = ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
 
