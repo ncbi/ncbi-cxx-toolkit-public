@@ -476,13 +476,14 @@ void CGuideTree::x_Init(void)
 }
 
 
-CBioTreeDynamic::CBioNode* CGuideTree::x_GetBioNode(TBioTreeNodeId id)
+CBioTreeDynamic::CBioNode* CGuideTree::x_GetBioNode(TBioTreeNodeId id,
+                                                    bool throw_if_null)
 {
     CBioNodeFinder finder = TreeDepthFirstTraverse(
                                             *m_Dyntree.GetTreeNodeNonConst(),
                                             CBioNodeFinder(id));
 
-    if (!finder.GetNode()) {
+    if (!finder.GetNode() && throw_if_null) {
         NCBI_THROW(CGuideTreeException, eNodeNotFound, (string)"Node "
                    + NStr::IntToString(id) + (string)" not found");
     }
@@ -642,6 +643,18 @@ void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,
 int CGuideTree::GetRootNodeID()
 {
     return m_Dyntree.GetTreeNode()->GetValue().GetId();
+}
+
+
+CBioTreeDynamic::CBioNode* CGuideTree::GetNode(TBioTreeNodeId id)
+{
+    return x_GetBioNode(id, false);
+}
+
+
+CBioTreeDynamic::CBioNode* CGuideTree::GetNonNullNode(TBioTreeNodeId id)
+{
+    return x_GetBioNode(id, true);
 }
 
 

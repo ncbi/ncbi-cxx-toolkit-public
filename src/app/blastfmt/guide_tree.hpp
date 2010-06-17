@@ -172,6 +172,18 @@ public:
     ///
     int GetRootNodeID(void);
 
+    /// Get pointer to the node with given id
+    /// @param id Node's numerical id [in]
+    /// @return Pointer to the node or NULL if node not found
+    ///
+    CBioTreeDynamic::CBioNode* GetNode(TBioTreeNodeId id);
+
+    /// Get pointer to the node with given id and throw exception if node not
+    /// found
+    /// @param id Node's numerical id [in]
+    /// @return Pointer to the node
+    CBioTreeDynamic::CBioNode* GetNonNullNode(TBioTreeNodeId id);
+
     /// Get tree structure
     /// @return Tree
     ///
@@ -297,9 +309,11 @@ protected:
     /// Find pointer to a BioTreeDynamic node with given numerical id.
     /// Throws excepion if node not found.
     /// @param id Numerical node id [in]
+    /// @param throw_if_null Throw exception if node not found [in]
     /// @return Pointer to the node with desired id
     ///
-    CBioTreeDynamic::CBioNode* x_GetBioNode(TBioTreeNodeId id);
+    CBioTreeDynamic::CBioNode* x_GetBioNode(TBioTreeNodeId id,
+                                            bool throw_if_null = true);
 
     /// Check if node is expanded (subtree shown)
     /// @param node Node [in]
