@@ -31,11 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-/* Cancel __wur (warn unused result) ill effects in GCC */
-#ifdef   _FORTIFY_SOURCE
-#  undef _FORTIFY_SOURCE
-#endif /*_FORTIFY_SOURCE*/
-#define  _FORTIFY_SOURCE 0
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
