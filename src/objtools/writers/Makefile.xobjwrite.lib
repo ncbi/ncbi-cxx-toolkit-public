@@ -5,3 +5,4 @@ ASN_DEP = seqset
 LIB = xobjwrite
 SRC = agp_write gff_writer wiggle_writer gff3_write_data
 
+WATCHERS = ludwigf boukn
