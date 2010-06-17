@@ -2094,7 +2094,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing5)
             CDB_Int         n_iteration;
             CDB_Int         n_proc_sn;
             CDB_Int         n_thread_sn;
-            CDB_VarChar     s_host;
+            CDB_VarChar     sm_host;
             CDB_VarChar     s_session_id;
             CDB_VarChar     s_app_name;
             CDB_VarChar     s_req_type;
@@ -2114,7 +2114,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing5)
             vBcp->Bind(pos++, &n_iteration);
             vBcp->Bind(pos++, &n_proc_sn);
             vBcp->Bind(pos++, &n_thread_sn);
-            vBcp->Bind(pos++, &s_host);
+            vBcp->Bind(pos++, &sm_host);
             vBcp->Bind(pos++, &s_session_id);
             vBcp->Bind(pos++, &s_app_name);
             vBcp->Bind(pos++, &s_req_type);
@@ -2138,7 +2138,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing5)
                 n_iteration = 23;
                 n_proc_sn = 34;
                 n_thread_sn = 45;
-                s_host = "some host";
+                sm_host = "some host";
                 s_session_id = "some id";
                 s_app_name = "some name";
                 s_req_type = "some type";
