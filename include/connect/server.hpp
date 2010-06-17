@@ -77,7 +77,7 @@ IOEventToServIOEvent(EIO_Event event)
 }
 
 
-class CNetCacheDApp;
+class CNetCacheServer;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -176,7 +176,7 @@ private:
                        const STimeout* timeout,
                        int request_id);
 
-    friend class CNetCacheDApp;
+    friend class CNetCacheServer;
     CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }
 
     auto_ptr<CStdPoolOfThreads> m_ThreadPool;
