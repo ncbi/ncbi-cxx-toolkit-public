@@ -425,6 +425,7 @@ COMMON_DetectPlatform()
 	*CYGWIN_NT*86   ) echo Win32      ;;
 	*CYGWIN_NT*64   ) echo Win64      ;; # unverified
 	Darwin\ i386    ) echo IntelMAC   ;;
+	Darwin\ x86_64  ) echo IntelMAC   ;; # split into IntelMac64?
 	Darwin\ powerpc ) echo PowerMAC   ;;
 	FreeBSD\ i386   ) echo FreeBSD32  ;;
 	IRIX64\ *       ) echo IRIX64     ;;
