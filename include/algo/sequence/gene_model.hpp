@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects)
     class CBioseq_set;
 END_SCOPE(objects)
 
+const int MIN_INTRON = 200;
 
 class NCBI_XALGOSEQ_EXPORT CGeneModel
 {
