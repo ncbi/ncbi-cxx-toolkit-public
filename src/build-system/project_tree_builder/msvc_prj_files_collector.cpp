@@ -384,6 +384,7 @@ static void s_CollectRelPathes(const string&        path_from,
 {
     rel_pathes->clear();
 
+    set<string> toremove;
     list<string> pathes;
     ITERATE(list<string>, n, abs_dirs) {
         string value(*n), pdir, base, ext;
@@ -410,13 +411,16 @@ static void s_CollectRelPathes(const string&        path_from,
                 string path  = (*i)->GetPath();
                 if ( NStr::EndsWith(path, ext, NStr::eNocase) ) {
                     if (remove) {
-                        pathes.remove(path);
+                        toremove.insert(path);
                     } else {
                         pathes.push_back(path);
                     }
                 }
             }
         }
+    }
+    ITERATE(set<string>, r, toremove) {
+        pathes.remove(*r);
     }
 
     ITERATE(list<string>, p, pathes)
