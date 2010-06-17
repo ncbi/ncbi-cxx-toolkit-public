@@ -239,6 +239,60 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo)
 }
 
 
+
+static void s_GetAssemblyInfo(const CUser_object& uo,
+                              string& s,
+                              CCommentItem::ECommentFormat format)
+{
+    s.clear();
+
+    typedef vector < pair<const string*, bool> > TAssemblyInfo;
+    TAssemblyInfo assembly;
+    if ( uo.HasField("Assembly") ) {
+        const CUser_field& field = uo.GetField("Assembly");
+        if ( !field.GetData().IsFields() ) {
+            return;
+        }
+        ITERATE (CUser_field::C_Data::TFields, fit,
+                 field.GetData().GetFields()) {
+            if ( !(*fit)->GetData().IsFields() ) {
+                continue;
+            }
+            ITERATE (CUser_field::C_Data::TFields, it,
+                     (*fit)->GetData().GetFields()) {
+                const CUser_field& uf = **it;
+                if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() ) {
+                    continue;
+                }
+                const string& label = uf.GetLabel().GetStr();
+                if ( label == "accession"  ||  label == "name" ) {
+                    bool is_accn = (label == "accession");
+                    if ( uf.GetData().IsStr()  &&
+                         !uf.GetData().GetStr().empty() ) {
+                        assembly.push_back(make_pair(&uf.GetData().GetStr(), is_accn));
+                    }
+                }
+            }
+        }
+    }
+    if ( assembly.size() > 0 ) {
+        CNcbiOstrstream oss;
+        oss << " The reference sequence was derived from ";
+        size_t assembly_size = assembly.size();
+        for ( size_t i = 0; i < assembly_size; ++i ) {
+            if ( i > 0  ) {
+                oss << ((i < assembly_size - 1) ? ", " : " and ");
+            }
+            const string& acc = *(assembly[i].first);
+            NcbiId(oss, acc, format == CCommentItem::eFormat_Html);
+        }
+        oss << '.';
+
+        s = (string)(CNcbiOstrstreamToString(oss));
+    }
+}
+
+
 CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
 (const CUser_object& uo,
  string* st)
@@ -260,6 +314,10 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
             retval = eRefTrackStatus_Provisional;
         } else if (NStr::EqualNocase(status, "Predicted")) {
             retval = eRefTrackStatus_Predicted;
+            /**
+        } else if (NStr::EqualNocase(status, "Pipeline")) {
+            retval = eRefTrackStatus_Pipeline;
+            **/
         } else if (NStr::EqualNocase(status, "Validated")) {
             retval = eRefTrackStatus_Validated;
         } else if (NStr::EqualNocase(status, "Reviewed")) {
@@ -314,12 +372,29 @@ string CCommentItem::GetStringForRefTrack
 
     const string *refseq = (format == eFormat_Html ? &kRefSeqLink : &kRefSeq);
 
+    string build_num = CGenomeAnnotComment::GetGenomeBuildNumber(bsh);
+
     CNcbiOstrstream oss;
-    oss << status_str << ' ' << *refseq << ": ";
+    if (status == eRefTrackStatus_Pipeline) {
+        oss << *refseq << " INFORMATION: ";
+    } else {
+        oss << status_str << ' ' << *refseq << ": ";
+    }
     switch ( status ) {
     case eRefTrackStatus_Inferred:
         oss << "This record is predicted by genome sequence analysis and is "
             << "not yet supported by experimental evidence.";
+        break;
+    case eRefTrackStatus_Pipeline:
+        if ( !build_num.empty() ) {
+            oss << "Features on this sequence have been produced for build "
+                << build_num << " of the NCBI's genome annotation"
+                << " [see " << "documentation" << "].";
+        } else {
+            oss << "NCBI contigs are derived from assembled genomic sequence data."
+                << "~Also see:~    " << "Documentation" 
+                << " of NCBI's Annotation Process~ ";
+        }
         break;
     case eRefTrackStatus_Provisional:
         oss << "This record has not yet been subject to final NCBI review.";
@@ -355,42 +430,12 @@ string CCommentItem::GetStringForRefTrack
             << source << ").";
     }
 
-    vector < pair<const string*, bool> > assembly;
-    if ( uo.HasField("Assembly") ) {
-        const CUser_field& field = uo.GetField("Assembly");
-        if ( field.GetData().IsFields() ) {
-            ITERATE (CUser_field::C_Data::TFields, fit, field.GetData().GetFields()) {
-                if ( !(*fit)->GetData().IsFields() ) {
-                    continue;
-                }
-                ITERATE (CUser_field::C_Data::TFields, it, (*fit)->GetData().GetFields()) {
-                    const CUser_field& uf = **it;
-                    if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() ) {
-                        continue;
-                    }
-                    const string& label = uf.GetLabel().GetStr();
-                    if ( label == "accession"  ||  label == "name" ) {
-                        bool is_accn = (label == "accession");
-                        if ( uf.GetData().IsStr()  &&  !uf.GetData().GetStr().empty() ) {
-                            assembly.push_back(make_pair(&uf.GetData().GetStr(), is_accn));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if ( assembly.size() > 0 ) {
-        oss << " The reference sequence was derived from ";
-        size_t assembly_size = assembly.size();
-        for ( size_t i = 0; i < assembly_size; ++i ) {
-            if ( i > 0  ) {
-                oss << ((i < assembly_size - 1) ? ", " : " and ");
-            }
-            const string& acc = *(assembly[i].first);
-            NcbiId(oss, acc, format == CCommentItem::eFormat_Html);
-        }
-        oss << '.';
-    }
+    {{
+         /// add our assembly info
+         string s;
+         s_GetAssemblyInfo(uo, s, format);
+         oss << s;
+     }}
 
     /// check for a concomitant RefSeqGene item
     for (CSeqdesc_CI desc_it(bsh, CSeqdesc::e_User);
@@ -845,6 +890,56 @@ CGenomeAnnotComment::CGenomeAnnotComment
 }
 
 
+string CGenomeAnnotComment::GetGenomeBuildNumber(const CUser_object& uo)
+{
+    if ( uo.IsSetType()  &&  uo.GetType().IsStr()  &&
+         uo.GetType().GetStr() == "GenomeBuild" ) {
+        if ( uo.HasField("NcbiAnnotation") ) {
+            string build_num;
+            const CUser_field& uf = uo.GetField("NcbiAnnotation");
+            if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
+                 !uf.GetData().GetStr().empty() ) {
+                build_num = uf.GetData().GetStr();
+            }
+
+            if ( uo.HasField("NcbiVersion") ) {
+                const CUser_field& uf = uo.GetField("NcbiVersion");
+                if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
+                     !uf.GetData().GetStr().empty() ) {
+                    build_num += " version ";
+                    build_num += uf.GetData().GetStr();
+                }
+            }
+            return build_num;
+
+        } else if ( uo.HasField("Annotation") ) {
+            const CUser_field& uf = uo.GetField("Annotation");
+            if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
+                 !uf.GetData().GetStr().empty() ) {
+                static const string prefix = "NCBI build ";
+                if ( NStr::StartsWith(uf.GetData().GetStr(), prefix) ) {
+                    return uf.GetData().GetStr().substr(prefix.length());
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
+string CGenomeAnnotComment::GetGenomeBuildNumber(const CBioseq_Handle& bsh)
+{
+    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        string s = GetGenomeBuildNumber(uo);
+        if ( !s.empty() ) {
+            return s;
+        }
+    }
+
+    return kEmptyStr;
+}
+
 void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 {
     const string *refseq = ctx.Config().DoHTML() ? &kRefSeqLink : &kRefSeq;
@@ -865,8 +960,27 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
              << "~Also see:~    " << "Documentation" 
              << " of NCBI's Annotation Process~ ";
     }
-    
-    x_SetComment(CNcbiOstrstreamToString(text));
+
+    /// add our assembly info
+    for (CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_User);
+         desc_it;  ++desc_it) {
+        const CUser_object& uo = desc_it->GetUser();
+        if ( !uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
+             uo.GetType().GetStr() != "RefGeneTracking") {
+            continue;
+        }
+
+        string s;
+        s_GetAssemblyInfo(uo, s,
+                          ctx.Config().DoHTML() ?
+                          CCommentItem::eFormat_Html :
+                          CCommentItem::eFormat_Text);
+        text << s;
+        break;
+    }
+
+    string s = (string)(CNcbiOstrstreamToString(text));
+    x_SetComment(s);
 }
 
 

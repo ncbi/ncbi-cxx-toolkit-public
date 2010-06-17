@@ -624,46 +624,6 @@ void CFlatGatherer::x_FlushComments(void) const
 }
 
 
-string s_GetGenomeBuildNumber(const CBioseq_Handle& bsh)
-{
-    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object& uo = it->GetUser();
-        if ( uo.IsSetType()  &&  uo.GetType().IsStr()  &&
-             uo.GetType().GetStr() == "GenomeBuild" ) {
-            if ( uo.HasField("NcbiAnnotation") ) {
-                string build_num;
-                const CUser_field& uf = uo.GetField("NcbiAnnotation");
-                if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
-                     !uf.GetData().GetStr().empty() ) {
-                    build_num = uf.GetData().GetStr();
-                }
-
-                if ( uo.HasField("NcbiVersion") ) {
-                    const CUser_field& uf = uo.GetField("NcbiVersion");
-                    if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
-                         !uf.GetData().GetStr().empty() ) {
-                        build_num += " version ";
-                        build_num += uf.GetData().GetStr();
-                    }
-                }
-                return build_num;
-
-            } else if ( uo.HasField("Annotation") ) {
-                const CUser_field& uf = uo.GetField("Annotation");
-                if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
-                     !uf.GetData().GetStr().empty() ) {
-                    static const string prefix = "NCBI build ";
-                    if ( NStr::StartsWith(uf.GetData().GetStr(), prefix) ) {
-                        return uf.GetData().GetStr().substr(prefix.length());
-                    }
-                }
-            }
-        }
-    }
-
-    return kEmptyStr;
-}
-
 
 bool s_HasRefTrackStatus(const CBioseq_Handle& bsh) {
     for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
@@ -740,7 +700,8 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 {
     const CObject_id* local_id = 0;
 
-    string genome_build_number = s_GetGenomeBuildNumber(ctx.GetHandle());
+    string genome_build_number =
+        CGenomeAnnotComment::GetGenomeBuildNumber(ctx.GetHandle());
     bool has_ref_track_status = s_HasRefTrackStatus(ctx.GetHandle());
     CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
         CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;

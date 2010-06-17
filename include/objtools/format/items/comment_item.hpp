@@ -75,6 +75,7 @@ public:
     enum ERefTrackStatus {
         eRefTrackStatus_Unknown,
         eRefTrackStatus_Inferred,
+        eRefTrackStatus_Pipeline,
         eRefTrackStatus_Provisional,
         eRefTrackStatus_Predicted,
         eRefTrackStatus_Validated,
@@ -152,7 +153,11 @@ private:
 class NCBI_FORMAT_EXPORT CGenomeAnnotComment : public CCommentItem
 {
 public:
-    CGenomeAnnotComment(CBioseqContext& ctx, const string& build_num = kEmptyStr);
+    CGenomeAnnotComment(CBioseqContext& ctx,
+                        const string& build_num = kEmptyStr);
+
+    static string GetGenomeBuildNumber(const CBioseq_Handle& bsh);
+    static string GetGenomeBuildNumber(const CUser_object& uo);
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
