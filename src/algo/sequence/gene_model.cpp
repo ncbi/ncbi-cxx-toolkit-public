@@ -753,18 +753,6 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///
-
-CConstRef<CSeq_align> CGeneModel::TrimAlignment(const CSeq_align& align,
-                                                CScope& scope)
-{
-    ///
-    /// HACK: NO-OP FOR NOW
-    ///
-    return CConstRef<CSeq_align>(&align);
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 

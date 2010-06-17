@@ -1,11 +1,6 @@
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 1,
       data gene {
         locus "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
  transporter), member 1 (SLC37A1), mRNA"
@@ -23,7 +18,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
       data rna {
         type mRNA,
         ext name "Homo sapiens solute carrier family 37 (glycerol-3-phosphate
@@ -225,7 +219,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
       data cdregion {
         code {
           id 1
@@ -415,13 +408,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 4,
       data gene {
         locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
  transcript variant 2, mRNA"
@@ -434,7 +422,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
       data rna {
         type mRNA,
         ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
@@ -699,9 +686,11 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 6,
       data cdregion {
         code {
+          id 1,
+          id 1,
+          id 1,
           id 1
         }
       },
@@ -967,13 +956,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 7,
       data gene {
         locus "Bos taurus Werner syndrome (WRN), mRNA"
       },
@@ -987,7 +971,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
       data rna {
         type mRNA,
         ext name "Bos taurus Werner syndrome (WRN), mRNA"
@@ -1103,7 +1086,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 9,
       data cdregion {
         code {
           id 1
@@ -1222,13 +1204,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 10,
       data gene {
         locus "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
       },
@@ -1242,7 +1219,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
       data rna {
         type mRNA,
         ext name "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
@@ -1346,7 +1322,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 12,
       data cdregion {
         frame one,
         code {
@@ -1454,13 +1429,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 13,
       data gene {
         locus "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
       },
@@ -1472,7 +1442,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
       data rna {
         type mRNA,
         ext name "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
@@ -1512,7 +1481,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
       data cdregion {
         code {
           id 1
@@ -1565,13 +1533,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 16,
       data gene {
         locus "Homo sapiens paternally expressed 10 (PEG10), transcript
  variant 1, mRNA"
@@ -1584,7 +1547,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
       data rna {
         type mRNA,
         ext name "Homo sapiens paternally expressed 10 (PEG10), transcript
@@ -1607,9 +1569,9 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
       data cdregion {
         code {
+          id 1,
           id 1
         }
       },
@@ -1635,13 +1597,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 19,
       data gene {
         locus "Danio rerio dynamin2-like (dnm2l), mRNA"
       },
@@ -1655,7 +1612,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 20,
       data rna {
         type mRNA,
         ext name "Danio rerio dynamin2-like (dnm2l), mRNA"
@@ -1685,13 +1641,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 21,
       data gene {
         locus "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
  mRNA decay factor (C. elegans)cds (smg6 gene)"
@@ -1705,7 +1656,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
       data rna {
         type mRNA,
         ext name "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
@@ -1723,7 +1673,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 23,
       data cdregion {
         frame two,
         code {
@@ -1753,13 +1702,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 24,
       data gene {
         locus "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
  transcript variant 2, mRNA"
@@ -1774,7 +1718,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
       data rna {
         type mRNA,
         ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
@@ -2041,10 +1984,12 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 26,
       data cdregion {
         frame two,
         code {
+          id 1,
+          id 1,
+          id 1,
           id 1
         }
       },
@@ -2312,13 +2257,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 27,
       data gene {
         locus "Danio rerio polymerase (DNA directed), delta 1, catalytic
  subunit (pold1), mRNA"
@@ -2331,7 +2271,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
       data rna {
         type mRNA,
         ext name "Danio rerio polymerase (DNA directed), delta 1, catalytic
@@ -2506,7 +2445,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 29,
       data cdregion {
         frame one,
         code {
@@ -2679,13 +2617,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 1,
       data gene {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
@@ -2701,7 +2634,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
       data rna {
         type mRNA,
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
@@ -2935,7 +2867,6 @@ Seq-annot ::= {
       except-text "mismatches in transcription"
     },
     {
-      id local id 3,
       data cdregion {
         code {
           id 1,
@@ -3167,13 +3098,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 4,
       data gene {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
@@ -3189,7 +3115,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
       data rna {
         type mRNA,
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
@@ -3424,7 +3349,6 @@ Seq-annot ::= {
       except-text "mismatches in transcription"
     },
     {
-      id local id 6,
       data cdregion {
         code {
           id 1,
@@ -3656,13 +3580,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 7,
       data gene {
         locus "Homo sapiens USO1 vesicle docking protein homolog (yeast)
  (USO1), mRNA"
@@ -3678,7 +3597,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
       data rna {
         type mRNA,
         ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
@@ -3893,7 +3811,6 @@ Seq-annot ::= {
       except-text "mismatches in transcription"
     },
     {
-      id local id 9,
       data cdregion {
         code {
           id 1,
@@ -4107,13 +4024,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 1,
       data gene {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
@@ -4129,7 +4041,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
       data rna {
         type mRNA,
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
@@ -4359,7 +4270,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
       data cdregion {
         code {
           id 1
@@ -4588,13 +4498,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 4,
       data gene {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
@@ -4610,7 +4515,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
       data rna {
         type mRNA,
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
@@ -4813,7 +4717,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 6,
       data cdregion {
         code {
           id 1
@@ -5008,13 +4911,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 7,
       data gene {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
@@ -5030,7 +4928,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
       data rna {
         type mRNA,
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
@@ -5237,7 +5134,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 9,
       data cdregion {
         code {
           id 1
@@ -5432,13 +5328,8 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    name "Demo Gene Models",
-    title "Demo Gene Models"
-  },
   data ftable {
     {
-      id local id 10,
       data gene {
         locus "Homo sapiens coatomer protein complex, subunit gamma 2 (COPG2),
  mRNA"
@@ -5454,7 +5345,6 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
       data rna {
         type mRNA,
         ext name "Homo sapiens coatomer protein complex, subunit gamma 2
@@ -5549,88 +5439,6 @@ Seq-annot ::= {
           fuzz-from lim lt
         },
         {
-          from 68320191,
-          to 68320199,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68309996,
-          to 68310008,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68306565,
-          to 68306573,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68302047,
-          to 68302055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        },
-        {
-          from 68288030,
-          to 68288038,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
-          from 68186540,
-          to 68186560,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68185146,
-          to 68185170,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-from lim lt
-        },
-        {
-          from 68181245,
-          to 68181362,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          },
-          fuzz-to lim gt
-        },
-        {
           from 68181245,
           to 68181343,
           strand minus,
@@ -5672,7 +5480,6 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 12,
       data cdregion {
         code {
           id 1
@@ -5763,78 +5570,6 @@ Seq-annot ::= {
           }
         },
         {
-          from 68320191,
-          to 68320199,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68309996,
-          to 68310008,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68306565,
-          to 68306573,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68302047,
-          to 68302055,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68288030,
-          to 68288038,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68186540,
-          to 68186560,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68185146,
-          to 68185170,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
-          from 68181245,
-          to 68181362,
-          strand minus,
-          id other {
-            accession "NT_007933",
-            version 15
-          }
-        },
-        {
           from 68181245,
           to 68181343,
           strand minus,
@@ -5872,6 +5607,67 @@ Seq-annot ::= {
         }
       },
       except-text "unclassified translation discrepancy"
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "Bos taurus claudin 2 (CLDN2), mRNA"
+      },
+      location int {
+        from 131748,
+        to 134289,
+        strand plus,
+        id other {
+          accession "NW_001508749",
+          version 2
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Bos taurus claudin 2 (CLDN2), mRNA"
+      },
+      except TRUE,
+      product whole other {
+        accession "NM_205781",
+        version 2
+      },
+      location packed-int {
+        {
+          from 131748,
+          to 134289,
+          strand plus,
+          id other {
+            accession "NW_001508749",
+            version 2
+          }
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      product whole gi 45429981,
+      location packed-int {
+        {
+          from 131839,
+          to 132531,
+          strand plus,
+          id other {
+            accession "NW_001508749",
+            version 2
+          }
+        }
+      }
     }
   }
 }

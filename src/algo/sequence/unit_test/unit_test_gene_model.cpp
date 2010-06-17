@@ -194,6 +194,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
 
 BOOST_AUTO_TEST_SUITE(TestSuiteTrimAlignment)
+
 BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -207,4 +208,5 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
                          trimmed_align = CGeneModel::TrimAlignment(align, scope)
                          );
 }
+
 BOOST_AUTO_TEST_SUITE_END();
