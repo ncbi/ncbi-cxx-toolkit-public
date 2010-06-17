@@ -47,7 +47,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// NCBI C++ Object Manager free implementation of IQueryFactory
-class NCBI_XBLAST_EXPORT CObjMgrFree_QueryFactory : public IQueryFactory
+/// @deprecated Please use CObjMgr_QueryFactory instead
+NCBI_DEPRECATED_CLASS NCBI_XBLAST_EXPORT CObjMgrFree_QueryFactory : 
+    public IQueryFactory
 {
 public:
     /// Parametrized constructor taking a single Bioseq
