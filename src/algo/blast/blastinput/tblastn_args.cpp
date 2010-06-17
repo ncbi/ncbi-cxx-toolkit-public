@@ -61,6 +61,7 @@ CTblastnAppArgs::CTblastnAppArgs()
     SetTask(kDefaultTask);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
+    m_BlastDbArgs->SetDatabaseMaskingSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
