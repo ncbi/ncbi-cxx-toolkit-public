@@ -77,7 +77,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
             ptb_path_par += "ReleaseDLL";
         }
     } else {
-        ptb_path_par += "$(ConfigurationName)";
+        ptb_path_par += CMsvc7RegSettings::GetConfigNameKeyword();
     }
 
     string tree_root_par = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
@@ -166,7 +166,7 @@ string CMsvcConfigureProjectGenerator::GetPath(bool with_gui) const
     if (with_gui) {
         project_path += "DIALOG_";
     }
-    project_path += MSVC_PROJECT_FILE_EXT;
+    project_path += CMsvc7RegSettings::GetVcprojExt();
     return project_path;
 }
 

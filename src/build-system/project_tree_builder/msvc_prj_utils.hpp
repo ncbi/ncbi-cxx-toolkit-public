@@ -61,7 +61,7 @@ CVisualStudioProject * LoadFromXmlFile(const string& file_path);
 /// @param project
 ///   Project to save.
 void SaveToXmlFile  (const string&               file_path, 
-                     const CVisualStudioProject& project);
+                     const CSerialObject& project);
 
 /// Save CVisualStudioProject class instance to file only if no such file 
 //  or contents of this file will be different from already present file.
@@ -71,7 +71,7 @@ void SaveToXmlFile  (const string&               file_path,
 /// @param project
 ///   Project to save.
 void SaveIfNewer    (const string&               file_path, 
-                     const CVisualStudioProject& project);
+                     const CSerialObject& project);
 #endif //NCBI_COMPILER_MSVC
 
 /// Consider promotion candidate to present 
@@ -110,6 +110,7 @@ struct SConfigInfo
                 bool          debug, 
                 const string& runtime_library);
     void DefineRtType();
+    void SetRuntimeLibrary(const string& lib);
     string GetConfigFullName(void) const;
 
     string m_Name;
@@ -240,6 +241,7 @@ public:
     static string    GetSolutionFileFormatVersion(void);
     
     static string    GetConfigNameKeyword(void);
+    static string    GetVcprojExt(void);
 private:
     static EMsvcVersion   sm_MsvcVersion;
     static EMsvcPlatform  sm_MsvcPlatform;

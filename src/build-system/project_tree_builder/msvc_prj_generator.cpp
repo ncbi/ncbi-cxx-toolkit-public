@@ -6,8 +6,14 @@
 
 #include "msvc_prj_utils.hpp"
 #include "msvc_prj_defines.hpp"
-#include "msvc_prj_files_collector.hpp"
 #include "ptb_err_codes.hpp"
+
+#define USE_MSVC2010  0
+#if USE_MSVC2010
+#if NCBI_COMPILER_MSVC
+#   include <build-system/project_tree_builder/msbuild/msbuild_dataobj__.hpp>
+#endif //NCBI_COMPILER_MSVC
+#endif //USE_MSVC2010
 
 #include <algorithm>
 
@@ -35,22 +41,11 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 }
 
 
-void CMsvcProjectGenerator::Generate(CProjItem& prj)
+bool CMsvcProjectGenerator::CheckProjectConfigs(
+    CMsvcPrjProjectContext& project_context, CProjItem& prj)
 {
-    // Already have it
-    if ( prj.m_ProjType == CProjKey::eMsvc) {
-        return;
-    }
-    if (prj.m_GUID.empty()) {
-        prj.m_GUID = GenerateSlnGUID();
-    }
-
-    CMsvcPrjProjectContext project_context(prj);
-    CVisualStudioProject xmlprj;
-
-    // Checking configuration availability:
+    m_project_configs.clear();
     string str_log, req_log;
-    list<SConfigInfo> project_configs;
     int failed=0;
     ITERATE(list<SConfigInfo>, p , m_Configs) {
         const SConfigInfo& cfg_info = *p;
@@ -64,7 +59,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
                 ++failed;
                 req_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet_req + ")";
             }
-            project_configs.push_back(cfg_info);
+            m_project_configs.push_back(cfg_info);
         }
     }
 
@@ -77,37 +72,24 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         PTB_WARNING_EX(path, ePTB_ConfigurationError,
                        "Invalid configurations: " << req_log);
     }
-    if (project_configs.empty()) {
+    if (m_project_configs.empty()) {
         PTB_WARNING_EX(path, ePTB_ConfigurationError,
                        "Disabled all configurations for project " << prj.m_Name);
-        return;
     }
     if (failed == m_Configs.size()) {
         prj.m_MakeType = eMakeType_ExcludedByReq;
         PTB_WARNING_EX(path, ePTB_ConfigurationError,
                        "All build configurations are invalid, project excluded: " << prj.m_Name);
     }
-    
-    // Attributes:
-    {{
-        xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
-        xmlprj.SetAttlist().SetVersion     (GetApp().GetRegSettings().GetProjectFileFormatVersion());
-        xmlprj.SetAttlist().SetName        (project_context.ProjectName());
-        xmlprj.SetAttlist().SetProjectGUID (prj.m_GUID);
-        xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
-    }}
+    return !m_project_configs.empty() && failed != m_Configs.size();
+}
 
-    // Platforms
-    {{
-        CRef<CPlatform> platform(new CPlatform());
-        platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
-        xmlprj.SetPlatforms().SetPlatform().push_back(platform);
-    }}
-
-    // package export handling
-    string pkg_export_command;
-    string pkg_export_output;
-    string pkg_export_input;
+void CMsvcProjectGenerator::AnalyzePackageExport(
+    CMsvcPrjProjectContext& project_context, CProjItem& prj)
+{
+    m_pkg_export_command.clear();
+    m_pkg_export_output.clear();
+    m_pkg_export_input.clear();
     if (!prj.m_ExportHeaders.empty()) {
         // destination
         string config_inc = GetApp().m_IncDir;
@@ -132,21 +114,65 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             output += file_out + ";";
             input  += file_in  + ";";
         }
-        pkg_export_command = command;
-        pkg_export_output  = output;
-        pkg_export_input   = input;
+        m_pkg_export_command = command;
+        m_pkg_export_output  = output;
+        m_pkg_export_input   = input;
     }
+}
 
-// default PCH
+void CMsvcProjectGenerator::GetDefaultPch(
+    CMsvcPrjProjectContext& project_context, CProjItem& prj)
+{
     SConfigInfo cfg_tmp;
-    string pch_default;
+    m_pch_default.clear();
     if ( project_context.IsPchEnabled(cfg_tmp) ) {
         string noname = CDirEntry::ConcatPath(prj.m_SourcesBaseDir,"aanofile");
-        pch_default = project_context.GetPchHeader(
+        m_pch_default = project_context.GetPchHeader(
             prj.m_ID, noname, GetApp().GetProjectTreeInfo().m_Src, cfg_tmp);
     }
+}
 
-    ITERATE(list<SConfigInfo>, p , project_configs) {
+void CMsvcProjectGenerator::Generate(CProjItem& prj)
+{
+    // Already have it
+    if ( prj.m_ProjType == CProjKey::eMsvc) {
+        return;
+    }
+    if (prj.m_GUID.empty()) {
+        prj.m_GUID = GenerateSlnGUID();
+    }
+    CMsvcPrjProjectContext project_context(prj);
+    if (!CheckProjectConfigs(project_context, prj)) {
+        return;
+    }
+    AnalyzePackageExport(project_context, prj);
+    GetDefaultPch(project_context, prj);
+    // Collect all source, header, inline, resource files
+    CMsvcPrjFilesCollector collector(project_context, m_project_configs, prj);
+
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+        GenerateMsbuild(collector, project_context, prj);
+        return;
+    }
+
+    CVisualStudioProject xmlprj;
+    // Attributes:
+    {{
+        xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
+        xmlprj.SetAttlist().SetVersion     (GetApp().GetRegSettings().GetProjectFileFormatVersion());
+        xmlprj.SetAttlist().SetName        (project_context.ProjectName());
+        xmlprj.SetAttlist().SetProjectGUID (prj.m_GUID);
+        xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
+    }}
+
+    // Platforms
+    {{
+        CRef<CPlatform> platform(new CPlatform());
+        platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
+        xmlprj.SetPlatforms().SetPlatform().push_back(platform);
+    }}
+
+    ITERATE(list<SConfigInfo>, p , m_project_configs) {
 
         const SConfigInfo& cfg_info = *p;
  
@@ -190,13 +216,13 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Compiler(), UsePrecompiledHeader);
 #else
 // set default
-            if (!pch_default.empty()) {
+            if (!m_pch_default.empty()) {
                 if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc800) {
                     tool->SetAttlist().SetUsePrecompiledHeader("2");
                 } else {
                     tool->SetAttlist().SetUsePrecompiledHeader("3");
                 }
-                tool->SetAttlist().SetPrecompiledHeaderThrough(pch_default);
+                tool->SetAttlist().SetPrecompiledHeaderThrough(m_pch_default);
             }
 #endif
             BIND_TOOLS(tool, msvc_tool.Compiler(), WarningLevel);
@@ -273,10 +299,10 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 #if 0
 // this seems relevant place, but it does not work on MSVC 2005
 // so we put it into PostBuildEvent
-            if (!pkg_export_command.empty()) {
-                tool->SetAttlist().SetCommandLine(pkg_export_command);
-                tool->SetAttlist().SetOutputs(pkg_export_output);
-//                tool->SetAttlist().SetAdditionalDependencies(pkg_export_input);
+            if (!m_pkg_export_command.empty()) {
+                tool->SetAttlist().SetCommandLine(m_pkg_export_command);
+                tool->SetAttlist().SetOutputs(m_pkg_export_output);
+//                tool->SetAttlist().SetAdditionalDependencies(m_pkg_export_input);
             }
 #endif
             conf->SetTool().push_back(tool);
@@ -293,8 +319,8 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         {{
             CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PostBuildEvent(), Name);
-            if (!pkg_export_command.empty()) {
-                tool->SetAttlist().SetCommandLine( pkg_export_command);
+            if (!m_pkg_export_command.empty()) {
+                tool->SetAttlist().SetCommandLine( m_pkg_export_command);
             }
             conf->SetTool().push_back(tool);
         }}
@@ -367,9 +393,6 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     {{
         xmlprj.SetReferences("");
     }}
-
-    // Collect all source, header, inline, resource files
-    CMsvcPrjFilesCollector collector(project_context, project_configs, prj);
     
     // Insert sources, headers, inlines:
     auto_ptr<IFilesToProjectInserter> inserter;
@@ -378,21 +401,21 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         inserter.reset(new CDllProjectFilesInserter
                                     (&xmlprj,
                                      CProjKey(prj.m_ProjType, prj.m_ID), 
-                                     project_configs, 
+                                     m_project_configs, 
                                      project_context.ProjectDir()));
 
     } else {
         inserter.reset(new CBasicProjectsFilesInserter 
                                      (&xmlprj,
                                       prj.m_ID,
-                                      project_configs, 
+                                      m_project_configs, 
                                       project_context.ProjectDir()));
     }
 
     ITERATE(list<string>, p, collector.SourceFiles()) {
         //Include collected source files
         const string& rel_source_file = *p;
-        inserter->AddSourceFile(rel_source_file, pch_default);
+        inserter->AddSourceFile(rel_source_file, m_pch_default);
     }
 
     ITERATE(list<string>, p, collector.HeaderFiles()) {
@@ -441,7 +464,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             ITERATE(list<SCustomBuildInfo>, p, info_list) { 
                 const SCustomBuildInfo& build_info = *p;
                 AddCustomBuildFileToFilter(filter, 
-                                           project_configs, 
+                                           m_project_configs, 
                                            project_context.ProjectDir(),
                                            build_info);
             }
@@ -466,7 +489,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
                                               src, 
                                               &build_info);
                 AddCustomBuildFileToFilter(filter, 
-                                           project_configs, 
+                                           m_project_configs, 
                                            project_context.ProjectDir(), 
                                            build_info);
             }
@@ -485,7 +508,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
     string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
                                                 project_context.ProjectName());
-    project_path += MSVC_PROJECT_FILE_EXT;
+    project_path += CMsvc7RegSettings::GetVcprojExt();
 
     SaveIfNewer(project_path, xmlprj);
 }
@@ -619,6 +642,268 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         //Additional Dependencies
         build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;
     }
+}
+
+#if USE_MSVC2010
+
+template<typename Container>
+void __SET_PROPGROUP_ELEMENT(
+    Container& container, const string& name, const string& value,
+    const string& condition = kEmptyStr)
+{
+    CRef<msbuild::CPropertyGroup::C_E> e(new msbuild::CPropertyGroup::C_E);
+    e->SetAnyContent().SetName(name);
+    e->SetAnyContent().SetValue(value);
+    if (!condition.empty()) {
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+    }
+    container->SetPropertyGroup().SetPropertyGroup().push_back(e);
+}
+
+template<typename Container>
+void __SET_CLCOMPILE_ELEMENT(
+    Container& container, const string& name, const string& value)
+{
+    CRef<msbuild::CClCompile::C_E> e(new msbuild::CClCompile::C_E);
+    e->SetAnyContent().SetName(name);
+    e->SetAnyContent().SetValue(value);
+    container->SetClCompile().SetClCompile().push_back(e);
+}
+#define __SET_CLCOMPILE(container, name) \
+    __SET_CLCOMPILE_ELEMENT(container, #name,  msvc_tool.Compiler()->name())
+
+
+template<typename Container>
+void __SET_LIB_ELEMENT(
+    Container& container, const string& name, const string& value)
+{
+    CRef<msbuild::CLib::C_E> e(new msbuild::CLib::C_E);
+    e->SetAnyContent().SetName(name);
+    e->SetAnyContent().SetValue(value);
+    container->SetLib().Set().push_back(e);
+}
+
+
+#endif  // USE_MSVC2010
+
+
+void CMsvcProjectGenerator::GenerateMsbuild(
+    CMsvcPrjFilesCollector& collector,
+    CMsvcPrjProjectContext& project_context, CProjItem& prj)
+{
+#if USE_MSVC2010
+    msbuild::CProject project;
+    project.SetAttlist().SetDefaultTargets("Build");
+    project.SetAttlist().SetToolsVersion("4.0");
+
+// ProjectLevelTagExceptTargetOrImportType
+    {
+        // project GUID
+        CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> t(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
+        t->SetPropertyGroup().SetAttlist().SetLabel("Globals");
+        project.SetProjectLevelTagExceptTargetOrImportType().SetProjectLevelTagExceptTargetOrImportType().push_back(t);
+        __SET_PROPGROUP_ELEMENT( t, "ProjectGuid", prj.m_GUID );
+        __SET_PROPGROUP_ELEMENT( t, "Keyword", MSVC_PROJECT_KEYWORD_WIN32 );
+    }
+    {
+        // project configurations
+        CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> t(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
+        t->SetItemGroup().SetAttlist().SetLabel("ProjectConfigurations");
+        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+            string cfg_name(c->GetConfigFullName());
+            string cfg_platform(CMsvc7RegSettings::GetMsvcPlatformName());
+            {
+                CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+                p->SetProjectConfiguration().SetAttlist().SetInclude(cfg_name + "|" + cfg_platform);
+                p->SetProjectConfiguration().SetConfiguration(cfg_name);
+                p->SetProjectConfiguration().SetPlatform(cfg_platform);
+                t->SetItemGroup().SetItemGroup().push_back(p);
+            }
+        }
+        project.SetProjectLevelTagExceptTargetOrImportType().SetProjectLevelTagExceptTargetOrImportType().push_back(t);
+    }
+
+// TargetOrImportType
+    project.SetTargetOrImportType().SetImport().SetAttlist().SetProject("$(VCTargetsPath)\\Microsoft.Cpp.Default.props");
+    
+// ProjectLevelTagType
+    // Configurations
+    {
+        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+
+            const SConfigInfo& cfg_info = *c;
+            CMsvcPrjGeneralContext general_context(cfg_info, project_context);
+            CMsvcTools msvc_tool(general_context, project_context);
+            string cfg_condition("'$(Configuration)|$(Platform)'=='");
+            cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetPropertyGroup().SetAttlist().SetCondition(cfg_condition);
+            t->SetPropertyGroup().SetAttlist().SetLabel("Configuration");
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+
+            __SET_PROPGROUP_ELEMENT(t, "ConfigurationType", msvc_tool.Configuration()->ConfigurationType());
+            __SET_PROPGROUP_ELEMENT(t, "CharacterSet", msvc_tool.Configuration()->CharacterSet());
+        }
+    }
+
+    // -----
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetImport().SetAttlist().SetProject("$(VCTargetsPath)\\Microsoft.Cpp.props");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+    }
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetImportGroup().SetAttlist().SetLabel("ExtensionSettings");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+    }
+    // PropertySheets
+    {
+        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+            string cfg_condition("'$(Configuration)|$(Platform)'=='");
+            cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetImportGroup().SetAttlist().SetCondition(cfg_condition);
+            t->SetImportGroup().SetAttlist().SetLabel("PropertySheets");
+            {
+                CRef<msbuild::CImportGroup::C_E> p(new msbuild::CImportGroup::C_E);
+                p->SetImport().SetAttlist().SetProject("$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props");
+                p->SetImport().SetAttlist().SetCondition("exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')");
+                p->SetImport().SetAttlist().SetLabel("LocalAppDataPlatform");
+                t->SetImportGroup().SetImportGroup().push_back(p);
+            }
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        }
+    }
+    
+    // UserMacros
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetPropertyGroup().SetAttlist().SetLabel("UserMacros");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+    }
+    
+    {
+        // File version
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        __SET_PROPGROUP_ELEMENT( t, "_ProjectFileVersion", GetApp().GetRegSettings().GetProjectFileFormatVersion());
+
+        // OutDir/IntDir/TargetName
+        ITERATE(list<SConfigInfo>, c , m_project_configs) {
+
+            const SConfigInfo& cfg_info = *c;
+            CMsvcPrjGeneralContext general_context(cfg_info, project_context);
+            CMsvcTools msvc_tool(general_context, project_context);
+            string cfg_condition("'$(Configuration)|$(Platform)'=='");
+            cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+            __SET_PROPGROUP_ELEMENT(t, "OutDir", msvc_tool.Configuration()->OutputDirectory(), cfg_condition);
+            __SET_PROPGROUP_ELEMENT(t, "IntDir", msvc_tool.Configuration()->IntermediateDirectory(), cfg_condition);
+            __SET_PROPGROUP_ELEMENT(t, "TargetName", project_context.ProjectId(), cfg_condition);
+        }
+    }
+
+    // compilation settings
+    ITERATE(list<SConfigInfo>, c , m_project_configs) {
+
+        const SConfigInfo& cfg_info = *c;
+        CMsvcPrjGeneralContext general_context(cfg_info, project_context);
+        CMsvcTools msvc_tool(general_context, project_context);
+        string cfg_condition("'$(Configuration)|$(Platform)'=='");
+        cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+
+        {
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            t->SetItemDefinitionGroup().SetAttlist().SetCondition(cfg_condition);
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            // compiler
+            {
+               CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+               t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+               __SET_CLCOMPILE(p, AdditionalOptions);
+               __SET_CLCOMPILE(p, Optimization);
+               __SET_CLCOMPILE(p, InlineFunctionExpansion);
+               __SET_CLCOMPILE(p, FavorSizeOrSpeed);
+               __SET_CLCOMPILE(p, OmitFramePointers);
+               __SET_CLCOMPILE(p, AdditionalIncludeDirectories);
+               __SET_CLCOMPILE(p, PreprocessorDefinitions);
+               __SET_CLCOMPILE(p, IgnoreStandardIncludePath);
+               __SET_CLCOMPILE(p, StringPooling);
+               __SET_CLCOMPILE(p, MinimalRebuild);
+               __SET_CLCOMPILE(p, BasicRuntimeChecks);
+               __SET_CLCOMPILE(p, RuntimeLibrary);
+               __SET_CLCOMPILE(p, ProgramDataBaseFileName);
+               __SET_CLCOMPILE(p, StructMemberAlignment);
+               __SET_CLCOMPILE(p, RuntimeTypeInfo);
+//todo: PrecompiledHeader
+// 
+               __SET_CLCOMPILE(p, BrowseInformation);
+               __SET_CLCOMPILE(p, WarningLevel);
+               __SET_CLCOMPILE(p, DebugInformationFormat);
+               __SET_CLCOMPILE(p, CallingConvention);
+               __SET_CLCOMPILE(p, CompileAs);
+               __SET_CLCOMPILE(p, DisableSpecificWarnings);
+               __SET_CLCOMPILE(p, UndefinePreprocessorDefinitions);
+            }
+            // librarian
+            {
+               CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+               t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+               __SET_LIB_ELEMENT(p, "AdditionalOptions", msvc_tool.Librarian()->AdditionalOptions());
+               __SET_LIB_ELEMENT(p, "OutputFile", msvc_tool.Librarian()->OutputFile());
+               __SET_LIB_ELEMENT(p, "AdditionalLibraryDirectories", msvc_tool.Librarian()->AdditionalLibraryDirectories());
+               __SET_LIB_ELEMENT(p, "IgnoreAllDefaultLibraries", msvc_tool.Librarian()->IgnoreAllDefaultLibraries());
+               __SET_LIB_ELEMENT(p, "IgnoreSpecificDefaultLibraries", msvc_tool.Librarian()->IgnoreDefaultLibraryNames());
+            }
+        }
+    }
+    
+    // sources
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        
+
+        ITERATE(list<string>, f, collector.SourceFiles()) {
+            const string& rel_source_file = *f;
+            CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+            t->SetItemGroup().SetItemGroup().push_back(p);
+            p->SetClCompile().SetAttlist().SetInclude(rel_source_file);
+/*
+            {
+                CRef<msbuild::CClCompile::C_E> e(new msbuild::CClCompile::C_E);
+                e->SetAnyContent().SetName("PreprocessorDefinitions");
+                e->SetAnyContent().SetValue("NCBI_USE_PCH");
+                p->SetClCompile().SetClCompile().push_back(e);
+            }
+*/
+        }
+    }
+    
+
+
+    // alsmost done
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetImport().SetAttlist().SetProject("$(VCTargetsPath)\\Microsoft.Cpp.targets");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+    }
+    {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetImportGroup().SetAttlist().SetLabel("ExtensionTargets");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+    }
+
+// save
+    string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
+                                                project_context.ProjectName());
+    project_path += CMsvc7RegSettings::GetVcprojExt();
+
+    SaveIfNewer(project_path, project);
+#endif
 }
 
 #endif //NCBI_COMPILER_MSVC

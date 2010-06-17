@@ -70,7 +70,7 @@ public:
     }
     virtual string IntermediateDirectory(void) const
     {
-	    return "$(ConfigurationName)";//m_ConfigurationName;
+	    return CMsvc7RegSettings::GetConfigNameKeyword();
     }
     virtual string ConfigurationType(void) const
     {
@@ -78,6 +78,9 @@ public:
     }
     virtual string CharacterSet(void) const
     {
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+            return "MultiByte";
+        }
 	    return "2";
     }
     virtual string BuildLogFile(void) const

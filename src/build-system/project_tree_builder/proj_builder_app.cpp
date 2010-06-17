@@ -778,7 +778,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     CreateUtilityProject(" INDEX, see here: ", *configurations, &index_xmlprj);
     string index_prj_path = 
         CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
-    index_prj_path += MSVC_PROJECT_FILE_EXT;
+    index_prj_path += CMsvc7RegSettings::GetVcprojExt();
     if (!skip_config) {
         SaveIfNewer(index_prj_path, index_xmlprj);
     }
@@ -788,7 +788,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     CreateUtilityProject("-BUILD-ALL-", *configurations, &build_all_xmlprj);
     string build_all_prj_path = 
         CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
-    build_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    build_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
     SaveIfNewer(build_all_prj_path, build_all_xmlprj);
 
     // AsnAll utility project
@@ -796,7 +796,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     CreateUtilityProject("-DATASPEC-ALL-", *configurations, &asn_all_xmlprj);
     string asn_all_prj_path = 
         CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
-    asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    asn_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
     SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
 
     // LibAll utility project
@@ -804,7 +804,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     CreateUtilityProject("-LIBS-ALL-", *configurations, &libs_all_xmlprj);
     string libs_all_prj_path = 
         CDirEntry::ConcatPath(utility_projects_dir, "_LIBS_ALL_");
-    libs_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    libs_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
     SaveIfNewer(libs_all_prj_path, libs_all_xmlprj);
 
     // Solution

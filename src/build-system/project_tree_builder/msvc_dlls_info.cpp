@@ -429,13 +429,13 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
             if ( !str_log.empty() ) {
                 string path = CDirEntry::ConcatPath(dll.m_SourcesBaseDir, dll_id);
-                path += ".vcproj";
+                path += CMsvc7RegSettings::GetVcprojExt();
                 PTB_WARNING_EX(path, ePTB_ConfigurationError,
                                "Missing libraries not found: " << str_log);
             }
         } else {
             string path = CDirEntry::ConcatPath(dll.m_SourcesBaseDir, dll_id);
-            path += ".vcproj";
+            path += CMsvc7RegSettings::GetVcprojExt();
             PTB_WARNING_EX(path, ePTB_ProjectExcluded,
                            "Skipped empty project: " << dll_id);
         }

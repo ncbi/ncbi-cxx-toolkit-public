@@ -397,10 +397,13 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                         d = CDirEntry::AddTrailingPathSeparator(d);
                         if ( CDirEntry(d).IsDir() ) {
                             include_dirs->push_back(d);    
-                        } else {
+                        }
+/*
+                        else {
                             LOG_POST(Warning << flag << " = " << dir << ": "
                                         << dir << " not found");
                         }
+*/
                     }
                 }
             }

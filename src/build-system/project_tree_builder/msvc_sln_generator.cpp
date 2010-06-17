@@ -191,6 +191,9 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     // Projects from the projects tree
     ITERATE(TProjects, p, m_Projects) {
         
+        if (p->second.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
+            continue;
+        }
         WriteProjectAndSection(ofs, p->second);
     }
 
@@ -287,7 +290,7 @@ CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
         m_ProjectName = project_context.ProjectName();
         m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
                                               project_context.ProjectName());
-        m_ProjectPath += MSVC_PROJECT_FILE_EXT;
+        m_ProjectPath += CMsvc7RegSettings::GetVcprojExt();
     }
 }
 

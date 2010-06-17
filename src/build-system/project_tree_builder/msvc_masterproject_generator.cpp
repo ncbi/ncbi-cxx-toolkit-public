@@ -94,7 +94,7 @@ string CMsvcMasterProjectGenerator::GetPath() const
 {
     string project_path = 
         CDirEntry::ConcatPath(m_ProjectDir, "_HIERARCHICAL_VIEW_");
-    project_path += MSVC_PROJECT_FILE_EXT;
+    project_path += CMsvc7RegSettings::GetVcprojExt();
     return project_path;
 }
 

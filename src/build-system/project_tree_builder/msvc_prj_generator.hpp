@@ -33,6 +33,7 @@
 #include "proj_item.hpp"
 #include "msvc_project_context.hpp"
 #include "msvc_prj_utils.hpp"
+#include "msvc_prj_files_collector.hpp"
 
 #include <corelib/ncbienv.hpp>
 
@@ -55,10 +56,30 @@ public:
     CMsvcProjectGenerator(const list<SConfigInfo>& configs);
     ~CMsvcProjectGenerator(void);
     
+    // Check configuration availability
+    bool CheckProjectConfigs(
+                            CMsvcPrjProjectContext& project_context,
+                            CProjItem& prj);
+    void AnalyzePackageExport(
+                            CMsvcPrjProjectContext& project_context,
+                            CProjItem& prj);
+    void GetDefaultPch(
+                            CMsvcPrjProjectContext& project_context,
+                            CProjItem& prj);
+
     void Generate(CProjItem& prj);
+    void GenerateMsbuild(
+                            CMsvcPrjFilesCollector& collector,
+                            CMsvcPrjProjectContext& project_context,
+                            CProjItem& prj);
 
 private:
     list<SConfigInfo> m_Configs;
+    list<SConfigInfo> m_project_configs;
+    string m_pkg_export_command;
+    string m_pkg_export_output;
+    string m_pkg_export_input;
+    string m_pch_default;
 
     /// Prohibited to.
     CMsvcProjectGenerator(void);

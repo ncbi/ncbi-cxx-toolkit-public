@@ -62,7 +62,7 @@ CVisualStudioProject* LoadFromXmlFile(const string& file_path)
 
 
 void SaveToXmlFile(const string&               file_path, 
-                   const CVisualStudioProject& project)
+                 const CSerialObject& project)
 {
     // Create dir if no such dir...
     string dir;
@@ -78,14 +78,19 @@ void SaveToXmlFile(const string&               file_path,
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
     CObjectOStreamXml xs(ofs, false);
-    xs.SetReferenceDTD(false);
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+        xs.SetReferenceSchema();
+        xs.SetUseSchemaLocation(false);
+    } else {
+        xs.SetReferenceDTD(false);
+    }
     xs.SetEncoding(eEncoding_Windows_1252);
 
     xs << project;
 }
 
 void SaveIfNewer(const string&               file_path, 
-                 const CVisualStudioProject& project)
+                 const CSerialObject& project)
 {
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
@@ -103,7 +108,7 @@ void SaveIfNewer(const string&               file_path,
         PTB_WARNING_EX(file_path, ePTB_FileModified,
                        "Project updated");
     } else {
-        PTB_TRACE("Left intact: " << project.GetAttlist().GetName());
+        PTB_TRACE("Left intact: " << file_path);
     }
 }
 #endif //NCBI_COMPILER_MSVC
@@ -214,7 +219,7 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
                 GetApp().GetProjectTreeInfo().m_Src, source_dir));
         vcproj = CDirEntry::AddTrailingPathSeparator(vcproj);
         vcproj += CreateProjectName(proj);
-        vcproj += MSVC_PROJECT_FILE_EXT;
+        vcproj += CMsvc7RegSettings::GetVcprojExt();
     }
     string guid;
     if ( CDirEntry(vcproj).Exists() ) {
@@ -227,6 +232,9 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
                 string data(buf);
                 string::size_type start, end;
                 start = data.find("ProjectGUID");
+                if (start == string::npos) {
+                    start = data.find("ProjectGuid");
+                }
                 if (start != string::npos) {
                     start = data.find('{',start);
                     if (start != string::npos) {
@@ -251,7 +259,7 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
     if (!guid.empty()) {
         return  "{" + guid + "}";
     }
-    return guid;
+    return GenerateSlnGUID();
 }
 
 
@@ -387,15 +395,27 @@ SConfigInfo::SConfigInfo(const string& name,
     DefineRtType();
 }
 
+void SConfigInfo::SetRuntimeLibrary(const string& lib)
+{
+    m_RuntimeLibrary = lib;
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+        if      (lib == "0") { m_RuntimeLibrary = "MultiThreaded"; }
+        else if (lib == "1") { m_RuntimeLibrary = "MultiThreadedDebug"; }
+        else if (lib == "2") { m_RuntimeLibrary = "MultiThreadedDLL"; }
+        else if (lib == "3") { m_RuntimeLibrary = "MultiThreadedDebugDLL"; }
+    }
+    DefineRtType();
+}
+
 void SConfigInfo::DefineRtType()
 {
-    if (m_RuntimeLibrary == "0") {
+    if (m_RuntimeLibrary == "0" || m_RuntimeLibrary == "MultiThreaded") {
         m_rtType = rtMultiThreaded;
-    } else if (m_RuntimeLibrary == "1") {
+    } else if (m_RuntimeLibrary == "1" || m_RuntimeLibrary == "MultiThreadedDebug") {
         m_rtType = rtMultiThreadedDebug;
-    } else if (m_RuntimeLibrary == "2") {
+    } else if (m_RuntimeLibrary == "2" || m_RuntimeLibrary == "MultiThreadedDLL") {
         m_rtType = rtMultiThreadedDLL;
-    } else if (m_RuntimeLibrary == "3") {
+    } else if (m_RuntimeLibrary == "3" || m_RuntimeLibrary == "MultiThreadedDebugDLL") {
         m_rtType = rtMultiThreadedDebugDLL;
     } else if (m_RuntimeLibrary == "4") {
         m_rtType = rtSingleThreaded;
@@ -425,10 +445,8 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
         config.m_Debug = registry.GetString(config_name, 
                                             "debug",
                                             "FALSE") != "FALSE";
-        config.m_RuntimeLibrary = registry.GetString(config_name, 
-                                                     "runtimeLibraryOption",
-                                                     "0");
-        config.DefineRtType();
+        config.SetRuntimeLibrary( registry.GetString(config_name, 
+                                  "runtimeLibraryOption","0"));
         configs->push_back(config);
         if (( config.m_Debug && GetApp().m_TweakVTuneD) ||
             (!config.m_Debug && GetApp().m_TweakVTuneR))
@@ -605,8 +623,8 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void)
         return "8.00";
     } else if (GetMsvcVersion() == eMsvc900) {
         return "9.00";
-    } else {
-        return "9.00";
+    } else if (GetMsvcVersion() == eMsvc1000) {
+        return "10.0.30319.1";
     }
     return "";
 }
@@ -634,6 +652,20 @@ string CMsvc7RegSettings::GetConfigNameKeyword(void)
         }
     } else if (GetMsvcPlatform() == eXCode) {
         return XCODE_CONFIGNAME;
+    }
+    return "";
+}
+
+string CMsvc7RegSettings::GetVcprojExt(void)
+{
+    if (GetMsvcPlatform() < eUnix) {
+        if (GetMsvcVersion() < eMsvc1000) {
+            return  MSVC_PROJECT_FILE_EXT;
+        } else {
+            return ".vcxproj";
+        }
+    } else if (GetMsvcPlatform() == eXCode) {
+        return ".xcodeproj";
     }
     return "";
 }
