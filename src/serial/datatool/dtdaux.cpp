@@ -306,7 +306,8 @@ void DTDElement::SetType( EType type)
     _ASSERT(m_Type == eUnknown ||
             m_Type == eUnknownGroup ||
             m_Type == eWsdlEndpoint ||
-            m_Type == type);
+            m_Type == type ||
+            m_Type == eEmpty);
     m_Type = type;
 }
 

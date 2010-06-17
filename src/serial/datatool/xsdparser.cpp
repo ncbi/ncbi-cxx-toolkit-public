@@ -710,7 +710,8 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             curr_type = node.GetType();
             if (curr_type == DTDElement::eUnknown ||
-                curr_type == DTDElement::eUnknownGroup) {
+                curr_type == DTDElement::eUnknownGroup ||
+                (m_ResolveTypes && curr_type == DTDElement::eEmpty)) {
                 node.SetType(DTDElement::eSequence);
                 ParseContainer(node);
                 if (node.GetContent().empty()) {
@@ -730,7 +731,8 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         case K_CHOICE:
             curr_type = node.GetType();
             if (curr_type == DTDElement::eUnknown ||
-                curr_type == DTDElement::eUnknownGroup) {
+                curr_type == DTDElement::eUnknownGroup ||
+                (m_ResolveTypes && curr_type == DTDElement::eEmpty)) {
                 node.SetType(DTDElement::eChoice);
                 ParseContainer(node);
                 if (node.GetContent().empty()) {
@@ -750,7 +752,8 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         case K_SET:
             curr_type = node.GetType();
             if (curr_type == DTDElement::eUnknown ||
-                curr_type == DTDElement::eUnknownGroup) {
+                curr_type == DTDElement::eUnknownGroup ||
+                (m_ResolveTypes && curr_type == DTDElement::eEmpty)) {
                 node.SetType(DTDElement::eSet);
                 ParseContainer(node);
                 if (node.GetContent().empty()) {
@@ -1308,6 +1311,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
 void XSDParser::ProcessNamedTypes(void)
 {
     m_ResolveTypes = true;
+    set<string> processed;
     bool found;
     do {
         found = false;
@@ -1350,6 +1354,11 @@ void XSDParser::ProcessNamedTypes(void)
                         node.SetType(DTDElement::eEmpty);
                     }
                 }
+                else if (processed.find(i->second.GetName()) == processed.end()) {
+                    PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
+                    ParseContent(node);
+                }
+                processed.insert(i->second.GetName());
             }
         }
     } while (found);
