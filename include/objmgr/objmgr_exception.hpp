@@ -203,6 +203,7 @@ public:
         eBadLocation,
         eNotUnique,
         eUnknownLength,
+        eBadFeature,
         eBadResidue
     };
     virtual const char* GetErrCodeString(void) const;

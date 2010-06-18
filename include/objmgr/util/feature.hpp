@@ -190,13 +190,16 @@ public:
     void AddFeature(const CMappedFeat& feat);
 
     /// Add all features from bottom_type to top_type for a feature.
-    void AddFeaturesFor(const CMappedFeat& feat,
-                        CSeqFeatData::ESubtype bottom_type,
-                        CSeqFeatData::ESubtype top_type);
     void AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
                         CSeqFeatData::ESubtype bottom_type,
                         CSeqFeatData::ESubtype top_type,
-                        const SAnnotSelector* base_sel = 0);
+                        const SAnnotSelector* base_sel = 0,
+                        bool skip_bottom = false);
+    void AddFeaturesFor(const CMappedFeat& feat,
+                        CSeqFeatData::ESubtype bottom_type,
+                        CSeqFeatData::ESubtype top_type);
+    void AddFeaturesFor(const CMappedFeat& feat,
+                        CSeqFeatData::ESubtype top_type);
     /// Add all necessary features to get genes for a mRNA feature.
     void AddGenesForMrna(const CMappedFeat& mrna_feat);
     /// Add all necessary features to get cdregions for a mRNA feature.
@@ -209,6 +212,8 @@ public:
     void AddGenesForCds(const CMappedFeat& cds_feat);
     /// Add all necessary features to get mRNAs for a cdregion feature.
     void AddMrnasForCds(const CMappedFeat& cds_feat);
+    /// Add all necessary features to get genes for an arbitrary feature.
+    void AddGenesForFeat(const CMappedFeat& feat);
 
     /// Find a corresponding CMappedFeat for a feature already added to a tree.
     /// Will throw an exception if the feature is not in the tree.
@@ -354,6 +359,11 @@ NCBI_XOBJUTIL_EXPORT
 void GetCdssForGene(const CMappedFeat& gene_feat,
                     list< CMappedFeat >& cds_feats,
                     CFeatTree* feat_tree = 0);
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
+GetBestGeneForFeat(const CMappedFeat& feat,
+                   CFeatTree* feat_tree = 0);
 
 /*
 NCBI_XOBJUTIL_EXPORT

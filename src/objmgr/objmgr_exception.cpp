@@ -135,6 +135,7 @@ const char* CObjmgrUtilException::GetErrCodeString(void) const
     case eNotUnique:        return "eNotUnique";
     case eUnknownLength:    return "eUnknownLength";
     case eBadResidue:       return "eBadResidue";
+    case eBadFeature:       return "eBadFeature";
     default:                return CException::GetErrCodeString();
     }
 }

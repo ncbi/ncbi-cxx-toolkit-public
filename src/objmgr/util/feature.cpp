@@ -1835,19 +1835,11 @@ const CTSE_Handle& CFeatTree::CFeatInfo::GetTSE(void) const
 }
 
 
-void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
-                               CSeqFeatData::ESubtype bottom_type,
-                               CSeqFeatData::ESubtype top_type)
-{
-    AddFeature(feat);
-    AddFeaturesFor(feat.GetScope(), feat.GetLocation(), bottom_type, top_type);
-}
-
-
 void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
                                CSeqFeatData::ESubtype bottom_type,
                                CSeqFeatData::ESubtype top_type,
-                               const SAnnotSelector* base_sel)
+                               const SAnnotSelector* base_sel,
+                               bool skip_bottom)
 {
     SAnnotSelector sel;
     if ( base_sel ) {
@@ -1856,7 +1848,12 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
     else {
         sel.SetResolveAll().SetAdaptiveDepth().SetOverlapTotalRange();
     }
-    sel.SetFeatSubtype(bottom_type);
+    if ( skip_bottom ) {
+        sel.SetAnnotType(CSeq_annot::C_Data::e_not_set);
+    }
+    else {
+        sel.SetFeatSubtype(bottom_type);
+    }
     if ( top_type != bottom_type ) {
         for ( STypeLink link(bottom_type); link.IsValid(); link.Next() ) {
             CSeqFeatData::ESubtype parent_type = link.m_ParentType;
@@ -1871,10 +1868,27 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
 }
 
 
+void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
+                               CSeqFeatData::ESubtype bottom_type,
+                               CSeqFeatData::ESubtype top_type)
+{
+    AddFeature(feat);
+    AddFeaturesFor(feat.GetScope(), feat.GetLocation(), bottom_type, top_type);
+}
+
+
+void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
+                               CSeqFeatData::ESubtype top_type)
+{
+    AddFeature(feat);
+    AddFeaturesFor(feat.GetScope(), feat.GetLocation(),
+                   feat.GetFeatSubtype(), top_type, 0, true);
+}
+
+
 void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat)
 {
     AddFeaturesFor(mrna_feat,
-                   CSeqFeatData::eSubtype_gene,
                    CSeqFeatData::eSubtype_gene);
 }
 
@@ -1890,7 +1904,6 @@ void CFeatTree::AddCdsForMrna(const CMappedFeat& mrna_feat)
 void CFeatTree::AddGenesForCds(const CMappedFeat& cds_feat)
 {
     AddFeaturesFor(cds_feat,
-                   CSeqFeatData::eSubtype_mRNA,
                    CSeqFeatData::eSubtype_gene);
 }
 
@@ -1898,7 +1911,6 @@ void CFeatTree::AddGenesForCds(const CMappedFeat& cds_feat)
 void CFeatTree::AddMrnasForCds(const CMappedFeat& cds_feat)
 {
     AddFeaturesFor(cds_feat,
-                   CSeqFeatData::eSubtype_mRNA,
                    CSeqFeatData::eSubtype_mRNA);
 }
 
@@ -1919,6 +1931,13 @@ void CFeatTree::AddCdsForGene(const CMappedFeat& gene_feat)
 }
 
 
+void CFeatTree::AddGenesForFeat(const CMappedFeat& feat)
+{
+    AddFeaturesFor(feat,
+                   CSeqFeatData::eSubtype_gene);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // New API for GetBestXxxForXxx()
 
@@ -1926,6 +1945,11 @@ CMappedFeat
 GetBestGeneForMrna(const CMappedFeat& mrna_feat,
                    CFeatTree* feat_tree)
 {
+    if ( !mrna_feat ||
+         mrna_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestGeneForMrna: mrna_feat is not a mRNA");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddGenesForMrna(mrna_feat);
@@ -1938,6 +1962,11 @@ CMappedFeat
 GetBestGeneForCds(const CMappedFeat& cds_feat,
                   CFeatTree* feat_tree)
 {
+    if ( !cds_feat ||
+         cds_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestGeneForCds: cds_feat is not a cdregion");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddGenesForCds(cds_feat);
@@ -1950,6 +1979,11 @@ CMappedFeat
 GetBestMrnaForCds(const CMappedFeat& cds_feat,
                   CFeatTree* feat_tree)
 {
+    if ( !cds_feat ||
+         cds_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestMrnaForCds: cds_feat is not a cdregion");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddMrnasForCds(cds_feat);
@@ -1962,6 +1996,11 @@ CMappedFeat
 GetBestCdsForMrna(const CMappedFeat& mrna_feat,
                   CFeatTree* feat_tree)
 {
+    if ( !mrna_feat ||
+         mrna_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestCdsForMrna: mrna_feat is not a mRNA");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddCdsForMrna(mrna_feat);
@@ -1980,6 +2019,11 @@ void GetMrnasForGene(const CMappedFeat& gene_feat,
                      list< CMappedFeat >& mrna_feats,
                      CFeatTree* feat_tree)
 {
+    if ( !gene_feat ||
+         gene_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_gene ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetMrnasForGene: gene_feat is not a gene");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddMrnasForGene(gene_feat);
@@ -1998,6 +2042,11 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
                     list< CMappedFeat >& cds_feats,
                     CFeatTree* feat_tree)
 {
+    if ( !gene_feat ||
+         gene_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_gene ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetCdssForGene: gene_feat is not a gene");
+    }
     if ( !feat_tree ) {
         CFeatTree tree;
         tree.AddCdsForGene(gene_feat);
@@ -2019,6 +2068,24 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
         }
     }
 }
+
+
+CMappedFeat
+GetBestGeneForFeat(const CMappedFeat& feat,
+                   CFeatTree* feat_tree)
+{
+    if ( !feat ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestGeneForFeat: feat is null");
+    }
+    if ( !feat_tree ) {
+        CFeatTree tree;
+        tree.AddGenesForFeat(feat);
+        return GetBestGeneForFeat(feat, &tree);
+    }
+    return feat_tree->GetParent(feat, CSeqFeatData::eSubtype_gene);
+}
+
 
 /*
 static
