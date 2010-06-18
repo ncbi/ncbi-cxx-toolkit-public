@@ -62,6 +62,7 @@ enum ERW_Result {
     eRW_Eof
 };
 
+const char* g_RW_ResultToString(ERW_Result res);
 
 /// A very basic data-read interface.
 

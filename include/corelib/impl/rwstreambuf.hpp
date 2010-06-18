@@ -64,10 +64,11 @@ public:
     /// NOTE:  if the reader and writer are in fact the same object,
     ///        it will _not_ be deleted twice.
     enum EFlags {
-        fOwnReader     = 1 << 1,    // own the underlying reader
-        fOwnWriter     = 1 << 2,    // own the underlying writer
-        fOwnAll        = fOwnReader + fOwnWriter,
-        fLogExceptions = 1 << 8
+        fOwnReader      = 1 << 1,    // own the underlying reader
+        fOwnWriter      = 1 << 2,    // own the underlying writer
+        fOwnAll         = fOwnReader + fOwnWriter,
+        fLogExceptions  = 1 << 8,
+        fLeakExceptions = 1 << 9
     };
     typedef int TFlags;             // bitwise OR of EFlags
 
