@@ -4892,7 +4892,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SALFM	s	Salford Natural History Museum, Salford City Council",
 "SALLE	s	Instituto Geobiologico La Salle",
 "SAM	s	South African Museum",
-"SAMA	s	South Australia Museum",
+"SAMA	s	South Australian Museum",
 "SAMC	s	Iziko Museum of Capetown",
 "SAMU	s	Savaria Museum, Department of Natural History",
 "SAN	s	Forest Research Centre, Forest Department",
