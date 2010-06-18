@@ -4,9 +4,7 @@
 base=
 logfile=
 map=
-
-ignored=".*make\[[0-9]+\]: )?(Nothing to be done for \`.*'|\`.*' is updated"
-ignored2="dmake: defaulting to parallel mode|See the man page dmake.*"
+mydir=`dirname $0`
 
 while :; do
     case "$1" in
@@ -23,7 +21,7 @@ clean_up () {
 }
 
 case $0 in
-    */*) get_lock="`dirname $0`/get_lock.sh" ;;
+    */*) get_lock="$mydir/get_lock.sh" ;;
     *) get_lock=get_lock.sh ;;
 esac
 
@@ -43,11 +41,8 @@ if "$get_lock" "$base" $$; then
         status_file=$base.lock/status
         ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile.new"
         # Emulate egrep -q to avoid having to move from under scripts.
-        if [ ! -f "$logfile" ]  ||  \
-         awk "BEGIN { s=1 }
-              (!/^($ignored)\\.\$/ && !/^($ignored2)\\.\$/) { s=0; exit }
-              END { exit s }" \
-          "$logfile.new"; then
+        if [ ! -f "$logfile" ]  \
+	  ||  $mydir/is_log_interesting.awk "$logfile.new"; then
             mv "$logfile.new" "$logfile"
         fi
         if [ -s "$status_file" ]; then
