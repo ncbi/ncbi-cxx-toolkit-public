@@ -505,14 +505,14 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
 
 void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input)
 {
-    CFormatGuess fg;
+    CFormatGuess fg(input);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     fg.GetFormatHints().DisableAllNonpreferred();
 
-    TFormat fmt = fg.Format(input);
+    TFormat fmt = fg.GuessFormat();
     
     switch(fmt) {
     case CFormatGuess::eFasta:
