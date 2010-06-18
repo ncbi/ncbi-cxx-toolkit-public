@@ -19,7 +19,7 @@ IMPORTS Dbtag, Date FROM NCBI-General
 
 EXPORTS GC-Assembly, GC-Genome, GC-Project, GC-GenomicPart, GC-Replicon,
         GC-Sequence, GC-SequenceStats, GC-Scaf-stats, GC-SeqIdAlias,
-        GC-TypedSeqId, GC-DbTagAlias, GC-ChrTypes, GC-ChrGapTypes;
+        GC-TypedSeqId, GC-DbTagAlias;
 
 
 GC-Genome ::= SEQUENCE
@@ -406,48 +406,12 @@ GC-Scaf-stats ::= SEQUENCE {
         -- latest GenBank/Refseq release for the same assembly, by how many?
         count-uniq-components (87), --INTEGER OPTIONAL ,
         count-uniq-component-diff-from-last-release (88), --INTEGER OPTIONAL,
-        -- Chromosome type (count of each type)
-        --chr-types SET OF GC-ChrTypes OPTIONAL,
-        count-chr-types (89), -- placeholder for set of gc-chrtypes
-        count-chr-terminal-gap-types (90),-- place holder for SET OF GC-ChrGapTypes OPTIONAL,
         count-dropped-components (91), -- dropped component due to foriegn screen
         other (255) -- catch all
     },
-    value INTEGER,
-    -- Chromosome type (count of each type) use category 88
-    chr-types SET OF GC-ChrTypes OPTIONAL,
-    -- list of chromosome terminal gaps use category 89
-    chr-terminal-gap-types SET OF GC-ChrGapTypes OPTIONAL
+    value INTEGER
 }
 
-
-GC-ChrGapTypes ::= SEQUENCE {
-    -- chromosome name
-    name  VisibleString,
-    -- terminal gaps and type
-    gaps SET OF Seq-gap OPTIONAL
-
-}
-
-GC-ChrTypes ::= SEQUENCE {
-    -- chromosome type
-    -- could be values
-    --   Chromosome
-    --   Macronuclear
-    --   Plastid
-    --   Mitochondrion
-    --   Plasmid
-    --   Viral segment
-    --   Extrachrom
-    --   Viroid
-    --   LG
-    --   Chloroplast
-    --   Un
-    type  VisibleString,
-    -- how many of this type
-    count INTEGER OPTIONAL
-
-}
 
 
 END
