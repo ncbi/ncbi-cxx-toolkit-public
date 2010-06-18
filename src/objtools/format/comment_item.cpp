@@ -314,10 +314,8 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
             retval = eRefTrackStatus_Provisional;
         } else if (NStr::EqualNocase(status, "Predicted")) {
             retval = eRefTrackStatus_Predicted;
-            /**
         } else if (NStr::EqualNocase(status, "Pipeline")) {
             retval = eRefTrackStatus_Pipeline;
-            **/
         } else if (NStr::EqualNocase(status, "Validated")) {
             retval = eRefTrackStatus_Validated;
         } else if (NStr::EqualNocase(status, "Reviewed")) {
@@ -367,6 +365,27 @@ string CCommentItem::GetStringForRefTrack
         const CUser_field& source_field = uo.GetField("GenomicSource");
         if ( source_field.GetData().IsStr() ) {
             source = source_field.GetData().GetStr();
+        }
+    }
+
+    string identical_to;
+    if (uo.HasField("IdenticalTo")) {
+        const CUser_field& uf = uo.GetField("IdenticalTo");
+        ITERATE (CUser_field::TData::TFields, it, uf.GetData().GetFields()) {
+            if ( !(*it)->GetData().IsFields() ) {
+                continue;
+            }
+            ITERATE (CUser_field::TData::TFields, i, (**it).GetData().GetFields()) {
+                const CUser_field& sub = **i;
+                if (sub.GetLabel().GetStr() == "accession") {
+                    identical_to = sub.GetData().GetStr();
+                    break;
+                }
+                if (sub.GetLabel().GetStr() == "gi") {
+                    identical_to = "gi:" +
+                        NStr::IntToString(sub.GetData().GetInt());
+                }
+            }
         }
     }
 
@@ -428,6 +447,11 @@ string CCommentItem::GetStringForRefTrack
     if ( !source.empty() ) {
         oss << " This record is derived from an annotated genomic sequence ("
             << source << ").";
+    }
+
+    if ( !identical_to.empty() ) {
+        oss << "   The reference sequence is identical to "
+            << identical_to << ".";
     }
 
     {{
@@ -946,11 +970,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 
     CNcbiOstrstream text;
 
-    if (ctx.IsRefSeq()) {
-        text << *refseq << " INFORMATION:  ";
-    } else {
-        text << "GENOME ANNOTATION " << *refseq << ":  ";
-    }
+    text << "GENOME ANNOTATION " << *refseq << ":  ";
     if ( !m_GenomeBuildNumber.empty() ) {
          text << "Features on this sequence have been produced for build "
               << m_GenomeBuildNumber << " of the NCBI's genome annotation"
