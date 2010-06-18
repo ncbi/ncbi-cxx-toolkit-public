@@ -32,6 +32,7 @@
 #include <algo/sequence/gene_model.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
 
