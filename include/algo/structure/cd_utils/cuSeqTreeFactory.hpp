@@ -63,6 +63,8 @@ struct TreeOptions
 	int cTermExt;
 	CAlgorithm_type::ETree_scope scope;
 	CAlgorithm_type::EColoring_scope coloringScope;
+
+    string ToString();
 };
 
 class NCBI_CDUTILS_EXPORT TreeFactory 

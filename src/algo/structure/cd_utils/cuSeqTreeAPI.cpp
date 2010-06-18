@@ -186,11 +186,11 @@ string SeqTreeAPI::layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdg
 
 int SeqTreeAPI::getAllEdges(vector<SeqTreeEdge>& edges)
 {
-	getEgesFromSubTree(m_seqTree->begin(), edges);
+	getEdgesFromSubTree(m_seqTree->begin(), edges);
 	return edges.size();
 }
 
-void SeqTreeAPI::getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges)
+void SeqTreeAPI::getEdgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges)
 {
     //if cursor is a leaf node, draw its name and return
     if (cursor.number_of_children() == 0)
@@ -215,7 +215,7 @@ void SeqTreeAPI::getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqT
 		{
 			nodeChild.isLeaf =true;
 			nodeChild.name = sib->name;
-			//nodeChild.childAcc = sib->membership;
+            nodeChild.displayAnnotation = kEmptyStr;
 			annotateLeafNode(*sib,nodeChild);
 		}
 		else
@@ -227,7 +227,7 @@ void SeqTreeAPI::getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqT
 		e2.second = nodeChild;
 		edges.push_back(e1);
 		edges.push_back(e2);
-		getEgesFromSubTree(sib, edges);
+		getEdgesFromSubTree(sib, edges);
         ++sib;
     }
 }

@@ -53,6 +53,7 @@ void SeqItem::init()
 	//numSelected = 0;
 	selected = false;
 	taxid = -1;
+    membership = kEmptyStr;
 	collapsed = false;
 	interesting = false;
 }
@@ -696,7 +697,8 @@ void SeqTree::setMembershipColor(const RowMembershipColor* rowColorMap)
 		if (mapIt != m_leafNodes.end())
 		{
 			leafNode = mapIt->second;
-			leafNode->membership = cit->second;
+            if (leafNode.is_valid())
+                leafNode->membership = cit->second;
 		}
 		++cit;
 	}

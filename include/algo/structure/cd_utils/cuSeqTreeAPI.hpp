@@ -52,6 +52,7 @@ struct SeqTreeNode
 	int y;
 	bool isLeaf;
 	string annotation;
+	string displayAnnotation;  //  empty by default; use if 'annotation' does not determine the node's display properties
 };
 typedef pair<SeqTreeNode, SeqTreeNode> SeqTreeEdge;
 
@@ -76,9 +77,11 @@ public:
 	int getNumOfLeaves();
 	//return a string of tree method names
 	//lay out the tree to the specified area, .i.e. with the "fit to screen" style
-	string layoutSeqTree(int maxX, int maxY, vector<SeqTreeEdge>& edgs);
+    //'displayAnnotation' on the nodes of edges is empty; user is to populate it manually
+    string layoutSeqTree(int maxX, int maxY, vector<SeqTreeEdge>& edges);
 	//lay out the tree with a fixed spacing between sequences
-	string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edgs, int yInt = 3);
+    //'displayAnnotation' on the nodes of edges is empty; user is to populate it manually
+    string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edges, int yInt = 3);
 	CCdCore* getRootCD(){return m_cd ? m_cd : m_ma.getFirstCD();}
 	bool makeOrLoadTree();
 	bool loadAndValidateExistingTree();
@@ -104,7 +107,7 @@ private:
 
 	string layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges);
 	int getAllEdges(vector<SeqTreeEdge>& edges);
-	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
+	void getEdgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);
 	void annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node);
 	bool loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree* seqTree);
 };

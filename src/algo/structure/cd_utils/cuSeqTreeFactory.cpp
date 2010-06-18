@@ -51,6 +51,20 @@ void static dummyMeter(int Num, int Total)
 {
 }
 
+string TreeOptions::ToString() 
+{
+    CNcbiOstrstream oss;
+    oss << "TreeOptions state:\n";
+    oss << "clusteringMethod = " << clusteringMethod << endl;
+    oss << "distMethod       = " << distMethod << endl;
+    oss << "matrix           = " << matrix << endl;
+    oss << "nTermExt         = " << nTermExt << endl;
+    oss << "cTermExt         = " << cTermExt << endl;
+    oss << "tree scope       = " << scope << endl;
+    oss << "color scope      = " << coloringScope << endl;
+    return CNcbiOstrstreamToString(oss);
+}
+
 SeqTree* TreeFactory::makeTree(AlignmentCollection* alignData, const TreeOptions& treeOptions)
 {
 	SeqTree* treeData = 0;
