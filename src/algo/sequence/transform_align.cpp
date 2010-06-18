@@ -166,7 +166,7 @@ void StitchSmallHoles(CSeq_align& align, CScope& scope)
     CSpliced_seg::TExons::iterator it = spliced_seg.SetExons().begin();
     CRef<CSpliced_exon> prev_exon = *it;
     int i = 1;
-    for (++it; it != spliced_seg.GetExons().end();  ++i, prev_exon = *it++) {
+    for (++it; it != spliced_seg.SetExons().end();  ++i, prev_exon = *it++) {
         CSpliced_exon& exon = **it;
 
         bool donor_set = prev_exon->IsSetDonor_after_exon();
