@@ -83,23 +83,10 @@ $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	@false
 
 
-ifeq ($(MAKECMDGOALS),clean)
-DONT_INCLUDE = 1
-endif
-ifeq ($(MAKECMDGOALS),purge)
-DONT_INCLUDE = 1
-endif
-ifeq ($(MAKECMDGOALS),requirements)
-DONT_INCLUDE = 1
-endif
-ifeq ($(MAKECMDGOALS),deactivate)
-DONT_INCLUDE = 1
-endif
-ifeq ($(MAKECMDGOALS),src-stamp)
-DONT_INCLUDE = 1
-endif
-
-ifndef DONT_INCLUDE
+NODEPGOALS = clean purge requirements deactivate src-stamp export-headers
+GOALS := $(MAKECMDGOALS)
+GOALS ?= all
+ifneq (,$(filter-out $(NODEPGOALS),$(GOALS)))
 ifdef SOURCES
  -include $(SOURCES:=.d)
 endif
