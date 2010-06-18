@@ -159,7 +159,6 @@ int CRPSBlastApp::Run(void)
                 results = rmt_blast->GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
             }
 
