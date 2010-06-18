@@ -45,11 +45,12 @@
     case fLeakExceptions:                                                   \
         call;                                                               \
         break;                                                              \
-    case 0: /* Ignore exceptions */                                         \
+    case 0: /* Only execute 'action' */                                     \
         try {                                                               \
             call;                                                           \
         }                                                                   \
         catch (...) {                                                       \
+            action;                                                         \
         }                                                                   \
         break;                                                              \
     default: /* Both fLogExceptions and fLeakExceptions are set */          \
