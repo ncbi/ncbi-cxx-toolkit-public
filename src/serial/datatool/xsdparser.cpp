@@ -270,6 +270,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
         node.SetType(DTDElement::eOctetString);
     } else if (IsValue("base64Binary")) {
         node.SetType(DTDElement::eBase64Binary);
+    } else if (IsValue("anySimpleType")) {
+        node.SetType(DTDElement::eEmpty);
     } else {
         return false;
     }
