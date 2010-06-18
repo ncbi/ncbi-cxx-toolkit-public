@@ -682,8 +682,27 @@ bool CGff3Reader::x_FeatureSetLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId( new CSeq_id );
-    pId->SetLocal().SetStr( record.Id() );
+    CRef< CSeq_id > pId;
+
+    const string& id_str = record.Id();
+    if (m_uFlags & fAllIdsAsLocal) {
+        pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+    } else {
+        bool is_numeric =
+            id_str.find_first_not_of("0123456789") == string::npos;
+
+        if (is_numeric) {
+            pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+        }
+        else {
+            try {
+                pId.Reset( new CSeq_id(id_str));
+            }
+            catch (CException&) {
+                pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
+            }
+        }
+    }
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
     pLocation->SetInt().SetFrom( record.SeqStart() );
