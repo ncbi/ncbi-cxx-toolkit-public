@@ -416,11 +416,15 @@ string CCommentItem::GetStringForRefTrack
         }
         break;
     case eRefTrackStatus_Provisional:
-        oss << "This record has not yet been subject to final NCBI review.";
+        if (collaborator.empty()) {
+            oss << "This record has not yet been subject to final NCBI review.";
+        } else {
+            oss << "This record is based on preliminary "
+                "annotation provided by " << collaborator << '.';
+        }
         break;
     case eRefTrackStatus_Predicted:
-        oss << "The mRNA record is supported by experimental evidence; "
-            << "however, the coding sequence is predicted.";
+        oss << "This record has not been reviewed and the function is unknown.";
         break;
     case eRefTrackStatus_Validated:
         oss << "This record has undergone validation or preliminary review.";
@@ -440,7 +444,9 @@ string CCommentItem::GetStringForRefTrack
         break;
     }
 
-    if ( status != eRefTrackStatus_Reviewed  &&  !collaborator.empty() ) {
+    if ( status != eRefTrackStatus_Reviewed  &&
+         status != eRefTrackStatus_Provisional  &&
+         !collaborator.empty() ) {
         oss << " This record has been curated by " << collaborator << '.';
     }
 
