@@ -214,19 +214,31 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Mix:
     {{
-        const char* delim = "";
-        oss << prefix;
-        CSeq_loc_CI::EEmptyFlag empty = ((type == eType_location) ?
-            CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
-        for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
-            oss << delim;
-            if (!x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp)) {
-                delim = "";
-            } else {
-                delim = ", \b";
-            }
-        }
-        oss << ')';
+         /// odd corner case:
+         /// a mix with one interval should not have a prefix
+         CSeq_loc_CI::EEmptyFlag empty =
+             ((type == eType_location) ?
+              CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
+         CSeq_loc_CI it(loc, empty);
+         ++it;
+         bool has_one = !it;
+         it.Rewind();
+
+         const char* delim = "";
+         if ( !has_one ) {
+             oss << prefix;
+         }
+         for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
+             oss << delim;
+             if (!x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp)) {
+                 delim = "";
+             } else {
+                 delim = ", \b";
+             }
+         }
+         if ( !has_one ) {
+             oss << ')';
+         }
         break;
     }}
     case CSeq_loc::e_Equiv:
