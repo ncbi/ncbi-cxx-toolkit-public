@@ -2657,31 +2657,36 @@ void CFeatureItem::x_AddQualsProt(
         bool has_mat_peptide = false;
         bool has_signal_peptide = false;
 
-        CRef<CSeq_loc> loc;
+        CConstRef<CSeq_loc> loc(&m_Feat.GetLocation());
 
         if (processed == CProt_ref::eProcessed_not_set) {
             SAnnotSelector sel = ctx.SetAnnotSelector();
             sel.SetFeatType(CSeqFeatData::e_Prot);
             for (CFeat_CI feat_it(ctx.GetHandle(), sel);  feat_it;  ++feat_it) {
+                bool copy_loc = false;
                 switch (feat_it->GetData().GetProt().GetProcessed()) {
                 case CProt_ref::eProcessed_signal_peptide:
                     has_signal_peptide = true;
-                    /// we need to adjust our location to the end of the signal
-                    /// peptide
-                    {{
-                         loc.Reset(new CSeq_loc);
-                         loc->Assign(m_Feat.GetLocation());
-                         loc->SetInt().SetTo
-                             (feat_it->GetLocation().GetTotalRange().GetTo());
-                     }}
+                    copy_loc = true;
                     break;
 
                 case CProt_ref::eProcessed_mature:
                     has_mat_peptide = true;
+                    copy_loc = true;
                     break;
 
                 default:
                     break;
+                }
+
+                if (copy_loc) {
+                    /// we need to adjust our location to the end of the signal
+                    /// peptide
+                    CRef<CSeq_loc> l(new CSeq_loc);
+                    loc = l;
+                    l->Assign(m_Feat.GetLocation());
+                    l->SetInt().SetTo
+                        (feat_it->GetLocation().GetTotalRange().GetTo());
                 }
             }
         }
