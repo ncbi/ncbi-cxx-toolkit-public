@@ -110,7 +110,9 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 
     /// find out if the molecule is complete
     CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_partial;
-    if (location  &&  location->GetTotalRange().GetFrom() > 0) {
+    if (location  &&
+        (location->GetTotalRange().GetFrom() > 0  ||
+         location->GetTotalRange().GetLength() < handle.GetBioseqLength())) {
         /// we don' want to clip
         comp = CMolInfo::eCompleteness_partial;
     } else {
