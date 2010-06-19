@@ -188,33 +188,39 @@ void CAsn2FlatApp::Init(void)
                                  "        4 - show show contig sources\n"
                                  "        8 - show far translations\n"
                                  "       16 - show translations if there are no products\n"
-                                 "       32 - show only near features\n"
-                                 "       64 - show far features on segs\n"
-                                 "      128 - copy CDS feature from cDNA\n"
-                                 "      256 - show contig in master record\n"
-                                 "      512 - hide imported features\n"
-                                 "     1024 - hide remote imported features\n"
-                                 "     2048 - hide SNP features\n"
-                                 "     4096 - hide exon features\n"
-                                 "     8192 - hide intron features\n"
-                                 "    16384 - hide misc features\n"
-                                 "    32768 - hide CDS product features\n"
-                                 "    65536 - hide CDS features\n"
-                                 "   131072 - show transcript sequence\n"
-                                 "   262144 - show peptides\n"
-                                 "   524288 - hide GeneRIFs\n"
-                                 "  1048576 - show only GeneRIFs\n"
-                                 "  2097152 - show only the latest GeneRIFs\n"
-                                 "  4194304 - show contig and sequence\n"
-                                 "  8388608 - hide source features\n"
-                                 " 16777216 - show feature table references\n"
-                                 " 33554432 - hide gap features\n"
-                                 " 67108864 - do not translate the CDS",
+                                 "       32 - always translate CDS\n"
+                                 "       64 - show only near features\n"
+                                 "      128 - show far features on segs\n"
+                                 "      256 - copy CDS feature from cDNA\n"
+                                 "      512 - copy gene to cDNA\n"
+                                 "     1024 - show contig in master\n"
+                                 "     2048 - hide imported features\n"
+                                 "     4096 - hide remote imported features\n"
+                                 "     8192 - hide SNP features\n"
+                                 "    16384 - hide exon features\n"
+                                 "    32768 - hide intron features\n"
+                                 "    65536 - hide misc features\n"
+                                 "   131072 - hide CDS product features\n"
+                                 "   262144 - hide CDD features\n"
+                                 "   542288 - show transcript sequence\n"
+                                 "  1048576 - show peptides\n"
+                                 "  2097152 - hide GeneRIFs\n"
+                                 "  4194304 - show only GeneRIFs\n"
+                                 "  8388608 - show only the latest GeneRIFs\n"
+                                 " 16777216 - show contig and sequence\n"
+                                 " 33554432 - hide source features\n"
+                                 " 67108864 - show feature table references\n"
+                                 "134217728 - use the old feature sort order\n"
+                                 "268435456 - hide gap features\n"
+                                 "536870912 - do not translate the CDS",
 
                                  CArgDescriptions::eInteger, "0");
 
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
+
+         arg_desc->AddFlag("show-flags",
+                           "Describe the current flag set in ENUM terms");
 
          // view (default: nucleotide)
          arg_desc->AddDefaultKey("view", "View", "View",
@@ -626,22 +632,82 @@ CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
         flags |= CFlatFileConfig::fDoHTML;
     }
 
-#if 0
-    flags &=
-        ~(CFlatFileConfig::fHideSNPFeatures |
-          CFlatFileConfig::fHideCDSProdFeatures |
-          CFlatFileConfig::fNeverTranslateCDS |
-          CFlatFileConfig::fHideCDDFeatures);
+    if (args["show-flags"]) {
 
-    flags |= CFlatFileConfig::fAlwaysTranslateCDS;
-    /**
-    flags =
-        CFlatFileConfig::fHideSNPFeatures |
-        CFlatFileConfig::fHideCDDFeatures;
-        **/
-
-    LOG_POST(Error << "flags = " << flags);
-#endif
+        typedef pair<CFlatFileConfig::EFlags, const char*> TFlagDescr;
+        static const TFlagDescr kDescrTable[] = {
+            TFlagDescr(CFlatFileConfig::fDoHTML,
+                       "CFlatFileConfig::fDoHTML"),
+            TFlagDescr(CFlatFileConfig::fShowContigFeatures,
+                       "CFlatFileConfig::fShowContigFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowContigSources,
+                       "CFlatFileConfig::fShowContigSources"),
+            TFlagDescr(CFlatFileConfig::fShowFarTranslations,
+                       "CFlatFileConfig::fShowFarTranslations"),
+            TFlagDescr(CFlatFileConfig::fTranslateIfNoProduct,
+                       "CFlatFileConfig::fTranslateIfNoProduct"),
+            TFlagDescr(CFlatFileConfig::fAlwaysTranslateCDS,
+                       "CFlatFileConfig::fAlwaysTranslateCDS"),
+            TFlagDescr(CFlatFileConfig::fOnlyNearFeatures,
+                       "CFlatFileConfig::fOnlyNearFeatures"),
+            TFlagDescr(CFlatFileConfig::fFavorFarFeatures,
+                       "CFlatFileConfig::fFavorFarFeatures"),
+            TFlagDescr(CFlatFileConfig::fCopyCDSFromCDNA,
+                       "CFlatFileConfig::fCopyCDSFromCDNA"),
+            TFlagDescr(CFlatFileConfig::fCopyGeneToCDNA,
+                       "CFlatFileConfig::fCopyGeneToCDNA"),
+            TFlagDescr(CFlatFileConfig::fShowContigInMaster,
+                       "CFlatFileConfig::fShowContigInMaster"),
+            TFlagDescr(CFlatFileConfig::fHideImpFeatures,
+                       "CFlatFileConfig::fHideImpFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideRemoteImpFeatures,
+                       "CFlatFileConfig::fHideRemoteImpFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideSNPFeatures,
+                       "CFlatFileConfig::fHideSNPFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideExonFeatures,
+                       "CFlatFileConfig::fHideExonFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideIntronFeatures,
+                       "CFlatFileConfig::fHideIntronFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideMiscFeatures,
+                       "CFlatFileConfig::fHideMiscFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideCDSProdFeatures,
+                       "CFlatFileConfig::fHideCDSProdFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideCDDFeatures,
+                       "CFlatFileConfig::fHideCDDFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowTranscript,
+                       "CFlatFileConfig::fShowTranscript"),
+            TFlagDescr(CFlatFileConfig::fShowPeptides,
+                       "CFlatFileConfig::fShowPeptides"),
+            TFlagDescr(CFlatFileConfig::fHideGeneRIFs,
+                       "CFlatFileConfig::fHideGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fOnlyGeneRIFs,
+                       "CFlatFileConfig::fOnlyGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fLatestGeneRIFs,
+                       "CFlatFileConfig::fLatestGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fShowContigAndSeq,
+                       "CFlatFileConfig::fShowContigAndSeq"),
+            TFlagDescr(CFlatFileConfig::fHideSourceFeatures,
+                       "CFlatFileConfig::fHideSourceFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowFtableRefs,
+                       "CFlatFileConfig::fShowFtableRefs"),
+            TFlagDescr(CFlatFileConfig::fOldFeaturesOrder,
+                       "CFlatFileConfig::fOldFeaturesOrder"),
+            TFlagDescr(CFlatFileConfig::fHideGapFeatures,
+                       "CFlatFileConfig::fHideGapFeatures"),
+            TFlagDescr(CFlatFileConfig::fNeverTranslateCDS,
+                       "CFlatFileConfig::fNeverTranslateCDS")
+        };
+        static size_t kArraySize = sizeof(kDescrTable) / sizeof(TFlagDescr);
+        for (size_t i = 0;  i < kArraySize;  ++i) {
+            if (flags & kDescrTable[i].first) {
+                LOG_POST(Error << "flag: "
+                         << std::left << setw(40) << kDescrTable[i].second
+                         << " = "
+                         << std::right << setw(10) << kDescrTable[i].first
+                        );
+            }
+        }
+    }
 
     return flags;
 }
