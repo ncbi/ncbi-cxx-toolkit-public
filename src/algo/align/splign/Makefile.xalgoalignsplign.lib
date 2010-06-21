@@ -6,8 +6,5 @@ SRC = splign splign_util splign_formatter splign_simple splign_cmdargs
 
 LIB = xalgoalignsplign
 
-# Omit ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY here and in algo/align/nw
-# to arrive at the legacy splign code that used a single set of scores.
-
-CXXFLAGS = $(FAST_CXXFLAGS) -D ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
