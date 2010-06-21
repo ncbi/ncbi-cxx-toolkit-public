@@ -15,7 +15,7 @@ SRC = mzXML2hdf5 MzXmlReader
 
 #LINK_WRAPPER = $(top_srcdir)/scripts/common/impl/favor-static
 
-LIB = mshdf5 mzXML xmlwrapp general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
+LIB = mshdf5 mzXML xmlwrapp general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress $(COMPRESS_LIBS)
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(LIBXML_LIBS) $(HDF5_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(HDF5_INCLUDE)
 

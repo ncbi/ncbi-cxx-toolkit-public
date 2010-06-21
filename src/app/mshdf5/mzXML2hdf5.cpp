@@ -41,6 +41,8 @@
 #include <util/compress/bzip2.hpp>
 #include <util/compress/stream.hpp>
 
+#include <misc/xmlwrapp/errors.hpp>
+
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
 #include "MzXmlReader.hpp"
 
@@ -56,7 +58,7 @@ private:
     void ProcessFiles(CDir::TEntries* entries);
     CRef<CMsHdf5> m_msHdf5;
 
-    typedef map<string, string> TErrorMap;
+    typedef map<string, xml::error_messages> TErrorMap;
     TErrorMap m_errors;
 };
 
@@ -117,9 +119,11 @@ int CMzXML2hdf5Application::Run(void)
     }
 
     if (!m_errors.empty()) {
-        cout << endl << endl << "Files that failed to process: " << endl;
+        cout << endl << endl << "Files that failed to process: " << endl << endl;
         ITERATE(TErrorMap, it, m_errors) {
-            cout << "  " << (*it).first << ":\t" << (*it).second << endl;
+            //cout << "  " << (*it).first << ":\t" << (*it).second << endl;
+            cout << (*it).first << endl << "-----------------" << endl;
+            cout << (*it).second.print() << endl << endl;
         }
     }
     
@@ -178,7 +182,8 @@ void CMzXML2hdf5Application::ProcessFiles(CDir::TEntries* entries)
             if (!mzXmlParser.parse_stream(*inStream)) {
                 //cout << "  Parse failed!  " << mzXmlParser.get_error_message() << endl;
                 cout << " - unable to parse";
-                m_errors[(*it)->GetPath()] = mzXmlParser.get_error_message();
+                //m_errors[(*it)->GetPath()] = mzXmlParser.get_error_message();
+                m_errors[(*it)->GetPath()] = mzXmlParser.get_parser_messages();
             }
 
             if (inCompStream) {

@@ -26,7 +26,7 @@
 * Author: Douglas Slotta
 *
 * File Description:
-*   Utility to test the MsHdf5 class functions
+*   Utility to test the speed of MsHdf5 files
 *
 * ===========================================================================
 */
@@ -43,7 +43,7 @@ USING_SCOPE(ncbi);
 
 const double kMebiByte = 1024 * 1024;
 
-class CHdf2mzXMLApplication : public CNcbiApplication
+class CMSHdf5SpeedApplication : public CNcbiApplication
 {
     virtual void Init(void);
     virtual int  Run(void);
@@ -57,7 +57,7 @@ class CHdf2mzXMLApplication : public CNcbiApplication
     };
 };
 
-void CHdf2mzXMLApplication::Init(void)
+void CMSHdf5SpeedApplication::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -82,7 +82,7 @@ void CHdf2mzXMLApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-int CHdf2mzXMLApplication::Run(void)
+int CMSHdf5SpeedApplication::Run(void)
 {
     // Get arguments
     CArgs args = GetArgs();
@@ -167,5 +167,5 @@ int CHdf2mzXMLApplication::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CHdf2mzXMLApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CMSHdf5SpeedApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
