@@ -178,7 +178,7 @@ CGff3Reader::ReadSeqAnnotsNew(
 
     while ( ! lr.AtEOF() ) {
         ++linecount;
-        line = *++lr;
+        line = NStr::TruncateSpaces( *++lr );
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
@@ -386,7 +386,7 @@ bool CGff3Reader::x_ReadLine(
 {
     strLine.clear();
     while ( ! lr.AtEOF() ) {
-        strLine = *++lr;
+        strLine = NStr::TruncateSpaces( *++lr );
         ++m_uLineNumber;
         NStr::TruncateSpacesInPlace( strLine );
         if ( ! x_IsCommentLine( strLine ) ) {
