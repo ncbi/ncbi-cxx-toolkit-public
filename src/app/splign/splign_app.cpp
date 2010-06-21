@@ -63,11 +63,6 @@
 #include <algorithm>
 #include <memory>
 
-
-#ifndef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
-#define GENOME_PIPELINE
-#endif
-
 namespace {
     const char kDirSense[]     = "sense";
     const char kDirAntisense[] = "antisense";
@@ -84,22 +79,14 @@ CSplignApp::CSplignApp(void)
     CRef<CVersion> version (CSplign::s_GetVersion());
     SetFullVersion(version);
     m_AppName = version->Print("Splign");
-
-#ifdef GENOME_PIPELINE
-    m_AppName += "(gpipe)";
-#endif
-
 }
 
 
 void CSplignApp::Init()
 {
-#ifndef GENOME_PIPELINE
     HideStdArgs(fHideHelp    | fHideLogfile | fHideConffile |
                 fHideVersion | fHideFullVersion | fHideDryRun  |
                 fHideXmlHelp | fHideFullHelp);
-#endif
-
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(), m_AppName);
@@ -160,13 +147,9 @@ void CSplignApp::Init()
          "and proceeds with the opposite direction (d2) "
          "if found a non-consensus splice in d1 or poly-a tail in d2. "
 
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
          "Default translates to 'auto' in mRNA and "
          "'both' in EST mode", 
          CArgDescriptions::eString,   kDirDefault
-#else
-         , CArgDescriptions::eString, kDirSense
-#endif
          );
 
     argdescr->AddDefaultKey("log", "log", "Splign log file",
@@ -181,9 +164,7 @@ void CSplignApp::Init()
     
     CArgAllow_Strings * constrain_direction (new CArgAllow_Strings);
     constrain_direction
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         ->Allow(kDirDefault)
-#endif
         ->Allow(kDirSense)
         ->Allow(kDirAntisense)
         ->Allow(kDirBoth)
@@ -870,11 +851,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
                                THit::TCoord smin, THit::TCoord smax)
 {
 
-#ifdef GENOME_PIPELINE
-    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_UseFastaStyleIds);
-#else
     const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_NoExonScores);
-#endif
 
     const bool raw_hits (!args["comps"]);
 
@@ -894,11 +871,9 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 
     string strand (args["direction"].AsString());
 
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     if(strand == kDirDefault) {
         strand = (args["type"].AsString() == kQueryType_mRNA)? kDirAuto: kDirBoth;
     }
-#endif
 
     CSplign::TResults splign_results;
 

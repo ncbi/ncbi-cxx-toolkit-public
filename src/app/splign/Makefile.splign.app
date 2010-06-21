@@ -21,13 +21,7 @@ LIBS = $(BERKELEYDB_STATIC_LIBS) \
        $(DL_LIBS) \
        $(ORIG_LIBS)
 
-
-# Comment out -D ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY to:
-#   1) Use FASTA-style sequence IDs in the output.
-#   2) Print individual exon scores in the last column of the output.
-#   3) Use 'sense' as the default transcript orientation regardless of -type.
-
-CXXFLAGS = $(FAST_CXXFLAGS) -D ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS  = $(FAST_LDFLAGS)
 
