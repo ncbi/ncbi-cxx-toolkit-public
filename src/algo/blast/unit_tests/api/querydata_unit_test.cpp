@@ -492,7 +492,7 @@ struct CQueryDataTestFixture
     {
         CBioseq_Handle bh = CSimpleOM::GetBioseqHandle(kGi);
         CConstRef<CBioseq> bs(bh.GetBioseqCore());
-        CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs));
+        CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs));/* NCBI_FAKE_WARNING */
         CSequenceDataTester(query_factory, kGi)();
     }
 
@@ -506,7 +506,7 @@ struct CQueryDataTestFixture
             seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
             bs->SetSeq_set().push_back(seq_entry);
         }
-        CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs));
+        CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs));/* NCBI_FAKE_WARNING */
 
         CSequenceDataTester(query_factory, gis)();
     }
@@ -577,7 +577,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalData_GetSumOfSequenceLengths) {
         seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
         bs->SetSeq_set().push_back(seq_entry);
     }
-    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs));
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bs)); /* NCBI_FAKE_WARNING */
     CRef<CBlastOptionsHandle> oh((CBlastOptionsFactory::Create(eBlastn)));
 
     size_t kExpectedSize = 416+624+310;
