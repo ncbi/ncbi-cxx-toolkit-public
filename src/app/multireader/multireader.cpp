@@ -284,9 +284,13 @@ void CMultiReaderApp::Init(void)
     //
     //  gff reader specific arguments:
     //
-    arg_desc->AddFlag(
+    arg_desc->AddFlag( // no longer used, retained for backward compatibility
         "new-code",
         "use new gff3 reader implementation",
+        true );    
+    arg_desc->AddFlag(
+        "old-code",
+        "use old gff3 reader implementation",
         true );    
     SetupArgDescriptions(arg_desc.release());
 }
@@ -427,7 +431,7 @@ void CMultiReaderApp::SetFlags(
         if ( args["format"].AsString() == "gff3" ) {
             m_iFlags |= CGFFReader::fSetVersion3;
         }
-        if ( args["new-code"] ) {
+        if ( ! args["old-code"] ) {
             m_iFlags |= CGff3Reader::fNewCode;
         }
             
