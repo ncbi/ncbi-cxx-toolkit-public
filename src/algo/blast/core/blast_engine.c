@@ -602,7 +602,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
 	Uint1* orig_sequence = subject->sequence;
 	BlastQueryInfo* query_info = query_info_in;
 	SSeqRange* seq_ranges_backup=NULL;
-        Int4 num_seq_ranges_backup;
+    Int4 num_seq_ranges_backup = 0;
 
    const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
