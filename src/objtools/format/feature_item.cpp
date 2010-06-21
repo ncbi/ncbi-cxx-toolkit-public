@@ -1243,17 +1243,31 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             feat = ctx.GetFeatTree().GetParent(m_Feat,
                                                CSeqFeatData::e_Gene);
         } else {
-            /// slow path
-            SAnnotSelector sel = ctx.SetAnnotSelector();
-            sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
-            CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
-            feature::CFeatTree ft(feat_it);
-            feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+            CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
+                                                       &ctx.GetScope());
+            if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
+                /// slow path
+                SAnnotSelector sel = ctx.SetAnnotSelector();
+                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                    .IncludeFeatSubtype(m_Feat.GetData().GetSubtype());
+                CFeat_CI feat_it(ctx.GetScope(), m_Feat.GetLocation(), sel);
+                feature::CFeatTree ft(feat_it);
+                feat = ft.GetParent(m_Feat, CSeqFeatData::e_Gene);
+            } else {
+                /// we must use a different call
+                s_feat =
+                    sequence::GetBestOverlappingFeat
+                    (*m_Loc,
+                     CSeqFeatData::e_Gene,
+                     sequence::eOverlap_Contained,
+                     ctx.GetScope());
+            }
         }
 
         if (feat) {
             s_feat.Reset(&feat.GetOriginalFeature());
+        }
+        if (s_feat) {
             g_ref = &( s_feat->GetData().GetGene() );
         }
     }
