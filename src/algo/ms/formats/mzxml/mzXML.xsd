@@ -209,7 +209,7 @@ Contact information for the person responsible for the instrument.
 <xs:element name="operator">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="empty">
+      <xs:extension base="xs:string">
         <xs:attribute name="first" type="xs:string" use="required"/>
         <xs:attribute name="last" type="xs:string" use="required"/>
         <xs:attribute name="phone" type="xs:string" use="optional"/>
@@ -232,7 +232,7 @@ Contact information for the person responsible for the instrument.
 <xs:element name="parentFile">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="empty">
+      <xs:extension base="xs:string">
         <xs:attribute name="fileName" type="xs:string" use="required"/>
         <xs:attribute name="fileType" use="required">
           <xs:simpleType>
@@ -444,7 +444,7 @@ Information about the separation technique, if any, used right before the acquis
 <xs:element name="software">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="empty">
+      <xs:extension base="xs:string">
         <xs:attribute name="type" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">
