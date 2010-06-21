@@ -488,7 +488,13 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnExtended(
         }
     }
     if ( feature.CanGetComment() ) {
-        m_Attributes[ "comment" ] = feature.GetComment();
+        m_Attributes[ "Note" ] = feature.GetComment();
+    }
+    if ( feature.CanGetPseudo()  &&  feature.GetPseudo() ) {
+        m_Attributes[ "pseudo" ] = "";
+    }
+    if ( feature.CanGetPartial()  &&  feature.GetPartial() ) {
+        m_Attributes[ "partial" ] = "";
     }
     return true;
 }

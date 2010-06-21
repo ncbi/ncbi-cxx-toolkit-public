@@ -744,6 +744,22 @@ bool CGff3Reader::x_FeatureSetQualifiers(
     const CGff3Record::TAttributes& attrs = record.Attributes();
     CGff3Record::TAttrCit it = attrs.begin();
     for ( /*NOOP*/; it != attrs.end(); ++it ) {
+
+        // special case some well-known attributes
+        if ( it->first == "Note" ) {
+            pFeature->SetComment( it->second );
+            continue;
+        }
+        if ( 0 == NStr::CompareNocase( it->first, "pseudo" ) ) {
+            pFeature->SetPseudo( true );
+            continue;
+        }
+        if ( 0 == NStr::CompareNocase( it->first, "partial" ) ) {
+            pFeature->SetPartial( true );
+            continue;
+        }
+
+        // turn everything else into a qualifier
         pQual.Reset( new CGb_qual );
         pQual->SetQual( it->first );
         pQual->SetVal( it->second );
