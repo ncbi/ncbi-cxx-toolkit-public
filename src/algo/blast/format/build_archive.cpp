@@ -64,9 +64,16 @@ static CRef<CBlast4_ka_block>
 s_Convert_to_CBlast_ka_block(const Blast_KarlinBlk* kablk, bool gapped)
 {
     CRef<CBlast4_ka_block> retval(new CBlast4_ka_block);
-    retval->SetLambda(kablk->Lambda);
-    retval->SetK(kablk->K);
-    retval->SetH(kablk->H);
+    if (kablk)
+    {
+       retval->SetLambda(kablk->Lambda);
+       retval->SetK(kablk->K);
+       retval->SetH(kablk->H);
+    } else {
+       retval->SetLambda(-1.0);
+       retval->SetK(-1.0);
+       retval->SetH(-1.0);
+    }
     retval->SetGapped(gapped);
     return retval;
 }
