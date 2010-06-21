@@ -204,17 +204,13 @@ void CSplicedAligner::CheckPreferences(void)
             break;
             
         case eTS_Insert:
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         case eTS_SlackInsert:
-#endif
             csq_matches = 0;
             ++p2;
             break;
             
         case eTS_Delete:
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         case eTS_SlackDelete:
-#endif
             csq_matches = 0;
             ++p1;
             break;

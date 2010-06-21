@@ -45,12 +45,10 @@ BEGIN_NCBI_SCOPE
 
 void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 {    
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     argdescr->AddDefaultKey("type", "type",
                             "Query cDNA type: 'mrna' or 'est'",
                             CArgDescriptions::eString,
                             kQueryType_mRNA);
-#endif
     
     argdescr->AddDefaultKey
         ("compartment_penalty",
@@ -122,12 +120,9 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     CArgAllow * constrain_max_space (new CArgAllow_Doubles(500, 4096));
     argdescr->SetConstraint("max_space", constrain_max_space);
 
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     CArgAllow_Strings * constrain_querytype (new CArgAllow_Strings);
     constrain_querytype ->Allow(kQueryType_mRNA) ->Allow(kQueryType_EST);
     argdescr->SetConstraint("type", constrain_querytype);
-#endif
-
 }
 
 
@@ -148,13 +143,7 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
 
     splign->SetMinSingletonIdentityBps(args["min_singleton_idty_bps"].AsInteger());
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
-
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
-#else
-    const bool query_low_quality (false);
-#endif
-
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());
     if(max_space > kMax32) max_space = kMax32;

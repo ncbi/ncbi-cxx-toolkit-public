@@ -139,7 +139,6 @@ CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(bool low_query_quality)
     CRef<CSplicedAligner> aligner(
         static_cast<CSplicedAligner*>(new CSplicedAligner16));
         
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     if(false == low_query_quality) {
         aligner->SetWm  (1000);
         aligner->SetWms (-1044);
@@ -164,7 +163,6 @@ CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(bool low_query_quality)
         aligner->SetWi(2, -7010);
         aligner->SetWi(3, -13060);
     }
-#endif
 
     return aligner;
 }

@@ -729,14 +729,11 @@ string CNWAligner::GetTranscriptString(void) const
             }
             break;
 
-#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
-
             case eTS_SlackInsert: {
                 c = 'i';
                 ++i2;
             }
             break;
-
 
             case eTS_SlackDelete: {
                 c = 'd';
@@ -744,7 +741,6 @@ string CNWAligner::GetTranscriptString(void) const
             }
             break;
 
-#endif
             case eTS_Delete: {
                 c = 'D';
                 ++i1;
