@@ -164,8 +164,11 @@ PC-AssayDescription ::= SEQUENCE {
                         mlpcn    (2),
                         mlscn-ap (3),
                         mlpcn-ap (4),
-                        journal-article (5),
+                        journal-article (5), -- to be deprecated
                         assay-vendor (6),
+                        literature-extracted (7), 
+                        literature-author (8), 
+                        literature-publisher (9), 
                         other    (255)
                       }                 OPTIONAL,               -- to distinguish projects funded through MLSCN, MLPCN or other
                                                                 -- mlscn: assay depositions from MLSCN screen center
@@ -173,6 +176,10 @@ PC-AssayDescription ::= SEQUENCE {
                                                                 -- mlscn-ap: assay depositions from MLSCN assay provider
                                                                 -- mlpcn-ap: assay depositions from MLPCN assay provider
                                                                 -- required for 'MLSCN' & 'MLPCN' projects
+                                                                -- journal-article: to be deprecated; replaced by option 7,8 & 9 to better characterize data from literature 
+                                                                -- literature-extracted: data from literature, extracted by curators
+                                                                -- literature-author: data from literature, submitted by author of articles
+                                                                -- literature-publisher: data from literature, submitted by journals/publishers
 
     -- annotation to indicate whether an assay is a panel, e.g. containing multiple components, or belongs to a group    
     is-panel          BOOLEAN    OPTIONAL,                      -- annotation for panel assay, e.g. to indicate that this assay
