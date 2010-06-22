@@ -49,7 +49,8 @@ class CBlastSystemException : public CException
 public:
     /// Error types that BLAST can generate
     enum EErrCode {
-        eOutOfMemory
+        eOutOfMemory,   ///< Out-of-memory 
+        eNetworkError   ///< Network error
     };
 
     /// Translate from the error code value to its string representation

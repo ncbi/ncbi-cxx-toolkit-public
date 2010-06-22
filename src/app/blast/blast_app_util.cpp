@@ -107,6 +107,22 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
     return retval;
 }
 
+static string s_FindBlastDbDataLoaderName(const string& dbname, bool is_protein)
+{
+    // This string is built based on the knowledge of how the BLAST DB data
+    // loader names are created, see 
+    // {CBlastDbDataLoader,CRemoteBlastDbDataLoader}::GetLoaderNameFromArgs
+    const string str2find(string("_") + dbname + string(is_protein ? "P" : "N"));
+    CObjectManager::TRegisteredNames loader_names;
+    CObjectManager::GetInstance()->GetRegisteredNames(loader_names);
+    ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
+        if (NStr::Find(*loader_name, str2find) != NPOS) {
+            return *loader_name;
+        }
+    }
+    return kEmptyStr;
+}
+
 void
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
@@ -166,6 +182,20 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             }
         }
     }
+
+    /// Set the BLASTDB data loader as the default data loader (if applicable)
+    if (search_db.NotEmpty()) {
+        string dbloader_name =
+            s_FindBlastDbDataLoaderName(search_db->GetDatabaseName(),
+                                        search_db->IsProtein());
+        if ( !dbloader_name.empty() ) {
+            // FIXME: will this work with multiple BLAST DBs?
+            scope->AddDataLoader(dbloader_name, 
+                             CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            _TRACE("Setting " << dbloader_name << " priority to "
+                   << (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+        }
+    }
 }
 
 string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
@@ -177,7 +207,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
                         CObjectManager::eDefault,
                         CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
     CBlastDbDataLoader::SBlastDbParam param(db_handle);
-    return CBlastDbDataLoader::GetLoaderNameFromArgs(param);
+    string retval(CBlastDbDataLoader::GetLoaderNameFromArgs(param));
+    _TRACE("Registering " << retval << " at priority " <<
+           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+    return retval;
 }
 
 /// Real implementation of search strategy extraction
@@ -550,41 +583,49 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
     CScope::TIds ids;
     vector<TSeqRange> ranges;
     s_ExtractSeqidsAndRanges(results, ids, ranges);
+    _TRACE("Prefetching " << ids.size() << " sequence lengths");
 
-    CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
+    try {
+        CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
 
-    // Per Eugene Vasilchenko's suggestion, via email on 6/8/10:
-    // "With the current API you can make artificial delta sequence referencing
-    // several other sequences and use its CSeqMap to load them all in one
-    // call. There is no straightforward way to do this, sorry."
+        // Per Eugene Vasilchenko's suggestion, via email on 6/8/10:
+        // "With the current API you can make artificial delta sequence
+        // referencing several other sequences and use its CSeqMap to load them
+        // all in one call. There is no straightforward way to do this, sorry."
 
-    // Create virtual delta sequence
-    CRef<CBioseq> top_seq(new CBioseq);
-    CSeq_inst& inst = top_seq->SetInst();
-    inst.SetRepr(CSeq_inst::eRepr_virtual);
-    inst.SetMol(CSeq_inst::eMol_not_set);
-    CDelta_ext& delta = inst.SetExt().SetDelta();
-    int i = 0;
-    ITERATE(CScope::TBioseqHandles, it, bhs) {
-        CRef<CDelta_seq> seq(new CDelta_seq);
-        CSeq_interval& interval = seq->SetLoc().SetInt();
-        interval.SetId
-            (*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
-        interval.SetFrom(ranges[i].GetFrom());
-        interval.SetTo(ranges[i].GetTo());
-        i++;
-        delta.Set().push_back(seq);
+        // Create virtual delta sequence
+        CRef<CBioseq> top_seq(new CBioseq);
+        CSeq_inst& inst = top_seq->SetInst();
+        inst.SetRepr(CSeq_inst::eRepr_virtual);
+        inst.SetMol(CSeq_inst::eMol_not_set);
+        CDelta_ext& delta = inst.SetExt().SetDelta();
+        int i = 0;
+        ITERATE(CScope::TBioseqHandles, it, bhs) {
+            CRef<CDelta_seq> seq(new CDelta_seq);
+            CSeq_interval& interval = seq->SetLoc().SetInt();
+            interval.SetId
+                (*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
+            interval.SetFrom(ranges[i].GetFrom());
+            interval.SetTo(ranges[i].GetTo());
+            i++;
+            delta.Set().push_back(seq);
+        }
+
+        // Add it to the scope
+        CBioseq_Handle top_bh = scope->AddBioseq(*top_seq);
+
+        // prepare selector. SetLinkUsedTSE() is necessary for batch loading
+        SSeqMapSelector sel(CSeqMap::fFindAnyLeaf, kInvalidSeqPos);
+        sel.SetLinkUsedTSE(top_bh.GetTSE_Handle());
+
+        // and get all sequence data in batch mode
+        _TRACE("Prefetching " << ids.size() << " sequences");
+        top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
+    } catch (const CException&) {
+        NCBI_THROW(CBlastSystemException, eNetworkError, 
+                   "Error fetching sequence data from BLAST databases at NCBI, "
+                   "please try again later");
     }
-
-    // Add it to the scope
-    CBioseq_Handle top_bh = scope->AddBioseq(*top_seq);
-
-    // prepare selector. SetLinkUsedTSE() is necessary for batch loading
-    SSeqMapSelector sel(CSeqMap::fFindAnyLeaf, kInvalidSeqPos);
-    sel.SetLinkUsedTSE(top_bh.GetTSE_Handle());
-
-    // and get all sequence data in batch mode
-    top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
 }
 
 END_NCBI_SCOPE

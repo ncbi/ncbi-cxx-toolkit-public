@@ -284,9 +284,13 @@ CBlastScopeSource::AddDataLoaders(CRef<objects::CScope> scope)
     // Note that these priorities are needed so that the CScope::AddXXX methods
     // don't need a specific priority (the default will be fine).
     if (!m_BlastDbLoaderName.empty()) {
+        _TRACE("Adding " << m_BlastDbLoaderName << " at priority " <<
+               blastdb_loader_priority);
         scope->AddDataLoader(m_BlastDbLoaderName, blastdb_loader_priority);
     } 
     if (!m_GbLoaderName.empty()) {
+        _TRACE("Adding " << m_GbLoaderName << " at priority " <<
+               (int)CBlastScopeSource::kGenbankLoaderPriority);
         scope->AddDataLoader(m_GbLoaderName, kGenbankLoaderPriority);
     }
 }

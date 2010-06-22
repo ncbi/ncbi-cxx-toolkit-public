@@ -258,6 +258,8 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     {
         CRef<CBlast4_database> db = m_RmtBlast->GetDatabases();
         _ASSERT(db);
+        _TRACE("Fetching results for " + Blast_ProgramNameFromType(p) + " on "
+               + db->GetName());
         filtering_algorithm = m_RmtBlast->GetDbFilteringAlgorithmId();
         CRef<CSearchDatabase> search_db(new CSearchDatabase(db->GetName(), db->IsProtein()
                               ? CSearchDatabase::eBlastDbIsProtein

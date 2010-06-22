@@ -142,6 +142,14 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         LOG_POST(Error << "BLAST engine error: " << e.GetMsg());            \
         exit_code = BLAST_ENGINE_ERROR;                                     \
     }                                                                       \
+    catch (const blast::CBlastSystemException& e) {                         \
+        if (e.GetErrCode() == CBlastSystemException::eOutOfMemory) {        \
+            LOG_POST(Error << "BLAST run out of memory: " << e.GetMsg());   \
+        } else if (e.GetErrCode() == CBlastSystemException::eNetworkError) {\
+            LOG_POST(Error << "Network error: " << e.GetMsg());             \
+        }                                                                   \
+        exit_code = BLAST_UNKNOWN_ERROR;                                    \
+    }                                                                       \
     catch (const CException& e) {                                           \
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
