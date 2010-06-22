@@ -45,7 +45,7 @@
     case fLeakExceptions:                                                   \
         call;                                                               \
         break;                                                              \
-    case 0: /* Only execute 'action' */                                     \
+    case 0: /* Only execute 'action' in the exception handler */            \
         try {                                                               \
             call;                                                           \
         }                                                                   \
@@ -53,7 +53,7 @@
             action;                                                         \
         }                                                                   \
         break;                                                              \
-    default: /* Both fLogExceptions and fLeakExceptions are set */          \
+    default: /* Exception logging (and maybe re-throwing) is requested */   \
         try {                                                               \
             call;                                                           \
             break;                                                          \
