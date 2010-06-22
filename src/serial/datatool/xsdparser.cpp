@@ -251,7 +251,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
         IsValue("anyURI") || IsValue("QName") ||
-        IsValue("dateTime") || IsValue("time") || IsValue("date")) {
+        IsValue("dateTime") || IsValue("time") || IsValue("date") ||
+        IsValue("anySimpleType")) {
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
         node.SetType(DTDElement::eDouble);
@@ -270,8 +271,6 @@ bool XSDParser::DefineElementType(DTDElement& node)
         node.SetType(DTDElement::eOctetString);
     } else if (IsValue("base64Binary")) {
         node.SetType(DTDElement::eBase64Binary);
-    } else if (IsValue("anySimpleType")) {
-        node.SetType(DTDElement::eEmpty);
     } else {
         return false;
     }
