@@ -72,12 +72,19 @@ bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()(
 }
 
 //  ---------------------------------------------------------------------------
+void CGff3WriteRecordSet::AddRecord(
+    CGff3WriteRecord* pRecord ) 
+//  ---------------------------------------------------------------------------
+{ 
+    m_Set.push_back( pRecord ); 
+};
 
+//  ---------------------------------------------------------------------------
 void CGff3WriteRecordSet::AddOrMergeRecord(
 	CGff3WriteRecord* pRecord )
+//  ---------------------------------------------------------------------------
 {
 	TMergeMap::iterator merge = m_MergeMap.find(pRecord);
-
 	if( merge != m_MergeMap.end() ) {
 		merge->second->MergeRecord( *pRecord );
 		delete pRecord;
@@ -240,42 +247,15 @@ bool CGffWriter::x_AssignObject(
                 const CSeq_interval& subint = **it;
                 CGff3WriteRecord* pExon = new CGff3WriteRecord( sah );
                 pExon->MakeExon( *pRecord, subint );
-                set.AddRecord( pExon );
+                set.AddOrMergeRecord( pExon );
             }
         }
         return true;
     }
 
-    if ( pRecord->Type() == "exon" ) {
-     
-	    set.AddOrMergeRecord( pRecord );
-		return true;
-
-		/*
-		// only add exon feature if one has not been created before. If one
-        // has been created before, migrate the attributes.
-        CGff3WriteRecordSet::TIt it;
-		for ( it = set.begin(); it != set.end(); ++it ) {
-            if ( (*it)->Type() != pRecord->Type() ) {
-                continue;
-            }
-            if ( (*it)->SeqStart() != pRecord->SeqStart() ) {
-                continue;
-            }
-            if ( (*it)->SeqStop() != pRecord->SeqStop() ) {
-                continue;
-            }
-            break;
-        }
-        if ( it == set.end() ) {
-            set.AddRecord( pRecord );
-        }
-        else {
-            (*it)->MergeRecord( *pRecord );
-            delete pRecord;
-        }
+    if ( pRecord->Type() == "exon" ) {     
+        set.AddOrMergeRecord( pRecord );
         return true;
-		*/
     }
 
     // default behavior:

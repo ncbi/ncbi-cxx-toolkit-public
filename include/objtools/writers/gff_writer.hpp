@@ -61,7 +61,7 @@ public:
     };
  
     void AddRecord(
-        CGff3WriteRecord* pRecord ) { m_Set.push_back( pRecord ); };
+        CGff3WriteRecord* pRecord );
 
 	void AddOrMergeRecord( CGff3WriteRecord* );
 
