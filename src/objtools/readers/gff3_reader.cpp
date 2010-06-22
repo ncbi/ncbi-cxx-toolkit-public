@@ -750,6 +750,16 @@ bool CGff3Reader::x_FeatureSetQualifiers(
             pFeature->SetComment( it->second );
             continue;
         }
+        if ( it->first == "Dbxref" ) {
+            vector< string > tags;
+            NStr::Tokenize( it->second, ";", tags );
+            for ( vector<string>::iterator it = tags.begin(); 
+                it != tags.end(); ++it ) {
+                pFeature->SetDbxref().push_back( x_ParseDbtag( *it ) );
+            }
+            continue;
+        }
+
         if ( 0 == NStr::CompareNocase( it->first, "pseudo" ) ) {
             pFeature->SetPseudo( true );
             continue;
@@ -1057,6 +1067,40 @@ void CGff3Reader::x_PlaceFeature(
         annot->SetDesc().Set().push_back( m_CurrentTrackInfo );
     }
     annots.push_back(annot);
+}
+
+//  ============================================================================
+CRef< CDbtag >
+CGff3Reader::x_ParseDbtag(
+    const string& str )
+//  ============================================================================
+{
+    CRef< CDbtag > pDbtag( new CDbtag() );
+    string strDb, strTag;
+    NStr::SplitInTwo( str, ":", strDb, strTag );
+
+    // dbtag names for gff3 do not always match the names for genbank.
+    // special case known fixups here:
+    if ( strDb == "NCBI_gi" ) {
+        strDb = "GI";
+    }
+    // todo: all the other ones
+
+
+    if ( ! strTag.empty() ) {
+        pDbtag->SetDb( strDb );
+        try {
+            pDbtag->SetTag().SetId( NStr::StringToUInt( strTag ) );
+        }
+        catch ( ... ) {
+            pDbtag->SetTag().SetStr( strTag );
+        }
+    }
+    else {
+        pDbtag->SetDb( "unknown" );
+        pDbtag->SetTag().SetStr( str );
+    }
+    return pDbtag;
 }
 
 END_objects_SCOPE

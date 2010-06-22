@@ -481,7 +481,7 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnExtended(
             for ( size_t i=1; i < dbxrefs.size(); ++i ) {
                 string label;
                 dbxrefs[i]->GetLabel( &label );
-                value += ",";
+                value += ";";
                 value += label;
             }
             m_Attributes[ "Dbxref" ] = value;

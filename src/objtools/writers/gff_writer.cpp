@@ -435,7 +435,7 @@ string CGffWriter::x_GffAttributes(
         }
 
         if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
-            strAttributes += ";";
+            strAttributes += "; ";
         }
         strAttributes += strKey;
         strAttributes += "=";
@@ -516,28 +516,56 @@ void CGffWriter::x_PriorityProcess(
     string strKeyMod( strKey );
 
     map< string, string >::iterator it = attrs.find( strKeyMod );
+    if ( it == attrs.end() ) {
+        return;
+    }
 
-    if ( it != attrs.end() ) {
-        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
-            strAttributes += ";";
-        }
-        string strKey = it->first;
+    // Some of the attributes are multivalue translating into multiple gff attributes
+    //  all carrying the same key. These are special cased here:
+    //
+    if ( strKey == "Dbxref" ) {
         if ( m_uFlags & fSoQuirks ) {
             NStr::ToUpper( strKeyMod );
         }
-
-        strAttributes += strKeyMod;
-        strAttributes += "=";
-       	bool quote = x_NeedsQuoting(it->second);
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second;
-		attrs.erase(it);
-		if ( quote )
-			strAttributes += '\"';
-		if ( m_uFlags & fSoQuirks ) {
-            strAttributes += "; ";
+        vector<string> tags;
+        NStr::Tokenize( it->second, ";", tags );
+        for ( vector<string>::iterator pTag = tags.begin(); 
+            pTag != tags.end(); pTag++ ) {
+            if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
+                strAttributes += "; ";
+            }
+            strAttributes += strKeyMod;
+            strAttributes += "=\""; // quoted in all samples I have seen
+            strAttributes += *pTag;
+            strAttributes += "\"";
+		    if ( m_uFlags & fSoQuirks ) {
+                strAttributes += "; ";
+            }
         }
+		attrs.erase(it);
+        return;
+    }
+
+    // General case: Single value, make straight forward gff attribute:
+    //
+    if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
+        strAttributes += "; ";
+    }
+    if ( m_uFlags & fSoQuirks ) {
+        NStr::ToUpper( strKeyMod );
+    }
+
+    strAttributes += strKeyMod;
+    strAttributes += "=";
+   	bool quote = x_NeedsQuoting(it->second);
+	if ( quote )
+		strAttributes += '\"';		
+	strAttributes += it->second;
+	attrs.erase(it);
+	if ( quote )
+		strAttributes += '\"';
+	if ( m_uFlags & fSoQuirks ) {
+        strAttributes += "; ";
     }
 }
 

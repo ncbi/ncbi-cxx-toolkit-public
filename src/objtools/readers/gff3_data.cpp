@@ -214,13 +214,23 @@ bool CGff3Record::x_AssignAttributesFromGff(
         if ( 0 == NStr::CompareNocase( strKey, "Note" ) ) {
             strKey = "Note";
         }
-        if ( 0 == NStr::CompareNocase( strKey, "Dbxref" ) ) {
+        if ( 0 == NStr::CompareNocase( strKey, "Dbxref" )  ||
+            0 == NStr::CompareNocase( strKey, "Db_xref" ) ) {
             strKey = "Dbxref";
         }
         if ( 0 == NStr::CompareNocase( strKey, "Ontology_term" ) ) {
             strKey = "Ontology_term";
         }
 
+        if ( strKey == "Dbxref" ) {
+            TAttrIt it = m_Attributes.find( strKey );
+            if ( it != m_Attributes.end() ) {
+                m_Attributes[ strKey ] += ";";
+                m_Attributes[ strKey ] += strValue;
+                return true;
+            }
+        }
+        
         m_Attributes[ strKey ] = strValue;
     }
     return true;

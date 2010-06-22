@@ -201,6 +201,10 @@ public:
         CRef< CSeq_feat >,
         CRef< CSeq_feat > );
 
+    static CRef< CDbtag >
+    x_ParseDbtag(
+        const string& );
+
     CErrorContainerLenient m_ErrorsPrivate;
     map< string, CRef< CSeq_feat > > m_MapIdToFeature;
 
