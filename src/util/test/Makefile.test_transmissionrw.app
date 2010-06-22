@@ -1,4 +1,3 @@
-#################################
 # $Id$
 
 APP = test_transmissionrw
@@ -7,4 +6,4 @@ LIB = xutil xncbi
 
 CHECK_CMD =
 
-WATCHERS = kuznets
+WATCHERS = kazimird
