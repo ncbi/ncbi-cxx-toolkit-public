@@ -169,6 +169,7 @@ PC-AssayDescription ::= SEQUENCE {
                         literature-extracted (7), 
                         literature-author (8), 
                         literature-publisher (9), 
+                        rnaigi (10),
                         other    (255)
                       }                 OPTIONAL,               -- to distinguish projects funded through MLSCN, MLPCN or other
                                                                 -- mlscn: assay depositions from MLSCN screen center
@@ -180,6 +181,7 @@ PC-AssayDescription ::= SEQUENCE {
                                                                 -- literature-extracted: data from literature, extracted by curators
                                                                 -- literature-author: data from literature, submitted by author of articles
                                                                 -- literature-publisher: data from literature, submitted by journals/publishers
+                                                                -- rnaigi: RNAi screenings from RNAi Global Initiative 
 
     -- annotation to indicate whether an assay is a panel, e.g. containing multiple components, or belongs to a group    
     is-panel          BOOLEAN    OPTIONAL,                      -- annotation for panel assay, e.g. to indicate that this assay
