@@ -110,6 +110,27 @@ BOOST_AUTO_TEST_CASE(GetInformationAboutInvalidBlastDatabaseRemotely)
     BOOST_REQUIRE(found == false);
 }
 
+BOOST_AUTO_TEST_CASE(MultipleDatabaseValidityCheck)
+{
+    CBlastServices remote_svc;
+    bool found = remote_svc.IsValidBlastDb("nt wgs", false);
+    BOOST_REQUIRE(found == true);
+}
+
+BOOST_AUTO_TEST_CASE(EmptyStringValidityCheck)
+{
+    CBlastServices remote_svc;
+    bool found = remote_svc.IsValidBlastDb("", false);
+    BOOST_REQUIRE(found == false);
+}
+
+BOOST_AUTO_TEST_CASE(OneBadDbValidityCheck)
+{
+    CBlastServices remote_svc;
+    bool found = remote_svc.IsValidBlastDb("nt dummy", false);
+    BOOST_REQUIRE(found == false);
+}
+
 BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
 {
     CBlastServices remote_svc;
@@ -180,6 +201,19 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     const string nt_title =
         "All GenBank+EMBL+DDBJ+PDB sequences (but no EST, STS, "
         "GSS,environmental samples or phase 0, 1 or 2 HTGS sequences)";
+    BOOST_REQUIRE_EQUAL(nt_title, dbinfo->GetDescription());
+
+    BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)15e+9);
+    BOOST_REQUIRE(dbinfo->GetNum_sequences() > (Int8)35e+5);
+
+    bool all_found;
+    vector< CRef<CBlast4_database_info> > dbinfo_v = remote_svc.GetDatabaseInfo("nr", false, &all_found);
+    BOOST_REQUIRE(dbinfo_v.empty() == false);
+    BOOST_REQUIRE(all_found == true);
+    dbinfo = dbinfo_v.front();
+    BOOST_REQUIRE(dbinfo.NotEmpty());
+    BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
+
     BOOST_REQUIRE_EQUAL(nt_title, dbinfo->GetDescription());
 
     BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)15e+9);

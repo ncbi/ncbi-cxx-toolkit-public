@@ -111,7 +111,9 @@ public:
     /// @param is_protein is this a protein database? [in]
     bool IsValidBlastDb(const string& dbname, bool is_protein);
     
-    /// Retrieve detailed information for a given BLAST database
+    /// Retrieve detailed information for one BLAST database
+    /// If information about multiple databases is needed, use
+    /// the other GetDatabaseInfo method.
     ///
     /// @param blastdb object describing the database for which to get
     /// detailed information
@@ -119,6 +121,18 @@ public:
     /// empty object is the requested database wasn't found
     CRef<objects::CBlast4_database_info>
     GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb);
+
+    /// Retrieve detailed information for databases listed
+    /// in the string.  If more than one database is supplied, it
+    /// they should be separated by spaces (e.g., "nt wgs est").  
+    ///
+    /// @param dbname string listing the database(s)
+    /// @param is_protein is a protein for true, otherwise dna
+    /// @param found_all true if all databases were found.
+    /// @return Detailed information for the requested BLAST databases or an
+    /// empty vector if no databases were found.
+    vector< CRef<objects::CBlast4_database_info> >
+    GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all);
 
     /// Retrieve organism specific repeats databases
     vector< CRef<objects::CBlast4_database_info> >

@@ -347,13 +347,17 @@ s_BuildGetSeqPartsRequest(const CBlastServices::TSeqIntervalVector & seqids,    
 bool
 CBlastServices::IsValidBlastDb(const string& dbname, bool is_protein)
 {
-    CRef<CBlast4_database> blastdb(new CBlast4_database);
-    blastdb->SetName(dbname);
-    blastdb->SetType(is_protein 
-                     ? eBlast4_residue_type_protein 
-                     : eBlast4_residue_type_nucleotide);
-    CRef<CBlast4_database_info> result = GetDatabaseInfo(blastdb);
-    return result.NotEmpty();
+    if (dbname.empty())
+       return false;
+
+    bool found_all = false;
+    vector< CRef<objects::CBlast4_database_info> > result =
+          GetDatabaseInfo(dbname, is_protein, &found_all);
+
+    if (found_all && !result.empty())
+       return true;
+    else
+       return false;
 }
 
 CRef<objects::CBlast4_database_info>
@@ -420,6 +424,38 @@ CBlastServices::GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb)
     }
 
     return x_FindDbInfoFromAvailableDatabases(blastdb);
+}
+
+
+vector< CRef<objects::CBlast4_database_info> >
+CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein, bool *found_all)
+{
+    vector<CRef<objects::CBlast4_database_info> > retval;
+    vector<string> dbs;
+    NStr::Tokenize(dbname, " \n\t", dbs);
+
+    if (dbs.empty())
+      *found_all = false; // Loop did not run.
+    else 
+      *found_all = true; // Set to false if one missing
+
+    ITERATE(vector<string>, i, dbs) {
+       const string kDbName = NStr::TruncateSpaces(*i);
+       if (kDbName.empty())
+             continue;
+
+       CRef<CBlast4_database> blastdb(new CBlast4_database);
+       blastdb->SetName(kDbName);
+       blastdb->SetType(is_protein 
+                     ? eBlast4_residue_type_protein 
+                     : eBlast4_residue_type_nucleotide);
+       CRef<CBlast4_database_info> result = GetDatabaseInfo(blastdb);
+       if (result)
+          retval.push_back(result);
+       else
+          *found_all = false;
+    }
+    return retval;
 }
 
 void
