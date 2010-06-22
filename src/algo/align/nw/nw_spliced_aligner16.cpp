@@ -223,8 +223,8 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     size_t  jBestDonor_d[splice_type_count_16];
 	
     // declare restrict aliases for arrays
-    size_t** NCBI_RESTRICT jAllDonors (jAllDonors_d);
-    TScore** NCBI_RESTRICT vAllDonors (vAllDonors_d);
+    size_t** NCBI_RESTRICT jAllDonors = jAllDonors_d;
+    TScore** NCBI_RESTRICT vAllDonors = vAllDonors_d;
     
     size_t* NCBI_RESTRICT jTail (jTail_d);
     size_t* NCBI_RESTRICT jHead (jHead_d);
