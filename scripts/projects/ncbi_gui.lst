@@ -11,6 +11,8 @@ gui
 html
 internal/align_model$
 internal/contigdb$
+internal/asn_cache
+internal/gpipe
 internal/gbench
 internal/ID/utils$
 internal/mapview/objects
