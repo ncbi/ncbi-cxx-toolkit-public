@@ -50,6 +50,31 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+string s_MakeGffDbtag( const CDbtag& dbtag )
+//
+//  Currently, simply produce "DB:TAG" (which is different from 
+//    dbtag.GetLabel() ).
+//  In the future, may have to convert between Genbank DB abbreviations and
+//    GFF DB abbreviations.
+//  ----------------------------------------------------------------------------
+{
+    string strGffTag;
+    if ( dbtag.IsSetDb() ) {
+        strGffTag += dbtag.GetDb();
+        strGffTag += ":";
+    }
+    if ( dbtag.IsSetTag() ) {
+        if ( dbtag.GetTag().IsId() ) {
+            strGffTag += NStr::UIntToString( dbtag.GetTag().GetId() );
+        }
+        if ( dbtag.GetTag().IsStr() ) {
+            strGffTag += dbtag.GetTag().GetStr();
+        }
+    }
+    return strGffTag;
+}
+        
+//  ----------------------------------------------------------------------------
 CGff3WriteRecord::CGff3WriteRecord(
     CSeq_annot_Handle sah ):
     m_uSeqStart( 0 ),
@@ -476,13 +501,10 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnExtended(
     if ( feature.CanGetDbxref() ) {
         const CSeq_feat::TDbxref& dbxrefs = feature.GetDbxref();
         if ( dbxrefs.size() > 0 ) {
-            string value;
-            dbxrefs[0]->GetLabel( &value );
+            string value = s_MakeGffDbtag( *dbxrefs[ 0 ] );
             for ( size_t i=1; i < dbxrefs.size(); ++i ) {
-                string label;
-                dbxrefs[i]->GetLabel( &label );
                 value += ";";
-                value += label;
+                value += s_MakeGffDbtag( *dbxrefs[ i ] );
             }
             m_Attributes[ "Dbxref" ] = value;
         }
