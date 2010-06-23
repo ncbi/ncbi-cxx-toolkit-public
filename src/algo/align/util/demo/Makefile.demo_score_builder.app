@@ -10,8 +10,9 @@ APP = demo_score_builder
 SRC = demo_score_builder
 # OBJ =
 
-LIB = xalgoalignutil xalnmgr xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB = xalgoalignutil xalgoseq xalnmgr xqueryparse xregexp \
+	  taxon1 $(PCRE_LIB) $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 

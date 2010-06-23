@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/align/util/align_filter.hpp>
 #include <algo/align/util/score_builder.hpp>
+#include <algo/sequence/gene_model.hpp>
 #include <corelib/rwstream.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -143,6 +144,57 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CScore_InternalUnaligned : public CAlignFilter::IScore
+{
+public:
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score_value = 0;
+        switch (align.GetSegs().Which()) {
+        case CSeq_align::TSegs::e_Spliced:
+            {{
+                 const CSpliced_seg& seg = align.GetSegs().GetSpliced();
+                 CSpliced_seg::TExons::const_iterator it =
+                     seg.GetExons().begin();
+                 CSpliced_seg::TExons::const_iterator prev =
+                     seg.GetExons().begin();
+                 CSpliced_seg::TExons::const_iterator end =
+                     seg.GetExons().end();
+                 for (++it;  it != end;  ++it, ++prev) {
+                     if (seg.GetProduct_type() ==
+                         CSpliced_seg::eProduct_type_transcript) {
+                         score_value += (*it)->GetProduct_start().GetNucpos() -
+                                        (*prev)->GetProduct_end().GetNucpos() - 1;
+                     } else {
+                         const CProt_pos& curr =
+                             (*it)->GetProduct_start().GetProtpos();
+                         const CProt_pos& last =
+                             (*prev)->GetProduct_end().GetProtpos();
+                         TSeqPos curr_nuc = curr.GetAmin() * 3;
+                         if (curr.GetFrame()) {
+                             curr_nuc += curr.GetFrame() - 1;
+                         }
+                         TSeqPos last_nuc = last.GetAmin() * 3;
+                         if (last.GetFrame()) {
+                             last_nuc += last.GetFrame() - 1;
+                         }
+                         score_value += curr_nuc - last_nuc - 1;
+                     }
+                 }
+             }}
+            break;
+
+        default:
+            NCBI_THROW(CException, eUnknown,
+                       "internal_unaligned not implemented for this "
+                       "type of alignment");
+        }
+        return score_value;
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 class CScore_AlignStartStop : public CAlignFilter::IScore
 {
 public:
@@ -229,6 +281,49 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
+class CScore_CdsInternalStops : public CAlignFilter::IScore
+{
+public:
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double score = 0;
+
+        ///
+        /// complicated
+        ///
+
+        /// first, generate a gene model
+        CSeq_annot annot;
+        CBioseq_set bset;
+        CGeneModel::CreateGeneModelFromAlign(align, *scope, annot, bset);
+
+        /// extract the CDS and translate it
+        CRef<CSeq_feat> cds;
+        ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
+            if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
+                cds = *it;
+                break;
+            }
+        }
+
+        if (cds) {
+            string trans;
+            CSeqTranslator::Translate(*cds, *scope, trans);
+            if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
+                 NStr::EndsWith(trans, "*")) {
+                trans.resize(trans.size() - 1);
+            }
+
+            ITERATE (string, i, trans) {
+                score += (*i == '*');
+            }
+        }
+        return score;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 CAlignFilter::CAlignFilter()
     : m_RemoveDuplicates(false)
 {
@@ -263,6 +358,16 @@ CAlignFilter::CAlignFilter()
               ("query_end",
                CIRef<IScore>(new CScore_AlignStartStop(0, false))));
      }}
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("internal_unaligned",
+          CIRef<IScore>(new CScore_InternalUnaligned)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("cds_internal_stops",
+          CIRef<IScore>(new CScore_CdsInternalStops)));
 
     m_Scores.insert
         (TScoreDictionary::value_type
