@@ -94,6 +94,9 @@ bool CGff3Record::AssignFromGff(
     m_strSource = columns[1];
     m_strType = columns[2];
     m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
+//    if ( m_uSeqStart == 929922 ) {
+//        cerr << "BREAK" << endl;
+//    }
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
 
     if ( columns[5] != "." ) {
@@ -227,11 +230,10 @@ bool CGff3Record::x_AssignAttributesFromGff(
             if ( it != m_Attributes.end() ) {
                 m_Attributes[ strKey ] += ";";
                 m_Attributes[ strKey ] += strValue;
-                return true;
+                continue;
             }
         }
-        
-        m_Attributes[ strKey ] = strValue;
+        m_Attributes[ strKey ] = strValue;        
     }
     return true;
 }
