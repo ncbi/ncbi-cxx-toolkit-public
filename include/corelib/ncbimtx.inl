@@ -295,8 +295,8 @@ CSpinLock::~CSpinLock(void)
 inline
 void CSpinLock::Lock(void)
 {
-    while (SwapPointers(&m_Value, (void*)1)) {
-        NCBI_SCHED_YIELD();
+    if (SwapPointers(&m_Value, (void*)1) != NULL) {
+        x_WaitForLock();
     }
 }
 

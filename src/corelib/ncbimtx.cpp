@@ -1520,5 +1520,14 @@ CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
     }
 }
 
+void
+CSpinLock::x_WaitForLock(void)
+{
+    do {
+        NCBI_SCHED_YIELD();
+    }
+    while (SwapPointers(&m_Value, (void*)1) != NULL);
+}
+
 
 END_NCBI_SCOPE

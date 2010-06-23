@@ -834,6 +834,10 @@ private:
     CSpinLock(const CSpinLock&);
     CSpinLock& operator= (const CSpinLock&);
 
+    /// Waiting for lock to be acquired when it didn't work on the first attempt
+    NCBI_XNCBI_EXPORT
+    void x_WaitForLock(void);
+
     /// Flag showing if mutex is locked (non-NULL value) or unlocked
     /// (NULL value).
     void* volatile m_Value;
