@@ -45,8 +45,6 @@ BEGIN_SCOPE(objects)
     class CBioseq_set;
 END_SCOPE(objects)
 
-const int MIN_INTRON = 200;
-
 class NCBI_XALGOSEQ_EXPORT CGeneModel
 {
 public:
@@ -64,26 +62,9 @@ public:
     };
     typedef int TGeneModelCreateFlags;
 
-    /// Trim an alignment according to our best guess of its biological
-    /// representation.  Trimming involves adjusting segments to satisfy our
-    /// expectations of partial exonic alignments and account for unaligned
-    /// parts.
-    static CConstRef<objects::CSeq_align>
-    TrimAlignment(const objects::CSeq_align& align,
-                  objects::CScope& scope);
-
-    /// Cconvert an alignment to a gene model
-    /// this will optionally promote all features through the alignment
-    static void ConvertAlignToGeneModel(const objects::CSeq_align& align,
-                                         objects::CScope& scope,
-                                         objects::CSeq_annot& annot,
-                                         objects::CBioseq_set& seqs,
-                                         TGeneModelCreateFlags flags = fDefaults,
-                                         TSeqPos allowed_unaligned = 10);
-
     /// Create a gene model from an alignment
     /// this will optionally promote all features through the alignment
-    /// just calls TrimAlignment and ConvertAlignToGeneModel
+    NCBI_DEPRECATED
     static void CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                          objects::CScope& scope,
                                          objects::CSeq_annot& annot,
@@ -94,10 +75,63 @@ public:
 
     /// Correctly mark exceptions on a feature
     ///
+    NCBI_DEPRECATED
     static void SetFeatureExceptions(objects::CSeq_feat& feat,
                                      objects::CScope& scope,
                                      const objects::CSeq_align* align = NULL);
 
+};
+
+class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
+{
+public:
+    CFeatureGenerator(CRef<objects::CScope> scope);
+    ~CFeatureGenerator();
+
+    enum EGeneModelCreateFlags {
+        fCreateGene          = 0x001,
+        fCreateMrna          = 0x002,
+        fCreateCdregion      = 0x004,
+        fPromoteAllFeatures  = 0x008,
+        fPropagateOnly       = 0x010,
+        fForceTranslateCds   = 0x020,
+        fForceTranscribeMrna = 0x040,
+        fDensegAsExon        = 0x080,
+        fGenerateLocalIds    = 0x100,
+
+        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion | fGenerateLocalIds
+    };
+    typedef int TFeatureGeneratorFlags;
+    static const TSeqPos kDefaultMinIntron = 200;
+    static const TSeqPos kDefaultAllowedUnaligned = 10;
+
+    void SetFlags(TFeatureGeneratorFlags);
+    TFeatureGeneratorFlags GetFlags() const;
+    void SetMinIntron(TSeqPos);
+    void SetAllowedUnaligned(TSeqPos);
+
+    /// Clean an alignment according to our best guess of its biological
+    /// representation.  Cleaning involves adjusting segments to satisfy our
+    /// expectations of partial exonic alignments and account for unaligned
+    /// parts. Eg. stitching small gaps, trimming to codon boundaries.
+    CConstRef<objects::CSeq_align>
+    CleanAlignment(const objects::CSeq_align& align);
+
+    /// Convert an alignment to an annotation.
+    /// This will optionally promote all features through the alignment
+    /// and create product sequences
+    void ConvertAlignToAnnot(const objects::CSeq_align& align,
+                             objects::CSeq_annot& annot,
+                             objects::CBioseq_set& seqs);
+
+    /// Correctly mark exceptions on a feature
+    ///
+    void SetFeatureExceptions(objects::CSeq_feat& feat,
+                              const objects::CSeq_align* align = NULL);
+
+private:
+    struct SImplementation;
+    auto_ptr<SImplementation> m_impl;
 };
 
 

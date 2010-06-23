@@ -34,36 +34,12 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/general/User_object.hpp>
 
+#include "feature_generator.hpp"
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-BEGIN_SCOPE()
-
-/// transform all positions to nucleotide, plus strand
-void StitchSmallHoles(CSeq_align& align, CScope& scope);
-void TrimHolesToCodons(CSeq_align& align, CScope& scope);
-
-
-END_SCOPE()
-
-//////////////////////////////////////////////////////////////////////////////
-///
-
-CConstRef<CSeq_align> CGeneModel::TrimAlignment(const CSeq_align& align_in,
-                                                CScope& scope)
-{
-    if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
-        return CConstRef<CSeq_align>(&align_in);
-
-    CRef<CSeq_align> align(new CSeq_align);
-    align->Assign(align_in);
-
-    StitchSmallHoles(*align, scope);
-    TrimHolesToCodons(*align, scope);
-
-    return align;
-}
 
 BEGIN_SCOPE()
 
@@ -121,7 +97,9 @@ void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons)
     }
 }
 
-void StitchSmallHoles(CSeq_align& align, CScope& scope)
+END_SCOPE()
+
+void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 {
     CSpliced_seg& spliced_seg = align.SetSegs().SetSpliced();
 
@@ -177,10 +155,12 @@ void StitchSmallHoles(CSeq_align& align, CScope& scope)
             continue;
         }
 
-        int prod_hole_len = exons[i].prod_from - exons[i-1].prod_to -1;
-        int genomic_hole_len = exons[i].genomic_from - exons[i-1].genomic_to -1;
+        _ASSERT( exons[i].prod_from > exons[i-1].prod_to );
+        TSeqPos prod_hole_len = exons[i].prod_from - exons[i-1].prod_to -1;
+        _ASSERT( exons[i].genomic_from > exons[i-1].genomic_to );
+        TSeqPos genomic_hole_len = exons[i].genomic_from - exons[i-1].genomic_to -1;
 
-        if (prod_hole_len >= MIN_INTRON || genomic_hole_len >= MIN_INTRON)
+        if (prod_hole_len >= m_min_intron || genomic_hole_len >= m_min_intron)
             continue;
 
         if (is_protein || product_strand != eNa_strand_minus) {
@@ -263,10 +243,8 @@ void StitchSmallHoles(CSeq_align& align, CScope& scope)
     }
 }
 
-void TrimHolesToCodons(CSeq_align& align, CScope& scope)
+void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
 {
 }
-
-END_SCOPE()
 
 END_NCBI_SCOPE

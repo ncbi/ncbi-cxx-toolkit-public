@@ -66,10 +66,108 @@
 #include <objects/general/Object_id.hpp>
 
 
-
+#include "feature_generator.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+//////////////////////////
+void CGeneModel::CreateGeneModelFromAlign(const CSeq_align& align_in,
+                                          CScope& scope_ref,
+                                          CSeq_annot& annot,
+                                          CBioseq_set& seqs,
+                                          TGeneModelCreateFlags flags,
+                                          TSeqPos allowed_unaligned)
+{
+    CRef<CScope> scope(&scope_ref);
+    CFeatureGenerator generator(scope);
+    generator.SetFlags(flags | CFeatureGenerator::fGenerateLocalIds);
+    generator.SetAllowedUnaligned(allowed_unaligned);
+
+    CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align_in);
+    generator.ConvertAlignToAnnot(*clean_align, annot, seqs);
+}
+
+void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
+                                      CScope& scope_ref,
+                                      const CSeq_align* align)
+{
+    CRef<CScope> scope(&scope_ref);
+    CFeatureGenerator generator(scope);
+    generator.SetFeatureExceptions(feat, align);
+}
+
+/////////////////////////////////////
+
+CFeatureGenerator::SImplementation::SImplementation(CRef<CScope> scope)
+    : m_scope(scope)
+    , m_flags(fDefaults)
+    , m_min_intron(kDefaultMinIntron)
+    , m_allowed_unaligned(kDefaultAllowedUnaligned)
+{
+}
+
+CFeatureGenerator::SImplementation::~SImplementation()
+{
+}
+
+CFeatureGenerator::CFeatureGenerator(CRef<CScope> scope)
+    : m_impl(new SImplementation(scope))
+{
+}
+
+CFeatureGenerator::~CFeatureGenerator()
+{
+}
+
+void CFeatureGenerator::SetFlags(TFeatureGeneratorFlags flags)
+{
+    m_impl->m_flags = flags;
+}
+
+CFeatureGenerator::TFeatureGeneratorFlags CFeatureGenerator::GetFlags() const
+{
+    return m_impl->m_flags;
+}
+
+void CFeatureGenerator::SetMinIntron(TSeqPos value)
+{
+    m_impl->m_min_intron = value;
+}
+
+void CFeatureGenerator::SetAllowedUnaligned(TSeqPos value)
+{
+    m_impl->m_allowed_unaligned = value;
+}
+
+CConstRef<objects::CSeq_align>
+CFeatureGenerator::CleanAlignment(const objects::CSeq_align& align_in)
+{
+    if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
+        return CConstRef<CSeq_align>(&align_in);
+
+    CRef<CSeq_align> align(new CSeq_align);
+    align->Assign(align_in);
+
+    m_impl->StitchSmallHoles(*align);
+    m_impl->TrimHolesToCodons(*align);
+
+    return align;
+}
+
+void CFeatureGenerator::ConvertAlignToAnnot(const CSeq_align& align,
+                                            CSeq_annot& annot,
+                                            CBioseq_set& seqs)
+{
+    m_impl->ConvertAlignToAnnot(align, annot, seqs);
+}
+
+void CFeatureGenerator::SetFeatureExceptions(CSeq_feat& feat,
+                                             const CSeq_align* align)
+{
+    m_impl->SetFeatureExceptions(feat, align);
+}
+
 
 ///
 /// Return the mol-info object for a given sequence
@@ -85,27 +183,9 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 }
 
 
-void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align_in,
-                                          CScope& scope,
-                                          CSeq_annot& annot,
-                                          CBioseq_set& seqs,
-                                          TGeneModelCreateFlags flags,
-                                          TSeqPos allowed_unaligned)
-{
-    CConstRef<CSeq_align> trimmed_align = TrimAlignment(align_in, scope);
-    ConvertAlignToGeneModel(*trimmed_align,
-                            scope,
-                            annot,
-                            seqs,
-                            flags,
-                            allowed_unaligned);
-}
-void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
-                                         objects::CScope& scope,
+void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
                                          objects::CSeq_annot& annot,
-                                         objects::CBioseq_set& seqs,
-                                         TGeneModelCreateFlags flags,
-                                         TSeqPos allowed_unaligned)
+                                         objects::CBioseq_set& seqs)
 {
     ////////////////////////////////////////////////////////////////////////////
     ///
@@ -296,11 +376,11 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
     ////////////////////////////////////////////////////////////////////////////
 
     CSeq_loc_Mapper::TMapOptions opts = 0;
-    if (flags & fDensegAsExon) {
+    if (m_flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    SMapper mapper(align, scope, allowed_unaligned, opts);
+    SMapper mapper(align, *m_scope, m_allowed_unaligned, opts);
 
     /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
@@ -308,7 +388,7 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
 
     const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
     const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
-    CBioseq_Handle handle = scope.GetBioseqHandle(rna_id);
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
 
     /// we always need the mRNA location as a reference
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -321,7 +401,7 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
     /// create our mRNA feature
     ///
     CRef<CSeq_feat> mrna_feat;
-    if (flags & fCreateMrna) {
+    if (m_flags & fCreateMrna) {
         mrna_feat.Reset(new CSeq_feat());
         const CMolInfo* info = s_GetMolInfo(handle);
         CRNA_ref::TType type = CRNA_ref::eType_unknown;
@@ -363,7 +443,7 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
             mrna_feat->SetPartial(true);
         }
 
-        if (flags & fForceTranscribeMrna) {
+        if (m_flags & fForceTranscribeMrna) {
             /// create a new bioseq for this mRNA
             CRef<CSeq_entry> entry(new CSeq_entry);
             CBioseq& bioseq = entry->SetSeq();
@@ -382,9 +462,9 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
             inst.SetRepr(CSeq_inst::eRepr_raw);
             inst.SetMol(CSeq_inst::eMol_na);
 
-            /// this is created as a translation of the genomic
+            /// this is created as a transcription of the genomic
             /// location
-            CSeqVector vec(*loc, scope);
+            CSeqVector vec(*loc, m_scope);
             vec.GetSeqData(0, vec.size(),
                            inst.SetSeq_data().SetIupacna().Set());
             inst.SetLength(inst.GetSeq_data().GetIupacna().Get().size());
@@ -400,8 +480,8 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
     /// create our gene feature
     ///
     CRef<CSeq_feat> gene_feat;
-    if (flags & fCreateGene) {
-        if (flags & fPropagateOnly) {
+    if (m_flags & fCreateGene) {
+        if (m_flags & fPropagateOnly) {
             //
             // only create a gene feature if one exists on the mRNA feature
             //
@@ -414,8 +494,8 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
                 CSeq_loc& gene_loc = gene_feat->SetLocation();
                 gene_loc.SetInt().SetFrom(new_loc->GetTotalRange().GetFrom());
                 gene_loc.SetInt().SetTo  (new_loc->GetTotalRange().GetTo());
-                gene_loc.SetStrand(sequence::GetStrand(*new_loc, &scope));
-                gene_loc.SetId(sequence::GetId(*new_loc, &scope));
+                gene_loc.SetStrand(sequence::GetStrand(*new_loc, m_scope));
+                gene_loc.SetId(sequence::GetId(*new_loc, m_scope));
 
                 if (mrna_feat  &&
                     !mrna_feat->IsSetDbxref()  &&
@@ -450,13 +530,13 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, scope, &align);
+        SetFeatureExceptions(*mrna_feat, &align);
         /// NOTE: added after gene!
         annot.SetData().SetFtable().push_back(mrna_feat);
     }
 
     CRef<CSeq_feat> cds_feat;
-    if (flags & fCreateCdregion) {
+    if (m_flags & fCreateCdregion) {
         //
         // only create a CDS feature if one exists on the mRNA feature
         //
@@ -466,7 +546,7 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
             cds_feat->Assign(feat_iter->GetOriginalFeature());
 
             /// from this point on, we will get complex locations back
-            SMapper mapper(align, scope, opts);
+            SMapper mapper(align, *m_scope, opts);
             mapper.IncludeSourceLocs();
             mapper.SetMergeNone();
 
@@ -658,10 +738,10 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
                     }
                 }
 
-                SetFeatureExceptions(*cds_feat, scope, &align);
+                SetFeatureExceptions(*cds_feat, &align);
                 annot.SetData().SetFtable().push_back(cds_feat);
 
-                if (flags & fForceTranslateCds) {
+                if (m_flags & fForceTranslateCds) {
                     /// create a new bioseq for the CDS
                     CRef<CSeq_entry> entry(new CSeq_entry);
                     CBioseq& bioseq = entry->SetSeq();
@@ -734,7 +814,7 @@ void CGeneModel::ConvertAlignToGeneModel(const objects::CSeq_align& align,
     ///
     /// copy additional features
     ///
-    if (flags & fPromoteAllFeatures) {
+    if (m_flags & fPromoteAllFeatures) {
         SAnnotSelector sel;
         sel.SetResolveAll()
             .SetAdaptiveDepth(true)
@@ -1204,8 +1284,7 @@ static void s_HandleCdsExceptions(CSeq_feat& feat,
 }
 
 
-void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
-                                      CScope& scope,
+void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       const CSeq_align* align)
 {
     // Exceptions identified are:
@@ -1216,11 +1295,11 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
     //   - mismatches in translation
     switch (feat.GetData().Which()) {
     case CSeqFeatData::e_Rna:
-        s_HandleRnaExceptions(feat, scope, align);
+        s_HandleRnaExceptions(feat, *m_scope, align);
         break;
 
     case CSeqFeatData::e_Cdregion:
-        s_HandleCdsExceptions(feat, scope, align);
+        s_HandleCdsExceptions(feat, *m_scope, align);
         break;
 
     case CSeqFeatData::e_Imp:
@@ -1232,7 +1311,7 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
         case CSeqFeatData::eSubtype_S_region:
         case CSeqFeatData::eSubtype_V_region:
         case CSeqFeatData::eSubtype_V_segment:
-            s_HandleRnaExceptions(feat, scope, align);
+            s_HandleRnaExceptions(feat, *m_scope, align);
             break;
 
         default:

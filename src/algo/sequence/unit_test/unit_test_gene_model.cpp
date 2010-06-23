@@ -199,13 +199,15 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
-    CScope scope(*om);
-    scope.AddDefaults();
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(scope);
     
     CSeq_align align;
     CConstRef<CSeq_align> trimmed_align;
     BOOST_CHECK_NO_THROW(
-                         trimmed_align = CGeneModel::TrimAlignment(align, scope)
+                         trimmed_align = feat_gen.CleanAlignment(align)
                          );
 }
 
