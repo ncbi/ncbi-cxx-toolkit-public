@@ -35,7 +35,6 @@
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
 
-
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -81,6 +80,8 @@
 
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -873,8 +874,18 @@ struct STypeLink
     bool IsValid(void) const {
         return m_ParentType != CSeqFeatData::eSubtype_bad;
     }
+    operator bool(void) const {
+        return IsValid();
+    }
+    bool operator!(void) const {
+        return !IsValid();
+    }
 
     void Next(void);
+    STypeLink& operator++(void) {
+        Next();
+        return *this;
+    }
         
     CSeqFeatData::ESubtype m_CurrentType;
     CSeqFeatData::ESubtype m_ParentType;
@@ -1052,6 +1063,21 @@ namespace {
     }
 
 
+    static
+    bool sx_IsParentType(CSeqFeatData::ESubtype parent_type,
+                         CSeqFeatData::ESubtype feat_type)
+    {
+        if ( feat_type != parent_type ) {
+            for ( STypeLink link(feat_type); link; ++link ) {
+                if ( link.m_ParentType == parent_type ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
     static const int kSameTypeParentQuality = 1000;
     static const int kWorseTypeParentQuality = 500;
 
@@ -1162,8 +1188,7 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 {
     CMappedFeat best_parent;
 
-    STypeLink link(feat.GetFeatSubtype());
-    while ( link.IsValid() ) {
+    for( STypeLink link(feat.GetFeatSubtype()); link; ++link ) {
         best_parent = sx_GetParentByRef(feat, link);
         if ( best_parent ) {
             // found by Xref
@@ -1175,8 +1200,6 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
             // parent is found by overlap
             break;
         }
-
-        link.Next();
     }
     return best_parent;
 }
@@ -1435,7 +1458,7 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
 void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
                                      const STypeLink& link)
 {
-    if ( features.empty() || !link.IsValid() ) {
+    if ( features.empty() || !link ) {
         return;
     }
     TFeatArray::iterator dst = features.begin();
@@ -1631,7 +1654,7 @@ void CFeatTree::x_AssignParents(void)
         }
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
         STypeLink link(feat_type);
-        if ( !link.IsValid() ) {
+        if ( !link ) {
             // no parent
             x_SetNoParent(info);
         }
@@ -1657,8 +1680,7 @@ void CFeatTree::x_AssignParents(void)
             // no work to do
             continue;
         }
-        STypeLink link(feat_set.m_FeatType);
-        while ( link.IsValid() ) {
+        for ( STypeLink link(feat_set.m_FeatType); link; ++link ) {
             if ( m_FeatIdMode == eFeatId_by_type ) {
                 x_AssignParentsByRef(feat_set.m_New, link);
                 if ( feat_set.m_New.empty() ) {
@@ -1675,8 +1697,6 @@ void CFeatTree::x_AssignParents(void)
             if ( feat_set.m_New.empty() ) {
                 break;
             }
-
-            link.Next();
         }
         // all remaining features are without parent
         ITERATE ( TFeatArray, it, feat_set.m_New ) {
@@ -1855,7 +1875,7 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
         sel.SetFeatSubtype(bottom_type);
     }
     if ( top_type != bottom_type ) {
-        for ( STypeLink link(bottom_type); link.IsValid(); link.Next() ) {
+        for ( STypeLink link(bottom_type); link; ++link ) {
             CSeqFeatData::ESubtype parent_type = link.m_ParentType;
             sel.IncludeFeatSubtype(parent_type);
             if ( parent_type == top_type ) {
@@ -1870,71 +1890,88 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
 
 void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
                                CSeqFeatData::ESubtype bottom_type,
-                               CSeqFeatData::ESubtype top_type)
+                               CSeqFeatData::ESubtype top_type,
+                               const SAnnotSelector* base_sel)
 {
     AddFeature(feat);
-    AddFeaturesFor(feat.GetScope(), feat.GetLocation(), bottom_type, top_type);
+    AddFeaturesFor(feat.GetScope(), feat.GetLocation(),
+                   bottom_type, top_type, base_sel);
 }
 
 
 void CFeatTree::AddFeaturesFor(const CMappedFeat& feat,
-                               CSeqFeatData::ESubtype top_type)
+                               CSeqFeatData::ESubtype top_type,
+                               const SAnnotSelector* base_sel)
 {
     AddFeature(feat);
     AddFeaturesFor(feat.GetScope(), feat.GetLocation(),
-                   feat.GetFeatSubtype(), top_type, 0, true);
+                   feat.GetFeatSubtype(), top_type, base_sel, true);
 }
 
 
-void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat)
+void CFeatTree::AddGenesForMrna(const CMappedFeat& mrna_feat,
+                                const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(mrna_feat,
-                   CSeqFeatData::eSubtype_gene);
+                   CSeqFeatData::eSubtype_gene,
+                   base_sel);
 }
 
 
-void CFeatTree::AddCdsForMrna(const CMappedFeat& mrna_feat)
+void CFeatTree::AddCdsForMrna(const CMappedFeat& mrna_feat,
+                              const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(mrna_feat,
                    CSeqFeatData::eSubtype_cdregion,
-                   CSeqFeatData::eSubtype_mRNA);
+                   CSeqFeatData::eSubtype_mRNA,
+                   base_sel);
 }
 
 
-void CFeatTree::AddGenesForCds(const CMappedFeat& cds_feat)
+void CFeatTree::AddGenesForCds(const CMappedFeat& cds_feat,
+                               const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(cds_feat,
-                   CSeqFeatData::eSubtype_gene);
+                   CSeqFeatData::eSubtype_gene,
+                   base_sel);
 }
 
 
-void CFeatTree::AddMrnasForCds(const CMappedFeat& cds_feat)
+void CFeatTree::AddMrnasForCds(const CMappedFeat& cds_feat,
+                               const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(cds_feat,
-                   CSeqFeatData::eSubtype_mRNA);
+                   CSeqFeatData::eSubtype_mRNA,
+                   base_sel);
 }
 
 
-void CFeatTree::AddMrnasForGene(const CMappedFeat& gene_feat)
+void CFeatTree::AddMrnasForGene(const CMappedFeat& gene_feat,
+                                const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(gene_feat,
                    CSeqFeatData::eSubtype_mRNA,
-                   CSeqFeatData::eSubtype_gene);
+                   CSeqFeatData::eSubtype_gene,
+                   base_sel);
 }
 
 
-void CFeatTree::AddCdsForGene(const CMappedFeat& gene_feat)
+void CFeatTree::AddCdsForGene(const CMappedFeat& gene_feat,
+                              const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(gene_feat,
                    CSeqFeatData::eSubtype_cdregion,
-                   CSeqFeatData::eSubtype_gene);
+                   CSeqFeatData::eSubtype_gene,
+                   base_sel);
 }
 
 
-void CFeatTree::AddGenesForFeat(const CMappedFeat& feat)
+void CFeatTree::AddGenesForFeat(const CMappedFeat& feat,
+                                const SAnnotSelector* base_sel)
 {
     AddFeaturesFor(feat,
-                   CSeqFeatData::eSubtype_gene);
+                   CSeqFeatData::eSubtype_gene,
+                   base_sel);
 }
 
 
@@ -1943,7 +1980,8 @@ void CFeatTree::AddGenesForFeat(const CMappedFeat& feat)
 
 CMappedFeat
 GetBestGeneForMrna(const CMappedFeat& mrna_feat,
-                   CFeatTree* feat_tree)
+                   CFeatTree* feat_tree,
+                   const SAnnotSelector* base_sel)
 {
     if ( !mrna_feat ||
          mrna_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA ) {
@@ -1952,15 +1990,17 @@ GetBestGeneForMrna(const CMappedFeat& mrna_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddGenesForMrna(mrna_feat);
-        return GetBestGeneForMrna(mrna_feat, &tree);
+        tree.AddGenesForMrna(mrna_feat, base_sel);
+        return tree.GetParent(mrna_feat, CSeqFeatData::eSubtype_gene);
     }
     return feat_tree->GetParent(mrna_feat, CSeqFeatData::eSubtype_gene);
 }
 
+
 CMappedFeat
 GetBestGeneForCds(const CMappedFeat& cds_feat,
-                  CFeatTree* feat_tree)
+                  CFeatTree* feat_tree,
+                  const SAnnotSelector* base_sel)
 {
     if ( !cds_feat ||
          cds_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
@@ -1969,15 +2009,17 @@ GetBestGeneForCds(const CMappedFeat& cds_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddGenesForCds(cds_feat);
-        return GetBestGeneForCds(cds_feat, &tree);
+        tree.AddGenesForCds(cds_feat, base_sel);
+        return tree.GetParent(cds_feat, CSeqFeatData::eSubtype_gene);
     }
     return feat_tree->GetParent(cds_feat, CSeqFeatData::eSubtype_gene);
 }
 
+
 CMappedFeat
 GetBestMrnaForCds(const CMappedFeat& cds_feat,
-                  CFeatTree* feat_tree)
+                  CFeatTree* feat_tree,
+                  const SAnnotSelector* base_sel)
 {
     if ( !cds_feat ||
          cds_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
@@ -1986,15 +2028,17 @@ GetBestMrnaForCds(const CMappedFeat& cds_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddMrnasForCds(cds_feat);
-        return GetBestMrnaForCds(cds_feat, &tree);
+        tree.AddMrnasForCds(cds_feat, base_sel);
+        return tree.GetParent(cds_feat, CSeqFeatData::eSubtype_mRNA);
     }
     return feat_tree->GetParent(cds_feat, CSeqFeatData::eSubtype_mRNA);
 }
 
+
 CMappedFeat
 GetBestCdsForMrna(const CMappedFeat& mrna_feat,
-                  CFeatTree* feat_tree)
+                  CFeatTree* feat_tree,
+                  const SAnnotSelector* base_sel)
 {
     if ( !mrna_feat ||
          mrna_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA ) {
@@ -2003,7 +2047,7 @@ GetBestCdsForMrna(const CMappedFeat& mrna_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddCdsForMrna(mrna_feat);
+        tree.AddCdsForMrna(mrna_feat, base_sel);
         return GetBestCdsForMrna(mrna_feat, &tree);
     }
     const vector<CMappedFeat>& children = feat_tree->GetChildren(mrna_feat);
@@ -2015,9 +2059,11 @@ GetBestCdsForMrna(const CMappedFeat& mrna_feat,
     return CMappedFeat();
 }
 
+
 void GetMrnasForGene(const CMappedFeat& gene_feat,
                      list< CMappedFeat >& mrna_feats,
-                     CFeatTree* feat_tree)
+                     CFeatTree* feat_tree,
+                     const SAnnotSelector* base_sel)
 {
     if ( !gene_feat ||
          gene_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_gene ) {
@@ -2026,7 +2072,7 @@ void GetMrnasForGene(const CMappedFeat& gene_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddMrnasForGene(gene_feat);
+        tree.AddMrnasForGene(gene_feat, base_sel);
         GetMrnasForGene(gene_feat, mrna_feats, &tree);
         return;
     }
@@ -2038,9 +2084,11 @@ void GetMrnasForGene(const CMappedFeat& gene_feat,
     }
 }
 
+
 void GetCdssForGene(const CMappedFeat& gene_feat,
                     list< CMappedFeat >& cds_feats,
-                    CFeatTree* feat_tree)
+                    CFeatTree* feat_tree,
+                    const SAnnotSelector* base_sel)
 {
     if ( !gene_feat ||
          gene_feat.GetFeatSubtype() != CSeqFeatData::eSubtype_gene ) {
@@ -2049,7 +2097,7 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddCdsForGene(gene_feat);
+        tree.AddCdsForGene(gene_feat, base_sel);
         GetCdssForGene(gene_feat, cds_feats, &tree);
         return;
     }
@@ -2072,7 +2120,8 @@ void GetCdssForGene(const CMappedFeat& gene_feat,
 
 CMappedFeat
 GetBestGeneForFeat(const CMappedFeat& feat,
-                   CFeatTree* feat_tree)
+                   CFeatTree* feat_tree,
+                   const SAnnotSelector* base_sel)
 {
     if ( !feat ) {
         NCBI_THROW(CObjmgrUtilException, eBadFeature,
@@ -2080,102 +2129,248 @@ GetBestGeneForFeat(const CMappedFeat& feat,
     }
     if ( !feat_tree ) {
         CFeatTree tree;
-        tree.AddGenesForFeat(feat);
-        return GetBestGeneForFeat(feat, &tree);
+        tree.AddGenesForFeat(feat, base_sel);
+        return tree.GetParent(feat, CSeqFeatData::eSubtype_gene);
     }
     return feat_tree->GetParent(feat, CSeqFeatData::eSubtype_gene);
 }
 
 
-/*
-static
 CMappedFeat
-sx_GetBestOverlappingFeat(const CMappedFeat& feat,
-                          CSeqFeatData::E_Choice feat_type,
-                          sequence::EOverlapType overlap_type)
+GetBestParentForFeat(const CMappedFeat& feat,
+                     CSeqFeatData::ESubtype parent_type,
+                     CFeatTree* feat_tree,
+                     const SAnnotSelector* base_sel)
 {
+    if ( !feat ) {
+        NCBI_THROW(CObjmgrUtilException, eBadFeature,
+                   "GetBestParentForFeat: feat is null");
+    }
+    if ( !feat_tree ) {
+        CFeatTree tree;
+        tree.AddFeaturesFor(feat, parent_type, base_sel);
+        return tree.GetParent(feat, parent_type);
+    }
+    return feat_tree->GetParent(feat, parent_type);
+}
+
+
+typedef pair<Int8, CMappedFeat> TMappedFeatScore;
+typedef vector<TMappedFeatScore> TMappedFeatScores;
+
+static
+void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
+                            CSeqFeatData::E_Choice feat_type,
+                            CSeqFeatData::ESubtype feat_subtype,
+                            sequence::EOverlapType overlap_type,
+                            TMappedFeatScores& feats,
+                            const SAnnotSelector* base_sel)
+{
+    bool revert_locations = false;
+    SAnnotSelector::EOverlapType annot_overlap_type;
+    switch (overlap_type) {
+    case eOverlap_Simple:
+    case eOverlap_Contained:
+    case eOverlap_Contains:
+        // Require total range overlap
+        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
+        break;
+    case eOverlap_Subset:
+    case eOverlap_SubsetRev:
+    case eOverlap_CheckIntervals:
+    case eOverlap_Interval:
+    case eOverlap_CheckIntRev:
+        revert_locations = true;
+        // there's no break here - proceed to "default"
+    default:
+        // Require intervals overlap
+        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
+        break;
+    }
+
+    CConstRef<CSeq_feat> feat_ref;
+
+    CBioseq_Handle h;
+    CRange<TSeqPos> range;
+    ENa_strand strand = eNa_strand_unknown;
+    if ( loc.IsWhole() ) {
+        h = scope.GetBioseqHandle(loc.GetWhole());
+        range = range.GetWhole();
+    }
+    else if ( loc.IsInt() ) {
+        const CSeq_interval& interval = loc.GetInt();
+        h = scope.GetBioseqHandle(interval.GetId());
+        range.SetFrom(interval.GetFrom());
+        range.SetTo(interval.GetTo());
+        if ( interval.IsSetStrand() ) {
+            strand = interval.GetStrand();
+        }
+    }
+    else {
+        range = range.GetEmpty();
+    }
+
+    // Check if the sequence is circular
+    TSeqPos circular_length = kInvalidSeqPos;
+    if ( h ) {
+        if ( h.IsSetInst_Topology() &&
+             h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+            circular_length = h.GetBioseqLength();
+        }
+    }
+    else {
+        try {
+            const CSeq_id* single_id = 0;
+            try {
+                loc.CheckId(single_id);
+            }
+            catch (CException&) {
+                single_id = 0;
+            }
+            if ( single_id ) {
+                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
+                if ( h && h.IsSetInst_Topology() &&
+                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = h.GetBioseqLength();
+                }
+            }
+        }
+        catch (CException& _DEBUG_ARG(e)) {
+            _TRACE("test for circularity failed: " << e.GetMsg());
+        }
+    }
+
+    try {
+        SAnnotSelector sel;
+        if ( base_sel ) {
+            sel = *base_sel;
+        }
+        else {
+            sel.SetResolveAll().SetAdaptiveDepth();
+        }
+        sel.SetFeatSubtype(feat_subtype).SetOverlapType(annot_overlap_type);
+        if ( h ) {
+            CFeat_CI feat_it(h, range, strand, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TMappedFeatScore sc(cur_diff, *feat_it);
+                feats.push_back(sc);
+            }
+        }
+        else {
+            CFeat_CI feat_it(scope, loc, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap64(feat_it->GetLocation(),
+                                     loc,
+                                     overlap_type,
+                                     circular_length,
+                                     &scope) :
+                    TestForOverlap64(loc,
+                                     feat_it->GetLocation(),
+                                     overlap_type,
+                                     circular_length,
+                                     &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TMappedFeatScore sc(cur_diff, *feat_it);
+                feats.push_back(sc);
+            }
+        }
+    }
+    catch (CException&) {
+        _TRACE("GetOverlappingFeatures(): error: feature iterator failed");
+    }
+}
+
+
+static
+CMappedFeat GetBestOverlappingFeat(CScope& scope,
+                                   const CSeq_loc& loc,
+                                   CSeqFeatData::ESubtype feat_subtype,
+                                   sequence::EOverlapType overlap_type,
+                                   TBestFeatOpts opts,
+                                   const SAnnotSelector* base_sel)
+{
+    TMappedFeatScores scores;
+    GetOverlappingFeatures(scope, loc,
+        CSeqFeatData::GetTypeFromSubtype(feat_subtype), feat_subtype,
+        overlap_type, scores, base_sel);
+
+    if ( !scores.empty() ) {
+        if (opts & fBestFeat_FavorLonger) {
+            return max_element(scores.begin(), scores.end())->second;
+        }
+        else {
+            return min_element(scores.begin(), scores.end())->second;
+        }
+    }
     return CMappedFeat();
 }
 
-CMappedFeat
-GetBestOverlappingFeat(const CMappedFeat& feat,
-                       CSeqFeatData::E_Choice feat_type,
-                       sequence::EOverlapType overlap_type)
-{
-    CMappedFeat ret;
-    switch (feat_type) {
-    case CSeqFeatData::e_Gene:
-        ret = GetBestOverlappingFeat(feat,
-                                     CSeqFeatData::eSubtype_gene,
-                                     overlap_type);
-        break;
-
-    case CSeqFeatData::e_Rna:
-        ret = GetBestOverlappingFeat(feat,
-                                     CSeqFeatData::eSubtype_mRNA,
-                                     overlap_type);
-        break;
-
-    case CSeqFeatData::e_Cdregion:
-        ret = GetBestOverlappingFeat(feat,
-                                     CSeqFeatData::eSubtype_cdregion,
-                                     overlap_type);
-        break;
-
-    default:
-        break;
-    }
-
-    if ( !ret ) {
-        ret = sx_GetBestOverlappingFeat(feat, feat_type, overlap_type);
-    }
-
-    return ret;
-}
-
 
 CMappedFeat
 GetBestOverlappingFeat(const CMappedFeat& feat,
-                       CSeqFeatData::ESubtype subtype,
-                       sequence::EOverlapType overlap_type)
+                       CSeqFeatData::ESubtype need_subtype,
+                       sequence::EOverlapType overlap_type,
+                       CFeatTree* feat_tree,
+                       const SAnnotSelector* base_sel)
 {
-    switch (feat.GetSubtype()) {
-    case CSeqFeatData::eSubtype_mRNA:
-        switch (subtype) {
+    // special cases
+    switch ( need_subtype ) {
+    case CSeqFeatData::eSubtype_gene:
+        switch ( feat.GetFeatSubtype() ) {
+        case CSeqFeatData::eSubtype_operon:
         case CSeqFeatData::eSubtype_gene:
-            return GetBestGeneForMrna(feat);
-
-        case CSeqFeatData::eSubtype_cdregion:
-            return GetBestCdsForMrna(feat);
-
-        default:
             break;
-        }
-        break;
-
-    case CSeqFeatData::eSubtype_cdregion:
-        switch (subtype) {
         case CSeqFeatData::eSubtype_mRNA:
-            return GetBestMrnaForCds(feat);
-
-        case CSeqFeatData::eSubtype_gene:
-            return GetBestGeneForCds(feat);
-
+            return GetBestGeneForMrna(feat, feat_tree, base_sel);
+        case CSeqFeatData::eSubtype_cdregion:
+            return GetBestGeneForCds(feat, feat_tree, base_sel);
         default:
-            break;
+            return GetBestGeneForFeat(feat, feat_tree, base_sel);
         }
         break;
-
-    case CSeqFeatData::eSubtype_variation:
-        return GetBestOverlapForSNP(feat, subtype);
-
+    case CSeqFeatData::eSubtype_mRNA:
+        if ( feat.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion ) {
+            return GetBestMrnaForCds(feat, feat_tree, base_sel);
+        }
+        break;
+    case CSeqFeatData::eSubtype_cdregion:
+        if ( feat.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA ) {
+            return GetBestCdsForMrna(feat, feat_tree, base_sel);
+        }
+        break;
     default:
         break;
     }
-
-    return sx_GetBestOverlappingFeat(feat, subtype, overlap_type);
+    // in-tree child -> parent lookup
+    if ( sx_IsParentType(need_subtype, feat.GetFeatSubtype()) ) {
+        return GetBestParentForFeat(feat, need_subtype, feat_tree, base_sel);
+    }
+    // non-tree overlap
+    return GetBestOverlappingFeat(feat.GetScope(), feat.GetLocation(),
+                                  need_subtype, overlap_type, 0, base_sel);
 }
-*/
+
 
 END_SCOPE(feature)
 END_SCOPE(objects)

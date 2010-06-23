@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -197,23 +198,32 @@ public:
                         bool skip_bottom = false);
     void AddFeaturesFor(const CMappedFeat& feat,
                         CSeqFeatData::ESubtype bottom_type,
-                        CSeqFeatData::ESubtype top_type);
+                        CSeqFeatData::ESubtype top_type,
+                        const SAnnotSelector* base_sel = 0);
     void AddFeaturesFor(const CMappedFeat& feat,
-                        CSeqFeatData::ESubtype top_type);
+                        CSeqFeatData::ESubtype top_type,
+                        const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get genes for a mRNA feature.
-    void AddGenesForMrna(const CMappedFeat& mrna_feat);
+    void AddGenesForMrna(const CMappedFeat& mrna_feat,
+                         const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get cdregions for a mRNA feature.
-    void AddCdsForMrna(const CMappedFeat& mrna_feat);
+    void AddCdsForMrna(const CMappedFeat& mrna_feat,
+                       const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get mRNAs for a gene feature.
-    void AddMrnasForGene(const CMappedFeat& gene_feat);
+    void AddMrnasForGene(const CMappedFeat& gene_feat,
+                         const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get cdregions for a gene feature.
-    void AddCdsForGene(const CMappedFeat& gene_feat);
+    void AddCdsForGene(const CMappedFeat& gene_feat,
+                       const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get genes for a cdregion feature.
-    void AddGenesForCds(const CMappedFeat& cds_feat);
+    void AddGenesForCds(const CMappedFeat& cds_feat,
+                        const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get mRNAs for a cdregion feature.
-    void AddMrnasForCds(const CMappedFeat& cds_feat);
+    void AddMrnasForCds(const CMappedFeat& cds_feat,
+                        const SAnnotSelector* base_sel = 0);
     /// Add all necessary features to get genes for an arbitrary feature.
-    void AddGenesForFeat(const CMappedFeat& feat);
+    void AddGenesForFeat(const CMappedFeat& feat,
+                         const SAnnotSelector* base_sel = 0);
 
     /// Find a corresponding CMappedFeat for a feature already added to a tree.
     /// Will throw an exception if the feature is not in the tree.
@@ -333,51 +343,68 @@ protected:
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForMrna(const CMappedFeat& mrna_feat,
-                   CFeatTree* feat_tree = 0);
+                   CFeatTree* feat_tree = 0,
+                   const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForCds(const CMappedFeat& cds_feat,
-                  CFeatTree* feat_tree = 0);
+                  CFeatTree* feat_tree = 0,
+                  const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestMrnaForCds(const CMappedFeat& cds_feat,
-                  CFeatTree* feat_tree = 0);
+                  CFeatTree* feat_tree = 0,
+                  const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestCdsForMrna(const CMappedFeat& mrna_feat,
-                  CFeatTree* feat_tree = 0);
+                  CFeatTree* feat_tree = 0,
+                  const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 void GetMrnasForGene(const CMappedFeat& gene_feat,
                      list< CMappedFeat >& mrna_feats,
-                     CFeatTree* feat_tree = 0);
+                     CFeatTree* feat_tree = 0,
+                     const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 void GetCdssForGene(const CMappedFeat& gene_feat,
                     list< CMappedFeat >& cds_feats,
-                    CFeatTree* feat_tree = 0);
+                    CFeatTree* feat_tree = 0,
+                    const SAnnotSelector* base_sel = 0);
+
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
 GetBestGeneForFeat(const CMappedFeat& feat,
-                   CFeatTree* feat_tree = 0);
+                   CFeatTree* feat_tree = 0,
+                   const SAnnotSelector* base_sel = 0);
 
-/*
-NCBI_XOBJUTIL_EXPORT
-CMappedFeat
-GetBestOverlappingFeat(const CMappedFeat& feat,
-                       CSeqFeatData::E_Choice feat_type,
-                       sequence::EOverlapType overlap_type);
 
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat
+GetBestParentForFeat(const CMappedFeat& feat,
+                     CSeqFeatData::ESubtype parent_subtype,
+                     CFeatTree* feat_tree = 0,
+                     const SAnnotSelector* base_sel = 0);
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat
 GetBestOverlappingFeat(const CMappedFeat& feat,
-                       CSeqFeatData::ESubtype feat_type,
-                       sequence::EOverlapType overlap_type);
-*/
+                       CSeqFeatData::ESubtype need_subtype,
+                       sequence::EOverlapType overlap_type,
+                       CFeatTree* feat_tree = 0,
+                       const SAnnotSelector* base_sel = 0);
+
 
 END_SCOPE(feature)
 END_SCOPE(objects)
