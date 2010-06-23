@@ -400,8 +400,14 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
                     // scheme://
                     x_SetScheme(url.substr(beg, pos - beg), *encoder);
                     beg = pos + 3;
-                    pos = url.find_first_of(":@/?", beg);
                     m_IsGeneric = true;
+                    if (m_Scheme == "file") {
+                        // Special case - no further parsing, use the whole
+                        // string as path.
+                        x_SetPath(url.substr(beg), *encoder);
+                        return;
+                    }
+                    pos = url.find_first_of(":@/?", beg);
                     break;
                 }
                 // user:password@ || host:port...
