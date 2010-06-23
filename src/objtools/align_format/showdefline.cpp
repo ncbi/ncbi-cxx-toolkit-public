@@ -417,8 +417,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, sdl->linkout,
-                                                 blast_rank,(m_Option & eNewTargetWindow) ? true : false); 
-        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,m_ScopeRef,useTemplates);
+                                                 blast_rank,false,(m_Option & eNewTargetWindow) ? true : false); 
+        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates);
     }
 
     //get defline
@@ -1392,6 +1392,7 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->total_bit_string = total_bit_score_buf; 
     score_info->bit_string = bit_score_buf;
     score_info->evalue_string = evalue_buf;
+    score_info->hspNum = aln.Size();
 
     return score_info;
 }
@@ -1438,8 +1439,8 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
 
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi, 0,blast_rank,(m_Option & eNewTargetWindow) ? true : false,0);
-            sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,m_ScopeRef);
+                                                     m_QueryNumber,sdl->gi, 0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,0);
+            sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -1527,8 +1528,8 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
     else {           
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
-    }
-        
+    }  
+    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
 		
     int percent_coverage = 100*iter->master_covered_length/m_QueryLength;
@@ -1586,8 +1587,6 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
     
     return defline;
 }
-
-
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

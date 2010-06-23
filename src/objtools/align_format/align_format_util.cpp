@@ -2295,22 +2295,9 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
 }
 
 
-string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef<CScope> &scopeRef, bool useTemplates)
-{
-    const CBioseq_Handle& handle = scopeRef->GetBioseqHandle(id);
-    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
-    
-    string user_url = seqUrlInfo->user_url; 
-    seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
-    
-    if(seqUrlInfo->taxid == -1) { //taxid is not set
-        seqUrlInfo->taxid = 0;    
-        if (seqUrlInfo->blastType == "mapview" || seqUrlInfo->blastType == "mapview_prev" || 
-            seqUrlInfo->blastType == "gsfasta" || seqUrlInfo->blastType == "gsfasta_prev") {
-            seqUrlInfo->taxid = GetTaxidForSeqid(id, *scopeRef);        
-        }
-    }
 
+string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids,bool useTemplates)
+{
     bool is_db_na = seqUrlInfo->isDbNa; 
     string db_name = seqUrlInfo->database;
     string rid = seqUrlInfo->rid;
@@ -2318,13 +2305,15 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef
     int gi = seqUrlInfo->gi;
     int linkout =  seqUrlInfo->linkout;
     int cur_align = seqUrlInfo->blast_rank;
-    
+
+    string user_url = seqUrlInfo->user_url; 
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    char dopt[32], db[32];
-    char logstr_moltype[32], logstr_location[32];
- 
+    string dopt, db;
+    string logstr_moltype,logstr_location;
+
     bool hit_not_in_mapviewer = !is_db_na || (linkout != 0 && !(linkout & eGenomicSeq));
+    logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     
     if (user_url.find("sra.cgi") != string::npos) {
         
@@ -2347,36 +2336,39 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef
                                            db_name,
                                            is_db_na, rid,
                                            query_number,
-                                           false);
+                                           seqUrlInfo->isAlignLink);
         if (url_with_parameters != NcbiEmptyString) {
-            if (!useTemplates)url_link += "<a href=\"";
+            if (!useTemplates)url_link += (seqUrlInfo->addCssInfo) ? ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
             url_link += url_with_parameters;
             if (!useTemplates) url_link += "\">";
         }
     } else { 
         //use entrez or dbtag specified     
         char url_buf[2048];
+		string temp_class_info = kClassInfo + " ";
         if (gi > 0) {
             if(is_db_na) {
-                strcpy(dopt, "GenBank");
-                strcpy(db, "Nucleotide");
-                strcpy(logstr_moltype, "nucl");
+                dopt = "GenBank";
+                db = "Nucleotide";
+                logstr_moltype = "nucl";
             } else {
-                strcpy(dopt, "GenPept");
-                strcpy(db, "Protein");
-                strcpy(logstr_moltype, "prot");
-            }    
-            strcpy(logstr_location, "top");
-            
+                dopt = "GenPept";
+                db = "Protein";
+                logstr_moltype ="prot";
+            }
+
             if(useTemplates) {
 	            string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_QUERY_CGI");
                 url_link = l_EntrezUrl + "?cmd=Retrieve&db=" + db + "&list_uids=" + NStr::IntToString(gi) + "&dopt=" + dopt + "&RID=" + rid +
                 "&log$=" + logstr_moltype + logstr_location + "&blast_rank=" +  NStr::IntToString(cur_align);
             }
             else {
-                string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");
-	            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
-                    logstr_moltype, logstr_location, cur_align,
+                string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");				
+	            sprintf(url_buf, l_EntrezUrl.c_str(), 
+					(seqUrlInfo->addCssInfo) ? 
+                    temp_class_info.c_str() : "",
+					db.c_str(), gi, dopt.c_str(), rid.c_str(),
+                    logstr_moltype.c_str(), logstr_location.c_str(), cur_align,
                     seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
                 url_link = url_buf;
             }
@@ -2393,7 +2385,9 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef
                         url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + rid;
                     }
                     else {                     
-                        sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str(),
+                        sprintf(url_buf, kTraceUrl.c_str(), 
+							(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "",
+							actual_id.c_str(),
                             rid.c_str());
                         url_link = url_buf;
                     }
@@ -2406,6 +2400,27 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,CRef
     
     return url_link;
 }
+
+
+string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,objects::CScope &scope, bool useTemplates)
+{
+    const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
+    
+    
+    seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
+    
+    if(seqUrlInfo->taxid == -1) { //taxid is not set
+        seqUrlInfo->taxid = 0;    
+        if (seqUrlInfo->blastType == "mapview" || seqUrlInfo->blastType == "mapview_prev" || 
+            seqUrlInfo->blastType == "gsfasta" || seqUrlInfo->blastType == "gsfasta_prev") {
+            seqUrlInfo->taxid = GetTaxidForSeqid(id, scope);        
+        }
+    }
+	string url_link = GetIDUrl(seqUrlInfo,ids,useTemplates);
+    return url_link;
+}
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
