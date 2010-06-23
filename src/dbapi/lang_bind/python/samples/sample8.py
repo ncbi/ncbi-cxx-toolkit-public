@@ -1,5 +1,5 @@
 #! /usr/bin/env python
- 
+
 # $Id$
 # ===========================================================================
 #
@@ -46,7 +46,7 @@ import python_ncbi_dbapi
 # use_std_interface: an optional parameter (default value is "False")
 
 # Open a connection to a database using the "simple mode" ( default behavior )
-conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')
+conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'DBAPI_test', 'allowed')
 
 # 3) Allocate a cursor
 cursor = conn.cursor()

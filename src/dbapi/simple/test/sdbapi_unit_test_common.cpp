@@ -177,7 +177,7 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
-                            CArgDescriptions::eString, "anyone");
+                            CArgDescriptions::eString, "DBAPI_test");
 
     arg_desc->AddDefaultKey("P", "password",
                             "Password",

@@ -75,7 +75,7 @@ CDbapiDriverSampleApp::GetServerType(void) const
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
                NStr::StartsWith(GetServerName(), "MSSQL") ||
                NStr::StartsWith(GetServerName(), "MSDEV")
-			   ) {
+               ) {
         return eMsSql;
     }
 
@@ -102,7 +102,7 @@ CDbapiDriverSampleApp::Init()
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
                             CArgDescriptions::eString,
-                            "anyone");
+                            "DBAPI_test");
 
     arg_desc->AddDefaultKey("P", "password",
                             "Password",

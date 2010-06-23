@@ -58,7 +58,7 @@ CDemoApp::Run(void)
         CDBLibContext my_context;
 
         auto_ptr<CDB_Connection> con(my_context.Connect("CLEMENTI",
-                                                        "anyone",
+                                                        "DBAPI_test",
                                                         "allowed",
                                                         0));
 

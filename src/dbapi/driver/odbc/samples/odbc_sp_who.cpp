@@ -58,7 +58,7 @@ CDemoeApp::Run(void)
         CODBCContext my_context;
 
         auto_ptr<CDB_Connection> con(my_context.Connect("msdev1",
-                                                        "anyone",
+                                                        "DBAPI_test",
                                                         "allowed",
                                                         0));
 

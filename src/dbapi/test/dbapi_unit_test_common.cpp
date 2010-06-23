@@ -609,14 +609,14 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
-                            CArgDescriptions::eString, "anyone");
+                            CArgDescriptions::eString, "DBAPI_test");
 
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
                             CArgDescriptions::eString, "allowed");
-    arg_desc->AddOptionalKey("D", "database",
+    arg_desc->AddDefaultKey("D", "database",
                             "Name of the database to connect",
-                            CArgDescriptions::eString);
+                            CArgDescriptions::eString, "DBAPI_Sample");
 
     arg_desc->AddOptionalKey("v", "version",
                             "TDS protocol version",

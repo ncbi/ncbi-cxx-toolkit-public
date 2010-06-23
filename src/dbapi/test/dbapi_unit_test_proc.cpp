@@ -654,11 +654,11 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
                 }
             }
 
-            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+            /*if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
                 BOOST_CHECK_EQUAL(result_num, 3);
-            } else {
+            } else {*/
                 BOOST_CHECK_EQUAL(result_num, 2);
-            }
+            //}
         }
 
         // The same as above, but using IStatement ...
@@ -680,11 +680,11 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
                 }
             }
 
-            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+            /*if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
                 BOOST_CHECK_EQUAL(result_num, 4);
-            } else {
+            } else {*/
                 BOOST_CHECK_EQUAL(result_num, 3);
-            }
+            //}
         }
 
         // Multiple results plus column names with spaces.

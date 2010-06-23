@@ -1,5 +1,5 @@
 #! /usr/bin/env python
- 
+
 # $Id$
 # ===========================================================================
 #
@@ -40,7 +40,7 @@ def checkEqual(var1, var2):
     check(var1 == var2, "Values not equal: '" + str(var1) + "' !='" + str(var2) + "'")
 
 
-conn = connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'anyone', 'allowed')
+conn = connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'DBAPI_test', 'allowed')
 cursor = conn.cursor()
 
 cursor.execute('select qq = 57 + 33')
@@ -183,15 +183,15 @@ cursor.execute('id_get_accn_ver_by_gi 2')
 cursor.fetchall()
 
 
-conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest1', 'anyone', 'allowed') 
-cursor = conn.cursor() 
-cursor.execute("SELECT @@servername") 
+conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest1', 'anyone', 'allowed')
+cursor = conn.cursor()
+cursor.execute("SELECT @@servername")
 cursor.fetchall()
 
 
-conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest2', 'anyone', 'allowed') 
-cursor = conn.cursor() 
-cursor.execute("SELECT @@servername") 
+conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest2', 'anyone', 'allowed')
+cursor = conn.cursor()
+cursor.execute("SELECT @@servername")
 cursor.fetchall()
 
 

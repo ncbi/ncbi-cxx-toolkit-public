@@ -25,7 +25,7 @@
  *
  * Author: Sergey Sikorskiy
  *
- * File Description: 
+ * File Description:
  *      Unit tests for expresiion parsing and evaluation.
  *
  * ===========================================================================
@@ -50,41 +50,41 @@ USING_NCBI_SCOPE;
 class CTestLOB : public CTL_ITDescriptor
 {
 public:
-	CTestLOB(void);
+    CTestLOB(void);
 
 public:
-	void CallSendData(void);
-	void Check(void);
+    void CallSendData(void);
+    void Check(void);
 
 private:
-	auto_ptr<I_DriverContext>	m_DC;
-	auto_ptr<CDB_Connection>	m_Conn;
+    auto_ptr<I_DriverContext>   m_DC;
+    auto_ptr<CDB_Connection>    m_Conn;
 };
 
 CTestLOB::CTestLOB(void)
 {
-	DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_CTLIB();
 
-	const CDBDefaultConnParams def_params("CLEMENTI", "anyone", "allowed");
-	const CCPPToolkitConnParams params(def_params);
+    const CDBDefaultConnParams def_params("CLEMENTI", "DBAPI_test", "allowed");
+    const CCPPToolkitConnParams params(def_params);
 
-	auto_ptr<I_DriverContext> dc(MakeDriverContext(params));
-	m_Conn.reset(dc->MakeConnection(params)); 
+    auto_ptr<I_DriverContext> dc(MakeDriverContext(params));
+    m_Conn.reset(dc->MakeConnection(params));
 }
 
 void CTestLOB::CallSendData(void)
 {
-	const char* data = "test lob data ...";
+    const char* data = "test lob data ...";
 
-	m_Desc.iotype = CS_IODATA;
-	m_Desc.datatype = CS_IMAGE_TYPE;
-	m_Desc.locale = NULL;
-	m_Desc.total_txtlen =  sizeof(data) - 1;
-	strcpy (m_Desc.name,"asn1");
-	m_Desc.namelen = 4;
-	m_Desc.timestamplen = CS_TS_SIZE;
+    m_Desc.iotype = CS_IODATA;
+    m_Desc.datatype = CS_IMAGE_TYPE;
+    m_Desc.locale = NULL;
+    m_Desc.total_txtlen =  sizeof(data) - 1;
+    strcpy (m_Desc.name,"asn1");
+    m_Desc.namelen = 4;
+    m_Desc.timestamplen = CS_TS_SIZE;
 
-	auto_ptr<CDB_SendDataCmd> s_cmd(m_Conn->SendDataCmd (*this, sizeof(data) - 1));
+    auto_ptr<CDB_SendDataCmd> s_cmd(m_Conn->SendDataCmd (*this, sizeof(data) - 1));
 }
 
 void CTestLOB::Check(void)
@@ -94,10 +94,10 @@ void CTestLOB::Check(void)
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(LOB)
 {
-	CTestLOB lob;
+    CTestLOB lob;
 
-	lob.CallSendData();
-	lob.Check();
+    lob.CallSendData();
+    lob.Check();
 }
 
 

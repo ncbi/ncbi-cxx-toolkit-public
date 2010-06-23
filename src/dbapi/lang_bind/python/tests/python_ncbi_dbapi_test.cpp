@@ -119,7 +119,7 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
-                            CArgDescriptions::eString, "anyone");
+                            CArgDescriptions::eString, "DBAPI_test");
 
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
@@ -1252,7 +1252,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_2)
 
     ExecuteStr("def TestScenario_2(): \n"
                 "        global conn \n"
-                "        conn = dbapi.connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'anyone', 'allowed', True) \n"
+                "        conn = dbapi.connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'DBAPI_test', 'allowed', True) \n"
                 "        CreateSchema() \n"
                 "        CreateCustomers() \n"
                 "        GetCustomers() \n"

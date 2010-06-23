@@ -860,8 +860,8 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
     //         string sDbServer("MSSQL57");
             string sDbServer("");
             string sDbName("NCBI_LS");
-            string sDbUser("anyone");
-            string sDbPasswd("allowed");
+            string sDbUser("");
+            string sDbPasswd("");
             string sErr;
 
             try {
@@ -1081,8 +1081,8 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
         BOOST_CHECK( auto_conn.get() != NULL );
 
         auto_conn->Connect(
-            "anyone",
-            "allowed",
+            "",
+            "",
     //         "MSSQL57",
             "",
             "NCBI_LS"

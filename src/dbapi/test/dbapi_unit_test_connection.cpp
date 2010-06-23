@@ -1114,7 +1114,7 @@ BOOST_AUTO_TEST_CASE(Test_Mirrors)
     CMirrorValidator validator1("DBAPI_ConnectionTest1");
     CMirrorValidator validator2("DBAPI_ConnectionTestt2");
 
-    string username = "anyone";
+    string username = "DBAPI_test";
     string password = "allowed";
     string server = "MSDEVVV";
 
@@ -1224,7 +1224,7 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
             CNcbiResourceInfo& info = file.GetResourceInfo_NC(app_name + "/some_user@some_server", "some_passwd");
             info.SetValue("allowed");
             TExtraMap& extra = info.GetExtraValues_NC().GetPairs();
-            extra.insert(TExtraPair("username", "anyone"));
+            extra.insert(TExtraPair("username", "DBAPI_test"));
             extra.insert(TExtraPair("server",   "MSDEV1"));
             extra.insert(TExtraPair("database", ""));
             file.SaveFile();
@@ -1241,7 +1241,7 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
             BOOST_CHECK_EQUAL(conn->GetDatabase(), "");
             BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->Password(), "allowed");
             BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->ServerName(), "MSDEV1");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "anyone");
+            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "DBAPI_test");
         }}
 
         {{
@@ -1266,7 +1266,7 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
             BOOST_CHECK_EQUAL(conn->GetDatabase(), "");
             BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->Password(), "allowed");
             BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->ServerName(), "MSDEV1");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "anyone");
+            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "DBAPI_test");
         }}
     }
     catch (CException& ex) {

@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
             GetDS().CreateConnection(CONN_OWNERSHIP)
             );
         auto_conn->Connect(
-                "anyone",
+                "DBAPI_test",
                 "allowed",
                 "MSSQL67"
                 );
