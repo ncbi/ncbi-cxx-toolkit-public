@@ -46,7 +46,7 @@
 #include <serial/objostr.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
 #include <algo/sequence/gene_model.hpp>
@@ -209,6 +209,40 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
     BOOST_CHECK_NO_THROW(
                          trimmed_align = feat_gen.CleanAlignment(align)
                          );
+}
+
+BOOST_AUTO_TEST_CASE(TestCaseStitch)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(scope);
+    
+    CSeq_align align;
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetNucpos(0);
+    exon->SetProduct_end().SetNucpos(100);
+    exon->SetGenomic_start(0);
+    exon->SetGenomic_end(100);
+    exons.push_back(exon);
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetNucpos(200);
+    exon->SetProduct_end().SetNucpos(300);
+    exon->SetGenomic_start(200);
+    exon->SetGenomic_end(300);
+    exons.push_back(exon);
+
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK(trimmed_align->GetSegs().GetSpliced().GetExons().size() == 1);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END();
