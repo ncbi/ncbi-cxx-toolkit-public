@@ -424,12 +424,23 @@ bool CGff3WriteRecord::x_AssignPhaseFromAsn(
         return true;
     }
     const CSeq_feat::TData& data = feature.GetData();
-    if ( data.GetSubtype() != CSeq_feat::TData::eSubtype_cdregion ) {
+    if ( data.GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
+        const CCdregion& cdr = data.GetCdregion();
+        m_pePhase = new TFrame( cdr.GetFrame() );
         return true;
     }
 
-    const CCdregion& cdr = data.GetCdregion();
-    m_pePhase = new TFrame( cdr.GetFrame() );
+    const vector< CRef< CGb_qual > >& quals = feature.GetQual();
+    vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+    while ( it != quals.end() ) {
+        if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+            if ( (*it)->GetQual() == "gff_phase" ) {
+                m_pePhase = new TFrame( TFrame( NStr::StringToInt( (*it)->GetVal() ) ) );
+                return true;
+            }
+            ++it;
+        }
+    }
     return true;
 }
 

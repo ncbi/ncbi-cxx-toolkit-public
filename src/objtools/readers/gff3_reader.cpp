@@ -880,6 +880,12 @@ bool CGff3Reader::x_FeatureSetDataMiscFeature(
 {
     CSeqFeatData& data = pFeature->SetData();
     data.SetImp().SetKey( "misc_feature" );
+    if ( record.IsSetPhase() ) {
+        CRef< CGb_qual > pQual( new CGb_qual );
+        pQual->SetQual( "gff_phase" );
+        pQual->SetVal( NStr::UIntToString( record.Phase() ) );
+        pFeature->SetQual().push_back( pQual );
+    }  
     
     return true;
 }
