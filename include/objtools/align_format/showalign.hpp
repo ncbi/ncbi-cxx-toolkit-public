@@ -213,6 +213,15 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///
     void DisplaySeqalign(CNcbiOstream & out);
     
+    //Data representing templates for defline display 
+    struct SAlignTemplates {
+        string alignHeaderTmpl; ///< Template for displaying defline and gene info  - BLAST_ALIGN_HEADER
+        string sortInfoTmpl;    ///< Template for displaying  Sort by header - SORT_ALIGNS_SEQ
+        string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,@BLAST_ALIGN_PARAMS_PROT
+        string alignFeatureTmpl; ///< Template for displaying  align features -ALN_FEATURES 
+        string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK 
+    };
+    
     /// Set functions
     /***The following functions are for all alignment display ****/
     
@@ -352,6 +361,8 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///
     static CRef < objects::CSeq_align_set >
     PrepareBlastUngappedSeqalign(const objects::CSeq_align_set & alnset);
+
+    void SetAlignTemplates(SAlignTemplates *alignTemplates) {m_AlignTemplates = alignTemplates;}    
     
 private:
 
@@ -480,26 +491,26 @@ private:
     int m_MasterGeneticCode;
     int m_SlaveGeneticCode;
     CCgiContext* m_Ctx;
-    
+    SAlignTemplates *m_AlignTemplates;    
     /// Gene info reader object, reads Gene info entries from files.
     auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
     /// Current alignment index (added to the linkout and entrez URL's)
     mutable int m_cur_align;
-
+    
+    string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
     ///@param out: stream for display
     ///
     void x_DisplayAlnvec(CNcbiOstream & out);
-
+    
     ///print defline
     ///@param bsp_handle: bioseq of interest
-    ///@param use_this_gi: display this gi instead
-    ///@param out: output stream
+    ///@param use_this_gi: display this gi instead    
+    ///@return: string containig defline(s)
     ///
-    void x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, 
-                        list<int>& use_this_gi, string& id_label,
-                              CNcbiOstream& out) const;
+    string x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, 
+                        list<int>& use_this_gi, string& id_label) const;
 
     /// display sequence for one row
     ///@param sequence: the sequence for that row
@@ -523,13 +534,10 @@ private:
     int x_GetNumGaps();               
     
     ///get url to sequence record
-    ///@param ids: id list
-    ///@param gi: gi or 0 if no gi
-    ///@param row: the current row
-    ///@param taxid: taxid
-    ///
-    string x_GetUrl(const list < CRef < objects::CSeq_id > >&ids, int gi,
-                    int row, int taxid, int linkout) const;
+    ///@param ids: id list    
+    ///@param seqUrlInfo: struct containging params for URL    
+    ///    
+    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids) const;
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
@@ -648,7 +656,8 @@ private:
     ///@param aln_vec_info: alnvec list
     ///
     void x_DisplayAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,
-                             bool show_defline);
+                             bool show_defline,
+                             bool showSortControls = false);
 
     ///output dynamic feature url
     ///@param out: output stream
@@ -699,7 +708,7 @@ private:
     CRef<objects::CAlnVec> x_GetAlnVecForSeqalign(const objects::CSeq_align& align); 
     ///Display Gene Info
     ///
-    void x_DisplayGeneInfo(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info,CNcbiOstream& out);
+    string x_DisplayGeneInfo(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
     
     ///Dipslay Bl2seq TBLASTX link
     ///
@@ -719,7 +728,7 @@ private:
 
     ///Display pairwise alignment
     ///
-    void x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out);
+    string x_DisplayRowData(SAlnRowInfo *alnRoInfo);
 
     ///Display identities,positives,frames etc
     ///
@@ -727,8 +736,8 @@ private:
 
     ///Display Sorting controls,score,bits,expect,method,features identities,positives,frames etc
     ///
-    void x_DisplayAlignSubsetInfo(CNcbiOstream& out, 
-                                  SAlnInfo* aln_vec_info,bool firstAlign);
+    void x_DisplaySingleAlignParams(CNcbiOstream& out, 
+                                  SAlnInfo* aln_vec_info,bool showSortControls);
 
     void x_PrepareIdentityInfo(SAlnInfo* aln_vec_info);
 
@@ -740,6 +749,26 @@ private:
     ///
     SAlnRowInfo *x_PrepareRowData(void);
 
+
+    string x_FormatSingleAlign(SAlnInfo* aln_vec_info, bool showSortControls);  
+    string x_FormatAlignSortInfo(string id_label);
+    string x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info);
+    string x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_vec_info);
+    string x_FormatDynamicFeaturesInfo(string alignInfo, SAlnInfo* aln_vec_info);
+    string x_FormatOneDynamicFeature(string viewerURL,
+                                     int subjectGi,                                                    
+                                     int fromRange, 
+                                     int toRange,
+                                     string featText);
+    ///Sets m_Segs,m_HspNumber
+    void x_PreProcessSeqAlign(objects::CSeq_align_set &actual_aln_list,string toolUrl);
+    void x_DisplayAlnvecInfoHead(CNcbiOstream& out, 
+                                 SAlnInfo* aln_vec_info);
+
+    ///Setup scope for feature fetching and m_DynamicFeature
+    ///
+    void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);
+    void x_GetHSPNum(objects::CSeq_align_set::Tdata::const_iterator currSeqAlignIter,objects::CSeq_align_set &actual_aln_list);                                     
 };
 
 END_SCOPE(align_format)

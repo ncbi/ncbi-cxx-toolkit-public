@@ -309,6 +309,7 @@ protected:
         int align_length;              //length of alignment
         CConstRef<objects::CSeq_id> id;
         int blast_rank;                // "Rank" of defline.
+        int hspNum;
     };
 
     ///Seqalign 

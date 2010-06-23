@@ -303,20 +303,20 @@ public:
         int gi;                 ///< gi to use
         int linkout;            ///< linkout flag
         int blast_rank;         ///< index of the current alignment
+        bool isAlignLink;       ///< bool indicating if link is in alignment section
         bool new_win;           ///< bool indicating if click of the url will open a new window
         int taxid;              ///< taxid
+        bool addCssInfo;        ///< bool indicating that css info should be added
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi, int lnk, int blrk,bool nw, int txid = -1)            
+                    int gi, int lnk, int blrk,bool alnLink, bool nw, int txid = -1,bool addCssInf = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
-                    queryNumber(qn), gi(gi),linkout(lnk),blast_rank(blrk),
-                    new_win(nw),taxid (txid){}
+                    queryNumber(qn), gi(gi),linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
+                    new_win(nw),taxid (txid),addCssInfo(addCssInf){}
 
     };
     
-    
-
       
     enum DbSortOrder {
         eNonGenomicFirst = 1,
@@ -863,8 +863,13 @@ public:
     ///@param useTemplates:bool indicating if templates are used
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
                            const objects::CSeq_id& id,
-                           CRef<objects::CScope> &scopeRef,
+                           objects::CScope &scope,
                            bool useTemplates = false);
+
+    static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
+                            const objects::CBioseq::TId* ids,                            
+                            bool useTemplates);
+    
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
 
