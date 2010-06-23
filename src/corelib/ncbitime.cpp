@@ -2760,7 +2760,7 @@ bool CTimeout::operator<= (const CTimeout& t) const
 CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
     : m_SecAfterHour(sec_after_hour),
       m_LastTuneupTime(0), m_LastSysTime(0),
-      m_Timezone(0), m_Daylight(-1), m_IsTuneup(false)
+      m_Timezone(0), m_Daylight(-1), m_IsTuneup(NULL)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect: use CTime locking mutex
@@ -2782,19 +2782,20 @@ void CFastLocalTime::Tuneup(void)
     time_t timer;
     long ns;
     s_GetTimeT(timer, ns);
-    x_Tuneup(timer, ns);
-
-    // MT-Safe protect: copy current local time to cached time
-    CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-    m_LocalTime   = m_TunedTime;
-    m_LastSysTime = m_LastTuneupTime;
+    if (x_Tuneup(timer, ns)) {
+        // MT-Safe protect: copy current local time to cached time
+        CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+        m_LocalTime   = m_TunedTime;
+        m_LastSysTime = m_LastTuneupTime;
+    }
 }
 
 
-void CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
+bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
 {
     // Tuneup in progress
-    m_IsTuneup = true;
+    if (SwapPointers(&m_IsTuneup, (void*)1))
+        return false;
 
     // MT-Safe protect: use CTime locking mutex
     CFastMutexGuard LOCK(s_TimeMutex);
@@ -2808,7 +2809,8 @@ void CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
     m_LastTuneupTime = timer;
 
     // Clear flag
-    m_IsTuneup = false;
+    m_IsTuneup = NULL;
+    return true;
 }
 
 
@@ -2840,12 +2842,13 @@ CTime CFastLocalTime::GetLocalTime(void)
             ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
 #endif
         ) {
-            x_Tuneup(timer, ns);
-            // MT-Safe protect: copy tuned time to cached local time
-            CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-            m_LocalTime   = m_TunedTime;
-            m_LastSysTime = m_LastTuneupTime;
-            return m_LocalTime;
+            if (x_Tuneup(timer, ns)) {
+                // MT-Safe protect: copy tuned time to cached local time
+                CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+                m_LocalTime   = m_TunedTime;
+                m_LastSysTime = m_LastTuneupTime;
+                return m_LocalTime;
+            }
         }
     }
     // MT-Safe protect
@@ -2900,12 +2903,12 @@ int CFastLocalTime::GetLocalTimezone(void)
              (timer % 3600 >  (time_t)m_SecAfterHour))
             ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
         ) {
-            x_Tuneup(timer, ns);
-            // MT-Safe protect: copy tuned time to cached local time
-            CFastMutexGuard LOCK(s_FastLocalTimeMutex);
-            m_LocalTime   = m_TunedTime;
-            m_LastSysTime = m_LastTuneupTime;
-            return m_Timezone;
+            if (x_Tuneup(timer, ns)) {
+                // MT-Safe protect: copy tuned time to cached local time
+                CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+                m_LocalTime   = m_TunedTime;
+                m_LastSysTime = m_LastTuneupTime;
+            }
         }
     }
 #endif

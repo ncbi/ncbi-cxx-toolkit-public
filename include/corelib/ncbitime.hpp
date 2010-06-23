@@ -1588,7 +1588,7 @@ public:
 
 private:
     /// Internal version of Tuneup()
-    void x_Tuneup(time_t timer, long nanosec);
+    bool x_Tuneup(time_t timer, long nanosec);
 
 private:
     unsigned int m_SecAfterHour;  ///< Time interval in seconds after hour
@@ -1600,7 +1600,7 @@ private:
     time_t  m_LastSysTime;    ///< Last system time
     int     m_Timezone;       ///< Cached timezone adjustment for local time
     int     m_Daylight;       ///< Cached system daylight information
-    bool    m_IsTuneup;       ///< Tuneup() in progress (MT)
+    void* volatile m_IsTuneup;///< (bool) Tuneup() in progress (MT)
 };
 
 
