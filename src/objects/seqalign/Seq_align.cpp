@@ -452,6 +452,24 @@ bool CSeq_align::GetNamedScore(EScoreType type, double& score) const
 }
 
 
+void CSeq_align::ResetNamedScore(const string& name)
+{
+    if (IsSetScore()) {
+        NON_CONST_ITERATE (TScore, iter, SetScore()) {
+            if ((*iter)->IsSetId()  &&  (*iter)->GetId().IsStr()  &&
+                (*iter)->GetId().GetStr() == name) {
+                SetScore().erase(iter);
+                break;
+            }
+        }
+    }
+}
+
+void CSeq_align::ResetNamedScore(EScoreType type)
+{
+    ResetNamedScore(sc_ScoreNames[type].second);
+}
+
 void CSeq_align::SetNamedScore(EScoreType type, int score)
 {
     CRef<CScore> ref = x_SetNamedScore(sc_ScoreNames[type].second);

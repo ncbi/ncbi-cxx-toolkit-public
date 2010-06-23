@@ -223,6 +223,9 @@ public:
     void SetNamedScore(EScoreType type, int score);
     void SetNamedScore(EScoreType type, double score);
 
+    void ResetNamedScore(const string& name);
+    void ResetNamedScore(EScoreType    type);
+
 
     /// Reverse the segments' orientation
     /// NOTE: currently *only* works for dense-seg
