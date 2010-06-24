@@ -298,9 +298,13 @@ void CValidError_bioseqset::ValidateNucProtSet
                     const string& instantiated = desc->GetTitle();                    
                     const string & generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                     if (!NStr::EqualNocase(instantiated, generated)) {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-                            "Instantiated protein title does not match automatically "
-                            "generated title", seq);
+                        const string & generated = defline_generator.GenerateDefline(seq, *m_Scope,
+                            sequence::CDeflineGenerator::fIgnoreExisting | sequence::CDeflineGenerator::fAllProteinNames);
+                        if (!NStr::EqualNocase(instantiated, generated)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                                "Instantiated protein title does not match automatically "
+                                "generated title", seq);
+                        }
                     }
                 }
             }
