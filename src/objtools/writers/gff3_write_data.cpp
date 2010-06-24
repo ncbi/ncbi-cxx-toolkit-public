@@ -129,74 +129,6 @@ bool CGff3WriteRecord::MergeRecord(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3WriteRecord::x_AssignAttributesFromGff(
-    const string& strRawAttributes )
-//  ----------------------------------------------------------------------------
-{
-    vector< string > attributes;
-    NStr::Tokenize( strRawAttributes, ";", attributes, NStr::eMergeDelims );
-    for ( size_t u=0; u < attributes.size(); ++u ) {
-        string strKey;
-        string strValue;
-        if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
-            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
-                return false;
-            }
-        }
-        NStr::TruncateSpacesInPlace( strKey );
-        NStr::TruncateSpacesInPlace( strValue );
-        if ( strKey.empty() && strValue.empty() ) {
-            // Probably due to trailing "; ". Sequence Ontology generates such
-            // things. 
-            continue;
-        }
-        if ( NStr::StartsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 1, string::npos );
-        }
-        if ( NStr::EndsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 0, strValue.length() - 1 );
-        }
-
-        //
-        //  Fix the worst of capitalization attrocities:
-        //
-        if ( 0 == NStr::CompareNocase( strKey, "ID" ) ) {
-            strKey = "ID";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Name" ) ) {
-            strKey = "Name";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Alias" ) ) {
-            strKey = "Alias";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Parent" ) ) {
-            strKey = "Parent";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Target" ) ) {
-            strKey = "Target";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Gap" ) ) {
-            strKey = "Gap";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Derives_from" ) ) {
-            strKey = "Derives_from";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Note" ) ) {
-            strKey = "Note";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Dbxref" ) ) {
-            strKey = "Dbxref";
-        }
-        if ( 0 == NStr::CompareNocase( strKey, "Ontology_term" ) ) {
-            strKey = "Ontology_term";
-        }
-
-        m_Attributes[ strKey ] = strValue;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::AssignFromAsn(
     const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
@@ -494,6 +426,14 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
                     if ( ! bIdAssigned ) {
                         m_Attributes[ "ID" ] = (*it)->GetVal();
                     }
+                    continue;
+                }
+                if ( (*it)->GetQual() == "transcript_id" ) {
+                    m_strTranscriptId = (*it)->GetVal();
+                    continue;
+                }
+                if ( (*it)->GetQual() == "gene_id" ) {
+                    m_strGeneId = (*it)->GetVal();
                     continue;
                 }
                 m_Attributes[ (*it)->GetQual() ] = (*it)->GetVal();

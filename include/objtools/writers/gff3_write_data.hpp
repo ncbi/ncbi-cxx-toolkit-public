@@ -92,6 +92,12 @@ public:
     double Score() const { 
         return IsSetScore() ? *m_pdScore : 0.0; 
     };
+    string GeneId() const {
+        return m_strGeneId;
+    }
+    string TranscriptId() const {
+        return m_strTranscriptId;
+    }
     ENa_strand Strand() const { 
         return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
     };
@@ -145,9 +151,6 @@ protected:
     static string x_FeatIdString(
         const CFeat_id& id );
 
-    bool x_AssignAttributesFromGff(
-        const string& );
-
     CSeq_feat::TData::ESubtype x_GetSubtypeOf(
 //        const CSeq_annot&,
         const CFeat_id& );
@@ -167,6 +170,8 @@ protected:
     double* m_pdScore;
     ENa_strand* m_peStrand;
     TFrame* m_pePhase;
+    string m_strGeneId;
+    string m_strTranscriptId;
     string m_strAttributes;    
     TAttributes m_Attributes;
 

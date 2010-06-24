@@ -52,22 +52,31 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+//  ---------------------------------------------------------------------------
 bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()( 
 	const CGff3WriteRecord* x, 
 	const CGff3WriteRecord* y ) const
+//  ---------------------------------------------------------------------------
 {
-	if( x->Type() < y->Type() )
-		return true;
+	if ( x->Type() != y->Type() )
+		return ( x->Type() < y->Type() );
 	
-	else if( x->Id() < y->Id() )
-		return true;
+	if ( x->Id() != y->Id() )
+		return ( x->Id() < y->Id() );
 	
-	else if( x->SeqStart() < y->SeqStart() )
-		return true;
+    if ( x->SeqStart() != y->SeqStart() )
+		return ( x->SeqStart() < y->SeqStart() );
 	
-	else if( x->SeqStop() < y->SeqStop() )
-		return true;
+	if ( x->SeqStop() != y->SeqStop() )
+		return ( x->SeqStop() < y->SeqStop() );
 
+    if ( x->GeneId() != y->GeneId() )
+		return ( x->GeneId() < y->GeneId() );
+	
+    if( x->TranscriptId() != y->TranscriptId() )
+		return ( x->TranscriptId() < y->TranscriptId() );
+
+    // equivalent
 	return false;
 }
 
@@ -396,6 +405,29 @@ string CGffWriter::x_GffAttributes(
     CGff3WriteRecord::TAttributes attrs;
     attrs.insert( record.Attributes().begin(), record.Attributes().end() );
     CGff3WriteRecord::TAttrIt it;
+
+    if ( ! record.GeneId().empty() ) {
+        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
+            strAttributes += "; ";
+        }
+        strAttributes += "gene_id=\"";
+		strAttributes += record.GeneId();
+		strAttributes += "\"";
+		if ( m_uFlags & fSoQuirks ) {
+            strAttributes += "; ";
+        }
+    }
+    if ( ! record.TranscriptId().empty() ) {
+        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
+            strAttributes += "; ";
+        }
+        strAttributes += "transcript_id=\"";
+		strAttributes += record.TranscriptId();
+		strAttributes += "\"";
+		if ( m_uFlags & fSoQuirks ) {
+            strAttributes += "; ";
+        }
+    }
 
     x_PriorityProcess( "ID", attrs, strAttributes );
     x_PriorityProcess( "Name", attrs, strAttributes );
