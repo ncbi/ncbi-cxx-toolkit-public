@@ -1343,6 +1343,8 @@ public:
 
     /// Get OS handle of the socket represented by the connection
     virtual TSockHandle GetLowLevelHandle(void) const = 0;
+
+    virtual ~I_ConnectionExtra(void);
 };
 
 
