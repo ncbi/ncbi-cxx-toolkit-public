@@ -29,21 +29,6 @@ Detect64BitPortabilityProblems=FALSE
 
 [Compiler.1000]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-WarningLevel=Level3
-OptimizeForProcessor=
-StructMemberAlignment=Default
-UsePrecompiledHeader=
-CallingConvention=Cdecl
-CompileAs=Default
-IgnoreStandardIncludePath=false
-StringPooling=false
-MinimalRebuild=
-ExceptionHandling=
-BufferSecurityCheck=true
-RuntimeTypeInfo=true
-DisableSpecificWarnings=
-UndefinePreprocessorDefinitions=
-AdditionalOptions=
 
 
 
@@ -59,18 +44,6 @@ OmitFramePointers=FALSE
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=FALSE
-
-[Compiler.1000.debug]
-DebugInformationFormat=ProgramDatabase
-Optimization=Disabled
-MinimalRebuild=true
-GlobalOptimizations=false
-InlineFunctionExpansion=Disabled
-FavorSizeOrSpeed=Neither
-OmitFramePointers=false
-BasicRuntimeChecks=Default
-BrowseInformation=false
-EnableFunctionLevelLinking=false
 
 
 
@@ -97,17 +70,6 @@ AdditionalOptions=/MP
 
 [Compiler.1000.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
-DebugInformationFormat=
-OptimizeForProcessor=
-Optimization=MaxSpeed
-MinimalRebuild=false
-GlobalOptimizations=true
-InlineFunctionExpansion=OnlyExplicitInline
-FavorSizeOrSpeed=Speed
-OmitFramePointers=true
-BasicRuntimeChecks=
-BrowseInformation=true
-EnableFunctionLevelLinking=true
 
 
 
@@ -120,9 +82,12 @@ AdditionalOptions=
 ProgramDatabaseFile=
 ImportLibrary=
 IgnoreAllDefaultLibraries=FALSE
-IgnoreDefaultLibraryNames=FALSE
+IgnoreDefaultLibraryNames=
 # use "1" to 'purify', 'quantify', 'vtune' etc; "0" - otherwise
 FixedBaseAddress=0
+
+[Linker.1000]
+AdditionalOptions=advapi32.lib
 
 [Linker.x64]
 TargetMachine=17
@@ -132,6 +97,7 @@ GenerateDebugInformation=TRUE
 OptimizeReferences=2
 EnableCOMDATFolding=1
 
+
 [Linker.release]
 GenerateDebugInformation=FALSE
 OptimizeReferences=2
@@ -140,22 +106,69 @@ EnableCOMDATFolding=2
 
 
 [Librarian]
-AdditionalOptions=0
+AdditionalOptions=
 IgnoreAllDefaultLibraries=FALSE
-IgnoreDefaultLibraryNames=FALSE
+IgnoreDefaultLibraryNames=
 AdditionalLibraryDirectories=
 
-[Librarian.1000]
-AdditionalOptions=
-IgnoreAllDefaultLibraries=false
-IgnoreDefaultLibraryNames=false
-AdditionalLibraryDirectories=
 
 
 [ResourceCompiler]
 AdditionalOptions=
 Culture=
 PreprocessorDefinitions=
+
+###############################################################################
+#  Conversions to MSVC2010
+[Translate]
+
+Configuration_ConfigurationType_1  = Application
+Configuration_ConfigurationType_2  = DynamicLibrary
+Configuration_ConfigurationType_4  = StaticLibrary
+Configuration_ConfigurationType_10 = Generic
+Configuration_CharacterSet_2     = MultiByte
+Configuration_RuntimeLibrary_0 = MultiThreaded
+Configuration_RuntimeLibrary_1 = MultiThreadedDebug
+Configuration_RuntimeLibrary_2 = MultiThreadedDLL
+Configuration_RuntimeLibrary_3 = MultiThreadedDebugDLL
+
+Compiler_BasicRuntimeChecks_0      = Default
+Compiler_BasicRuntimeChecks_3      = EnableFastChecks
+Compiler_BrowseInformation_0       = false
+Compiler_BrowseInformation_1       = true
+Compiler_CallingConvention_0       = Cdecl
+Compiler_CompileAs_0               = Default
+Compiler_DebugInformationFormat_0  = -
+Compiler_DebugInformationFormat_3  = ProgramDatabase
+Compiler_FavorSizeOrSpeed_0        = Neither
+Compiler_FavorSizeOrSpeed_1        = Speed
+Compiler_FavorSizeOrSpeed_2        = Size
+Compiler_InlineFunctionExpansion_0 = Default
+Compiler_InlineFunctionExpansion_1 = OnlyExplicitInline
+Compiler_InlineFunctionExpansion_2 = AnySuitable 
+Compiler_Optimization_0            = Disabled
+Compiler_Optimization_2            = MaxSpeed
+Compiler_UsePrecompiledHeader_0    = NotUsing
+Compiler_UsePrecompiledHeader_1    = Create
+Compiler_UsePrecompiledHeader_2    = Use
+Compiler_StructMemberAlignment_0   = Default
+Compiler_WarningLevel_1            = Level1
+Compiler_WarningLevel_2            = Level2
+Compiler_WarningLevel_3            = Level3
+Compiler_WarningLevel_4            = Level4
+
+Linker_EnableCOMDATFolding_1 = false
+Linker_EnableCOMDATFolding_2 = true
+Linker_FixedBaseAddress_0    = false
+Linker_FixedBaseAddress_1    = true
+Linker_LinkIncremental_1     = false
+Linker_LinkIncremental_2     = true
+Linker_OptimizeReferences_1  = false
+Linker_OptimizeReferences_2  = true
+Linker_SubSystem_1           = Console
+Linker_SubSystem_2           = Windows
+Linker_TargetMachine_1       = MachineX86
+Linker_TargetMachine_17      = MachineX64
 
 
 ###############################################################################
