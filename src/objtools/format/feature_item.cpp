@@ -1242,7 +1242,20 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
             feat = ctx.GetFeatTree().GetParent(m_Feat,
                                                CSeqFeatData::e_Gene);
-        } else {
+        }
+        else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
+            /// genpept report; we need to do something different
+            CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
+            if (cds) {
+                SAnnotSelector sel = ctx.SetAnnotSelector();
+                sel.SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                    .IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+                CFeat_CI feat_it(ctx.GetScope(), cds.GetLocation(), sel);
+                feature::CFeatTree ft(feat_it);
+                feat = ft.GetParent(cds, CSeqFeatData::e_Gene);
+            }
+        }
+        else {
             CSeq_id_Handle id3 = sequence::GetIdHandle(*m_Loc,
                                                        &ctx.GetScope());
             if (sequence::IsSameBioseq(id2, id3, &ctx.GetScope())) {
@@ -2680,8 +2693,13 @@ void CFeatureItem::x_AddQualsProt(
                 bool copy_loc = false;
                 switch (feat_it->GetData().GetProt().GetProcessed()) {
                 case CProt_ref::eProcessed_signal_peptide:
-                    has_signal_peptide = true;
-                    copy_loc = true;
+                case CProt_ref::eProcessed_transit_peptide:
+                    {{
+                         has_signal_peptide = true;
+                         loc = loc->Subtract(feat_it->GetLocation(),
+                                             CSeq_loc::fSortAndMerge_All,
+                                             NULL, NULL);
+                     }}
                     break;
 
                 case CProt_ref::eProcessed_mature:
