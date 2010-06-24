@@ -15,15 +15,7 @@ step. Unpack the distribution using the following command:
 This will create a directory named ncbi_cxx--<date>/ and the Toolkit distribution
 will be unpacked into that directory.
 
-*************************
-At this point there are 2 ways to proceed. One could use an included dependency listing
-to build only the dustmasker application and its dependencies. Alternatively one could
-build the complete toolkit. In the following description the items related to the first
-method are marked with subscript 'a' and the items related to the second method are marked
-with subscript 'b'.
-*************************
-
-3a. Configuration to build only windowmasker and its dependencies.
+3. Configuration to build the complete toolkit.
 
 Enter the toolkit distribution directory:
 
@@ -31,33 +23,11 @@ Enter the toolkit distribution directory:
 
 Configure the toolkit with the following command:
 
-        ./configure --without-debug --with-optimization --with-projects=src/app/winmasker/windowmasker.lst
+        ./configure --without-debug --with-optimization
 
 The configure script will create the build tree under <your_compiler_version>-Release/.
 
-3b. Configuration to build the complete toolkit.
-
-Enter the toolkit distribution directory:
-
-        cd ncbi_cxx--<date>
-
-Configure the toolkit with the following command:
-
-        ./configure --without-debug --with-optimization --without-odbc
-
-The configure script will create the build tree under <your_compiler_version>-Release/.
-
-4a. Build of the windowmasker application and its dependencies.
-
-Enter the build directory:
-
-        cd <your_compiler_version>-Release/build
-
-Build the windowmasker:
-
-        make all_p
-
-4b. Build of the complete toolkit.
+4. Build of the complete toolkit.
 
 Enter the build directory:
 
