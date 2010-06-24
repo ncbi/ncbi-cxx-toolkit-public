@@ -517,24 +517,35 @@ static void s_QualVectorToNote(
     bool noRedundancy,
     string& note, 
     string& punctuation,
-    bool& addPeriod) {
+    bool& addPeriod)
+{
 
-    string qual, prefix;
+    set<CTempString> values;
+
+    string prefix;
     ITERATE (CFlatFeature::TQuals, it, qualVector) {
-        qual = (*it)->GetValue();
-        
+        const string& qual = (*it)->GetValue();
+
+        if (noRedundancy  &&
+            !values.insert(CTempString(qual)).second) {
+            continue;
+        }
+
         prefix.erase();
-        if (!note.empty()) {
+        if ( !note.empty() ) {
             prefix = punctuation;
             if (!NStr::EndsWith(prefix, '\n')) {
                 prefix += (*it)->GetPrefix();
             }
         }
-        JoinString(note, prefix, qual, noRedundancy);
+        //JoinString(note, prefix, qual, noRedundancy);
+        note += prefix;
+        note += qual;
         addPeriod = (*it)->GetAddPeriod();
         punctuation = (*it)->GetSuffix();
     }
 }
+
 
 static void s_NoteFinalize(
    bool addPeriod,

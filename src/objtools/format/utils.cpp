@@ -334,7 +334,7 @@ static bool s_IsWholeWord(const string& str, size_t pos)
     // NB: To preserve the behavior of the C toolkit we only test on the left.
     // This was an old bug in the C toolkit that was never fixed and by now
     // has become the expected behavior.
-    return (pos > 0) ?
+    return (pos > 0  &&  pos <= str.size()) ?
         isspace((unsigned char) str[pos - 1])  ||  ispunct((unsigned char) str[pos - 1]) : true;
 }
 
@@ -370,11 +370,25 @@ string JoinString(const list<string>& l, const string& delim, bool noRedundancy)
         return kEmptyStr;
     }
 
+    string result;
+    set<CTempString> strings;
+    ITERATE (list<string>, it, l) {
+        if ( !noRedundancy  ||
+             strings.insert(CTempString(*it)).second) {
+            if ( !result.empty() ) {
+                result += delim;
+            }
+            result += *it;
+        }
+    }
+
+    /**
     string result = l.front();
     list<string>::const_iterator it = l.begin();
     while ( ++it != l.end() ) {
         JoinString(result, delim, *it, noRedundancy);
     }
+    **/
 
     return result;
 }
