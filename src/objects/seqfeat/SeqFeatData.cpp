@@ -634,6 +634,7 @@ END_SUBTYPE
 
 START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(allele);
+    ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
