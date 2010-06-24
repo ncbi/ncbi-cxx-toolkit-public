@@ -296,7 +296,8 @@ void CGC_Assembly::CreateIndex()
                 }
             }
         }
-    } else {
+    }
+    else if (IsAssembly_set()) {
         CGC_AssemblySet& set = SetAssembly_set();
         set.SetPrimary_assembly().CreateIndex();
         if (set.IsSetMore_assemblies()) {
