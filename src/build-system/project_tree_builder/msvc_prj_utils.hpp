@@ -462,11 +462,6 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
                                 const string&           project_dir,
                                 const SCustomBuildInfo& build_info);
 
-
-/// Fill-In MSVC 7.10 Utility project
-void CreateUtilityProject(const string&            name, 
-                          const list<SConfigInfo>& configs, 
-                          CVisualStudioProject*    project);
 #endif //NCBI_COMPILER_MSVC
 
 /// Checks if 2 dirs has the same root

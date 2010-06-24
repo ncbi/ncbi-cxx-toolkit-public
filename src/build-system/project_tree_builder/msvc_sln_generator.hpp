@@ -56,11 +56,11 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddUtilityProject  (const string& full_path, const CVisualStudioProject& prj);
-    void AddConfigureProject(const string& full_path, const CVisualStudioProject& prj);
-    void AddBuildAllProject (const string& full_path, const CVisualStudioProject& prj);
-    void AddAsnAllProject   (const string& full_path, const CVisualStudioProject& prj);
-    void AddLibsAllProject  (const string& full_path, const CVisualStudioProject& prj);
+    void AddUtilityProject  (const string& full_path, const string& guid, const string& name);
+    void AddConfigureProject(const string& full_path, const string& guid, const string& name);
+    void AddBuildAllProject (const string& full_path, const string& guid, const string& name);
+    void AddAsnAllProject   (const string& full_path, const string& guid, const string& name);
+    void AddLibsAllProject  (const string& full_path, const string& guid, const string& name);
 
     void VerifyProjectDependencies(void);
     void SaveSolution(const string& file_path);

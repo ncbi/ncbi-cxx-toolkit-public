@@ -129,6 +129,7 @@ public:
     bool IsEmpty                  (void) const;
 
 
+    static string TranslateOpt(const string& value, const string& section, const string& opt);
     // IMsvcMetaMakefile
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config) const;

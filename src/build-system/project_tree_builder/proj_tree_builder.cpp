@@ -1295,6 +1295,29 @@ CProjKey SLibProjectT::DoCreateDataSpec(
     return proj_key;
 }
 
+CProjItem CreateUtilityProjectItem( const string& prj_dir, const string& name)
+{
+    string spec_proj_name = name;
+    string spec_proj_id   = NStr::Replace(name, "-", "_");
+
+    list<string>   s_empty;
+    list<CProjKey> d_empty;
+    CProjKey::TProjType type = CProjKey::eUtility;
+    CProjKey proj_key(type, spec_proj_id);
+    return CProjItem(type,
+                spec_proj_name, 
+                spec_proj_id,
+                prj_dir,
+                s_empty, 
+                d_empty,
+                s_empty,
+                s_empty,
+                s_empty,
+                s_empty,
+                eMakeType_Undefined,
+                IdentifySlnGUID(prj_dir, proj_key));
+}
+
 //-----------------------------------------------------------------------------
 CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                                 const string& proj_name,

@@ -774,38 +774,72 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     }
 
     // INDEX dummy project
-    CVisualStudioProject index_xmlprj;
-    CreateUtilityProject(" INDEX, see here: ", *configurations, &index_xmlprj);
-    string index_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
+    string index_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
     index_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    if (!skip_config) {
-        SaveIfNewer(index_prj_path, index_xmlprj);
+    string index_prj_guid, index_prj_name;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+        CVisualStudioProject xmlprj;
+        CreateUtilityProject(" INDEX, see here: ", *configurations, &xmlprj);
+        if (!skip_config) {
+            SaveIfNewer(index_prj_path, xmlprj);
+            index_prj_guid = xmlprj.GetAttlist().GetProjectGUID();
+            index_prj_name = xmlprj.GetAttlist().GetName();
+        }
     }
 
     // BuildAll utility project
-    CVisualStudioProject build_all_xmlprj;
-    CreateUtilityProject("-BUILD-ALL-", *configurations, &build_all_xmlprj);
-    string build_all_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
+    string build_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
     build_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    SaveIfNewer(build_all_prj_path, build_all_xmlprj);
+    string build_all_guid, build_all_name;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+        CVisualStudioProject xmlprj;
+        CreateUtilityProject("-BUILD-ALL-", *configurations, &xmlprj);
+        SaveIfNewer(build_all_prj_path, xmlprj);
+        build_all_guid = xmlprj.GetAttlist().GetProjectGUID();
+        build_all_name = xmlprj.GetAttlist().GetName();
+    } else {
+        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-BUILD-ALL-");
+        prj_gen.Generate(prj_item);
+        build_all_guid = prj_item.m_GUID;
+        build_all_name = prj_item.m_Name;
+    }
 
     // AsnAll utility project
-    CVisualStudioProject asn_all_xmlprj;
-    CreateUtilityProject("-DATASPEC-ALL-", *configurations, &asn_all_xmlprj);
-    string asn_all_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
+    string asn_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
     asn_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
+    string asn_all_guid, asn_all_name;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+        CVisualStudioProject xmlprj;
+        CreateUtilityProject("-DATASPEC-ALL-", *configurations, &xmlprj);
+        SaveIfNewer(asn_all_prj_path, xmlprj);
+        asn_all_guid = xmlprj.GetAttlist().GetProjectGUID();
+        asn_all_name = xmlprj.GetAttlist().GetName();
+    } else {
+        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        CProjItem prj_item( CreateUtilityProjectItem(prj_dir, "-DATASPEC-ALL-"));
+        prj_gen.Generate(prj_item);
+        asn_all_guid = prj_item.m_GUID;
+        asn_all_name = prj_item.m_Name;
+    }
 
     // LibAll utility project
-    CVisualStudioProject libs_all_xmlprj;
-    CreateUtilityProject("-LIBS-ALL-", *configurations, &libs_all_xmlprj);
-    string libs_all_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_LIBS_ALL_");
+    string libs_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_LIBS_ALL_");
     libs_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    SaveIfNewer(libs_all_prj_path, libs_all_xmlprj);
+    string libs_all_guid, libs_all_name;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+        CVisualStudioProject xmlprj;
+        CreateUtilityProject("-LIBS-ALL-", *configurations, &xmlprj);
+        SaveIfNewer(libs_all_prj_path, xmlprj);
+        libs_all_guid = xmlprj.GetAttlist().GetProjectGUID();
+        libs_all_name = xmlprj.GetAttlist().GetName();
+    } else {
+        string prj_dir =  CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src, "UtilityProjects");
+        CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-LIBS-ALL-");
+        prj_gen.Generate(prj_item);
+        libs_all_guid = prj_item.m_GUID;
+        libs_all_name = prj_item.m_Name;
+    }
 
     // Solution
     CMsvcSolutionGenerator sln_gen(*configurations);
@@ -813,16 +847,28 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         sln_gen.AddProject(p->second);
     }
     if (!skip_config) {
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
-                                        configure_generator.GetVisualStudioProject(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
-                                        configure_generator.GetVisualStudioProject(true));
-        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
-        sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
-        sln_gen.AddLibsAllProject(libs_all_prj_path, libs_all_xmlprj);
+
+        if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+            sln_gen.AddUtilityProject( master_prj_gen.GetPath(),
+                master_prj_gen.GetVisualStudioProject().GetAttlist().GetProjectGUID(),
+                master_prj_gen.GetVisualStudioProject().GetAttlist().GetName());
+
+            sln_gen.AddConfigureProject( configure_generator.GetPath(false),
+                configure_generator.GetVisualStudioProject(false).GetAttlist().GetProjectGUID(),
+                configure_generator.GetVisualStudioProject(false).GetAttlist().GetName());
+
+            sln_gen.AddConfigureProject( configure_generator.GetPath(true),
+                configure_generator.GetVisualStudioProject(true).GetAttlist().GetProjectGUID(),
+                configure_generator.GetVisualStudioProject(true).GetAttlist().GetName());
+
+            sln_gen.AddUtilityProject( index_prj_path, index_prj_guid, index_prj_name);
+        }
+
+        sln_gen.AddAsnAllProject(   asn_all_prj_path,  asn_all_guid,  asn_all_name);
+        sln_gen.AddLibsAllProject( libs_all_prj_path, libs_all_guid, libs_all_name);
     }
-    sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
+    sln_gen.AddBuildAllProject( build_all_prj_path, build_all_guid, build_all_name);
+
     sln_gen.SaveSolution(m_Solution);
 
     CreateCheckList(configurations, projects_tree);

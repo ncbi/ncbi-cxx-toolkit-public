@@ -28,6 +28,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
+#include "msvc_prj_generator.hpp"
 #include "msvc_configure_prj_generator.hpp"
 #include "msvc_prj_defines.hpp"
 #include "proj_builder_app.hpp"

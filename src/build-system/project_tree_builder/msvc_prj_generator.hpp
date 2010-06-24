@@ -80,12 +80,19 @@ private:
     string m_pkg_export_output;
     string m_pkg_export_input;
     string m_pch_default;
+    string m_pch_define;
 
     /// Prohibited to.
     CMsvcProjectGenerator(void);
     CMsvcProjectGenerator(const CMsvcProjectGenerator&);
     CMsvcProjectGenerator& operator= (const CMsvcProjectGenerator&);
 };
+
+/// Fill-In MSVC Utility project
+void CreateUtilityProject(const string&            name, 
+                          const list<SConfigInfo>& configs, 
+                          CVisualStudioProject*    project);
+
 #endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE

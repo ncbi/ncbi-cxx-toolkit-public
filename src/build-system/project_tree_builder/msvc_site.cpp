@@ -538,7 +538,7 @@ void CMsvcSite::GetLibInclude(const string& lib_id,
         if (!lib_info.IsEmpty()) {
             LOG_POST(Warning << lib_id << "|" << cfg_info.GetConfigFullName()
                           << " unavailable: library include ignored: "
-                          << NStr::Join(lib_info.m_IncludeDir,","));
+                          << NStr::Join(lib_info.m_IncludeDir,";"));
         }
     }
 }

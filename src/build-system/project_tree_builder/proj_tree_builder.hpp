@@ -201,6 +201,7 @@ struct SDllProjectT : public SMakeProjectT
                              EMakeFileType maketype);
 };
 
+CProjItem CreateUtilityProjectItem( const string& prj_dir, const string& name);
 
 /////////////////////////////////////////////////////////////////////////////
 ///

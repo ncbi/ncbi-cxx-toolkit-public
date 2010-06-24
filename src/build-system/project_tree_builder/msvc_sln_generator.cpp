@@ -63,46 +63,59 @@ CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 }
 
 void CMsvcSolutionGenerator::AddUtilityProject(
-    const string& full_path, const CVisualStudioProject& prj)
+    const string& full_path, const string& guid, const string& name)
 {
-    m_UtilityProjects.push_back(
-        TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID()));
-    m_PathToName[full_path] = prj.GetAttlist().GetName();
+    if (guid.empty()) {
+        return;
+    }
+    m_UtilityProjects.push_back(TUtilityProject(full_path, guid));
+    m_PathToName[full_path] = name;
 }
 
 
 void 
-CMsvcSolutionGenerator::AddConfigureProject(const string& full_path,
-                                            const CVisualStudioProject& prj)
+CMsvcSolutionGenerator::AddConfigureProject(
+    const string& full_path, const string& guid, const string& name)
 {
-    m_ConfigureProjects.push_back(
-        TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID()));
-    m_PathToName[full_path] = prj.GetAttlist().GetName();
+    if (guid.empty()) {
+        return;
+    }
+    m_ConfigureProjects.push_back(TUtilityProject(full_path, guid));
+    m_PathToName[full_path] = name;
 }
 
 
 void 
-CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path,
-                                           const CVisualStudioProject& prj)
+CMsvcSolutionGenerator::AddBuildAllProject(
+    const string& full_path, const string& guid, const string& name)
 {
-    m_BuildAllProject = TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID());
-    m_PathToName[full_path] = prj.GetAttlist().GetName();
+    if (guid.empty()) {
+        return;
+    }
+    m_BuildAllProject = TUtilityProject(full_path, guid);
+    m_PathToName[full_path] = name;
 }
 
 void 
-CMsvcSolutionGenerator::AddAsnAllProject(const string& full_path,
-                                         const CVisualStudioProject& prj)
+CMsvcSolutionGenerator::AddAsnAllProject(
+    const string& full_path, const string& guid, const string& name)
 {
-    m_AsnAllProject = TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID());
-    m_PathToName[full_path] = prj.GetAttlist().GetName();
+    if (guid.empty()) {
+        return;
+    }
+    m_AsnAllProject = TUtilityProject(full_path, guid);
+    m_PathToName[full_path] = name;
 }
 
 void
-CMsvcSolutionGenerator::AddLibsAllProject(const string& full_path,
-                                          const CVisualStudioProject& prj)
+CMsvcSolutionGenerator::AddLibsAllProject(
+    const string& full_path, const string& guid, const string& name)
 {
-    m_LibsAllProject = TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID());
-    m_PathToName[full_path] = prj.GetAttlist().GetName();
+    if (guid.empty()) {
+        return;
+    }
+    m_LibsAllProject = TUtilityProject(full_path, guid);
+    m_PathToName[full_path] = name;
 }
 
 void CMsvcSolutionGenerator::VerifyProjectDependencies(void)

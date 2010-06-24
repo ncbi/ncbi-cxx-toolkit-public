@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "msvc_prj_generator.hpp"
 #include "msvc_masterproject_generator.hpp"
 
 

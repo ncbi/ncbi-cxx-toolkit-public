@@ -394,7 +394,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     //Leave only unique dirs and join them to string
 //    add_include_dirs_list.sort();
 //    add_include_dirs_list.unique();
-    return NStr::Join(add_include_dirs_list, ", ");
+    return NStr::Join(add_include_dirs_list, ";");
 }
 
 
@@ -431,7 +431,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
                 PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
                                requires << "|" << cfg_info.GetConfigFullName()
                                << " unavailable: missing additional libraries: "
-                               << NStr::Join(lib_info.m_Libs,","));
+                               << NStr::Join(lib_info.m_Libs,";"));
 
             }
         }
@@ -503,7 +503,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
             lib_dir = m_StaticLibRoot;
         }
         lib_dir = CDirEntry::ConcatPath(lib_dir, CMsvc7RegSettings::GetConfigNameKeyword());
-        dir_list.push_back(lib_dir);
+        dir_list.push_back(CDirEntry::AddTrailingPathSeparator(lib_dir));
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             try {
                 lib_dir = CDirEntry::CreateRelativePath(ProjectDir(), m_DynamicLibRoot);
@@ -511,7 +511,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
                 lib_dir = m_DynamicLibRoot;
             }
             lib_dir = CDirEntry::ConcatPath(lib_dir, CMsvc7RegSettings::GetConfigNameKeyword());
-            dir_list.push_back(lib_dir);
+            dir_list.push_back(CDirEntry::AddTrailingPathSeparator(lib_dir));
         }
     }
 
@@ -530,7 +530,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         if ( site.IsLibOk(lib_info) &&
              site.IsLibEnabledInConfig(requires, cfg_info) ) {
             if ( !lib_info.m_LibPath.empty() ) {
-                dir_list.push_back(lib_info.m_LibPath);
+                dir_list.push_back(CDirEntry::AddTrailingPathSeparator(lib_info.m_LibPath));
             }
         } else {
             if (!lib_info.IsEmpty()) {
@@ -543,7 +543,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     }
     dir_list.sort();
     dir_list.unique();
-    return NStr::Join(dir_list, ", ");
+    return NStr::Join(dir_list, ";");
 }
 
 
@@ -814,8 +814,9 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     output_dir_abs = 
         CDirEntry::ConcatPath(output_dir_abs, CMsvc7RegSettings::GetConfigNameKeyword());
     m_OutputDirectory = 
+        CDirEntry::AddTrailingPathSeparator(
         CDirEntry::CreateRelativePath(prj_context.ProjectDir(), 
-                                      output_dir_abs);
+                                      output_dir_abs));
 
 #if 0
 
@@ -901,7 +902,8 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
         m_PreBuildEvent.reset(new CPreBuildEventToolLibImpl
                                                 (project_context.PreBuilds(),
                                                  project_context.GetMakeType()));
-    } else if (project_context.ProjectType() == CProjKey::eDataSpec) {
+    } else if (project_context.ProjectType() == CProjKey::eDataSpec ||
+               project_context.ProjectType() == CProjKey::eUtility) {
         m_PreBuildEvent.reset(new CPreBuildEventToolDummyImpl);
     } else {
         m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.PreBuilds(),
@@ -1034,7 +1036,8 @@ static bool s_IsLib(const CMsvcPrjGeneralContext& general_context,
 static bool s_IsUtility(const CMsvcPrjGeneralContext& general_context,
                     const CMsvcPrjProjectContext& project_context)
 {
-    return general_context.m_Type == CMsvcPrjGeneralContext::eDataSpec;
+    return general_context.m_Type == CMsvcPrjGeneralContext::eDataSpec ||
+           general_context.m_Type == CMsvcPrjGeneralContext::eOther;
 }
 
 

@@ -61,9 +61,6 @@ struct SCrtMultiThreaded
 {
     static string RuntimeLibrary(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MultiThreaded";
-        }
 	    return "0";
     }
 };
@@ -73,9 +70,6 @@ struct SCrtMultiThreadedDebug
 {
     static string RuntimeLibrary(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MultiThreadedDebug";
-        }
 	    return "1";
     }
 };
@@ -85,9 +79,6 @@ struct SCrtMultiThreadedDLL
 {
     static string RuntimeLibrary(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MultiThreadedDLL";
-        }
         return "2";
     }
 };
@@ -97,9 +88,6 @@ struct SCrtMultiThreadedDebugDLL
 {
     static string RuntimeLibrary(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MultiThreadedDebugDLL";
-        }
 	    return "3";
     }
 };
@@ -158,9 +146,6 @@ struct SDebug
     }
     static string Optimization(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Disabled";
-        }
 	    return "0";
     }
     static string PreprocessorDefinitions(void)
@@ -169,23 +154,14 @@ struct SDebug
     }
     static string BasicRuntimeChecks(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Default";
-        }
         return "3";
     }
     static string DebugInformationFormat(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "ProgramDatabase";
-        }
 	    return "1";
     }
     static string InlineFunctionExpansion(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Disabled";
-        }
 	    return "";
     }
     static string OmitFramePointers(void)
@@ -202,9 +178,6 @@ struct SDebug
     }
     static string GenerateDebugInformation(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "true";
-        }
 	    return "TRUE";
     }
     static string OptimizeReferences(void)
@@ -222,16 +195,10 @@ struct SDebug
     }
     static string FavorSizeOrSpeed(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Neither";
-        }
 	    return "0";
     }
     static string BrowseInformation(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "true";
-        }
 	    return "1";
     }
 };
@@ -245,9 +212,6 @@ struct SRelease
     }
     static string Optimization(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MaxSpeed";
-        }
 	    return "2"; //VG: MaxSpeed
     }
     static string PreprocessorDefinitions(void)
@@ -256,51 +220,30 @@ struct SRelease
     }
     static string BasicRuntimeChecks(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Default";
-        }
         return "0";
     }
     static string DebugInformationFormat(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Disabled";
-        }
 	    return "0";
     }
     static string InlineFunctionExpansion(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "OnlyExplicitInline";
-        }
 	    return "1";
     }
     static string OmitFramePointers(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "false";
-        }
 	    return "FALSE";
     }
     static string StringPooling(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "true";
-        }
 	    return "TRUE";
     }
     static string EnableFunctionLevelLinking(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "true";
-        }
 	    return "TRUE";
     }
     static string GenerateDebugInformation(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "false";
-        }
 	    return "FALSE";
     }
     static string OptimizeReferences(void)
@@ -314,23 +257,14 @@ struct SRelease
 
     static string GlobalOptimizations(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "true";
-        }
 	    return "TRUE";
     }
     static string FavorSizeOrSpeed(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Speed";
-        }
 	    return "1";
     }
     static string BrowseInformation(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "false";
-        }
 	    return "0";
     }
 };
@@ -352,9 +286,6 @@ struct SApp
 {
     static string ConfigurationType(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Application";
-        }
 	    return "1";
     }
     static string PreprocessorDefinitions(void)
@@ -371,9 +302,6 @@ struct SApp
     }
     static string SubSystem(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Console";
-        }
 	    return "1"; //console
     }
 };
@@ -383,9 +311,6 @@ struct SLib
 {
     static string ConfigurationType(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "StaticLibrary";
-        }
 	    return "4";
     }
     static string PreprocessorDefinitions(void)
@@ -402,9 +327,6 @@ struct SLib
     }
     static string SubSystem(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Console";
-        }
 	    return "1"; //console
     }
 };
@@ -414,9 +336,6 @@ struct SUtility
 {
     static string ConfigurationType(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Generic";
-        }
 	    return "10";
     }
     static string PreprocessorDefinitions(void)
@@ -433,9 +352,6 @@ struct SUtility
     }
     static string SubSystem(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Console";
-        }
 	    return "1"; //console
     }
 };
@@ -445,9 +361,6 @@ struct SDll
 {
     static string ConfigurationType(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "DynamicLibrary";
-        }
 	    return "2";
     }
     static string PreprocessorDefinitions(void)
@@ -464,9 +377,6 @@ struct SDll
     }
     static string SubSystem(void)
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "Windows";
-        }
 	    return "2"; //windows
     }
 };

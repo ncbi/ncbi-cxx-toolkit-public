@@ -70,22 +70,21 @@ public:
     }
     virtual string IntermediateDirectory(void) const
     {
-	    return CMsvc7RegSettings::GetConfigNameKeyword();
+	    return CDirEntry::AddTrailingPathSeparator(
+                CMsvc7RegSettings::GetConfigNameKeyword());
     }
     virtual string ConfigurationType(void) const
     {
-	    return ConfTrait::ConfigurationType();
+	    return CMsvcMetaMakefile::TranslateOpt(
+	        ConfTrait::ConfigurationType(),"Configuration","ConfigurationType");
     }
     virtual string CharacterSet(void) const
     {
-        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-            return "MultiByte";
-        }
-	    return "2";
+        return CMsvcMetaMakefile::TranslateOpt("2","Configuration","CharacterSet");
     }
     virtual string BuildLogFile(void) const
     {
-	    return "$(IntDir)\\BuildLog_$(TargetName).htm";
+	    return "$(IntDir)BuildLog_$(TargetName).htm";
     }
 
 
@@ -210,7 +209,7 @@ public:
     virtual string BasicRuntimeChecks(void) const
     {
         if (m_Config.m_VTuneAddon) {
-            return "0";
+            return CMsvcMetaMakefile::TranslateOpt("0", "Compiler", "BasicRuntimeChecks");
         }
         return GetCompilerOpt(m_MsvcMetaMakefile,
                               m_MsvcProjectMakefile,
@@ -229,7 +228,7 @@ public:
     virtual string DebugInformationFormat(void) const
     {
         if (m_Config.m_VTuneAddon) {
-            return "3";
+            return CMsvcMetaMakefile::TranslateOpt("3", "Compiler", "DebugInformationFormat");
         }
         return GetCompilerOpt(m_MsvcMetaMakefile,
                               m_MsvcProjectMakefile,
@@ -267,8 +266,8 @@ public:
         if( !pdb_file.empty() )
             return pdb_file;
 
-	    return string("$(IntDir)\\") + m_ProjectId + ".pdb";
-//	    return string("$(OutDir)\\$(ProjectName).pdb");
+	    return string("$(IntDir)") + m_ProjectId + ".pdb";
+//	    return string("$(OutDir)$(ProjectName).pdb");
     }
 
 private:
@@ -337,8 +336,11 @@ public:
         if( !output_file.empty() )
             return output_file;
 
-//	    return string("$(OutDir)\\") + m_ProjectId + ConfTrait::TargetExtension();
-	    return string("$(OutDir)\\$(ProjectName)");
+//	    return string("$(OutDir)") + m_ProjectId + ConfTrait::TargetExtension();
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+    	    return string("$(OutDir)$(TargetName)$(TargetExt)");
+        }
+	    return string("$(OutDir)$(ProjectName)");
     }
 
 #define SUPPORT_LINKER_OPTION(opt) \
@@ -373,16 +375,16 @@ public:
         if( !pdb_file.empty() )
             return pdb_file;
 
-	    return string("$(OutDir)\\") + m_ProjectId + ".pdb";
-//	    return string("$(OutDir)\\$(ProjectName).pdb");
+	    return string("$(OutDir)") + m_ProjectId + ".pdb";
+//	    return string("$(OutDir)$(ProjectName).pdb");
     }
 
     SUPPORT_LINKER_OPTION(SubSystem)
     
     virtual string ImportLibrary(void) const
     {
-	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
-//	    return string("$(OutDir)\\$(ProjectName).lib");
+	    return string("$(OutDir)") + m_ProjectId + ".lib";
+//	    return string("$(OutDir)$(ProjectName).lib");
     }
 
     SUPPORT_LINKER_OPTION(TargetMachine)
@@ -408,7 +410,7 @@ public:
     virtual string FixedBaseAddress(void) const
     {
         if (m_Config.m_VTuneAddon) {
-            return "1";
+            return CMsvcMetaMakefile::TranslateOpt("1", "Linker", "FixedBaseAddress");
         }
         return GetLinkerOpt(m_MsvcMetaMakefile,
                             m_MsvcProjectMakefile,
@@ -474,7 +476,7 @@ public:
     }
     virtual string IgnoreDefaultLibraryNames(void) const
     {
-        return "FALSE";
+        return "";
     }
 
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
@@ -512,14 +514,17 @@ public:
 
     virtual string OutputFile(void) const
     {
-//	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
-	    return string("$(OutDir)\\$(ProjectName)");
+//	    return string("$(OutDir)") + m_ProjectId + ".lib";
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+    	    return string("$(OutDir)$(TargetName)$(TargetExt)");
+        }
+	    return string("$(OutDir)$(ProjectName)");
     }
 
 #define SUPPORT_LIBRARIAN_OPTION(opt) \
     virtual string opt(void) const \
     { \
-        return GetLinkerOpt(m_MsvcMetaMakefile, \
+        return GetLibrarianOpt(m_MsvcMetaMakefile, \
                             m_MsvcProjectMakefile, \
                             #opt, \
                             m_Config ); \

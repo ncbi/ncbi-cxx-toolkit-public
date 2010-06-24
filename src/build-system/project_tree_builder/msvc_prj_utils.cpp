@@ -61,8 +61,7 @@ CVisualStudioProject* LoadFromXmlFile(const string& file_path)
 }
 
 
-void SaveToXmlFile(const string&               file_path, 
-                 const CSerialObject& project)
+void SaveToXmlFile(const string& file_path, const CSerialObject& project)
 {
     // Create dir if no such dir...
     string dir;
@@ -89,8 +88,7 @@ void SaveToXmlFile(const string&               file_path,
     xs << project;
 }
 
-void SaveIfNewer(const string&               file_path, 
-                 const CSerialObject& project)
+void SaveIfNewer(const string& file_path, const CSerialObject& project)
 {
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
@@ -397,13 +395,7 @@ SConfigInfo::SConfigInfo(const string& name,
 
 void SConfigInfo::SetRuntimeLibrary(const string& lib)
 {
-    m_RuntimeLibrary = lib;
-    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-        if      (lib == "0") { m_RuntimeLibrary = "MultiThreaded"; }
-        else if (lib == "1") { m_RuntimeLibrary = "MultiThreadedDebug"; }
-        else if (lib == "2") { m_RuntimeLibrary = "MultiThreadedDLL"; }
-        else if (lib == "3") { m_RuntimeLibrary = "MultiThreadedDebugDLL"; }
-    }
+    m_RuntimeLibrary = CMsvcMetaMakefile::TranslateOpt(lib, "Configuration", "RuntimeLibrary");
     DefineRtType();
 }
 
@@ -1258,89 +1250,6 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
     filter->SetFF().SetFF().push_back(ce);
 }
 
-
-void CreateUtilityProject(const string&            name, 
-                          const list<SConfigInfo>& configs, 
-                          CVisualStudioProject*    project)
-{
-    {{
-        //Attributes:
-        project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
-        project->SetAttlist().SetVersion      (GetApp().GetRegSettings().GetProjectFileFormatVersion());
-        project->SetAttlist().SetName         (name);
-        project->SetAttlist().SetRootNamespace
-            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
-        project->SetAttlist().SetProjectGUID  (GenerateSlnGUID());
-        project->SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
-    }}
-    
-    {{
-        //Platforms
-         CRef<CPlatform> platform(new CPlatform());
-         platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
-         project->SetPlatforms().SetPlatform().push_back(platform);
-    }}
-
-    ITERATE(list<SConfigInfo>, p , configs) {
-        // Iterate all configurations
-        const string& config = (*p).GetConfigFullName();
-        
-        CRef<CConfiguration> conf(new CConfiguration());
-
-#  define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
-
-        {{
-            //Configuration
-            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
-            SET_ATTRIBUTE(conf, 
-                          OutputDirectory,
-                          "$(SolutionDir)$(ConfigurationName)");
-            SET_ATTRIBUTE(conf, 
-                          IntermediateDirectory,  
-                          "$(ConfigurationName)");
-            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
-            SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
-        }}
-
-        {{
-            //VCCustomBuildTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCMIDLTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPostBuildEventTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPreBuildEventTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-
-        project->SetConfigurations().SetConfiguration().push_back(conf);
-    }
-
-    {{
-        //References
-        project->SetReferences("");
-    }}
-
-    {{
-        //Globals
-        project->SetGlobals("");
-    }}
-}
 #endif //NCBI_COMPILER_MSVC
 
 
@@ -1379,6 +1288,8 @@ string CreateProjectName(const CProjKey& project_id)
         return project_id.Id();// + ".vcproj";
     case CProjKey::eDataSpec:
         return project_id.Id() + ".dataspec";
+    case CProjKey::eUtility:
+        return project_id.Id();
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";

@@ -60,32 +60,46 @@ bool CMsvcMetaMakefile::IsEmpty(void) const
     return m_MakeFile.Empty();
 }
 
+string CMsvcMetaMakefile::TranslateOpt(
+    const string& value, const string& section, const string& opt)
+{
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 || value.empty()) {
+        return value;
+    }
+    string name(section+"_"+opt+"_"+value);
+    return GetApp().GetMetaMakefile().m_MakeFile.GetString(
+        "Translate", name, value);
+}
 
 string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, 
                                          const SConfigInfo& config) const
 {
-    return GetOpt(m_MakeFile, "Compiler", opt, config);
+    string sec("Compiler");
+    return TranslateOpt( GetOpt(m_MakeFile, sec, opt, config), sec, opt);
 }
 
 
 string CMsvcMetaMakefile::GetLinkerOpt(const string& opt, 
                                        const SConfigInfo& config) const
 {
-    return GetOpt(m_MakeFile, "Linker", opt, config);
+    string sec("Linker");
+    return TranslateOpt( GetOpt(m_MakeFile, sec, opt, config), sec, opt);
 }
 
 
 string CMsvcMetaMakefile::GetLibrarianOpt(const string& opt, 
                                           const SConfigInfo& config) const
 {
-    return GetOpt(m_MakeFile, "Librarian", opt, config);
+    string sec("Librarian");
+    return TranslateOpt( GetOpt(m_MakeFile, sec, opt, config), sec, opt);
 }
 
 
 string CMsvcMetaMakefile::GetResourceCompilerOpt
                           (const string& opt, const SConfigInfo& config) const
 {
-    return GetOpt(m_MakeFile, "ResourceCompiler", opt, config);
+    string sec("ResourceCompiler");
+    return TranslateOpt( GetOpt(m_MakeFile, sec, opt, config), sec, opt);
 }
 
 string CMsvcMetaMakefile::GetConfigOpt(
@@ -205,6 +219,9 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
         break;
     case CProjKey::eDataSpec:
         name += "dataspec.";
+        break;
+    case CProjKey::eUtility:
+        name += "utility.";
         break;
     default:
         NCBI_THROW(CProjBulderAppException, 
@@ -682,11 +699,14 @@ string GetCompilerOpt(const IMsvcMetaMakefile&    meta_file,
                       const string&               opt,
                       const SConfigInfo&          config)
 {
-   string val = project_file.GetCompilerOpt(opt, config);
-   if ( !val.empty() )
-       return val;
-   
-   return meta_file.GetCompilerOpt(opt, config);
+    string val = project_file.GetCompilerOpt(opt, config);
+    if ( val.empty() ) {
+        val = meta_file.GetCompilerOpt(opt, config);
+    }
+    if (val == "-") {
+        return kEmptyStr;
+    }
+    return val;
 }
 
 
@@ -695,11 +715,14 @@ string GetLinkerOpt(const IMsvcMetaMakefile& meta_file,
                     const string&            opt,
                     const SConfigInfo&       config)
 {
-   string val = project_file.GetLinkerOpt(opt, config);
-   if ( !val.empty() )
-       return val;
-   
-   return meta_file.GetLinkerOpt(opt, config);
+    string val = project_file.GetLinkerOpt(opt, config);
+    if ( val.empty() ) {
+        val = meta_file.GetLinkerOpt(opt, config);
+    }
+    if (val == "-") {
+        return kEmptyStr;
+    }
+    return val;
 }
 
 
@@ -708,11 +731,14 @@ string GetLibrarianOpt(const IMsvcMetaMakefile& meta_file,
                        const string&            opt,
                        const SConfigInfo&       config)
 {
-   string val = project_file.GetLibrarianOpt(opt, config);
-   if ( !val.empty() )
-       return val;
-   
-   return meta_file.GetLibrarianOpt(opt, config);
+    string val = project_file.GetLibrarianOpt(opt, config);
+    if ( val.empty() ) {
+        val = meta_file.GetLibrarianOpt(opt, config);
+    }
+    if (val == "-") {
+        return kEmptyStr;
+    }
+    return val;
 }
 
 string GetResourceCompilerOpt(const IMsvcMetaMakefile& meta_file, 
@@ -720,11 +746,14 @@ string GetResourceCompilerOpt(const IMsvcMetaMakefile& meta_file,
                               const string&            opt,
                               const SConfigInfo&       config)
 {
-   string val = project_file.GetResourceCompilerOpt(opt, config);
-   if ( !val.empty() )
-       return val;
-   
-   return meta_file.GetResourceCompilerOpt(opt, config);
+    string val = project_file.GetResourceCompilerOpt(opt, config);
+    if ( val.empty() ) {
+        val = meta_file.GetResourceCompilerOpt(opt, config);
+    }
+    if (val == "-") {
+        return kEmptyStr;
+    }
+    return val;
 }
 
 END_NCBI_SCOPE

@@ -59,6 +59,7 @@ public:
         eDll,
         eMsvc,
         eDataSpec,
+        eUtility,
         eLast 
     } TProjType;
 
