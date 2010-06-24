@@ -95,16 +95,17 @@ CGuideTree::CGuideTree(CGuideTreeCalc& guide_tree_calc, ELabelType label_type,
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_query_node,
                        m_BlastNameColorMap,
-                       guide_tree_calc.GetQueryNodeId());
+                       m_QueryNodeId);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
-    m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
 }
 
 CGuideTree::CGuideTree(CBioTreeContainer& btc,
-                       CGuideTree::ELabelType lblType)
+                       CGuideTree::ELabelType lblType,
+                       int query_node_id)
 {
     x_Init();
+    m_QueryNodeId = query_node_id;
 
     x_InitTreeLabels(btc,lblType);
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
@@ -114,13 +115,10 @@ CGuideTree::CGuideTree(CBioTreeContainer& btc,
 CGuideTree::CGuideTree(CBioTreeContainer& btc,
                        const vector< CRef<CSeq_id> >& seqids,
                        CScope& scope,
-                       int query_node_id,
                        CGuideTree::ELabelType lbl_type,
                        bool mark_query_node)
 {
     x_Init();
-
-    m_QueryNodeId = query_node_id;
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_query_node,
                        m_BlastNameColorMap, m_QueryNodeId);
 
@@ -742,7 +740,7 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     CGuideTree::ELabelType label_type,
                                     bool mark_query_node,
                                     TBlastNameColorMap& bcolormap,
-                                    int query_node_id)
+                                    int& query_node_id)
 {
     CTaxon1 tax;
 

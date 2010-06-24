@@ -94,30 +94,36 @@ public:
     /// @param guide_tree_calc GuideTreeCalc object [in]
     /// @param lbl_type Type of labels to be used for tree leaves [in]
     /// @param mark_query_node If true, query node will be marked with
-    /// different color [in]
+    /// different color (query node is the node correspondig to query 
+    /// sequence used in guide_tree_calc) [in]
     ///
     CGuideTree(CGuideTreeCalc& guide_tree_calc,
                ELabelType lbl_type = eSeqId,
                bool mark_query_node = true);
 
     /// Constructor
-    /// @param btc BioTreeContainer object
-    /// @param lbl_type ELabelType
+    /// @param btc BioTreeContainer object [in]
+    /// @param lbl_type ELabelType [in]
+    /// @param query_node_id Id of query node [in]
     ///
-    CGuideTree(CBioTreeContainer& btc, ELabelType lbl_type
-               = eSeqId);
+    /// Query node will have color features set so that it will be marked
+    /// when tree is rendered. Query node id of -1 denotes that none of tree
+    /// nodes is the query node.
+    CGuideTree(CBioTreeContainer& btc, ELabelType lbl_type = eSeqId,
+               int query_node_id = -1);
 
     /// Constructor with initialization of tree features
     /// @param btc BioTreeContainer object [in]
     /// @param seqids Seq-ids for sequences represented in the tree [in]
     /// @param scope Scope [in]
-    /// @param query_node_id Id of query node [in]
     /// @param lbl_type Type of lables for tree leaves [in]
     /// @param mark_query_node Query node will be marked if true [in]
     ///
+    /// btc must be tree with the same number of leaves as number of elements
+    /// in seqids. Tree leaf labels must be numbers from 0 to number of leaves
+    /// minus 1. Node with label '0' is considered query node.
     CGuideTree(CBioTreeContainer& btc, const vector< CRef<CSeq_id> >& seqids,
-               CScope& scope, int query_node_id,
-               ELabelType lbl_type = eSeqId, 
+               CScope& scope, ELabelType lbl_type = eSeqId, 
                bool mark_query_node = true);
 
 
@@ -390,7 +396,7 @@ private:
                                  ELabelType label_type,
                                  bool mark_query_node,
                                  TBlastNameColorMap& bcolormap,
-                                 int query_node_id);
+                                 int& query_node_id);
 
     /// Add feature descriptor to tree
     /// @param id Feature id [in]

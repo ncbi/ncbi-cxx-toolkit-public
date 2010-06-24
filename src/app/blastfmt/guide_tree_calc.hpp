@@ -66,7 +66,6 @@ public:
     enum ETreeMethod {
         eNJ,      ///< Neighbor Joining
         eFastME,  ///< Fast Minumum Evolution
-        eCobalt   ///< Cobalt tree
     };
 
 
@@ -120,16 +119,14 @@ public:
     /// Create CGuideTreeCalc from Seq-align
     /// @param seq_aln Seq-align [in]
     /// @param scope Scope [in]
-    /// @param query_id Seqid of query sequence [in]
     ///
-    CGuideTreeCalc(const CSeq_align& seq_aln, CRef<CScope> scope,
-                   const string& query_id = "");
+    CGuideTreeCalc(const CSeq_align& seq_aln, CRef<CScope> scope);
 
     /// Create CGuideTreeCalc from CSeq_align_set
-    /// @param annot CSeq_align_set [in]
+    /// @param seq_align_set SeqAlignSet [in]
     /// @param scope Scope [in]    
     ///
-    CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet, CRef<CScope> scope);
+    CGuideTreeCalc(const CSeq_align_set& seq_align_set, CRef<CScope> scope);
 
     ~CGuideTreeCalc() {delete m_Tree;}
 
@@ -154,6 +151,12 @@ public:
     /// @param method Tree compuutation method [in]
     ///
     void SetTreeMethod(ETreeMethod method) {m_TreeMethod = method;}
+
+
+    /// Set labels for tree leaves
+    /// @return Labels
+    ///
+    vector<string>& SetLabels(void) {return m_Labels;}
 
 
     //--- Getters ---
@@ -214,12 +217,6 @@ public:
     EDistMethod GetDistMethod(void) const {return m_DistMethod;}
 
 
-    /// Get tree node id for the query sequence
-    /// @return Query node id
-    ///
-    int GetQueryNodeId(void) const {return m_QueryNodeId;}
-
-
     /// Get ids of sequences excluded from tree computation
     /// @return Ids of excluded sequences
     ///
@@ -255,9 +252,9 @@ protected:
     void x_InitAlignDS(const CSeq_align& seq_aln);
 
     /// Initialize alignment data source
-    /// @param seqAlignSet CSeq_align_set [in]
+    /// @param seq_align_set CSeq_align_set [in]
     /// @return True if success, false otherwise
-    bool x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet);
+    bool x_InitAlignDS(const CSeq_align_set& seq_align_set);
 
     /// Compute divergence matrix and find sequences to exclude from tree
     /// reconstruction
@@ -312,12 +309,6 @@ protected:
     /// Alignment data source
     CRef<CAlnVec> m_AlignDataSource;
 
-    /// Seq-id of query sequence
-    string m_QuerySeqId;
-
-    /// Id of node that represents query sequence
-    int m_QueryNodeId;
-
     /// Maximum allowed divergence between sequences
     double m_MaxDivergence;
 
@@ -342,6 +333,9 @@ protected:
 
     /// Computed tree
     TPhyTreeNode* m_Tree;
+
+    /// Labels for tree leaves
+    vector<string> m_Labels;
 
     /// Error/warning messages
     vector<string> m_Messages;    

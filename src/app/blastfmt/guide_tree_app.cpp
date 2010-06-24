@@ -93,9 +93,6 @@ void CGuideTreeApplication::Init(void)
     arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "seqalign",
                                       "seqalignset", "tree"));
 
-    arg_desc->AddOptionalKey("query", "id", "Query sequence id",
-                             CArgDescriptions::eString);
-
     arg_desc->AddOptionalKey("seqalign", "filename", "Write seq_align "
                              "correspoinding to the tree to a file",
                              CArgDescriptions::eOutputFile);
@@ -194,11 +191,6 @@ int CGuideTreeApplication::Run(void)
     
     auto_ptr<CGuideTree> gtree;
 
-    string query_id = "";
-    if (args["query"]) {
-        query_id = args["query"].AsString();
-    }
-
     EInput input;
     if (args["type"].AsString() == "seqalignset") {
         input = eSeqAlignSet;
@@ -218,12 +210,12 @@ int CGuideTreeApplication::Run(void)
         if (input == eSeqAlignSet) {
             CRef<CSeq_align_set> seq_align_set(new CSeq_align_set());
             args["i"].AsInputFile() >> MSerial_AsnText >> *seq_align_set;
-            calc.Reset(new CGuideTreeCalc(seq_align_set, scope));
+            calc.Reset(new CGuideTreeCalc(*seq_align_set, scope));
         }
         else {
             CSeq_align seq_align;
             args["i"].AsInputFile() >> MSerial_AsnText >> seq_align;
-            calc.Reset(new CGuideTreeCalc(seq_align, scope, query_id));
+            calc.Reset(new CGuideTreeCalc(seq_align, scope));
         }
 
         calc->SetMaxDivergence(args["divergence"].AsDouble());
@@ -314,14 +306,14 @@ int CGuideTreeApplication::Run(void)
         }
     }
 
-    // Expand or collapse selected subtree
-    if (args["expcol"]) {
-        gtree->ExpandCollapseSubtree(args["expcol"].AsInteger());
-    }
-
     // Reroot tree
     if (args["reroot"]) {
         gtree->RerootTree(args["reroot"].AsInteger());
+    }
+
+    // Expand or collapse selected subtree
+    if (args["expcol"]) {
+        gtree->ExpandCollapseSubtree(args["expcol"].AsInteger());
     }
 
     // Show subtree

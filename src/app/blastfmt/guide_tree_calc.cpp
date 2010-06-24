@@ -112,22 +112,20 @@ double& CGuideTreeCalc::CDistMatrix::operator()(int i, int j)
 
 
 CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
-                               CRef<CScope> scope,
-                               const string& query_id)
-    : m_Scope(scope),
-      m_QuerySeqId(query_id)
+                               CRef<CScope> scope)
+    : m_Scope(scope)
 {
     x_Init();
     x_InitAlignDS(seq_aln);
 }
 
 
-CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet,
+CGuideTreeCalc::CGuideTreeCalc(const CSeq_align_set& seq_align_set,
                                CRef<CScope> scope)
     : m_Scope(scope)      
 {
     x_Init();
-    x_InitAlignDS(seqAlignSet);
+    x_InitAlignDS(seq_align_set);
 }
 
 CRef<CBioTreeContainer> CGuideTreeCalc::GetSerialTree(void) const
@@ -332,6 +330,17 @@ void CGuideTreeCalc::x_CreateValidAlign(const vector<int>& used_indices)
         CRef<CDense_seg> new_denseg
             = m_AlignDataSource->GetDenseg().ExtractRows(used_indices);
 
+        // if sequence labels are specified, remove labels correponding to
+        // unused sequences
+        if (!m_Labels.empty()) {
+            vector<string> new_labels;
+            ITERATE (vector<int>, it, used_indices) {
+                new_labels.push_back(m_Labels[*it]);
+            }
+            m_Labels.swap(new_labels);
+            _ASSERT((int)m_Labels.size() == m_AlignDataSource->GetNumRows());
+        }
+
         m_AlignDataSource.Reset(new CAlnVec(*new_denseg, *m_Scope));
     }
 }
@@ -399,21 +408,22 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
     _ASSERT((size_t)m_AlignDataSource->GetNumRows()
             == m_FullDistMatrix.GetRows());
 
-    // use sequence indeces as labels
-    vector<string> labels;
-    for (int i=0;i < m_AlignDataSource->GetNumRows();i++) {
-            labels.push_back(NStr::IntToString(i));
+    // if labels not provided, use sequence indeces as labels
+    if (m_Labels.empty()) {
+        for (int i=0;i < m_AlignDataSource->GetNumRows();i++) {
+            m_Labels.push_back(NStr::IntToString(i));
+        }
     }
-    _ASSERT((int)labels.size() == m_AlignDataSource->GetNumRows());
+    _ASSERT((int)m_Labels.size() == m_AlignDataSource->GetNumRows());
  
     m_Tree = NULL;
     switch (m_TreeMethod) {
     case eNJ :
-        m_Tree = CDistMethods::NjTree(m_FullDistMatrix, labels);
+        m_Tree = CDistMethods::NjTree(m_FullDistMatrix, m_Labels);
         break;
 
     case eFastME :
-        m_Tree = CDistMethods::FastMeTree(m_FullDistMatrix, labels);
+        m_Tree = CDistMethods::FastMeTree(m_FullDistMatrix, m_Labels);
         break;
 
     default:
@@ -440,6 +450,13 @@ void CGuideTreeCalc::x_ComputeTree(bool correct)
 
 bool CGuideTreeCalc::CalcBioTree(void)
 {
+    if (!m_Labels.empty()
+        && (int)m_Labels.size() != m_AlignDataSource->GetNumRows()) {
+
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions, "Number of labels"
+                   " is not the same as number of sequences");
+    }
+
     vector<int> used_inds;
 
     bool valid;
@@ -472,23 +489,22 @@ void CGuideTreeCalc::x_Init(void)
 {
     m_DistMethod = eGrishin;
     m_TreeMethod = eFastME;
-    m_QueryNodeId = -1;
     m_MaxDivergence = 0.85;
     m_Tree = NULL;
 }
 
 
 
-bool CGuideTreeCalc::x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet)
+bool CGuideTreeCalc::x_InitAlignDS(const CSeq_align_set& seq_align_set)
 {
     bool success = true;
 
-    if(seqAlignSet->Get().size() == 1) {   
-        x_InitAlignDS(**(seqAlignSet->Get().begin()));        
+    if(seq_align_set.Get().size() == 1) {   
+        x_InitAlignDS(**(seq_align_set.Get().begin()));
     }
-    else if(seqAlignSet->Get().size() > 1) {   
+    else if(seq_align_set.Get().size() > 1) {   
         CAlnMix mix;
-        ITERATE (CSeq_annot::TData::TAlign, iter, seqAlignSet->Get()) {
+        ITERATE (CSeq_annot::TData::TAlign, iter, seq_align_set.Get()) {
 
             CRef<CSeq_align> seq_align = *iter;            
             mix.Add(**iter);        
