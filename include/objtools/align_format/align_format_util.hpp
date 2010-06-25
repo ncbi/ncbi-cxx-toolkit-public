@@ -59,8 +59,11 @@ static const string kClassInfo = "class=\"info\"";
 
 ///entrez
 // .ncbirc alias: ENTREZ
-const string kEntrezUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/entre\
-z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s&RID=%s&log$=%s%s&blast_rank=%d\" %s>";
+const string kEntrezUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
+
+//.ncbirc alias: ENTREZ_TM
+const string kEntrezTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
+
 
 ///trace db
 //.ncbirc alias: TRACE
@@ -191,6 +194,7 @@ const string kBl2SeqWBlastCgi = "http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast
 const string kEntrezSitesCgi = "http://www.ncbi.nlm.nih.gov/sites/entrez";
 
 
+
 /// list all static url patterns 
 static 
 pair <string,string> 
@@ -221,7 +225,8 @@ k_all_url_pairs[]={
   pair <string,string>  ("MAP_SEARCH_CGI",  kMapSearchCgi),
   pair <string,string>  ("CBLAST_CGI",  kCBlastCgi),
   pair <string,string>  ("BL2SEQ_WBLAST_CGI",  kBl2SeqWBlastCgi),
-  pair <string,string>  ("ENTREZ_SITES_CGI",  kEntrezSitesCgi)
+  pair <string,string>  ("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
+  pair <string,string>  ("ENTREZ_TM",  kEntrezTMUrl)
 };
 
 #ifndef DIM
