@@ -132,6 +132,9 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddOptionalKey("id", "ID",
                                   "Specific ID to display",
                                   CArgDescriptions::eString);
+         arg_desc->AddOptionalKey("ids", "IDFile",
+                                  "FIle of IDs to display, one per line",
+                                  CArgDescriptions::eInputFile);
 
          // input type:
          arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
@@ -271,7 +274,7 @@ int CAsn2FlatApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CException, eUnknown, "Could not create object manager");
     }
-    if (args["gbload"]  ||  args["id"]) {
+    if (args["gbload"]  ||  args["id"]  ||  args["ids"]) {
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     }
     m_Scope.Reset(new CScope(*m_Objmgr));
@@ -307,6 +310,21 @@ int CAsn2FlatApp::Run(void)
         CGBReleaseFile in( *is.release() );
         in.RegisterHandler( this );
         in.Read();  // HandleSeqEntry will be called from this function
+        return 0;
+    }
+
+    if ( args[ "ids" ] ) {
+        CNcbiIstream& istr = args["ids"].AsInputFile();
+        string id_str;
+        while (NcbiGetlineEOL(istr, id_str)) {
+            id_str = NStr::TruncateSpaces(id_str);
+            if (id_str.empty()  ||  id_str[0] == '#') {
+                continue;
+            }
+
+            LOG_POST(Error << "id = " << id_str);
+            HandleSeqId( id_str );
+        }
         return 0;
     }
 
