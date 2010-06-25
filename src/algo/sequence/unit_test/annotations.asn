@@ -2865,7 +2865,7 @@ Seq-annot ::= {
           }
         }
       },
-      except-text "mismatches in transcription"
+      except-text "unclassified transcription discrepancy"
     },
     {
       data cdregion {
@@ -3347,7 +3347,7 @@ Seq-annot ::= {
           }
         }
       },
-      except-text "mismatches in transcription"
+      except-text "unclassified transcription discrepancy"
     },
     {
       data cdregion {
@@ -3809,7 +3809,7 @@ Seq-annot ::= {
           }
         }
       },
-      except-text "mismatches in transcription"
+      except-text "unclassified transcription discrepancy"
     },
     {
       data cdregion {

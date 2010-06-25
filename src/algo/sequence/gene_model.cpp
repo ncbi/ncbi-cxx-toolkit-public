@@ -936,9 +936,13 @@ static void s_HandleRnaExceptions(CSeq_feat& feat,
 
         /// we know we have a Spliced-seg
         /// evaluate for gaps or mismatches
+        TSeqPos prev_to = 0;
         ITERATE (CSpliced_seg::TExons, exon_it,
                  al->GetSegs().GetSpliced().GetExons()) {
             const CSpliced_exon& exon = **exon_it;
+            if (prev_to > 0 && prev_to+1 != exon.GetProduct_start().GetNucpos()) // discontinuity
+                has_gaps = true;
+            prev_to = exon.GetProduct_end().GetNucpos();
             if (exon.IsSetParts()) {
                 ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
                     switch ((*part_it)->Which()) {
