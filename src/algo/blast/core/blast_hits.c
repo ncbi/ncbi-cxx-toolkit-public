@@ -1209,9 +1209,16 @@ s_HSPEndDiag(const BlastHSP *hsp)
  * @return TRUE if a merge was performed, FALSE if not
  */
 static Boolean 
-s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2)
+s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Boolean allow_gap)
 {
    ASSERT(!hsp1->gap_info || !hsp2->gap_info);
+
+   /* do not merge off-diagonal hsps for ungapped search */
+   if (!allow_gap && 
+       hsp1->subject.offset - hsp2->subject.offset -hsp1->query.offset + hsp2->query.offset) 
+   {  
+       return FALSE;
+   }
 
    /* combine the boundaries of the two HSPs, 
       assuming they intersect at all */
@@ -1223,6 +1230,7 @@ s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2)
                         hsp2->query.end,
                         hsp1->subject.offset, hsp1->subject.end,
                         hsp2->subject.end)) {
+
       hsp1->query.offset = MIN(hsp1->query.offset, hsp2->query.offset);
       hsp1->subject.offset = MIN(hsp1->subject.offset, hsp2->subject.offset);
       hsp1->query.end = MAX(hsp1->query.end, hsp2->query.end);
@@ -1683,7 +1691,7 @@ static int s_SortHSPListByOid(const void *x, const void *y)
 Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
                         BlastHitList** combined_hit_list_ptr,
                         Int4 contexts_per_query, Int4 *split_offsets,
-                        Int4 chunk_overlap_size)
+                        Int4 chunk_overlap_size, Boolean allow_gap)
 {
     Int4 i, j;
     Boolean query_is_split;
@@ -1751,7 +1759,8 @@ Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
                                     hitlist2->hsplist_array + j,
                                     hsplist2->hsp_max, split_offsets,
                                     contexts_per_query,
-                                    chunk_overlap_size);
+                                    chunk_overlap_size,
+                                    allow_gap);
             }
             else {
                 Blast_HSPListAppend(hitlist1->hsplist_array + i,
@@ -2247,7 +2256,8 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
 Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr, 
                    BlastHSPList** combined_hsp_list_ptr,
                    Int4 hsp_num_max, Int4 *split_offsets, 
-                   Int4 contexts_per_query, Int4 chunk_overlap_size)
+                   Int4 contexts_per_query, Int4 chunk_overlap_size,
+                   Boolean allow_gap)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
    BlastHSPList* hsp_list = *hsp_list_ptr;
@@ -2371,7 +2381,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
             }
    
             if (ABS(end_diag - start_diag) < OVERLAP_DIAG_CLOSE) {
-               if (s_BlastMergeTwoHSPs(hsp1, hsp2)) {
+               if (s_BlastMergeTwoHSPs(hsp1, hsp2, allow_gap)) {
                   /* Free the second HSP. */
                   hspp2[index2] = Blast_HSPFree(hsp2);
                }

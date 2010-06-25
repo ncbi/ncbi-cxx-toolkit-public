@@ -556,6 +556,7 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
  * @param chunk_overlap_size The length of the overlap region between the
  *                    sequence region containing hsp_list and that
  *                    containing combined_hsp_list [in]
+ * @param allow_gap Allow merging HSPs at different diagonals [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
 NCBI_XBLAST_EXPORT
@@ -563,7 +564,8 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list,
                    BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max, Int4* split_points, 
                    Int4 contexts_per_query,
-                   Int4 chunk_overlap_size);
+                   Int4 chunk_overlap_size,
+                   Boolean allow_gap);
                    
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
  * was searched. Used when long subject sequence is split into more manageable
@@ -659,12 +661,13 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
  * @param chunk_overlap_size The length of the overlap region between the
  *                    sequence region containing hit_list and that
  *                    containing combined_hit_list [in]
+ * @param allow_gap Allow merging HSPs at different diagonals [in]
 */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
                         BlastHitList** combined_hit_list_ptr,
                         Int4 contexts_per_query, Int4 *split_offsets,
-                        Int4 chunk_overlap_size);
+                        Int4 chunk_overlap_size, Boolean allow_gap);
 
 /** Purges a BlastHitList of NULL HSP lists.
  * @param hit_list BLAST hit list to purge. [in] [out]

@@ -848,7 +848,8 @@ CQuerySplitter::Split()
         return m_SplitBlk;
     }
 
-    m_SplitBlk.Reset(new CSplitQueryBlk(m_NumChunks));
+    m_SplitBlk.Reset(new CSplitQueryBlk(m_NumChunks,
+                                        m_Options->GetGappedMode()));
     m_QueryChunkFactories.reserve(m_NumChunks);
 
     if (m_NumChunks == 1) {

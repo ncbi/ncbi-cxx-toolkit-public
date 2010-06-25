@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
             setupHSPList(&hsp_list, chunk);
             Blast_HSPListsMerge(&hsp_list, &combined_hsp_list, 
                                 hsp_num_max, &offset, INT4_MIN,
-                                DBSEQ_CHUNK_OVERLAP);
+                                DBSEQ_CHUNK_OVERLAP, TRUE);
             offset += kOffsetIncrement;
         }
 

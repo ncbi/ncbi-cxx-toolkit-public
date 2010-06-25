@@ -57,7 +57,7 @@ public:
     * 
     * @param num_chunks number of chunks
     */
-    CSplitQueryBlk(Uint4 num_chunks);
+    CSplitQueryBlk(Uint4 num_chunks, bool gapped_merge = true);
 
     /// Destructor
     ~CSplitQueryBlk();

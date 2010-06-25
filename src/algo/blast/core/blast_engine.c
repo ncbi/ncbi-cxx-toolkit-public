@@ -501,7 +501,8 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
 		Blast_HSPListAdjustOffsets(hsp_list, offset);
 		status = Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,  
 				kHspNumMax, &offset, INT4_MIN,
-				DBSEQ_CHUNK_OVERLAP);
+				DBSEQ_CHUNK_OVERLAP,
+                                score_options->gapped_calculation);
 	} /* End loop on chunks of subject sequence */
 
 	s_RestoreSeqRanges(subject, &seq_ranges_backup, num_seq_ranges_backup);

@@ -65,6 +65,7 @@ typedef struct SSplitQueryBlk {
     SQueryChunkBoundary* chunk_bounds;  /**< This chunk's boundaries */
     size_t chunk_overlap_sz;            /**< Size (# of bases/residues) of
                                           overlap between query chunks */
+    Boolean gapped_merge;   /**< Allows merging HSPs with gap */
 } SSplitQueryBlk;
 
 /** Allocate a new split query chunk structure
@@ -73,7 +74,7 @@ typedef struct SSplitQueryBlk {
  * failure
  */
 NCBI_XBLAST_EXPORT
-SSplitQueryBlk* SplitQueryBlkNew(Uint4 num_chunks);
+SSplitQueryBlk* SplitQueryBlkNew(Uint4 num_chunks, Boolean gapped_merge);
 
 /** Deallocate a split query chunk structure
  * @param squery_blk structure to deallocate [in]

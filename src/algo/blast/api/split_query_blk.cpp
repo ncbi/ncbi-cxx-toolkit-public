@@ -48,9 +48,9 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CSplitQueryBlk::CSplitQueryBlk(Uint4 num_chunks)
+CSplitQueryBlk::CSplitQueryBlk(Uint4 num_chunks, bool gapped_merge)
 {
-    if ( !(m_SplitQueryBlk = SplitQueryBlkNew(num_chunks))) {
+    if ( !(m_SplitQueryBlk = SplitQueryBlkNew(num_chunks, gapped_merge))) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "SplitQueryBlkNew");
     }
 }
