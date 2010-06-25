@@ -6099,6 +6099,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UWW	s	University of Wisconsin - Whitewater, Biological Sciences Department",
 "UWZM	s	University of Wisconsin, Zoological Museum",
 "UYIC	s	Instituto de Biologia",
+"UZ<ESP>	s	Herbario de la Universidad de Zaragoza",
 "UZA	s	Unidad de Zoologia Aplicada, Departamento de Ecologia",
 "UZIU	s	Uppsala University",
 "UZL	s	University of Zambia, Biological Sciences Department",
