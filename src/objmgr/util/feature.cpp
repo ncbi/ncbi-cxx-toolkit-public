@@ -869,7 +869,8 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 
 struct STypeLink
 {
-    STypeLink(CSeqFeatData::ESubtype subtype);
+    STypeLink(CSeqFeatData::ESubtype subtype,
+              CSeqFeatData::ESubtype start = CSeqFeatData::eSubtype_bad);
         
     bool IsValid(void) const {
         return m_ParentType != CSeqFeatData::eSubtype_bad;
@@ -886,15 +887,18 @@ struct STypeLink
         Next();
         return *this;
     }
-        
+
+    CSeqFeatData::ESubtype m_StartType;
     CSeqFeatData::ESubtype m_CurrentType;
     CSeqFeatData::ESubtype m_ParentType;
     bool                   m_ByProduct;
 };
 
 
-STypeLink::STypeLink(CSeqFeatData::ESubtype subtype)
-    : m_CurrentType(subtype),
+STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
+                     CSeqFeatData::ESubtype start)
+    : m_StartType(start == CSeqFeatData::eSubtype_bad? subtype: start),
+      m_CurrentType(subtype),
       m_ParentType(CSeqFeatData::eSubtype_bad),
       m_ByProduct(false)
 {
@@ -953,7 +957,7 @@ void STypeLink::Next(void)
         }
         break;
     default:
-        *this = STypeLink(m_ParentType);
+        *this = STypeLink(m_ParentType, m_StartType);
         break;
     }
 }
@@ -1038,7 +1042,9 @@ namespace {
                                    const CSeq_loc& loc)
     {
         EOverlapType overlap_type = eOverlap_Contained;
-        if ( link.m_CurrentType == CSeqFeatData::eSubtype_cdregion ) {
+        if ( link.m_StartType == CSeqFeatData::eSubtype_cdregion &&
+             link.m_CurrentType == CSeqFeatData::eSubtype_cdregion &&
+             link.m_ParentType == CSeqFeatData::eSubtype_mRNA ) {
             overlap_type = eOverlap_CheckIntervals;
         }
         if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
