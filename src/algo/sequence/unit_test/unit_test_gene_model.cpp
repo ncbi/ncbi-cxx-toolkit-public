@@ -192,7 +192,6 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     BOOST_CHECK(annot_istr.eof());
 }
 
-
 BOOST_AUTO_TEST_SUITE(TestSuiteTrimAlignment)
 
 BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
@@ -241,8 +240,58 @@ BOOST_AUTO_TEST_CASE(TestCaseStitch)
     CConstRef<CSeq_align> trimmed_align;
     trimmed_align = feat_gen.CleanAlignment(align);
 
-    BOOST_CHECK(trimmed_align->GetSegs().GetSpliced().GetExons().size() == 1);
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(1));
 
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseTrim)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(scope);
+    
+    CSeq_align align;
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    CRef<CSeq_id> seq_id(new CSeq_id("NM_018690.2"));
+    seg.SetProduct_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetNucpos(0);
+    exon->SetProduct_end().SetNucpos(19);
+    exon->SetGenomic_start(0);
+    exon->SetGenomic_end(18);
+    CRef<CSpliced_exon_chunk> chunk;
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetProduct_ins(1);
+    exon->SetParts().push_back(chunk);
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(19);
+    exon->SetParts().push_back(chunk);
+
+    exons.push_back(exon);
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetNucpos(200);
+    exon->SetProduct_end().SetNucpos(300);
+    exon->SetGenomic_start(2000);
+    exon->SetGenomic_end(2100);
+    exons.push_back(exon);
+
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(2));
+
+    CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
+
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(17) );
+    BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(2002) );
+}
+
 BOOST_AUTO_TEST_SUITE_END();
+
+

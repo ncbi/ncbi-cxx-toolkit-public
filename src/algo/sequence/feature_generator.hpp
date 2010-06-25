@@ -36,8 +36,21 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <algo/sequence/gene_model.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE()
+
+struct SExon {
+    TSignedSeqPos prod_from;
+    TSignedSeqPos prod_to;
+    TSignedSeqPos genomic_from;
+    TSignedSeqPos genomic_to;
+};
+
+END_SCOPE();
 
 struct CFeatureGenerator::SImplementation {
     SImplementation(CRef<objects::CScope> scope);
@@ -56,6 +69,21 @@ struct CFeatureGenerator::SImplementation {
                              objects::CBioseq_set& seqs);
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                               const objects::CSeq_align* align);
+
+    TSignedSeqPos GetCdsStart(const objects::CSeq_id& seqid);
+
+    void TrimLeftExon(int trim_amount,
+                      vector<SExon>::iterator left_edge,
+                      vector<SExon>::iterator& exon_it,
+                      objects::CSpliced_seg::TExons::iterator& spl_exon_it,
+                      objects::ENa_strand product_strand,
+                      objects::ENa_strand genomic_strand);
+    void TrimRightExon(int trim_amount,
+                       vector<SExon>::iterator& exon_it,
+                       vector<SExon>::iterator right_edge,
+                       objects::CSpliced_seg::TExons::iterator& spl_exon_it,
+                       objects::ENa_strand product_strand,
+                       objects::ENa_strand genomic_strand);
 };
 
 END_NCBI_SCOPE

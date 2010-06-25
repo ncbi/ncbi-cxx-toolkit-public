@@ -34,6 +34,10 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/general/User_object.hpp>
 
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/feat_ci.hpp>
+
 #include "feature_generator.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -42,13 +46,6 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE()
-
-struct SExon {
-    TSignedSeqPos prod_from;
-    TSignedSeqPos prod_to;
-    TSignedSeqPos genomic_from;
-    TSignedSeqPos genomic_to;
-};
 
 void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons)
 {
@@ -245,6 +242,283 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 
 void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
 {
+    CSpliced_seg& spliced_seg = align.SetSegs().SetSpliced();
+
+    if (!spliced_seg.CanGetExons() || spliced_seg.GetExons().size() < 2)
+        return;
+
+    bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
+
+    ENa_strand product_strand = spliced_seg.IsSetProduct_strand() ? spliced_seg.GetProduct_strand() : eNa_strand_unknown;
+    ENa_strand genomic_strand = spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand() : eNa_strand_unknown;
+
+    TSignedSeqPos cds_start = 0;
+    if (!is_protein) {
+        if (!spliced_seg.CanGetProduct_id())
+            return;
+        cds_start = GetCdsStart(spliced_seg.GetProduct_id());
+        if (cds_start == -1)
+            return;
+        if (product_strand == eNa_strand_minus) {
+            NCBI_THROW(CException, eUnknown,
+                       "TrimHolesToCodons(): "
+                       "Reversed mRNA with CDS");
+        }
+    }
+
+    vector<SExon> exons;
+    GetExonStructure(spliced_seg, exons);
+    _ASSERT( exons.size() == spliced_seg.GetExons().size() );
+
+    int frame_offset = (exons.back().prod_to/3+1)*3+cds_start; // to make modulo operands always positive
+
+    vector<SExon>::iterator left_exon_it; 
+    vector<SExon>::iterator right_exon_it = exons.begin();
+    CSpliced_seg::TExons::iterator left_spl_exon_it;
+    CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
+
+    while ((left_exon_it     = right_exon_it++,     right_exon_it     !=exons.end()) &&
+           (left_spl_exon_it = right_spl_exon_it++, right_spl_exon_it != spliced_seg.SetExons().end())) {
+
+        bool donor_set = (*left_spl_exon_it)->IsSetDonor_after_exon();
+        bool acceptor_set = (*right_spl_exon_it)->IsSetAcceptor_before_exon();
+
+        if(donor_set && acceptor_set && left_exon_it->prod_to + 1 == right_exon_it->prod_from) {
+            continue;
+        }
+
+        TrimLeftExon((left_exon_it->prod_to - cds_start + 1) % 3,
+                     exons.begin()-1, left_exon_it, left_spl_exon_it,
+                     product_strand, genomic_strand);
+        TrimRightExon((frame_offset-right_exon_it->prod_from) % 3,
+                      right_exon_it, exons.end(), right_spl_exon_it,
+                      product_strand, genomic_strand);
+
+        if (left_exon_it+1 != right_exon_it) {
+            right_exon_it = exons.erase(++left_exon_it, right_exon_it);
+            right_spl_exon_it = spliced_seg.SetExons().erase(++left_spl_exon_it, right_spl_exon_it);
+        }
+    }
 }
 
+TSignedSeqPos CFeatureGenerator::SImplementation::GetCdsStart(const objects::CSeq_id& rna_id)
+{
+    TSignedSeqPos cds_start = -1;
+
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+    if (feat_iter  &&  feat_iter.GetSize()) {
+        cds_start = feat_iter->GetTotalRange().GetFrom();
+    }
+
+    return cds_start;
+}
+
+void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
+                                                      vector<SExon>::iterator left_edge,
+                                                      vector<SExon>::iterator& exon_it,
+                                                      CSpliced_seg::TExons::iterator& spl_exon_it,
+                                                      ENa_strand product_strand,
+                                                      ENa_strand genomic_strand)
+{
+    bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
+
+    while (trim_amount > 0) {
+        int exon_len = exon_it->prod_to - exon_it->prod_from + 1;
+        if (exon_len <= trim_amount) {
+            --exon_it;
+            --spl_exon_it;
+            trim_amount -= exon_len;
+            if (exon_it == left_edge)
+                break;
+        } else {
+            if (is_protein) {
+                CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_end().SetProtpos();
+                _ASSERT( prot_pos.GetFrame() - trim_amount == 0 );
+                --prot_pos.SetAmin();
+                prot_pos.SetFrame(3);
+            } else {
+                if (product_strand != eNa_strand_minus) {
+                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= trim_amount;
+                } else {
+                    (*spl_exon_it)->SetProduct_start().SetNucpos() += trim_amount;
+                }
+            }
+
+            (*spl_exon_it)->SetPartial(true);
+            (*spl_exon_it)->ResetDonor_after_exon();
+
+            int genomic_trim_amount = 0;
+
+            CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
+            if (!parts.empty()) {
+                CSpliced_exon_Base::TParts::iterator chunk = parts.end();
+                while (--chunk, trim_amount>0 || (*chunk)->IsGenomic_ins()) {
+                    int product_chunk_len = 0;
+                    int genomic_chunk_len = 0;
+                    switch((*chunk)->Which()) {
+                    case CSpliced_exon_chunk::e_Match:
+                        product_chunk_len = (*chunk)->GetMatch();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetMatch(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Mismatch:
+                        product_chunk_len = (*chunk)->GetMismatch();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetMismatch(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Diag:
+                        product_chunk_len = (*chunk)->GetDiag();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetDiag(product_chunk_len - trim_amount);
+                        }
+                        break;
+                        
+                    case CSpliced_exon_chunk::e_Product_ins:
+                        product_chunk_len = (*chunk)->GetProduct_ins();
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetProduct_ins(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Genomic_ins:
+                        genomic_chunk_len = (*chunk)->GetGenomic_ins();
+                        break;
+                    default:
+                        _ASSERT(false);
+                        break;
+                    }
+                    
+                    if (product_chunk_len <= trim_amount) {
+                        genomic_trim_amount += genomic_chunk_len;
+                        trim_amount -= product_chunk_len;
+                        CSpliced_exon_Base::TParts::iterator prev_chunk = chunk;
+                        --(chunk = parts.erase(chunk));
+                    } else {
+                        genomic_trim_amount += min(trim_amount, genomic_chunk_len);
+                        trim_amount = 0;
+                        break;
+                    }
+                }
+                
+            } else {
+                genomic_trim_amount += trim_amount;
+                trim_amount = 0;
+            }
+            
+            if (genomic_strand != eNa_strand_minus) {
+                (*spl_exon_it)->SetGenomic_end() -= genomic_trim_amount;
+            } else {
+                (*spl_exon_it)->SetGenomic_start() += genomic_trim_amount;
+            }
+        }
+    }
+}
+void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
+                                                       vector<SExon>::iterator& exon_it,
+                                                       vector<SExon>::iterator right_edge,
+                                                       CSpliced_seg::TExons::iterator& spl_exon_it,
+                                                       ENa_strand product_strand,
+                                                       ENa_strand genomic_strand)
+{
+    bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
+
+    while (trim_amount > 0) {
+        int exon_len = exon_it->prod_to - exon_it->prod_from + 1;
+        if (exon_len <= trim_amount) {
+            ++exon_it;
+            ++spl_exon_it;
+            trim_amount -= exon_len;
+            if (exon_it == right_edge)
+                break;
+        } else {
+            if (is_protein) {
+                CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_start().SetProtpos();
+                _ASSERT( prot_pos.GetFrame() + trim_amount == 3 );
+                ++prot_pos.SetAmin();
+                prot_pos.SetFrame(1);
+            } else {
+                if (product_strand != eNa_strand_minus) {
+                    (*spl_exon_it)->SetProduct_start().SetNucpos() += trim_amount;
+                } else {
+                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= trim_amount;
+                }
+            }
+
+            (*spl_exon_it)->SetPartial(true);
+            (*spl_exon_it)->ResetAcceptor_before_exon();
+
+            int genomic_trim_amount = 0;
+
+            CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
+            if (!parts.empty()) {
+                CSpliced_exon_Base::TParts::iterator chunk = parts.begin();
+                for (; trim_amount>0 || (*chunk)->IsGenomic_ins(); ++chunk) {
+                    int product_chunk_len = 0;
+                    int genomic_chunk_len = 0;
+                    switch((*chunk)->Which()) {
+                    case CSpliced_exon_chunk::e_Match:
+                        product_chunk_len = (*chunk)->GetMatch();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetMatch(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Mismatch:
+                        product_chunk_len = (*chunk)->GetMismatch();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetMismatch(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Diag:
+                        product_chunk_len = (*chunk)->GetDiag();
+                        genomic_chunk_len = product_chunk_len;
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetDiag(product_chunk_len - trim_amount);
+                        }
+                        break;
+                        
+                    case CSpliced_exon_chunk::e_Product_ins:
+                        product_chunk_len = (*chunk)->GetProduct_ins();
+                        if (product_chunk_len > trim_amount) {
+                            (*chunk)->SetProduct_ins(product_chunk_len - trim_amount);
+                        }
+                        break;
+                    case CSpliced_exon_chunk::e_Genomic_ins:
+                        genomic_chunk_len = (*chunk)->GetGenomic_ins();
+                        break;
+                    default:
+                        _ASSERT(false);
+                        break;
+                    }
+                    
+                    if (product_chunk_len <= trim_amount) {
+                        genomic_trim_amount += genomic_chunk_len;
+                        trim_amount -= product_chunk_len;
+                        chunk = parts.erase(chunk);
+                    } else {
+                        genomic_trim_amount += min(trim_amount, genomic_chunk_len);
+                        trim_amount = 0;
+                        break;
+                    }
+                }
+                
+            } else {
+                genomic_trim_amount += trim_amount;
+                trim_amount = 0;
+            }
+            
+            if (genomic_strand != eNa_strand_minus) {
+                (*spl_exon_it)->SetGenomic_start() += genomic_trim_amount;
+            } else {
+                (*spl_exon_it)->SetGenomic_end() -= genomic_trim_amount;
+            }
+        }
+    }
+}
 END_NCBI_SCOPE
