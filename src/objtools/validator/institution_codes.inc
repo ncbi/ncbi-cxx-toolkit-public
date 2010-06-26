@@ -5053,7 +5053,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SHD	s	University of Sheffield, Botany Department",
 "SHDC	s	Shanghai Institute for Drug Control",
 "SHG	s	Sohag University, Botany Department",
-"SHI	s	Shihezi Agricultural College, Biology Department",
+"SHI	s	Herbarium, Shihezi University",
 "SHIN	s	Shinshu University",
 "SHJ	s	St. John's University",
 "SHM<CHN>	s	Shanghai Museum of Natural History, Botanical Department",
