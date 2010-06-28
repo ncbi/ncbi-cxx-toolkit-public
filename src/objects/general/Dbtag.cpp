@@ -529,7 +529,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name="),
     TDbtUrl(CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc="),
     TDbtUrl(CDbtag::eDbtagType_UNITE, "http://unite.ut.ee/bl_forw.php?nimi="),
-    TDbtUrl(CDbtag::eDbtagType_UniGene, "http://www.ncbi.nlm.nih.gov/unigene?db=unigene&term="),
+    TDbtUrl(CDbtag::eDbtagType_UniGene, "http://www.ncbi.nlm.nih.gov/unigene?term="),
     TDbtUrl(CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/uniprot/"),
     TDbtUrl(CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/uniprot/"),
     TDbtUrl(CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid="),
