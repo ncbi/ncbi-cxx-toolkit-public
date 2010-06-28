@@ -54,6 +54,7 @@ USING_SCOPE(objects);
 /// Auxiliary class to register the BLAST database data loader of choice
 /// (information provided in the constructor) and deactivate it on object
 /// destruction
+/// @sa rmt_dataloader_test.cpp
 class CAutoRegistrar {
 public:
     CAutoRegistrar(const string& dbname, bool is_protein,
@@ -90,9 +91,9 @@ public:
 
     ~CAutoRegistrar() {
         CRef<CObjectManager> om = CObjectManager::GetInstance();
-        om->SetLoaderOptions(loader_name, CObjectManager::eNonDefault);
+        om->RevokeDataLoader(loader_name);
         if ( !gbloader_name.empty() ) {
-            om->SetLoaderOptions(gbloader_name, CObjectManager::eNonDefault);
+            om->RevokeDataLoader(gbloader_name);
         }
     }
 

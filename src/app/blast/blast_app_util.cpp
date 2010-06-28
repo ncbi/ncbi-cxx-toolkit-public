@@ -525,6 +525,7 @@ static void
 s_ExtractSeqidsAndRanges(const blast::CSearchResultSet& results,
                          CScope::TIds& ids, vector<TSeqRange>& ranges)
 {
+    static const CSeq_align::TDim kQueryRow = 0;
     static const CSeq_align::TDim kSubjRow = 1;
     ids.clear();
     ranges.clear();
@@ -541,7 +542,16 @@ s_ExtractSeqidsAndRanges(const blast::CSearchResultSet& results,
         }
         ITERATE(CSeq_align_set::Tdata, aln, (*result)->GetSeqAlign()->Get()) {
             CConstRef<CSeq_id> subj(&(*aln)->GetSeq_id(kSubjRow));
-            id_ranges[subj].push_back((*aln)->GetSeqRange(kSubjRow));
+            TSeqRange subj_range((*aln)->GetSeqRange(kSubjRow));
+            if ((*aln)->GetSeqStrand(kQueryRow) == eNa_strand_minus &&
+                (*aln)->GetSeqStrand(kSubjRow) == eNa_strand_plus) {
+                TSeqRange r(subj_range);
+                // flag the range as needed to be flipped once the sequence
+                // length is known
+                subj_range.SetFrom(r.GetToOpen());
+                subj_range.SetToOpen(r.GetFrom());
+            }
+            id_ranges[subj].push_back(subj_range);
         }
     }
 
@@ -605,8 +615,14 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
             CSeq_interval& interval = seq->SetLoc().SetInt();
             interval.SetId
                 (*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
+            if (ranges[i].GetFrom() > ranges[i].GetToOpen()) {
+                TSeqPos length = it->GetBioseqLength();
+                interval.SetFrom(length - ranges[i].GetTo());
+                interval.SetTo(length - ranges[i].GetFrom());
+            } else {
             interval.SetFrom(ranges[i].GetFrom());
             interval.SetTo(ranges[i].GetTo());
+            }
             i++;
             delta.Set().push_back(seq);
         }

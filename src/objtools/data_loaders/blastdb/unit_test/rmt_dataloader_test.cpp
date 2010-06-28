@@ -72,68 +72,125 @@ USING_NCBI_SCOPE;
 using namespace ncbi::objects;
 BEGIN_SCOPE(blast)
 
+/// Auxiliary class to register the BLAST database data loader of choice
+/// (information provided in the constructor) and deactivate it on object
+/// destruction (shamelessly copied from bdbloader_unit_test.cpp)
+/// @sa bdbloader_unit_test.cpp
+class CAutoRegistrar {
+public:
+    CAutoRegistrar(const string& dbname, bool is_protein,
+                   bool use_fixed_slice_size, 
+                   bool use_remote_blast_db_loader = false) {
+        CRef<CObjectManager> om = CObjectManager::GetInstance();
+        if (use_remote_blast_db_loader) {
+            loader_name = CRemoteBlastDbDataLoader::RegisterInObjectManager
+                        (*om, dbname, is_protein 
+                         ? CBlastDbDataLoader::eProtein
+                         : CBlastDbDataLoader::eNucleotide,
+                         use_fixed_slice_size,
+                         CObjectManager::eDefault, 
+                         CObjectManager::kPriority_NotSet)
+                        .GetLoader()->GetName();
+        } else {
+            loader_name = CBlastDbDataLoader::RegisterInObjectManager
+                        (*om, dbname, is_protein 
+                         ? CBlastDbDataLoader::eProtein
+                         : CBlastDbDataLoader::eNucleotide,
+                         use_fixed_slice_size,
+                         CObjectManager::eDefault, 
+                         CObjectManager::kPriority_NotSet)
+                        .GetLoader()->GetName();
+        }
+        om->SetLoaderOptions(loader_name, CObjectManager::eDefault);
+    }
+
+    //void RegisterGenbankDataLoader() {
+    //    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    //    gbloader_name = 
+    //        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    //}
+
+    ~CAutoRegistrar() {
+        CRef<CObjectManager> om = CObjectManager::GetInstance();
+        om->RevokeDataLoader(loader_name);
+        //if ( !gbloader_name.empty() ) {
+        //    om->RevokeDataLoader(gbloader_name);
+        //}
+    }
+
+private:
+    string loader_name;
+    //string gbloader_name;
+};
+
+
 BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
 {
-     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string loader_name = 
-       CRemoteBlastDbDataLoader::RegisterInObjectManager(*objmgr, "nt", CBlastDbDataLoader::eNucleotide).GetLoader()->GetName();
-     BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_ntNucleotide", loader_name);
+    const string db("nt");
+    const bool is_protein(false);
+    const bool use_fixed_size_slice(true);
+    const bool is_remote(true);
+    CAutoRegistrar reg(db, is_protein, use_fixed_size_slice, is_remote);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    objmgr->GetRegisteredNames(loader_names);
+    BOOST_REQUIRE_EQUAL(1, loader_names.size());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_ntNucleotide", loader_names.front());
 
-     {{ // limit the lifespan of the CScope object
-     CScope scope(*objmgr);
+    {{ // limit the lifespan of the CScope object
+        CScope scope(*objmgr);
 
-     scope.AddDataLoader(loader_name);
+        scope.AddDataLoader(loader_names.front());
 
-     CSeq_id seqid1(CSeq_id::e_Gi, 555); // nucleotide
-     CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
-     BOOST_REQUIRE_EQUAL((TSeqPos)624, handle1.GetInst().GetLength());
+        CSeq_id seqid1(CSeq_id::e_Gi, 555); // nucleotide
+        CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
+        BOOST_REQUIRE_EQUAL((TSeqPos)624, handle1.GetInst().GetLength());
 
-     CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
-     BOOST_REQUIRE_EQUAL((TSeqPos)624, bioseq1->GetInst().GetLength());
+        CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
+        BOOST_REQUIRE_EQUAL((TSeqPos)624, bioseq1->GetInst().GetLength());
 
-     CSeq_id seqid2(CSeq_id::e_Gi, 129295); // protein
-     CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
-     BOOST_REQUIRE(!handle2);
-     BOOST_REQUIRE(handle2.State_NoData());
-     }}
-     objmgr->RevokeDataLoader(loader_name);
+        CSeq_id seqid2(CSeq_id::e_Gi, 129295); // protein
+        CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
+        BOOST_REQUIRE(!handle2);
+        BOOST_REQUIRE(handle2.State_NoData());
+    }}
 }
 
 static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
 {          
-     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nucl_dbs");
-     string loader_name =
-       CRemoteBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname,
-                         CBlastDbDataLoader::eNucleotide, fixed_slice_size,
-           CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
+    const string db("nucl_dbs");
+    const bool is_protein(false);
+    const bool is_remote(true);
+    CAutoRegistrar reg(db, is_protein, fixed_slice_size, is_remote);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    objmgr->GetRegisteredNames(loader_names);
+    BOOST_REQUIRE_EQUAL(1, loader_names.size());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nucl_dbsNucleotide",
+                        loader_names.front());
 
-     BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nucl_dbsNucleotide", loader_name);
+    {{ // limit the lifespan of the CScope object
+        CScope scope(*objmgr);
+        
+        scope.AddDataLoader(loader_names.front());
+        
+        CSeq_id seqid1(CSeq_id::e_Gi, 89058412);  // nucleotide
+        
+        CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
+        BOOST_REQUIRE(handle1);
+        const TSeqPos kLength(647850);
+        BOOST_REQUIRE_EQUAL(kLength, handle1.GetInst().GetLength());
 
-     {{ // limit the lifespan of the CScope object
-     CScope scope(*objmgr);
-     
-     scope.AddDataLoader(loader_name);
-     
-     CSeq_id seqid1(CSeq_id::e_Gi, 89058412);  // nucleotide
-     
-     CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
-     BOOST_REQUIRE(handle1);
-     const TSeqPos kLength(647850);
-     BOOST_REQUIRE_EQUAL(kLength, handle1.GetInst().GetLength());
+        CSeqVector sv = handle1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        const string
+            kExpectedSeqData("CCTAAATATATATGCACCCAATACAGGAGCACCCAGATTCATAAAGCAAGTCCTGAATGACCTACAAAGAGACTTAGCCTCCAACACAATAATAATGGGA");
+        string buffer;
+        sv.GetSeqData(393200, 393300, buffer);
+        BOOST_REQUIRE_EQUAL(kExpectedSeqData, buffer);
 
-     CSeqVector sv = handle1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-     const string
-         kExpectedSeqData("CCTAAATATATATGCACCCAATACAGGAGCACCCAGATTCATAAAGCAAGTCCTGAATGACCTACAAAGAGACTTAGCCTCCAACACAATAATAATGGGA");
-     string buffer;
-     sv.GetSeqData(393200, 393300, buffer);
-     BOOST_REQUIRE_EQUAL(kExpectedSeqData, buffer);
-
-     CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
-     BOOST_REQUIRE_EQUAL(kLength, bioseq1->GetInst().GetLength());
-     }}
-     objmgr->RevokeDataLoader(loader_name);
-     
+        CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
+        BOOST_REQUIRE_EQUAL(kLength, bioseq1->GetInst().GetLength());
+    }}
 }    
      
 BOOST_AUTO_TEST_CASE(RemoteFetchLongNucleotideBioseq_FixedSliceSize)
@@ -145,36 +202,133 @@ BOOST_AUTO_TEST_CASE(RemoteFetchLongNucleotideBioseq_NotFixedSliceSize)
 {          
     RemoteFetchLongNucleotideBioseq(false);
 }    
+
+BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
+{
+    const string db("nr");
+    const bool is_protein(true);
+    const bool kFixedSliceSize(true);
+    const bool is_remote(true);
+    CAutoRegistrar reg_prot(db, is_protein, kFixedSliceSize, is_remote);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    objmgr->GetRegisteredNames(loader_names);
+
+    CRef<CScope> scope(new CScope(*objmgr)); 
+    
+    ITERATE(CObjectManager::TRegisteredNames, name, loader_names) {
+        scope->AddDataLoader(*name);
+    }
+
+    typedef vector< pair<int, int> > TGiLengthVector;
+    TGiLengthVector test_data;
+    test_data.push_back(make_pair(129295, 232));
+    test_data.push_back(make_pair(129296, 388));
+    test_data.push_back(make_pair(129295, 232));
+
+    CScope::TIds ids;
+    ITERATE(TGiLengthVector, itr, test_data) {
+        ids.push_back(CSeq_id_Handle::GetHandle(itr->first));
+    }
+    BOOST_REQUIRE_EQUAL(ids.size(), test_data.size());
+
+    CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
+    BOOST_REQUIRE_EQUAL(ids.size(), bhs.size());
+
+    TGiLengthVector::size_type i = 0;
+    ITERATE(CScope::TBioseqHandles, bh, bhs) {
+        BOOST_REQUIRE_EQUAL(bh->GetInst().GetLength(), test_data[i].second);
+        i++;
+    }
+    BOOST_REQUIRE_EQUAL(i, bhs.size());
+}
+
+BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
+{
+    const string db("nr");
+    const bool is_protein(true);
+    const bool kFixedSliceSize(true);
+    const bool is_remote(true);
+    CAutoRegistrar reg_prot(db, is_protein, kFixedSliceSize, is_remote);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    objmgr->GetRegisteredNames(loader_names);
+    BOOST_REQUIRE_EQUAL(1, loader_names.size());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nrProtein", loader_names.front());
+
+    CAutoRegistrar reg_nucl(db, !is_protein, kFixedSliceSize, is_remote);
+    loader_names.clear();
+    objmgr->GetRegisteredNames(loader_names);
+    BOOST_REQUIRE_EQUAL(2, loader_names.size());
+    bool found_prot(false), found_nucl(false);
+    ITERATE(CObjectManager::TRegisteredNames, name, loader_names) {
+        if (*name == string("REMOTE_BLASTDB_nrNucleotide")) {
+            found_nucl = true;
+        }
+        if (*name == string("REMOTE_BLASTDB_nrProtein")) {
+            found_prot = true;
+        }
+    }
+    BOOST_REQUIRE(found_nucl);
+    BOOST_REQUIRE(found_prot);
+
+    //{{ // limit the lifespan of the CScope object
+        CRef<CScope> scope(new CScope(*objmgr)); 
+        
+        ITERATE(CObjectManager::TRegisteredNames, name, loader_names) {
+            scope->AddDataLoader(*name);
+        }
+
+        CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
+        CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
+        BOOST_REQUIRE(handle1);
+        BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());
+        
+        CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
+        BOOST_REQUIRE_EQUAL((TSeqPos)232, bioseq1->GetInst().GetLength());
+
+        CSeq_id seqid2(CSeq_id::e_Gi, 555); // nucleotide
+        CBioseq_Handle handle2 = scope->GetBioseqHandle(seqid2);
+        BOOST_REQUIRE(handle2);
+        BOOST_REQUIRE_EQUAL((TSeqPos)624, handle2.GetInst().GetLength());
+
+        CConstRef<CBioseq> bioseq2 = handle2.GetCompleteBioseq();
+        BOOST_REQUIRE_EQUAL((TSeqPos)624, bioseq2->GetInst().GetLength());
+    //}}
+
+}
      
 BOOST_AUTO_TEST_CASE(RemoteFetchProteinBioseq)
 {          
-     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nr");
-     string loader_name =
-       CRemoteBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eProtein, true,
-           CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
-     
-     BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nrProtein", loader_name);
-     
-     {{ // limit the lifespan of the CScope object
-     CScope scope(*objmgr); 
-     
-     scope.AddDataLoader(loader_name);
+    const string dbname("nr");
+    const bool is_protein(true);
+    const bool use_fixed_size_slice(true);
+    const bool is_remote(true);
+    CAutoRegistrar reg(dbname, is_protein, use_fixed_size_slice, is_remote);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    objmgr->GetRegisteredNames(loader_names);
+    BOOST_REQUIRE_EQUAL(1, loader_names.size());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nrProtein", loader_names.front());
+    
+    {{ // limit the lifespan of the CScope object
+        CScope scope(*objmgr); 
+        
+        scope.AddDataLoader(loader_names.front());
 
-     CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
-     CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
-     BOOST_REQUIRE(handle1);
-     BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());
-     
-     CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
-     BOOST_REQUIRE_EQUAL((TSeqPos)232, bioseq1->GetInst().GetLength());
+        CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
+        CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
+        BOOST_REQUIRE(handle1);
+        BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());
+        
+        CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
+        BOOST_REQUIRE_EQUAL((TSeqPos)232, bioseq1->GetInst().GetLength());
 
-     CSeq_id seqid2(CSeq_id::e_Gi, 555); // nucleotide
-     CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
-     BOOST_REQUIRE(!handle2);
-     BOOST_REQUIRE(handle2.State_NoData());
-     }}
-     objmgr->RevokeDataLoader(loader_name);
+        CSeq_id seqid2(CSeq_id::e_Gi, 555); // nucleotide
+        CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
+        BOOST_REQUIRE(!handle2);
+        BOOST_REQUIRE(handle2.State_NoData());
+    }}
 }    
 
 END_SCOPE(blast)

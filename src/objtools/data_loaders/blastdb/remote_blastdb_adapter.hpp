@@ -193,9 +193,18 @@ public:
 	/** @inheritDoc */
     virtual CRef<CSeq_data> GetSequence(int oid, int begin = 0, int end = 0);
     /// Batch-version of GetSequence
+    /// @param oids OIDs of the sequences to fetch, must be of same size as
+    /// ranges [in]
+    /// @param ranges sequence ranges for the OIDs above, must be of same size as
+    /// oids. If any of the ranges is TSeqRange::GetEmpty, the whole sequence
+    /// will be fetched (assuming no splitting of the sequence occurred),
+    /// otherwise the ranges are expected to be spanning a give sequence chunk
+    /// @sa x_CalculateNumberOfSlices [in]
+    /// @param sequence_data output parameter for the sequence data to fetch
+    /// [out]
     void GetSequenceBatch(const vector<int>& oids, 
-                          vector< CRef<CSeq_data> >& sequence_data,
-                          vector<TSeqRange> ranges = vector<TSeqRange>());
+                          const vector<TSeqRange>& ranges,
+                          vector< CRef<CSeq_data> >& sequence_data);
 	/** @inheritDoc */
     virtual bool SeqidToOid(const CSeq_id & id, int & oid);
     /// Batch-version of SeqidToOid

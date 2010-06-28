@@ -198,10 +198,11 @@ CRemoteBlastDbDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 }
 
 void
-CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks)
+CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks_orig)
 {
     static const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
 
+    TChunkSet& chunks = const_cast<TChunkSet&>(chunks_orig);
     if (chunks.empty()) {
         return;
     }
@@ -211,7 +212,7 @@ CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks)
     vector< CRef<CSeq_data> > sequence_data;
 
     ITERATE(TChunkSet, chunk_itr, chunks) {
-        TChunk chunk = *chunk_itr;
+        const TChunk& chunk = *chunk_itr;
         _ASSERT(!chunk->IsLoaded());
         int oid = x_GetOid(chunk->GetBlobId());
         oids.push_back(oid);
@@ -221,17 +222,17 @@ CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks)
             ranges.push_back(it->second);
         }
     }
+    _ASSERT(oids.size() == ranges.size());
 
     CRemoteBlastDbAdapter* rmt_blastdb_svc =
         dynamic_cast<CRemoteBlastDbAdapter*>(&*m_BlastDb);
     _ASSERT( rmt_blastdb_svc != NULL );
-    rmt_blastdb_svc->GetSequenceBatch(oids,
-                                  sequence_data,
-                                  ranges);
-    _ASSERT(sequence_data.size() <= oids.size());
+    rmt_blastdb_svc->GetSequenceBatch(oids, ranges,
+                                  sequence_data);
+    _ASSERT(sequence_data.size() == oids.size());
 
-    int seq_data_idx = 0;
-    ITERATE(TChunkSet, chunk_itr, chunks) {
+    unsigned int seq_data_idx = 0;
+    NON_CONST_ITERATE(TChunkSet, chunk_itr, chunks) {
         TChunk chunk = *chunk_itr;
         _ASSERT(!chunk->IsLoaded());
         ITERATE (CTSE_Chunk_Info::TLocationSet, it, 
@@ -252,6 +253,7 @@ CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks)
         // Mark chunk as loaded
         chunk->SetLoaded();
     }
+    _ASSERT(seq_data_idx == sequence_data.size());
 }
 
 void

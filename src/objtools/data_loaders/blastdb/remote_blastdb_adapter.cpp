@@ -151,6 +151,9 @@ void CRemoteBlastDbAdapter::x_FetchDataByBatch(const vector<int>& oids,
                                                const vector<TSeqRange>& ranges)
 {
     const char seqtype = (GetSequenceType() == CSeqDB::eProtein) ? 'p' : 'n';
+    if (oids.empty()) {
+        return;
+    }
 
     CBlastServices::TSeqIntervalVector seqids;
     seqids.reserve(oids.size());
@@ -206,12 +209,11 @@ CRemoteBlastDbAdapter::GetSequence(int oid,
 
 void
 CRemoteBlastDbAdapter::GetSequenceBatch(const vector<int>& oids,
-            vector< CRef<CSeq_data> >& sequence_data,
-            vector<TSeqRange> ranges /* = vector<TSeqRange>() */ )
+            const vector<TSeqRange>& ranges,
+            vector< CRef<CSeq_data> >& sequence_data)
 {
-    if ( !ranges.empty() ) {
-        _ASSERT(oids.size() == ranges.size());
-    }
+    _ASSERT( !ranges.empty() );
+    _ASSERT(oids.size() == ranges.size());
     sequence_data.clear();
 
     vector<int> oids2fetch;
@@ -227,11 +229,14 @@ CRemoteBlastDbAdapter::GetSequenceBatch(const vector<int>& oids,
         }
         if ( !cached_seqdata.HasSequenceData(begin, end) ) {
             oids2fetch.push_back(oids[i]);
-            ranges2fetch.push_back(TSeqRange(begin, end));
+            ranges2fetch.push_back(TSeqRange(begin, end-1));
+            if (ranges[i] != TSeqRange::GetEmpty()) {   // get partial sequence
+                _ASSERT(ranges[i] == ranges2fetch.back());
+            }
         }
     }
 
-    x_FetchDataByBatch(oids, ranges);
+    x_FetchDataByBatch(oids2fetch, ranges2fetch);
 
     // Populate the return value
     sequence_data.reserve(oids.size());
@@ -243,8 +248,16 @@ CRemoteBlastDbAdapter::GetSequenceBatch(const vector<int>& oids,
             begin = ranges[i].GetFrom();
             end = ranges[i].GetToOpen();
         }
+        _ASSERT(cached_seqdata.HasSequenceData(begin, end));
         sequence_data.push_back(cached_seqdata.GetSeqDataChunk(begin, end));
     }
+    _ASSERT(sequence_data.size() == oids.size());
+
+#if _DEBUG
+    for (vector<int>::size_type i = 0; i < sequence_data.size(); i++) {
+        _ASSERT(sequence_data[i] != NULL);
+    }
+#endif
 }
 
 // N.B.: this method should be called when the BLAST database data loader
