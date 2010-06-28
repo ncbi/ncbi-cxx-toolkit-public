@@ -147,7 +147,15 @@ bool CFlatSeqLoc::x_Add
             break;
         } 
         size_t uLength = gap->GetLength();
-        oss << (uLength==100 ? "gap(" : "gap(") << uLength << ")";
+        const CInt_fuzz* fuzz = gap->GetFuzz();
+        oss << "gap(";
+        if (fuzz  &&  fuzz->IsLim()  &&
+            fuzz->GetLim() == CInt_fuzz::eLim_unk) {
+            oss << "unk";
+        }
+        oss << uLength << ")";
+
+        //oss << (uLength==100 ? "gap(" : "gap(") << uLength << ")";
         break;
     }}
     case CSeq_loc::e_Empty:

@@ -87,10 +87,11 @@ void CContigItem::x_GatherInfo(CBioseqContext& ctx)
             } else {  // literal
                 const CSeq_literal& lit = (*it)->GetLiteral();
                 TSeqPos len = lit.CanGetLength() ? lit.GetLength() : 0;
-                // no data or data with 0 length => gap
-//                if (!lit.CanGetSeq_data()  ||  len == 0) {
-                    data.push_back(TLoc(new CFlatGapLoc(len)));
-//                }
+                CRef<CFlatGapLoc> flat_loc(new CFlatGapLoc(len));
+                if (lit.IsSetFuzz()) {
+                    flat_loc->SetFuzz(&lit.GetFuzz());
+                }
+                data.push_back(TLoc(&*flat_loc));
             }
         }
     }

@@ -53,13 +53,17 @@ class NCBI_FORMAT_EXPORT CFlatGapLoc : public CSeq_loc
 public:
     typedef TSeqPos TLength;
 
-    CFlatGapLoc(TLength value) : m_Length(value) { SetNull(); }
+    CFlatGapLoc(TLength value) : m_Length(value), m_Fuzz(NULL) { SetNull(); }
 
     TLength GetLength(void) const { return m_Length; }
     void SetLength(const TLength& value) { m_Length = value; }
 
+    const CInt_fuzz* GetFuzz() const { return m_Fuzz; }
+    void SetFuzz(const CInt_fuzz* fuzz) { m_Fuzz = fuzz; }
+
 private:
     TLength m_Length;
+    const CInt_fuzz* m_Fuzz;
 };
 
 
