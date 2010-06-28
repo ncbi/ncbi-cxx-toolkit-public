@@ -129,7 +129,7 @@ void CEntrez2ClientApp::Init(void)
                      CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("lt", "Lookup", "Type of lookup to perform",
-                            CArgDescriptions::eString, "info");
+                            CArgDescriptions::eString, "count");
     arg_desc->SetConstraint("lt",
                             &(*new CArgAllow_Strings,
                               "info",     // get-info request
