@@ -12,7 +12,8 @@ html
 internal/align_model$
 internal/contigdb$
 internal/asn_cache
-internal/gpipe
+internal/gpipe/common$
+internal/gpipe/gencoll/src/gcaccess$
 internal/gbench
 internal/ID/utils$
 internal/mapview/objects
