@@ -56,3 +56,5 @@ Win64_9    : 900-static-64 : msvc900_prj  static  64  ReleaseDLL
 
 XCode      : plain      : Xcode.sh 30
 
+USE_COMPONENTS
+

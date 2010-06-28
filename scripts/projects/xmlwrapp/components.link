@@ -1,0 +1,11 @@
+[components]
+infrastructure  6.0
+core            6.0
+dbase           6.0
+web             6.0
+objects         6.0
+objtools        6.0
+algo            6.0
+blast           6.0
+app             6.0
+
