@@ -99,12 +99,12 @@ public:
     CGffWriter(
         CNcbiOstream&,
         TFlags = fNormal );
-    ~CGffWriter();
+    virtual ~CGffWriter();
 
     bool WriteAnnot( const CSeq_annot& );
 
 protected:
-    bool x_WriteHeader();
+    virtual bool x_WriteHeader();
     bool x_WriteAnnotFTable( 
         const CSeq_annot& );
     bool x_WriteAnnotAlign( 
@@ -139,10 +139,10 @@ protected:
         const CGff3WriteRecord& ) const;
     string x_GffPhase(
         const CGff3WriteRecord& ) const;
-    string x_GffAttributes( 
+    virtual string x_GffAttributes( 
         const CGff3WriteRecord& ) const;
 
-    void x_PriorityProcess(
+    virtual void x_PriorityProcess(
         const string&,
         map<string, string >&,
         string& ) const;

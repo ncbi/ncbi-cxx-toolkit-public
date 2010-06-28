@@ -483,10 +483,10 @@ CSeq_feat::TData::ESubtype CGff3WriteRecord::x_GetSubtypeOf(
        	CSeq_feat_Handle sfh = seh.GetTSE_Handle().GetFeatureWithId( 
            	CSeqFeatData::e_not_set, id.GetLocal() );
        	if(sfh) {
-			subtype = sfh.GetFeatSubtype();
-		} else {
-        	ERR_POST(Warning << "CGff3WriteRecord::x_GetSubtypeOf: Feature could not be found.");
-		}
+            subtype = sfh.GetFeatSubtype();
+        } else {
+            ERR_POST(Warning << "CGff3WriteRecord::x_GetSubtypeOf: Feature could not be found.");
+        }
 	}
     return subtype;
 }
