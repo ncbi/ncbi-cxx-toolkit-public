@@ -57,7 +57,7 @@ public:
     ~CCit_book(void);
     
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    void GetLabel(string* label, bool unique = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator

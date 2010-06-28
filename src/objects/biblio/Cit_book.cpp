@@ -53,9 +53,9 @@ CCit_book::~CCit_book(void)
 }
 
 
-void CCit_book::GetLabel(string* label) const
+void CCit_book::GetLabel(string* label, bool unique) const
 {
-    GetLabelContent(label, false, &GetAuthors(), &GetImp(), &GetTitle(), this, 0);
+    GetLabelContent(label, unique, &GetAuthors(), &GetImp(), &GetTitle(), this, 0);
 }
 
 

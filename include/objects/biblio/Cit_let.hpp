@@ -58,7 +58,7 @@ public:
     ~CCit_let(void);
 
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    void GetLabel(string* label, bool unique = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -78,9 +78,9 @@ CCit_let::CCit_let(void)
 }
 
 inline
-void CCit_let::GetLabel(string* label) const
+void CCit_let::GetLabel(string* label, bool unique) const
 {
-    GetCit().GetLabel(label);
+    GetCit().GetLabel(label, unique);
 }
 
 /////////////////// end of CCit_let inline methods
