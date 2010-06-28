@@ -284,8 +284,8 @@ sub handle_blastall($)
         }
     }
     $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
-    if (defined $opt_i and (not $retval =~ /\/tblastn/)) {
-        $retval .= "-query $opt_i ";
+    unless (($retval =~ /\/tblastn/) and defined $opt_R) {
+        $retval .= "-query $opt_i "         if (defined $opt_i);
     }
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
