@@ -71,6 +71,7 @@
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/writers/gff_writer.hpp>
+#include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -93,6 +94,10 @@ private:
         CNcbiOstream& );
 
     bool WriteGff(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
+    bool WriteGtf(
         const CSeq_annot& annot,
         CNcbiOstream& );
 
@@ -131,7 +136,7 @@ void CAnnotWriterApp::Init()
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "gff", "wiggle" ) );
+            "gff", "gtf", "wiggle" ) );
     }}
 
     // output
@@ -228,9 +233,6 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
         bDeleteOnClose = true;
     }
     CObjectIStream* pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose );
-//    if ( 0 != pI ) {
-//        pI->UseMemoryPool();
-//    }
     return pI;
 }
 
@@ -242,6 +244,9 @@ bool CAnnotWriterApp::Write(
 {
     if ( GetArgs()[ "format" ].AsString() == "gff" ) { 
         return WriteGff( annot, os );
+    }
+    if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+        return WriteGtf( annot, os );
     }
     if ( GetArgs()[ "format" ].AsString() == "wiggle" ) {
         return WriteWiggle( annot, os );
@@ -257,6 +262,16 @@ bool CAnnotWriterApp::WriteGff(
 //  -----------------------------------------------------------------------------
 {
     CGffWriter writer( os, GffFlags( GetArgs() ) );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGtf( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CGtfWriter writer( os );
     return writer.WriteAnnot( annot );
 }
 
