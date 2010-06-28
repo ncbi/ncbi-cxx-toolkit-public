@@ -111,6 +111,18 @@ CMultiReader::CMultiReader(
 }
 
 //  ----------------------------------------------------------------------------
+CMultiReader::CMultiReader(
+    CFormatGuess::EFormat fmt,
+    int iFlags,
+    const string& name,
+    const string& title )
+//  ----------------------------------------------------------------------------
+    : m_iFormat( fmt ), m_iFlags( iFlags ),
+      m_AnnotName( name ), m_AnnotTitle( title )
+{
+}
+
+//  ----------------------------------------------------------------------------
 CMultiReader::~CMultiReader()
 //  ----------------------------------------------------------------------------
 {
@@ -162,7 +174,7 @@ CMultiReader::CreateReader()
         return new CWiggleReader( m_iFlags );
         
     case CFormatGuess::eGtf:
-        return new CGff3Reader( m_iFlags );
+        return new CGff3Reader( m_iFlags, m_AnnotName, m_AnnotTitle );
     
     default:
         return 0;

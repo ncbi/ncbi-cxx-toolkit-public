@@ -129,6 +129,19 @@ CGff3Reader::CGff3Reader(
 }
 
 //  ----------------------------------------------------------------------------
+CGff3Reader::CGff3Reader(
+    unsigned int uFlags,
+    const string& name,
+    const string& title ):
+//  ----------------------------------------------------------------------------
+    m_uFlags( TFlags( uFlags ) ),
+    m_pErrors( 0 ),
+    m_AnnotName( name ),
+    m_AnnotTitle( title )
+{
+}
+
+//  ----------------------------------------------------------------------------
 CGff3Reader::~CGff3Reader()
 //  ----------------------------------------------------------------------------
 {
@@ -606,6 +619,13 @@ bool CGff3Reader::x_InitAnnot(
         pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
     }
 
+    if ( !m_AnnotName.empty() ) {
+        pAnnot->AddName(m_AnnotName);
+    }
+    if ( !m_AnnotTitle.empty() ) {
+        pAnnot->SetTitle(m_AnnotTitle);
+    }
+
     return x_UpdateAnnot( gff, pAnnot );
 }
 
@@ -691,7 +711,7 @@ bool CGff3Reader::x_FeatureSetLocation(
         bool is_numeric =
             id_str.find_first_not_of("0123456789") == string::npos;
 
-        if (is_numeric) {
+        if (is_numeric  &&  !!(m_uFlags & fNumericIdsAsLocal)) {
             pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
         }
         else {

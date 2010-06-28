@@ -59,6 +59,12 @@ public:
         CFormatGuess::EFormat = CFormatGuess::eUnknown,
         int iFlags = 0 );
     
+    CMultiReader(
+        CFormatGuess::EFormat,
+        int iFlags,
+        const string& name,
+        const string& title);
+
     virtual ~CMultiReader();
 
 public:
@@ -81,6 +87,8 @@ protected:
 
     CFormatGuess::EFormat m_iFormat;
     int m_iFlags;
+    string m_AnnotName;
+    string m_AnnotTitle;
 };    
 
 END_objects_SCOPE

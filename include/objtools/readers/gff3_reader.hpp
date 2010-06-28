@@ -70,8 +70,13 @@ public:
     //  object management:
     //
 public:
-    CGff3Reader( 
+    CGff3Reader(
         unsigned int = 0 );
+
+    CGff3Reader(
+        unsigned int uFlags,
+        const string& name,
+        const string& title );
 
     virtual ~CGff3Reader();
     
@@ -253,10 +258,12 @@ protected:
     //  data:
     //
 protected:
-    TFlags m_uFlags;
-    IErrorContainer* m_pErrors;
+    TFlags             m_uFlags;
+    IErrorContainer*   m_pErrors;
     CRef< CAnnotdesc > m_CurrentTrackInfo;
     CRef< CAnnotdesc > m_CurrentBrowserInfo;
+    string             m_AnnotName;
+    string             m_AnnotTitle;
 };
 
 END_SCOPE(objects)

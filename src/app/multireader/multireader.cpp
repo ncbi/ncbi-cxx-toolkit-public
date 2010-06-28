@@ -116,7 +116,9 @@ private:
     CErrorContainerBase* m_pErrors;
     bool m_bCheckOnly;
     bool m_bDumpStats;
-    int m_iFlags;
+    int  m_iFlags;
+    string m_AnnotName;
+    string m_AnnotTitle;
 };
 
 //  ============================================================================
@@ -165,8 +167,8 @@ void CMultiReaderApp::Init(void)
 
     arg_desc->AddDefaultKey(
         "output", 
-        "OutputFile",
         "File_Out",
+        "Output filename",
         CArgDescriptions::eOutputFile, "-"); 
 
     arg_desc->AddDefaultKey(
@@ -186,6 +188,19 @@ void CMultiReaderApp::Init(void)
         "Additional flags passed to the reader",
         CArgDescriptions::eString,
         "0" );
+
+    arg_desc->AddDefaultKey(
+        "name", 
+        "STRING",
+        "Name for annotation",
+        CArgDescriptions::eString, 
+        "");
+    arg_desc->AddDefaultKey(
+        "title", 
+        "STRING",
+        "Title for annotation",
+        CArgDescriptions::eString, 
+        "");
 
     //
     //  ID mapping:
@@ -251,7 +266,7 @@ void CMultiReaderApp::Init(void)
             "info", "warning", "error" ) );
 
     //
-    //  bed reader specific arguments:
+    //  bed and gff reader specific arguments:
     //
     arg_desc->AddFlag(
         "all-ids-as-local",
@@ -434,10 +449,18 @@ void CMultiReaderApp::SetFlags(
         if ( ! args["old-code"] ) {
             m_iFlags |= CGff3Reader::fNewCode;
         }
+        if ( args["all-ids-as-local"] ) {
+            m_iFlags |= CGFFReader::fAllIdsAsLocal;
+        }
+        if ( args["numeric-ids-as-local"] ) {
+            m_iFlags |= CGFFReader::fNumericIdsAsLocal;
+        }
             
     default:
         break;
     }
+    m_AnnotName = args["name"].AsString();
+    m_AnnotTitle = args["title"].AsString();
 }
 
 //  ============================================================================
@@ -445,7 +468,7 @@ void CMultiReaderApp::ReadObject(
     CRef<CSerialObject>& object )
 //  ============================================================================
 {
-    CMultiReader reader( m_uFormat, m_iFlags );
+    CMultiReader reader( m_uFormat, m_iFlags, m_AnnotName, m_AnnotTitle );
     object = reader.ReadObject( *m_pInput, m_pErrors );
 }
 
@@ -465,7 +488,7 @@ void CMultiReaderApp::ReadAnnots(
             break;
         }    
         case CFormatGuess::eGtf: {
-            CGff3Reader reader( (unsigned int)m_iFlags );
+            CGff3Reader reader( (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
             reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
             break;
         }
