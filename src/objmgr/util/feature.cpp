@@ -805,7 +805,23 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
     string l1, l2;
     GetLabel(f1, &l1, fFGL_Both, scope);
     GetLabel(f2, &l2, fFGL_Both, scope);
-    return l1 < l2;
+
+    if (l1 < l2 ) {
+        return true;
+    }
+    if (l2 < l1) {
+        return false;
+    }
+
+    if ( !f2.IsSetComment() ) {
+        return false;
+    }
+
+    if (f1.IsSetComment()) {
+        return f1.GetComment() < f2.GetComment();
+    }
+
+    return false;
 }
 
 
