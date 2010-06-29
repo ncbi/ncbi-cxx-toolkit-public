@@ -457,6 +457,18 @@ bool CGuideTreeCalc::CalcBioTree(void)
                    " is not the same as number of sequences");
     }
 
+    if (m_MaxDivergence < 0.0) {
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions, "Maximum "
+                   "divergence must be positive");
+    }
+
+
+    if (m_DistMethod == eKimura && m_MaxDivergence > 0.85) {
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions, "Maximum "
+                   "divergence must be smaller than 0.85 if Kimura distance is"
+                   " selected");
+    }
+
     vector<int> used_inds;
 
     bool valid;
