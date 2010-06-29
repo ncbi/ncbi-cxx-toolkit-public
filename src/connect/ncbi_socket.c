@@ -2625,9 +2625,9 @@ static EIO_Status s_Send(SOCK        sock,
                          int         flag)
 {
 #ifdef NCBI_OS_MSWIN
-    int no_buffer_wait = 0;
-    struct timeval timeout;
-    memset(&timeout, 0, sizeof(timeout));
+    int wait_buf_ms = 0;
+    struct timeval waited;
+    memset(&waited, 0, sizeof(waited));
 #endif /*NCBI_OS_MSWIN*/
 
     assert(sock->type == eSocket  &&  data  &&  size > 0  &&  !*n_written);
@@ -2636,10 +2636,10 @@ static EIO_Status s_Send(SOCK        sock,
         return eIO_Closed;
 
     for (;;) { /* optionally auto-resume if interrupted */
-        int x_error;
+        int x_error = 0;
         int x_written = send(sock->sock, (void*) data, size,
                              flag < 0 ? MSG_OOB : 0);
-        if (x_written > 0  ||
+        if (x_written >= 0  ||
             (x_written < 0  &&  ((x_error= SOCK_ERRNO) == SOCK_EPIPE       ||
                                  x_error               == SOCK_ENOTCONN    ||
                                  x_error               == SOCK_ETIMEDOUT   ||
@@ -2647,38 +2647,32 @@ static EIO_Status s_Send(SOCK        sock,
                                  x_error               == SOCK_ECONNRESET  ||
                                  x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
-            if (x_written < 0  ||
+            if (x_written <= 0  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
-                s_DoLog(x_written < 0  &&  (sock->n_read & sock->n_written)
+                s_DoLog(x_written <= 0  &&  (sock->n_read & sock->n_written)
                         ? eLOG_Error : eLOG_Trace, sock, eIO_Write,
-                        x_written < 0 ? (void*) &x_error : data,
-                        (size_t)(x_written < 0 ? 0 : x_written),
+                        x_written <= 0 ? (void*) &x_error : data,
+                        (size_t)(x_written <= 0 ? 0 : x_written),
                         flag < 0 ? "" : 0);
             }
 
+            if (x_written > 0) {
+                sock->n_written += x_written;
+                *n_written       = x_written;
+                sock->w_status = eIO_Success;
+                break;
+            }
             if (x_written < 0) {
-                sock->w_status = eIO_Closed;
                 if (x_error != SOCK_EPIPE)
                     sock->r_status = eIO_Closed;
+                sock->w_status = eIO_Closed;
                 break;
-                /*return eIO_Unknown;*/
             }
-            sock->n_written += x_written;
-            *n_written       = x_written;
-            sock->w_status = eIO_Success;
-            break;
         }
-
-#ifdef NCBI_OS_MSWIN
-        /* special write()'s semantics of IO event recording reset */
-        sock->writable = 0/*false*/;
-#endif /*NCBI_OS_MSWIN*/
 
         if (flag < 0/*OOB*/  ||  !x_written)
             return eIO_Unknown;
-
-        x_error = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout expires
          * (use stall protection if specified) */
@@ -2687,32 +2681,59 @@ static EIO_Status s_Send(SOCK        sock,
             ||  x_error == WSAENOBUFS
 #endif /*NCBI_OS_MSWIN*/
             ) {
-            SSOCK_Poll poll;
-            EIO_Status status;
+            SSOCK_Poll            poll;
+            EIO_Status            status;
+            const struct timeval* timeout;
 
 #ifdef NCBI_OS_MSWIN
-            /* special kludge for Windows */
+            struct timeval        slice;
+            unsigned int          writable = sock->writable;
+
+            /* special send()'s semantics of IO event recording reset */
+            sock->writable = 0/*false*/;
             if (x_error == WSAENOBUFS) {
-                s_AddTimeout(&timeout, no_buffer_wait);
-                if (s_IsSmallerTimeout(sock->w_timeout, &timeout))
-                    return eIO_Timeout;
-                if (no_buffer_wait)
-                    Sleep(no_buffer_wait);
-                if (no_buffer_wait == 0)
-                    no_buffer_wait = 10;
-                else if (no_buffer_wait < 160)
-                    no_buffer_wait <<= 1;
+                if (size < SOCK_BUF_CHUNK_SIZE) {
+                    s_AddTimeout(&waited, wait_buf_ms);
+                    if (s_IsSmallerTimeout(sock->w_timeout, &waited))
+                        return eIO_Timeout;
+                    if (wait_buf_ms == 0)
+                        wait_buf_ms = 10;
+                    else if (wait_buf_ms < 160)
+                        wait_buf_ms <<= 1;
+                    slice.tv_sec  = 0;
+                    slice.tv_usec = wait_buf_ms * 1000;
+                } else {
+                    size >>= 1;
+                    memset(&slice, 0, sizeof(slice));
+                }
+                timeout = &slice;
             } else {
-                no_buffer_wait = 0;
-                memset(&timeout, 0, sizeof(timeout));
+                if (wait_buf_ms) {
+                    wait_buf_ms = 0;
+                    memset(&waited, 0, sizeof(waited));
+                }
+                timeout = sock->w_timeout;
+            }
+#else
+            {
+                timeout = sock->w_timeout;
             }
 #endif /*NCBI_OS_MSWIN*/
+
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
             /* stall protection:  try pulling incoming data from the socket */
-            status = s_SelectStallsafe(1, &poll, sock->w_timeout, 0);
+            status = s_SelectStallsafe(1, &poll, timeout, 0);
             assert(poll.event == eIO_Write);
+#ifdef NCBI_OS_MSWIN
+            if (x_error == WSAENOBUFS) {
+                assert(timeout == &slice);
+                sock->writable = writable/*restore*/;
+                if (status == eIO_Timeout)
+                    continue/*try to write again*/;
+            }
+#endif /*NCBI_OS_MSWIN*/
             if (status != eIO_Success)
                 return status;
             if (poll.revent == eIO_Close)
@@ -3392,11 +3413,11 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*SO_OOBINLINE*/
 
     /* establish connection to the peer */
-    sock->connected = 0;
+    sock->connected = 0/*false*/;
 #ifdef NCBI_OS_MSWIN
-    sock->readable = 0;
-    sock->writable = 0;
-    sock->closing  = 0;
+    sock->readable  = 0/*false*/;
+    sock->writable  = 0/*false*/;
+    sock->closing   = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
     for (n = 0; ; n = 1) { /* optionally auto-resume if interrupted */
         if (connect(x_sock, &addr.sa, addrlen) == 0) {
