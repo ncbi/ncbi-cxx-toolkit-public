@@ -332,7 +332,7 @@ string Sequence::GetLabel(void) const
         }
     }
 
-    seqIDs.front()->GetLabel(&label, objects::CSeq_id::eContent, 0);
+    seqIDs.front()->GetLabel(&label, objects::CSeq_id::eContent, objects::CSeq_id::fLabel_GeneralDbIsContent);
     return label;
 }
 
