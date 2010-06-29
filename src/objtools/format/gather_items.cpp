@@ -678,7 +678,9 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
                     if ( GetModelEvidance(ctx.GetHandle(), me) ) {
                         string str = CCommentItem::GetStringForModelEvidance(me, format);
                         if ( !str.empty() ) {
-                            x_AddComment(new CCommentItem(str, ctx));
+                            CRef<CCommentItem> item(new CCommentItem(str, ctx));
+                            item->SetNeedPeriod(false);
+                            x_AddComment(item);
                         }
                     }
                 }
