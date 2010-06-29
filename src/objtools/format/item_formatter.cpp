@@ -951,14 +951,16 @@ static void s_FormatCitSub
         if (sub.GetAuthors().IsSetAffil()) {
             string affil;
             CReferenceItem::FormatAffil(sub.GetAuthors().GetAffil(), affil, true);
+            bool embl_affil =
+                affil.find("to the EMBL/GenBank/DDBJ databases") != string::npos;
             if (do_embl) {
-                if (!NStr::StartsWith(affil, " to the EMBL/GenBank/DDBJ databases.")) {
+                if ( !embl_affil ) {
                     journal += " to the EMBL/GenBank/DDBJ databases.\n";
                 }
-            } else {
+            } else if ( !embl_affil ) {
                 journal += ' ';
+                journal += affil;
             }
-            journal += affil;
         } else if (do_embl) {
             journal += " to the EMBL/GenBank/DDBJ databases.\n";
         }
