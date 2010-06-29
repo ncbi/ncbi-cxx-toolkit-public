@@ -3661,76 +3661,70 @@ void CDisplaySeqalign::x_PreProcessSeqAlign(CSeq_align_set &actual_aln_list,stri
 {
     int num_align = 0;
     //get segs first and get hsp number - m_Segs,m_HspNumber
-    if (toolUrl.find("dumpgnl.cgi") != string::npos 
+    if (toolUrl.find("dumpgnl.cgi") != string::npos
         || (m_AlignOption & eLinkout)
         || (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo)) {
         /*need to construct segs for dumpgnl and
           get sub-sequence for long sequences*/
-        for (CSeq_align_set::Tdata::const_iterator 
-                     iter =  actual_aln_list.Get().begin(); 
-                 iter != actual_aln_list.Get().end() 
+        for (CSeq_align_set::Tdata::const_iterator
+                     iter =  actual_aln_list.Get().begin();
+                 iter != actual_aln_list.Get().end()
                      && num_align<m_NumAlignToShow; iter++, num_align++) {
 
-                //make alnvector
-                CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
-                string idString = avRef->GetSeqId(1).GetSeqIdString();
-                if (toolUrl.find("dumpgnl.cgi") != string::npos 
+                CConstRef<CSeq_id> subid;
+                subid = &((*iter)->GetSeq_id(1));
+                string idString = subid->GetSeqIdString();
+
+                if (toolUrl.find("dumpgnl.cgi") != string::npos
                     || (m_AlignOption & eLinkout)) {
-                    if(m_Segs.count(idString) > 0){ 
-                        //already has seg, concatenate
-                        /*Note that currently it's not necessary to 
-                          use map to store this information.  
-                          But I already implemented this way for 
-                          previous version.  Will keep this way as
-                          it's more flexible if we change something*/
-                        
-                        m_Segs[idString] += "," 
-                            + NStr::IntToString(avRef->GetSeqStart(1))
-                            + "-" + 
-                            NStr::IntToString(avRef->GetSeqStop(1));
-                    } else {//new segs
-                        m_Segs.
-                            insert(map<string, string>::
-                                   value_type(idString, 
-                                              NStr::
-                                              IntToString(avRef->GetSeqStart(1))
-                                              + "-" + 
-                                              NStr::IntToString(avRef->GetSeqStop(1))));
-                    }
-                } 
-                if (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo) {
-                    if(m_HspNumber.count(idString) > 0){
-                        m_HspNumber[idString] ++;
-                    } else {//new subject
-                        m_HspNumber.insert(map<string, int>::value_type(idString, 1));
-                    }
+                    x_CalcSegs(**iter,idString);//sets m_Segs
                 }
-        }                        
-    } 
+                if (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo) {
+                    x_CalcHSPNum(idString); //sets m_HspNumber
+                }
+        }
+    }
 }
 
-void CDisplaySeqalign::x_GetHSPNum(CSeq_align_set::Tdata::const_iterator currSeqAlignIter,CSeq_align_set &actual_aln_list)
-{
-    CConstRef<CSeq_id> subid;
-  
-    string idString, prevIdString;
-    for (CSeq_align_set::Tdata::const_iterator 
-         iter =  currSeqAlignIter; 
-         iter != actual_aln_list.Get().end();iter++) {
 
-        subid = &((*iter)->GetSeq_id(1));
-        idString = subid->GetSeqIdString();
-        if(prevIdString.empty())  {
-            m_HspNumber.insert(map<string, int>::value_type(idString, 1));
-        }
-        else if(prevIdString == idString) {
-            m_HspNumber[idString]++;
-        }        
-        else {
-            break;            
-        }
-        prevIdString = idString;      
-    }  
+void CDisplaySeqalign::x_CalcHSPNum(string idString)
+{
+    if(m_HspNumber.count(idString) > 0){
+        m_HspNumber[idString] ++;
+    } else {//new subject
+        m_HspNumber.insert(map<string, int>::value_type(idString, 1));
+    }
+}
+
+
+
+
+void CDisplaySeqalign::x_CalcSegs(const CSeq_align& align, string idStr)
+{
+    //make alnvector
+    CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(align);
+    string idString = idString.empty() ? avRef->GetSeqId(1).GetSeqIdString(): idStr;
+    if(m_Segs.count(idString) > 0){
+            //already has seg, concatenate
+            /*Note that currently it's not necessary to
+            use map to store this information.
+            But I already implemented this way for
+            previous version.  Will keep this way as
+            it's more flexible if we change something*/
+
+            m_Segs[idString] += ","
+                          + NStr::IntToString(avRef->GetSeqStart(1))
+                          + "-" +
+                          NStr::IntToString(avRef->GetSeqStop(1));
+    }
+    else {//new segs
+            m_Segs.insert(map<string, string>::
+                                   value_type(idString,
+                                              NStr::
+                                              IntToString(avRef->GetSeqStart(1))
+                                              + "-" +
+                                              NStr::IntToString(avRef->GetSeqStop(1))));
+    }
 }
 
 END_SCOPE(align_format)
