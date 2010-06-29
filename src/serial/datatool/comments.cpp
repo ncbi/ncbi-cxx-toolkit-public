@@ -135,7 +135,7 @@ CNcbiOstream& CComments::PrintASN(CNcbiOstream& out,
     ITERATE ( TComments, i, m_Comments ) {
         if ( newLine )
             PrintASNNewLine(out, indent);
-        out << "--" << *i;
+        out << "--" << NStr::Replace(*i, "--", "");
         newLine = true;
     }
 
