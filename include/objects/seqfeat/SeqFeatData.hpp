@@ -227,6 +227,7 @@ public:
         eQual_anticodon,
         eQual_artificial_location,
         eQual_bio_material,
+        eQual_bond_type,
         eQual_bound_moiety,
         eQual_calculated_mol_wt,
         eQual_cell_line,

@@ -2140,6 +2140,7 @@ END_SUBTYPE
 
 START_SUBTYPE(bond)  // same as misc_feature
     ADD_QUAL(allele);
+    ADD_QUAL(bond_type);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
@@ -2307,6 +2308,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_anticodon, "anticodon"),
     TQualPair(CSeqFeatData::eQual_artificial_location, "artificial_location"),
     TQualPair(CSeqFeatData::eQual_bio_material, "bio_material"),
+    TQualPair(CSeqFeatData::eQual_bond_type, "bond_type"),
     TQualPair(CSeqFeatData::eQual_bound_moiety, "bound_moiety"),
     TQualPair(CSeqFeatData::eQual_calculated_mol_wt, "calculated_mol_wt"),
     TQualPair(CSeqFeatData::eQual_cell_line, "cell_line"),
