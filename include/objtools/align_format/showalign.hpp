@@ -768,7 +768,9 @@ private:
     ///Setup scope for feature fetching and m_DynamicFeature
     ///
     void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);
-    void x_GetHSPNum(objects::CSeq_align_set::Tdata::const_iterator currSeqAlignIter,objects::CSeq_align_set &actual_aln_list);                                     
+    void x_CalcSegs(const objects::CSeq_align& align, string idString = "");
+    void x_CalcHSPNum(string idString);
+                                     
 };
 
 END_SCOPE(align_format)
