@@ -1251,8 +1251,13 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 
         CMappedFeat feat;
         if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-            feat = ctx.GetFeatTree().GetParent(m_Feat,
-                                               CSeqFeatData::e_Gene);
+            feat = GetBestGeneForFeat(m_Feat, &ctx.GetFeatTree());
+            if ( !feat ) {
+                feat = feature::GetBestOverlappingFeat
+                    (m_Feat, CSeqFeatData::eSubtype_gene,
+                     sequence::eOverlap_Contains,
+                     &ctx.GetFeatTree());
+            }
         }
         else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
             /// genpept report; we need to do something different
@@ -2743,7 +2748,7 @@ void CFeatureItem::x_AddQualsProt(
              }
          }}
 
-        if (true ||  comp == CMolInfo::eCompleteness_complete) {
+        if (comp == CMolInfo::eCompleteness_complete) {
             if (!has_mat_peptide  ||  !has_signal_peptide) {
                 try {
                     wt = GetProteinWeight(ctx.GetHandle(), loc);
@@ -3533,7 +3538,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_anticodon, CSeqFeatData::eQual_anticodon),
     TQualPair(eFQ_artificial_location, CSeqFeatData::eQual_artificial_location),
     TQualPair(eFQ_bond, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_bond_type, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_bond_type, CSeqFeatData::eQual_bond_type),
     TQualPair(eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety),
     TQualPair(eFQ_calculated_mol_wt, CSeqFeatData::eQual_calculated_mol_wt),
     TQualPair(eFQ_cds_product, CSeqFeatData::eQual_product),
