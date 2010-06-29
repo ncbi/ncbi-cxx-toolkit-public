@@ -2292,10 +2292,12 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                x_AddQual(eFQ_region,
-                          new CFlatStringQVal(f->GetData().GetStr()));
-                found = true;
-                break;
+                if ( !ctx.IsProt()  &&  region != f->GetData().GetStr()) {
+                    x_AddQual(eFQ_region,
+                              new CFlatStringQVal(f->GetData().GetStr()));
+                    found = true;
+                    break;
+                }
             }
         }
 
@@ -2899,6 +2901,7 @@ void CFeatureItem::x_ImportQuals(
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
     bool is_operon = (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
 
+    vector<string> replace_quals;
     ITERATE (CSeq_feat::TQual, it, m_Feat.GetQual()) {
         if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
             continue;
@@ -3034,7 +3037,7 @@ void CFeatureItem::x_ImportQuals(
             {{
                  string s(val);
                  NStr::ToLower(s);
-                 x_AddQual(slot, new CFlatStringQVal(s));
+                 replace_quals.push_back(s);
              }}
             break;
 
@@ -3042,6 +3045,10 @@ void CFeatureItem::x_ImportQuals(
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
         }
+    }
+
+    ITERATE (vector<string>, it, replace_quals) {
+        x_AddQual(eFQ_replace, new CFlatStringQVal(*it));
     }
 }
 
