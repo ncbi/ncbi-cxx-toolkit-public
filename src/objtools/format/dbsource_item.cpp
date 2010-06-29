@@ -282,6 +282,12 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
     }
 }
 
+static void s_FormatDate(const CDate& date, string& str)
+{
+    CTime time = date.AsCTime();
+    str += time.AsString(CTimeFormat("b d, Y"));
+}
+
 
 void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
 {
@@ -305,7 +311,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
     // laid out slightly differently from the C version, but I think that's
     // a bug in the latter (which runs some things together)
     if (sp.CanGetExtra_acc()  &&  !sp.GetExtra_acc().empty() ) {
-        m_DBSource.push_back("extra_accessions:"
+        m_DBSource.push_back("extra accessions:"
                              + NStr::Join(sp.GetExtra_acc(), ","));
     }
     if (sp.GetImeth()) {
@@ -316,22 +322,36 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
     }
     if (sp.CanGetCreated()) {
         string s("created: ");
-        sp.GetCreated().GetDate(&s, "%3N %D %Y");
+        //sp.GetCreated().GetDate(&s, "%3N %D %Y");
+        s_FormatDate(sp.GetCreated(), s);
         m_DBSource.push_back(s + '.');
     }
     if (sp.CanGetSequpd()) {
         string s("sequence updated: ");
-        sp.GetSequpd().GetDate(&s, "%3N %D %Y");
+        //sp.GetSequpd().GetDate(&s, "%3N %D %Y");
+        s_FormatDate(sp.GetSequpd(), s);
         m_DBSource.push_back(s + '.');
     }
     if (sp.CanGetAnnotupd()) {
         string s("annotation updated: ");
-        sp.GetAnnotupd().GetDate(&s, "%3N %D %Y");
+        //sp.GetAnnotupd().GetDate(&s, "%3N %D %Y");
+        s_FormatDate(sp.GetAnnotupd(), s);
         m_DBSource.push_back(s + '.');
     }
     if (sp.CanGetSeqref()  &&  !sp.GetSeqref().empty() ) {
         list<string> xrefs;
         ITERATE (CSP_block::TSeqref, it, sp.GetSeqref()) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**it);
+            CSeq_id_Handle best = sequence::GetId(idh, ctx.GetScope(),
+                                                  sequence::eGetId_Best);
+            if ( !best ) {
+                best = idh;
+            }
+            if (best) {
+                string acc = best.GetSeqId()->GetSeqIdString(true);
+                xrefs.push_back(acc);
+            }
+            /**
             const char* s = 0;
             switch ((*it)->Which()) {
             case CSeq_id::e_Genbank:  s = "genbank accession ";          break;
@@ -351,6 +371,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                 string acc = (*it)->GetSeqIdString(true);
                 xrefs.push_back(s + acc);
             }
+            **/
         }
         if ( !xrefs.empty() ) {
             m_DBSource.push_back("xrefs: " + NStr::Join(xrefs, ", "));
@@ -363,12 +384,16 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
             string id = (tag.IsStr() ? tag.GetStr()
                                      : NStr::IntToString(tag.GetId()));
             if ((*it)->GetDb() == "MIM") {
-                xrefs.push_back
-                    ("MIM <a href=\""
-                     "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id=" + id
-                     + "\">" + id + "</a>");
+                if (ctx.Config().DoHTML()) {
+                    xrefs.push_back
+                        ("MIM <a href=\""
+                         "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id=" + id
+                         + "\">" + id + "</a>");
+                } else {
+                    xrefs.push_back("MIM:" + id);
+                }
             } else {
-                xrefs.push_back((*it)->GetDb() + id); // no space(!)
+                xrefs.push_back((*it)->GetDb() + ':' + id); // no space(!)
             }
         }
         m_DBSource.push_back
@@ -500,7 +525,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             switch (choice) {
             case CSeq_id::e_Embl:       s = "embl ";        comma = ",";  break;
             case CSeq_id::e_Other:      s = "REFSEQ: ";                   break;
-            case CSeq_id::e_Swissprot:  s = "swissprot: ";  comma = ",";  break;
+            case CSeq_id::e_Swissprot:  s = "UniProtKB: ";  comma = ",";  break;
             case CSeq_id::e_Pir:        s = "pir: ";                      break;
             case CSeq_id::e_Prf:        s = "prf: ";                      break;
             default:                    break;
@@ -513,15 +538,19 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             }
             if (tsid->CanGetAccession()) {
                 string acc = tsid->GetAccession();
+                /**
                 if (tsid->CanGetVersion()) {
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
+                **/
                 s += comma + sep + "accession " + acc;
                 sep = " ";
             }
+            /**
             if (tsid->CanGetRelease()) {
                 s += sep + "release " + tsid->GetRelease();
             }
+            **/
             if (id->IsSwissprot()) {
                 s += ';';
             }
