@@ -707,8 +707,8 @@ bool CSeq_loc_Conversion::ConvertSimpleMix(const CSeq_loc& src)
     }
     else {
         dst_strand = Reverse(src_strand);
-        dst_from = m_Shift - src_from;
-        dst_to = m_Shift - src_to;
+        dst_from = m_Shift - src_to;
+        dst_to = m_Shift - src_from;
     }
     m_PartialFlag = 0;
     m_DstFuzz_from.Reset();
