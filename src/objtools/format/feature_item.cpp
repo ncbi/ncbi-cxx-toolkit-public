@@ -2748,7 +2748,7 @@ void CFeatureItem::x_AddQualsProt(
              }
          }}
 
-        if (comp == CMolInfo::eCompleteness_complete) {
+        if (comp == CMolInfo::eCompleteness_complete  ||  ctx.IsRefSeq()) {
             if (!has_mat_peptide  ||  !has_signal_peptide) {
                 try {
                     wt = GetProteinWeight(ctx.GetHandle(), loc);
