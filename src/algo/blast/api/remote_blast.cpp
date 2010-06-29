@@ -129,8 +129,8 @@ void CRemoteBlast::x_SearchErrors(CRef<objects::CBlast4_reply> reply)
             break;
             
         case eBlast4_error_code_bad_request_id:
-            _ASSERT(msg == kEmptyStr);
-            m_Errs.push_back(string("Invalid/unknown RID (bad_request_id)"));
+            m_Errs.push_back(string("Invalid/unknown RID (bad_request_id)") +
+                             msg);
             break;
         }
     }
