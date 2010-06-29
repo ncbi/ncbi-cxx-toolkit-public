@@ -2292,7 +2292,9 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                if ( !ctx.IsProt()  &&  region != f->GetData().GetStr()) {
+                if (ctx.IsProt()  &&  region == f->GetData().GetStr()) {
+                    /// skip
+                } else {
                     x_AddQual(eFQ_region,
                               new CFlatStringQVal(f->GetData().GetStr()));
                     found = true;
