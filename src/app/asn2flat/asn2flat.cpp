@@ -188,7 +188,7 @@ void CAsn2FlatApp::Init(void)
                                  "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
                                  "        1 - show HTML report\n"
                                  "        2 - show contig features\n"
-                                 "        4 - show show contig sources\n"
+                                 "        4 - show contig sources\n"
                                  "        8 - show far translations\n"
                                  "       16 - show translations if there are no products\n"
                                  "       32 - always translate CDS\n"
@@ -322,8 +322,15 @@ int CAsn2FlatApp::Run(void)
                 continue;
             }
 
-            LOG_POST(Error << "id = " << id_str);
-            HandleSeqId( id_str );
+            try {
+                m_Scope.Reset(new CScope(*m_Objmgr));
+                m_Scope->AddDefaults();
+                LOG_POST(Error << "id = " << id_str);
+                HandleSeqId( id_str );
+            }
+            catch (CException& e) {
+                ERR_POST(Error << e);
+            }
         }
         return 0;
     }
