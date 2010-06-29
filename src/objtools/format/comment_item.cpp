@@ -411,8 +411,8 @@ string CCommentItem::GetStringForRefTrack
                 << " [see " << "documentation" << "].";
         } else {
             oss << "NCBI contigs are derived from assembled genomic sequence data."
-                << "~Also see:~    " << "Documentation" 
-                << " of NCBI's Annotation Process~ ";
+                << "~Also see:~"
+                << "    Documentation of NCBI's Annotation Process~ ";
         }
         break;
     case eRefTrackStatus_Provisional:
@@ -688,8 +688,8 @@ string CCommentItem::GetStringForModelEvidance
         text << "evidence";
     }
 
-    text << ".~Also see:~    " << 
-            "Documentation of NCBI's Annotation Process~    ";
+    text << ".~Also see:~"
+        << "    Documentation of NCBI's Annotation Process~    ";
 
     return CNcbiOstrstreamToString(text);
 }
@@ -983,8 +983,8 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
               << " [see " << "documentation" << "].";
     } else {
         text << "NCBI contigs are derived from assembled genomic sequence data."
-             << "~Also see:~    " << "Documentation" 
-             << " of NCBI's Annotation Process~ ";
+             << "~Also see:~"
+             << "    Documentation of NCBI's Annotation Process~ ";
     }
 
     /// add our assembly info
