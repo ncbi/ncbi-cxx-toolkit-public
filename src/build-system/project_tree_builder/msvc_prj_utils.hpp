@@ -39,9 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#if NCBI_COMPILER_MSVC
-USING_SCOPE(objects);
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CProjKey --
@@ -82,6 +79,9 @@ private:
     string    m_Id;
 
 };
+
+#if NCBI_COMPILER_MSVC
+USING_SCOPE(objects);
 
 /// Creates CVisualStudioProject class instance from file.
 ///
