@@ -411,7 +411,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
              temp + kFWExplanation[m_Firewall]);
 
     PreCheck(eFirewallConnPoints, 1/*sub*/,
-             "Obtaining current NCBI firewall settings");
+             "Obtaining current NCBI " +
+             string(m_Firewall ? "firewall settings" : "service entries"));
 
     CConn_HttpStream script("http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
                             "/fwd_check.cgi", net_info, user_header,
@@ -452,7 +453,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     bool firewall = false;
     if (status == eIO_Success) {
         PreCheck(eFirewallConnPoints, 2/*sub*/,
-                 "Verifying firewall configuration consistency");
+                 "Verifying configuration for consistency");
 
         ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_Fwd) {
             if (CONN_FWD_PORT_MIN <= cp->port && cp->port <= CONN_FWD_PORT_MAX)
@@ -466,7 +467,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         }
         if (status == eIO_Success) {
             if (m_Firewall != firewall) {
-                temp  = "Firewall configuration mismatch: ";
+                temp = "Configuration mismatch: firewall ";
                 temp += firewall ? "wrongly" : "not";
                 temp += " acknowledged, please contact " NCBI_HELP_DESK;
                 status = eIO_NotSupported;
