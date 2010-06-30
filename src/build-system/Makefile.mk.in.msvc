@@ -87,7 +87,7 @@ IgnoreDefaultLibraryNames=
 FixedBaseAddress=0
 
 [Linker.1000]
-AdditionalOptions=advapi32.lib
+AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib
 
 [Linker.x64]
 TargetMachine=17
@@ -169,6 +169,11 @@ Linker_SubSystem_1           = Console
 Linker_SubSystem_2           = Windows
 Linker_TargetMachine_1       = MachineX86
 Linker_TargetMachine_17      = MachineX64
+
+Macro_InputPath = %(FullPath)
+Macro_InputDir = %(RootDir)%(Directory)
+Macro_InputName = %(Filename)
+Macro_InputFileName = %(Filename)%(Extension)
 
 
 ###############################################################################
