@@ -63,5 +63,6 @@ objtools/simple$
 -objects/.*/unit_test
 algo/tree
 algo/phy_tree
+algo/align$
 algo/align/nw
 algo/cobalt
