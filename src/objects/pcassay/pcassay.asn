@@ -204,11 +204,13 @@ PC-AssayDescription ::= SEQUENCE {
                                                                 -- before hand so it is not necessary to update the descriptions of
                                                                 -- related assays when new group member submitted to PubChem 
 
-    panel-info        PC-AssayPanel     OPTIONAL,                -- for 'panel' type of bioassay only
+    panel-info        PC-AssayPanel     OPTIONAL,               -- for 'panel' type of bioassay only
                                                                 -- store assay panel member information
-    is-mlp-late-stage       BOOLEAN OPTIONAL                    -- verification for 'late-stage-data' deposition
+    is-mlp-late-stage       BOOLEAN OPTIONAL,                   -- verification for 'late-stage-data' deposition
+    categorized-comment SEQUENCE OF PC-CategorizedComment OPTIONAL
+                                                                -- to report categorized description/comment by associating with a category title 
 }
- 
+
 -- Description for Panel Assay
 -- Describe general information about the panel, and link to information for each panel member 
 PC-AssayPanel ::= SEQUENCE {
@@ -235,9 +237,18 @@ PC-AssayPanelMember ::= SEQUENCE {
                                confirmatory       (2),          --   Confirmatory Assay
                                summary            (3)           --   Probe Summary Assay
                              }                        OPTIONAL,
-    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL  -- Dose-Response Attribution within the panel member
+    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL,  -- Dose-Response Attribution within the panel member
+    categorized-comment SEQUENCE OF PC-CategorizedComment OPTIONAL
+                                                                -- to report categorized description/comment by associating with a category title 
 } 
 
+-- Definition for Categorized description/comment 
+-- This field is added to provide flexibility for depositors to present textual description/comments in a desirable way 
+-- and to facilitate information validation by the depositor and data exchange with PubChem 
+PC-CategorizedComment ::= SEQUENCE {
+    title     VisibleString,                                    -- title for the description/comment
+    comment   VisibleString                                     -- description/comment content
+}
 
 --  Assay Dose-response attribute information used to define a set of readouts
 --    as being part of a dose-response curve (for curve plotting/analysis)
