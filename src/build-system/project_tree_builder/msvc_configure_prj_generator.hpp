@@ -31,12 +31,9 @@
  */
 
 #include "proj_item.hpp"
-
 #include <set>
-
-#include "msvc_prj_utils.hpp"
-
 #include <corelib/ncbienv.hpp>
+
 BEGIN_NCBI_SCOPE
 
 #if NCBI_COMPILER_MSVC
@@ -68,13 +65,19 @@ public:
     ~CMsvcConfigureProjectGenerator(void);
 
 
-    void SaveProject(bool with_gui);
+    void SaveProject(bool with_gui, CMsvcProjectGenerator* generator);
+    void CreateCustomBuildInfo(bool with_gui, SCustomBuildInfo* build_info);
     string GetPath(bool with_gui) const;
+    void GetVisualStudioProject(string& path, string& guid, string& name, bool with_gui) const;
+
     const CVisualStudioProject& GetVisualStudioProject(bool with_gui) const;
 
 private:
     CVisualStudioProject m_Xmlprj;
     CVisualStudioProject m_XmlprjGui;
+    CProjItem m_Prj;
+    CProjItem m_PrjGui;
+
   	const string m_Name;
   	const string m_NameGui;
 

@@ -206,6 +206,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_Includes = item.m_Includes;
     m_Inlines  = item.m_Inlines;
     m_ProjTags = item.m_ProjTags;
+    m_CustomBuild = item.m_CustomBuild;
     
     m_IsBundle = item.m_IsBundle;
     m_External = item.m_External;

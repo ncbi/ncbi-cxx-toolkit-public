@@ -71,6 +71,40 @@ string CMsvcMetaMakefile::TranslateOpt(
         "Translate", name, value);
 }
 
+string CMsvcMetaMakefile::TranslateCommand(const string& value)
+{
+    if (CMsvc7RegSettings::GetMsvcVersion() != CMsvc7RegSettings::eMsvc1000 || value.empty()) {
+        return value;
+    }
+    const CMsvcMetaMakefile& meta = GetApp().GetMetaMakefile();
+
+    string data(value), raw_macro, macro, definition;
+    string::size_type start, end, done = 0;
+    for (;;) {
+        if ((start = data.find("$(", done)) == string::npos) {
+            break;
+        }
+        end = data.find(")", start);
+        if (end == string::npos) {
+            break;
+        }
+        raw_macro = data.substr(start,end-start+1);
+        if (CSymResolver::IsDefine(raw_macro)) {
+            macro = CSymResolver::StripDefine(raw_macro);
+            definition = meta.m_MakeFile.Get("Translate", string("Macro_") + macro);
+            if (definition.empty()) {
+                done = end;
+            } else {
+                data = NStr::Replace(data, raw_macro, definition);
+                done = 0;
+            } 
+        }
+    }
+    data = NStr::Replace(data, "@echo", "%40echo");
+    return data;
+}
+
+
 string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, 
                                          const SConfigInfo& config) const
 {

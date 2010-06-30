@@ -31,18 +31,57 @@
  */
 
 #include "ptb_registry.hpp"
-#include "proj_item.hpp"
 #include <corelib/ncbienv.hpp>
 #if NCBI_COMPILER_MSVC
 #   include <build-system/project_tree_builder/msvc71_project__.hpp>
 #endif //NCBI_COMPILER_MSVC
-#include "proj_item.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE
 
 #if NCBI_COMPILER_MSVC
 USING_SCOPE(objects);
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CProjKey --
+///
+/// Project key  abstraction.
+///
+/// Project key (type + project_id).
+
+class CProjKey
+{
+public:
+    typedef enum {
+        eNoProj,
+        eLib,
+        eApp,
+        eDll,
+        eMsvc,
+        eDataSpec,
+        eUtility,
+        eLast 
+    } TProjType;
+
+    CProjKey(void);
+    CProjKey(TProjType type, const string& project_id);
+    CProjKey(const CProjKey& key);
+    CProjKey& operator= (const CProjKey& key);
+    ~CProjKey(void);
+
+    bool operator<  (const CProjKey& key) const;
+    bool operator== (const CProjKey& key) const;
+    bool operator!= (const CProjKey& key) const;
+
+    TProjType     Type(void) const;
+    const string& Id  (void) const;
+
+private:
+    TProjType m_Type;
+    string    m_Id;
+
+};
 
 /// Creates CVisualStudioProject class instance from file.
 ///

@@ -1742,10 +1742,14 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     }}
 
     // VCPROJ - will map to src
-    k = m->second.m_Contents.find("VCPROJ");
+    string vcproj_key("VCPROJ");
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+        vcproj_key = "VCXPROJ";
+    }
+    k = m->second.m_Contents.find(vcproj_key);
     if (k == m->second.m_Contents.end()) {
 
-        LOG_POST(Info << "No VCPROJ specified in Makefile: project " << proj_name
+        LOG_POST(Info << "No " << vcproj_key <<" specified in Makefile: project " << proj_name
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }

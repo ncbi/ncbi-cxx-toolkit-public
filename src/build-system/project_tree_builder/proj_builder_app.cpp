@@ -769,8 +769,8 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
                                             m_Solution,
                                             m_BuildPtb);
     if (!skip_config) {
-        configure_generator.SaveProject(false);
-        configure_generator.SaveProject(true);
+        configure_generator.SaveProject(false, &prj_gen);
+        configure_generator.SaveProject(true, &prj_gen);
     }
 
     // INDEX dummy project
@@ -853,16 +853,15 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
                 master_prj_gen.GetVisualStudioProject().GetAttlist().GetProjectGUID(),
                 master_prj_gen.GetVisualStudioProject().GetAttlist().GetName());
 
-            sln_gen.AddConfigureProject( configure_generator.GetPath(false),
-                configure_generator.GetVisualStudioProject(false).GetAttlist().GetProjectGUID(),
-                configure_generator.GetVisualStudioProject(false).GetAttlist().GetName());
-
-            sln_gen.AddConfigureProject( configure_generator.GetPath(true),
-                configure_generator.GetVisualStudioProject(true).GetAttlist().GetProjectGUID(),
-                configure_generator.GetVisualStudioProject(true).GetAttlist().GetName());
-
             sln_gen.AddUtilityProject( index_prj_path, index_prj_guid, index_prj_name);
         }
+
+        string cfg_path, cfg_guid, cfg_name;
+        configure_generator.GetVisualStudioProject(cfg_path, cfg_guid, cfg_name, false);
+        sln_gen.AddConfigureProject( cfg_path, cfg_guid, cfg_name);
+
+        configure_generator.GetVisualStudioProject(cfg_path, cfg_guid, cfg_name, true);
+        sln_gen.AddConfigureProject( cfg_path, cfg_guid, cfg_name);
 
         sln_gen.AddAsnAllProject(   asn_all_prj_path,  asn_all_guid,  asn_all_name);
         sln_gen.AddLibsAllProject( libs_all_prj_path, libs_all_guid, libs_all_name);

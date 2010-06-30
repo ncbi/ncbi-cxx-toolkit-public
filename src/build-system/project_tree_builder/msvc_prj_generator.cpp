@@ -711,6 +711,19 @@ void __SET_RC_ELEMENT(
     e->SetAnyContent().SetValue(value);
     container->SetResourceCompile().SetResourceCompile().push_back(e);
 }
+template<typename Container>
+void __SET_CUSTOMBUILD_ELEMENT(
+    Container& container, const string& name, const string& value,
+    const string& condition = kEmptyStr)
+{
+    CRef<msbuild::CCustomBuild::C_E> e(new msbuild::CCustomBuild::C_E);
+    e->SetAnyContent().SetName(name);
+    e->SetAnyContent().SetValue(value);
+    if (!condition.empty()) {
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+    }
+    container->SetCustomBuild().SetCustomBuild().push_back(e);
+}
 
 
 #endif  // USE_MSVC2010
@@ -854,6 +867,25 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
             t->SetItemDefinitionGroup().SetAttlist().SetCondition(cfg_condition);
             project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            // PreBuild event
+            {
+                string cmd(msvc_tool.PreBuildEvent()->CommandLine());
+                if (!cmd.empty()) {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    CRef<msbuild::CPreBuildEvent::C_E> e(new msbuild::CPreBuildEvent::C_E);
+                    p->SetPreBuildEvent().SetPreBuildEvent().push_back(e);
+                    e->SetCommand(CMsvcMetaMakefile::TranslateCommand(cmd));
+                }
+            }
+            // Midl
+            if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eMsvcX64) {
+                CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                CRef<msbuild::CMidl::C_E> e(new msbuild::CMidl::C_E);
+                p->SetMidl().SetMidl().push_back(e);
+                e->SetTargetEnvironment("X64");
+            }
             // compiler
             {
                 CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
@@ -866,13 +898,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 __SET_CLCOMPILE(p, BufferSecurityCheck);
                 __SET_CLCOMPILE(p, CallingConvention);
                 __SET_CLCOMPILE(p, CompileAs);
-               {
-                    string i(msvc_tool.Compiler()->DebugInformationFormat());
-                    if (i == "0") {
-                        i = "";
-                    }
-                    __SET_CLCOMPILE_ELEMENT(p, "DebugInformationFormat", i);
-               }
+                __SET_CLCOMPILE(p, DebugInformationFormat);
                 __SET_CLCOMPILE(p, DisableSpecificWarnings);
                 __SET_CLCOMPILE(p, EnableFunctionLevelLinking);
                 __SET_CLCOMPILE(p, FavorSizeOrSpeed);
@@ -935,6 +961,17 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 __SET_RC_ELEMENT(p, "AdditionalOptions",            msvc_tool.ResourceCompiler()->AdditionalOptions());
                 __SET_RC_ELEMENT(p, "PreprocessorDefinitions",      msvc_tool.ResourceCompiler()->PreprocessorDefinitions());
             }
+            // PostBuild event
+            {
+                string cmd(m_pkg_export_command);
+                if (!cmd.empty()) {
+                    CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
+                    t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
+                    CRef<msbuild::CPostBuildEvent::C_E> e(new msbuild::CPostBuildEvent::C_E);
+                    p->SetPostBuildEvent().SetPostBuildEvent().push_back(e);
+                    e->SetCommand(CMsvcMetaMakefile::TranslateCommand(cmd));
+                }
+            }
         }
     }
     
@@ -987,6 +1024,76 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                         __SET_CLCOMPILE_ELEMENT(p, "PrecompiledHeader", "NotUsing", cfg_condition);
                     }
                 }
+            }
+        }
+    }
+    // headers
+    if (!collector.HeaderFiles().empty()) {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        ITERATE(list<string>, f, collector.HeaderFiles()) {
+            const string& rel_source_file = *f;
+            CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+            t->SetItemGroup().SetItemGroup().push_back(p);
+            p->SetClInclude().SetAttlist().SetInclude(rel_source_file);
+        }
+    }
+    // inline
+    if (!collector.InlineFiles().empty()) {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        ITERATE(list<string>, f, collector.InlineFiles()) {
+            const string& rel_source_file = *f;
+            CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+            t->SetItemGroup().SetItemGroup().push_back(p);
+            p->SetNone().SetAttlist().SetInclude(rel_source_file);
+        }
+    }
+    // resource
+    if (!collector.ResourceFiles().empty()) {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        ITERATE(list<string>, f, collector.ResourceFiles()) {
+            const string& rel_source_file = *f;
+            CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+            t->SetItemGroup().SetItemGroup().push_back(p);
+            p->SetResourceCompile().SetAttlist().SetInclude(rel_source_file);
+        }
+    }
+    // custom build and datatool files
+    list<SCustomBuildInfo> info_list = prj.m_CustomBuild;
+    copy(project_context.GetCustomBuildInfo().begin(), 
+         project_context.GetCustomBuildInfo().end(), back_inserter(info_list));
+    if ( !prj.m_DatatoolSources.empty() ) {
+        ITERATE(list<CDataToolGeneratedSrc>, f, prj.m_DatatoolSources) {
+            const CDataToolGeneratedSrc& src = *f;
+            SCustomBuildInfo build_info;
+            s_CreateDatatoolCustomBuildInfo(prj, project_context, src, &build_info);
+            info_list.push_back(build_info);
+        }
+    }
+    if ( !info_list.empty() ) {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        ITERATE(list<SCustomBuildInfo>, f, info_list) { 
+            const SCustomBuildInfo& build_info = *f;
+            string rel_source_file =
+                CDirEntry::CreateRelativePath(project_context.ProjectDir(), build_info.m_SourceFile);
+            CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+            t->SetItemGroup().SetItemGroup().push_back(p);
+            p->SetCustomBuild().SetAttlist().SetInclude(rel_source_file);
+            __SET_CUSTOMBUILD_ELEMENT(p,"FileType", "Document");
+            ITERATE(list<SConfigInfo>, c , m_project_configs) {
+                string cfg_condition("'$(Configuration)|$(Platform)'=='");
+                cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+                __SET_CUSTOMBUILD_ELEMENT(p,"Message",
+                    CMsvcMetaMakefile::TranslateCommand(build_info.m_Description), cfg_condition);
+                __SET_CUSTOMBUILD_ELEMENT(p,"Command",
+                    CMsvcMetaMakefile::TranslateCommand(build_info.m_CommandLine), cfg_condition);
+                __SET_CUSTOMBUILD_ELEMENT(p,"AdditionalInputs",
+                    CMsvcMetaMakefile::TranslateCommand(build_info.m_AdditionalDependencies), cfg_condition);
+                __SET_CUSTOMBUILD_ELEMENT(p,"Outputs",
+                    CMsvcMetaMakefile::TranslateCommand(build_info.m_Outputs), cfg_condition);
             }
         }
     }
@@ -1045,31 +1152,6 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 
     SaveIfNewer(project_path, project);
 #endif
-}
-
-void CreateUtilityProject10(
-    CProjItem& prj_item,
-    const string& prj_dir, const string& name)
-{
-    string spec_proj_name = name;
-    string spec_proj_id   = NStr::Replace(name, "-", "_");
-
-    list<string>   s_empty;
-    list<CProjKey> d_empty;
-    CProjKey::TProjType type = CProjKey::eUtility;
-    CProjKey proj_key(type, spec_proj_id);
-    prj_item = CProjItem(type,
-                spec_proj_name, 
-                spec_proj_id,
-                prj_dir,
-                s_empty, 
-                d_empty,
-                s_empty,
-                s_empty,
-                s_empty,
-                s_empty,
-                eMakeType_Undefined,
-                IdentifySlnGUID(prj_dir, proj_key));
 }
 
 void CreateUtilityProject(const string&            name, 

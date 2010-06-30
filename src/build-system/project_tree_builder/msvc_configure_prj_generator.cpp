@@ -32,6 +32,7 @@
 #include "msvc_configure_prj_generator.hpp"
 #include "msvc_prj_defines.hpp"
 #include "proj_builder_app.hpp"
+#include "proj_tree_builder.hpp"
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -108,8 +109,24 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     if (m_BuildPtb) {
         m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
     }
-    CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
-    CreateUtilityProject(m_NameGui, m_Configs, &m_XmlprjGui);
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+
+        string prj_dir =  CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Src, "UtilityProjects");
+
+        SCustomBuildInfo build_info;
+
+        m_Prj = CreateUtilityProjectItem(prj_dir, m_Name);
+        CreateCustomBuildInfo(false,&build_info);
+        m_Prj.m_CustomBuild.push_back(build_info);
+        
+        m_PrjGui = CreateUtilityProjectItem(prj_dir, m_NameGui);
+        CreateCustomBuildInfo(true,&build_info);
+        m_PrjGui.m_CustomBuild.push_back(build_info);
+
+    } else {
+        CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
+        CreateUtilityProject(m_NameGui, m_Configs, &m_XmlprjGui);
+    }
 }
 
 
@@ -117,10 +134,35 @@ CMsvcConfigureProjectGenerator::~CMsvcConfigureProjectGenerator(void)
 {
 }
 
-
-void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
+void CMsvcConfigureProjectGenerator::CreateCustomBuildInfo(
+    bool with_gui, SCustomBuildInfo* build_info)
 {
-    string name(with_gui ? m_NameGui : m_Name);
+    string srcfile(with_gui ? m_SrcFileNameGui : m_SrcFileName);
+    CreateProjectFileItem(with_gui);
+
+    string source_file_path_abs = 
+        CDirEntry::ConcatPath(m_ProjectDir, srcfile + m_ProjectItemExt);
+    source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
+    build_info->m_SourceFile  = source_file_path_abs;
+    build_info->m_Description = "Configure solution : $(SolutionName)";
+    build_info->m_CommandLine = m_CustomBuildCommand;
+    string outputs("$(InputPath).aanofile.out;");
+    if (!GetApp().m_CustomConfFile.empty()) {
+        outputs += "$(ProjectDir)" +
+            CDir::CreateRelativePath(m_ProjectDir, GetApp().m_CustomConfFile) + ";";
+    }
+    outputs += m_CustomBuildOutput;
+    build_info->m_Outputs     = outputs;//"$(InputPath).aanofile.out";
+}
+
+void CMsvcConfigureProjectGenerator::SaveProject(
+    bool with_gui, CMsvcProjectGenerator* generator)
+{
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+        generator->Generate( with_gui ? m_PrjGui : m_Prj);
+        return;
+    }
+
     string srcfile(with_gui ? m_SrcFileNameGui : m_SrcFileName);
     CVisualStudioProject& xmlprj = with_gui ? m_XmlprjGui : m_Xmlprj;
 
@@ -129,25 +171,10 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
         filter->SetAttlist().SetName("Configure");
         filter->SetAttlist().SetFilter("");
 
-        //Include collected source files
-        CreateProjectFileItem(with_gui);
         CRef< CFFile > file(new CFFile());
         file->SetAttlist().SetRelativePath(srcfile + m_ProjectItemExt);
         SCustomBuildInfo build_info;
-        string source_file_path_abs = 
-            CDirEntry::ConcatPath(m_ProjectDir, srcfile + m_ProjectItemExt);
-        source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
-        build_info.m_SourceFile  = source_file_path_abs;
-        build_info.m_Description = "Configure solution : $(SolutionName)";
-        build_info.m_CommandLine = m_CustomBuildCommand;
-        string outputs("$(InputPath).aanofile.out;");
-        if (!GetApp().m_CustomConfFile.empty()) {
-            outputs += "$(ProjectDir)" +
-                CDir::CreateRelativePath(m_ProjectDir, GetApp().m_CustomConfFile) + ";";
-        }
-        outputs += m_CustomBuildOutput;
-        build_info.m_Outputs     = outputs;//"$(InputPath).aanofile.out";
-        
+        CreateCustomBuildInfo(with_gui, &build_info);
         AddCustomBuildFileToFilter(filter, 
                                    m_Configs, 
                                    m_ProjectDir, 
@@ -155,8 +182,6 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
         xmlprj.SetFiles().SetFilter().push_back(filter);
 
     }}
-
-
 
     SaveIfNewer(GetPath(with_gui), xmlprj);
 }
@@ -178,6 +203,29 @@ CMsvcConfigureProjectGenerator::GetVisualStudioProject(bool with_gui) const
         return m_XmlprjGui;
     }
     return m_Xmlprj;
+}
+
+void CMsvcConfigureProjectGenerator::GetVisualStudioProject(
+    string& path, string& guid, string& name, bool with_gui) const
+{
+    path = GetPath(with_gui);
+    if (with_gui) {
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+            guid = m_PrjGui.m_GUID;
+            name = m_PrjGui.m_Name;
+        } else {
+            guid = m_XmlprjGui.GetAttlist().GetProjectGUID();
+            name = m_XmlprjGui.GetAttlist().GetName();
+        }
+    } else {
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+            guid = m_Prj.m_GUID;
+            name = m_Prj.m_Name;
+        } else {
+            guid = m_Xmlprj.GetAttlist().GetProjectGUID();
+            name = m_Xmlprj.GetAttlist().GetName();
+        }
+    }
 }
 
 void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const

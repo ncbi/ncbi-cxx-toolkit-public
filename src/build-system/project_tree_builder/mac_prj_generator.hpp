@@ -32,7 +32,6 @@
 
 #include "proj_item.hpp"
 #include "msvc_project_context.hpp"
-#include "msvc_prj_utils.hpp"
 #include "prj_file_collector.hpp"
 
 #include <corelib/ncbienv.hpp>

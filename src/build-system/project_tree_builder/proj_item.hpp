@@ -31,6 +31,7 @@
  */
 
 
+#include "msvc_prj_utils.hpp"
 #include "proj_datatool_generated_src.hpp"
 #include "file_contents.hpp"
 
@@ -40,47 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CProjKey --
-///
-/// Project key  abstraction.
-///
-/// Project key (type + project_id).
-
-class CProjKey
-{
-public:
-    typedef enum {
-        eNoProj,
-        eLib,
-        eApp,
-        eDll,
-        eMsvc,
-        eDataSpec,
-        eUtility,
-        eLast 
-    } TProjType;
-
-    CProjKey(void);
-    CProjKey(TProjType type, const string& project_id);
-    CProjKey(const CProjKey& key);
-    CProjKey& operator= (const CProjKey& key);
-    ~CProjKey(void);
-
-    bool operator<  (const CProjKey& key) const;
-    bool operator== (const CProjKey& key) const;
-    bool operator!= (const CProjKey& key) const;
-
-    TProjType     Type(void) const;
-    const string& Id  (void) const;
-
-private:
-    TProjType m_Type;
-    string    m_Id;
-
-};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -180,6 +140,7 @@ public:
     list<string> m_Includes;
     list<string> m_Inlines;
     list<string> m_ProjTags;
+    list<SCustomBuildInfo> m_CustomBuild;
     
     mutable bool m_IsBundle;
     bool m_External;

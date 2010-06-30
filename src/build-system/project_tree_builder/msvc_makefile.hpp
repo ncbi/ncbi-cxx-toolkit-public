@@ -130,6 +130,7 @@ public:
 
 
     static string TranslateOpt(const string& value, const string& section, const string& opt);
+    static string TranslateCommand(const string& value);
     // IMsvcMetaMakefile
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config) const;
