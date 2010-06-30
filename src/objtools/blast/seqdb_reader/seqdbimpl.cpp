@@ -2031,8 +2031,10 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
 }
 
 static
-void s_GetDetails(int algorithm_id, const string & desc, 
-      EBlast_filter_program & program, string & program_name, string & algo_opts)
+void s_GetDetails(const string          & desc, 
+                  EBlast_filter_program & program, 
+                  string                & program_name, 
+                  string                & algo_opts)
 {
     static const CEnumeratedTypeValues* enum_type_vals = NULL;
     if (enum_type_vals == NULL) {
@@ -2083,7 +2085,7 @@ void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
         NCBI_THROW(CSeqDBException, eArgErr, CNcbiOstrstreamToString(oss));
     }
 
-    s_GetDetails(algorithm_id, s, program, program_name, algo_opts);
+    s_GetDetails(s, program, program_name, algo_opts);
 }
 
 void CSeqDBImpl::x_BuildMaskAlgorithmList(CSeqDBLockHold & locked)
@@ -2260,9 +2262,9 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
             m_CachedSeqs.pop_back();
             delete buffer;
         }
-        m_CacheID.clear();
     }
            
+    m_CacheID.clear();
     m_NextCacheID = 0;
     m_NumThreads = num_threads;
     m_Atlas.SetMTSliceSize(num_threads);
