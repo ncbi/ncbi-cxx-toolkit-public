@@ -814,9 +814,14 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         }
 
         if ( m_FeatComparator && x_info && y_info ) {
-            return m_FeatComparator->Less(x_create.GetFeat(x, x_info),
-                                          y_create.GetFeat(y, y_info),
-                                          m_Scope);
+            const CSeq_feat& x_feat = x_create.GetFeat(x, x_info);
+            const CSeq_feat& y_feat = y_create.GetFeat(y, y_info);
+            if ( m_FeatComparator->Less(x_feat, y_feat, m_Scope) ) {
+                return true;
+            }
+            if ( m_FeatComparator->Less(y_feat, x_feat, m_Scope) ) {
+                return false;
+            }
         }
     }
     return x < y;
