@@ -121,23 +121,23 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 }
 
 
-const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
+CConstRef<CSeq_loc> CMappedFeat::GetMappedLocation(void) const
 {
-    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr, *this);
+    return m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr, *this);
 }
 
 
-const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
+CConstRef<CSeq_feat> CMappedFeat::GetSeq_feat(void) const
 {
     if ( m_MappingInfoPtr->IsMapped() ) {
         CRef<CSeq_loc> mapped_location
-            (&const_cast<CSeq_loc&>(GetMappedLocation()));
-        return *m_MappedFeat.MakeMappedFeature(*this,
-                                               *m_MappingInfoPtr,
-                                               *mapped_location);
+            (&const_cast<CSeq_loc&>(*GetMappedLocation()));
+        return m_MappedFeat.MakeMappedFeature(*this,
+                                              *m_MappingInfoPtr,
+                                              *mapped_location);
     }
     else {
-        return GetOriginalFeature();
+        return GetOriginalSeq_feat();
     }
 }
 
@@ -151,9 +151,9 @@ const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
 }
 
 
-CConstRef<CSeq_feat> CMappedFeat::GetSeq_feat(void) const
+const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 {
-    return ConstRef(&GetMappedFeature());
+    return *GetSeq_feat();
 }
 
 
@@ -172,14 +172,14 @@ bool CMappedFeat::GetPartial(void) const
 const CSeq_loc& CMappedFeat::GetProduct(void) const
 {
     return m_MappingInfoPtr->IsMappedProduct()?
-        GetMappedLocation(): GetSeq_feat()->GetProduct();
+        *GetMappedLocation(): GetOriginalSeq_feat()->GetProduct();
 }
 
 
 const CSeq_loc& CMappedFeat::GetLocation(void) const
 {
     return m_MappingInfoPtr->IsMappedLocation()?
-        GetMappedLocation(): GetSeq_feat()->GetLocation();
+        *GetMappedLocation(): GetOriginalSeq_feat()->GetLocation();
 }
 
 

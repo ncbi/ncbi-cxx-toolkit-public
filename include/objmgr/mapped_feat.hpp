@@ -112,7 +112,7 @@ private:
                      const TIterator& annot);
     void Reset(void);
 
-    const CSeq_loc& GetMappedLocation(void) const;
+    CConstRef<CSeq_loc> GetMappedLocation(void) const;
 
     // Pointer is used with annot collector to avoid copying of the
     // mapping info. The structure is copied only when the whole
