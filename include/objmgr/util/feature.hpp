@@ -36,6 +36,7 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +49,7 @@ class CFeat_CI;
 class CTSE_Handle;
 class CFeat_id;
 class CGene_ref;
+class CGb_qual;
 
 BEGIN_SCOPE(feature)
 
@@ -272,7 +274,7 @@ public:
         
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
-        const string* m_TranscriptId;
+        CConstRef<CGb_qual> m_TranscriptId;
         bool m_IsSetParent, m_IsSetChildren;
         enum EIsLinkedToRoot {
             eIsLinkedToRoot_unknown,

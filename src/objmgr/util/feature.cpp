@@ -1266,9 +1266,11 @@ void CFeatTree::AddFeature(const CMappedFeat& feat)
     CFeatInfo& info = m_InfoMap[feat.GetSeq_feat_Handle()];
     info.m_Feat = feat;
     if ( feat.IsSetQual() && sx_CanHaveTranscriptId(feat.GetFeatSubtype()) ) {
-        ITERATE ( CSeq_feat::TQual, it, feat.GetQual() ) {
+        CConstRef<CSeq_feat> f = feat.GetSeq_feat();
+        const CSeq_feat::TQual& qual = f->GetQual();
+        ITERATE ( CSeq_feat::TQual, it, qual ) {
             if ( (*it)->GetQual() == "transcript_id" && (*it)->IsSetVal() ) {
-                info.m_TranscriptId = &(*it)->GetVal();
+                info.m_TranscriptId = *it;
                 break;
             }
         }
@@ -1610,7 +1612,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                         p_feat.GetLocation();
                     Uint1 quality = 0;
                     if ( info.m_TranscriptId && pc->m_Info->m_TranscriptId &&
-                         *info.m_TranscriptId == *pc->m_Info->m_TranscriptId ){
+                         info.m_TranscriptId->GetVal() == pc->m_Info->m_TranscriptId->GetVal() ){
                         quality = 1;
                     }
                     Int8 overlap = TestForOverlap64(p_loc,
@@ -1855,8 +1857,7 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
 
 
 CFeatTree::CFeatInfo::CFeatInfo(void)
-    : m_TranscriptId(0),
-      m_IsSetParent(false),
+    : m_IsSetParent(false),
       m_IsSetChildren(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),
       m_ParentQuality(0),
