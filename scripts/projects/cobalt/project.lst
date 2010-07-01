@@ -26,9 +26,6 @@ util/regexp
 util/xregexp$
 util/sequtil$
 util/bitset$
-util/math$
-util/cache$
-util/impl$
 objtools$
 objtools/alnmgr$
 objtools/readers$
