@@ -361,7 +361,7 @@ private:
         eMagicCounterPoolNew    = 0x54917ec2 & ~eStateMask
     };
     friend class CObjectMemoryPool;
-    friend class CObjectEx;
+    friend class CWeakObject;
 
     // special methods for parsing object state number
 
@@ -1956,22 +1956,25 @@ private:
 };
 
 
+// Forward declaration for CPtrToObjectProxy
+class CWeakObject;
+
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CPtrToObjectExProxy --
+/// CPtrToObjectProxy --
 ///
-/// Proxy class used for building CObjectEx and CWeakPtr.
+/// Proxy class used for building CWeakObject and CWeakPtr.
 ///
-/// Contains pointer to CObjectEx instance and NULL after this instance is
-/// destroyed.
+/// Contains pointers to both CObject and CWeakObject instances.
+/// The pointers are set to NULL after the instances are destroyed.
 
-class CPtrToObjectExProxy : public CObject
+class CPtrToObjectProxy : public CObject
 {
 public:
-    CPtrToObjectExProxy(CObjectEx* ptr);
+    CPtrToObjectProxy(CWeakObject* ptr);
 
     NCBI_XNCBI_EXPORT
-    ~CPtrToObjectExProxy(void);
+    ~CPtrToObjectProxy(void);
 
     /// Set pointer to NULL from object's destructor.
     void Clear(void);
@@ -1979,43 +1982,46 @@ public:
     /// Lock the object and return pointer to it.
     /// If object is already destroyed then return NULL.
     NCBI_XNCBI_EXPORT
-    CObjectEx* GetLockedObject(void);
+    CObject* GetLockedObject(void);
 
-    /// Report about trying to convert incompatible interface fo CObjectEx
+    /// Report about trying to convert incompatible interface fo CObject
     NCBI_XNCBI_EXPORT
     static void ReportIncompatibleType(const type_info& type);
 
 private:
-    CObjectEx* m_Ptr;
+    CObject*        m_Ptr;
+    CWeakObject*    m_WeakPtr;
+
+private:
+    friend class CWeakObject;
+    CObject*  x_UpdateCObjectPtr(void);
 };
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CObjectEx --
+/// CWeakObject --
 ///
-/// The extended CObject class not only counting references to it but
-/// containing additional information to allow weak references to it.
+/// The class contains additional information to allow weak references to it.
 ///
-/// NOTE: If your class is derived from CObjectEx, you override DelteThis()
-///       method, you do not actually delete the object in your implementation
-///       of DeleteThis() and you do not want all existing CWeakRefs to
-///       reference to this object any longer then you must call method
-///       CleanWeakRefs().
+/// Note: If you want to have your class weak referenced you should derive
+///       from both CObject and CWeakObject.
 ///
 /// @sa CWeakRef<>
 
-class CObjectEx : public CObject
+class CWeakObject
 {
 public:
     NCBI_XNCBI_EXPORT
-    CObjectEx(void);
+    CWeakObject(void);
 
     NCBI_XNCBI_EXPORT
-    virtual ~CObjectEx(void);
+    virtual ~CWeakObject(void);
 
     /// Get pointer to proxy object containing pointer to this object
-    CPtrToObjectExProxy* GetPtrProxy(void) const;
+    CPtrToObjectProxy* GetPtrProxy(void) const;
 
 protected:
     /// Method cleaning all CWeakRefs referencing at this moment to the object
@@ -2029,44 +2035,95 @@ protected:
     void CleanWeakRefs(void) const;
 
 private:
-    /// Add reference to the object in "weak" manner
+    /// Add reference to the object in "weak" manner.
     /// If reference was added successfully returns TRUE.
     /// If the object is already destroying then returns FALSE.
-    bool WeakAddReference(void);
+    bool x_AddWeakReference(CObject* obj);
 
-    friend class CPtrToObjectExProxy;
-
+    friend class CPtrToObjectProxy;
 
     /// Proxy object with pointer to this instance
-    mutable CRef<CPtrToObjectExProxy> m_SelfPtrProxy;
+    mutable CRef<CPtrToObjectProxy> m_SelfPtrProxy;
 };
 
+
+
 ////////////////////////////////////////////////////////////////////////////
-// CObjectCounterLocker inline methods
+// CPtrToObjectProxy and CWeakObject inline methods
 ////////////////////////////////////////////////////////////////////////////
 
+
 inline
-CPtrToObjectExProxy* CObjectEx::GetPtrProxy(void) const
+CObject* CPtrToObjectProxy::x_UpdateCObjectPtr(void)
 {
+    // Race condition is legal here. The worst that can happen is
+    // that dynamic_cast<> can be called more than once.
+    if ( !m_Ptr ) {
+        m_Ptr = dynamic_cast<CObject*>(m_WeakPtr);
+        if ( !m_Ptr )
+            CObjectCounterLocker::ReportIncompatibleType(typeid(*m_WeakPtr));
+    }
+    return m_Ptr;
+}
+
+
+inline
+CPtrToObjectProxy* CWeakObject::GetPtrProxy(void) const
+{
+    // The x_UpdateCObjectPtr() member will check that the object derives from
+    // CObject.
+    CObject*  object_ptr = m_SelfPtrProxy->x_UpdateCObjectPtr();
+
+    // This tests that the object is controlled by CRef.
+    if ( !object_ptr->Referenced() ) {
+        NCBI_THROW(CObjectException, eNoRef,
+                   "Weak referenced object must be managed by CRef");
+    }
     return m_SelfPtrProxy.GetNCPointer();
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectEx --
+///
+/// The extended CObject class not only counting references to it but
+/// containing additional information to allow weak references to it.
+///
+/// NOTE: If your class is derived from CObjectEx, you override DeleteThis()
+///       method, you do not actually delete the object in your implementation
+///       of DeleteThis() and you do not want all existing CWeakRefs to
+///       reference to this object any longer then you must call method
+///       CleanWeakRefs().
+///
+/// @sa CWeakRef<>
+
+class CObjectEx : public CObject,
+                  public CWeakObject
+{
+public:
+    CObjectEx(void)
+    {
+    }
+
+    NCBI_XNCBI_EXPORT
+    virtual ~CObjectEx(void);
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CWeakObjectExLocker --
+/// CWeakObjectLocker --
 ///
 /// Default locker class for CWeakRef template
 
 template <class C>
-class CWeakObjectExLocker : public CObjectCounterLocker
+class CWeakObjectLocker : public CObjectCounterLocker
 {
 public:
     /// Type working as proxy storage for pointer to object
-    typedef CPtrToObjectExProxy     TPtrProxyType;
+    typedef CPtrToObjectProxy       TPtrProxyType;
     /// Alias for this type
-    typedef CWeakObjectExLocker<C>  TThisType;
+    typedef CWeakObjectLocker<C>    TThisType;
 
     /// Get proxy storage for pointer to object
     TPtrProxyType* GetPtrProxy(C* object) const
@@ -2099,16 +2156,16 @@ class CWeakInterfaceLocker : public CInterfaceObjectLocker<Interface>
 {
 public:
     /// Type working as proxy storage for pointer to object
-    typedef CPtrToObjectExProxy              TPtrProxyType;
+    typedef CPtrToObjectProxy                TPtrProxyType;
     /// Alias for this type
     typedef CWeakInterfaceLocker<Interface>  TThisType;
 
     /// Get proxy storage for pointer to object
     TPtrProxyType* GetPtrProxy(Interface* ptr) const
     {
-        CObjectEx* object = dynamic_cast<CObjectEx*>(ptr);
+        CWeakObject* object = dynamic_cast<CWeakObject*>(ptr);
         if (!object) {
-            CPtrToObjectExProxy::ReportIncompatibleType(typeid(*ptr));
+            CPtrToObjectProxy::ReportIncompatibleType(typeid(*ptr));
         }
         return object->GetPtrProxy();
     }
@@ -2139,7 +2196,7 @@ template <class C>
 class CWeakLockerTraits
 {
 public:
-    typedef CWeakObjectExLocker<C>  TLockerType;
+    typedef CWeakObjectLocker<C>  TLockerType;
 };
 
 
@@ -2148,18 +2205,23 @@ public:
 ///
 /// CWeakRef --
 ///
-/// Template for "weak" pointer to the object.
+/// Holds a "weak" pointer to the object.
 ///
-/// Contains the pointer to the CObjectEx but do not control the lifetime of
-/// the object. Access to the object can be obtained only via method Lock()
+/// It contains the pointer to the CObjectEx but does not control the lifetime
+/// of the object. Access to the object can be obtained only via method Lock()
 /// which will return CRef to the object which will guarantee that object is
-/// not destroyed yet and until received CRef is not destroyed. If contained
-/// object is already destroyed at the time of calling Lock() then method will
+/// not destroyed yet and that it will not be destroyed at least until the
+/// returned CRef is destroyed.
+/// If the referenced object is already destroyed then Lock() will
 /// return empty reference.
 ///
-/// Parameter class C should be derrived from CObjectEx class.
+/// Parameter class C should be derived from CObjectEx class (or from both
+/// CObject and CWeakObject classes).
+/// A CWeakRef instance cannot be created for the objects for which there are
+/// currently no CRefs (except if the object is allocated in the stack or
+/// static memory).
 ///
-/// @sa CObjectEx
+/// @sa CObjectEx, CWeakObject, CObject
 
 template<class C, class Locker = typename CWeakLockerTraits<C>::TLockerType>
 class CWeakRef
@@ -2185,15 +2247,25 @@ public:
     }
 
     /// Constructor for pointer to a particular object
+    ///
+    /// @param ptr  Pointer to the object whose life time is controlled by CRef
     explicit CWeakRef(TObjectType* ptr)
     {
+        // The reset member function calls the locker GetPtrProxy()
+        // where type checking is done. In case of problems an exception
+        // will be generated.
         Reset(ptr);
     }
 
-    /// Constructor for explicit type conversion from pointer to object.
+    /// Constructor for explicit type conversion from pointer to object
+    ///
+    /// @param ptr  Pointer to the object whose life time is controlled by CRef
     CWeakRef(TObjectType* ptr, const locker_type& locker_value)
         : m_Locker(locker_value)
     {
+        // The reset member function calls the locker GetPtrProxy()
+        // where type checking is done. In case of problems an exception
+        // will be generated.
         Reset(ptr);
     }
 
@@ -2207,7 +2279,7 @@ public:
     }
 
     /// Lock the object and return reference to it.
-    /// If object is already deleted then null reference is returned.
+    /// If the refenced object is already deleted then return null reference.
     TRefType Lock(void) const
     {
         if (!m_Proxy)
@@ -2232,6 +2304,9 @@ public:
     void Reset(TObjectType* ptr)
     {
         if (ptr) {
+            // GetPtrProxy() will make type checking i.e.
+            // will make sure that the object derives from CObject
+            // and that it is controlled by CRef.
             m_Proxy.Reset(m_Locker.GetPtrProxy(ptr));
         }
         else {

@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE(RefMainUsage)
     BOOST_CHECK(ref2.IsNull());
 }
 
+
 BOOST_AUTO_TEST_CASE(IRefMainUsage)
 {
     CIRef<CTestInterface> ref(new CTestObject());
@@ -107,3 +108,136 @@ BOOST_AUTO_TEST_CASE(IRefMainUsage)
     ref2 = weak.Lock();
     BOOST_CHECK(ref2.IsNull());
 }
+
+
+
+class CWeakReferencable : public CObject,
+                          public CWeakObject
+{
+};
+
+BOOST_AUTO_TEST_CASE(CWeakObjectBased)
+{
+    CRef<CWeakReferencable>      ref(new CWeakReferencable());
+    CWeakRef<CWeakReferencable>  weak(ref);
+    CRef<CWeakReferencable>      ref2;
+
+    // These blocks are for the sake of conformance with C++ standard:
+    // temporary object returned from Lock() is not mandatory to be destroyed
+    // at the end of the statement, but at the end of the block. If we
+    // remove these blocks test can fail on some compilers, e.g. WorkShop 5.5.
+    {{
+        ref2 = weak.Lock();
+        BOOST_CHECK(ref2.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    {{
+        ref.Reset();
+        ref = weak.Lock();
+        BOOST_CHECK(ref.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    ref.Reset();
+    ref2.Reset();
+    ref2 = weak.Lock();
+    BOOST_CHECK(ref2.IsNull());
+}
+
+
+// The test below will work for non debug configurations only.
+// In case of debug the CPtrToObjectProxy::ReportIncompatibleType()
+// method calls the ERR_POST_X(...) macro with Fatal type of error so
+// abort() will be called.
+// The non-debug version of the CPtrToObjectProxy::ReportIncompatibleType()
+// will throw an exception which could be caught.
+#ifndef _DEBUG
+// The class does not derive from CObject so it cannot be used
+// for weak referencing
+class CNotWeakReferencable : public CWeakObject
+{
+};
+
+BOOST_AUTO_TEST_CASE(CWeakNotReferencable)
+{
+    BOOST_CHECK_THROW( CWeakRef<CNotWeakReferencable>
+                            weak(new CNotWeakReferencable()),
+                       CCoreException );
+}
+#endif
+
+
+
+BOOST_AUTO_TEST_CASE(CWeakNotCRefControllable)
+{
+    // The new object is not controlled by CRef
+    // so an exception is expected.
+    BOOST_CHECK_THROW( CWeakRef<CWeakReferencable>
+                            weak(new CWeakReferencable()),
+                       CObjectException );
+}
+
+
+BOOST_AUTO_TEST_CASE(WeakReferencableOnStack)
+{
+    CWeakReferencable            stackObject;
+    CRef<CWeakReferencable>      ref(&stackObject);
+    CWeakRef<CWeakReferencable>  weak(ref);
+    CRef<CWeakReferencable>      ref2;
+
+    // These blocks are for the sake of conformance with C++ standard:
+    // temporary object returned from Lock() is not mandatory to be destroyed
+    // at the end of the statement, but at the end of the block. If we
+    // remove these blocks test can fail on some compilers, e.g. WorkShop 5.5.
+    {{
+        ref2 = weak.Lock();
+        BOOST_CHECK(ref2.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    {{
+        ref.Reset();
+        ref = weak.Lock();
+        BOOST_CHECK(ref.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    ref.Reset();
+    ref2.Reset();
+    ref2 = weak.Lock();
+    BOOST_CHECK(ref2.IsNull());
+}
+
+
+static CWeakReferencable    staticMemoryObject;
+
+BOOST_AUTO_TEST_CASE(WeakReferencableInStaticMemory)
+{
+    CRef<CWeakReferencable>      ref(&staticMemoryObject);
+    CWeakRef<CWeakReferencable>  weak(ref);
+    CRef<CWeakReferencable>      ref2;
+
+    // These blocks are for the sake of conformance with C++ standard:
+    // temporary object returned from Lock() is not mandatory to be destroyed
+    // at the end of the statement, but at the end of the block. If we
+    // remove these blocks test can fail on some compilers, e.g. WorkShop 5.5.
+    {{
+        ref2 = weak.Lock();
+        BOOST_CHECK(ref2.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    {{
+        ref.Reset();
+        ref = weak.Lock();
+        BOOST_CHECK(ref.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
+
+    ref.Reset();
+    ref2.Reset();
+    ref2 = weak.Lock();
+    BOOST_CHECK(ref2.IsNull());
+}
+

@@ -597,7 +597,7 @@ void CObject::DoNotDeleteThisObject(void)
             return;
         }
     }}
-    
+
     if ( count == eMagicCounterDeleted ||
          count == eMagicCounterPoolDeleted ) {
         // deleted object
@@ -733,82 +733,97 @@ const char* CObjectException::GetErrCodeString(void) const
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(sWeakRefMutex);
+DEFINE_STATIC_FAST_MUTEX(s_WeakRefMutex);
 
 
-CObjectEx::CObjectEx(void)
-    : m_SelfPtrProxy( new CPtrToObjectExProxy(this) )
+CWeakObject::CWeakObject(void)
+    : m_SelfPtrProxy( new CPtrToObjectProxy(this) )
 {
 }
 
-CObjectEx::~CObjectEx(void)
+
+CWeakObject::~CWeakObject(void)
 {
     m_SelfPtrProxy->Clear();
 }
 
+
 inline
-bool CObjectEx::WeakAddReference(void)
+bool CWeakObject::x_AddWeakReference(CObject* obj)
 {
-    TCount newCount = m_Counter.Add(eCounterStep);
-    if ( ObjectStateReferencedOnlyOnce(newCount) ) {
-        m_Counter.Add(-eCounterStep);
+    CObject::TCount newCount = obj->m_Counter.Add(CObject::eCounterStep);
+
+    if ( CObject::ObjectStateReferencedOnlyOnce(newCount) ) {
+        obj->m_Counter.Add(-CObject::eCounterStep);
         return false;
     }
     return true;
 }
 
 void
-CObjectEx::CleanWeakRefs(void) const
+CWeakObject::CleanWeakRefs(void) const
 {
     m_SelfPtrProxy->Clear();
-    m_SelfPtrProxy.Reset(new CPtrToObjectExProxy(
-                                               const_cast<CObjectEx*>(this)));
+    m_SelfPtrProxy.Reset(new CPtrToObjectProxy(const_cast<CWeakObject*>(this)));
 }
 
 
-CPtrToObjectExProxy::CPtrToObjectExProxy(CObjectEx* ptr)
-    : m_Ptr(ptr)
+CObjectEx::~CObjectEx(void)
 {
 }
 
-CPtrToObjectExProxy::~CPtrToObjectExProxy(void)
+
+CPtrToObjectProxy::CPtrToObjectProxy(CWeakObject* ptr)
+    : m_Ptr(NULL), m_WeakPtr(ptr)
 {
 }
 
-void CPtrToObjectExProxy::Clear(void)
-{
-    CFastMutexGuard guard(sWeakRefMutex);
 
-    m_Ptr = NULL;
+CPtrToObjectProxy::~CPtrToObjectProxy(void)
+{
 }
 
-CObjectEx* CPtrToObjectExProxy::GetLockedObject(void)
+
+void CPtrToObjectProxy::Clear(void)
 {
-    if (! m_Ptr)
+    CFastMutexGuard guard(s_WeakRefMutex);
+
+    m_Ptr     = NULL;
+    m_WeakPtr = NULL;
+}
+
+
+CObject* CPtrToObjectProxy::GetLockedObject(void)
+{
+    if ( !m_WeakPtr )
         return NULL;
 
-    CFastMutexGuard guard(sWeakRefMutex);
+    CFastMutexGuard guard(s_WeakRefMutex);
 
-    // m_Ptr is set to NULL in CObjectEx destructor and always under mutex.
-    // So if m_Ptr here is not NULL then it will be possible to execute
-    // WeakAddReference() without interfering with destructor.
-    if (m_Ptr  &&  ! m_Ptr->WeakAddReference()) {
+    // m_Ptr is set to NULL in CWeakObject destructor and always under mutex,
+    // and always together with m_WeakPtr.
+    // So if m_WeakPtr here is not NULL then it will be possible to execute
+    // x_AddWeakReference() without interfering with destructor.
+    if (m_WeakPtr  &&  !m_WeakPtr->x_AddWeakReference(m_Ptr)) {
         return NULL;
     }
 
     return m_Ptr;
 }
 
-void CPtrToObjectExProxy::ReportIncompatibleType(const type_info& type)
+
+void CPtrToObjectProxy::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG
     ERR_POST_X(8, Fatal <<
-                  "Type " << type.name() << " must be derived from CObjectEx");
+               "Type " << type.name() << " must be derived from CWeakObject");
 #else
-    NCBI_THROW(CCoreException, eInvalidArg,
-               string("Type ")+type.name()+" must be derived from CObjectEx");
+    NCBI_THROW(CCoreException, eInvalidArg, string("Type ") +
+               type.name() + " must be derived from CWeakObject");
 #endif
 }
+
+
 
 END_NCBI_SCOPE
 
