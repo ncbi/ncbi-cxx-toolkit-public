@@ -67,8 +67,7 @@ const string kEntrezTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=ge
 
 ///trace db
 //.ncbirc alias: TRACE
-const string kTraceUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/Traces\
-/trace.cgi?cmd=retrieve&dopt=fasta&val=%s&RID=%s\">";
+const string kTraceUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/Traces\/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">";
 
 ///genome button
 //.ncbirc alias: GENOME_BTN
@@ -306,6 +305,7 @@ public:
         string rid;             ///< blast RID
         int queryNumber;        ///< the query number
         int gi;                 ///< gi to use
+	string accession;       ///< accession
         int linkout;            ///< linkout flag
         int blast_rank;         ///< index of the current alignment
         bool isAlignLink;       ///< bool indicating if link is in alignment section
@@ -315,9 +315,9 @@ public:
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi, int lnk, int blrk,bool alnLink, bool nw, int txid = -1,bool addCssInf = false) 
+                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, int txid = -1,bool addCssInf = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
-                    queryNumber(qn), gi(gi),linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
+                    queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
                     new_win(nw),taxid (txid),addCssInfo(addCssInf){}
 
     };
