@@ -157,8 +157,10 @@ void CNetCacheControl::ParseICacheBlobAddress(
 int CNetCacheControl::Run()
 {
     const CArgs& args = GetArgs();
-    const string service(args["service"].HasValue() ?
-        args["service"].AsString() : args["service_name"].AsString());
+    string service(args["service"].AsString());
+
+    if (service.empty())
+        service = args["service_name"].AsString();
 
     bool icache_mode = args["icache"].HasValue();
 
@@ -187,17 +189,21 @@ int CNetCacheControl::Run()
         if (!icache_mode)
             reader.reset(password_arg.HasValue() ?
                 CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->GetData(key, &blob_size) :
-                nc_client.GetData(key, &blob_size));
+                    password_arg.AsString())->GetReader(key, &blob_size,
+                        CNetCacheAPI::eCaching_Disable) :
+                nc_client.GetReader(key, &blob_size,
+                    CNetCacheAPI::eCaching_Disable));
         else {
             SICacheBlobAddress blob_address;
             ParseICacheBlobAddress(key, &blob_address);
             reader.reset(password_arg.HasValue() ?
                 CNetICachePasswordGuard(icache_client,
                     password_arg.AsString())->GetReadStream(blob_address.key,
-                        blob_address.version, blob_address.subkey) :
+                        blob_address.version, blob_address.subkey, NULL,
+                            CNetCacheAPI::eCaching_Disable) :
                 icache_client.GetReadStream(blob_address.key,
-                    blob_address.version, blob_address.subkey));
+                    blob_address.version, blob_address.subkey, NULL,
+                        CNetCacheAPI::eCaching_Disable));
         }
         if (!reader.get()) {
             NCBI_THROW(CNetCacheException, eBlobNotFound,
@@ -234,7 +240,7 @@ int CNetCacheControl::Run()
         }
     } else if (args["store"]) {
         string key(args["store"].AsString());
-        auto_ptr<IWriter> writer;
+        auto_ptr<IEmbeddedStreamWriter> writer;
         if (!icache_mode)
             writer.reset(password_arg.HasValue() ?
                 CNetCachePasswordGuard(nc_client,
@@ -245,9 +251,9 @@ int CNetCacheControl::Run()
             ParseICacheBlobAddress(key, &blob_address);
             writer.reset(password_arg.HasValue() ?
                 CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->GetWriteStream(blob_address.key,
+                    password_arg.AsString())->GetNetCacheWriter(blob_address.key,
                         blob_address.version, blob_address.subkey) :
-                icache_client.GetWriteStream(blob_address.key,
+                icache_client.GetNetCacheWriter(blob_address.key,
                     blob_address.version, blob_address.subkey));
         }
         if (!writer.get()) {
@@ -278,6 +284,8 @@ int CNetCacheControl::Run()
                 NCBI_USER_THROW_FMT("Error while writing to NetCache");
             }
         }
+
+        writer->Close();
 
         if (!icache_mode)
             NcbiCout << key << NcbiEndl;

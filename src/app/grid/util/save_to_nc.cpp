@@ -124,35 +124,28 @@ int CSaveToNetCacheApp::Run()
 
     string key;
 
-    string error_message;
-
-    {
-        auto_ptr<IWriter> writer(cln.PutData(&key, 0, &error_message));
-        if (!writer.get()) {
-            ERR_POST("Could not create a writer for \"" <<
-                service << "\" NetCache service.");
-            return 1;
-        }
-
-        char buffer[16 * 1024];
-
-        while (!feof(istream)) {
-            size_t bytes_read = fread(buffer, 1, sizeof(buffer), istream);
-
-            if (ferror(istream)) {
-                perror("Read error");
-                return 2;
-            }
-
-            if (bytes_read > 0)
-                writer->Write(buffer, bytes_read);
-        }
+    auto_ptr<IEmbeddedStreamWriter> writer(cln.PutData(&key));
+    if (!writer.get()) {
+        ERR_POST("Could not create a writer for \"" <<
+            service << "\" NetCache service.");
+        return 1;
     }
 
-    if (!error_message.empty()) {
-        ERR_POST(error_message);
-        return 4;
+    char buffer[16 * 1024];
+
+    while (!feof(istream)) {
+        size_t bytes_read = fread(buffer, 1, sizeof(buffer), istream);
+
+        if (ferror(istream)) {
+            perror("Read error");
+            return 2;
+        }
+
+        if (bytes_read > 0)
+            writer->Write(buffer, bytes_read);
     }
+
+    writer->Close();
 
     (*ostream) << key << NcbiEndl;
 

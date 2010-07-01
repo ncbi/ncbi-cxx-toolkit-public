@@ -75,8 +75,8 @@ private:
 
     CNetCacheAPI                  m_NetCacheAPI;
     auto_ptr<CNcbiIstream>        m_RStream;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream>        m_WStream;
-    string                        m_WriteErrorMessage;
 
     CRequestRateControl           m_MsgThrottler;
     long                          m_CheckStatusPeriod;

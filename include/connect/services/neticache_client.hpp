@@ -37,7 +37,7 @@
 /// NetCache ICache client specs.
 ///
 
-#include <connect/services/netservice_api.hpp>
+#include <connect/services/netcache_api.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 
@@ -124,6 +124,14 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                       const string& subkey,
                       void*         buf,
                       size_t        buf_size);
+
+    virtual IReader* GetReadStream(
+        const string& key,
+        int version,
+        const string& subkey,
+        size_t* blob_size_ptr,
+        CNetCacheAPI::ECachingMode caching_mode);
+
     virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey);
@@ -132,11 +140,23 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                                int               version,
                                const string&     subkey,
                                SBlobAccessDescr*  blob_descr);
-    virtual IWriter* GetWriteStream(const string&    key,
-                                    int              version,
-                                    const string&    subkey,
-                                    unsigned int     time_to_live = 0,
-                                    const string&    owner = kEmptyStr);
+
+    IEmbeddedStreamWriter* GetNetCacheWriter(
+        const string& key,
+        int version,
+        const string& subkey,
+        unsigned int time_to_live = 0,
+        const string& owner = kEmptyStr,
+        CNetCacheAPI::ECachingMode caching_mode =
+            CNetCacheAPI::eCaching_AppDefault);
+
+    virtual IWriter* GetWriteStream(
+        const string& key,
+        int version,
+        const string& subkey,
+        unsigned int time_to_live = 0,
+        const string& owner = kEmptyStr);
+
     virtual void Remove(const string& key);
     virtual void Remove(const string&    key,
                         int              version,

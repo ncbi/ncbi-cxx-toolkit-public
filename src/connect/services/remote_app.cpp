@@ -81,15 +81,11 @@ CNcbiOstream& CBlobStreamHelper::GetOStream(const string& fname /*= ""*/,
 {
     if (!m_OStream.get()) {
         _ASSERT(!m_IStream.get());
-        auto_ptr<IWriter> writer(
-            new CStringOrBlobStorageWriter(max_inline_size,
-            m_Storage,
-            *m_Data,
-            NULL)
-            );
+        auto_ptr<IWriter> writer(new CStringOrBlobStorageWriter(
+            max_inline_size, m_Storage, *m_Data));
         m_OStream.reset(new CWStream(writer.release(),
             0, 0, CRWStreambuf::fOwnWriter
-            | CRWStreambuf::fLogExceptions));
+            | CRWStreambuf::fLeakExceptions));
         m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         *m_OStream << (int) type << " ";
         WriteStrWithLen(*m_OStream, fname);
@@ -114,7 +110,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
             new CStringOrBlobStorageReader(*m_Data, m_Storage, m_DataSize));
         m_IStream.reset(new CRStream(reader.release(),
             0,0,CRWStreambuf::fOwnReader
-            | CRWStreambuf::fLogExceptions));
+            | CRWStreambuf::fLeakExceptions));
         m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         string name;
         int tmp = (int)eBlobStorage;

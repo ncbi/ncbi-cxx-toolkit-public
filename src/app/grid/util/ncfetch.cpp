@@ -110,7 +110,8 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     size_t blob_size = 0;
     auto_ptr<IReader> reader;
     if (m_PasswordSource == eNoPassword)
-        reader.reset(cli.GetReader(key, &blob_size));
+        reader.reset(cli.GetReader(key, &blob_size,
+            CNetCacheAPI::eCaching_Disable));
     else {
         string password;
         if (m_PasswordSource == ePasswordFromCookie) {
@@ -129,8 +130,8 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
                 return 2;
             }
         }
-        reader.reset(CNetCachePasswordGuard(cli,
-            password)->GetReader(key, &blob_size));
+        reader.reset(CNetCachePasswordGuard(cli, password)->GetReader(key,
+            &blob_size, CNetCacheAPI::eCaching_Disable));
     }
     if (!reader.get()) {
         ERR_POST("Could not retrieve blob " << key);

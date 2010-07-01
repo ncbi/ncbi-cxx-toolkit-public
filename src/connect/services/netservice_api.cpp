@@ -398,17 +398,16 @@ CNetServer SNetServiceImpl::GetSingleServer()
 {
     _ASSERT(m_ServiceType != eLoadBalanced);
 
-    if (m_ServiceType == eNotDefined)
+    if (m_ServiceType == eNotDefined) {
         NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-            "The service is not set.");
+            "Operation requires a server but none specified");
+    }
 
     return ReturnServer(m_SignleServerGroup->m_Servers.front());
 }
 
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
-    _ASSERT(m_Impl->m_ServiceType != SNetServiceImpl::eNotDefined);
-
     if (m_Impl->m_ServiceType != SNetServiceImpl::eLoadBalanced)
         return m_Impl->GetSingleServer().ExecWithRetry(cmd);
 

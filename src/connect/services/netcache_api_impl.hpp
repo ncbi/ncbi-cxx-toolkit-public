@@ -32,11 +32,15 @@
  */
 
 #include "netservice_api_impl.hpp"
-#include "netcache_rw.hpp"
 
 #include <connect/services/netcache_api.hpp>
 
 BEGIN_NCBI_SCOPE
+
+enum ENetCacheResponseType {
+    eNetCache_Wait,
+    eICache_NoWait,
+};
 
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
@@ -51,6 +55,8 @@ private:
     string m_Auth;
 };
 
+class CNetCacheWriter;
+
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 {
     SNetCacheAPIImpl(CConfig* config, const string& section,
@@ -60,9 +66,10 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
     // For use by SNetICacheClientImpl
     SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
 
-    static IReader* GetReadStream(
-        const CNetServer::SExecResult& exec_result,
-        size_t* blob_size);
+    IReader* GetReadStream(
+        const string& blob_id,
+        size_t* blob_size,
+        CNetCacheAPI::ECachingMode caching_mode);
 
     static CNetCacheAPI::EReadResult ReadBuffer(
         IReader& reader,
@@ -72,13 +79,14 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         size_t blob_size);
 
     CNetServer GetServer(const string& bid);
-    CNetServerConnection InitiatePutCmd(string* key, unsigned time_to_live);
 
-    static void WriteBuffer(
-        SNetServerConnectionImpl* conn_impl,
-        CNetCacheWriter::EServerResponseType response_type,
-        const char* buf_ptr,
-        size_t buf_size);
+    string MakePutCmd(const string& key, unsigned time_to_live);
+    void CheckPutCmdResult(CNetServer::SExecResult& exec_result);
+    void CreateNewBlob(CNetCacheWriter* writer, unsigned time_to_live);
+
+    virtual CNetServerConnection InitiateWriteCmd(
+        const string& blob_id,
+        unsigned time_to_live);
 
     void AppendClientIPSessionIDPassword(string* cmd);
     string MakeCmd(const char* cmd);

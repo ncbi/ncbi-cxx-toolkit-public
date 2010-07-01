@@ -131,7 +131,8 @@ int CNetCacheCheckApp::Run(void)
         return CHECK_FAILED_RETVAL;
     }
 
-    auto_ptr<IReader> reader(cl.GetData(key, &blob_size));
+    auto_ptr<IReader> reader(cl.GetData(key, &blob_size,
+        CNetCacheAPI::eCaching_Disable));
 
     if (reader.get() == 0) {
         NcbiCerr << "Failed to read data." << NcbiEndl;
@@ -158,7 +159,7 @@ int CNetCacheCheckApp::Run(void)
     SleepMilliSec(args["delay"].AsInteger());
 
     memset(data_buf, 0xff, sizeof(data_buf));
-    reader.reset(cl.GetReader(key, &blob_size));
+    reader.reset(cl.GetReader(key, &blob_size, CNetCacheAPI::eCaching_Disable));
     reader->Read(data_buf, 1024);
     res = strcmp(data_buf, test_data2);
     if (res != 0) {

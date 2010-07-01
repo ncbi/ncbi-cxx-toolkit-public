@@ -282,7 +282,6 @@ struct CNetScheduleJob
     string    output;
     string    error_msg;
     string    progress_msg;
-    string    nc_io_error;
 };
 
 struct SNetScheduleSubmitterImpl;

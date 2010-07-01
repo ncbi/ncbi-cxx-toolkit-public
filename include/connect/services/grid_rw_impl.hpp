@@ -48,13 +48,13 @@ BEGIN_NCBI_SCOPE
 /// and all next calls to Write method will write data to the Blob Storage.
 /// In this case "data_or_key" parameter holds a blob key for the written data.
 ///
-class NCBI_XCONNECT_EXPORT CStringOrBlobStorageWriter : public IWriter
+class NCBI_XCONNECT_EXPORT CStringOrBlobStorageWriter :
+    public IEmbeddedStreamWriter
 {
 public:
     CStringOrBlobStorageWriter(size_t max_string_size,
                                SNetCacheAPIImpl* storage,
-                               string& job_output_ref,
-                               string* error_message);
+                               string& job_output_ref);
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -62,12 +62,13 @@ public:
 
     virtual ERW_Result Flush(void);
 
+    virtual void Close();
+
 private:
     CNetCacheAPI m_Storage;
-    auto_ptr<IWriter> m_NetCacheWriter;
+    auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
     string& m_Data;
     size_t m_MaxBuffSize;
-    string* m_ErrorMessage;
 };
 
 

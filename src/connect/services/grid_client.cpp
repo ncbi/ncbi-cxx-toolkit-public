@@ -134,22 +134,24 @@ void CGridJobSubmitter::SetJobAffinity(const string& affinity)
 
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
-    IWriter* writer =
-        new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
-                                       m_GridClient.GetNetCacheAPI(),
-                                       m_Job.input,
-                                       &m_Job.nc_io_error);
+    m_Writer.reset(new CStringOrBlobStorageWriter(
+        m_GridClient.GetMaxServerInputSize(),
+        m_GridClient.GetNetCacheAPI(),
+        m_Job.input));
 
-    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
-                                             | CRWStreambuf::fLogExceptions));
+    m_WStream.reset(new CWStream(m_Writer.get(),
+        0, 0, CRWStreambuf::fLeakExceptions));
+
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
     return *m_WStream;
-    //    return m_GridClient.GetNetCacheAPI().CreateOStream(m_Input);
 }
 
 string CGridJobSubmitter::Submit(const string& affinity)
 {
     m_WStream.reset();
+    m_Writer->Close();
+    m_Writer.reset();
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
     if (m_UseProgress)
@@ -186,15 +188,16 @@ CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
     CheckIfAlreadySubmitted();
     if (m_Jobs.empty())
         PrepareNextJob();
-    IWriter* writer =
-        new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
-                                       m_GridClient.GetNetCacheAPI(),
-                                       m_Jobs[m_JobIndex].input,
-                                       &m_Jobs[m_JobIndex].nc_io_error);
+    m_Writer.reset(new CStringOrBlobStorageWriter(
+        m_GridClient.GetMaxServerInputSize(),
+        m_GridClient.GetNetCacheAPI(),
+        m_Jobs[m_JobIndex].input));
 
-    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
-                                             | CRWStreambuf::fLogExceptions));
+    m_WStream.reset(new CWStream(m_Writer.get(),
+        0, 0, CRWStreambuf::fLeakExceptions));
+
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
     return *m_WStream;
 }
 
@@ -226,6 +229,8 @@ void CGridJobBatchSubmitter::PrepareNextJob()
 {
     CheckIfAlreadySubmitted();
     m_WStream.reset();
+    m_Writer->Close();
+    m_Writer.reset();
     if (!m_Jobs.empty())
         ++m_JobIndex;
     m_Jobs.push_back(CNetScheduleJob());
@@ -235,6 +240,8 @@ void CGridJobBatchSubmitter::Submit()
 {
     CheckIfAlreadySubmitted();
     m_WStream.reset();
+    m_Writer->Close();
+    m_Writer.reset();
     if (!m_Jobs.empty()) {
         m_GridClient.GetNSClient().SubmitJobBatch(m_Jobs);
         m_HasBeenSubmitted = true;
@@ -244,6 +251,8 @@ void CGridJobBatchSubmitter::Submit()
 void CGridJobBatchSubmitter::Reset()
 {
     m_WStream.reset();
+    m_Writer->Close();
+    m_Writer.reset();
     m_HasBeenSubmitted = false;
     m_JobIndex = 0;
     m_Jobs.clear();
@@ -297,7 +306,7 @@ CNcbiIstream& CGridJobStatus::GetIStream()
     IReader* reader = new CStringOrBlobStorageReader(
         m_Job.output, m_GridClient.GetNetCacheAPI(), &m_BlobSize);
     m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader
-                                          | CRWStreambuf::fLogExceptions));
+                                          | CRWStreambuf::fLeakExceptions));
     m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_RStream;
 }

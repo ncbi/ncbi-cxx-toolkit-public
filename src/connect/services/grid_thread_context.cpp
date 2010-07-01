@@ -73,7 +73,7 @@ CNcbiIstream& CGridThreadContext::GetIStream()
                                               &m_JobContext->SetJobInputBlobSize());
         m_RStream.reset(new CRStream(reader, 0,0,
                                      CRWStreambuf::fOwnReader
-                                   | CRWStreambuf::fLogExceptions));
+                                   | CRWStreambuf::fLeakExceptions));
         m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         return *m_RStream;
     }
@@ -87,13 +87,10 @@ CNcbiOstream& CGridThreadContext::GetOStream()
     if (m_NetCacheAPI) {
         size_t max_data_size =
             m_JobContext->GetWorkerNode().GetServerOutputSize();
-        IWriter* writer =
-            new CStringOrBlobStorageWriter(max_data_size,
-                                           m_NetCacheAPI,
-                                           m_JobContext->SetJobOutput(),
-                                           &m_WriteErrorMessage);
-        m_WStream.reset(new CWStream(writer, 0,0, CRWStreambuf::fOwnWriter
-                                                | CRWStreambuf::fLogExceptions));
+        m_Writer.reset(new CStringOrBlobStorageWriter(max_data_size,
+            m_NetCacheAPI, m_JobContext->SetJobOutput()));
+        m_WStream.reset(new CWStream(m_Writer.get(),
+            0, 0, CRWStreambuf::fLeakExceptions));
         m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         return *m_WStream;
     }
@@ -316,12 +313,10 @@ void CGridThreadContext::CloseStreams()
     m_MsgThrottler.Reset(1);
     m_StatusThrottler.Reset(1, CTimeSpan(m_CheckStatusPeriod, 0));
 
-    m_RStream.reset(); // Destructor of IReader resets m_NetCacheAPI also
-    m_WStream.reset(); // Destructor of IWriter resets m_NetCacheAPI also
-    if (!m_WriteErrorMessage.empty()) {
-        NCBI_THROW(CNetServiceException,
-            eCommunicationError, m_WriteErrorMessage);
-    }
+    m_RStream.reset();
+    m_WStream.reset();
+    m_Writer->Close();
+    m_Writer.reset();
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (debug_context) {

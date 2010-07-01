@@ -45,10 +45,8 @@ static const char s_JobOutputPrefixNetCache[] = "K ";
 #define JOB_OUTPUT_PREFIX_LEN 2
 
 CStringOrBlobStorageWriter::CStringOrBlobStorageWriter(size_t max_string_size,
-        SNetCacheAPIImpl* storage, string& job_output_ref,
-        string* error_message) :
-    m_Storage(storage), m_Data(job_output_ref), m_MaxBuffSize(max_string_size),
-    m_ErrorMessage(error_message)
+        SNetCacheAPIImpl* storage, string& job_output_ref) :
+    m_Storage(storage), m_Data(job_output_ref), m_MaxBuffSize(max_string_size)
 {
     job_output_ref = s_JobOutputPrefixEmbedded;
 }
@@ -69,7 +67,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
     }
 
     string key;
-    m_NetCacheWriter.reset(m_Storage.PutData(&key, 0, m_ErrorMessage));
+    m_NetCacheWriter.reset(m_Storage.PutData(&key));
 
     if (m_Data.size() > JOB_OUTPUT_PREFIX_LEN) {
         ERW_Result ret = m_NetCacheWriter->Write(
@@ -92,6 +90,12 @@ ERW_Result CStringOrBlobStorageWriter::Flush(void)
     return m_NetCacheWriter.get() ? m_NetCacheWriter->Flush() : eRW_Success;
 }
 
+void CStringOrBlobStorageWriter::Close()
+{
+    if (m_NetCacheWriter.get())
+        m_NetCacheWriter->Close();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -102,7 +106,7 @@ CStringOrBlobStorageReader::CStringOrBlobStorageReader(const string& data_or_key
 {
     if (NStr::CompareCase(data_or_key, 0, JOB_OUTPUT_PREFIX_LEN,
             s_JobOutputPrefixNetCache) == 0) {
-        m_NetCacheReader.reset(m_Storage.GetData(
+        m_NetCacheReader.reset(m_Storage.GetReader(
             data_or_key.data() + JOB_OUTPUT_PREFIX_LEN, data_size));
     } else if (NStr::CompareCase(data_or_key, 0,
             JOB_OUTPUT_PREFIX_LEN, s_JobOutputPrefixEmbedded) == 0) {

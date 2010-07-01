@@ -37,9 +37,9 @@
 /// NetCache client specs.
 ///
 
-#include <connect/connect_export.h>
+#include "netcache_api_impl.hpp"
+
 #include <connect/ncbi_conn_reader_writer.hpp>
-#include <connect/services/srv_connections.hpp>
 
 #include <util/transmissionrw.hpp>
 
@@ -58,37 +58,46 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
-    CNetCacheReader(CNetServerConnection::TInstance connection,
-                    size_t blob_size);
+    CNetCacheReader(SNetCacheAPIImpl* impl,
+        const CNetServer::SExecResult& exec_result,
+        size_t* blob_size_ptr,
+        CNetCacheAPI::ECachingMode caching_mode);
+
     virtual ~CNetCacheReader();
 
-    virtual ERW_Result Read(void*   buf,
-                                size_t  count,
-                            size_t* bytes_read = 0);
+    virtual ERW_Result Read(void* buf, size_t count,
+        size_t* bytes_read_ptr = 0);
+
     virtual ERW_Result PendingCount(size_t* count);
 
     void Close();
 
 private:
+    void SocketRead(void* buf, size_t count, size_t* bytes_read);
+    void ReportPrematureEOF();
+
     CNetServerConnection m_Connection;
-    CSocketReaderWriter m_Reader;
-    /// Remaining BLOB size to be read
-    size_t m_BlobBytesToRead;
+    CFileIO m_CacheFile;
+    size_t m_BlobBytesToRead; // Remaining number of bytes to be read
+    bool m_CachingEnabled;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 
-class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
+class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IEmbeddedStreamWriter
 {
 public:
-    enum EServerResponseType {
-        eNetCache_Wait,
-        eICache_NoWait,
-    };
+    CNetCacheWriter(SNetCacheAPIImpl* impl,
+        const string& blob_id,
+        unsigned time_to_live,
+        ENetCacheResponseType response_type,
+        CNetCacheAPI::ECachingMode caching_mode);
 
-    CNetCacheWriter(CNetServerConnection::TInstance connection,
-        EServerResponseType response_type, string* error_message);
+    void SetBlobID(const string& blob_id) {m_BlobID = blob_id;}
+    const string& GetBlobID() const {return m_BlobID;}
+
+    void SetConnection(CNetServerConnection::TInstance conn);
 
     virtual ~CNetCacheWriter();
 
@@ -96,22 +105,29 @@ public:
                              size_t      count,
                              size_t*     bytes_written = 0);
 
-     /// Flush pending data (if any) down to output device.
+    /// Flush pending data (if any) down to the output device.
     virtual ERW_Result Flush(void);
 
-    void Close();
+    virtual void Close();
+
+    void WriteBufferAndClose(const void* buf_ptr, size_t buf_size);
 
 private:
+    void ResetConnection(CNetServerConnection::TInstance conn = NULL);
+    void EstablishConnection();
+    void Transmit(const void* buf, size_t count, size_t* bytes_written);
+
+    CNetCacheAPI m_NetCacheAPI;
+    string m_BlobID;
+    unsigned m_TimeToLive;
     CNetServerConnection m_Connection;
-    CSocketReaderWriter m_SocketReaderWriter;
-    CTransmissionWriter m_TransmissionWriter;
-    EServerResponseType m_ResponseType;
-    string m_IgnoredError;
-    string* m_ErrorMessage;
-
-    bool x_IsStreamOk();
+    auto_ptr<CSocketReaderWriter> m_SocketReaderWriter;
+    auto_ptr<CTransmissionWriter> m_TransmissionWriter;
+    ENetCacheResponseType m_ResponseType;
+    CFileIO m_CacheFile;
+    bool m_CachingEnabled;
+    bool m_Closed;
 };
-
 
 /* @} */
 

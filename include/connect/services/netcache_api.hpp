@@ -58,6 +58,12 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class NCBI_XCONNECT_EXPORT IEmbeddedStreamWriter : public IWriter
+{
+public:
+    virtual void Close() = 0;
+};
+
 struct SNetCacheAPIImpl;
 
 /// Client API for NetCache server.
@@ -75,6 +81,13 @@ struct SNetCacheAPIImpl;
 class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
     NCBI_NET_COMPONENT(NetCacheAPI);
+
+    /// Allows to define caching behavior on a per-call basis.
+    enum ECachingMode {
+        eCaching_AppDefault,
+        eCaching_Disable,
+        eCaching_Enable
+    };
 
     /// Defines how this object must be initialized.
     enum EAppRegistry {
@@ -149,17 +162,11 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
     ///
-    /// @param error_message
-    ///    A pointer to a string variable, which will be
-    ///    set to a non-empty error description should an
-    ///    error happen during Write() or in the destructor
-    ///    of the stream object. If this parameter is NULL,
-    ///    errors that happen in the destructor will be ignored.
-    ///
     /// @return
-    ///    IWriter* (caller must delete it).
-    IWriter* PutData(string* key, unsigned int time_to_live = 0,
-        string* error_message = NULL);
+    ///    IEmbeddedStreamWriter* (caller must delete it).
+    IEmbeddedStreamWriter* PutData(string* key,
+        unsigned int time_to_live = 0,
+        ECachingMode caching_mode = eCaching_AppDefault);
 
     /// Update an existing BLOB.  Just like all other PutData
     /// methods, this one is blocking and waits for a confirmation
@@ -196,7 +203,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// This is a safe version of the GetData method having the same
     /// signature. Unlike GetData, GetReader will throw an exception
     /// if the requested blob is not found.
-    IReader* GetReader(const string& key, size_t* blob_size = NULL);
+    IReader* GetReader(const string& key, size_t* blob_size = NULL,
+        ECachingMode caching_mode = eCaching_AppDefault);
 
     /// Read the blob pointed to by "key" and store its contents
     /// in "buffer". The output string is resized as required.
@@ -224,12 +232,16 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @param blob_size
     ///    Pointer to the memory location where the size
     ///    of the requested blob will be stored.
+    /// @param caching_mode
+    ///    Overrides the default caching mode defined in the application
+    ///    registry.
     /// @return
     ///    If the requested blob is found, the method returns a pointer
     ///    to the IReader interface for reading the blob contents (the
     ///    caller must delete it). If the blob is not found (that is,
     ///    if it's expired), NULL is returned.
-    IReader* GetData(const string& key, size_t* blob_size = NULL);
+    IReader* GetData(const string& key, size_t* blob_size = NULL,
+        ECachingMode caching_mode = eCaching_AppDefault);
 
     /// Status of GetData() call
     /// @sa GetData
@@ -363,12 +375,12 @@ public:
     ///
     /// @param[in] blob_key
     ///    Blob key to read
-    /// @param[out] blob_size
-    ///    if blob_size if not NULL the size of a blob is returned
+    /// @param[out] blob_size_ptr
+    ///    if blob_size_ptr if not NULL the size of a blob is returned
     /// @param[in] lock_mode
     ///    Blob locking mode
     virtual CNcbiIstream& GetIStream(const string& data_id,
-                                     size_t* blob_size = 0,
+                                     size_t* blob_size_ptr = 0,
                                      ELockMode lock_mode = eLockWait);
 
     /// Get an output stream to a blob

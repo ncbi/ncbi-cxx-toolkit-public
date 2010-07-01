@@ -101,6 +101,7 @@ private:
     CGridClient& m_GridClient;
     CNetScheduleJob m_Job;
     bool         m_UseProgress;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_WStream;
 
     /// The copy constructor and the assignment operator
@@ -165,6 +166,7 @@ private:
     vector<CNetScheduleJob> m_Jobs;
     size_t       m_JobIndex;
     bool         m_HasBeenSubmitted;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_WStream;
 
     /// The copy constructor and the assignment operator
