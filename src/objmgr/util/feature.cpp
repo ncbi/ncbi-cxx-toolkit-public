@@ -806,19 +806,37 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
     GetLabel(f1, &l1, fFGL_Both, scope);
     GetLabel(f2, &l2, fFGL_Both, scope);
 
-    if (l1 < l2 ) {
-        return true;
-    }
-    if (l2 < l1) {
-        return false;
+    int d = NStr::Compare(l1, l2);
+    if ( d != 0 ) {
+        return d < 0;
     }
 
-    if ( !f2.IsSetComment() ) {
-        return false;
+    if ( f1.IsSetComment() != f2.IsSetComment() ) {
+        return !f1.IsSetComment();
+    }
+    if ( f1.IsSetComment() ) {
+        d = NStr::Compare(f1.GetComment(), f2.GetComment());
+        if ( d != 0 ) {
+            return d < 0;
+        }
     }
 
-    if (f1.IsSetComment()) {
-        return f1.GetComment() < f2.GetComment();
+    if ( f1.IsSetId() != f2.IsSetId() ) {
+        return f1.IsSetId();
+    }
+
+    if ( f1.GetData().IsGene() && f2.GetData().IsGene() ) {
+        const CGene_ref& g1 = f1.GetData().GetGene();
+        const CGene_ref& g2 = f2.GetData().GetGene();
+        if ( g1.IsSetLocus_tag() != g2.IsSetLocus_tag() ) {
+            return !g1.IsSetLocus_tag();
+        }
+        if ( g1.IsSetLocus_tag() ) {
+            d = NStr::Compare(g1.GetLocus_tag(), g2.GetLocus_tag());
+            if ( d != 0 ) {
+                return d < 0;
+            }
+        }
     }
 
     return false;
