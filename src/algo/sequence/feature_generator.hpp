@@ -38,8 +38,19 @@
 #include <algo/sequence/gene_model.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+//     class CScope;
+//     class CSeq_feat;
+//    class CSeq_align;
+//     class CSeq_annot;
+//     class CBioseq_set;
+END_SCOPE(objects)
+
+USING_SCOPE(objects);
 
 BEGIN_SCOPE()
 
@@ -84,6 +95,43 @@ struct CFeatureGenerator::SImplementation {
                        objects::CSpliced_seg::TExons::iterator& spl_exon_it,
                        objects::ENa_strand product_strand,
                        objects::ENa_strand genomic_strand);
+private:
+
+    struct SMapper
+    {
+    public:
+
+        SMapper(const CSeq_align& aln, CScope& scope,
+                TSeqPos allowed_unaligned = 10,
+                CSeq_loc_Mapper::TMapOptions opts = 0);
+
+        const CSeq_loc& GetRnaLoc();
+        CSeq_align::TDim GetGenomicRow() const;
+        CSeq_align::TDim GetRnaRow() const;
+        CRef<CSeq_loc> Map(const CSeq_loc& loc);
+        void IncludeSourceLocs(bool b = true);
+        void SetMergeNone();
+
+    private:
+
+        /// This has special logic to set partialness based on alignment
+        /// properties
+        /// In addition, we need to interpret partial exons correctly
+        CRef<CSeq_loc> x_GetLocFromSplicedExons(const CSeq_align& aln) const;
+
+        const CSeq_align& m_aln;
+        CScope& m_scope;
+        CRef<CSeq_loc_Mapper> m_mapper;
+        CSeq_align::TDim m_genomic_row;
+        CRef<CSeq_loc> rna_loc;
+        TSeqPos m_allowed_unaligned;
+    };
+
+    CRef<CSeq_feat> x_CreateMrnaFeature(const CBioseq_Handle& handle, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& rna_id);
+    CRef<CSeq_feat> x_CreateGeneFeature(const CBioseq_Handle& handle, SMapper& mapper, CRef<CSeq_feat> mrna_feat, CRef<CSeq_loc> loc, const CSeq_id& genomic_id);
+    CRef<CSeq_feat> x_CreateCdsFeature(const CBioseq_Handle& handle, const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, CSeq_loc_Mapper::TMapOptions opts, CRef<CSeq_feat> gene_feat);
+    void x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat, CRef<CSeq_feat> cds_feat, CRef<CSeq_feat> gene_feat);
+    void x_CopyAdditionalFeatures(const CBioseq_Handle& handle, SMapper& mapper, CSeq_annot& annot);
 };
 
 END_NCBI_SCOPE

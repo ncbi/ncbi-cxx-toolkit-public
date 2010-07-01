@@ -182,199 +182,176 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
     return NULL;
 }
 
+CFeatureGenerator::SImplementation::SMapper::SMapper(const CSeq_align& aln, CScope& scope,
+                                                     TSeqPos allowed_unaligned,
+                                                     CSeq_loc_Mapper::TMapOptions opts)
+    : m_aln(aln), m_scope(scope), m_allowed_unaligned(allowed_unaligned)
+{
+    if(aln.GetSegs().IsSpliced()) {
+        //row 1 is always genomic in spliced-segs
+        m_genomic_row = 1;
+        m_mapper.Reset
+            (new CSeq_loc_Mapper(aln, aln.GetSeq_id(1),
+                                 &scope, opts));
+    } else {
+        //otherwise, find exactly one genomic row
+        CSeq_align::TDim num_rows = aln.CheckNumRows();
+        if (num_rows != 2) {
+            /// make sure we only have two rows. anything else
+            /// represents a mixed-strand case or more than two
+            /// sequences
+            NCBI_THROW(CException, eUnknown,
+                       "CreateGeneModelFromAlign(): "
+                       "failed to create consistent alignment");
+        }
+        for (CSeq_align::TDim i = 0;  i < num_rows;  ++i) {
+            const CSeq_id& id = aln.GetSeq_id(i);
+            CBioseq_Handle handle = scope.GetBioseqHandle(id);
+            if(!handle) {
+                continue;
+            }
+            const CMolInfo* info =  sequence::GetMolInfo(handle);
+            if (info && info->IsSetBiomol()
+                && info->GetBiomol() == CMolInfo::eBiomol_genomic)
+                {
+                    if(m_mapper.IsNull()) {
+                        m_mapper.Reset
+                            (new CSeq_loc_Mapper(aln, aln.GetSeq_id(i),
+                                                 &scope, opts));
+                        m_genomic_row = i;
+                    } else {
+                        NCBI_THROW(CException, eUnknown,
+                                   "CreateGeneModelFromAlign(): "
+                                   "More than one genomic row in alignment");
+                    }
+                }
+        }
+        if (m_mapper.IsNull()) {
+            NCBI_THROW(CException, eUnknown,
+                       "CreateGeneModelFromAlign(): "
+                       "No genomic sequence found in alignment");
+        }
+    }
+}
+
+const CSeq_loc& CFeatureGenerator::SImplementation::SMapper::GetRnaLoc()
+{
+    if(rna_loc.IsNull()) {
+        if(m_aln.GetSegs().IsSpliced()) {
+            rna_loc = x_GetLocFromSplicedExons(m_aln);
+        } else {
+            const CSeq_id& id = m_aln.GetSeq_id(GetRnaRow());
+            CBioseq_Handle handle = m_scope.GetBioseqHandle(id);
+            CRef<CSeq_loc> range_loc =
+                handle.GetRangeSeq_loc(0, 0, eNa_strand_plus); //0-0 meanns whole range
+            //todo: truncate the range loc not to include polyA, or
+            //else the remapped loc will be erroneously partial
+            //not a huge issue as it only applies to seg alignments only.
+            rna_loc = m_mapper->Map(*range_loc);
+        }
+    }
+    return *rna_loc;
+}
+
+CSeq_align::TDim CFeatureGenerator::SImplementation::SMapper::GetGenomicRow() const
+{
+    return m_genomic_row;
+}
+
+CSeq_align::TDim CFeatureGenerator::SImplementation::SMapper::GetRnaRow() const
+{
+    //we checked that alignment contains exactly 2 rows
+    return GetGenomicRow() == 0 ? 1 : 0;
+}
+
+CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::Map(const CSeq_loc& loc)
+{
+    CRef<CSeq_loc> mapped_loc  = m_mapper->Map(loc);
+    return mapped_loc;
+}
+
+void CFeatureGenerator::SImplementation::SMapper::IncludeSourceLocs(bool b)
+{
+    if (m_mapper) {
+        m_mapper->IncludeSourceLocs(b);
+    }
+}
+
+void CFeatureGenerator::SImplementation::SMapper::SetMergeNone()
+{
+    if (m_mapper) {
+        m_mapper->SetMergeNone();
+    }
+}
+
+CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedExons(const CSeq_align& aln) const
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CConstRef<CSpliced_exon> prev_exon;
+    CRef<CSeq_interval> prev_int;
+    
+    const CSpliced_seg& spliced_seg = aln.GetSegs().GetSpliced();
+    ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
+        const CSpliced_exon& exon = **it;
+        CRef<CSeq_interval> genomic_int(new CSeq_interval);
+        
+        genomic_int->SetId().Assign(aln.GetSeq_id(1));
+        genomic_int->SetFrom(exon.GetGenomic_start());
+        genomic_int->SetTo(exon.GetGenomic_end());
+        genomic_int->SetStrand(
+                               exon.IsSetGenomic_strand() ? exon.GetGenomic_strand()
+                               : spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand()
+                               : eNa_strand_plus);
+        
+        // check for gaps between exons
+        if(!prev_exon.IsNull()) {
+            bool donor_set = prev_exon->IsSetDonor_after_exon();
+            bool acceptor_set = exon.IsSetAcceptor_before_exon();
+            
+            if(!(donor_set && acceptor_set) || prev_exon->GetProduct_end().GetNucpos() + 1 != exon.GetProduct_start().GetNucpos()) {
+                // gap between exons on rna. But which exon is partial?
+                // if have non-strict consensus splice site - blame it
+                // for partialness. If can't disambiguate on this - set
+                // both.
+                bool donor_ok =
+                    (donor_set  &&
+                     prev_exon->GetDonor_after_exon().GetBases() == "GT");
+                bool acceptor_ok =
+                    (acceptor_set  &&
+                     exon.GetAcceptor_before_exon().GetBases() == "AG");
+                if(donor_ok || !acceptor_ok) {
+                    genomic_int->SetPartialStart(true, eExtreme_Biological);
+                }
+                if(acceptor_ok || !donor_ok) {
+                    prev_int->SetPartialStop(true, eExtreme_Biological);
+                }
+            }
+        }
+        
+        loc->SetPacked_int().Set().push_back(genomic_int);
+        prev_exon = *it;
+        prev_int = genomic_int;
+    }
+    
+    // set terminal partialness
+    if(m_aln.GetSeqStart(0) > m_allowed_unaligned) {
+        loc->SetPartialStart(true, eExtreme_Biological);
+    }
+    
+    TSeqPos product_len = aln.GetSegs().GetSpliced().GetProduct_length();
+    TSeqPos polya_pos = aln.GetSegs().GetSpliced().CanGetPoly_a() ? aln.GetSegs().GetSpliced().GetPoly_a() : product_len;
+    
+    if(m_aln.GetSeqStop(0) + 1 + m_allowed_unaligned < polya_pos) {
+        loc->SetPartialStop(true, eExtreme_Biological);
+    }
+    return loc;
+    
+}
 
 void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq_align& align,
                                          objects::CSeq_annot& annot,
                                          objects::CBioseq_set& seqs)
 {
-    ////////////////////////////////////////////////////////////////////////////
-    ///
-
-    struct SMapper
-    {
-    public:
-
-        SMapper(const CSeq_align& aln, CScope& scope,
-                TSeqPos allowed_unaligned = 10,
-                CSeq_loc_Mapper::TMapOptions opts = 0)
-            : m_aln(aln), m_scope(scope), m_allowed_unaligned(allowed_unaligned)
-        {
-            if(aln.GetSegs().IsSpliced()) {
-                //row 1 is always genomic in spliced-segs
-                m_genomic_row = 1;
-                m_mapper.Reset
-                    (new CSeq_loc_Mapper(aln, aln.GetSeq_id(1),
-                                         &scope, opts));
-            } else {
-                //otherwise, find exactly one genomic row
-                CSeq_align::TDim num_rows = aln.CheckNumRows();
-                if (num_rows != 2) {
-                    /// make sure we only have two rows. anything else
-                    /// represents a mixed-strand case or more than two
-                    /// sequences
-                    NCBI_THROW(CException, eUnknown,
-                               "CreateGeneModelFromAlign(): "
-                               "failed to create consistent alignment");
-                }
-                for (CSeq_align::TDim i = 0;  i < num_rows;  ++i) {
-                    const CSeq_id& id = aln.GetSeq_id(i);
-                    CBioseq_Handle handle = scope.GetBioseqHandle(id);
-                    if(!handle) {
-                        continue;
-                    }
-                    const CMolInfo* info =  sequence::GetMolInfo(handle);
-                    if (info && info->IsSetBiomol()
-                             && info->GetBiomol() == CMolInfo::eBiomol_genomic)
-                    {
-                        if(m_mapper.IsNull()) {
-                            m_mapper.Reset
-                                (new CSeq_loc_Mapper(aln, aln.GetSeq_id(i),
-                                                     &scope, opts));
-                            m_genomic_row = i;
-                        } else {
-                            NCBI_THROW(CException, eUnknown,
-                                       "CreateGeneModelFromAlign(): "
-                                       "More than one genomic row in alignment");
-                        }
-                    }
-                }
-                if (m_mapper.IsNull()) {
-                    NCBI_THROW(CException, eUnknown,
-                               "CreateGeneModelFromAlign(): "
-                               "No genomic sequence found in alignment");
-                }
-            }
-        }
-
-        const CSeq_loc& GetRnaLoc()
-        {
-            if(rna_loc.IsNull()) {
-                if(m_aln.GetSegs().IsSpliced()) {
-                    rna_loc = x_GetLocFromSplicedExons(m_aln);
-                } else {
-                    const CSeq_id& id = m_aln.GetSeq_id(GetRnaRow());
-                    CBioseq_Handle handle = m_scope.GetBioseqHandle(id);
-                    CRef<CSeq_loc> range_loc =
-                        handle.GetRangeSeq_loc(0, 0, eNa_strand_plus); //0-0 meanns whole range
-                    //todo: truncate the range loc not to include polyA, or
-                    //else the remapped loc will be erroneously partial
-                    //not a huge issue as it only applies to seg alignments only.
-                    rna_loc = m_mapper->Map(*range_loc);
-                }
-            }
-            return *rna_loc;
-        }
-
-        CSeq_align::TDim GetGenomicRow() const
-        {
-            return m_genomic_row;
-        }
-
-        CSeq_align::TDim GetRnaRow() const
-        {
-            //we checked that alignment contains exactly 2 rows
-            return GetGenomicRow() == 0 ? 1 : 0;
-        }
-
-        CRef<CSeq_loc> Map(const CSeq_loc& loc)
-        {
-            CRef<CSeq_loc> mapped_loc  = m_mapper->Map(loc);
-            return mapped_loc;
-        }
-
-        void IncludeSourceLocs(bool b = true)
-        {
-            if (m_mapper) {
-                m_mapper->IncludeSourceLocs(b);
-            }
-        }
-
-        void SetMergeNone()
-        {
-            if (m_mapper) {
-                m_mapper->SetMergeNone();
-            }
-        }
-
-    private:
-
-        /// This has special logic to set partialness based on alignment
-        /// properties
-        /// In addition, we need to interpret partial exons correctly
-        CRef<CSeq_loc> x_GetLocFromSplicedExons(const CSeq_align& aln) const
-        {
-            CRef<CSeq_loc> loc(new CSeq_loc);
-            CConstRef<CSpliced_exon> prev_exon;
-            CRef<CSeq_interval> prev_int;
-
-            const CSpliced_seg& spliced_seg = aln.GetSegs().GetSpliced();
-            ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
-                const CSpliced_exon& exon = **it;
-                CRef<CSeq_interval> genomic_int(new CSeq_interval);
-
-                genomic_int->SetId().Assign(aln.GetSeq_id(1));
-                genomic_int->SetFrom(exon.GetGenomic_start());
-                genomic_int->SetTo(exon.GetGenomic_end());
-                genomic_int->SetStrand(
-                        exon.IsSetGenomic_strand() ? exon.GetGenomic_strand()
-                      : spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand()
-                      : eNa_strand_plus);
-
-                // check for gaps between exons
-                if(!prev_exon.IsNull()) {
-                    bool donor_set = prev_exon->IsSetDonor_after_exon();
-                    bool acceptor_set = exon.IsSetAcceptor_before_exon();
-
-                    if(!(donor_set && acceptor_set) || prev_exon->GetProduct_end().GetNucpos() + 1 != exon.GetProduct_start().GetNucpos()) {
-                        // gap between exons on rna. But which exon is partial?
-                        // if have non-strict consensus splice site - blame it
-                        // for partialness. If can't disambiguate on this - set
-                        // both.
-                        bool donor_ok =
-                            (donor_set  &&
-                             prev_exon->GetDonor_after_exon().GetBases() == "GT");
-                        bool acceptor_ok =
-                            (acceptor_set  &&
-                             exon.GetAcceptor_before_exon().GetBases() == "AG");
-                        if(donor_ok || !acceptor_ok) {
-                            genomic_int->SetPartialStart(true, eExtreme_Biological);
-                        }
-                        if(acceptor_ok || !donor_ok) {
-                            prev_int->SetPartialStop(true, eExtreme_Biological);
-                        }
-                    }
-                }
-
-                loc->SetPacked_int().Set().push_back(genomic_int);
-                prev_exon = *it;
-                prev_int = genomic_int;
-            }
-
-            // set terminal partialness
-            if(m_aln.GetSeqStart(0) > m_allowed_unaligned) {
-                loc->SetPartialStart(true, eExtreme_Biological);
-            }
-
-            TSeqPos product_len = aln.GetSegs().GetSpliced().GetProduct_length();
-            TSeqPos polya_pos = aln.GetSegs().GetSpliced().CanGetPoly_a() ? aln.GetSegs().GetSpliced().GetPoly_a() : product_len;
-
-            if(m_aln.GetSeqStop(0) + 1 + m_allowed_unaligned < polya_pos) {
-                loc->SetPartialStop(true, eExtreme_Biological);
-            }
-            return loc;
-
-        }
-        const CSeq_align& m_aln;
-        CScope& m_scope;
-        CRef<CSeq_loc_Mapper> m_mapper;
-        CSeq_align::TDim m_genomic_row;
-        CRef<CSeq_loc> rna_loc;
-        TSeqPos m_allowed_unaligned;
-    };
-
-    ///
-    ////////////////////////////////////////////////////////////////////////////
-
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (m_flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
@@ -382,7 +359,6 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
 
     SMapper mapper(align, *m_scope, m_allowed_unaligned, opts);
 
-    /// now, for each row, create a feature
     CTime time(CTime::eCurrent);
 
 
@@ -397,9 +373,30 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
-    ///
-    /// create our mRNA feature
-    ///
+    CRef<CSeq_feat> mrna_feat = x_CreateMrnaFeature(handle, loc, time, model_num, seqs, rna_id);
+    CRef<CSeq_feat> gene_feat = x_CreateGeneFeature(handle, mapper, mrna_feat, loc, genomic_id);
+
+    if (gene_feat) {
+        annot.SetData().SetFtable().push_back(gene_feat);
+    }
+    if (mrna_feat) {
+        SetFeatureExceptions(*mrna_feat, &align);
+        /// NOTE: added after gene!
+        annot.SetData().SetFtable().push_back(mrna_feat);
+    }
+
+    CRef<CSeq_feat> cds_feat = x_CreateCdsFeature(handle, align, loc, time, model_num, seqs, opts, gene_feat);
+
+    if (cds_feat) {
+        annot.SetData().SetFtable().push_back(cds_feat);
+    }
+
+    x_SetPartialWhereNeeded(mrna_feat, cds_feat, gene_feat);
+    x_CopyAdditionalFeatures(handle, mapper, annot);
+}
+
+CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateMrnaFeature(const CBioseq_Handle& handle, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, const CSeq_id& rna_id)
+{
     CRef<CSeq_feat> mrna_feat;
     if (m_flags & fCreateMrna) {
         mrna_feat.Reset(new CSeq_feat());
@@ -475,10 +472,11 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
             mrna_feat->SetProduct().SetWhole().Assign(rna_id);
         }
     }
+    return mrna_feat;
+}
 
-    ///
-    /// create our gene feature
-    ///
+CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateGeneFeature(const CBioseq_Handle& handle, SMapper& mapper, CRef<CSeq_feat> mrna_feat, CRef<CSeq_loc> loc, const CSeq_id& genomic_id)
+{
     CRef<CSeq_feat> gene_feat;
     if (m_flags & fCreateGene) {
         if (m_flags & fPropagateOnly) {
@@ -523,18 +521,12 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
             gene_feat->SetLocation()
                 .SetStrand(sequence::GetStrand(*loc));
         }
-
-        if (gene_feat) {
-            annot.SetData().SetFtable().push_back(gene_feat);
-        }
     }
+    return gene_feat;
+}
 
-    if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, &align);
-        /// NOTE: added after gene!
-        annot.SetData().SetFtable().push_back(mrna_feat);
-    }
-
+CRef<CSeq_feat> CFeatureGenerator::SImplementation::x_CreateCdsFeature(const CBioseq_Handle& handle, const CSeq_align& align, CRef<CSeq_loc> loc, const CTime& time, size_t model_num, CBioseq_set& seqs, CSeq_loc_Mapper::TMapOptions opts, CRef<CSeq_feat> gene_feat)
+{
     CRef<CSeq_feat> cds_feat;
     if (m_flags & fCreateCdregion) {
         //
@@ -545,11 +537,11 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
             cds_feat.Reset(new CSeq_feat());
             cds_feat->Assign(feat_iter->GetOriginalFeature());
 
-            /// from this point on, we will get complex locations back
-            SMapper mapper(align, *m_scope, opts);
+            // from this point on, we will get complex locations back
+            SMapper mapper(align, *m_scope, 0, opts);
             mapper.IncludeSourceLocs();
             mapper.SetMergeNone();
-
+            
             CRef<CSeq_loc> source_loc;
 
             ///
@@ -739,7 +731,6 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
                 }
 
                 SetFeatureExceptions(*cds_feat, &align);
-                annot.SetData().SetFtable().push_back(cds_feat);
 
                 if (m_flags & fForceTranslateCds) {
                     /// create a new bioseq for the CDS
@@ -774,7 +765,11 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
             }
         }
     }
+    return cds_feat;
+}
 
+void CFeatureGenerator::SImplementation::x_SetPartialWhereNeeded(CRef<CSeq_feat> mrna_feat, CRef<CSeq_feat> cds_feat, CRef<CSeq_feat> gene_feat)
+{
     ///
     /// partial flags may require a global analysis - we may need to mark some
     /// locations partial even if they are not yet partial
@@ -810,10 +805,10 @@ void CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const objects::CSeq
             gene_loc.SetPartialStop(true, eExtreme_Biological);
         }
     }
+}
 
-    ///
-    /// copy additional features
-    ///
+void CFeatureGenerator::SImplementation::x_CopyAdditionalFeatures(const CBioseq_Handle& handle, SMapper& mapper, CSeq_annot& annot)
+{
     if (m_flags & fPromoteAllFeatures) {
         SAnnotSelector sel;
         sel.SetResolveAll()
