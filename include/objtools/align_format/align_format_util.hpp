@@ -67,7 +67,7 @@ const string kEntrezTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=ge
 
 ///trace db
 //.ncbirc alias: TRACE
-const string kTraceUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/Traces\/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">";
+const string kTraceUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">";
 
 ///genome button
 //.ncbirc alias: GENOME_BTN
