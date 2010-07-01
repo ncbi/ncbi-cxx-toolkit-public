@@ -11,3 +11,4 @@ DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+WATCHERS = chetvern souvorov

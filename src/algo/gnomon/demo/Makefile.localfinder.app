@@ -1,4 +1,5 @@
 # $Id$
+#
 # Makefile for 'localfinder' app
 
 SRC = local_finder
@@ -11,3 +12,5 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # (notably 32-bit SPARC WorkShop Release).
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = chetvern
