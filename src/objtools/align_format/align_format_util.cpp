@@ -2390,12 +2390,10 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
                         string l_TraceUrl = CAlignFormatUtil::GetURLFromRegistry("TRACE_CGI");                    
                         url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + rid;
                     }
-                    else {                     
-                        sprintf(url_buf, kTraceUrl.c_str(), 
-							(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "",
-							actual_id.c_str(),
-                            rid.c_str());
-                        url_link = url_buf;
+                    else {
+			url_link = CAlignFormatUtil::MapTemplate(kTraceUrl,"val",actual_id);
+                        url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
+                        url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);
                     }
                     
                     
