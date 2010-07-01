@@ -2272,70 +2272,18 @@ static string s_StdGetTmpName(const char* dir, const char* prefix)
 #endif
 
 
-string CDirEntry::GetTmpNameEx(const string&        dir, 
+string CDirEntry::GetTmpNameEx(const string&        dir,
                                const string&        prefix,
                                ETmpFileCreationMode mode)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    string x_dir = dir;
-    if ( x_dir.empty() ) {
-        // Get application specific temporary directory name (see CParam)
-        x_dir = NCBI_PARAM_TYPE(NCBI,TmpDir)::GetThreadDefault();
-        if ( x_dir.empty() ) {
-            // Use default TMP directory specified by OS
-            x_dir = CDir::GetTmpDir();
-        }
-    }
-    if ( !x_dir.empty() ) {
-        x_dir = AddTrailingPathSeparator(x_dir);
-    }
-    string fn;
+    CFileIO temp_file;
 
-#  if defined(NCBI_OS_UNIX)
-    string pattern = x_dir + prefix + "XXXXXX";
-    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
-    int fd = mkstemp(filename.get());
-    close(fd);
-    if (mode != eTmpFileCreate) {
-        remove(filename.get());
-    }
-    fn = filename.get();
+    temp_file.CreateTemporary(dir, prefix, mode == eTmpFileCreate ?
+        CFileIO::eDoNotRemove : CFileIO::eRemoveInClose);
 
-#  elif defined(NCBI_OS_MSWIN)
-    char buffer[MAX_PATH];
-    HANDLE hFile = INVALID_HANDLE_VALUE;
-    srand((unsigned)time(0));
-    unsigned long ofs = rand();
+    temp_file.Close();
 
-    while ( ofs < numeric_limits<unsigned long>::max() ) {
-        _ultoa((unsigned long)ofs, buffer, 24);
-        fn = x_dir + prefix + buffer;
-        hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
-                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (hFile != INVALID_HANDLE_VALUE) {
-            break;
-        }
-        ofs++;
-    }
-    CloseHandle(hFile);
-    if (ofs == numeric_limits<unsigned long>::max() ) {
-        return kEmptyStr;
-    }
-    if (mode != eTmpFileCreate) {
-        remove(fn.c_str());
-    }
-
-#  endif
-
-#else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    if (mode == eTmpFileCreate) {
-        ERR_POST_X(3, Warning << "CFile::GetTmpNameEx():"
-                   " Temporary file cannot be auto-created on this platform,"
-                   " so return its name only");
-    }
-    fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
-#endif
-    return fn;
+    return temp_file.GetPathname();
 }
 
 
@@ -5044,22 +4992,21 @@ void FindFiles(const string& pattern,
 // CFileIO
 //
 
-CFileIO::CFileIO(void)
-    : m_Handle(kInvalidHandle), m_CloseHandle(false)
+CFileIO::CFileIO(void) :
+    m_Handle(kInvalidHandle),
+    m_AutoClose(true),
+    m_AutoRemove(CFileIO::eDoNotRemove)
 {
-    return;
 }
 
 
 CFileIO::~CFileIO()
 {
-    if (m_Handle == kInvalidHandle) {
-        return;
-    }
-    try {
-        Close();
-    }
-    catch (CFileErrnoException&) {
+    if (m_Handle != kInvalidHandle && m_AutoClose) {
+        try {
+            Close();
+        }
+        NCBI_CATCH_ALL("Error while closing file [IGNORED]");
     }
 }
 
@@ -5191,15 +5138,71 @@ void CFileIO::Open(const string& filename,
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot open file " + filename);
     }
-    m_CloseHandle = true;
+    m_Pathname = filename;
+}
+
+
+void CFileIO::CreateTemporary(const string& dir,
+                              const string& prefix,
+                              EAutoRemove auto_remove)
+{
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    string x_dir = dir;
+    if (x_dir.empty()) {
+        // Get application specific temporary directory name (see CParam)
+        x_dir = NCBI_PARAM_TYPE(NCBI, TmpDir)::GetThreadDefault();
+        if (x_dir.empty()) {
+            // Use default TMP directory specified by OS
+            x_dir = CDir::GetTmpDir();
+        }
+    }
+    if (!x_dir.empty())
+        x_dir = CDirEntry::AddTrailingPathSeparator(x_dir);
+
+#  if defined(NCBI_OS_UNIX)
+    string pattern = x_dir + prefix + "XXXXXX";
+    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
+    if ((m_Handle = mkstemp(filename.get())) == -1) {
+        NCBI_THROW(CFileErrnoException, eFileIO, "mkstemp(3) failed");
+    }
+    m_Pathname = filename.get();
+    if (auto_remove == eRemoveASAP)
+        remove(m_Pathname.c_str());
+
+#  elif defined(NCBI_OS_MSWIN)
+    char buffer[MAX_PATH];
+    srand((unsigned) time(0));
+    unsigned long ofs = rand();
+
+    while (ofs < numeric_limits<unsigned long>::max()) {
+        _ultoa((unsigned long)ofs, buffer, 24);
+        m_Pathname = x_dir + prefix + buffer;
+        m_Handle = CreateFile(m_Pathname.c_str(), GENERIC_ALL, 0, NULL,
+                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
+        if (m_Handle != INVALID_HANDLE_VALUE)
+            break;
+        ofs++;
+    }
+    if (ofs == numeric_limits<unsigned long>::max()) {
+        NCBI_THROW(CFileException, eTmpFile,
+            "Unable to generate a unique temporary file name");
+    }
+
+#  endif
+
+#else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    Open(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
+#endif
+
+    m_AutoRemove = auto_remove;
 }
 
 
 void CFileIO::Close(void)
 {
-    if (m_CloseHandle) {
+    if (m_Handle != kInvalidHandle) {
 #if defined(NCBI_OS_MSWIN)
-        if ( !::CloseHandle(m_Handle)) {
+        if (!::CloseHandle(m_Handle)) {
             NCBI_THROW(CFileErrnoException, eFileIO, "CloseHandle() failed");
         }
 #elif defined(NCBI_OS_UNIX)
@@ -5209,9 +5212,11 @@ void CFileIO::Close(void)
             }
         }
 #endif
-        m_CloseHandle = false;
+        m_Handle = kInvalidHandle;
+
+        if (m_AutoRemove != eDoNotRemove)
+            remove(m_Pathname.c_str());
     }
-    m_Handle = kInvalidHandle;
 }
 
 
@@ -5270,8 +5275,8 @@ size_t CFileIO::Write(const void* buf, size_t count) const
         n   -= n_written;
         ptr += n_written;
     }
-    while (n);
-    return count - n;
+    while (n > 0);
+    return count;
 }
 
 

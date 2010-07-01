@@ -1093,11 +1093,11 @@ public:
 
     /// Get temporary file name.
     ///
-    /// This class generate temporary file name in the temporary directory
-    /// specified by OS. But this behaviour can be changed, just set desired
-    /// temporary directory using global parameter (see CParam class decription)
-    /// in the registry or environment (section 'NCBI', name 'TmpDir') and it
-    /// will used by default in this class.
+    /// This class generates a temporary file name in the temporary directory
+    /// specified by the OS. But this behavior can be changed -- just set the
+    /// desired temporary directory using the global parameter 'TmpDir' in
+    /// in the 'NCBI' registry section or the environment (see CParam class
+    /// description), and it will used by default in this class.
     ///
     /// @param mode
     ///   Temporary file creation mode. Note, that default mode eTmpFileGetName
@@ -2828,7 +2828,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Class for suppport low level input/output for files.
+/// Class for support low level input/output for files.
 ///
 /// Throw CFileException/CFileErrnoException on error.
 
@@ -2844,6 +2844,20 @@ public:
     /// Open file.
     void Open(const string& filename, EOpenMode open_mode,
               EAccessMode access_mode, EShareMode share_mode = eShare);
+
+    /// Controls how temporary file is removed.
+    enum EAutoRemove {
+        eDoNotRemove,           ///< Do not ever remove temporary file.
+        eRemoveInClose,         ///< Remove temporary file immediately
+                                ///< after closing its handle in Close().
+        eRemoveASAP,            ///< Remove the file at the earliest
+                                ///< possible moment (in CreateTemporary()
+                                ///< on UNIX).
+    };
+    /// Create temporary file in the specified directory.
+    /// The prefix argument is used to generate a unique file name.
+    void CreateTemporary(const string& dir, const string& prefix,
+                         EAutoRemove auto_remove = eRemoveInClose);
 
     /// Close file.
     void Close(void);
@@ -2864,6 +2878,10 @@ public:
 
     /// Flush file buffers.
     void Flush(void) const;
+
+    /// Return file path and name as it was specified in the
+    /// Open() method or created in CreateTemporary().
+    const string& GetPathname(void) const { return m_Pathname; }
 
     /// Return system file handle associated with the file.
     TFileHandle GetFileHandle(void) const { return m_Handle; };
@@ -2911,9 +2929,22 @@ public:
     ///   eCurrent means that file position does not change.
     void SetFileSize(Uint8 length, EPositionMoveMethod pos = eCurrent) const;
 
+    /// Define whether the open file handle needs to be closed
+    /// in the destructor.
+    void SetAutoClose(bool auto_close = true) { m_AutoClose = auto_close; }
+
+    /// Define whether the temporary file created by CreateTemporary()
+    /// must be automatically removed in Close(). This method will
+    /// also work for regular files created with Open().
+    void SetAutoRemove(EAutoRemove auto_remove = eRemoveInClose)
+        { m_AutoRemove = auto_remove; }
+
 protected:
+    string       m_Pathname;    ///< File path and name.
     TFileHandle  m_Handle;      ///< System file handle.
-    bool         m_CloseHandle; ///< Need to close file handle in destructor.
+    bool         m_AutoClose;   ///< Need to close file handle in destructor.
+    EAutoRemove  m_AutoRemove;  ///< When (if ever) should the temporary
+                                ///< file be removed.
 
 private:
     // prevent copying
