@@ -1966,14 +1966,12 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
     vector< CRef< CSeq_id > > seqid_set;
     
     if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
-cout << "if ok" << endl;
         // Something like SeqIdFindBest()
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
         
         result = SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
-cout << "if not ok" << endl;
         str_id = acc;
         result = eStringId;
         simpler = false;
