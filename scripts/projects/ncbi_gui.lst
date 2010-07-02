@@ -1,5 +1,6 @@
 algo
 app/netcache
+app/winmasker
 build-system/project_tree_builder
 cgi
 check
