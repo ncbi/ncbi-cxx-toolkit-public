@@ -568,6 +568,7 @@ END_SUBTYPE
 START_SUBTYPE(preprotein)
     ADD_QUAL(EC_number);
     ADD_QUAL(allele);
+    ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
@@ -601,6 +602,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(name);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
@@ -2368,6 +2370,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_mobile_element, "mobile_element"),
     TQualPair(CSeqFeatData::eQual_mod_base, "mod_base"),
     TQualPair(CSeqFeatData::eQual_mol_type, "mol_type"),
+    TQualPair(CSeqFeatData::eQual_name, "name"),
     TQualPair(CSeqFeatData::eQual_ncRNA_class, "ncRNA_class"),
     TQualPair(CSeqFeatData::eQual_note, "note"),
     TQualPair(CSeqFeatData::eQual_number, "number"),

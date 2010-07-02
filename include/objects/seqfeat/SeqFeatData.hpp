@@ -287,6 +287,7 @@ public:
         eQual_mobile_element,
         eQual_mod_base,
         eQual_mol_type,
+        eQual_name,
         eQual_ncRNA_class,
         eQual_note,
         eQual_number,
