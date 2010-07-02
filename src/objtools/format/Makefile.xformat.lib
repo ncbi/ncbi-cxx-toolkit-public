@@ -2,6 +2,7 @@
 
 # Build library "xformat"
 ###############################
+
 ASN_DEP = seq submit seqset gbseq general pub
 
 LIB = xformat
@@ -15,3 +16,5 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       gff_gather gff_formatter origin_item ftable_gather ftable_formatter \
       gbseq_formatter flat_file_config alignment_item gff3_formatter \
       gap_item genome_project_item sam_formatter cigar_formatter
+
+WATCHERS = ludwigf dicuccio
