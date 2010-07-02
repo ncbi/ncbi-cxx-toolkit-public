@@ -2267,9 +2267,11 @@ void CFeatureItem::x_AddQualsRegion(
         return;
     }
 
+    bool added_raw = false;
     if ( ctx.IsProt()  &&
          data.GetSubtype() == CSeqFeatData::eSubtype_region ) {
         x_AddQual(eFQ_region_name, new CFlatStringQVal(region));
+        added_raw = true;
     } else {
         x_AddQual(eFQ_region, new CFlatStringQVal("Region: " + region));
     }
@@ -2292,8 +2294,10 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                x_AddQual(eFQ_region,
-                          new CFlatStringQVal(f->GetData().GetStr()));
+                if (f->GetData().GetStr() != region  ||  added_raw) {
+                    x_AddQual(eFQ_region,
+                              new CFlatStringQVal(f->GetData().GetStr()));
+                }
                 found = true;
                 break;
                 /**
@@ -2722,15 +2726,17 @@ void CFeatureItem::x_AddQualsProt(
                 case CProt_ref::eProcessed_transit_peptide:
                     {{
                          has_signal_peptide = true;
-                         loc = loc->Subtract(feat_it->GetLocation(),
-                                             CSeq_loc::fSortAndMerge_All,
-                                             NULL, NULL);
+                         if (feat_it->GetLocation().GetTotalRange().GetFrom() ==
+                             m_Feat.GetLocation().GetTotalRange().GetFrom()) {
+                             loc = loc->Subtract(feat_it->GetLocation(),
+                                                 CSeq_loc::fSortAndMerge_All,
+                                                 NULL, NULL);
+                         }
                      }}
                     break;
 
                 case CProt_ref::eProcessed_mature:
                     has_mat_peptide = true;
-                    copy_loc = true;
                     break;
 
                 default:
@@ -2761,7 +2767,9 @@ void CFeatureItem::x_AddQualsProt(
         if (comp == CMolInfo::eCompleteness_complete  ||  ctx.IsRefSeq()) {
             if (!has_mat_peptide  ||  !has_signal_peptide) {
                 try {
-                    wt = GetProteinWeight(ctx.GetHandle(), loc);
+                    //wt = GetProteinWeight(ctx.GetHandle(), loc);
+                    wt = GetProteinWeight(m_Feat.GetOriginalFeature(),
+                                          ctx.GetScope(), loc);
                 }
                 catch (CException&) {
                 }
@@ -3055,8 +3063,11 @@ void CFeatureItem::x_ImportQuals(
         }
     }
 
-    ITERATE (vector<string>, it, replace_quals) {
-        x_AddQual(eFQ_replace, new CFlatStringQVal(*it));
+    if (replace_quals.size()) {
+        std::sort(replace_quals.begin(), replace_quals.end());
+        ITERATE (vector<string>, it, replace_quals) {
+            x_AddQual(eFQ_replace, new CFlatStringQVal(*it));
+        }
     }
 }
 
@@ -3617,7 +3628,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_prot_conflict, CSeqFeatData::eQual_note),
     TQualPair(eFQ_prot_desc, CSeqFeatData::eQual_note),
     TQualPair(eFQ_prot_missing, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_name, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_prot_name, CSeqFeatData::eQual_name),
     TQualPair(eFQ_prot_names, CSeqFeatData::eQual_note),
     TQualPair(eFQ_protein_id, CSeqFeatData::eQual_protein_id),
     TQualPair(eFQ_pseudo, CSeqFeatData::eQual_pseudo),
