@@ -242,6 +242,21 @@ void StripSpaces(string& str)
 
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
+    string::size_type pos = str.find_last_not_of(".");
+    if (pos < str.size() - 1) {
+        if (keep_ellipsis) {
+            /// trim the end to an actual ellipsis
+            if (str.length() - pos > 3) {
+                pos += 3;
+            }
+        }
+        if (pos < str.size() - 1) {
+            str.erase(pos + 1);
+            return true;
+        }
+    }
+
+    /**
     static const string kEllipsis = "...";
 
     if ( NStr::EndsWith(str, '.') ) {
@@ -250,16 +265,14 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
             return true;
         }
     }
-
+    **/
     return false;
 }
 
 
 void AddPeriod(string& str)
 {
-    static const string kChars = " \t~.\n";
-
-    size_t pos = str.find_last_not_of(kChars);
+    size_t pos = str.find_last_not_of(" \t~.\n");
     str.erase(pos + 1);
     str += '.';
 }
