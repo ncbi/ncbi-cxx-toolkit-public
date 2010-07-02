@@ -439,7 +439,8 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
         if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL) ) {
             // Has peer closed the connection?
             DWORD error = ::GetLastError();
-            if (error == ERROR_BROKEN_PIPE  ||  error == ERROR_PIPE_NOT_CONNECTED) {
+            if (error == ERROR_BROKEN_PIPE  ||
+                error == ERROR_PIPE_NOT_CONNECTED) {
                 m_ReadStatus  = eIO_Closed;
                 m_WriteStatus = eIO_Closed;
                 return eIO_Closed;
@@ -551,7 +552,8 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                 // NB:  status == eIO_Unknown
                 if ( !bytes_written ) {
                     DWORD error = ::GetLastError();
-                    if (error == ERROR_BROKEN_PIPE  ||  error == ERROR_PIPE_NOT_CONNECTED) {
+                    if (error == ERROR_BROKEN_PIPE  ||
+                        error == ERROR_PIPE_NOT_CONNECTED) {
                         m_ReadStatus = eIO_Closed;
                         status       = eIO_Closed;
                     }
@@ -813,10 +815,14 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         }
 
         status = LSOCK_Accept(m_LSocket, timeout, &m_IoSocket);
+        if (status == eIO_Timeout) {
+            return status;
+        }
         if (status != eIO_Success) {
             throw string("Named pipe LSOCK_Accept() failed: ")
                 + IO_StatusStr(status);
         }
+
         // Set buffer size
         if (m_PipeBufSize) {
             int fd;
