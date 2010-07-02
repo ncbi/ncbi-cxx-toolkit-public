@@ -434,11 +434,14 @@ void CFlatGeneSynonymsQVal::Format
 
     string qual = "gene_synonym";
     list<string> synonyms = GetValue();
-    synonyms.sort(PNocase());
+    vector<string> sub;
+    std::copy(synonyms.begin(), synonyms.end(),
+              back_inserter(sub));
+    std::sort(sub.begin(), sub.end(), PNocase());
     if (ctx.IsRefSeq()) {
-        x_AddFQ( q, qual, NStr::Join(synonyms, "; "), m_Style );
+        x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style );
     } else {
-        ITERATE (list<string>, it, synonyms) {
+        ITERATE (vector<string>, it, sub) {
             x_AddFQ( q, qual, *it, m_Style );
         }
     }
@@ -636,16 +639,6 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
     if ( s != 0 ) {
         x_AddFQ(q, name, s);
     }
-}
-
-static string s_GetSpecimenVoucherTag(
-    const string& strRawName,
-    const string& strBase,
-    const string& strInst )
-{
-    CNcbiOstrstream text;
-    
-    return CNcbiOstrstreamToString(text);
 }
 
 
