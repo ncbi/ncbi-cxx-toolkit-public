@@ -99,6 +99,97 @@ double s_GetProteinWeight(Iterator start, Iterator end)
 }
 
 
+double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
+                        const CSeq_loc* location)
+{
+    if (feat.GetData().Which() != CSeqFeatData::e_Prot) {
+        NCBI_THROW(CException, eUnknown,
+                   "molecular weight only valid for protein features");
+    }
+
+    const CSeq_loc& loc =
+        (location ? *location : feat.GetLocation());
+    CSeqVector v(loc, scope);
+    v.SetCoding(CSeq_data::e_Ncbistdaa);
+
+    CSeqVector_CI vit(v);
+
+    /// find out if the molecule is complete
+    CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_unknown;
+    const CProt_ref& prot = feat.GetData().GetProt();
+    switch (prot.GetProcessed()) {
+    case CProt_ref::eProcessed_not_set:
+        /// follow the molecule's setting
+        break;
+
+    case CProt_ref::eProcessed_preprotein:
+    case CProt_ref::eProcessed_mature:
+    case CProt_ref::eProcessed_signal_peptide:
+    case CProt_ref::eProcessed_transit_peptide:
+        /// trust the location as-is
+        comp = CMolInfo::eCompleteness_partial;
+        break;
+    }
+
+    if (comp == CMolInfo::eCompleteness_unknown) {
+        /// assess based on the molecule
+        CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+        if (loc.GetTotalRange().GetFrom() > 0  ||
+            loc.GetTotalRange().GetLength() < bsh.GetBioseqLength()) {
+            /// we don' want to clip
+            comp = CMolInfo::eCompleteness_partial;
+        } else {
+            comp = CMolInfo::eCompleteness_complete;
+
+            if (prot.GetProcessed() == CProt_ref::eProcessed_not_set) {
+                /// look for a signal peptide; if there is one, consider
+                /// ourselves partial
+                CFeat_CI feat_it(bsh, CSeqFeatData::e_Prot);
+                for ( ;  feat_it;  ++feat_it) {
+                    switch (feat_it->GetData().GetProt().GetProcessed()) {
+                    case CProt_ref::eProcessed_signal_peptide:
+                        comp = CMolInfo::eCompleteness_partial;
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+            }
+
+            /**
+            /// NB: the C toolkit has not yet implemented this; commented out
+            /// for now to maintain compatibility
+            CConstRef<CMolInfo> molinfo(sequence::GetMolInfo(bsh));
+            if (molinfo) {
+                comp = molinfo->GetCompleteness();
+                LOG_POST(Error << "comp = " << comp);
+            }
+            **/
+        }
+    }
+
+    switch (comp) {
+    case CMolInfo::eCompleteness_unknown:
+    case CMolInfo::eCompleteness_partial:
+    case CMolInfo::eCompleteness_no_left:
+    case CMolInfo::eCompleteness_no_ends:
+        /// molecule is incomplete at the start; any 'M' here should be trusted
+        break;
+
+    default:
+        /// for complete molecules, we skip the leading 'M' since this is
+        /// cleaved as a post-transcriptional modification
+        if (*vit == ('M' - 'A')) {
+            ++vit;
+        }
+        break;
+    }
+
+    return s_GetProteinWeight(vit, v.end());
+}
+
+
 double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 {
     CSeqVector v = (location
@@ -116,13 +207,20 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
         /// we don' want to clip
         comp = CMolInfo::eCompleteness_partial;
     } else {
+        comp = CMolInfo::eCompleteness_complete;
+        /**
+        /// NB: the C toolkit has not yet implemented this; commented out
+        /// for now to maintain compatibility
         CConstRef<CMolInfo> molinfo(sequence::GetMolInfo(handle));
         if (molinfo) {
             comp = molinfo->GetCompleteness();
+            LOG_POST(Error << "comp = " << comp);
         }
+        **/
     }
 
     switch (comp) {
+    case CMolInfo::eCompleteness_unknown:
     case CMolInfo::eCompleteness_partial:
     case CMolInfo::eCompleteness_no_left:
     case CMolInfo::eCompleteness_no_ends:
@@ -149,6 +247,10 @@ double GetProteinWeight(const string& iupac_aa_sequence)
         CSeqConvert::Convert(iupac_aa_sequence, CSeqUtil::e_Iupacaa,
                              0, iupac_aa_sequence.size(),
                              ncbistdaa, CSeqUtil::e_Ncbistdaa);
+    if (len < iupac_aa_sequence.size()) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to convert IUPACaa sequence to NCBIstdaa");
+    }
     return s_GetProteinWeight(ncbistdaa.begin(),
                               ncbistdaa.end());
 }
