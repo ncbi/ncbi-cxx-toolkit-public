@@ -113,7 +113,8 @@ public:
     void WriteBufferAndClose(const void* buf_ptr, size_t buf_size);
 
 private:
-    void ResetConnection(CNetServerConnection::TInstance conn = NULL);
+    void ResetWriters();
+    void AbortConnection();
     void EstablishConnection();
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
 

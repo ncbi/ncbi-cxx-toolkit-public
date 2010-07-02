@@ -202,7 +202,9 @@ CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
 
 void CNetCacheWriter::SetConnection(CNetServerConnection::TInstance conn)
 {
-    ResetConnection(conn);
+    ResetWriters();
+
+    m_Connection = conn;
 
     if (conn != NULL) {
         m_SocketReaderWriter.reset(
@@ -266,8 +268,7 @@ void CNetCacheWriter::Close()
     ERW_Result res = m_TransmissionWriter->Close();
 
     if (res != eRW_Success) {
-        m_Connection->Abort();
-        ResetConnection();
+        AbortConnection();
         if (res == eRW_Timeout) {
             NCBI_THROW(CNetServiceException, eTimeout,
                 "Timeout while sending EOF packet");
@@ -283,14 +284,14 @@ void CNetCacheWriter::Close()
             m_Connection->ReadCmdOutputLine(dummy);
         }
         catch (...) {
-            if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
-                m_Connection->Abort();
-            ResetConnection();
+            AbortConnection();
             throw;
         }
     }
 
-    ResetConnection();
+    ResetWriters();
+
+    m_Connection = NULL;
 }
 
 ERW_Result CNetCacheWriter::Write(const void* buf,
@@ -331,7 +332,7 @@ void CNetCacheWriter::WriteBufferAndClose(const void* buf_ptr, size_t buf_size)
     Close();
 }
 
-void CNetCacheWriter::ResetConnection(CNetServerConnection::TInstance conn)
+void CNetCacheWriter::ResetWriters()
 {
     try {
         m_TransmissionWriter.reset();
@@ -339,8 +340,16 @@ void CNetCacheWriter::ResetConnection(CNetServerConnection::TInstance conn)
     }
     catch (...) {
     }
+}
 
-    m_Connection = conn;
+void CNetCacheWriter::AbortConnection()
+{
+    ResetWriters();
+
+    if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
+        m_Connection->Abort();
+
+    m_Connection = NULL;
 }
 
 void CNetCacheWriter::EstablishConnection()
@@ -384,7 +393,8 @@ void CNetCacheWriter::Transmit(const void* buf,
         }
     }
     catch (...) {
-        m_Connection->Abort();
+        m_Closed = true;
+        AbortConnection();
         throw;
     }
 }
