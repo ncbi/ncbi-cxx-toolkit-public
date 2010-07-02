@@ -434,6 +434,7 @@ void CFlatGeneSynonymsQVal::Format
 
     string qual = "gene_synonym";
     list<string> synonyms = GetValue();
+    synonyms.sort(PNocase());
     if (ctx.IsRefSeq()) {
         x_AddFQ( q, qual, NStr::Join(synonyms, "; "), m_Style );
     } else {
