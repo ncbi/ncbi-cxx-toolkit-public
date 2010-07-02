@@ -272,13 +272,14 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
 
     int frame_offset = (exons.back().prod_to/3+1)*3+cds_start; // to make modulo operands always positive
 
-    vector<SExon>::iterator left_exon_it; 
     vector<SExon>::iterator right_exon_it = exons.begin();
-    CSpliced_seg::TExons::iterator left_spl_exon_it;
     CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
 
-    while ((left_exon_it     = right_exon_it++,     right_exon_it     !=exons.end()) &&
-           (left_spl_exon_it = right_spl_exon_it++, right_spl_exon_it != spliced_seg.SetExons().end())) {
+    while (++right_exon_it     !=exons.end() &&
+           ++right_spl_exon_it != spliced_seg.SetExons().end()) {
+
+        vector<SExon>::reverse_iterator left_exon_it(right_exon_it); 
+        CSpliced_seg::TExons::reverse_iterator left_spl_exon_it(right_spl_exon_it);
 
         bool donor_set = (*left_spl_exon_it)->IsSetDonor_after_exon();
         bool acceptor_set = (*right_spl_exon_it)->IsSetAcceptor_before_exon();
@@ -288,15 +289,15 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
         }
 
         TrimLeftExon((left_exon_it->prod_to - cds_start + 1) % 3,
-                     exons.begin()-1, left_exon_it, left_spl_exon_it,
+                     exons.rend(), left_exon_it, left_spl_exon_it,
                      product_strand, genomic_strand);
         TrimRightExon((frame_offset-right_exon_it->prod_from) % 3,
                       right_exon_it, exons.end(), right_spl_exon_it,
                       product_strand, genomic_strand);
 
-        if (left_exon_it+1 != right_exon_it) {
-            right_exon_it = exons.erase(++left_exon_it, right_exon_it);
-            right_spl_exon_it = spliced_seg.SetExons().erase(++left_spl_exon_it, right_spl_exon_it);
+        if (left_exon_it.base() != right_exon_it) {
+            right_exon_it = exons.erase(left_exon_it.base(), right_exon_it);
+            right_spl_exon_it = spliced_seg.SetExons().erase(left_spl_exon_it.base(), right_spl_exon_it);
         }
     }
 }
@@ -315,9 +316,9 @@ TSignedSeqPos CFeatureGenerator::SImplementation::GetCdsStart(const objects::CSe
 }
 
 void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
-                                                      vector<SExon>::iterator left_edge,
-                                                      vector<SExon>::iterator& exon_it,
-                                                      CSpliced_seg::TExons::iterator& spl_exon_it,
+                                                      vector<SExon>::reverse_iterator left_edge,
+                                                      vector<SExon>::reverse_iterator& exon_it,
+                                                      CSpliced_seg::TExons::reverse_iterator& spl_exon_it,
                                                       ENa_strand product_strand,
                                                       ENa_strand genomic_strand)
 {
@@ -326,8 +327,8 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
     while (trim_amount > 0) {
         int exon_len = exon_it->prod_to - exon_it->prod_from + 1;
         if (exon_len <= trim_amount) {
-            --exon_it;
-            --spl_exon_it;
+            ++exon_it;
+            ++spl_exon_it;
             trim_amount -= exon_len;
             if (exon_it == left_edge)
                 break;
@@ -350,10 +351,10 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
 
             int genomic_trim_amount = 0;
 
-            CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
-            if (!parts.empty()) {
+            if ((*spl_exon_it)->CanGetParts() && !(*spl_exon_it)->GetParts().empty()) {
+                CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
                 CSpliced_exon_Base::TParts::iterator chunk = parts.end();
-                while (--chunk, trim_amount>0 || (*chunk)->IsGenomic_ins()) {
+                while (--chunk, (trim_amount>0 || (*chunk)->IsGenomic_ins())) {
                     int product_chunk_len = 0;
                     int genomic_chunk_len = 0;
                     switch((*chunk)->Which()) {
@@ -396,8 +397,7 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
                     if (product_chunk_len <= trim_amount) {
                         genomic_trim_amount += genomic_chunk_len;
                         trim_amount -= product_chunk_len;
-                        CSpliced_exon_Base::TParts::iterator prev_chunk = chunk;
-                        --(chunk = parts.erase(chunk));
+                        chunk = parts.erase(chunk);
                     } else {
                         genomic_trim_amount += min(trim_amount, genomic_chunk_len);
                         trim_amount = 0;
@@ -454,8 +454,8 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
 
             int genomic_trim_amount = 0;
 
-            CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
-            if (!parts.empty()) {
+            if ((*spl_exon_it)->CanGetParts() && !(*spl_exon_it)->GetParts().empty()) {
+                CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
                 CSpliced_exon_Base::TParts::iterator chunk = parts.begin();
                 for (; trim_amount>0 || (*chunk)->IsGenomic_ins(); ++chunk) {
                     int product_chunk_len = 0;
@@ -500,7 +500,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
                     if (product_chunk_len <= trim_amount) {
                         genomic_trim_amount += genomic_chunk_len;
                         trim_amount -= product_chunk_len;
-                        chunk = parts.erase(chunk);
+                        --(chunk = parts.erase(chunk));
                     } else {
                         genomic_trim_amount += min(trim_amount, genomic_chunk_len);
                         trim_amount = 0;

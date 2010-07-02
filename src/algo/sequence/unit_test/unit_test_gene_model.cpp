@@ -256,24 +256,45 @@ BOOST_AUTO_TEST_CASE(TestCaseTrim)
     CSeq_align align;
     CSpliced_seg& seg = align.SetSegs().SetSpliced();
     seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
-    CRef<CSeq_id> seq_id(new CSeq_id("NM_018690.2"));
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("NM_018690.2"));
     seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("NT_010393.16"));
+    seg.SetGenomic_id(*seq_id);
     CSpliced_seg::TExons& exons = seg.SetExons();
     CRef<CSpliced_exon> exon;
+
     exon.Reset(new CSpliced_exon);
-    exon->SetProduct_start().SetNucpos(0);
+    exon->SetProduct_start().SetNucpos(10);
+    exon->SetProduct_end().SetNucpos(11);
+    exon->SetGenomic_start(20);
+    exon->SetGenomic_end(21);
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetNucpos(16);
     exon->SetProduct_end().SetNucpos(19);
-    exon->SetGenomic_start(0);
-    exon->SetGenomic_end(18);
+    exon->SetGenomic_start(1031);
+    exon->SetGenomic_end(1034);
     CRef<CSpliced_exon_chunk> chunk;
+
     chunk.Reset(new CSpliced_exon_chunk);
     chunk->SetProduct_ins(1);
     exon->SetParts().push_back(chunk);
+
     chunk.Reset(new CSpliced_exon_chunk);
-    chunk->SetMatch(19);
+    chunk->SetMatch(2);
     exon->SetParts().push_back(chunk);
 
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(1);
+    exon->SetParts().push_back(chunk);
     exons.push_back(exon);
+
     exon.Reset(new CSpliced_exon);
     exon->SetProduct_start().SetNucpos(200);
     exon->SetProduct_end().SetNucpos(300);
@@ -281,14 +302,19 @@ BOOST_AUTO_TEST_CASE(TestCaseTrim)
     exon->SetGenomic_end(2100);
     exons.push_back(exon);
 
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
     CConstRef<CSeq_align> trimmed_align;
     trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK_NO_THROW(trimmed_align->Validate(true));
 
     BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(2));
 
     CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
 
-    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(17) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(1031) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(1032) );
     BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(2002) );
 }
 
