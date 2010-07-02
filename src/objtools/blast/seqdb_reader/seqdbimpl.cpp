@@ -70,6 +70,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_TotalLength     (0),
       m_TotalLengthStats(0),
       m_VolumeLength    (0),
+      m_MaxLength       (0),
       m_SeqType         (prot_nucl),
       m_OidListSetup    (false),
       m_UserGiList      (gi_list),
@@ -133,11 +134,12 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
             // This is a whole-database scan; it's always done in
             // approximate length mode.
             
-            x_ScanTotals(true, & m_NumSeqs, & m_TotalLength, locked);
+            x_ScanTotals(true, & m_NumSeqs, & m_TotalLength, & m_MaxLength, locked);
             m_Atlas.Verify(locked);
         } else {
             m_NumSeqs     = x_GetNumSeqs();
             m_TotalLength = x_GetTotalLength();
+            m_MaxLength   = x_GetMaxLength();
         }
         m_NumSeqsStats     = x_GetNumSeqsStats();
         m_TotalLengthStats = x_GetTotalLengthStats();
@@ -852,6 +854,12 @@ Uint8 CSeqDBImpl::x_GetVolumeLength() const
     return m_VolSet.GetVolumeSetLength();
 }
 
+int CSeqDBImpl::x_GetMaxLength() const
+{
+    CHECK_MARKER();
+    return m_VolSet.GetMaxLength();
+}
+
 string CSeqDBImpl::GetTitle() const
 {
     CHECK_MARKER();
@@ -941,16 +949,7 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked)
 int CSeqDBImpl::GetMaxLength() const
 {
     CHECK_MARKER();
-    int max_len = 0;
-    
-    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
-        int new_max = m_VolSet.GetVol(i)->GetMaxLength();
-        
-        if (new_max > max_len)
-            max_len = new_max;
-    }
-    
-    return max_len;
+    return m_MaxLength;
 }
 
 const string & CSeqDBImpl::GetDBNameList() const
@@ -1278,10 +1277,12 @@ void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
 void CSeqDBImpl::x_ScanTotals(bool             approx,
                               int            * numseq,
                               Uint8          * totlen,
+                              int            * maxlen,
                               CSeqDBLockHold & locked)
 {
     int   oid_count(0);
     Uint8 base_count(0);
+    int   max_count(0);
     
     const CSeqDBVol * volp = 0;
     
@@ -1296,16 +1297,19 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
         
         _ASSERT(volp);
         
-        if (totlen) {
+        if (totlen || maxlen ) {
+            int len;
             if ('p' == m_SeqType) {
-                base_count += volp->GetSeqLengthProt(vol_oid, locked);
+                len = volp->GetSeqLengthProt(vol_oid, locked);
             } else {
                 if (approx) {
-                    base_count += volp->GetSeqLengthApprox(vol_oid, locked);
+                    len = volp->GetSeqLengthApprox(vol_oid, locked);
                 } else {
-                    base_count += volp->GetSeqLengthExact(vol_oid, locked);
+                    len = volp->GetSeqLengthExact(vol_oid, locked);
                 }
             }
+            max_count = MAX(len, max_count);
+            base_count += len;
         }
     }
     
@@ -1315,6 +1319,10 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
     
     if (totlen) {
         *totlen = base_count;
+    }
+
+    if (maxlen) {
+        *maxlen = max_count;
     }
 }
 
@@ -1371,7 +1379,7 @@ void CSeqDBImpl::GetTotals(ESummaryType   sumtype,
         break;
         
     case CSeqDB::eFilteredRange:
-        x_ScanTotals(use_approx, oid_count, total_length, locked);
+        x_ScanTotals(use_approx, oid_count, total_length, NULL, locked);
         break;
     }
 }

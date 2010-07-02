@@ -1090,6 +1090,10 @@ private:
     /// and is used to populate a field that caches the value; the
     /// corresponding public method uses that cached value.
     Uint8 x_GetVolumeLength() const;
+
+
+    /// Returns the longest sequence lengths of all volumes.
+    int x_GetMaxLength() const;
     
     /// Build the OID list
     ///
@@ -1151,11 +1155,14 @@ private:
     ///   Returned count of included OIDs in this range.
     /// @param base_count
     ///   Returned sum of lengths of included sequences.
+    /// @param max_count
+    ///   Returned longest of included sequences.
     /// @param locked
     ///   The lock hold object for this thread.
     void x_ScanTotals(bool             approx,
                       int            * seq_count,
                       Uint8          * base_count, 
+                      int            * max_count, 
                       CSeqDBLockHold & locked);
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1279,6 +1286,9 @@ private:
     /// Total length of all database volumes combined (in bases).
     Uint8 m_VolumeLength;
     
+    /// Longest database sequence
+    int m_MaxLength;
+
     /// Type of sequences used by this instance.
     char m_SeqType;
     

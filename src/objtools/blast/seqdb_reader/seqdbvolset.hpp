@@ -513,6 +513,17 @@ public:
         
         return vol_total;
     }
+
+    int GetMaxLength() const
+    {
+        int max_len = 0;
+
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
+            max_len = MAX( max_len, m_VolList[index].Vol()->GetMaxLength());
+        }
+
+        return max_len;
+    }       
     
     /// Optimize the GI list configuration.
     /// 
