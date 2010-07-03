@@ -1308,7 +1308,7 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
                     len = volp->GetSeqLengthExact(vol_oid, locked);
                 }
             }
-            max_count = MAX(len, max_count);
+            max_count = max(len, max_count);
             base_count += len;
         }
     }

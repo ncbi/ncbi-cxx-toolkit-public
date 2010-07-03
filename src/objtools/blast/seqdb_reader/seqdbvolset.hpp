@@ -519,7 +519,7 @@ public:
         int max_len = 0;
 
         for(int index = 0; index < (int) m_VolList.size(); index++) {
-            max_len = MAX( max_len, m_VolList[index].Vol()->GetMaxLength());
+            max_len = max( max_len, m_VolList[index].Vol()->GetMaxLength());
         }
 
         return max_len;
