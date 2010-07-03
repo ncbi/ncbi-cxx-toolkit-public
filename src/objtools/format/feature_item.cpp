@@ -608,7 +608,7 @@ static CMappedFeat s_GetBestProtFeature(const CBioseq_Handle& seq)
     CProt_ref::TProcessed best_processed = CProt_ref::eProcessed_transit_peptide;
     int best_overlap = 0;
 
-    for (CFeat_CI it(seq, sel); it; ++it) {
+    for (CFeat_CI it(seq, sel);  it;  ++it) {
 
         if ( !best ) {
 
@@ -1080,6 +1080,7 @@ void CFeatureItem::x_AddQualSeqfeatNote()
 
         if ( ! comment.empty() ) {
             bool bAddPeriod = RemovePeriodFromEnd( comment, true );
+            ConvertQuotes(comment);
             CRef<CFlatStringQVal> seqfeat_note( new CFlatStringQVal( comment ) );
             if ( bAddPeriod &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
                 seqfeat_note->SetAddPeriod();
@@ -2260,6 +2261,8 @@ void CFeatureItem::x_AddQualsRegion(
 //  ----------------------------------------------------------------------------
 {
     _ASSERT( m_Feat.GetData().IsRegion() );
+
+    //cerr << MSerial_AsnText << m_Feat.GetOriginalFeature();
 
     const CSeqFeatData& data = m_Feat.GetData();
     const string& region = data.GetRegion();

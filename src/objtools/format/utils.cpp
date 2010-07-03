@@ -243,12 +243,20 @@ void StripSpaces(string& str)
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
     string::size_type pos = str.find_last_not_of(".");
+    string::size_type pos2 = str.find_last_not_of(";,.");
     if (pos < str.size() - 1) {
         if (keep_ellipsis) {
             /// trim the end to an actual ellipsis
-            if (str.length() - pos > 3) {
+            if (str.length() - pos2 > 3) {
+                if (pos2 < pos) {
+                    str.erase(pos2 + 1);
+                    str += "...";
+                    return true;
+                }
                 pos += 3;
             }
+        } else if (pos2 < pos) {
+            pos = pos2;
         }
         if (pos < str.size() - 1) {
             str.erase(pos + 1);
