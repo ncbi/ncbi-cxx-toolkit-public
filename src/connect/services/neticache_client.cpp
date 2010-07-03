@@ -91,7 +91,7 @@ static inline void AppendKeyVersionSubkey(string* outstr,
 static string s_MakeBlobID(const string& key, int version, const string& subkey)
 {
     string blob_id(kEmptyStr);
-    blob_id.resize(KEY_VERSION_SUBKEY_MAXLEN);
+    blob_id.reserve(KEY_VERSION_SUBKEY_MAXLEN);
 
     blob_id.push_back('"');
 
@@ -125,7 +125,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     string ExecStdCmd(const char* cmd_base, const string& key,
         int version, const string& subkey);
 
-    virtual CNetServerConnection InitiateWriteCmd(const string& blob_id,
+    virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
         unsigned time_to_live);
 
     IReader* GetReadStream(const string& key,
@@ -184,12 +184,12 @@ CNetICachePasswordGuard::CNetICachePasswordGuard(
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
-    const string& blob_id, unsigned time_to_live)
+    string* blob_id, unsigned time_to_live)
 {
     string cmd(m_ICacheCmdPrefix + "STOR ");
     cmd.append(NStr::UIntToString(time_to_live));
     cmd.push_back(' ');
-    cmd.append(blob_id);
+    cmd.append(*blob_id);
     AppendClientIPSessionIDPassword(&cmd);
 
     return StickToServerAndExec(cmd).conn;
@@ -351,8 +351,10 @@ void CNetICacheClient::Store(const string&  key,
                              unsigned int   time_to_live,
                              const string&  /*owner*/)
 {
-    CNetCacheWriter writer(m_Impl, s_MakeBlobID(key, version, subkey),
-        time_to_live, eICache_NoWait, CNetCacheAPI::eCaching_Disable);
+    string blob_id(s_MakeBlobID(key, version, subkey));
+
+    CNetCacheWriter writer(m_Impl, &blob_id, time_to_live,
+        eICache_NoWait, CNetCacheAPI::eCaching_Disable);
 
     writer.WriteBufferAndClose(data, size);
 }
@@ -456,15 +458,17 @@ IEmbeddedStreamWriter* CNetICacheClient::GetNetCacheWriter(const string& key,
     unsigned time_to_live, const string& /*owner*/,
     CNetCacheAPI::ECachingMode caching_mode)
 {
-    return new CNetCacheWriter(m_Impl, s_MakeBlobID(key, version, subkey),
-        time_to_live, eICache_NoWait, caching_mode);
+    string blob_id(s_MakeBlobID(key, version, subkey));
+
+    return new CNetCacheWriter(m_Impl, &blob_id, time_to_live,
+        eICache_NoWait, caching_mode);
 }
 
 
 void CNetICacheClient::Remove(const string& key)
 {
     string cmd(kEmptyStr);
-    cmd.resize(m_Impl->m_ICacheCmdPrefix.length() +
+    cmd.reserve(m_Impl->m_ICacheCmdPrefix.length() +
         sizeof("REMK \"") - 1 +
         key.length() + 1);
     cmd.append(m_Impl->m_ICacheCmdPrefix);
@@ -538,7 +542,7 @@ string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     const string& key, int version, const string& subkey)
 {
     string cmd(kEmptyStr);
-    cmd.resize(m_ICacheCmdPrefix.length() + strlen(cmd_base) +
+    cmd.reserve(m_ICacheCmdPrefix.length() + strlen(cmd_base) +
         1 + KEY_VERSION_SUBKEY_MAXLEN);
 
     cmd.append(m_ICacheCmdPrefix);

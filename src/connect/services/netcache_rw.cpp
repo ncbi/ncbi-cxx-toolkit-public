@@ -184,34 +184,24 @@ void CNetCacheReader::ReportPrematureEOF()
 
 /////////////////////////////////////////////////
 CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
-        const string& blob_id,
+        string* blob_id,
         unsigned time_to_live,
         ENetCacheResponseType response_type,
         CNetCacheAPI::ECachingMode caching_mode) :
     m_NetCacheAPI(impl),
-    m_BlobID(blob_id),
+    m_BlobID(*blob_id),
     m_TimeToLive(time_to_live),
     m_ResponseType(response_type),
     m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
         impl->m_CacheOutput : caching_mode == CNetCacheAPI::eCaching_Enable),
-    m_Closed(false)
+    m_ConnectionIsOpen(false)
 {
     if (m_CachingEnabled)
         m_CacheFile.CreateTemporary(impl->m_TempDir, s_OutputBlobCachePrefix);
-}
 
-void CNetCacheWriter::SetConnection(CNetServerConnection::TInstance conn)
-{
-    ResetWriters();
-
-    m_Connection = conn;
-
-    if (conn != NULL) {
-        m_SocketReaderWriter.reset(
-            new CSocketReaderWriter(&m_Connection->m_Socket));
-        m_TransmissionWriter.reset(
-            new CTransmissionWriter(m_SocketReaderWriter.get(),
-            eNoOwnership, CTransmissionWriter::eSendEofPacket));
+    if (!m_CachingEnabled || blob_id->empty()) {
+        EstablishConnection();
+        *blob_id = m_BlobID;
     }
 }
 
@@ -224,10 +214,10 @@ CNetCacheWriter::~CNetCacheWriter()
 
 void CNetCacheWriter::Close()
 {
-    if (m_Closed)
+    if (!m_ConnectionIsOpen)
         return;
 
-    m_Closed = true;
+    m_ConnectionIsOpen = false;
 
     if (m_CachingEnabled) {
         m_CacheFile.Flush();
@@ -259,9 +249,8 @@ void CNetCacheWriter::Close()
             EstablishConnection();
 
             m_CacheFile.SetFilePos(0);
-            while ((bytes_read = m_CacheFile.Read(buf, sizeof(buf))) > 0) {
+            while ((bytes_read = m_CacheFile.Read(buf, sizeof(buf))) > 0)
                 Transmit(buf, bytes_read, &bytes_written);
-            }
         }
     }
 
@@ -302,12 +291,8 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
         size_t bytes_written = m_CacheFile.Write(buf, count);
         if (bytes_written_ptr != NULL)
             *bytes_written_ptr = bytes_written;
-    } else {
-        if (!m_Connection)
-            EstablishConnection();
-
+    } else
         Transmit(buf, count, bytes_written_ptr);
-    }
 
     return eRW_Success;
 }
@@ -342,19 +327,32 @@ void CNetCacheWriter::ResetWriters()
     }
 }
 
+void CNetCacheWriter::EstablishConnection()
+{
+    ResetWriters();
+
+    m_Connection = m_NetCacheAPI->InitiateWriteCmd(&m_BlobID, m_TimeToLive);
+
+    m_SocketReaderWriter.reset(
+        new CSocketReaderWriter(&m_Connection->m_Socket));
+
+    m_TransmissionWriter.reset(
+        new CTransmissionWriter(m_SocketReaderWriter.get(),
+            eNoOwnership, CTransmissionWriter::eSendEofPacket));
+
+    m_ConnectionIsOpen = true;
+}
+
 void CNetCacheWriter::AbortConnection()
 {
+    m_ConnectionIsOpen = false;
+
     ResetWriters();
 
     if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
         m_Connection->Abort();
 
     m_Connection = NULL;
-}
-
-void CNetCacheWriter::EstablishConnection()
-{
-    SetConnection(m_NetCacheAPI->InitiateWriteCmd(m_BlobID, m_TimeToLive));
 }
 
 void CNetCacheWriter::Transmit(const void* buf,
@@ -393,7 +391,6 @@ void CNetCacheWriter::Transmit(const void* buf,
         }
     }
     catch (...) {
-        m_Closed = true;
         AbortConnection();
         throw;
     }

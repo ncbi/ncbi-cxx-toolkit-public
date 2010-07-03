@@ -80,12 +80,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 
     CNetServer GetServer(const string& bid);
 
-    string MakePutCmd(const string& key, unsigned time_to_live);
-    void CheckPutCmdResult(CNetServer::SExecResult& exec_result);
-    void CreateNewBlob(CNetCacheWriter* writer, unsigned time_to_live);
-
-    virtual CNetServerConnection InitiateWriteCmd(
-        const string& blob_id,
+    virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
         unsigned time_to_live);
 
     void AppendClientIPSessionIDPassword(string* cmd);

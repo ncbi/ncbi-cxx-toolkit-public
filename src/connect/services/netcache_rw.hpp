@@ -89,15 +89,10 @@ class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IEmbeddedStreamWriter
 {
 public:
     CNetCacheWriter(SNetCacheAPIImpl* impl,
-        const string& blob_id,
+        string* blob_id,
         unsigned time_to_live,
         ENetCacheResponseType response_type,
         CNetCacheAPI::ECachingMode caching_mode);
-
-    void SetBlobID(const string& blob_id) {m_BlobID = blob_id;}
-    const string& GetBlobID() const {return m_BlobID;}
-
-    void SetConnection(CNetServerConnection::TInstance conn);
 
     virtual ~CNetCacheWriter();
 
@@ -114,8 +109,8 @@ public:
 
 private:
     void ResetWriters();
-    void AbortConnection();
     void EstablishConnection();
+    void AbortConnection();
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
 
     CNetCacheAPI m_NetCacheAPI;
@@ -127,7 +122,7 @@ private:
     ENetCacheResponseType m_ResponseType;
     CFileIO m_CacheFile;
     bool m_CachingEnabled;
-    bool m_Closed;
+    bool m_ConnectionIsOpen;
 };
 
 /* @} */

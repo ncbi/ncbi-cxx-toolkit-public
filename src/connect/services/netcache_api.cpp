@@ -245,23 +245,44 @@ string CNetCacheAPI::PutData(const void* buf, size_t size,
     return PutData(kEmptyStr, buf, size, time_to_live);
 }
 
-string SNetCacheAPIImpl::MakePutCmd(const string& key, unsigned time_to_live)
+CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
+    unsigned time_to_live)
 {
     string cmd("PUT3 ");
     cmd.append(NStr::IntToString(time_to_live));
 
-    if (!key.empty()) {
+    bool write_existing_blob = !blob_id->empty();
+
+    if (write_existing_blob) {
         cmd.push_back(' ');
-        cmd.append(key);
+        cmd.append(*blob_id);
     }
 
     AppendClientIPSessionIDPassword(&cmd);
 
-    return cmd;
-}
+    CNetServer::SExecResult exec_result;
 
-void SNetCacheAPIImpl::CheckPutCmdResult(CNetServer::SExecResult& exec_result)
-{
+    if (write_existing_blob)
+        exec_result = GetServer(*blob_id).ExecWithRetry(cmd);
+    else {
+        try {
+            exec_result = m_Service.FindServerAndExec(cmd);
+        } catch (CNetSrvConnException& e) {
+            SServerAddress* backup = s_GetFallbackServer();
+
+            if (backup == NULL) {
+                ERR_POST("Fallback server address is not configured.");
+                throw;
+            }
+
+            ERR_POST_X(3, "Could not connect to " <<
+                m_Service.GetServiceName() << ":" << e.what() <<
+                ". Connecting to backup server " << backup->AsString() << ".");
+
+            exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
+        }
+    }
+
     if (NStr::FindCase(exec_result.response, "ID:") != 0) {
         // Answer is not in the "ID:....." format
         string msg = "Unexpected server response:";
@@ -274,53 +295,15 @@ void SNetCacheAPIImpl::CheckPutCmdResult(CNetServer::SExecResult& exec_result)
         NCBI_THROW(CNetServiceException, eCommunicationError,
             "Invalid server response. Empty key.");
     }
-}
 
-void SNetCacheAPIImpl::CreateNewBlob(CNetCacheWriter* writer,
-    unsigned time_to_live)
-{
-    string cmd(MakePutCmd(kEmptyStr, time_to_live));
-
-    CNetServer::SExecResult exec_result;
-
-    try {
-        exec_result = m_Service.FindServerAndExec(cmd);
-    } catch (CNetSrvConnException& e) {
-        SServerAddress* backup = s_GetFallbackServer();
-
-        if (backup == NULL) {
-            ERR_POST("Fallback server address is not configured.");
-            throw;
+    if (write_existing_blob) {
+        if (*blob_id != exec_result.response) {
+            NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+                "Server created " << exec_result.response <<
+                " in response to PUT3 \"" << blob_id << "\"");
         }
-
-        ERR_POST_X(3, "Could not connect to " <<
-            m_Service.GetServiceName() << ":" << e.what() <<
-            ". Connecting to backup server " << backup->AsString() << ".");
-
-        exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
-    }
-
-    CheckPutCmdResult(exec_result);
-
-    writer->SetBlobID(exec_result.response);
-    writer->SetConnection(exec_result.conn);
-}
-
-CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
-    const string& blob_id, unsigned time_to_live)
-{
-    _ASSERT(!blob_id.empty() && "Blob ID should be defined at this point");
-
-    CNetServer::SExecResult exec_result(
-        GetServer(blob_id).ExecWithRetry(MakePutCmd(blob_id, time_to_live)));
-
-    CheckPutCmdResult(exec_result);
-
-    if (blob_id != exec_result.response) {
-        NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
-            "Server created " << exec_result.response <<
-            " in response to PUT3 \"" << blob_id << "\"");
-    }
+    } else
+        *blob_id = exec_result.response;
 
     return exec_result.conn;
 }
@@ -331,15 +314,14 @@ string  CNetCacheAPI::PutData(const string& key,
                               size_t        size,
                               unsigned int  time_to_live)
 {
-    CNetCacheWriter writer(m_Impl, key, time_to_live,
-        eNetCache_Wait, CNetCacheAPI::eCaching_Disable);
+    string actual_key(key);
 
-    if (key.empty())
-        m_Impl->CreateNewBlob(&writer, time_to_live);
+    CNetCacheWriter writer(m_Impl, &actual_key, time_to_live,
+        eNetCache_Wait, CNetCacheAPI::eCaching_Disable);
 
     writer.WriteBufferAndClose(buf, size);
 
-    return writer.GetBlobID();
+    return actual_key;
 }
 
 CNcbiOstream* CNetCacheAPI::CreateOStream(string& key, unsigned time_to_live)
@@ -351,19 +333,8 @@ CNcbiOstream* CNetCacheAPI::CreateOStream(string& key, unsigned time_to_live)
 IEmbeddedStreamWriter* CNetCacheAPI::PutData(string* key,
     unsigned time_to_live, ECachingMode caching_mode)
 {
-    if (!key->empty())
-        return new CNetCacheWriter(m_Impl,
-            *key, time_to_live, eNetCache_Wait, caching_mode);
-    else {
-        auto_ptr<CNetCacheWriter> writer(new CNetCacheWriter(m_Impl,
-            *key, time_to_live, eNetCache_Wait, caching_mode));
-
-        m_Impl->CreateNewBlob(writer.get(), time_to_live);
-
-        *key = writer->GetBlobID();
-
-        return writer.release();
-    }
+    return new CNetCacheWriter(m_Impl, key, time_to_live,
+        eNetCache_Wait, caching_mode);
 }
 
 
