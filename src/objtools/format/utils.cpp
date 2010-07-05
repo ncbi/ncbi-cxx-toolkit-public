@@ -242,8 +242,27 @@ void StripSpaces(string& str)
 
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
-    string::size_type pos = str.find_last_not_of(".");
+    /**
+    // NB: this is likely a better solution; however, the C toolkit differs...
+    //string::size_type pos = str.find_last_not_of(".,;:() ");
+    string::size_type pos = str.find_last_not_of(".,;: ");
+    string::size_type pos2 = str.find("...", pos);
+    if (pos < str.size() - 1) {
+        str.erase(pos + 1);
+        if (keep_ellipsis  &&  pos2 != string::npos) {
+            str += "...";
+        }
+    }
+    **/
+
     string::size_type pos2 = str.find_last_not_of(";,.");
+    string::size_type pos3 = str.find_last_not_of(" ", pos2);
+    if (pos3 < pos2) {
+        str.erase(pos3 + 1);
+        pos2 = str.find_last_not_of(";,.");
+    }
+
+    string::size_type pos = str.find_last_not_of(".");
     if (pos < str.size() - 1) {
         if (keep_ellipsis) {
             /// trim the end to an actual ellipsis
