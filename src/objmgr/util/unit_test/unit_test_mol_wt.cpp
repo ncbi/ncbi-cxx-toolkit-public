@@ -92,7 +92,8 @@ BOOST_AUTO_TEST_CASE(Test_Bioseq)
     CScope scope(*CObjectManager::GetInstance());
     CBioseq_Handle bsh = scope.AddBioseq(*bs);
     double wt = GetProteinWeight(bsh);
-    BOOST_CHECK_CLOSE(wt, 66753.98925, 0.001);
+    //BOOST_CHECK_CLOSE(wt, 66753.98925, 0.001);
+    BOOST_CHECK_CLOSE(wt, 66622.7923, 0.001);
 
     ///
     /// check after setting completeness
