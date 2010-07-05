@@ -323,8 +323,6 @@ int CAsn2FlatApp::Run(void)
             }
 
             try {
-                m_Scope.Reset(new CScope(*m_Objmgr));
-                m_Scope->AddDefaults();
                 LOG_POST(Error << "id = " << id_str);
                 HandleSeqId( id_str );
             }
