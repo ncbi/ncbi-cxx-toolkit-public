@@ -120,6 +120,7 @@ public:
         eCmd_lcheck,           ///< Check for the existence of external links
         eCmd_ncheck,           ///< Check for the existence of neighbor links
         eCmd_neighbor,         ///< Display neighbors within a database (default)
+        eCmd_neighbor_score,   ///< Display neighbors within a database, with scores
         eCmd_neighbor_history, ///< Create history for use in other EUtils
         eCmd_acheck            ///< Entrez databases links
     };

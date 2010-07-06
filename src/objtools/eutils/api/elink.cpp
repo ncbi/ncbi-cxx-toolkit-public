@@ -69,7 +69,7 @@ const char* CELink_Request::x_GetCommandName(void) const
 {
     static const char* s_CommandName[] = {
         "none", "prlinks", "llinks", "llinkslib", "lcheck", "ncheck",
-        "neighbor", "neighbor_history", "acheck"
+        "neighbor", "neighbor_score", "neighbor_history", "acheck"
     };
     return s_CommandName[m_Cmd];
 }
