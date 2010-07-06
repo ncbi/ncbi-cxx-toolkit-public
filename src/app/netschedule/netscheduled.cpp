@@ -1985,7 +1985,7 @@ void CNetScheduleHandler::ProcessPrintQueue(CQueue* q)
     socket.SetOwnership(eNoOwnership);
     socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
 
-    CConn_SocketStream ios(sock);  // sock is being passed and used exclusively
+    CConn_SocketStream ios(sock, eTakeOwnership);  // sock is being passed and used exclusively
 
     q->PrintQueue(ios,
                   job_status,
@@ -2005,7 +2005,7 @@ void CNetScheduleHandler::ProcessDump(CQueue* q)
     socket.SetOwnership(eNoOwnership);
     socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
 
-    CConn_SocketStream ios(sock);
+    CConn_SocketStream ios(sock, eTakeOwnership);
 
     ios << "OK:" << NETSCHEDULED_FULL_VERSION << endl;
 
