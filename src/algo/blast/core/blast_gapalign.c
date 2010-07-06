@@ -2563,8 +2563,8 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
    SGreedySeed rev_start_point;
    Uint1 rem;
    GapEditScript* esp = NULL;
-   Int4 q_seed_start;
-   Int4 s_seed_start;
+   Int4 q_seed_start = q_off;
+   Int4 s_seed_start = s_off;
    
    q_avail = query_length - q_off;
    s_avail = subject_length - s_off;
