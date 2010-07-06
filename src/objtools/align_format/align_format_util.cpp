@@ -2344,7 +2344,6 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
         }
     } else { 
         //use entrez or dbtag specified     
-        char url_buf[2048];
 		string temp_class_info = kClassInfo + " ";
         if (gi > 0) {
             if(is_db_na) {
