@@ -632,7 +632,6 @@ SourceFile::EType CDataTool::LoadDefinitions(
         string name = *fi;
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
-            name = fName.GetFileName();
             moduleType = fName.GetType();
 
 // if first module has unknown type - assume ASN
@@ -677,7 +676,8 @@ SourceFile::EType CDataTool::LoadDefinitions(
                 break;
             case SourceFile::eXSD:
                 {
-                    XSDLexer lexer(fName,name);
+                    name = fName.GetFileName();
+		    XSDLexer lexer(fName,name);
                     XSDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
                     CDataType::SetXmlSourceSpec(true);
@@ -685,6 +685,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
                 break;
             case SourceFile::eWSDL:
                 {
+                    name = fName.GetFileName();
                     WSDLLexer lexer(fName,name);
                     WSDLParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
