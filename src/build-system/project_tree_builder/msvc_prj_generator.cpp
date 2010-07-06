@@ -1098,7 +1098,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         }
     }
     // references
-    if (prj.m_ProjType == CProjKey::eApp) {
+    if (prj.m_ProjType == CProjKey::eApp || prj.m_ProjType == CProjKey::eDll) {
 
         map<string,string> guid_to_path;
         ITERATE(list<CProjKey>, k, prj.m_Depends) {
