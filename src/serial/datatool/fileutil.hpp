@@ -61,6 +61,10 @@ public:
         eWSDL      // WSDL file
     };
     EType GetType(void) const;
+    string GetFileName(void) const
+        {
+            return m_Name;
+        }
 
 private:
     string m_Name;

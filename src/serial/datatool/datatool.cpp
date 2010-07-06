@@ -629,9 +629,10 @@ SourceFile::EType CDataTool::LoadDefinitions(
     }
 
     ITERATE ( list<string>, fi, names ) {
-        const string& name = *fi;
+        string name = *fi;
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
+            name = fName.GetFileName();
             moduleType = fName.GetType();
 
 // if first module has unknown type - assume ASN
