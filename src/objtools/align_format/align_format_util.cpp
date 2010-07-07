@@ -2314,14 +2314,15 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
 
     bool hit_not_in_mapviewer = !is_db_na || (linkout != 0 && !(linkout & eGenomicSeq));
     logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
-    
+    string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
+
     if (user_url.find("sra.cgi") != string::npos) {
         
         string url_with_parameters = 
             CAlignFormatUtil::BuildSRAUrl(*ids, user_url);
 
         if (url_with_parameters != NcbiEmptyString) {
-            if (!useTemplates) url_link += "<a href=\"";
+            if (!useTemplates) url_link += "<a " + title + "href=\"";
             url_link += url_with_parameters;
             if (!useTemplates) url_link += "\">";
         }
@@ -2338,42 +2339,31 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
                                            query_number,
                                            seqUrlInfo->isAlignLink);
         if (url_with_parameters != NcbiEmptyString) {
-            if (!useTemplates)url_link += (seqUrlInfo->addCssInfo) ? ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
+            if (!useTemplates)url_link += (seqUrlInfo->addCssInfo) ? ("<a " + title + kClassInfo + " " + "href=\"") : "<a " + title + "href=\"";
             url_link += url_with_parameters;
             if (!useTemplates) url_link += "\">";
         }
     } else { 
-        //use entrez or dbtag specified     
+        //use entrez or dbtag specified             
 		string temp_class_info = kClassInfo + " ";
         if (gi > 0) {
-            if(is_db_na) {
-                dopt = "GenBank";
+            if(is_db_na) {                
                 db = "nucleotide";
                 logstr_moltype = "nucl";
-            } else {
-                dopt = "GenPept";
+            } else {                
                 db = "protein";
                 logstr_moltype ="prot";
             }
-            if(useTemplates) {
+            string entrezTag = (useTemplates) ? "ENTREZ_TM" : "ENTREZ";
+            string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
 
-                string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_TM");
-	            
-                url_link = CAlignFormatUtil::MapTemplate(l_EntrezUrl,"db",db);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",gi);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",cur_align);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);                
-            }
-            else {
-                string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");				
-				
-                url_link = CAlignFormatUtil::MapTemplate(l_EntrezUrl,"db",db);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",gi);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",cur_align);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);
-
+            url_link = CAlignFormatUtil::MapTemplate(l_EntrezUrl,"db",db);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",gi);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",cur_align);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid); 
+            if(!useTemplates) {
+                url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
             }
@@ -2389,10 +2379,10 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
                         string l_TraceUrl = CAlignFormatUtil::GetURLFromRegistry("TRACE_CGI");                    
                         url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + rid;
                     }
-                    else {
-			url_link = CAlignFormatUtil::MapTemplate(kTraceUrl,"val",actual_id);
+                    else {                        
+                        url_link = CAlignFormatUtil::MapTemplate(kTraceUrl,"val",actual_id);                        
                         url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
-                        url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);
+                        url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);                        
                     }
                     
                     

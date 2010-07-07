@@ -1317,7 +1317,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                                  m_QueryNumber,
                                                  gi,
-						 "", 
+						                         alnRoInfo->seqidArray[row], 
                                                  CAlignFormatUtil::GetLinkout(m_AV->GetBioseqHandle(row),m_AV->GetSeqId(row)),
                                                  m_cur_align,
                                                  true,
@@ -1551,9 +1551,10 @@ CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
     return avRef;
 }
 
+
 void CDisplaySeqalign::x_FeatSetup(CSeq_align_set &actual_aln_list)
 {
-//scope for feature fetching
+    //scope for feature fetching
     if(!(m_AlignOption & eMasterAnchored) 
        && (m_AlignOption & eShowCdsFeature || m_AlignOption 
            & eShowGeneFeature)){
@@ -1897,11 +1898,14 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
             }
                 
             if(m_AlignOption&eHtml){
-                
+               
+		        string acc = CAlignFormatUtil::GetLabel(wid);
+                id_label = (gi != 0) ? NStr::IntToString(gi) : acc;
+ 
                 CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                                  m_QueryNumber,
                                                  gi,
-						 "", 
+						                         acc, 
                                                  0,
                                                  m_cur_align,
                                                  true,
@@ -1909,8 +1913,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                                  0,
                                                  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
                 
-                urlLink = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());
-                
+
+                urlLink = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());                
+
                 out<<urlLink;
             }
                 
@@ -1926,11 +1931,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     out<<"</a>";
                 }
                 if(gi != 0){
-                    out<<"<a name="<<gi<<"></a>";
-                    id_label = NStr::IntToString(gi);
+                    out<<"<a name="<<gi<<"></a>";                    
                 } else {
-                    out<<"<a name="<<wid->GetSeqIdString()<<"></a>";
-                    id_label = CAlignFormatUtil::GetLabel(wid).c_str();
+                    out<<"<a name="<<wid->GetSeqIdString()<<"></a>";                    
                 }
             }
             out <<" ";
@@ -1977,7 +1980,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     const CRef<CSeq_id> wid2
                         = FindBestChoice((*iter)->GetSeqid(),
                                          CSeq_id::WorstRank);
-                
+
+                    string label =  CAlignFormatUtil::GetLabel(wid2);
                     if(isFirst){
                         firstGi = gi;
                     }
@@ -1985,7 +1989,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                         char buf[512];
                         sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
-                                NStr::IntToString(gi).c_str() : CAlignFormatUtil::GetLabel(wid2).c_str(),
+                                NStr::IntToString(gi).c_str() : label.c_str(),
                                 m_QueryNumber);
                                 out << buf;
                     }
@@ -2000,12 +2004,11 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                            (*iter)->CanGetTaxid()){
                             taxid = (*iter)->GetTaxid();
                         }
-
-
+           
                         CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                                  m_QueryNumber,
-                                                 gi_in_use_this_gi,
-						 "", 
+                                                 gi_in_use_this_gi, 
+						                         label,
                                                  CAlignFormatUtil::GetLinkout(**iter),
                                                  m_cur_align,
                                                  true,
@@ -2013,8 +2016,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                                  taxid,
                                                  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
                         
-                        urlLink = x_GetUrl(&seqUrlInfo, (*iter)->GetSeqid());
-                        
+                        urlLink = x_GetUrl(&seqUrlInfo, (*iter)->GetSeqid());                        
+
                         out<<urlLink;
                     }
                 
@@ -3660,6 +3663,8 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
     }
 }
 
+
+
 void CDisplaySeqalign::x_PreProcessSeqAlign(CSeq_align_set &actual_aln_list,string toolUrl)
 {
     int num_align = 0;
@@ -3702,11 +3707,10 @@ void CDisplaySeqalign::x_CalcHSPNum(string idString)
 
 
 
-void CDisplaySeqalign::x_CalcSegs(const CSeq_align& align, string idStr)
+void CDisplaySeqalign::x_CalcSegs(const CSeq_align& align, string idString)
 {
     //make alnvector
-    CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(align);
-    string idString = idString.empty() ? avRef->GetSeqId(1).GetSeqIdString(): idStr;
+    CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(align);    
     if(m_Segs.count(idString) > 0){
             //already has seg, concatenate
             /*Note that currently it's not necessary to
@@ -3729,6 +3733,7 @@ void CDisplaySeqalign::x_CalcSegs(const CSeq_align& align, string idStr)
                                               NStr::IntToString(avRef->GetSeqStop(1))));
     }
 }
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

@@ -416,7 +416,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
 
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                 m_QueryNumber,sdl->gi,"", sdl->linkout,
+                                                 m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false); 
         sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef,useTemplates);
     }
@@ -1429,18 +1429,20 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
         
         if((*id).Which() == CSeq_id::e_Gi){
             sdl->gi = (*id).GetGi();
-        } else {            
-            sdl->id = id;
+        } else {                        
             sdl->gi = 0;
         }
+        sdl->id = id;
         if(m_Option & eHtml){
 			_ASSERT(m_Reg.get());
 
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
-
+            string accession;
+            sdl->id->GetLabel(&accession, CSeq_id::eContent);
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi,"",0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,0);
+                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,0);
             sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);
+
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -1528,8 +1530,9 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
     else {           
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
-    }  
+    }     
     
+
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
 		
     int percent_coverage = 100*iter->master_covered_length/m_QueryLength;
