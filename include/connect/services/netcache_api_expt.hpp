@@ -61,8 +61,6 @@ public:
         eKeyFormatError,
         ///< Server side error
         eServerError,
-        ///< Cache name unknown
-        eUnknnownCache,
         ///< Blob is not found
         eBlobNotFound,
         ///< Blob could not be read completely
@@ -81,7 +79,6 @@ public:
         case eAuthenticationError:      return "eAuthenticationError";
         case eKeyFormatError:           return "eKeyFormatError";
         case eServerError:              return "eServerError";
-        case eUnknnownCache:            return "eUnknnownCache";
         case eBlobNotFound:             return "eBlobNotFound";
         case eUnknownCommand:           return "eUnknownCommand";
         case eNotImplemented:           return "eNotImplemented";
