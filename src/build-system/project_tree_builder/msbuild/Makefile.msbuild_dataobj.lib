@@ -1,4 +1,5 @@
 LIB = msbuild_dataobj
 SRC = msbuild_dataobj__ msbuild_dataobj___
 
+REQUIRES = MSWin
 WATCHERS = gouriano
