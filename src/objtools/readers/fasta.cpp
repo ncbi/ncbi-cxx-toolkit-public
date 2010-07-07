@@ -419,7 +419,13 @@ void CFastaReader::ParseDefLine(const TStr& s)
         ds.SetIds().push_back(m_BestID);
         ds.SetStarts().push_back(0);
         ds.SetStarts().push_back(range_start);
-        ds.SetLens().push_back(range_end + 1 - range_start);
+        if (range_start > range_end) { // negative strand
+            ds.SetLens().push_back(range_start + 1 - range_end);
+            ds.SetStrands().push_back(eNa_strand_plus);
+            ds.SetStrands().push_back(eNa_strand_minus);
+        } else {
+            ds.SetLens().push_back(range_end + 1 - range_start);
+        }
         m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(sa);
         m_BestID = GetIDs().front();
         m_ExpectedEnd = range_end - range_start;
@@ -478,6 +484,7 @@ bool CFastaReader::ParseIDs(const TStr& s)
 size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
 {
     bool    on_start = false;
+    bool    negative = false;
     TSeqPos mult = 1;
     size_t  pos;
     start = end = 0;
@@ -495,11 +502,15 @@ size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
             mult = 1;
         } else if (c == ':'  &&  on_start  &&  mult > 1) {
             break;
+        } else if (c == 'c'  &&  pos > 0  &&  s[--pos] == ':'
+                   &&  on_start  &&  mult > 1) {
+            negative = true;
+            break;
         } else {
             return 0; // syntax error
         }
     }
-    if (start > end  ||  s[pos] != ':') {
+    if ((negative ? (end > start) : (start > end))  ||  s[pos] != ':') {
         return 0;
     }
     return s.length() - pos;
