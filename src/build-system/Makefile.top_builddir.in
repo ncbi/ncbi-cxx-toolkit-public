@@ -11,8 +11,8 @@ include ./Makefile.mk
 #################################
 
 
-SUB_PROJ = corelib util connect cgi html serial build-system \
-           db dbapi objects objmgr objtools ctools \
+SUB_PROJ = corelib util connect cgi html build-system \
+           serial db dbapi objects objmgr objtools ctools \
            algo misc gui app sample internal
 
 EXPENDABLE_SUB_PROJ = @check@
