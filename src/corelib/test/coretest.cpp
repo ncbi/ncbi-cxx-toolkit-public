@@ -1080,6 +1080,13 @@ static void TestEraseIterate(void)
 }
 
 
+static void TestStringNpos(void)
+{
+    assert(string::npos == static_cast<string::size_type>(-1));
+    assert(NPOS == static_cast<SIZE_TYPE>(-1));
+}
+
+
 /////////////////////////////////
 // Test application
 //
@@ -1106,6 +1113,7 @@ int CTestApplication::Run(void)
     TestObjectSizes();
     TestBASE64Encoding();
     TestEraseIterate();
+    TestStringNpos();
 
     NcbiCout << NcbiEndl << "CORETEST execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
