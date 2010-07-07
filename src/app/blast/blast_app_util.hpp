@@ -104,6 +104,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 #define BLAST_DATABASE_ERROR        2
 /// Command line binary exit code: error in BLAST engine
 #define BLAST_ENGINE_ERROR          3
+/// Command line binary exit code: BLAST run out of memory
+#define BLAST_OUT_OF_MEMORY         4
+/// Command line binary exit code: Network error encountered
+#define BLAST_NETWORK_ERROR         5
 /// Command line binary exit code: unknown error
 #define BLAST_UNKNOWN_ERROR         255
 
@@ -144,15 +148,20 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     }                                                                       \
     catch (const blast::CBlastSystemException& e) {                         \
         if (e.GetErrCode() == CBlastSystemException::eOutOfMemory) {        \
-            LOG_POST(Error << "BLAST run out of memory: " << e.GetMsg());   \
+            LOG_POST(Error << "BLAST ran out of memory: " << e.GetMsg());   \
+            exit_code = BLAST_OUT_OF_MEMORY;                                \
         } else if (e.GetErrCode() == CBlastSystemException::eNetworkError) {\
             LOG_POST(Error << "Network error: " << e.GetMsg());             \
+            exit_code = BLAST_NETWORK_ERROR;                                \
         }                                                                   \
-        exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
     catch (const CException& e) {                                           \
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
+    }                                                                       \
+    catch (const std::bad_alloc& e) {                                       \
+        LOG_POST(Error << "BLAST ran out of memory");                       \
+        exit_code = BLAST_OUT_OF_MEMORY;                                    \
     }                                                                       \
     catch (const exception& e) {                                            \
         LOG_POST(Error << "Error: " << e.what());                           \
