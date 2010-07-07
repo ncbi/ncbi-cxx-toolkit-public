@@ -59,7 +59,7 @@ static const string kClassInfo = "class=\"info\"";
 
 ///entrez
 // .ncbirc alias: ENTREZ
-const string kEntrezUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
+const string kEntrezUrl = "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
 
 //.ncbirc alias: ENTREZ_TM
 const string kEntrezTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
@@ -67,7 +67,7 @@ const string kEntrezTMUrl = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=ge
 
 ///trace db
 //.ncbirc alias: TRACE
-const string kTraceUrl = "<a <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">";
+const string kTraceUrl = "<a title=\"Show report for <@val@>\" <@cssInf@>href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">";
 
 ///genome button
 //.ncbirc alias: GENOME_BTN
