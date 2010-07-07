@@ -826,7 +826,8 @@ OrgName ::= SEQUENCE {
     lineage VisibleString OPTIONAL ,       -- lineage with semicolon separators
     gcode INTEGER OPTIONAL ,               -- genetic code (see CdRegion)
     mgcode INTEGER OPTIONAL ,              -- mitochondrial genetic code
-    div VisibleString OPTIONAL }           -- GenBank division code
+    div VisibleString OPTIONAL ,           -- GenBank division code
+    pgcode INTEGER OPTIONAL }              -- plastid genetic code
 
 
 OrgMod ::= SEQUENCE {
