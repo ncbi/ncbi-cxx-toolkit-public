@@ -60,7 +60,7 @@ void CNetScheduleAdmin::ShutdownServer(
         cmd = "SHUTDOWN ";
     }
 
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().ExecWithRetry(cmd).response;
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().ExecWithRetry(cmd);
 }
 
 
@@ -72,7 +72,7 @@ void CNetScheduleAdmin::ForceReschedule(const string& job_key) const
 void CNetScheduleAdmin::ReloadServerConfig() const
 {
     m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec().ExecWithRetry("RECO").response;
+        RequireStandAloneServerSpec().ExecWithRetry("RECO");
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
@@ -256,7 +256,7 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream& out) const
 void CNetScheduleAdmin::Logging(bool on_off) const
 {
     m_Impl->m_API->m_Service->RequireStandAloneServerSpec().ExecWithRetry(
-        on_off ? "LOG ON" : "LOG OFF").response;
+        on_off ? "LOG ON" : "LOG OFF");
 }
 
 
