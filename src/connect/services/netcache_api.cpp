@@ -92,22 +92,28 @@ void CNetCacheServerListener::OnInit(CNetObject* api_impl,
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    string temp_dir = config->GetString(config_section,
-        "tmp_dir", CConfig::eErr_NoThrow, kEmptyStr);
-
     static const string default_temp_dir = ".";
 
-    if (temp_dir.empty())
-        temp_dir = config->GetString(config_section,
-            "tmp_path", CConfig::eErr_NoThrow, default_temp_dir);
+    if (config != NULL) {
+        string temp_dir = config->GetString(config_section,
+            "tmp_dir", CConfig::eErr_NoThrow, kEmptyStr);
 
-    nc_impl->m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
+        if (temp_dir.empty())
+            temp_dir = config->GetString(config_section,
+                "tmp_path", CConfig::eErr_NoThrow, default_temp_dir);
 
-    nc_impl->m_CacheInput = config->GetBool(config_section,
-        "cache_input", CConfig::eErr_NoThrow, false);
+        nc_impl->m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
 
-    nc_impl->m_CacheOutput = config->GetBool(config_section,
-        "cache_output", CConfig::eErr_NoThrow, false);
+        nc_impl->m_CacheInput = config->GetBool(config_section,
+            "cache_input", CConfig::eErr_NoThrow, false);
+
+        nc_impl->m_CacheOutput = config->GetBool(config_section,
+            "cache_output", CConfig::eErr_NoThrow, false);
+    } else {
+        nc_impl->m_TempDir = default_temp_dir;
+        nc_impl->m_CacheInput = false;
+        nc_impl->m_CacheOutput = false;
+    }
 }
 
 void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
@@ -133,10 +139,7 @@ void CNetCacheServerListener::OnError(
         sizeof(s_UnknownCommandMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eUnknownCommand, message);
 
-    if (err_msg.find("Cache unknown") != string::npos)
-        NCBI_THROW(CNetCacheException, eUnknnownCache, message);
-
-    NCBI_THROW(CNetServiceException, eCommunicationError, message);
+    NCBI_THROW(CNetCacheException, eServerError, message);
 }
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
@@ -371,21 +374,6 @@ void CNetCacheAPI::Remove(const string& key)
         ERR_POST("Could not remove blob \"" << key << "\": " << e.what());
     } catch (...) {
         ERR_POST("Could not remove blob \"" << key << "\"");
-    }
-}
-
-
-bool CNetCacheAPI::IsLocked(const string& key)
-{
-    CNetServer srv = m_Impl->GetServer(key);
-
-    try {
-        return srv.ExecWithRetry(
-            m_Impl->MakeCmd("ISLK ", key)).response[0] == '1';
-    } catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return false;
-        throw;
     }
 }
 

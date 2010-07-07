@@ -278,14 +278,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    The requested blob does not exist.
     CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL);
 
-    /// NetCache server locks BLOB so only one client can
-    /// work with one BLOB at a time. Method returns TRUE
-    /// if BLOB is locked at the moment.
-    ///
-    /// @return TRUE if BLOB exists and locked by another client
-    /// FALSE if BLOB not found or not locked
-    bool IsLocked(const string& key);
-
     /// Retrieve BLOB's owner information as registered by the server
     string GetOwner(const string& key);
 
