@@ -245,8 +245,10 @@ static void s_MergeDuplicates
 (CReferenceItem::TReferences& refs,
  CBioseqContext& ctx)
 {
+    /**
     static const CSeq_loc::TOpFlags kMergeFlags = 
         CSeq_loc::fSort | CSeq_loc::fStrand_Ignore | CSeq_loc::fMerge_All;
+        **/
 
     if ( refs.size() < 2 ) {
         return;
@@ -1042,17 +1044,30 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                         const CCit_jour::TImp& imp = jour.GetImp();
                         if ( imp.IsSetRetract() ) {
                             const CCitRetract& ret = imp.GetRetract();
-                            if ( ret.IsSetType()  &&
-                                ret.GetType() == CCitRetract::eType_in_error  &&
-                                ret.IsSetExp()  &&
-                                !ret.GetExp().empty() ) {
-                                l.push_back("Erratum:[" + ret.GetExp() + "]");
-                            }
-                            if ( ret.IsSetType()  &&
-                                ret.GetType() == CCitRetract::eType_retracted  &&
-                                ret.IsSetExp()  &&
-                                !ret.GetExp().empty() ) {
-                                l.push_back("Retracted:[" + ret.GetExp() + "]");
+                            switch (ret.GetType()) {
+                            case CCitRetract::eType_in_error:
+                                if (ret.IsSetExp()  &&
+                                    !ret.GetExp().empty() ) {
+                                    l.push_back("Erratum:[" + ret.GetExp() + "]");
+                                }
+                                break;
+
+                            case CCitRetract::eType_retracted:
+                                if (ret.IsSetExp()  &&
+                                    !ret.GetExp().empty() ) {
+                                    l.push_back("Retracted:[" + ret.GetExp() + "]");
+                                }
+                                break;
+
+                            case CCitRetract::eType_erratum:
+                                if (ret.IsSetExp()  &&
+                                    !ret.GetExp().empty() ) {
+                                    l.push_back("Correction to:[" + ret.GetExp() + "]");
+                                }
+                                break;
+
+                            default:
+                                break;
                             }
                         }
                         if ( imp.CanGetPubstatus() ) {
@@ -1090,6 +1105,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 // Reference Sorting
 
 
+/**
 static size_t s_CountFields(const CDate& date)
 {
     _ASSERT(date.IsStd());
@@ -1121,6 +1137,7 @@ static size_t s_CountFields(const CDate& date)
 
     return count;
 }
+**/
 
 
 static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
