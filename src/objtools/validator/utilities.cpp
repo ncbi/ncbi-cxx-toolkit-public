@@ -802,7 +802,7 @@ bool IsBioseqTSA (const CBioseq& seq, CScope* scope)
 }
 
 
-static string s_GetAuthorsString (const CAuth_list& auth_list)
+string GetAuthorsString (const CAuth_list& auth_list)
 {
     string auth_str = "";
 
@@ -859,7 +859,7 @@ static string s_GetAuthorsString (const CPubdesc& pd)
 
     FOR_EACH_PUB_ON_PUBDESC (pub, pd) {
         if ((*pub)->IsSetAuthors()) {
-            authors_string = s_GetAuthorsString ((*pub)->GetAuthors());
+            authors_string = GetAuthorsString ((*pub)->GetAuthors());
             break;
         }
     }

@@ -2191,6 +2191,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                 } else {                    
                     string label;
                     (*cit_it)->GetLabel(&label, CPub::eContent, true);
+
                     if (NStr::EndsWith (label, ">")) {
                         label = label.substr(0, label.length() - 2);
                     }

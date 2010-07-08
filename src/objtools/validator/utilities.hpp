@@ -136,6 +136,8 @@ string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
 
 bool HasECnumberPattern (const string& str);
 
+string GetAuthorsString (const CAuth_list& auth_list);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

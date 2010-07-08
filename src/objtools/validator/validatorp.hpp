@@ -692,7 +692,6 @@ private:
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
-    void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
     bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
         const CCdregion& cdregion, bool report_erros);
@@ -748,11 +747,7 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    bool IsPartialAtSpliceSiteOrGap(const CSeq_loc& loc, unsigned int errtype, bool& bad_seq, bool& is_gap);
-    bool x_MatchesOverlappingFeaturePartial (const CSeq_feat& feat, unsigned int partial_type);
     bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
-    bool IsSameAsCDS(const CSeq_feat& feat);
-    bool IsCDDFeat(const CSeq_feat& feat) const;
 
     int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
@@ -856,6 +851,12 @@ private:
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
+    void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void ValidateFeatPartialInContext (const CMappedFeat& feat);
+    bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
+    bool x_SplicingNotExpected(const CMappedFeat& feat);
+    bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type, bool& bypass_gene_test);
+    bool x_IsSameAsCDS(const CMappedFeat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
     bool x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2);
@@ -869,7 +870,7 @@ private:
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
-    bool x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const CTSE_Handle& tse, bool is_genbank, bool have_cds_gene_mrna);
+    bool x_IsMrnaMissingForCDS (const CSeq_feat& cds_feat, const CTSE_Handle& tse, bool is_genbank, bool have_cds_gene_mrna, vector< CMappedFeat > & mrna_list);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
@@ -954,6 +955,31 @@ private:
 
     // feature iterator for all features on bioseq (again, trying to cut down on overhead
     CFeat_CI *m_AllFeatIt;
+
+    class CmRNACDSIndex 
+    {
+    public:
+        CmRNACDSIndex();
+        ~CmRNACDSIndex();
+        void SetBioseq(CFeat_CI * feat_list, const CTSE_Handle& tse);
+
+        CMappedFeat GetmRNAForCDS(CMappedFeat cds);
+        CMappedFeat GetCDSFormRNA(CMappedFeat cds);
+        CMappedFeat GetCDSForPartialmRNA(CMappedFeat mRNA, unsigned int partial_type);
+
+    private:
+        typedef pair <CMappedFeat, CMappedFeat> TmRNACDSPair;
+        typedef vector < TmRNACDSPair > TPairList;
+        TPairList m_PairList;
+
+        typedef vector< CMappedFeat > TFeatList;
+        TFeatList m_CDSList;
+        TFeatList m_mRNAList;
+    };
+
+    CmRNACDSIndex m_mRNACDSIndex;
+
+
 };
 
 

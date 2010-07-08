@@ -743,7 +743,7 @@ void CValidError_imp::ValidateAuthorList
             bool   last_is_bad = false;
             if (s_BadCharsInAuthor (**name, badauthor, last_is_bad)) {
                 if (last_is_bad) {
-                    PostObjErr (sev, eErr_SEQ_FEAT_BadCharInAuthorLastName, 
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorLastName, 
                                 "Bad characters in author " + badauthor, obj, ctx);
                 } else {
                     PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName,
