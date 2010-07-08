@@ -22,3 +22,8 @@ Modified C++ code generation to use NORETURN attribute in relevant functions
 and to modify combined files.
 When processing XML schema specifications, corrected documentation parsing,
 setting default types of elements and attributes, skipping byte order marks.
+
+July 08, 2010
+version 2.1.1
+Enhanced processing of type extension definitions.
+Added processing of anySimpleType element type.
