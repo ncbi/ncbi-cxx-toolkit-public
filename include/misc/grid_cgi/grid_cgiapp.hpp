@@ -34,7 +34,6 @@
  */
 
 #include <corelib/ncbimisc.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <cgi/cgiapp_cached.hpp>
 #include <cgi/cgictx.hpp>

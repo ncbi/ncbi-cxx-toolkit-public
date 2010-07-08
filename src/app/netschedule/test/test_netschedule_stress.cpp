@@ -42,8 +42,6 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
 
-#include <connect/services/blob_storage_netcache.hpp>
-
 
 USING_NCBI_SCOPE;
 

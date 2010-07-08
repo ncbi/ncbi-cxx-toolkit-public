@@ -5,7 +5,7 @@ SRC = grid_worker_sample
 
 ### BEGIN COPIED SETTINGS
 
-LIB = ncbi_xblobstorage_netcache xconnserv xthrserv xconnect xutil xncbi 
+LIB = xconnserv xthrserv xconnect xutil xncbi 
 
 REQUIRES = MT
 

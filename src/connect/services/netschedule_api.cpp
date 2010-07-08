@@ -153,6 +153,27 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
+CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
+        const string& conf_section /* = kEmptyStr */) :
+    m_Impl(new SNetScheduleAPIImpl(NULL, conf_section,
+        kEmptyStr, kEmptyStr, kEmptyStr))
+{
+}
+
+CNetScheduleAPI::CNetScheduleAPI(const IRegistry& reg,
+        const string& conf_section)
+{
+    CConfig conf(reg);
+    m_Impl = new SNetScheduleAPIImpl(&conf, conf_section,
+        kEmptyStr, kEmptyStr, kEmptyStr);
+}
+
+CNetScheduleAPI::CNetScheduleAPI(CConfig* conf, const string& conf_section) :
+    m_Impl(new SNetScheduleAPIImpl(conf, conf_section,
+        kEmptyStr, kEmptyStr, kEmptyStr))
+{
+}
+
 CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
         const string& client_name, const string& queue_name) :
     m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,

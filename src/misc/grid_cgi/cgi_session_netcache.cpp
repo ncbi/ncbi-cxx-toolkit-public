@@ -37,18 +37,14 @@
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
-#include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf) 
-    : m_Dirty(false), m_Loaded(false)
+CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf) :
+    m_Storage(CNetCacheAPI(conf)),
+    m_Dirty(false),
+    m_Loaded(false)
 {
-    // XXX It needs to be removed when we know how to deal with unresolved
-    // symbols in plug-ins.
-    BlobStorage_RegisterDriver_NetCache(); 
-    CBlobStorageFactory factory(conf);
-    m_Storage.reset(factory.CreateInstance());
 }
 
 CCgiSession_NetCache::~CCgiSession_NetCache()
@@ -69,7 +65,7 @@ string CCgiSession_NetCache::CreateNewSession()
     m_Blobs.clear();
     m_SessionId.erase();
     Reset();
-    m_SessionId = m_Storage->CreateEmptyBlob();
+    m_SessionId = m_Storage.CreateEmptyBlob();
     m_Loaded = true;
     return m_SessionId;
 }
@@ -89,7 +85,7 @@ bool CCgiSession_NetCache::LoadSession(const string& sessionid)
     m_Loaded = false;
     string master_value;
     try {
-        master_value = m_Storage->GetBlobAsString(sessionid);
+        master_value = m_Storage.GetBlobAsString(sessionid);
     }
     catch(...) {
         return false;
@@ -124,13 +120,8 @@ CNcbiIstream& CCgiSession_NetCache::GetAttrIStream(const string& name,
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
         NCBI_THROW(CCgiSessionException, eAttrNotFound, " : " + name);
-        /*
-        static CNcbiIstrstream sEmptyStream("",streamsize(0));
-        if (size) *size = 0;
-        return sEmptyStream;
-        */
     }
-    return m_Storage->GetIStream(i->second, size);
+    return m_Storage.GetIStream(i->second, size);
 }
 CNcbiOstream& CCgiSession_NetCache::GetAttrOStream(const string& name)
 {
@@ -138,7 +129,7 @@ CNcbiOstream& CCgiSession_NetCache::GetAttrOStream(const string& name)
     Reset();
     m_Dirty = true;
     string& blobid = m_Blobs[name];
-    return m_Storage->CreateOStream(blobid);
+    return m_Storage.CreateOStream(blobid);
 }
 
 void CCgiSession_NetCache::SetAttribute(const string& name, const string& value)
@@ -155,7 +146,8 @@ string CCgiSession_NetCache::GetAttribute(const string& name) const
         NCBI_THROW(CCgiSessionException, eAttrNotFound, " : " + name);
     }
     try {
-        return m_Storage->GetBlobAsString(i->second);
+        return const_cast<CBlobStorage_NetCache&>(m_Storage).GetBlobAsString(
+            i->second);
     }
     catch (CException& e) {
         NCBI_RETHROW(e, CCgiSessionException, eImplException,
@@ -172,7 +164,7 @@ void CCgiSession_NetCache::RemoveAttribute(const string& name)
     Reset(); 
     string blobid = i->second;
     m_Blobs.erase(i);
-    m_Storage->DeleteBlob(blobid);
+    m_Storage.DeleteBlob(blobid);
     m_Dirty = true;
     Reset();
 }
@@ -181,9 +173,9 @@ void CCgiSession_NetCache::DeleteSession()
     x_CheckStatus();
     Reset();
     ITERATE(TBlobs, it, m_Blobs) {
-        m_Storage->DeleteBlob(it->second);
+        m_Storage.DeleteBlob(it->second);
     }
-    m_Storage->DeleteBlob(m_SessionId);
+    m_Storage.DeleteBlob(m_SessionId);
     m_Loaded = false;
 }
 
@@ -191,7 +183,7 @@ void CCgiSession_NetCache::DeleteSession()
 void CCgiSession_NetCache::Reset()
 {
     if (!m_Loaded) return;
-    m_Storage->Reset();
+    m_Storage.Reset();
     if (m_Dirty) {
         string master_value;
         ITERATE(TBlobs, it, m_Blobs) {
@@ -199,9 +191,9 @@ void CCgiSession_NetCache::Reset()
                 master_value += ";";
             master_value += it->first + "|" + it->second;
         }
-        CNcbiOstream& os = m_Storage->CreateOStream(m_SessionId);
+        CNcbiOstream& os = m_Storage.CreateOStream(m_SessionId);
         os << master_value;
-        m_Storage->Reset();
+        m_Storage.Reset();
         m_Dirty = false;
     }
 }

@@ -34,13 +34,11 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/remote_app.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #define PROGRAM_NAME "CNSSubmitRemoteJobApp"
 #define PROGRAM_VERSION "1.0.0"
@@ -72,10 +70,6 @@ protected:
 
 void CNSSubmitRemoteJobApp::Init(void)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
-
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -286,7 +280,7 @@ int CNSSubmitRemoteJobApp::Run(void)
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
-    } if (args["jf"]) {
+    } else if (args["jf"]) {
         CGridJobBatchSubmitter* job_batch_submitter = NULL;
         if ( args["batch"]  ||  args["bsize"])
             job_batch_submitter = &GetGridClient().GetJobBatchSubmitter();

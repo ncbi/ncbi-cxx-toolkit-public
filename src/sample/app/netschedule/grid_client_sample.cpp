@@ -37,8 +37,6 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 
-#include <connect/services/blob_storage_netcache.hpp>
-
 #include <algorithm>
 
 USING_NCBI_SCOPE;
@@ -70,10 +68,6 @@ private:
 
 void CGridClientSampleApp::Init(void)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
-
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 

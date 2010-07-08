@@ -33,9 +33,6 @@
 
 #include <misc/grid_cgi/remote_cgiapp.hpp>
 
-// 
-#include <connect/services/blob_storage_netcache.hpp>
-
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_process.hpp>
@@ -106,9 +103,6 @@ private:
 CRemoteCgiApp::CRemoteCgiApp()
     : m_WorkerNodeContext(NULL)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
     m_AppImpl.reset(new CGridWorkerNode(*this,
         new CCgiWorkerNodeJobFactory(*this)));
 

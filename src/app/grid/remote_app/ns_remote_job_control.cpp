@@ -35,14 +35,12 @@
 #include "renderer.hpp"
 
 #include <connect/services/remote_app.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/util.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #define REMOTEJOBCTL_VERSION_MAJOR 1
 #define REMOTEJOBCTL_VERSION_MINOR 0
@@ -68,10 +66,6 @@ protected:
 
 void CNSRemoveJobControlApp::Init(void)
 {
-    // FIXME It needs to be removed when we know how to deal with unresolved
-    // symbols in plug-ins.
-    BlobStorage_RegisterDriver_NetCache();
-
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 

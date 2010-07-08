@@ -36,7 +36,6 @@
 #include <connect/services/remote_app.hpp>
 
 #include <corelib/ncbimisc.hpp>
-#include <corelib/blob_storage.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -40,15 +40,12 @@
 #include <html/page.hpp>
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/ns_client_factory.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <connect/email_diag_handler.hpp>
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <vector>
 #include <map>
@@ -321,7 +318,7 @@ private:
     bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
     CNetScheduleAPI m_NSClient;
-    auto_ptr<IBlobStorage> m_NSStorage;
+    CNetCacheAPI m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
 
@@ -368,10 +365,6 @@ void CCgi2RCgiApp::Init()
 
     // Grid client initialization
 
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache();
-
     m_RefreshDelay =
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay =
@@ -385,14 +378,12 @@ void CCgi2RCgiApp::Init()
         GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
 
     if (!m_NSClient) {
-        CNetScheduleClientFactory cf(GetConfig());
-        m_NSClient = cf.CreateInstance();
+        m_NSClient = CNetScheduleAPI(GetConfig());
         m_NSClient.SetProgramVersion(PROGRAM_VERSION);
     }
-    if (!m_NSStorage.get()) {
-        CBlobStorageFactory cf(GetConfig());
-        m_NSStorage.reset(cf.CreateInstance());
-    }
+    if (!m_NSStorage)
+        m_NSStorage = CNetCacheAPI(GetConfig());
+
     bool use_embedded_input = false;
     if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
         use_embedded_input = GetConfig().
@@ -403,7 +394,7 @@ void CCgi2RCgiApp::Init()
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), *m_NSStorage,
+    m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), m_NSStorage,
                                        automatic_cleanup ?
                                             CGridClient::eAutomaticCleanup :
                                             CGridClient::eManualCleanup,

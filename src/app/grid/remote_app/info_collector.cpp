@@ -36,7 +36,6 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 
-#include <corelib/blob_storage.hpp>
 #include <corelib/rwstream.hpp>
 
 BEGIN_NCBI_SCOPE

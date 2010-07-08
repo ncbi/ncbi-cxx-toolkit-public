@@ -31,10 +31,11 @@
 
 #include <ncbi_pch.hpp>
 
+#include <connect/services/netcache_api.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -103,9 +104,9 @@ int CTestNSStorage::Run(void)
     if (args["protocol"])
 	reg.Set(kDriverName, "protocol", args["protocol"].AsString());
 
-    CBlobStorageFactory factory(reg);
-    auto_ptr<IBlobStorage> storage1(factory.CreateInstance());
-    auto_ptr<IBlobStorage> storage2(factory.CreateInstance());
+    CNetCacheAPI nc_api(reg);
+    auto_ptr<IBlobStorage> storage1(new CBlobStorage_NetCache(nc_api));
+    auto_ptr<IBlobStorage> storage2(new CBlobStorage_NetCache(nc_api));
 
     string blobid;
     CNcbiOstream& os = storage1->CreateOStream(blobid);
@@ -138,13 +139,7 @@ int CTestNSStorage::Run(void)
 }
 
 
-extern "C"
-{
-void BlobStorage_RegisterDriver_NetCache(void);
-}
-
 int main(int argc, const char* argv[])
 {
-    BlobStorage_RegisterDriver_NetCache();
     return CTestNSStorage().AppMain(argc, argv);
 }

@@ -32,10 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
-
-#include <connect/services/ns_client_factory.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 #include <misc/error_codes.hpp>
@@ -181,10 +177,6 @@ bool CGridCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
 
 void CGridCgiApplication::InitGridClient()
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
-
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 
@@ -198,8 +190,7 @@ void CGridCgiApplication::InitGridClient()
         GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
 
     if (!m_NSClient) {
-        CNetScheduleClientFactory cf(GetConfig());
-        m_NSClient = cf.CreateInstance();
+        m_NSClient = CNetScheduleAPI(GetConfig());
         m_NSClient.SetProgramVersion(GetProgramVersion());
     }
     if (!m_NetCacheAPI)

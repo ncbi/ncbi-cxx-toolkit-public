@@ -87,6 +87,45 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 {
     NCBI_NET_COMPONENT(NetScheduleAPI);
 
+    /// Defines how this object must be initialized.
+    enum EAppRegistry {
+        eAppRegistry
+    };
+
+    /// Creates an instance of CNetScheduleAPI and initializes
+    /// it with parameters read from the application registry.
+    /// @param use_app_reg
+    ///   Selects this constructor.
+    ///   The parameter is not used otherwise.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If empty string is passed, then the section
+    ///   name "netschedule_api" will be used.
+    explicit CNetScheduleAPI(EAppRegistry use_app_reg,
+        const string& conf_section = kEmptyStr);
+
+    /// Constructs a CNetScheduleAPI object and initializes it with
+    /// parameters read from the specified registry object.
+    /// @param reg
+    ///   Registry to get the configuration parameters from.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If empty string is passed, then the section
+    ///   name "netschedule_api" will be used.
+    explicit CNetScheduleAPI(const IRegistry& reg,
+        const string& conf_section = kEmptyStr);
+
+    /// Constructs a CNetScheduleAPI object and initializes it with
+    /// parameters read from the specified configuration object.
+    /// @param conf
+    ///   A CConfig object to get the configuration parameters from.
+    /// @param conf_section
+    ///   Name of the configuration section where to look for the
+    ///   parameters.  If empty string is passed, then the section
+    ///   name "netschedule_api" will be used.
+    explicit CNetScheduleAPI(CConfig* conf,
+        const string& conf_section = kEmptyStr);
+
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
     /// job key

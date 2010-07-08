@@ -33,9 +33,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
-#include <connect/services/ns_client_factory.hpp>
 
-#include <corelib/blob_storage.hpp>
 #include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -64,8 +62,7 @@ void CGridClientApp::Init(void)
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
-    CNetScheduleClientFactory ns_cf(GetConfig());
-    CNetScheduleAPI ns_api = ns_cf.CreateInstance();
+    CNetScheduleAPI ns_api(GetConfig());
     ns_api.SetProgramVersion(GetProgramVersion());
 
     CNetCacheAPI nc_api(GetConfig());

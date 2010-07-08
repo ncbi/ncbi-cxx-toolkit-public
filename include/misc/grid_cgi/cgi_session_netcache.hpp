@@ -30,14 +30,15 @@
 *
 */
 
-#include <stddef.h>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/blob_storage.hpp>
+#include <connect/services/netcache_api.hpp>
 
 #include <cgi/cgi_session.hpp>
 
+#include <corelib/ncbiexpt.hpp>
+
 #include <map>
 #include <string>
+#include <stddef.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -48,7 +49,7 @@ class IRegistry;
 //
 //  CCgiSession_NetCache -- 
 //  
-//  Implementaion of ICgiSessionStorage interface based on NetCache service
+//  Implementation of ICgiSessionStorage interface based on NetCache service
 //
 //  @note
 //    This implementation can work only with one attribute at a time. This
@@ -81,18 +82,18 @@ public:
     /// Retrieve names of all attributes attached to this session.
     virtual TNames GetAttributeNames(void) const;
 
-    /// Get input stream to read an attribute's data from.
+    /// Get input stream to read an attribute data from.
     /// @param[in] name
     ///  Name of the attribute
     /// @param[out] size
-    ///  Size of the attribute's data
+    ///  Size of the attribute data
     /// @return 
-    ///  Stream to read attribute's data from.If the attribute does not exist, 
+    ///  Stream to read attribute data from.If the attribute does not exist,
     ///  then return an empty stream.
     virtual CNcbiIstream& GetAttrIStream(const string& name,
                                          size_t* size = 0);
 
-    /// Get output stream to write an attribute's data to.
+    /// Get output stream to write an attribute data to.
     /// If the attribute does not exist it will be created and added 
     /// to the session. If the attribute exists its content will be
     /// overwritten.
@@ -117,7 +118,7 @@ public:
     ///  CCgiSessionException with error code eAttrNotFound if
     ///  attribute with the specified name was not found;
     ///  CCgiSessionException with error code eImplException if
-    ///  an error occured during attribute retrieval -- in the
+    ///  an error occurred during attribute retrieval -- in the
     ///  latter case, more information can be obtained from the
     ///  embedded exception.
     virtual string GetAttribute(const string& name) const;  
@@ -136,10 +137,10 @@ public:
 private:
     typedef map<string,string> TBlobs;
 
-    string m_SessionId;    
-    auto_ptr<IBlobStorage> m_Storage;
+    string m_SessionId;
+    CBlobStorage_NetCache m_Storage;
     
-    TBlobs m_Blobs;    
+    TBlobs m_Blobs;
     bool m_Dirty;
 
     bool m_Loaded;

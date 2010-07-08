@@ -38,8 +38,8 @@
 /// Grid Framework specs.
 ///
 
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_api.hpp>
-#include <connect/services/ns_client_factory.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <connect/connect_export.h>
@@ -51,7 +51,6 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
-#include <corelib/blob_storage.hpp>
 #include <corelib/ncbiapp.hpp>
 
 BEGIN_NCBI_SCOPE

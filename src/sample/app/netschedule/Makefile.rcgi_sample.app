@@ -14,7 +14,7 @@ REQUIRES = MT
 
 ### BEGIN COPIED SETTINGS
 ## Use these two lines for normal CGI.
-LIB = xgridcgi ncbi_xblobstorage_netcache xconnserv xthrserv xcgi xhtml xconnect xutil xncbi
+LIB = xgridcgi xconnserv xthrserv xcgi xhtml xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 ## If you need the C toolkit...

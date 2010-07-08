@@ -54,7 +54,6 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
-#include <corelib/blob_storage.hpp>
 
 #ifdef NCBI_OS_UNIX
 #include <unistd.h>
@@ -895,9 +894,7 @@ void CGridWorkerNode::Init(bool default_merge_lines_value)
 
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
-    CNetScheduleClientFactory ns_factory(reg);
-    m_NetScheduleAPI = ns_factory.CreateInstance();
-
+    m_NetScheduleAPI = CNetScheduleAPI(reg);
     m_NetCacheAPI = CNetCacheAPI(reg);
 }
 

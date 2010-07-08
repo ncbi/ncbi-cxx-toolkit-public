@@ -33,12 +33,10 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/remote_app.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -73,9 +71,6 @@ protected:
 
 void CRemoteAppClientSampleApp::Init(void)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
     // Don't forget to call it
     CGridClientApp::Init();
 
@@ -150,8 +145,6 @@ int CRemoteAppClientSampleApp::Run(void)
 
         request.SetCmdLine("-a sss -f=/tmp/dddd.f1");
         request.AddFileForTransfer("/tmp/dddd.f1");
-
-        //request.SetStdOutErrFileNames("/tmp/out.txt", "/tmp/err.txt", eLocalFile);
 
         // Get a job submitter
         CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
@@ -238,12 +231,10 @@ int CRemoteAppClientSampleApp::Run(void)
 
 void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 {
-    CBlobStorageFactory factory(GetConfig());
-    auto_ptr<IBlobStorage> storage(factory.CreateInstance());
-    //    string str = storage->GetBlobAsString(blob_key);
-    //    NcbiCout << str << NcbiEndl;
-    CNcbiIstream& is = storage->GetIStream(blob_key);
-    NcbiCout << is.rdbuf() << NcbiEndl;
+    CNetCacheAPI nc_api(GetConfig());
+    auto_ptr<CNcbiIstream> is(nc_api.GetIStream(blob_key));
+    NcbiStreamCopy(NcbiCout, *is);
+    NcbiCout << NcbiEndl;
 }
 
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,

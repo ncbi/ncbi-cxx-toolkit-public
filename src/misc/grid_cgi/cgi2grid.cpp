@@ -29,8 +29,6 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <corelib/blob_storage.hpp>
-
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgiapp.hpp>
 
@@ -38,7 +36,6 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_api.hpp>
-#include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -77,8 +74,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
 {
     auto_ptr<CGridClient> grid_client;
 
-    CNetScheduleClientFactory cfc(app.GetConfig());
-    CNetScheduleAPI ns_client = cfc.CreateInstance();
+    CNetScheduleAPI ns_client(app.GetConfig());
     ns_client.SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
     CNetCacheAPI netcache_api(app.GetConfig());

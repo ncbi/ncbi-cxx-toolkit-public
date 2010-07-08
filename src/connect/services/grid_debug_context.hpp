@@ -38,7 +38,6 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <connect/connect_export.h>
 

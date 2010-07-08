@@ -40,7 +40,6 @@
 
 
 #include <connect/services/grid_worker.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -193,7 +192,6 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        BlobStorage_RegisterDriver_NetCache();                              \
         CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
             CVersionInfo(#Version));                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
@@ -206,7 +204,6 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        BlobStorage_RegisterDriver_NetCache();                              \
         CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
             CVersionInfo(#Version));                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
@@ -219,7 +216,6 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        BlobStorage_RegisterDriver_NetCache();                              \
         CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
             CVersionInfo(#Version));                                        \
         app.SetMergeLogLines();                                             \

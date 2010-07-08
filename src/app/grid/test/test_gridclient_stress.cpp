@@ -33,7 +33,6 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimisc.hpp>
@@ -72,10 +71,6 @@ string CGridClientTestApp::GetProgramVersion(void) const
 
 void CGridClientTestApp::Init(void)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
-
     CGridClientApp::Init();
 
     // Create command-line argument descriptions class

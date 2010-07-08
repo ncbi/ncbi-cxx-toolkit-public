@@ -33,7 +33,6 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 
 #include <corelib/rwstream.hpp>
 

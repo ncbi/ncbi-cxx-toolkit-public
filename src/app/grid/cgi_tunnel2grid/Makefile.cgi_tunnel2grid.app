@@ -6,8 +6,7 @@
 APP = cgi_tunnel2grid.cgi
 SRC = cgi_tunnel2grid
 
-LIB = xgridcgi ncbi_xblobstorage_netcache xconnserv xthrserv \
-      xcgi xhtml xconnect xutil xncbi
+LIB = xgridcgi xconnserv xthrserv xcgi xhtml xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 #CHECK_CMD  =

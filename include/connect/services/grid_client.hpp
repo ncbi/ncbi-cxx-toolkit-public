@@ -41,7 +41,6 @@
 #include <connect/connect_export.h>
 
 #include <corelib/ncbistre.hpp>
-#include <corelib/blob_storage.hpp>
 
 
 BEGIN_NCBI_SCOPE

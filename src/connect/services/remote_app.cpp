@@ -36,7 +36,6 @@
 #include <connect/services/error_codes.hpp>
 
 #include <corelib/ncbifile.hpp>
-#include <corelib/blob_storage.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbifile.hpp>
 
