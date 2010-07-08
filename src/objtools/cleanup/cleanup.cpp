@@ -56,8 +56,7 @@ enum EChangeType {
 // *********************** CCleanup implementation **********************
 
 
-CCleanup::CCleanup(
-    CRef<CScope> Scope ) : m_Scope( Scope )
+CCleanup::CCleanup(CScope* scope) : m_Scope( scope )
 {
 }
 
@@ -67,7 +66,7 @@ CCleanup::~CCleanup(void)
 }
 
 
-void CCleanup::SetScope(CRef<CScope> scope)
+void CCleanup::SetScope(CScope* scope)
 {
     m_Scope = scope;
 }

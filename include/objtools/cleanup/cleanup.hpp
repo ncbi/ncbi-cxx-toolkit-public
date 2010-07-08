@@ -63,11 +63,10 @@ public:
     };
 
     // Construtor / Destructor
-    CCleanup(
-        CRef<CScope> Scope = CRef<CScope>() );
+    CCleanup(CScope* scope = NULL);
     ~CCleanup();
 
-    void SetScope(CRef<CScope> scope);
+    void SetScope(CScope* scope);
     
     // BASIC CLEANUP
     
@@ -104,7 +103,7 @@ private:
     CCleanup(const CCleanup&);
     CCleanup& operator= (const CCleanup&);
 
-    CRef<CScope>            m_Scope;
+    CScope*            m_Scope;
 };
 
 

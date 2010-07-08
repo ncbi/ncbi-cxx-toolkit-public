@@ -113,7 +113,7 @@ enum ECleanupMode
 class CCleanup_imp
 {
 public:
-    CCleanup_imp(CRef<CCleanupChange> changes, CRef<CScope> scope, Uint4 options = 0);
+    CCleanup_imp(CRef<CCleanupChange> changes, CScope* scope, Uint4 options = 0);
     virtual ~CCleanup_imp();
         
     /// Cleanup a Seq-entry. 
@@ -469,7 +469,7 @@ private:
     CRef<CCleanupChange>    m_Changes;
     Uint4                   m_Options;
     ECleanupMode            m_Mode;
-    CRef<CScope>            m_Scope;
+    CScope*                 m_Scope;
     
 };
 

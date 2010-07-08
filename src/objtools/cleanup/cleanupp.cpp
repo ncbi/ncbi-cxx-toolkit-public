@@ -79,7 +79,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CCleanup_imp::CCleanup_imp(CRef<CCleanupChange> changes, CRef<CScope> scope, Uint4 options)
+CCleanup_imp::CCleanup_imp(CRef<CCleanupChange> changes, CScope * scope, Uint4 options)
 : m_Changes(changes), m_Options(options), m_Mode(eCleanup_GenBank), m_Scope (scope)
 {
    
@@ -683,7 +683,7 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     {
         CBioseq_Handle bsh;
         try {
-            if (m_Scope.GetPointerOrNull() ) {
+            if (m_Scope ) {
                 bsh = m_Scope->GetBioseqHandle(sl);
             }
         } catch (...) { }
