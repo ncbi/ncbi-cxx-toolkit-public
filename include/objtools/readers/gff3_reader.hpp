@@ -130,7 +130,7 @@ public:
         const string&,
         CRef< CAnnotdesc >& );
                                 
-    bool x_ParseFeatureGff(
+    virtual bool x_ParseFeatureGff(
         const string&,
         TAnnots& );
 
@@ -150,11 +150,11 @@ public:
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
                             
-    bool x_FeatureSetId(
+    virtual bool x_FeatureSetId(
         const CGff3Record&,
         CRef< CSeq_feat > );
 
-    bool x_FeatureSetXref(
+    virtual bool x_FeatureSetXref(
         const CGff3Record&,
         CRef< CSeq_feat > );
 
