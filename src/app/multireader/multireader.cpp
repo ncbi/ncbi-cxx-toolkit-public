@@ -55,9 +55,10 @@
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/multireader.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/bed_reader.hpp> //  for flag definitions only
-#include <objtools/readers/wiggle_reader.hpp> //  for flag definitions only
-#include <objtools/readers/gff3_reader.hpp> //  for flag definitions only
+#include <objtools/readers/bed_reader.hpp>
+#include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gtf_reader.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -488,9 +489,16 @@ void CMultiReaderApp::ReadAnnots(
             break;
         }    
         case CFormatGuess::eGtf: {
-            CGff3Reader reader( (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-            break;
+            if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
+                CGtfReader reader;
+                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+                break;
+            }
+            else {
+                CGff3Reader reader( (unsigned int)m_iFlags );
+                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+                break;
+            }
         }
     }
 }
