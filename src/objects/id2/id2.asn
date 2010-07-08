@@ -70,7 +70,10 @@ ID2-Request-Get-Seq-id ::= SEQUENCE {
                 text    (2),    -- text Seq-id (accession etc) is preferred
                 general (4),    -- general Seq-id is preferred
                 all     (127),  -- return all qualified Seq-ids of the sequence
-                label   (128)   -- return a sequence string label as general id
+                label   (128),  -- return a sequence string label as string
+                                -- in general id with db "LABEL"
+                taxid   (256)   -- return a sequence taxonomy ID as integer
+                                -- in general id with db "TAXID"
         } DEFAULT any
 }
 
