@@ -189,6 +189,15 @@ void SeqDB_CombinePath(const CSeqDB_Substring & one,
 }
 
 
+bool SeqDB_CompareVolume(const string & s1, const string & s2)
+{
+    string x1, x2;
+    CSeqDB_Path(s1).FindBaseName().GetString(x1);
+    CSeqDB_Path(s2).FindBaseName().GetString(x2);
+    if (x1 != x2) return (x1 < x2);
+    else return (s1 < s2);
+} 
+
 /// File existence test interface.
 class CSeqDB_FileExistence {
 public:

@@ -906,17 +906,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
     }
 }
 
-
-Int4 x_CompareVolume(const string & s1, const string & s2)
-{
-    string x1, x2;
-    CSeqDB_Path(s1).FindBaseName().GetString(x1);
-    CSeqDB_Path(s2).FindBaseName().GetString(x2);
-    if (x1 != x2) return (x1 < x2);
-    else return (s1 < s2);
-} 
-
-
 void CSeqDBAliasNode::FindVolumePaths(vector<string> & vols, vector<string> * alias, bool recursive) const
 {
 
@@ -946,14 +935,14 @@ void CSeqDBAliasNode::FindVolumePaths(vector<string> & vols, vector<string> * al
     }
     
     // Sort to insure deterministic order.
-    sort(vols.begin(), vols.end(), x_CompareVolume);
+    sort(vols.begin(), vols.end(), SeqDB_CompareVolume);
 
     if (alias) {
         alias->clear();
         ITERATE(set<string>, iter, aliset) {
             alias->push_back(*iter);
         }
-        sort(alias->begin(), alias->end(), x_CompareVolume);
+        sort(alias->begin(), alias->end(), SeqDB_CompareVolume);
     }
 }
 
