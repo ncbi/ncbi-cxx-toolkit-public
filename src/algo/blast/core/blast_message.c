@@ -191,6 +191,12 @@ Blast_PerrorEx(Blast_Message* *msg,
 
     /* Fatal errors */
     case BLASTERR_MEMORY:
+        /** @todo Ideally this message would be more informative (the error code
+         * already conveys this information) so that this string can be
+         * displayed to the end user via the CATCH_ALL macro. If this string is
+         * ever changed, please update that macro accordingly (ideally this
+         * error code would be caught and would lead to a CBlastSystemException
+         * being thrown with the eOutOfMemory error code) */
         new_msg->message = strdup("Out of memory");
         new_msg->severity = eBlastSevFatal;
         new_msg->context = context;

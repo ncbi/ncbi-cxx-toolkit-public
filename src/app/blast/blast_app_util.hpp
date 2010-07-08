@@ -143,8 +143,15 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const blast::CBlastException& e) {                               \
-        LOG_POST(Error << "BLAST engine error: " << e.GetMsg());            \
-        exit_code = BLAST_ENGINE_ERROR;                                     \
+        const string& msg = e.GetMsg();                                     \
+        if ((NStr::Find(msg, "Out of memory") != NPOS) ||                   \
+            (NStr::Find(msg, "Failed to allocate") != NPOS)) {              \
+            LOG_POST(Error << "BLAST ran out of memory: " << e.GetMsg());   \
+            exit_code = BLAST_OUT_OF_MEMORY;                                \
+        } else {                                                            \
+            LOG_POST(Error << "BLAST engine error: " << e.GetMsg());        \
+            exit_code = BLAST_ENGINE_ERROR;                                 \
+        }                                                                   \
     }                                                                       \
     catch (const blast::CBlastSystemException& e) {                         \
         if (e.GetErrCode() == CBlastSystemException::eOutOfMemory) {        \
@@ -153,6 +160,9 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         } else if (e.GetErrCode() == CBlastSystemException::eNetworkError) {\
             LOG_POST(Error << "Network error: " << e.GetMsg());             \
             exit_code = BLAST_NETWORK_ERROR;                                \
+        } else {                                                            \
+            LOG_POST(Error << "System error: " << e.GetMsg());              \
+            exit_code = BLAST_UNKNOWN_ERROR;                                \
         }                                                                   \
     }                                                                       \
     catch (const CException& e) {                                           \
