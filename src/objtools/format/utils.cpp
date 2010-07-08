@@ -263,7 +263,7 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
     }
 
     string::size_type pos = str.find_last_not_of(".");
-    if (pos < str.size() - 1) {
+    if (pos2 < str.size() - 1) {
         if (keep_ellipsis) {
             /// trim the end to an actual ellipsis
             if (str.length() - pos2 > 3) {
@@ -273,6 +273,9 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
                     return true;
                 }
                 pos += 3;
+            }
+            else if (pos2 < pos) {
+                pos = pos2;
             }
         } else if (pos2 < pos) {
             pos = pos2;
@@ -392,12 +395,16 @@ void JoinString(string& to, const string& prefix, const string& str, bool noRedu
     
     size_t pos = NPOS;
     if (noRedundancy) {
-        for ( pos = NStr::Find(to, str); pos != NPOS; pos += str.length()) {
+        //for ( pos = NStr::Find(to, str); pos != NPOS; pos += str.length()) {
+        for ( pos = NStr::Find(to, str);
+              pos != NPOS;  pos = NStr::Find(to, str, pos + 1)) {
             if (s_IsWholeWord(to, pos)) {
                 return;
             }
         }        
     }
+
+    //LOG_POST(Error << "adding: to=" << to << "  prefix=" << prefix << "  str=" << str);
 
     to += prefix;
     to += str;
@@ -410,6 +417,7 @@ string JoinString(const list<string>& l, const string& delim, bool noRedundancy)
         return kEmptyStr;
     }
 
+    /**
     string result;
     set<CTempString> strings;
     ITERATE (list<string>, it, l) {
@@ -421,14 +429,13 @@ string JoinString(const list<string>& l, const string& delim, bool noRedundancy)
             result += *it;
         }
     }
+    **/
 
-    /**
     string result = l.front();
     list<string>::const_iterator it = l.begin();
     while ( ++it != l.end() ) {
         JoinString(result, delim, *it, noRedundancy);
     }
-    **/
 
     return result;
 }
