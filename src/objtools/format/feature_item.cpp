@@ -519,17 +519,9 @@ static void s_QualVectorToNote(
     string& punctuation,
     bool& addPeriod)
 {
-
-    set<CTempString> values;
-
     string prefix;
     ITERATE (CFlatFeature::TQuals, it, qualVector) {
         const string& qual = (*it)->GetValue();
-
-        if (noRedundancy  &&
-            !values.insert(CTempString(qual)).second) {
-            continue;
-        }
 
         prefix.erase();
         if ( !note.empty() ) {
@@ -538,9 +530,9 @@ static void s_QualVectorToNote(
                 prefix += (*it)->GetPrefix();
             }
         }
-        //JoinString(note, prefix, qual, noRedundancy);
-        note += prefix;
-        note += qual;
+
+        //LOG_POST(Error << "prefix=" << prefix << "  qual=" << qual << "  note=" << note);
+        JoinString(note, prefix, qual, noRedundancy);
         addPeriod = (*it)->GetAddPeriod();
         punctuation = (*it)->GetSuffix();
     }
@@ -2297,12 +2289,26 @@ void CFeatureItem::x_AddQualsRegion(
             obj.GetType().GetStr() == "cddScoreData") {
             CConstRef<CUser_field> f = obj.GetFieldRef("definition");
             if (f) {
-                if (f->GetData().GetStr() != region  ||  added_raw) {
+                x_AddQual(eFQ_region,
+                          new CFlatStringQVal(f->GetData().GetStr()));
+                found = true;
+                break;
+
+                /**
+                if (ctx.IsProt()) {
+                    if (f->GetData().GetStr() != region  ||  added_raw) {
+                        x_AddQual(eFQ_region,
+                                  new CFlatStringQVal(f->GetData().GetStr()));
+                    }
+                } else {
                     x_AddQual(eFQ_region,
                               new CFlatStringQVal(f->GetData().GetStr()));
                 }
+
                 found = true;
                 break;
+                **/
+
                 /**
                 if (ctx.IsProt()  &&  region == f->GetData().GetStr()) {
                     /// skip
@@ -2348,12 +2354,17 @@ static const string& s_GetSiteName(CSeqFeatData::TSite site)
 {
     static const string kOther = "other";
     static const string kDnaBinding = "DNA binding";
+    static const string kInhibit = "inhibition";
 
-    if (site == CSeqFeatData::eSite_other) {
+    switch (site) {
+    case CSeqFeatData::eSite_other:
         return kOther;
-    } else if (site == CSeqFeatData::eSite_dna_binding) {
+    case CSeqFeatData::eSite_dna_binding:
         return kDnaBinding;
-    } else {
+    case CSeqFeatData::eSite_inhibit:
+        return kInhibit;
+
+    default:
         return CSeqFeatData::ENUM_METHOD_NAME(ESite)()->FindName(site, true);
     }
 }
@@ -2637,6 +2648,8 @@ void CFeatureItem::x_AddQualsProt(
     const CSeqFeatData& data = m_Feat.GetData();
     const CProt_ref& pref = data.GetProt();
     CProt_ref::TProcessed processed = pref.GetProcessed();
+
+    //cerr << MSerial_AsnText << m_Feat.GetOriginalFeature();
 
     if ( ctx.IsNuc()  ||  (ctx.IsProt()  &&  !IsMappedFromProt()) ) {
         if ( pref.IsSetName()  &&  !pref.GetName().empty() ) {
