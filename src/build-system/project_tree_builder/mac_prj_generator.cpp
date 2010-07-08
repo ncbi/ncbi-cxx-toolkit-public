@@ -586,6 +586,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
         AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
         AddString( *dict_script, "shellPath", "/bin/sh");
         AddString( *dict_script, "shellScript", script);
+        AddString( *dict_script, "showEnvVarsInLog", "0");
         return proj_script;
     }
     return kEmptyStr;
@@ -631,6 +632,7 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
         AddString( *dict_script, "shellPath", info.m_Shell);
         AddString( *dict_script, "shellScript",
             GetRelativePath(CDirEntry::ConcatPath(script_loc,info.m_Script)));
+        AddString( *dict_script, "showEnvVarsInLog", "0");
         return proj_script;
     }
     return kEmptyStr;
@@ -663,6 +665,7 @@ string CMacProjectGenerator::CreateProjectCopyBinScript(
         AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
         AddString( *dict_script, "shellPath", "/bin/sh");
         AddString( *dict_script, "shellScript", script);
+        AddString( *dict_script, "showEnvVarsInLog", "0");
         return proj_script;
     }
     return kEmptyStr;
@@ -1305,6 +1308,7 @@ string CMacProjectGenerator::AddConfigureTarget(
     AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
     AddString( *dict_script, "shellPath", "/bin/sh");
     AddString( *dict_script, "shellScript", script);
+    AddString( *dict_script, "showEnvVarsInLog", "0");
 
     CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
     AddString( *dict_target, "buildConfigurationList", configs_prj);
