@@ -1374,6 +1374,67 @@ static string s_GetFeatDesc(const CSeq_feat_Handle& feat)
 }
 
 
+static void s_CleanCDDFeature(const CSeq_feat& feat)
+{
+    /// we adjust CDD feature types based on a few simple rules
+    if (feat.GetData().IsSite()  &&
+        feat.GetData().GetSite() == CSeqFeatData::eSite_other  &&
+        feat.GetNamedDbxref("CDD")  &&
+        feat.IsSetComment()) {
+
+        /// CDD features may have the site type encoded as a comment
+        string s;
+        if (feat.GetComment().find_last_not_of(" ") !=
+            feat.GetComment().size() - 1) {
+            s = NStr::TruncateSpaces(feat.GetComment());
+        }
+        const string& comment =
+            (s.empty() ? feat.GetComment() : s);
+
+        typedef pair<const char*, CSeqFeatData::ESite> TPair;
+        static const TPair sc_Pairs[] = {
+            TPair("acetylation site", CSeqFeatData::eSite_acetylation),
+            TPair("active site", CSeqFeatData::eSite_active),
+            TPair("active-site", CSeqFeatData::eSite_active),
+            TPair("active_site", CSeqFeatData::eSite_active),
+            TPair("binding", CSeqFeatData::eSite_binding),
+            TPair("binding site", CSeqFeatData::eSite_binding),
+            TPair("cleavage site", CSeqFeatData::eSite_cleavage),
+            TPair("DNA binding", CSeqFeatData::eSite_dna_binding),
+            TPair("DNA-binding", CSeqFeatData::eSite_dna_binding),
+            TPair("DNA binding site", CSeqFeatData::eSite_dna_binding),
+            TPair("DNA-binding site", CSeqFeatData::eSite_dna_binding),
+            TPair("glycosylation site", CSeqFeatData::eSite_glycosylation),
+            TPair("inhibitor", CSeqFeatData::eSite_inhibit),
+            TPair("lipid binding site", CSeqFeatData::eSite_lipid_binding),
+            TPair("lipid binding", CSeqFeatData::eSite_lipid_binding),
+            TPair("metal binding", CSeqFeatData::eSite_metal_binding),
+            TPair("metal-binding", CSeqFeatData::eSite_metal_binding),
+            TPair("metal binding site", CSeqFeatData::eSite_metal_binding),
+            TPair("metal-binding site", CSeqFeatData::eSite_metal_binding),
+            TPair("modified", CSeqFeatData::eSite_modified),
+            TPair("phosphorylation", CSeqFeatData::eSite_phosphorylation),
+            TPair("phosphorylation site", CSeqFeatData::eSite_phosphorylation),
+        };
+
+        static const size_t kMaxPair = sizeof(sc_Pairs) / sizeof(TPair);
+        for (size_t i = 0;  i < kMaxPair;  ++i) {
+            if (NStr::EqualNocase(comment, sc_Pairs[i].first)) {
+                //cerr << MSerial_AsnText << feat;
+                CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+                f.SetData().SetSite(sc_Pairs[i].second);
+                f.ResetComment();
+            }
+            else if (NStr::FindNoCase(comment, sc_Pairs[i].first) == 0) {
+                //cerr << MSerial_AsnText << feat;
+                CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+                f.SetData().SetSite(sc_Pairs[i].second);
+            }
+        }
+    }
+}
+
+
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -1392,6 +1453,16 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         try {
             CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
             const CSeq_feat& original_feat = it->GetOriginalFeature();
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            s_CleanCDDFeature(original_feat);
+
+            ///
+            /// HACK HACK HACK
+            ///
 
             // supress dupliacte features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
@@ -1752,6 +1823,16 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         if (prev  &&  s_IsDuplicateFeatures(curr, prev)) {
             continue;
         }
+
+        ///
+        /// HACK HACK HACK
+        ///
+
+        s_CleanCDDFeature(it->GetOriginalFeature());
+
+        ///
+        /// HACK HACK HACK
+        ///
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
