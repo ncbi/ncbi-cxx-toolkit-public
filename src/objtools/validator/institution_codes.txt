@@ -984,7 +984,7 @@ CMM	s	Bradford Art Galleries and Museums, Natural Sciences Department
 CMMC	c	China Marine Microbe Collection
 CMMEX	s	Universidad Autonoma de Baja California
 CMMI	s	Chinese Academy of Traditional Medicine
-CMML	s	Colorado State University
+CMML	s	Colorado State University Herbarium
 CMN	s	Canadian Museum of Nature
 CMN:Annelid	s	Canadian Museum of Nature, Annelid Collection
 CMN:Bird	s	Canadian Museum of Nature, Bird Collection
@@ -1057,6 +1057,7 @@ CONV	s	Converse College, Biology Department
 COR	s	Universidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Ambiente
 CORB	s	Corchester School
 CORD	s	Universidad Nacional de Cordoba, Facultad de Ciencias Exactas, Fisicas y Naturales
+Coriell	b	Coriell Institute for Medical Research
 CORO	s	IUTAG, Departamento de Investigacion
 CORT	s	State University of New York College at Cortland, Biological Sciences Department
 CORU	s	Universidad Veracruzana, Campus Cordoba
@@ -5986,6 +5987,7 @@ USNC	s	Smithsonian Institution, Paleobiology Department
 USNM	s	National Museum of Natural History, Smithsonian Institution
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection
 USNM:Fish	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection
+USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Herpetology Collection
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology
 USNTC	s	U.S. National Tick Collection
 USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas
