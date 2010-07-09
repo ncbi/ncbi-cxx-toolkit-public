@@ -209,7 +209,7 @@ CNetCacheWriter::~CNetCacheWriter()
 {
     try {
         Close();
-    } NCBI_CATCH_ALL_X(11, "Error while closing output stream [IGNORED]");
+    } NCBI_CATCH_ALL_X(11, "Exception in ~CNetCacheWriter() [IGNORED]");
 }
 
 void CNetCacheWriter::Close()
