@@ -148,9 +148,16 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
 
 string CGridJobSubmitter::Submit(const string& affinity)
 {
-    m_WStream.reset();
-    m_Writer->Close();
-    m_Writer.reset();
+    if (m_Writer.get()) {
+        if (m_WStream.get()) {
+            m_WStream->flush();
+            m_WStream.reset();
+        }
+
+        m_Writer->Close();
+        m_Writer.reset();
+    }
+
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
     if (m_UseProgress)

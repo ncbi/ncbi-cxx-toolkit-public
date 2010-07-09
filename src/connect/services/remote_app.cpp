@@ -148,7 +148,10 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
 void CBlobStreamHelper::Reset()
 {
     m_IStream.reset();
-    m_OStream.reset();
+    if (m_OStream.get()) {
+        m_OStream->flush();
+        m_OStream.reset();
+    }
 }
 //////////////////////////////////////////////////////////////////////////////
 //
