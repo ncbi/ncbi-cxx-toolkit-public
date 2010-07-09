@@ -42,8 +42,11 @@ BEGIN_NCBI_SCOPE
 inline bool IsConsensusSplice(const string& splice5,
                               const string& splice3)
 {
-    return (splice3 == "AG" && (splice5 == "GT" || splice5 == "GC"))
-        || (splice5 == "AT" && splice3 == "AC");
+    return (NStr::EqualNocase(splice3, "AG") &&
+            (NStr::EqualNocase(splice5, "GT") ||
+             NStr::EqualNocase(splice5, "GC")))  ||
+           (NStr::EqualNocase(splice5, "AT") &&
+            NStr::EqualNocase(splice3, "AC"));
 }
 
 
@@ -51,7 +54,8 @@ inline bool IsConsensusSplice(const string& splice5,
 inline bool IsStrictConsensusSplice(const string& splice5,
                                     const string& splice3)
 {
-    return splice5 == "GT" && splice3 == "AG";
+    return NStr::EqualNocase(splice5, "GT")  &&
+           NStr::EqualNocase(splice3, "AG");
 }
 
 
