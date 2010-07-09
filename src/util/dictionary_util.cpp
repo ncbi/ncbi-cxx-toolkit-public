@@ -969,7 +969,7 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
         TReplace("ness", ""),
 
         /// end
-        TReplace(NULL, NULL)
+        TReplace((const char*)0, (const char*)0)
     };
     {{
          static string s_Step3_Endings("eils");
