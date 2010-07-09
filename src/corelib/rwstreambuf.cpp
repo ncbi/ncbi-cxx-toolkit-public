@@ -136,30 +136,32 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
 
 CRWStreambuf::~CRWStreambuf()
 {
-    // Flush only if data pending
-    if (pbase()  &&  pptr() > pbase()) {
-        if (!x_Err  ||  x_ErrPos != x_GetPPos()) {
-            sync();
+    try {
+        // Flush only if data pending
+        if (pbase()  &&  pptr() > pbase()) {
+            if (!x_Err  ||  x_ErrPos != x_GetPPos()) {
+                sync();
+            }
         }
-    }
-    setg(0, 0, 0);
-    setp(0, 0);
+        setg(0, 0, 0);
+        setp(0, 0);
 
-    IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
-    if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
-        if ((m_Flags & fOwnAll) == fOwnAll) {
-            delete rw;
+        IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
+        if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
+            if ((m_Flags & fOwnAll) == fOwnAll) {
+                delete rw;
+            }
+        } else {
+            if (m_Flags & fOwnWriter) {
+                delete m_Writer;
+            }
+            if (m_Flags & fOwnReader) {
+                delete m_Reader;
+            }
         }
-    } else {
-        if (m_Flags & fOwnWriter) {
-            delete m_Writer;
-        }
-        if (m_Flags & fOwnReader) {
-            delete m_Reader;
-        }
-    }
 
-    delete[] m_pBuf;
+        delete[] m_pBuf;
+    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
 }
 
 
