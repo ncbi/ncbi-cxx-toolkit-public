@@ -76,10 +76,10 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 //          relative to current position (ios::cur);  only direct-access
 //          (ios::beg, ios::end) seeks are fully okay (if permitted by "is").
 // NOTE 6:  Stream re-positioning made after pushback clears all pushback data.
-// NOTE 7:  The standard specifically says that pushbacks must be interleaved
-//          with reads in order to work properly.  This is especially
-//          important to keep in mind, when using both standard putbacks
-//          and pushbacks offered by this API.
+// NOTE 7:  The standard specifically says that putbacks must be interleaved
+//          with reads in order to work properly.  That is especially
+//          important to keep in mind, when using both the standard
+//          putbacks and the pushbacks offered by this API.
     static void       Pushback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
@@ -93,7 +93,6 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
                                const CT_CHAR_TYPE* buf,
                                streamsize          buf_size)
     { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), buf_size); }
-
 
     static void       Stepback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
