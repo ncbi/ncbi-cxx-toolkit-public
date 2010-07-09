@@ -46,6 +46,7 @@
 #include <corelib/ncbistr.hpp>
 #include <string>
 #include <vector>
+#include <iterator>
 
 
 /** @addtogroup StringSearch
