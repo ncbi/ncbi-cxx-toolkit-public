@@ -60,7 +60,10 @@ int main(int argc, const char* argv[])
 
     net_info = ConnNetInfo_Create(service);
     strcpy(net_info->host, host);
-    strcpy(net_info->args, "testarg=val&service=none&platform=none&address=2");
+    ConnNetInfo_AppendArg(net_info, "testarg",  "val");
+    ConnNetInfo_AppendArg(net_info, "service",  "none");
+    ConnNetInfo_AppendArg(net_info, "platform", "none");
+    ConnNetInfo_AppendArg(net_info, "address",  "2010");
     ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
@@ -85,7 +88,7 @@ int main(int argc, const char* argv[])
         for (n = 0; n < 10; n++) {
             size_t m;
             for (m = 0; m < sizeof(obuf) - 2; m++)
-                obuf[m] = "01234567890\n"[rand() % 12];
+                obuf[m] = "0123456789\n"[rand() % 11];
             obuf[m++] = '\n';
             obuf[m]   = '\0';
 
