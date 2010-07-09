@@ -3087,6 +3087,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LNMD	s	Landessammlungen fuer Naturkunde",
 "LNMO	s	Oldenburg, Landesmuseum Natur und Mensch",
 "LNNU	s	Liaoning Normal University, Biology Department",
+"LNPV<FRA>	c	 Laboratoire National de la Protection des Vegetaux",
 "LO	s	Type Collection",
 "LOB	s	California State University, Biological Sciences Department",
 "LOC	s	Occidental College, Biology Department",
