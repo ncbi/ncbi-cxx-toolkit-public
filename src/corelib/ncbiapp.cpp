@@ -477,7 +477,7 @@ int CNcbiApplication::AppMain
             // take care about logging.
             if ( diag != eDS_User  &&
                 NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
-                if ( !argv[i++] ) {
+                if (!argv[++i]) {
                     continue;
                 }
                 v[real_arg_index++] = argv[i - 1];
@@ -488,7 +488,7 @@ int CNcbiApplication::AppMain
                 }
                 // Configuration file
             } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
-                if ( !argv[i++] ) {
+                if (!argv[++i]) {
                     continue;
                 }
                 v[real_arg_index++] = argv[i - 1];
@@ -497,9 +497,7 @@ int CNcbiApplication::AppMain
 
                 // Version
             } else if ( NStr::strcmp(argv[i], s_ArgVersion) == 0 ) {
-                if ( !argv[i++] ) {
-                    continue;
-                }
+                delete[] v;
                 // Print VERSION
                 cout << GetFullVersion().Print( appname,
                     CVersion::fVersionInfo | CVersion::fPackageShort );
@@ -508,9 +506,7 @@ int CNcbiApplication::AppMain
 
                 // Full version
             } else if ( NStr::strcmp(argv[i], s_ArgFullVersion) == 0 ) {
-                if ( !argv[i++] ) {
-                    continue;
-                }
+                delete[] v;
                 // Print full VERSION
                 cout << GetFullVersion().Print( appname );
                 GetDiagContext().DiscardMessages();
