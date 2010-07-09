@@ -50,6 +50,8 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 
+#include <objmgr/seq_vector_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
@@ -200,6 +202,15 @@ private:
         {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested nucleotide, found protein");
+        }
+
+        if (!isProtein)  // Never seen a virtual protein sequence.
+        {
+             if (m_BioseqMaker->HasSequence(id) == false)
+             {
+                  string message = "No sequence available for " + id->AsFastaString();
+                  NCBI_THROW(CInputException, eInvalidInput, message);
+             }
         }
     }
 

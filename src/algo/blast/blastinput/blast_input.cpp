@@ -43,6 +43,9 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <objtools/readers/reader_exception.hpp> // for CObjReaderParseException
 
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
@@ -249,6 +252,17 @@ bool CBlastBioseqMaker::IsProtein(CConstRef<CSeq_id> id)
                     id->AsFastaString() + "'");
     }
     return bh.IsProtein();
+}
+
+bool CBlastBioseqMaker::HasSequence(CConstRef<CSeq_id> id)
+{
+      CBioseq_Handle bh = m_scope->GetBioseqHandle(*id);
+      CSeqVector seq_vect = bh.GetSeqVector();
+      CSeqVector_CI itr(seq_vect);
+      if (itr.GetGapSizeForward() == seq_vect.size())
+          return false;
+      else
+          return true;
 }
 
 bool

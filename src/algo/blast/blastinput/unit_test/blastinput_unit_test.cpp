@@ -2420,6 +2420,18 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb)
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
 }
 
+BOOST_AUTO_TEST_CASE(ThrowOnEmptySequence)
+{
+    string wgs_master("NZ_ABFD00000000.2"); // Contains no sequence
+    istringstream instream(wgs_master);
+
+    CBlastInputSourceConfig iconfig(false);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
+}
+
 BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
 {
     string pdb_mol("1IQR");

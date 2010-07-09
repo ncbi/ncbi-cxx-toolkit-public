@@ -363,6 +363,13 @@ public:
     ///
     bool IsProtein(CConstRef<CSeq_id> id);
 
+    /// Checks whether the Bioseq actually contains sequence.
+    /// E.g., master WGS accessions have no sequence.
+    /// @param id Reference to the SeqId object identifying the sequence [in]
+    /// @return True if there is sequence.
+    ///
+    bool HasSequence(CConstRef<CSeq_id> id);
+
     /// Returns true if the Bioseq contained in the seq_entry is empty (i.e.:
     /// it was created by this class)
     /// @param bioseq Bioseq object to inspect [in]
