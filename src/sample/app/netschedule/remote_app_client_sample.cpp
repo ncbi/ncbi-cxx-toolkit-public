@@ -111,8 +111,7 @@ int CRemoteAppClientSampleApp::Run(void)
         return 0;
     }
 
-    CConfig config(GetConfig());
-    CNetCacheAPI netcache_api(&config);
+    CNetCacheAPI netcache_api(GetConfig());
 
     if (args["jobinfo"]) {
         PrintJobInfo(args["jobinfo"].AsString(), netcache_api);
