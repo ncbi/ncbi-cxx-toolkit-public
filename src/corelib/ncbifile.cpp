@@ -5179,13 +5179,14 @@ void CFileIO::CreateTemporary(const string& dir,
         m_Pathname = x_dir + prefix + buffer;
         m_Handle = CreateFile(m_Pathname.c_str(), GENERIC_ALL, 0, NULL,
                             CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (m_Handle != INVALID_HANDLE_VALUE)
+        if (m_Handle != INVALID_HANDLE_VALUE ||
+                ::GetLastError() != ERROR_FILE_EXISTS)
             break;
         ofs++;
     }
-    if (ofs == numeric_limits<unsigned long>::max()) {
-        NCBI_THROW(CFileException, eTmpFile,
-            "Unable to generate a unique temporary file name");
+    if (m_Handle == INVALID_HANDLE_VALUE) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+            "Unable to create a temporary file");
     }
 
 #  endif
