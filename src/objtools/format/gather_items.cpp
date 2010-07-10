@@ -1456,9 +1456,40 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
             ///
             /// HACK HACK HACK
+            /// we need to cleanse CDD features
             ///
 
             s_CleanCDDFeature(original_feat);
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            ///
+            /// HACK HACK HACK
+            /// we may need to assert proper product resolution
+            ///
+
+            if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
+                vector<CMappedFeat> children =
+                    ctx.GetFeatTree().GetChildren(*it);
+                if (children.size() == 1  &&
+                    children.front().IsSetProduct()) {
+
+                    /// resolve sequences
+                    CSeq_id_Handle rna =
+                        sequence::GetIdHandle(it->GetProduct(), &scope);
+                    CSeq_id_Handle prot =
+                        sequence::GetIdHandle(children.front().GetProduct(),
+                                              &scope);
+
+                    CBioseq_Handle rna_bsh;
+                    CBioseq_Handle prot_bsh;
+                    GetResolveOrder(scope,
+                                    rna, prot,
+                                    rna_bsh, prot_bsh);
+                }
+            }
 
             ///
             /// HACK HACK HACK

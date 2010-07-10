@@ -49,6 +49,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algorithm>
 #include "utils.hpp"
@@ -829,6 +830,70 @@ const char* GetAAName(unsigned char aa, bool is_ascii)
     }
     return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+EResolveOrder GetResolveOrder(CScope& scope,
+                              const CSeq_id_Handle& mrna,
+                              const CSeq_id_Handle& prot,
+                              CBioseq_Handle& mrna_bsh,
+                              CBioseq_Handle& prot_bsh)
+{
+    EResolveOrder order = eResolve_NotFound;
+
+    if (order == eResolve_NotFound) {
+        CRef<CScope> local_scope(new CScope(*CObjectManager::GetInstance()));
+        local_scope->AddDefaults();
+
+        CBioseq_Handle possible_mrna = local_scope->GetBioseqHandle(mrna);
+        CBioseq_Handle possible_prot;
+        if (possible_mrna) {
+            possible_prot =
+                possible_mrna.GetTopLevelEntry().GetBioseqHandle(prot);
+        }
+        if (possible_mrna  &&  possible_prot) {
+            order = eResolve_RnaFirst;
+        }
+    }
+
+    if (order == eResolve_NotFound) {
+        CRef<CScope> local_scope(new CScope(*CObjectManager::GetInstance()));
+        local_scope->AddDefaults();
+
+        CBioseq_Handle possible_prot = local_scope->GetBioseqHandle(prot);
+        CBioseq_Handle possible_mrna;
+        if (possible_prot) {
+            possible_mrna =
+                possible_prot.GetTopLevelEntry().GetBioseqHandle(mrna);
+        }
+
+        if (possible_mrna  &&  possible_prot) {
+            order = eResolve_ProtFirst;
+        }
+    }
+
+    switch (order) {
+    case eResolve_NotFound:
+        mrna_bsh = CBioseq_Handle();
+        prot_bsh = CBioseq_Handle();
+        break;
+
+    case eResolve_RnaFirst:
+        LOG_POST(Error << "resolve: rna first");
+        mrna_bsh = scope.GetBioseqHandle(mrna);
+        prot_bsh = scope.GetBioseqHandle(prot);
+        break;
+
+    case eResolve_ProtFirst:
+        LOG_POST(Error << "resolve: prot first");
+        prot_bsh = scope.GetBioseqHandle(prot);
+        mrna_bsh = scope.GetBioseqHandle(mrna);
+        break;
+    }
+
+    return order;
+}
+
 
 
 END_SCOPE(objects)

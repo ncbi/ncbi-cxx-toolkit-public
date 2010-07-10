@@ -132,6 +132,22 @@ void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
     }
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+enum EResolveOrder
+{
+    eResolve_NotFound,
+    eResolve_RnaFirst,
+    eResolve_ProtFirst
+};
+
+
+EResolveOrder GetResolveOrder(CScope& scope,
+                              const CSeq_id_Handle& mrna,
+                              const CSeq_id_Handle& prot,
+                              CBioseq_Handle& mrna_bsh,
+                              CBioseq_Handle& prot_bsh);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
