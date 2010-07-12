@@ -145,6 +145,10 @@ protected:
         const CGff3Record&,
         CRef< CSeq_annot > );
         
+    bool x_CreateParentMrna(
+        const CGff3Record&,
+        CRef< CSeq_annot > );
+        
     bool x_MergeParentCds(
         const CGff3Record&,
         CRef< CSeq_feat > );
@@ -154,9 +158,18 @@ protected:
         const CGff3Record&,
         CRef< CSeq_feat >& );
 
+    bool x_FindParentCds(
+        const CGff3Record&,
+        CRef< CSeq_feat >& );
+
+    bool x_FindParentMrna(
+        const CGff3Record&,
+        CRef< CSeq_feat >& );
+
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
     TIdToFeature m_CdsMap;
+    TIdToFeature m_MrnaMap;
 };
 
 END_SCOPE(objects)

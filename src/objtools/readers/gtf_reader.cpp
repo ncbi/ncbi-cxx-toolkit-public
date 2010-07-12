@@ -102,27 +102,28 @@ string s_GeneKey(
 {
     string strGeneId;
     if ( ! gff.GetAttribute( "gene_id", strGeneId ) ) {
-        cerr << "Unexpected: GTF CDS feature without a gene_id." << endl;
-        return false;
+        cerr << "Unexpected: GTF feature without a gene_id." << endl;
+        return "gene_id";
     }
     return strGeneId;
 }
 
 //  ----------------------------------------------------------------------------
-string s_CdsKey(
+string s_FeatureKey(
     const CGff3Record& gff )
 //  ----------------------------------------------------------------------------
 {
-    string strGeneId;
-    if ( ! gff.GetAttribute( "gene_id", strGeneId ) ) {
-        cerr << "Unexpected: GTF CDS feature without a gene_id." << endl;
-        return false;
+    string strGeneId = s_GeneKey( gff );
+    if ( gff.Type() == "gene" ) {
+        return strGeneId;
     }
+
     string strTranscriptId;
     if ( ! gff.GetAttribute( "transcript_id", strTranscriptId ) ) {
-        cerr << "Unexpected: GTF CDS feature without a transcript_id." << endl;
-        return false;
+        cerr << "Unexpected: GTF feature without a transcript_id." << endl;
+        strTranscriptId = "transcript_id";
     }
+
     return strGeneId + "|" + strTranscriptId;
 }
 
@@ -289,7 +290,6 @@ bool CGtfReader::x_UpdateAnnotCds(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
-
     //
     // If there is no gene feature to go with this CDS then make one. Otherwise,
     //  make sure the existing gene feature includes the location of the CDS.
@@ -307,17 +307,11 @@ bool CGtfReader::x_UpdateAnnotCds(
     }
     
     //
-    // If there is not CDS feature with this gene_id|transcript_id then make one.
+    // If there is no CDS feature with this gene_id|transcript_id then make one.
     //  Otherwise, fix up the location of the existing one.
     //
-    string strTranscriptId;
-    if ( ! gff.GetAttribute( "transcript_id", strTranscriptId ) ) {
-        cerr << "Unexpected: GTF CDS feature without a transcript_id." << endl;
-        return false;
-    }
-    string strCdsId = s_CdsKey( gff );
-    TIdToFeature::iterator cds_it = m_CdsMap.find( strCdsId );
-    if ( cds_it == m_CdsMap.end() ) {
+    CRef< CSeq_feat > pCds;
+    if ( ! x_FindParentCds( gff, pCds ) ) {
         //
         // Create a brand new CDS feature:
         //
@@ -329,7 +323,7 @@ bool CGtfReader::x_UpdateAnnotCds(
         //
         // Update an already existing CDS features:
         //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, cds_it->second ) ) {
+        if ( ! x_MergeFeatureLocationMultiInterval( gff, pCds ) ) {
             return false;
         }
     }
@@ -370,6 +364,44 @@ bool CGtfReader::x_UpdateAnnot5utr(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    //
+    // If there is no gene feature to go with this CDS then make one. Otherwise,
+    //  make sure the existing gene feature includes the location of the CDS.
+    //
+    CRef< CSeq_feat > pGene;
+    if ( ! x_FindParentGene( gff, pGene ) ) {
+        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        if ( ! x_MergeParentGene( gff, pGene ) ) {
+            return false;
+        }
+    }
+
+    //
+    // If there is no mRNA feature with this gene_id|transcript_id then make one.
+    //  Otherwise, fix up the location of the existing one.
+    //
+    CRef< CSeq_feat > pMrna;
+    if ( ! x_FindParentMrna( gff, pMrna ) ) {
+        //
+        // Create a brand new CDS feature:
+        //
+        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        //
+        // Update an already existing CDS features:
+        //
+        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -379,6 +411,44 @@ bool CGtfReader::x_UpdateAnnot3utr(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    //
+    // If there is no gene feature to go with this CDS then make one. Otherwise,
+    //  make sure the existing gene feature includes the location of the CDS.
+    //
+    CRef< CSeq_feat > pGene;
+    if ( ! x_FindParentGene( gff, pGene ) ) {
+        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        if ( ! x_MergeParentGene( gff, pGene ) ) {
+            return false;
+        }
+    }
+
+    //
+    // If there is no mRNA feature with this gene_id|transcript_id then make one.
+    //  Otherwise, fix up the location of the existing one.
+    //
+    CRef< CSeq_feat > pMrna;
+    if ( ! x_FindParentMrna( gff, pMrna ) ) {
+        //
+        // Create a brand new CDS feature:
+        //
+        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        //
+        // Update an already existing CDS features:
+        //
+        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -415,6 +485,44 @@ bool CGtfReader::x_UpdateAnnotExon(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    //
+    // If there is no gene feature to go with this CDS then make one. Otherwise,
+    //  make sure the existing gene feature includes the location of the CDS.
+    //
+    CRef< CSeq_feat > pGene;
+    if ( ! x_FindParentGene( gff, pGene ) ) {
+        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        if ( ! x_MergeParentGene( gff, pGene ) ) {
+            return false;
+        }
+    }
+
+    //
+    // If there is no mRNA feature with this gene_id|transcript_id then make one.
+    //  Otherwise, fix up the location of the existing one.
+    //
+    CRef< CSeq_feat > pMrna;
+    if ( ! x_FindParentMrna( gff, pMrna ) ) {
+        //
+        // Create a brand new CDS feature:
+        //
+        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
+            return false;
+        }
+    }
+    else {
+        //
+        // Update an already existing CDS features:
+        //
+        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -433,28 +541,25 @@ bool CGtfReader::x_UpdateFeatureId(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strGeneId;
-    if ( ! record.GetAttribute( "gene_id", strGeneId ) ) {
-        cerr << "Unexpected: Feature without gene_id" << endl;
-        return false;
-    }
+    string strFeatureId;
     if ( record.Type() == "gene" ) {
-        pFeature->SetId().SetLocal().SetStr( string( "gene." ) + strGeneId );
-        return true;
+        strFeatureId = "gene|";
+        strFeatureId += s_GeneKey( record );
     }
-
-    string strTranscriptId;
-    if ( ! record.GetAttribute( "transcript_id", strTranscriptId ) ) {
-        cerr << "Unexpected: Feature without transcript_id" << endl;
-        return false;
+    else if ( record.Type() == "exon" ) {
+        strFeatureId = "mrna|";
+        strFeatureId += s_FeatureKey( record );
     }
-
-    if ( record.Type() == "CDS" ) {
-        pFeature->SetId().SetLocal().SetStr( 
-            string( "cds." ) + strGeneId + "." + strTranscriptId );
-        return true;
+    else if ( record.Type() == "CDS" ) {
+        strFeatureId = "cds|";
+        strFeatureId += s_FeatureKey( record );
     }
-    return false;
+    else {
+        strFeatureId = record.Type() + "|";
+        strFeatureId += s_FeatureKey( record );
+    }
+    pFeature->SetId().SetLocal().SetStr( strFeatureId );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -500,10 +605,10 @@ bool CGtfReader::x_CreateGeneXref(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strGeneId;
-    if ( ! record.GetAttribute( "gene_id", strGeneId ) ) {
-        return true;
-    }
+//    string strGeneId;
+//    if ( ! record.GetAttribute( "gene_id", strGeneId ) ) {
+//        return true;
+//    }
     CRef< CSeq_feat > pParent;
     if ( ! x_FindParentGene( record, pParent ) ) {
         return true;
@@ -574,11 +679,7 @@ bool CGtfReader::x_CreateParentGene(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-
-    string strGeneId;
-    if ( gff.GetAttribute( "gene_id", strGeneId ) ) {
-        m_GeneMap[ strGeneId ] = pFeature;
-    }
+    m_GeneMap[ s_GeneKey( gff ) ] = pFeature;
 
     return x_AddFeatureToAnnot( pFeature, pAnnot );
 }
@@ -619,7 +720,39 @@ bool CGtfReader::x_CreateParentCds(
         return false;
     }
 
-    m_CdsMap[ s_CdsKey( gff ) ] = pFeature;
+    m_CdsMap[ s_FeatureKey( gff ) ] = pFeature;
+
+    return x_AddFeatureToAnnot( pFeature, pAnnot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CGtfReader::x_CreateParentMrna(
+    const CGff3Record& gff,
+    CRef< CSeq_annot > pAnnot )
+//  -----------------------------------------------------------------------------
+{
+    //
+    // Create a single cds feature:
+    //
+    CRef< CSeq_feat > pFeature( new CSeq_feat );
+
+    if ( ! x_FeatureSetDataMRNA( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_CreateFeatureLocation( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_UpdateFeatureId( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_CreateGeneXref( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+        return false;
+    }
+
+    m_MrnaMap[ s_FeatureKey( gff ) ] = pFeature;
 
     return x_AddFeatureToAnnot( pFeature, pAnnot );
 }
@@ -630,16 +763,39 @@ bool CGtfReader::x_FindParentGene(
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strGeneId;
-    if ( ! gff.GetAttribute( "gene_id", strGeneId ) ) {
-        cerr << "Unexpected: GTF CDS feature without a gene_id." << endl;
-        return false;
-    }
-    TIdToFeature::iterator gene_it = m_GeneMap.find( strGeneId );
+    TIdToFeature::iterator gene_it = m_GeneMap.find( s_GeneKey( gff ) );
     if ( gene_it == m_GeneMap.end() ) {
         return false;
     }
     pFeature = gene_it->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_FindParentCds(
+    const CGff3Record& gff,
+    CRef< CSeq_feat >& pFeature )
+//  ----------------------------------------------------------------------------
+{
+    TIdToFeature::iterator cds_it = m_CdsMap.find( s_FeatureKey( gff ) );
+    if ( cds_it == m_CdsMap.end() ) {
+        return false;
+    }
+    pFeature = cds_it->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_FindParentMrna(
+    const CGff3Record& gff,
+    CRef< CSeq_feat >& pFeature )
+//  ----------------------------------------------------------------------------
+{
+    TIdToFeature::iterator rna_it = m_MrnaMap.find( s_FeatureKey( gff ) );
+    if ( rna_it == m_MrnaMap.end() ) {
+        return false;
+    }
+    pFeature = rna_it->second;
     return true;
 }
 
