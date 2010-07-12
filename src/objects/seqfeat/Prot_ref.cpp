@@ -104,6 +104,7 @@ static void s_ProcessECNumberLine(const CTempString& line,
 
 static void s_LoadECNumberTable(const string& dir, const string& name,
                                 const char* const *fallback,
+                                size_t fallback_count,
                                 CProt_ref::EECNumberStatus status)
 {
     CRef<ILineReader> lr;
@@ -112,8 +113,8 @@ static void s_LoadECNumberTable(const string& dir, const string& name,
                  (CDirEntry::MakePath(dir, "ecnum_" + name, "txt")));
     }
     if (lr.Empty()) {
-        for (const char* const* p = fallback;  *p;  ++p) {
-            s_ProcessECNumberLine(*p, status);
+        while (fallback_count--) {
+            s_ProcessECNumberLine(*fallback++, status);
         }
     } else {
         for (++*lr; !lr->AtEOF(); ++*lr) {
@@ -143,7 +144,9 @@ static void s_InitializeECNumberMaps(void)
         ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
                    "falling back on built-in data.");
     }
-#define LOAD_EC(x) s_LoadECNumberTable(dir, #x, kECNum_##x, CProt_ref::eEC_##x)
+#define LOAD_EC(x) s_LoadECNumberTable \
+    (dir, #x, kECNum_##x, sizeof(kECNum_##x) / sizeof(*kECNum_##x), \
+     CProt_ref::eEC_##x)
     LOAD_EC(specific);
     LOAD_EC(ambiguous);
     LOAD_EC(replaced);
