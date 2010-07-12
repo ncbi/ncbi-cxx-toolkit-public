@@ -493,6 +493,8 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
             end = indexnames.find_first_not_of( " ", end );
         }
 
+        std::sort( dbnames.begin(), dbnames.end(), &SeqDB_CompareVolume );
+
         for( vector< string >::const_iterator dbni = dbnames.begin();
                 dbni != dbnames.end(); ++dbni ) {
             const string & indexname = *dbni;
