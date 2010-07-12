@@ -457,7 +457,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
             if ((*spl_exon_it)->CanGetParts() && !(*spl_exon_it)->GetParts().empty()) {
                 CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
                 CSpliced_exon_Base::TParts::iterator chunk = parts.begin();
-                for (; trim_amount>0 || (*chunk)->IsGenomic_ins(); ++chunk) {
+                for (; trim_amount>0 || (*chunk)->IsGenomic_ins(); chunk = parts.erase(chunk)) {
                     int product_chunk_len = 0;
                     int genomic_chunk_len = 0;
                     switch((*chunk)->Which()) {
@@ -500,7 +500,6 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
                     if (product_chunk_len <= trim_amount) {
                         genomic_trim_amount += genomic_chunk_len;
                         trim_amount -= product_chunk_len;
-                        --(chunk = parts.erase(chunk));
                     } else {
                         genomic_trim_amount += min(trim_amount, genomic_chunk_len);
                         trim_amount = 0;
