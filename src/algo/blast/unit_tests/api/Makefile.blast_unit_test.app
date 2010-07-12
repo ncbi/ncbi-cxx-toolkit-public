@@ -23,9 +23,8 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/../../api \
            -I$(srcdir)/../../core -I$(top_srcdir)/algo/blast/api \
            -I$(top_srcdir)/algo/blast/core
 
-LIB_ = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
-    $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) xalgowinmask
-LIB = $(LIB_:%=%$(STATIC))
+LIB = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
+    $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS:ncbi_x%=ncbi_x%$(DLL))
 
 LIBS = $(NETWORK_LIBS) \
         $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
