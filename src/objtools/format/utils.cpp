@@ -879,13 +879,11 @@ EResolveOrder GetResolveOrder(CScope& scope,
         break;
 
     case eResolve_RnaFirst:
-        LOG_POST(Error << "resolve: rna first");
         mrna_bsh = scope.GetBioseqHandle(mrna);
         prot_bsh = scope.GetBioseqHandle(prot);
         break;
 
     case eResolve_ProtFirst:
-        LOG_POST(Error << "resolve: prot first");
         prot_bsh = scope.GetBioseqHandle(prot);
         mrna_bsh = scope.GetBioseqHandle(mrna);
         break;
