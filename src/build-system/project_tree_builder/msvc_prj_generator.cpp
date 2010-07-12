@@ -8,7 +8,7 @@
 #include "msvc_prj_defines.hpp"
 #include "ptb_err_codes.hpp"
 
-#define USE_MSVC2010  0
+#define USE_MSVC2010  1
 #if USE_MSVC2010
 #if NCBI_COMPILER_MSVC
 #   include <build-system/project_tree_builder/msbuild/msbuild_dataobj__.hpp>
@@ -1111,9 +1111,11 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             CProjectItemsTree::TProjects::const_iterator n = GetApp().GetCurrentBuildTree()->m_Projects.find(id);
             if (n != GetApp().GetCurrentBuildTree()->m_Projects.end() && 
                 (n->first.Type() == CProjKey::eLib || n->first.Type() == CProjKey::eDll)) {
-                guid_to_path[n->second.m_GUID] = CDirEntry::ConcatPath(
-                    CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, n->second.m_SourcesBaseDir),
-                    CreateProjectName(n->first)) + CMsvc7RegSettings::GetVcprojExt();
+                if (prj.m_GUID != n->second.m_GUID) {
+                    guid_to_path[n->second.m_GUID] = CDirEntry::ConcatPath(
+                        CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, n->second.m_SourcesBaseDir),
+                        CreateProjectName(n->first)) + CMsvc7RegSettings::GetVcprojExt();
+                }
             }
         }
 
