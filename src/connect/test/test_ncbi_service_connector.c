@@ -42,7 +42,6 @@
 int main(int argc, const char* argv[])
 {
     const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
-    const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
     static char obuf[8192 + 2];
     SConnNetInfo* net_info;
     CONNECTOR connector;
@@ -59,7 +58,6 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     net_info = ConnNetInfo_Create(service);
-    strcpy(net_info->host, host);
     ConnNetInfo_AppendArg(net_info, "testarg",  "val");
     ConnNetInfo_AppendArg(net_info, "service",  "none");
     ConnNetInfo_AppendArg(net_info, "platform", "none");
@@ -74,8 +72,8 @@ int main(int argc, const char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-    if (argc > 3) {
-        strncpy0(obuf, argv[3], sizeof(obuf) - 2);
+    if (argc > 2) {
+        strncpy0(obuf, argv[2], sizeof(obuf) - 2);
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = '\0';
         if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
