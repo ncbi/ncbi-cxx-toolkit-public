@@ -52,17 +52,33 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(s_TestGetStatus)
 {
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("1.1.1.1"),
+                      CProt_ref::eEC_specific);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("2.7.3.6"),
                       CProt_ref::eEC_specific);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("6.6.1.2"),
+                      CProt_ref::eEC_specific);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("1.-.-.-"),
+                      CProt_ref::eEC_ambiguous);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("3.4.-.-"),
                       CProt_ref::eEC_ambiguous);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("3.4.N.n"),
                       CProt_ref::eEC_ambiguous);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("3.4.n.N"),
                       CProt_ref::eEC_ambiguous);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("6.n.n.n"),
+                      CProt_ref::eEC_ambiguous);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("1.1.1.5"),
+                      CProt_ref::eEC_replaced);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("4.2.2.4"),
                       CProt_ref::eEC_replaced);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("6.3.5.8"),
+                      CProt_ref::eEC_replaced);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("1.1.1.74"),
+                      CProt_ref::eEC_deleted);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("5.4.3.1"),
+                      CProt_ref::eEC_deleted);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("6.3.2.15"),
                       CProt_ref::eEC_deleted);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("asdf"),
                       CProt_ref::eEC_unknown);
