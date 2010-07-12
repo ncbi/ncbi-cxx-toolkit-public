@@ -16,4 +16,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn
 CHECK_COPY = alignments.asn annotations.asn
 
-WATCHERS = dicuccio
+WATCHERS = dicuccio chetvern
