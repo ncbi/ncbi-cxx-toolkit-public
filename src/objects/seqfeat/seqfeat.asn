@@ -301,7 +301,8 @@ VariantProperties ::= SEQUENCE {
         frameshift (2048), -- one allele in the set changes all downstream
                            -- amino acids (0x800)
 
-        in-start-codon(4096), -- the variant is observed in a start codon (0x1000)
+        in-start-codon(4096), -- the variant is observed in a start codon
+                              -- (0x1000)
         up-regulator(8192), -- the variant causes increased transcription
                            -- (0x2000)
         down-regulator(16384) -- the variant causes decreased transcription
@@ -536,12 +537,13 @@ Variation-ref ::= SEQUENCE {
                                  -- 13_88del]
                 haplotype   (3), -- changes on the same allele, e.g
                                  -- r.[13g>a;15u>c]
-                alleles     (4), -- changes on different alleles in the same
+                genotype    (4), -- changes on different alleles in the same
                                  -- genotype, e.g. g.[476C>T]+[476C>T]
                 mosaic      (5), -- different genotypes in the same individual
                 individual  (6), -- same organism; allele relationship unknown,
                                  -- e.g. g.[476C>T(+)183G>C]
                 population  (7), -- population
+                alleles     (8), -- set represents a set of observed alleles
                 other       (255)
             },
             variations SET OF Variation-ref,
@@ -598,8 +600,32 @@ Delta-item ::= SEQUENCE {
     -- multiplier which specifies the count of the repeat unit.
 
     multiplier          INTEGER OPTIONAL, --assumed 1 if not specified.
-    multiplier-fuzz     Int-fuzz OPTIONAL
+    multiplier-fuzz     Int-fuzz OPTIONAL,
+
+    action INTEGER {
+
+        -- cut the sequence at location and paste seq (multiplier applies to
+        -- seq)
+        replace    (0),
+
+        -- go downstream by distance specified by multiplier (upstream if < 0),
+        -- in genomic context.
+        offset     (1),
+
+        -- excise sequence at location
+        -- if multiplier is specified, delete len(location)*multiplier
+        -- positions downstream
+        del-at     (2),
+
+        -- insert seq before the location.start
+        ins-before (3),
+
+        -- replace len(seq) positions starting with location.start with seq
+        morph      (4)
+
+    } DEFAULT replace
 }
+
 
 -- Variation instance
 Variation-inst ::= SEQUENCE {
