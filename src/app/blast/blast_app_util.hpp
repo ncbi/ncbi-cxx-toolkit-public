@@ -169,7 +169,7 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
-    catch (const std::bad_alloc& e) {                                       \
+    catch (const std::bad_alloc&) {                                       \
         LOG_POST(Error << "BLAST ran out of memory");                       \
         exit_code = BLAST_OUT_OF_MEMORY;                                    \
     }                                                                       \
