@@ -465,14 +465,6 @@ void SeqDB_CombinePath(const CSeqDB_Substring & path,
                        const CSeqDB_Substring * extn,
                        string                 & outp);
 
-/// Compares two volume file names and determine the volume order
-///
-/// @param volpath1 The 1st volume path 
-/// @param volpath2 The 2nd volume path 
-/// @return true if vol1 should appear before vol2
-bool SeqDB_CompareVolume(const string & volpath1, 
-                         const string & volpath2);
-
 /// Returns a path minus filename.
 ///
 /// Substring version of the above.  This returns the part of a file
