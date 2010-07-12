@@ -185,7 +185,7 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetOriginalSeq_feat(void) const
         return ConstRef(&x_GetPlainSeq_feat());
     }
     else {
-        return m_CreatedFeat->MakeOriginalFeature(*this);
+        return m_CreatedFeat->GetOriginalFeature(*this);
     }
 }
 

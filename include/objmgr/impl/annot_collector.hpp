@@ -142,11 +142,10 @@ public:
         { return m_GraphRanges.GetPointerOrNull(); }
 
     bool MappedSeq_locNeedsUpdate(void) const;
-    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
     void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
                              CRef<CSeq_point>&    pnt_ref,
                              CRef<CSeq_interval>& int_ref,
-                             const CMappedFeat&   feat) const;
+                             const CSeq_feat*     orig_feat) const;
 
     // Copy non-modified members from original feature
     // (all except partial flag and location/product, depending on mode.
@@ -238,12 +237,15 @@ public:
                        CRef<CSeq_point>*    point,
                        CRef<CSeq_interval>* interval);
 
-    CConstRef<CSeq_feat> MakeOriginalFeature(const CSeq_feat_Handle& feat_h);
-    CConstRef<CSeq_loc>  MakeMappedLocation(const CAnnotMapping_Info& map_info,
-                                            const CMappedFeat& feat);
-    CConstRef<CSeq_feat> MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
-                                           const CAnnotMapping_Info& map_info,
-                                           CSeq_loc& mapped_location);
+    CConstRef<CSeq_feat> GetOriginalFeature(const CSeq_feat_Handle& feat_h);
+    CRef<CSeq_loc>  GetMappedLocation(const CAnnotMapping_Info& map,
+                                      const CSeq_feat& orig_feat);
+    CRef<CSeq_loc>  GetMappedLocation(const CAnnotMapping_Info& map,
+                                      const CMappedFeat& feat);
+    CConstRef<CSeq_feat> GetMappedFeature(const CAnnotMapping_Info& map,
+                                          const CSeq_feat& orig_feat);
+    CConstRef<CSeq_feat> GetMappedFeature(const CAnnotMapping_Info& map,
+                                          const CMappedFeat& feat);
 private:
     CRef<CSeq_feat>      m_CreatedSeq_feat;
     CRef<CSeq_loc>       m_CreatedSeq_loc;

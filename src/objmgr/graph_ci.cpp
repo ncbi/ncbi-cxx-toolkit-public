@@ -59,7 +59,12 @@ void CMappedGraph::MakeMappedLoc(void) const
             m_Collector->m_CreatedMapped.Reset(new CCreatedFeat_Ref);
         }
         m_Collector->m_CreatedMapped->ReleaseRefsTo(0, &created_loc, 0, 0);
-        m_GraphRef->GetMappingInfo().UpdateMappedSeq_loc(created_loc);
+        CRef<CSeq_point>    created_pnt;
+        CRef<CSeq_interval> created_int;
+        m_GraphRef->GetMappingInfo().UpdateMappedSeq_loc(created_loc,
+                                                         created_pnt,
+                                                         created_int,
+                                                         0);
         m_MappedLoc = created_loc;
         m_Collector->m_CreatedMapped->ResetRefsFrom(0, &created_loc, 0, 0);
     }

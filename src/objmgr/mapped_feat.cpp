@@ -123,18 +123,14 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 
 CConstRef<CSeq_loc> CMappedFeat::GetMappedLocation(void) const
 {
-    return m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr, *this);
+    return m_MappedFeat.GetMappedLocation(*m_MappingInfoPtr, *this);
 }
 
 
 CConstRef<CSeq_feat> CMappedFeat::GetSeq_feat(void) const
 {
     if ( m_MappingInfoPtr->IsMapped() ) {
-        CRef<CSeq_loc> mapped_location
-            (&const_cast<CSeq_loc&>(*GetMappedLocation()));
-        return m_MappedFeat.MakeMappedFeature(*this,
-                                              *m_MappingInfoPtr,
-                                              *mapped_location);
+        return m_MappedFeat.GetMappedFeature(*m_MappingInfoPtr, *this);
     }
     else {
         return GetOriginalSeq_feat();
