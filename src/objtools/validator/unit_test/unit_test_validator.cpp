@@ -9447,7 +9447,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadCharInAuthorLastName",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadCharInAuthorLastName",
                               "Bad characters in author foo<script"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "EmbeddedScript",
                               "Script tag found in item"));
@@ -10898,10 +10898,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "MultiIntervalGene",
         "Gene feature on non-segmented sequence should not have multiple intervals"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
-        "Gene of 'order' with otherwise complete location should have partial flag set"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSgeneRange",
         "gene overlaps CDS but does not completely contain it"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
+        "Gene of 'order' with otherwise complete location should have partial flag set"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
@@ -11129,10 +11129,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     CLEAR_ERRORS
 
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
-        "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
                                                  "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
+        "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
