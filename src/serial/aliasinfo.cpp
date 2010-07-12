@@ -35,6 +35,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -191,7 +192,7 @@ void CAliasTypeInfoFunctions::CopyAliasDefault(CObjectStreamCopier& copier,
 {
     const CAliasTypeInfo* aliasType =
         CTypeConverter<CAliasTypeInfo>::SafeCast(objectType);
-    aliasType->GetPointedType()->DefaultCopyData(copier);
+    copier.CopyAlias(aliasType);
 }
 
 void CAliasTypeInfoFunctions::SkipAliasDefault(CObjectIStream& in,
