@@ -513,16 +513,31 @@ const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
 
 struct CAnnotObjectType_Less
 {
+    bool m_ByProduct;
     IFeatComparator* m_FeatComparator;
     CScope* m_Scope;
-    explicit CAnnotObjectType_Less(IFeatComparator* feat_comparator = 0,
+    explicit CAnnotObjectType_Less(const SAnnotSelector* sel = 0,
                                    CScope* scope = 0)
-        : m_FeatComparator(feat_comparator),
+        : m_ByProduct(sel && sel->GetFeatProduct()),
+          m_FeatComparator(sel? sel->GetFeatComparator(): 0),
           m_Scope(scope)
         {
         }
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const;
+
+    // smaller first
+    static int GetTypeOrder(CSeqFeatData::E_Choice type,
+                            CSeqFeatData::ESubtype subtype)
+        {
+            if ( subtype == CSeqFeatData::eSubtype_operon ) {
+                // operon first
+                return -1;
+            }
+            else {
+                return CSeq_feat::GetTypeSortingOrder(type);
+            }
+        }
 };
 
 class CCreateFeat
@@ -532,14 +547,22 @@ public:
                                      const CAnnotObject_Info* info);
     const CSeq_feat& GetMappedFeat(const CAnnotObject_Ref& ref,
                                    const CAnnotObject_Info* info);
-    CCdregion::EFrame GetCdregionFrame(const CAnnotObject_Ref& ref,
-                                       const CAnnotObject_Info* info);
+    int GetCdregionOrder(const CAnnotObject_Ref& ref,
+                         const CAnnotObject_Info* info);
     const char* GetImpKey(const CAnnotObject_Ref& ref,
                           const CAnnotObject_Info* info);
+
+    static const CSeq_loc& GetLoc(const CSeq_feat& feat, bool by_product) {
+        return by_product? feat.GetProduct(): feat.GetLocation();
+    }
+
     ENa_strand GetStrand(const CAnnotObject_Ref& ref,
-                         const CAnnotObject_Info* info);
+                         const CAnnotObject_Info* info,
+                         bool by_product);
+
     const CSeq_loc_mix* GetMix(const CAnnotObject_Ref& ref,
-                               const CAnnotObject_Info* info);
+                               const CAnnotObject_Info* info,
+                               bool by_product);
 
 private:
     CRef<CSeq_feat> m_CreatedOriginalFeat;
@@ -549,20 +572,29 @@ private:
 const CSeq_feat& CCreateFeat::GetOriginalFeat(const CAnnotObject_Ref& ref,
                                               const CAnnotObject_Info* info)
 {
-    _ASSERT(info);
     if ( ref.IsPlainFeat() ) {
         // real Seq-feat exists
         return *info->GetFeatFast();
     }
     else {
         // table feature
-        _ASSERT(ref.IsTableFeat());
         if ( !m_CreatedOriginalFeat ) {
             CRef<CSeq_point> seq_pnt;
             CRef<CSeq_interval> seq_int;
-            ref.GetSeq_annot_Info().GetTableInfo().
-                UpdateSeq_feat(ref.GetAnnotIndex(),
-                               m_CreatedOriginalFeat, seq_pnt, seq_int);
+            if ( !info ) {
+                // SNP table feature
+                const CSeq_annot_SNP_Info& annot_snp_info =
+                    ref.GetSeq_annot_SNP_Info();
+                ref.GetSNP_Info().UpdateSeq_feat(m_CreatedOriginalFeat,
+                                                 seq_pnt, seq_int,
+                                                 annot_snp_info);
+            }
+            else {
+                _ASSERT(ref.IsTableFeat());
+                ref.GetSeq_annot_Info().GetTableInfo().
+                    UpdateSeq_feat(ref.GetAnnotIndex(),
+                                   m_CreatedOriginalFeat, seq_pnt, seq_int);
+            }
             _ASSERT(m_CreatedOriginalFeat);
         }
         return *m_CreatedOriginalFeat;
@@ -573,7 +605,6 @@ const CSeq_feat& CCreateFeat::GetOriginalFeat(const CAnnotObject_Ref& ref,
 const CSeq_feat& CCreateFeat::GetMappedFeat(const CAnnotObject_Ref& ref,
                                             const CAnnotObject_Info* info)
 {
-    _ASSERT(info);
     CAnnotMapping_Info& map = ref.GetMappingInfo();
     if ( !map.IsMapped() ) {
         return GetOriginalFeat(ref, info);
@@ -590,10 +621,15 @@ const CSeq_feat& CCreateFeat::GetMappedFeat(const CAnnotObject_Ref& ref,
 }
 
 
-CCdregion::EFrame CCreateFeat::GetCdregionFrame(const CAnnotObject_Ref& ref,
-                                                const CAnnotObject_Info* info)
+int CCreateFeat::GetCdregionOrder(const CAnnotObject_Ref& ref,
+                                  const CAnnotObject_Info* info)
 {
-    return GetMappedFeat(ref, info).GetData().GetCdregion().GetFrame();
+    CCdregion::EFrame frame = 
+        GetMappedFeat(ref, info).GetData().GetCdregion().GetFrame();
+    if ( frame == CCdregion::eFrame_not_set ) {
+        frame = CCdregion::eFrame_one;
+    }
+    return frame;
 }
 
 
@@ -609,14 +645,15 @@ const char* CCreateFeat::GetImpKey(const CAnnotObject_Ref& ref,
 
 
 ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
-                                  const CAnnotObject_Info* info)
+                                  const CAnnotObject_Info* info,
+                                  bool by_product)
 {
     CAnnotMapping_Info& map = ref.GetMappingInfo();
     if ( map.IsMappedLocation() ) {
         // location is mapped
         if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_feat ) {
             // mapped Seq-feat is created already
-            return map.GetMappedSeq_feat().GetLocation().GetStrand();
+            return GetLoc(map.GetMappedSeq_feat(), by_product).GetStrand();
         }
         else if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_loc ) {
             // mapped Seq-loc is created already
@@ -635,14 +672,15 @@ ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
         }
         else {
             // get location from the Seq-feat
-            return GetOriginalFeat(ref, info).GetLocation().GetStrand();
+            return GetLoc(GetOriginalFeat(ref, info), by_product).GetStrand();
         }
     }
 }
 
 
 const CSeq_loc_mix* CCreateFeat::GetMix(const CAnnotObject_Ref& ref,
-                                        const CAnnotObject_Info* info)
+                                        const CAnnotObject_Info* info,
+                                        bool by_product)
 {
     if ( !info ) {
         // table SNP -> no mix
@@ -661,12 +699,12 @@ const CSeq_loc_mix* CCreateFeat::GetMix(const CAnnotObject_Ref& ref,
             return 0;
         }
         // get location from the Seq-feat
-        const CSeq_loc& loc = GetMappedFeat(ref, info).GetLocation();
+        const CSeq_loc& loc = GetLoc(GetMappedFeat(ref, info), by_product);
         return loc.IsMix()? &loc.GetMix(): 0;
     }
     else {
         // get location from the Seq-feat
-        const CSeq_loc& loc = GetOriginalFeat(ref, info).GetLocation();
+        const CSeq_loc& loc = GetLoc(GetOriginalFeat(ref, info), by_product);
         return loc.IsMix()? &loc.GetMix(): 0;
     }
 }
@@ -698,7 +736,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         y_info = 0;
         y_annot_type = CSeq_annot::C_Data::e_Ftable;
     }
-
+    
     // compare by annotation type (feature, align, graph)
     if ( x_annot_type != y_annot_type ) {
         return x_annot_type < y_annot_type;
@@ -706,6 +744,8 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
     if ( x_annot_type == CSeq_annot::C_Data::e_Ftable ) {
         // compare features
+
+        // get x feature type
         CSeqFeatData::E_Choice x_feat_type;
         CSeqFeatData::ESubtype x_feat_subtype;
         if ( x_info ) {
@@ -717,6 +757,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             x_feat_subtype = CSeqFeatData::eSubtype_variation;
         }
 
+        // get y feature type
         CSeqFeatData::E_Choice y_feat_type;
         CSeqFeatData::ESubtype y_feat_subtype;
         if ( y_info ) {
@@ -728,98 +769,97 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             y_feat_subtype = CSeqFeatData::eSubtype_variation;
         }
 
-        {{
-            // order by feature type
-            if ( x_feat_type != y_feat_type ) {
-                int x_order = CSeq_feat::GetTypeSortingOrder(x_feat_type);
-                int y_order = CSeq_feat::GetTypeSortingOrder(y_feat_type);
-                if ( x_order != y_order ) {
-                    return x_order < y_order;
-                }
+        // order by feature type
+        if ( x_feat_subtype != y_feat_subtype ) {
+            int x_order = GetTypeOrder(x_feat_type, x_feat_subtype);
+            int y_order = GetTypeOrder(y_feat_type, y_feat_subtype);
+            if ( x_order != y_order ) {
+                return x_order < y_order;
             }
-        }}
+        }
 
         CCreateFeat x_create, y_create;
-        bool x_minus = x_create.GetStrand(x, x_info) == eNa_strand_minus;
-        bool y_minus = y_create.GetStrand(y, y_info) == eNa_strand_minus;
+
+        // compare strands
+        bool x_minus =
+            x_create.GetStrand(x, x_info, m_ByProduct) == eNa_strand_minus;
+        bool y_minus =
+            y_create.GetStrand(y, y_info, m_ByProduct) == eNa_strand_minus;
         if ( x_minus != y_minus ) {
             // minus strand last
             return y_minus;
         }
-        {{
-            // compare mix locations
-            const CSeq_loc_mix* x_mix = x_create.GetMix(x, x_info);
-            const CSeq_loc_mix* y_mix = y_create.GetMix(y, y_info);
-
-            if ( x_mix ) {
-                if ( y_mix ) {
-                    const CSeq_loc_mix::Tdata& x_l = x_mix->Get();
-                    const CSeq_loc_mix::Tdata& y_l = y_mix->Get();
-                    CSeq_loc_mix::Tdata::const_iterator x_it = x_l.begin();
-                    CSeq_loc_mix::Tdata::const_iterator y_it = y_l.begin();
-                    for ( ; ; ++x_it, ++y_it) {
-                        if ( x_it == x_l.end() ) {
-                            if ( y_it == y_l.end() ) {
-                                // equal
-                                break;
-                            }
-                            else {
-                                // x loc is shorter
-                                return true;
-                            }
-                        }
-                        if ( y_it == y_l.end() ) {
-                            // y loc is shorter
-                            return false;
-                        }
+        
+        // compare mix locations
+        const CSeq_loc_mix* x_mix = x_create.GetMix(x, x_info, m_ByProduct);
+        const CSeq_loc_mix* y_mix = y_create.GetMix(y, y_info, m_ByProduct);
+        
+        if ( x_mix ) {
+            if ( !y_mix ) {
+                // mix is last on plus strand, and first on minus strand
+                return x_minus;
+            }
+            const CSeq_loc_mix::Tdata& x_l = x_mix->Get();
+            const CSeq_loc_mix::Tdata& y_l = y_mix->Get();
+            CSeq_loc_mix::Tdata::const_iterator x_it = x_l.begin();
+            CSeq_loc_mix::Tdata::const_iterator y_it = y_l.begin();
+            for ( ; ; ++x_it, ++y_it) {
+                if ( x_it == x_l.end() ) {
+                    if ( y_it == y_l.end() ) {
+                        // equal
+                        break;
+                    }
+                    else {
+                        // x loc is shorter
+                        return true;
+                    }
+                }
+                if ( y_it == y_l.end() ) {
+                    // y loc is shorter
+                    return false;
+                }
                         
-                        COpenRange<TSeqPos> x_r, y_r;
-                        try {
-                            x_r = (*x_it)->GetTotalRange();
-                        }
-                        catch ( CException& /*ignored*/ ) {
-                            // assume empty
-                        }
-                        try {
-                            y_r = (*y_it)->GetTotalRange();
-                        }
-                        catch ( CException& /*ignored*/ ) {
-                            // assume empty
-                        }
-                        if ( x_minus ) {
-                            // largest right extreme first
-                            if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
-                                return x_r.GetToOpen() > y_r.GetToOpen();
-                            }
-                            // longest first
-                            if ( x_r.GetFrom() != y_r.GetFrom() ) {
-                                return x_r.GetFrom() < y_r.GetFrom();
-                            }
-                        }
-                        else {
-                            // smallest left extreme first
-                            if ( x_r.GetFrom() != y_r.GetFrom() ) {
-                                return x_r.GetFrom() < y_r.GetFrom();
-                            }
-                            // longest first
-                            if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
-                                return x_r.GetToOpen() > y_r.GetToOpen();
-                            }
-                        }
+                COpenRange<TSeqPos> x_r, y_r;
+                try {
+                    x_r = (*x_it)->GetTotalRange();
+                }
+                catch ( CException& /*ignored*/ ) {
+                    // assume empty
+                }
+                try {
+                    y_r = (*y_it)->GetTotalRange();
+                }
+                catch ( CException& /*ignored*/ ) {
+                    // assume empty
+                }
+                if ( x_minus ) {
+                    // largest right extreme first
+                    if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
+                        return x_r.GetToOpen() > y_r.GetToOpen();
+                    }
+                    // longest first
+                    if ( x_r.GetFrom() != y_r.GetFrom() ) {
+                        return x_r.GetFrom() < y_r.GetFrom();
                     }
                 }
                 else {
-                    // non-mix y first
-                    return false;
+                    // smallest left extreme first
+                    if ( x_r.GetFrom() != y_r.GetFrom() ) {
+                        return x_r.GetFrom() < y_r.GetFrom();
+                    }
+                    // longest first
+                    if ( x_r.GetToOpen() != y_r.GetToOpen() ) {
+                        return x_r.GetToOpen() > y_r.GetToOpen();
+                    }
                 }
             }
-            else {
-                if ( y_mix ) {
-                    // non-mix x first
-                    return true;
-                }
+        }
+        else {
+            if ( y_mix ) {
+                // mix is last on plus strand, and first on minus strand
+                return !x_minus;
             }
-        }}
+        }
             
         // compare subtypes
         if ( x_feat_subtype != y_feat_subtype ) {
@@ -830,12 +870,9 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         // type dependent comparison
         if ( x_feat_type == CSeqFeatData::e_Cdregion ) {
             // compare frames of identical CDS ranges
-            CCdregion::EFrame x_frame = x_create.GetCdregionFrame(x, x_info);
-            CCdregion::EFrame y_frame = y_create.GetCdregionFrame(y, y_info);
-
-            if ( x_frame != y_frame &&
-                 (x_frame > CCdregion::eFrame_one ||
-                  y_frame > CCdregion::eFrame_one) ) {
+            int x_frame = x_create.GetCdregionOrder(x, x_info);
+            int y_frame = y_create.GetCdregionOrder(y, y_info);
+            if ( x_frame != y_frame ) {
                 return x_frame < y_frame;
             }
         }
@@ -846,18 +883,13 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             // compare labels of imp features
             if ( x_key != y_key ) {
                 int diff = NStr::CompareNocase(x_key, y_key);
-                if ( diff != 0 )
+                if ( diff != 0 ) {
                     return diff < 0;
-            }
-            bool x_snp = !x_info;
-            bool y_snp = !y_info;
-            if ( x_snp != y_snp ) {
-                // non-SNP before SNP
-                return y_snp;
+                }
             }
         }
 
-        if ( m_FeatComparator && x_info && y_info ) {
+        if ( m_FeatComparator ) {
             const CSeq_feat& x_feat = x_create.GetMappedFeat(x, x_info);
             const CSeq_feat& y_feat = y_create.GetMappedFeat(y, y_info);
             if ( m_FeatComparator->Less(x_feat, y_feat, m_Scope) ) {
@@ -868,15 +900,16 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             }
         }
     }
+
     return x < y;
 }
 
 
 struct CAnnotObject_Less
 {
-    explicit CAnnotObject_Less(IFeatComparator* feat_comparator = 0,
+    explicit CAnnotObject_Less(const SAnnotSelector* sel = 0,
                                CScope* scope = 0)
-        : type_less(feat_comparator, scope)
+        : type_less(sel, scope)
         {
         }
     // Compare CRef-s: both must be features
@@ -915,9 +948,9 @@ struct CAnnotObject_Less
 
 struct CAnnotObject_LessReverse
 {
-    explicit CAnnotObject_LessReverse(IFeatComparator* feat_comparator = 0,
+    explicit CAnnotObject_LessReverse(const SAnnotSelector* sel = 0,
                                       CScope* scope = 0)
-        : type_less(feat_comparator, scope)
+        : type_less(sel, scope)
         {
         }
     // Compare CRef-s: both must be features
@@ -1778,13 +1811,11 @@ void CAnnot_Collector::x_Sort(void)
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
         sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-             CAnnotObject_Less(m_Selector->GetFeatComparator(),
-                               m_Scope));
+             CAnnotObject_Less(m_Selector, m_Scope));
         break;
     case SAnnotSelector::eSortOrder_Reverse:
         sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-             CAnnotObject_LessReverse(m_Selector->GetFeatComparator(),
-                                      m_Scope));
+             CAnnotObject_LessReverse(m_Selector, m_Scope));
         break;
     default:
         // do nothing
