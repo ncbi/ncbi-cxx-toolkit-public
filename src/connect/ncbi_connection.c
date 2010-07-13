@@ -51,9 +51,9 @@
 #define CONN_LOG_EX(subcode, func_name, level, message, status)            \
   do {                                                                     \
       const char* ststr = status ? IO_StatusStr((EIO_Status) status) : ""; \
-      const char* type = (conn->meta.get_type                              \
-                          ? conn->meta.get_type(conn->meta.c_get_type)     \
-                          : 0);                                            \
+      const char* ctype = (conn->meta.get_type                             \
+                           ? conn->meta.get_type(conn->meta.c_get_type)    \
+                           : 0);                                           \
       char* descr = (conn->meta.descr                                      \
                      ? conn->meta.descr(conn->meta.c_descr)                \
                      : 0);                                                 \
@@ -67,8 +67,8 @@
       }                                                                    \
       CORE_LOGF_X(subcode, level,                                          \
                   ("[CONN_" #func_name "(%s%s%s)]  %s%s%s",                \
-                   type   &&  *type  ? type : "UNKNOWN",                   \
-                   descr  &&  *descr ? "; " : "", descr ? descr : "",      \
+                   ctype  &&  *ctype ? ctype : "UNKNOWN",                  \
+                   descr  &&  *descr ? "; "  : "", descr ? descr : "",     \
                    message,                                                \
                    ststr  &&  *ststr ? ": "  : "",                         \
                    ststr             ? ststr : ""));                       \

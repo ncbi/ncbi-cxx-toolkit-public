@@ -132,8 +132,12 @@ string CConnTest::x_TimeoutMsg(void)
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream& io)
 {
     CONN conn = io.GetCONN();
+    const char* ctype = conn ? CONN_GetType(conn)     : 0;
     const char* descr = conn ? CONN_Description(conn) : 0;
-    m_CheckPoint = descr ? descr : kEmptyStr;
+    m_CheckPoint =
+        string(ctype            ? ctype : kEmptyStr) +
+        string(ctype  &&  descr ? "/"   : kEmptyStr) +
+        string(descr            ? descr : kEmptyStr);
     if (!failure)
         return eIO_Success;
     EIO_Status status = io.Status();
