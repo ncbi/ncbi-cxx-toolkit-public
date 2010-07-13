@@ -118,7 +118,7 @@ protected:
     bool x_WriteTrackLine(
         const CRef< CUser_object > );
 
-    bool x_AssignObject( 
+    virtual bool x_AssignObject( 
         CSeq_annot_Handle,
         const CSeq_feat&,        
         CGff3WriteRecordSet& );

@@ -42,6 +42,9 @@
 //#include <objtools/writers/gff_writer.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CGtfRecord;
+
 BEGIN_objects_SCOPE
 
 //  ============================================================================
@@ -57,13 +60,39 @@ public:
 protected:
     bool x_WriteHeader();
 
+    bool x_AssignObject( 
+        CSeq_annot_Handle,
+        const CSeq_feat&,        
+        CGff3WriteRecordSet& );
+
+    bool x_AssignObjectMrna( 
+        CSeq_annot_Handle,
+        const CSeq_feat&,        
+        CGff3WriteRecordSet& );
+
+    bool x_AssignObjectCds( 
+        CSeq_annot_Handle,
+        const CSeq_feat&,        
+        CGff3WriteRecordSet& );
+
     string x_GffAttributes( 
-        const CGff3WriteRecord& ) const;
+        const CGtfRecord& ) const;
 
     void x_PriorityProcess(
         const string&,
         map<string, string >&,
         string& ) const;
+
+    bool x_SplitCdsLocation(
+        const CSeq_feat&,
+        CRef< CSeq_loc >&,
+        CRef< CSeq_loc >&,
+        CRef< CSeq_loc >& ) const;
+
+    void x_AddMultipleRecords(
+        const CGtfRecord&,
+        CRef< CSeq_loc >,
+        CGff3WriteRecordSet& );
 };
 
 END_objects_SCOPE

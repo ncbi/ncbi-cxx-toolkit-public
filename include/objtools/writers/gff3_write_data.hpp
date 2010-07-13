@@ -53,7 +53,7 @@ public:
     CGff3WriteRecord(
         CSeq_annot_Handle sah
     );
-    ~CGff3WriteRecord();
+    virtual ~CGff3WriteRecord();
 
     //
     //  Input/output:

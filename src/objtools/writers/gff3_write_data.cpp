@@ -485,7 +485,7 @@ CSeq_feat::TData::ESubtype CGff3WriteRecord::x_GetSubtypeOf(
        	if(sfh) {
             subtype = sfh.GetFeatSubtype();
         } else {
-            ERR_POST(Warning << "CGff3WriteRecord::x_GetSubtypeOf: Feature could not be found.");
+//            ERR_POST(Warning << "CGff3WriteRecord::x_GetSubtypeOf: Feature could not be found.");
         }
 	}
     return subtype;
