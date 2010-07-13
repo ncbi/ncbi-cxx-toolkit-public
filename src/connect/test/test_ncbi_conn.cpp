@@ -197,6 +197,8 @@ int main(int argc, const char* argv[])
 
     try {
         CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
+        log.close();
+        log.open(kLogfile, IOS_BASE:: out | IOS_BASE::app);
         if (log) {
             SetDiagStream(&log);
 
