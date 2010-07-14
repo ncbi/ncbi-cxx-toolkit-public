@@ -46,6 +46,70 @@ BEGIN_SCOPE(objects)
 class CPrefetchManager_Impl;
 
 
+BEGIN_SCOPE(prefetch)
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCancelRequest::
+//
+//    Exception used to cancel requests safely, cleaning up
+//    all the resources allocated.
+//
+
+class CCancelRequestException
+{
+public:
+    // Create new exception object, initialize counter.
+    CCancelRequestException(void);
+
+    // Create a copy of exception object, increase counter.
+    CCancelRequestException(const CCancelRequestException& prev);
+
+    // Destroy the object, decrease counter. If the counter is
+    // zero outside of CThread::Wrapper(), rethrow exception.
+    ~CCancelRequestException(void);
+
+    // Inform the object it has reached normal catch.
+    void SetFinished(void)
+    {
+        m_Data->second = true;
+    }
+private:
+    typedef pair<int, bool> TData;
+    TData *m_Data;
+};
+
+
+CCancelRequestException::CCancelRequestException(void)
+    : m_Data(new TData(1, false))
+{
+}
+
+
+CCancelRequestException::CCancelRequestException(const CCancelRequestException& prev)
+    : m_Data(prev.m_Data)
+{
+    ++m_Data->first;
+}
+
+
+CCancelRequestException::~CCancelRequestException(void)
+{
+    if ( --m_Data->first > 0 ) {
+        // Not the last object - continue to handle exceptions
+        return;
+    }
+
+    bool finished = m_Data->second; // save the flag
+    delete m_Data;
+
+    if ( !finished ) {
+        ERR_POST(Critical<<"CancelRequest() failed due to catch(...) in "<<
+                 CStackTrace());
+    }
+}
+
+END_SCOPE(prefetch)
+
 CPrefetchRequest::CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
                                    IPrefetchAction* action,
                                    IPrefetchListener* listener,
@@ -127,12 +191,20 @@ CPrefetchRequest::EStatus CPrefetchRequest::Execute(void)
     try {
         EStatus result = CThreadPool_Task::eCompleted;
         if (m_Action.NotNull()) {
-            if (! GetAction()->Execute(Ref(this)))
-                result = CThreadPool_Task::eFailed;
+            if (! GetAction()->Execute(Ref(this))) {
+                if ( IsCancelRequested() )
+                    result = CThreadPool_Task::eCanceled;
+                else
+                    result = CThreadPool_Task::eFailed;
+            }
         }
         return result;
     }
     catch ( CPrefetchCanceled& /* ignored */ ) {
+        return CThreadPool_Task::eCanceled;
+    }
+    catch ( prefetch::CCancelRequestException& exc ) {
+        exc.SetFinished();
         return CThreadPool_Task::eCanceled;
     }
 }
@@ -157,8 +229,7 @@ CRef<CPrefetchRequest> CPrefetchManager_Impl::AddAction(TPriority priority,
 {
     CMutexGuard guard0(GetMainPoolMutex());
     if ( action && IsAborted() ) {
-        NCBI_THROW(CPrefetchCanceled, eCanceled,
-                   "prefetch manager is canceled");
+        throw prefetch::CCancelRequestException();
     }
     CMutexGuard guard(m_StateMutex->GetData());
     CRef<CPrefetchRequest> req(new CPrefetchRequest(m_StateMutex,
@@ -185,7 +256,7 @@ bool CPrefetchManager::IsActive(void)
     }
     
     if (req->IsCancelRequested()) {
-        NCBI_THROW(CPrefetchCanceled, eCanceled, "canceled");
+        throw prefetch::CCancelRequestException();
     }
     
     switch ( req->GetState() ) {
