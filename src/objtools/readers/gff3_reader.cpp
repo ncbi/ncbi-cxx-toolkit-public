@@ -766,11 +766,13 @@ bool CGff3Reader::x_FeatureSetQualifiers(
     for ( /*NOOP*/; it != attrs.end(); ++it ) {
 
         // special case some well-known attributes
-        if ( it->first == "Note" ) {
+        if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
             pFeature->SetComment( it->second );
             continue;
         }
-        if ( it->first == "Dbxref" ) {
+        if ( 0 == NStr::CompareNocase( it->first, "dbxref" ) || 
+            0 == NStr::CompareNocase( it->first, "db_xref" ) ) 
+        {
             vector< string > tags;
             NStr::Tokenize( it->second, ";", tags );
             for ( vector<string>::iterator it = tags.begin(); 

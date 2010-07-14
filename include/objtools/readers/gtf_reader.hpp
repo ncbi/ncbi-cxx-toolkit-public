@@ -69,6 +69,10 @@ protected:
         string&,
         int& );
 
+    bool x_ParseFeatureGff(
+        const string& strLine,
+        TAnnots& annots );
+
     virtual bool x_UpdateAnnot(
         const CGff3Record&,
         CRef< CSeq_annot > );

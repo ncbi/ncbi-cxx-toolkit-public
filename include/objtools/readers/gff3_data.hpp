@@ -48,7 +48,7 @@ public:
 
 public:
     CGff3Record();
-    ~CGff3Record();
+    virtual ~CGff3Record();
 
     //
     //  Input/output:
@@ -116,7 +116,7 @@ protected:
     static string x_FeatIdString(
         const CFeat_id& id );
 
-    bool x_AssignAttributesFromGff(
+    virtual bool x_AssignAttributesFromGff(
         const string& );
 
 	bool x_SplitGffAttributes(

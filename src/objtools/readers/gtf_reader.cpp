@@ -96,6 +96,80 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+bool s_AnnotId(
+    const CSeq_annot& annot,
+    string& strId )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! annot.CanGetId() || annot.GetId().size() != 1 ) {
+        // internal error
+        return false;
+    }
+    
+    CRef< CAnnot_id > pId = *( annot.GetId().begin() );
+    if ( ! pId->IsLocal() ) {
+        // internal error
+        return false;
+    }
+    strId = pId->GetLocal().GetStr();
+    return true;
+}
+
+//  ============================================================================
+class CGtfRecord
+//  ============================================================================
+    : public CGff3Record
+{
+public:
+    CGtfRecord(): CGff3Record() {};
+    ~CGtfRecord() {};
+
+protected:
+    bool x_AssignAttributesFromGff(
+        const string& );
+};
+
+//  ----------------------------------------------------------------------------
+bool CGtfRecord::x_AssignAttributesFromGff(
+    const string& strRawAttributes )
+//  ----------------------------------------------------------------------------
+{
+    vector< string > attributes;
+    x_SplitGffAttributes(strRawAttributes, attributes);
+
+	for ( size_t u=0; u < attributes.size(); ++u ) {
+        string strKey;
+        string strValue;
+        if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
+            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
+                return false;
+            }
+        }
+        NStr::TruncateSpacesInPlace( strKey );
+        NStr::TruncateSpacesInPlace( strValue );
+		if ( strKey.empty() && strValue.empty() ) {
+            // Probably due to trailing "; ". Sequence Ontology generates such
+            // things. 
+            continue;
+        }
+        if ( NStr::StartsWith( strValue, "\"" ) ) {
+            strValue = strValue.substr( 1, string::npos );
+        }
+        if ( NStr::EndsWith( strValue, "\"" ) ) {
+            strValue = strValue.substr( 0, strValue.length() - 1 );
+        }
+
+        if ( strKey == "exon_number" ) {
+            //  we compute our own if we ever need them
+            continue;
+        }
+        m_Attributes[ strKey ] = strValue;        
+    }
+    return true;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 string s_GeneKey(
     const CGff3Record& gff )
 //  ----------------------------------------------------------------------------
@@ -211,6 +285,60 @@ CGtfReader::x_GetLine(
     return false;
 }
  
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_ParseFeatureGff(
+    const string& strLine,
+    TAnnots& annots )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Parse the record and determine which ID the given feature will pertain 
+    //  to:
+    //
+    CGtfRecord record;
+    if ( ! record.AssignFromGff( strLine ) ) {
+        return false;
+    }
+
+    //
+    //  Search annots for a pre-existing annot pertaining to the same ID:
+    //
+    TAnnotIt it = annots.begin();
+    for ( /*NOOP*/; it != annots.end(); ++it ) {
+        string strAnnotId;
+        if ( ! s_AnnotId( **it, strAnnotId ) ) {
+            return false;
+        }
+        if ( record.Id() == strAnnotId ) {
+            break;
+        }
+    }
+
+    //
+    //  If a preexisting annot was found, update it with the new feature
+    //  information:
+    //
+    if ( it != annots.end() ) {
+        if ( ! x_UpdateAnnot( record, *it ) ) {
+            return false;
+        }
+    }
+
+    //
+    //  Otherwise, create a new annot pertaining to the new ID and initialize it
+    //  with the given feature information:
+    //
+    else {
+        CRef< CSeq_annot > pAnnot( new CSeq_annot );
+        if ( ! x_InitAnnot( record, pAnnot ) ) {
+            return false;
+        }
+        annots.push_back( pAnnot );      
+    }
+ 
+    return true; 
+};
+
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnot(
     const CGff3Record& gff,
