@@ -53,13 +53,18 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                       config.m_SeqRange,
                       config.m_Strand,
                       config.m_FiltAlgoId,
+                      config.m_FmtAlgoId,
                       config.m_LineWidth,
                       config.m_TargetOnly,
                       config.m_UseCtrlA)
 {
     // Validate the algo id
-    if (config.m_FiltAlgoId >= 0) {
-        vector<int> algo_ids(1, config.m_FiltAlgoId);
+    if (config.m_FiltAlgoId >= 0 || config.m_FmtAlgoId >= 0) {
+        vector<int> algo_ids;
+        if (config.m_FiltAlgoId >= 0) 
+            algo_ids.push_back(config.m_FiltAlgoId);
+        if (config.m_FmtAlgoId >= 0) 
+            algo_ids.push_back(config.m_FmtAlgoId);
         vector<int> invalid_algo_ids = 
             m_BlastDb.ValidateMaskAlgorithms(algo_ids);
         if ( !invalid_algo_ids.empty()) {

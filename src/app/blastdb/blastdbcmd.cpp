@@ -81,8 +81,6 @@ private:
     TSeqRange m_SeqRange;
     /// Strand to retrieve
     ENa_strand m_Strand;
-    /// Output format
-    string m_OutFmt;
     /// output is FASTA
     bool m_FASTA;
     /// should we find duplicate entries? 
@@ -263,16 +261,6 @@ CBlastDBCmdApp::x_InitApplicationData()
         }
     } 
 
-    if (args["outfmt"].HasValue()) {
-        m_OutFmt = args["outfmt"].AsString();
-        m_FASTA = false;
-        // If "%f" is found within outfmt, discard everything else
-        if (m_OutFmt.find("%f") != string::npos) {
-            m_OutFmt = "%f";
-            m_FASTA = true;
-        }
-    }
-
     m_GetDuplicates = args["get_dups"];
 
     m_TargetOnly = args["target_only"];
@@ -330,11 +318,38 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     conf.m_Strand = m_Strand;
     conf.m_TargetOnly = m_TargetOnly;
     conf.m_UseCtrlA = args["ctrl_a"];
-    conf.m_FiltAlgoId = (args["db_mask"].HasValue()) 
-                      ? args["db_mask"].AsInteger() : -1;
+    conf.m_FiltAlgoId = (args["mask_sequence_with"].HasValue()) 
+                      ? args["mask_sequence_with"].AsInteger() : -1;
+
+    string outfmt;
+    if (args["outfmt"].HasValue()) {
+        outfmt = args["outfmt"].AsString();
+        m_FASTA = false;
+        // If "%f" is found within outfmt, discard everything else
+        if (outfmt.find("%f") != string::npos) {
+            outfmt = "%f";
+            m_FASTA = true;
+        }
+        if (outfmt.find("%m") != string::npos) {
+            int algo_id = 0;
+            int i = outfmt.find("%m") + 2;
+            bool found = false;
+            while (i < outfmt.size() 
+                && outfmt[i] >= '0' && outfmt[i] <= '9') {
+                algo_id = algo_id * 10 + (outfmt[i] - '0');
+                outfmt.erase(i, 1);
+                found = true;
+            }
+            if (!found) {
+                NCBI_THROW(CInputException, eInvalidInput, 
+                    "The option '-outfmt %m' is not followed by a masking algo ID.");
+            }
+            conf.m_FmtAlgoId = algo_id;
+        }
+    }
 
     bool errors_found = false;
-    CSeqFormatter seq_fmt(m_OutFmt, *m_BlastDb, out, conf);
+    CSeqFormatter seq_fmt(outfmt, *m_BlastDb, out, conf);
     NON_CONST_ITERATE(TQueries, itr, queries) {
         try { 
             seq_fmt.Write(**itr); 
@@ -368,10 +383,6 @@ void CBlastDBCmdApp::Init()
                             CArgDescriptions::eString, "guess");
     arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
                                         "nucl", "prot", "guess"));
-
-    arg_desc->AddOptionalKey("db_mask", "mask_algo_id",
-                            "Masking algorithm ID", 
-                            CArgDescriptions::eInteger);
 
     arg_desc->SetCurrentGroup("Retrieval options");
     arg_desc->AddOptionalKey("entry", "sequence_identifier",
@@ -414,10 +425,10 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetConstraint("strand", &(*new CArgAllow_Strings, "minus",
                                         "plus"));
 
-    arg_desc->AddFlag("mask_sequence", 
+    arg_desc->AddOptionalKey("mask_sequence_with", "mask_algo_id",
                              "Produce lower-case masked FASTA using the "
-                             "algorithm ID specified by db_mask", true);
-    arg_desc->SetDependency("mask_sequence", CArgDescriptions::eRequires, "db_mask");
+                             "algorithm ID specified", 
+                             CArgDescriptions::eInteger);
 
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey("out", "output_file", "Output file name", 
@@ -437,7 +448,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
-            "\t\t%m means sequence masking data (specified in db_mask).\n"
+            "\t\t%m means sequence masking data.\n"
             "\t\t   Masking data will be displayed as a series of 'N-M' values\n"
             "\t\t   separated by ';' or the word 'none' if none are available.\n"
             "\tIf '%f' is specified, all other format specifiers are ignored.\n"

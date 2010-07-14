@@ -140,7 +140,7 @@ string CBlastDBExtractor::ExtractMaskingData() {
     return kNoMasksFound;
 #else
     CSeqDB::TSequenceRanges masked_ranges;
-    x_ExtractMaskingData(masked_ranges);
+    x_ExtractMaskingData(masked_ranges, m_FmtAlgoId);
     if (masked_ranges.empty())  return kNoMasksFound;
 
     CNcbiOstrstream out;
@@ -156,7 +156,7 @@ string CBlastDBExtractor::ExtractSeqData() {
     try {
         m_BlastDb.GetSequenceAsString(m_Oid, seq, m_SeqRange);
         CSeqDB::TSequenceRanges masked_ranges;
-        x_ExtractMaskingData(masked_ranges);
+        x_ExtractMaskingData(masked_ranges, m_FiltAlgoId);
         ITERATE(CSeqDB::TSequenceRanges, mask, masked_ranges) {
             transform(&seq[mask->first], &seq[mask->second],
                       &seq[mask->first], (int (*)(int))tolower);
@@ -251,7 +251,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     // Handle any requests for masked FASTA
     static const CFastaOstream::EMaskType kMaskType = CFastaOstream::eSoftMask;
     CSeqDB::TSequenceRanges masked_ranges;
-    x_ExtractMaskingData(masked_ranges);
+    x_ExtractMaskingData(masked_ranges, m_FiltAlgoId);
     if (!masked_ranges.empty()) {
         CRef<CSeq_loc> masks(new CSeq_loc);
         ITERATE(CSeqDB::TSequenceRanges, itr, masked_ranges) {
@@ -277,10 +277,10 @@ int CBlastDBExtractor::x_ExtractTaxId() {
     return gi2taxid[m_Gi];
 }
 
-void CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges) {
+void CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id) {
     ranges.clear();
-    if (m_FiltAlgoId != -1) {
-        m_BlastDb.GetMaskData(m_Oid, m_FiltAlgoId, ranges);
+    if (algo_id != -1) {
+        m_BlastDb.GetMaskData(m_Oid, algo_id, ranges);
     }
 }
 

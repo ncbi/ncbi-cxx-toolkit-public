@@ -54,6 +54,7 @@ public:
                       TSeqRange           range = TSeqRange(),
                       objects::ENa_strand strand = objects::eNa_strand_both,
                       int                 filt_algo_id = -1, 
+                      int                 fmt_algo_id = -1,
                       int                 line_width = 80,
                       bool                target_only = true,
                       bool                ctrl_a = false)
@@ -61,6 +62,7 @@ public:
               m_SeqRange(range),
               m_Strand(strand),
               m_FiltAlgoId(filt_algo_id),
+              m_FmtAlgoId(fmt_algo_id),
               m_LineWidth(line_width),
               m_TargetOnly(target_only),
               m_UseCtrlA(ctrl_a) {}
@@ -90,8 +92,10 @@ protected:
     TSeqRange m_SeqRange;
     /// strand
     objects::ENa_strand m_Strand;
-    /// filtering algorithsm
+    /// filtering algorithsm for sequence
     int m_FiltAlgoId;
+    /// filtering algorithsm for outfmt
+    int m_FmtAlgoId;
     /// FASTA output line width
     int m_LineWidth;
     /// Should the record contain mutilple seqids? (used only with %f)
@@ -106,7 +110,7 @@ protected:
     CRef< CBioseq> m_Bioseq;
 
 private:
-    void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges);
+    void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
 };
 

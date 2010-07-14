@@ -49,6 +49,7 @@ struct CSeqFormatterConfig {
         m_TargetOnly = false;
         m_UseCtrlA = false;
         m_FiltAlgoId = -1;
+        m_FmtAlgoId = -1;
     }
 
     /// length of the line of output (applicable only to FASTA output)
@@ -68,6 +69,8 @@ struct CSeqFormatterConfig {
     bool m_UseCtrlA;
     /// Filtering algorithm ID to mask the FASTA
     int m_FiltAlgoId;
+    /// Filtering algorithm ID for outfmt %m
+    int m_FmtAlgoId;
 };
 
 /// Customizable sequence writer interface
