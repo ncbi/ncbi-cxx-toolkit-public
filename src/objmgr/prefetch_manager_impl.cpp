@@ -71,16 +71,24 @@ public:
     // Inform the object it has reached normal catch.
     void SetFinished(void)
     {
-        m_Data->second = true;
+        m_Data->m_Finished = true;
     }
 private:
-    typedef pair<int, bool> TData;
-    TData *m_Data;
+    struct SData {
+        SData(void)
+            : m_RefCounter(1),
+              m_Finished(false)
+            {
+            }
+        int m_RefCounter;
+        bool m_Finished;
+    };
+    SData *m_Data;
 };
 
 
 CCancelRequestException::CCancelRequestException(void)
-    : m_Data(new TData(1, false))
+    : m_Data(new SData())
 {
 }
 
@@ -88,18 +96,18 @@ CCancelRequestException::CCancelRequestException(void)
 CCancelRequestException::CCancelRequestException(const CCancelRequestException& prev)
     : m_Data(prev.m_Data)
 {
-    ++m_Data->first;
+    ++m_Data->m_RefCounter;
 }
 
 
 CCancelRequestException::~CCancelRequestException(void)
 {
-    if ( --m_Data->first > 0 ) {
+    if ( --m_Data->m_RefCounter > 0 ) {
         // Not the last object - continue to handle exceptions
         return;
     }
 
-    bool finished = m_Data->second; // save the flag
+    bool finished = m_Data->m_Finished; // save the flag
     delete m_Data;
 
     if ( !finished ) {

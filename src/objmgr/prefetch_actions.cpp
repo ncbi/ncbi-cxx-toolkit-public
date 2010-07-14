@@ -142,10 +142,13 @@ bool CPrefetchFeat_CI::Execute(CRef<CPrefetchRequest> token)
     if ( m_Loc ) {
         m_Result = CFeat_CI(GetScope(), *m_Loc, m_Selector);
     }
-    else if ( CPrefetchBioseq::Execute(token) ) {
+    else {
+        if ( !CPrefetchBioseq::Execute(token) ) {
+            return false;
+        }
         m_Result = CFeat_CI(GetBioseqHandle(), m_Range, m_Strand, m_Selector);
     }
-    return m_Result;
+    return true;
 }
 
 
@@ -167,9 +170,10 @@ CPrefetchComplete<CBioseq_Handle>::CPrefetchComplete(const CScopeSource& scope,
 
 bool CPrefetchComplete<CBioseq_Handle>::Execute(CRef<CPrefetchRequest> token)
 {
-    if ( CPrefetchBioseq::Execute(token) ) {
-        m_Result = GetHandle().GetCompleteObject();
+    if ( !CPrefetchBioseq::Execute(token) ) {
+        return false;
     }
+    m_Result = GetHandle().GetCompleteObject();
     return GetResult().NotNull();
 }
 
@@ -218,6 +222,14 @@ void CStdPrefetch::Wait(CRef<CPrefetchRequest> token)
         if ( !token->IsDone() ) {
             listener->Wait();
         }
+    }
+    if ( token->GetState() == SPrefetchTypes::eFailed ) {
+        NCBI_THROW(CPrefetchFailed, eFailed,
+                   "CStdPrefetch::Wait: action had failed");
+    }
+    if ( token->GetState() == SPrefetchTypes::eCanceled ) {
+        NCBI_THROW(CPrefetchCanceled, eCanceled,
+                   "CStdPrefetch::Wait: action was canceled");
     }
 }
 

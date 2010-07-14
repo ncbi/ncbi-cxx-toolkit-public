@@ -100,6 +100,15 @@ void CPrefetchManager::Shutdown(void)
 }
 
 
+const char* CPrefetchFailed::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eFailed: return "eFailed";
+    default:        return CException::GetErrCodeString();
+    }
+}
+
+
 const char* CPrefetchCanceled::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {

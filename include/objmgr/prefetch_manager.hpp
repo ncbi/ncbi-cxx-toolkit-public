@@ -130,6 +130,18 @@ private:
 };
 
 
+/// This exception is used to report failed actions
+class NCBI_XOBJMGR_EXPORT CPrefetchFailed : public CException
+{
+public:
+    enum EErrCode {
+        eFailed
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CPrefetchFailed,CException);
+};
+
+
 /// This exception is used to interrupt actions canceled by user
 class NCBI_XOBJMGR_EXPORT CPrefetchCanceled : public CException
 {

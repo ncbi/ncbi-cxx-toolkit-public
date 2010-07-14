@@ -94,6 +94,9 @@ void CBioseq_Handle::Reset(void)
 
 CBioseq_Handle::TBioseqStateFlags CBioseq_Handle::GetState(void) const
 {
+    if ( !m_Info ) {
+        return fState_no_data;
+    }
     TBioseqStateFlags state = x_GetScopeInfo().GetBlobState();
     if ( m_Info->HasBioseq() ) {
         state |= m_Info->GetTSE_Handle().x_GetTSE_Info().GetBlobState();
