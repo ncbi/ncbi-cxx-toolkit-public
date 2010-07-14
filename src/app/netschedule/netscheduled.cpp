@@ -1311,7 +1311,12 @@ TNSBitVector CNetScheduleHandler::x_DeserializeBitVector(const string& s)
 
 bool CNetScheduleHandler::IsMonitoring()
 {
-    return !(m_Incaps & eNSAC_Queue)  &&  GetQueue()->IsMonitoring();
+    if ((m_Incaps & eNSAC_Queue) == 0) {
+        CRef<CQueue> queue_ref(m_QueueRef.Lock());
+        if (queue_ref != NULL)
+            return queue_ref->IsMonitoring();
+    }
+    return false;
 }
 
 
