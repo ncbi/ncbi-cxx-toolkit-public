@@ -5390,6 +5390,9 @@ else
    LIBXSLT_STATIC_LIBS=${LIBXSLT_LIBS}
 fi
 
+AC_PATH_PROG(XSLTPROC, xsltproc, :,
+   [$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_`/bin:$PATH])
+
 : ${XERCES_PATH=$NCBI/xerces}
 if test "$with_xerces" != no; then
    if test "${with_xerces-yes}" != yes; then
