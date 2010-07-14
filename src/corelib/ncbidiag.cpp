@@ -4635,7 +4635,13 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 
 bool s_CanOpenLogFile(const string& file_name)
 {
-    string abs_path = CDirEntry::CreateAbsolutePath(file_name);
+    string abs_path;
+    try {
+        abs_path = CDirEntry::CreateAbsolutePath(file_name);
+    }
+    catch (CException) {
+        return false;
+    }
     CDirEntry entry(abs_path);
     // Need at least 20K of free space to write logs
     try {
