@@ -24,7 +24,7 @@ fi
 
 Usage()
 {
-  fmt -sw80 << EOF
+  fmt -s -w 79 << EOF
 USAGE:   $script_name <action> [-q] <f1> <f2> ... <fN> <dest_dir>
          $script_name <action> [-q] <src_file> <dest_file>
 EXAMPLE: $script_name "cp -p" abc.o ../def.a /tmp
