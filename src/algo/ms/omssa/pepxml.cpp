@@ -488,11 +488,13 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     case eMSSearchType_monoisotopic:
     case eMSSearchType_monon15:
     case eMSSearchType_exact:
+    case eMSSearchType_multiisotope:
         sSum->SetAttlist().SetPrecursor_mass_type(CSearch_summary::C_Attlist::eAttlist_precursor_mass_type_monoisotopic);
         break;
     default:
         // Should be some sort of error here
         cerr << "Hmm, a typeless search, how odd." << endl;
+        sSum->SetAttlist().SetPrecursor_mass_type(CSearch_summary::C_Attlist::eAttlist_precursor_mass_type_monoisotopic);
     }
 
 
@@ -505,11 +507,13 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     case eMSSearchType_monoisotopic:
     case eMSSearchType_monon15:
     case eMSSearchType_exact:
+    case eMSSearchType_multiisotope:
         sSum->SetAttlist().SetFragment_mass_type(CSearch_summary::C_Attlist::eAttlist_fragment_mass_type_monoisotopic);
         break;
     default:
         // Should be some sort of error here
         cerr << "Hmm, a typeless search, how odd." << endl;
+        sSum->SetAttlist().SetFragment_mass_type(CSearch_summary::C_Attlist::eAttlist_fragment_mass_type_monoisotopic);
     }
     //sSum->SetAttlist().SetFragment_mass_type(searchTypeName);
     sSum->SetAttlist().SetSearch_id(1); // Should be count based upon search number

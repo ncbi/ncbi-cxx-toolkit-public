@@ -653,6 +653,7 @@ void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 	}
     }
     else if(SearchType == eMSSearchType_monoisotopic || 
+            SearchType == eMSSearchType_multiisotope ||
             SearchType == eMSSearchType_exact) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = MonoMass[i];
