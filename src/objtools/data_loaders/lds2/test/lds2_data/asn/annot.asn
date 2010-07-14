@@ -1,0 +1,142 @@
+Seq-annot ::= {
+-- aligns for gi 5
+  desc {
+    user {
+      type
+        str "Hist Seqalign" ,
+      data {
+        {
+          label
+            str "Hist Seqalign" ,
+          data
+            bool TRUE } } } ,
+    user {
+      type
+        str "Blast Type" ,
+      data {
+        {
+          label
+            str "BLASTN" ,
+          data
+            int 1 } } } } ,
+  data
+    align {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 888 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 176082328, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 891 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              gi 5 ,
+              gi 3 } ,
+            starts {
+              86 ,
+              9 } ,
+            lens {
+              892 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 881 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 17469468, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 919 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 5 ,
+            ids {
+              gi 5 ,
+              gi 4 } ,
+            starts {
+              86 ,
+              45 ,
+              -1 ,
+              757 ,
+              798 ,
+              758 ,
+              806 ,
+              -1 ,
+              807 ,
+              766 } ,
+            lens {
+              712 ,
+              1 ,
+              8 ,
+              1 ,
+              207 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } } }
+
+
+Seq-annot ::= {
+-- feats for gi 5
+  data ftable {
+    {
+      data imp {
+        key "lds_feat(annot)"
+      },
+      product whole gi 6,
+      location whole gi 5
+    },
+    {
+      data imp {
+        key "lds_feat(annot)"
+      },
+      product whole gi 7,
+      location whole local str "gi5"
+    }
+  }
+}

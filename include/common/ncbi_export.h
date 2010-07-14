@@ -546,6 +546,14 @@
 #  define NCBI_LDS_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library lds v.2
+ */
+#ifdef NCBI_LDS2_EXPORTS
+#  define NCBI_LDS2_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_LDS2_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library medlars
  */
 #ifdef NCBI_MEDLARS_EXPORTS
@@ -1051,6 +1059,14 @@
 #  define NCBI_XLOADER_LDS_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_XLOADER_LDS_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library ncbi_xloader_lds2
+ */
+#ifdef NCBI_XLOADER_LDS2_EXPORTS
+#  define NCBI_XLOADER_LDS2_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XLOADER_LDS2_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library ncbi_xloader_table

@@ -1,0 +1,15 @@
+# $Id$
+
+# Build library "lds2"
+###############################
+ASN_DEP = seq submit seqset biblio
+
+LIB = lds2
+SRC = lds2 lds2_db
+
+# Dependencies for shared library
+#DLL_LIB = sqlitewrapp
+
+CPPFLAGS = $(SQLITE3_INCLUDE) $(ORIG_CPPFLAGS)
+
+WATCHERS = grichenk

@@ -1,0 +1,377 @@
+Seq-align-set ::= {
+-- orphan alignments for gis 3, 4, 6-9
+-- external alignments for gi 5
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 888 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 176082328, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 891 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              gi 5 ,
+              gi 3 } ,
+            starts {
+              86 ,
+              9 } ,
+            lens {
+              892 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 881 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 17469468, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 919 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 5 ,
+            ids {
+              gi 5 ,
+              gi 4 } ,
+            starts {
+              86 ,
+              45 ,
+              -1 ,
+              757 ,
+              798 ,
+              758 ,
+              806 ,
+              -1 ,
+              807 ,
+              766 } ,
+            lens {
+              712 ,
+              1 ,
+              8 ,
+              1 ,
+              207 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 851 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 168747618, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 899 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 11 ,
+            ids {
+              gi 5 ,
+              gi 6 } ,
+            starts {
+              86 ,
+              1 ,
+              765 ,
+              -1 ,
+              766 ,
+              680 ,
+              -1 ,
+              683 ,
+              769 ,
+              684 ,
+              937 ,
+              -1 ,
+              938 ,
+              852 ,
+              955 ,
+              -1 ,
+              956 ,
+              869 ,
+              980 ,
+              -1 ,
+              981 ,
+              893 } ,
+            lens {
+              679 ,
+              1 ,
+              3 ,
+              1 ,
+              168 ,
+              1 ,
+              17 ,
+              1 ,
+              24 ,
+              1 ,
+              15 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 841 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 166765264, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 875 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 7 ,
+            ids {
+              gi 5 ,
+              gi 7 } ,
+            starts {
+              86 ,
+              52 ,
+              609 ,
+              -1 ,
+              610 ,
+              575 ,
+              937 ,
+              -1 ,
+              938 ,
+              902 ,
+              955 ,
+              -1 ,
+              956 ,
+              919 } ,
+            lens {
+              523 ,
+              1 ,
+              327 ,
+              1 ,
+              17 ,
+              1 ,
+              15 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 830 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 164584674, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 862 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 7 ,
+            ids {
+              gi 5 ,
+              gi 8 } ,
+            starts {
+              87 ,
+              23 ,
+              -1 ,
+              757 ,
+              821 ,
+              758 ,
+              -1 ,
+              859 ,
+              922 ,
+              860 ,
+              -1 ,
+              866 ,
+              928 ,
+              867 } ,
+            lens {
+              734 ,
+              1 ,
+              101 ,
+              1 ,
+              6 ,
+              1 ,
+              25 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 790 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 156655258, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 804 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              gi 5 ,
+              gi 9 } ,
+            starts {
+              86 ,
+              1 ,
+              -1 ,
+              708 ,
+              793 ,
+              709 } ,
+            lens {
+              707 ,
+              1 ,
+              100 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } }
