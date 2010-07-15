@@ -3385,13 +3385,13 @@ void CQueue::PrintStat(CNcbiOstream& out)
 }
 
 
-const unsigned kMeasureInterval = 1;
+static const unsigned kMeasureInterval = 1;
 // for informational purposes only, see kDecayExp below
-const unsigned kDecayInterval = 10;
-const unsigned kFixedShift = 7;
-const unsigned kFixed_1 = 1 << kFixedShift;
+static const unsigned kDecayInterval = 10;
+static const unsigned kFixedShift = 7;
+static const unsigned kFixed_1 = 1 << kFixedShift;
 // kDecayExp = 2 ^ kFixedShift / 2 ^ ( kMeasureInterval * log2(e) / kDecayInterval)
-const unsigned kDecayExp = 116;
+static const unsigned kDecayExp = 116;
 
 CQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
     : CThreadNonStop(kMeasureInterval),
@@ -3400,14 +3400,16 @@ CQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
 }
 
 
-void CQueue::CStatisticsThread::DoJob(void) {
-    unsigned counter;
+void CQueue::CStatisticsThread::DoJob(void)
+{
+    int counter;
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
         counter = m_Container.m_EventCounter[n].Get();
         m_Container.m_EventCounter[n].Add(-counter);
-        m_Container.m_Average[n] = (kDecayExp * m_Container.m_Average[n] +
-                                (kFixed_1-kDecayExp) * (counter << kFixedShift)
-                                   ) >> kFixedShift;
+        m_Container.m_Average[n] =
+            (kDecayExp * m_Container.m_Average[n] +
+                (kFixed_1-kDecayExp) * ((unsigned) counter << kFixedShift)) >>
+                    kFixedShift;
     }
 }
 
