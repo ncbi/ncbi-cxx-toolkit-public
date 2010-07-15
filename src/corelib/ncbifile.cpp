@@ -4994,7 +4994,7 @@ void FindFiles(const string& pattern,
 
 CFileIO::CFileIO(void) :
     m_Handle(kInvalidHandle),
-    m_AutoClose(true),
+    m_AutoClose(false),
     m_AutoRemove(CFileIO::eDoNotRemove)
 {
 }
@@ -5139,6 +5139,7 @@ void CFileIO::Open(const string& filename,
                    "Cannot open file " + filename);
     }
     m_Pathname = filename;
+    m_AutoClose = true;
 }
 
 
@@ -5195,6 +5196,7 @@ void CFileIO::CreateTemporary(const string& dir,
     Open(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
 #endif
 
+    m_AutoClose = true;
     m_AutoRemove = auto_remove;
 }
 
@@ -5298,7 +5300,8 @@ void CFileIO::Flush(void) const
 void CFileIO::SetFileHandle(TFileHandle handle)
 {
     // Close previous handle if needed
-    Close();
+    if (m_AutoClose)
+        Close();
     // Use given handle for all I/O
     m_Handle = handle;
 }
