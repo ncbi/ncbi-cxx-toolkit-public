@@ -2,6 +2,7 @@
 <VisualStudioProject ProjectType="Visual C++" Version="9.00" Name="msbuild_dataobj.lib" Keyword="Win32Proj" ProjectGUID="{C142E94F-1D21-466C-A4EA-1436A2367BC6}">
   <Platforms>
     <Platform Name="Win32"/>
+    <Platform Name="x64"/>
   </Platforms>
   <Configurations>
     <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\..\..\lib\$(ConfigurationName)\" IntermediateDirectory="$(ConfigurationName)\" ConfigurationType="4" CharacterSet="2" BuildLogFile="$(IntDir)BuildLog_$(TargetName).htm">
