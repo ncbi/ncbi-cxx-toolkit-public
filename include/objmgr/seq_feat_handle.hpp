@@ -355,14 +355,15 @@ bool CSeq_feat_Handle::IsSetSNPExtra(void) const
 inline
 bool CSeq_feat_Handle::IsSetId(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetId();
+    // table SNP features do not have id
+    return !IsTableSNP() && GetSeq_feat()->IsSetId();
 }
 
 
 inline
 const CFeat_id& CSeq_feat_Handle::GetId(void) const
 {
-    return x_GetPlainSeq_feat().GetId();
+    return GetSeq_feat()->GetId();
 }
 
 
@@ -376,43 +377,47 @@ const CSeqFeatData& CSeq_feat_Handle::GetData(void) const
 inline
 bool CSeq_feat_Handle::IsSetExcept(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExcept();
+    // table SNP features do not have except
+    return !IsTableSNP() && GetSeq_feat()->IsSetExcept();
 }
 
 
 inline
 bool CSeq_feat_Handle::GetExcept(void) const
 {
-    return IsSetExcept() && x_GetPlainSeq_feat().GetExcept();
+    return GetSeq_feat()->GetExcept();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetComment(void) const
 {
-    return (IsPlainFeat() && x_GetPlainSeq_feat().IsSetComment()) ||
-        (IsTableSNP() && IsSetSNPComment());
+    // table SNP features may have comment
+    return IsTableSNP()? IsSetSNPComment(): GetSeq_feat()->IsSetComment();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetComment(void) const
 {
-    return IsTableSNP()? GetSNPComment(): x_GetPlainSeq_feat().GetComment();
+    // table SNP features may have comment
+    return IsTableSNP()? GetSNPComment(): GetSeq_feat()->GetComment();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetProduct(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetProduct();
+    // table SNP features do not have product
+    return !IsTableSNP() && GetSeq_feat()->IsSetProduct();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetQual(void) const
 {
-    return IsTableSNP() || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetQual());
+    // table SNP features always have qual
+    return IsTableSNP() || GetSeq_feat()->IsSetQual();
 }
 
 
@@ -426,21 +431,23 @@ const CSeq_feat::TQual& CSeq_feat_Handle::GetQual(void) const
 inline
 bool CSeq_feat_Handle::IsSetTitle(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetTitle();
+    // table SNP features do not have title
+    return !IsTableSNP() && GetSeq_feat()->IsSetTitle();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetTitle(void) const
 {
-    return x_GetPlainSeq_feat().GetTitle();
+    return GetSeq_feat()->GetTitle();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExt(void) const
 {
-    return IsTableSNP() || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetExt());
+    // table SNP features always have ext
+    return IsTableSNP() || GetSeq_feat()->IsSetExt();
 }
 
 
@@ -454,50 +461,53 @@ const CUser_object& CSeq_feat_Handle::GetExt(void) const
 inline
 bool CSeq_feat_Handle::IsSetCit(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetCit();
+    // table SNP features do not have cit
+    return !IsTableSNP() && GetSeq_feat()->IsSetCit();
 }
 
 
 inline
 const CPub_set& CSeq_feat_Handle::GetCit(void) const
 {
-    return x_GetPlainSeq_feat().GetCit();
+    return GetSeq_feat()->GetCit();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExp_ev(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExp_ev();
+    // table SNP features do not have exp-ev
+    return !IsTableSNP() && GetSeq_feat()->IsSetExp_ev();
 }
 
 
 inline
 CSeq_feat::EExp_ev CSeq_feat_Handle::GetExp_ev(void) const
 {
-    return x_GetPlainSeq_feat().GetExp_ev();
+    return GetSeq_feat()->GetExp_ev();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetXref(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetXref();
+    // table SNP features do not have xref
+    return !IsTableSNP() && GetSeq_feat()->IsSetXref();
 }
 
 
 inline
 const CSeq_feat::TXref& CSeq_feat_Handle::GetXref(void) const
 {
-    return x_GetPlainSeq_feat().GetXref();
+    return GetSeq_feat()->GetXref();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetDbxref(void) const
 {
-    return IsTableSNP()
-        || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetDbxref());
+    // table SNP features always have dbxref
+    return IsTableSNP() || GetSeq_feat()->IsSetDbxref();
 }
 
 
@@ -511,56 +521,60 @@ const CSeq_feat::TDbxref& CSeq_feat_Handle::GetDbxref(void) const
 inline
 bool CSeq_feat_Handle::IsSetPseudo(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPseudo();
+    // table SNP features do not have pseudo
+    return !IsTableSNP() && GetSeq_feat()->IsSetPseudo();
 }
 
 
 inline
 bool CSeq_feat_Handle::GetPseudo(void) const
 {
-    return IsSetPseudo() && x_GetPlainSeq_feat().GetPseudo();
+    return GetSeq_feat()->GetPseudo();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExcept_text(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExcept_text();
+    // table SNP features do not have except-text
+    return !IsTableSNP() && GetSeq_feat()->IsSetExcept_text();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetExcept_text(void) const
 {
-    return x_GetPlainSeq_feat().GetExcept_text();
+    return GetSeq_feat()->GetExcept_text();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetIds(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetIds();
+    // table SNP features do not have ids
+    return !IsTableSNP() && GetSeq_feat()->IsSetIds();
 }
 
 
 inline
 const CSeq_feat::TIds& CSeq_feat_Handle::GetIds(void) const
 {
-    return x_GetPlainSeq_feat().GetIds();
+    return GetSeq_feat()->GetIds();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExts(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExts();
+    // table SNP features do not have exts
+    return !IsTableSNP() && GetSeq_feat()->IsSetExts();
 }
 
 
 inline
 const CSeq_feat::TExts& CSeq_feat_Handle::GetExts(void) const
 {
-    return x_GetPlainSeq_feat().GetExts();
+    return GetSeq_feat()->GetExts();
 }
 
 

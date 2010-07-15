@@ -198,19 +198,21 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
 
 bool CSeq_feat_Handle::IsSetPartial(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPartial();
+    // table SNP features do not have partial
+    return !IsTableSNP() && GetSeq_feat()->IsSetPartial();
 }
 
 
 bool CSeq_feat_Handle::GetPartial(void) const
 {
-    return IsSetPartial() && x_GetPlainSeq_feat().GetPartial();
+    // table SNP features do not have partial
+    return !IsTableSNP() && GetSeq_feat()->GetPartial();
 }
 
 
 const CSeq_loc& CSeq_feat_Handle::GetProduct(void) const
 {
-    return x_GetPlainSeq_feat().GetProduct();
+    return GetSeq_feat()->GetProduct();
 }
 
 
@@ -225,8 +227,8 @@ bool CSeq_feat_Handle::IsSetData(void) const
     if ( !*this ) {
         return false;
     }
-    if ( IsPlainFeat() ) {
-        return x_GetPlainSeq_feat().IsSetData();
+    if ( !IsTableSNP() ) {
+        return GetSeq_feat()->IsSetData();
     }
     else {
         return true;
@@ -250,8 +252,8 @@ CSeq_id_Handle CSeq_feat_Handle::GetLocationId(void) const
 
 CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 {
-    if ( IsPlainFeat() ) {
-        return x_GetPlainSeq_feat().GetLocation().GetTotalRange();
+    if ( !IsTableSNP() ) {
+        return GetSeq_feat()->GetLocation().GetTotalRange();
     }
     else {
         const SSNP_Info& info = x_GetSNP_Info();
@@ -438,7 +440,8 @@ void CSeq_feat_EditHandle::x_RealRemove(void) const
     }
     else {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CSeq_feat_Handle::Remove: handle is SNP table");
+                   "CSeq_feat_Handle::Remove: "
+                   "handle is SNP table or Seq-table");
     }
 }
 
@@ -451,7 +454,8 @@ void CSeq_feat_EditHandle::x_RealReplace(const CSeq_feat& new_feat) const
     }
     else {
         NCBI_THROW(CObjMgrException, eNotImplemented,
-                   "CSeq_feat_Handle::Replace: handle is SNP table");
+                   "CSeq_feat_Handle::Replace: "
+                   "handle is SNP table or Seq-table");
     }
 }
 
