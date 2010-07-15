@@ -223,9 +223,7 @@ CObjectOStream::~CObjectOStream(void)
         Close();
         ResetLocalHooks();
     }
-    catch (std::exception& exc) {
-        ERR_POST_X(4, "Cannot close output stream: "<<exc.what());
-    }
+    NCBI_CATCH_X(4, "Cannot close serializing output stream")
 }
 
 
