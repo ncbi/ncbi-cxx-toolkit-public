@@ -151,9 +151,10 @@ int CNetCacheCheckApp::Run(void)
     reader.reset(0);
 
     {{
-        auto_ptr<IWriter> wrt(cl.PutData(&key));
+        auto_ptr<IEmbeddedStreamWriter> wrt(cl.PutData(&key));
         size_t bytes_written;
         wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
+        wrt->Close();
     }}
 
     SleepMilliSec(args["delay"].AsInteger());
