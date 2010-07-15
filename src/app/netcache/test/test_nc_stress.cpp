@@ -300,8 +300,7 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
         if (rand() % 2) {
             ti.key = cl.PutData(buf, blob_size);
         } else {
-            auto_ptr<IWriter> writer;
-            writer.reset(cl.PutData(&ti.key));
+            auto_ptr<IWriter> writer(cl.PutData(&ti.key));
             auto_ptr<CWStream> os(new CWStream(writer.release(), 0,0, 
                                                CRWStreambuf::fOwnWriter));
             os->write((char*)buf, blob_size);
