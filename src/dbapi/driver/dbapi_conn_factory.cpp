@@ -94,6 +94,7 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
         m_MaxNumOfDispatches = 0;
         m_ConnectionTimeout = 0;
         m_LoginTimeout = 0;
+        m_TryServerToo = false;
     }
 }
 
