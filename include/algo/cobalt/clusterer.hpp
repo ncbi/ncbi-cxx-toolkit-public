@@ -41,6 +41,7 @@ Contents: Interface for CClusterer class
 #include <corelib/ncbiobj.hpp>
 #include <util/math/matrix.hpp>
 #include <algo/phy_tree/phy_node.hpp>
+#include <algo/cobalt/links.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +60,15 @@ public:
     enum EDistMethod {
         eCompleteLinkage = 0,  ///< Maximum distance between elements
         eAverageLinkage        ///< Avegrae distance between elements
+    };
+
+    /// Method for clustering from links
+    enum EClustMethod {
+        eClique = 0,        ///< Clusters can be joined if there is a link 
+                            ///< between a pair of their elements
+        eDist               ///< Clusters can be joined only if there is a link
+                            ///< between all pairs of elements
+                            ///< in the new cluster
     };
 
     /// Single cluster
@@ -153,6 +163,11 @@ public:
     ///
     CClusterer(auto_ptr<TDistMatrix>& dmat);
 
+    /// Create clusterer
+    /// @param links Graph of distances between elements
+    ///
+    CClusterer(CRef<CLinks> links);
+
     /// Destructor
     ///
     ~CClusterer();
@@ -167,10 +182,35 @@ public:
     ///
     void SetDistMatrix(auto_ptr<TDistMatrix>& dmat);
 
+    /// Set distance links
+    /// @param links Distance links
+    ///
+    void SetLinks(CRef<CLinks> links);
+
     /// Get distance matrix
     /// @return Distance matrix
     ///
     const TDistMatrix& GetDistMatrix(void) const;
+
+    /// Set maximum diameter for single cluster
+    /// @param diam Maximum cluster diameter
+    ///
+    void SetMaxClusterDiameter(double diam) {m_MaxDiameter = diam;}
+
+    /// Get maximum diameter for single cluster
+    /// @return Maximum cluster diameter
+    ///
+    double GetMaxClusterDiameter(void) const {return m_MaxDiameter;}
+
+    /// Set clustering method for links
+    /// @param method Clustering method
+    ///
+    void SetClustMethod(EClustMethod method) {m_LinkMethod = method;}
+
+    /// Get clustering method for links
+    /// @return Clustering method for links
+    ///
+    EClustMethod GetClustMethod(void) const {return m_LinkMethod;}
 
     /// Compute clusters
     ///
@@ -188,6 +228,10 @@ public:
                          EDistMethod dist_method = eCompleteLinkage,
                          bool do_trees = true,
                          double infinity = -1.0);
+
+    /// Compute clusters using graph of distances between elements
+    ///
+    void ComputeClustersFromLinks(void);
 
     /// Get list of elements of a specified cluster
     /// @param index Cluster index
@@ -249,14 +293,55 @@ public:
     ///
     void Reset(void);
 
+    /// Cluster elements. The clustering method is selected based on whether
+    /// distance matrix or distance links are set.
+    ///
+    void Run(void);
+
 protected:
+
+    /// Forbid copy constructor
     CClusterer(const CClusterer&);
+
+    /// Forbid assignment operator
     CClusterer& operator=(const CClusterer&);
+
+    /// Initialize parameters
+    void x_Init(void);
+
+    /// Join two elements and form a cluster
+    void x_JoinElements(const CLinks::SLink& link);
+
+    /// Add element to a cluster
+    void x_JoinClustElem(int cluster_id, int elem, double dist);
+
+    /// Join two clusters
+    void x_JoinClusters(int cluster1_id, int cluster2_id);
+
+    /// Create one-element cluster
+    void x_CreateCluster(int elem);
+
+    /// Check whether element can be added to the cluster. The function assumes
+    /// that there is a link between the element and at least one element
+    /// of the cluster.
+    bool x_CanAddElem(int cluster_id, int elem) const;
+
+    /// Check whether two clusters can be joined. The function assumes that
+    /// there is a link between at least one pair of elements from the two
+    /// clusters.
+    bool x_CanJoinClusters(int cluster1_id, int cluster2_id) const;
+
 
 protected:
     auto_ptr<TDistMatrix> m_DistMatrix;
     TClusters m_Clusters;
     vector<TPhyTreeNode*> m_Trees;
+    double m_MaxDiameter;
+    EClustMethod m_LinkMethod;
+
+    CRef<CLinks> m_Links;
+    vector<int> m_ClusterId;
+    list<int> m_UnusedEntries;
 };
 
 
@@ -272,7 +357,8 @@ public:
         eElementOutOfRange,       ///< Cluster element is larger than distance
                                   ///< matrix size
         eNoDistMatrix,            ///< Distance matrix not assigned
-        eInvalidOptions
+        eInvalidOptions,
+        eInvalidInput
     };
 
     NCBI_EXCEPTION_DEFAULT(CClustererException, CException);

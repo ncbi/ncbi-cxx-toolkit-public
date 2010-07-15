@@ -53,12 +53,19 @@ CClusterer::CClusterer(const CClusterer::TDistMatrix& dmat)
     : m_DistMatrix(new TDistMatrix(dmat))
 {
     s_CheckDistMatrix(*m_DistMatrix);
+    x_Init();
 }
 
 CClusterer::CClusterer(auto_ptr<CClusterer::TDistMatrix>& dmat)
     : m_DistMatrix(dmat)
 {
     s_CheckDistMatrix(*m_DistMatrix);
+    x_Init();
+}
+
+CClusterer::CClusterer(CRef<CLinks> links) : m_Links(links)
+{
+    x_Init();
 }
 
 static void s_PurgeTrees(vector<TPhyTreeNode*>& trees)
@@ -75,6 +82,12 @@ CClusterer::~CClusterer()
     s_PurgeTrees(m_Trees);
 }
 
+void CClusterer::x_Init(void)
+{
+    m_MaxDiameter = 0.8;
+    m_LinkMethod = eDist;
+}
+
 void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
 {
     s_CheckDistMatrix(dmat);
@@ -89,6 +102,11 @@ void CClusterer::SetDistMatrix(auto_ptr<TDistMatrix>& dmat)
     s_CheckDistMatrix(*dmat);
 
     m_DistMatrix = dmat;
+}
+
+void CClusterer::SetLinks(CRef<CLinks> links)
+{
+    m_Links = links;
 }
 
 const CClusterer::TDistMatrix& CClusterer::GetDistMatrix(void) const
@@ -253,6 +271,11 @@ void CClusterer::ComputeClusters(double max_diam,
     if (dist_method != eCompleteLinkage && dist_method != eAverageLinkage) {
         NCBI_THROW(CClustererException, eInvalidOptions, "Unrecognised cluster"
                    " distance method");
+    }
+
+    if (!m_DistMatrix.get()) {
+        NCBI_THROW(CClustererException, eInvalidInput, "Distance matrix not"
+                   " set");
     }
 
     m_Clusters.clear();
@@ -589,6 +612,240 @@ void CClusterer::ComputeClusters(double max_diam,
     }
 }
 
+void CClusterer::ComputeClustersFromLinks(void)
+{
+    if (m_Links.Empty()) {
+        NCBI_THROW(CClustererException, eInvalidOptions, "Distance links not"
+                   " set");
+    }
+
+    // initialize table of cluster ids for elements to unassigned
+    m_ClusterId.resize(m_Links->GetNumElements(), -1);
+
+    // sort links
+    if (!m_Links->IsSorted()) {
+        m_Links->Sort();
+    }
+
+    // for each link
+    CLinks::SLink_CI it = m_Links->begin();
+    for (;it != m_Links->end();++it) {
+
+        // if none of elements belongs to a cluster
+        if (m_ClusterId[it->first] < 0 && m_ClusterId[it->second] < 0) {
+
+            // join these two elements
+            x_JoinElements(*it);
+            continue;
+        }
+
+        // if cluster ids differ
+        if (m_ClusterId[it->first] != m_ClusterId[it->second]) {
+
+            // if one of elements does not belong to any cluster
+            if (m_ClusterId[it->first] < 0 || m_ClusterId[it->second] < 0) {
+                int elem;
+                int cluster_id;
+            
+                if (m_ClusterId[it->first] < 0) {
+                    elem = it->first;
+                    cluster_id = m_ClusterId[it->second];
+                }
+                else {
+                    elem = it->second;
+                    cluster_id = m_ClusterId[it->first];
+                }
+
+                // check if element can be added to the cluster the other
+                // element belongs
+                if (x_CanAddElem(cluster_id, elem)) {
+                    // add element
+                    x_JoinClustElem(cluster_id, elem, it->weight);
+                }
+                
+            }
+            // if both elements belong to clusters
+            else {
+                // if these clusters can e joined
+                if (x_CanJoinClusters(m_ClusterId[it->first],
+                                      m_ClusterId[it->second])) {
+                    
+                    // join clusters
+                    x_JoinClusters(m_ClusterId[it->first],
+                                   m_ClusterId[it->second]);
+                }
+            }
+        }
+        // if both elements already belong to the same cluster
+        else {
+            // update value of cluster diameter
+            int cluster_id = m_ClusterId[it->first];
+            if (m_Clusters[cluster_id].GetMaxDistance() < it->weight) {
+                m_Clusters[cluster_id].SetMaxDistance(it->weight);
+            }
+        }
+    }
+
+    // find elements that were not assigned to any clusters and create
+    // one-element clusters for them
+    for (int i=0;i < (int)m_ClusterId.size();i++) {
+        if (m_ClusterId[i] < 0) {
+            x_CreateCluster(i);
+        }
+    }
+
+    // TO DO: m_Clusters needs to be chenched to vector of pointers or list
+    // so that the operations below are more efficient
+
+    // remove empty clusters from the back of the list of clusters
+    // the empty clusters appear in the list when clusters are joined
+    while (m_Clusters.back().size() == 0) {
+        m_Clusters.pop_back();
+    }
+
+    // remove empty clusters from the list of clusters by moving the cluster
+    // from the back of the list to the position of the empty one
+    for (int i=0;i < (int)m_Clusters.size();i++) {
+        if (m_Clusters[i].size() == 0) {
+            const TSingleCluster& cluster = m_Clusters.back();
+            ITERATE (vector<int>, it, cluster) {
+                m_Clusters[i].AddElement(*it);
+            }
+            m_Clusters.pop_back();
+        }        
+    }
+}
+
+
+void CClusterer::x_JoinElements(const CLinks::SLink& link)
+{
+    int cluster_id;
+
+    // if the list of unused entries in the cluster list is empty
+    if (m_UnusedEntries.empty()) {
+
+        // add a new cluster to the list
+        m_Clusters.push_back(CSingleCluster());        
+        CSingleCluster& cluster = m_Clusters.back();
+        cluster.AddElement(link.first);
+        cluster.AddElement(link.second);
+        cluster.SetMaxDistance(link.weight);
+        cluster_id = (int)m_Clusters.size() - 1;        
+    }
+    else {
+
+        // if there are any empty clusters in the list (created by joining two
+        // clusters)
+        
+        // use the empty cluster enrty in the list for joining the elements
+        cluster_id = m_UnusedEntries.front();
+        m_UnusedEntries.pop_front();
+        _ASSERT(m_Clusters[cluster_id].size() == 0);
+        CSingleCluster& cluster = m_Clusters[cluster_id];
+        cluster.AddElement(link.first);
+        cluster.AddElement(link.second);
+        cluster.SetMaxDistance(link.weight);
+    }
+
+    // set cluster id for elements
+    m_ClusterId[link.first] = cluster_id;
+    m_ClusterId[link.second] = cluster_id;
+}
+
+void CClusterer::x_CreateCluster(int elem)
+{
+    int cluster_id;
+
+    // if the list of unused entries in the cluster list is empty
+    if (m_UnusedEntries.empty()) {
+
+        // add a new cluster to the list
+        m_Clusters.push_back(CSingleCluster());
+        CSingleCluster& cluster = m_Clusters.back();
+        cluster.AddElement(elem);
+        cluster_id = m_Clusters.size() - 1;
+    }
+    else {
+
+        // if there are any empty clusters in the list (created by joining two
+        // clusters)
+        
+        // use the empty cluster enrty in the list for joining the elements
+        cluster_id = m_UnusedEntries.front();
+        m_UnusedEntries.pop_front();
+        CSingleCluster& cluster = m_Clusters[cluster_id];
+        cluster.AddElement(elem);
+    }
+
+    // set cluster id for the element
+    m_ClusterId[elem] = cluster_id;
+}
+
+void CClusterer::x_JoinClustElem(int cluster_id, int elem, double distance)
+{
+    m_Clusters[cluster_id].AddElement(elem);
+    m_ClusterId[elem] = cluster_id;
+}
+
+
+bool CClusterer::x_CanAddElem(int cluster_id, int elem) const
+{
+    // for the link method, clusters and elements can be joined as long
+    // as there exists at least one link between elements
+    if (m_LinkMethod == eClique) {
+        return true;
+    }
+
+    // for the dist method there must be a link between all pairs of elements
+    ITERATE (vector<int>, it, m_Clusters[cluster_id]) {
+        if (!m_Links->IsLink(*it, elem)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+void CClusterer::x_JoinClusters(int cluster1_id, int cluster2_id)
+{
+    CSingleCluster& cluster1 = m_Clusters[cluster1_id];
+    CSingleCluster& cluster2 = m_Clusters[cluster2_id];
+
+    // add elements of cluster2 to cluster1
+    ITERATE (vector<int>, it, cluster2) {
+        cluster1.AddElement(*it);
+        m_ClusterId[*it] = cluster1_id;
+    }
+
+    // remove all elements of cluster 2
+    cluster2.clear();
+
+    // mark cluster2 as unused
+    m_UnusedEntries.push_back(cluster2_id);
+}
+
+
+bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id) const
+{
+    // for the link method, clusters can be joined as long
+    // as there exists at least one link between elements
+    if (m_LinkMethod == eClique) {
+        return true;
+    }
+
+    // for the dist method there must be a link between all pairs of elements
+    ITERATE (vector<int>, it1, m_Clusters[cluster1_id]) {
+        ITERATE (vector<int>, it2, m_Clusters[cluster2_id]) {
+            if (!m_Links->IsLink(*it1, *it2)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 
 void CClusterer::GetTrees(vector<TPhyTreeNode*>& trees) const
 {
@@ -681,6 +938,20 @@ void CClusterer::Reset(void)
     PurgeDistMatrix();
 }
 
+
+void CClusterer::Run(void)
+{
+    if (!m_Links.Empty()) {
+        ComputeClustersFromLinks();
+    }
+    else if (m_DistMatrix.get()) {
+        ComputeClusters(m_MaxDiameter);
+    }
+    else {
+        NCBI_THROW(CClustererException, eInvalidInput, "Either distance matrix"
+                   " or distance links must be set");
+    }
+}
 
 //------------------------------------------------------------
 

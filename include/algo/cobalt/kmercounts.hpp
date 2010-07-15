@@ -41,6 +41,7 @@ Contents: Interface for k-mer counting
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/scope.hpp>
 #include <algo/cobalt/base.hpp>
+#include <algo/cobalt/links.hpp>
 #include <algo/blast/core/blast_encoding.h>
 #include <vector>
 #include <stack>
@@ -252,6 +253,7 @@ class CKmerCountsException : public CException
 {
 public:
     enum EErrCode {
+        eInvalid,
         eUnsupportedSeqLoc,
         eUnsuportedDistMethod,
         eInvalidOptions,
@@ -475,6 +477,50 @@ public:
                                                    counts.size(), 0));
         ComputeDistMatrix(counts, dist_method, *dmat.get());
         return dmat;
+    }
+
+
+    /// Compute distances between k-mer counts as graph where nodes are
+    /// sequences and edges represent distances. Distances above given
+    /// threshold will not have edges.
+    /// @param counts List of k-mer counts vectors [in]
+    /// @param dist_method Distance measure [in]
+    /// @param max_dist Maxium distance that will be represented with a graph
+    /// edge [in]
+    /// @param mark_links If true, existings links will be marked in binary
+    /// matrix [in]
+    /// @return Disatances between k-mer counts vectors represented as a graph
+    ///
+    static CRef<CLinks> ComputeDistLinks(const vector<TKmerCounts>& counts,
+                                         EDistMeasures dist_method,
+                                         double max_dist,
+                                         bool mark_links = true)
+    {
+        if (counts.size() < 2) {
+            NCBI_THROW(CKmerCountsException, eInvalid, "Distance links can be"
+                       " computed for at least two k-mer counts vectors");
+        }
+
+        CRef<CLinks> links(new CLinks(counts.size(), mark_links));
+        double dist;
+        for (int i=0;i < (int)counts.size()-1;i++) {
+            for (int j=i+1;j < (int)counts.size();j++) {
+                if (dist_method == eFractionCommonKmersLocal) {
+                    dist = TKmerCounts::FractionCommonKmersDist(counts[i],
+                                                                counts[j]);
+                }
+                else {
+                    dist = TKmerCounts::FractionCommonKmersGlobalDist(counts[i],
+                                                                      counts[j]);
+                }
+
+                if (dist <= max_dist) {
+                    links->AddLink(i, j, dist);
+                }
+            }
+        }
+        
+        return links;
     }
 };
 

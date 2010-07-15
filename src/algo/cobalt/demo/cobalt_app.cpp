@@ -50,6 +50,8 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <algo/cobalt/cobalt.hpp>
 #include <algo/cobalt/version.hpp>
 
+#include "cobalt_app_util.hpp"
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(align_format);
@@ -206,42 +208,6 @@ void CMultiApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-
-void
-x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
-                      vector< CRef<objects::CSeq_loc> >& seqs,
-                      CRef<objects::CScope>& scope)
-{
-    seqs.clear();
-    scope.Reset(new CScope(objmgr));
-    scope->AddDefaults();
-
-    // read one query at a time, and use a separate seq_entry,
-    // scope, and lowercase mask for each query. This lets different
-    // query sequences have the same ID. Later code will distinguish
-    // between queries by using different elements of retval[]
-
-    CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, 
-                              CFastaReader::fAssumeProt |
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID);
-
-    while (!line_reader.AtEOF()) {
-
-        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
-
-        if (entry == 0) {
-            NCBI_THROW(CObjReaderException, eInvalid, 
-                        "Could not retrieve seq entry");
-        }
-        scope->AddTopLevelSeqEntry(*entry);
-        CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
-        CRef<CSeq_loc> seqloc(new CSeq_loc());
-        seqloc->SetWhole().Assign(*itr->GetId().front());
-        seqs.push_back(seqloc);
-    }
-}
 
 static void
 x_LoadConstraints(string constraintfile,
@@ -440,7 +406,7 @@ int CMultiApplication::Run(void)
 
     vector< CRef<objects::CSeq_loc> > queries;
     CRef<objects::CScope> scope;
-    x_GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope);
+    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope);
     _ASSERT(!scope.Empty());
 
     aligner.SetQueries(queries, scope);

@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = cobalt
+APP_PROJ = cobalt clusterer
 PROJ_TAG = demo
 
 srcdir = @srcdir@
