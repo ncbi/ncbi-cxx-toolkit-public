@@ -191,6 +191,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AMMRL	c	Australian National Reference Laboratory in Medical Mycology",
 "AMMS	s	Academy of Military Medical Sciences",
 "AMNH	s	American Museum of Natural History",
+"AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection",
 "AMNH:Herp	s	American Museum of Natural History, Herpetology collection",
 "AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division",
 "AMNZ	s	Auckland Institute and Museum",
