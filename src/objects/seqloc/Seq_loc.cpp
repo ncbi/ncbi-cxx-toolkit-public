@@ -2436,26 +2436,55 @@ void x_SubNoSort(CSeq_loc& dst,
         TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
             rg_coll_minus : rg_coll_plus;
         TIdToRangeColl::const_iterator id_it = rg_coll.find(idh);
+        bool modified = false;
         if (id_it != rg_coll.end()) {
-            it_rg_coll -= id_it->second;
-        }
-        ITERATE(TRangeColl, rg_it, it_rg_coll) {
-            if ( have_range  &&  last_id == idh ) {
-                if (x_MergeRanges(last_rg,
-                                last_strand,
-                                *rg_it,
-                                it.GetStrand(),
-                                flags)) {
-                    have_range = true;
-                    continue;
+            // Check if there's anything to subtract
+            ITERATE(TRangeColl, check_it, id_it->second) {
+                if ( it_rg_coll.IntersectingWith(*check_it) ) {
+                    it_rg_coll -= id_it->second;
+                    modified = true;
+                    break;
                 }
             }
-            // No merging - push current range, reset last values
+        }
+        if ( modified ) {
+            ITERATE(TRangeColl, rg_it, it_rg_coll) {
+                if ( have_range  &&  last_id == idh ) {
+                    if (x_MergeRanges(last_rg,
+                                    last_strand,
+                                    *rg_it,
+                                    it.GetStrand(),
+                                    flags)) {
+                        have_range = true;
+                        continue;
+                    }
+                }
+                // No merging - push current range, reset last values
+                if ( have_range ) {
+                    x_PushRange(dst, last_id, last_rg, last_strand);
+                }
+                last_id = idh;
+                last_rg = *rg_it;
+                last_strand = it.GetStrand();
+                have_range = true;
+            }
+        }
+        else {
             if ( have_range ) {
-                x_PushRange(dst, last_id, last_rg, last_strand);
+                bool merged = false;
+                if (last_id == idh) {
+                    merged = x_MergeRanges(last_rg,
+                        last_strand,
+                        it_range,
+                        it.GetStrand(),
+                        flags);
+                }
+                if ( !merged ) {
+                    x_PushRange(dst, last_id, last_rg, last_strand);
+                }
             }
             last_id = idh;
-            last_rg = *rg_it;
+            last_rg = it_range;
             last_strand = it.GetStrand();
             have_range = true;
         }
@@ -2492,7 +2521,7 @@ void x_SubAndSort(CSeq_loc& dst,
 
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
-        TRangeWithFuzz it_range = it.GetRange();
+        TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
             it_range.ResetFuzzFrom();
@@ -2504,11 +2533,24 @@ void x_SubAndSort(CSeq_loc& dst,
         TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
             rg_coll_minus : rg_coll_plus;
         TIdToRangeColl::const_iterator id_it = rg_coll.find(idh);
+        bool modified = false;
         if (id_it != rg_coll.end()) {
-            it_rg_coll -= id_it->second;
+            // Check if there's anything to subtract
+            ITERATE(TRangeColl, check_it, id_it->second) {
+                if ( it_rg_coll.IntersectingWith(*check_it) ) {
+                    it_rg_coll -= id_it->second;
+                    modified = true;
+                    break;
+                }
+            }
         }
-        ITERATE(TRangeColl, rg_it, it_rg_coll) {
-            rg_map.push_back(*rg_it);
+        if ( modified ) {
+            ITERATE(TRangeColl, rg_it, it_rg_coll) {
+                rg_map.push_back(*rg_it);
+            }
+        }
+        else {
+            rg_map.push_back(it_range);
         }
     }
 
