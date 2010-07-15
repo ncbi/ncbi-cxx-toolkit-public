@@ -2167,14 +2167,7 @@ struct SReadInt4 {
                      CSeqDB::TSequenceRanges & ranges)
     {
         const void * src = (const void *) blob.ReadRaw(n*8);
-
-        // reallocate if necessary
-        if (ranges._capacity < (ranges._size + n) ) {
-            ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size+n)*8 );
-        }
-
-        memcpy(ranges._data + ranges._size, src, n*8);
-        ranges._size += n;
+        ranges.append(src, n);
     }
 };
 
@@ -2204,7 +2197,7 @@ void CSeqDBImpl::GetMaskData(int                       oid,
     CHECK_MARKER();
     
     // This reads the data written by CWriteDB_Impl::SetMaskData
-    ranges._size=0;
+    ranges.clear();
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);

@@ -1049,12 +1049,28 @@ public:
         typedef TOffsetPair value_type;
         typedef const value_type* const_iterator;
 
+    private:
         size_type _size;
         size_type _capacity;
-        TOffsetPair* _data;
+        TSeqPos* _data;
 
+        void x_reset_all() {
+            _size = 0;
+            _capacity = 0;
+            _data = NULL;
+        }
+
+        void x_reallocate_if_necessary() {
+            static size_t kResizeFactor = 2;
+            if (_size + 1 > _capacity) {
+                reserve((_capacity + 1) * kResizeFactor -1);
+            }
+        }
+
+    public:
         TSequenceRanges() {
             x_reset_all();
+            reserve(7);   // must reserve at least 1 element
         }
 
         ~TSequenceRanges() {
@@ -1062,57 +1078,46 @@ public:
             x_reset_all();
         }
 
-        void clear() {
-            _size = 0;
-        }
+        void clear() { _size = 0; }
+
+        bool empty() const { return _size == 0; }
 
         size_type size() const { return _size; }
 
-        const_iterator begin() const { return &_data[0]; }
-        const_iterator end() const { return &_data[_size]; }
+        const_iterator begin() const { return const_iterator(&_data[1]); }
+
+        const_iterator end() const { return const_iterator(&_data[1+ 2*_size]); }
+
+        value_type& operator[](size_type i) { return (value_type &)_data[1+ 2*i]; }
 
         /// Reserves capacity for at least num_elements elements
         /// @throw CSeqDBException in case of memory allocation failure
         void reserve(size_t num_elements) {
             if (num_elements > _capacity) {
                 value_type* reallocation =
-                    (value_type*) realloc(_data, num_elements *
+                    (value_type*) realloc(_data, (num_elements + 1) *
                                           sizeof(value_type));
                 if ( !reallocation ) {
                     string msg("Failed to allocate ");
-                    msg += NStr::IntToString(num_elements) + " elements";
+                    msg += NStr::IntToString(num_elements + 1) + " elements";
                     NCBI_THROW(CSeqDBException, eMemErr, msg);
                 }
-                _data = reallocation;
+                _data = (TSeqPos*) reallocation;
                 _capacity = num_elements;
             }
         }
 
-        void resize(size_type num_elements) { reserve(num_elements); }
+        /// Append extra elements at the end
+        void append(const void *src, size_type num_elements) {
+            reserve(_size + num_elements);
+            memcpy(&_data[1+ 2*_size], src, num_elements * sizeof(value_type));
+            _size += num_elements;
+        }
 
+        /// Append extra element at the end
         void push_back(const value_type& element) {
             x_reallocate_if_necessary();
-            _data[_size] = element;
-            _size++;
-        }
-
-        value_type& operator[](size_type i) { return _data[i]; }
-
-        bool empty() const { return _size == 0; }
-
-    private:
-        /// Resets all data members
-        void x_reset_all() {
-            _size = _capacity = 0;
-            _data = NULL;
-        }
-
-        /// Reallocates the data array if necessary to add one more element
-        void x_reallocate_if_necessary() {
-            static size_t kResizeFactor = 2;
-            if (_size+1 > _capacity) {
-                reserve(_capacity*kResizeFactor);
-            }
+            append(&element, 1);
         }
     };
 

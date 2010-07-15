@@ -108,14 +108,11 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
               m_DataFile[vol]->GetRegion(*m_DataLease[vol], off, off+4, locked);
     Int4 n = *datap;
 
-    if (ranges._capacity < (ranges._size + n)) {
-        ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size + n)*8);
-    }
     // Remapping the mask data
     datap = (const Int4 *)
             m_DataFile[vol]->GetRegion(*m_DataLease[vol], off+4, off + 8*n + 4, locked);
-    memcpy(ranges._data + ranges._size, datap,  n*8);
-    ranges._size +=n;
+
+    ranges.append(datap, n);
     return;
 }
 
