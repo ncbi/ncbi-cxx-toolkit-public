@@ -58,10 +58,7 @@ public:
     //
     //  Input/output:
     //
-//    bool AssignFromGff(
-//        const string& );
-//
-    bool AssignFromAsn(
+    virtual bool AssignFromAsn(
         const CSeq_feat& );
 
     bool MakeExon(
@@ -70,6 +67,16 @@ public:
 
     bool MergeRecord(
         const CGff3WriteRecord& );
+
+    virtual string StrType() const;
+    virtual string StrAttributes() const;
+    virtual string StrId() const;
+    virtual string StrSource() const;
+    virtual string StrSeqStart() const;
+    virtual string StrSeqStop() const;
+    virtual string StrScore() const;
+    virtual string StrStrand() const;
+    virtual string StrPhase() const;
 
     //
     // Accessors:
@@ -92,20 +99,14 @@ public:
     double Score() const { 
         return IsSetScore() ? *m_pdScore : 0.0; 
     };
-    string GeneId() const {
-        return m_strGeneId;
-    }
-    string TranscriptId() const {
-        return m_strTranscriptId;
-    }
     ENa_strand Strand() const { 
         return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
     };
     TFrame Phase() const {
         return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
     };
-    string AttributesLiteral() const { 
-        return m_strAttributes; 
+    virtual string SortTieBreaker() const { 
+        return ""; 
     };
 
     bool IsSetScore() const { 
@@ -143,9 +144,9 @@ protected:
         const CSeq_feat& );
     bool x_AssignPhaseFromAsn(
         const CSeq_feat& );
-    bool x_AssignAttributesFromAsnCore(
+    virtual bool x_AssignAttributesFromAsnCore(
         const CSeq_feat& );
-    bool x_AssignAttributesFromAsnExtended(
+    virtual bool x_AssignAttributesFromAsnExtended(
         const CSeq_feat& );
 
     static string x_FeatIdString(
@@ -159,6 +160,14 @@ protected:
         CSeq_feat::TData::ESubtype,
         CSeq_feat::TData::ESubtype );
 
+    static bool x_NeedsQuoting(
+        const string& );
+
+    virtual void x_PriorityProcess(
+        const string&,
+        map<string, string >&,
+        string& ) const;
+
     //
     // Data:
     //
@@ -170,8 +179,6 @@ protected:
     double* m_pdScore;
     ENa_strand* m_peStrand;
     TFrame* m_pePhase;
-    string m_strGeneId;
-    string m_strTranscriptId;
     string m_strAttributes;    
     TAttributes m_Attributes;
 

@@ -56,7 +56,7 @@ public:
     CGff3WriteRecordSet() {};
     ~CGff3WriteRecordSet() {
         for ( TRecords::iterator it = begin(); it != end(); ++it ) {
-            delete *it;
+//            delete *it;
         }
     };
  
@@ -109,8 +109,8 @@ protected:
         const CSeq_annot& );
     bool x_WriteAnnotAlign( 
         const CSeq_annot& );
-    bool x_WriteRecord( 
-        const CGff3WriteRecord& );
+    virtual bool x_WriteRecord( 
+        const CGff3WriteRecord* );
     bool x_WriteRecords( 
         const CGff3WriteRecordSet& );
     bool x_WriteBrowserLine(
@@ -122,25 +122,6 @@ protected:
         CSeq_annot_Handle,
         const CSeq_feat&,        
         CGff3WriteRecordSet& );
-
-    string x_GffId(
-        const CGff3WriteRecord& ) const;
-    string x_GffSource(
-        const CGff3WriteRecord& ) const;
-    string x_GffType(
-        const CGff3WriteRecord& ) const;
-    string x_GffSeqStart(
-        const CGff3WriteRecord& ) const;
-    string x_GffSeqStop(
-        const CGff3WriteRecord& ) const;
-    string x_GffScore(
-        const CGff3WriteRecord& ) const;
-    string x_GffStrand(
-        const CGff3WriteRecord& ) const;
-    string x_GffPhase(
-        const CGff3WriteRecord& ) const;
-    virtual string x_GffAttributes( 
-        const CGff3WriteRecord& ) const;
 
     virtual void x_PriorityProcess(
         const string&,

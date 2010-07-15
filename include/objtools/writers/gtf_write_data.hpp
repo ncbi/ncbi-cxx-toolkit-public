@@ -23,83 +23,78 @@
  *
  * ===========================================================================
  *
- * Authors:  Frank Ludwig
+ * Author: Frank Ludwig
  *
- * File Description:  Write gtf file
+ * File Description:
+ *   GTF transient data structures
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GTF_WRITER__HPP
-#define OBJTOOLS_READERS___GTF_WRITER__HPP
+#ifndef OBJTOOLS_WRITERS___GTF_WRITE_DATA__HPP
+#define OBJTOOLS_WRITERS___GTF_WRITE_DATA__HPP
 
-#include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
-//#include <objtools/writers/gff_writer.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
-
-class CGtfRecord;
-class CGff3WriteRecordSet;
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGffWriter
+class CGtfRecord
 //  ============================================================================
+    : public CGff3WriteRecord
 {
+public: 
+    CGtfRecord(
+        CSeq_annot_Handle sah
+    ): CGff3WriteRecord( sah ) {};
+
+    ~CGtfRecord() {};
+
 public:
-    CGtfWriter(
-        CNcbiOstream& );
-    ~CGtfWriter();
+    bool AssignFromAsn(
+        const CSeq_feat& );
+
+    void ForceType(
+        const string& strType ) {
+        m_strType = strType;
+    };
+
+    CSeq_annot_Handle AnnotHandle() const {
+        return m_Sah;
+    };
+
+    bool MakeChildRecord(
+        const CGtfRecord&,
+        const CSeq_interval&,
+        unsigned int = 0 );
+
+    string StrAttributes() const;
+    string StrGeneId() const;
+    string StrTranscriptId() const;
+
+    string GeneId() const { return m_strGeneId; };
+    string TranscriptId() const { return m_strTranscriptId; };
+
+    string SortTieBreaker() const { 
+        return StrGeneId() + "|" + StrTranscriptId(); 
+    };
 
 protected:
-    bool x_WriteHeader();
+    bool x_AssignAttributesFromAsnCore(
+        const CSeq_feat& );
 
-    bool x_AssignObject( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
-        CGff3WriteRecordSet& );
-
-    bool x_AssignObjectMrna( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
-        CGff3WriteRecordSet& );
-
-    bool x_AssignObjectCds( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
-        CGff3WriteRecordSet& );
-
-    void x_PriorityProcess(
-        const string&,
-        map<string, string >&,
-        string& ) const;
-
-    bool x_SplitCdsLocation(
-        const CSeq_feat&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >& ) const;
-
-    void x_AddMultipleRecords(
-        const CGtfRecord&,
-        CRef< CSeq_loc >,
-        CGff3WriteRecordSet& );
+    bool x_AssignAttributesFromAsnExtended(
+        const CSeq_feat& );
 
     static bool x_NeedsQuoting(
         const string& ) { return true; };
 
-    typedef map< int, const CSeq_interval* > TExonMap;
-    typedef TExonMap::const_iterator TExonCit;
-    TExonMap m_exonMap;
+    string m_strGeneId;
+    string m_strTranscriptId;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GTF_WRITER__HPP
+#endif // OBJTOOLS_WRITERS___GTF_WRITE_DATA__HPP

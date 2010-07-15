@@ -195,6 +195,154 @@ bool CGff3WriteRecord::MakeExon(
 }
 
 //  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrId() const
+//  ----------------------------------------------------------------------------
+{
+    return Id();
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrSource() const
+//  ----------------------------------------------------------------------------
+{
+    return Source();
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrType() const
+//  ----------------------------------------------------------------------------
+{
+    string strGffType;
+    if ( GetAttribute( "gff_type", strGffType ) ) {
+        return strGffType;
+    }
+    return Type();
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrSeqStart() const
+//  ----------------------------------------------------------------------------
+{
+    return NStr::UIntToString( SeqStart() + 1 );;
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrSeqStop() const
+//  ----------------------------------------------------------------------------
+{
+    return NStr::UIntToString( SeqStop() + 1 );
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrScore() const
+//  ----------------------------------------------------------------------------
+{
+    if ( ! IsSetScore() ) {
+        return ".";
+    }
+
+    //  can NStr format floating point numbers? Didn't see ...
+    char pcBuffer[ 16 ];
+    ::sprintf( pcBuffer, "%6.6f", Score() );
+    return string( pcBuffer );
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrStrand() const
+//  ----------------------------------------------------------------------------
+{
+    if ( ! IsSetStrand() ) {
+        return ".";
+    }
+    switch ( Strand() ) {
+    default:
+        return ".";
+    case eNa_strand_plus:
+        return "+";
+    case eNa_strand_minus:
+        return "-";
+    }
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrPhase() const
+//  ----------------------------------------------------------------------------
+{
+    if ( ! IsSetPhase() ) {
+        return ".";
+    }
+    switch ( Phase() ) {
+    default:
+        return "0";
+    case CCdregion::eFrame_two:
+        return "1";
+    case CCdregion::eFrame_three:
+        return "2";
+    }
+}
+
+//  ----------------------------------------------------------------------------
+string CGff3WriteRecord::StrAttributes() const
+//  ----------------------------------------------------------------------------
+{
+    string strAttributes;
+	strAttributes.reserve(256);
+    CGff3WriteRecord::TAttributes attrs;
+    attrs.insert( Attributes().begin(), Attributes().end() );
+    CGff3WriteRecord::TAttrIt it;
+
+    x_PriorityProcess( "ID", attrs, strAttributes );
+    x_PriorityProcess( "Name", attrs, strAttributes );
+    x_PriorityProcess( "Alias", attrs, strAttributes );
+    x_PriorityProcess( "Parent", attrs, strAttributes );
+    x_PriorityProcess( "Target", attrs, strAttributes );
+    x_PriorityProcess( "Gap", attrs, strAttributes );
+    x_PriorityProcess( "Derives_from", attrs, strAttributes );
+    x_PriorityProcess( "Note", attrs, strAttributes );
+    x_PriorityProcess( "Dbxref", attrs, strAttributes );
+    x_PriorityProcess( "Ontology_term", attrs, strAttributes );
+
+    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
+        string strKey = it->first;
+        if ( NStr::StartsWith( strKey, "gff_" ) ) {
+            continue;
+        }
+
+        if ( ! strAttributes.empty() ) {
+            strAttributes += "; ";
+        }
+        strAttributes += strKey;
+        strAttributes += "=";
+		
+		bool quote = x_NeedsQuoting(it->second);
+		if ( quote )
+			strAttributes += '\"';		
+		strAttributes += it->second;
+		if ( quote )
+			strAttributes += '\"';
+    }
+    return strAttributes;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::x_NeedsQuoting(
+    const string& str )
+//  ----------------------------------------------------------------------------
+{
+    if( str.empty() )
+		return true;
+
+	for ( size_t u=0; u < str.length(); ++u ) {
+        if ( str[u] == '\"' )
+			return false;
+		if ( str[u] == ' ' || str[u] == ';' ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
     const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
@@ -416,31 +564,6 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
             m_Attributes[ "Parent" ] = value;
         }
     }
-
-    if ( feature.CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
-        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-        for ( /*NOOP*/; it != quals.end(); ++it ) {
-            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-                if ( (*it)->GetQual() == "ID" ) {
-                    if ( ! bIdAssigned ) {
-                        m_Attributes[ "ID" ] = (*it)->GetVal();
-                    }
-                    continue;
-                }
-                if ( (*it)->GetQual() == "transcript_id" ) {
-                    m_strTranscriptId = (*it)->GetVal();
-                    continue;
-                }
-                if ( (*it)->GetQual() == "gene_id" ) {
-                    m_strGeneId = (*it)->GetVal();
-                    continue;
-                }
-                m_Attributes[ (*it)->GetQual() ] = (*it)->GetVal();
-            }
-        }
-    }
-
     return true;
 }
 
@@ -576,6 +699,56 @@ string CGff3WriteRecord::x_FeatIdString(
     return "FEATID";
 }
 
+//  ----------------------------------------------------------------------------
+void CGff3WriteRecord::x_PriorityProcess(
+    const string& strKey,
+    map<string, string >& attrs,
+    string& strAttributes ) const
+//  ----------------------------------------------------------------------------
+{
+    string strKeyMod( strKey );
+
+    map< string, string >::iterator it = attrs.find( strKeyMod );
+    if ( it == attrs.end() ) {
+        return;
+    }
+
+    // Some of the attributes are multivalue translating into multiple gff attributes
+    //  all carrying the same key. These are special cased here:
+    //
+    if ( strKey == "Dbxref" ) {
+        vector<string> tags;
+        NStr::Tokenize( it->second, ";", tags );
+        for ( vector<string>::iterator pTag = tags.begin(); 
+            pTag != tags.end(); pTag++ ) {
+            if ( ! strAttributes.empty() ) {
+                strAttributes += "; ";
+            }
+            strAttributes += strKeyMod;
+            strAttributes += "=\""; // quoted in all samples I have seen
+            strAttributes += *pTag;
+            strAttributes += "\"";
+        }
+		attrs.erase(it);
+        return;
+    }
+
+    // General case: Single value, make straight forward gff attribute:
+    //
+    if ( ! strAttributes.empty() ) {
+        strAttributes += "; ";
+    }
+
+    strAttributes += strKeyMod;
+    strAttributes += "=";
+   	bool quote = x_NeedsQuoting(it->second);
+	if ( quote )
+		strAttributes += '\"';		
+	strAttributes += it->second;
+	attrs.erase(it);
+	if ( quote )
+		strAttributes += '\"';
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

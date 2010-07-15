@@ -46,65 +46,12 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gtf_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-//  ============================================================================
-class CGtfRecord
-//  ============================================================================
-    : public CGff3WriteRecord
-{
-public: 
-    CGtfRecord(
-        CSeq_annot_Handle sah
-    ): CGff3WriteRecord( sah ) {};
-
-    ~CGtfRecord() {};
-
-public:
-    void ForceType(
-        const string& strType ) {
-        m_strType = strType;
-    };
-
-    CSeq_annot_Handle AnnotHandle() const {
-        return m_Sah;
-    };
-
-    bool MakeChildRecord(
-        const CGtfRecord&,
-        const CSeq_interval& );
-};
-
-//  ----------------------------------------------------------------------------
-bool CGtfRecord::MakeChildRecord(
-    const CGtfRecord& parent,
-    const CSeq_interval& location )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! location.CanGetFrom() || ! location.CanGetTo() ) {
-        return false;
-    }
-    m_strId = parent.Id();
-    m_strSource = parent.Source();
-    m_strType = parent.Type();
-    m_uSeqStart = location.GetFrom();
-    m_uSeqStop = location.GetTo();
-    if ( parent.IsSetScore() ) {
-        m_pdScore = new double( parent.Score() );
-    }
-    if ( parent.IsSetStrand() ) {
-        m_peStrand = new ENa_strand( parent.Strand() );
-    }
-    string strParentId;
-    if ( parent.GetAttribute( "ID", strParentId ) ) {
-        m_Attributes[ "Parent" ] = strParentId;
-    }
-    return true;
-};
 
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
@@ -152,10 +99,6 @@ bool CGtfWriter::x_AssignObject(
     if ( ! pRecord->AssignFromAsn( feat ) ) {
         return false;
     }
-    if ( pRecord->Type() == "exon" ) {     
-        set.AddOrMergeRecord( pRecord );
-        return true;
-    }
 
     // default behavior:
     set.AddRecord( pRecord );
@@ -164,25 +107,32 @@ bool CGtfWriter::x_AssignObject(
     
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_AssignObjectMrna(
-   CSeq_annot_Handle sah,
-   const CSeq_feat& feat,        
-   CGff3WriteRecordSet& set )
+    CSeq_annot_Handle sah,
+    const CSeq_feat& feat,
+    CGff3WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
+    m_exonMap.clear();
+
     CGtfRecord* pParent = new CGtfRecord( sah );
     if ( ! pParent->AssignFromAsn( feat ) ) {
         delete pParent;
         return false;
     }
+
     const CSeq_loc& loc = feat.GetLocation();
+    unsigned int uExonNumber = 1;
+
     if ( loc.IsPacked_int() && loc.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = loc.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CGtfRecord* pExon = new CGtfRecord( sah );
-            pExon->MakeExon( *pParent, subint );
+            pParent->ForceType( "exon" );
+            pExon->MakeChildRecord( *pParent, subint, uExonNumber );
             set.AddOrMergeRecord( pExon );
+            m_exonMap[ uExonNumber++ ] = &subint;
         }
     }
     else if ( loc.IsMix() && loc.GetMix().CanGet() ) {
@@ -192,12 +142,14 @@ bool CGtfWriter::x_AssignObjectMrna(
             if ( (*it)->IsInt() ) {
                 const CSeq_interval& subint = (*it)->GetInt();
                 CGtfRecord* pExon = new CGtfRecord( sah );
-                pExon->MakeExon( *pParent, subint );
+                pParent->ForceType( "exon" );
+                pExon->MakeChildRecord( *pParent, subint, uExonNumber );
                 set.AddOrMergeRecord( pExon );
+                m_exonMap[ uExonNumber++ ] = &subint;
             }
         }
     }
-    delete pParent;
+//    delete pParent;
     return true;
 }
     
@@ -233,62 +185,10 @@ bool CGtfWriter::x_AssignObjectCds(
         x_AddMultipleRecords( *pParent, pLocStopCodon, set );
     }
 
-    delete pParent;
+//    delete pParent;
     return true;
 }
     
-//  ----------------------------------------------------------------------------
-string CGtfWriter::x_GffAttributes(
-    const CGtfRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    string strAttributes;
-	strAttributes.reserve(256);
-    CGtfRecord::TAttributes attrs;
-    attrs.insert( record.Attributes().begin(), record.Attributes().end() );
-    CGtfRecord::TAttrIt it;
-
-    if ( ! record.GeneId().empty() ) {
-        strAttributes += "gene_id \"";
-		strAttributes += record.GeneId();
-		strAttributes += "\"";
-        strAttributes += "; ";
-    }
-    else {
-        x_PriorityProcess( "gene_id", attrs, strAttributes );
-    }
-
-    if ( ! record.TranscriptId().empty() ) {
-        strAttributes += "transcript_id \"";
-		strAttributes += record.TranscriptId();
-		strAttributes += "\"";
-        strAttributes += "; ";
-    }
-    else {
-        x_PriorityProcess( "transcript_id", attrs, strAttributes );
-    }
-
-
-    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
-        string strKey = it->first;
-        if ( NStr::StartsWith( strKey, "gff_" ) ) {
-            continue;
-        }
-
-        strAttributes += strKey;
-        strAttributes += " ";
-		
-		bool quote = x_NeedsQuoting(it->second);
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second;
-		if ( quote )
-			strAttributes += '\"';
-		strAttributes += "; ";
-    }
-    return strAttributes;
-}
-
 //  ----------------------------------------------------------------------------
 void CGtfWriter::x_PriorityProcess(
     const string& strKey,
@@ -390,8 +290,18 @@ void CGtfWriter::x_AddMultipleRecords(
     list< CRef< CSeq_interval > >::const_iterator it;
     for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
         const CSeq_interval& subint = **it;
+
+        unsigned int uExonNumber = 0;
+        for ( TExonCit xit = m_exonMap.begin(); xit != m_exonMap.end(); ++xit ) {
+            const CSeq_interval& compint = *(xit->second);
+            if ( compint.GetFrom() <= subint.GetFrom()  &&  compint.GetTo() >= subint.GetTo() ) {
+                uExonNumber = xit->first;
+                break;
+            }
+        }
+            
         CGtfRecord* pRecord = new CGtfRecord( parent.AnnotHandle() );
-        pRecord->MakeChildRecord( parent, subint );
+        pRecord->MakeChildRecord( parent, subint, uExonNumber );
         set.AddOrMergeRecord( pRecord );
     }
 }

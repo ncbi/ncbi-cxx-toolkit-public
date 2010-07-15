@@ -70,12 +70,15 @@ bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()(
 	if ( x->SeqStop() != y->SeqStop() )
 		return ( x->SeqStop() < y->SeqStop() );
 
-    if ( x->GeneId() != y->GeneId() )
+    if ( x->SortTieBreaker() != y->SortTieBreaker() )
+        return ( x->SortTieBreaker() < y->SortTieBreaker() );
+
+/*    if ( x->GeneId() != y->GeneId() )
 		return ( x->GeneId() < y->GeneId() );
 	
     if( x->TranscriptId() != y->TranscriptId() )
 		return ( x->TranscriptId() < y->TranscriptId() );
-
+*/
     // equivalent
 	return false;
 }
@@ -278,7 +281,7 @@ bool CGffWriter::x_WriteRecords(
 //  ----------------------------------------------------------------------------
 {
     for ( CGff3WriteRecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
-        if ( ! x_WriteRecord( **cit ) ) {
+        if ( ! x_WriteRecord( *cit ) ) {
             return false;
         }
     }
@@ -287,182 +290,21 @@ bool CGffWriter::x_WriteRecords(
     
 //  ----------------------------------------------------------------------------
 bool CGffWriter::x_WriteRecord( 
-    const CGff3WriteRecord& record )
+    const CGff3WriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
-    m_Os << x_GffId( record ) << '\t';
-    m_Os << x_GffSource( record ) << '\t';
-    m_Os << x_GffType( record ) << '\t';
-    m_Os << x_GffSeqStart( record ) << '\t';
-    m_Os << x_GffSeqStop( record ) << '\t';
-    m_Os << x_GffScore( record ) << '\t';
-    m_Os << x_GffStrand( record ) << '\t';
-    m_Os << x_GffPhase( record ) << '\t';
-    m_Os << x_GffAttributes( record ) << endl;
+    const CGff3WriteRecord& record = *pRecord;
+
+    m_Os << pRecord->StrId() << '\t';
+    m_Os << pRecord->StrSource() << '\t';
+    m_Os << pRecord->StrType() << '\t';
+    m_Os << pRecord->StrSeqStart() << '\t';
+    m_Os << pRecord->StrSeqStop() << '\t';
+    m_Os << pRecord->StrScore() << '\t';
+    m_Os << pRecord->StrStrand() << '\t';
+    m_Os << pRecord->StrPhase() << '\t';
+    m_Os << pRecord->StrAttributes() << endl;
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffId(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    return record.Id();
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffSource(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    return record.Source();
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffType(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    string strGffType;
-    if ( record.GetAttribute( "gff_type", strGffType ) ) {
-        return strGffType;
-    }
-    return record.Type();
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffSeqStart(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    return NStr::UIntToString( record.SeqStart() + 1 );
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffSeqStop(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    return NStr::UIntToString( record.SeqStop() + 1 );
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffScore(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    if ( ! record.IsSetScore() ) {
-        return ".";
-    }
-    char pcBuffer[ 16 ];
-    ::sprintf( pcBuffer, "%6.6f", record.Score() );
-    return string( pcBuffer );
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffStrand(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    if ( ! record.IsSetStrand() ) {
-        return ".";
-    }
-    switch ( record.Strand() ) {
-    default:
-        return ".";
-    case eNa_strand_plus:
-        return "+";
-    case eNa_strand_minus:
-        return "-";
-    }
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffPhase(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    if ( ! record.IsSetPhase() ) {
-        return ".";
-    }
-    switch ( record.Phase() ) {
-    default:
-        return "0";
-    case CCdregion::eFrame_two:
-        return "1";
-    case CCdregion::eFrame_three:
-        return "2";
-    }
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriter::x_GffAttributes(
-    const CGff3WriteRecord& record ) const
-//  ----------------------------------------------------------------------------
-{
-    string strAttributes;
-	strAttributes.reserve(256);
-    CGff3WriteRecord::TAttributes attrs;
-    attrs.insert( record.Attributes().begin(), record.Attributes().end() );
-    CGff3WriteRecord::TAttrIt it;
-
-    if ( ! record.GeneId().empty() ) {
-        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
-            strAttributes += "; ";
-        }
-        strAttributes += "gene_id=\"";
-		strAttributes += record.GeneId();
-		strAttributes += "\"";
-		if ( m_uFlags & fSoQuirks ) {
-            strAttributes += "; ";
-        }
-    }
-    if ( ! record.TranscriptId().empty() ) {
-        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
-            strAttributes += "; ";
-        }
-        strAttributes += "transcript_id=\"";
-		strAttributes += record.TranscriptId();
-		strAttributes += "\"";
-		if ( m_uFlags & fSoQuirks ) {
-            strAttributes += "; ";
-        }
-    }
-
-    x_PriorityProcess( "ID", attrs, strAttributes );
-    x_PriorityProcess( "Name", attrs, strAttributes );
-    x_PriorityProcess( "Alias", attrs, strAttributes );
-    x_PriorityProcess( "Parent", attrs, strAttributes );
-    x_PriorityProcess( "Target", attrs, strAttributes );
-    x_PriorityProcess( "Gap", attrs, strAttributes );
-    x_PriorityProcess( "Derives_from", attrs, strAttributes );
-    x_PriorityProcess( "Note", attrs, strAttributes );
-    x_PriorityProcess( "Dbxref", attrs, strAttributes );
-    x_PriorityProcess( "Ontology_term", attrs, strAttributes );
-
-    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
-        string strKey = it->first;
-        if ( NStr::StartsWith( strKey, "gff_" ) ) {
-            continue;
-        }
-
-        if ( ! strAttributes.empty() && ! (m_uFlags & fSoQuirks) ) {
-            strAttributes += "; ";
-        }
-        strAttributes += strKey;
-        strAttributes += "=";
-		
-		bool quote = x_NeedsQuoting(it->second);
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second;
-		if ( quote )
-			strAttributes += '\"';
-		if ( m_uFlags & fSoQuirks ) {
-            strAttributes += "; ";
-        }
-    }
-    return strAttributes;
 }
 
 //  ----------------------------------------------------------------------------
