@@ -116,13 +116,13 @@ bool s_AnnotId(
 }
 
 //  ============================================================================
-class CGtfRecord
+class CGtfReadRecord
 //  ============================================================================
     : public CGff3Record
 {
 public:
-    CGtfRecord(): CGff3Record() {};
-    ~CGtfRecord() {};
+    CGtfReadRecord(): CGff3Record() {};
+    ~CGtfReadRecord() {};
 
 protected:
     bool x_AssignAttributesFromGff(
@@ -130,7 +130,7 @@ protected:
 };
 
 //  ----------------------------------------------------------------------------
-bool CGtfRecord::x_AssignAttributesFromGff(
+bool CGtfReadRecord::x_AssignAttributesFromGff(
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {
@@ -295,7 +295,7 @@ bool CGtfReader::x_ParseFeatureGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGtfRecord record;
+    CGtfReadRecord record;
     if ( ! record.AssignFromGff( strLine ) ) {
         return false;
     }
