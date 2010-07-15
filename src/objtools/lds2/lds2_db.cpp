@@ -55,20 +55,25 @@ CLDS2_Database::~CLDS2_Database(void)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(sx_LDS2_DB_Lock);
+#define LDS2_DB_GUARD() CFastMutexGuard guard(sx_LDS2_DB_Lock)
+
+
 CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
 {
     if ( !m_Conn.get() ) {
-        if ( m_DbFile.empty() ) {
-            LDS2_THROW(eInvalidDbFile, "Empty database file name.");
+        LDS2_DB_GUARD();
+        if ( !m_Conn.get() ) {
+            if ( m_DbFile.empty() ) {
+                LDS2_THROW(eInvalidDbFile, "Empty database file name.");
+            }
+            m_Conn.reset(new CSQLITE_Connection(m_DbFile,
+                CSQLITE_Connection::eDefaultFlags |
+                CSQLITE_Connection::fVacuumManual |
+                CSQLITE_Connection::fJournalMemory |
+                CSQLITE_Connection::fSyncOff
+                ));
         }
-        //m_Conn.reset(new CSQLITE_Connection(m_DbFile, m_DbFlags));
-        m_Conn.reset(new CSQLITE_Connection(m_DbFile,
-            CSQLITE_Connection::eDefaultFlags |
-            CSQLITE_Connection::fVacuumManual |
-            CSQLITE_Connection::fJournalMemory |
-            CSQLITE_Connection::fSyncOff
-            ));
-        //m_Conn->SetFlags();
     }
     return *m_Conn;
 }
