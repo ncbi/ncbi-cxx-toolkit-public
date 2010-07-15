@@ -305,10 +305,6 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
 int
 CBlastDBCmdApp::x_ProcessSearchRequest()
 {
-    TQueries queries;
-    x_GetQueries(queries);
-    _ASSERT( !queries.empty() );
-
     const CArgs& args = GetArgs();
     CNcbiOstream& out = args["out"].AsOutputFile();
 
@@ -350,6 +346,11 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
 
     bool errors_found = false;
     CSeqFormatter seq_fmt(outfmt, *m_BlastDb, out, conf);
+
+    TQueries queries;
+    x_GetQueries(queries);
+    _ASSERT( !queries.empty() );
+
     NON_CONST_ITERATE(TQueries, itr, queries) {
         try { 
             seq_fmt.Write(**itr); 
