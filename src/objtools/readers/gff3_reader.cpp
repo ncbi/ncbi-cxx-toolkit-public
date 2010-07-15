@@ -608,6 +608,7 @@ bool CGff3Reader::x_InitAnnot(
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
     pAnnotId->SetLocal().SetStr( gff.Id() );
     pAnnot->SetId().push_back( pAnnotId );
+    pAnnot->SetData().SetFtable();
 
     // if available, add current browser information
     if ( m_CurrentBrowserInfo ) {
