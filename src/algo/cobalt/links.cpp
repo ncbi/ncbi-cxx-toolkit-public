@@ -44,15 +44,6 @@ Contents: Implementation of CLinks
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
-struct compare_links
-{
-    bool operator() (const CLinks::SLink& link1,
-                     const CLinks::SLink& link2) const
-    {
-        return link1.weight >= link2.weight;
-    }
-};
-
 CLinks::~CLinks()
 {}
 
@@ -98,7 +89,7 @@ bool CLinks::IsLink(int first, int second) const
 void CLinks::Sort(void)
 {
     // sort according to weights
-    m_Links.sort(compare_links());
+    m_Links.sort();
     m_IsSorted = true;
 }
 
