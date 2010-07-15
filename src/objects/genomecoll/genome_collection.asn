@@ -383,17 +383,9 @@ GC-Scaf-stats ::= SEQUENCE {
         count-chr-with-single-component (75), -- INTEGER OPTIONAL,
         -- number of unplaced/unlocalized singleton scaffolds in minus orientation
         count-singleton-in-minus-orientation (76),-- INTEGER OPTIONAL,
-        -- Number of placed scaffolds, 0 means no placed scaffolds
-        count-placed-scaf (77), -- INTEGER OPTIONAL,
-        -- Number of unordered(unlocalized) scaffolds belong to chromosomes
-        count-unlocalized-scaf (78),-- INTEGER OPTIONAL,
-        -- Number of scaffolds which do not belong to any chromosome, ie ChrUn
-        count-unplaced-scaf   (79), -- INTEGER OPTIONAL,
         --chr-terminal-gap-types SET OF GC-ChrGapTypes OPTIONAL,
         -- are any gaps flagged as 'unknown' and how many? 0 means none.
         count-unknown-gaps (80), --  INTEGER OPTIONAL,
-        -- Is there any unplaced singleton scaffold included? How many?
-        count-unplaced-singleton-scaf (81), --  INTEGER OPTIONAL,
         -- 1.2c Scaffold source names: count implicit/explicit
         count-implicit-scaf-src-name (82), -- INTEGER OPTIONAL,
         count-explicit-scaf-src-name (83), -- INTEGER OPTIONAL
