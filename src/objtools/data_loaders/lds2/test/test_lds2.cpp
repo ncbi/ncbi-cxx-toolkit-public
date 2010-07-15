@@ -45,6 +45,7 @@
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/lds2/lds2_db.hpp>
@@ -427,7 +428,48 @@ int CLDS2TestApplication::Run(void)
     if ( m_RunStress ) {
         x_RunStressTest();
     }
-    else {
+    else if ( args["id"] ) {
+        CSeq_id seq_id(args["id"].AsString());
+        CScope scope(*objmgr);
+        scope.AddDefaults();
+
+        CBioseq_Handle h = scope.GetBioseqHandle(seq_id);
+        if ( !h ) {
+            cout << "Seq-id " << seq_id.AsFastaString() <<
+                " not found in the database" << endl;
+            return 0;
+        }
+
+        SAnnotSelector sel;
+        sel.SetSearchUnresolved()
+            .SetResolveAll();
+        CSeq_loc loc;
+        loc.SetWhole().Assign(seq_id);
+        CFeat_CI fit(scope, loc, sel);
+        int fcount = 0;
+        for (; fit; ++fit) {
+            fcount++;
+        }
+        cout << "Features with location on " << seq_id.AsFastaString() <<
+            ": " << fcount << endl;
+
+        sel.SetByProduct(true);
+        CFeat_CI fitp(scope, loc, sel);
+        fcount = 0;
+        for (; fitp; ++fitp) {
+            fcount++;
+        }
+        cout << "Features with product on " << seq_id.AsFastaString() <<
+            ": " << fcount << endl;
+
+        sel.SetByProduct(false);
+        CAlign_CI ait(scope, loc, sel);
+        int acount = 0;
+        for (; ait; ++ait) {
+            acount++;
+        }
+        cout << "Alignments for " << seq_id.AsFastaString() <<
+            ": " << acount << endl;
     }
 
     return 0;
