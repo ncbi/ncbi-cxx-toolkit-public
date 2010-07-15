@@ -31,7 +31,7 @@
  *
  */
 
-#include <db/bdb/bdb_expt.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 
 BEGIN_NCBI_SCOPE
