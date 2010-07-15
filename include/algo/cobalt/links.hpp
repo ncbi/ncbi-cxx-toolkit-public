@@ -49,7 +49,7 @@ BEGIN_SCOPE(cobalt)
 
 /// Set of edges with weights between nodes represented by zero-based positive
 /// integers
-class CLinks : public CObject
+class NCBI_COBALT_EXPORT CLinks : public CObject
 {
 public:
 
