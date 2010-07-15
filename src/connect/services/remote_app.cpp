@@ -80,16 +80,16 @@ CNcbiOstream& CBlobStreamHelper::GetOStream(const string& fname /*= ""*/,
 {
     if (!m_OStream.get()) {
         _ASSERT(!m_IStream.get());
-        auto_ptr<IWriter> writer(new CStringOrBlobStorageWriter(
+        m_Writer.reset(new CStringOrBlobStorageWriter(
             max_inline_size, m_Storage, *m_Data));
-        m_OStream.reset(new CWStream(writer.release(),
-            0, 0, CRWStreambuf::fOwnWriter
-            | CRWStreambuf::fLeakExceptions));
+        m_OStream.reset(new CWStream(m_Writer.get(),
+            0, 0, CRWStreambuf::fLeakExceptions));
         m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         *m_OStream << (int) type << " ";
         WriteStrWithLen(*m_OStream, fname);
         if (!fname.empty() && type == eLocalFile) {
             m_OStream.reset(new CNcbiOfstream(fname.c_str()));
+            m_Writer.reset();
             if (!m_OStream->good()) {
                 NCBI_THROW(CFileException, eRelativePath,
                     "Cannot open " + fname + " for output");
@@ -148,9 +148,15 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
 void CBlobStreamHelper::Reset()
 {
     m_IStream.reset();
+
     if (m_OStream.get()) {
         m_OStream->flush();
         m_OStream.reset();
+    }
+
+    if (m_Writer.get()) {
+        m_Writer->Close();
+        m_Writer.reset();
     }
 }
 //////////////////////////////////////////////////////////////////////////////

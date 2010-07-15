@@ -73,6 +73,7 @@ public:
 private:
     CNetCacheAPI m_Storage;
     auto_ptr<CNcbiIstream> m_IStream;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_OStream;
     string* m_Data;
     size_t* m_DataSize;
