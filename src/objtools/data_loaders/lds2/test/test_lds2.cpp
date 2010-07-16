@@ -358,7 +358,7 @@ void CLDS2TestApplication::x_RunStressTest(void)
     for (int i = 0; i < 10; i++) {
         CRef<CThread> thr(new CLDS2_TestThread(i));
         threads.push_back(thr);
-        thr->Run();
+        thr->Run(CThread::fRunAllowST);
     }
     NON_CONST_ITERATE(vector< CRef<CThread> >, it, threads) {
         (*it)->Join();
