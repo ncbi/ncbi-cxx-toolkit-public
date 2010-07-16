@@ -1637,6 +1637,22 @@ Seq-annot ::= {
         }
       },
       except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1,
+          id 1
+        }
+      },
+      product whole gi 47086061,
+      location int {
+        from 142,
+        to 2712,
+        strand plus,
+        id gi 47086060
+      }
     }
   }
 }
@@ -2893,7 +2909,9 @@ Seq-annot ::= {
           id other {
             accession "NT_016354",
             version 19
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 1224337,
@@ -2902,7 +2920,8 @@ Seq-annot ::= {
           id other {
             accession "NT_016354",
             version 19
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 1226369,
@@ -3375,7 +3394,9 @@ Seq-annot ::= {
           id other {
             accession "NT_016354",
             version 19
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 1224337,
@@ -3384,7 +3405,8 @@ Seq-annot ::= {
           id other {
             accession "NT_016354",
             version 19
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 1226369,
@@ -3837,7 +3859,8 @@ Seq-annot ::= {
           id other {
             accession "NT_016354",
             version 19
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 1239312,
@@ -4809,7 +4832,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68320191,
@@ -4818,7 +4842,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68309996,
@@ -4827,7 +4853,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68306565,
@@ -4836,7 +4863,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68302047,
@@ -4845,7 +4874,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68288030,
@@ -4854,7 +4885,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68186540,
@@ -4872,7 +4904,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68181245,
@@ -4881,7 +4914,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68180368,
@@ -5226,7 +5260,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68320191,
@@ -5235,7 +5270,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68309996,
@@ -5244,7 +5281,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68306565,
@@ -5253,7 +5291,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68302047,
@@ -5262,7 +5302,9 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
         },
         {
           from 68288030,
@@ -5271,7 +5313,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68186540,
@@ -5289,7 +5332,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68181245,
@@ -5298,7 +5342,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68180368,
@@ -5573,7 +5618,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68181245,
@@ -5582,7 +5628,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         },
         {
           from 68180368,
@@ -5600,7 +5647,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-from lim lt
         },
         {
           from 68179359,
