@@ -5,6 +5,15 @@
 
   !include "MUI.nsh"
   !include "EnvVarUpdate.nsh"
+  !include "x64.nsh"
+  
+;--------------------------------
+; Initialization function to properly set the installation directory
+Function .onInit
+  ${If} ${RunningX64}
+    StrCpy $INSTDIR "$PROGRAMFILES64\NCBI\blast-BLAST_VERSION+"
+  ${EndIf}
+FunctionEnd
 
 ;--------------------------------
 ;General
