@@ -8,12 +8,9 @@
 #include "msvc_prj_defines.hpp"
 #include "ptb_err_codes.hpp"
 
-#define USE_MSVC2010  1
-#if USE_MSVC2010
 #if NCBI_COMPILER_MSVC
 #   include <build-system/project_tree_builder/msbuild/msbuild_dataobj__.hpp>
 #endif //NCBI_COMPILER_MSVC
-#endif //USE_MSVC2010
 
 #include <algorithm>
 
@@ -647,7 +644,6 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     }
 }
 
-#if USE_MSVC2010
 
 template<typename Container>
 void __SET_PROPGROUP_ELEMENT(
@@ -726,14 +722,12 @@ void __SET_CUSTOMBUILD_ELEMENT(
 }
 
 
-#endif  // USE_MSVC2010
 
 
 void CMsvcProjectGenerator::GenerateMsbuild(
     CMsvcPrjFilesCollector& collector,
     CMsvcPrjProjectContext& project_context, CProjItem& prj)
 {
-#if USE_MSVC2010
     msbuild::CProject project;
     project.SetAttlist().SetDefaultTargets("Build");
     project.SetAttlist().SetToolsVersion("4.0");
@@ -979,7 +973,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     if (!collector.SourceFiles().empty()) {
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
         project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
-        
+
         bool first = true;
         ITERATE(list<string>, f, collector.SourceFiles()) {
             const string& rel_source_file = *f;
@@ -1075,10 +1069,15 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     if ( !info_list.empty() ) {
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
         project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+        set<string> processed;
         ITERATE(list<SCustomBuildInfo>, f, info_list) { 
             const SCustomBuildInfo& build_info = *f;
             string rel_source_file =
                 CDirEntry::CreateRelativePath(project_context.ProjectDir(), build_info.m_SourceFile);
+            if (processed.find(rel_source_file) != processed.end()) {
+                continue;
+            }
+            processed.insert(rel_source_file);
             CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
             t->SetItemGroup().SetItemGroup().push_back(p);
             p->SetCustomBuild().SetAttlist().SetInclude(rel_source_file);
@@ -1135,7 +1134,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         }
     }
 
-    // alsmost done
+    // almost done
     {
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
         t->SetImport().SetAttlist().SetProject("$(VCTargetsPath)\\Microsoft.Cpp.targets");
@@ -1153,7 +1152,239 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     project_path += CMsvc7RegSettings::GetVcprojExt();
 
     SaveIfNewer(project_path, project);
-#endif
+
+    GenerateMsbuildFilters(collector, project_context, prj);
+}
+
+class CMsbuildFileFilter
+{
+public:
+    CMsbuildFileFilter(
+        msbuild::CProject& filters,
+        CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E>& filter_list,
+        const string& file_extensions,
+        const string& tag_name,
+        const string& def_filter_name,
+        const string& project_dir,
+        CMsvcPrjFilesCollector& collector,
+        CProjItem& prj);
+    ~CMsbuildFileFilter(void);
+    void AddFile(const string& name);
+
+    static void BeginNewProject(void)
+    {
+        s_project_initialized = false;
+    }
+
+private:
+    msbuild::CProject& m_filters;
+    CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E>& m_filter_list;
+    string m_file_extensions;
+    string m_tag_name;
+    string m_project_dir;
+    CMsvcPrjFilesCollector& m_collector;
+    CProjItem& m_prj;
+
+    map<string, CRef<msbuild::CItemGroup::C_E> > m_filter_id_map;
+    map<string, CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> > m_filter_files_map;
+    map<string, string> m_filter_name_map;
+
+    CDllSrcFilesDistr& m_dll_src;
+    CProjKey m_proj_key;
+    set<string> m_processed;
+    static bool s_project_initialized;
+};
+
+bool CMsbuildFileFilter::s_project_initialized = false;
+
+CMsbuildFileFilter::CMsbuildFileFilter(
+        msbuild::CProject& filters,
+        CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E>& filter_list,
+        const string& file_extensions,
+        const string& tag_name,
+        const string& def_filter_name,
+        const string& project_dir,
+        CMsvcPrjFilesCollector& collector,
+        CProjItem& prj) :
+
+    m_filters(filters),
+    m_filter_list(filter_list),
+    m_file_extensions(file_extensions),
+    m_project_dir(project_dir),
+    m_tag_name(tag_name),
+    m_collector(collector),
+    m_prj(prj),
+    m_dll_src( GetApp().GetDllFilesDistr()),
+    m_proj_key(prj.m_ProjType, prj.m_ID)
+{
+    string filter_lib("Hosted Libraries");
+    list<string> libs = prj.m_HostedLibs;
+    libs.push_back("");
+    libs.sort();
+    libs.unique();
+    
+    
+    ITERATE( list<string>, hosted_lib, libs) {
+        m_filter_id_map[*hosted_lib] = new msbuild::CItemGroup::C_E;
+        m_filter_files_map[*hosted_lib] = new msbuild::CProject::C_ProjectLevelTagType::C_E;
+        if (hosted_lib->empty()) {
+            m_filter_name_map[*hosted_lib] = def_filter_name;
+        } else {
+            m_filter_name_map[*hosted_lib] = filter_lib + "\\" + *hosted_lib + "\\" + def_filter_name;
+        }
+    }
+
+    if (!prj.m_HostedLibs.empty() && !s_project_initialized) {
+        ITERATE( list<string>, hosted_lib, libs) {
+            string filter_name(filter_lib);
+            if (!hosted_lib->empty()) {
+                filter_name += "\\" + *hosted_lib;
+            }
+            CRef<msbuild::CItemGroup::C_E> filter_id( new msbuild::CItemGroup::C_E);
+            filter_id->SetFilter().SetAttlist().SetInclude(filter_name);
+            filter_id->SetFilter().SetUniqueIdentifier(GenerateSlnGUID());
+            filter_id->SetFilter().SetExtensions("");
+            m_filter_list->SetItemGroup().SetItemGroup().push_back(filter_id);
+        }
+        s_project_initialized = true;
+    }
+}
+
+CMsbuildFileFilter::~CMsbuildFileFilter(void)
+{
+    map<string, CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> >::const_iterator i;
+    for (i = m_filter_files_map.begin(); i != m_filter_files_map.end(); ++i) {
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> filter_files = i->second;
+        if (filter_files->Which() != msbuild::CProject::C_ProjectLevelTagType::C_E::e_not_set) {
+            CRef<msbuild::CItemGroup::C_E> filter_id = m_filter_id_map[i->first];
+            string filter_name = m_filter_name_map[i->first];
+            filter_id->SetFilter().SetAttlist().SetInclude(filter_name);
+            filter_id->SetFilter().SetUniqueIdentifier(GenerateSlnGUID());
+            filter_id->SetFilter().SetExtensions(m_file_extensions);
+            m_filter_list->SetItemGroup().SetItemGroup().push_back(filter_id);
+            m_filters.SetProjectLevelTagType().SetProjectLevelTagType().push_back(filter_files);
+        }
+    }
+}
+
+void CMsbuildFileFilter::AddFile(const string& file_name)
+{
+    if (m_processed.find(file_name) != m_processed.end()) {
+        return;
+    }
+    m_processed.insert(file_name);
+    string abs_name(file_name);
+    if (!CDirEntry::IsAbsolutePath(file_name)) {
+        abs_name = CDirEntry::ConcatPath( m_project_dir, file_name);
+    }
+    abs_name = CDirEntry::NormalizePath( abs_name);
+    CProjKey hosted_key = m_dll_src.GetFileLib( abs_name, m_proj_key);
+    CRef<msbuild::CProject::C_ProjectLevelTagType::C_E>& filter_files = m_filter_files_map[hosted_key.Id()];
+    const string& filter_name = m_filter_name_map[hosted_key.Id()];
+
+    CRef<msbuild::CItemGroup::C_E> file_id(new msbuild::CItemGroup::C_E);
+    filter_files->SetItemGroup().SetItemGroup().push_back(file_id);
+    file_id->SetAnyContent().SetName(m_tag_name);
+    file_id->SetAnyContent().AddAttribute("Include",kEmptyStr,file_name);
+    file_id->SetAnyContent().SetValue("<Filter>" + filter_name + "</Filter>");
+}
+
+void CMsvcProjectGenerator::GenerateMsbuildFilters(
+    CMsvcPrjFilesCollector& collector,
+    CMsvcPrjProjectContext& project_context, CProjItem& prj)
+{
+    msbuild::CProject filters;
+    filters.SetAttlist().SetToolsVersion("4.0");
+    string project_dir(project_context.ProjectDir());
+
+    CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> filter_list(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
+    CMsbuildFileFilter::BeginNewProject();
+
+    // sources
+    if (!collector.SourceFiles().empty()) {
+        string tag_name("ClCompile");
+        string filter_name("Source Files");
+        CMsbuildFileFilter filter( filters, filter_list, "cpp;c;cxx",
+            tag_name, filter_name, project_dir, collector, prj);
+        ITERATE(list<string>, f, collector.SourceFiles()) {
+            const string& rel_source_file = *f;
+            if ( NStr::Find(rel_source_file, ".@config@") == NPOS ) {
+                filter.AddFile(rel_source_file);
+            } else {
+                ITERATE(list<SConfigInfo>, c, m_project_configs) {
+                    const string& cfg_name = c->GetConfigFullName();
+                    string cfg_file = NStr::Replace(rel_source_file, ".@config@", "." + cfg_name);
+                    filter.AddFile(cfg_file);
+                }
+            }
+        }
+    }
+    if (!collector.HeaderFiles().empty()) {
+        string tag_name("ClInclude");
+        string filter_name("Header Files");
+        CMsbuildFileFilter filter( filters, filter_list, "hpp;h;hxx",
+            tag_name, filter_name, project_dir, collector, prj);
+        ITERATE(list<string>, f, collector.HeaderFiles()) {
+            filter.AddFile(*f);
+        }
+    }
+    if (!collector.InlineFiles().empty()) {
+        string tag_name("None");
+        string filter_name("Inline Files");
+        CMsbuildFileFilter filter( filters, filter_list, "inl",
+            tag_name, filter_name, project_dir, collector, prj);
+        ITERATE(list<string>, f, collector.InlineFiles()) {
+            filter.AddFile(*f);
+        }
+    }
+    if (!collector.ResourceFiles().empty()) {
+        string tag_name("ResourceCompile");
+        string filter_name("Resource Files");
+        CMsbuildFileFilter filter( filters, filter_list, "rc",
+            tag_name, filter_name, project_dir, collector, prj);
+        ITERATE(list<string>, f, collector.ResourceFiles()) {
+            filter.AddFile(*f);
+        }
+    }
+    list<SCustomBuildInfo> info_list = prj.m_CustomBuild;
+    copy(project_context.GetCustomBuildInfo().begin(), 
+         project_context.GetCustomBuildInfo().end(), back_inserter(info_list));
+    if ( !prj.m_DatatoolSources.empty() ) {
+        ITERATE(list<CDataToolGeneratedSrc>, f, prj.m_DatatoolSources) {
+            const CDataToolGeneratedSrc& src = *f;
+            SCustomBuildInfo build_info;
+            s_CreateDatatoolCustomBuildInfo(prj, project_context, src, &build_info);
+            info_list.push_back(build_info);
+        }
+    }
+    if ( !info_list.empty() ) {
+        string tag_name("CustomBuild");
+        string filter_name("Custom Build Files");
+        CMsbuildFileFilter filter( filters, filter_list, "asn;dtd;xsd",
+            tag_name, filter_name, project_dir, collector, prj);
+        ITERATE(list<SCustomBuildInfo>, f, info_list) { 
+            const SCustomBuildInfo& build_info = *f;
+            string rel_source_file =
+                CDirEntry::CreateRelativePath(project_context.ProjectDir(), build_info.m_SourceFile);
+            filter.AddFile(rel_source_file);
+        }
+    }
+
+    bool save_filters = false;
+    try {
+        save_filters = !filter_list->GetItemGroup().GetItemGroup().empty();
+    } catch (CInvalidChoiceSelection&) {
+        save_filters = false;
+    }
+    if (save_filters) {
+        string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
+                                                    project_context.ProjectName());
+        project_path += CMsvc7RegSettings::GetVcprojExt();
+        project_path += ".filters";
+
+        filters.SetProjectLevelTagExceptTargetOrImportType().SetProjectLevelTagExceptTargetOrImportType().push_back(filter_list);
+        SaveIfNewer(project_path, filters);
+    }
 }
 
 void CreateUtilityProject(const string&            name, 

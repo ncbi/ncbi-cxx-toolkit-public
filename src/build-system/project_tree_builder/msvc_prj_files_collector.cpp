@@ -302,6 +302,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
         }
     }
     m_SourceFiles.sort(s_FileName_less);
+    m_SourceFiles.unique();
 }
 
 
@@ -313,6 +314,7 @@ CMsvcPrjFilesCollector::CollectHeaders(void)
     s_CollectRelPathes(m_Context->ProjectDir(), m_Context->IncludeDirsAbs(),
                        &m_HeaderFiles);
     m_HeaderFiles.sort(s_FileName_less);
+    m_HeaderFiles.unique();
 }
 
 
@@ -325,6 +327,7 @@ CMsvcPrjFilesCollector::CollectInlines(void)
     s_CollectRelPathes(m_Context->ProjectDir(), m_Context->InlineDirsAbs(),
                        &m_InlineFiles);
     m_InlineFiles.sort(s_FileName_less);
+    m_InlineFiles.unique();
 }
 
 
@@ -372,6 +375,7 @@ CMsvcPrjFilesCollector::CollectResources(void)
         }
     }
     m_ResourceFiles.sort(s_FileName_less);
+    m_ResourceFiles.unique();
 }
 
 

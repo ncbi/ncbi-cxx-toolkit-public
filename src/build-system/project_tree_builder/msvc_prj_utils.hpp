@@ -566,6 +566,8 @@ public:
     // Retrive original lib_id for .inl file
     CProjKey GetInlineLib(const string&   inl_file_path, 
                           const CProjKey& dll_project_id) const;
+    CProjKey GetFileLib(const string&   file_path, 
+                          const CProjKey& dll_project_id) const;
 private:
 
     typedef pair<string,    CProjKey> TDllSrcKey;

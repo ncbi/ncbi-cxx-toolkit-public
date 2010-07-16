@@ -12,7 +12,7 @@
             <xs:sequence>
                 <xs:group ref="msb:ProjectLevelTagExceptTargetOrImportType" minOccurs="0" maxOccurs="unbounded"/>
                 <!-- must be at least one Target or Import tag-->
-                <xs:group ref="msb:TargetOrImportType"/>
+                <xs:group ref="msb:TargetOrImportType" minOccurs="0"/>
                 <xs:group ref="msb:ProjectLevelTagType" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="DefaultTargets" type="xs:string" use="optional">
@@ -195,6 +195,7 @@
             <xs:element ref="msb:None"/>
             <xs:element ref="msb:CustomBuild"/>
             <xs:element ref="msb:Filter"/>
+            <xs:any processContents="lax"/>
 <!--  NCBI modification end -->
             <xs:element name="Link" type="msb:LinkItem" />
             <xs:element name="ResourceCompile" type="msb:ResourceCompile" />

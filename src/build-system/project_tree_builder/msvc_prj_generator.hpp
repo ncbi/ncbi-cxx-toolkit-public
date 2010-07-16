@@ -72,6 +72,10 @@ public:
                             CMsvcPrjFilesCollector& collector,
                             CMsvcPrjProjectContext& project_context,
                             CProjItem& prj);
+    void GenerateMsbuildFilters(
+                            CMsvcPrjFilesCollector& collector,
+                            CMsvcPrjProjectContext& project_context,
+                            CProjItem& prj);
 
 private:
     list<SConfigInfo> m_Configs;

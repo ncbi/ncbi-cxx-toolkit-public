@@ -32,6 +32,7 @@
 #include "proj_builder_app.hpp"
 #include "msvc_prj_defines.hpp"
 #include "ptb_err_codes.hpp"
+#include <corelib/ncbi_system.hpp>
 
 #ifdef NCBI_COMPILER_MSVC
 #  include <serial/objostrxml.hpp>
@@ -119,8 +120,8 @@ bool PromoteIfDifferent(const string& present_path,
                               IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs_present ) {
         CDirEntry(present_path).Remove();
-        CDirEntry(candidate_path).Rename(present_path);
-        GetApp().RegisterGeneratedFile( present_path );
+        for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
+            SleepSec(1);
         return true;
     }
 
@@ -143,7 +144,8 @@ bool PromoteIfDifferent(const string& present_path,
         ifs_present.close();
         ifs_new.close();
         CDirEntry(present_path).Remove();
-        CDirEntry(candidate_path).Rename(present_path);
+        for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
+            SleepSec(1);
         GetApp().RegisterGeneratedFile( present_path );
         return true;
     }
@@ -162,7 +164,8 @@ bool PromoteIfDifferent(const string& present_path,
     // If candidate file is not the same as present file it'll be a new file
     if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
         CDirEntry(present_path).Remove();
-        CDirEntry(candidate_path).Rename(present_path);
+        for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
+            SleepSec(1);
         GetApp().RegisterGeneratedFile( present_path );
         return true;
     } else {
@@ -1409,6 +1412,29 @@ CProjKey CDllSrcFilesDistr::GetInlineLib(const string&   inl_file_path,
         return lib_id;
     }
     return CProjKey();
+}
+
+CProjKey CDllSrcFilesDistr::GetFileLib(const string&   file_path, 
+                          const CProjKey& dll_project_id) const
+{
+    CProjKey empty;
+    if (dll_project_id.Type() != CProjKey::eDll) {
+        return empty;
+    }
+    CProjKey test;
+    test = GetSourceLib(file_path, dll_project_id);
+    if (test != empty) {
+        return test;
+    }
+    test = GetHeaderLib(file_path, dll_project_id);
+    if (test != empty) {
+        return test;
+    }
+    test = GetInlineLib(file_path, dll_project_id);
+    if (test != empty) {
+        return test;
+    }
+    return empty;
 }
 
 

@@ -676,8 +676,7 @@ elementFormDefault="qualified">
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="msb:SimpleItemType">
-                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                        <xs:choice>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
                             <xs:element name="DependentUpon"/>
                             <xs:element name="Generator">
                                 <xs:annotation>
@@ -699,7 +698,6 @@ elementFormDefault="qualified">
                             <xs:element name="CopyToOutputDirectory"/>                            
                             <xs:any processContents="lax"/>
                         </xs:choice>
-                    </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
