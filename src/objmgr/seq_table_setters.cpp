@@ -163,39 +163,66 @@ void CSeqTableSetQual::SetString(CSeq_feat& feat, const string& value) const
 }
 
 
-void CSeqTableSetExt::SetInt(CSeq_feat& feat, int value) const
+CSeqTableSetExt::CSeqTableSetExt(const CTempString& fullname)
+    : name(fullname.substr(2))
 {
+    if ( name.find('.') != NPOS ) {
+        NStr::Tokenize(name, ".", subfields);
+        name = subfields.back();
+        subfields.pop_back();
+    }
+}
+
+
+CUser_field& CSeqTableSetExt::x_SetField(CSeq_feat& feat) const
+{
+    CUser_object::TData* data = &feat.SetExt().SetData();
+    ITERATE ( TSubfields, it, subfields ) {
+        CUser_object::TData* next_data = 0;
+        NON_CONST_ITERATE ( CUser_object::TData, it2, *data ) {
+            const CObject_id& id = (*it2)->GetLabel();
+            CUser_field::TData& data = (*it2)->SetData();
+            if ( data.IsFields() && id.IsStr() && id.GetStr() == *it ) {
+                next_data = &data.SetFields();
+                break;
+            }
+        }
+        if ( !next_data ) {
+            CRef<CUser_field> field(new CUser_field());
+            data->push_back(field);
+            field->SetLabel().SetStr(*it);
+            next_data = &field->SetData().SetFields();
+        }
+        data = next_data;
+    }
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(name);
-    field->SetData().SetInt(value);
-    feat.SetExt().SetData().push_back(field);
+    data->push_back(field);
+    return *field;
+}
+
+
+void CSeqTableSetExt::SetInt(CSeq_feat& feat, int value) const
+{
+    x_SetField(feat).SetData().SetInt(value);
 }
 
 
 void CSeqTableSetExt::SetReal(CSeq_feat& feat, double value) const
 {
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetReal(value);
-    feat.SetExt().SetData().push_back(field);
+    x_SetField(feat).SetData().SetReal(value);
 }
 
 
 void CSeqTableSetExt::SetString(CSeq_feat& feat, const string& value) const
 {
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetStr(value);
-    feat.SetExt().SetData().push_back(field);
+    x_SetField(feat).SetData().SetStr(value);
 }
 
 
 void CSeqTableSetExt::SetBytes(CSeq_feat& feat, const vector<char>& value) const
 {
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetOs() = value;
-    feat.SetExt().SetData().push_back(field);
+    x_SetField(feat).SetData().SetOs() = value;
 }
 
 

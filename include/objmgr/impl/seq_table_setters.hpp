@@ -41,6 +41,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CUser_field;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_feat and CSeq_loc field setters
@@ -99,17 +101,19 @@ private:
 class CSeqTableSetExt : public CSeqTableSetFeatField
 {
 public:
-    CSeqTableSetExt(const CTempString& name)
-        : name(name.substr(2))
-        {
-        }
+    CSeqTableSetExt(const CTempString& name);
 
     virtual void SetInt(CSeq_feat& feat, int value) const;
     virtual void SetReal(CSeq_feat& feat, double value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;
     virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
 
+protected:
+    CUser_field& x_SetField(CSeq_feat& feat) const;
+
 private:
+    typedef vector<string> TSubfields;
+    TSubfields subfields;
     string name;
 };
 
