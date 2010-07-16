@@ -194,54 +194,44 @@ const string kEntrezSitesCgi = "http://www.ncbi.nlm.nih.gov/sites/entrez";
 
 
 
-/// list all static url patterns 
-static 
-pair <string,string> 
-k_all_url_pairs[]={
-  pair <string,string>  ("ENTREZ",  kEntrezUrl ),
-  pair <string,string>  ("UNIGEN",  kUnigeneUrl),  
-  pair <string,string>  ("GEO",    kGeoUrl),
-  pair <string,string>  ("GENE",  kGeneUrl),
-  pair <string,string>  ("GENE_INFO",  kGeneInfoUrl),
-  pair <string,string>  ("BIOASSAY_PROT",  kBioAssayProtURL),
-  pair <string,string>  ("BIOASSAY_NUC",  kBioAssayNucURL),
-  pair <string,string>  ("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
-  pair <string,string>  ("TRACE",  kTraceUrl),
-  pair <string,string>  ("GENOME_BTN",  kGenomeButton),
-  pair <string,string>  ("STRUCTURE_URL",  kStructureUrl),
-  pair <string,string>  ("STRUCTURE_OVW",  kStructure_Overview),
-  pair <string,string>  ("MAPVIEWER",  kMapviwerUrl),
-  pair <string,string>  ("BL2SEQ",  kBl2seqUrl),
-  pair <string,string>  ("GETSEQ_SUB_FRM_0",  k_GetSeqSubmitForm[0]),
-  pair <string,string>  ("GETSEQ_SUB_FRM_1",  k_GetSeqSubmitForm[1]),
-  pair <string,string>  ("GETSEQ_SEL_FRM",  k_GetSeqSelectForm),
-  pair <string,string>  ("TREEVIEW_FRM",  k_GetTreeViewForm),
+/// create map source of all static URL's using previously defined pairs
+typedef pair<string, string> TTagUrl;
+static const TTagUrl s_TagUrls [] = {
+  TTagUrl("ENTREZ",  kEntrezUrl ),
+  TTagUrl("UNIGEN",  kUnigeneUrl),  
+  TTagUrl("GEO",    kGeoUrl),
+  TTagUrl("GENE",  kGeneUrl),
+  TTagUrl("GENE_INFO",  kGeneInfoUrl),
+  TTagUrl("BIOASSAY_PROT",  kBioAssayProtURL),
+  TTagUrl("BIOASSAY_NUC",  kBioAssayNucURL),
+  TTagUrl("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
+  TTagUrl("TRACE",  kTraceUrl),
+  TTagUrl("GENOME_BTN",  kGenomeButton),
+  TTagUrl("STRUCTURE_URL",  kStructureUrl),
+  TTagUrl("STRUCTURE_OVW",  kStructure_Overview),
+  TTagUrl("MAPVIEWER",  kMapviwerUrl),
+  TTagUrl("BL2SEQ",  kBl2seqUrl),
+  TTagUrl("GETSEQ_SUB_FRM_0",  k_GetSeqSubmitForm[0]),
+  TTagUrl("GETSEQ_SUB_FRM_1",  k_GetSeqSubmitForm[1]),
+  TTagUrl("GETSEQ_SEL_FRM",  k_GetSeqSelectForm),
+  TTagUrl("TREEVIEW_FRM",  k_GetTreeViewForm),
   // only cgi links
-  pair <string,string>  ("TREEVIEW_CGI",  kGetTreeViewCgi),
-  pair <string,string>  ("ENTREZ_QUERY_CGI",  kEntrezQueryCgi),
-  pair <string,string>  ("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
-  pair <string,string>  ("TRACE_CGI",  kTraceCgi),
-  pair <string,string>  ("MAP_SEARCH_CGI",  kMapSearchCgi),
-  pair <string,string>  ("CBLAST_CGI",  kCBlastCgi),
-  pair <string,string>  ("BL2SEQ_WBLAST_CGI",  kBl2SeqWBlastCgi),
-  pair <string,string>  ("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
-  pair <string,string>  ("ENTREZ_TM",  kEntrezTMUrl)
+  TTagUrl("TREEVIEW_CGI",  kGetTreeViewCgi),
+  TTagUrl("ENTREZ_QUERY_CGI",  kEntrezQueryCgi),
+  TTagUrl("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
+  TTagUrl("TRACE_CGI",  kTraceCgi),
+  TTagUrl("MAP_SEARCH_CGI",  kMapSearchCgi),
+  TTagUrl("CBLAST_CGI",  kCBlastCgi),
+  TTagUrl("BL2SEQ_WBLAST_CGI",  kBl2SeqWBlastCgi),
+  TTagUrl("ENTREZ_SITES_CGI",  kEntrezSitesCgi),
+  TTagUrl("ENTREZ_TM",  kEntrezTMUrl)
 };
+typedef CStaticArrayMap<string, string> TTagUrlMap;
+DEFINE_STATIC_ARRAY_MAP(TTagUrlMap, sm_TagUrlMap, s_TagUrls);
 
 #ifndef DIM
 /// Calculates the dimensions of a static array
 #define DIM(static_array) (sizeof(static_array)/sizeof(*static_array))
-#endif
-
-/// Type definition for a map of tags - URLs
-typedef map<string, string> TUrlMap;
-
-#ifndef NCBI_SWIG
-/// create map source of all static URL's using previously defined pairs
-static 
-TUrlMap
-k_UrlMap((const TUrlMap::value_type*)&k_all_url_pairs[0], 
-         (const TUrlMap::value_type*)k_all_url_pairs + DIM(k_all_url_pairs));
 #endif
 
 ///protein matrix define

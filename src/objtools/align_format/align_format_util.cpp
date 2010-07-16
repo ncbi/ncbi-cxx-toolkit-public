@@ -2229,10 +2229,10 @@ string CAlignFormatUtil::GetURLFromRegistry( const string url_name, int index){
 string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
 
   string search_name = url_name;
-  map <string,string>::iterator url_it;
+  TTagUrlMap::const_iterator url_it;
   if( index >= 0 ) search_name += "_" + NStr::IntToString( index); // actual name for index value is NAME_{index}
 
-  if( (url_it = k_UrlMap.find( search_name ) ) != k_UrlMap.end()) return url_it->second;
+  if( (url_it = sm_TagUrlMap.find( search_name ) ) != sm_TagUrlMap.end()) return url_it->second;
 
   string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
   if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index ); 
