@@ -105,6 +105,7 @@ typedef struct BlastHSPStream {
    /* support for writer and pipes */
    BlastHSPWriter* writer;         /**< writer to be applied when writing*/
    Boolean writer_initialized;     /**< Is writer already initialized? */
+   Boolean writer_finalized;       /**< Is writer ever finalized? */
    BlastHSPPipe *pre_pipe;         /**< registered preliminary pipeline (unused
                                     for now) */
    BlastHSPPipe *tback_pipe;       /**< registered traceback pipeline */

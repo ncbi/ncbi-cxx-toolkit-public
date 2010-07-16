@@ -99,18 +99,13 @@ static int s_SortHSPListByOid(const void *x, const void *y)
                 return (*yy)->oid - (*xx)->oid;
 }
 
-/** Prohibit any future writing to the HSP stream when all results are written.
- * Also perform sorting of results here to prepare them for reading.
- * @param hsp_stream The HSP stream to close [in] [out]
- */ 
-void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
+/** certain hspstreams (such as besthit and culling) uses its own data structure
+ * and therefore must be finalized before reading/merging 
+ */
+static void s_FinalizeWriter(BlastHSPStream* hsp_stream)
 {
-   Int4 i, j, k;
-   Int4 num_hsplists;
-   BlastHSPResults *results;
    BlastHSPPipe *pipe;
-
-   if (!hsp_stream || !hsp_stream->results || hsp_stream->results_sorted)
+   if (!hsp_stream || !hsp_stream->results || hsp_stream->writer_finalized) 
       return;
 
    /* perform post-writer clean ups */
@@ -131,6 +126,24 @@ void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
        (pipe->RunFnPtr) (pipe->data, hsp_stream->results);
        (pipe->FreeFnPtr) (pipe);
    }
+
+   hsp_stream->writer_finalized = TRUE;
+}
+
+/** Prohibit any future writing to the HSP stream when all results are written.
+ * Also perform sorting of results here to prepare them for reading.
+ * @param hsp_stream The HSP stream to close [in] [out]
+ */ 
+void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
+{
+   Int4 i, j, k;
+   Int4 num_hsplists;
+   BlastHSPResults *results;
+
+   if (!hsp_stream || !hsp_stream->results || hsp_stream->results_sorted)
+      return;
+
+   s_FinalizeWriter(hsp_stream);
 
    if (hsp_stream->sort_by_score) {
        if (hsp_stream->sort_by_score->sort_on_read) {
@@ -381,8 +394,12 @@ int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
    if (!stream1 || !stream2) 
        return kBlastHSPStream_Error;
 
+   s_FinalizeWriter(stream1);
+   s_FinalizeWriter(stream2);
+
    results1 = stream1->results;
    results2 = stream2->results;
+
    contexts_per_query = BLAST_GetNumberOfContexts(stream2->program);
 
    SplitQueryBlk_GetQueryIndicesForChunk(squery_blk, chunk_num, &query_list);
@@ -543,10 +560,6 @@ int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
    if (!hsp_stream || !batch)
        return kBlastHSPStream_Error;
 
-   batch->num_hsplists = 0;
-   if (!hsp_stream->results)
-      return kBlastHSPStream_Eof;
-
    /* If this stream is not yet closed for writing, close it. In particular,
       this includes sorting of results. 
       NB: to lift the prohibition on write after the first read, the 
@@ -554,6 +567,10 @@ int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
       should be done outside of the read function. */
    if (!hsp_stream->results_sorted)
       BlastHSPStreamClose(hsp_stream);
+
+   batch->num_hsplists = 0;
+   if (!hsp_stream->results)
+      return kBlastHSPStream_Eof;
 
    /* return all the HSPlists with the same subject OID as the
       last HSPList in the collection stored. We assume there is
@@ -646,6 +663,7 @@ BlastHSPStreamNew(EBlastProgramType program,
     hsp_stream->x_lock = NULL;
     hsp_stream->writer = writer;
     hsp_stream->writer_initialized = FALSE;
+    hsp_stream->writer_finalized = FALSE;
     hsp_stream->pre_pipe = NULL;
     hsp_stream->tback_pipe = NULL;
 

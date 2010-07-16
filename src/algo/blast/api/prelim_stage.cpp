@@ -217,9 +217,9 @@ CBlastPrelimSearch::Run()
         }
     }
 
-	// Query splitting data structure (used only if applicable)
-	CRef<SBlastSetupData> setup_data(new SBlastSetupData(m_QueryFactory, m_Options));
-	CRef<CQuerySplitter> query_splitter = setup_data->m_QuerySplitter;
+    // Query splitting data structure (used only if applicable)
+    CRef<SBlastSetupData> setup_data(new SBlastSetupData(m_QueryFactory, m_Options));
+    CRef<CQuerySplitter> query_splitter = setup_data->m_QuerySplitter;
     if (query_splitter->IsQuerySplit()) {
 
         CRef<CSplitQueryBlk> split_query_blk = query_splitter->Split();
