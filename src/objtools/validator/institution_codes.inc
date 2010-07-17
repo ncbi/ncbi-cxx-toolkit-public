@@ -5011,6 +5011,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SEMK	s	Snow Entomological Museum",
 "SEMM	s	Station Experimental de la Maboke",
 "SEMO	s	Southeast Missouri State University, Department of Biology",
+"SERC<USA-MD>	s	Smithsonian Environmental Research Center",
 "SERG	s	Institut de Recherche Agronomique de Guinee",
 "SERO	s	Sociedad para el Estudio de los Recursos Bioticos de Oaxaca",
 "SES	s	Southeastern Shanxi Teachers School, Biochemistry Department",
