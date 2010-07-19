@@ -384,7 +384,7 @@ GC-Scaf-stats ::= SEQUENCE {
         spanned-gaps (20),
         unspanned-gaps (21),
         is-there-unplaced-scaf (72), -- 1 means there is unplaced scaffold. 0 means none
-        count-singleton-unordered-scaffole (73),
+        count-singleton-unordered-scaffold (73),
         count-chr-made-of-singleton-ordered-scaffold (74),
     -- GCOL-675 - assembly release review stats. Meaningful only at assembly
     -- level.
@@ -416,7 +416,7 @@ GC-Scaf-stats ::= SEQUENCE {
         -- latest GenBank/Refseq release for the same assembly, by how many?
         count-uniq-components (87), --INTEGER OPTIONAL ,
         count-uniq-component-diff-from-last-release (88), --INTEGER OPTIONAL,
-        count-dropped-components (91), -- dropped component due to foriegn screen
+        count-dropped-components (91), -- dropped component due to foreign screen
         other (255) -- catch all
     },
     value INTEGER
