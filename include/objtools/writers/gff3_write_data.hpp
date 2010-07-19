@@ -102,8 +102,8 @@ public:
     ENa_strand Strand() const { 
         return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
     };
-    TFrame Phase() const {
-        return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
+    unsigned int Phase() const {
+        return IsSetPhase() ? *m_puPhase : 0; 
     };
     virtual string SortTieBreaker() const { 
         return ""; 
@@ -116,7 +116,7 @@ public:
         return m_peStrand != 0; 
     };
     bool IsSetPhase() const { 
-        return m_pePhase != 0; 
+        return m_puPhase != 0; 
     };
 
     const TAttributes& Attributes() const { 
@@ -178,7 +178,7 @@ protected:
     string m_strType;
     double* m_pdScore;
     ENa_strand* m_peStrand;
-    TFrame* m_pePhase;
+    unsigned int* m_puPhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
 

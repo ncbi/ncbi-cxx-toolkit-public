@@ -81,7 +81,7 @@ CGff3WriteRecord::CGff3WriteRecord(
     m_uSeqStop( 0 ),
     m_pdScore( 0 ),
     m_peStrand( 0 ),
-    m_pePhase( 0 )
+    m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
     m_Sah = sah;
@@ -93,7 +93,7 @@ CGff3WriteRecord::~CGff3WriteRecord()
 {
     delete m_pdScore;
     delete m_peStrand;
-    delete m_pePhase; 
+    delete m_puPhase; 
 };
 
 //  ----------------------------------------------------------------------------
@@ -271,14 +271,7 @@ string CGff3WriteRecord::StrPhase() const
     if ( ! IsSetPhase() ) {
         return ".";
     }
-    switch ( Phase() ) {
-    default:
-        return "0";
-    case CCdregion::eFrame_two:
-        return "1";
-    case CCdregion::eFrame_three:
-        return "2";
-    }
+    return NStr::UIntToString( Phase() );
 }
 
 //  ----------------------------------------------------------------------------
@@ -506,20 +499,8 @@ bool CGff3WriteRecord::x_AssignPhaseFromAsn(
     const CSeq_feat::TData& data = feature.GetData();
     if ( data.GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
         const CCdregion& cdr = data.GetCdregion();
-        m_pePhase = new TFrame( cdr.GetFrame() );
+        m_puPhase = new unsigned int( 0 );
         return true;
-    }
-
-    const vector< CRef< CGb_qual > >& quals = feature.GetQual();
-    vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-    while ( it != quals.end() ) {
-        if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-            if ( (*it)->GetQual() == "gff_phase" ) {
-                m_pePhase = new TFrame( TFrame( NStr::StringToInt( (*it)->GetVal() ) ) );
-                return true;
-            }
-            ++it;
-        }
     }
     return true;
 }

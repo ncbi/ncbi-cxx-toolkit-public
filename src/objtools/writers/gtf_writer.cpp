@@ -82,29 +82,41 @@ bool CGtfWriter::x_AssignObject(
    CGff3WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    if ( feat.CanGetData() ) {
-        switch ( feat.GetData().GetSubtype() ) {
-        default:
-            break;
-
-        case CSeq_feat::TData::eSubtype_mRNA: 
-            return x_AssignObjectMrna( sah, feat, set );       
-
-        case CSeq_feat::TData::eSubtype_cdregion:
-            return x_AssignObjectCds( sah, feat, set );
-        }
+    if ( ! feat.CanGetData() ) {
+        return false;
     }
 
+    switch ( feat.GetData().GetSubtype() ) {
+    default:
+        // GTF is not interested --- ignore
+        return true;
+
+    case CSeq_feat::TData::eSubtype_mRNA: 
+        return x_AssignObjectMrna( sah, feat, set );       
+
+    case CSeq_feat::TData::eSubtype_cdregion:
+        return x_AssignObjectCds( sah, feat, set );
+
+    case CSeq_feat::TData::eSubtype_gene:
+            return x_AssignObjectGene( sah, feat, set );
+    }
+}
+    
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::x_AssignObjectGene(
+    CSeq_annot_Handle sah,
+    const CSeq_feat& feat,
+    CGff3WriteRecordSet& set )
+//  ----------------------------------------------------------------------------
+{
     CGtfRecord* pRecord = new CGtfRecord( sah );
     if ( ! pRecord->AssignFromAsn( feat ) ) {
         return false;
     }
-
-    // default behavior:
     set.AddRecord( pRecord );
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_AssignObjectMrna(
     CSeq_annot_Handle sah,
@@ -123,33 +135,23 @@ bool CGtfWriter::x_AssignObjectMrna(
     const CSeq_loc& loc = feat.GetLocation();
     unsigned int uExonNumber = 1;
 
-    if ( loc.IsPacked_int() && loc.GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = loc.GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
+    CRef< CSeq_loc > pLocMrna( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pLocMrna->Add( loc );
+    pLocMrna->ChangeToPackedInt();
+
+    if ( pLocMrna->IsPacked_int() && pLocMrna->GetPacked_int().CanGet() ) {
+        list< CRef< CSeq_interval > >& sublocs = pLocMrna->SetPacked_int().Set();
+        list< CRef< CSeq_interval > >::iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
+            CSeq_interval& subint = **it;
             CGtfRecord* pExon = new CGtfRecord( sah );
             pParent->ForceType( "exon" );
             pExon->MakeChildRecord( *pParent, subint, uExonNumber );
             set.AddOrMergeRecord( pExon );
-            m_exonMap[ uExonNumber++ ] = &subint;
+            m_exonMap[ uExonNumber++ ] = CRef< CSeq_interval >( 
+                new CSeq_interval( subint.SetId(), subint.SetFrom(), subint.SetTo() ) );
         }
     }
-    else if ( loc.IsMix() && loc.GetMix().CanGet() ) {
-        const list< CRef< CSeq_loc > >& sublocs = loc.GetMix().Get();
-        list< CRef< CSeq_loc > >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            if ( (*it)->IsInt() ) {
-                const CSeq_interval& subint = (*it)->GetInt();
-                CGtfRecord* pExon = new CGtfRecord( sah );
-                pParent->ForceType( "exon" );
-                pExon->MakeChildRecord( *pParent, subint, uExonNumber );
-                set.AddOrMergeRecord( pExon );
-                m_exonMap[ uExonNumber++ ] = &subint;
-            }
-        }
-    }
-//    delete pParent;
     return true;
 }
     
@@ -302,6 +304,12 @@ void CGtfWriter::x_AddMultipleRecords(
             
         CGtfRecord* pRecord = new CGtfRecord( parent.AnnotHandle() );
         pRecord->MakeChildRecord( parent, subint, uExonNumber );
+
+        if ( pRecord->Type() == "CDS" ||
+            pRecord->Type() == "start_codon" || pRecord->Type() == "stop_codon" ) 
+        {
+            pRecord->SetCdsPhase( sublocs, pLocation->GetStrand() );
+        }
         set.AddOrMergeRecord( pRecord );
     }
 }

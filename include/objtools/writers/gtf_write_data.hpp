@@ -60,6 +60,10 @@ public:
         m_strType = strType;
     };
 
+    void SetCdsPhase(
+        const list< CRef< CSeq_interval > >&,
+        ENa_strand );
+ 
     CSeq_annot_Handle AnnotHandle() const {
         return m_Sah;
     };

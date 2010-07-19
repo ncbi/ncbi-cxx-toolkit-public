@@ -243,5 +243,39 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+void CGtfRecord::SetCdsPhase(
+    const list<CRef<CSeq_interval> > & cdsLocs,
+    ENa_strand eStrand )
+//  ----------------------------------------------------------------------------
+{
+    if ( cdsLocs.empty() ) {
+        return;
+    }
+    if ( ! IsSetPhase() ) {
+        m_puPhase = new unsigned int( 0 );
+    }
+    if ( eStrand == eNa_strand_minus ) {
+        unsigned int uTopSize = 0;
+        list<CRef<CSeq_interval> >::const_iterator it = cdsLocs.begin();
+        for ( ; it != cdsLocs.end(); ++it ) {
+            if ( (*it)->CanGetFrom()  && (*it)->GetFrom() > m_uSeqStop ) {
+                uTopSize += (*it)->GetLength();
+            }
+        }
+        *m_puPhase = (3 - (uTopSize % 3) ) % 3;
+    }
+    else {
+        unsigned int uBottomSize = 0;
+        list<CRef<CSeq_interval> >::const_iterator it = cdsLocs.begin();
+        for ( ; it != cdsLocs.end(); ++it ) {
+            if ( (*it)->CanGetFrom()  &&  (*it)->GetTo() < m_uSeqStart ) {
+                uBottomSize += (*it)->GetLength();
+            }
+        }
+        *m_puPhase = (3 - (uBottomSize % 3) ) % 3;
+    }
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

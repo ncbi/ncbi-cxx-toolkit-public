@@ -73,12 +73,6 @@ bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()(
     if ( x->SortTieBreaker() != y->SortTieBreaker() )
         return ( x->SortTieBreaker() < y->SortTieBreaker() );
 
-/*    if ( x->GeneId() != y->GeneId() )
-		return ( x->GeneId() < y->GeneId() );
-	
-    if( x->TranscriptId() != y->TranscriptId() )
-		return ( x->TranscriptId() < y->TranscriptId() );
-*/
     // equivalent
 	return false;
 }

@@ -65,6 +65,11 @@ protected:
         const CSeq_feat&,        
         CGff3WriteRecordSet& );
 
+    bool x_AssignObjectGene( 
+        CSeq_annot_Handle,
+        const CSeq_feat&,        
+        CGff3WriteRecordSet& );
+
     bool x_AssignObjectMrna( 
         CSeq_annot_Handle,
         const CSeq_feat&,        
@@ -94,7 +99,7 @@ protected:
     static bool x_NeedsQuoting(
         const string& ) { return true; };
 
-    typedef map< int, const CSeq_interval* > TExonMap;
+    typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;
     TExonMap m_exonMap;
 };
