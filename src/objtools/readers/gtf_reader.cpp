@@ -756,10 +756,10 @@ bool CGtfReader::x_MergeFeatureLocationSingleInterval(
 {
     const CSeq_interval& gene_int = pFeature->GetLocation().GetInt();
     if ( gene_int.GetFrom() > record.SeqStart() -1 ) {
-        pFeature->SetLocation().SetInt().SetFrom( record.SeqStart() - 1 );
+        pFeature->SetLocation().SetInt().SetFrom( record.SeqStart() );
     }
     if ( gene_int.GetTo() < record.SeqStop() - 1 ) {
-        pFeature->SetLocation().SetInt().SetTo( record.SeqStop() - 1 );
+        pFeature->SetLocation().SetInt().SetTo( record.SeqStop() );
     }
     return true;
 }
