@@ -809,6 +809,7 @@ void CLDS2_Manager::UpdateData(void)
 {
     if ( !CDirEntry(m_Db->GetDbFile()).Exists() ) {
         // Create the database if it does not exist yet.
+        // This will also be triggered for ":memory:" database.
         m_Db->Create();
     }
     else {
@@ -826,6 +827,17 @@ void CLDS2_Manager::UpdateData(void)
             if (db_info.id != 0) {
                 // remove the file from the database
                 m_Db->DeleteFile(db_info.id);
+            }
+            if ( file_info.exists() ) {
+                // Unsupported format
+                if (m_ErrorMode == eError_Throw) {
+                    LDS2_THROW(eIndexerError,
+                        "Unrecognized file format: " + *it);
+                }
+                else if (m_ErrorMode == eError_Report) {
+                    ERR_POST_X(9, Error <<
+                        "Unrecognized file format: " + *it);
+                }
             }
             continue;
         }

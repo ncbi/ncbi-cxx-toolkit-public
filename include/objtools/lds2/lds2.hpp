@@ -48,10 +48,14 @@ public:
     /// If the file does not exist, it will be created only after adding
     /// at least one data file and indexing it.
     CLDS2_Manager(const string& db_file);
+
     virtual ~CLDS2_Manager(void);
 
-    /// Get currently selected database.
+    /// Get currently selected database name.
     const string& GetDbFile(void) const;
+
+    /// Get the current database object.
+    CLDS2_Database* GetDatabase(void) { return m_Db.GetPointerOrNull(); }
 
     /// Select new database. If the database does not yet exist,
     /// it is not created immediately. The list of data files is

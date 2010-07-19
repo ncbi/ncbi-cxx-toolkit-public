@@ -67,13 +67,22 @@ string CLDS2_DataLoader::GetLoaderNameFromArgs(void)
 
 string CLDS2_DataLoader::GetLoaderNameFromArgs(const string& db_path)
 {
-    return "LDS2_dataloader:" + db_path;
+    string abs_path = db_path;
+    // Try to get absolute path, if failed, use as-is.
+    if (db_path != ":memory:") {
+        try {
+            abs_path = CDirEntry::CreateAbsolutePath(db_path);
+        }
+        catch (CFileException) {
+        }
+    }
+    return "LDS2_dataloader:" + abs_path;
 }
 
 
 string CLDS2_DataLoader::GetLoaderNameFromArgs(CLDS2_Database& lds_db)
 {
-    return "LDS2_dataloader:" + lds_db.GetDbFile();
+    return GetLoaderNameFromArgs(lds_db.GetDbFile());
 }
 
 
@@ -125,7 +134,7 @@ CLDS2_LoaderMaker::CLDS2_LoaderMaker(const string&        db_path,
     : m_DbPath(db_path),
       m_FastaFlags(fasta_flags)
 {
-    m_Name = "LDS_dataloader_" + db_path;
+    m_Name = CLDS2_DataLoader::GetLoaderNameFromArgs(db_path);
 }
 
 
@@ -136,7 +145,7 @@ CLDS2_LoaderMaker::CLDS2_LoaderMaker(CLDS2_Database&      db,
       m_DbPath(db.GetDbFile()),
       m_FastaFlags(fasta_flags)
 {
-    m_Name = "LDS_dataloader_" + m_DbPath;
+    m_Name = CLDS2_DataLoader::GetLoaderNameFromArgs(m_DbPath);
 }
 
 
