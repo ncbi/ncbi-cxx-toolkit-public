@@ -76,6 +76,7 @@ private:
     string              m_FmtName;
     ESerialDataFormat   m_Fmt;
     bool                m_RunStress;
+    CRef<CLDS2_Manager> m_Mgr;
 };
 
 
@@ -193,7 +194,8 @@ void CLDS2TestApplication::x_TestDatabase(const string& id)
     string sep = "";
     CLDS2_Database::TBlobSet blobs;
 
-    CRef<CLDS2_Database> db(new CLDS2_Database(m_DbFile));
+    CRef<CLDS2_Database> db(
+        m_Mgr ? m_Mgr->GetDatabase() : new CLDS2_Database(m_DbFile));
     SLDS2_Blob blob = db->GetBlobInfo(idh);
     cout << "Main blob id: " << blob.id;
     if (blob.id > 0) {
@@ -252,6 +254,10 @@ void CLDS2TestApplication::x_TestDatabase(const string& id)
 }
 
 
+const int kStressTestFiles = 50;
+const int kStressTestEntriesPerFile = 20;
+const int kStressTestEntries = kStressTestFiles*kStressTestEntriesPerFile;
+
 void CLDS2TestApplication::x_InitStressTest(void)
 {
     cout << "Initializing stress test data..." << endl;
@@ -265,8 +271,12 @@ void CLDS2TestApplication::x_InitStressTest(void)
 
     m_DataDir = "./lds2_data/stress";
     CDir(m_DataDir).CreatePath();
+    if ( m_FmtName.empty() ) {
+        m_FmtName = "asn";
+    }
 
-    for (int f = 1; f < 100; f++) {
+    // File index starts with 1 so that there's no gi 0 in the data.
+    for (int f = 1; f < kStressTestFiles; f++) {
         string fname = CDirEntry::ConcatPath(m_DataDir,
             "data" + NStr::Int8ToString(f) + "." + m_FmtName);
         CNcbiOfstream fout(fname.c_str(), ios::binary | ios::out);
@@ -279,8 +289,8 @@ void CLDS2TestApplication::x_InitStressTest(void)
             out.reset(CObjectOStream::Open(m_Fmt, fout));
         }
 
-        for (int g = 0; g < 100; g++) {
-            int gi = g + f*100;
+        for (int idx = 0; idx < kStressTestEntriesPerFile; idx++) {
+            int gi = idx + f*kStressTestEntriesPerFile;
             CSeq_id& id = *e.SetSeq().SetId().front();
             id.SetGi(gi);
             CSeq_feat& feat = *e.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
@@ -300,18 +310,20 @@ void CLDS2TestApplication::x_InitStressTest(void)
 class CLDS2_TestThread : public CThread
 {
 public:
-    CLDS2_TestThread(int id);
+    CLDS2_TestThread(int id, int step);
 
     virtual void* Main(void);
 
 private:
     int     m_Id;
+    int     m_Step;
     CScope  m_Scope;
 };
 
 
-CLDS2_TestThread::CLDS2_TestThread(int id)
+CLDS2_TestThread::CLDS2_TestThread(int id, int step)
     : m_Id(id),
+      m_Step(step),
       m_Scope(*CObjectManager::GetInstance())
 {
     m_Scope.AddDefaults();
@@ -320,9 +332,9 @@ CLDS2_TestThread::CLDS2_TestThread(int id)
 
 void* CLDS2_TestThread::Main(void)
 {
-    for (int i = 10; i < 990; i++) {
-        int gi = i*10 + m_Id;
-        CSeq_id seq_id;
+    int gi = kStressTestEntriesPerFile + m_Id;
+    CSeq_id seq_id;
+    for (; gi < kStressTestEntries; gi += m_Step) {
         seq_id.SetGi(gi);
         CSeq_id_Handle id = CSeq_id_Handle::GetHandle(seq_id);
         CBioseq_Handle h = m_Scope.GetBioseqHandle(id);
@@ -355,8 +367,9 @@ void CLDS2TestApplication::x_RunStressTest(void)
     cout << "Running stress test" << endl;
     CStopWatch sw(CStopWatch::eStart);
     vector< CRef<CThread> > threads;
-    for (int i = 0; i < 10; i++) {
-        CRef<CThread> thr(new CLDS2_TestThread(i));
+    int step = 5; // Number of threads = step for each thread
+    for (int i = 0; i < step; i++) {
+        CRef<CThread> thr(new CLDS2_TestThread(i, step));
         threads.push_back(thr);
         thr->Run(CThread::fRunAllowST);
     }
@@ -365,7 +378,8 @@ void CLDS2TestApplication::x_RunStressTest(void)
     }
     double elapsed = sw.Elapsed();
     cout << "Finished stress test in " << elapsed << " sec (" <<
-        elapsed/9800 << " per bioseq)" << endl;
+        elapsed/(kStressTestEntries - kStressTestEntriesPerFile) <<
+        " per bioseq)" << endl;
 }
 
 
@@ -407,23 +421,33 @@ int CLDS2TestApplication::Run(void)
     }
 
     cout << "Indexing data..." << endl;
-    CRef<CLDS2_Manager> mgr(new CLDS2_Manager(m_DbFile));
-    mgr->ResetData(); // Re-create the database
-    mgr->AddDataDir(m_DataDir);
-    mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
+    m_Mgr.Reset(new CLDS2_Manager(m_DbFile));
+    m_Mgr->ResetData(); // Re-create the database
+    m_Mgr->AddDataDir(m_DataDir);
+    m_Mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
     CStopWatch sw(CStopWatch::eStart);
-    mgr->UpdateData();
-    mgr.Reset();
+    m_Mgr->UpdateData();
     cout << "Data indexing done in " << sw.Elapsed() << " sec" << endl;
+    if (m_DbFile != ":memory:") {
+        m_Mgr.Reset();
+    }
 
     if ( args["id"] ) {
         x_TestDatabase(args["id"].AsString());
     }
 
     // Run object manager tests
-    CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
-    CLDS2_DataLoader::RegisterInObjectManager(*objmgr, m_DbFile,
-        -1, CObjectManager::eDefault);
+    CRef<CObjectManager> objmgr(CObjectManager::GetInstance());
+    if ( m_Mgr ) {
+        CLDS2_DataLoader::RegisterInObjectManager(*objmgr,
+            *m_Mgr->GetDatabase(),
+            -1, CObjectManager::eDefault);
+    }
+    else {
+        CLDS2_DataLoader::RegisterInObjectManager(*objmgr,
+            m_DbFile,
+            -1, CObjectManager::eDefault);
+    }
 
     if ( m_RunStress ) {
         x_RunStressTest();
@@ -432,6 +456,7 @@ int CLDS2TestApplication::Run(void)
         CSeq_id seq_id(args["id"].AsString());
         CScope scope(*objmgr);
         scope.AddDefaults();
+        //scope.AddDataLoader(CLDS2_DataLoader::GetLoaderNameFromArgs(m_DbFile));
 
         CBioseq_Handle h = scope.GetBioseqHandle(seq_id);
         if ( !h ) {
