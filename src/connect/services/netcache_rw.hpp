@@ -108,10 +108,12 @@ public:
     void WriteBufferAndClose(const void* buf_ptr, size_t buf_size);
 
 private:
+    bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
     void ResetWriters();
     void EstablishConnection();
     void AbortConnection();
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
+    void UploadCacheFile();
 
     CNetCacheAPI m_NetCacheAPI;
     string m_BlobID;
@@ -122,7 +124,6 @@ private:
     ENetCacheResponseType m_ResponseType;
     CFileIO m_CacheFile;
     bool m_CachingEnabled;
-    bool m_ConnectionIsOpen;
 };
 
 /* @} */

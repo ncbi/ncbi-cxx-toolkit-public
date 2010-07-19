@@ -193,8 +193,7 @@ CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
     m_TimeToLive(time_to_live),
     m_ResponseType(response_type),
     m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
-        impl->m_CacheOutput : caching_mode == CNetCacheAPI::eCaching_Enable),
-    m_ConnectionIsOpen(false)
+        impl->m_CacheOutput : caching_mode == CNetCacheAPI::eCaching_Enable)
 {
     if (m_CachingEnabled)
         m_CacheFile.CreateTemporary(impl->m_TempDir, s_OutputBlobCachePrefix);
@@ -214,45 +213,27 @@ CNetCacheWriter::~CNetCacheWriter()
 
 void CNetCacheWriter::Close()
 {
-    if (!m_ConnectionIsOpen)
-        return;
-
-    m_ConnectionIsOpen = false;
-
     if (m_CachingEnabled) {
         m_CacheFile.Flush();
 
-        char buf[CACHE_XFER_BUFFER_SIZE];
-        size_t bytes_read;
-        size_t bytes_written;
-        bool blob_written;
+        bool blob_written = false;
 
-        if (!m_Connection)
-            blob_written = false;
-        else {
-            m_CacheFile.SetFilePos(0);
-
-            blob_written = true;
-
-            while ((bytes_read = m_CacheFile.Read(buf, sizeof(buf))) > 0) {
-                try {
-                    Transmit(buf, bytes_read, &bytes_written);
-                }
-                catch (CNetServiceException&) {
-                    blob_written = false;
-                    break;
-                }
+        if (IsConnectionOpen()) {
+            try {
+                UploadCacheFile();
+                blob_written = true;
+            }
+            catch (CNetServiceException&) {
             }
         }
 
         if (!blob_written) {
             EstablishConnection();
 
-            m_CacheFile.SetFilePos(0);
-            while ((bytes_read = m_CacheFile.Read(buf, sizeof(buf))) > 0)
-                Transmit(buf, bytes_read, &bytes_written);
+            UploadCacheFile();
         }
-    }
+    } else if (!IsConnectionOpen())
+        return;
 
     ERW_Result res = m_TransmissionWriter->Close();
 
@@ -291,15 +272,18 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
         size_t bytes_written = m_CacheFile.Write(buf, count);
         if (bytes_written_ptr != NULL)
             *bytes_written_ptr = bytes_written;
-    } else
+    } else if (IsConnectionOpen())
         Transmit(buf, count, bytes_written_ptr);
+    else
+        return eRW_Error;
 
     return eRW_Success;
 }
 
 ERW_Result CNetCacheWriter::Flush(void)
 {
-    m_TransmissionWriter->Flush();
+    if (!m_CachingEnabled && IsConnectionOpen())
+        m_TransmissionWriter->Flush();
 
     return eRW_Success;
 }
@@ -339,14 +323,10 @@ void CNetCacheWriter::EstablishConnection()
     m_TransmissionWriter.reset(
         new CTransmissionWriter(m_SocketReaderWriter.get(),
             eNoOwnership, CTransmissionWriter::eSendEofPacket));
-
-    m_ConnectionIsOpen = true;
 }
 
 void CNetCacheWriter::AbortConnection()
 {
-    m_ConnectionIsOpen = false;
-
     ResetWriters();
 
     if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
@@ -394,6 +374,17 @@ void CNetCacheWriter::Transmit(const void* buf,
         AbortConnection();
         throw;
     }
+}
+
+void CNetCacheWriter::UploadCacheFile()
+{
+    char buf[CACHE_XFER_BUFFER_SIZE];
+    size_t bytes_read;
+    size_t bytes_written;
+
+    m_CacheFile.SetFilePos(0);
+    while ((bytes_read = m_CacheFile.Read(buf, sizeof(buf))) > 0)
+        Transmit(buf, bytes_read, &bytes_written);
 }
 
 END_NCBI_SCOPE
