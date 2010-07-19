@@ -55,9 +55,11 @@ USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
-    CNcbiOstream& ostr ) :
+    CNcbiOstream& ostr,
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGffWriter( ostr )
+    CGffWriter( ostr ),
+    m_uFlags( uFlags )
 {
 };
 
@@ -74,6 +76,31 @@ bool CGtfWriter::x_WriteHeader()
     m_Os << "#gtf-version 2.2" << endl;
     return true;
 };
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::x_WriteRecord( 
+    const CGff3WriteRecord* pRecord )
+//  ----------------------------------------------------------------------------
+{
+    const CGff3WriteRecord& record = *pRecord;
+
+    m_Os << pRecord->StrId() << '\t';
+    m_Os << pRecord->StrSource() << '\t';
+    m_Os << pRecord->StrType() << '\t';
+    m_Os << pRecord->StrSeqStart() << '\t';
+    m_Os << pRecord->StrSeqStop() << '\t';
+    m_Os << pRecord->StrScore() << '\t';
+    m_Os << pRecord->StrStrand() << '\t';
+    m_Os << pRecord->StrPhase() << '\t';
+
+    if ( m_uFlags & fStructibutes ) {
+        m_Os << pRecord->StrStructibutes() << endl;
+    }
+    else {
+        m_Os << pRecord->StrAttributes() << endl;
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_AssignObject(

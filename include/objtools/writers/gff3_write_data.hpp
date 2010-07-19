@@ -77,6 +77,7 @@ public:
     virtual string StrScore() const;
     virtual string StrStrand() const;
     virtual string StrPhase() const;
+    virtual string StrStructibutes() const { return ""; };
 
     //
     // Accessors:

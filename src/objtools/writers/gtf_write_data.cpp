@@ -181,6 +181,39 @@ string CGtfRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
+string CGtfRecord::StrStructibutes() const
+//  ----------------------------------------------------------------------------
+{
+    string strAttributes;
+	strAttributes.reserve(256);
+    CGtfRecord::TAttributes attrs;
+    attrs.insert( Attributes().begin(), Attributes().end() );
+    CGtfRecord::TAttrIt it;
+
+    if ( ! GeneId().empty() ) {
+        strAttributes += "gene_id \"";
+		strAttributes += StrGeneId();
+		strAttributes += "\"";
+        strAttributes += "; ";
+    }
+
+    if ( ! TranscriptId().empty() ) {
+        strAttributes += "transcript_id \"";
+		strAttributes += StrTranscriptId();
+		strAttributes += "\"";
+        strAttributes += "; ";
+    }
+
+    it = attrs.find( "exon_number" );
+    if ( it != attrs.end() ) {
+        strAttributes += "exon_number \"";
+        strAttributes += it->second;
+        strAttributes += "\"; ";
+    }
+    return strAttributes;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnCore(
     const CSeq_feat& feature )
 //  ----------------------------------------------------------------------------

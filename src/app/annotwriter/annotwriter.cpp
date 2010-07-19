@@ -159,6 +159,11 @@ void CAnnotWriterApp::Init()
         "recreate sequence ontology funniness in output",
         true );
         
+    arg_desc->AddFlag(
+        "structibutes",
+        "limit attributes to inter feature relationships",
+        true );
+        
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -271,7 +276,7 @@ bool CAnnotWriterApp::WriteGtf(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CGtfWriter writer( os );
+    CGtfWriter writer( os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -293,6 +298,9 @@ CGffWriter::TFlags CAnnotWriterApp::GffFlags(
     CGffWriter::TFlags eFlags = CGffWriter::fNormal;
     if ( args["so-quirks"] ) {
         eFlags = CGffWriter::TFlags( eFlags | CGffWriter::fSoQuirks );
+    }
+    if ( args["structibutes"] ) {
+        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
     }
     return eFlags;
 }

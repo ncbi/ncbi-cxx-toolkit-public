@@ -76,6 +76,7 @@ public:
     string StrAttributes() const;
     string StrGeneId() const;
     string StrTranscriptId() const;
+    string StrStructibutes() const;
 
     string GeneId() const { return m_strGeneId; };
     string TranscriptId() const { return m_strTranscriptId; };

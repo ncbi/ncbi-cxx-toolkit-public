@@ -53,12 +53,20 @@ class NCBI_XOBJWRITE_EXPORT CGtfWriter:
 //  ============================================================================
 {
 public:
+    enum {
+        fStructibutes = 1<<16,
+    };
+
     CGtfWriter(
-        CNcbiOstream& );
+        CNcbiOstream&,
+        unsigned int = 0 );
     ~CGtfWriter();
 
 protected:
     bool x_WriteHeader();
+
+    bool x_WriteRecord( 
+        const CGff3WriteRecord* );
 
     bool x_AssignObject( 
         CSeq_annot_Handle,
@@ -102,6 +110,7 @@ protected:
     typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;
     TExonMap m_exonMap;
+    unsigned int m_uFlags;
 };
 
 END_objects_SCOPE
