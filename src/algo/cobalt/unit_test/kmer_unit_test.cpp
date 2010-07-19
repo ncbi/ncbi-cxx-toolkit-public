@@ -58,11 +58,14 @@
 
 #include <boost/test/floating_point_comparison.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
 USING_SCOPE(objects);
 
+
+BOOST_AUTO_TEST_SUITE(kmer_counts)
 
 static CRef<CBioseq> s_CreateBioseq(const string& sequence, int id)
 {
@@ -266,3 +269,7 @@ BOOST_AUTO_TEST_CASE(TestKmerMethods)
     BOOST_REQUIRE_EQUAL(dmat.GetRows(), seqs.size());
     BOOST_CHECK_CLOSE(dmat(0, 1), 0.0, 1e-6);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+#endif /* SKIP_DOXYGEN_PROCESSING */

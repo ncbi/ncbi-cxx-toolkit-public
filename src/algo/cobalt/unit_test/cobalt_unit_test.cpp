@@ -67,6 +67,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
@@ -154,6 +155,9 @@ static void s_MakeBioseqs(const vector< CRef<CSeq_loc> >& seqlocs,
     }
 
 }
+
+BOOST_AUTO_TEST_SUITE(multialigner)
+
 
 // Make sure assiging query sequences are assigned properly
 BOOST_AUTO_TEST_CASE(TestSetQueries)
@@ -786,3 +790,6 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
     
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+#endif /* SKIP_DOXYGEN_PROCESSING */

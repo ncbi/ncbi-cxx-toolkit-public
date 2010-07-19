@@ -52,10 +52,12 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
 
+BOOST_AUTO_TEST_SUITE(options)
 
 BOOST_AUTO_TEST_CASE(TestOptionsModes)
 {
@@ -163,3 +165,6 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
     BOOST_CHECK(opts->Validate());
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+#endif /* SKIP_DOXYGEN_PROCESSING */
