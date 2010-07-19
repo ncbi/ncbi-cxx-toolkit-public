@@ -56,6 +56,11 @@ CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
     SetTargetId(*CIdHandler::GnomonMRNA(ID()));
 }
 
+void CAlignModel::ResetAlignMap()
+{
+    m_alignmap = CGeneModel::GetAlignMap();
+}
+
 string CAlignModel::TargetAccession() const {
     _ASSERT( !GetTargetId().Empty() );
     if (GetTargetId().Empty())

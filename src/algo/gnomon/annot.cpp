@@ -539,6 +539,13 @@ void RemoveTrailingNs::operator()(CGeneModel& m)
             CCDSInfo cds_info = m.GetCdsInfo();
             cds_info.SetScore(score, false);
             m.SetCdsInfo(cds_info);
+            
+            if (m.Type() & (CGeneModel::eChain | CGeneModel::eGnomon)) {
+                CAlignModel* a = dynamic_cast<CAlignModel*>(&m);
+                if (a != NULL) {
+                    a->ResetAlignMap();
+                }
+            }
         }
 }
 

@@ -587,6 +587,7 @@ public:
     CAlignModel(const CGeneModel& g, const CAlignMap& a);
     TSignedSeqRange TranscriptExon(int i) const;
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
+    void ResetAlignMap();
 
     string TargetAccession() const;
     void SetTargetId(const objects::CSeq_id& id) { m_target_id.Reset(&id); }
@@ -595,6 +596,7 @@ public:
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
     int PolyALen() const;
+
 private:
     CAlignMap m_alignmap;
     CConstRef<objects::CSeq_id> m_target_id;
