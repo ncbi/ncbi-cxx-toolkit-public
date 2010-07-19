@@ -5300,8 +5300,10 @@ void CFileIO::Flush(void) const
 void CFileIO::SetFileHandle(TFileHandle handle)
 {
     // Close previous handle if needed
-    if (m_AutoClose)
+    if (m_AutoClose) {
         Close();
+        m_AutoClose = false;
+    }
     // Use given handle for all I/O
     m_Handle = handle;
 }
