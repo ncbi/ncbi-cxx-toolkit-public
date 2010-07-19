@@ -579,12 +579,10 @@ public:
     /// Empty main method
     virtual EStatus Execute(void) { return eCompleted; }
 
-#ifdef NCBI_COMPILER_ICC
-    // In the absence of the following constructor,
-    // ICC fills the object memory with zeros,
-    // erasing flags set by CObject::operator new
+    // In the absence of the following constructor, new compilers (as required
+    // by the new C++ standard) may fill the object memory with zeros,
+    // erasing flags set by CObject::operator new (see CXX-1808)
     CThreadPool_EmptyTask(void) {}
-#endif
 };
 
 

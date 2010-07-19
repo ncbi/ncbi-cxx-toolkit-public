@@ -1060,19 +1060,17 @@ public:
     virtual bool Verify(const string &value) const = 0;
 
     /// Get usage information.
-    virtual 
+    virtual
     string GetUsage(void) const = 0;
 
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 protected:
-#ifdef NCBI_COMPILER_ICC
-// In the absence of the following constructor,
-// ICC fills the object memory with zeros,
-// erasing flags set by CObject::operator new
+    // In the absence of the following constructor, new compilers (as required
+    // by the new C++ standard) may fill the object memory with zeros,
+    // erasing flags set by CObject::operator new (see CXX-1808)
     CArgAllow(void) {}
-#endif
 
     /// Protected destructor.
     ///
