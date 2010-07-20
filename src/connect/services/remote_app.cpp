@@ -154,7 +154,7 @@ void CBlobStreamHelper::Reset()
         m_OStream.reset();
     }
 
-    if (m_Writer.get()) {
+    if (m_Writer.get() != NULL) {
         m_Writer->Close();
         m_Writer.reset();
     }

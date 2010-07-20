@@ -148,8 +148,8 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
 
 string CGridJobSubmitter::Submit(const string& affinity)
 {
-    if (m_Writer.get()) {
-        if (m_WStream.get()) {
+    if (m_Writer.get() != NULL) {
+        if (m_WStream.get() != NULL) {
             m_WStream->flush();
             m_WStream.reset();
         }
@@ -235,8 +235,10 @@ void CGridJobBatchSubmitter::PrepareNextJob()
 {
     CheckIfAlreadySubmitted();
     m_WStream.reset();
-    m_Writer->Close();
-    m_Writer.reset();
+    if (m_Writer.get() != NULL) {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
     if (!m_Jobs.empty())
         ++m_JobIndex;
     m_Jobs.push_back(CNetScheduleJob());
@@ -246,8 +248,10 @@ void CGridJobBatchSubmitter::Submit()
 {
     CheckIfAlreadySubmitted();
     m_WStream.reset();
-    m_Writer->Close();
-    m_Writer.reset();
+    if (m_Writer.get() != NULL) {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
     if (!m_Jobs.empty()) {
         m_GridClient.GetNSClient().SubmitJobBatch(m_Jobs);
         m_HasBeenSubmitted = true;
@@ -257,8 +261,10 @@ void CGridJobBatchSubmitter::Submit()
 void CGridJobBatchSubmitter::Reset()
 {
     m_WStream.reset();
-    m_Writer->Close();
-    m_Writer.reset();
+    if (m_Writer.get() != NULL) {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
     m_HasBeenSubmitted = false;
     m_JobIndex = 0;
     m_Jobs.clear();

@@ -315,8 +315,10 @@ void CGridThreadContext::CloseStreams()
 
     m_RStream.reset();
     m_WStream.reset();
-    m_Writer->Close();
-    m_Writer.reset();
+    if (m_Writer.get() != NULL) {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
 
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (debug_context) {
