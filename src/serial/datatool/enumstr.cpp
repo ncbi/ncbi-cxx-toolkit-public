@@ -92,12 +92,15 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string methodPrefix = ctx.GetMethodPrefix();
     bool inClass = !methodPrefix.empty();
     {
+        TEnumValueType minvalue=0, maxvalue=0;
         // alignments
         size_t maxlen = 0, maxwidth=0;
         ITERATE ( TValues, i, m_Values ) {
             maxlen = max(maxlen,i->GetName().size());
             size_t w = 0;
             TEnumValueType val = i->GetValue();
+            minvalue = min(minvalue,val);
+            maxvalue = max(maxvalue,val);
             if (val < 0) {
                 ++w; val = -val;
             }
@@ -106,11 +109,20 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             }
             maxwidth = max(maxwidth,w);
         }
+        string valtype("int");
+        if (minvalue >= numeric_limits<unsigned char>::min() &&
+            maxvalue <= numeric_limits<unsigned char>::max()) {
+            valtype = "unsigned char";
+        } else
+        if (minvalue >= numeric_limits<short>::min() &&
+            maxvalue <= numeric_limits<short>::max()) {
+            valtype = "short";
+        }
         // generated enum
         CNcbiOstrstream hpp;
         PrintHPPComments(hpp);
         hpp <<
-            "enum "<<m_EnumName<<" {";
+            "enum "<<m_EnumName<<" NCBI_PACKED_ENUM_TYPE( "<<valtype<<" ) {";
         ITERATE ( TValues, i, m_Values ) {
             string id = Identifier( i->GetName(), false );
             hpp << "\n    " << m_ValuesPrefix << id;
@@ -124,7 +136,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             i->GetComments().PrintHPPEnum(hpp);
         }
         hpp << "\n"
-            "};\n"
+            "} NCBI_PACKED_ENUM_END();\n"
             "\n";
         // prototype of GetTypeInfo_enum_* function
 
