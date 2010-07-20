@@ -1048,15 +1048,15 @@ size_t ArraySize(const Element (&)[Size])
 END_STD_SCOPE
 
 /// Definition of packed enum type, to save some memory
-#if NCBI_COMPILER_MSVC
-#  define NCBI_PACKED_ENUM_BEGIN(type, tag)  enum tag : type {
-#  define NCBI_PACKED_ENUM_END()             }
+#if defined(NCBI_COMPILER_MSVC)
+#  define NCBI_PACKED_ENUM_TYPE(type)  : type
+#  define NCBI_PACKED_ENUM_END()
 #elif (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  defined(NCBI_COMPILER_ICC)
-#  define NCBI_PACKED_ENUM_BEGIN(type, tag)  enum tag {
-#  define NCBI_PACKED_ENUM_END()             } __attribute__((packed))
+#  define NCBI_PACKED_ENUM_TYPE(type)
+#  define NCBI_PACKED_ENUM_END()        __attribute__((packed))
 #else
-#  define NCBI_PACKED_ENUM_BEGIN(type, tag)  enum tag {
-#  define NCBI_PACKED_ENUM_END()             }
+#  define NCBI_PACKED_ENUM_TYPE(type)
+#  define NCBI_PACKED_ENUM_END()
 #endif
 
 
