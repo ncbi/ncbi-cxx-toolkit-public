@@ -5055,6 +5055,7 @@ else
       NCBI_SSS_LIBPATH= # Not needed
       ncbi_cv_lib_sssutils=yes
       ncbi_cv_lib_sssdb=yes
+      sssutils=sssutils
    else
       NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
    fi
@@ -6379,6 +6380,7 @@ AC_SUBST(NCBI_SSS_INCLUDE)
 AC_SUBST(NCBI_SSS_LIBPATH)
 AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
+AC_SUBST(sssutils)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)
