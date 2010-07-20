@@ -14,6 +14,7 @@ internal/align_model$
 internal/contigdb$
 internal/asn_cache
 internal/gpipe/common$
+internal/gpipe/align_db/objects$
 internal/gpipe/gencoll/src/gcaccess$
 internal/gbench
 internal/ID/utils$
