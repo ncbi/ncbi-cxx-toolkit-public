@@ -44,6 +44,8 @@
 #include <objects/seqalign/seqalign_exception.hpp>
 #include <util/range.hpp>
 
+#include <serial/objhook.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -139,6 +141,9 @@ public:
                         TSeqPos subj_start, ENa_strand subj_strand,
                         const string& transcript );
 
+
+    static void SetReserveHooks(CObjectIStream& in);
+
 protected:
     TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;
 
@@ -224,6 +229,41 @@ CDense_seg::TDim CDense_seg::CheckNumRows() const
 
 
 /////////////////// end of CDense_seg inline methods
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Read hooks to reserve memory of Dense-seg vector<> to estimated size.
+/////////////////////////////////////////////////////////////////////////////
+
+
+class NCBI_SEQALIGN_EXPORT CDenseSegReserveStartsHook
+    : public CReadClassMemberHook
+{
+public:
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
+
+    static void SetHook(CObjectIStream& in);
+};
+
+
+class NCBI_SEQALIGN_EXPORT CDenseSegReserveLensHook
+    : public CReadClassMemberHook
+{
+public:
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
+
+    static void SetHook(CObjectIStream& in);
+};
+
+
+class NCBI_SEQALIGN_EXPORT CDenseSegReserveStrandsHook
+    : public CReadClassMemberHook
+{
+public:
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
+
+    static void SetHook(CObjectIStream& in);
+};
 
 
 END_objects_SCOPE // namespace ncbi::objects::

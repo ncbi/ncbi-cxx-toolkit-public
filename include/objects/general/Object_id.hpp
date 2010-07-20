@@ -43,6 +43,9 @@
 
 // generated classes
 
+#include <serial/objhook.hpp>
+#include <map>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -89,6 +92,47 @@ bool CObject_id::operator<(const CObject_id& id2) const
 
 
 /////////////////// end of CObject_id inline methods
+
+/////////////////////////////////////////////////////////////////////////////
+// CReadSharedObjectIdHookBase
+//   base class for read hooks for shared Object-id objects.
+/////////////////////////////////////////////////////////////////////////////
+
+class NCBI_GENERAL_EXPORT CReadSharedObjectIdHookBase
+    : public CReadClassMemberHook
+{
+public:
+    /// Returns shared version of Object-id with specified 'str' field value.
+    /// Can be stored for later read-only use.
+    CObject_id& GetSharedObject_id(const string& id);
+    /// Returns shared version of Object-id with specified 'id' field value.
+    /// Can be stored for later read-only use.
+    CObject_id& GetSharedObject_id(int id);
+
+    /// Returns shared version of argument Object-id.
+    /// Can be stored for later read-only use.
+    CObject_id& GetSharedObject_id(const CObject_id& id) {
+        return id.IsStr()?
+            GetSharedObject_id(id.GetStr()):
+            GetSharedObject_id(id.GetId());
+    }
+
+    /// Reads Object-id and returns reference to its shared version.
+    /// Can be stored for later read-only use.
+    CObject_id& ReadSharedObject_id(CObjectIStream& in);
+    
+protected:
+    CObject_id m_Temp;
+
+private:
+    typedef map<string, CRef<CObject_id> > TMapByStr;
+    typedef map<int, CRef<CObject_id> > TMapByInt;
+    TMapByStr m_MapByStr;
+    TMapByInt m_MapByInt;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 END_objects_SCOPE // namespace ncbi::objects::

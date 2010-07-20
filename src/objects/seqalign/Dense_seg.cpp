@@ -44,6 +44,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <serial/objistr.hpp>
 
 // generated classes
 
@@ -1345,6 +1346,70 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     ++seg_count;
     
     SetNumseg(seg_count);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Read hooks to reserve memory of Dense-seg vector<> to estimated size.
+/////////////////////////////////////////////////////////////////////////////
+
+
+void CDense_seg::SetReserveHooks(CObjectIStream& in)
+{
+    CDenseSegReserveStartsHook::SetHook(in);
+    CDenseSegReserveLensHook::SetHook(in);
+    CDenseSegReserveStrandsHook::SetHook(in);
+}
+
+
+void CDenseSegReserveStartsHook::ReadClassMember(CObjectIStream& in,
+                                                 const CObjectInfoMI& member)
+{
+    CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
+    ds.SetStarts().reserve(ds.GetDim()*ds.GetNumseg());
+    DefaultRead(in, member);
+}
+
+
+void CDenseSegReserveStartsHook::SetHook(CObjectIStream& in)
+{
+    CRef<CDenseSegReserveStartsHook> hook(new CDenseSegReserveStartsHook);
+    CObjectTypeInfo type = CType<CDense_seg>();
+    type.FindMember("starts").SetLocalReadHook(in, hook);
+}
+
+
+void CDenseSegReserveLensHook::ReadClassMember(CObjectIStream& in,
+                                               const CObjectInfoMI& member)
+{
+    CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
+    ds.SetLens().reserve(ds.GetNumseg());
+    DefaultRead(in, member);
+}
+
+
+void CDenseSegReserveLensHook::SetHook(CObjectIStream& in)
+{
+    CRef<CDenseSegReserveLensHook> hook(new CDenseSegReserveLensHook);
+    CObjectTypeInfo type = CType<CDense_seg>();
+    type.FindMember("lens").SetLocalReadHook(in, hook);
+}
+
+
+void CDenseSegReserveStrandsHook::ReadClassMember(CObjectIStream& in,
+                                                  const CObjectInfoMI& member)
+{
+    CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
+    ds.SetStrands().reserve(ds.GetDim()*ds.GetNumseg());
+    DefaultRead(in, member);
+}
+
+
+void CDenseSegReserveStrandsHook::SetHook(CObjectIStream& in)
+{
+    CRef<CDenseSegReserveStrandsHook> hook(new CDenseSegReserveStrandsHook);
+    CObjectTypeInfo type = CType<CDense_seg>();
+    type.FindMember("strands").SetLocalReadHook(in, hook);
 }
 
 

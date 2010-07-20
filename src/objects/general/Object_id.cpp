@@ -43,6 +43,8 @@
 
 // generated classes
 
+#include <serial/objistr.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -105,6 +107,38 @@ ostream& CObject_id::AsString(ostream &s) const
         break;
     }
     return s;
+}
+
+
+CObject_id&
+CReadSharedObjectIdHookBase::GetSharedObject_id(const string& id)
+{
+    CRef<CObject_id>& shared_id = m_MapByStr[id];
+    if ( !shared_id ) {
+        shared_id = new CObject_id;
+        shared_id->SetStr(id);
+    }
+    return *shared_id;
+}
+
+
+CObject_id&
+CReadSharedObjectIdHookBase::GetSharedObject_id(int id)
+{
+    CRef<CObject_id>& shared_id = m_MapByInt[id];
+    if ( !shared_id ) {
+        shared_id = new CObject_id;
+        shared_id->SetId(id);
+    }
+    return *shared_id;
+}
+
+
+CObject_id&
+CReadSharedObjectIdHookBase::ReadSharedObject_id(CObjectIStream& in)
+{
+    in.ReadObject(&m_Temp, m_Temp.GetTypeInfo());
+    return GetSharedObject_id(m_Temp);
 }
 
 
