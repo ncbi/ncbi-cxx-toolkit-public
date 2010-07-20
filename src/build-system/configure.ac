@@ -1039,6 +1039,11 @@ case "$host_os:$compiler" in
 
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
+
+   case `uname -m` in
+      *64 ) : ${with_64=yes} ;;
+      *   ) : ${with_64=no}  ;;
+   esac
    ;;
 esac
 
