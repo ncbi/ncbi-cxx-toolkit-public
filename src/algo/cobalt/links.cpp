@@ -53,6 +53,10 @@ void CLinks::AddLink(int first, int second, double weight)
     if (first > second) {
         swap(first, second);
     }
+    if (second >= (int)m_NumElements) {
+        NCBI_THROW(CLinksException, eInvalidNode, "Adding node with index "
+                   " larger than number of elements attempted");
+    }
     m_Links.push_back(SLink(first, second, weight));
 
     if (m_MarkLinks) {

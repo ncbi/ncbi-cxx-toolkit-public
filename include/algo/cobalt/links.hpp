@@ -180,6 +180,20 @@ protected:
 };
 
 
+/// Exceptions for CLinks class
+class CLinksException : public CException
+{
+public:
+
+    /// Error codes
+    enum EErrCode {
+        eInvalidNode  ///< Invalid node index
+    };
+
+    NCBI_EXCEPTION_DEFAULT(CLinksException, CException);
+};
+
+
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
