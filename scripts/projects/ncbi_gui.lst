@@ -1,6 +1,7 @@
 algo
 app/netcache
 app/winmasker
+app/gbench
 build-system/project_tree_builder
 cgi
 check
@@ -12,7 +13,9 @@ gui
 html
 internal/align_model$
 internal/contigdb$
+internal/blast
 internal/asn_cache
+internal/gpipe/align_db
 internal/gpipe/common$
 internal/gpipe/gencoll/src/gcaccess$
 internal/gbench
