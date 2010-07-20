@@ -115,6 +115,34 @@ bool s_AnnotId(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+CRef< CSeq_id > s_RecordIdToSeqId(
+    const string& strId,
+    bool bForceLocal = false )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_id > pId;
+
+    if ( bForceLocal ) {
+        pId.Reset( new CSeq_id( CSeq_id::e_Local, strId ) );
+        return pId;
+    }
+
+    bool is_numeric = strId.find_first_not_of("0123456789") == string::npos;
+    if ( is_numeric ) {
+        pId.Reset( new CSeq_id( CSeq_id::e_Local, strId ) );
+        return pId;
+    }
+
+    try {
+        pId.Reset( new CSeq_id( strId ) );
+    }
+    catch (CException&) {
+        pId.Reset(new CSeq_id( CSeq_id::e_Local, strId ) );
+    }
+    return pId;
+}
+        
 //  ============================================================================
 class CGtfReadRecord
 //  ============================================================================
@@ -690,27 +718,9 @@ bool CGtfReader::x_CreateFeatureLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId;
+    CRef< CSeq_id > pId = 
+        s_RecordIdToSeqId( record.Id(), m_uFlags & fAllIdsAsLocal );
 
-    const string& id_str = record.Id();
-    if (m_uFlags & fAllIdsAsLocal) {
-        pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-    } else {
-        bool is_numeric =
-            id_str.find_first_not_of("0123456789") == string::npos;
-
-        if (is_numeric) {
-            pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-        }
-        else {
-            try {
-                pId.Reset( new CSeq_id(id_str));
-            }
-            catch (CException&) {
-                pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-            }
-        }
-    }
     CSeq_interval& location = pFeature->SetLocation().SetInt();
     location.SetId( *pId );
     location.SetFrom( record.SeqStart() );
@@ -764,7 +774,9 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId( new CSeq_id( CSeq_id::e_Local, record.Id() ) );
+    CRef< CSeq_id > pId = 
+        s_RecordIdToSeqId( record.Id(), m_uFlags & fAllIdsAsLocal );
+
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
     pLocation->SetInt().SetFrom( record.SeqStart() );
@@ -931,11 +943,15 @@ bool CGtfReader::x_FeatureSetDataCDS(
         return false;
     }
 
-//    CCdregion& cdr = pFeature->SetData().SetCdregion();
+    CCdregion& cdr = pFeature->SetData().SetCdregion();
 
-    string strProteinId;
-    if ( record.GetAttribute( "protein_id", strProteinId ) ) {
-        pFeature->SetProduct().SetWhole().SetLocal().SetStr( strProteinId );
+    string strValue;
+    if ( record.GetAttribute( "protein_id", strValue ) ) {
+        pFeature->SetProduct().SetWhole().SetLocal().SetStr( strValue );
+    }
+    if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
+        pFeature->SetExcept( true );
+        pFeature->SetExcept_text( "ribosomal slippage" );
     }
     return true;
 }
@@ -952,6 +968,9 @@ bool CGtfReader::x_SkipAttribute(
 
     if ( record.Type() == "CDS" ) {
         if ( strKey == "protein_id" ) {
+            return true;
+        }
+        if ( strKey == "ribosomal_slippage" ) {
             return true;
         }
     }

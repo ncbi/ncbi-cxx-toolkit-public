@@ -283,6 +283,11 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
                 string strProduct = feature.GetProduct().GetId()->GetSeqIdString();
                 m_Attributes[ "protein_id" ] = strProduct;
             }
+            if ( feature.IsSetExcept_text() ) {
+                if ( feature.GetExcept_text() == "ribosomal slippage" ) {
+                    m_Attributes[ "ribosomal_slippage" ] = "";
+                }
+            }
         }
         break;
     }
