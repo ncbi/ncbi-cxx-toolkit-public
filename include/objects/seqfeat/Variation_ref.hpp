@@ -67,7 +67,7 @@ public:
 
     /// Set a standard single nucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
-    void SetSNP(const vector<string>& replaces,
+    void SetSNV(const vector<string>& replaces,
                 ESeqType seq_type);
 
     /// Set a standard multinucleotide variant.  The replaces set can include

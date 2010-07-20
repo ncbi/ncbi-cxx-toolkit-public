@@ -274,39 +274,49 @@ VariantProperties ::= SEQUENCE {
         provisional      (2), -- Provisional Third Party Annotations (0x02)
         has3D            (4), -- Has 3D strcture SNP3D table (0x04)
         submitterLinkout (8), -- SNP->SubSNP->Batch link_out (0x08)
-        clinical        (16), -- Clinical if LSDB, OMIM, TPA, Diagnostic
+        clinical        (16), -- Clinical if LSDB, OMIM, TPA, Diagnostic (0x10)
         genotypeKit     (32)  -- Marker exists on high density genotyping kit
+                              -- (0x20)
     } OPTIONAL,
 
-    gene-function INTEGER {
-        no-change     (0), -- known to cause no functional changes
-                           -- since 0 does not combine with any other bit
-                           -- value, 'no-change' specifically implies that
-                           -- there are no consequences
-        in-gene       (1), -- Sequence intervals covered by a gene ID but not
-                           -- having an aligned transcript (0x01)
-        in-gene-5     (2), -- In Gene near 5' (0x02)
-        in-gene-3     (4), -- In Gene near 3' (0x04)
-        intron        (8), -- In Intron (0x08)
-        donor        (16), -- In donor splice-site (0x10)
-        acceptor     (32), -- In acceptor splice-site (0x20)
-        utr-5        (64), -- In 5' UTR (0x40)
-        utr-3       (128), -- In 3' UTR (0x80)
-        synonymous  (256), -- one allele in the set does not change the encoded
-                           -- amino acid (0x100)
-        nonsense    (512), -- one allele in the set changes to STOP codon
-                           -- (TER).  (0x200)
-        missense   (1024), -- one allele in the set changes protein peptide
-                           -- (0x400)
-        frameshift (2048), -- one allele in the set changes all downstream
-                           -- amino acids (0x800)
+    gene-location INTEGER {
+        in-gene         (1), -- Sequence intervals covered by a gene ID but not
+                             -- having an aligned transcript (0x01)
+        near-gene-5     (2), -- Within 2kb of the 5' end of a gene feature
+        near-gene-3     (4), -- Within 0.5kb of the 3' end of a gene feature
+        intron          (8), -- In Intron (0x08)
+        donor          (16), -- In donor splice-site (0x10)
+        acceptor       (32), -- In acceptor splice-site (0x20)
+        utr-5          (64), -- In 5' UTR (0x40)
+        utr-3         (128), -- In 3' UTR (0x80)
+        in-start-codon(256), -- the variant is observed in a start codon
+                             -- (0x100)
+        in-stop-codon (512), -- the variant is observed in a stop codon
+                             -- (0x200)
+        intergenic   (1024), -- variant located between genes (0x400)
+        conserved-noncoding(2048) -- variant is located in a conserved
+                                  -- non-coding region (0x800)
+    } OPTIONAL,
 
-        in-start-codon(4096), -- the variant is observed in a start codon
-                              -- (0x1000)
-        up-regulator(8192), -- the variant causes increased transcription
-                           -- (0x2000)
-        down-regulator(16384) -- the variant causes decreased transcription
-                           -- (0x4000)
+    effect INTEGER {
+        no-change      (0), -- known to cause no functional changes
+                            -- since 0 does not combine with any other bit
+                            -- value, 'no-change' specifically implies that
+                            -- there are no consequences
+        synonymous     (1), -- one allele in the set does not change the encoded
+                            -- amino acid (0x1)
+        nonsense       (2), -- one allele in the set changes to STOP codon
+                            -- (TER).  (0x2)
+        missense       (4), -- one allele in the set changes protein peptide
+                            -- (0x4)
+        frameshift     (8), -- one allele in the set changes all downstream
+                            -- amino acids (0x8)
+
+        up-regulator  (16), -- the variant causes increased transcription
+                            -- (0x10)
+        down-regulator(32), -- the variant causes decreased transcription
+                            -- (0x20)
+        methylation(64)
     } OPTIONAL,
 
     mapping INTEGER {
@@ -326,8 +336,8 @@ VariantProperties ::= SEQUENCE {
     } OPTIONAL,
 
     frequency-based-validation INTEGER {
-        is-mutation       (1), -- low frequency variation that is cited in journal
-                               -- and other reputable sources (0x01)
+        is-mutation       (1), -- low frequency variation that is cited in
+                               -- journal or other reputable sources (0x01)
         above-5pct-all    (2), -- >5% minor allele freq in each and all
                                -- populations (0x02)
         above-5pct-1plus  (4), -- >5% minor allele freq in 1+ populations (0x04)
@@ -343,13 +353,14 @@ VariantProperties ::= SEQUENCE {
         has-genotypes    (2)  -- SNP has individual genotype (0x02)
     } OPTIONAL,
 
-    hapmap INTEGER {
-        phase1-genotyped (1), -- Phase 1 genotyped; filtered, non-redundant
-                              -- (0x01)
-        phase2-genotyped (2), -- Phase 2 genotyped; filtered, non-redundant
-                              -- (0x02)
-        phase3-genotyped (4)  -- Phase 3 genotyped; filtered, non-redundant
-                              -- (0x04)
+    project-data SET OF SEQUENCE {
+        -- project IDs are IDs from BioProjects
+        -- in order to report information about project relationships, we
+        -- require projects to be registered
+        -- This field in many ways duplicates dbxrefs; however, the
+        -- intention of this field is to more adequately reflects
+        -- ownership and data source
+        project-ids SET OF INTEGER
     } OPTIONAL,
 
     quality-check INTEGER {
@@ -593,7 +604,7 @@ Delta-item ::= SEQUENCE {
         literal Seq-literal,
         loc Seq-loc,
         this NULL --same location as variation-ref itself
-    },
+    } OPTIONAL,
 
     -- Multiplier allows representing a tandem, e.g.  ATATAT as AT*3
     -- This allows describing CNV/SSR where delta=self  with a
@@ -604,9 +615,8 @@ Delta-item ::= SEQUENCE {
 
     action INTEGER {
 
-        -- cut the sequence at location and paste seq (multiplier applies to
-        -- seq)
-        replace    (0),
+        -- replace len(seq) positions starting with location.start with seq
+        morph      (0),
 
         -- go downstream by distance specified by multiplier (upstream if < 0),
         -- in genomic context.
@@ -618,56 +628,57 @@ Delta-item ::= SEQUENCE {
         del-at     (2),
 
         -- insert seq before the location.start
-        ins-before (3),
+        ins-before (3)
 
-        -- replace len(seq) positions starting with location.start with seq
-        morph      (4)
-
-    } DEFAULT replace
+    } DEFAULT morph
 }
 
 
 -- Variation instance
 Variation-inst ::= SEQUENCE {
     type INTEGER {
-        unknown         (0),
-        identity        (1),    -- delta = this
-        inv             (2),    -- inversion: delta =
-                                -- reverse-comp(feat.location)
-        snp             (3),    -- delins where len(del) = len(ins) = 1
-        mnp             (4),    -- delins where len(del) = len(ins) > 1
-        delins          (5),    -- delins where len(del) != len(ins)
-        del             (6),    -- deltaseq is empty
-        ins             (7),    -- deltaseq contains [this, ins] or [ins, this]
-        microsatellite  (8),    -- location describes tandem sequence;
-                                --   delta is the repeat-unit with a multiplier
-        transposon      (9),    -- delta refers to equivalent sequence in
-                                -- another location.
-                                --   ext-loc describes donor sequence, if known
-                                -- (could be location itself)
-        cnv             (10),   -- general CNV class, indicating "local"
-                                -- rearrangement
+        unknown         (0),    -- delta=[]
+        identity        (1),    -- delta=[]
+        inv             (2),    -- delta=[del, ins.seq=
+                                -- RevComp(variation-location)]
+        snv             (3),    -- delta=[morph of length 1]
+                                -- NOTE: this is snV not snP; the latter
+                                -- requires frequency-based validation to be
+                                -- established in VariantProperties
+                                -- the strict definition of SNP is an SNV with
+                                -- an established population frequency of at
+                                -- least 1% in at least 1 popuplation
+        mnp             (4),    -- delta=[morph of length >1]
+        delins          (5),    -- delta=[del, ins]
+        del             (6),    -- delta=[del]
+        ins             (7),    -- delta=[ins]
+        microsatellite  (8),    -- delta=[del, ins.seq= repeat-unit with fuzzy
+                                -- multiplier]
+                                -- variation-location is the microsat expansion
+                                -- on the sequence
+        transposon      (9),    -- delta=[del, ins.seq= known donor or 'this']
+                                -- variation-location is equiv of transposon
+                                -- locs.
+        cnv             (10),   -- delta=[del, ins= 'this' with fuzzy
+                                -- multiplier]
+        direct-copy     (11),   -- delta=[ins.seq= upstream location on the
+                                -- same strand]
+        rev-direct-copy (12),   -- delta=[ins.seq= downstream location on the
+                                -- same strand]
+        inverted-copy   (13),   -- delta=[ins.seq= upstream location on the
+                                -- opposite strand]
+        everted-copy    (14),   -- delta=[ins.seq= downstream location on the
+                                -- opposite strand]
+        translocation   (15),   -- delta=like delins
+        prot-missense   (16),   -- delta=[morph of length 1]
+        prot-nonsense   (17),   -- delta=[del]; variation-location is the tail
+                                -- of the protein being truncated
+        prot-neutral    (18),   -- delta=[morph of length 1]
+        prot-silent     (19),   -- delta=[morph of length 1, same AA as at
+                                -- variation-location]
+        prot-other      (20),   -- delta=any
 
-        -- Below are four possible copy configurations,
-        -- where delta is a seq-loc on the same sequence.
-        -- If the repeat is represented on the sequence, it is
-        -- described like a transposon; if it is a de-novo
-        -- repeat, it is described like an insertion.
-        direct-copy     (11),   -- delta sequence is located upstream, same
-                                -- strand
-        rev-direct-copy (12),   -- delta sequence is downstream, same strand
-        inverted-copy   (13),   -- delta sequence is upstream, opposite strand
-        everted-copy    (14),   -- delta sequence is downstream, opposite strand
-
-        translocation   (15),   -- feat.location is swapped with delta (i.e.
-                                -- reciprocal transposon)
-        prot-missense   (16),
-        prot-nonsense   (17),
-        prot-neutral    (18),
-        prot-silent     (19),
-        prot-other      (20),
-
-        other           (255)
+        other           (255)   -- delta=any
     },
 
     -- Sequence that replaces the location, in biological order.

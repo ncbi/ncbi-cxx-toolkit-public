@@ -139,14 +139,14 @@ static void s_SetReplaces(CVariation_ref& ref,
 }
 
 
-void CVariation_ref::SetSNP(const vector<string>& replaces,
+void CVariation_ref::SetSNV(const vector<string>& replaces,
                             ESeqType seq_type)
 {
     CVariation_inst& inst = SetData().SetInstance();
     inst.SetDelta().clear();
 
     s_SetReplaces(*this, replaces, seq_type,
-                  CVariation_inst::eType_snp);
+                  CVariation_inst::eType_snv);
 }
 
 
