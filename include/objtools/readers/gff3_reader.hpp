@@ -182,7 +182,7 @@ public:
         const CGff3Record&,
         CRef< CSeq_feat > );
 
-    bool x_FeatureSetDataCDS(
+    virtual bool x_FeatureSetDataCDS(
         const CGff3Record&,
         CRef< CSeq_feat > );
 
@@ -254,6 +254,11 @@ protected:
     void x_PlaceFeature(
         CSeq_feat& feat, 
         const SRecord& );
+
+    virtual bool x_SkipAttribute(
+        const CGff3Record&,
+        const string& ) const { return false; };
+
     //
     //  data:
     //

@@ -273,6 +273,19 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
     if ( feature.CanGetPartial()  &&  feature.GetPartial() ) {
         m_Attributes[ "partial" ] = "";
     }
+
+    switch ( feature.GetData().GetSubtype() ) {
+    default:
+        break;
+
+    case CSeq_feat::TData::eSubtype_cdregion: {
+            if ( feature.IsSetProduct() ) {
+                string strProduct = feature.GetProduct().GetId()->GetSeqIdString();
+                m_Attributes[ "protein_id" ] = strProduct;
+            }
+        }
+        break;
+    }
     return true;
 }
 

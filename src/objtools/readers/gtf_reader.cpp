@@ -158,14 +158,8 @@ bool CGtfReadRecord::x_AssignAttributesFromGff(
         if ( NStr::EndsWith( strValue, "\"" ) ) {
             strValue = strValue.substr( 0, strValue.length() - 1 );
         }
-
-        if ( strKey == "exon_number" ) {
-            //  we compute our own if we ever need them
-            continue;
-        }
         m_Attributes[ strKey ] = strValue;        
     }
-    return true;
     return true;
 }
 
@@ -925,6 +919,43 @@ bool CGtfReader::x_FindParentMrna(
     }
     pFeature = rna_it->second;
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureSetDataCDS(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! CGff3Reader::x_FeatureSetDataCDS( record, pFeature ) ) {
+        return false;
+    }
+
+//    CCdregion& cdr = pFeature->SetData().SetCdregion();
+
+    string strProteinId;
+    if ( record.GetAttribute( "protein_id", strProteinId ) ) {
+        pFeature->SetProduct().SetWhole().SetLocal().SetStr( strProteinId );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_SkipAttribute(
+    const CGff3Record& record,
+    const string& strKey ) const
+//  ----------------------------------------------------------------------------
+{
+    if ( strKey == "exon_number" ) {
+        return true;
+    }
+
+    if ( record.Type() == "CDS" ) {
+        if ( strKey == "protein_id" ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 END_objects_SCOPE

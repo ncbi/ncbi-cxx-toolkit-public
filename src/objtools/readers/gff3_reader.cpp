@@ -766,6 +766,10 @@ bool CGff3Reader::x_FeatureSetQualifiers(
     CGff3Record::TAttrCit it = attrs.begin();
     for ( /*NOOP*/; it != attrs.end(); ++it ) {
 
+        if ( x_SkipAttribute( record, it->first ) ) {
+            continue;
+        }
+
         // special case some well-known attributes
         if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
             pFeature->SetComment( it->second );
@@ -877,9 +881,6 @@ bool CGff3Reader::x_FeatureSetDataCDS(
 //  ----------------------------------------------------------------------------
 {
     CCdregion& cdr = pFeature->SetData().SetCdregion();
-    if ( record.IsSetPhase() ) {
-        cdr.SetFrame( record.Phase() );  
-    }  
     return true;
 }
 

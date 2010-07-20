@@ -157,6 +157,10 @@ protected:
         const CGff3Record&,
         CRef< CSeq_feat > );
             
+    bool x_FeatureSetDataCDS(
+        const CGff3Record&,
+        CRef< CSeq_feat > );
+
 protected:
     bool x_FindParentGene(
         const CGff3Record&,
@@ -169,6 +173,10 @@ protected:
     bool x_FindParentMrna(
         const CGff3Record&,
         CRef< CSeq_feat >& );
+
+    bool x_SkipAttribute(
+        const CGff3Record&,
+        const string& ) const;
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
