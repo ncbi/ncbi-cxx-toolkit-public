@@ -487,17 +487,17 @@ const string CDataTypeModule::GetVar(
     _ASSERT(!typeName.empty());
     _ASSERT(!varName.empty());
     {
-        const string& s = x_GetVar(GetName() + '.' + typeName, varName);
+        const string s = x_GetVar(GetName() + '.' + typeName, varName);
         if ( !s.empty() )
             return s;
     }
     {
-        const string& s = x_GetVar(typeName, varName, collect);
+        const string s = x_GetVar(typeName, varName, collect);
         if ( !s.empty() )
             return s;
     }
     {
-        const string& s = x_GetVar(GetName(), varName);
+        const string s = x_GetVar(GetName(), varName);
         if ( !s.empty() )
             return s;
     }
@@ -505,7 +505,7 @@ const string CDataTypeModule::GetVar(
     return x_GetVar("-", varName);
 }
 
-string const CDataTypeModule::x_GetVar(
+const string CDataTypeModule::x_GetVar(
     const string& section, const string& value, bool collect) const
 {
     if (collect) {

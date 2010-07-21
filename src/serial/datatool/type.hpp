@@ -293,11 +293,13 @@ public:
 protected:
     static bool x_IsSavedName(const string& name);
     static void x_AddSavedName(const string& name);
+    void x_SetMemberAndClassName(const string& memberName);
 
 private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;
+    string m_ClassName;
     string m_XmlName;
     int m_SourceLine;
     CComments m_Comments;

@@ -243,7 +243,7 @@ void CDataType::SetParent(const CDataType* parent, const string& memberName,
     _ASSERT(m_ParentType == 0 && m_Module == 0 && m_MemberName.empty());
     m_ParentType = parent;
     m_Module = parent->GetModule();
-    m_MemberName = memberName;
+    x_SetMemberAndClassName( memberName);
     m_XmlName = xmlName;
     _ASSERT(m_Module != 0);
     if (m_DataMember && m_DataMember->GetDefault()) {
@@ -258,7 +258,7 @@ void CDataType::SetParent(const CDataTypeModule* module,
     _ASSERT(module != 0);
     _ASSERT(m_ParentType == 0 && m_Module == 0 && m_MemberName.empty());
     m_Module = module;
-    m_MemberName = typeName;
+    x_SetMemberAndClassName( typeName );
     FixTypeTree();
 }
 
@@ -484,14 +484,33 @@ string CDataType::DefClassMemberName(void) const
     return cls;
 }
 
+void CDataType::x_SetMemberAndClassName(const string& memberName)
+{
+    m_MemberName = memberName;
+
+    if ( GetParentType() ) {
+        // local type
+        m_ClassName = "C_"+Identifier(m_MemberName);
+
+        const CDataType* parent = GetParentType();
+        if (parent->IsUniSeq()) {
+            parent = parent->GetParentType();
+            if (parent && parent->m_ClassName == m_ClassName) {
+                m_ClassName += '_';
+            }
+        }
+    }
+}
+
 string CDataType::ClassName(void) const
 {
-    const string& cls = GetVar("_class");
+    const string cls = GetVar("_class");
     if ( !cls.empty() )
         return cls;
     if ( GetParentType() ) {
         // local type
-        return "C_"+Identifier(m_MemberName);
+//        return "C_"+Identifier(m_MemberName);
+        return m_ClassName;
     }
     else {
         // global type
@@ -520,7 +539,7 @@ string CDataType::FileName(void) const
         return GetParentType()->FileName();
     }
     if ( m_CachedFileName.empty() ) {
-        const string& file = GetVar("_file");
+        const string file = GetVar("_file");
         if ( !file.empty() ) {
             m_CachedFileName = file;
         }
@@ -541,7 +560,7 @@ string CDataType::FileName(void) const
 const CNamespace& CDataType::Namespace(void) const
 {
     if ( !m_CachedNamespace.get() ) {
-        const string& ns = GetVar("_namespace");
+        const string ns = GetVar("_namespace");
         if ( !ns.empty() ) {
             m_CachedNamespace.reset(new CNamespace(ns));
         }
@@ -564,7 +583,7 @@ string CDataType::InheritFromClass(void) const
 
 const CDataType* CDataType::InheritFromType(void) const
 {
-    const string& parentName = GetVar("_parent_type");
+    const string parentName = GetVar("_parent_type");
     if ( !parentName.empty() )
         return ResolveGlobal(parentName);
     return 0;
