@@ -452,12 +452,15 @@ bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
         return false;
     }
     // recurse to non-named version
-    if ( !LoadSeq_idBlob_ids(result, seq_id, 0) ) {
+    CLoadLockBlob_ids src_ids(result, seq_id, 0);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, seq_id, 0);
+    if ( !src_ids.IsLoaded() ) {
         return false;
     }
-    return false;
     CLoadLockBlob_ids dst_ids(result, seq_id, sel);
-    CLoadLockBlob_ids src_ids(result, seq_id, 0);
+    dst_ids->m_Blob_ids = src_ids->m_Blob_ids;
+    dst_ids->SetState(src_ids->GetState());
+    dst_ids.SetLoaded();
     return true;
 }
 
