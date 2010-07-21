@@ -48,6 +48,7 @@ class CEnumTypeStrings : public CTypeStrings
 public:
     typedef list<CEnumDataTypeValue> TValues;
     CEnumTypeStrings(const string& externalName, const string& enumName,
+                     const string& packedType,
                      const string& cType, bool isInteger,
                      const TValues& values, const string& valuesPrefix,
                      const CComments& comments);
@@ -73,6 +74,7 @@ public:
 private:
     string m_ExternalName;
     string m_EnumName;
+    string m_PackedType;
     string m_CType;
     bool m_IsInteger;
     const TValues& m_Values;

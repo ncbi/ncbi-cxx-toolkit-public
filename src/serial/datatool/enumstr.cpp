@@ -41,12 +41,14 @@ BEGIN_NCBI_SCOPE
 
 CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
                                    const string& enumName,
+                                   const string& packedType,
                                    const string& cType, bool isInteger,
                                    const TValues& values,
                                    const string& valuePrefix,
                                    const CComments& comments)
     : CParent(comments),
       m_ExternalName(externalName), m_EnumName(enumName),
+      m_PackedType(packedType),
       m_CType(cType), m_IsInteger(isInteger),
       m_Values(values), m_ValuesPrefix(valuePrefix)
 {
@@ -92,15 +94,12 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string methodPrefix = ctx.GetMethodPrefix();
     bool inClass = !methodPrefix.empty();
     {
-        TEnumValueType minvalue=0, maxvalue=0;
         // alignments
         size_t maxlen = 0, maxwidth=0;
         ITERATE ( TValues, i, m_Values ) {
             maxlen = max(maxlen,i->GetName().size());
             size_t w = 0;
             TEnumValueType val = i->GetValue();
-            minvalue = min(minvalue,val);
-            maxvalue = max(maxvalue,val);
             if (val < 0) {
                 ++w; val = -val;
             }
@@ -109,20 +108,14 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             }
             maxwidth = max(maxwidth,w);
         }
-        string valtype("int");
-        if (minvalue >= numeric_limits<unsigned char>::min() &&
-            maxvalue <= numeric_limits<unsigned char>::max()) {
-            valtype = "unsigned char";
-        } else
-        if (minvalue >= numeric_limits<short>::min() &&
-            maxvalue <= numeric_limits<short>::max()) {
-            valtype = "short";
-        }
         // generated enum
         CNcbiOstrstream hpp;
         PrintHPPComments(hpp);
-        hpp <<
-            "enum "<<m_EnumName<<" NCBI_PACKED_ENUM_TYPE( "<<valtype<<" ) {";
+        hpp << "enum " << m_EnumName;
+        if (!m_PackedType.empty()) {
+            hpp << " NCBI_PACKED_ENUM_TYPE( " << m_PackedType << " )";
+        }
+        hpp << " {";
         ITERATE ( TValues, i, m_Values ) {
             string id = Identifier( i->GetName(), false );
             hpp << "\n    " << m_ValuesPrefix << id;
@@ -135,9 +128,11 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             }
             i->GetComments().PrintHPPEnum(hpp);
         }
-        hpp << "\n"
-            "} NCBI_PACKED_ENUM_END();\n"
-            "\n";
+        hpp << "\n}";
+        if (!m_PackedType.empty()) {
+            hpp << " NCBI_PACKED_ENUM_END()";
+        }
+        hpp << ";\n\n";
         // prototype of GetTypeInfo_enum_* function
 
 #if 0
