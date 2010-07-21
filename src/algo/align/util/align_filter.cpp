@@ -49,6 +49,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/impl/synonyms.hpp>
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -698,8 +699,9 @@ double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
              double val;
 			 if(s_IsDouble(str)) {
 			     try {
-			         val =  NStr::StringToDouble(str);
-                 } catch (...) {
+			         val = NStr::StringToDouble(str);
+                 }
+                 catch (CException&) {
                      val = x_GetAlignmentScore(str, align);
 				 }
 		     } else {
@@ -722,6 +724,39 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                               const CQueryParseTree::TNode& r_node,
                               const CSeq_align& align)
 {
+    ///
+    /// screen for simple sequence match first
+    ///
+    if (l_node.GetValue().GetType() == CQueryParseNode::eString) {
+        string s = l_node.GetValue().GetStrValue();
+        if (NStr::EqualNocase(s, "query")  ||
+            NStr::EqualNocase(s, "subject")) {
+            if (type != CQueryParseNode::eEQ) {
+                NCBI_THROW(CException, eUnknown,
+                           "query/subject filter is valid with equality only");
+            }
+
+            string val = r_node.GetValue().GetStrValue();
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(val);
+            CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
+
+            if ( !syns ) {
+                return false;
+            }
+
+            CSeq_id_Handle other_idh;
+            if (NStr::EqualNocase(s, "query")) {
+                other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+            } else {
+                other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+            }
+
+            return (syns->ContainsSynonym(other_idh) == !is_not);
+        }
+    }
+
+    /// fall-through: not query or subject
+
     double l_val = x_TermValue(l_node, align);
     double r_val = x_TermValue(r_node, align);
 
