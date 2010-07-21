@@ -1870,13 +1870,13 @@ x_GetDstExon(CSpliced_seg&              spliced,
 
 
 // Helper class for sorting exon parts.
+// Sorts parts by genetic start only. All parts with genetic gaps
+// go first, so that the second pass is required to put them in
+// the right places by product coords.
 class SegByFirstRow_Less
 {
 public:
-    // prod_rev indicates if product strand is reversed to the genomic
-    // one, not just minus.
-    SegByFirstRow_Less(bool prod_rev)
-        : m_ProdRev(prod_rev) {}
+    SegByFirstRow_Less(bool rev_prod) : m_RevProd(rev_prod) {}
 
     bool operator()(const SAlignment_Segment& seg1,
                     const SAlignment_Segment& seg2) const
@@ -1893,30 +1893,25 @@ public:
             if (r1.m_Id != r2.m_Id) {
                 return r1.m_Id < r2.m_Id;
             }
-            return r1.m_Start < r2.m_Start;
         }
-        // Genomic insertion. No way to sort by genomic coordinates.
-        // Try to use product starts. Take into account product's
-        // direction compared to the genomic one.
-        // Use product coords in case of genomic insertion
-        const SAlignment_Segment::SAlignment_Row& pr1 =
-            seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
-        const SAlignment_Segment::SAlignment_Row& pr2 =
-            seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
-        // If ids are different, ingore the starts.
-        if (pr1.m_Id != pr2.m_Id) {
-            return pr1.m_Id < pr2.m_Id;
+        // Make kInvalidSeqPos the least value
+        if (r2.m_Start == kInvalidSeqPos) {
+            if (r1.m_Start == kInvalidSeqPos) {
+                TSeqPos pstart1 =
+                    seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
+                TSeqPos pstart2 =
+                    seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
+                // Sort genomic gaps by product pos, ignore product gaps.
+                return m_RevProd ? (pstart2 < pstart1) : (pstart1 < pstart2);
+            }
+            return false;
         }
-        // Compare product starts. In case of product insertion the
-        // sort order may still be invalid. There's nothing we can
-        // do about it. The exon will be removed anyway if it has
-        // gaps in both genomic and product sequences.
-        return m_ProdRev ?
-            pr1.m_Start > pr2.m_Start : pr1.m_Start < pr2.m_Start;
+        if (r1.m_Start == kInvalidSeqPos) return true;
+        return r1.m_Start < r2.m_Start;
     }
 
 private:
-    bool m_ProdRev; // Product orientation is relative to genetic strand
+    bool m_RevProd; // Is product reversed compared to genomic?
 };
 
 
@@ -1968,8 +1963,7 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
     ITERATE(TSegments, it, m_Segs) {
         tmp.push_back(*it);
     }
-    sort(tmp.begin(), tmp.end(),
-         SegByFirstRow_Less(gen_reverse != prod_reverse));
+    sort(tmp.begin(), tmp.end(), SegByFirstRow_Less(prod_reverse != gen_reverse));
     m_Segs.clear();
     ITERATE(TSegmentsVector, it, tmp) {
         m_Segs.push_back(*it);
@@ -1978,8 +1972,49 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
     // Sort exon parts. Try to sort each id by genomic starts.
     // If there's a gap on genomic sequence, try to sort by product start,
     // but reverse the order if genomic and product strands are different.
-    m_Segs.sort(SegByFirstRow_Less(gen_reverse != prod_reverse));
+    m_Segs.sort(SegByFirstRow_Less(prod_reverse != gen_reverse));
 #endif
+    // Now all parts with non-gap genomic coords are sorted, all genomic gaps
+    // go before non-gaps and are sorted by product coords.
+    // Find first segment with non-gap in genomic coords.
+    TSegments::iterator first_non_gap = m_Segs.begin();
+    while (first_non_gap != m_Segs.end()  &&
+        first_non_gap->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen].m_Start == kInvalidSeqPos) {
+        ++first_non_gap;
+    }
+    if (first_non_gap != m_Segs.begin()) {
+        TSegments segs2;
+        // Move genomic gaps sorted by product coords to a new list
+        segs2.splice(segs2.end(), m_Segs, m_Segs.begin(), first_non_gap);
+        // Now merge the two lists sorting by product coord.
+        TSegments::iterator it1 = m_Segs.begin();
+        // Store last segment with non-gap in product. We will try to
+        // put non-gaps before gaps, although this should not be
+        // important. (?)
+        TSegments::iterator last_it1 = it1;
+        while (!segs2.empty()  &&  it1 != m_Segs.end()) {
+            TSeqPos pp1 = it1->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
+            TSeqPos pp2 = segs2.front().m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
+            if (pp1 == kInvalidSeqPos) {
+                it1++;
+            }
+            else if ((gen_reverse == prod_reverse  &&  pp1 < pp2)  ||
+                (gen_reverse != prod_reverse  &&  pp1 > pp2)) {
+                last_it1 = it1;
+                it1++;
+            }
+            else {
+                // pp1 < pp2 - insert segment here
+                ++last_it1;
+                m_Segs.splice(last_it1, segs2, segs2.begin());
+                --last_it1;
+            }
+        }
+        if ( !segs2.empty() ) {
+            // all remaining segments, if any, go to the end
+            m_Segs.splice(m_Segs.end(), segs2, segs2.begin(), segs2.end());
+        }
+    }
 }
 
 
