@@ -108,6 +108,8 @@ void CFlatFileGenerator::Generate
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
+    /// archive a copy of the annot selector before we generate!
+    SAnnotSelector sel = m_Ctx->SetAnnotSelector();
     m_Ctx->SetEntry(entry);
 
     CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
@@ -124,7 +126,12 @@ void CFlatFileGenerator::Generate
     }
     gatherer->Gather(*m_Ctx, item_os);
 
+    /// reset the context, but preserve our selector
+    /// we do this a bit oddly since resetting the context erases the selector;
+    /// since the caller is reusing this object (most likely), we automatically
+    /// restore the selector to its former glory
     m_Ctx->Reset();
+    m_Ctx->SetAnnotSelector() = sel;
 }
 
 
