@@ -792,7 +792,7 @@ bool CClusterer::x_CanAddElem(int cluster_id, int elem) const
 {
     // for the link method, clusters and elements can be joined as long
     // as there exists at least one link between elements
-    if (m_LinkMethod == eClique) {
+    if (m_LinkMethod == eDist) {
         return true;
     }
 
@@ -830,7 +830,7 @@ bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id) const
 {
     // for the link method, clusters can be joined as long
     // as there exists at least one link between elements
-    if (m_LinkMethod == eClique) {
+    if (m_LinkMethod == eDist) {
         return true;
     }
 
