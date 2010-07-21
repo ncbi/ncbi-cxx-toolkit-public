@@ -41,6 +41,10 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
@@ -279,14 +283,47 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
         break;
 
     case CSeq_feat::TData::eSubtype_cdregion: {
+
+            const CCdregion& cdr = feature.GetData().GetCdregion();
+
             if ( feature.IsSetProduct() ) {
                 string strProduct = feature.GetProduct().GetId()->GetSeqIdString();
                 m_Attributes[ "protein_id" ] = strProduct;
             }
+
             if ( feature.IsSetExcept_text() ) {
                 if ( feature.GetExcept_text() == "ribosomal slippage" ) {
                     m_Attributes[ "ribosomal_slippage" ] = "";
                 }
+            }
+
+            if ( feature.IsSetXref() ) {
+                const vector< CRef< CSeqFeatXref > > xref = feature.GetXref();
+                vector< CRef< CSeqFeatXref > >::const_iterator it = xref.begin();
+                for ( ; it != xref.end(); ++it ) {
+                    const CSeqFeatXref& ref = **it;
+                    if ( ref.IsSetData() && ref.GetData().IsProt() && 
+                        ref.GetData().GetProt().IsSetName() ) 
+                    {
+                        string strProduct = *( ref.GetData().GetProt().GetName().begin() );
+                        m_Attributes[ "product" ] = strProduct; 
+                        break;
+                    }
+                }
+            }
+
+            if ( cdr.IsSetCode() ) {
+                string strCode = NStr::IntToString( cdr.GetCode().GetId() );
+                m_Attributes[ "transl_table" ] = strCode;
+            }
+        }
+        break;
+
+    case CSeq_feat::TData::eSubtype_mRNA: {
+            const CRNA_ref& rna = feature.GetData().GetRna();
+            if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
+                string strProduct = rna.GetExt().GetName();
+                m_Attributes[ "product" ] = strProduct;
             }
         }
         break;

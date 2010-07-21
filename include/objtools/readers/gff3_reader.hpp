@@ -178,7 +178,7 @@ public:
         const CGff3Record&,
         CRef< CSeq_feat > );
 
-    bool x_FeatureSetDataMRNA(
+    virtual bool x_FeatureSetDataMRNA(
         const CGff3Record&,
         CRef< CSeq_feat > );
 

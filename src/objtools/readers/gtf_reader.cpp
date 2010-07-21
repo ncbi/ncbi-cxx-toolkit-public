@@ -934,6 +934,26 @@ bool CGtfReader::x_FindParentMrna(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureSetDataMRNA(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! CGff3Reader::x_FeatureSetDataMRNA( record, pFeature ) ) {
+        return false;
+    }
+    
+    CRNA_ref& rna = pFeature->SetData().SetRna();
+
+    string strValue;
+    if ( record.GetAttribute( "product", strValue ) ) {
+        rna.SetExt().SetName( strValue );
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataCDS(
     const CGff3Record& record,
     CRef< CSeq_feat > pFeature )
@@ -953,6 +973,17 @@ bool CGtfReader::x_FeatureSetDataCDS(
         pFeature->SetExcept( true );
         pFeature->SetExcept_text( "ribosomal slippage" );
     }
+    if ( record.GetAttribute( "product", strValue ) ) {
+        CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
+        pXref->SetData().SetProt().SetName().push_back( strValue );
+        pFeature->SetXref().push_back( pXref );
+    }
+    if ( record.GetAttribute( "transl_table", strValue ) ) {
+        CRef< CGenetic_code::C_E > pGc( new CGenetic_code::C_E );
+        pGc->SetId( NStr::StringToUInt( strValue ) );
+        cdr.SetCode().Set().push_back( pGc );
+    }
+
     return true;
 }
 
@@ -973,7 +1004,20 @@ bool CGtfReader::x_SkipAttribute(
         if ( strKey == "ribosomal_slippage" ) {
             return true;
         }
+        if ( strKey == "product" ) {
+            return true;
+        }
+        if ( strKey == "transl_table" ) {
+            return true;
+        }
     }
+
+    if ( record.Type() == "exon" ) {
+        if ( strKey == "product" ) {
+            return true;
+        }
+    }
+
     return false;
 }
 
