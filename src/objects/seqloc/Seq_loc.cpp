@@ -1925,14 +1925,19 @@ public:
         if (old_from != GetFrom()) {
             m_Fuzz_from.Reset(rg.m_Fuzz_from);
         }
-        else if (old_from == rg.GetFrom()) {
-            ResetFuzzFrom();
+        else if (old_from == rg.GetFrom()  &&  m_Fuzz_from) {
+            // Reset fuzz if it's not the same for both ranges
+            if (!rg.m_Fuzz_from  ||  !m_Fuzz_from->Equals(*rg.m_Fuzz_from)) {
+                ResetFuzzFrom();
+            }
         }
         if (old_to != GetTo()) {
             m_Fuzz_to.Reset(rg.m_Fuzz_to);
         }
-        else if (old_to == rg.GetTo()) {
-            ResetFuzzTo();
+        else if (old_to == rg.GetTo()  &&  m_Fuzz_to) {
+            if (!rg.m_Fuzz_to  ||  !m_Fuzz_to->Equals(*rg.m_Fuzz_to)) {
+                ResetFuzzTo();
+            }
         }
         return *this;
     }
