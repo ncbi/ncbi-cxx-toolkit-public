@@ -710,6 +710,7 @@ void CClusterer::ComputeClustersFromLinks(void)
             const TSingleCluster& cluster = m_Clusters.back();
             ITERATE (vector<int>, it, cluster) {
                 m_Clusters[i].AddElement(*it);
+                m_ClusterId[*it] = i;
             }
             m_Clusters.pop_back();
         }        
