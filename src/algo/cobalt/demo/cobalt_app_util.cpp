@@ -40,7 +40,6 @@ Contents: Utility functions for COBALT command line applications
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <serial/iterator.hpp>
-#include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 #include "cobalt_app_util.hpp"
@@ -51,7 +50,8 @@ BEGIN_SCOPE(cobalt);
 
 void GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
                          vector< CRef<objects::CSeq_loc> >& seqs,
-                         CRef<objects::CScope>& scope)
+                         CRef<objects::CScope>& scope,
+                         objects::CFastaReader::TFlags flags)
 {
     seqs.clear();
     scope.Reset(new CScope(objmgr));
@@ -63,10 +63,7 @@ void GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
     // between queries by using different elements of retval[]
 
     CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, 
-                              CFastaReader::fAssumeProt |
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID);
+    CFastaReader fasta_reader(line_reader, flags);
 
     while (!line_reader.AtEOF()) {
 

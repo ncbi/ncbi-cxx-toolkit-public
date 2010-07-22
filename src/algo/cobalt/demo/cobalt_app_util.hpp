@@ -39,6 +39,7 @@ Contents: Utility functions for COBALT command line applications
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/readers/fasta.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
@@ -46,7 +47,8 @@ BEGIN_SCOPE(cobalt)
 void GetSeqLocFromStream(CNcbiIstream& instream,
                          objects::CObjectManager& objmgr,
                          vector< CRef<objects::CSeq_loc> >& seqs,
-                         CRef<objects::CScope>& scope);
+                         CRef<objects::CScope>& scope,
+                         objects::CFastaReader::TFlags flags);
 
 
 

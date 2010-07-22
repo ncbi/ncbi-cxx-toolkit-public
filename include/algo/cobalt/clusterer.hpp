@@ -249,6 +249,12 @@ public:
     ///
     TClusters& SetClusters(void) {return m_Clusters;}
 
+    /// Find id of cluster to which given element belongs
+    /// @param elem Element [in]
+    /// @return Cluster numerical id
+    ///
+    int GetClusterId(int elem) const;
+
     /// Get list of trees for clusters
     /// @param List of trees [out]
     ///

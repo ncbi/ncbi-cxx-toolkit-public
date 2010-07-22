@@ -42,10 +42,13 @@
 #include <algo/cobalt/clusterer.hpp>
 #include <algo/cobalt/links.hpp>
 
+#include <objtools/align_format/showdefline.hpp>
+
 #include "cobalt_app_util.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 USING_SCOPE(cobalt);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -106,16 +109,10 @@ void CClustererApplication::Init(void)
                             CArgDescriptions::eDouble, "0.8");
 
     arg_desc->AddDefaultKey("clust_method", "method", "Clustering method",
-                            CArgDescriptions::eString, "dist");
+                            CArgDescriptions::eString, "clique");
 
     arg_desc->SetConstraint("clust_method", &(*new CArgAllow_Strings, "dist",
                                               "clique"));
-
-    arg_desc->AddDefaultKey("outfmt", "format", "Output format",
-                            CArgDescriptions::eString, "index");
-    arg_desc->SetConstraint("outfmt", 
-                            &(*new CArgAllow_Strings, "sequence", "index"));
-
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -135,7 +132,9 @@ int CClustererApplication::Run(void)
     m_ObjMgr = CObjectManager::GetInstance();
     CRef<CScope> scope;
     vector< CRef<CSeq_loc> > queries;
-    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope);
+    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
+                        CFastaReader::fAssumeProt | 
+                        CFastaReader::fForceType);
 
     vector<TKmerCounts> kmer_counts;
     unsigned int kmer_len = (unsigned int)args["k"].AsInteger();
@@ -158,6 +157,7 @@ int CClustererApplication::Run(void)
     }
     TKMethods::SetParams(kmer_len, alph);
 
+    // compute k-mer counts
     TKMethods::ComputeCounts(queries, *scope, kmer_counts);
 
     TKMethods::EDistMeasures dist_method = TKMethods::eFractionCommonKmersLocal;
@@ -180,75 +180,28 @@ int CClustererApplication::Run(void)
         clust_method = CClusterer::eClique;
     }
 
+    // compute distances between sequences
     CRef<CLinks> links = TKMethods::ComputeDistLinks(kmer_counts, dist_method,
                                      max_diameter,
-                                     clust_method == CClusterer::eDist);
+                                     clust_method == CClusterer::eClique);
 
+    // compute clusters
     CClusterer clusterer;
     clusterer.SetLinks(links);
     clusterer.SetClustMethod(clust_method);
     clusterer.Run();
         
-    const CClusterer::TClusters& clusters = clusterer.GetClusters();
-    unsigned int cluster_ind = 0;
+    // print output: sequence id  cluster id
+    for (int i=0;i < (int)queries.size();i++) {
 
-    if (args["outfmt"].AsString() == "index") {
-        ITERATE(CClusterer::TClusters, cluster_it, clusters) {
-            NcbiCout << "Cluster " << cluster_ind++ << ":";
-            if (cluster_it->GetPrototype() >= 0) {
-                NcbiCout << " (prototype: query " 
-                         << cluster_it->GetPrototype() << ")";
-            }
-            NcbiCout << NcbiEndl;
-            ITERATE(CClusterer::TSingleCluster, elem, *cluster_it) {
-                NcbiCout << "  query " << *elem << NcbiEndl;
-            }
-            NcbiCout << NcbiEndl;
-        }
-    }
+        CBioseq_Handle bhandle = scope->GetBioseqHandle(queries[i]->GetWhole(),
+                                                        CScope::eGetBioseq_All);
 
-    if (args["outfmt"].AsString() == "sequence") {
-        NcbiCout << NcbiEndl;
-        ITERATE(CClusterer::TClusters, cluster_it, clusters) {
-            NcbiCout << "Cluster " << cluster_ind++ << ":" << NcbiEndl;
-            
-            // We start with printing prototype
-            int prot = cluster_it->GetPrototype();
-            if (prot >= 0) {
-                CBioseq_Handle bhandle = scope->GetBioseqHandle(
-                                                queries[prot]->GetWhole(),
-                                                CScope::eGetBioseq_All);
-
-                NcbiCout << ">" << sequence::GetTitle(bhandle) << NcbiEndl;
-                CSeqVector seqvec 
-                    = bhandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-
-                ITERATE(CSeqVector, residue, seqvec) {
-                    NcbiCout << *residue;
-                }
-                NcbiCout << NcbiEndl;
-            }
-
-            ITERATE(CClusterer::TSingleCluster, elem, *cluster_it) {
-                
-                if (*elem == prot) {
-                    continue;
-                }
-
-                CBioseq_Handle bhandle = scope->GetBioseqHandle(
-                                       queries[*elem]->GetWhole(),
-                                       CScope::eGetBioseq_All);
-                NcbiCout << ">" << sequence::GetTitle(bhandle) << NcbiEndl;
-                CSeqVector seqvec 
-                    = bhandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-
-                ITERATE(CSeqVector, residue, seqvec) {
-                    NcbiCout << *residue;
-                }
-                NcbiCout << NcbiEndl;
-            }
-            NcbiCout << NcbiEndl;
-        }
+        list< CRef<CSeq_id> > id;
+        CShowBlastDefline::GetSeqIdList(bhandle, id);
+        string id_str = CShowBlastDefline::GetSeqIdListString(id, true);
+        NcbiCout << id_str << "\t" << "Cluster_" 
+                 << clusterer.GetClusterId(i) << NcbiEndl;
     }
 
     return 0;

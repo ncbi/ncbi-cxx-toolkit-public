@@ -846,6 +846,16 @@ bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id) const
     return true;
 }
 
+int CClusterer::GetClusterId(int elem) const
+{
+    if (elem < 0 || elem >= m_ClusterId.size()) {
+        NCBI_THROW(CClustererException, eInvalidInput, "Element index out of "
+                   "range");
+    }
+
+    return m_ClusterId[elem];
+}
+
 
 void CClusterer::GetTrees(vector<TPhyTreeNode*>& trees) const
 {

@@ -406,7 +406,11 @@ int CMultiApplication::Run(void)
 
     vector< CRef<objects::CSeq_loc> > queries;
     CRef<objects::CScope> scope;
-    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope);
+    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
+                        CFastaReader::fAssumeProt | 
+                        CFastaReader::fForceType |
+                        CFastaReader::fNoParseID);
+
     _ASSERT(!scope.Empty());
 
     aligner.SetQueries(queries, scope);
