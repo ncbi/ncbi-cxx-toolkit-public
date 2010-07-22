@@ -1813,7 +1813,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
         exon->SetPartial(true);
     }
     else {
-        // If the exon is not partial, copy some date from the original one.
+        // If the exon is not partial, copy some data from the original one.
         if ( m_OrigExon->IsSetAcceptor_before_exon() ) {
             exon->SetAcceptor_before_exon().Assign(
                 m_OrigExon->GetAcceptor_before_exon());
@@ -1926,7 +1926,8 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
     ITERATE(TSegments, seg, m_Segs) {
         const SAlignment_Segment::SAlignment_Row& r =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
-        if ( r.m_IsSetStrand ) {
+        // Ingore strand in gaps - it's unmapped
+        if (r.m_Start != kInvalidSeqPos  &&  r.m_IsSetStrand) {
             // Check if all parts have the same strand.
             bool gen_row_rev = IsReverse(r.m_Strand);
             if ( !found_gen_strand ) {
@@ -1940,7 +1941,8 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
         }
         const SAlignment_Segment::SAlignment_Row& pr =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
-        if ( pr.m_IsSetStrand ) {
+        // Ingore strand in gaps - it's unmapped
+        if (pr.m_Start != kInvalidSeqPos  &&  pr.m_IsSetStrand) {
             // Check if all parts have the same strand.
             bool prod_row_rev = IsReverse(pr.m_Strand);
             if ( !found_prod_strand ) {
@@ -1991,28 +1993,31 @@ void CSeq_align_Mapper_Base::x_SortSegs(void) const
         // Store last segment with non-gap in product. We will try to
         // put non-gaps before gaps, although this should not be
         // important. (?)
-        TSegments::iterator last_it1 = it1;
-        while (!segs2.empty()  &&  it1 != m_Segs.end()) {
+        TSegments::iterator ins_it = it1;
+        while (!segs2.empty()) {
+            if (it1 == m_Segs.end()) {
+                // The last segment has been checked - all the remaining
+                // gen-gapped ranges go before the trailing prod-gapped
+                // segments.
+                m_Segs.splice(ins_it, segs2, segs2.begin(), segs2.end());
+                break;
+            }
             TSeqPos pp1 = it1->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
             TSeqPos pp2 = segs2.front().m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
+            // Skip prod-gapped segments
             if (pp1 == kInvalidSeqPos) {
                 it1++;
+                continue;
             }
-            else if ((gen_reverse == prod_reverse  &&  pp1 < pp2)  ||
-                (gen_reverse != prod_reverse  &&  pp1 > pp2)) {
-                last_it1 = it1;
-                it1++;
+            // Check if any gen-gapped ranges may be inserted before the current
+            // position.
+            if ((gen_reverse == prod_reverse  &&  pp1 > pp2)  ||
+                (gen_reverse != prod_reverse  &&  pp1 < pp2)) {
+                m_Segs.splice(ins_it, segs2, segs2.begin());
+                continue; // Check the next gen-gapped segment
             }
-            else {
-                // pp1 < pp2 - insert segment here
-                ++last_it1;
-                m_Segs.splice(last_it1, segs2, segs2.begin());
-                --last_it1;
-            }
-        }
-        if ( !segs2.empty() ) {
-            // all remaining segments, if any, go to the end
-            m_Segs.splice(m_Segs.end(), segs2, segs2.begin(), segs2.end());
+            it1++;
+            ins_it = it1;
         }
     }
 }
@@ -2092,16 +2097,24 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     }
 
     // Try to propagate some properties to the alignment level.
+    if ( !gen_id ) {
+        // Don't try to use genomic id if not set
+        single_gen_id = false;
+    }
+    if ( !prod_id ) {
+        // Don't try to use product id if not set
+        single_prod_id = false;
+    }
     if ( single_gen_id ) {
         spliced.SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
     }
-    if ( single_gen_str  &&  gen_strand != eNa_strand_unknown ) {
+    if (single_gen_str  &&  gen_strand != eNa_strand_unknown) {
         spliced.SetGenomic_strand(gen_strand);
     }
     if ( single_prod_id ) {
         spliced.SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
     }
-    if ( single_prod_str  &&  prod_strand != eNa_strand_unknown ) {
+    if (single_prod_str  &&  prod_strand != eNa_strand_unknown) {
         spliced.SetProduct_strand(prod_strand);
     }
 

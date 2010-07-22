@@ -904,6 +904,57 @@ void TestMapper_Fuzz(CNcbiIstream& in)
 }
 
 
+void TestMapper_ExonPartsOrder(CNcbiIstream& in)
+{
+    cout << "Testing sort order of mapped exons" << endl;
+
+    CSeq_loc src, dst_plus, dst_minus;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst_plus;
+    in >> MSerial_AsnText >> dst_minus;
+    CSeq_loc_Mapper_Base mapper_plus(src, dst_plus);
+    CSeq_loc_Mapper_Base mapper_minus(src, dst_minus);
+
+    CSeq_align orig;
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Both rows on plus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Both rows on plus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Genomic on minus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Genomic on minus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Product on minus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Product on minus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     CNcbiIfstream in("mapper_unit_test.asn");
@@ -922,4 +973,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapping_ThroughAlignments(in);
     TestMapper_Sequence_Info(in);
     TestMapper_Fuzz(in);
+    TestMapper_ExonPartsOrder(in);
 }
