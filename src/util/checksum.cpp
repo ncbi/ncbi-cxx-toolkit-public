@@ -23,16 +23,15 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko
+ * Author:  Eugene Vasilchenko
  *
- * File Description:  Checksum (CRC32 or MD5) calculation class
+ * File Description:  Checksum (CRC32, Adler32 or MD5) calculation class
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/checksum.hpp>
-#include <util/md5.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -40,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
-// sx_Start must begin with "/* O" (see ValidChecksumLine() in checksum.inl)
+// sx_Start must begin with "/* O" (see ValidChecksumLine() in checksum.hpp)
 static const char sx_Start[]     = "/* Original file checksum: ";
 static const char sx_End[]       = " */";
 static const char sx_LineCount[] = "lines: ";
@@ -86,7 +85,6 @@ CChecksum::CChecksum(EMethod method)
     }
 }
 
-
 CChecksum::CChecksum(const CChecksum& cks)
     : m_LineCount(cks.m_LineCount), m_CharCount(cks.m_CharCount),
       m_Method(cks.m_Method)
@@ -105,12 +103,10 @@ CChecksum::CChecksum(const CChecksum& cks)
     }
 }
 
-
 CChecksum::~CChecksum()
 {
     x_Free();
 }
-
 
 void CChecksum::x_Free()
 {
@@ -123,7 +119,6 @@ void CChecksum::x_Free()
         break;
     }
 }
-
 
 CChecksum& CChecksum::operator= (const CChecksum& cks)
 {
@@ -148,7 +143,6 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
     return *this;
 }
 
-
 void CChecksum::Reset()
 {
     m_LineCount = 0;
@@ -172,7 +166,6 @@ void CChecksum::Reset()
     }
 }
 
-
 Uint4 CChecksum::GetChecksum() const
 {
     switch ( GetMethod() ) {
@@ -186,13 +179,6 @@ Uint4 CChecksum::GetChecksum() const
         _ASSERT(0);
         return 0;
     }
-}
-
-
-void CChecksum::GetMD5Digest(unsigned char digest[16]) const
-{
-    _ASSERT(GetMethod() == eMD5);
-    m_Checksum.m_MD5->Finalize(digest);
 }
 
 
@@ -225,7 +211,6 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     return memcmp(line, bufferPtr, length) == 0;
 }
 
-
 CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 {
     switch ( GetMethod() ) {
@@ -242,7 +227,6 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
         return out << "none";
     }
 }
-
 
 void CChecksum::x_Update(const char* str, size_t count)
 {
@@ -264,7 +248,6 @@ void CChecksum::x_Update(const char* str, size_t count)
     }
 }
 
-
 void CChecksum::NextLine(void)
 {
     char eol = '\n';
@@ -272,24 +255,19 @@ void CChecksum::NextLine(void)
     ++m_LineCount;
 }
 
-
 CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     CChecksum cks(method);
-
     return ComputeFileChecksum(path, cks);
 }
 
-
-CChecksum& ComputeFileChecksum(const string& path,
-                               CChecksum& checksum)
+CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !input.is_open() ) {
         return checksum;
     }
-
     while ( !input.eof() ) {
         char buf[1024*4];
         input.read(buf, sizeof(buf));
@@ -300,7 +278,6 @@ CChecksum& ComputeFileChecksum(const string& path,
     }
     input.close();
     return checksum;
-
 }
 
 
