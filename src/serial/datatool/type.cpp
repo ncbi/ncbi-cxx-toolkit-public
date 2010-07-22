@@ -495,9 +495,9 @@ void CDataType::x_SetMemberAndClassName(const string& memberName)
         const CDataType* parent = GetParentType();
         if (parent->IsUniSeq()) {
             parent = parent->GetParentType();
-            if (parent && parent->m_ClassName == m_ClassName) {
-                m_ClassName += '_';
-            }
+        }
+        if (parent && parent->m_ClassName == m_ClassName) {
+            m_ClassName += '_';
         }
     }
 }
