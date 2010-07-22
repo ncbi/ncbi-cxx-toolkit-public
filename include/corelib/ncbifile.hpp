@@ -3012,7 +3012,7 @@ class NCBI_XNCBI_EXPORT CFileWriter : public IWriter,
                                       public CFileReaderWriter_Base
 {
 public:
-    /// Construct CFileWriter for reading from the file with name 'filename'.
+    /// Construct CFileWriter for writinf to the file with name 'filename'.
     /// Throw CFileErrnoException on error.
     CFileWriter(const string& filename,
                 EOpenMode  open_mode  = eCreate,
