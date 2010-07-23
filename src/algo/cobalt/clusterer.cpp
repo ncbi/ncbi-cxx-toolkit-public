@@ -797,7 +797,7 @@ bool CClusterer::x_CanAddElem(int cluster_id, int elem) const
         return true;
     }
 
-    // for the dist method there must be a link between all pairs of elements
+    // for the clique method there must be a link between all pairs of elements
     ITERATE (vector<int>, it, m_Clusters[cluster_id]) {
         if (!m_Links->IsLink(*it, elem)) {
             return false;
@@ -835,7 +835,7 @@ bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id) const
         return true;
     }
 
-    // for the dist method there must be a link between all pairs of elements
+    // for the clique method there must be a link between all pairs of elements
     ITERATE (vector<int>, it1, m_Clusters[cluster1_id]) {
         ITERATE (vector<int>, it2, m_Clusters[cluster2_id]) {
             if (!m_Links->IsLink(*it1, *it2)) {
