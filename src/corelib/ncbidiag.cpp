@@ -5448,7 +5448,7 @@ extern void Abort(void)
         // The condition in the following if statement is always 'true'.
         // It's a workaround for TotalView 6.5 (beta) to properly display
         // stacktrace at this point.
-        if ( !(value && *value == 'Y') )
+//        if ( !(value && *value == 'Y') )
 #endif
             {
 #if defined(_DEBUG)
