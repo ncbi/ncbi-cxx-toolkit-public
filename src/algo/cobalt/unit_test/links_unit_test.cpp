@@ -117,16 +117,22 @@ BOOST_AUTO_TEST_CASE(TestIsLink)
 {
     const int kNumElements = 10;
 
-    CLinks links(kNumElements, true);
+    CLinks links(kNumElements);
+    links.AddLink(1, 0, 0.0);
 
-    // non existent link
-    BOOST_REQUIRE(!links.IsLink(0, 1));
+    // links must be sorted before check can be made
+    BOOST_CHECK_THROW(links.IsLink(0, 1), CLinksException);
+
+    links.Sort();
 
     // existent link
-    links.AddLink(1, 0, 0.0);
     BOOST_REQUIRE(links.IsLink(0, 1));
     // links are undirected
     BOOST_REQUIRE(links.IsLink(1, 0));
+    
+    // non existent link
+    BOOST_REQUIRE(!links.IsLink(1, 2));
+    BOOST_REQUIRE(!links.IsLink(2, 1));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -72,13 +72,11 @@ public:
 
     /// Constructor
     /// @param num_elements Number of nodes (not necessary connected) [in]
-    /// @param mark_links If true existing links will be marked in binary
     /// [in] table
     ///
-    CLinks(Uint4 num_elements, bool mark_links = true)
+    CLinks(Uint4 num_elements)
         : m_NumElements(num_elements),
           m_IsSorted(false),
-          m_MarkLinks(mark_links),
           m_MaxWeight(0.0)
     {}
 
@@ -101,6 +99,7 @@ public:
     /// @param second Node number [in]
     /// @return True if link exists, false otherwise
     ///
+    /// The link is checked by doing binary search in sorted list of links
     bool IsLink(int first, int second) const;
 
     /// Check whether the links are sorted according to weights
@@ -127,13 +126,6 @@ public:
     ///
     double GetMaxWeight(void) const {return m_MaxWeight;}
 
-    /// Check if links are marked in binary table. If they are the IsLink()
-    /// function will be fast. If not the funtion will iterate through all
-    /// links.
-    /// @return True if links are marked, false otherwise
-    ///
-    bool GetMarkLinks(void) const {return m_MarkLinks;}
-
     /// Get iterator pointing to the first link
     /// @return Link iterator
     ///
@@ -151,8 +143,15 @@ private:
     /// Forbid assignment operator
     CLinks& operator=(const CLinks& links);
 
-    /// Get index for a link in the binary table
-    int x_GetBinIndex(int first, int second) const;
+    /// Initialize secondary list of link pointers
+    void x_InitLinkPtrs(void);
+
+    /// Check if link exists by searching list of link pointers sorted by
+    /// node indexes
+    /// @param first Node number [in]
+    /// @param second Node number [in]
+    /// @return True if link exists, false otherwise
+    bool x_IsLinkPtr(int first, int second) const;
 
 
 protected:
@@ -160,8 +159,9 @@ protected:
     /// Links
     list<SLink> m_Links;
 
-    /// Binary table for marking existing links
-    bm::bvector<> m_IsLink;
+    /// Pointers to links in m_Links sorted according to node indexes;
+    /// used for checks whether a link exists
+    vector<SLink*> m_LinkPtrs;
 
     /// Number of nodes
     Uint4 m_NumElements;
@@ -171,9 +171,6 @@ protected:
 
     /// Is list of links sorted
     bool m_IsSorted;
-
-    /// Are existing linkes marked
-    bool m_MarkLinks;
 
     /// Maximym weight in the list
     double m_MaxWeight;
@@ -187,7 +184,10 @@ public:
 
     /// Error codes
     enum EErrCode {
-        eInvalidNode  ///< Invalid node index
+        eInvalidInput,
+        eInvalidNode,  ///< Invalid node index
+        eUnsortedLinks
+        
     };
 
     NCBI_EXCEPTION_DEFAULT(CLinksException, CException);

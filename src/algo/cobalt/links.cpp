@@ -44,6 +44,18 @@ Contents: Implementation of CLinks
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+
+// Compare links based on node indexes
+static bool compare_links_by_nodes(const CLinks::SLink* link1,
+                                   const CLinks::SLink* link2)
+{
+    if (link1->first == link2->first) {
+        return link1->second < link2->second;
+    }
+
+    return link1->first < link2->first;
+}
+
 CLinks::~CLinks()
 {}
 
@@ -59,9 +71,6 @@ void CLinks::AddLink(int first, int second, double weight)
     }
     m_Links.push_back(SLink(first, second, weight));
 
-    if (m_MarkLinks) {
-        m_IsLink.set(x_GetBinIndex(first, second));
-    }
     m_NumLinks++;
     if (weight > m_MaxWeight) {
         m_MaxWeight = weight;
@@ -73,21 +82,20 @@ void CLinks::AddLink(int first, int second, double weight)
 
 bool CLinks::IsLink(int first, int second) const
 {
+    if (!m_IsSorted) {
+        NCBI_THROW(CLinksException, eUnsortedLinks, "Links must be sorted "
+                   "before checks for links can be made");
+    }
+    if (first >= (int)m_NumElements || second >= (int)m_NumElements) {
+        NCBI_THROW(CLinksException, eInvalidNode, "Adding node with index "
+                   " larger than number of elements attempted");
+    }
+
     if (first > second) {
         swap(first, second);
     }
 
-    if (m_MarkLinks) {
-        return m_IsLink[x_GetBinIndex(first, second)];
-    }
-    
-    ITERATE (list<SLink>, it, m_Links) {
-        if (it->first == first && it->second == second) {
-            return true;
-        }
-    }
-
-    return false;
+    return x_IsLinkPtr(first, second);
 }
 
 void CLinks::Sort(void)
@@ -95,13 +103,33 @@ void CLinks::Sort(void)
     // sort according to weights
     m_Links.sort();
     m_IsSorted = true;
+
+    // initialize list of link pointers
+    x_InitLinkPtrs();
 }
 
 
-int CLinks::x_GetBinIndex(int first, int second) const
+void CLinks::x_InitLinkPtrs(void)
 {
-    _ASSERT(first < second);
-    return (second * second - second) / 2 + first;
+    m_LinkPtrs.clear();
+
+    // create list of link pointers
+    NON_CONST_ITERATE (list<SLink>, it, m_Links) {
+        m_LinkPtrs.push_back(&*it);
+    }
+
+    // sort by node indexes
+    sort(m_LinkPtrs.begin(), m_LinkPtrs.end(), compare_links_by_nodes);
+}
+
+bool CLinks::x_IsLinkPtr(int first, int second) const
+{
+    _ASSERT(!m_LinkPtrs.empty());
+    _ASSERT(first <= second);
+
+    SLink link(first, second, 0.0);
+    return binary_search(m_LinkPtrs.begin(), m_LinkPtrs.end(), &link,
+                         compare_links_by_nodes);
 }
 
 END_SCOPE(cobalt)

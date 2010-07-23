@@ -182,15 +182,13 @@ int CClustererApplication::Run(void)
 
     // compute distances between sequences
     CRef<CLinks> links = TKMethods::ComputeDistLinks(kmer_counts, dist_method,
-                                     max_diameter,
-                                     clust_method == CClusterer::eClique);
-
+                                                     max_diameter);
     // compute clusters
     CClusterer clusterer;
     clusterer.SetLinks(links);
     clusterer.SetClustMethod(clust_method);
     clusterer.Run();
-        
+
     // print output: sequence id  cluster id
     for (int i=0;i < (int)queries.size();i++) {
 

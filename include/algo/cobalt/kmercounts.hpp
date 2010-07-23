@@ -493,15 +493,14 @@ public:
     ///
     static CRef<CLinks> ComputeDistLinks(const vector<TKmerCounts>& counts,
                                          EDistMeasures dist_method,
-                                         double max_dist,
-                                         bool mark_links = true)
+                                         double max_dist)
     {
         if (counts.size() < 2) {
             NCBI_THROW(CKmerCountsException, eInvalid, "Distance links can be"
                        " computed for at least two k-mer counts vectors");
         }
 
-        CRef<CLinks> links(new CLinks(counts.size(), mark_links));
+        CRef<CLinks> links(new CLinks(counts.size()));
         double dist;
         for (int i=0;i < (int)counts.size()-1;i++) {
             for (int j=i+1;j < (int)counts.size();j++) {
