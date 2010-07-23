@@ -191,27 +191,30 @@ BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
     if ( !seq_blk || !seq_ranges ) {
         return -1;
     }
+
     ASSERT(num_seq_ranges >= 1);
 
+    s_BlastSequenceBlkFreeSeqRanges(seq_blk);
+    SSeqRange* tmp;
     if (copy_seq_ranges) {
-        SSeqRange* tmp = (SSeqRange*) calloc(num_seq_ranges,
-                                             sizeof(*seq_ranges));
-        if ( !tmp ) {
-            return -1;
-        }
-        s_BlastSequenceBlkFreeSeqRanges(seq_blk);
-        seq_blk->seq_ranges = tmp;
-        memcpy((void*) seq_blk->seq_ranges,
+        // allocate one more space for easy complimentary operations
+        seq_blk->seq_ranges_allocated = TRUE;
+        tmp = (SSeqRange *) calloc(num_seq_ranges, sizeof(SSeqRange));
+        if ( !tmp ) { return -1; }
+        memcpy((void*) tmp,
                (void*) seq_ranges,
                num_seq_ranges * sizeof(*seq_ranges));
-        seq_blk->num_seq_ranges = num_seq_ranges;
-        seq_blk->seq_ranges_allocated = TRUE;
     } else {
-        s_BlastSequenceBlkFreeSeqRanges(seq_blk);
-        seq_blk->seq_ranges = seq_ranges;
+        // CSeqDB has allocated one more space before and after seq_range
         seq_blk->seq_ranges_allocated = FALSE;
-        seq_blk->num_seq_ranges = num_seq_ranges;
+        tmp = seq_ranges;
     }
+        
+    // Fill out the boundary of the sequence to compliment the masks
+    tmp[0].left = 0;
+    tmp[num_seq_ranges - 1].right = seq_blk->length;
+    seq_blk->seq_ranges = tmp;
+    seq_blk->num_seq_ranges = num_seq_ranges; 
     return 0;
 }
 

@@ -245,12 +245,10 @@ BOOST_AUTO_TEST_CASE(ScanOffsetTest)
 {
     Int4 query_length = query_blk->length;
     Int4 subject_length = subject_blk->length;
-    Int4 offset_now;
     Int4 hits;
     Uint4 s_off;
     Int4 scan_range[3];
 
-    offset_now = 0;
     s_off = 0;
 
     BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eAaLookupTable);
@@ -263,11 +261,10 @@ BOOST_AUTO_TEST_CASE(ScanOffsetTest)
     scan_range[1] = 0; 
     scan_range[2] = subject_blk->length - lut->word_length;
 
-    while (offset_now < (subject_length - 2)) 
+    while (scan_range[1] < scan_range[2])
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
-                &offset_now,
                 offset_pairs,
                 GetOffsetArraySize(lookup_wrap_ptr),
                 scan_range);
@@ -320,19 +317,17 @@ BOOST_AUTO_TEST_CASE(ScanOffsetTest)
         }
 
         s_off = offset_pairs[hits-1].qs_offsets.s_off;
-        BOOST_REQUIRE((Int4)s_off < offset_now);
+        BOOST_REQUIRE((Int4)s_off < scan_range[1]);
     }
 }
             
 BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
 {
-    Int4 subject_length = subject_blk->length;
-    Int4 offset_now;
     Int4 hits, found_hits, expected_hits;
     Int4 new_max_size;
     Int4 scan_range[3];
 
-    offset_now = found_hits = expected_hits = 0;
+    found_hits = expected_hits = 0;
 
     BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eAaLookupTable);
     BlastAaLookupTable *lut = (BlastAaLookupTable *)(lookup_wrap_ptr->lut);
@@ -347,11 +342,10 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
     scan_range[1] = 0;
     scan_range[2] = subject_blk->length - lut->word_length;
 
-    while (offset_now < (subject_length - 2)) 
+    while (scan_range[1] < scan_range[2])
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
-                &offset_now,
                 offset_pairs,
                 GetOffsetArraySize(lookup_wrap_ptr),
                 scan_range);
@@ -360,18 +354,16 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
         expected_hits += hits;
     }
 
-    offset_now = 0;
     scan_range[0] = 0;
     scan_range[1] = 0;
     scan_range[2] = subject_blk->length - lut->word_length;
     new_max_size = MAX(GetOffsetArraySize(lookup_wrap_ptr)/3,
             ((BlastAaLookupTable *)(lookup_wrap_ptr->lut))->longest_chain);
 
-    while (offset_now < (subject_length - 2)) 
+    while (scan_range[1] < scan_range[2]) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
-                &offset_now,
                 offset_pairs,
                 new_max_size,
                 scan_range);
@@ -385,12 +377,11 @@ BOOST_AUTO_TEST_CASE(ScanMaxHitsTest)
 BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
 {
     Int4 subject_length = subject_blk->length;
-    Int4 offset_now;
     Int4 hits;
     Int4 found_hits, expected_hits;
     Int4 scan_range[3];
 
-    offset_now = found_hits = expected_hits = 0;
+    found_hits = expected_hits = 0;
 
     BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eAaLookupTable);
     BlastAaLookupTable *lut = (BlastAaLookupTable *)(lookup_wrap_ptr->lut);
@@ -398,19 +389,18 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
                     (TAaScanSubjectFunction)(lut->scansub_callback);
     BOOST_REQUIRE(scansub != NULL);
 
-    SSeqRange ranges2scan[] = { {501, 700} , {1001, subject_length} };
+    SSeqRange ranges2scan[] = { {0, 501}, {700, 1001}, {subject_length, subject_length} };
     const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
     BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
 
     scan_range[0] = 0;
     scan_range[1] = 0;
-    scan_range[2] = subject_blk->length - lut->word_length;
+    scan_range[2] = ranges2scan[0].right - lut->word_length;
 
-    while (offset_now < 999) 
+    while (scan_range[1] < scan_range[2]) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
-                &offset_now,
                 offset_pairs,
                 GetOffsetArraySize(lookup_wrap_ptr),
                 scan_range);
@@ -421,11 +411,12 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
         // Ensure that hits fall in the subject's "approved" ranges
         for (int i = 0; i < hits; i++) {
             const Uint4 s_off = offset_pairs[i].qs_offsets.s_off;
-            bool hit_found = TRUE;
+            bool hit_found = FALSE;
             for (size_t j = 0; j < kNumRanges; j++) {
                 if ( s_off >= (Uint4)ranges2scan[j].left && 
                      s_off <  (Uint4)ranges2scan[j].right ) {
-                    hit_found = FALSE;
+                    hit_found = TRUE;
+                    break;
                 }
             }
             BOOST_REQUIRE( hit_found );
@@ -437,12 +428,11 @@ BOOST_AUTO_TEST_CASE(ScanCheckScores)
 {
     Int4 query_length = query_blk->length;
     Int4 subject_length = subject_blk->length;
-    Int4 offset_now;
     Int4 hits;
     Int4 found_hits, expected_hits;
     Int4 scan_range[3];
 
-    offset_now = found_hits = expected_hits = 0;
+    found_hits = expected_hits = 0;
 
     BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eAaLookupTable);
     BlastAaLookupTable *lut = (BlastAaLookupTable *)(lookup_wrap_ptr->lut);
@@ -457,11 +447,10 @@ BOOST_AUTO_TEST_CASE(ScanCheckScores)
     scan_range[1] = 0;
     scan_range[2] = subject_blk->length - lut->word_length;
 
-    while (offset_now < (subject_length - 2)) 
+    while (scan_range[1] < scan_range[2])
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
-                &offset_now,
                 offset_pairs,
                 GetOffsetArraySize(lookup_wrap_ptr),
                 scan_range);

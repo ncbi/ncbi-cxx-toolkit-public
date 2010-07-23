@@ -182,7 +182,7 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
+        if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -469,7 +469,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
+        if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -1498,8 +1498,6 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
    Int4 total_hits = 0;
    Int4 lut_word_length = mb_lt->lut_word_length;
    Int4 scan_step = mb_lt->scan_step;
-//printf("%d -- %d -- %d  %d\n",mb_lt->lut_word_length, mb_lt->word_length, scan_step, mb_lt->);
-//if(mb_lt->discontiguous) printf("discontiguous\n");
    
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    ASSERT(lut_word_length == 9 || 
@@ -1511,7 +1509,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
       subtract the longest chain length from the allowed offset array size. */
    max_hits -= mb_lt->longest_chain;
 
-   if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
+   if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
 
       /* for strides that are a multiple of 4, words are
          always aligned and three bytes of the subject sequence 
@@ -1520,8 +1518,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          the third-to-last byte of the subject sequence, so we will
          never fetch the byte beyond the end of subject */
 
-      Uint1* s_end = abs_start + (subject->length - lut_word_length) /
-                                                COMPRESSION_RATIO;
+      Uint1 *s_end = abs_start + scan_range[1] / COMPRESSION_RATIO;
       Int4 shift = 2 * (12 - lut_word_length);
       s = abs_start + scan_range[0] / COMPRESSION_RATIO;
       scan_step = scan_step / COMPRESSION_RATIO;

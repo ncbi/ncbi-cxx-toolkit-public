@@ -459,8 +459,6 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     Int4 i;
     Int4 hits = 0;
     Int4 totalhits = 0;
-    Int4 first_offset = 0;
-    Int4 last_offset;
     Int4 score;
     Int4 hsp_q, hsp_s, hsp_len = 0;
     Int4 window;
@@ -498,15 +496,19 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
         scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
         wordsize = lookup->word_length;
     }
-    last_offset = subject->length - wordsize;
 
     scan_range[0] = 0;
-    scan_range[1] = first_offset;
-    scan_range[2] = last_offset;
+    scan_range[1] = 0;
+    scan_range[2] = subject->length - wordsize;
 
-    while (first_offset <= last_offset) {
+    if (subject->num_seq_ranges > 1) {
+        scan_range[1] = subject->seq_ranges[0].left;
+        scan_range[2] = subject->seq_ranges[0].right - wordsize;
+    }
+
+    while (scan_range[1] <= scan_range[2]) {
         /* scan the subject sequence for hits */
-        hits = scansub(lookup_wrap, subject, &first_offset,
+        hits = scansub(lookup_wrap, subject, 
                                   offset_pairs, array_size, scan_range);
 
         totalhits += hits;
@@ -717,8 +719,6 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 wordsize;
     Int4 hits = 0;
     Int4 totalhits = 0;
-    Int4 first_offset = 0;
-    Int4 last_offset;
     Int4 hsp_q, hsp_s, hsp_len;
     Int4 s_last_off;
     Int4 i;
@@ -751,15 +751,19 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
         scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
         wordsize = lookup->word_length;
     }
-    last_offset = subject->length - wordsize;
 
     scan_range[0] = 0;
-    scan_range[1] = first_offset;
-    scan_range[2] = last_offset;
+    scan_range[1] = 0;
+    scan_range[2] = subject->length - wordsize;
 
-    while (first_offset <= last_offset) {
+    if (subject->num_seq_ranges > 1) {
+        scan_range[1] = subject->seq_ranges[0].left;
+        scan_range[2] = subject->seq_ranges[0].right - wordsize;
+    }
+
+    while (scan_range[1] <= scan_range[2]) {
         /* scan the subject sequence for hits */
-        hits = scansub(lookup_wrap, subject, &first_offset,
+        hits = scansub(lookup_wrap, subject,
                        offset_pairs, array_size, scan_range);
 
         totalhits += hits;

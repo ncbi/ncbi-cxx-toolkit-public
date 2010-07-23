@@ -45,24 +45,13 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
                            Int4  lut_word_length,
                            Int4* range)
 {
-    /* no mask, or the last NA mask has been checked previously */
-    if (range[0] >= subject->num_seq_ranges) return (range[1] <= range[2]);
-      
-    /* the same range has not been consumed yet*/
-    if (range[1] + lut_word_length <= subject->seq_ranges[range[0]].left) {
-        range[2] = subject->seq_ranges[range[0]].left - lut_word_length;
-        return TRUE;
-    }
-
-    range[0]++;
-    while (range[0] < subject->num_seq_ranges && 
-           subject->seq_ranges[range[0]-1].right + word_length > subject->seq_ranges[range[0]].left) {
+    while (range[1] > range[2]) {
         range[0]++;
-    }
-    range[1] = subject->seq_ranges[range[0]-1].right + word_length - lut_word_length;
-    range[2] = ((range[0]<subject->num_seq_ranges)? 
-                 subject->seq_ranges[range[0]].left 
-               : subject->length) - lut_word_length;
-
-    return (range[1] <= range[2]);
+        if (range[0] >= subject->num_seq_ranges) {
+            return FALSE;
+        }
+        range[1] = subject->seq_ranges[range[0]].left + word_length - lut_word_length;
+        range[2] = subject->seq_ranges[range[0]].right - lut_word_length;
+    } 
+    return TRUE;
 }

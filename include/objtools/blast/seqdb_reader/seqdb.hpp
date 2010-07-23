@@ -1090,6 +1090,8 @@ public:
 
         value_type& operator[](size_type i) { return (value_type &)_data[1+ 2*i]; }
 
+        value_type * get_data() const { return (value_type *) _data; }
+
         /// Reserves capacity for at least num_elements elements
         /// @throw CSeqDBException in case of memory allocation failure
         void reserve(size_t num_elements) {

@@ -740,8 +740,8 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
             _ASSERT( !masked_ranges.empty() );
             /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
             /// be copied for performance reasons...
-            if (BlastSeqBlkSetSeqRanges(subj, (SSeqRange*)& masked_ranges[0],
-                                    masked_ranges.size(), true) != 0) {
+            if (BlastSeqBlkSetSeqRanges(subj, (SSeqRange*) masked_ranges.get_data(),
+                                    masked_ranges.size() + 1, true) != 0) {
             }
         }
         subj->lcase_mask = NULL;                // unused for subjects

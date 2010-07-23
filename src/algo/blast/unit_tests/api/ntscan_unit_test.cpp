@@ -740,7 +740,7 @@ struct TestFixture {
         BOOST_REQUIRE(offset_pairs != NULL);
         BOOST_REQUIRE(lookup_segments != NULL);
 
-        SSeqRange ranges2scan[] = { {501, 700} , {1001, subject_bases} };
+        SSeqRange ranges2scan[] = { {0, 501}, {700, 1001} , {subject_bases, subject_bases}};
         const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
         BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
 
@@ -774,11 +774,12 @@ struct TestFixture {
         for (int i = 0; i < init_hitlist->total; i++) {
             const BlastInitHSP& init_hsp = init_hitlist->init_hsp_array[i];
             const Uint4 s_off = init_hsp.offsets.qs_offsets.s_off;
-            bool hit_found = TRUE;
+            bool hit_found = FALSE;
             for (size_t j = 0; j < kNumRanges; j++) {
                 if ( s_off >= (Uint4)ranges2scan[j].left && 
                      s_off <  (Uint4)ranges2scan[j].right ) {
-                    hit_found = FALSE;
+                    hit_found = TRUE;
+                    break;
                 }
             }
             BOOST_REQUIRE( hit_found );

@@ -44,7 +44,6 @@ extern "C" {
 /** Generic prototype for nucleotide subject scanning routines */
 typedef Int4 (*TAaScanSubjectFunction)(const LookupTableWrap* lookup_wrap,
                                   const BLAST_SequenceBlk* subject,
-                                  Int4 *start_offset,
                                   BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                                   Int4 max_hits,
                                   Int4 * s_range);

@@ -58,11 +58,9 @@ struct SSeqDB_SeqSrc_Data {
     
     /// Constructor.
     SSeqDB_SeqSrc_Data(CSeqDB * ptr, int algo_id)
-        : seqdb((CSeqDBExpert*) ptr), algorithm_id(-1)
+        : seqdb((CSeqDBExpert*) ptr), 
+          algorithm_id(algo_id)
     {
-        if (algo_id != -1) {
-            algorithm_id = algo_id;
-        }
     }
     
     /// Make a copy of this object, sharing the same SeqDB object.
@@ -298,19 +296,16 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
+    CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
     if ( datap->algorithm_id != -1 ) {
-        static const Boolean kCopySequenceRanges = false;
-        CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
         seqdb.GetMaskData(oid, datap->algorithm_id, ranges);
-        if ( !ranges.empty() ) {
-            if (BlastSeqBlkSetSeqRanges(args->seq, 
-                                    (SSeqRange*)& ranges[0],
-                                    ranges.size(), kCopySequenceRanges) != 0) {
-                return BLAST_SEQSRC_ERROR;
-            }
-        } else {
-            args->seq->num_seq_ranges=0;
-        }
+    }
+
+    // Set the seq_ranges anyway even if no masked range is found.
+    if (BlastSeqBlkSetSeqRanges(args->seq, 
+                                (SSeqRange*) ranges.get_data(),
+                                ranges.size() + 1, false) != 0) {
+        return BLAST_SEQSRC_ERROR;
     }
 #endif
     

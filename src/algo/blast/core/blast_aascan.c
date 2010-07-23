@@ -46,14 +46,12 @@ static char const rcsid[] =
  *
  * @param lookup_wrap the lookup table [in]
  * @param subject the subject sequence [in]
- * @param offset the offset in the subject at which to begin scanning [in/out]
  * @param offset_pairs Array to which hits will be copied [out]
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
 static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
                                  const BLAST_SequenceBlk * subject,
-                                 Int4 * offset,
                                  BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                                  Int4 array_size,
                                  Int4 * s_range)
@@ -125,7 +123,6 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
             } else
                 /* not enough space in the destination array; return early */
             {
-                *offset = s - subject->sequence;
                 s_range[1] = s - subject->sequence;
                 return totalhits;
             }
@@ -135,15 +132,12 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
     } /* end while */
 
     /* if we get here, we fell off the end of the sequence */
-    *offset = subject->length - word_length + 1;
-
     return totalhits;
 }
 
 /** same function for small lookup table */
 static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
                                  const BLAST_SequenceBlk * subject,
-                                 Int4 * offset,
                                  BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                                  Int4 array_size,
                                  Int4 * s_range)
@@ -215,9 +209,7 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
             } else
                 /* not enough space in the destination array; return early */
             {
-                *offset = s - subject->sequence;
                 s_range[1] = s - subject->sequence;
-
                 return totalhits;
             }
         }
@@ -226,8 +218,6 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
 
     } /* end while */
     /* if we get here, we fell off the end of the sequence */
-    *offset = subject->length - word_length + 1;
-
     return totalhits;
 }
 
@@ -249,7 +239,6 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
 static Int4 s_BlastCompressedAaScanSubject(
                               const LookupTableWrap * lookup_wrap,
                               const BLAST_SequenceBlk * subject,
-                              Int4 * offset,
                               BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                               Int4 array_size,
                               Int4 * s_range)
@@ -425,7 +414,7 @@ static Int4 s_BlastCompressedAaScanSubject(
           else
               /* not enough space in the destination array */
           {
-              *offset = s - subject->sequence;
+              s_range[1] = s - subject->sequence;
               return totalhits;
           }
        }
@@ -434,8 +423,6 @@ static Int4 s_BlastCompressedAaScanSubject(
     } /* end while */
 
     /* if we get here, we fell off the end of the sequence */
-    *offset = subject->length - word_length + 1;
-
     return totalhits;
 }
 
