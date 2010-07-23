@@ -188,6 +188,8 @@ BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
                         Uint4 num_seq_ranges,
                         Boolean copy_seq_ranges)
 {
+    SSeqRange* tmp;
+
     if ( !seq_blk || !seq_ranges ) {
         return -1;
     }
@@ -195,7 +197,6 @@ BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
     ASSERT(num_seq_ranges >= 1);
 
     s_BlastSequenceBlkFreeSeqRanges(seq_blk);
-    SSeqRange* tmp;
     if (copy_seq_ranges) {
         // allocate one more space for easy complimentary operations
         seq_blk->seq_ranges_allocated = TRUE;
