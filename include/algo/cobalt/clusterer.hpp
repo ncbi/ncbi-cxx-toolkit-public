@@ -65,10 +65,9 @@ public:
     /// Method for clustering from links
     enum EClustMethod {
         eClique = 0,        ///< Clusters can be joined if there is a link 
-                            ///< between a pair of their elements
-        eDist               ///< Clusters can be joined only if there is a link
-                            ///< between all pairs of elements
-                            ///< in the new cluster
+                            ///< between all pairs of their elements
+        eDist               ///< Clusters can be joined if there is a link
+                            ///< between at least one pair of elements
     };
 
     /// Single cluster
