@@ -796,6 +796,113 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
         BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
 }
 
+// test sequence alignment convertion to multiple sequence alignment
+// structure
+BOOST_AUTO_TEST_CASE(testSeqAlignToPsiBlastMultipleSequenceAlignment) {
+        
+        /*** Setup code ***/
+        CSeq_id qid("gi|129295"), sid("gi|6");
+        auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+        auto_ptr<SSeqLoc> s(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+        CBl2Seq blaster(*q, *s, eBlastp);
+        TSeqAlignVector sasv = blaster.Run();
+        BOOST_REQUIRE(sasv.size() != 0);
+
+        CPSIBlastOptions opts;
+        PSIBlastOptionsNew(&opts);
+
+        opts->inclusion_ethresh = BLAST_EXPECT_VALUE;
+        opts->use_best_alignment = FALSE;
+
+        // Retrieve the query sequence, but skip the sentinel bytes!
+        SBlastSequence seq(GetSequence(*q->seqloc, eBlastEncodingProtein, q->scope));
+
+        try {
+            auto_ptr<CPsiBlastInputData> pssm_input(
+                new CPsiBlastInputData(seq.data.get()+1,
+                                       seq.length-2,
+                                       sasv[0], q->scope, *opts));
+            // Create the score matrix builder!
+            CPssmEngine pssm_engine(pssm_input.get());
+            pssm_input->Process();
+            // include query
+            TSeqPos nseqs = CPssmCreateTestFixture::GetNumAlignedSequences(*pssm_input) + 1; 
+
+        /*** End Setup code ***/
+
+            // Actual unit tests follow:
+            // Walk through the alignment segments and ensure m_AlignmentData
+            // is filled properly
+
+            TSeqPos seq_index = 1; // skip the query sequence
+                const PSIMsaCell kNullPSIMsaCell = { 
+                    (unsigned char) 0,              // letter
+                    false                           // is_aligned
+                };
+
+                // vector to keep track of aligned positions of a particular
+                // subject w.r.t the query/query sequence
+                vector<PSIMsaCell> aligned_pos(pssm_input->GetQueryLength());
+                fill(aligned_pos.begin(), aligned_pos.end(), kNullPSIMsaCell);
+
+                // Iterate over all HSPs and populate the aligned_pos vector.
+                // This should be identical to what the pssm_engine object 
+                // calculated.
+                ITERATE(CSeq_align_set::Tdata, hsp, sasv[0]->Get()) {
+                    const CDense_seg& ds = (*hsp)->GetSegs().GetDenseg();
+                    string subj;
+                    CPssmCreateTestFixture::x_GetSubjectSequence(ds, 
+                                                             *s->scope, subj);
+                    const vector<TSignedSeqPos>& starts = ds.GetStarts();
+                    const vector<TSeqPos>& lengths = ds.GetLens();
+
+                    for (int i = 0; i < ds.GetNumseg(); i++) {
+                        TSignedSeqPos q_index = starts[i*ds.GetDim()];
+                        TSignedSeqPos s_index = starts[i*ds.GetDim()+1];
+// FIXME
+#define GAP_IN_ALIGNMENT -1
+                        if (s_index == (int)GAP_IN_ALIGNMENT) {
+                            for (TSeqPos pos = 0; pos < lengths[i]; pos++) {
+                                PSIMsaCell& pd = aligned_pos[q_index++];
+                                pd.letter = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
+                                pd.is_aligned = true;
+                            }
+                        } else if (q_index == (int)GAP_IN_ALIGNMENT) {
+                            s_index += lengths[i];
+                            continue;
+                        } else {
+                            s_index = (i == 0) ? 0 : (s_index - starts[1]);
+                            for (TSeqPos pos = 0; pos < lengths[i]; pos++) {
+                                PSIMsaCell& pd = aligned_pos[q_index++];
+                                pd.letter = subj[s_index++];
+                                pd.is_aligned = true;
+                            }
+                        }
+                    }
+                }
+
+                stringstream ss;
+                // Now compare each position for this sequence
+                for (TSeqPos i = 0; i < pssm_input->GetQueryLength(); i++) {
+                    BOOST_REQUIRE(seq_index < nseqs);
+                    const PSIMsaCell& pos_desc = 
+                        pssm_input->GetData()->data[seq_index][i];
+                    ss.str("");
+                    ss << "Sequence " << seq_index << ", position " << i 
+                       << " differ";
+                    BOOST_REQUIRE_MESSAGE(aligned_pos[i].letter == pos_desc.letter && 
+                         aligned_pos[i].is_aligned == pos_desc.is_aligned, ss.str());
+                }
+
+                seq_index++;
+        } catch (const exception& e) {  
+            cerr << e.what() << endl; 
+            BOOST_REQUIRE(false);
+        } catch (...) {  
+            cerr << "Unknown exception" << endl; 
+            BOOST_REQUIRE(false);
+        }
+}
 
 /// Unit test the individual stages of the PSSM creation algorithm (core
 /// layer):
@@ -1231,6 +1338,16 @@ BOOST_AUTO_TEST_CASE(testRejectUnsupportedMatrix) {
                                                CPssmInputUnsupportedMatrix());
         BOOST_REQUIRE_THROW(CPssmEngine pssm_engine(bad_pssm_data.get()), CBlastException);
 }
+
+// Deliberately ask for an alignment data structure that too large to test
+// the error handling. Should not be run under valgrind
+BOOST_AUTO_TEST_CASE(testPsiAlignmentDataCreation_TooMuchMemory) {
+        size_t big_num = ncbi::numeric_limits<int>::max()/sizeof(void*);
+        const PSIMsaDimensions kDimensions = { big_num, big_num};
+        PSIMsa* msa = PSIMsaNew(&kDimensions);
+        BOOST_REQUIRE(msa == NULL);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
