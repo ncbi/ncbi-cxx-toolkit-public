@@ -1413,7 +1413,7 @@ extern void SetAbortHandler(FAbortHandler func = 0);
 ///
 /// Processes user abort handler and does not pop up assert windows
 /// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y").
-NCBI_XNCBI_EXPORT
+NCBI_XNCBI_EXPORT NCBI_NORETURN
 extern void Abort(void);
 
 /// Diagnostic trace setting.
