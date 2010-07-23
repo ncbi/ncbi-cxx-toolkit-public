@@ -237,6 +237,7 @@ public:
                                      const CSeq_feat& feat);
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
+    SSeqMatch_Scope Resolve(const CSeq_id_Handle& idh, CTSE_ScopeInfo& tse);
 
     void AttachTSE(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
 
@@ -373,6 +374,8 @@ public:
     void SetTSE_Lock(const CTSE_Lock& lock);
     void ResetTSE_Lock(void);
     void DropTSE_Lock(void);
+
+    SSeqMatch_Scope Resolve(const CSeq_id_Handle& id);
 
 protected:
     void x_SetTSE_Lock(const CTSE_Lock& lock);

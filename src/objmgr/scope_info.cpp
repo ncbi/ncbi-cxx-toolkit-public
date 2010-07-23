@@ -536,6 +536,15 @@ SSeqMatch_Scope CDataSource_ScopeInfo::BestResolve(const CSeq_id_Handle& idh,
 }
 
 
+SSeqMatch_Scope CDataSource_ScopeInfo::Resolve(const CSeq_id_Handle& idh,
+                                               CTSE_ScopeInfo& tse)
+{
+    SSeqMatch_Scope ret;
+    x_SetMatch(ret, tse, idh);
+    return ret;
+}
+
+
 SSeqMatch_Scope CDataSource_ScopeInfo::x_GetSeqMatch(const CSeq_id_Handle& idh)
 {
     SSeqMatch_Scope ret = x_FindBestTSE(idh);
@@ -1533,6 +1542,13 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
     _ASSERT(child.m_TSE_Handle.m_TSE);
     _ASSERT(child.HasObject());
 }
+
+
+SSeqMatch_Scope CTSE_ScopeInfo::Resolve(const CSeq_id_Handle& id)
+{
+    return GetDSInfo().Resolve(id, *this);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_ScopeInfo

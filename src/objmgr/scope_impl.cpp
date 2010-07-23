@@ -1651,27 +1651,28 @@ CScope_Impl::x_FindBioseq_Info(const CSeq_id_Handle& id,
 CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                                      const CTSE_Handle& tse)
 {
-    CBioseq_Handle ret;
     TConfReadLockGuard rguard(m_ConfLock);
     SSeqMatch_Scope match;
     CRef<CBioseq_ScopeInfo> info =
         x_FindBioseq_Info(id, CScope::eGetBioseq_Loaded, match);
-    if ( info ) {
-        if ( info->HasBioseq() &&
-             &info->x_GetTSE_ScopeInfo() == &tse.x_GetScopeInfo() ) {
-            ret = CBioseq_Handle(id, *info);
-        }
-    }
-    else {
-        // new bioseq - try to find it in source TSE
-        if ( tse.x_GetScopeInfo().ContainsMatchingBioseq(id) ) {
-            ret = GetBioseqHandle(id, CScope::eGetBioseq_Loaded);
-            if ( ret.GetTSE_Handle() != tse ) {
-                ret.Reset();
+    CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
+    if ( !info || !info->HasBioseq() ||
+         &info->x_GetTSE_ScopeInfo() != &tse_info ) {
+        info.Reset();
+        if ( tse_info.ContainsMatchingBioseq(id) ) {
+            match = tse_info.Resolve(id);
+            if ( match ) {
+                info = tse_info.GetBioseqInfo(match);
+                _ASSERT(info && info->HasBioseq());
             }
         }
     }
-    return ret;
+    if ( info ) {
+        return CBioseq_Handle(id, *info);
+    }
+    else {
+        return CBioseq_Handle();
+    }
 }
 
 
