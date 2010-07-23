@@ -429,7 +429,7 @@ void BioTreeForestConvert2Container(TBioTreeContainer&      tree_container,
 
     // convert tree data (nodes)
     typedef typename TDynamicForest::TBioTree::TBioTreeNode TTreeNode;
-    CBioTreeConvert2ContainerFunc<TBioTreeContainer, TDynamicForest::TBioTree>
+    CBioTreeConvert2ContainerFunc<TBioTreeContainer, typename TDynamicForest::TBioTree>
         func(&tree_container);
 
     for (unsigned int i=0; i<dyn_forest.GetTrees().size(); ++i) {
@@ -471,7 +471,7 @@ void BioTreeConvertContainer2DynamicForest(TDynamicForest&           dyn_forest,
 
     const TNodeList node_list = tree_container.GetNodes().Get();
 
-    TDynamicForest::TBioTree* current_tree = NULL;
+    typename TDynamicForest::TBioTree* current_tree = NULL;
 
 	ITERATE(typename TNodeList, it, node_list) {
 
@@ -513,7 +513,7 @@ void BioTreeConvertContainer2DynamicForest(TDynamicForest&           dyn_forest,
             }
 		} else {
             // This should be the root no   de in a new tree:
-            current_tree = new TDynamicForest::TBioTree();
+            current_tree = new typename TDynamicForest::TBioTree();
             dyn_forest.AddTree(current_tree);
 
 			TDynamicNodeType* dnode = new TDynamicNodeType(v);
@@ -723,7 +723,7 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
     typename TContainerDict::Tdata& feat_list = fd.Set();
 
     // Don't add duplicate ids:
-    ITERATE(TContainerDict::Tdata, it, feat_list) {
+    ITERATE(typename TContainerDict::Tdata, it, feat_list) {
         if ( (*it)->GetId()==feature_id )
             return;
     }

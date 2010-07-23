@@ -179,9 +179,9 @@ template<class BioTree>
 const typename CBioTreeForest<BioTree>::TBioTreeNode* 
 CBioTreeForest<BioTree>::FindNode(TBioTreeNodeId node_id) const
 {
-    const CBioTreeForest<BioTree>::TBioTreeNode* n = NULL;
+    const typename CBioTreeForest<BioTree>::TBioTreeNode* n = NULL;
     
-    std::vector<BioTree*>::const_iterator iter;
+    typename std::vector<BioTree*>::const_iterator iter;
     for (iter=m_Forest.begin(); iter!=m_Forest.end() && (n==NULL); ++iter) {
         n = (*iter)->FindNode(node_id);
     }
@@ -192,7 +192,7 @@ CBioTreeForest<BioTree>::FindNode(TBioTreeNodeId node_id) const
 template<class BioTree>
 void CBioTreeForest<BioTree>::AddTree(BioTree* t)
 {
-    std::vector<BioTree*>::iterator iter;
+    typename std::vector<BioTree*>::iterator iter;
     iter = std::find(m_Forest.begin(), m_Forest.end(), t);
 
     if (iter == m_Forest.end())
@@ -202,7 +202,7 @@ void CBioTreeForest<BioTree>::AddTree(BioTree* t)
 template<class BioTree>
 void CBioTreeForest<BioTree>::RemoveTree(BioTree* t)
 {
-    std::vector<BioTree*>::iterator iter;
+    typename std::vector<BioTree*>::iterator iter;
     iter = std::find(m_Forest.begin(), m_Forest.end(), t);
 
     _ASSERT(iter != m_Forest.end());
@@ -213,7 +213,7 @@ void CBioTreeForest<BioTree>::RemoveTree(BioTree* t)
 template<class BioTree>
 void CBioTreeForest<BioTree>::DeleteTree(BioTree* t)
 {
-    std::vector<BioTree*>::iterator iter;
+    typename std::vector<BioTree*>::iterator iter;
     iter = std::find(m_Forest.begin(), m_Forest.end(), t);
 
     _ASSERT(iter != m_Forest.end());   
@@ -283,7 +283,7 @@ void CBioTreeForest<BioTree>::Clear()
     m_FeatureDict.Clear();
     m_NodeIdCounter = 0;
 
-    ITERATE(std::vector<BioTree*>, iter, m_Forest) {
+    ITERATE(typename std::vector<BioTree*>, iter, m_Forest) {
         (*iter)->Clear();
         delete *iter;
     }
