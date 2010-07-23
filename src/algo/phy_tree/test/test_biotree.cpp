@@ -34,12 +34,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_tree.hpp>
 #include <util/bitset/bitset_debug.hpp>
 #include <algo/tree/tree_algo.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <algorithm>
 #include <algo/phy_tree/bio_tree.hpp>
+#include <algo/phy_tree/bio_tree_forest.hpp>
 #include <algo/phy_tree/bio_tree_conv.hpp>
 
 #include <objects/biotree/BioTreeContainer.hpp>
@@ -73,6 +75,8 @@ static string s_Node2String_name(const CBioTreeDynamic::TBioTreeNode& node)
 {
     const CBioTreeDynamic::TBioTreeNode::TValueType& v = node.GetValue();
     return v.features.GetFeatureValue(name_id);
+
+    CNodeSet s;
 }
 
 
@@ -257,6 +261,7 @@ int CTestApplication::Run(void)
 	}
 
 
+    // Create one container and tree:
 	try{
 		int tax_id = tax.GetTaxIdByName("Mouse");
 		cout << tax_id << endl;
@@ -275,13 +280,94 @@ int CTestApplication::Run(void)
 		BioTreeConvertContainer2Dynamic(dtr2, btrc);
 
 		TreePrint(cout, *(dtr2.GetTreeNode()), s_Node2String_name);
-
-		tax.Fini();
 	}
 	catch (exception& ex) 
 	{
 		cout << "Error! " << ex.what() << endl;
 	}
+
+    // Create one contanier with two trees in it, and a forest:
+	try{
+		int tax_id1 = tax.GetTaxIdByName("Mouse");
+		cout << tax_id1 << endl;
+
+	    int tax_id2 = tax.GetTaxIdByName("Rattus rattus");
+		cout << tax_id2 << endl;
+
+        //
+        // Create two containers and a forest. Convert containers to forest and back, and write
+        // the contents both before and after conversions.
+		CBioTreeContainer c1, c2;
+        CBioTreeForestDynamic f1;
+
+        /// Add 2 separate trees to container c1
+		CTaxon1ConvertToBioTreeContainer<CBioTreeContainer, 
+				                         CTaxon1,
+				                         ITaxon1Node,
+				                         ITreeIterator>
+		conv_func;
+        bool is_forest;
+
+		conv_func(c1, tax, tax_id1);
+        is_forest = BioTreeContainerIsForest(c1);
+        if (is_forest)
+            cout << "Container with 1 tree misclassified as forest." << endl;
+        else
+            cout << "Container with 1 tree classified as tree." << endl; 
+
+        conv_func(c1, tax, tax_id2);
+        is_forest = BioTreeContainerIsForest(c1);
+        if (!is_forest)
+            cout << "Container with 2 trees misclassified as tree." << endl;
+        else
+            cout << "Container with 2 trees classified as forest." << endl;
+
+        // Create temporary files for output.  Replace any previous contents.
+        std::string tdir = CDir::GetTmpDir();
+        cout << "Temp Output Dir: " << tdir << endl;
+
+        std::string container1 =  CDirEntry::ConcatPath(tdir,"treetestc1.txt");
+        std::string forest1 =  CDirEntry::ConcatPath(tdir,"treetestf1.txt");
+        std::string container2 =  CDirEntry::ConcatPath(tdir,"treetestc2.txt");       
+
+        CNcbiOfstream tstoutc1(container1.c_str());
+        CNcbiOfstream tstoutf1(forest1.c_str());
+        CNcbiOfstream tstoutc2(container2.c_str());      
+
+        // Write iniial value of container 1 to firest container file
+		tstoutc1 << MSerial_AsnText << c1;
+
+        // Create forest from container and write contents to first forest file
+		BioTreeConvertContainer2DynamicForest(f1, c1);        
+        for (unsigned int i=0; i<f1.GetTrees().size(); ++i)
+            TreePrint(tstoutf1, *(f1.GetTrees()[i]->GetTreeNode()), 
+                      s_Node2String_name);
+
+        // Convert forest back into a container (2), and write out container 2
+        BioTreeForestConvert2Container<CBioTreeContainer, 
+                                       CBioTreeForestDynamic>(c2, f1);
+        tstoutc2 << MSerial_AsnText << c2;
+
+        // close output files
+        tstoutc1.close();
+        tstoutf1.close();
+        tstoutc2.close();
+      
+        // Compare contents of first container with contents
+        // of container created from conversion to and from forest
+        CFile  fc1(container1);
+        
+        if (!fc1.CompareTextContents(container2, CFile::eIgnoreWs))
+            cout << "Converted container file differs from original" << endl;
+        else
+            cout << "Converted container file is identical to original" << endl;
+	}
+	catch (exception& ex) 
+	{
+		cout << "Error! " << ex.what() << endl;
+	}
+
+    tax.Fini();
 
     return 0;
 }

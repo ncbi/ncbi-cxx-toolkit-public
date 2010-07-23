@@ -339,7 +339,7 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
     const TContainerDict& fd = tree_container.GetFdict();
     const typename TContainerDict::Tdata& feat_list = fd.Get();
 
-		ITERATE(typename TContainerDict::Tdata, it, feat_list) {
+    ITERATE(typename TContainerDict::Tdata, it, feat_list) {
         TBioTreeFeatureId fid = (*it)->GetId();
         const string& fvalue = (*it)->GetName();
 		
@@ -388,6 +388,136 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 		} else {
 			TDynamicNodeType* dnode = new TDynamicNodeType(v);
 			dyn_tree.SetTreeNode(dnode);
+		}
+
+
+	} // ITERATE TNodeList
+}
+
+/// Convert forest of Dynamic trees to ASN.1 BioTree container
+///
+template<class TBioTreeContainer, class TDynamicForest>
+void BioTreeForestConvert2Container(TBioTreeContainer&      tree_container,
+                                    const TDynamicForest&   dyn_forest)
+{
+    // Convert feature dictionary
+
+    typedef typename TBioTreeContainer::TFdict  TContainerDict;
+
+    const CBioTreeFeatureDictionary& dict = dyn_forest.GetFeatureDict();
+    const CBioTreeFeatureDictionary::TFeatureDict& dict_map = 
+                                                dict.GetFeatureDict();
+
+    TContainerDict& fd = tree_container.SetFdict();
+    typename TContainerDict::Tdata& feat_list = fd.Set();
+    typedef 
+    typename TContainerDict::Tdata::value_type::element_type TCFeatureDescr;
+    
+    ITERATE(CBioTreeFeatureDictionary::TFeatureDict, it, dict_map) {
+        TBioTreeFeatureId fid = it->first;
+        const string& fvalue = it->second;
+
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(fid);
+        d->SetName(fvalue);
+
+        feat_list.push_back(d);
+        }}
+    } // ITERATE
+
+
+    // convert tree data (nodes)
+    typedef typename TDynamicForest::TBioTree::TBioTreeNode TTreeNode;
+    CBioTreeConvert2ContainerFunc<TBioTreeContainer, TDynamicForest::TBioTree>
+        func(&tree_container);
+
+    for (unsigned int i=0; i<dyn_forest.GetTrees().size(); ++i) {
+        const TTreeNode *n = dyn_forest.GetTrees()[i]->GetTreeNode();
+        TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
+    }
+}
+
+/// Convert ASN.1 BioTree container to forest of dynamic trees
+///
+// Assume that the data in the container is sorted such that the nodes of trees
+// are not interleaved with nodes of other trees, and that all nodes within a
+// tree are sorted such that the parent of every node comes before the node itself.
+template<class TBioTreeContainer, class TDynamicForest>
+void BioTreeConvertContainer2DynamicForest(TDynamicForest&           dyn_forest,
+		                                   const TBioTreeContainer&  tree_container)
+{
+	dyn_forest.Clear();
+	
+    // Convert feature dictionary
+
+    typedef typename TBioTreeContainer::TFdict  TContainerDict;
+
+    CBioTreeFeatureDictionary& dict = dyn_forest.GetFeatureDict();
+    const TContainerDict& fd = tree_container.GetFdict();
+    const typename TContainerDict::Tdata& feat_list = fd.Get();
+
+    ITERATE(typename TContainerDict::Tdata, it, feat_list) {
+        TBioTreeFeatureId fid = (*it)->GetId();
+        const string& fvalue = (*it)->GetName();
+		
+		dict.Register(fid, fvalue);
+    }
+
+	// convert tree data (nodes)
+    typedef typename TBioTreeContainer::TNodes            TCNodeSet;
+    typedef typename TCNodeSet::Tdata                     TNodeList;
+    typedef typename TNodeList::value_type::element_type  TCNode;
+
+    const TNodeList node_list = tree_container.GetNodes().Get();
+
+    TDynamicForest::TBioTree* current_tree = NULL;
+
+	ITERATE(typename TNodeList, it, node_list) {
+
+		const CRef<TCNode>& cnode = *it;
+
+        TBioTreeNodeId uid = cnode->GetId();
+
+        typedef typename TDynamicForest::TBioTree        TDynamicTree;
+	    typedef typename TDynamicTree::TBioTreeNode      TDynamicNodeType;
+		typedef typename TDynamicNodeType::TValueType    TDynamicNodeValueType;
+
+		TDynamicNodeValueType v;
+		v.SetId(uid);
+    
+		typedef typename TCNode::TFeatures               TCNodeFeatureSet;
+
+		if (cnode->CanGetFeatures()) {
+			const TCNodeFeatureSet& fset = cnode->GetFeatures();
+
+			const typename TCNodeFeatureSet::Tdata& flist = fset.Get();
+
+			ITERATE(typename TCNodeFeatureSet::Tdata, fit, flist) {
+				unsigned int fid = (*fit)->GetFeatureid();
+				const string& fvalue = (*fit)->GetValue();
+
+				v.features.SetFeature(fid, fvalue);
+
+			} // ITERATE 
+
+		}
+
+		if (cnode->CanGetParent()) {
+            if (current_tree != NULL) {
+	            TBioTreeNodeId parent_id = cnode->GetParent();
+			    current_tree->AddNode(v, parent_id);
+            }
+            else {
+                // throw exception?
+            }
+		} else {
+            // This should be the root no   de in a new tree:
+            current_tree = new TDynamicForest::TBioTree();
+            dyn_forest.AddTree(current_tree);
+
+			TDynamicNodeType* dnode = new TDynamicNodeType(v);
+			current_tree->SetTreeNode(dnode);
 		}
 
 
@@ -451,8 +581,8 @@ public:
         CRef<TCNode> cnode(new TCNode);
         cnode->SetId(uid);
 
-        if (uid > m_MaxUID) { // new tree node id max?
-            m_MaxUID = uid;
+        if (uid > (unsigned int)m_MaxUID) { // new tree node id max?
+            m_MaxUID = (int)uid;
         }
 
 		vector<int>::size_type psize = m_Parents.size();
@@ -592,6 +722,11 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
     TContainerDict& fd = tree_container.SetFdict();
     typename TContainerDict::Tdata& feat_list = fd.Set();
 
+    // Don't add duplicate ids:
+    ITERATE(TContainerDict::Tdata, it, feat_list) {
+        if ( (*it)->GetId()==feature_id )
+            return;
+    }
 
     CRef<TFeatureDescr> d(new TFeatureDescr);
     d->SetId(feature_id);
@@ -673,8 +808,37 @@ private:
     int m_MaxNodeId;
 };
 
+/// Function to determine tree if a given biotree container
+/// is a single tree or a forest.
+///
+/// @internal
+template<class TBioTreeContainer>
+bool BioTreeContainerIsForest(const TBioTreeContainer&  tree_container)
+{
+    // Definition of a tree  : exactly one node has no parent node (is a root).
+    // Definition of a forest: more than one node has no parent node (multiple roots).
 
+    typedef typename TBioTreeContainer::TNodes            TCNodeSet;
+    typedef typename TCNodeSet::Tdata                     TNodeList;
+    typedef typename TNodeList::value_type::element_type  TCNode;
+
+    const TNodeList node_list = tree_container.GetNodes().Get();
+
+    int number_roots = 0;
+
+	ITERATE(typename TNodeList, it, node_list) {
+
+		const CRef<TCNode>& cnode = *it;
+
+        if (!cnode->CanGetParent())
+            ++number_roots;
+
+	} // ITERATE TNodeList
+
+    return (number_roots > 1);
+}
 /* @} */
+
 
 
 END_NCBI_SCOPE

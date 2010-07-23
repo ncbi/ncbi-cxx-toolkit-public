@@ -602,6 +602,13 @@ void CBioTree<TBioNode>::Clear()
     m_TreeNode.reset(0);
 }
 
+/// Bio tree without static elements. Everything is stored as features.
+///
+/// @internal
+typedef 
+  CBioTree<BioTreeBaseNode<CBioTreeEmptyNodeData, CBioTreeFeatureList> >
+  CBioTreeDynamic;
+
 
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
