@@ -215,7 +215,6 @@ public:
 
         node_set *      parent_;            // Node set to iterate over
         int             current_index_;     // Index of the node in the set
-        mutable node    fake_node_;         // Fake node to be returned by * and ->
 
         friend class node_set;
         friend class const_iterator;
@@ -352,7 +351,6 @@ public:
 
         const node_set *    parent_;            // Node set to iterate over
         int                 current_index_;     // Index of the node in the set
-        mutable node        fake_node_;         // Fake node to be returned by * and ->
 
         friend class node_set;
     };
@@ -427,6 +425,7 @@ private:
     friend class node;
     friend class iterator;
     friend class const_iterator;
+    friend struct impl::nset_impl;
 };
 
 

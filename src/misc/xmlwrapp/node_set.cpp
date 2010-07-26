@@ -41,6 +41,7 @@
 
 // standard includes
 #include <stdexcept>
+#include <map>
 
 // libxml2
 #include <libxml/xpath.h>
@@ -57,8 +58,9 @@ namespace xml
             // XPath query results
             xmlXPathObjectPtr   results_;
 
-            nset_impl(void* results) :
+            nset_impl(void* results, node_set* ns) :
                 results_(reinterpret_cast<xmlXPathObjectPtr>(results)),
+                parent_(ns),
                 refcnt_(1)
             {}
             void inc_ref() { ++refcnt_; }
@@ -69,11 +71,26 @@ namespace xml
                 }
             }
 
+            node &  get_reference( int  index ) {
+                /* The index range is checked by the caller */
+
+                std::map<int, node>::iterator   element = references_.find(index);
+                if (element != references_.end())
+                    return element->second;
+
+                xml::node &     ref( references_[index] = node() );
+                parent_->set_node_data(ref, results_->nodesetval->nodeTab[index]);
+                return ref;
+            }
+
         protected:
             ~nset_impl() {}
 
         private:
-            size_t  refcnt_;    // reference counter
+            node_set *              parent_;    // pointer to the parent
+            size_t                  refcnt_;    // reference counter
+            std::map< int, node >   references_;// refrences to the nodes received
+                                                // via * and -> iterators operators
         };
     }
 
@@ -86,11 +103,11 @@ namespace xml
     const char*     kAdvError   = "advancing non initialised or out of range iterator";
 
     node_set::node_set() :
-        pimpl_( new impl::nset_impl(0) )
+        pimpl_( new impl::nset_impl(0, this) )
     {}
 
     node_set::node_set(void* result_set) :
-        pimpl_( new impl::nset_impl(result_set) )
+        pimpl_( new impl::nset_impl(result_set, this) )
     {}
 
     node_set::node_set(const node_set& other) :
@@ -173,18 +190,14 @@ namespace xml
     {
         if (!parent_ || current_index_ == -1)
             throw xml::exception(kDerefError);
-        parent_->set_node_data(fake_node_,
-                               parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
-        return fake_node_;
+        return parent_->pimpl_->get_reference(current_index_);
     }
 
     node_set::iterator::pointer node_set::iterator::operator->() const
     {
         if (!parent_ || current_index_ == -1)
             throw xml::exception(kRefError);
-        parent_->set_node_data(fake_node_,
-                               parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
-        return &fake_node_;
+        return &parent_->pimpl_->get_reference(current_index_);
     }
 
     node_set::iterator& node_set::iterator::operator++()
@@ -243,18 +256,14 @@ namespace xml
     {
         if (!parent_ || current_index_ == -1)
             throw xml::exception(kDerefError);
-        parent_->set_node_data(fake_node_,
-                               parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
-        return fake_node_;
+        return parent_->pimpl_->get_reference(current_index_);
     }
 
     node_set::const_iterator::pointer node_set::const_iterator::operator-> () const
     {
         if (!parent_ || current_index_ == -1)
             throw xml::exception(kRefError);
-        parent_->set_node_data(fake_node_,
-                               parent_->pimpl_->results_->nodesetval->nodeTab[current_index_]);
-        return &fake_node_;
+        return &parent_->pimpl_->get_reference(current_index_);
     }
 
     node_set::const_iterator& node_set::const_iterator::operator++ ()
