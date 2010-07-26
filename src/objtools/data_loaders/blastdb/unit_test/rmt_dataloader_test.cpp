@@ -110,6 +110,15 @@ public:
     //        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
     //}
 
+    static void RemoveAllDataLoaders() {
+        CRef<CObjectManager> om = CObjectManager::GetInstance();
+        CObjectManager::TRegisteredNames loader_names;
+        om->GetRegisteredNames(loader_names);
+        ITERATE(CObjectManager::TRegisteredNames, itr, loader_names) {
+            om->RevokeDataLoader(*itr);
+        }
+    }
+
     ~CAutoRegistrar() {
         CRef<CObjectManager> om = CObjectManager::GetInstance();
         om->RevokeDataLoader(loader_name);
@@ -130,6 +139,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
     const bool is_protein(false);
     const bool use_fixed_size_slice(true);
     const bool is_remote(true);
+    CAutoRegistrar::RemoveAllDataLoaders();
     CAutoRegistrar reg(db, is_protein, use_fixed_size_slice, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
@@ -161,6 +171,7 @@ static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
     const string db("nucl_dbs");
     const bool is_protein(false);
     const bool is_remote(true);
+    CAutoRegistrar::RemoveAllDataLoaders();
     CAutoRegistrar reg(db, is_protein, fixed_slice_size, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
@@ -209,6 +220,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
     const bool is_protein(true);
     const bool kFixedSliceSize(true);
     const bool is_remote(true);
+    CAutoRegistrar::RemoveAllDataLoaders();
     CAutoRegistrar reg_prot(db, is_protein, kFixedSliceSize, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
@@ -249,6 +261,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
     const bool is_protein(true);
     const bool kFixedSliceSize(true);
     const bool is_remote(true);
+    CAutoRegistrar::RemoveAllDataLoaders();
     CAutoRegistrar reg_prot(db, is_protein, kFixedSliceSize, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
@@ -304,6 +317,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinBioseq)
     const bool is_protein(true);
     const bool use_fixed_size_slice(true);
     const bool is_remote(true);
+    CAutoRegistrar::RemoveAllDataLoaders();
     CAutoRegistrar reg(dbname, is_protein, use_fixed_size_slice, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
