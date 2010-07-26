@@ -12,7 +12,7 @@ APP_PROJ = test_utf8 test_rangemap test_resize_iter \
            test_scheduler test_value_convert example_value_convert \
            formatguess_unit_test test_floating_point_comparison \
            test_get_console_password test_range_coll test_porter_stemming \
-           test_buffer_writer
+           test_buffer_writer test_math
 PROJ_TAG = test
 
 srcdir = @srcdir@
