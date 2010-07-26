@@ -23,10 +23,10 @@
 *
 * ===========================================================================
 *
-* Author:  Pavel Ivanov, Aleksey Grichenko, NCBI
+* Author:  Mike DiCuccio
 *
 * File Description:
-*   Unit test for CFormatGuess class
+*   Unit test for Porter stemming algorithm
 *
 * ===========================================================================
 */
