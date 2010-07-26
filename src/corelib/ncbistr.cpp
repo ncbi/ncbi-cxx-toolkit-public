@@ -3350,7 +3350,7 @@ EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
             if (x_EvalNext(ch)) {
                 --more;
                 if (more == 0) {
-                    ascii = cp1252 = iso1 = false;
+                    ascii = false;
                 }
                 skip = true;
             } else {
@@ -3377,10 +3377,10 @@ EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
     }
     if (ascii) {
         return eEncoding_Ascii;
-    } else if (cp1252) {
-        return iso1 ? eEncoding_ISO8859_1 : eEncoding_Windows_1252;
     } else if (utf8) {
         return eEncoding_UTF8;
+    } else if (cp1252) {
+        return iso1 ? eEncoding_ISO8859_1 : eEncoding_Windows_1252;
     }
     return eEncoding_Unknown;
 }
