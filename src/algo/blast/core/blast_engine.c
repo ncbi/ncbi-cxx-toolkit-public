@@ -614,6 +614,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     Int2 status = 0;
     Uint4 context, first_context, last_context;
     BlastQueryInfo* query_info = query_info_in;
+    Int4 orig_length = subject->length;
 
     const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
@@ -711,7 +712,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         }
 
         status = s_BlastSearchEngineOneContext(program_number, query, query_info, 
-                                               subject, backup.full_range.right, lookup, 
+                                               subject, orig_length, lookup, 
                                                gap_align, score_params, 
                                                word_params, ext_params, 
                                                hit_params, diagnostics, 
