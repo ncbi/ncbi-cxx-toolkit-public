@@ -467,6 +467,7 @@ Variation-ref ::= SEQUENCE {
         snp-genoytyping     (23),
         southern            (24),
         western             (25),
+        optical-mapping     (26),
 
         other               (255)
     } OPTIONAL,
