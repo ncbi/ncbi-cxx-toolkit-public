@@ -11,3 +11,6 @@ point._type = TSeqPos
 [Packed-seqpnt]
 points._type   = vector
 points.E._type = TSeqPos
+
+[Na-strand]
+_packedtype = unsigned char
