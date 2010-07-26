@@ -296,7 +296,8 @@ public:
         /// first, generate a gene model
         CSeq_annot annot;
         CBioseq_set bset;
-        CGeneModel::CreateGeneModelFromAlign(align, *scope, annot, bset);
+        CFeatureGenerator gen(*scope);
+        gen.ConvertAlignToAnnot(align, annot, bset);
 
         /// extract the CDS and translate it
         CRef<CSeq_feat> cds;

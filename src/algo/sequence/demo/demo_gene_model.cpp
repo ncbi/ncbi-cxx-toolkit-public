@@ -107,8 +107,8 @@ int CGeneModelDemoApp::Run(void)
 
         CSeq_annot annot;
         CBioseq_set seqs;
-        CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                             annot, seqs);
+        CFeatureGenerator gen(scope);
+        gen.ConvertAlignToAnnot(align, annot, seqs);
 
         annot.AddName("Demo Gene Models");
         annot.SetTitle("Demo Gene Models");

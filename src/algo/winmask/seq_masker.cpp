@@ -248,19 +248,21 @@ CSeqMasker::DoMask(
         TMList masked, unmasked;
         TMaskList::iterator jtmp = mask->end();
 
-        for( TMaskList::iterator i = mask->begin(), j = --jtmp; 
-             i != j; )
-        {
-            masked.push_back( mitem( i->first, i->second, unit_size, 
-                                     data, *this ) );
-            Uint4 nstart = (i++)->second - unit_size + 2;
-            unmasked.push_back( mitem( nstart, i->first + unit_size - 2, 
-                                       unit_size, data, *this ) );
-        }
+        {{
+             for( TMaskList::iterator i = mask->begin(), j = --jtmp; 
+                  i != j; )
+             {
+                 masked.push_back( mitem( i->first, i->second, unit_size, 
+                                          data, *this ) );
+                 Uint4 nstart = (i++)->second - unit_size + 2;
+                 unmasked.push_back( mitem( nstart, i->first + unit_size - 2, 
+                                            unit_size, data, *this ) );
+             }
 
-        masked.push_back( mitem( (mask->rbegin())->first,
-                                 (mask->rbegin())->second, 
-                                 unit_size, data, *this ) );
+             masked.push_back( mitem( (mask->rbegin())->first,
+                                      (mask->rbegin())->second, 
+                                      unit_size, data, *this ) );
+         }}
 
         Int4 count = 0;
         TMList::iterator ii = masked.begin();

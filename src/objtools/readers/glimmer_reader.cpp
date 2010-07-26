@@ -291,9 +291,9 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
 
         /// establish our inst
         CSeq_inst& inst = bioseq.SetInst();
-        CCdregion_translate::TranslateCdregion(inst.SetSeq_data().SetIupacaa().Set(),
-                                               **it, scope,
-                                               false /* trim trailing stop */);
+        CSeqTranslator::Translate(**it, scope,
+                                  inst.SetSeq_data().SetIupacaa().Set(),
+                                  false /* trim trailing stop */);
         inst.SetRepr(CSeq_inst::eRepr_raw);
         inst.SetMol(CSeq_inst::eMol_aa);
         inst.SetLength(inst.SetSeq_data().SetIupacaa().Set().size());

@@ -456,7 +456,7 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
             jpeg_err_info.message.erase();
         }
     }
-    catch (CException& e) {
+    catch (CException&) {
         // clean up our mess
         jpeg_destroy_decompress(&cinfo);
         throw;

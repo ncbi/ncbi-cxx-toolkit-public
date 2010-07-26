@@ -118,11 +118,14 @@ void CSeqMaskerWindowAmbig::FillWindow( Uint4 winstart )
 
         unit = ((unit<<2)&unit_mask) + letter;
 
-        if( iter >= unit_size - 1 ) 
-            if( !((iter + 1 - unit_size)%unit_step) )
+        if( iter >= unit_size - 1 )  {
+            if( !((iter + 1 - unit_size)%unit_step) ) {
                 if( ambig_pos >= 0 ) 
                     units[(iter + 1 - unit_size)/unit_step] = ambig_unit;
-                else units[(iter + 1- unit_size)/unit_step] = unit;
+                else
+                    units[(iter + 1- unit_size)/unit_step] = unit;
+            }
+        }
     }
 
     --end;

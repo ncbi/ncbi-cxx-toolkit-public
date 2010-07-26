@@ -86,7 +86,7 @@ static void s_GetFeatLabel(const CSeq_feat& feat,
         *label += ": ";
     }
 
-    feature::GetLabel(feat, label, feature::eBoth, scope);
+    feature::GetLabel(feat, label, feature::fFGL_Both, scope);
     *label += " (";
     feat.GetLocation().GetLabel(label);
     *label += ")";

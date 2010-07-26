@@ -64,7 +64,7 @@ struct SExon {
 END_SCOPE();
 
 struct CFeatureGenerator::SImplementation {
-    SImplementation(CRef<objects::CScope> scope);
+    SImplementation(objects::CScope& scope);
     ~SImplementation();
 
     CRef<objects::CScope> m_scope;

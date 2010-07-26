@@ -2700,9 +2700,11 @@ void x_Translate(const Container& seq,
 
     // main loop through bases
     typename Container::const_iterator start = seq.begin();
-    for (int i = 0;  i < frame;  ++i) {
-        ++start;
-    }
+    {{
+         for (int i = 0;  i < frame;  ++i) {
+             ++start;
+         }
+     }}
 
     size_t i;
     size_t k;

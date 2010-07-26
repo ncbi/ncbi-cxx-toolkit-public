@@ -122,10 +122,9 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         CBioseq_set seqs;
         CSeq_annot actual_annot;
-        BOOST_CHECK_NO_THROW(
-                             CGeneModel::CreateGeneModelFromAlign(align, scope,
-                                                                  actual_annot, seqs)
-                             );
+        BOOST_CHECK_NO_THROW
+            (CGeneModel::CreateGeneModelFromAlign(align, scope,
+                                                  actual_annot, seqs));
 
         //cerr << MSerial_AsnText << actual_annot;
 
@@ -201,7 +200,7 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
     
-    CFeatureGenerator feat_gen(scope);
+    CFeatureGenerator feat_gen(*scope);
     
     CSeq_align align;
     CConstRef<CSeq_align> trimmed_align;
@@ -217,7 +216,7 @@ BOOST_AUTO_TEST_CASE(TestCaseStitch)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
     
-    CFeatureGenerator feat_gen(scope);
+    CFeatureGenerator feat_gen(*scope);
     
     CSeq_align align;
     CSpliced_seg& seg = align.SetSegs().SetSpliced();

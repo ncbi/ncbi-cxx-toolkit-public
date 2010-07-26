@@ -353,7 +353,7 @@ template <class T>
 inline const T&
 CNcbiMatrix<T>::operator[] (size_t i) const
 {
-    _ASSERT(i >= 0  &&  i < m_Data.size());
+    _ASSERT(i < m_Data.size());
     return m_Data[i];
 }
 
@@ -361,7 +361,7 @@ CNcbiMatrix<T>::operator[] (size_t i) const
 template <class T>
 inline T& CNcbiMatrix<T>::operator[] (size_t i)
 {
-    _ASSERT(i >= 0  &&  i < m_Data.size());
+    _ASSERT(i < m_Data.size());
     return m_Data[i];
 }
 
@@ -369,8 +369,8 @@ inline T& CNcbiMatrix<T>::operator[] (size_t i)
 template <class T>
 inline const T& CNcbiMatrix<T>::operator() (size_t i, size_t j) const
 {
-    _ASSERT(i >= 0  &&  i < m_Rows);
-    _ASSERT(j >= 0  &&  j < m_Cols);
+    _ASSERT(i < m_Rows);
+    _ASSERT(j < m_Cols);
 
     return m_Data[i * m_Cols + j];
 } 
@@ -379,8 +379,8 @@ inline const T& CNcbiMatrix<T>::operator() (size_t i, size_t j) const
 template <class T>
 inline T& CNcbiMatrix<T>::operator() (size_t i, size_t j)
 {
-    _ASSERT(i >= 0  &&  i < m_Rows);
-    _ASSERT(j >= 0  &&  j < m_Cols);
+    _ASSERT(i < m_Rows);
+    _ASSERT(j < m_Cols);
 
     return m_Data[i * m_Cols + j];
 }

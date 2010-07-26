@@ -372,8 +372,10 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             if (!NStr::Equal(m_ClauseList[k-1]->GetTypeword(), m_ClauseList[k]->GetTypeword())){
                 onebefore_has_typeword_change = true;
             }
-            if (onebefore_has_typeword_change || onebefore_has_interval_change
-                || m_ClauseList[k-1]->DisplayAlleleName() && m_ClauseList[k]->DisplayAlleleName()) {
+            if (onebefore_has_typeword_change  ||
+                onebefore_has_interval_change  ||
+                (m_ClauseList[k-1]->DisplayAlleleName()  &&
+                 m_ClauseList[k]->DisplayAlleleName())) {
                 onebefore_has_detail_change = true;  
             }
         }
@@ -387,8 +389,10 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             if (!NStr::Equal(m_ClauseList[k]->GetTypeword(), m_ClauseList[k + 1]->GetTypeword())) {
                 oneafter_has_typeword_change = true;
             }
-            if (oneafter_has_typeword_change  || oneafter_has_interval_change
-                || m_ClauseList[k+1]->DisplayAlleleName() && m_ClauseList[k]->DisplayAlleleName()) {
+            if (oneafter_has_typeword_change  ||
+                oneafter_has_interval_change  ||
+                (m_ClauseList[k+1]->DisplayAlleleName()  &&
+                 m_ClauseList[k]->DisplayAlleleName())) {
                 oneafter_has_detail_change = true;
             }
         }
@@ -1352,7 +1356,7 @@ void CAutoDefFeatureClause_Base::GroupSegmentedCDSs ()
 void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type)
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k]->GetMainFeatureSubtype() == feature_type) {
+        if ((unsigned int)m_ClauseList[k]->GetMainFeatureSubtype() == feature_type) {
             m_ClauseList[k]->MarkForDeletion();
         } else if (!m_ClauseList[k]->IsMarkedForDeletion()) {
             m_ClauseList[k]->RemoveFeaturesByType(feature_type);

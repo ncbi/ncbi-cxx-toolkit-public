@@ -772,7 +772,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             string label;
             
-            feature::GetLabel(m_MainFeat, &label, feature::eContent);
+            feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
             if (NStr::Equal(label, "tRNA-Xxx")) {
                 label = "tRNA-OTHER";
             } else if (!NStr::StartsWith(label, "tRNA-")) {
@@ -809,12 +809,12 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                                                                eOverlap_Simple,
                                                                m_BH.GetScope());
             if (prot) {
-                feature::GetLabel(*prot, &label, feature::eContent);
+                feature::GetLabel(*prot, &label, feature::fFGL_Content);
             }
         }
         
         if (NStr::IsBlank(label)) {                    
-            feature::GetLabel(m_MainFeat, &label, feature::eContent);
+            feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
         }
         if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
             || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
@@ -853,7 +853,7 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     string label;
     
-    feature::GetLabel(m_MainFeat, &label, feature::eContent);
+    feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
 
     if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
         || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
