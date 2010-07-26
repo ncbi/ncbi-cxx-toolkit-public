@@ -73,13 +73,12 @@ USING_SCOPE(objects);
 
 //////////////////////////
 void CGeneModel::CreateGeneModelFromAlign(const CSeq_align& align_in,
-                                          CScope& scope_ref,
+                                          CScope& scope,
                                           CSeq_annot& annot,
                                           CBioseq_set& seqs,
                                           TGeneModelCreateFlags flags,
                                           TSeqPos allowed_unaligned)
 {
-    CRef<CScope> scope(&scope_ref);
     CFeatureGenerator generator(scope);
     generator.SetFlags(flags | CFeatureGenerator::fGenerateLocalIds);
     generator.SetAllowedUnaligned(allowed_unaligned);
@@ -89,18 +88,17 @@ void CGeneModel::CreateGeneModelFromAlign(const CSeq_align& align_in,
 }
 
 void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
-                                      CScope& scope_ref,
+                                      CScope& scope,
                                       const CSeq_align* align)
 {
-    CRef<CScope> scope(&scope_ref);
     CFeatureGenerator generator(scope);
     generator.SetFeatureExceptions(feat, align);
 }
 
 /////////////////////////////////////
 
-CFeatureGenerator::SImplementation::SImplementation(CRef<CScope> scope)
-    : m_scope(scope)
+CFeatureGenerator::SImplementation::SImplementation(CScope& scope)
+    : m_scope(&scope)
     , m_flags(fDefaults)
     , m_min_intron(kDefaultMinIntron)
     , m_allowed_unaligned(kDefaultAllowedUnaligned)
@@ -112,6 +110,11 @@ CFeatureGenerator::SImplementation::~SImplementation()
 }
 
 CFeatureGenerator::CFeatureGenerator(CRef<CScope> scope)
+    : m_impl(new SImplementation(*scope))
+{
+}
+
+CFeatureGenerator::CFeatureGenerator(CScope& scope)
     : m_impl(new SImplementation(scope))
 {
 }

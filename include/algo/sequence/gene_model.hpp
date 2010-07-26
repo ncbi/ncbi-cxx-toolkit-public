@@ -85,7 +85,10 @@ public:
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
 {
 public:
+    NCBI_DEPRECATED
     CFeatureGenerator(CRef<objects::CScope> scope);
+
+    CFeatureGenerator(objects::CScope& scope);
     ~CFeatureGenerator();
 
     enum EGeneModelCreateFlags {
