@@ -572,8 +572,8 @@ CDBConnectionFactory::MakeValidConnection(
                        << params.GetUserName() << "'");
             throw;
         }
+        conn->FinishOpening();
     }
-    conn->FinishOpenning();
     return conn.release();
 }
 

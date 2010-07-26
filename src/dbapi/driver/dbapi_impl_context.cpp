@@ -250,7 +250,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         m_InUse.erase(it);
     }
 
-    if (conn_reusable  &&  conn->IsOpenningFinished()  &&  conn->IsValid()) {
+    if (conn_reusable  &&  conn->IsOpeningFinished()  &&  conn->IsValid()) {
         m_NotInUse.push_back(conn);
     } else {
         delete conn;

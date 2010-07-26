@@ -420,10 +420,10 @@ I_ConnectionExtra& CDB_Connection::GetExtraFeatures(void)
     return *m_ConnImpl;
 }
 
-void CDB_Connection::FinishOpenning(void)
+void CDB_Connection::FinishOpening(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    m_ConnImpl->FinishOpenning();
+    m_ConnImpl->FinishOpening();
 }
 
 ////////////////////////////////////////////////////////////////////////////

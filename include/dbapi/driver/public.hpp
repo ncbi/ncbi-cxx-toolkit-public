@@ -317,7 +317,7 @@ public:
         return Cursor(cursor_name, query, batch_size);
     }
 
-    void FinishOpenning(void);
+    void FinishOpening(void);
 
 private:
     impl::CConnection* m_ConnImpl;

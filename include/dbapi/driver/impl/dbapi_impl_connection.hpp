@@ -123,11 +123,11 @@ public:
     /// it just checks the status of connection which was set by the last
     /// i/o operation)
     virtual bool IsAlive(void) = 0;
-    bool IsOpenningFinished(void) const
+    bool IsOpeningFinished(void) const
     {
         return m_OpenFinished;
     }
-    void FinishOpenning(void)
+    void FinishOpening(void)
     {
         m_OpenFinished = true;
     }
