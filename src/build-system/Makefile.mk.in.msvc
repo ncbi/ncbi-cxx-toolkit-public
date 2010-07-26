@@ -169,6 +169,8 @@ Linker_SubSystem_1           = Console
 Linker_SubSystem_2           = Windows
 Linker_TargetMachine_1       = MachineX86
 Linker_TargetMachine_17      = MachineX64
+Linker_LargeAddressAware_1   = false
+Linker_LargeAddressAware_2   = true
 
 Macro_InputPath = %(FullPath)
 Macro_InputDir = %(RootDir)%(Directory)
