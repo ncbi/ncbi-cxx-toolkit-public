@@ -737,10 +737,6 @@ bool CGtfReader::x_CreateGeneXref(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-//    string strGeneId;
-//    if ( ! record.GetAttribute( "gene_id", strGeneId ) ) {
-//        return true;
-//    }
     CRef< CSeq_feat > pParent;
     if ( ! x_FindParentGene( record, pParent ) ) {
         return true;
@@ -934,6 +930,28 @@ bool CGtfReader::x_FindParentMrna(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureSetDataGene(
+    const CGff3Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! CGff3Reader::x_FeatureSetDataGene( record, pFeature ) ) {
+        return false;
+    }
+
+    CGene_ref& gene = pFeature->SetData().SetGene();
+
+    string strValue;
+    if ( record.GetAttribute( "gene_synonym", strValue ) ) {
+        gene.SetSyn().push_back( strValue );
+    }
+    if ( record.GetAttribute( "gene_id", strValue ) ) {
+        gene.SetSyn().push_front( strValue );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataMRNA(
     const CGff3Record& record,
     CRef< CSeq_feat > pFeature )
@@ -948,6 +966,10 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     string strValue;
     if ( record.GetAttribute( "product", strValue ) ) {
         rna.SetExt().SetName( strValue );
+    }
+    if ( record.GetAttribute( "transcript_id", strValue ) ) {
+        pFeature->SetProduct().SetWhole(
+            * s_RecordIdToSeqId( strValue, m_uFlags & fAllIdsAsLocal ) );
     }
 
     return true;
@@ -967,7 +989,8 @@ bool CGtfReader::x_FeatureSetDataCDS(
 
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
-        pFeature->SetProduct().SetWhole().SetLocal().SetStr( strValue );
+        pFeature->SetProduct().SetWhole(
+            * s_RecordIdToSeqId( strValue, m_uFlags & fAllIdsAsLocal ) );
     }
     if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
         pFeature->SetExcept( true );
@@ -983,7 +1006,6 @@ bool CGtfReader::x_FeatureSetDataCDS(
         pGc->SetId( NStr::StringToUInt( strValue ) );
         cdr.SetCode().Set().push_back( pGc );
     }
-
     return true;
 }
 
@@ -1010,10 +1032,31 @@ bool CGtfReader::x_SkipAttribute(
         if ( strKey == "transl_table" ) {
             return true;
         }
+        if ( strKey == "gene_id" ) {
+            return true;
+        }
+        if ( strKey == "transcript_id" ) { // ! implied by parent mRNA
+            return true;
+        }
     }
 
     if ( record.Type() == "exon" ) {
         if ( strKey == "product" ) {
+            return true;
+        }
+        if ( strKey == "gene_id" ) {
+            return true;
+        }
+        if ( strKey == "transcript_id" ) {
+            return true;
+        }
+    }
+
+    if ( record.Type() == "gene" ) {
+        if ( strKey == "gene_synonym" ) {
+            return true;
+        }
+        if ( strKey == "gene_id" ) {
             return true;
         }
     }

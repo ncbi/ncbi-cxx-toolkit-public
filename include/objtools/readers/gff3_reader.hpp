@@ -174,7 +174,7 @@ public:
         const CGff3Record&,
         CRef< CSeq_feat > );
     
-    bool x_FeatureSetDataGene(
+    virtual bool x_FeatureSetDataGene(
         const CGff3Record&,
         CRef< CSeq_feat > );
 

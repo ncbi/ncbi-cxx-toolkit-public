@@ -35,6 +35,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -46,14 +47,14 @@ class CGtfRecord
 {
 public: 
     CGtfRecord(
-        CSeq_annot_Handle sah
-    ): CGff3WriteRecord( sah ) {};
+        feature::CFeatTree& feat_tree
+    ): CGff3WriteRecord( feat_tree ) {};
 
     ~CGtfRecord() {};
 
 public:
     bool AssignFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
 
     void ForceType(
         const string& strType ) {
@@ -64,36 +65,106 @@ public:
         const list< CRef< CSeq_interval > >&,
         ENa_strand );
  
-    CSeq_annot_Handle AnnotHandle() const {
-        return m_Sah;
-    };
-
     bool MakeChildRecord(
         const CGtfRecord&,
         const CSeq_interval&,
         unsigned int = 0 );
 
     string StrAttributes() const;
-    string StrGeneId() const;
-    string StrTranscriptId() const;
     string StrStructibutes() const;
 
     string GeneId() const { return m_strGeneId; };
     string TranscriptId() const { return m_strTranscriptId; };
 
     string SortTieBreaker() const { 
-        return StrGeneId() + "|" + StrTranscriptId(); 
+        return GeneId() + "|" + TranscriptId(); 
     };
+
+    feature::CFeatTree&
+    FeatTree() { return m_feat_tree; };
 
 protected:
     bool x_AssignAttributesFromAsnCore(
-        const CSeq_feat& );
+        CMappedFeat );
 
     bool x_AssignAttributesFromAsnExtended(
-        const CSeq_feat& );
+        CMappedFeat );
 
-    static bool x_NeedsQuoting(
-        const string& ) { return true; };
+    static string x_GenericTranscriptId(
+        CMappedFeat );
+
+    static string x_GenericGeneId(
+        CMappedFeat );
+
+/////
+
+    CMappedFeat x_CdsFeatureToMrnaParent(
+        CMappedFeat ) /* throws !*/;
+
+    CMappedFeat x_CdsFeatureToGeneParent(
+        CMappedFeat ) /* throws !*/;
+
+    CMappedFeat x_MrnaFeatureToGeneParent(
+        CMappedFeat ) /* throws !*/;
+
+/////
+
+    string x_FeatureToDbxref(
+        CMappedFeat );
+
+    string x_FeatureToNote(
+        CMappedFeat );
+
+    bool x_FeatureToPseudo(
+        CMappedFeat );
+
+    bool x_FeatureToPartial(
+        CMappedFeat );
+
+///
+
+    string x_GeneToGeneId(
+        CMappedFeat );
+
+    string x_GeneToGeneSyn(
+        CMappedFeat );
+
+///
+
+    string x_MrnaToGeneId(
+        CMappedFeat );
+
+    string x_MrnaToTranscriptId(
+        CMappedFeat );
+
+    string x_MrnaToProduct(
+        CMappedFeat );
+
+///
+
+    string x_CdsToGeneId(
+        CMappedFeat );
+
+    string x_CdsToTranscriptId(
+        CMappedFeat );
+
+    string x_CdsToProteinId(
+        CMappedFeat );
+
+    bool x_CdsToRibosomalSlippage(
+        CMappedFeat );
+
+    string x_CdsToProduct(
+        CMappedFeat );
+
+    string x_CdsToCode(
+        CMappedFeat );
+
+/////
+
+    static string x_AttributeToString(
+        const string&,
+        const string& );
 
     string m_strGeneId;
     string m_strTranscriptId;

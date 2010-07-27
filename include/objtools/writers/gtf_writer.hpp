@@ -40,12 +40,15 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 //#include <objtools/writers/gff_writer.hpp>
+#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 class CGtfRecord;
 class CGff3WriteRecordSet;
+
+class feature::CFeatTree;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
@@ -58,6 +61,7 @@ public:
     };
 
     CGtfWriter(
+        CScope&,
         CNcbiOstream&,
         unsigned int = 0 );
     ~CGtfWriter();
@@ -69,29 +73,24 @@ protected:
         const CGff3WriteRecord* );
 
     bool x_AssignObject( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
+        feature::CFeatTree&,
+        CMappedFeat,        
         CGff3WriteRecordSet& );
 
     bool x_AssignObjectGene( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
+        feature::CFeatTree&,
+        CMappedFeat,        
         CGff3WriteRecordSet& );
 
     bool x_AssignObjectMrna( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
+        feature::CFeatTree&,
+        CMappedFeat,        
         CGff3WriteRecordSet& );
 
     bool x_AssignObjectCds( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
+        feature::CFeatTree&,
+        CMappedFeat,        
         CGff3WriteRecordSet& );
-
-    void x_PriorityProcess(
-        const string&,
-        map<string, string >&,
-        string& ) const;
 
     bool x_SplitCdsLocation(
         const CSeq_feat&,
@@ -100,12 +99,9 @@ protected:
         CRef< CSeq_loc >& ) const;
 
     void x_AddMultipleRecords(
-        const CGtfRecord&,
+        CGtfRecord&,
         CRef< CSeq_loc >,
         CGff3WriteRecordSet& );
-
-    static bool x_NeedsQuoting(
-        const string& ) { return true; };
 
     typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;

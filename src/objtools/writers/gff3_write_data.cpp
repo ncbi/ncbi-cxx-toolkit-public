@@ -44,6 +44,8 @@
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -76,7 +78,8 @@ string s_MakeGffDbtag( const CDbtag& dbtag )
         
 //  ----------------------------------------------------------------------------
 CGff3WriteRecord::CGff3WriteRecord(
-    CSeq_annot_Handle sah ):
+    feature::CFeatTree& feat_tree ):
+    m_feat_tree( feat_tree ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
     m_pdScore( 0 ),
@@ -84,7 +87,6 @@ CGff3WriteRecord::CGff3WriteRecord(
     m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
-    m_Sah = sah;
 };
 
 //  ----------------------------------------------------------------------------
@@ -130,37 +132,37 @@ bool CGff3WriteRecord::MergeRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::AssignFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_AssignTypeFromAsn( feature ) ) {
+    if ( ! x_AssignTypeFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignSeqIdFromAsn( feature ) ) {
+    if ( ! x_AssignSeqIdFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignSourceFromAsn( feature ) ) {
+    if ( ! x_AssignSourceFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignStartFromAsn( feature ) ) {
+    if ( ! x_AssignStartFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignStopFromAsn( feature ) ) {
+    if ( ! x_AssignStopFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignScoreFromAsn( feature ) ) {
+    if ( ! x_AssignScoreFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignStrandFromAsn( feature ) ) {
+    if ( ! x_AssignStrandFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignPhaseFromAsn( feature ) ) {
+    if ( ! x_AssignPhaseFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignAttributesFromAsnCore( feature ) ) {
+    if ( ! x_AssignAttributesFromAsnCore( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignAttributesFromAsnExtended( feature ) ) {
+    if ( ! x_AssignAttributesFromAsnExtended( mapped_feature ) ) {
         return false;
     }
 
@@ -337,9 +339,11 @@ bool CGff3WriteRecord::x_NeedsQuoting(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     m_strId = "<unknown>";
 
     if ( feature.CanGetLocation() ) {
@@ -355,9 +359,11 @@ bool CGff3WriteRecord::x_AssignSeqIdFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignTypeFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     m_strType = "region";
 
     if ( feature.CanGetQual() ) {
@@ -408,9 +414,11 @@ bool CGff3WriteRecord::x_AssignTypeFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignStartFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( feature.CanGetLocation() ) {
         const CSeq_loc& location = feature.GetLocation();
         unsigned int uStart = location.GetStart( eExtreme_Positional );
@@ -421,9 +429,11 @@ bool CGff3WriteRecord::x_AssignStartFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignStopFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( feature.CanGetLocation() ) {
         const CSeq_loc& location = feature.GetLocation();
         unsigned int uEnd = location.GetStop( eExtreme_Positional );
@@ -434,9 +444,11 @@ bool CGff3WriteRecord::x_AssignStopFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignSourceFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     m_strSource = ".";
 
     if ( feature.CanGetQual() ) {
@@ -457,9 +469,11 @@ bool CGff3WriteRecord::x_AssignSourceFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignScoreFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( feature.CanGetQual() ) {
         const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
@@ -479,9 +493,11 @@ bool CGff3WriteRecord::x_AssignScoreFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignStrandFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( feature.CanGetLocation() ) {
         m_peStrand = new ENa_strand( feature.GetLocation().GetStrand() );
     }
@@ -490,9 +506,11 @@ bool CGff3WriteRecord::x_AssignStrandFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignPhaseFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( ! feature.CanGetData() ) {
         return true;
     }
@@ -507,9 +525,11 @@ bool CGff3WriteRecord::x_AssignPhaseFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     // If feature ids are present then they are likely used to show parent/child
     // relationships, via corresponding xrefs. Thus, any feature ids override
     // gb ID tags (feature ids and ID tags should agree in the first place, but
@@ -530,11 +550,11 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
         for ( size_t i=0; i < xref.size(); ++i ) {
             if ( xref[i]->CanGetId() /* && xref[i]->CanGetData() */ ) {
                 const CSeqFeatXref::TId& id = xref[i]->GetId();
-                CSeq_feat::TData::ESubtype other_type = 
-                    CGff3WriteRecord::x_GetSubtypeOf( id );
-                if ( ! x_IsParentOf( other_type, feature.GetData().GetSubtype() ) ) {
-                    continue;
-                }
+//                CSeq_feat::TData::ESubtype other_type = 
+//                    CGff3WriteRecord::x_GetSubtypeOf( id );
+//                if ( ! x_IsParentOf( other_type, feature.GetData().GetSubtype() ) ) {
+//                    continue;
+//                }
                 if ( ! value.empty() ) {
                     value += ",";
                 }
@@ -550,9 +570,11 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnCore(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_AssignAttributesFromAsnExtended(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
+
     if ( feature.CanGetDbxref() ) {
         const CSeq_feat::TDbxref& dbxrefs = feature.GetDbxref();
         if ( dbxrefs.size() > 0 ) {
@@ -576,6 +598,7 @@ bool CGff3WriteRecord::x_AssignAttributesFromAsnExtended(
     return true;
 }
 
+/*
 //  ----------------------------------------------------------------------------
 CSeq_feat::TData::ESubtype CGff3WriteRecord::x_GetSubtypeOf(
     const CFeat_id& id )
@@ -594,6 +617,7 @@ CSeq_feat::TData::ESubtype CGff3WriteRecord::x_GetSubtypeOf(
 	}
     return subtype;
 }
+*/
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecord::x_IsParentOf(

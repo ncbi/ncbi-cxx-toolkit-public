@@ -74,6 +74,8 @@
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 
+#include <time.h>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -217,8 +219,8 @@ int CAnnotWriterApp::Run()
                 cerr << "Object type not supported!" << endl;
             }
         }
-    } 
     
+    } 
     pOs->flush();
 
     pIs.reset();
@@ -266,7 +268,12 @@ bool CAnnotWriterApp::WriteGff(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CGffWriter writer( os, GffFlags( GetArgs() ) );
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGffWriter writer( *pScope, os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -276,7 +283,12 @@ bool CAnnotWriterApp::WriteGtf(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
-    CGtfWriter writer( os, GffFlags( GetArgs() ) );
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGtfWriter writer( *pScope, os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 

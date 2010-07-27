@@ -45,6 +45,10 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
+
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 
@@ -102,14 +106,14 @@ void CGff3WriteRecordSet::AddOrMergeRecord(
 
 //  ----------------------------------------------------------------------------
 CGffWriter::CGffWriter(
+    CScope& scope,
     CNcbiOstream& ostr,
     TFlags uFlags ) :
 //  ----------------------------------------------------------------------------
+    m_Scope( scope ),
     m_Os( ostr ),
     m_uFlags( uFlags )
 {
-    m_pObjMngr = CObjectManager::GetInstance();
-    m_pScope.Reset( new CScope( *m_pObjMngr ) );
 };
 
 //  ----------------------------------------------------------------------------
@@ -155,15 +159,19 @@ bool CGffWriter::x_WriteAnnotFTable(
     }
 
     CGff3WriteRecordSet recordSet;
-    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
+    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
 
-    const list< CRef< CSeq_feat > >& table = annot.GetData().GetFtable();
-    list< CRef< CSeq_feat > >::const_iterator it = table.begin();
-    while ( it != table.end() ) {
-        x_AssignObject( sah, **it, recordSet );
-        it++;
+    SAnnotSelector sel;
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+
+    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
+
+    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
+        x_AssignObject( feat_tree, *mf, recordSet );
     }
-    m_pScope->RemoveSeq_annot( sah );
+    m_Scope.RemoveSeq_annot( sah );
     x_WriteRecords( recordSet );
     return true;
 }
@@ -232,13 +240,15 @@ bool CGffWriter::x_WriteTrackLine(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriter::x_AssignObject(
-   CSeq_annot_Handle sah,
-   const CSeq_feat& feat,        
+   feature::CFeatTree& feat_tree,
+   CMappedFeat mapped_feature,        
    CGff3WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    CGff3WriteRecord* pRecord = new CGff3WriteRecord( sah );
-    if ( ! pRecord->AssignFromAsn( feat ) ) {
+    const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
+
+    CGff3WriteRecord* pRecord = new CGff3WriteRecord( feat_tree );
+    if ( ! pRecord->AssignFromAsn( mapped_feature ) ) {
         return false;
     }
     if ( pRecord->Type() == "mRNA" ) {
@@ -251,7 +261,7 @@ bool CGffWriter::x_AssignObject(
             list< CRef< CSeq_interval > >::const_iterator it;
             for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
                 const CSeq_interval& subint = **it;
-                CGff3WriteRecord* pExon = new CGff3WriteRecord( sah );
+                CGff3WriteRecord* pExon = new CGff3WriteRecord( feat_tree );
                 pExon->MakeExon( *pRecord, subint );
                 set.AddOrMergeRecord( pExon );
             }

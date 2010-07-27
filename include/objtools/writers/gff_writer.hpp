@@ -97,6 +97,7 @@ public:
     
 public:
     CGffWriter(
+        CScope&,
         CNcbiOstream&,
         TFlags = fNormal );
     virtual ~CGffWriter();
@@ -119,8 +120,8 @@ protected:
         const CRef< CUser_object > );
 
     virtual bool x_AssignObject( 
-        CSeq_annot_Handle,
-        const CSeq_feat&,        
+        feature::CFeatTree&,
+        CMappedFeat,        
         CGff3WriteRecordSet& );
 
     virtual void x_PriorityProcess(
@@ -135,11 +136,9 @@ protected:
     static bool x_NeedsQuoting(
         const string& );
 
+    CScope& m_Scope;
     CNcbiOstream& m_Os;
     TFlags m_uFlags;
-
-    CRef< CObjectManager > m_pObjMngr;
-    CRef< CScope > m_pScope;
 };
 
 END_objects_SCOPE

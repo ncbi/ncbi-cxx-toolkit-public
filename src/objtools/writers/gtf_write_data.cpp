@@ -41,10 +41,17 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+
+//#include <objmgr/util/sequence.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
@@ -107,27 +114,13 @@ bool CGtfRecord::MakeChildRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::AssignFromAsn(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff3WriteRecord::AssignFromAsn( feature ) ) {
+    if ( ! CGff3WriteRecord::AssignFromAsn( mapped_feature ) ) {
         return false;
     }
     return true;
-};
-
-//  ----------------------------------------------------------------------------
-string CGtfRecord::StrGeneId() const
-//  ----------------------------------------------------------------------------
-{
-    return GeneId();
-};
-
-//  ----------------------------------------------------------------------------
-string CGtfRecord::StrTranscriptId() const
-//  ----------------------------------------------------------------------------
-{
-    return TranscriptId();
 };
 
 //  ----------------------------------------------------------------------------
@@ -140,18 +133,9 @@ string CGtfRecord::StrAttributes() const
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGtfRecord::TAttrIt it;
 
-    if ( ! GeneId().empty() ) {
-        strAttributes += "gene_id \"";
-		strAttributes += StrGeneId();
-		strAttributes += "\"";
-        strAttributes += "; ";
-    }
-
-    if ( ! TranscriptId().empty() ) {
-        strAttributes += "transcript_id \"";
-		strAttributes += StrTranscriptId();
-		strAttributes += "\"";
-        strAttributes += "; ";
+    strAttributes += x_AttributeToString( "gene_id", GeneId() );
+    if ( Type() != "gene" ) {
+        strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
     }
 
     for ( it = attrs.begin(); it != attrs.end(); ++it ) {
@@ -163,23 +147,12 @@ string CGtfRecord::StrAttributes() const
             continue;
         }
 
-        strAttributes += strKey;
-        strAttributes += " ";
-		
-		bool quote = x_NeedsQuoting(it->second);
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second;
-		if ( quote )
-			strAttributes += '\"';
-		strAttributes += "; ";
+        strAttributes += x_AttributeToString( strKey, it->second );
     }
     
     it = attrs.find( "exon_number" );
     if ( it != attrs.end() ) {
-        strAttributes += "exon_number \"";
-        strAttributes += it->second;
-        strAttributes += "\"; ";
+        strAttributes += x_AttributeToString( "exon_number", it->second );
     }
     return strAttributes;
 }
@@ -194,34 +167,25 @@ string CGtfRecord::StrStructibutes() const
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGtfRecord::TAttrIt it;
 
-    if ( ! GeneId().empty() ) {
-        strAttributes += "gene_id \"";
-		strAttributes += StrGeneId();
-		strAttributes += "\"";
-        strAttributes += "; ";
-    }
-
-    if ( ! TranscriptId().empty() ) {
-        strAttributes += "transcript_id \"";
-		strAttributes += StrTranscriptId();
-		strAttributes += "\"";
-        strAttributes += "; ";
+    strAttributes += x_AttributeToString( "gene_id", GeneId() );
+    if ( Type() != "gene" ) {
+        strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
     }
 
     it = attrs.find( "exon_number" );
     if ( it != attrs.end() ) {
-        strAttributes += "exon_number \"";
-        strAttributes += it->second;
-        strAttributes += "\"; ";
+        strAttributes += x_AttributeToString( "exon_number", it->second );
     }
     return strAttributes;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnCore(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
+    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
+
     if ( feature.CanGetQual() ) {
         const vector< CRef< CGb_qual > >& quals = feature.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
@@ -237,11 +201,9 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
                     continue;
                 }
                 if ( (*it)->GetQual() == "transcript_id" ) {
-                    m_strTranscriptId = (*it)->GetVal();
                     continue;
                 }
                 if ( (*it)->GetQual() == "gene_id" ) {
-                    m_strGeneId = (*it)->GetVal();
                     continue;
                 }
                 m_Attributes[ (*it)->GetQual() ] = (*it)->GetVal();
@@ -254,27 +216,26 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnExtended(
-    const CSeq_feat& feature )
+    CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( feature.CanGetDbxref() ) {
-        const CSeq_feat::TDbxref& dbxrefs = feature.GetDbxref();
-        if ( dbxrefs.size() > 0 ) {
-            string value = s_GtfDbtag( *dbxrefs[ 0 ] );
-            for ( size_t i=1; i < dbxrefs.size(); ++i ) {
-                value += ";";
-                value += s_GtfDbtag( *dbxrefs[ i ] );
-            }
-            m_Attributes[ "db_xref" ] = value;
-        }
+    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
+
+    string strDbxref = x_FeatureToDbxref( mapped_feature );
+    if ( ! strDbxref.empty() ) {
+        m_Attributes[ "db_xref" ] = strDbxref;
     }
-    if ( feature.CanGetComment() ) {
-        m_Attributes[ "note" ] = feature.GetComment();
+
+    string strNote = x_FeatureToNote( mapped_feature );
+    if ( ! strNote.empty() ) {
+        m_Attributes[ "note" ] = strNote;
     }
-    if ( feature.CanGetPseudo()  &&  feature.GetPseudo() ) {
+    
+    if ( x_FeatureToPseudo( mapped_feature ) ) {    
         m_Attributes[ "pseudo" ] = "";
     }
-    if ( feature.CanGetPartial()  &&  feature.GetPartial() ) {
+
+    if ( x_FeatureToPartial( mapped_feature ) ) {    
         m_Attributes[ "partial" ] = "";
     }
 
@@ -284,47 +245,50 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
     case CSeq_feat::TData::eSubtype_cdregion: {
 
-            const CCdregion& cdr = feature.GetData().GetCdregion();
+            m_strGeneId = x_CdsToGeneId( mapped_feature );
+            m_strTranscriptId = x_CdsToTranscriptId( mapped_feature );
 
-            if ( feature.IsSetProduct() ) {
-                string strProduct = feature.GetProduct().GetId()->GetSeqIdString();
-                m_Attributes[ "protein_id" ] = strProduct;
+            string strProteinId = x_CdsToProteinId( mapped_feature );
+            if ( ! strProteinId.empty() ) {
+                m_Attributes[ "protein_id" ] = strProteinId;
             }
 
-            if ( feature.IsSetExcept_text() ) {
-                if ( feature.GetExcept_text() == "ribosomal slippage" ) {
-                    m_Attributes[ "ribosomal_slippage" ] = "";
-                }
+            if ( x_CdsToRibosomalSlippage( mapped_feature ) ) {
+                m_Attributes[ "ribosomal_slippage" ] = "";
             }
 
-            if ( feature.IsSetXref() ) {
-                const vector< CRef< CSeqFeatXref > > xref = feature.GetXref();
-                vector< CRef< CSeqFeatXref > >::const_iterator it = xref.begin();
-                for ( ; it != xref.end(); ++it ) {
-                    const CSeqFeatXref& ref = **it;
-                    if ( ref.IsSetData() && ref.GetData().IsProt() && 
-                        ref.GetData().GetProt().IsSetName() ) 
-                    {
-                        string strProduct = *( ref.GetData().GetProt().GetName().begin() );
-                        m_Attributes[ "product" ] = strProduct; 
-                        break;
-                    }
-                }
+            string strProduct = x_CdsToProduct( mapped_feature );
+            if ( ! strProduct.empty() ) {
+                m_Attributes[ "product" ] = strProduct; 
             }
 
-            if ( cdr.IsSetCode() ) {
-                string strCode = NStr::IntToString( cdr.GetCode().GetId() );
+            string strCode = x_CdsToCode( mapped_feature );
+            if ( ! strCode.empty() ) {
                 m_Attributes[ "transl_table" ] = strCode;
             }
-        }
+         }
         break;
 
     case CSeq_feat::TData::eSubtype_mRNA: {
-            const CRNA_ref& rna = feature.GetData().GetRna();
-            if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
-                string strProduct = rna.GetExt().GetName();
-                m_Attributes[ "product" ] = strProduct;
+
+            m_strGeneId = x_MrnaToGeneId( mapped_feature );
+            m_strTranscriptId = x_MrnaToTranscriptId( mapped_feature );
+
+            string strProduct = x_MrnaToProduct( mapped_feature );
+            if ( ! strProduct.empty() ) {
+                m_Attributes[ "product" ] = strProduct; 
             }
+         }
+        break;
+
+    case CSeq_feat::TData::eSubtype_gene: {
+
+            m_strGeneId = x_GeneToGeneId( mapped_feature );
+
+            string strGeneSyn = x_GeneToGeneSyn( mapped_feature );
+            if ( ! strGeneSyn.empty() ) {
+                m_Attributes[ "gene_synonym" ] = strGeneSyn;
+            }                             
         }
         break;
     }
@@ -365,5 +329,281 @@ void CGtfRecord::SetCdsPhase(
     }
 }
 
+//  ============================================================================
+string CGtfRecord::x_GenericGeneId(
+    CMappedFeat mapped_feat )
+//  ============================================================================
+{
+    static unsigned int uId = 1;
+    string strGeneId = string( "unknown_gene_" ) + 
+        NStr::UIntToString( uId );
+    if ( mapped_feat.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_gene ) {
+        uId++;
+    }
+    return strGeneId;
+}
+
+//  ============================================================================
+string CGtfRecord::x_GenericTranscriptId(
+    CMappedFeat mapped_feat )
+//  ============================================================================
+{
+    static unsigned int uId = 1;
+    string strTranscriptId = string( "unknown_transcript_" ) + 
+        NStr::UIntToString( uId );
+    if ( mapped_feat.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
+        uId++;
+    }
+    return strTranscriptId;
+}
+
+//  ============================================================================
+CMappedFeat CGtfRecord::x_CdsFeatureToMrnaParent(
+    CMappedFeat mapped_feat )
+//  ============================================================================
+{
+    return feature::GetBestMrnaForCds( mapped_feat, &m_feat_tree );
+}
+
+//  ============================================================================
+CMappedFeat CGtfRecord::x_CdsFeatureToGeneParent(
+    CMappedFeat mapped_feat )
+//  ============================================================================
+{
+    return feature::GetBestGeneForCds( mapped_feat, &m_feat_tree );
+}
+
+//  ============================================================================
+CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
+    CMappedFeat mapped_feat )
+//  ============================================================================
+{
+    return feature::GetBestGeneForMrna( mapped_feat, &m_feat_tree );
+}
+
+//  ============================================================================
+string CGtfRecord::x_GeneToGeneId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    const CGene_ref& gene = mapped_feature.GetData().GetGene();
+    if ( gene.IsSetLocus_tag() ) {
+        return gene.GetLocus_tag();
+    }
+    if ( gene.IsSetSyn() ) {
+        return gene.GetSyn().front();
+    }
+    return x_GenericGeneId( mapped_feature ); 
+}                        
+
+//  ============================================================================
+string CGtfRecord::x_GeneToGeneSyn(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    const CGene_ref& gene = mapped_feature.GetData().GetGene();
+    if ( ! gene.IsSetSyn() ) {
+        return "";
+    }
+    if ( gene.IsSetLocus_tag() ) {
+        return gene.GetSyn().front();
+    }
+    CGene_ref::TSyn::const_iterator it = gene.GetSyn().begin();
+    ++it;
+    if ( it != gene.GetSyn().end() ) {
+        return *it;
+    }
+    return "";
+}
+
+//  =============================================================================
+string CGtfRecord::x_MrnaToGeneId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    try {
+        CMappedFeat gene = x_MrnaFeatureToGeneParent( mapped_feature );
+        return x_GeneToGeneId( gene );
+    }
+    catch(...) {
+        return "";
+    } 
+}
+
+//  =============================================================================
+string CGtfRecord::x_MrnaToTranscriptId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetProduct() ) {
+        return mapped_feature.GetProduct().GetId()->GetSeqIdString( true );
+    }
+    else { 
+        return x_GenericTranscriptId( mapped_feature );
+    }
+}
+    
+//  =============================================================================
+string CGtfRecord::x_CdsToGeneId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    try {
+        CMappedFeat gene = x_CdsFeatureToGeneParent( mapped_feature );
+        return x_GeneToGeneId( gene );
+    }
+    catch(...) {
+        return "";
+    } 
+}
+
+//  =============================================================================
+string CGtfRecord::x_CdsToTranscriptId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    try {
+        CMappedFeat mrna = x_CdsFeatureToMrnaParent( mapped_feature );
+        return x_MrnaToTranscriptId( mrna );
+    }
+    catch( ... ) {
+        return x_GenericTranscriptId( mapped_feature );
+    }
+}
+
+//  ============================================================================
+string CGtfRecord::x_CdsToProteinId(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetProduct() ) {
+        return mapped_feature.GetProduct().GetId()->GetSeqIdString( true );
+    }
+    return "";
+}
+
+//  ============================================================================
+bool CGtfRecord::x_CdsToRibosomalSlippage(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetExcept_text() ) {
+        if ( mapped_feature.GetExcept_text() == "ribosomal slippage" ) {
+            return true;
+        }
+    }
+    return false;
+}
+    
+//  ============================================================================
+string CGtfRecord::x_CdsToProduct(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( ! mapped_feature.IsSetXref() ) {
+        return "";
+    }
+    const vector< CRef< CSeqFeatXref > > xref = mapped_feature.GetXref();
+    vector< CRef< CSeqFeatXref > >::const_iterator it = xref.begin();
+    for ( ; it != xref.end(); ++it ) {
+        const CSeqFeatXref& ref = **it;
+        if ( ref.IsSetData() && ref.GetData().IsProt() && 
+            ref.GetData().GetProt().IsSetName() ) 
+        {
+            return ref.GetData().GetProt().GetName().front();
+        }
+    }
+    return "";
+}
+    
+//  ============================================================================
+string CGtfRecord::x_CdsToCode(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    const CCdregion& cdr = mapped_feature.GetData().GetCdregion();
+    if ( cdr.IsSetCode() ) {
+        return NStr::IntToString( cdr.GetCode().GetId() );
+    }
+    return "";
+}
+
+//  ============================================================================
+string CGtfRecord::x_MrnaToProduct(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    const CRNA_ref& rna = mapped_feature.GetData().GetRna();
+    if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
+        return rna.GetExt().GetName();
+    }
+    return "";
+}
+
+//  ============================================================================
+string CGtfRecord::x_FeatureToDbxref(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetDbxref() ) {
+        const CSeq_feat::TDbxref& dbxrefs = mapped_feature.GetDbxref();
+        if ( dbxrefs.size() > 0 ) {
+            string value = s_GtfDbtag( *dbxrefs[ 0 ] );
+            for ( size_t i=1; i < dbxrefs.size(); ++i ) {
+                value += ";";
+                value += s_GtfDbtag( *dbxrefs[ i ] );
+            }
+            return value;
+        }
+    }
+    return "";
+}
+
+//  ============================================================================
+string CGtfRecord::x_FeatureToNote(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetComment() ) {
+        return mapped_feature.GetComment();
+    }
+    return "";
+}
+
+//  ============================================================================
+bool CGtfRecord::x_FeatureToPseudo(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetPseudo()  &&  mapped_feature.GetPseudo() ) {
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+bool CGtfRecord::x_FeatureToPartial(
+    CMappedFeat mapped_feature )
+//  ============================================================================
+{
+    if ( mapped_feature.IsSetPartial()  &&  mapped_feature.GetPartial() ) {
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+string CGtfRecord::x_AttributeToString(
+    const string& strKey,
+    const string& strValue )
+//  ============================================================================
+{
+    string str( strKey );
+    str += " \"";
+    str += strValue;
+    str += "\"; ";
+    return str;
+}
+    
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -35,6 +35,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -51,7 +52,7 @@ public:
 
 public:
     CGff3WriteRecord(
-        CSeq_annot_Handle sah
+        feature::CFeatTree&
     );
     virtual ~CGff3WriteRecord();
 
@@ -59,7 +60,7 @@ public:
     //  Input/output:
     //
     virtual bool AssignFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
 
     bool MakeExon(
         const CGff3WriteRecord&,
@@ -130,25 +131,25 @@ public:
 
 protected:
     bool x_AssignTypeFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignSeqIdFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignStartFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignStopFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignSourceFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignScoreFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignStrandFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     bool x_AssignPhaseFromAsn(
-        const CSeq_feat& );
+        CMappedFeat );
     virtual bool x_AssignAttributesFromAsnCore(
-        const CSeq_feat& );
+        CMappedFeat );
     virtual bool x_AssignAttributesFromAsnExtended(
-        const CSeq_feat& );
+        CMappedFeat );
 
     static string x_FeatIdString(
         const CFeat_id& id );
@@ -183,7 +184,7 @@ protected:
     string m_strAttributes;    
     TAttributes m_Attributes;
 
-    CSeq_annot_Handle m_Sah;
+    feature::CFeatTree& m_feat_tree;
 };
 
 END_objects_SCOPE
