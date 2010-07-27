@@ -221,10 +221,10 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             match->m_DsIdx = m_DsCnt;
                             match->m_StrandsDiffer = false;
                             if (strands_exist) {
-                                if (strand1 == eNa_strand_minus  &&
-                                    strand2 != eNa_strand_minus  ||
-                                    strand1 != eNa_strand_minus  &&
-                                    strand2 == eNa_strand_minus) {
+                                if ((strand1 == eNa_strand_minus  &&
+                                     strand2 != eNa_strand_minus)  ||
+                                    (strand1 != eNa_strand_minus  &&
+                                     strand2 == eNa_strand_minus)) {
                                     
                                     match->m_StrandsDiffer = true;
                                 }
