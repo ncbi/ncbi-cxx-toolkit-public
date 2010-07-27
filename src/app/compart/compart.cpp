@@ -167,7 +167,7 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
 
         CRef<CSeq_id> seqid;
         try { seqid.Reset(new CSeq_id(id)); }
-        catch(CSeqIdException& e) {
+        catch(CSeqIdException&) {
             return 0;
         }
 

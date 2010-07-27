@@ -584,8 +584,8 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
     blastdb->SetMemoryBound(kSeqDbMemBound);
 
     const Uint8 blastdb_total_length (blastdb->GetTotalLength());
-    if(mode == eIM_Genomic && blastdb_total_length / kN > numeric_limits<Uint4>::max()
-       || mode == eIM_cDNA && blastdb_total_length > numeric_limits<Uint4>::max())
+    if((mode == eIM_Genomic && blastdb_total_length / kN > numeric_limits<Uint4>::max())
+       || (mode == eIM_cDNA && blastdb_total_length > numeric_limits<Uint4>::max()))
     {
         CNcbiOstrstream ostr;
         ostr << "Sequence volumes with total length exceeding " 
@@ -1470,8 +1470,8 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
         const Uint4 q   (qs & kUI8_LoWord);
         const Uint4 s   (qs >> 32);
 
-        if(q0 >= s0 && q0 - s0 == q - s && q <= q0 + 16 ||
-           q0 < s0 && s0 - q0 == s - q && q <= q0 + 16 )
+        if((q0 >= s0 && q0 - s0 == q - s && q <= q0 + 16) ||
+           (q0 < s0 && s0 - q0 == s - q && q <= q0 + 16) )
         {
             lens.back() += q - q0;
         }
@@ -1515,7 +1515,9 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
     Int8 left_limit (0);         // diag extension left limit
     Int8 right_limit (kDiagMax); // diag ext right limit
     Int8 s_prime_cur (0);
-    for(size_t k(0), kn (hitrefs.size()); k != kn; ++k) {
+
+    const int kn (hitrefs.size());
+    for(int k(0); k < kn; ++k) {
         
         // diag coords: q_prime = q + s; s_prime = s - q;
         const THit::TCoord * box (hitrefs[k]->GetBox());
@@ -1537,10 +1539,9 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
     }
 
     // merge adjacent hits
-    const int kn (hitrefs.size());
     int d (-1);
     Int8 rlimit (0), spc (0);
-    for(int k (0); k != kn; ++k) {
+    for(int k (0); k < kn; ++k) {
 
         const THit::TCoord cur_diag_stop (hitrefs[k]->GetQueryStop() 
                                           + hitrefs[k]->GetSubjStop());
