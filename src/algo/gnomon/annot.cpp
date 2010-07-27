@@ -504,7 +504,7 @@ RemoveTrailingNs::RemoveTrailingNs(const CResidueVec& _seq)
 {
 }
 
-void RemoveTrailingNs::operator()(CGeneModel& m)
+void RemoveTrailingNs::transform_model(CGeneModel& m)
 {
         CAlignMap mrnamap(m.GetAlignMap());
         CResidueVec vec;

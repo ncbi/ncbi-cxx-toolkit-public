@@ -87,14 +87,20 @@ void transform(Container& c,  UnaryFunction* op)
 
 struct TransformFunction {
     virtual ~TransformFunction() {}
-    virtual void operator()(CGeneModel& a) {}
-    virtual void operator()(CAlignModel& a) {}
+    void operator()(CGeneModel& a) { transform_model(a); }
+    void operator()(CAlignModel& a) { transform_align(a); }
+
+    virtual void transform_model(CGeneModel& a) {}
+    virtual void transform_align(CAlignModel& a) {}
 };
 struct Predicate {
     virtual ~Predicate() {}
     virtual string GetComment() { return "reason not given"; }
-    virtual bool operator()(CGeneModel& a) { return false; }
-    virtual bool operator()(CAlignModel& a) { return operator()(static_cast<CGeneModel&>(a)); }
+    bool operator()(CGeneModel& a) { return  model_predicate(a); }
+    bool operator()(CAlignModel& a) { return align_predicate(a); }
+
+    virtual bool model_predicate(CGeneModel& a) { return false; }
+    virtual bool align_predicate(CAlignModel& a) { return model_predicate(a); }
 };
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator_Base {
@@ -158,56 +164,57 @@ struct MarkupCappedEst : public TransformFunction {
     const set<string>& caps;
     int capgap;
 
-    virtual void operator()(CAlignModel& align);
+    virtual void transform_align(CAlignModel& align);
 };
 
 struct MarkupTrustedGenes : public TransformFunction {
     MarkupTrustedGenes(set<string> _trusted_genes);
     const set<string>& trusted_genes;
 
-    virtual void operator()(CAlignModel& align);
+    virtual void transform_align(CAlignModel& align);
 };
 
 struct ProteinWithBigHole : public Predicate {
     ProteinWithBigHole(double hthresh, double hmaxlen, CGnomonEngine& gnomon);
     double hthresh, hmaxlen;
     CGnomonEngine& gnomon;
-    virtual bool operator()(CGeneModel& align);
+
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct CdnaWithHole : public Predicate {
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct HasShortIntron : public Predicate {
     HasShortIntron(CGnomonEngine& gnomon);
     CGnomonEngine& gnomon;
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct CutShortPartialExons : public TransformFunction {
     CutShortPartialExons(int minex);
     int minex;
 
-    virtual void operator()(CAlignModel& align);
+    virtual void transform_align(CAlignModel& align);
 };
 
 struct HasNoExons : public Predicate {
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct SingleExon_AllEst : public Predicate {
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct SingleExon_Noncoding : public Predicate {
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 struct LowSupport_Noncoding : public Predicate {
     LowSupport_Noncoding(int _minsupport);
     int minsupport;
-    virtual bool operator()(CGeneModel& align);
+    virtual bool model_predicate(CGeneModel& align);
 };
 
 class NCBI_XALGOGNOMON_EXPORT CChainerArgUtil {

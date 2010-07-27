@@ -801,7 +801,7 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
     }
     RemoveExtraFShifts();
 
-    SetType(Type() | (CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA)&align.Type());
+    SetType(Type() | ((CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA)&align.Type()));
     if(align.ReadingFrame().NotEmpty())
         CombineCdsInfo(align, ensure_cds_invariant);
 }

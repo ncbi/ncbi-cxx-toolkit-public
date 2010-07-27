@@ -142,7 +142,8 @@ private:
 
 struct RemoveTrailingNs : public TransformFunction {
     RemoveTrailingNs(const CResidueVec& seq);
-    virtual void operator()(CGeneModel& a);
+
+    virtual void transform_model(CGeneModel& a);
 private:
     const CResidueVec& seq;
 };

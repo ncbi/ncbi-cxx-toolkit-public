@@ -1400,7 +1400,7 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
 
 struct OverlapsSameAccessionAlignment : public Predicate {
     OverlapsSameAccessionAlignment(TAlignModelList& alignments);
-    virtual bool operator()(CAlignModel& align);
+    virtual bool align_predicate(CAlignModel& align);
     virtual string GetComment() { return "Overlaps the same alignment";}
 };
 
@@ -1427,7 +1427,7 @@ OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& 
     }
 }
 
-bool OverlapsSameAccessionAlignment::operator()(CAlignModel& align)
+bool OverlapsSameAccessionAlignment::align_predicate(CAlignModel& align)
 {
     return align.Status() & CGeneModel::eSkipped;
 }
@@ -1458,7 +1458,7 @@ string FindMultiplyIncluded(CAlignModel& algn, TAlignModelList& clust)
             if (!same_as_prev)
                 prev_alignp = &algnj;
                         
-            if (same_as_prev && prev_is_compatible || !same_as_prev && algn.Strand()==algnj.Strand() && algn.isCompatible(algnj)) {
+            if ((same_as_prev && prev_is_compatible) || (!same_as_prev && algn.Strand()==algnj.Strand() && algn.isCompatible(algnj))) {
                 prev_is_compatible = true;
                 if (!compatible_evidence.insert(algnj.TargetAccession()).second) {
                     return algnj.TargetAccession();
@@ -1478,7 +1478,7 @@ struct ConnectsParalogs : public Predicate {
     TAlignModelList& alignments;
     string paralog;
 
-    virtual bool operator()(CAlignModel& align)
+    virtual bool align_predicate(CAlignModel& align)
     {
         paralog = FindMultiplyIncluded(align, alignments);
         return !paralog.empty();
@@ -1695,7 +1695,8 @@ void CChainer::CChainerImpl::AddFShifts(TGeneModelList& clust, const TInDels& fs
                 int b = algn.Exons()[k].GetTo();
                 if (fs->IntersectingWith(a,b)) {
                     found = true;
-                    if (algn.Exons()[k].m_fsplice && fs->Loc()<a || algn.Exons()[k].m_ssplice && fs->IsInsertion() && b<fs->Loc()+fs->Len()-1) {
+                    if ((algn.Exons()[k].m_fsplice && fs->Loc()<a) ||
+                        (algn.Exons()[k].m_ssplice && fs->IsInsertion() && b<fs->Loc()+fs->Len()-1)) {
                         incompatible_indels = true;
                     }
                 } 
@@ -1830,10 +1831,10 @@ struct ProjectCDS : public TransformFunction {
     const CResidueVec& seq;
     CScope* scope;
     const map<string, TSignedSeqRange>& mrnaCDS;
-    virtual void operator()(CAlignModel& align);
+    virtual void transform_align(CAlignModel& align);
 };
 
-void ProjectCDS::operator()(CAlignModel& align)
+void ProjectCDS::transform_align(CAlignModel& align)
 {
     if ((align.Type()&CAlignModel::emRNA)==0 || (align.Status()&CAlignModel::eReversed)!=0)
         return;
@@ -1972,7 +1973,7 @@ public:
         return new_to;
     }
 
-    virtual void operator() (CAlignModel& align)
+    virtual void transform_align(CAlignModel& align)
     {
         TSignedSeqRange limits = align.Limits();
         CAlignMap alignmap(align.GetAlignMap());
@@ -2062,7 +2063,7 @@ struct DoNotBelieveShortPolyATail : public TransformFunction {
     DoNotBelieveShortPolyATail(int _minpolya) : minpolya(_minpolya) {}
 
     int minpolya;
-    virtual void operator()(CAlignModel& align)
+    virtual void transform_align(CAlignModel& align)
     {
         int polyalen = align.PolyALen();
         if ((align.Status() & CGeneModel::ePolyA) != 0  &&
@@ -2104,7 +2105,7 @@ TransformFunction* CChainer::ProjectCDS(CScope& scope)
 }
 
 struct DoNotBelieveFrameShiftsWithoutCdsEvidence : public TransformFunction {
-    virtual void operator()(CAlignModel& align)
+    virtual void transform_align(CAlignModel& align)
     {
         if (align.ReadingFrame().Empty())
             align.FrameShifts().clear();
@@ -2385,7 +2386,7 @@ MarkupCappedEst::MarkupCappedEst(const set<string>& _caps, int _capgap)
     , capgap(_capgap)
 {}
 
-void MarkupCappedEst::operator()(CAlignModel& align)
+void MarkupCappedEst::transform_align(CAlignModel& align)
 {
     string acc = CIdHandler::ToString(*align.GetTargetId());
     int fivep = align.TranscriptExon(0).GetFrom();
@@ -2397,7 +2398,7 @@ void MarkupCappedEst::operator()(CAlignModel& align)
 
 MarkupTrustedGenes::MarkupTrustedGenes(set<string> _trusted_genes) : trusted_genes(_trusted_genes) {}
 
-void MarkupTrustedGenes::operator()(CAlignModel& align)
+void MarkupTrustedGenes::transform_align(CAlignModel& align)
 {
     string acc = CIdHandler::ToString(*align.GetTargetId());
     if(trusted_genes.find(acc) != trusted_genes.end()) {
@@ -2412,7 +2413,7 @@ void MarkupTrustedGenes::operator()(CAlignModel& align)
 
 ProteinWithBigHole::ProteinWithBigHole(double _hthresh, double _hmaxlen, CGnomonEngine& _gnomon)
     : hthresh(_hthresh), hmaxlen(_hmaxlen), gnomon(_gnomon) {}
-bool ProteinWithBigHole::operator()(CGeneModel& m)
+bool ProteinWithBigHole::model_predicate(CGeneModel& m)
 {
     if ((m.Type() & CGeneModel::eProt)==0)
         return false;
@@ -2434,7 +2435,7 @@ bool ProteinWithBigHole::operator()(CGeneModel& m)
     return false;
 }
 
-bool CdnaWithHole::operator()(CGeneModel& m)
+bool CdnaWithHole::model_predicate(CGeneModel& m)
 {
     if ((m.Type() & CGeneModel::eProt)!=0)
         return false;
@@ -2444,7 +2445,7 @@ bool CdnaWithHole::operator()(CGeneModel& m)
 HasShortIntron::HasShortIntron(CGnomonEngine& _gnomon)
     :gnomon(_gnomon) {}
 
-bool HasShortIntron::operator()(CGeneModel& m)
+bool HasShortIntron::model_predicate(CGeneModel& m)
 {
     for(unsigned int i = 1; i < m.Exons().size(); ++i) {
         bool hole = !m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice;
@@ -2465,7 +2466,7 @@ int EffectiveExonLength(const CModelExon& e, const CAlignMap& alignmap, bool sna
     return min(exonlen,shrinkedexon.GetLength());
 }
 
-void CutShortPartialExons::operator()(CAlignModel& a)
+void CutShortPartialExons::transform_align(CAlignModel& a)
 {
     if (a.Exons().empty())
         return;
@@ -2549,17 +2550,17 @@ void CutShortPartialExons::operator()(CAlignModel& a)
     return;
 }
 
-bool HasNoExons::operator()(CGeneModel& m)
+bool HasNoExons::model_predicate(CGeneModel& m)
 {
     return m.Exons().empty();
 }
 
-bool SingleExon_AllEst::operator()(CGeneModel& m)
+bool SingleExon_AllEst::model_predicate(CGeneModel& m)
 {
     return m.Exons().size() <= 1 && (m.Type()&(CAlignModel::eProt|CAlignModel::eEST|CAlignModel::emRNA))==CAlignModel::eEST;
 }
 
-bool SingleExon_Noncoding::operator()(CGeneModel& m)
+bool SingleExon_Noncoding::model_predicate(CGeneModel& m)
 {
     return m.Exons().size() <= 1 && m.Score() == BadScore();
 }
@@ -2567,7 +2568,7 @@ bool SingleExon_Noncoding::operator()(CGeneModel& m)
 LowSupport_Noncoding::LowSupport_Noncoding(int _minsupport)
     : minsupport(_minsupport)
 {}
-bool LowSupport_Noncoding::operator()(CGeneModel& m)
+bool LowSupport_Noncoding::model_predicate(CGeneModel& m)
 {
     return m.Score() == BadScore() && int(m.Support().size()) < minsupport && (m.Type() & (CAlignModel::eProt|CAlignModel::emRNA))==0;
 }

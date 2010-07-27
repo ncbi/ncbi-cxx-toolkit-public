@@ -50,7 +50,7 @@ void CModelFilters::FilterOutSingleExonEST(TGeneModelList& chains)
 {
       for (TGeneModelList::iterator it = chains.begin(); it != chains.end();) {
         const CGeneModel& chain(*it);
-        if (chain.Exons().size() == 1 & (chain.Type()&(CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA))==CGeneModel::eEST) {
+        if (chain.Exons().size() == 1 && (chain.Type()&(CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA))==CGeneModel::eEST) {
             it = chains.erase(it);
         } else {
             ++it;

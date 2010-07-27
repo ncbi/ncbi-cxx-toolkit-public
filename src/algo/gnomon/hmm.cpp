@@ -572,24 +572,28 @@ CExonParameters::CExonParameters(const CGnomon_param::C_Param& from)
 {
     string label = class_id();
 
-    int i = 0;
-    ITERATE(CExon_params::TFirst_exon_phase_probabilities, p, from.GetExon().GetFirst_exon_phase_probabilities()) {
-        if (i<3)
-            m_firstphase[i] = log(*p);
-        else
-            Error(label+" Too long First_exon_phase_probabilities");
-        ++i;
-    }
-
-    CExon_params::TInternal_exon_phase_probabilities::const_iterator p = from.GetExon().GetInternal_exon_phase_probabilities().begin();
-    for(int i = 0; i < 3; ++i) {
-        for(int j = 0; j < 3; ++j)  {
-            m_internalphase[i][j] = log(*p++);
+    {
+        int i = 0;
+        ITERATE(CExon_params::TFirst_exon_phase_probabilities, p, from.GetExon().GetFirst_exon_phase_probabilities()) {
+            if (i<3)
+                m_firstphase[i] = log(*p);
+            else
+                Error(label+" Too long First_exon_phase_probabilities");
+            ++i;
         }
     }
-    if (p != from.GetExon().GetInternal_exon_phase_probabilities().end())
-        Error(label+" Too long Internal_exon_phase_probabilities");
-    
+
+    {
+        CExon_params::TInternal_exon_phase_probabilities::const_iterator p = from.GetExon().GetInternal_exon_phase_probabilities().begin();
+        for(int i = 0; i < 3; ++i) {
+            for(int j = 0; j < 3; ++j)  {
+                m_internalphase[i][j] = log(*p++);
+            }
+        }
+        if (p != from.GetExon().GetInternal_exon_phase_probabilities().end())
+            Error(label+" Too long Internal_exon_phase_probabilities");
+    }
+
     m_firstlen.Init(from.GetExon().GetFirst_exon_length());
     m_internallen.Init(from.GetExon().GetInternal_exon_length());
     m_lastlen.Init(from.GetExon().GetLast_exon_length());

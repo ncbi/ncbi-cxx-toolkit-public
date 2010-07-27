@@ -104,8 +104,8 @@ public:
     bool IsDeletion() const { return !m_is_insert; }
     bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const    // insertion at least partially inside, deletion inside or flanking
     {
-        return IsDeletion() && Loc() >= a && Loc() <= b+1 ||
-            IsInsertion() && Loc() <= b && a <= Loc()+Len()-1;
+        return (IsDeletion() && Loc() >= a && Loc() <= b+1) ||
+            (IsInsertion() && Loc() <= b && a <= Loc()+Len()-1);
     }
     bool operator<(const CInDelInfo& fsi) const
     { return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); } // if location is same deletion first
