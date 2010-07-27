@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-BEGIN_SCOPE()
+namespace {
 
 void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons)
 {
@@ -94,7 +94,7 @@ void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons)
     }
 }
 
-END_SCOPE()
+}
 
 void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 {
@@ -126,14 +126,14 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         }
     } else {
         if (spliced_seg.IsSetProduct_length()) {
-            product_min_pos = -spliced_seg.GetProduct_length()+1;
+            product_min_pos = -int(spliced_seg.GetProduct_length())+1;
             if (is_protein)
                 product_min_pos = product_min_pos*3-2;
         } else {
             product_min_pos = exons[0].prod_from;
         }
         if (spliced_seg.IsSetPoly_a()) {
-            product_max_pos = -spliced_seg.GetPoly_a()-1;
+            product_max_pos = -int(spliced_seg.GetPoly_a())+1;
         } else {
             product_max_pos = 0;
         }
