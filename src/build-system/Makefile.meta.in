@@ -60,7 +60,11 @@ USRP_BRA = \
    expendable=false ; \
    test -f requirements  ||  touch -t 197607040000 requirements ; \
    for i in $$x_project ; do \
-      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+      if test "x$$i" = "x-" ; then \
+         expendable=true ; \
+         NCBI_BUT_EXPENDABLE=' (but expendable)' ; \
+         continue ; \
+      fi ; \
       if test -f "Makefile.$$i" ; then \
          x_mfile="Makefile.$$i" ; \
       else \
@@ -68,7 +72,7 @@ USRP_BRA = \
       fi ; \
       if NCBICXX_TESTING_REQS=1 $(MAKE_USR) -q requirements ; then \
          $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_USR)
-USRP_KET = || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i" ; \
+USRP_KET = || $(NOTK_BRA) echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$$i" ; \
               exit 1 $(NOTK_KET) ; \
       else \
          echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -87,7 +91,7 @@ ASNP_BRA = \
        && MAKE="$(MAKE) $(MFLAGS_NR)" \
           $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_ASN)
 ASNP_KET = && $(MAKE_LIB) src-stamp) \
-           || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+           || $(NOTK_BRA) echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$$i.lib" ; \
                 exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -126,13 +130,17 @@ LIBP_BRA = \
    x_project="$$x_project - $(EXPENDABLE_LIB_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
-     if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+     if test "x$$i" = "x-" ; then \
+        expendable=true ; \
+        NCBI_BUT_EXPENDABLE=' (but expendable)' ; \
+        continue ; \
+     fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
         $(RWL) -base "make_$$i" -log "make_$$i.log" -map $(srcdir)/.\#lock-map \
            $(MAKE_LIB)
 LIBP_KET = && continue ; \
         $(MAKE_LIB) $(deactivate) ; \
-        $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+        $(NOTK_BRA) echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$$i.lib" ; \
         exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -149,13 +157,17 @@ APPP_BRA = \
    expendable=false ; \
    test -f requirements  ||  touch -t 197607040000 requirements ; \
    for i in $$x_project ; do \
-     if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+     if test "x$$i" = "x-" ; then \
+        expendable=true ; \
+        NCBI_BUT_EXPENDABLE=' (but expendable)' ; \
+        continue ; \
+     fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements ; then \
         $(RWL) -base "make_$$i" -log "make_$$i.log" -map $(srcdir)/.\#lock-map \
            $(MAKE_APP)
 APPP_KET = && continue ; \
         $(MAKE_APP) unlink ; \
-        $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.app" ; \
+        $(NOTK_BRA) echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$$i.app" ; \
         exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -286,6 +298,12 @@ SUB_BRA = \
     x_subproj="$(SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)" ; \
     expendable=false ; \
     for i in $$x_subproj ; do \
+        if test "x$$i" = "x-" ; then \
+           expendable=true ; \
+           NCBI_BUT_EXPENDABLE=' (but expendable)' ; \
+           export NCBI_BUT_EXPENDABLE ; \
+           continue ; \
+        fi ; \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         if test "x$(IS_CHECK)" = "xY"  -a  "x$$i" = "xcheck" ; then \
             continue ; \
