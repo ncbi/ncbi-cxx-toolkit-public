@@ -1245,7 +1245,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         if (p->second.m_MakeType == eMakeType_Expendable) {
             ofs << "-";
         }
-        ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS)"
+        ofs << "cd " << rel_path << ";";
+        if (p->second.m_MakeType == eMakeType_Expendable) {
+            ofs << " NCBI_BUT_EXPENDABLE=' (but expendable)'";
+        }
+        ofs << " $(MAKE) $(MFLAGS)"
             << " APP_PROJ=" << target_app
             << " LIB_PROJ=" << target_lib
             << " $(MTARGET)" << endl << endl;
