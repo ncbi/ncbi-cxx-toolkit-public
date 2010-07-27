@@ -231,12 +231,16 @@ typedef struct BlastMaskLoc {
    BlastSeqLoc** seqloc_array; 
 } BlastMaskLoc;
 
+#define DB_MASK_NONE 0   /* no db mask */
+#define DB_MASK_SOFT 1   /* soft db mask */
+#define DB_MASK_HARD 2   /* hard db mask */
+
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
    Uint1* sequence; /**< Sequence used for search (could be translation). */
    Uint1* sequence_start; /**< Start of sequence, usually one byte before 
                                sequence as that byte is a NULL sentinel byte.*/
-   Int4     length;         /**< Length of sequence. */
+   Int4 length;         /**< Length of sequence. */
    Int2 frame; /**< Frame of the query, needed for translated searches */
    Int2 subject_strand; /**< Strand of the subject sequence for translated searches. 
                           Uses the same values as ENa_strand. */
@@ -274,6 +278,7 @@ typedef struct BLAST_SequenceBlk {
    Uint4 num_seq_ranges;    /**< Number of elements in seq_ranges */
    Boolean seq_ranges_allocated;   /**< TRUE if memory has been allocated for
                                       seq_ranges */
+   Int4 mask_type;          /**< type of subject masking */
    /* END: Data members needed for masking subjects from a BLAST database */
 } BLAST_SequenceBlk;
 

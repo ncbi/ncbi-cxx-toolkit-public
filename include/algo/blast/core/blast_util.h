@@ -135,6 +135,7 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
  * @param seq_ranges sequence ranges to copy [in]
  * @param num_seq_ranges number of elements in array above [in]
  * @param copy_seq_ranges set to TRUE if seq_ranges should be copied to the
+ * @param mask_type either kSoftDBMask or kHardDBMask [in]
  * BLAST_SequenceBlk and assume its ownership, set to FALSE if the pointer
  * should be copied and the ownership of the seq_ranges remains in the caller's
  * possession.
@@ -147,7 +148,8 @@ NCBI_XBLAST_EXPORT
 Int2 BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
                              SSeqRange* seq_ranges,
                              Uint4 num_seq_ranges,
-                             Boolean copy_seq_ranges);
+                             Boolean copy_seq_ranges,
+                             Int4 mask_type);
                             
 /** Adds a specialized representation of sequence data to a sequence
  * block. In the specialized representation, the byte at offset i 

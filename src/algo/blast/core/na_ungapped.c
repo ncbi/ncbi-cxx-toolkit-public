@@ -1583,7 +1583,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     scan_range[2] = subject->length - lut_word_length; /*end pos (inclusive) of scan*/
 
     /* if sequence is masked, fall back to generic scanner and extender */
-    if (subject->num_seq_ranges > 1) {
+    if (subject->mask_type) {
         scansub = (TNaScanSubjectFunction) 
                   BlastChooseNucleotideScanSubjectAny(lookup_wrap);
         if (extend != (TNaExtendFunction)s_BlastNaExtendDirect) {

@@ -186,7 +186,8 @@ Int2
 BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
                         SSeqRange* seq_ranges,
                         Uint4 num_seq_ranges,
-                        Boolean copy_seq_ranges)
+                        Boolean copy_seq_ranges,
+                        Int4 mask_type)
 {
     SSeqRange* tmp;
 
@@ -216,6 +217,7 @@ BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
     tmp[num_seq_ranges - 1].right = seq_blk->length;
     seq_blk->seq_ranges = tmp;
     seq_blk->num_seq_ranges = num_seq_ranges; 
+    seq_blk->mask_type = mask_type;
     return 0;
 }
 

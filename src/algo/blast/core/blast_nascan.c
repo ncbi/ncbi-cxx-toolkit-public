@@ -182,7 +182,7 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
+        if (scan_step % COMPRESSION_RATIO == 0 && !subject->mask_type) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -469,7 +469,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
+        if (scan_step % COMPRESSION_RATIO == 0 && !subject->mask_type) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -1509,7 +1509,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
       subtract the longest chain length from the allowed offset array size. */
    max_hits -= mb_lt->longest_chain;
 
-   if (scan_step % COMPRESSION_RATIO == 0 && (subject->num_seq_ranges > 1)) {
+   if (scan_step % COMPRESSION_RATIO == 0 && !subject->mask_type) {
 
       /* for strides that are a multiple of 4, words are
          always aligned and three bytes of the subject sequence 

@@ -742,7 +742,7 @@ struct TestFixture {
 
         SSeqRange ranges2scan[] = { {0, 501}, {700, 1001} , {subject_bases, subject_bases}};
         const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
-        BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
+        BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE, DB_MASK_SOFT);
 
         BlastHitSavingParameters* hit_params = NULL;
         retval = BlastHitSavingParametersNew(program_number, hitsaving_options,

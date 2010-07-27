@@ -498,13 +498,8 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     }
 
     scan_range[0] = 0;
-    scan_range[1] = 0;
-    scan_range[2] = subject->length - wordsize;
-
-    if (subject->num_seq_ranges > 1) {
-        scan_range[1] = subject->seq_ranges[0].left;
-        scan_range[2] = subject->seq_ranges[0].right - wordsize;
-    }
+    scan_range[1] = subject->seq_ranges[0].left;
+    scan_range[2] = subject->seq_ranges[0].right - wordsize;
 
     while (scan_range[1] <= scan_range[2]) {
         /* scan the subject sequence for hits */
@@ -753,13 +748,8 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     }
 
     scan_range[0] = 0;
-    scan_range[1] = 0;
-    scan_range[2] = subject->length - wordsize;
-
-    if (subject->num_seq_ranges > 1) {
-        scan_range[1] = subject->seq_ranges[0].left;
-        scan_range[2] = subject->seq_ranges[0].right - wordsize;
-    }
+    scan_range[1] = subject->seq_ranges[0].left;
+    scan_range[2] = subject->seq_ranges[0].right - wordsize;
 
     while (scan_range[1] <= scan_range[2]) {
         /* scan the subject sequence for hits */

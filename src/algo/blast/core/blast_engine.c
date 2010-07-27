@@ -126,7 +126,7 @@ typedef struct SubjectSplitStruct {
 
     SSeqRange* seq_ranges;  /**< backup of original sequence range */
     Int4 num_seq_ranges;    /**< backup of original number of items in seq_ranges */
-    Int4 seq_range_capacity;/**< number of seq_range allocated for subject */
+    Int4 allocated;         /**< number of seq_range allocated for subject */
 
     SSeqRange* hard_ranges; /**< sequence ranges for hard masking */
     Int4 num_hard_ranges;   /**< number of hard masking ranges */
@@ -141,45 +141,59 @@ typedef struct SubjectSplitStruct {
 
 } SubjectSplitStruct;
 
-const int kNoDBMasks = 0;
-const int kSoftDBMasks = 1;
-const int kHardDBMasks = 2;
-
 static void s_BackupSubject(BLAST_SequenceBlk* subject,
-                            SubjectSplitStruct* backup,
-                            Int4 mask_type)
+                            SubjectSplitStruct* backup)
 {
     if (backup->sequence) return;
 
     backup->sequence = subject->sequence;
     backup->full_range.left = 0;
     backup->full_range.right = subject->length;
-    subject->sequence = NULL;
-    subject->chunk = -1; 
 
     backup->seq_ranges = subject->seq_ranges;
     backup->num_seq_ranges = subject->num_seq_ranges;
-    backup->seq_range_capacity = 0;
-    subject->seq_ranges = NULL;
+    backup->allocated = 0;
 
     backup->hard_ranges = &(backup->full_range);
     backup->num_hard_ranges = 1;
     backup->hm_index = 0;
 
     backup->soft_ranges = &(backup->full_range);
-    backup->num_soft_ranges = 0;
+    backup->num_soft_ranges = 1;
     backup->sm_index = 0;
 
-    if (mask_type == kSoftDBMasks) {
+    if (subject->mask_type == DB_MASK_SOFT) {
+        ASSERT (backup->seq_ranges);
+        ASSERT (backup->num_seq_ranges >= 1);
         backup->soft_ranges = backup->seq_ranges;
         backup->num_soft_ranges = backup->num_seq_ranges;
-    } else if (mask_type == kHardDBMasks) {
+    } else if (subject->mask_type == DB_MASK_HARD) {
+        ASSERT (backup->seq_ranges);
+        ASSERT (backup->num_seq_ranges >= 1);
         backup->hard_ranges = backup->seq_ranges;
         backup->num_hard_ranges = backup->num_seq_ranges;
-    }
+    } 
 
     backup->offset = backup->hard_ranges[0].left;
     backup->next = backup->offset;
+    subject->chunk = -1; 
+
+}
+
+static void s_AllocateSeqRange(BLAST_SequenceBlk* subject,
+                               SubjectSplitStruct* backup,
+                               Int4 num_seq_ranges)
+{
+    ASSERT(num_seq_ranges >= 1);
+    subject->num_seq_ranges = num_seq_ranges;
+    if (backup->allocated >= num_seq_ranges) return;
+    if (backup->allocated) {
+        sfree(subject->seq_ranges);
+    }
+
+    backup->allocated = num_seq_ranges;
+    subject->seq_ranges = (SSeqRange *) calloc(backup->allocated,
+                                   sizeof(SSeqRange));
 }
 
 static void s_RestoreSubject(BLAST_SequenceBlk* subject,
@@ -190,7 +204,7 @@ static void s_RestoreSubject(BLAST_SequenceBlk* subject,
     subject->sequence = backup->sequence;
     subject->length = backup->full_range.right;
 
-    if (backup->seq_range_capacity) {
+    if (backup->allocated) {
         sfree(subject->seq_ranges);
     }
     subject->seq_ranges = backup->seq_ranges;
@@ -227,7 +241,7 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
     } else {
 
         subject->length = backup->hard_ranges[backup->hm_index].right 
-                       - backup->offset;
+                        - backup->offset;
         backup->hm_index++;
         backup->next = (backup->hm_index < backup->num_hard_ranges) ?
                         backup->hard_ranges[backup->hm_index].left :
@@ -236,15 +250,22 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
 
     (subject->chunk)++;
 
-    if (!backup->num_soft_ranges || 
-        (backup->offset == 0 && backup->next == backup->full_range.right)) {
-        /* no need to modify seq_ranges */
+    /* if no chunking is performed */
+    if (backup->offset == 0 && backup->next == backup->full_range.right) {
         subject->seq_ranges = backup->soft_ranges;
-        subject->num_seq_ranges = MAX(1, backup->num_soft_ranges);
+        subject->num_seq_ranges = backup->num_soft_ranges;
         return SUBJECT_SPLIT_OK;
     }
 
-    /* readjust soft masks */
+    /* if soft masking is off */
+    if (subject->mask_type != DB_MASK_SOFT) {
+        s_AllocateSeqRange(subject, backup, 1);
+        subject->seq_ranges[0].left = 0;
+        subject->seq_ranges[0].right = subject->length;
+        return SUBJECT_SPLIT_OK;
+    }
+      
+    /* soft masking is on, sequence is chunked, must re-allocate and adjust */
     start = backup->offset;
     len = start + subject->length;
     i = backup->sm_index;
@@ -262,20 +283,14 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
 
     if (len == 0) return SUBJECT_SPLIT_NO_RANGE;
 
-    subject->num_seq_ranges = len;
-    if (backup->seq_range_capacity < len) {
-        backup->seq_range_capacity = len;
-        sfree(subject->seq_ranges);
-        subject->seq_ranges = (SSeqRange *) calloc(backup->seq_range_capacity,
-                                   sizeof(SSeqRange));
-    }
+    s_AllocateSeqRange(subject, backup, len);
 
     for (i=0; i<len; i++) {
         subject->seq_ranges[i].left = backup->soft_ranges[i+start].left - backup->offset;
         subject->seq_ranges[i].right = backup->soft_ranges[i+start].right - backup->offset;
     }
 
-    if (subject->seq_ranges[0].left < 0)
+    if (subject->seq_ranges[0].left < 0) 
         subject->seq_ranges[0].left = 0;
     if (subject->seq_ranges[len-1].right > subject->length)
         subject->seq_ranges[len-1].right = subject->length;
@@ -423,8 +438,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
        program_number == eBlastTypePhiBlastn);
     const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_params->options);
     const int kScanSubjectOffsetArraySize = GetOffsetArraySize(lookup);
-    /* TODO how to get mask_type? */
-    const int mask_type = kSoftDBMasks;
     Int4 overlap;
 
     SubjectSplitStruct backup; 
@@ -435,13 +448,15 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
         gapped_stats = diagnostics->gapped_stat;
     }
 
-    s_BackupSubject(subject, &backup, mask_type);
+    s_BackupSubject(subject, &backup);
 
     while (TRUE) {
         status = s_GetNextSubjectChunk(subject, &backup, kNucleotide);
         if (status == SUBJECT_SPLIT_DONE) break;
         if (status == SUBJECT_SPLIT_NO_RANGE) continue;
         ASSERT(status == SUBJECT_SPLIT_OK);
+        ASSERT(subject->num_seq_ranges >= 1);
+        ASSERT(subject->seq_ranges);
 
         /* Delete if not done in last loop iteration to prevent memory leak. */
         hsp_list = Blast_HSPListFree(hsp_list);
@@ -629,10 +644,13 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
 
     if (kTranslatedSubject) {
 
-        s_BackupSubject(subject, &backup, kNoDBMasks);
-        subject->seq_ranges = (SSeqRange *) calloc (subject->num_seq_ranges,
-                              sizeof(SSeqRange));
-        backup.seq_range_capacity = subject->num_seq_ranges;
+        s_BackupSubject(subject, &backup);
+        if (subject->mask_type) {
+            s_AllocateSeqRange(subject, &backup, backup.num_seq_ranges);
+        } else {
+            subject->num_seq_ranges = 0;
+            subject->seq_ranges = NULL;
+        }
 
         first_context = 0;
         last_context = 5;

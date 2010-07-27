@@ -296,16 +296,18 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
     if ( datap->algorithm_id != -1 ) {
+        CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
         seqdb.GetMaskData(oid, datap->algorithm_id, ranges);
-    }
-
-    // Set the seq_ranges anyway even if no masked range is found.
-    if (BlastSeqBlkSetSeqRanges(args->seq, 
+        if (!ranges.empty()) {
+            if (BlastSeqBlkSetSeqRanges(args->seq, 
                                 (SSeqRange*) ranges.get_data(),
-                                ranges.size() + 1, false) != 0) {
-        return BLAST_SEQSRC_ERROR;
+                                ranges.size() + 1, false, DB_MASK_SOFT) != 0) {
+                return BLAST_SEQSRC_ERROR;
+            }
+        } else {
+            args->seq->num_seq_ranges = 0;
+        }
     }
 #endif
     

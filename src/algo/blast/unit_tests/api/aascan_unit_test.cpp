@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
 
     SSeqRange ranges2scan[] = { {0, 501}, {700, 1001}, {subject_length, subject_length} };
     const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
-    BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
+    BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE, DB_MASK_SOFT);
 
     scan_range[0] = 0;
     scan_range[1] = 0;
