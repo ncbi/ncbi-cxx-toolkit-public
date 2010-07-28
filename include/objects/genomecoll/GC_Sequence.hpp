@@ -59,6 +59,7 @@ class NCBI_GENOME_COLLECTION_EXPORT CGC_Sequence : public CGC_Sequence_Base
 {
     typedef CGC_Sequence_Base Tparent;
     friend class CGC_Assembly;
+    friend class CGC_Replicon;
 public:
     // constructor
     CGC_Sequence(void);
@@ -85,6 +86,8 @@ protected:
     CRef<CGC_Replicon>     m_Replicon;
     CRef<CGC_Sequence>     m_ParentSequence;
     CGC_TaggedSequences::TState m_ParentRel;
+
+    void x_UnIndex();
 
 private:
     // Prohibit copy constructor and assignment operator

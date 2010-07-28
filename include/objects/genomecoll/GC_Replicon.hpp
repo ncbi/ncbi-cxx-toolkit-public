@@ -54,6 +54,7 @@ class NCBI_GENOME_COLLECTION_EXPORT CGC_Replicon : public CGC_Replicon_Base
 {
     typedef CGC_Replicon_Base Tparent;
     friend class CGC_Assembly;
+    friend class CGC_AssemblyUnit;
 public:
     // constructor
     CGC_Replicon(void);
@@ -66,6 +67,8 @@ public:
 protected:
     CRef<CGC_AssemblyUnit> m_AssemblyUnit;
 
+    void x_UnIndex();
+
 private:
     // Prohibit copy constructor and assignment operator
     CGC_Replicon(const CGC_Replicon& value);
@@ -74,12 +77,6 @@ private:
 };
 
 /////////////////// CGC_Replicon inline methods
-
-// constructor
-inline
-CGC_Replicon::CGC_Replicon(void)
-{
-}
 
 
 /////////////////// end of CGC_Replicon inline methods

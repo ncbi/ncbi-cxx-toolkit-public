@@ -140,15 +140,11 @@ private:
                  CGC_TaggedSequences::TState relation);
     void x_Index(CGC_Sequence& seq,
                  CGC_TaggedSequences::TState relation);
+
+    void x_UnIndex();
 };
 
 /////////////////// CGC_Assembly inline methods
-
-// constructor
-inline
-CGC_Assembly::CGC_Assembly(void)
-{
-}
 
 
 /////////////////// end of CGC_Assembly inline methods

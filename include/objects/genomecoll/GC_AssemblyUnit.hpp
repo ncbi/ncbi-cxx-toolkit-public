@@ -53,6 +53,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class NCBI_GENOME_COLLECTION_EXPORT CGC_AssemblyUnit : public CGC_AssemblyUnit_Base
 {
     typedef CGC_AssemblyUnit_Base Tparent;
+    friend class CGC_Assembly;
 public:
     // constructor
     CGC_AssemblyUnit(void);
@@ -61,8 +62,12 @@ public:
 
     /// Retrieve this unit's accession
 	string GetAccession() const;
+
     /// Retrieve the release id for this assembly
     int GetReleaseId() const;
+
+protected:
+    void x_UnIndex();
 
 private:
     // Prohibit copy constructor and assignment operator
