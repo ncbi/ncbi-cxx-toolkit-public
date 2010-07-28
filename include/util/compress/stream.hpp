@@ -261,11 +261,19 @@ public:
     bool GetError(int& status, string& description) {
         return CCompressionStream::x_GetError(eRead, status, description);
     }
-    /// Return number of processed bytes.
+    /// Get total number of bytes processed by "stream_processor".
+    /// This method don't count bytes cached in the internal buffers
+    /// and waiting to be compressed/decompressed. Usually, only after
+    /// stream finalization by Finalize() it will be equal a number of 
+    /// bytes read from underlying stream.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eRead);
     };
-    /// Return number of output bytes.
+    /// Get total number of bytes, that "stream_processor" returns.
+    /// This method don't equal a number of bytes read from stream.
+    /// Some data can be still cashed in the internal buffer.
+    /// Usually, only after stream finalization by Finalize() it 
+    /// will be equal a size of decompressed data in underlying stream.
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
@@ -314,11 +322,19 @@ public:
     bool GetError(int& status, string& description) {
         return CCompressionStream::x_GetError(eWrite, status, description);
     }
-    /// Return number of processed bytes.
+    /// Get total number of bytes processed by "stream_processor".
+    /// This method don't count bytes cached in the internal buffers
+    /// and waiting to be compressed/decompressed. Usually, only after
+    /// stream finalization by Finalize() it will be equal a number of
+    /// bytes written into stream.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eWrite);
     };
-    /// Return number of output bytes.
+    /// Get total number of bytes, that "stream_processor" returns.
+    /// This method don't equal a number of bytes written to underlying
+    /// stream, some data can be still cashed in the internal buffer
+    /// for better I/O performance. Usually, only after stream
+    /// finalization by Finalize() these numvbers will be equal.
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
@@ -370,11 +386,13 @@ public:
                   int& status, string& description) {
         return CCompressionStream::x_GetError(dir, status, description);
     }
-    /// Return number of processed bytes.
+    /// Get total number of bytes processed by specified "stream_processor".
+    /// @sa CCompressionIStream, CCompressionOStream
     unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetProcessedSize(dir);
     };
-    /// Return number of output bytes.
+    /// Get total number of bytes, that "stream_processor" returns.
+    /// @sa CCompressionIStream, CCompressionOStream
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };

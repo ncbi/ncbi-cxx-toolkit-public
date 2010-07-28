@@ -247,21 +247,21 @@ public:
     CCompressionFile(const string& path, EMode mode); 
     virtual ~CCompressionFile(void);
 
-    // Opens a compressed file for reading or writing.
-    // Return NULL if error has been occurred.
+    /// Opens a compressed file for reading or writing.
+    /// Return NULL if error has been occurred.
     virtual bool Open(const string& path, EMode mode) = 0; 
 
-    // Read up to "len" uncompressed bytes from the compressed file "file"
-    // into the buffer "buf". Return the number of bytes actually read
-    // (0 for end of file, -1 for error)
+    /// Read up to "len" uncompressed bytes from the compressed file "file"
+    /// into the buffer "buf". Return the number of bytes actually read
+    /// (0 for end of file, -1 for error)
     virtual long Read(void* buf, size_t len) = 0;
 
-    // Writes the given number of uncompressed bytes into the compressed file.
-    // Return the number of bytes actually written or -1 for error.
+    /// Writes the given number of uncompressed bytes into the compressed file.
+    /// Return the number of bytes actually written or -1 for error.
     virtual long Write(const void* buf, size_t len) = 0;
 
-    // Flushes all pending output if necessary, closes the compressed file.
-    // Return TRUE on success, FALSE on error.
+    /// Flushes all pending output if necessary, closes the compressed file.
+    /// Return TRUE on success, FALSE on error.
     virtual bool Close(void) = 0;
 
 protected:
@@ -304,9 +304,9 @@ public:
     CCompressionProcessor(void);
     virtual ~CCompressionProcessor(void);
 
-    // Return compressor's busy flag. If returns value is true that
-    // the current compression object already have being use in other
-    // compression session.
+    /// Return compressor's busy flag. If returns value is true that
+    /// the current compression object already have being use in other
+    /// compression session.
     bool IsBusy(void) const;
 
     // Return number of processed/output bytes.
@@ -314,14 +314,14 @@ public:
     unsigned long GetOutputSize(void);
 
 protected:
-    // Initialize the internal stream state for compression/decompression.
-    // It does not perform any compression, this will be done by Process().
+    /// Initialize the internal stream state for compression/decompression.
+    /// It does not perform any compression, this will be done by Process().
     virtual EStatus Init(void) = 0;
 
-    // Compress/decompress as much data as possible, and stops when the input
-    // buffer becomes empty or the output buffer becomes full. It may
-    // introduce some output latency (reading input without producing any
-    // output).
+    /// Compress/decompress as much data as possible, and stops when the input
+    /// buffer becomes empty or the output buffer becomes full. It may
+    /// introduce some output latency (reading input without producing any
+    /// output).
     virtual EStatus Process
     (const char* in_buf,      // [in]  input buffer 
      size_t      in_len,      // [in]  input data length
@@ -331,35 +331,35 @@ protected:
      size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
-    // Flush compressed/decompressed data from the output buffer. 
-    // Flushing may degrade compression for some compression algorithms
-    // and so it should be used only when necessary.
+    /// Flush compressed/decompressed data from the output buffer. 
+    /// Flushing may degrade compression for some compression algorithms
+    /// and so it should be used only when necessary.
     virtual EStatus Flush
     (char*       out_buf,     // [in]  output buffer
      size_t      out_size,    // [in]  output buffer size
      size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
-    // Finish the compression/decompression process.
-    // Process pending input, flush pending output.
-    // This function slightly like to Flush(), but it must be called only
-    // at the end of compression process before End().
+    /// Finish the compression/decompression process.
+    /// Process pending input, flush pending output.
+    /// This function slightly like to Flush(), but it must be called only
+    /// at the end of compression process before End().
     virtual EStatus Finish
     (char*       out_buf,     // [in]  output buffer
      size_t      out_size,    // [in]  output buffer size
      size_t*     out_avail    // [out] count bytes putted into out buffer
      ) = 0;
 
-    // Free all dynamically allocated data structures.
-    // This function discards any unprocessed input and does not flush
-    // any pending output.
+    /// Free all dynamically allocated data structures.
+    /// This function discards any unprocessed input and does not flush
+    /// any pending output.
     virtual EStatus End(void) = 0;
 
 protected:
-    // Reset internal state
+    /// Reset internal state
     void Reset(void);
 
-    // Set/unset compressor busy flag
+    /// Set/unset compressor busy flag
     void SetBusy(bool busy = true);
 
     // Increase number of processed/output bytes.
