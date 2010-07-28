@@ -75,14 +75,16 @@ CSubstMatrix::CSubstMatrix(const string& matrix_name, int scaling)
 
     int score;
     for(const char* p1 = packed_mtx->symbols; *p1; ++p1) {
-        char c = toupper(*p1);
+        int c = toupper(*p1);
+        int lc = tolower(c);
         for(const char* p2 = packed_mtx->symbols; *p2; ++p2) {
-            char d = toupper(*p2);
-            score = mtx.s[*p1][*p2]*scaling;
+            int d = toupper(*p2);
+            int ld = tolower(d);
+            score = mtx.s[(int)(*p1)][(int)(*p2)]*scaling;
             scaled_subst_matrix[c][d] = score;
-            scaled_subst_matrix[tolower(c)][tolower(d)] = score;
-            scaled_subst_matrix[c][tolower(d)] = score;
-            scaled_subst_matrix[tolower(c)][d] = score;
+            scaled_subst_matrix[lc][ld] = score;
+            scaled_subst_matrix[c][ld] = score;
+            scaled_subst_matrix[lc][d] = score;
     }}
 }
 

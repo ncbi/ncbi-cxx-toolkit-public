@@ -263,14 +263,14 @@ list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const
     const string& match = match_all_pos;
     
     string::size_type n = match.find_first_not_of(BAD_OR_MISMATCH, pc.beg);
-    if(n == string::npos || n >= pc.end) return m_AliPiece; //no matches    
+    if(n == string::npos || n >= (unsigned)pc.end) return m_AliPiece; //no matches    
     bool ism = true;
     bool isintr = false;
     string::size_type beg = n;
     int efflen = 0;
     if(match[n] == MATCH_CHAR && protein.find_first_not_of(GAP_CHAR) == n && protein[n+1] == 'M')
         efflen += m_options.GetStartBonus();
-    for(; n<pc.end; ++n) {
+    for(; n<(unsigned)pc.end; ++n) {
         if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) {
             if(!ism) {
                 ism = true;
@@ -905,7 +905,9 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
         int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
+#ifdef _DEBUG
         int prot_cur_end = GetProdPosInBases(exon.GetProduct_end());
+#endif
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
         if (strand==eNa_strand_plus) {
@@ -918,7 +920,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
         }
         bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
         bool hole_before =
-            prot_prev+1 != prot_cur_start || !( prev_3_prime_splice && cur_5_prime_splice || prot_cur_start==0 && nuc_cur_start==0);
+            prot_prev+1 != prot_cur_start || !( (prev_3_prime_splice && cur_5_prime_splice) || (prot_cur_start==0 && nuc_cur_start==0) );
 
         if (hole_before) {
             AddHoleText(prev_3_prime_splice, cur_5_prime_splice,
@@ -1129,6 +1131,9 @@ bool HasStopOnNuc(const CSpliced_seg& sps, CScope& scope)
         exon.GetGenomic_start()<3)
         return false;
 
+    //need to check before because TSeqPos is unsigned
+    if(sps.GetGenomic_strand()!=eNa_strand_plus && exon.GetGenomic_start()<3) return false;
+
     TSeqPos stop_codon_start = sps.GetGenomic_strand()==eNa_strand_plus?exon.GetGenomic_end()+1:exon.GetGenomic_start()-3;
     TSeqPos stop_codon_end = sps.GetGenomic_strand()==eNa_strand_plus?exon.GetGenomic_end()+3:exon.GetGenomic_start()-1;
 
@@ -1136,7 +1141,8 @@ bool HasStopOnNuc(const CSpliced_seg& sps, CScope& scope)
     nucid.Assign(sps.GetGenomic_id());
 
     TSeqPos seq_end = sequence::GetLength(nucid, &scope)-1;
-    if (sps.GetGenomic_strand()==eNa_strand_plus?seq_end<stop_codon_end:stop_codon_start<0)
+    //if (sps.GetGenomic_strand()==eNa_strand_plus?seq_end<stop_codon_end:stop_codon_start<0) //wrong. stop_codon_start is insigned
+    if (sps.GetGenomic_strand()==eNa_strand_plus && seq_end<stop_codon_end)
         return false;
 
     CSeq_loc genomic_seqloc(nucid,stop_codon_start, stop_codon_end,sps.GetGenomic_strand());
@@ -1293,7 +1299,7 @@ TAliChunkCollection ExtractChunks(CScope& scope, CSeq_align& seq_align)
         }
 
         _ASSERT( GetProdPosInBases(exon.GetProduct_end())+1==prot_from );
-        _ASSERT( strand==eNa_strand_plus && nuc_cur_end+1==nuc_from || strand!=eNa_strand_plus && nuc_cur_start-1==nuc_to );
+        _ASSERT( (strand==eNa_strand_plus && nuc_cur_end+1==nuc_from) || (strand!=eNa_strand_plus && nuc_cur_start-1==nuc_to) );
     }
     return chunks;
 }
@@ -1317,10 +1323,6 @@ list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange total_
     
 void TestExonLength(const CSpliced_exon& exon)
 {
-        int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
-        int prot_cur_end = GetProdPosInBases(exon.GetProduct_end());
-        int nuc_cur_start = exon.GetGenomic_start();
-        int nuc_cur_end = exon.GetGenomic_end();
         int nuc_len = 0;
         int prot_len = 0;
         ITERATE (CSpliced_exon::TParts, p_it, exon.GetParts()) {
@@ -1344,6 +1346,14 @@ void TestExonLength(const CSpliced_exon& exon)
                 nuc_len += chunk.GetGenomic_ins();
             }
         }
+
+#ifdef _DEBUG
+                int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
+                int prot_cur_end = GetProdPosInBases(exon.GetProduct_end());
+                int nuc_cur_end = exon.GetGenomic_end();
+                int nuc_cur_start = exon.GetGenomic_start();
+#endif
+
         _ASSERT( nuc_cur_end-nuc_cur_start+1 == nuc_len );
         _ASSERT( prot_cur_end-prot_cur_start+1 == prot_len );
 }
@@ -1476,7 +1486,7 @@ void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope
     const string& prot = pro_text.GetProtein();
     const string& dna = pro_text.GetDNA();
     const string& match = pro_text.GetMatch();
-    const string& trans = pro_text.GetTranslation();
+    // const string& trans = pro_text.GetTranslation();
     int pos = 0, ident = 0, len = 0, neg = 0, pgap = 0, ngap = 0;
     for(string::size_type i=0;i<match.size(); ++i) {
         if( (prot[i] != '.') && (match[i] != 'X') ) {//skip introns and bad parts

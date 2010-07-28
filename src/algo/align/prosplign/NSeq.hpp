@@ -70,7 +70,7 @@ public:
     inline int operator[](NSEQ::size_type j)  const { return seq[j]; }
     inline int size(void) const{ return m_size; }
     //can a letter be taken at position 'pos'?
-    inline bool ValidPos(NSEQ::size_type pos) const{ return pos >= 0 && pos < seq.size(); }
+    inline bool ValidPos(int pos) const{ return pos >= 0 &&  pos < (int)seq.size(); }
 private:
     int m_size;//represents part of sequence involved into alignment; m_size could be less than seq.size()
     NSEQ seq;  //real sequence may have up to three extra letters  for stop check that are not involved

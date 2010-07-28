@@ -180,7 +180,7 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
         hitref->SetQueryMin(hitref->GetQueryMin()*3);
 
         if (compart_options.m_ByCoverage)
-            hitref->SetIdentity(0.9999);
+            hitref->SetIdentity(0.9999f);
 
         hitrefs.push_back(hitref);
     }
