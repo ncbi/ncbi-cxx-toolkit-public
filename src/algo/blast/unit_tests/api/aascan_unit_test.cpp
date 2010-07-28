@@ -158,12 +158,18 @@ struct AascanTestFixture {
                                         subj_sequence.length - 2);
         BOOST_REQUIRE_EQUAL(0, status);
 
+        SSeqRange full_range;
+        full_range.left = 0;
+        full_range.right = subject_blk->length;
+        status = BlastSeqBlkSetSeqRanges(subject_blk, &full_range, 1, true, DB_MASK_NONE);
+        BOOST_REQUIRE_EQUAL(0, status);
+
         BOOST_REQUIRE(subject_blk != NULL);
         BOOST_REQUIRE(subject_blk->sequence[0] != 0);
         BOOST_REQUIRE(subject_blk->sequence[subject_blk->length - 1] != 0);
         BOOST_REQUIRE(subject_blk->sequence_start[0] == 0);
         BOOST_REQUIRE(subject_blk->sequence_start[subject_blk->length + 1] == 0);
-        BOOST_REQUIRE_EQUAL(0, (int)subject_blk->num_seq_ranges);
+        BOOST_REQUIRE_EQUAL(1, (int)subject_blk->num_seq_ranges);
 
         //----------------------------------- LOOKUP TABLE SETUP -----------
         // set lookup table options
