@@ -21,4 +21,4 @@ CHECK_COPY = data
 REQUIRES = Boost.Test.Included
 
 WATCHERS = blastsoft
-CHECK_TIMEOUT = 600
+CHECK_TIMEOUT = 750
