@@ -304,7 +304,6 @@ SUB_BRA = \
            export NCBI_BUT_EXPENDABLE ; \
            continue ; \
         fi ; \
-        if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         if test "x$(IS_CHECK)" = "xY"  -a  "x$$i" = "xcheck" ; then \
             continue ; \
         fi ; \
@@ -414,7 +413,12 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
     x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)"; \
     expendable=false ; \
     for i in $$x_subproj ; do \
-        if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+        if test "x$$i" = "x-" ; then \
+           expendable=true ; \
+           NCBI_BUT_EXPENDABLE=' (but expendable)' ; \
+           export NCBI_BUT_EXPENDABLE ; \
+           continue ; \
+        fi ; \
         ( if test -d $$i ; then \
           cd $$i  &&  if $(RELEVANT_DIR) || $(RELEVANT_SUBS) ; then \
           $(MAKE) $(MFLAGS_NR)
