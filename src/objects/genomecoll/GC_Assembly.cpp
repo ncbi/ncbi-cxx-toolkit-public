@@ -62,9 +62,17 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CGC_Assembly::CGC_Assembly(void)
+{
+}
+
+
+
 // destructor
 CGC_Assembly::~CGC_Assembly(void)
 {
+    x_UnIndex();
 }
 
 
@@ -273,6 +281,28 @@ void CGC_Assembly::PostRead()
 }
 
 
+void CGC_Assembly::x_UnIndex()
+{
+    ///
+    /// generate the up-links as needed
+    ///
+    if (IsUnit()) {
+        SetUnit().x_UnIndex();
+    }
+    else if (IsAssembly_set()) {
+        CGC_AssemblySet& set = SetAssembly_set();
+        set.SetPrimary_assembly().x_UnIndex();
+        if (set.IsSetMore_assemblies()) {
+            NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
+                               set.SetMore_assemblies()) {
+                (*it)->x_UnIndex();
+            }
+        }
+    }
+
+    m_SequenceMap.clear();
+}
+
 void CGC_Assembly::CreateIndex()
 {
     ///
@@ -396,7 +426,6 @@ void CGC_Assembly::x_Index(CGC_Sequence& seq,
         }
     }
 }
-
 
 
 

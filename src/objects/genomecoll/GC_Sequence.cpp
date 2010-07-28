@@ -47,7 +47,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-
 // constructor
 CGC_Sequence::CGC_Sequence(void)
     : m_ParentRel(CGC_TaggedSequences::eState_not_set)
@@ -58,6 +57,15 @@ CGC_Sequence::CGC_Sequence(void)
 // destructor
 CGC_Sequence::~CGC_Sequence(void)
 {
+    x_UnIndex();
+}
+
+
+void CGC_Sequence::x_UnIndex()
+{
+    m_AssemblyUnit.Reset();
+    m_Replicon.Reset();
+    m_ParentSequence.Reset();
 }
 
 

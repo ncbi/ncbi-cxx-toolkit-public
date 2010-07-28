@@ -46,9 +46,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CGC_Replicon::CGC_Replicon(void)
+{
+}
+
 // destructor
 CGC_Replicon::~CGC_Replicon(void)
 {
+    m_AssemblyUnit.Reset();
 }
 
 
@@ -56,6 +62,21 @@ CGC_Replicon::~CGC_Replicon(void)
 CConstRef<CGC_AssemblyUnit> CGC_Replicon::GetAssemblyUnit() const
 {
     return m_AssemblyUnit;
+}
+
+
+void CGC_Replicon::x_UnIndex()
+{
+    m_AssemblyUnit.Reset();
+
+    if (GetSequence().IsSingle()) {
+        SetSequence().SetSingle().x_UnIndex();
+    }
+    else if (GetSequence().IsSet()) {
+        NON_CONST_ITERATE (TSequence::TSet, it, SetSequence().SetSet()) {
+            (*it)->x_UnIndex();
+        }
+    }
 }
 
 

@@ -12,14 +12,14 @@
 NCBI-GenomeCollection DEFINITIONS ::=
 BEGIN
 
+EXPORTS GC-Assembly, GC-Genome, GC-Project, GC-GenomicPart, GC-Replicon,
+        GC-Sequence, GC-SequenceStats, GC-Scaf-stats, GC-SeqIdAlias,
+        GC-TypedSeqId, GC-DbTagAlias;
+
 IMPORTS Dbtag, Date FROM NCBI-General
         MolInfo, Seqdesc, Seq-descr, Delta-ext, Seq-annot, Seq-gap FROM NCBI-Sequence
         Seq-id FROM NCBI-Seqloc
         BioSource FROM NCBI-BioSource;
-
-EXPORTS GC-Assembly, GC-Genome, GC-Project, GC-GenomicPart, GC-Replicon,
-        GC-Sequence, GC-SequenceStats, GC-Scaf-stats, GC-SeqIdAlias,
-        GC-TypedSeqId, GC-DbTagAlias;
 
 
 GC-Genome ::= SEQUENCE

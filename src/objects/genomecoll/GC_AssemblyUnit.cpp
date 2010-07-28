@@ -49,6 +49,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CGC_AssemblyUnit::~CGC_AssemblyUnit(void)
 {
+    x_UnIndex();
 }
 
 string CGC_AssemblyUnit::GetAccession() const
@@ -66,6 +67,7 @@ string CGC_AssemblyUnit::GetAccession() const
 	return "";
 }
 
+
 int CGC_AssemblyUnit::GetReleaseId() const
 {
     int release_id = 0;
@@ -78,6 +80,16 @@ int CGC_AssemblyUnit::GetReleaseId() const
         }
     }
     return release_id;
+}
+
+
+void CGC_AssemblyUnit::x_UnIndex()
+{
+    if (IsSetMols()) {
+        NON_CONST_ITERATE (TMols, it, SetMols()) {
+            (*it)->x_UnIndex();
+        }
+    }
 }
 
 
