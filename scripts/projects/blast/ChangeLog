@@ -3,10 +3,13 @@ August 2, 2010
 * Added support for BLAST Archive format (see BLAST+ user manual)
 * Added the blast_formatter application (see BLAST+ user manual)
 * Added support for translated subject soft masking in the BLAST databases
+* Added support for the BLAST Trace-back operations (btop) output format
+* Added command line options to blastdbcmd for listing available BLAST databases
 * Improved performance of formatting of remote BLAST searches
 * Use a consistent exit code for out of memory conditions
 * Fixed bug in indexed megablast with multiple space-separated BLAST databases
 * Fixed bugs in legacy_blast.pl, blastdbcmd, rpsblast, and makeblastdb
+* Fixed Windows installer for 64-bit installations
 
 Feb 03, 2010
 * 2.2.23 release
