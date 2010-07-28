@@ -76,7 +76,5 @@ diag._type           = TSeqPos
 product-ins._type    = TSeqPos
 genomic-ins._type    = TSeqPos
 
-
-
-
-
+[Score]
+value._pointer       = false
