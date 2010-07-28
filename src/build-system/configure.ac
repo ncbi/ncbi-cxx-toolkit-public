@@ -5007,6 +5007,9 @@ esac
 
 if test "$with_sss" != "no" ; then
    local_sss=${real_srcdir}/src/internal/sss
+   if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
+      NCBI_PACKAGE(LocalNCBILS)
+   fi
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
        -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
@@ -5015,9 +5018,6 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
       NCBI_SSS_LIBPATH="\$(libdir)"
       NCBI_PACKAGE(LocalSSS)
-      if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
-         NCBI_PACKAGE(LocalNCBILS)
-      fi
       if test -f "$local_sss/../msgmail2/asn/msgmail.asn"; then
          NCBI_PACKAGE(LocalMSGMAIL2)
       fi
