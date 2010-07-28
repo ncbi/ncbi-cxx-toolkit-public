@@ -221,6 +221,9 @@ TField B4Param_Web_RunPsiBlast       ("Web_RunPsiBlast",      CBlast4_value::e_B
 TField B4Param_Web_ShortQueryAdjust  ("Web_ShortQueryAdjust", CBlast4_value::e_Boolean);
 TField B4Param_Web_StepNumber        ("Web_StepNumber",       CBlast4_value::e_Integer);
 TField B4Param_Web_DBInput  	     ("Web_DBInput", 	      CBlast4_value::e_Boolean);
+TField B4Param_Web_DBGroup           ("Web_DBGroup",          CBlast4_value::e_String);
+TField B4Param_Web_DBSubgroupName    ("Web_DBSubgroupName",   CBlast4_value::e_String);
+TField B4Param_Web_DBSubgroup        ("Web_DBSubgroup",       CBlast4_value::e_String);
 
 END_objects_SCOPE // namespace ncbi::objects::
 
