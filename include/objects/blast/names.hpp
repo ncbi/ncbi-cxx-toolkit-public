@@ -192,6 +192,10 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_RunPsiBlast;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ShortQueryAdjust;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_StepNumber;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBInput;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBGroup;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBSubgroupName;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBSubgroup;
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
