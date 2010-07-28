@@ -5026,12 +5026,6 @@ if test "$with_sss" != "no" ; then
    fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
-   if test -f "$local_sss/../ncbils2/asn/login.asn"; then
-      if test "$with_included_sss" = yes  || \
-         grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
-         NCBI_PACKAGE(NCBILS2)
-      fi
-   fi
    if test -z "$NCBI_SSS_LIBPATH" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
       if test "$with_mt" = "yes" ; then
@@ -5081,6 +5075,12 @@ else
          AC_DEFINE(HAVE_LIBSSSUTILS, 1,
                    [Define to 1 if the NCBI SSS UTILS library is available.])
          NCBI_PACKAGE(SSSUTILS)
+         if test -f "$local_sss/../ncbils2/asn/login.asn"; then
+            if test "$with_included_sss" = yes  || \
+               grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
+               NCBI_PACKAGE(NCBILS2)
+            fi
+         fi
       else
          NCBI_MISSING_PACKAGE(sssutils)
          NCBI_MISSING_PACKAGE(sss)

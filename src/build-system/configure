@@ -27179,12 +27179,6 @@ if test "$with_sss" != "no" ; then
    fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
-   if test -f "$local_sss/../ncbils2/asn/login.asn"; then
-      if test "$with_included_sss" = yes  || \
-         grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
-                   WithPackages="$WithPackages${WithPackagesSep}NCBILS2"; WithPackagesSep=" "
-      fi
-   fi
    if test -z "$NCBI_SSS_LIBPATH" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
       if test "$with_mt" = "yes" ; then
@@ -27302,6 +27296,12 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
                    WithPackages="$WithPackages${WithPackagesSep}SSSUTILS"; WithPackagesSep=" "
+         if test -f "$local_sss/../ncbils2/asn/login.asn"; then
+            if test "$with_included_sss" = yes  || \
+               grep vformat $NCBI_SSS_INCLUDE/String.hpp >/dev/null 2>&1; then
+                         WithPackages="$WithPackages${WithPackagesSep}NCBILS2"; WithPackagesSep=" "
+            fi
+         fi
       else
          if test "${with_sssutils:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-sssutils explicitly specified, but no usable version found." >&5
@@ -31717,7 +31717,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_B
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalNCBILS LocalSSS LocalMSGMAIL2 NCBILS2 SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalNCBILS LocalSSS LocalMSGMAIL2 SSSUTILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
