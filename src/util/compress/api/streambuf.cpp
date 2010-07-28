@@ -176,6 +176,14 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
     if ( !IsStreamProcessorOkay(dir) ) {
         return -1;
     }
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    // Check processor status
+    if ( sp->m_LastStatus == CP::eStatus_Unknown ) {
+        return 0;
+    }
+    if ( sp->m_LastStatus == CP::eStatus_Error) {
+        return -1;
+    }
     // Process remaining data in the preprocessing buffer
     if ( !Process(dir) ) {
         return -1;
@@ -202,7 +210,8 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
     }
     // Process remaining data in the preprocessing buffer
     Process(dir);
-    if ( sp->m_LastStatus == CP::eStatus_Error ) {
+    if ( sp->m_LastStatus == CP::eStatus_Error  ||
+         sp->m_LastStatus == CP::eStatus_Unknown ) {
         return -1;
     }
     // Finish. Change state to 'finalized'.
@@ -416,6 +425,10 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     const streamsize count     = pptr() - pbase();
     size_t           in_avail  = count;
 
+    // Nothing was written into processor yet
+    if ( m_Writer->m_LastStatus == CP::eStatus_Unknown  &&  !count ) {
+        return false;
+    }
     // End of stream has been detected
     if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
         return false;
