@@ -48,7 +48,7 @@ BEGIN_SCOPE(blast)
 
 /// Implementation of the IBlastSeqInfoSrc interface to encapsulate retrieval
 /// of sequence identifiers and lengths from a vector of Seq-locs. 
-class CSeqVecSeqInfoSrc : public IBlastSeqInfoSrc
+class NCBI_XBLAST_EXPORT CSeqVecSeqInfoSrc : public IBlastSeqInfoSrc
 {
 public:
     /// Constructor from a vector of sequence locations.
