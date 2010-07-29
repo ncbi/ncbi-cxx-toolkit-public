@@ -842,7 +842,9 @@ bool CCgi2RCgiApp::x_CheckJobStatus(CGridCgiContext& grid_ctx)
         // Render a status report page
         grid_ctx.SelectView("JOB_RUNNING");
         err = new CHTMLText(grid_ctx.GetJobProgressMessage());
-        grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",err);
+        grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG", err);
+        err = new CHTMLText(grid_ctx.GetJobProgressMessage());
+        grid_ctx.GetHTMLPage().AddTagMap("PROGRESS_MSG", err);
         break;
 
     default:
