@@ -186,6 +186,25 @@ void CVariation_ref::SetInsertion(const string& sequence, ESeqType seq_type)
 }
 
 
+void CVariation_ref::SetDeletionInsertion(const string& sequence,
+                                          ESeqType seq_type)
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item;
+
+    item.Reset(new CDelta_item);
+    item->SetAction(CDelta_item::eAction_del_at);
+    inst.SetDelta().push_back(item);
+
+    vector<string> replaces;
+    replaces.push_back(sequence);
+    s_SetReplaces(*this, replaces, seq_type,
+                  CVariation_inst::eType_delins);
+}
+
+
 void CVariation_ref::SetMicrosatellite(const string& nucleotide_seq,
                                        TSeqPos min_repeats,
                                        TSeqPos max_repeats)
@@ -269,6 +288,59 @@ void CVariation_ref::SetCNV(const vector<TSeqPos>& observed_copies)
 
     inst.SetDelta().push_back(item);
 }
+
+void CVariation_ref::SetInversion(const CSeq_loc& other_loc)
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_inverted_copy);
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item(new CDelta_item);
+    item->SetSeq().SetLoc().Assign(other_loc);
+    inst.SetDelta().push_back(item);
+}
+
+
+void CVariation_ref::SetEversion(const CSeq_loc& other_loc)
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_everted_copy);
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item(new CDelta_item);
+    item->SetSeq().SetLoc().Assign(other_loc);
+    inst.SetDelta().push_back(item);
+}
+
+
+/// The feature represents an eversion at the specified location
+/// The provided location can be anywhere; a special case exists when the
+/// provided location is on a different chromosome, in which case the
+/// feature is considered a transchromosomal rearrangement
+void CVariation_ref::SetTranslocation(const CSeq_loc& other_loc)
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_translocation);
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item;
+    item.Reset(new CDelta_item);
+    item->SetAction(CDelta_item::eAction_del_at);
+    inst.SetDelta().push_back(item);
+
+    item.Reset(new CDelta_item);
+    item->SetSeq().SetLoc().Assign(other_loc);
+    inst.SetDelta().push_back(item);
+
+}
+
+
+/// Establish a uniparental disomy mark-up
+void CVariation_ref::SetUniparentalDisomy()
+{
+    SetData().SetUniparental_disomy();
+}
+
 
 
 

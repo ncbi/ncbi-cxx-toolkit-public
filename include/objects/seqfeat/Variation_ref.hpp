@@ -81,6 +81,9 @@ public:
     /// Make this variant an insertion
     void SetInsertion(const string& sequence, ESeqType seq_type);
 
+    /// Make this variant an insertion
+    void SetDeletionInsertion(const string& sequence, ESeqType seq_type);
+
     /// Set the standard fields for a microsatellite.  This API establishes a
     /// microsatellite with a range of possible observed repeats.
     void SetMicrosatellite(const string& nucleotide_seq,
@@ -102,6 +105,23 @@ public:
     /// Make this variant a copy number variant.  NOTE: This API variant
     /// establishes a CNV with a fixed set of possible copies
     void SetCNV(const vector<TSeqPos>& observed_copies);
+
+    /// The feature represents an inversion at the specified location
+    /// The provided location should be upstream and on the opposite strand
+    void SetInversion(const CSeq_loc& other_loc);
+
+    /// The feature represents an eversion at the specified location
+    /// The provided location should be downstream and on the opposite strand
+    void SetEversion(const CSeq_loc& other_loc);
+
+    /// The feature represents a translocation event
+    /// The provided location can be anywhere; a special case exists when the
+    /// provided location is on a different chromosome, in which case the
+    /// feature is considered a transchromosomal rearrangement
+    void SetTranslocation(const CSeq_loc& other_loc);
+
+    /// Establish a uniparental disomy mark-up
+    void SetUniparentalDisomy();
 
     /// Validate that all semantic fields are correct
     void Validate();
