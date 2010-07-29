@@ -2288,7 +2288,11 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
         char delim = ':';
         for (CSeq_loc_CI it(*location);  it;  ++it) {
             CSeq_loc::TRange range = it.GetRange();
-            m_Out << delim << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
+            m_Out << delim;
+            if (it.IsSetStrand()  &&  IsReverse(it.GetStrand())) {
+                m_Out << 'c';
+            }
+            m_Out << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
             delim = ',';
         }
     }
@@ -2343,18 +2347,7 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
                                const CSeq_loc* location)
 {
-    m_Out << '>';
-    CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
-
-    if (location != NULL  &&  !location->IsWhole()
-        &&  !(m_Flags & fSuppressRange) ) {
-        char delim = ':';
-        for (CSeq_loc_CI it(*location);  it;  ++it) {
-            CSeq_loc::TRange range = it.GetRange();
-            m_Out << delim << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
-            delim = ',';
-        }
-    }
+    x_WriteSeqIds(*handle.GetBioseqCore(), location);
 
     string safe_title = m_Gen->GenerateDefline(handle);
     if ((m_Flags & fKeepGTSigns) == 0) {
