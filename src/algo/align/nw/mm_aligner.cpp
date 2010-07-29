@@ -344,7 +344,7 @@ CNWAligner::TScore CMMAligner::x_FindBestJ (
         trans_alts [1] = vFtop[i] + vEbtm[i];          // DI
         trans_alts [2] = vGtop[i] + vEbtm[i];          // GI
         trans_alts [3] = vEtop[i] + vFbtm[i];          // ID
-        TScore wg = (bFreeGapLeft2 && i == 0 || bFreeGapRight2 && i == dim -1)?
+        TScore wg = (bFreeGapLeft2 && i == 0 || ( bFreeGapRight2 && i == dim -1) )?
                     0: m_Wg;
         trans_alts [4] = vFtop[i] + vFbtm[i] - wg;     // DD
         trans_alts [5] = vGtop[i] + vFbtm[i];          // GD
@@ -530,7 +530,7 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             CFastMutexGuard guard (progress_mutex);
 #endif
             m_prg_info.m_iter_done += prg_rep_increment;
-            if( m_terminate = m_prg_callback(&m_prg_info) ) {
+            if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
                 break;
             }
         }
@@ -702,7 +702,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             CFastMutexGuard guard (progress_mutex);
 #endif
             m_prg_info.m_iter_done += prg_rep_increment;
-            if( m_terminate = m_prg_callback(&m_prg_info) ) {
+            if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
                 break;
             }
         }

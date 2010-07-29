@@ -214,7 +214,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
+        if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
 	  return 0;
 	}
     }
@@ -326,7 +326,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
-            if(m_terminate = m_prg_callback(&m_prg_info)) {
+            if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
                 break;
             }
         }
@@ -1212,7 +1212,7 @@ size_t CNWAligner::MakePattern(const size_t guide_size,
 
     vector<nwaln_mrnaseg> segs;
 
-    size_t err_idx;
+    size_t err_idx(0);
     for(size_t i = 0; i + guide_size <= m_SeqLen1; ) {
         const char* beg = m_Seq1 + i;
         const char* end = m_Seq1 + i + guide_size;

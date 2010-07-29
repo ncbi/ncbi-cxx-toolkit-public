@@ -165,7 +165,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
+        if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
 	  return 0;
 	}
     }
@@ -504,7 +504,7 @@ NW_DON_EVAL(2)
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
-            if(m_terminate = m_prg_callback(&m_prg_info)) {
+            if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
                 break;
             }
         }
@@ -719,8 +719,8 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
                 else {
                     for(unsigned char i = 0; i < splice_type_count_16; ++i) {
 
-                        if(*p2 == g_nwspl_donor[i][0] &&
-                           *(p2 + 1) == g_nwspl_donor[i][1] || i == g_topidx) {
+                        if( (*p2 == g_nwspl_donor[i][0] &&
+                             *(p2 + 1) == g_nwspl_donor[i][1]) || i == g_topidx) {
                             
                             score += m_Wi[i];
                             break;

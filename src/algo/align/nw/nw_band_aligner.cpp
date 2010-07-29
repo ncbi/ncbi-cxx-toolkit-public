@@ -69,7 +69,7 @@ void CBandAligner::SetShift(Uint1 where, size_t offset)
 {
     switch(where) {
     case 0: m_Shift = offset;  break;
-    case 1: m_Shift = -offset; break;
+    case 1: m_Shift = -(long)offset; break;
     default:
         NCBI_THROW(CAlgoAlignException, eBadParameter, 
                    "CBandAligner::SetShift(): Incorrect sequence index specified");
@@ -127,7 +127,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*fullrow;
         m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
+        if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
             return 0;
         }
     }
@@ -387,7 +387,7 @@ void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
         const size_t kOverflow (kMax_size_t - 256), kMax (kMax_size_t);
 
         const bool invalid_backtrace_data (
-            (i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) ||
+                                           ( (i1 > kOverflow && i1 != kMax) || (i2 > kOverflow && i2 != kMax) ) ||
             ((size_t)abs(m_Shift - long(i1) + long(i2))) > m_band );
 
         if(invalid_backtrace_data) {

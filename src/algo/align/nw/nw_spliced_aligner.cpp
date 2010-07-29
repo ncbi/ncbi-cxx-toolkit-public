@@ -165,7 +165,7 @@ size_t GetSplicePriority(const  char * dnr, const char* acc)
     size_t rv (0);
     if(acc[1] == 'G') {
         if(acc[0] == 'T') {
-            rv = dnr[1] == 'T' && dnr[0] == 'G';
+            rv = ( dnr[1] == 'T' && dnr[0] == 'G' );
         }
         else if(acc[0] == 'A') {
             rv = ((dnr[1] == 'A' || dnr[1] == 'G') && dnr[0] == 'G') 
