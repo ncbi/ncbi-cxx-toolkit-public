@@ -39,7 +39,7 @@
 
 /* Revision 6.250 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  250
+#define SERV_CLIENT_REVISION_MINOR  260
 
 
 /** @addtogroup ServiceSupport
