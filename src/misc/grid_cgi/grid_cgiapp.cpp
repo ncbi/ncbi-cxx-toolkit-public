@@ -93,7 +93,7 @@ string CGridCgiContext::GetHiddenFields() const
 
 void CGridCgiContext::SetJobKey(const string& job_key)
 {
-    PersistEntry("job_key", job_key);
+    DefinePersistentEntry("job_key", job_key);
 
 }
 const string& CGridCgiContext::GetJobKey(void) const
@@ -109,7 +109,7 @@ const string& CGridCgiContext::GetEntryValue(const string& entry_name) const
     return kEmptyStr;
 }
 
-void CGridCgiContext::PersistEntry(const string& entry_name)
+void CGridCgiContext::PullUpPersistentEntry(const string& entry_name)
 {
     string value = kEmptyStr;
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
@@ -129,9 +129,9 @@ void CGridCgiContext::PersistEntry(const string& entry_name)
             }
         }
     }
-    PersistEntry(entry_name, value);
+    DefinePersistentEntry(entry_name, value);
 }
-void CGridCgiContext::PersistEntry(const string& entry_name, 
+void CGridCgiContext::DefinePersistentEntry(const string& entry_name, 
                                    const string& value)
 {   
     if (value.empty()) {
@@ -246,8 +246,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         return 2;
     }
     CGridCgiContext grid_ctx(*page, ctx);
-    grid_ctx.PersistEntry("job_key");
-    grid_ctx.PersistEntry("Cancel");
+    grid_ctx.PullUpPersistentEntry("job_key");
+    grid_ctx.PullUpPersistentEntry("Cancel");
     string job_key = grid_ctx.GetEntryValue("job_key");
     try {
         try {

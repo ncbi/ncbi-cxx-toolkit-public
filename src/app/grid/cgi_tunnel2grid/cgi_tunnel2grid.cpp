@@ -179,9 +179,9 @@ string CCgiTunnel2Grid::GetPageTemplate() const
 
 void CCgiTunnel2Grid::OnBeginProcessRequest(CGridCgiContext& ctx)
 {
-    ctx.PersistEntry(kProjectParamName);
-    ctx.PersistEntry(kElapsedTime);   
-    ctx.PersistEntry(kErrorUrlParamName);
+    ctx.PullUpPersistentEntry(kProjectParamName);
+    ctx.PullUpPersistentEntry(kElapsedTime);
+    ctx.PullUpPersistentEntry(kErrorUrlParamName);
 
     vector<string>::const_iterator it;
     string project = ctx.GetEntryValue(kProjectParamName);
@@ -254,7 +254,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
     string page_templ = GetProgramDisplayName() + "_err.html";
     CHTMLPage page("Initialization Error", page_templ );
     CGridCgiContext grid_ctx(page,ctx);
-    grid_ctx.PersistEntry(kProjectParamName);
+    grid_ctx.PullUpPersistentEntry(kProjectParamName);
     string project = grid_ctx.GetEntryValue(kProjectParamName);
     if (project.empty()) {
         string mesg = "Parameter " + kProjectParamName + " is missing.";
@@ -290,7 +290,7 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 
     // "args" now contains both command line arguments and the arguments 
     // extracted from the HTTP request
-    ctx.PersistEntry(kInputParamName);
+    ctx.PullUpPersistentEntry(kInputParamName);
 
     //    if (args[kInputParamName]) {
     //        m_Input = args[kInputParamName].AsString();
@@ -323,14 +323,14 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmitter& submitter)
         os << m_Input;
 }
 
-  
+
 void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
-{   
+{
     // Render a report page
     CTime time(CTime::eCurrent);
     time_t tt = time.GetTimeT();
     string st = NStr::IntToString(tt);
-    ctx.PersistEntry(kElapsedTime,st);   
+    ctx.DefinePersistentEntry(kElapsedTime,st);
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_SUBMITTED@>");
 }
 
@@ -376,7 +376,7 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
 void CCgiTunnel2Grid::OnJobFailed(const string& msg, 
                                   CGridCgiContext& ctx)
 {
-    ctx.PersistEntry(kElapsedTime,"");   
+    ctx.DefinePersistentEntry(kElapsedTime,"");   
     // Render a error page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_FAILED@>");
 
@@ -391,7 +391,7 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
 
 void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 {
-    ctx.PersistEntry(kElapsedTime,"");   
+    ctx.DefinePersistentEntry(kElapsedTime,"");   
    // Render a job cancelation page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
@@ -402,7 +402,7 @@ void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 {
-    ctx.PersistEntry(kElapsedTime,"");   
+    ctx.DefinePersistentEntry(kElapsedTime,"");   
     // Render a page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_QUEUE_IS_BUSY@>");
 

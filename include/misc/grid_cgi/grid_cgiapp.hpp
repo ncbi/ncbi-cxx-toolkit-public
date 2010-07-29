@@ -48,7 +48,7 @@
 #include <map>
 
 /// @file grid_cgiapp.hpp
-/// NetSchedule Framework specs. 
+/// NetSchedule Framework specs.
 ///
 
 
@@ -61,7 +61,7 @@ BEGIN_NCBI_SCOPE
 
 class CGridCgiApplication;
 /////////////////////////////////////////////////////////////////////////////
-///  Grid Cgi Context
+///  Grid CGI Context
 ///  Context in which a request is processed
 ///
 class NCBI_XGRIDCGI_EXPORT CGridCgiContext
@@ -74,7 +74,7 @@ public:
     ///
     CHTMLPage&    GetHTMLPage(void)       { return m_Page; }
 
-    /// Get Sefl URL
+    /// Get Self URL
     ///
     string        GetSelfURL(void) const;
 
@@ -86,13 +86,13 @@ public:
     const string& GetJobProgressMessage(void) const
     { return m_ProgressMsg; }
 
-    /// Get a value from a cgi request. if there is no an entry with a
+    /// Get a value from a CGI request. if there is no an entry with a
     /// given name it returns an empty string.
     const string& GetEntryValue(const string& entry_name) const;
 
     /// Save this entry as a cookie add it to serf url
-    void PersistEntry(const string& entry_name);
-    void PersistEntry(const string& entry_name, const string& value);
+    void PullUpPersistentEntry(const string& entry_name);
+    void DefinePersistentEntry(const string& entry_name, const string& value);
     
     /// Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }

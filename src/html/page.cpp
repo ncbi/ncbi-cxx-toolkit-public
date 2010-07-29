@@ -49,7 +49,7 @@ extern const char* kTagEnd;
 // Tag start in the end of block definition (see page templates)
 const char* kTagStartEnd = "</@";  
 
-// Template file cahing (disabled by default)
+// Template file caching (disabled by default)
 CHTMLPage::ECacheTemplateFiles CHTMLPage::sm_CacheTemplateFiles = CHTMLPage::eCTF_Disable;
 typedef map<string, string*> TTemplateCache;
 static CSafeStaticPtr<TTemplateCache> s_TemplateCache;
@@ -590,10 +590,73 @@ static SIZE_TYPE s_Find(const string& s, const char* target,
     return p ? p - cstr : NPOS;
 }
 
+bool CHTMLPage::x_ApplyFilters(TTemplateLibFilter* filter, const char* buffer)
+{
+    bool template_applicable = true;
+
+    while (*buffer != '\0') {
+        while (isspace(*buffer))
+            ++buffer;
+
+        const char* id_begin = buffer;
+
+        for (; *buffer != '\0'; ++buffer)
+            if (*buffer == '(' || *buffer == '<' || *buffer == '{')
+                break;
+
+        if (id_begin == buffer || *buffer == '\0')
+            break;
+
+        string id(id_begin, buffer - id_begin);
+
+        char bracket_stack[sizeof(long)];
+        char* bracket_stack_pos = bracket_stack + sizeof(bracket_stack) - 1;
+
+        *bracket_stack_pos = '\0';
+
+        for (;;) {
+            char closing_bracket;
+
+            if (*buffer == '(')
+                closing_bracket = ')';
+            else if (*buffer == '<')
+                closing_bracket = '>';
+            else if (*buffer == '{')
+                closing_bracket = '}';
+            else
+                break;
+
+            if (bracket_stack_pos == bracket_stack) {
+                NCBI_THROW(CHTMLException, eUnknown,
+                    "Bracket nesting is too deep");
+            }
+
+            *--bracket_stack_pos = closing_bracket;
+            ++buffer;
+        }
+
+        const char* pattern_end;
+
+        if ((pattern_end = strstr(buffer, bracket_stack_pos)) == NULL) {
+            NCBI_THROW(CHTMLException, eUnknown,
+                    "Unterminated filter expression");
+        }
+
+        if (template_applicable && (filter == NULL ||
+                !filter->TestAttribute(id, string(buffer, pattern_end))))
+            template_applicable = false;
+
+        buffer = pattern_end + (bracket_stack +
+            sizeof(bracket_stack) - 1 - bracket_stack_pos);
+    }
+
+    return template_applicable;
+}
 
 void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                                   ETemplateIncludes includes, 
-                                  const string& file_name /* = kEmptyStr */)
+                                  const string& file_name /* = kEmptyStr */,
+                                  TTemplateLibFilter* filter)
 {
     string  templbuf("\n");
     string* pstr      = &templbuf;
@@ -749,6 +812,13 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             // Tag found
             name = pstr->substr(name_start, name_end - name_start);
         }
+        bool template_applicable = true;
+        string::size_type space_pos;
+        if ((space_pos = name.find_first_of(" \t")) != string::npos) {
+            template_applicable =
+                x_ApplyFilters(filter, name.c_str() + space_pos + 1);
+            name.erase(space_pos);
+        }
         SIZE_TYPE tag_end = name_end + te_size;
 
         // Find close tags for "name"
@@ -769,7 +839,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             continue;
         }
 
-        // Is it a multi-line template? Remove redundand line breaks.
+        // Is it a multi-line template? Remove redundant line breaks.
         SIZE_TYPE pos = pstr->find_first_not_of(" ", tag_end);
         if (pos != NPOS  &&  (*pstr)[pos] == '\n') {
             tag_end = pos + 1;
@@ -783,7 +853,8 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
         string subtemplate = pstr->substr(tag_end, last - tag_end);
 
         // Add sub-template resolver
-        AddTagMap(name, CreateTagMapper(new CHTMLText(subtemplate)));
+        if (template_applicable)
+            AddTagMap(name, CreateTagMapper(new CHTMLText(subtemplate)));
 
         // Find next
         tag_start = s_Find(*pstr, kTagStartBOL.c_str(),
@@ -793,13 +864,14 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
 }
 
 
-void CHTMLPage::LoadTemplateLibFile(const string& template_file)
+void CHTMLPage::LoadTemplateLibFile(const string& template_file,
+                                    TTemplateLibFilter* filter)
 {
     // We will open file in x_LoadTemplateLib just before reading from it.
     // This allow to minimize stat() calls when template caching is enabled.
     CNcbiIfstream is;
     x_LoadTemplateLib(is, 0 /* size - determine later */,
-                      eAllowIncludes, template_file);
+                      eAllowIncludes, template_file, filter);
 }
 
     

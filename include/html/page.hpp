@@ -212,13 +212,37 @@ public:
     void SetTemplateBuffer(const void*    template_buffer, size_t size);
     void SetTemplateStream(istream& template_stream);
 
+    /// Interface for a filter, which must be passed to one the
+    /// LoadTemplateLib methods to select relevant parts of the loaded
+    /// template library.
+    ///
+    /// The TestAttribute() method is called for each attribute test
+    /// defined in the template library.
+    typedef class CTemplateLibFilter
+    {
+    public:
+        /// This method is called by LoadTemplateLib methods to check
+        /// whether a template within library should be loaded.
+        /// If the method returns true, the template is loaded,
+        /// otherwise it's skipped.
+        virtual bool TestAttribute(
+            const string& attr_name,
+            const string& test_pattern) = 0;
+
+        virtual ~CTemplateLibFilter() {}
+    } TTemplateLibFilter;
+
     /// Load template library.
     ///
-    /// Automaticaly map all sub-templates from loaded library.
-    void LoadTemplateLibFile  (const string&  template_file);
-    void LoadTemplateLibString(const char*    template_string);
-    void LoadTemplateLibBuffer(const void*    template_buffer, size_t size);
-    void LoadTemplateLibStream(istream& template_stream);
+    /// Automatically map all sub-templates from the loaded library.
+    void LoadTemplateLibFile  (const string&  template_file,
+        TTemplateLibFilter* filter = NULL);
+    void LoadTemplateLibString(const char*    template_string,
+        TTemplateLibFilter* filter = NULL);
+    void LoadTemplateLibBuffer(const void*    template_buffer, size_t size,
+        TTemplateLibFilter* filter = NULL);
+    void LoadTemplateLibStream(istream& template_stream,
+        TTemplateLibFilter* filter = NULL);
 
     /// Template file caching state.
     enum ECacheTemplateFiles {
@@ -280,6 +304,8 @@ private:
     CNCBINode* x_PrintTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                CNCBINode::TMode mode);
 
+    bool x_ApplyFilters(TTemplateLibFilter* filter, const char* buffer);
+
     // Allow/disable processing of #include directives for template libraries.
     // eAllowIncludes used by default for LoadTemplateLibFile().
     enum ETemplateIncludes{
@@ -303,9 +329,10 @@ private:
     /// @sa
     ///   LoadTemplateLibFile(), LoadTemplateLibString(),
     ///   LoadTemplateLibBuffer(), LoadTemplateLibStream()
-    void x_LoadTemplateLib(CNcbiIstream& is, size_t size = 0,
-                           ETemplateIncludes includes  = eSkipIncludes,
-                           const string&     file_name = kEmptyStr);
+    void x_LoadTemplateLib(CNcbiIstream& is, size_t size /*= 0*/,
+                           ETemplateIncludes includes    /*= eSkipIncludes*/,
+                           const string&     file_name   /*= kEmptyStr*/,
+                           TTemplateLibFilter* filter);
 
 private:
     /// Generate page internal name on the base of template source.
@@ -417,25 +444,28 @@ inline void CHTMLPage::SetTemplateStream(istream& template_stream)
 }
 
 
-inline void CHTMLPage::LoadTemplateLibString(const char* template_string)
+inline void CHTMLPage::LoadTemplateLibString(const char* template_string,
+                                             TTemplateLibFilter* filter)
 {
     size_t size = strlen(template_string);
     CNcbiIstrstream is(template_string, size);
-    x_LoadTemplateLib(is, size);
+    x_LoadTemplateLib(is, size, eSkipIncludes, kEmptyStr, filter);
 }
 
 
 inline void CHTMLPage::LoadTemplateLibBuffer(const void* template_buffer,
-                                             size_t size)
+                                             size_t size,
+                                             TTemplateLibFilter* filter)
 {
-    CNcbiIstrstream is((char*)template_buffer, (int)size);
-    x_LoadTemplateLib(is, size);
+    CNcbiIstrstream is((char*)template_buffer, (int) size);
+    x_LoadTemplateLib(is, size, eSkipIncludes, kEmptyStr, filter);
 }
 
 
-inline void CHTMLPage::LoadTemplateLibStream(istream& template_stream)
+inline void CHTMLPage::LoadTemplateLibStream(istream& template_stream,
+                                             TTemplateLibFilter* filter)
 {
-    x_LoadTemplateLib(template_stream);
+    x_LoadTemplateLib(template_stream, 0, eSkipIncludes, kEmptyStr, filter);
 }
 
 
