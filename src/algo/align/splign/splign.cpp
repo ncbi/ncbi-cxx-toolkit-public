@@ -1282,7 +1282,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     
         // shift hits so that they originate from zero
         NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
-            (*ii)->Shift(-qmin, -smin);
+            (*ii)->Shift(-(Int4)qmin, -(Int4)smin);
         }
 
         x_SplitQualifyingHits(phitrefs);
@@ -2466,8 +2466,8 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
 
             case 'X':
                 qpos += qinc;
-                if( qstrand && cds_start <= qpos && qpos < cds_stop ||
-                    !qstrand && cds_start >= qpos && qpos > cds_stop )
+                if( (qstrand && cds_start <= qpos && qpos < cds_stop) ||
+                    (!qstrand && cds_start >= qpos && qpos > cds_stop) )
                 {
                     frame = kFrame_lost;
                     ++aln_length_cds;
