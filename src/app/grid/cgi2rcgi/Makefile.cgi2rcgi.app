@@ -6,7 +6,7 @@
 APP = cgi2rcgi
 SRC = cgi2rcgi
 
-LIB = xconnserv xthrserv xcgi xhtml xregexp xconnect xutil xncbi
+LIB = xconnserv xthrserv xcgi xhtml xregexp $(PCRE_LIB) xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 WATCHERS = kazimird
