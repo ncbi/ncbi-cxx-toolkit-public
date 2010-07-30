@@ -2270,9 +2270,10 @@ void CFastaOstream::Write(const CSeq_entry_Handle& handle,
 
 
 void CFastaOstream::Write(const CBioseq_Handle& handle,
-                          const CSeq_loc* location)
+                          const CSeq_loc* location,
+                          const string& custom_title)
 {
-    WriteTitle(handle, location);
+    WriteTitle(handle, location, custom_title);
     WriteSequence(handle, location);
 }
 
@@ -2299,7 +2300,8 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
 }
 
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
-                                    CScope* scope)
+                                    CScope* scope,
+                                    const string& custom_title)
 {
     sequence::TGetTitleFlags title_flags = 0;
     if ((m_Flags & fNoExpensiveOps) != 0) {
@@ -2307,7 +2309,9 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     }
 
     string safe_title;
-    if (scope) {
+    if ( !custom_title.empty() ) {
+        safe_title = custom_title;
+    } else if (scope) {
         CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
         safe_title = m_Gen->GenerateDefline(bsh);
     } else {
@@ -2331,25 +2335,28 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
 
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
-                               bool no_scope)
+                               bool no_scope,
+                               const string& custom_title)
 {
     if ( no_scope && ! location ) {
         x_WriteSeqIds(bioseq, NULL);
-        x_WriteSeqTitle(bioseq, NULL);
+        x_WriteSeqTitle(bioseq, NULL, custom_title);
     }
     else {
         CScope scope(*CObjectManager::GetInstance());
-        WriteTitle(scope.AddBioseq(bioseq), location);
+        WriteTitle(scope.AddBioseq(bioseq), location, custom_title);
     }
 }
 
 
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
-                               const CSeq_loc* location)
+                               const CSeq_loc* location,
+                               const string& custom_title)
 {
     x_WriteSeqIds(*handle.GetBioseqCore(), location);
 
-    string safe_title = m_Gen->GenerateDefline(handle);
+    string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
+                         : custom_title);
     if ((m_Flags & fKeepGTSigns) == 0) {
         safe_title = NStr::Replace(safe_title, ">", "_");
     }
@@ -2598,15 +2605,16 @@ void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location)
 }
 
 
-void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location, bool no_scope )
+void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location,
+                          bool no_scope, const string& custom_title )
 {
     if (location || !no_scope) {
         CScope scope(*CObjectManager::GetInstance());
-        Write(scope.AddBioseq(seq), location);
+        Write(scope.AddBioseq(seq), location, custom_title);
     } else {
         /// write our title
         x_WriteSeqIds(seq, NULL);
-        x_WriteSeqTitle(seq, NULL);
+        x_WriteSeqTitle(seq, NULL, custom_title);
 
         /// write the sequence
         TMSMap masking_state;

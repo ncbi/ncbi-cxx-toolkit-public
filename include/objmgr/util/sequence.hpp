@@ -679,21 +679,26 @@ public:
     CFastaOstream(CNcbiOstream& out);
     virtual ~CFastaOstream();
 
-    /// Unspecified locations designate complete sequences
+    /// Unspecified locations designate complete sequences;
+    /// non-empty custom titles override the usual title determination logic
     virtual void Write        (const CSeq_entry_Handle& handle,
                                const CSeq_loc* location = 0);
     virtual void Write        (const CBioseq_Handle& handle,
-                               const CSeq_loc* location = 0);
+                               const CSeq_loc* location = 0,
+                               const string& custom_title = kEmptyStr);
     virtual void WriteTitle   (const CBioseq_Handle& handle,
-                               const CSeq_loc* location = 0);
+                               const CSeq_loc* location = 0,
+                               const string& custom_title = kEmptyStr);
     virtual void WriteSequence(const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0);
 
     /// These versions may set up a temporary object manager scope
     /// In the common case of a raw bioseq, no scope is needed
     void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
-    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=false );
-    void WriteTitle(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=false );
+    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0,
+               bool no_scope = false,   const string& custom_title = kEmptyStr);
+    void WriteTitle(const CBioseq& seq, const CSeq_loc* location = 0,
+                    bool no_scope=false, const string& custom_title=kEmptyStr);
 
     /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
@@ -732,7 +737,8 @@ private:
     void x_WriteSeqIds  (const CBioseq& bioseq,
                          const CSeq_loc* location);
     void x_WriteSeqTitle(const CBioseq& bioseq,
-                         CScope* scope);
+                         CScope* scope,
+                         const string& custom_title);
 
     CConstRef<CSeq_loc> x_MapMask(CSeq_loc_Mapper& mapper, const CSeq_loc& mask,
                                   const CSeq_id* base_seq_id, CScope* scope);
