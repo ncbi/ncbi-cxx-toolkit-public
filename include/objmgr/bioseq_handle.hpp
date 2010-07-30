@@ -104,6 +104,10 @@ public:
     CConstRef<CSeq_id> GetSeqId(void) const;
     /// Get id used to obtain this bioseq handle
     CConstRef<CSeq_id> GetInitialSeqIdOrNull(void) const;
+
+    /// Find a non-local ID if present, consulting assembly details if
+    /// all IDs for the overall sequence are local.
+    CConstRef<CSeq_id> GetNonLocalIdOrNull(void) const;
     
     /// Get unique object id
     const CBioObjectId& GetBioObjectId(void) const;
@@ -754,6 +758,13 @@ inline
 const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 {
     return m_Handle_Seq_id;
+}
+
+
+inline
+CConstRef<CSeq_id> CBioseq_Handle::GetNonLocalIdOrNull(void) const
+{
+    return CConstRef<CSeq_id>(GetBioseqCore()->GetNonLocalId());
 }
 
 

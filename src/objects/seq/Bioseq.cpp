@@ -55,9 +55,12 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_hist.hpp>
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -255,6 +258,40 @@ const CSeq_id* CBioseq::GetFirstId() const
     }
 
     return *GetId().begin();
+}
+
+const CSeq_id* CBioseq::GetNonLocalId() const
+{
+    CRef<CSeq_id> id = FindBestChoice(GetId(), &CSeq_id::BestRank);
+    if (id.NotEmpty()  &&  !id->IsLocal()) {
+        return &*id;
+    }
+
+    const CSeq_inst& inst = GetInst();
+    if ( !inst.CanGetHist()  ||  !inst.GetHist().CanGetAssembly() ) {
+        return NULL;
+    }
+
+    ITERATE (CSeq_hist::TAssembly, it, inst.GetHist().GetAssembly() ) {
+        try {
+            if ((*it)->CheckNumRows() != 2) {
+                continue;
+            }
+        } catch (CSeqalignException&) { // fails basic validation; ignore
+            continue;
+        }
+
+        // XXX - check that local ID matches id?
+        const CSeq_id& id1 = (*it)->GetSeq_id(0);
+        const CSeq_id& id2 = (*it)->GetSeq_id(1);
+        if (id1.IsLocal()  &&  !id2.IsLocal()) {
+            return &id2;
+        } else if (id2.IsLocal()  &&  !id1.IsLocal()) {
+            return &id1;
+        }
+    }
+
+    return NULL;
 }
 
 bool CBioseq::IsNa(void) const
