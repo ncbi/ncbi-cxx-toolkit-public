@@ -185,6 +185,7 @@ public:
     // CDD-specific data accessors
     bool IsCDD(void) const;
     bool IsCDDInMime(void) const;
+    bool HasStructuredMaster(void) const;
     const std::string& GetCDDName(void) const;
     bool SetCDDName(const std::string& name);
     const std::string& GetCDDDescription(void) const;

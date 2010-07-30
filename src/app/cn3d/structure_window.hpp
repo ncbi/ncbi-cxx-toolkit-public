@@ -57,6 +57,7 @@ BEGIN_SCOPE(Cn3D)
 
 class Cn3DGLCanvas;
 class CDDAnnotateDialog;
+class IBISAnnotateDialog;
 class MultiTextDialog;
 class CDDRefDialog;
 class CDDBookRefDialog;
@@ -184,6 +185,7 @@ public:
             MID_EDIT_CDD_REFERENCES,
             MID_EDIT_CDD_BOOK_REFERENCES,
             MID_ANNOT_CDD,
+            MID_ANNOT_IBIS,
             MID_CDD_REJECT_SEQ,
             MID_CDD_SHOW_REJECTS,
         // Messaging menu (only when file messenger specified on command line)
@@ -202,6 +204,7 @@ public:
     void ShowCDDAnnotations(void);
     void ShowCDDReferences(void);
     void ShowCDDBookReferences(void);
+    void ShowIBISAnnotations(void);
 
     void SetRenderingMenuFlag(int which);
     void SetColoringMenuFlag(int which);
@@ -210,6 +213,7 @@ private:
 
     // non-modal dialogs owned by this object
     CDDAnnotateDialog *cddAnnotateDialog;
+    IBISAnnotateDialog *ibisAnnotateDialog;
     MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
     CDDRefDialog *cddRefDialog;
     CDDBookRefDialog *cddBookRefDialog;

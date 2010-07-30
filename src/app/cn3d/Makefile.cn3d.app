@@ -18,6 +18,7 @@ SRC =	aaa_dummy_pch \
 	bond \
 	cdd_annot_dialog \
 	cdd_book_ref_dialog \
+	cdd_ibis_annot_dialog \
 	cdd_ref_dialog \
 	cdd_splash_dialog \
 	chemical_graph \

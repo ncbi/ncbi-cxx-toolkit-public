@@ -1140,6 +1140,7 @@ bool StructureSet::SetCDDNotes(const StructureSet::TextLines& lines) { return da
 ncbi::objects::CCdd_descr_set * StructureSet::GetCDDDescrSet(void) { return dataManager->GetCDDDescrSet(); }
 ncbi::objects::CAlign_annot_set * StructureSet::GetCDDAnnotSet(void) { return dataManager->GetCDDAnnotSet(); }
 
+bool StructureSet::HasStructuredMaster(void) const { return (alignmentSet && alignmentSet->master && alignmentSet->master->identifier->HasStructure()); }
 
 
 ///// StructureObject stuff /////

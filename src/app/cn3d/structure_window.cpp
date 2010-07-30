@@ -70,6 +70,7 @@
 #include "show_hide_dialog.hpp"
 #include "cn3d_tools.hpp"
 #include "cdd_annot_dialog.hpp"
+#include "cdd_ibis_annot_dialog.hpp"
 #include "preferences_dialog.hpp"
 #include "cdd_ref_dialog.hpp"
 #include "cdd_book_ref_dialog.hpp"
@@ -155,7 +156,7 @@ END_EVENT_TABLE()
 
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE),
-    glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
+    glCanvas(NULL), cddAnnotateDialog(NULL), ibisAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
     cddRefDialog(NULL), cddBookRefDialog(NULL), cddOverview(NULL),
     spinIncrement(3.0), helpController(NULL), helpConfig(NULL),
     fileMessagingManager("Cn3D"), fileMessenger(NULL)
@@ -331,6 +332,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
 //    menu->Enable(MID_EDIT_CDD_BOOK_REFERENCES, !readOnly);
     menu->Append(MID_ANNOT_CDD, "Edit &Annotations");
     menu->Enable(MID_ANNOT_CDD, !readOnly);
+    menu->Append(MID_ANNOT_IBIS, "Edit &IBIS Annotations");
+    menu->Enable(MID_ANNOT_IBIS, !readOnly);
     menu->AppendSeparator();
     menu->Append(MID_CDD_REJECT_SEQ, "Re&ject Sequence");
     menu->Enable(MID_CDD_REJECT_SEQ, !readOnly);
@@ -979,6 +982,7 @@ void StructureWindow::DialogDestroyed(const MultiTextDialog *destroyed)
 void StructureWindow::DestroyNonModalDialogs(void)
 {
     if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
+    if (ibisAnnotateDialog) ibisAnnotateDialog->Destroy();
     if (cddNotesDialog) cddNotesDialog->DestroyDialog();
     if (cddDescriptionDialog) cddDescriptionDialog->DestroyDialog();
     if (cddRefDialog) cddRefDialog->Destroy();
@@ -1045,6 +1049,14 @@ void StructureWindow::ShowCDDAnnotations(void)
         cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
     cddAnnotateDialog->Raise();
     cddAnnotateDialog->Show(true);
+}
+
+void StructureWindow::ShowIBISAnnotations(void)
+{
+    if (!ibisAnnotateDialog)
+        ibisAnnotateDialog = new IBISAnnotateDialog(this, &ibisAnnotateDialog, glCanvas->structureSet);
+    ibisAnnotateDialog->Raise();
+    ibisAnnotateDialog->Show(true);
 }
 
 void StructureWindow::ShowCDDReferences(void)
@@ -1114,6 +1126,10 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
 
         case MID_ANNOT_CDD:
             ShowCDDAnnotations();
+            break;
+
+        case MID_ANNOT_IBIS:
+            ShowIBISAnnotations();
             break;
 
         case MID_CDD_SHOW_REJECTS:
@@ -1620,6 +1636,12 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
+
+    //  Disable IBIS annotations when there's not a structured master.
+    if (glCanvas->structureSet->IsCDD() && !glCanvas->structureSet->HasStructuredMaster()) {
+        menuBar->FindItem(MID_ANNOT_IBIS)->Enable(false);
+    }
+
     glCanvas->Refresh(false);
     if (!noAlignmentWindow && glCanvas->structureSet->alignmentManager)
         glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);
