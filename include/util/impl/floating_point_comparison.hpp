@@ -253,7 +253,7 @@ struct check_is_small_t {
 };
 
 namespace {
-check_is_small_t check_is_small;
+check_is_small_t check_is_small; /* NCBI_FAKE_WARNING */
 }
 
 //____________________________________________________________________________//
