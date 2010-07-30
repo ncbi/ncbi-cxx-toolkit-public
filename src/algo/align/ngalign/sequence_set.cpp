@@ -34,6 +34,7 @@
 #include <math.h>
 #include <algo/align/ngalign/sequence_set.hpp>
 
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -52,6 +53,7 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 #include <algo/dustmask/symdust.hpp>
 
@@ -65,6 +67,22 @@ CBlastDbSet::CBlastDbSet(const string& BlastDb) : m_BlastDb(BlastDb), m_Filter(-
     ;
 }
 
+void CBlastDbSet::SetNegativeGiList(const vector<int>& GiList)
+{
+    m_NegativeGiList.Reset(new CInputGiList);
+    ITERATE(vector<int>, GiIter, GiList) {
+        m_NegativeGiList->AppendGi(*GiIter);
+    }
+}
+
+
+void CBlastDbSet::SetPositiveGiList(const vector<int>& GiList)
+{
+    m_PositiveGiList.Reset(new CInputGiList);
+    ITERATE(vector<int>, GiIter, GiList) {
+        m_PositiveGiList->AppendGi(*GiIter);
+    }
+}
 
 
 CRef<IQueryFactory>
@@ -100,9 +118,18 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
     CRef<CSearchDatabase> SearchDb;
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
-    //if(m_Filter != -1) {
-        SearchDb->SetFilteringAlgorithm(m_Filter);
-    //}
+    if(m_Filter != -1) {
+        SearchDb->SetFilteringAlgorithm(m_Filter, DB_SOFT_MASK);
+    }
+
+    if(!m_NegativeGiList.IsNull() && !m_NegativeGiList->NotEmpty()) {
+        SearchDb->SetNegativeGiList(m_NegativeGiList);
+    }
+
+    if(!m_PositiveGiList.IsNull() && !m_PositiveGiList->NotEmpty()) {
+        SearchDb->SetGiList(m_PositiveGiList);
+    }
+
 
     CRef<CLocalDbAdapter> Result;
     Result.Reset(new CLocalDbAdapter(*SearchDb));
@@ -127,6 +154,29 @@ void CSeqIdListSet::SetSeqMasker(CSeqMasker* SeqMasker)
 {
     m_SeqMasker = SeqMasker;
 }
+
+
+void CSeqIdListSet::GetGiList(vector<int>& GiList, CScope& Scope,
+                            const CAlignResultsSet& Alignments, int Threshold)
+{
+    ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
+
+        if(Alignments.QueryExists(**IdIter)) {
+            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(**IdIter);
+            int BestRank = QuerySet->GetBestRank();
+            if(BestRank != -1 && BestRank <= Threshold) {
+                continue;
+            }
+        }
+
+        int Gi;
+        Gi = sequence::GetGiForId(**IdIter, Scope);
+        if(Gi != 0) {
+            GiList.push_back(Gi);
+        }
+    }
+}
+
 
 
 CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
@@ -192,13 +242,12 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
     TSeqLocVector FastaLocVec;
     ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
 
-        if(m_SeqMasker == NULL) {
+        if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
             CRef<CSeq_loc> WholeLoc(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
             SSeqLoc WholeSLoc(*WholeLoc, Scope);
             FastaLocVec.push_back(WholeSLoc);
         } else {
-
             CRef<CSeq_loc> WholeLoc(new CSeq_loc), MaskLoc;
             WholeLoc->SetWhole().Assign(**IdIter);
 
