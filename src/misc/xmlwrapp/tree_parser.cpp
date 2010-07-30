@@ -171,7 +171,7 @@ xml::tree_parser::tree_parser (const char *name, bool allow_exceptions) {
     }
 
     ap.release();
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exceptions) {
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
@@ -203,7 +203,7 @@ xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exce
 
     xmlFreeParserCtxt(ctxt);
     ap.release();
-}
+} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::tree_parser::~tree_parser (void) {
     delete pimpl_;

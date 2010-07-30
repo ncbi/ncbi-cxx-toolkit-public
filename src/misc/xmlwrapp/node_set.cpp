@@ -103,12 +103,18 @@ namespace xml
     const char*     kAdvError   = "advancing non initialised or out of range iterator";
 
     node_set::node_set() :
-        pimpl_( new impl::nset_impl(0, this) )
-    {}
+        pimpl_(NULL)
+    {
+        /* Avoid compiler warnings */
+        pimpl_ = new impl::nset_impl(0, this);
+    }
 
     node_set::node_set(void* result_set) :
-        pimpl_( new impl::nset_impl(result_set, this) )
-    {}
+        pimpl_(NULL)
+    {
+        /* Avoid compiler warnings */
+        pimpl_ = new impl::nset_impl(result_set, this);
+    }
 
     node_set::node_set(const node_set& other) :
         pimpl_(other.pimpl_)
