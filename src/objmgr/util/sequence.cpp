@@ -2289,11 +2289,14 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
         char delim = ':';
         for (CSeq_loc_CI it(*location);  it;  ++it) {
             CSeq_loc::TRange range = it.GetRange();
+            TSeqPos from = range.GetFrom() + 1, to = range.GetTo() + 1;
+            _ASSERT(from <= to);
             m_Out << delim;
             if (it.IsSetStrand()  &&  IsReverse(it.GetStrand())) {
-                m_Out << 'c';
+                m_Out << 'c' << to << '-' << from;
+            } else {
+                m_Out << from << '-' << to;
             }
-            m_Out << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
             delim = ',';
         }
     }
