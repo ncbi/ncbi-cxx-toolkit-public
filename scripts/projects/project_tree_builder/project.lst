@@ -8,4 +8,4 @@ util/xregexp$
 serial$
 serial/impl$
 serial/datatool$
-build-system/project_tree_builder$
+build-system/project_tree_builder

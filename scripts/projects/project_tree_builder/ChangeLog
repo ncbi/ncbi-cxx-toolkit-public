@@ -117,4 +117,7 @@ version 2.7.1
 Corrected file dependencies in Xcode project targets which use
 ASN.1 data specifications
 
+July 30, 2010
+version 3.0.0
+Added support of MSVC 2010
 
