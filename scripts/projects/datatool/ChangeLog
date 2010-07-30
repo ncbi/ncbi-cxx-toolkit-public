@@ -27,3 +27,8 @@ July 08, 2010
 version 2.1.1
 Enhanced processing of type extension definitions.
 Added processing of anySimpleType element type.
+
+July 30, 2010
+version 2.2.0
+Added possibility to use packed enum types in generated code.
+Corrected code generation to avoid identical names of nested classes.
