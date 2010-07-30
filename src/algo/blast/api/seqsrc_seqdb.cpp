@@ -53,20 +53,23 @@ USING_SCOPE(blast);
 struct SSeqDB_SeqSrc_Data {
     /// Constructor.
     SSeqDB_SeqSrc_Data()
+        : copied(false)
     {
     }
     
     /// Constructor.
-    SSeqDB_SeqSrc_Data(CSeqDB * ptr, int algo_id)
+    SSeqDB_SeqSrc_Data(CSeqDB * ptr, int id, int type)
         : seqdb((CSeqDBExpert*) ptr), 
-          algorithm_id(algo_id)
+          mask_algo_id(id),
+          mask_type(type),
+          copied(false)
     {
     }
     
     /// Make a copy of this object, sharing the same SeqDB object.
     SSeqDB_SeqSrc_Data * clone()
     {
-        return new SSeqDB_SeqSrc_Data(&* seqdb, algorithm_id);
+        return new SSeqDB_SeqSrc_Data(&* seqdb, mask_algo_id, mask_type);
     }
     
     /// Convenience to allow datap->method to use SeqDB methods.
@@ -86,8 +89,10 @@ struct SSeqDB_SeqSrc_Data {
     /// SeqDB object.
     CRef<CSeqDBExpert> seqdb;
     
-    /// Algorithm ID for mask data fetching.
-    int algorithm_id;
+    /// Algorithm ID and type for mask data fetching.
+    int mask_algo_id;
+    int mask_type;
+    bool copied;
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -221,7 +226,6 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 {
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
-    Boolean buffer_allocated;
     
     if (!seqdb_handle || !args)
         return BLAST_SEQSRC_ERROR;
@@ -231,6 +235,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     CSeqDBExpert & seqdb = **datap;
     
     oid = args->oid;
+
+    datap->copied = false;
     
     // If we are asked to check for OID exclusion, and if the database
     // has a GI list, then we check whether all the seqids have been
@@ -245,17 +251,16 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
                 return BLAST_SEQSRC_ERROR;
             }
         }
+    
+        if ( args->encoding == eBlastEncodingNucleotide 
+          || args->encoding == eBlastEncodingNcbi4na 
+          || datap->mask_type == DB_MASK_HARD) datap->copied = true;
     }
-    
-    EBlastEncoding encoding = args->encoding;
-    has_sentinel_byte = (encoding == eBlastEncodingNucleotide);
-    
-    buffer_allocated = 
-       (encoding == eBlastEncodingNucleotide || encoding == eBlastEncodingNcbi4na);
+
+    has_sentinel_byte = (args->encoding == eBlastEncodingNucleotide);
     
     /* free buffers if necessary */
-    if (args->seq)
-        BlastSequenceBlkClean(args->seq);
+    if (args->seq) BlastSequenceBlkClean(args->seq);
     
     /* This occurs if the pre-selected partial sequence in the traceback stage
      * was too small to perform the traceback. Only do this for nucleotide
@@ -265,49 +270,45 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     }
     
     const char *buf;
-    if (!buffer_allocated) {
-        len = seqdb.GetSequence(oid, &buf);
-    } else {
-        len = seqdb.GetAmbigSeq(oid, &buf, has_sentinel_byte);
-    }
+    len = (datap->copied) ?
+          seqdb.GetAmbigSeqAlloc(oid, const_cast<char **>(&buf), has_sentinel_byte, eMalloc) :
+          seqdb.GetSequence(oid, &buf);
     
-    if (len <= 0)
-        return BLAST_SEQSRC_ERROR;
+    if (len <= 0) return BLAST_SEQSRC_ERROR;
     
-    BlastSetUp_SeqBlkNew((Uint1*)buf, len, &args->seq, 
-                         buffer_allocated);
+    BlastSetUp_SeqBlkNew((Uint1*)buf, len, &args->seq, datap->copied);
     
     /* If there is no sentinel byte, and buffer is allocated, i.e. this is
        the traceback stage of a translated search, set "sequence" to the same 
        position as "sequence_start". */
-    if (buffer_allocated && !has_sentinel_byte)
-       args->seq->sequence = args->seq->sequence_start;
+    if (datap->copied && !has_sentinel_byte)
+        args->seq->sequence = args->seq->sequence_start;
     
     /* For preliminary stage, even though sequence buffer points to a memory
        mapped location, we still need to call ReleaseSequence. This can only be
        guaranteed by making the engine believe tat sequence is allocated.
     */
-    if (!buffer_allocated)
-        args->seq->sequence_allocated = TRUE;
+    if (!datap->copied) args->seq->sequence_allocated = TRUE;
     
     args->seq->oid = oid;
 
-    // Test should be whether the list of algorithm ids is null or not
-    
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    if ( datap->algorithm_id != -1 ) {
+    if ( datap->mask_algo_id != -1 ) {
         CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
-        seqdb.GetMaskData(oid, datap->algorithm_id, ranges);
+        seqdb.GetMaskData(oid, datap->mask_algo_id, ranges);
+
         if (!ranges.empty()) {
-            if (BlastSeqBlkSetSeqRanges(args->seq, 
+
+            if (args->check_oid_exclusion && datap->mask_type == DB_MASK_HARD) {
+                // TODO do hard mask in traceback stage
+                
+            } else if (BlastSeqBlkSetSeqRanges(args->seq, 
                                 (SSeqRange*) ranges.get_data(),
-                                ranges.size() + 1, false, DB_MASK_SOFT) != 0) {
+                                ranges.size() + 1, false, datap->mask_type) != 0) {
                 return BLAST_SEQSRC_ERROR;
             }
-        } else {
-            args->seq->num_seq_ranges = 0;
-        }
+        } 
     }
 #endif
     
@@ -322,6 +323,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 static void
 s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 {
+    TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
+    
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
 
     _ASSERT(seqdb_handle);
@@ -329,12 +332,14 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     _ASSERT(args->seq);
 
     if (args->seq->sequence_start_allocated) {
-        seqdb.RetAmbigSeq((const char**)&args->seq->sequence_start);
+        ASSERT (datap->copied);
+        sfree(args->seq->sequence_start);
         args->seq->sequence_start_allocated = FALSE;
         args->seq->sequence_start = NULL;
     }
     if (args->seq->sequence_allocated) {
-        seqdb.RetSequence((const char**)&args->seq->sequence);
+        if (datap->copied) sfree(args->seq->sequence);
+        else seqdb.RetSequence((const char**)&args->seq->sequence);
         args->seq->sequence_allocated = FALSE;
         args->seq->sequence = NULL;
     }
@@ -470,10 +475,10 @@ public:
     /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0,
-                     int filtering_algorithm = -1)
+                     Int4 mask_algo_id = -1, Int4 mask_type = DB_MASK_NONE)
         : m_DbName(db), m_IsProtein(is_prot), 
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid),
-          m_FilteringAlgorithm(filtering_algorithm)
+          m_MaskAlgoId(mask_algo_id), m_MaskType(mask_type)
     {}
 
     /// Getter functions for the private fields
@@ -486,7 +491,8 @@ public:
     Uint4 GetFinalOid() const { return m_FinalDbSeq; }
     /// Returns the default filtering algorithm to use with sequence data
     /// extracted from this BlastSeqSrc
-    int GetFilteringAlgorithm() const { return m_FilteringAlgorithm; }
+    Int4 GetMaskAlgoId() const { return m_MaskAlgoId; }
+    Int4 GetMaskType() const { return m_MaskType; }
 
 private:
     string m_DbName;        ///< Database name
@@ -494,7 +500,8 @@ private:
     Uint4 m_FirstDbSeq;     ///< Ordinal id of the first sequence to search
     Uint4 m_FinalDbSeq;     ///< Ordinal id of the last sequence to search
     /// filtering algorithm ID to use when retrieving sequence data
-    int m_FilteringAlgorithm;
+    Int4 m_MaskAlgoId;
+    Int4 m_MaskType;
 };
 
 extern "C" {
@@ -612,7 +619,8 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         datap->seqdb->SetIterationRange(seqdb_args->GetFirstOid(),
                                         seqdb_args->GetFinalOid());
         
-        datap->algorithm_id = seqdb_args->GetFilteringAlgorithm();
+        datap->mask_algo_id = seqdb_args->GetMaskAlgoId();
+        datap->mask_type = seqdb_args->GetMaskType();
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, 
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
@@ -636,12 +644,12 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                  Uint4 first_seq, Uint4 last_seq,
-                 int filtering_algorithm /* = -1 */)
+                 Int4 mask_algo_id, Int4 mask_type)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
     CSeqDbSrcNewArgs seqdb_args(dbname, is_prot, first_seq, last_seq,
-                                filtering_algorithm);
+                                mask_algo_id, mask_type);
 
     bssn_info.constructor = &s_SeqDbSrcNew;
     bssn_info.ctor_argument = (void*) &seqdb_args;
@@ -651,12 +659,13 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
 
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
-                 int filtering_algorithm /* = -1 */)
+                     Int4 mask_algo_id,
+                     Int4 mask_type)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc * seq_src = NULL;
 
-    TSeqDBData data(seqdb, filtering_algorithm);
+    TSeqDBData data(seqdb, mask_algo_id, mask_type);
 
     bssn_info.constructor = & s_SeqDbSrcSharedNew;
     bssn_info.ctor_argument = (void*) & data;

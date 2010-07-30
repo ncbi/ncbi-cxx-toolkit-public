@@ -373,7 +373,8 @@ s_ImportDatabase(const CBlast4_subject& subj,
 
     if (opts_builder.HasDbFilteringAlgorithmId()) {
         int algo_id = opts_builder.GetDbFilteringAlgorithmId();
-        search_db->SetFilteringAlgorithm(algo_id);
+        // TODO:  should we support hard masking here at all?
+        search_db->SetFilteringAlgorithm(algo_id, DB_MASK_SOFT);
     }
 
     db_args->SetSearchDatabase(search_db);

@@ -466,6 +466,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         memset((void*) &seq_arg, 0, sizeof(seq_arg));
         seq_arg.oid = hsp_list->oid;
         seq_arg.encoding = encoding;
+        seq_arg.check_oid_exclusion = TRUE;
         status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
         ASSERT(status == 0);
     }
@@ -962,6 +963,7 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
 
         memset((void*) &seq_info->seq_arg, 0, sizeof(seq_info->seq_arg));
         seq_info->seq_arg.oid = self->index = subject_index;
+        seq_info->seq_arg.check_oid_exclusion = TRUE;
 
         if( program_number == eBlastTypeTblastn ) {
             seq_info->seq_arg.encoding = eBlastEncodingNcbi4na;

@@ -740,6 +740,7 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
             _ASSERT( !masked_ranges.empty() );
             /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
             /// be copied for performance reasons...
+            /// TODO bl2seq only use soft masking?
             BlastSeqBlkSetSeqRanges(subj, (SSeqRange*) masked_ranges.get_data(),
                                     masked_ranges.size() + 1, true, DB_MASK_SOFT);
         } else {

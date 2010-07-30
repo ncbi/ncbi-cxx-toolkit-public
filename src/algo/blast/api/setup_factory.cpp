@@ -353,13 +353,15 @@ CSetupFactory::CreateHspPipe(const CBlastOptionsMemento* opts_memento,
 BlastSeqSrc*
 CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
 {
-    return CreateBlastSeqSrc(db.GetSeqDb(), db.GetFilteringAlgorithm());
+    return CreateBlastSeqSrc(db.GetSeqDb(), 
+                             db.GetFilteringAlgorithm(),
+                             db.GetMaskType());
 }
 
 BlastSeqSrc*
-CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo)
+CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo, int mask_type)
 {
-    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db, filt_algo);
+    BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db, filt_algo, mask_type);
     char* error_str = BlastSeqSrcGetInitError(retval);
     if (error_str) {
         string msg(error_str);

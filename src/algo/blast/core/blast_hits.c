@@ -2065,6 +2065,7 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
       	seq_arg.oid = subject_blk->oid;
       	seq_arg.encoding =
        	  (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);
+        seq_arg.check_oid_exclusion = TRUE;
       	seq_arg.seq = subject_blk;
       	/* Return the packed sequence to the database */
       	BlastSeqSrcReleaseSequence(seq_src, &seq_arg);

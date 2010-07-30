@@ -54,22 +54,26 @@ BEGIN_SCOPE(blast)
  * @param first_seq First ordinal id in the database to search [in]
  * @param last_seq Last ordinal id in the database to search 
  *                 (full database if 0) [in]
- * @param filtering_algorithm database algorithm ID (-1 if not applicable) [in]
+ * @param mask_algo_id Database masking algorithm ID (-1 if not applicable) [in]
+ * @param mask_type Type of database masking [in]
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                      Uint4 first_seq = 0, Uint4 last_seq = 0,
-                     int filtering_algorithm = -1);
+                     Int4 mask_algo_id  = -1,
+                     Int4 mask_type = DB_MASK_NONE);
 
 /** Initialize the sequence source structure using an existing SeqDB object.
  * @param seqdb CSeqDB object [in]
- * @param filtering_algorithm database algorithm ID (-1 if not applicable) [in]
+ * @param mask_algo_id Database masking algorithm ID (-1 if not applicable) [in]
+ * @param mask_type Type of database masking [in]
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc*
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
-                     int filtering_algorithm = -1);
+                     Int4 mask_algo_id  = -1,
+                     Int4 mask_type = DB_MASK_NONE);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
