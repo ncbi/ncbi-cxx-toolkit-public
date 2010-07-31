@@ -6407,6 +6407,12 @@ YNUH	s	Yeungnam University, Biology Department
 YOLA	s	Mari State University, Department of Plant Biology
 YPM	s	Yale Peabody Museum of Natural History
 YPM/PU	s	Princeton University Collection in Yale Peabody Museum
+YPM:ENT	s	Yale Peabody Museum of Natural History, Entomology Collection
+YPM:HER	s	Yale Peabody Museum of Natural History, Herpetology Collection
+YPM:ICH	s	Yale Peabody Museum of Natural History, Ichthyology Collection
+YPM:IZ	s	Yale Peabody Museum of Natural History, Invertebrate Zoology Collection
+YPM:MAM	s	Yale Peabody Museum of Natural History, Mammology Collection
+YPM:ORN	s	Yale Peabody Museum of Natural History, Ornithology Collection
 YPMC	s	Yellowstone National Park
 YRK	s	Yorkshire Museum, Biology Department
 YU<CHN>	s	Yunnan University
