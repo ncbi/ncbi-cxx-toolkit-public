@@ -11,3 +11,5 @@ LIB  = submit seqset $(SEQ_LIBS) pub medline biblio general xobjutil xobjmgr xse
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
+
+WATCHERS = badrazat
