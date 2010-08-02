@@ -376,8 +376,8 @@ void CCodeGenerator::GenerateDoxygenGroupDescription(
     string ingroup_name =
         m_DoxygenIngroup.empty() ? "DatatoolGeneratedClasses" : m_DoxygenIngroup;
     CDirEntry entry(GetMainModules().GetModuleSets().front()->GetSourceFileName());
-    string fileName =
-        Path(m_HPPDir, Path(m_FileNamePrefix, entry.GetBase() + "_doxygen.h"));
+    string fileName = MakeAbsolutePath(
+        Path(m_HPPDir, Path(m_FileNamePrefix, entry.GetBase() + "_doxygen.h")));
     CNcbiOfstream doxyfile(fileName.c_str());
     if ( doxyfile.is_open() ) {
         CFileCode::WriteCopyrightHeader( doxyfile);
@@ -422,7 +422,8 @@ void CCodeGenerator::GenerateFileList(
     if ( m_FileListFileName.empty() ) {
         return;
     }
-    string fileName(Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName)));
+    string fileName( MakeAbsolutePath(
+        Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName))));
     CNcbiOfstream fileList(fileName.c_str());
     if ( !fileList ) {
         ERR_POST_X(4, Fatal <<
@@ -570,7 +571,7 @@ void CCodeGenerator::GenerateCombiningFile(
     for ( int i = 0; i < 2; ++i ) {
         const char* suffix = i? "_.cpp": ".cpp";
         string fileName = m_CombiningFileName + "__" + suffix;
-        fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
+        fileName = MakeAbsolutePath(Path(m_CPPDir,Path(m_FileNamePrefix,fileName)));
         allCpp.push_back(fileName);
         CNcbiOfstream out(fileName.c_str());
         if ( !out )
@@ -599,9 +600,9 @@ void CCodeGenerator::GenerateCombiningFile(
     // write combined *__.hpp file
     const char* suffix = ".hpp";
     // save to the includes directory
-    string fileName = Path(m_HPPDir,
+    string fileName = MakeAbsolutePath(Path(m_HPPDir,
                             Path(m_FileNamePrefix,
-                                m_CombiningFileName + "__" + suffix));
+                                m_CombiningFileName + "__" + suffix)));
     allHpp.push_back(fileName);
 
     CNcbiOfstream out(fileName.c_str());
@@ -640,7 +641,7 @@ void CCodeGenerator::GenerateCvsignore(
         bool different_dirs = (outdir_cpp != outdir_hpp);
         string out_dir(is_cpp ? outdir_cpp : outdir_hpp);
 
-        string ignorePath(Path(out_dir,ignoreName));
+        string ignorePath(MakeAbsolutePath(Path(out_dir,ignoreName)));
         // ios::out should be redundant, but some compilers
         // (GCC 2.9x, for one) seem to need it. :-/
         CNcbiOfstream ignoreFile(ignorePath.c_str(),

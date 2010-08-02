@@ -89,8 +89,8 @@ bool CFileModules::CheckNames(void) const
 void CFileModules::PrintSampleDEF(const string& rootdir) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        string fileName =
-            Path(rootdir, Path(GetFileNamePrefix(), (*mi)->GetName() + "._sample_def"));
+        string fileName = MakeAbsolutePath(
+            Path(rootdir, Path(GetFileNamePrefix(), (*mi)->GetName() + "._sample_def")));
         CNcbiOfstream out(fileName.c_str());
         (*mi)->PrintSampleDEF(out);
         if ( !out )
@@ -176,8 +176,8 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
 void CFileModules::PrintDTDModular(void) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        string fileNameBase =
-            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix();
+        string fileNameBase = MakeAbsolutePath(
+            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix());
         {
             string fileName = fileNameBase + ".mod.dtd";
             CNcbiOfstream out(fileName.c_str());
@@ -200,8 +200,8 @@ void CFileModules::PrintDTDModular(void) const
 void CFileModules::PrintXMLSchemaModular(void) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        string fileNameBase =
-            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix();
+        string fileNameBase = MakeAbsolutePath(
+            (*mi)->GetDTDFileNameBase() + (*mi)->GetModuleFileSuffix());
         {
             string fileName = fileNameBase + ".mod.xsd";
             CNcbiOfstream out(fileName.c_str());

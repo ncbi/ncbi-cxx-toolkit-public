@@ -424,12 +424,12 @@ void CDelayedOfstream::open(const string& fileName)
     clear();
     seekp(0, IOS_BASE::beg);
     clear(); // eof set?
-    m_FileName = fileName;
-    m_Istream.reset(new CNcbiIfstream(fileName.c_str()));
+    m_FileName = MakeAbsolutePath(fileName);
+    m_Istream.reset(new CNcbiIfstream(m_FileName.c_str()));
     if ( !*m_Istream ) {
         _TRACE("cannot open " << m_FileName);
         m_Istream.reset(0);
-        m_Ostream.reset(new CNcbiOfstream(fileName.c_str()));
+        m_Ostream.reset(new CNcbiOfstream(m_FileName.c_str()));
         if ( !*m_Ostream ) {
             _TRACE("cannot create " << m_FileName);
             setstate(m_Ostream->rdstate());
