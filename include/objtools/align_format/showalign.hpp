@@ -418,6 +418,16 @@ private:
         bool colorMismatch;
         int         rowNum;
     };
+    
+    struct SAlnDispParams: public CObject {
+		int gi;
+		CRef<objects::CSeq_id> seqID;		
+		string label;
+		string	id_url;
+		string linkoutStr;
+		string dumpGnlUrl;
+		string title;
+	};
 
     /// store alnvec and score info
     struct SAlnInfo : public CObject {               
@@ -510,7 +520,7 @@ private:
     ///@return: string containig defline(s)
     ///
     string x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, 
-                        list<int>& use_this_gi, string& id_label) const;
+                        list<int>& use_this_gi, string& id_label);
 
     /// display sequence for one row
     ///@param sequence: the sequence for that row
@@ -770,6 +780,12 @@ private:
     void x_FeatSetup(objects::CSeq_align_set &actual_aln_list);
     void x_CalcSegs(const objects::CSeq_align& align, string idString);
     void x_CalcHSPNum(string idString);
+    SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
+								   list<int>& use_this_gi,
+								   int firstGi,
+								   bool isNa,
+								  int seqLength);
+	SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);
                                      
 };
 
