@@ -75,7 +75,10 @@ public:
             /* raise hell */;
         }
         m_scope->AddDefaults();
-        m_scope->AddTopLevelSeqEntry( *m_entry );
+        m_topseh = m_scope->AddTopLevelSeqEntry( *m_entry );
+        if ( !m_topseh ) {
+            /* raise hell */;
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -89,6 +92,7 @@ public:
 protected:
     CRef<CObjectManager> m_objmgr;
     CRef<CScope> m_scope;
+    CSeq_entry_Handle m_topseh;
 };
 
 #endif
