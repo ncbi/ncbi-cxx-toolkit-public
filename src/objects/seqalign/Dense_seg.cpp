@@ -1362,6 +1362,14 @@ void CDense_seg::SetReserveHooks(CObjectIStream& in)
 }
 
 
+void CDense_seg::SetGlobalReserveHooks(void)
+{
+    CDenseSegReserveStartsHook::SetGlobalHook();
+    CDenseSegReserveLensHook::SetGlobalHook();
+    CDenseSegReserveStrandsHook::SetGlobalHook();
+}
+
+
 void CDenseSegReserveStartsHook::ReadClassMember(CObjectIStream& in,
                                                  const CObjectInfoMI& member)
 {
@@ -1371,11 +1379,24 @@ void CDenseSegReserveStartsHook::ReadClassMember(CObjectIStream& in,
 }
 
 
+CObjectTypeInfoMI CDenseSegReserveStartsHook::x_GetMember(void)
+{
+    CObjectTypeInfo type = CType<CDense_seg>();
+    return type.FindMember("starts");
+}
+
+
 void CDenseSegReserveStartsHook::SetHook(CObjectIStream& in)
 {
     CRef<CDenseSegReserveStartsHook> hook(new CDenseSegReserveStartsHook);
-    CObjectTypeInfo type = CType<CDense_seg>();
-    type.FindMember("starts").SetLocalReadHook(in, hook);
+    x_GetMember().SetLocalReadHook(in, hook);
+}
+
+
+void CDenseSegReserveStartsHook::SetGlobalHook(void)
+{
+    CRef<CDenseSegReserveStartsHook> hook(new CDenseSegReserveStartsHook);
+    x_GetMember().SetGlobalReadHook(hook);
 }
 
 
@@ -1388,11 +1409,24 @@ void CDenseSegReserveLensHook::ReadClassMember(CObjectIStream& in,
 }
 
 
+CObjectTypeInfoMI CDenseSegReserveLensHook::x_GetMember(void)
+{
+    CObjectTypeInfo type = CType<CDense_seg>();
+    return type.FindMember("lens");
+}
+
+
 void CDenseSegReserveLensHook::SetHook(CObjectIStream& in)
 {
     CRef<CDenseSegReserveLensHook> hook(new CDenseSegReserveLensHook);
-    CObjectTypeInfo type = CType<CDense_seg>();
-    type.FindMember("lens").SetLocalReadHook(in, hook);
+    x_GetMember().SetLocalReadHook(in, hook);
+}
+
+
+void CDenseSegReserveLensHook::SetGlobalHook(void)
+{
+    CRef<CDenseSegReserveLensHook> hook(new CDenseSegReserveLensHook);
+    x_GetMember().SetGlobalReadHook(hook);
 }
 
 
@@ -1405,11 +1439,24 @@ void CDenseSegReserveStrandsHook::ReadClassMember(CObjectIStream& in,
 }
 
 
+CObjectTypeInfoMI CDenseSegReserveStrandsHook::x_GetMember(void)
+{
+    CObjectTypeInfo type = CType<CDense_seg>();
+    return type.FindMember("strands");
+}
+
+
 void CDenseSegReserveStrandsHook::SetHook(CObjectIStream& in)
 {
     CRef<CDenseSegReserveStrandsHook> hook(new CDenseSegReserveStrandsHook);
-    CObjectTypeInfo type = CType<CDense_seg>();
-    type.FindMember("strands").SetLocalReadHook(in, hook);
+    x_GetMember().SetLocalReadHook(in, hook);
+}
+
+
+void CDenseSegReserveStrandsHook::SetGlobalHook(void)
+{
+    CRef<CDenseSegReserveStrandsHook> hook(new CDenseSegReserveStrandsHook);
+    x_GetMember().SetGlobalReadHook(hook);
 }
 
 

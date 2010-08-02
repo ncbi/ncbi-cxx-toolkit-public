@@ -60,11 +60,24 @@ void CReadSharedScoreIdHook::ReadClassMember(CObjectIStream& in,
 }
 
 
+CObjectTypeInfoMI CReadSharedScoreIdHook::x_GetMember(void)
+{
+    CObjectTypeInfo score_type = CType<CScore>();
+    return score_type.FindMember("id");
+}
+
+
 void CReadSharedScoreIdHook::SetHook(CObjectIStream& in)
 {
     CRef<CReadSharedScoreIdHook> hook(new CReadSharedScoreIdHook);
-    CObjectTypeInfo score_type = CType<CScore>();
-    score_type.FindMember("id").SetLocalReadHook(in, hook);
+    x_GetMember().SetLocalReadHook(in, hook);
+}
+
+
+void CReadSharedScoreIdHook::SetGlobalHook(void)
+{
+    CRef<CReadSharedScoreIdHook> hook(new CReadSharedScoreIdHook);
+    x_GetMember().SetGlobalReadHook(hook);
 }
 
 

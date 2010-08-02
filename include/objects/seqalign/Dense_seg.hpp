@@ -143,6 +143,7 @@ public:
 
 
     static void SetReserveHooks(CObjectIStream& in);
+    static void SetGlobalReserveHooks(void);
 
 protected:
     TNumseg x_FindSegment(TDim row, TSignedSeqPos pos) const;
@@ -243,6 +244,10 @@ public:
     void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
 
     static void SetHook(CObjectIStream& in);
+    static void SetGlobalHook(void);
+
+private:
+    static CObjectTypeInfoMI x_GetMember(void);
 };
 
 
@@ -253,6 +258,10 @@ public:
     void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
 
     static void SetHook(CObjectIStream& in);
+    static void SetGlobalHook(void);
+
+private:
+    static CObjectTypeInfoMI x_GetMember(void);
 };
 
 
@@ -263,6 +272,10 @@ public:
     void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member);
 
     static void SetHook(CObjectIStream& in);
+    static void SetGlobalHook(void);
+
+private:
+    static CObjectTypeInfoMI x_GetMember(void);
 };
 
 
