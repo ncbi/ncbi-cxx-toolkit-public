@@ -1851,10 +1851,112 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
     }  
 }
 
+CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
+								   list<int>& use_this_gi,
+								   int firstGi,
+								   bool isNa,
+								  int seqLength)
+{
+    SAlnDispParams *alnDispParams = NULL;
+
+	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
+	int gi =  s_GetGiForSeqIdList(ids);
+    int gi_in_use_this_gi = 0;
+    
+    ITERATE(list<int>, iter_gi, use_this_gi){
+        if(gi == *iter_gi){
+            gi_in_use_this_gi = *iter_gi;
+            break;
+        }
+    }
+	if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+		alnDispParams = new SAlnDispParams();
+		alnDispParams->gi =  gi;    		
+		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
+		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+		if(m_AlignOption&eHtml){
+			int taxid = 0;
+			string type_temp = m_BlastType;
+			type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
+			if((type_temp == "mapview" || 
+                            type_temp == "mapview_prev" || 
+                            type_temp == "gsfasta" || type_temp == "gsfasta_prev") && 
+                            bdl->IsSetTaxid() && 
+                            bdl->CanGetTaxid()){
+				taxid = bdl->GetTaxid();
+			}
+           
+			CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
+                                                 m_QueryNumber,
+                                                 gi_in_use_this_gi, 
+						                         alnDispParams->label,
+                                                 CAlignFormatUtil::GetLinkout(*bdl),
+                                                 m_cur_align,
+                                                 true,
+                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
+                                                 taxid,
+                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
+                        
+			alnDispParams->id_url =  x_GetUrl(&seqUrlInfo, ids);                                                
+		}
+		
+		if(m_AlignOption&eLinkout){
+		
+			int linkout = CAlignFormatUtil::GetLinkout((*bdl));
+			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
+			list<string> linkout_url =  CAlignFormatUtil::
+                                GetLinkoutUrl(linkout, ids,
+                                              m_Rid,
+                                              m_CddRid, m_EntrezTerm,
+                                              isNa, 
+                                              firstGi,
+                                              false, true, m_cur_align);                            
+			ITERATE(list<string>, iter_linkout, linkout_url){
+				alnDispParams->linkoutStr += *iter_linkout;
+			}
+			if(seqLength > k_GetSubseqThreshhold){
+				alnDispParams->dumpGnlUrl = x_GetDumpgnlLink(ids, 1, k_DumpGnlUrl, 0);                                
+			}
+        
+		}
+		if(bdl->IsSetTitle()){
+			alnDispParams->title = bdl->GetTitle();
+		}
+	}
+	return alnDispParams;
+}
+
+
+
+CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CBioseq_Handle& bsp_handle)								   
+{
+    SAlnDispParams *alnDispParams = new SAlnDispParams();
+	alnDispParams->gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
+	alnDispParams->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
+	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+	if(m_AlignOption&eHtml){           
+			CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
+                                                 m_QueryNumber,
+                                                 alnDispParams->gi, 
+						                         alnDispParams->label,
+                                                 0,
+                                                 m_cur_align,
+                                                 true,
+                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
+                                                 0,
+                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
+                        
+			alnDispParams->id_url = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());
+	}
+			
+	alnDispParams->title = GetTitle(bsp_handle);		
+	
+	return alnDispParams;
+}
 
 string
 CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
-                                 list<int>& use_this_gi, string& id_label) const
+                                 list<int>& use_this_gi, string& id_label)
 {
     CNcbiOstrstream out;                
     /* Facilitates comparing formatted output using diff */
@@ -1885,61 +1987,45 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
         if(bdl.empty()){ //no blast defline struct, should be no such case now
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
             //there is no blast defline in such case.
-            int gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
-            string urlLink;
+			SAlnDispParams *alnDispParams = x_FillAlnDispParams(bsp_handle);
             out << ">";
             if ((m_AlignOption&eSequenceRetrieval)
                 && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                 char buf[512];
-                sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
-                        NStr::IntToString(gi).c_str() : CAlignFormatUtil::GetLabel(wid).c_str(),
+                sprintf(buf, k_Checkbox.c_str(), alnDispParams->gi > 0 ?
+                        NStr::IntToString(alnDispParams->gi).c_str() : alnDispParams->label.c_str(),
                         m_QueryNumber);
                 out << buf;
             }
                 
-            if(m_AlignOption&eHtml){
-               
-		        string acc = CAlignFormatUtil::GetLabel(wid);
-                id_label = (gi != 0) ? NStr::IntToString(gi) : acc;
- 
-                CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
-                                                 m_QueryNumber,
-                                                 gi,
-						                         acc, 
-                                                 0,
-                                                 m_cur_align,
-                                                 true,
-                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
-                                                 0,
-                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
-                
+            if(m_AlignOption&eHtml){               
+		        
+                id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;                      
 
-                urlLink = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());                
-
-                out<<urlLink;
+                out<<alnDispParams->id_url;
             }
                 
-            if(m_AlignOption&eShowGi && gi > 0){
-                out<<"gi|"<<gi<<"|";
+            if(m_AlignOption&eShowGi && alnDispParams->gi > 0){
+                out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
-            if(!(wid->AsFastaString().find("gnl|BL_ORD_ID") 
+            if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
                  != string::npos)){
-                wid->WriteAsFasta(out);
+                alnDispParams->seqID->WriteAsFasta(out);
             }
             if(m_AlignOption&eHtml){
-                if(urlLink != NcbiEmptyString){
+                if(alnDispParams->id_url != NcbiEmptyString){
                     out<<"</a>";
                 }
-                if(gi != 0){
-                    out<<"<a name="<<gi<<"></a>";                    
+                if(alnDispParams->gi != 0){
+                    out<<"<a name="<<alnDispParams->gi<<"></a>";                    
                 } else {
-                    out<<"<a name="<<wid->GetSeqIdString()<<"></a>";                    
+                    out<<"<a name="<<alnDispParams->seqID->GetSeqIdString()<<"></a>";                    
                 }
             }
             out <<" ";
             s_WrapOutputLine(out, (m_AlignOption&eHtml) ? 
-                             CHTMLHelper::HTMLEncode(GetTitle(bsp_handle)) :
-                             GetTitle(bsp_handle));     
+                             CHTMLHelper::HTMLEncode(alnDispParams->title) :
+                             alnDispParams->title);     
                 
             out<<"\n";
             
@@ -1950,17 +2036,14 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){
                 numBdl++;
-                string urlLink;
-                int gi =  s_GetGiForSeqIdList((*iter)->GetSeqid());
-                int gi_in_use_this_gi = 0;
-                int taxid = 0;
-                ITERATE(list<int>, iter_gi, use_this_gi){
-                    if(gi == *iter_gi){
-                        gi_in_use_this_gi = *iter_gi;
-                        break;
-                    }
-                }
-                if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
+																	use_this_gi,
+																	firstGi,
+																	bsp_handle.GetBioseqCore()->IsNa(), 
+																	(int)bsp_handle.GetBioseqLength());
+
+                int taxid = 0;                
+                if(alnDispParams) {
                 
                     if(isFirst){
                         out << ">";                  
@@ -1977,105 +2060,61 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                             bMultipleDeflines = true;
                         }
                     }
-                    const CRef<CSeq_id> wid2
-                        = FindBestChoice((*iter)->GetSeqid(),
-                                         CSeq_id::WorstRank);
-
-                    string label =  CAlignFormatUtil::GetLabel(wid2);
+                    
                     if(isFirst){
-                        firstGi = gi;
+                        firstGi = alnDispParams->gi;
                     }
                     if ((m_AlignOption&eSequenceRetrieval)
                         && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                         char buf[512];
-                        sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
-                                NStr::IntToString(gi).c_str() : label.c_str(),
+                        sprintf(buf, k_Checkbox.c_str(), alnDispParams->gi > 0 ?
+                                NStr::IntToString(alnDispParams->gi).c_str() : alnDispParams->label.c_str(),
                                 m_QueryNumber);
                                 out << buf;
                     }
                 
                     if(m_AlignOption&eHtml){
-                        string type_temp = m_BlastType;
-                        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-                        if((type_temp == "mapview" || 
-                            type_temp == "mapview_prev" || 
-                            type_temp == "gsfasta" || type_temp == "gsfasta_prev") && 
-                           (*iter)->IsSetTaxid() && 
-                           (*iter)->CanGetTaxid()){
-                            taxid = (*iter)->GetTaxid();
-                        }
-           
-                        CAlignFormatUtil::SSeqURLInfo seqUrlInfo("",m_BlastType,m_IsDbNa,m_DbName,m_Rid,
-                                                 m_QueryNumber,
-                                                 gi_in_use_this_gi, 
-						                         label,
-                                                 CAlignFormatUtil::GetLinkout(**iter),
-                                                 m_cur_align,
-                                                 true,
-                                                 (m_AlignOption & eNewTargetWindow) ? true : false,
-                                                 taxid,
-                                                 (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
-                        
-                        urlLink = x_GetUrl(&seqUrlInfo, (*iter)->GetSeqid());                        
-
-                        out<<urlLink;
+                        out<< alnDispParams->id_url;
                     }
                 
-                    if(m_AlignOption&eShowGi && gi > 0){
-                        out<<"gi|"<<gi<<"|";
+                    if(m_AlignOption&eShowGi && alnDispParams->gi > 0){
+                        out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
-                    if(!(wid2->AsFastaString().find("gnl|BL_ORD_ID") 
+                    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
                          != string::npos)){
-                        wid2->WriteAsFasta(out);
+                        alnDispParams->seqID->WriteAsFasta(out);
                     }
                     if(m_AlignOption&eHtml){
-                        if(urlLink != NcbiEmptyString){
+                        if(alnDispParams->id_url != NcbiEmptyString){
                             out<<"</a>";
                         }
-                        if(gi != 0){
-                            out<<"<a name="<<gi<<"></a>";
-                            id_label = NStr::IntToString(gi);
+                        if(alnDispParams->gi != 0){
+                            out<<"<a name="<<alnDispParams->gi<<"></a>";
+                            id_label = NStr::IntToString(alnDispParams->gi);
                         } else {
-                            out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
-                            id_label = CAlignFormatUtil::GetLabel(wid2).c_str();
+                            out<<"<a name="<<alnDispParams->seqID->GetSeqIdString()<<"></a>";
+                            id_label = alnDispParams->label;
                         }
                         if(m_AlignOption&eLinkout){
                             
-                            int linkout = CAlignFormatUtil::
-                                GetLinkout((**iter));
-                            string user_url = m_Reg->Get(m_BlastType, 
-                                                         "TOOL_URL");
-                            list<string> linkout_url =  CAlignFormatUtil::
-                                GetLinkoutUrl(linkout, (*iter)->GetSeqid(),
-                                              m_Rid,
-                                              m_CddRid, m_EntrezTerm,
-                                              bsp_handle.GetBioseqCore()->IsNa(), 
-                                              firstGi,
-                                              false, true, m_cur_align);
                             out <<" ";
-                            ITERATE(list<string>, iter_linkout, linkout_url){
-                                out << *iter_linkout;
-                            }
-                           
-                            if((int)bsp_handle.GetBioseqLength() 
-                               > k_GetSubseqThreshhold){
-                                string dumpGnlUrl
-                                    = x_GetDumpgnlLink((*iter)->GetSeqid(), 1, 
-                                                       k_DumpGnlUrl, 0);
-                                out<<dumpGnlUrl
+                            out << alnDispParams->linkoutStr;
+							if(!alnDispParams->dumpGnlUrl.empty()) {                           
+                            
+                                out<<alnDispParams->dumpGnlUrl
                                    <<"<img border=0 height=16 width=16\
                                    src=\"images/D.gif\" alt=\"Download subject sequence spanning the \
                                    HSP\"></a>";
                             }
-                        }
+						}
                     }
                 
                     out <<" ";
-                    if((*iter)->IsSetTitle()){
+					if(!alnDispParams->title.empty()) {                    
                         s_WrapOutputLine(out, (m_AlignOption&eHtml) ? 
                                          CHTMLHelper::
-                                         HTMLEncode((*iter)->GetTitle()) :
-                                         (*iter)->GetTitle());     
+                                         HTMLEncode(alnDispParams->title) :
+                                         alnDispParams->title);     
                     }
                     out<<"\n";
                     isFirst = false;
