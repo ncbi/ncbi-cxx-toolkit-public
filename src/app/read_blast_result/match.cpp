@@ -199,8 +199,8 @@ int CReadBlastApp::match_na
      {
      strand_match = input_strand == calc_strand;
      if(PrintDetails()) NcbiCerr << "match_na[f1,ext_rna,...] strands: "
-      << input_strand << ","
-      << calc_strand << ","
+      << int(input_strand) << ","
+      << int(calc_strand) << ","
       << strand_match << ","
       << NcbiEndl;
      }

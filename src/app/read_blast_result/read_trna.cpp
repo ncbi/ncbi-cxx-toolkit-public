@@ -83,7 +83,7 @@ int CReadBlastApp::ReadTRNA(const string& file)
     if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): structure: " 
        << ext_rna.from << ","
        << ext_rna.to   << ","
-       << ext_rna.strand << ","
+       << int(ext_rna.strand) << ","
        << ext_rna.type3 << ","
        << ext_rna.present << ","
        << NcbiEndl;
