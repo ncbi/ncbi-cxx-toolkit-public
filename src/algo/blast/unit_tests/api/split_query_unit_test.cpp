@@ -738,7 +738,8 @@ public:
                 os << "Ending offset for query " << j << " in chunk " << i << " is now " << test_query_range.GetToOpen() << " and not " << ref_query_range.GetTo();
                 BOOST_REQUIRE_MESSAGE(ref_query_range.GetTo()==test_query_range.GetToOpen(),os.str());
                 os.str("");
-                os << "Strand for query " << j << " in chunk " << i << " is now " << test_qloc->GetStrand() << " and not " << ref_qloc->GetStrand();
+                os << "Strand for query " << j << " in chunk " << i << " is now " 
+                    << (int)test_qloc->GetStrand() << " and not " << (int)ref_qloc->GetStrand();
                 BOOST_REQUIRE_MESSAGE(ref_qloc->GetStrand()==test_qloc->GetStrand(),os.str());
             }
         }

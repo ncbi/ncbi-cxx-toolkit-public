@@ -2310,13 +2310,13 @@ void x_TestAlignmentQuerySubjStrandCombinations(TSeqAlignVector& sav,
         BOOST_REQUIRE_MESSAGE(starts[index].second == seg_starts[2*index+1],
                               os.str());
         os.str("");
-        os << "Segment " << index << ": expected " << strands[index].first
-           << " actual " << seg_strands[2*index];
+        os << "Segment " << index << ": expected " << (int)strands[index].first
+           << " actual " << (int)seg_strands[2*index];
         BOOST_REQUIRE_MESSAGE(strands[index].first == seg_strands[2*index],
                               os.str());
         os.str("");
-        os << "Segment " << index << ": expected " << strands[index].second
-           << " actual " << seg_strands[2*index];
+        os << "Segment " << index << ": expected " << (int)strands[index].second
+           << " actual " << (int)seg_strands[2*index];
         BOOST_REQUIRE_MESSAGE(strands[index].second == seg_strands[2*index+1],
                               os.str());
     }
