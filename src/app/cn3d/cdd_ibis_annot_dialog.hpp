@@ -110,7 +110,7 @@ public:
     static bool QueryMoleculeHasChain();
 
     //  Returns a string indicating the type of interaction partner.
-    static string IbisIntTypeToString(eIbisInteractionType ibisType);
+    static std::string IbisIntTypeToString(eIbisInteractionType ibisType);
 
     //  Note:  This mapping is many->one.
     static bool IsIbisIntType(int integer, eIbisInteractionType* ibisType = NULL);
@@ -129,7 +129,7 @@ public:
 
     int GetRowId(void) const { return m_rowId; }
     int GetSdiId(void) const { return m_sdiId; }
-    string GetDesc(void) const { return m_desc; }
+    std::string GetDesc(void) const { return m_desc; }
     eIbisInteractionType GetType(void) const { return m_type; }
     eCddInteractionType GetCddType(void) const { return IbisIntTypeToCddIntType(m_type); }
 
@@ -170,7 +170,7 @@ private:
     int m_rowId;    //  interaction id, used to open a 'row' in IBIS web display
     int m_mmdbId;   //  from the data labeled 'mmdbId'
     int m_sdiId;    //  from the data labeled 'sdiId'
-    string m_desc;  //  name assigned to the interaction
+    std::string m_desc;  //  name assigned to the interaction
 
     bool m_isObs;   //  from the data labeled 'isObserverd'
     bool m_isFilt;  //  from the data labeled ''; true if the interaction is filtered from the IBIS web display
@@ -204,7 +204,7 @@ private:
     IBISAnnotateDialog **dialogHandle;
     StructureSet *structureSet;
     ncbi::CRef < ncbi::objects::CAlign_annot_set > annotSet;
-    vector< ncbi::CRef<IBISInteraction> > vecIbisInteractions;
+    std::vector< ncbi::CRef<IBISInteraction> > vecIbisInteractions;
 
     wxImageList* m_images;
 
@@ -212,7 +212,7 @@ private:
     typedef struct {
         void* ptr;                             //  pointer to a CAlign_annot (== map key)
         unsigned int nRes;                     //  number of residues covered by *ptr
-        vector< SeqPosSet > overlaps;  //  vector of positions that overlap ith Ibis intn
+        std::vector< SeqPosSet > overlaps;  //  vector of positions that overlap ith Ibis intn
     } AlignAnnotInfo;
     typedef std::map<unsigned long, AlignAnnotInfo> AnnotIbisOverlapMap;
 

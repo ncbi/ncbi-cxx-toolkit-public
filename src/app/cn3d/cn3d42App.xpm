@@ -1,5 +1,5 @@
 /* XPM */
-static char *cn3d_xpm[] = {
+static const char *cn3d_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "32 32 149 2",
 "   c black",

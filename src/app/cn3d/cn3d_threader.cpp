@@ -329,7 +329,7 @@ static const unsigned int NUM_RES_TYPES = 21;
 Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 {
     Rcx_Ptl*  pmf;
-    char      *FileName = "ContactPotential";
+    const char      *FileName = "ContactPotential";
     char      ResName[32];
     char      Path[512];
     unsigned int i, j, k;

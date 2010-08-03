@@ -672,7 +672,7 @@ IBISAnnotateDialog::IBISAnnotateDialog(wxWindow *parent, IBISAnnotateDialog **ha
     wxIcon tickMarkIcon = wxArtProvider::GetIcon(wxART_TICK_MARK);  //, wxART_FRAME_ICON, wxSize(16, 16));
     if (tickMarkIcon.Ok()) {
         m_images = new wxImageList(16, 16, true);
-        int imageIndex = m_images->Add(infoIcon);
+        /*int imageIndex =*/ m_images->Add(infoIcon);
         m_images->Add(warnIcon);
         m_images->Add(questionIcon);
         m_images->Add(bookmarkIcon);
@@ -1024,8 +1024,8 @@ void IBISAnnotateDialog::OnListCtrlSelection(wxListEvent& event)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_LB_ANNOT, wxListBox)
 
     wxString eventText = event.GetText();
-    long eventData = event.GetData();
-    const wxListItem& eventItem = event.GetItem();
+    //long eventData = event.GetData();
+    //const wxListItem& eventItem = event.GetItem();
 
     SetupGUIControls(event.GetIndex(), annots->GetSelection(), eRemakeListBox);
     HighlightInteraction();
@@ -1047,7 +1047,7 @@ void InsertItemInListView(int vecIndex, const CRef<IBISInteraction>& ibisInt, wx
     long itemIndex;
     wxString buf;
     buf.Printf(wxT("(%d)  %s  [%d in cluster (%4.1f %%id); %d residues]"), (int) ibisInt->GetType(), 
-        ibisInt->GetDesc(), ibisInt->GetNumMembers(), ibisInt->GetAverageIdentity(), ibisInt->GetNumInterfaceResidues());
+        ibisInt->GetDesc().c_str(), ibisInt->GetNumMembers(), ibisInt->GetAverageIdentity(), ibisInt->GetNumInterfaceResidues());
     itemIndex = listCtrl.InsertItem(vecIndex, buf, -1);
     if (itemIndex >= 0) {
         listCtrl.SetItemData(itemIndex, vecIndex);
@@ -1085,7 +1085,7 @@ void InsertItemInReportView(int vecIndex, const CRef<IBISInteraction>& ibisInt, 
         //  were found to overlap the query and are in the Seq-loc.
         //  GetPositions.size() <= GetNumInterfaceResidues()
 //        buf.Printf(wxT("%d"), ibisInt->GetNumInterfaceResidues());
-        buf.Printf(wxT("%d"), ibisInt->GetPositions().size());
+        buf.Printf(wxT("%d"), (int) ibisInt->GetPositions().size());
         listCtrl.SetItem(itemIndex, 5, buf);
 
         buf.Printf(wxT("%d"), ibisInt->GetNumMembers());
@@ -1256,7 +1256,7 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
     int pos = interactions->GetScrollPos(wxVERTICAL);
 
     CAlign_annot *annotPtr = NULL;
-    IBISInteraction::eIbisInteractionType ibisType = IBISInteraction::eIbisOther;
+    //IBISInteraction::eIbisInteractionType ibisType = IBISInteraction::eIbisOther;
     wxString annotDescStr, choiceSelectionStr;
     set<unsigned int> ibisIndexWithOverlap;
     set<unsigned int>::iterator ibisIndexEnd;
@@ -1346,7 +1346,7 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
             this->SetEvtHandlerEnabled(false);
             nItems = interactions->GetItemCount();
             for (i = 0; i < nItems; ++i) {
-                if (interactions->GetItemData(i) == selectedVecIndex) {
+                if ((int) interactions->GetItemData(i) == selectedVecIndex) {
                     selectInteraction = i;
                     interactions->SetItemState(i, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
                     break;

@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>

@@ -328,7 +328,7 @@ public:
 
     // typedefs for UserAnnotation
     typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
-    typedef class UserAnnotation : public ncbi::CObject {
+    class UserAnnotation : public ncbi::CObject {
     public:
         std::string name, description;
         int styleID;

@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Cdd_book_ref.hpp>
@@ -234,7 +234,7 @@ static wxString MakeParameterString(const CCdd_book_ref& bref)
 }
 
 //  The 'rid' parameter is used in old "DTD1" style URLs based on bv.fcgi
-static wxString MakeRID(const CCdd_book_ref& bref)
+/*static wxString MakeRID(const CCdd_book_ref& bref)
 {
     wxString rid;
 
@@ -263,7 +263,7 @@ static wxString MakeRID(const CCdd_book_ref& bref)
     }
 
     return rid;
-}
+}*/
 
 void CDDBookRefDialog::SetWidgetStates(void)
 {

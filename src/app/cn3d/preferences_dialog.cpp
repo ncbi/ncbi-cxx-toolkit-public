@@ -236,7 +236,7 @@ PreferencesDialog::~PreferencesDialog(void)
         if (newValue != oldValue) { \
             if (!RegistrySetInteger((section), (name), newValue)) \
                 throw "RegistrySetInteger() failed"; \
-            if (changedPtr) *((bool*) changedPtr) = true; \
+            if (changedPtr != NULL) *((bool*) changedPtr) = true; \
         } \
     } while (0)
 
@@ -248,7 +248,7 @@ PreferencesDialog::~PreferencesDialog(void)
         if (newValue != oldValue) { \
             if (!RegistrySetDouble((section), (name), newValue)) \
                 throw "RegistrySetInteger() failed"; \
-            if (changedPtr) *((bool*) changedPtr) = true; \
+            if (changedPtr != NULL) *((bool*) changedPtr) = true; \
         } \
     } while (0)
 
@@ -262,7 +262,7 @@ PreferencesDialog::~PreferencesDialog(void)
         if (newValue != oldValue) { \
             if (!RegistrySetBoolean((section), (name), newValue, true)) \
                 throw "RegistrySetBoolean() failed"; \
-            if (changedPtr) *((bool*) changedPtr) = true; \
+            if (changedPtr != NULL) *((bool*) changedPtr) = true; \
         } \
     } while (0)
 
@@ -276,7 +276,7 @@ PreferencesDialog::~PreferencesDialog(void)
         if (newValue != oldValue) { \
             if (!RegistrySetString((section), (name), newValue)) \
                 throw "RegistrySetString() failed"; \
-            if (changedPtr) *((bool*) changedPtr) = true; \
+            if (changedPtr != NULL) *((bool*) changedPtr) = true; \
         } \
     } while (0)
 
