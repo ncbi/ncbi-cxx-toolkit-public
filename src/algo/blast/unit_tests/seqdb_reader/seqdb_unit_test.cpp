@@ -1815,14 +1815,16 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
     vector< vector<string> > volumes(dbs.size());
     
     for(int i = 0; i < (int)dbs.size(); i++) {
-        CSeqDB db(dbs[i], CSeqDB::eNucleotide);
+        CRef<CSeqDB> db;
+        BOOST_REQUIRE_NO_THROW(db.Reset(new CSeqDB(dbs[i], 
+                                                   CSeqDB::eNucleotide)));
         
-        db.FindVolumePaths(volumes[i]);
+        db->FindVolumePaths(volumes[i]);
         
         // Collect all the included gis.
         
-        for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
-            db.GetGis(oid, gis[i], true);
+        for(int oid = 0; db->CheckOrFindOID(oid); oid++) {
+            db->GetGis(oid, gis[i], true);
         }
     }
     
