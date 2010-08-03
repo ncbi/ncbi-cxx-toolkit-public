@@ -168,6 +168,14 @@ CObjectIStream* CObjectIStream::CreateFromBuffer(ESerialDataFormat format,
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
+                                     EOwnership deleteInStream)
+{
+    CRef<CByteSource> src = GetSource(inStream, deleteInStream == eDeleteWhenDone);
+    return Create(format, *src);
+}
+
+CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
+                                     CNcbiIstream& inStream,
                                      bool deleteInStream)
 {
     CRef<CByteSource> src = GetSource(inStream, deleteInStream);

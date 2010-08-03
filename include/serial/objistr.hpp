@@ -102,6 +102,14 @@ public:
 // Create methods
     // CObjectIStream will be created on heap, and must be deleted later on
 
+    /// Input stream ownership policy
+    enum EOwnership {
+        /// Do not own the input stream
+        eNoDelete,
+        /// Accept ownership, delete the input stream when done
+        eDeleteWhenDone
+    };
+
     /// Create serial object reader and attach it to an input stream.
     ///
     /// @param format
@@ -113,9 +121,24 @@ public:
     ///   when the reader is deleted
     /// @return
     ///   Reader (created on heap)
+    static NCBI_DEPRECATED CObjectIStream* Open(ESerialDataFormat format,
+                                CNcbiIstream& inStream,
+                                bool deleteInStream);
+
+    /// Create serial object reader and attach it to an input stream.
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param inStream
+    ///   Input stream
+    /// @param deleteInStream
+    ///   When eDeleteWhenDone, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    /// @return
+    ///   Reader (created on heap)
     static CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
-                                bool deleteInStream = false);
+                                EOwnership deleteInStream = eNoDelete);
 
     /// Create serial object reader and attach it to a file stream.
     ///

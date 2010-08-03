@@ -103,13 +103,34 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         deleteStream = true;
     }
 
-    return Open(format, *outStream, deleteStream);
+    return Open(format, *outStream, deleteStream ? eDeleteWhenDone : eNoDelete);
 }
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      CNcbiOstream& outStream,
                                      bool deleteStream)
 {
+    switch ( format ) {
+    case eSerial_AsnText:
+        return OpenObjectOStreamAsn(outStream, deleteStream);
+    case eSerial_AsnBinary:
+        return OpenObjectOStreamAsnBinary(outStream, deleteStream);
+    case eSerial_Xml:
+        return OpenObjectOStreamXml(outStream, deleteStream);
+    case eSerial_Json:
+        return OpenObjectOStreamJson(outStream, deleteStream);
+    default:
+        break;
+    }
+    NCBI_THROW(CSerialException,eNotImplemented,
+               "CObjectOStream::Open: unsupported format");
+}
+
+CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
+                                     CNcbiOstream& outStream,
+                                     EOwnership edeleteStream)
+{
+    bool deleteStream = edeleteStream == eDeleteWhenDone;
     switch ( format ) {
     case eSerial_AsnText:
         return OpenObjectOStreamAsn(outStream, deleteStream);
