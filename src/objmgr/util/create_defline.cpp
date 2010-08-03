@@ -38,7 +38,9 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -50,13 +52,27 @@ USING_SCOPE(feature);
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
-    : m_Low_Quality_Fsa(false),
-      m_HasBiosrcFeats(eSFS_Unknown)
 {
+    m_ConstructedFeatTree = false;
+    m_InitializedFeatTree = false;
+    m_Low_Quality_Fsa = 0;
+
     m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
     m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
     m_Low_Quality_Fsa.AddWord ("unextendable partial coding region", 3);
     m_Low_Quality_Fsa.Prime ();
+}
+
+// constructor
+CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh)
+{
+    // first call default constructor
+    CDeflineGenerator ();
+
+    // then store top SeqEntry Handle for building CFeatTree when first needed
+    m_TopSEH = tseh;
+    m_ConstructedFeatTree = true;
+    m_InitializedFeatTree = false;
 }
 
 // destructor
@@ -65,36 +81,74 @@ CDeflineGenerator::~CDeflineGenerator (void)
 {
 }
 
-bool CDeflineGenerator::x_CDShasLowQualityException (
-    const CSeq_feat& sft
-)
+// macros
 
-{
-    if (! FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Cdregion))) return false;
-    if (! sft.IsSetExcept()) return false;
-    if (! sft.GetExcept()) return false;
-    if (! sft.IsSetExcept_text()) return false;
+// SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE_ITERATOR
+// FOR_EACH_SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE
+// CSeq_entry_Handle as input,
+//  dereference with CSeq_entry_Handle var = *Itr;
 
-    const string& str = sft.GetExcept_text();
-    int current_state = 0;
-    FOR_EACH_CHAR_IN_STRING (str_itr, str) {
-        const char ch = *str_itr;
-        int next_state = m_Low_Quality_Fsa.GetNextState (current_state, ch);
-        if (m_Low_Quality_Fsa.IsMatchFound (next_state)) {
-            return true;
-        }
-        current_state = next_state;
-    }
+#define SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE_ITERATOR(Itr, Var) \
+CSeq_entry_CI Itr(Var)
 
+#define FOR_EACH_SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE(Itr, Var) \
+for (SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE_ITERATOR(Itr, Var); Itr;  ++Itr)
 
-    return false;
-}
+// FOR_EACH_SEQID_ON_BIOSEQ_HANDLE
+// CBioseq_Handle& as input,
+//  dereference with CSeq_id_Handle sid = *Itr;
+
+#define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
+ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
+
+// SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR
+// FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE
+// CBioseq_Handle& as input,
+//  dereference with const C##Chs& sdc = Itr->Get##Chs();
+
+#define SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs) \
+CSeqdesc_CI Itr(Var, CSeqdesc::e_##Chs)
+
+#define FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE(Itr, Var, Chs) \
+for (SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs); Itr;  ++Itr)
+
+// SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR
+// FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE
+// CBioseq_Handle& as input,
+//  dereference with const CSeq_feat& sft = Itr->GetOriginalFeature();
+
+#define SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs) \
+CFeat_CI Itr(Var, CSeqFeatData::e_##Chs)
+
+#define FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE(Itr, Var, Chs) \
+for (SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs); Itr;  ++Itr)
+
+// SEQFEAT_ON_SCOPE_ITERATOR
+// FOR_EACH_SEQFEAT_ON_SCOPE
+// CScope& as input,
+//  dereference with const CSeq_feat& sft = Itr->GetOriginalFeature();
+
+#define SEQFEAT_ON_SCOPE_ITERATOR(Itr, Var, Loc, Chs) \
+CFeat_CI Itr(Var, Loc, CSeqFeatData::e_##Chs)
+
+#define FOR_EACH_SEQFEAT_ON_SCOPE(Itr, Var, Loc, Chs) \
+for (SEQFEAT_ON_SCOPE_ITERATOR(Itr, Var, Loc, Chs); Itr;  ++Itr)
+
+// SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR
+// FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE
+// CBioseq_Handle& and SAnnotSelector as input,
+//  dereference with const CSeq_feat& sft = Itr->GetOriginalFeature();
+
+#define SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Sel) \
+CFeat_CI Itr(Var, Sel)
+
+#define FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE(Itr, Var, Sel) \
+for (SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Sel); Itr;  ++Itr)
 
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
 //  BioSource
 void CDeflineGenerator::x_SetFlags (
-    const CBioseq& bioseq,
-    CScope& scope,
+    const CBioseq_Handle& bsh,
     TUserFlags flags
 )
 
@@ -134,6 +188,7 @@ void CDeflineGenerator::x_SetFlags (
     m_HTGSUnfinished = false;
     m_IsTSA = false;
     m_IsWGS = false;
+    m_IsEST_STS_GSS = false;
 
     m_UseBiosrc = false;
 
@@ -159,11 +214,11 @@ void CDeflineGenerator::x_SetFlags (
     m_Strain.clear();
 
     // now start setting member variables
-    m_IsNA = bioseq.IsNa();
-    m_IsAA = bioseq.IsAa();
+    m_IsNA = bsh.IsNa();
+    m_IsAA = bsh.IsAa();
 
-    if (bioseq.IsSetInst()) {
-        const CSeq_inst& inst = bioseq.GetInst();
+    if (bsh.IsSetInst()) {
+        const CSeq_inst& inst = bsh.GetInst();
         if (inst.IsSetRepr()) {
             TSEQ_REPR repr = inst.GetRepr();
             m_IsSeg = (repr == CSeq_inst::eRepr_seg);
@@ -172,20 +227,19 @@ void CDeflineGenerator::x_SetFlags (
     }
 
     // process Seq-ids
-    FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
-        const CSeq_id& sid = **sid_itr;
-        SWITCH_ON_SEQID_CHOICE (sid) {
+    FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
+        CSeq_id_Handle sid = *sid_itr;
+        switch (sid.Which()) {
             case NCBI_SEQID(Other):
             case NCBI_SEQID(Genbank):
             case NCBI_SEQID(Embl):
             case NCBI_SEQID(Ddbj):
             {
-                const CTextseq_id& tsid = *sid.GetTextseq_Id ();
+                const CTextseq_id& tsid = *sid.GetSeqId()->GetTextseq_Id ();
                 if (tsid.IsSetAccession()) {
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                    if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs) &&
-                            NStr::EndsWith(acc, "000000")) {
+                    if (type == NCBI_ACCN(wgs_master)) {
                         m_WGSMaster = true;
                     } else if (type == NCBI_ACCN(refseq_chromosome)) {
                         m_IsNC = true;
@@ -199,7 +253,7 @@ void CDeflineGenerator::x_SetFlags (
             }
             case NCBI_SEQID(General):
             {
-                const CDbtag& gen_id = sid.GetGeneral ();
+                const CDbtag& gen_id = sid.GetSeqId()->GetGeneral ();
                 if (! gen_id.IsSkippable ()) {
                     if (gen_id.IsSetTag ()) {
                         const CObject_id& oid = gen_id.GetTag();
@@ -218,7 +272,7 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Pdb):
             {
                 m_IsPDB = true;
-                const CPDB_seq_id& pdb_id = sid.GetPdb ();
+                const CPDB_seq_id& pdb_id = sid.GetSeqId()->GetPdb ();
                 if (pdb_id.IsSetChain()) {
                     m_PDBChain = pdb_id.GetChain();
                 }
@@ -227,7 +281,7 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Patent):
             {
                 m_IsPatent = true;
-                const CPatent_seq_id& pat_id = sid.GetPatent();
+                const CPatent_seq_id& pat_id = sid.GetSeqId()->GetPatent();
                 if (pat_id.IsSetSeqid()) {
                     m_PatentSequence = pat_id.GetSeqid();
                 }
@@ -246,39 +300,44 @@ void CDeflineGenerator::x_SetFlags (
     }
 
     // process MolInfo tech
-    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, bioseq, NULL) {
-        const CMolInfo& molinf = (*mi_ref).GetMolinfo();
-        m_MIBiomol = molinf.GetBiomol();
-        m_MITech = molinf.GetTech();
-        m_MICompleteness = molinf.GetCompleteness();
-        switch (m_MITech) {
-            case NCBI_TECH(htgs_0):
-            case NCBI_TECH(htgs_1):
-            case NCBI_TECH(htgs_2):
-                m_HTGSUnfinished = true;
-                // manufacture all titles for unfinished HTG sequences
-                m_Reconstruct = true;
-                // fall through
-            case NCBI_TECH(htgs_3):
-                m_HTGTech = true;
-                m_UseBiosrc = true;
-                break;
-            case NCBI_TECH(est):
-            case NCBI_TECH(sts):
-            case NCBI_TECH(survey):
-                m_IsEST_STS_GSS = true;
-                m_UseBiosrc = true;
-                break;
-            case NCBI_TECH(wgs):
-                m_IsWGS = true;
-                m_UseBiosrc = true;
-                break;
-            case NCBI_TECH(tsa):
-                m_IsTSA = true;
-                m_UseBiosrc = true;
-                break;
-            default:
-                break;
+    {
+        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Molinfo) {
+            const CMolInfo& molinf = desc_it->GetMolinfo();
+            m_MIBiomol = molinf.GetBiomol();
+            m_MITech = molinf.GetTech();
+            m_MICompleteness = molinf.GetCompleteness();
+            switch (m_MITech) {
+                case NCBI_TECH(htgs_0):
+                case NCBI_TECH(htgs_1):
+                case NCBI_TECH(htgs_2):
+                    m_HTGSUnfinished = true;
+                    // manufacture all titles for unfinished HTG sequences
+                    m_Reconstruct = true;
+                    // fall through
+                case NCBI_TECH(htgs_3):
+                    m_HTGTech = true;
+                    m_UseBiosrc = true;
+                    break;
+                case NCBI_TECH(est):
+                case NCBI_TECH(sts):
+                case NCBI_TECH(survey):
+                    m_IsEST_STS_GSS = true;
+                    m_UseBiosrc = true;
+                    break;
+                case NCBI_TECH(wgs):
+                    m_IsWGS = true;
+                    m_UseBiosrc = true;
+                    break;
+                case NCBI_TECH(tsa):
+                    m_IsTSA = true;
+                    m_UseBiosrc = true;
+                    break;
+                default:
+                    break;
+            }
+
+            // take first, then break to skip remainder
+            break;
         }
     }
 
@@ -287,18 +346,24 @@ void CDeflineGenerator::x_SetFlags (
         // process keywords
         const list <string> *keywords = NULL;
 
-        IF_EXISTS_CLOSEST_GENBANKBLOCK (gb_ref, bioseq, NULL) {
-            const CGB_block& gbk = (*gb_ref).GetGenbank();
+        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Genbank) {
+            const CGB_block& gbk = desc_it->GetGenbank();
             if (gbk.IsSetKeywords()) {
                 keywords = &gbk.GetKeywords();
             }
+
+            // take first, then break to skip remainder
+            break;
         }
         if (keywords == NULL) {
-            IF_EXISTS_CLOSEST_EMBLBLOCK (eb_ref, bioseq, NULL) {
-                const CEMBL_block& ebk = (*eb_ref).GetEmbl();
+            FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Embl) {
+                const CEMBL_block& ebk = desc_it->GetEmbl();
                 if (ebk.IsSetKeywords()) {
                     keywords = &ebk.GetKeywords();
                 }
+
+                // take first, then break to skip remainder
+                break;
             }
         }
         if (keywords != NULL) {
@@ -324,29 +389,30 @@ void CDeflineGenerator::x_SetFlags (
     if (m_IsPDB) {
 
         // process PDB block
-        IF_EXISTS_CLOSEST_PDBBLOCK (pb_ref, bioseq, NULL) {
-            const CPDB_block& pbk = (*pb_ref).GetPdb();
+        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Pdb) {
+            const CPDB_block& pbk = desc_it->GetPdb();
             FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
                 const string& str = *cp_itr;
                 if (m_PDBCompound.empty()) {
                     m_PDBCompound = str;
+
                     // take first, then break to skip remainder
                     break;
                 }
             }
+            break;
         }
     }
 }
 
 // set instance variables from BioSource
 void CDeflineGenerator::x_SetBioSrc (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
-    IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, bioseq, NULL) {
-        const CBioSource& source = (*bs_ref).GetSource();
+    FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Source) {
+        const CBioSource& source = desc_it->GetSource();
 
         // get organism name
         if (source.IsSetTaxname()) {
@@ -402,11 +468,15 @@ void CDeflineGenerator::x_SetBioSrc (
                     break;
             }
         }
+
+        // take first, then break to skip remainder
+        break;
     }
 }
 
 // generate title from BioSource fields
 string CDeflineGenerator::x_DescribeClones (void)
+
 {
     SIZE_TYPE count = 1;
     for (SIZE_TYPE pos = m_Clone.find(';'); pos != NPOS;
@@ -422,32 +492,35 @@ string CDeflineGenerator::x_DescribeClones (void)
     }
 }
 
-bool CDeflineGenerator::x_EndsWithStrain (void)
+static bool x_EndsWithStrain (
+    string taxname,
+    string strain
+)
+
 {
-    // return NStr::EndsWith(m_Taxname, m_Strain, NStr::eNocase);
-    if (m_Strain.size() >= m_Taxname.size()) {
+    // return NStr::EndsWith(taxname, strain, NStr::eNocase);
+    if (strain.size() >= taxname.size()) {
         return false;
     }
-    SIZE_TYPE pos = m_Taxname.find(' ');
+    SIZE_TYPE pos = taxname.find(' ');
     if (pos == NPOS) {
         return false;
     }
-    pos = m_Taxname.find(' ', pos + 1);
+    pos = taxname.find(' ', pos + 1);
     if (pos == NPOS) {
         return false;
     }
-    // XXX - the C Toolkit looks for the first occurrence, which could
-    // (at least in theory) lead to false negatives.
-    pos = NStr::FindNoCase (m_Taxname, m_Strain, pos + 1, NPOS, NStr::eLast);
-    if (pos == m_Taxname.size() - m_Strain.size()) {
+
+    pos = NStr::FindNoCase (taxname, strain, 0, taxname.size() - 1, NStr::eLast);
+    if (pos == taxname.size() - strain.size()) {
         // check for space to avoid fortuitous match to end of taxname
-        char ch = m_Taxname[pos - 1];
+        char ch = taxname[pos - 1];
         if (ispunct (ch) || isspace (ch)) {
             return true;
         }
-    } else if (pos == m_Taxname.size() - m_Strain.size() - 1
-               &&  m_Taxname[pos - 1] == '\''
-               &&  m_Taxname[m_Taxname.size() - 1] == '\'') {
+    } else if (pos == taxname.size() - strain.size() - 1
+               &&  taxname[pos - 1] == '\''
+               &&  taxname[taxname.size() - 1] == '\'') {
         return true;
     }
     return false;
@@ -459,7 +532,7 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
     string chr, cln, mp, pls, stn, sfx;
 
     if (! m_Strain.empty()) {
-        if (! x_EndsWithStrain ()) {
+        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
             stn = " strain " + m_Strain.substr (0, m_Strain.find(';'));
         }
     }
@@ -489,7 +562,8 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
 }
 
 // generate title for NC
-string CDeflineGenerator::x_OrganelleName (
+static string x_OrganelleName (
+    TBIOSOURCE_GENOME genome,
     bool has_plasmid,
     bool virus_or_phage,
     bool wgs_suffix
@@ -498,7 +572,7 @@ string CDeflineGenerator::x_OrganelleName (
 {
     string result;
 
-    switch (m_Genome) {
+    switch (genome) {
         case NCBI_GENOME(chloroplast):
             result = "chloroplast";
             break;
@@ -628,7 +702,7 @@ string CDeflineGenerator::x_TitleFromNC (void)
         }
     }
 
-    orgnl = x_OrganelleName (has_plasmid, virus_or_phage, false);
+    orgnl = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, false);
 
     is_plasmid = (m_Genome == NCBI_GENOME(plasmid));
 
@@ -692,7 +766,7 @@ string CDeflineGenerator::x_TitleFromNC (void)
 }
 
 // generate title for NM
-void CDeflineGenerator::x_FlyCG_PtoR (
+static void x_FlyCG_PtoR (
     string& s
 )
 
@@ -716,8 +790,7 @@ void CDeflineGenerator::x_FlyCG_PtoR (
 }
 
 string CDeflineGenerator::x_TitleFromNM (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
@@ -729,19 +802,24 @@ string CDeflineGenerator::x_TitleFromNM (
     // require taxname to be set
     if (m_Taxname.empty()) return result;
 
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    CBioseq_Handle hnd = scope.GetBioseqHandle (bioseq);
+    CScope& scope = bsh.GetScope();
 
-    for (CFeat_CI it(hnd); it; ++it) {
-        const CSeq_feat& sft = it->GetOriginalFeature();
+    SAnnotSelector sel;
+    sel.SetFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    sel.IncludeFeatType(CSeqFeatData::e_Prot);
+    sel.SetResolveTSE();
+
+    FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, sel) {
+        const CSeq_feat& sft = feat_it->GetOriginalFeature();
         SWITCH_ON_FEATURE_CHOICE (sft) {
             case CSeqFeatData::e_Gene:
                 ++genes;
-                gene.Reset(&it->GetMappedFeature());
+                gene.Reset(&sft);
                 break;
             case CSeqFeatData::e_Cdregion:
                 ++cdregions;
-                cdregion.Reset(&it->GetMappedFeature());
+                cdregion.Reset(&sft);
                 break;
             case CSeqFeatData::e_Prot:
                 ++prots;
@@ -769,8 +847,7 @@ string CDeflineGenerator::x_TitleFromNM (
 
 // generate title for NR
 string CDeflineGenerator::x_TitleFromNR (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
@@ -779,55 +856,51 @@ string CDeflineGenerator::x_TitleFromNR (
     // require taxname to be set
     if (m_Taxname.empty()) return result;
 
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    CBioseq_Handle hnd = scope.GetBioseqHandle (bioseq);
-
-    for (CTypeConstIterator<CSeq_feat> it(
-          *hnd.GetTopLevelEntry().GetCompleteSeq_entry()); it; ++it) {
-        const CSeq_feat& sft = *it;
-        if (FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Gene))) {
-            result = m_Taxname + " ";
-            feature::GetLabel(*it, &result, feature::fFGL_Content);
-            result += ", ";
-            switch (m_MIBiomol) {
-                case NCBI_BIOMOL(pre_RNA):
-                    result += "precursorRNA";
-                    break;
-                case NCBI_BIOMOL(mRNA):
-                    result += "mRNA";
-                    break;
-                case NCBI_BIOMOL(rRNA):
-                    result += "rRNA";
-                    break;
-                case NCBI_BIOMOL(tRNA):
-                    result += "tRNA";
-                    break;
-                case NCBI_BIOMOL(snRNA):
-                    result += "snRNA";
-                    break;
-                case NCBI_BIOMOL(scRNA):
-                    result += "scRNA";
-                    break;
-                case NCBI_BIOMOL(cRNA):
-                    result += "cRNA";
-                    break;
-                case NCBI_BIOMOL(snoRNA):
-                    result += "snoRNA";
-                    break;
-                case NCBI_BIOMOL(transcribed_RNA):
-                    result+="miscRNA";
-                    break;
-                case NCBI_BIOMOL(ncRNA):
-                    result += "ncRNA";
-                    break;
-                case NCBI_BIOMOL(tmRNA):
-                    result += "tmRNA";
-                    break;
-                default:
-                    break;
-            }
-            break;
+    FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, Gene) {
+        const CSeq_feat& sft = feat_it->GetOriginalFeature();
+        result = m_Taxname + " ";
+        feature::GetLabel(sft, &result, feature::fFGL_Content);
+        result += ", ";
+        switch (m_MIBiomol) {
+            case NCBI_BIOMOL(pre_RNA):
+                result += "precursorRNA";
+                break;
+            case NCBI_BIOMOL(mRNA):
+                result += "mRNA";
+                break;
+            case NCBI_BIOMOL(rRNA):
+                result += "rRNA";
+                break;
+            case NCBI_BIOMOL(tRNA):
+                result += "tRNA";
+                break;
+            case NCBI_BIOMOL(snRNA):
+                result += "snRNA";
+                break;
+            case NCBI_BIOMOL(scRNA):
+                result += "scRNA";
+                break;
+            case NCBI_BIOMOL(cRNA):
+                result += "cRNA";
+                break;
+            case NCBI_BIOMOL(snoRNA):
+                result += "snoRNA";
+                break;
+            case NCBI_BIOMOL(transcribed_RNA):
+                result+="miscRNA";
+                break;
+            case NCBI_BIOMOL(ncRNA):
+                result += "ncRNA";
+                break;
+            case NCBI_BIOMOL(tmRNA):
+                result += "tmRNA";
+                break;
+            default:
+                break;
         }
+
+        // take first, then break to skip remainder
+        break;
     }
 
     return result;
@@ -862,95 +935,66 @@ string CDeflineGenerator::x_TitleFromPDB (void)
 
 // generate title for protein
 CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
-    bool                  go_on = true;
     TSeqPos               longest = 0;
     CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
     CProt_ref::EProcessed processed;
     CConstRef<CProt_ref>  prot;
     CConstRef<CSeq_feat>  prot_feat;
-    CSeq_entry*           se;
     TSeqPos               seq_len = UINT_MAX;
 
-    if (bioseq.IsSetInst ()) {
-        const CSeq_inst& inst = bioseq.GetInst ();
+    CScope& scope = bsh.GetScope();
+
+    if (bsh.IsSetInst ()) {
+        const CSeq_inst& inst = bsh.GetInst ();
         if (inst.IsSetLength ()) {
             seq_len = inst.GetLength ();
         }
     }
-    
-    se = bioseq.GetParentEntry();
 
-    while (se && go_on) {
-        const CSeq_entry& entry = *se;
-        FOR_EACH_ANNOT_ON_SEQENTRY (sa_itr, entry) {
-            const CSeq_annot& annot = **sa_itr;
-            FOR_EACH_FEATURE_ON_ANNOT (sf_itr, annot) {
-                const CSeq_feat& feat = **sf_itr;
-                if (! FEATURE_CHOICE_IS (feat, NCBI_SEQFEAT(Prot))) continue;
-                /*
-                if (! feat.IsSetData ()) continue;
-                */
-                const CSeqFeatData& sfdata = feat.GetData ();
-                /*
-                if (! sfdata.IsProt ()) continue;
-                */
-                const CProt_ref& prp = sfdata.GetProt();
-                processed = CProt_ref::eProcessed_not_set;
-                if (prp.IsSetProcessed()) {
-                    processed = prp.GetProcessed();
-                }
-                if (! feat.IsSetLocation ()) continue;
-                const CSeq_loc& loc = feat.GetLocation ();
-                TSeqPos prot_length = GetLength (loc, &scope);
-                if (prot_length > longest) {
-                    prot_feat = *sf_itr;
-                    longest = prot_length;
-                    bestprocessed = processed;
-                } else if (prot_length == longest) {
-                    // unprocessed 0 preferred over preprotein 1 preferred
-                    // over mat peptide 2
-                    if (processed < bestprocessed) {
-                        prot_feat = *sf_itr;
-                        longest = prot_length;
-                        bestprocessed = processed;
-                    }
-                }
-            }
+    FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, Prot) {
+        const CSeq_feat& feat = feat_it->GetOriginalFeature();
+        if (! feat.IsSetData ()) continue;
+        const CSeqFeatData& sfdata = feat.GetData ();
+        const CProt_ref& prp = sfdata.GetProt();
+        processed = CProt_ref::eProcessed_not_set;
+        if (prp.IsSetProcessed()) {
+            processed = prp.GetProcessed();
         }
-
-        if (longest == seq_len && prot_feat) return prot_feat;
-
-        se = se->GetParentEntry();
-
-        go_on = false;
-        if (se) {
-            if (se->IsSet ()) {
-                const CBioseq_set& bss = se->GetSet ();
-                if (bss.IsSetClass ()) {
-                    CBioseq_set::EClass bss_class = bss.GetClass ();
-                    if (bss_class == CBioseq_set::eClass_parts ||
-                        bss_class == CBioseq_set::eClass_segset) {
-                        go_on = true;
-                    }
-                }
+        if (! feat.IsSetLocation ()) continue;
+        const CSeq_loc& loc = feat.GetLocation ();
+        TSeqPos prot_length = GetLength (loc, &scope);
+        if (prot_length > longest) {
+            prot_feat = &feat;
+            longest = prot_length;
+            bestprocessed = processed;
+        } else if (prot_length == longest) {
+            // unprocessed 0 preferred over preprotein 1 preferred
+            // over mat peptide 2
+            if (processed < bestprocessed) {
+                prot_feat = &feat;
+                longest = prot_length;
+                bestprocessed = processed;
             }
         }
     }
+
+    if (longest == seq_len && prot_feat) {
+        return prot_feat;
+    }
+
+    // confirm that this will automatically check features on
+    // parts and segset in pathological segmented protein ???
 
     if (prot_feat) {
         return prot_feat;
     }
 
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
-
     CSeq_loc everywhere;
-    everywhere.SetWhole().Assign(*hnd.GetSeqId());
+    everywhere.SetWhole().Assign(*bsh.GetSeqId());
 
     prot_feat = GetBestOverlappingFeat (everywhere, CSeqFeatData::e_Prot,
                                         eOverlap_Contained, scope);
@@ -963,17 +1007,10 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
 }
 
 CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
-    const CBioseq& bioseq,
-    CScope& scope
-)
+    const CMappedFeat& mapped_cds)
 
 {
     CConstRef<CGene_ref> gene_ref;
-
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
-
-    const CMappedFeat& mapped_cds = GetMappedCDSForProduct (hnd);
 
     if (mapped_cds) {
         const CSeq_feat& cds_feat = mapped_cds.GetOriginalFeature();
@@ -991,9 +1028,21 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
             return gene_ref;
         }
 
-        CFeatTree tree;
-        tree.AddGenesForCds (mapped_cds);
-        CMappedFeat mapped_gene = GetBestGeneForCds (mapped_cds, &tree);
+        if (m_ConstructedFeatTree) {
+            if (! m_InitializedFeatTree) {
+                CFeat_CI iter (m_TopSEH);
+                m_Feat_Tree.Reset (new CFeatTree (iter));
+                m_InitializedFeatTree = true;
+            }
+        }
+        if (m_Feat_Tree.Empty ()) {
+            m_Feat_Tree.Reset (new CFeatTree);
+        }
+        if (! m_ConstructedFeatTree) {
+            m_Feat_Tree->AddGenesForCds (mapped_cds);
+        }
+
+        CMappedFeat mapped_gene = GetBestGeneForCds (mapped_cds, m_Feat_Tree);
         if (mapped_gene) {
             const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
             gene_ref = &gene_feat.GetData().GetGene();
@@ -1003,64 +1052,8 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
     return gene_ref;
 }
 
-bool CDeflineGenerator::x_HasSourceFeats (
-    const CBioseq& bioseq
-)
-
-{
-    if (m_HasBiosrcFeats == eSFS_Unknown) {
-        CSeq_entry* se;
-        CSeq_entry* top;
-
-        se = bioseq.GetParentEntry();
-        top = se;
-
-        while (se) {
-            top = se;
-            se = se->GetParentEntry();
-        }
-
-        if (top) {
-            m_HasBiosrcFeats = eSFS_Absent;
-            /*
-            VISIT_ALL_FEATURES_WITHIN_SEQENTRY (ft_itr, *top) {
-                const CSeq_feat& feat = *ft_itr;
-                if (feat.IsSetData()) {
-                    const CSeqFeatData& sfd = feat.GetData();
-                    if (sfd.IsBiosrc()) {
-                        m_HasBiosrcFeats = eSFS_Present;
-                        return true;
-                    }
-                }
-            }
-            */
-            VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY (se_itr, *top) {
-                const CSeq_entry& entry = *se_itr;
-                FOR_EACH_ANNOT_ON_SEQENTRY (an_itr, entry) {
-                    const CSeq_annot& annot = **an_itr;
-                    FOR_EACH_FEATURE_ON_ANNOT (ft_itr, annot) {
-                        const CSeq_feat& feat = **ft_itr;
-                        if (feat.IsSetData()) {
-                            const CSeqFeatData& sfd = feat.GetData();
-                            if (sfd.IsBiosrc()) {
-                                m_HasBiosrcFeats = eSFS_Present;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (m_HasBiosrcFeats == eSFS_Present) return true;
-
-    return false;
-}
-
-CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS  (
-    const CBioseq& bioseq,
-    CScope& scope
+static CConstRef<CBioSource> x_GetSourceFeatViaCDS  (
+    const CBioseq_Handle& bsh
 )
 
 {
@@ -1068,10 +1061,9 @@ CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS  (
     CConstRef<CSeq_loc>    cds_loc;
     CConstRef<CBioSource>  src_ref;
 
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
+    CScope& scope = bsh.GetScope();
 
-    cds_feat = GetCDSForProduct (hnd);
+    cds_feat = GetCDSForProduct (bsh);
 
     if (cds_feat) {
         /*
@@ -1100,10 +1092,33 @@ CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS  (
     return CConstRef<CBioSource> ();
 }
 
+bool CDeflineGenerator::x_CDShasLowQualityException (
+    const CSeq_feat& sft
+)
+
+{
+    if (! FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Cdregion))) return false;
+    if (! sft.IsSetExcept()) return false;
+    if (! sft.GetExcept()) return false;
+    if (! sft.IsSetExcept_text()) return false;
+
+    const string& str = sft.GetExcept_text();
+    int current_state = 0;
+    FOR_EACH_CHAR_IN_STRING (str_itr, str) {
+        const char ch = *str_itr;
+        int next_state = m_Low_Quality_Fsa.GetNextState (current_state, ch);
+        if (m_Low_Quality_Fsa.IsMatchFound (next_state)) {
+            return true;
+        }
+        current_state = next_state;
+    }
+
+
+    return false;
+}
 
 string CDeflineGenerator::x_TitleFromProtein (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
@@ -1117,11 +1132,14 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     // gets longest protein on Bioseq, parts set, or seg set, even if not
     // full-length
-    prot_feat = x_GetLongestProtein (bioseq, scope);
+
+    prot_feat = x_GetLongestProtein (bsh);
 
     if (prot_feat) {
         prot = &prot_feat->GetData().GetProt();
     }
+
+    const CMappedFeat& mapped_cds = GetMappedCDSForProduct (bsh);
 
     if (prot) {
         const CProt_ref& prp = *prot;
@@ -1138,6 +1156,11 @@ string CDeflineGenerator::x_TitleFromProtein (
 
         if (! result.empty()) {
             // strip trailing periods, commas, and spaces
+            size_t pos = result.find_last_not_of (".,;~ ");
+            if (pos != string::npos) {
+                result.erase (pos + 1);
+            }
+            /*
             while (NStr::EndsWith (result, ".") ||
                    NStr::EndsWith (result, ",") ||
                    NStr::EndsWith (result, ";") ||
@@ -1145,9 +1168,10 @@ string CDeflineGenerator::x_TitleFromProtein (
                    NStr::EndsWith (result, " ")) {
                 result.erase (result.end() - 1);
             }
+            */
 
             if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
-                gene = x_GetGeneRefViaCDS (bioseq, scope);
+                gene = x_GetGeneRefViaCDS (mapped_cds);
                 if (gene) {
                     const CGene_ref& grp = *gene;
                     if (grp.IsSetLocus_tag()) {
@@ -1174,7 +1198,7 @@ string CDeflineGenerator::x_TitleFromProtein (
     }
 
     if (result.empty()) {
-        gene = x_GetGeneRefViaCDS (bioseq, scope);
+        gene = x_GetGeneRefViaCDS (mapped_cds);
         if (gene) {
             const CGene_ref& grp = *gene;
             if (grp.IsSetLocus()) {
@@ -1202,10 +1226,8 @@ string CDeflineGenerator::x_TitleFromProtein (
         result = "unnamed protein product";
     }
 
-    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
-    cds_feat = GetCDSForProduct (hnd);
-    if (cds_feat) {
-        const CSeq_feat& cds = (*cds_feat);
+    if (mapped_cds) {
+        const CSeq_feat& cds = mapped_cds.GetOriginalFeature();
         if (x_CDShasLowQualityException (cds)) {
           const string& low_qual = "LOW QUALITY PROTEIN: ";
           if (NStr::FindNoCase (result, low_qual, 0) == NPOS) {
@@ -1216,6 +1238,11 @@ string CDeflineGenerator::x_TitleFromProtein (
     }
 
     // strip trailing periods, commas, and spaces
+    size_t pos = result.find_last_not_of (".,;~ ");
+    if (pos != string::npos) {
+        result.erase (pos + 1);
+    }
+    /*
     while (NStr::EndsWith (result, ".") ||
                NStr::EndsWith (result, ",") ||
                NStr::EndsWith (result, ";") ||
@@ -1223,6 +1250,7 @@ string CDeflineGenerator::x_TitleFromProtein (
                NStr::EndsWith (result, " ")) {
         result.erase (result.end() - 1);
     }
+    */
 
     string taxname;
     taxname = m_Taxname;
@@ -1234,14 +1262,12 @@ string CDeflineGenerator::x_TitleFromProtein (
          taxname.find ("vector") == NPOS &&
          taxname.find ("Vector") == NPOS)) {
 
-        if (x_HasSourceFeats(bioseq)) {
-            src = x_GetSourceFeatViaCDS (bioseq, scope);
-            if (src) {
-                const CBioSource& source = *src;
-                if (source.IsSetTaxname()) {
-                    const string& str = source.GetTaxname();
-                    taxname = str;
-                }
+        src = x_GetSourceFeatViaCDS (bsh);
+        if (src) {
+            const CBioSource& source = *src;
+            if (source.IsSetTaxname()) {
+                const string& str = source.GetTaxname();
+                taxname = str;
             }
         }
     }
@@ -1255,8 +1281,7 @@ string CDeflineGenerator::x_TitleFromProtein (
 
 // generate title for segmented sequence
 string CDeflineGenerator::x_TitleFromSegSeq  (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq_Handle& bsh
 )
 
 {
@@ -1264,58 +1289,76 @@ string CDeflineGenerator::x_TitleFromSegSeq  (
     bool   cds_found    = false;
     string locus, product, result;
 
-    // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
+    CScope& scope = bsh.GetScope();
 
     if (m_Taxname.empty()) {
         m_Taxname = "Unknown";
     }
 
+    // check C toolkit code to understand what is happening here ???
+
     CSeq_loc everywhere;
-    everywhere.SetMix().Set() = hnd.GetInst_Ext().GetSeg();
+    everywhere.SetMix().Set() = bsh.GetInst_Ext().GetSeg();
 
-    CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
-    for (; it; ++it) {
+    FOR_EACH_SEQFEAT_ON_SCOPE (it, scope, everywhere, Cdregion) {
+        const CSeq_feat& cds = it->GetOriginalFeature();
+        if (! cds.IsSetLocation ()) continue;
+        const CSeq_loc& cds_loc = cds.GetLocation();
+
         cds_found = true;
-        if ( !it->IsSetProduct() ) {
-            continue;
-        }
-        const CSeq_loc& product_loc = it->GetProduct();
 
-        if (it->IsSetPartial()) {
+        GetLabel (cds, &product, feature::fFGL_Content, &scope);
+
+        if (cds.IsSetPartial()) {
             completeness = "partial";
         }
 
-        CConstRef<CSeq_feat> prot_feat
-            = GetBestOverlappingFeat(product_loc, CSeqFeatData::e_Prot,
-                                     eOverlap_Interval, scope);
-        if (product.empty()  &&  prot_feat.NotEmpty() &&
-            prot_feat->GetData().GetProt().IsSetName()) {
-            product = *prot_feat->GetData().GetProt().GetName().begin();
-        }
-
-        CConstRef<CSeq_feat> gene_feat
-            = GetBestOverlappingFeat(it->GetLocation(),
-                                     CSeqFeatData::eSubtype_gene,
-                                     eOverlap_Subset,
-                                     scope);
-        if (locus.empty()  &&  gene_feat.NotEmpty()) {
-            if (gene_feat->GetData().GetGene().IsSetLocus()) {
-                locus = gene_feat->GetData().GetGene().GetLocus();
-            } else if (gene_feat->GetData().GetGene().IsSetSyn()) {
-                locus = *gene_feat->GetData().GetGene().GetSyn().begin();
+        FOR_EACH_SEQFEATXREF_ON_SEQFEAT (xr_itr, cds) {
+            const CSeqFeatXref& sfx = **xr_itr;
+            if (! FIELD_IS_SET (sfx, Data)) continue;
+            const CSeqFeatData& sfd = GET_FIELD (sfx, Data);
+            if (! FIELD_IS (sfd, Gene)) continue;
+            const CGene_ref& gr = GET_FIELD (sfd, Gene);
+            if (FIELD_IS_SET (gr, Locus)) {
+                locus = GET_FIELD (gr, Locus);
+            } else {
+                FOR_EACH_SYNONYM_ON_GENEREF (syn_itr, gr) {
+                    locus = *syn_itr;
+                    // take first, then break to skip remainder
+                    break;
+                }
             }
         }
 
+        if (locus.empty()) {
+            CConstRef<CSeq_feat> gene_feat
+                = GetBestOverlappingFeat(cds_loc,
+                                         CSeqFeatData::eSubtype_gene,
+                                         eOverlap_Contained,
+                                         scope);
+            if (gene_feat.NotEmpty()) {
+                const CSeq_feat& gene = *gene_feat;
+                GetLabel (gene, &locus, feature::fFGL_Content, &scope);
+                /*
+                if (gene_feat->GetData().GetGene().IsSetLocus()) {
+                    locus = gene_feat->GetData().GetGene().GetLocus();
+                } else if (gene_feat->GetData().GetGene().IsSetSyn()) {
+                    locus = *gene_feat->GetData().GetGene().GetSyn().begin();
+                }
+                */
+            }
+        }
+
+        // take first, then break to skip remainder
         break;
     }
 
     result = m_Taxname;
 
     if ( !cds_found) {
-        if ( (! m_Strain.empty()) && (! x_EndsWithStrain ())) {
+        if ( (! m_Strain.empty()) && (! x_EndsWithStrain (m_Taxname, m_Strain))) {
             result += " strain " + m_Strain;
-        } else if (! m_Clone.empty() && m_Clone.find(" clone ") != NPOS) {
+        } else if (! m_Clone.empty() /* && m_Clone.find(" clone ") != NPOS */) {
             result += x_DescribeClones ();
         } else if (! m_Isolate.empty() ) {
             result += " isolate " + m_Isolate;
@@ -1340,7 +1383,7 @@ string CDeflineGenerator::x_TitleFromWGS (void)
     string chr, cln, mp, pls, stn, sfx;
 
     if (! m_Strain.empty()) {
-        if (! x_EndsWithStrain ()) {
+        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
             stn = " strain " + m_Strain.substr (0, m_Strain.find(';'));
         }
     }
@@ -1397,8 +1440,7 @@ string CDeflineGenerator::x_SetPrefix (void)
 
 // generate suffix if not already present
 string CDeflineGenerator::x_SetSuffix (
-    const CBioseq& bioseq,
-    CScope& scope,
+    const CBioseq_Handle& bsh,
     const string& title
 )
 
@@ -1427,9 +1469,7 @@ string CDeflineGenerator::x_SetSuffix (
             }
             if (m_IsDelta) {
                 unsigned int pieces = 1;
-                // !!! NOTE CALL TO OBJECT MANAGER !!!
-                const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
-                for (CSeqMap_CI it (hnd, CSeqMap::fFindGap); it; ++it) {
+                for (CSeqMap_CI it (bsh, CSeqMap::fFindGap); it; ++it) {
                     ++pieces;
                 }
                 if (pieces == 1) {
@@ -1470,7 +1510,7 @@ string CDeflineGenerator::x_SetSuffix (
                     suffix = ", whole genome shotgun sequencing project";
                 }            
             } else if (title.find ("whole genome shotgun sequence") == NPOS) {
-                string orgnl = x_OrganelleName (false, false, true);
+                string orgnl = x_OrganelleName (m_Genome, false, false, true);
                 if (! orgnl.empty()) {
                     suffix = " " + orgnl;
                 }
@@ -1485,34 +1525,32 @@ string CDeflineGenerator::x_SetSuffix (
 }
 
 // main method
-string CDeflineGenerator::GenerateDefline(const CBioseq_Handle& bioseq,
-                                           TUserFlags flags)
-{
-    return GenerateDefline(*bioseq.GetCompleteBioseq(),
-                           bioseq.GetScope(),
-                           flags);
-}
+string CDeflineGenerator::GenerateDefline (
+    const CBioseq_Handle& bsh,
+    TUserFlags flags
+)
 
-
-string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
-                                          CScope& scope,
-                                          TUserFlags flags)
 {
     string prefix, title, suffix;
 
     // set flags from record components
-    x_SetFlags (bioseq, scope, flags);
+    x_SetFlags (bsh, flags);
 
     if (! m_Reconstruct) {
         // look for existing instantiated title
         int level = 0;
-        IF_EXISTS_CLOSEST_TITLE (ttl_ref, bioseq, &level) {
-            const string& str = (*ttl_ref).GetTitle();
+        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Title) {
+            const string& str = desc_it->GetTitle();
             // for non-PDB proteins, title must be packaged on Bioseq
             if (m_IsNA || m_IsPDB || level == 0) {
                 title = str;
 
                 // strip trailing periods, commas, semicolons, and spaces
+                size_t pos = title.find_last_not_of (".,;~ ");
+                if (pos != string::npos) {
+                    title.erase (pos + 1);
+                }
+                /*
                 while (NStr::EndsWith (title, ".") ||
                            NStr::EndsWith (title, ",") ||
                            NStr::EndsWith (title, ";") ||
@@ -1520,7 +1558,11 @@ string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
                            NStr::EndsWith (title, " ")) {
                     title.erase (title.end() - 1);
                 }
+                */
             }
+
+            // take first, then break to skip remainder
+            break;
         }
     }
 
@@ -1535,19 +1577,19 @@ string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
 
         if (title.empty()) {
             // set fields from source information
-            x_SetBioSrc (bioseq, scope);
+            x_SetBioSrc (bsh);
 
             // several record types have specific methods
             if (m_IsNC) {
                 title = x_TitleFromNC ();
             } else if (m_IsNM) {
-                title = x_TitleFromNM (bioseq, scope);
+                title = x_TitleFromNM (bsh);
             } else if (m_IsNR) {
-                title = x_TitleFromNR (bioseq, scope);
+                title = x_TitleFromNR (bsh);
             } else if (m_IsAA) {
-                title = x_TitleFromProtein (bioseq, scope);
+                title = x_TitleFromProtein (bsh);
             } else if (m_IsSeg && (! m_IsEST_STS_GSS)) {
-                title = x_TitleFromSegSeq (bioseq, scope);
+                title = x_TitleFromSegSeq (bsh);
             } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster))) {
                 title = x_TitleFromWGS ();
             }
@@ -1584,55 +1626,38 @@ string CDeflineGenerator::GenerateDefline(const CBioseq& bioseq,
 
     // strip trailing commas, semicolons, and spaces (period may be an sp.
     // species)
+    size_t pos = title.find_last_not_of (",;~ ");
+    if (pos != string::npos) {
+        title.erase (pos + 1);
+    }
+    /*
     while (NStr::EndsWith (title, ",") ||
                NStr::EndsWith (title, ";") ||
                NStr::EndsWith (title, "~") ||
                NStr::EndsWith (title, " ")) {
         title.erase (title.end() - 1);
     }
+    */
 
     // calculate prefix
     prefix = x_SetPrefix ();
 
     // calculate suffix
-    suffix = x_SetSuffix (bioseq, scope, title);
+    suffix = x_SetSuffix (bsh, title);
 
     return prefix + title + suffix;
 }
 
-
-#if 0
-// PUBLIC FUNCTIONS - will probably remove
-
-// preferred function only does feature indexing if necessary
-string CreateDefLine (
+string CDeflineGenerator::GenerateDefline (
     const CBioseq& bioseq,
     CScope& scope,
-    CDeflineGenerator::TUserFlags flags
+    TUserFlags flags
 )
 
 {
-    CDeflineGenerator gen;
-
-    return gen.GenerateDefline (bioseq, scope, flags);
+    CBioseq_Handle bsh = scope.AddBioseq(bioseq,
+                                         CScope::kPriority_Default,
+                                         CScope::eExist_Get);
+    return GenerateDefline(bsh, flags);
 }
-
-// alternative provided for backward compatibility with existing function
-string CreateDefLine (
-    const CBioseq_Handle& hnd,
-    CDeflineGenerator::TUserFlags flags
-)
-
-{
-    string result;
-
-    CConstRef<CBioseq> bs_ref = hnd.GetCompleteBioseq();
-    if (bs_ref) {
-        CScope& scope = hnd.GetScope();
-        result = CreateDefLine (*bs_ref, scope, flags);
-    }
-
-    return result;
-}
-#endif
 

@@ -36,6 +36,8 @@
 
 #include <objects/misc/sequence_macros.hpp>
 #include <util/strsearch.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 
 /** @addtogroup ObjUtilSequence
  *
@@ -55,9 +57,9 @@ BEGIN_SCOPE(sequence)
 ///
 /// PREFERRED USAGE:
 ///
-/// CDeflineGenerator gen;
+/// CDeflineGenerator gen(tseh);
 ///
-/// const string& title = gen.GenerateDefline(bioseq, scope, flags);
+/// const string& title = gen.GenerateDefline(bsh, flags);
 ///
 /// Same CDeflineGenerator should be used for all titles within nuc-prot set
 /// blob, since it tracks presence or absence of biosource features to speed
@@ -68,6 +70,9 @@ class NCBI_XOBJUTIL_EXPORT CDeflineGenerator
 public:
     /// Constructor
     CDeflineGenerator (void);
+
+    /// Constructor
+    CDeflineGenerator (const CSeq_entry_Handle& tseh);
 
     /// Destructor
     ~CDeflineGenerator (void);
@@ -81,28 +86,31 @@ public:
 
     /// Main method
     string GenerateDefline (
-        const CBioseq& bioseq,
-        CScope& scope,
+        const CBioseq_Handle& bsh,
         TUserFlags flags = 0
     );
 
     /// Main method
     string GenerateDefline (
-        const CBioseq_Handle& bioseq,
+        const CBioseq& bioseq,
+        CScope& scope,
         TUserFlags flags = 0
     );
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CDeflineGenerator (const CDeflineGenerator&);
+    CDeflineGenerator& operator= (const CDeflineGenerator&);
 
 private:
     /// internal methods
 
     void x_SetFlags (
-        const CBioseq& bioseq,
-        CScope& scope,
+        const CBioseq_Handle& bsh,
         TUserFlags flags
     );
     void x_SetBioSrc (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
 
     bool x_CDShasLowQualityException (
@@ -110,61 +118,44 @@ private:
     );
 
     string x_DescribeClones (void);
-    bool x_EndsWithStrain (void);
-    void x_FlyCG_PtoR (
-        string& s
-    );
-    string x_OrganelleName (
-        bool has_plasmid,
-        bool virus_or_phage,
-        bool wgs_suffix
-    );
     CConstRef<CSeq_feat> x_GetLongestProtein (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
     CConstRef<CGene_ref> x_GetGeneRefViaCDS (
-        const CBioseq& bioseq,
-        CScope& scope
-    );
-    bool x_HasSourceFeats (
-        const CBioseq& bioseq
-    );
-    CConstRef<CBioSource> x_GetSourceFeatViaCDS (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CMappedFeat& mapped_cds
     );
 
     string x_TitleFromBioSrc (void);
     string x_TitleFromNC (void);
     string x_TitleFromNM (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
     string x_TitleFromNR (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
     string x_TitleFromPatent (void);
     string x_TitleFromPDB (void);
     string x_TitleFromProtein (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
     string x_TitleFromSegSeq (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq_Handle& bsh
     );
     string x_TitleFromWGS (void);
 
     string x_SetPrefix (void);
     string x_SetSuffix (
-        const CBioseq& bioseq,
-        CScope& scope,
+        const CBioseq_Handle& bsh,
         const string& title
     );
 
 private:
+    /// internal feature tree for parent mapping
+    CRef<feature::CFeatTree> m_Feat_Tree;
+    CSeq_entry_Handle m_TopSEH;
+    bool m_ConstructedFeatTree;
+    bool m_InitializedFeatTree;
+
     /// ignore existing title is forced for certain types
     bool m_Reconstruct;
     bool m_AllProtNames;
@@ -234,34 +225,8 @@ private:
 
     /// exception fields
     CTextFsm<int> m_Low_Quality_Fsa;
-
-    /// persistent state for blob to suppress unnecessary feature indexing
-    enum ESourceFeatureStatus {
-        eSFS_Unknown = -1,
-        eSFS_Absent  = 0,
-        eSFS_Present = 1
-    };
-
-    ESourceFeatureStatus m_HasBiosrcFeats;
 };
 
-
-#if 0
-// PUBLIC FUNCTIONS - will probably remove
-
-// preferred function only does feature indexing if necessary
-string CreateDefLine (
-    const CBioseq& bioseq,
-    CScope& scope,
-    CDeflineGenerator::TUserFlags flags = 0
-);
-
-// alternative provided for backward compatibility with existing function
-string CreateDefLine (
-    const CBioseq_Handle& hnd,
-    CDeflineGenerator::TUserFlags flags = 0
-);
-#endif
 
 END_SCOPE(sequence)
 END_SCOPE(objects)
