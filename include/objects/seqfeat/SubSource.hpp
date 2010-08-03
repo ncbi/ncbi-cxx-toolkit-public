@@ -127,6 +127,7 @@ public:
     static bool IsValid(const string& country);
     static bool IsValid(const string& country, bool& is_miscapitalized);
     static bool WasValid(const string& country);
+    static bool WasValid(const string& country, bool& is_miscapitalized);
 
 private:
     static const string sm_Countries[];

@@ -615,6 +615,32 @@ bool CCountries::WasValid(const string& country)
 }
 
 
+bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
+{
+    string name = country;
+    size_t pos = country.find(':');
+
+    if ( pos != string::npos ) {
+        name = country.substr(0, pos);
+    }
+
+    is_miscapitalized = false;
+    // try formerly-valid countries
+    is_miscapitalized = false;
+    // try current countries
+    size_t num_countries = sizeof(sm_Former_Countries) / sizeof(string);
+    for (size_t i = 0; i < num_countries; i++) {
+        if (NStr::EqualNocase (name, sm_Former_Countries[i])) {
+            if (!NStr::EqualCase(name, sm_Former_Countries[i])) {
+                is_miscapitalized = true;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
