@@ -298,10 +298,10 @@ s_checkDbSeqSrcFunctions(BlastSeqSrc* seq_src, const char* dbname)
     // Now check the uncompressed sequence retrieval
     seq_arg->encoding = eBlastEncodingNucleotide;
     BOOST_REQUIRE(BlastSeqSrcGetSequence(seq_src, seq_arg) >= 0);
+    BOOST_REQUIRE(seq_arg != NULL);
+    BOOST_REQUIRE(seq_arg->seq != NULL);
+    BOOST_REQUIRE(seq_arg->seq->sequence_start != NULL);
     for (index = 0; index < kNumBytes_4na; ++index) {
-        BOOST_REQUIRE(seq_arg != NULL);
-        BOOST_REQUIRE(seq_arg->seq != NULL);
-        BOOST_REQUIRE(seq_arg->seq->sequence_start != NULL);
         BOOST_REQUIRE_EQUAL(kBlastnaSeqBytes[index], 
                              (int)seq_arg->seq->sequence_start[index]);
     }
