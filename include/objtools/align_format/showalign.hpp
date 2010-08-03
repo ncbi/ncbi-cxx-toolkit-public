@@ -785,7 +785,7 @@ private:
 								   int firstGi,
 								   bool isNa,
 								  int seqLength);
-	SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);
+    SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);
                                      
 };
 
