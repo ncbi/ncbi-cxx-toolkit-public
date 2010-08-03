@@ -393,6 +393,7 @@ public:
                     int               nucl_code,
                     ESeqDBAllocType   alloc_type,
                     SSeqDBSlice     * region,
+                    CSeqDB::TSequenceRanges * masks,
                     CSeqDBLockHold  & locked) const;
     
     /// Get the Seq-ids associated with a sequence.

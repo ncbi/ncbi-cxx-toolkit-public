@@ -374,7 +374,8 @@ public:
                     char           ** buffer,
                     int               nucl_code,
                     SSeqDBSlice     * region,
-                    ESeqDBAllocType   strategy) const;
+                    ESeqDBAllocType   strategy,
+                    CSeqDB::TSequenceRanges * masks = NULL ) const;
     
     /// Returns any resources associated with the sequence.
     ///

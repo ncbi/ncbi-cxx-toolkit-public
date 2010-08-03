@@ -197,6 +197,96 @@ public:
     /// Sequence type accepted and returned for GI indices.
     typedef int TGI;
 
+    /// Structure to represent a range
+    struct TOffsetPair {
+        TSeqPos first;
+        TSeqPos second;
+
+        /// Default constructor
+        TOffsetPair() : first(0), second(0) {}
+        /// Convenient operator to convert to TSeqRange
+        operator TSeqRange() const { return TSeqRange(first, second-1); }
+    };
+
+    /// List of sequence offset ranges.
+    struct TSequenceRanges {
+        typedef size_t size_type;
+        typedef TOffsetPair value_type;
+        typedef const value_type* const_iterator;
+
+    private:
+        size_type _size;
+        size_type _capacity;
+        TSeqPos* _data;
+
+        void x_reset_all() {
+            _size = 0;
+            _capacity = 0;
+            _data = NULL;
+        }
+
+        void x_reallocate_if_necessary() {
+            static size_t kResizeFactor = 2;
+            if (_size + 1 > _capacity) {
+                reserve((_capacity + 1) * kResizeFactor -1);
+            }
+        }
+
+    public:
+        TSequenceRanges() {
+            x_reset_all();
+            reserve(7);   // must reserve at least 1 element
+        }
+
+        ~TSequenceRanges() {
+            free(_data);
+            x_reset_all();
+        }
+
+        void clear() { _size = 0; }
+
+        bool empty() const { return _size == 0; }
+
+        size_type size() const { return _size; }
+
+        const_iterator begin() const { return const_iterator(&_data[1]); }
+
+        const_iterator end() const { return const_iterator(&_data[1+ 2*_size]); }
+
+        value_type& operator[](size_type i) { return (value_type &)_data[1+ 2*i]; }
+
+        value_type * get_data() const { return (value_type *) _data; }
+
+        /// Reserves capacity for at least num_elements elements
+        /// @throw CSeqDBException in case of memory allocation failure
+        void reserve(size_t num_elements) {
+            if (num_elements > _capacity) {
+                value_type* reallocation =
+                    (value_type*) realloc(_data, (num_elements + 1) *
+                                          sizeof(value_type));
+                if ( !reallocation ) {
+                    string msg("Failed to allocate ");
+                    msg += NStr::IntToString(num_elements + 1) + " elements";
+                    NCBI_THROW(CSeqDBException, eMemErr, msg);
+                }
+                _data = (TSeqPos*) reallocation;
+                _capacity = num_elements;
+            }
+        }
+
+        /// Append extra elements at the end
+        void append(const void *src, size_type num_elements) {
+            reserve(_size + num_elements);
+            memcpy(&_data[1+ 2*_size], src, num_elements * sizeof(value_type));
+            _size += num_elements;
+        }
+
+        /// Append extra element at the end
+        void push_back(const value_type& element) {
+            x_reallocate_if_necessary();
+            append(&element, 1);
+        }
+    };
     /// String containing the error message in exceptions thrown when a given
     /// OID cannot be found
     static const string kOidNotFound;
@@ -532,13 +622,17 @@ public:
     ///   The NA encoding, kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8.
     /// @param strategy
     ///   Indicate which allocation strategy to use.
+    /// @param masks
+    ///   If not empty, the return sequence will be (hard) masked.
+    ///   Masks are cleared on return.
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
     int GetAmbigSeqAlloc(int                oid,
                          char            ** buffer,
                          int                nucl_code,
-                         ESeqDBAllocType    strategy) const;
+                         ESeqDBAllocType    strategy,
+                         TSequenceRanges  * masks = NULL) const;
     
     /// Returns any resources associated with the sequence.
     /// 
@@ -1032,96 +1126,6 @@ public:
                              string & output,
                              TSeqRange range = TSeqRange()) const;
     
-    /// Structure to represent a range
-    struct TOffsetPair {
-        TSeqPos first;
-        TSeqPos second;
-
-        /// Default constructor
-        TOffsetPair() : first(0), second(0) {}
-        /// Convenient operator to convert to TSeqRange
-        operator TSeqRange() const { return TSeqRange(first, second-1); }
-    };
-
-    /// List of sequence offset ranges.
-    struct TSequenceRanges {
-        typedef size_t size_type;
-        typedef TOffsetPair value_type;
-        typedef const value_type* const_iterator;
-
-    private:
-        size_type _size;
-        size_type _capacity;
-        TSeqPos* _data;
-
-        void x_reset_all() {
-            _size = 0;
-            _capacity = 0;
-            _data = NULL;
-        }
-
-        void x_reallocate_if_necessary() {
-            static size_t kResizeFactor = 2;
-            if (_size + 1 > _capacity) {
-                reserve((_capacity + 1) * kResizeFactor -1);
-            }
-        }
-
-    public:
-        TSequenceRanges() {
-            x_reset_all();
-            reserve(7);   // must reserve at least 1 element
-        }
-
-        ~TSequenceRanges() {
-            free(_data);
-            x_reset_all();
-        }
-
-        void clear() { _size = 0; }
-
-        bool empty() const { return _size == 0; }
-
-        size_type size() const { return _size; }
-
-        const_iterator begin() const { return const_iterator(&_data[1]); }
-
-        const_iterator end() const { return const_iterator(&_data[1+ 2*_size]); }
-
-        value_type& operator[](size_type i) { return (value_type &)_data[1+ 2*i]; }
-
-        value_type * get_data() const { return (value_type *) _data; }
-
-        /// Reserves capacity for at least num_elements elements
-        /// @throw CSeqDBException in case of memory allocation failure
-        void reserve(size_t num_elements) {
-            if (num_elements > _capacity) {
-                value_type* reallocation =
-                    (value_type*) realloc(_data, (num_elements + 1) *
-                                          sizeof(value_type));
-                if ( !reallocation ) {
-                    string msg("Failed to allocate ");
-                    msg += NStr::IntToString(num_elements + 1) + " elements";
-                    NCBI_THROW(CSeqDBException, eMemErr, msg);
-                }
-                _data = (TSeqPos*) reallocation;
-                _capacity = num_elements;
-            }
-        }
-
-        /// Append extra elements at the end
-        void append(const void *src, size_type num_elements) {
-            reserve(_size + num_elements);
-            memcpy(&_data[1+ 2*_size], src, num_elements * sizeof(value_type));
-            _size += num_elements;
-        }
-
-        /// Append extra element at the end
-        void push_back(const value_type& element) {
-            x_reallocate_if_necessary();
-            append(&element, 1);
-        }
-    };
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

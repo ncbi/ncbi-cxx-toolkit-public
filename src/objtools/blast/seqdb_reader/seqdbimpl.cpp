@@ -677,7 +677,8 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                             char           ** buffer,
                             int               nucl_code,
                             SSeqDBSlice     * region,
-                            ESeqDBAllocType   alloc_type) const
+                            ESeqDBAllocType   alloc_type,
+                            CSeqDB::TSequenceRanges * masks) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -692,6 +693,7 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                                 nucl_code,
                                 alloc_type,
                                 region,
+                                masks,
                                 locked);
     }
     

@@ -472,7 +472,8 @@ int CSeqDB::GetAmbigSeq(int           oid,
 int CSeqDB::GetAmbigSeqAlloc(int             oid,
                              char         ** buffer,
                              int             nucl_code,
-                             ESeqDBAllocType strategy) const
+                             ESeqDBAllocType strategy,
+                             TSequenceRanges *masks) const
 {
     m_Impl->Verify();
     
@@ -482,7 +483,7 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
                    "Invalid allocation strategy specified.");
     }
     
-    int rv = m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy);
+    int rv = m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy, masks);
     
     m_Impl->Verify();
     

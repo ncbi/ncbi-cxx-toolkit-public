@@ -236,8 +236,6 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
     oid = args->oid;
 
-    datap->copied = false;
-    
     // If we are asked to check for OID exclusion, and if the database
     // has a GI list, then we check whether all the seqids have been
     // removed by filtering.  If so we return an error.  The traceback
@@ -251,11 +249,23 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
                 return BLAST_SEQSRC_ERROR;
             }
         }
-    
-        if ( args->encoding == eBlastEncodingNucleotide 
-          || args->encoding == eBlastEncodingNcbi4na 
-          || datap->mask_type == DB_MASK_HARD) datap->copied = true;
     }
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    if (datap->mask_type) { 
+        ASSERT(datap->mask_algo_id != -1);
+        seqdb.GetMaskData(oid, datap->mask_algo_id, datap->seq_ranges);
+    }
+#endif
+
+    datap->copied = false;
+    
+    if ( args->encoding == eBlastEncodingNucleotide 
+      || args->encoding == eBlastEncodingNcbi4na 
+      || (datap->mask_type == DB_MASK_HARD 
+              && !(datap->seq_ranges.empty())
+              && args->check_oid_exclusion))  datap->copied = true;
 
     has_sentinel_byte = (args->encoding == eBlastEncodingNucleotide);
     
@@ -270,9 +280,14 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     }
     
     const char *buf;
-    len = (datap->copied) ?
-          seqdb.GetAmbigSeqAlloc(oid, const_cast<char **>(&buf), has_sentinel_byte, eMalloc) :
-          seqdb.GetSequence(oid, &buf);
+    len = (datap->copied) 
+           /* This will consume and clear datap->seq_ranges */
+        ?  seqdb.GetAmbigSeqAlloc(oid, 
+                                  const_cast<char **>(&buf), 
+                                  has_sentinel_byte, 
+                                  eMalloc,
+                                  &(datap->seq_ranges))
+        :  seqdb.GetSequence(oid, &buf);
     
     if (len <= 0) return BLAST_SEQSRC_ERROR;
     
@@ -294,21 +309,13 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    if ( datap->mask_algo_id != -1 ) {
-        CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
-        seqdb.GetMaskData(oid, datap->mask_algo_id, ranges);
-
-        if (!ranges.empty()) {
-
-            if (args->check_oid_exclusion && datap->mask_type == DB_MASK_HARD) {
-                // TODO do hard mask in traceback stage
-                
-            } else if (BlastSeqBlkSetSeqRanges(args->seq, 
-                                (SSeqRange*) ranges.get_data(),
-                                ranges.size() + 1, false, datap->mask_type) != 0) {
-                return BLAST_SEQSRC_ERROR;
-            }
-        } 
+    /* If masks have not been consumed (scanning phase), pass on to engine */
+    if (!(datap->seq_ranges.empty())) {
+        if (BlastSeqBlkSetSeqRanges(args->seq, 
+                                (SSeqRange*) datap->seq_ranges.get_data(),
+                                datap->seq_ranges.size() + 1, false, datap->mask_type) != 0) {
+            return BLAST_SEQSRC_ERROR;
+        }
     }
 #endif
     

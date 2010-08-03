@@ -1495,6 +1495,7 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
                            int                nucl_code,
                            ESeqDBAllocType    alloc_type,
                            SSeqDBSlice      * region,
+                           CSeqDB::TSequenceRanges  * masks,
                            CSeqDBLockHold   & locked) const
 {
     char * buf1 = 0;
