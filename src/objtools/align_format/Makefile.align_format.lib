@@ -16,3 +16,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
+
+WATCHERS = blastsoft
