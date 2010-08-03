@@ -332,7 +332,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
 //    menu->Enable(MID_EDIT_CDD_BOOK_REFERENCES, !readOnly);
     menu->Append(MID_ANNOT_CDD, "Edit &Annotations");
     menu->Enable(MID_ANNOT_CDD, !readOnly);
-    menu->Append(MID_ANNOT_IBIS, "Edit &IBIS Annotations");
+    menu->AppendSeparator();
+    menu->Append(MID_ANNOT_IBIS, "View Master's &Interactions");
     menu->Enable(MID_ANNOT_IBIS, !readOnly);
     menu->AppendSeparator();
     menu->Append(MID_CDD_REJECT_SEQ, "Re&ject Sequence");

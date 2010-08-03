@@ -108,23 +108,21 @@ static const string IBIS_EVIDENCE_COMMENT = "Interaction site inferred from IBIS
 
 //  IBISInteraction members and methods
 
+const Sequence* IBISInteraction::m_querySequence = NULL;
 const MoleculeIdentifier* IBISInteraction::m_queryMolecule = NULL;
 const int IBISInteraction::NOT_ASSIGNED = -1;
+
+void IBISInteraction::SetQuerySequence(const Sequence* querySequence) { 
+    m_queryMolecule = NULL;
+    m_querySequence = querySequence;
+    if (m_querySequence) m_queryMolecule = m_querySequence->identifier;
+}
 
 bool IBISInteraction::QueryMoleculeHasChain()
 {
     bool result = false;
     if (m_queryMolecule) {
-        result = QueryMoleculeHasChain(m_queryMolecule);
-    }
-    return result;
-}
-
-bool IBISInteraction::QueryMoleculeHasChain(const MoleculeIdentifier* queryMolecule)
-{
-    bool result = false;
-    if (queryMolecule) {
-        result = (queryMolecule->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && queryMolecule->pdbChain != ' ');
+        result = (m_queryMolecule->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && m_queryMolecule->pdbChain != ' ');
     }
     return result;
 }
@@ -169,6 +167,39 @@ bool IBISInteraction::IsIbisIntType(int integer, IBISInteraction::eIbisInteracti
         *ibisType = type;
     }
 
+    return result;
+}
+
+string IBISInteraction::IbisIntTypeToString(IBISInteraction::eIbisInteractionType ibisType) 
+{
+    string result = "Unknown";
+    switch (ibisType) {
+        case eIbisNoTypeAssigned:
+            result = "Unassigned";
+            break;
+        case eIbisProteinDNA:
+        case eIbisProteinRNA:
+        case eIbisProteinCombo_DNA_RNA:
+            result = "NucAcid";
+            break;
+        case eIbisProteinProtein:
+            result = "Protein";
+            break;
+        case eIbisProteinPeptide:
+            result = "Peptide";
+            break;
+        case eIbisProteinIon:
+            result = "Ion";
+            break;
+        case eIbisProteinChemical:
+            result = "Chemical";
+            break;
+//        case ???:
+//            cddType = eCddPosttransMod;
+//            break;
+        default:
+            break;
+    };
     return result;
 }
 
@@ -256,6 +287,10 @@ void IBISInteraction::Initialize(void)
     }
 
     //  The IBIS seqfeat by convention has zero-based positions.  
+    //  Also, to ensure the use of consistent identifiers, because 
+    //  IBIS may have a GI different than in the CD for the query
+    //  structure, switch to the Seq-id found in the query sequence 
+    //  [if the query actually worked, then we should end up w/ the PDB accession].
     bool inRange = true;
     TSeqPos from, to;
     CSeq_loc& location = m_seqfeat.SetLocation();
@@ -264,6 +299,9 @@ void IBISInteraction::Initialize(void)
         to = location.SetInt().SetTo();
         location.SetInt().SetFrom(from);
         location.SetInt().SetTo(to);
+        if (m_querySequence) 
+            m_querySequence->FillOutSeqId(&(location.SetInt().SetId()));
+        
     } else if (location.IsPacked_int()) {
         CPacked_seqint::Tdata::iterator s, se = location.SetPacked_int().Set().end();
         for (s = location.SetPacked_int().Set().begin(); s!=se; ++s) {
@@ -271,6 +309,8 @@ void IBISInteraction::Initialize(void)
             to = (**s).SetTo();
             (**s).SetFrom(from);
             (**s).SetTo(to);
+            if (m_querySequence) 
+                m_querySequence->FillOutSeqId(&((**s).SetId()));
         }
     } else {
         ERRORMSG("interaction '" << m_desc << "' has unexpected location type");
@@ -281,7 +321,7 @@ void IBISInteraction::Initialize(void)
     }
 
 
-    m_type = IBISInteraction::eIbisOther;
+    m_type = IBISInteraction::eIbisNoTypeAssigned;
     m_mmdbId = NOT_ASSIGNED;
     m_sdiId = NOT_ASSIGNED;
     m_score = NOT_ASSIGNED;
@@ -292,6 +332,7 @@ void IBISInteraction::Initialize(void)
     m_pid = (double) NOT_ASSIGNED;
     m_isObs = false;
     m_isFilt = false;
+    m_isSing = false;
 
     if (m_seqfeat.IsSetExcept()) {
         m_isFilt = !(m_seqfeat.GetExcept());
@@ -300,6 +341,7 @@ void IBISInteraction::Initialize(void)
     if (m_seqfeat.IsSetExt()) {
 
         int intType = m_seqfeat.GetExt().GetType().GetId();
+        m_type = IBISInteraction::eIbisOther;
         switch (intType) {
             case 1:
                 m_type = eIbisProteinDNA;
@@ -323,7 +365,7 @@ void IBISInteraction::Initialize(void)
                 m_type = eIbisProteinCombo_DNA_RNA;
                 break;
             default:
-                ERRORMSG("IBIS feature data with unexpected type " << intType);
+                WARNINGMSG("IBIS feature data with unexpected type " << intType);
                 break;
         };
 
@@ -376,8 +418,7 @@ ncbi::CRef < ncbi::objects::CAlign_annot > IBISInteraction::ToAlignAnnot(void) c
     bool isLocOK = false;
     string commentEvid;
     CRef < CAlign_annot > annot(new CAlign_annot());
-//    annot->SetType(IbisIntTypeToCddIntType(m_type));
-    annot->SetType(m_type);
+    annot->SetType(IbisIntTypeToCddIntType(m_type));
     annot->SetDescription(m_desc);
 
     // fill out location; isLocOK = true means it was a packed-int
@@ -397,9 +438,8 @@ ncbi::CRef < ncbi::objects::CAlign_annot > IBISInteraction::ToAlignAnnot(void) c
             commentEvid = IBIS_EVIDENCE_COMMENT + " for an unspecified query structure";
         }
         
-//        commentEvid += " [" + string(__DATE__) + "]";
         CTimeFormat timeFormat = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeMin);
-        commentEvid += " [" + CTime(CTime::eCurrent).AsString(timeFormat) + "]";
+        commentEvid += " [created " + CTime(CTime::eCurrent).AsString(timeFormat) + "]";
         boilerplateEvidence->SetComment(commentEvid);
         evidence.push_back(boilerplateEvidence);
 
@@ -417,14 +457,6 @@ ncbi::CRef < ncbi::objects::CAlign_annot > IBISInteraction::ToAlignAnnot(void) c
         ERRORMSG("error converting interaction '" << m_desc << "' to an annotation!");
         annot.Reset();
     }
-
-    // In dialog, will need to do the equivalent of this...
-    // add to annotation list
-    //annotSet->Set().push_back(annot);
-    //structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
-
-    // update GUI
-    //SetupGUIControls(annotSet->Get().size() - 1, 0);
 
     return annot;
 }
@@ -595,7 +627,7 @@ IBISAnnotateDialog::IBISAnnotateDialog(wxWindow *parent, IBISAnnotateDialog **ha
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(intTypeFilter, ID_C_TYPE, wxChoice)
     if (vecIbisInteractions.size() > 0) {
         if (!HasInteractionData(IBISInteraction::eIbisProteinProtein)) {
-            choiceId = intTypeFilter->FindString(wxT("3 (Protein-Protein)"));
+            choiceId = intTypeFilter->FindString(wxT("Protein-Protein"));
             if (choiceId != wxNOT_FOUND) {
                 intTypeFilter->Delete(choiceId);
             }
@@ -603,25 +635,25 @@ IBISAnnotateDialog::IBISAnnotateDialog(wxWindow *parent, IBISAnnotateDialog **ha
         if (!HasInteractionData(IBISInteraction::eIbisProteinDNA) &&
             !HasInteractionData(IBISInteraction::eIbisProteinRNA) &&
             !HasInteractionData(IBISInteraction::eIbisProteinCombo_DNA_RNA)) {
-            choiceId = intTypeFilter->FindString(wxT("5 (Protein-NucAcid)"));
+            choiceId = intTypeFilter->FindString(wxT("Protein-NucAcid"));
             if (choiceId != wxNOT_FOUND) {
                 intTypeFilter->Delete(choiceId);
             }
         }
         if (!HasInteractionData(IBISInteraction::eIbisProteinChemical)) {
-            choiceId = intTypeFilter->FindString(wxT("6 (Protein-Chemical)"));
+            choiceId = intTypeFilter->FindString(wxT("Protein-Chemical"));
             if (choiceId != wxNOT_FOUND) {
                 intTypeFilter->Delete(choiceId);
             }
         }
         if (!HasInteractionData(IBISInteraction::eIbisProteinPeptide)) {
-            choiceId = intTypeFilter->FindString(wxT("7 (Protein-Peptide)"));
+            choiceId = intTypeFilter->FindString(wxT("Protein-Peptide"));
             if (choiceId != wxNOT_FOUND) {
                 intTypeFilter->Delete(choiceId);
             }
         }
         if (!HasInteractionData(IBISInteraction::eIbisProteinIon)) {
-            choiceId = intTypeFilter->FindString(wxT("8 (Protein-Ion)"));
+            choiceId = intTypeFilter->FindString(wxT("Protein-Ion"));
             if (choiceId != wxNOT_FOUND) {
                 intTypeFilter->Delete(choiceId);
             }
@@ -651,37 +683,41 @@ IBISAnnotateDialog::IBISAnnotateDialog(wxWindow *parent, IBISAnnotateDialog **ha
     // initialize the column headings in the list control
     if (interactions->GetWindowStyleFlag() & wxLC_REPORT) {
         wxListItem itemCol;
-        itemCol.SetText(wxT("Type"));
-        itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
+        itemCol.SetText(wxT("Annot Overlap?"));
+        itemCol.SetAlign(wxLIST_FORMAT_LEFT);
         interactions->InsertColumn(0, itemCol);
+
+        itemCol.SetText(wxT("Type"));
+        itemCol.SetAlign(wxLIST_FORMAT_LEFT);
+        interactions->InsertColumn(1, itemCol);
 
         itemCol.SetText(wxT("Observed?"));
         itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
-        interactions->InsertColumn(1, itemCol);
+        interactions->InsertColumn(2, itemCol);
 
         itemCol.SetText(wxT("Filtered on Web?"));
         itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
-        interactions->InsertColumn(2, itemCol);
+        interactions->InsertColumn(3, itemCol);
 
         itemCol.SetText(wxT("Description"));
-        itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
-        interactions->InsertColumn(3, itemCol);
+        itemCol.SetAlign(wxLIST_FORMAT_LEFT);
+        interactions->InsertColumn(4, itemCol);
 
         itemCol.SetText(wxT("# Res. on Query"));
         itemCol.SetAlign(wxLIST_FORMAT_CENTER);
-        interactions->InsertColumn(4, itemCol);
+        interactions->InsertColumn(5, itemCol);
 
         itemCol.SetText(wxT("Clust. Size"));
         itemCol.SetAlign(wxLIST_FORMAT_CENTER);
-        interactions->InsertColumn(5, itemCol);
+        interactions->InsertColumn(6, itemCol);
 
         itemCol.SetText(wxT("Avg. Clust. %Id"));
         itemCol.SetAlign(wxLIST_FORMAT_CENTER);
-        interactions->InsertColumn(6, itemCol);
+        interactions->InsertColumn(7, itemCol);
 
         itemCol.SetText(wxT("IBIS Score"));
         itemCol.SetAlign(wxLIST_FORMAT_CENTER);
-        interactions->InsertColumn(7, itemCol);
+        interactions->InsertColumn(8, itemCol);
     }
 
 
@@ -694,8 +730,8 @@ IBISAnnotateDialog::~IBISAnnotateDialog(void)
 {
     delete m_images;
 
-    // reset the query molecule to NULL
-    IBISInteraction::SetQueryMolecule(NULL);
+    // reset the query sequence and molecule to NULL
+    IBISInteraction::SetQuerySequence(NULL);
 
     // so owner knows that this dialog has been destroyed
     if (dialogHandle && *dialogHandle) *dialogHandle = NULL;
@@ -772,9 +808,8 @@ static bool GetInteractionDataFromIbis(CSeq_annot& ibisSeqAnnot, IbisQuery& quer
     }
 
     // set up URL
-//        host = "www.ncbi.nlm.nih.gov",
     string args, err,
-        host = "structuredev11.be-md.ncbi.nlm.nih.gov",
+        host = "www.ncbi.nlm.nih.gov",
         path = "/Structure/ibis/ibis.cgi";
     CNcbiOstrstream argstr;
     argstr << "sqat&range=" << (query.from+1) << ',' << (query.to+1) << "&mmdbid=" << query.mmdbId
@@ -846,8 +881,8 @@ void IBISAnnotateDialog::PopulateInteractionData(void)
         ncbi::CRef< ncbi::objects::CSeq_annot > ibisInteractions(new CSeq_annot);
         if (ibisInteractions.NotEmpty()) {
 
-            //  Set the static query molecule in the IBISInteraction class
-            IBISInteraction::SetQueryMolecule(master->identifier);
+            //  Set the static query variables in the IBISInteraction class
+            IBISInteraction::SetQuerySequence(master);
 
             query.mmdbId = master->identifier->mmdbID;
             query.molId = master->identifier->moleculeID;
@@ -883,33 +918,6 @@ void IBISAnnotateDialog::PopulateInteractionData(void)
                     }
                 }
 
-                //  Warn user if there seems to be a seq-id mismatch (often due to PDB remediation).
-                //  Assume that all interactions have the same seq-id and can look at the first one
-                if (vecIbisInteractions.size() > 0) {
-                    bool isLocationOK = false, isSeqIdOK = false;
-                    string seqIdString;
-                    const CSeq_loc& location = vecIbisInteractions[0]->GetLocation(isLocationOK);
-                    if (isLocationOK) {
-                        if (location.IsInt()) {
-                            seqIdString = location.GetInt().GetId().GetSeqIdString();
-                            isSeqIdOK = master->identifier->MatchesSeqId(location.GetInt().GetId());
-                        } else if (location.IsPacked_int() && location.GetPacked_int().Get().size() > 0) {
-                            seqIdString = location.GetPacked_int().Get().front()->GetId().GetSeqIdString();
-                            isSeqIdOK = master->identifier->MatchesSeqId(location.GetPacked_int().Get().front()->GetId());
-                        }
-                    }
-        //            if (!master->identifier->MatchesSeqId(interval.GetId())) {
-                    if (isLocationOK && !isSeqIdOK) {
-                        wxString message = ("interaction Seq-id "
-                            "REPLACE-ME"
-                            " does not match master Seq-id"
-                            "\n(often due to a new NCBI GI being assigned during PDB remediation)"
-                        );
-                        message.Replace("REPLACE-ME", seqIdString.c_str());
-                        wxMessageBox(message, "IBIS Annotation Warning",
-                                     wxOK | wxCENTRE | wxICON_WARNING, this);
-                    }
-                }
             }
         } else {
             ERRORMSG("Error:  allocation failure before trying to contact ibis.cgi.");
@@ -934,56 +942,6 @@ bool IBISAnnotateDialog::HasInteractionData(IBISInteraction::eIbisInteractionTyp
     }
     return result;
 }
-
-/*
-static bool IsFirstResidueOfABlock(const BlockMultipleAlignment::ConstBlockList& blocks, unsigned int masterIndex)
-{
-    BlockMultipleAlignment::ConstBlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; ++b) {
-        int from = (*b)->GetRangeOfRow(0)->from;
-        if (from == (int) masterIndex)
-            return true;
-        else if (from > (int) masterIndex)
-            return false;
-    }
-    return false;
-}
-
-void IBISAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
-{
-    const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
-    const Sequence *master = alignment->GetMaster();
-    BlockMultipleAlignment::ConstBlockList blocks;
-    alignment->GetBlocks(&blocks);
-
-    // find intervals of aligned residues of the master sequence that are currently highlighted
-    intervals->clear();
-    unsigned int first = 0, last = 0;
-    while (first < master->Length()) {
-
-        // find first highlighted residue
-        while (first < master->Length() &&
-               !(GlobalMessenger()->IsHighlighted(master, first) &&
-                 alignment->IsAligned(0U, first))) ++first;
-        if (first >= master->Length()) break;
-
-        // find last in contiguous stretch of highlighted residues, but not crossing block boundaries
-        last = first;
-        while (last + 1 < master->Length() &&
-               GlobalMessenger()->IsHighlighted(master, last + 1) &&
-               alignment->IsAligned(0U, last + 1) &&
-               !IsFirstResidueOfABlock(blocks, last + 1)) ++last;
-
-        // create Seq-interval
-        CRef < CSeq_interval > interval(new CSeq_interval());
-        interval->SetFrom(first);
-        interval->SetTo(last);
-        master->FillOutSeqId(&(interval->SetId()));
-        intervals->push_back(interval);
-        first = last + 1;
-    }
-}
-*/
 
 unsigned int IBISAnnotateDialog::GetIntervalsForSet(const SeqPosSet& positions, IntervalList& intervals)
 {
@@ -1100,24 +1058,26 @@ void InsertItemInReportView(int vecIndex, const CRef<IBISInteraction>& ibisInt, 
 {
     if (ibisInt.Empty()) return;
 
-    //  column order:  type/observed/filtered/descr/# res/clust size/avg ident/score
+    //  column order:  annotOverlap/IBIStype/observed/filtered/descr/# res/clust size/avg ident/score
 
     wxString buf;
-    buf.Printf(wxT(" %d "), (int) ibisInt->GetType());
+    buf.Printf(wxT("%s "), IBISInteraction::IbisIntTypeToString(ibisInt->GetType()).c_str());
 
-    long itemIndex = listCtrl.InsertItem(vecIndex, buf, -1);
+    long itemIndex = listCtrl.InsertItem(vecIndex, "", -1);
     if (itemIndex >= 0) {
         listCtrl.SetItemData(itemIndex, vecIndex);
 
+        listCtrl.SetItem(itemIndex, 1, buf, -1);
+
         if (ibisInt->IsObserved()) {
-            listCtrl.SetItem(itemIndex, 1, "", 4);
+            listCtrl.SetItem(itemIndex, 2, "", 3);
         }
         if (ibisInt->IsFiltered()) {
-            listCtrl.SetItem(itemIndex, 2, "", 2);
+            listCtrl.SetItem(itemIndex, 3, "", 2);
         }
 
         buf.Printf(wxT("%s"), ibisInt->GetDesc().c_str());
-        listCtrl.SetItem(itemIndex, 3, buf);
+        listCtrl.SetItem(itemIndex, 4, buf);
 
         //  GetNumInterfaceResidues() refers to all residues in the 
         //  IBIS-defined interaction that the query hit.
@@ -1126,18 +1086,18 @@ void InsertItemInReportView(int vecIndex, const CRef<IBISInteraction>& ibisInt, 
         //  GetPositions.size() <= GetNumInterfaceResidues()
 //        buf.Printf(wxT("%d"), ibisInt->GetNumInterfaceResidues());
         buf.Printf(wxT("%d"), ibisInt->GetPositions().size());
-        listCtrl.SetItem(itemIndex, 4, buf);
+        listCtrl.SetItem(itemIndex, 5, buf);
 
         buf.Printf(wxT("%d"), ibisInt->GetNumMembers());
-        listCtrl.SetItem(itemIndex, 5, buf);
-        buf.Printf(wxT("%4.1f"), ibisInt->GetAverageIdentity());
         listCtrl.SetItem(itemIndex, 6, buf);
+        buf.Printf(wxT("%4.1f"), ibisInt->GetAverageIdentity());
+        listCtrl.SetItem(itemIndex, 7, buf);
         if (ibisInt->GetScore() != IBISInteraction::NOT_ASSIGNED) {
             buf.Printf(wxT("%4.1f"), (double) ibisInt->GetScore()/10000.0);
         } else {
             buf = wxT("n/a");
         }
-        listCtrl.SetItem(itemIndex, 7, buf);
+        listCtrl.SetItem(itemIndex, 8, buf);
     }
 }
 
@@ -1147,7 +1107,6 @@ bool DoesInteractionMatchChoice(const wxString& choiceStr, IBISInteraction::eIbi
     if (choiceStr == wxT("All")) {
         result = (ibisIntType != IBISInteraction::eIbisNoTypeAssigned &&
                   ibisIntType != IBISInteraction::eIbisOther);
-//        result = true;
     } else if (choiceStr.Contains(wxT("Protein-Protein"))) {
         result = (ibisIntType == IBISInteraction::eIbisProteinProtein);
     } else if (choiceStr.Contains(wxT("Protein-NucAcid"))) {
@@ -1395,8 +1354,6 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
             }
             this->SetEvtHandlerEnabled(true);
         }
-        /*
-        */
     }
 
     //  Turn on image for images with overlapping annotations.
@@ -1404,13 +1361,13 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
     for (i = 0; i < nItems; ++i) {
         ibisIndex = (unsigned int) interactions->GetItemData(i);
         if (ibisIndexWithOverlap.find(ibisIndex) != ibisIndexEnd) {
-            interactions->SetItemImage(i, 3);
+            interactions->SetItemImage(i, 4);
         }
     }
 
     for (i = 0; i < (unsigned int) interactions->GetColumnCount(); ++i) {
-        if (i >= 1 && i <= 3) {
-            interactions->SetColumnWidth(i, wxLIST_AUTOSIZE);  //  observed/filtered/description
+        if (i <= 4) {
+            interactions->SetColumnWidth(i, wxLIST_AUTOSIZE);  //  type/annotOverlap/observed/filtered/description
         } else {
             interactions->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
         }
@@ -1499,6 +1456,7 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
     bHighlightNoOlapA->Enable(selectAnnot >= 0 && nRes > 0 && (nOverlaps < nRes));
     bHighlightNoOlapI->Enable(selectAnnot >= 0 && nResIntn > 0 && (nOverlaps < nResIntn));
 
+    interactions->SetFocus();
 }
 
 void IBISAnnotateDialog::LaunchIbisWebPage(void)
@@ -1696,9 +1654,8 @@ void IBISAnnotateDialog::DeleteAnnotation(void)
 bool IBISAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& interval)
 {
     const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
-    return alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
+//    return alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
 
-    /*
     // make sure annotation sequence matches master sequence
     bool highlightResult;
     bool idMatchResult = true;
@@ -1710,8 +1667,6 @@ bool IBISAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& i
 
     highlightResult = alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
     return (idMatchResult && highlightResult);
-    */
-
 }
 
 void IBISAnnotateDialog::HighlightAnnotation(int eventId)
@@ -1808,11 +1763,11 @@ wxSizer *SetupIbisAnnotationDialog( wxWindow *parent, bool call_fit, bool set_si
     wxString strs6[] = 
     {
         wxT("All"), 
-        wxT("3 (Protein-Protein)"), 
-        wxT("5 (Protein-NucAcid)"), 
-        wxT("6 (Protein-Chemical)"), 
-        wxT("7 (Protein-Peptide)"), 
-        wxT("8 (Protein-Ion)")
+        wxT("Protein-Protein"), 
+        wxT("Protein-NucAcid"), 
+        wxT("Protein-Chemical"), 
+        wxT("Protein-Peptide"), 
+        wxT("Protein-Ion")
     };
     wxChoice *item6 = new wxChoice( parent, ID_C_TYPE, wxDefaultPosition, wxSize(100,-1), 6, strs6, 0 );
     item4->Add( item6, 0, wxALIGN_CENTER|wxALL, 5 );

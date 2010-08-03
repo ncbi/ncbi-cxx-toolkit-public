@@ -69,6 +69,7 @@ typedef std::set<ncbi::TSeqPos> SeqPosSet;
 class IBISInteraction : public ncbi::CObject
 {
 
+    static const Sequence* m_querySequence;
     static const MoleculeIdentifier* m_queryMolecule;
 
 public:
@@ -103,6 +104,14 @@ public:
         eCddOther
     };
 
+    static void SetQuerySequence(const Sequence* querySequence); 
+    static const Sequence* GetQuerySequence() { return m_querySequence; }
+    static const MoleculeIdentifier* GetQueryMolecule() { return m_queryMolecule; }
+    static bool QueryMoleculeHasChain();
+
+    //  Returns a string indicating the type of interaction partner.
+    static string IbisIntTypeToString(eIbisInteractionType ibisType);
+
     //  Note:  This mapping is many->one.
     static bool IsIbisIntType(int integer, eIbisInteractionType* ibisType = NULL);
 
@@ -112,11 +121,6 @@ public:
     //  Note:  This mapping is ambiguous as a cdd type could have arisen from
     //  various ibis types.
     static eIbisInteractionType CddIntTypeToIbisIntType(eCddInteractionType cddType);
-
-    static void SetQueryMolecule(const MoleculeIdentifier* queryMolecule) { m_queryMolecule = queryMolecule; }
-    static const MoleculeIdentifier* GetQueryMolecule() { return m_queryMolecule; }
-    static bool QueryMoleculeHasChain();
-    static bool QueryMoleculeHasChain(const MoleculeIdentifier* queryMolecule);
 
     IBISInteraction(const ncbi::objects::CSeq_feat& seqfeat);
 
@@ -131,6 +135,7 @@ public:
 
     bool IsObserved(void) const { return m_isObs; }
     bool IsFiltered(void) const { return m_isFilt; }
+    bool IsSingleton(void) const { return m_isSing; }
     int GetScore(void) const { return m_score; }
     int GetNumInterfaceResidues(void) const { return m_nIntRes; }
     int GetNumMembers(void) const { return m_nMembers; }
@@ -169,6 +174,7 @@ private:
 
     bool m_isObs;   //  from the data labeled 'isObserverd'
     bool m_isFilt;  //  from the data labeled ''; true if the interaction is filtered from the IBIS web display
+    bool m_isSing;  //  
     int m_score;    //  from the data labeled 'comb_scr'
     int m_nIntRes;  //  from the data labeled 'nInterfaceRes'
     int m_nMembers; //  from the data labeled 'nMembers'
@@ -210,7 +216,7 @@ private:
     } AlignAnnotInfo;
     typedef std::map<unsigned long, AlignAnnotInfo> AnnotIbisOverlapMap;
 
-    // get highlighted+aligned intervals on master
+    // get highlighted+aligned intervals on master [copy this from cdd_annot_dialog if needed]
 //    void GetCurrentHighlightedIntervals(IntervalList *intervals);
 
     //  As users can generate new Align_annots with this dialog - 
