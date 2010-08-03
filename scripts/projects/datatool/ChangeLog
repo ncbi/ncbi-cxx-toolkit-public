@@ -32,3 +32,7 @@ July 30, 2010
 version 2.2.0
 Added possibility to use packed enum types in generated code.
 Corrected code generation to avoid identical names of nested classes.
+
+August 02, 2010
+version 2.2.1
+Enhanced to handle long path names.
