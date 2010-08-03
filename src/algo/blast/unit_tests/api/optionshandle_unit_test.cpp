@@ -604,12 +604,9 @@ BOOST_FIXTURE_TEST_CASE(Set_Get_WordSize_BlastNucl, BlastNuclOptionsHandleFixtur
 
 BOOST_FIXTURE_TEST_CASE(Set_Get_StrandOption_BlastNucl, BlastNuclOptionsHandleFixture) {
         objects::ENa_strand value = objects::eNa_strand_minus;
-
-        VerifyMutatorAccessor<CBlastNucleotideOptionsHandle, objects::ENa_strand>
-            (*m_OptsHandle, 
-             &CBlastNucleotideOptionsHandle::SetStrandOption,
-             &CBlastNucleotideOptionsHandle::GetStrandOption, 
-             value);
+        m_OptsHandle->SetStrandOption(value);
+        objects::ENa_strand actual_value = m_OptsHandle->GetStrandOption();
+        BOOST_REQUIRE_EQUAL((int)value, (int)actual_value);
 }
 
 BOOST_FIXTURE_TEST_CASE(Set_Get_WindowSize_BlastNucl, BlastNuclOptionsHandleFixture) {

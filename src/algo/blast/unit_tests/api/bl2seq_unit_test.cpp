@@ -614,7 +614,7 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
-    BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+    BOOST_CHECK_EQUAL((int)eNa_strand_minus, (int)(locs[1])->GetStrand());
     int num_ident = 0;
     sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
     BOOST_CHECK_EQUAL(155, num_ident);
@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
-    BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+    BOOST_CHECK_EQUAL((int)eNa_strand_minus, (int)(locs[1])->GetStrand());
     int num_ident = 0;
     sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
     BOOST_CHECK_EQUAL(11, num_ident);

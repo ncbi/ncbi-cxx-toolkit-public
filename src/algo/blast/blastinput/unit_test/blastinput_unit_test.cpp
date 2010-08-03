@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProtein_Single)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(RawFastaWithSpaces)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_CASE(ReadGenbankReport)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -805,7 +805,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -860,7 +860,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL(kStart, ssl.seqloc->GetInt().GetFrom());
@@ -934,7 +934,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL(kStart, ssl.seqloc->GetInt().GetFrom());
@@ -999,7 +999,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
     for (size_t i = 0; i < kNumQueries; i++) {
 
         blast::SSeqLoc& ssl = query_vector[i];
-        BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetStrand());
         BOOST_REQUIRE_EQUAL((TSeqPos)accession_lengths[i].second - 1, 
                     ssl.seqloc->GetInt().GetTo());
 
@@ -1077,7 +1077,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
         blast::SSeqLoc& ssl = query_vector[i];
         BOOST_REQUIRE_EQUAL((TSeqPos)accession_lengths[i].second - 1, 
                     ssl.seqloc->GetInt().GetTo());
-        BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetStrand());
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
         BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
     }
@@ -1105,7 +1105,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleGi)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1158,7 +1158,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
         BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-        BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
         BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1286,7 +1286,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
         const blast::SSeqLoc& ssl = query_vector[i];
         BOOST_REQUIRE(ssl.seqloc->IsInt());
         const CSeq_interval& seqint = ssl.seqloc->GetInt();
-        BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetStrand());
         BOOST_REQUIRE_EQUAL((TSeqPos)ti_lengths[i].second - 1, seqint.GetTo());
 
         BOOST_REQUIRE(seqint.IsSetId() == true);
@@ -1322,7 +1322,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1389,7 +1389,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     for (size_t i = 0; i < kNumQueries; i++) {
 
         blast::SSeqLoc& ssl = query_vector[i];
-        BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetStrand());
         BOOST_REQUIRE_EQUAL((TSeqPos)gi_accessions[i].second - 1, 
                     ssl.seqloc->GetInt().GetTo());
 
@@ -1475,7 +1475,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1527,7 +1527,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1577,7 +1577,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1641,7 +1641,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -1761,7 +1761,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_ToEqualThanSequenceLength)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)10, ssl.seqloc->GetInt().GetFrom());
@@ -1786,7 +1786,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_ToGreaterThanSequenceLength)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)10, ssl.seqloc->GetInt().GetFrom());
@@ -1858,18 +1858,18 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
     blast::SSeqLoc ssl = query_vector.front();
     TSeqPos length = 646;
 
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetStrand());
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
 
     ssl = query_vector.back();
 
     length = 360;
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetStrand());
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
     BOOST_REQUIRE(!ssl.mask);
@@ -1892,8 +1892,8 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
 
         ITERATE(TSeqLocVector, itr, seqs) {
             const blast::SSeqLoc& ssl = *itr;
-            BOOST_REQUIRE_EQUAL(strand, ssl.seqloc->GetStrand());
-            BOOST_REQUIRE_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+            BOOST_REQUIRE_EQUAL((int)strand, (int)ssl.seqloc->GetStrand());
+            BOOST_REQUIRE_EQUAL((int)strand, (int)ssl.seqloc->GetInt().GetStrand());
             BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
         }
     }
@@ -1908,8 +1908,8 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
 
         ITERATE(TSeqLocVector, itr, seqs) {
             const blast::SSeqLoc& ssl = *itr;
-            BOOST_REQUIRE_EQUAL(strand, ssl.seqloc->GetStrand());
-            BOOST_REQUIRE_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+            BOOST_REQUIRE_EQUAL((int)strand, (int)ssl.seqloc->GetStrand());
+            BOOST_REQUIRE_EQUAL((int)strand, (int)ssl.seqloc->GetInt().GetStrand());
             BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
         }
     }
@@ -1922,7 +1922,7 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask_TSeqLocVector)
     CBlastInputSourceConfig iconfig(is_protein);
     BOOST_REQUIRE(iconfig.GetBelieveDeflines() == false);
     BOOST_REQUIRE(iconfig.GetLowercaseMask() == false);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, iconfig.GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)iconfig.GetStrand());
     iconfig.SetLowercaseMask(true);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
@@ -1939,13 +1939,13 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask_TSeqLocVector)
     BOOST_REQUIRE_EQUAL((TSeqPos)167, masklocs.front()->GetTo());
     // any masks read from the file are expected to be in the plus strand
     BOOST_REQUIRE(masklocs.front()->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_plus, masklocs.front()->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_plus, (int)masklocs.front()->GetStrand());
 
     BOOST_REQUIRE_EQUAL((TSeqPos)330, masklocs.back()->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)356, masklocs.back()->GetTo());
     // any masks read from the file are expected to be in the plus strand
     BOOST_REQUIRE(masklocs.back()->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_plus, masklocs.back()->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_plus, (int)masklocs.back()->GetStrand());
 
     ssl = *++itr;
     BOOST_REQUIRE(ssl.mask);
@@ -1978,23 +1978,23 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask_BlastQueryVector)
     BOOST_REQUIRE_EQUAL((TSeqPos)126, (*itr)->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)167, (*itr)->GetTo());
     BOOST_REQUIRE((*itr)->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_plus, (*itr)->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_plus, (int)(*itr)->GetStrand());
     ++itr;
     BOOST_REQUIRE_EQUAL((TSeqPos)126, (*itr)->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)167, (*itr)->GetTo());
     BOOST_REQUIRE((*itr)->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_minus, (*itr)->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_minus, (int)(*itr)->GetStrand());
     ++itr;
 
     BOOST_REQUIRE_EQUAL((TSeqPos)330, (*itr)->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)356, (*itr)->GetTo());
     BOOST_REQUIRE((*itr)->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_plus, (*itr)->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_plus, (int)(*itr)->GetStrand());
     ++itr;
     BOOST_REQUIRE_EQUAL((TSeqPos)330, (*itr)->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)356, (*itr)->GetTo());
     BOOST_REQUIRE((*itr)->CanGetStrand());
-    BOOST_REQUIRE_EQUAL(eNa_strand_minus, (*itr)->GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_minus, (int)(*itr)->GetStrand());
     ++itr;
 
     BOOST_REQUIRE(itr == masks->Get().end());
@@ -2391,7 +2391,7 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb)
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
     
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -2461,7 +2461,7 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
         BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
         
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-        BOOST_REQUIRE_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+        BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetInt().GetStrand());
 
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
         BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -2512,7 +2512,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetStrand() == true);
-    BOOST_REQUIRE_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+    BOOST_REQUIRE_EQUAL((int)eNa_strand_both, (int)ssl.seqloc->GetInt().GetStrand());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetFrom() == true);
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
