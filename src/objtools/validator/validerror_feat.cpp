@@ -144,8 +144,12 @@ static bool s_IsValidECNumberFormat (string str)
             ptr++;
             ch = *ptr;
         } else if (ch == 'n') {
-            numdashes++;
-            is_ambig = true;
+            if (numperiods == 3 && numdigits == 0 && isdigit(*(ptr + 1))) {
+              // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit */
+            } else {
+              numdashes++;
+              is_ambig = true;
+            }
             ptr++;
             ch = *ptr;
         } else if (ch == '.') {
@@ -269,9 +273,18 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 								 feat);
 						break;
 					case CProt_ref::eEC_unknown:
-						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-							     ec_number + " is not a legal value for qualifier EC_number",
-								 feat);
+            {
+                size_t pos = NStr::Find (ec_number, "n");
+                if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+						        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+							               ec_number + " is not a legal value for qualifier EC_number",
+								             feat);
+                } else {
+						        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+							               ec_number + " is not a legal preliminary value for qualifier EC_number",
+								             feat);
+                }
+            }
 						break;
 					default:
 						break;
@@ -2478,9 +2491,18 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
 							 feat);
 					break;
 				case CProt_ref::eEC_unknown:
-					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-						     ec_number + " is not a legal value for qualifier EC_number",
-							 feat);
+          {
+              size_t pos = NStr::Find (ec_number, "n");
+              if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+					        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+						               ec_number + " is not a legal value for qualifier EC_number",
+							             feat);
+              } else {
+					        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+						               ec_number + " is not a legal preliminary value for qualifier EC_number",
+							             feat);
+              }
+          }
 					break;
 				default:
 					break;

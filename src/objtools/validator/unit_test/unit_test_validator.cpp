@@ -1718,7 +1718,65 @@ NCBITEST_INIT_TREE()
     }
 }
 
+
+static void SetErrorsAccessions (vector< CExpectedError *> & expected_errors, string accession)
+{
+    size_t i, len = expected_errors.size();
+    for (i = 0; i < len; i++) {
+        expected_errors[i]->SetAccession(accession);
+    }
+}
+
+
 // new case test ground
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadEcNumberValue)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet ();
+    CRef<CSeq_feat> prot = entry->GetSet().GetSeq_set().back()->GetAnnot().front()->GetData().GetFtable().front();
+    prot->SetData().SetProt().SetEc().push_back("1.2.3.10");
+    prot->SetData().SetProt().SetEc().push_back("1.1.3.22");
+    prot->SetData().SetProt().SetEc().push_back("1.1.99.n");
+    prot->SetData().SetProt().SetEc().push_back("1.1.1.17");
+    prot->SetData().SetProt().SetEc().push_back("11.22.33.44");
+    prot->SetData().SetProt().SetEc().push_back("11.22.n33.44");
+    prot->SetData().SetProt().SetEc().push_back("11.22.33.n44");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
+                      "EC_number 1.2.3.10 was deleted"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
+                      "EC_number 1.1.3.22 was transferred and is no longer valid"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
+                      "11.22.33.44 is not a legal value for qualifier EC_number"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberFormat", 
+                      "11.22.n33.44 is not in proper EC_number format"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Info, "BadEcNumberValue", 
+                      "11.22.33.n44 is not a legal preliminary value for qualifier EC_number"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    prot->SetData().SetProt().ResetEc();
+    CRef<CSeq_feat> misc = AddMiscFeature (entry->GetSet().GetSeq_set().front());
+    misc->SetData().SetImp().SetKey("exon");
+    misc->AddQualifier("EC_number", "1.2.3.10");
+    misc->AddQualifier("EC_number", "1.1.3.22");
+    misc->AddQualifier("EC_number", "1.1.99.n");
+    misc->AddQualifier("EC_number", "1.1.1.17");
+    misc->AddQualifier("EC_number", "11.22.33.44");
+    misc->AddQualifier("EC_number", "11.22.n33.44");
+    misc->AddQualifier("EC_number", "11.22.33.n44");
+    SetErrorsAccessions(expected_errors, "nuc");
+    expected_errors[1]->SetErrMsg("EC_number 1.1.3.22 was replaced");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
 {
@@ -4796,15 +4854,6 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-}
-
-
-static void SetErrorsAccessions (vector< CExpectedError *> & expected_errors, string accession)
-{
-    size_t i, len = expected_errors.size();
-    for (i = 0; i < len; i++) {
-        expected_errors[i]->SetAccession(accession);
-    }
 }
 
 
