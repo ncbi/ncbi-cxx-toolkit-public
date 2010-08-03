@@ -89,8 +89,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
     SNetServiceImpl(const string& service_name,
-        const string& client_name, INetServerConnectionListener* listener,
-        const string& lbsm_affinity_name);
+        const string& client_name, INetServerConnectionListener* listener);
 
     void Init(CNetObject* api_impl,
         CConfig* config, const string& config_section,

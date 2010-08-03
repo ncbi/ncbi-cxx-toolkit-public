@@ -152,10 +152,9 @@ static const char* const s_NetCacheConfigSections[] = {
 };
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
-        const string& service, const string& client_name,
-        const string& lbsm_affinity_name) :
+        const string& service, const string& client_name) :
     m_Service(new SNetServiceImpl(service, client_name,
-        new CNetCacheServerListener, lbsm_affinity_name))
+        new CNetCacheServerListener))
 {
     m_Service->Init(this, config, section, s_NetCacheConfigSections);
 }
@@ -211,34 +210,29 @@ CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
         const string& conf_section /* = kEmptyStr */) :
-    m_Impl(new SNetCacheAPIImpl(NULL, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr))
+    m_Impl(new SNetCacheAPIImpl(NULL, conf_section, kEmptyStr, kEmptyStr))
 {
 }
 
 CNetCacheAPI::CNetCacheAPI(const IRegistry& reg, const string& conf_section)
 {
     CConfig conf(reg);
-    m_Impl = new SNetCacheAPIImpl(&conf, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr);
+    m_Impl = new SNetCacheAPIImpl(&conf, conf_section, kEmptyStr, kEmptyStr);
 }
 
 CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section) :
-    m_Impl(new SNetCacheAPIImpl(conf, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr))
+    m_Impl(new SNetCacheAPIImpl(conf, conf_section, kEmptyStr, kEmptyStr))
 {
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr,
-        kEmptyStr, client_name, kEmptyStr))
+    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr, kEmptyStr, client_name))
 {
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& service_name,
         const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr,
-        service_name, client_name, kEmptyStr))
+    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr, service_name, client_name))
 {
 }
 
@@ -557,7 +551,7 @@ public:
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
             return new SNetCacheAPIImpl(&config, m_DriverName,
-                kEmptyStr, kEmptyStr, kEmptyStr);
+                kEmptyStr, kEmptyStr);
         }
         return NULL;
     }

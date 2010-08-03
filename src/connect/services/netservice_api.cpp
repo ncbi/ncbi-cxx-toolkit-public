@@ -83,12 +83,11 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
 }
 
 SNetServiceImpl::SNetServiceImpl(const string& service_name,
-        const string& client_name, INetServerConnectionListener* listener,
-        const string& lbsm_affinity_name) :
+        const string& client_name, INetServerConnectionListener* listener) :
     m_ServiceName(service_name),
     m_ClientName(client_name),
     m_Listener(listener),
-    m_LBSMAffinityName(lbsm_affinity_name),
+    m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_ServiceType(eNotDefined)
 {

@@ -144,7 +144,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         const string& service_name, const string& client_name,
         const string& queue_name) :
     m_Service(new SNetServiceImpl(service_name, client_name,
-        new CNetScheduleServerListener, kEmptyStr)),
+        new CNetScheduleServerListener)),
     m_Queue(queue_name),
     m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {

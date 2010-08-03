@@ -106,10 +106,9 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& section,
             const string& service_name,
             const string& client_name,
-            const string& lbsm_affinity_name,
             const string& cache_name) :
         SNetCacheAPIImpl(new SNetServiceImpl(service_name, client_name,
-            new CNetICacheServerListener, lbsm_affinity_name)),
+            new CNetICacheServerListener)),
         m_CacheName(cache_name)
     {
         m_Service->Init(this, config, section, s_NetICacheConfigSections);
@@ -202,7 +201,7 @@ CNetICacheClient::CNetICacheClient(
         const string& client_name) :
     m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
         host + ':' + NStr::UIntToString(port),
-        client_name, kEmptyStr, cache_name))
+        client_name, cache_name))
 {
 }
 
@@ -211,23 +210,13 @@ CNetICacheClient::CNetICacheClient(
         const string& cache_name,
         const string& client_name) :
     m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
-        service_name, client_name, kEmptyStr, cache_name))
-{
-}
-
-CNetICacheClient::CNetICacheClient(
-        const string& service_name,
-        const string& cache_name,
-        const string& client_name,
-        const string& lbsm_affinity_name) :
-    m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
-        service_name, client_name, lbsm_affinity_name, cache_name))
+        service_name, client_name, cache_name))
 {
 }
 
 CNetICacheClient::CNetICacheClient(CConfig* config, const string& driver_name) :
     m_Impl(new SNetICacheClientImpl(config, driver_name,
-        kEmptyStr, kEmptyStr, kEmptyStr, kEmptyStr))
+        kEmptyStr, kEmptyStr, kEmptyStr))
 {
 }
 

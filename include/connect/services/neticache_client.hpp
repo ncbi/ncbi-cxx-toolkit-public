@@ -82,14 +82,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                      const string& cache_name,
                      const string& client_name);
 
-    /// This constructor will be retired in favor of the
-    /// constructor that accepts the CConfig parameter.
-    NCBI_DEPRECATED
-    CNetICacheClient(const string& service_name,
-                     const string& cache_name,
-                     const string& client_name,
-                     const string& lbsm_affinity_name);
-
     /// Send session registration command
     void RegisterSession(unsigned pid);
     /// Send session unregistration command

@@ -60,8 +60,7 @@ class CNetCacheWriter;
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 {
     SNetCacheAPIImpl(CConfig* config, const string& section,
-        const string& service, const string& client_name,
-        const string& lbsm_affinity_name);
+        const string& service, const string& client_name);
 
     // For use by SNetICacheClientImpl
     SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
