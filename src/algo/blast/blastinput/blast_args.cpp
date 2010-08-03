@@ -763,6 +763,8 @@ CGappedArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& options)
     }
 #endif
     options.SetGappedMode( !args[kArgUngapped] );
+    if (options.GetGappedMode() == false)
+        options.SetSumStatisticsMode(true);
 }
 
 void
