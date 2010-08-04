@@ -78,11 +78,11 @@ protected:
     virtual SLDS2_File::TFormat GetFileFormat(const string& url);
     /// Get file size - returns 0 by default. Negative values are used
     /// to indicate non-existing files.
-    virtual Int8 GetFileSize(const string& url) { return 0; }
+    virtual Int8 GetFileSize(const string& /*url*/) { return 0; }
     /// Get file CRC - returns 0 by default.
-    virtual Uint4 GetFileCRC(const string& url) { return 0; }
+    virtual Uint4 GetFileCRC(const string& /*url*/) { return 0; }
     /// Get file timestamp - returns 0 by default.
-    virtual Int8 GetFileTime(const string& url) { return 0; }
+    virtual Int8 GetFileTime(const string& /*url*/) { return 0; }
 
 private:
     string m_Name;

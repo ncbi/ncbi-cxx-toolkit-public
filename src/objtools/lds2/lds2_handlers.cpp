@@ -143,7 +143,7 @@ CNcbiIstream* CLDS2_UrlHandler_GZipFile::OpenStream(const string&  url,
         char buf[buf_size];
         CNcbiStreampos to_read = NcbiInt8ToStreampos(buf_size);
         while (pos > 0) {
-            if (pos < buf_size) {
+            if (NcbiStreamposToInt8(pos) < buf_size) {
                 to_read = pos;
             }
             zin->read(buf, to_read);
