@@ -78,8 +78,8 @@ void CTestICClient::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
         "Network ICache client test");
 
-    arg_desc->AddOptionalKey("service", "Service",
-        "NetCache service name.", CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("service", "Service", "NetCache service name.",
+        CArgDescriptions::eString, kEmptyStr);
 
     arg_desc->AddOptionalKey("hostname", "Host",
         "NetCache host name.", CArgDescriptions::eString);
@@ -87,9 +87,8 @@ void CTestICClient::Init(void)
     arg_desc->AddOptionalKey("port", "Port",
         "Port number.", CArgDescriptions::eInteger);
 
-    arg_desc->AddPositional("cache", "Cache name.",
-        CArgDescriptions::eString);
-
+    arg_desc->AddDefaultPositional("cache", "Cache name.",
+        CArgDescriptions::eString, kEmptyStr);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -99,29 +98,19 @@ void CTestICClient::Init(void)
 }
 
 
-
-
-
-
 int CTestICClient::Run(void)
 {
     CArgs args = GetArgs();
 
-    const string& cache_name  = args["cache"].AsString();
+    string service(args["service"].AsString());
+    string cache_name(args["cache"].AsString());
 
-    CNetICacheClient cl(eVoid);
-
-    if (args["service"].HasValue()) {
-        cl = CNetICacheClient(args["service"].AsString(),
-            cache_name, "test_icache");
-    } else if (args["hostname"].HasValue()) {
-        cl = CNetICacheClient(args["hostname"].AsString(),
+    CNetICacheClient cl(args["hostname"].HasValue() ?
+        CNetICacheClient(args["hostname"].AsString(),
             args["port"].AsInteger(),
-            cache_name, "test_icache");
-    } else {
-        NcbiCerr << "Either -service or -hostname argument must be specified.";
-        return 1;
-    }
+            cache_name, "test_icache") :
+        CNetICacheClient(args["service"].AsString(),
+            cache_name, "test_icache"));
 
     const char test_data[] = "The quick brown fox jumps over the lazy dog.";
 
@@ -234,5 +223,5 @@ int CTestICClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestICClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestICClient().AppMain(argc, argv, 0, eDS_Default);
 }
