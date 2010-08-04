@@ -68,6 +68,23 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 {
     NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetICacheClient);
 
+    /// Defines how this object must be initialized.
+    enum EAppRegistry {
+        eAppRegistry
+    };
+
+    /// Create an instance of CNetICacheClient and initialize
+    /// it with parameters read from the application registry.
+    /// @param use_app_reg
+    ///   Selects this constructor.
+    ///   The parameter is not used otherwise.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If an empty string is passed, the default
+    ///   section name "netcache" is used.
+    explicit CNetICacheClient(EAppRegistry use_app_reg,
+        const string& conf_section = kEmptyStr);
+
     // Construct an instance using connection parameters
     // specified in the configuration file.
     CNetICacheClient(CConfig* config = NULL,
@@ -133,6 +150,25 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                                const string&     subkey,
                                SBlobAccessDescr*  blob_descr);
 
+    /// Create or update the specified blob. This method is blocking --
+    /// it waits for a confirmation from NetCache after all
+    /// data is transferred. Since blob EOF marker is sent in the
+    /// destructor, the blob will not be created until the stream
+    /// is deleted.
+    ///
+    /// @param key
+    ///    ICache key
+    /// @param version
+    ///    ICache key version
+    /// @param subkey
+    ///    ICache subkey
+    /// @param time_to_live
+    ///    BLOB time to live value in seconds.
+    ///    0 - server side default is assumed.
+    /// @param caching_mode
+    ///    Defines whether to enable file caching.
+    /// @return
+    ///    IEmbeddedStreamWriter* (caller must delete it).
     IEmbeddedStreamWriter* GetNetCacheWriter(
         const string& key,
         int version,

@@ -194,6 +194,13 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
     return StickToServerAndExec(cmd).conn;
 }
 
+CNetICacheClient::CNetICacheClient(EAppRegistry use_app_reg,
+        const string& conf_section) :
+    m_Impl(new SNetICacheClientImpl(NULL, conf_section,
+        kEmptyStr, kEmptyStr, kEmptyStr))
+{
+}
+
 CNetICacheClient::CNetICacheClient(
         const string& host,
         unsigned short port,
