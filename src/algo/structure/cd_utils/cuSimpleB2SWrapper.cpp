@@ -39,6 +39,7 @@
 #include <string>
 #include <list>
 
+#include <objmgr/scope.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
@@ -48,9 +49,10 @@
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+//#include <algo/blast/api/objmgrfree_query_data.hpp>
 
 #include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
@@ -95,6 +97,7 @@ void CSimpleB2SWrapper::InitializeToDefaults()
     m_eValueThold = E_VAL_DEFAULT;
     m_effSearchSpace = DO_NOT_USE_EFF_SEARCH_SPACE;
     m_caMode = COMPOSITION_ADJ_DEF;
+    m_scoringMatrix = SCORING_MATRIX_DEFAULT;
 
 
 	m_options.Reset(new CBlastAdvancedProteinOptionsHandle);
@@ -116,13 +119,19 @@ void CSimpleB2SWrapper::InitializeToDefaults()
 void CSimpleB2SWrapper::SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int from, unsigned int to)
 {
     bool full = (from == 0 && to == 0);
+    unsigned int len = GetSeqLength(*seq);
 
     //  If invalid range, also use the full sequence.
     if (full || from > to) {
         full = true;
         from = 0;
-		to = (seq.NotEmpty()) ? GetSeqLength(*seq) - 1 : 0;
+		to = (seq.NotEmpty()) ? len - 1 : 0;
 //		to = (seq.NotEmpty()) ? seq->GetInst().GetLength() - 1 : 0;
+    }
+
+    //  Clip end of range so it does not extend beyond end of the sequence
+    if (to >= len) {
+        to = len - 1;
     }
 
     SB2SSeq tmp = {full, from, to, seq};
@@ -132,6 +141,25 @@ void CSimpleB2SWrapper::SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int fro
         m_seq2 = tmp;
     }
 }
+
+bool CSimpleB2SWrapper::FillOutSeqLoc(const SB2SSeq& s, CSeq_loc& seqLoc)
+{
+    bool result = true;
+    CSeq_interval& seqInt = seqLoc.SetInt();
+    CSeq_id& seqId = seqInt.SetId();
+    seqInt.SetFrom(s.from);
+    seqInt.SetTo(s.to);
+    
+    //  Assign the first identifier from the bioseq
+    if (s.bs.NotEmpty() && s.bs->GetId().size() > 0) {
+        seqId.Assign(*(s.bs->GetId().front()));
+    } else {
+        result = false;
+    }
+
+    return result;
+}
+
 
 double CSimpleB2SWrapper::SetPercIdThreshold(double percIdThold)
 {
@@ -221,24 +249,33 @@ bool CSimpleB2SWrapper::DoBlast2Seqs()
 //    cout << "m_percIdThold = " << m_percIdThold << ";  DO_... = " << DO_NOT_USE_PERC_ID_THRESHOLD << endl;
 */
 
-	CRef< CSeq_align > nullRef;
+    CSeq_loc querySeqLoc, subjectSeqLoc;
+    if (!FillOutSeqLoc(m_seq1, querySeqLoc) || !FillOutSeqLoc(m_seq2, subjectSeqLoc)) {
+        return false;
+    }
+
+    RemoveAllDataLoaders();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    CBioseq_Handle handle1 = scope.AddBioseq(*m_seq1.bs);
+    CBioseq_Handle handle2 = scope.AddBioseq(*m_seq2.bs);
+
+
+    CRef<CBlastSearchQuery> bsqQuery(new CBlastSearchQuery(querySeqLoc, scope));
+    CRef<CBlastSearchQuery> bsqSubject(new CBlastSearchQuery(subjectSeqLoc, scope));
+    CBlastQueryVector queryVector, subjectVector;
+    queryVector.AddQuery(bsqQuery);
+    subjectVector.AddQuery(bsqSubject);
+
+
+    CRef<IQueryFactory> query(new CObjMgr_QueryFactory(queryVector));
+    CRef<IQueryFactory> subject(new CObjMgr_QueryFactory(subjectVector));
 	CRef<CBlastProteinOptionsHandle> blastOptions((CBlastProteinOptionsHandle*)m_options.GetPointer());
 	
-    //  construct 'query' from m_seq1
-    CRef< CBioseq > queryBioseq = m_seq1.bs;   
-    CRef<IQueryFactory> query(new CObjMgrFree_QueryFactory(queryBioseq));
-
-
-    //  construct 'subject' from m_seq2
-	CRef< CBioseq_set > bioseqset(new CBioseq_set);
-	list< CRef< CSeq_entry > >& seqEntryList = bioseqset->SetSeq_set();
-    CRef< CSeq_entry > seqEntry(new CSeq_entry);
-    seqEntry->SetSeq(*m_seq2.bs);
-    seqEntryList.push_back(seqEntry);
-    CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 
     //  perform the blast 2 sequences and process the results...
-    CPsiBl2Seq blaster(query,subject,blastOptions);
+    CPsiBl2Seq blaster(query, subject, blastOptions);
     CSearchResultSet& hits = *blaster.Run();
     int total = hits.GetNumResults();
     for (int index=0; index<total; index++)
@@ -246,11 +283,11 @@ bool CSimpleB2SWrapper::DoBlast2Seqs()
 
 //  dump the CSearchResults object... 
 //    string err;
-//    WriteASNToStream(cout, *hits, false, &err);
+//    if (total > 0) WriteASNToStream(cout, hits[0], false, &err);
 
     return (m_alignments.size() > 0);
 }
-	
+
 CRef<CSeq_align> CSimpleB2SWrapper::getBestB2SAlignment(double* score, double* eval, double* percIdent) const
 {
     if (m_alignments.size() == 0) {
@@ -302,10 +339,10 @@ double  CSimpleB2SWrapper::getPairwisePercIdent(unsigned int hitNum) const
 void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
 {
     unsigned int len1 = (m_seq1.to >= m_seq1.from) ? m_seq1.to - m_seq1.from + 1 : 0;
-//    unsigned int len2 = (m_seq2.to >= m_seq2.from) ? m_seq2.to - m_seq2.from + 1 : 0;
     double invLen1 = (len1) ? 1.0/(double) len1 : 0;
 	const list< CRef< CSeq_align > >& seqAlignList = hits.GetSeqAlign()->Get();
 
+//    unsigned int len2 = (m_seq2.to >= m_seq2.from) ? m_seq2.to - m_seq2.from + 1 : 0;
 //    cout << "Processing " << seqAlignList.size() << " blast hits (len1 = " << len1 << ", len2 = " << len2 << ").\n";
 
     m_scores.clear();
@@ -317,7 +354,6 @@ void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
 
     int nIdent = 0;
 	double score = 0.0, eVal = kMax_Double, percIdent = 0.0;
-//	CRef< CSeq_align > sa = *(seqAlignList.begin());
 	CRef< CSeq_align > sa = ExtractFirstSeqAlign(*(seqAlignList.begin()));
 	if (!sa.Empty()) 
 	{
@@ -325,21 +361,112 @@ void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
 		sa->GetNamedScore(CSeq_align::eScore_EValue, eVal);
         if (sa->GetNamedScore(CSeq_align::eScore_IdentityCount, nIdent)) {
             percIdent = 100.0 * invLen1 * (double) nIdent; 
-//                cout << "nIdent = " << nIdent << "; percIdent = " << percIdent << endl;
-//         } else {
-//              cout << "????  Didn't find identity count\n";
+//            cout << "nIdent = " << nIdent << "; percIdent = " << percIdent << endl;
+//        } else {
+//            cout << "????  Didn't find identity count\n";
         }
 
 
-//            if (!sa->GetNamedScore(CSeq_align::eScore_PercentIdentity, percIdent))
-//                cout << "????  Didn't find percent identity\n";
-//            cout << "saving values:   score = " <<score << "; eval = " << eVal << "; id% = " << percIdent << endl;
+//        if (!sa->GetNamedScore(CSeq_align::eScore_PercentIdentity, percIdent))
+//            cout << "????  Didn't find percent identity\n";
+//        cout << "saving values:   score = " <<score << "; eval = " << eVal << "; id% = " << percIdent << endl;
+
+        m_scores.push_back(score);
+        m_evals.push_back(eVal);
+        m_percIdents.push_back(percIdent);
+        m_alignments.push_back(sa);
+	}
+
+}
+
+/*	
+bool CSimpleB2SWrapper::DoBlast2Seqs_OMFree()
+{
+    if (m_options.Empty()) return false;
+
+//	CRef<CBlastAdvancedProteinOptionsHandle> options(new CBlastAdvancedProteinOptionsHandle);
+//	options->SetEvalueThreshold(m_eValueThold);
+//	options->SetMatrixName(m_scoringMatrix.c_str());
+//	options->SetSegFiltering(false);
+//	options->SetDbLength(CDD_DATABASE_SIZE);
+//    options->SetHitlistSize(m_hitlistSize);
+//	options->SetDbSeqNum(1);
+//	options->SetCompositionBasedStats(eNoCompositionBasedStats);
+
+//    if (m_percIdThold != DO_NOT_USE_PERC_ID_THRESHOLD) options->SetPercentIdentity(m_percIdThold);
+//    cout << "m_percIdThold = " << m_percIdThold << ";  DO_... = " << DO_NOT_USE_PERC_ID_THRESHOLD << endl;
+
+	CRef<CBlastProteinOptionsHandle> blastOptions((CBlastProteinOptionsHandle*)m_options.GetPointer());
+	
+    //  construct 'query' from m_seq1
+    CRef< CBioseq > queryBioseq = m_seq1.bs;   
+    CRef<IQueryFactory> query(new CObjMgrFree_QueryFactory(queryBioseq));
+
+
+    //  construct 'subject' from m_seq2
+	CRef< CBioseq_set > bioseqset(new CBioseq_set);
+	list< CRef< CSeq_entry > >& seqEntryList = bioseqset->SetSeq_set();
+    CRef< CSeq_entry > seqEntry(new CSeq_entry);
+    seqEntry->SetSeq(*m_seq2.bs);
+    seqEntryList.push_back(seqEntry);
+    CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
+
+    //  perform the blast 2 sequences and process the results...
+    CPsiBl2Seq blaster(query,subject,blastOptions);
+    CSearchResultSet& hits = *blaster.Run();
+    int total = hits.GetNumResults();
+    for (int index=0; index<total; index++)
+       processBlastHits_OMFree(hits[index]);
+
+//  dump the CSearchResults object... 
+//    string err;
+//    if (total > 0) WriteASNToStream(cout, hits[0], false, &err);
+
+    return (m_alignments.size() > 0);
+}
+
+void CSimpleB2SWrapper::processBlastHits_OMFree(CSearchResults& hits)
+{
+    unsigned int len1 = (m_seq1.to >= m_seq1.from) ? m_seq1.to - m_seq1.from + 1 : 0;
+    unsigned int len2 = (m_seq2.to >= m_seq2.from) ? m_seq2.to - m_seq2.from + 1 : 0;
+    double invLen1 = (len1) ? 1.0/(double) len1 : 0;
+	const list< CRef< CSeq_align > >& seqAlignList = hits.GetSeqAlign()->Get();
+
+    cout << "Processing " << seqAlignList.size() << " blast hits (len1 = " << len1 << ", len2 = " << len2 << ").\n";
+
+    m_scores.clear();
+    m_evals.clear();
+    m_percIdents.clear();
+    m_alignments.clear();
+
+    if (seqAlignList.size() == 0) return;
+
+    int nIdent = 0;
+	double score = 0.0, eVal = kMax_Double, percIdent = 0.0;
+	CRef< CSeq_align > sa = ExtractFirstSeqAlign(*(seqAlignList.begin()));
+	if (!sa.Empty()) 
+	{
+		sa->GetNamedScore(CSeq_align::eScore_Score, score);
+		sa->GetNamedScore(CSeq_align::eScore_EValue, eVal);
+        if (sa->GetNamedScore(CSeq_align::eScore_IdentityCount, nIdent)) {
+            percIdent = 100.0 * invLen1 * (double) nIdent; 
+//            cout << "nIdent = " << nIdent << "; percIdent = " << percIdent << endl;
+//        } else {
+//            cout << "????  Didn't find identity count\n";
+        }
+
+
+//        if (!sa->GetNamedScore(CSeq_align::eScore_PercentIdentity, percIdent))
+//            cout << "????  Didn't find percent identity\n";
+//        cout << "saving values:   score = " <<score << "; eval = " << eVal << "; id% = " << percIdent << endl;
+
         m_scores.push_back(score);
         m_evals.push_back(eVal);
         m_percIdents.push_back(percIdent);
         m_alignments.push_back(sa);
 	}
 }
+*/
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

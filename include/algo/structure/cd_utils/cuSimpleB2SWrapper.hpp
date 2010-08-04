@@ -38,6 +38,7 @@
 #define CU_SIMPLEB2SWRAPPER_HPP
 
 #include <vector>
+#include <objmgr/object_manager.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
 #include <algo/structure/cd_utils/cuMatrix.hpp>
 #include <algo/structure/cd_utils/cuScoringMatrix.hpp>
@@ -48,6 +49,17 @@ BEGIN_SCOPE(cd_utils)
 
 class NCBI_CDUTILS_EXPORT CSimpleB2SWrapper
 {
+    static void RemoveAllDataLoaders() {
+        int i = 1;
+        CRef<CObjectManager> om = CObjectManager::GetInstance();
+        CObjectManager::TRegisteredNames loader_names;
+        om->GetRegisteredNames(loader_names);
+        ITERATE(CObjectManager::TRegisteredNames, itr, loader_names) {
+            cout << "data loader " << i << ":  " << *itr << endl;
+            om->RevokeDataLoader(*itr);
+            ++i;
+        }
+    }
 public:
 	static const unsigned int HITLIST_SIZE_DEFAULT    ;
 	static const unsigned int MAX_HITLIST_SIZE        ;
@@ -106,7 +118,13 @@ public:
 
     //  Do all parameter configurations before calling this method.
     //  E-value threshold is 10.0 unless user has previously called 'SetEValueThreshold'.
+    //  Uses Object Manager enabled Blast interface.
     bool DoBlast2Seqs();
+
+    //  Do all parameter configurations before calling this method.
+    //  E-value threshold is 10.0 unless user has previously called 'SetEValueThreshold'.
+    //  Uses Object Manager free Blast interface.
+//    bool DoBlast2Seqs_OMFree();
 
     //  If there are no hits, the returned CRef will be invalid.  Test the CRef before using.
     CRef<CSeq_align> getBestB2SAlignment(double* score = NULL, double* eval = NULL, double* percIdent = NULL) const;
@@ -155,7 +173,11 @@ private:
 
 	void SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int from, unsigned int to);
 
+    //  False if there was a problem (e.g., SB2SSeq couldn't provide a Seq-id).
+    bool FillOutSeqLoc(const SB2SSeq& s, CSeq_loc& seqLoc);
+
 	void processBlastHits(ncbi::blast::CSearchResults&);
+//    void processBlastHits_OMFree(ncbi::blast::CSearchResults&);
 };
 
 END_SCOPE(cd_utils)
