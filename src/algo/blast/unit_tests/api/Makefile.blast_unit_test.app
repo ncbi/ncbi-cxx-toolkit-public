@@ -35,6 +35,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini data
-CHECK_TIMEOUT = 750
+# This unit test suite shouldn't run longer than 15 minutes
+CHECK_TIMEOUT = 900
 
 WATCHERS = blastsoft
