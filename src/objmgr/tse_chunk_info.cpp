@@ -540,7 +540,10 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     else {
         ITERATE ( TAnnotContents, it, m_AnnotContents ) {
             ITERATE ( TAnnotTypes, it2, it->second ) {
-                tse.x_MapChunkByFeatType(it2->first, GetChunkId());
+                const SAnnotTypeSelector& type = it2->first;
+                if ( type.GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
+                    tse.x_MapChunkByFeatType(type, GetChunkId());
+                }
             }
         }
     }
