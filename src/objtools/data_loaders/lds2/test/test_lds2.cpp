@@ -156,7 +156,7 @@ void CLDS2TestApplication::x_ConvertFile(const string& rel_name)
             new CZipStreamCompressor(CZipCompression::eLevel_Default,
             CZipCompression::fGZip)));
         out.reset(CObjectOStream::Open(m_Fmt, *zout.release(),
-            CObjectOStream::eDeleteWhenDone));
+            eTakeOwnership));
     }
     else {
         out.reset(CObjectOStream::Open(m_Fmt, fout));
