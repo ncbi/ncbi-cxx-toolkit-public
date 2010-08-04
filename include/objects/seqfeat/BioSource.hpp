@@ -84,6 +84,9 @@ public:
     bool IsSetMgcode(void) const;
     int GetMgcode(void) const;
 
+    bool IsSetPgcode(void) const;
+    int GetPgcode(void) const;
+
     bool IsSetDivision(void) const;
     const string& GetDivision(void) const;
 

@@ -143,6 +143,16 @@ int COrg_ref::GetMgcode(void) const
     return GetOrgname ().GetMgcode ();
 }
 
+bool COrg_ref::IsSetPgcode(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetPgcode ();
+}
+
+int COrg_ref::GetPgcode(void) const
+{
+    return GetOrgname ().GetPgcode ();
+}
+
 bool COrg_ref::IsSetDivision(void) const
 {
     return IsSetOrgname () && GetOrgname ().IsSetDiv ();

@@ -71,8 +71,14 @@ int CBioSource::GetGenCode(void) const
         switch ( genome ) {
         case eGenome_kinetoplast:
         case eGenome_mitochondrion:
-            // bacteria and plant organelle code
-            return orn.GetMgcode();
+        case eGenome_hydrogenosome:
+            {
+                // mitochondrial code
+                if (orn.IsSetMgcode()) {
+                    return orn.GetMgcode();
+                }
+                return 1;
+            }
         case eGenome_chloroplast:
         case eGenome_chromoplast:
         case eGenome_plastid:
@@ -80,10 +86,22 @@ int CBioSource::GetGenCode(void) const
         case eGenome_apicoplast:
         case eGenome_leucoplast:
         case eGenome_proplastid:
-            // bacteria and plant plastids are code 11.
-            return 11;
+            {
+                // bacteria and plant plastid code
+                if (orn.IsSetPgcode()) {
+                    int pgcode = orn.GetPgcode();
+                    if (pgcode > 0) return pgcode;
+                }
+                // bacteria and plant plastids default to code 11.
+                return 11;
+            }
         default:
-            return orn.GetGcode();
+            {
+                if (orn.IsSetGcode()) {
+                    return orn.GetGcode();
+                }
+                return 1;
+            }
         }
     } catch (...) {
         return 1; // was 0(!)
@@ -226,6 +244,16 @@ bool CBioSource::IsSetMgcode(void) const
 int CBioSource::GetMgcode(void) const
 {
     return GetOrg ().GetMgcode ();
+}
+
+bool CBioSource::IsSetPgcode(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetPgcode ();
+}
+
+int CBioSource::GetPgcode(void) const
+{
+    return GetOrg ().GetPgcode ();
 }
 
 bool CBioSource::IsSetDivision(void) const
