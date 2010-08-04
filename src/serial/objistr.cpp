@@ -170,7 +170,7 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
                                      EOwnership deleteInStream)
 {
-    CRef<CByteSource> src = GetSource(inStream, deleteInStream == eDeleteWhenDone);
+    CRef<CByteSource> src = GetSource(inStream, deleteInStream == eTakeOwnership);
     return Create(format, *src);
 }
 

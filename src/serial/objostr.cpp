@@ -103,7 +103,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         deleteStream = true;
     }
 
-    return Open(format, *outStream, deleteStream ? eDeleteWhenDone : eNoDelete);
+    return Open(format, *outStream, deleteStream ? eTakeOwnership : eNoOwnership);
 }
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
@@ -130,7 +130,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      CNcbiOstream& outStream,
                                      EOwnership edeleteStream)
 {
-    bool deleteStream = edeleteStream == eDeleteWhenDone;
+    bool deleteStream = edeleteStream == eTakeOwnership;
     switch ( format ) {
     case eSerial_AsnText:
         return OpenObjectOStreamAsn(outStream, deleteStream);

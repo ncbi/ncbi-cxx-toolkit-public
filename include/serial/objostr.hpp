@@ -92,14 +92,6 @@ public:
 // Create methods
     // CObjectOStream will be created on heap, and must be deleted later on
 
-    /// Output stream ownership policy
-    enum EOwnership {
-        /// Do not own the output stream
-        eNoDelete,
-        /// Accept ownership, delete the output stream when done
-        eDeleteWhenDone
-    };
-
     /// Create serial object writer and attach it to an output stream.
     ///
     /// @param format
@@ -122,13 +114,13 @@ public:
     /// @param outStream
     ///   Output stream
     /// @param deleteOutStream
-    ///   When eDeleteWhenDone, the output stream will be deleted automatically
+    ///   When eTakeOwnership, the output stream will be deleted automatically
     ///   when the writer is deleted
     /// @return
     ///   Writer (created on heap)
     static CObjectOStream* Open(ESerialDataFormat format,
                                 CNcbiOstream& outStream,
-                                EOwnership deleteOutStream = eNoDelete);
+                                EOwnership deleteOutStream = eNoOwnership);
 
     /// Create serial object writer and attach it to a file stream.
     ///
