@@ -36,6 +36,7 @@
 #include <objmgr/data_loader.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/lds2/lds2_db.hpp>
+#include <objtools/lds2/lds2_handlers.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -110,6 +111,10 @@ public:
     friend class CSimpleLoaderMaker<CLDS2_DataLoader>;
     friend class CParamLoaderMaker<CLDS2_DataLoader, CLDS2_Database&>;
 
+    /// Register URL handler. The default handlers "file" and "gzipfile"
+    /// for local files are registered automatically.
+    void RegisterUrlHandler(CLDS2_UrlHandler_Base* handler);
+
 private:
     class CLDS2_LoaderMaker : public TSimpleMaker
     {
@@ -126,7 +131,6 @@ private:
     };
     friend class CLDS2_LoaderMaker;
 
-private:
     typedef CLDS2_Database::TBlobSet TBlobSet;
 
     // Load data for the blobs
@@ -135,6 +139,8 @@ private:
     CRef<CSeq_entry> x_LoadTSE(const SLDS2_Blob& blob);
     CRef<CSeq_entry> x_LoadFastaTSE(CNcbiIstream&     in,
                                     const SLDS2_Blob& blob);
+
+    CLDS2_UrlHandler_Base* x_GetUrlHandler(const SLDS2_File& info);
 
     // to prevent copying
     CLDS2_DataLoader(const CLDS2_DataLoader&);
@@ -148,8 +154,11 @@ private:
                      CLDS2_Database&      lds_db,
                      CFastaReader::TFlags fasta_flags);
 
+    typedef map<string, CRef<CLDS2_UrlHandler_Base> > THandlers;
+
     CRef<CLDS2_Database>  m_Db; // Reference on the LDS2 database
     CFastaReader::TFlags  m_FastaFlags;
+    THandlers             m_Handlers;
 };
 
 

@@ -81,21 +81,12 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
 
 // Create db queries
 const char* kLDS2_CreateDB[] = {
-    // object types
-    "create table `obj_type` (" \
-    "`type_id` integer primary key on conflict replace autoincrement," \
-    "`type_name` varchar(100) not null);",
-
-    // annotation types
-    "create table `annot_type` (" \
-    "`type_id` integer primary key on conflict replace autoincrement," \
-    "`type_name` varchar(100) not null);",
-
     // files
     "create table `file` (" \
     "`file_id` integer primary key on conflict abort autoincrement," \
     "`file_name` varchar(2048) not null unique on conflict abort," \
     "`file_format` integer not null," \
+    "`file_handler` varchar(100)," \
     "`file_size` integer(8)," \
     "`file_time` integer(8)," \
     "`file_crc` integer(4));",
@@ -197,74 +188,19 @@ void CLDS2_Database::Create(void)
     for (int i = 0; i < sizeof(kLDS2_CreateDB)/sizeof(kLDS2_CreateDB[0]); i++) {
         conn.ExecuteSql(kLDS2_CreateDB[i]);
     }
+}
 
-    x_InitTypeMaps();
+
+void CLDS2_Database::SetSQLiteFlags(int flags)
+{
+    m_DbFlags = flags;
+    m_Conn.reset();
 }
 
 
 void CLDS2_Database::Open(void)
 {
-    x_InitTypeMaps();
-}
-
-
-void CLDS2_Database::x_InitTypeMaps(void)
-{
-    if ( !m_ObjTypeMap.empty() ) {
-        m_ObjTypeMap.clear();
-    }
-    if ( !m_AnnotTypeMap.empty() ) {
-        m_AnnotTypeMap.clear();
-    }
-
-    CSQLITE_Connection& conn = x_GetConn();
-    CSQLITE_Statement st(&conn);
-
-    // Initialize object types
-    st.SetSql("select type_id, type_name from obj_type;");
-    while ( st.Step() ) {
-        m_ObjTypeMap[st.GetString(1)] = st.GetInt(0);
-    }
-    if ( m_ObjTypeMap.empty() ) {
-        m_ObjTypeMap["unknown"]             = SLDS2_Blob::eUnknown;
-        m_ObjTypeMap["Seq-entry"]           = SLDS2_Blob::eSeq_entry;
-        m_ObjTypeMap["Bioseq"]              = SLDS2_Blob::eBioseq;
-        m_ObjTypeMap["Bioseq-set"]          = SLDS2_Blob::eBioseq_set;
-        m_ObjTypeMap["Bioseq-set-element"]  = SLDS2_Blob::eBioseq_set_element;
-        m_ObjTypeMap["Seq-annot"]           = SLDS2_Blob::eSeq_annot;
-        m_ObjTypeMap["Seq-align-set"]       = SLDS2_Blob::eSeq_align_set;
-        m_ObjTypeMap["Seq-align"]           = SLDS2_Blob::eSeq_align;
-
-        st.SetSql(
-            "insert into obj_type (type_id, type_name) values (?1, ?2);");
-        ITERATE(TObjTypeMap, it, m_ObjTypeMap) {
-            st.Bind(1, it->second);
-            st.Bind(2, it->first);
-            st.Execute();
-            st.Reset();
-        }
-    }
-
-    // Initialize annotation types
-    st.SetSql("select type_id, type_name from annot_type;");
-    while ( st.Step() ) {
-        m_AnnotTypeMap[st.GetString(1)] = st.GetInt(0);
-    }
-    if ( m_AnnotTypeMap.empty() ) {
-        m_AnnotTypeMap["unknown"]   = SLDS2_Annot::eUnknown;
-        m_AnnotTypeMap["feat"]      = SLDS2_Annot::eSeq_feat;
-        m_AnnotTypeMap["align"]     = SLDS2_Annot::eSeq_align;
-        m_AnnotTypeMap["graph"]     = SLDS2_Annot::eSeq_graph;
-
-        st.SetSql(
-            "insert into annot_type (type_id, type_name) values (?1, ?2);");
-        ITERATE(TObjTypeMap, it, m_AnnotTypeMap) {
-            st.Bind(1, it->second);
-            st.Bind(2, it->first);
-            st.Execute();
-            st.Reset();
-        }
-    }
+    x_GetConn();
 }
 
 
@@ -284,15 +220,16 @@ SLDS2_File CLDS2_Database::GetFileInfo(const string& file_name) const
 
     CSQLITE_Connection& conn = x_GetConn();
     CSQLITE_Statement st(&conn,
-        "select `file_id`, `file_format`, `file_size`, `file_time`, `file_crc` " \
-        "from `file` where `file_name`=?1;");
+        "select `file_id`, `file_format`, `file_handler`, `file_size`, " \
+        "`file_time`, `file_crc` from `file` where `file_name`=?1;");
     st.Bind(1, file_name);
     if ( st.Step() ) {
         info.id = st.GetInt8(0);
         info.format = SLDS2_File::TFormat(st.GetInt(1));
-        info.size = st.GetInt8(2);
-        info.time = st.GetInt8(3);
-        info.crc = st.GetInt(4);
+        info.handler = st.GetString(2);
+        info.size = st.GetInt8(3);
+        info.time = st.GetInt8(4);
+        info.crc = st.GetInt(5);
     }
     return info;
 }
@@ -304,13 +241,14 @@ void CLDS2_Database::AddFile(SLDS2_File& info)
     CSQLITE_Connection& conn = x_GetConn();
     CSQLITE_Statement st(&conn,
         "insert into `file` " \
-        "(`file_name`, `file_format`, `file_size`, `file_time`, `file_crc`) " \
-        "values (?1, ?2, ?3, ?4, ?5);");
+        "(`file_name`, `file_format`, `file_handler`, `file_size`, " \
+        "`file_time`, `file_crc`) values (?1, ?2, ?3, ?4, ?5, ?6);");
     st.Bind(1, info.name);
     st.Bind(2, info.format);
-    st.Bind(3, info.size);
-    st.Bind(4, info.time);
-    st.Bind(5, info.crc);
+    st.Bind(3, info.handler);
+    st.Bind(4, info.size);
+    st.Bind(5, info.time);
+    st.Bind(6, info.crc);
     st.Execute();
     info.id = st.GetLastInsertedRowid();
 }
@@ -609,16 +547,17 @@ SLDS2_File CLDS2_Database::GetFileInfo(Int8 file_id)
     }
     CSQLITE_Connection& conn = x_GetConn();
     CSQLITE_Statement st(&conn,
-        "select `file_name`, `file_format`, `file_size`, `file_time`, " \
-        "`file_crc` from `file` where `file_id`=?1;");
+        "select `file_name`, `file_format`, `file_handler`, `file_size`, " \
+        "`file_time`, `file_crc` from `file` where `file_id`=?1;");
     st.Bind(1, file_id);
     if ( st.Step() ) {
         info.id = file_id;
         info.name = st.GetString(0);
         info.format = SLDS2_File::TFormat(st.GetInt(1));
-        info.size = st.GetInt8(2);
-        info.time = st.GetInt8(3);
-        info.crc = st.GetInt(4);
+        info.handler = st.GetString(2);
+        info.size = st.GetInt8(3);
+        info.time = st.GetInt8(4);
+        info.crc = st.GetInt(5);
     }
     return info;
 }

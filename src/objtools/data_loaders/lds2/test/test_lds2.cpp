@@ -40,6 +40,10 @@
 #include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
 
+#include <util/compress/compress.hpp>
+#include <util/compress/stream.hpp>
+#include <util/compress/zlib.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -70,13 +74,14 @@ private:
     void x_InitStressTest(void);
     void x_RunStressTest(void);
 
-    string              m_DbFile;
-    string              m_SrcDir;
-    string              m_DataDir;
-    string              m_FmtName;
-    ESerialDataFormat   m_Fmt;
-    bool                m_RunStress;
-    CRef<CLDS2_Manager> m_Mgr;
+    string                      m_DbFile;
+    string                      m_SrcDir;
+    string                      m_DataDir;
+    string                      m_FmtName;
+    ESerialDataFormat           m_Fmt;
+    bool                        m_RunStress;
+    bool                        m_GZip;
+    CRef<CLDS2_Manager>         m_Mgr;
 };
 
 
@@ -107,6 +112,8 @@ void CLDS2TestApplication::Init(void)
         CArgDescriptions::eString);
 
     arg_desc->AddFlag("stress", "Run stress test.");
+
+    arg_desc->AddFlag("gzip", "Use gzip compression for data");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -143,7 +150,17 @@ void CLDS2TestApplication::x_ConvertFile(const string& rel_name)
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, fin));
 
     CNcbiOfstream fout(dst.GetPath().c_str(), ios::binary | ios::out);
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(m_Fmt, fout));
+    auto_ptr<CObjectOStream> out;
+    if ( m_GZip ) {
+        auto_ptr<CCompressionOStream> zout(new CCompressionOStream(fout,
+            new CZipStreamCompressor(CZipCompression::eLevel_Default,
+            CZipCompression::fGZip)));
+        out.reset(CObjectOStream::Open(m_Fmt, *zout.release(),
+            CObjectOStream::eDeleteWhenDone));
+    }
+    else {
+        out.reset(CObjectOStream::Open(m_Fmt, fout));
+    }
     CObjectStreamCopier cp(*in, *out);
 
     while ( in->HaveMoreData() ) {
@@ -280,13 +297,21 @@ void CLDS2TestApplication::x_InitStressTest(void)
         string fname = CDirEntry::ConcatPath(m_DataDir,
             "data" + NStr::Int8ToString(f) + "." + m_FmtName);
         CNcbiOfstream fout(fname.c_str(), ios::binary | ios::out);
+        auto_ptr<CNcbiOstream> zout;
+        CNcbiOstream* out_stream = &fout;
+        if ( m_GZip ) {
+            zout.reset(new CCompressionOStream(fout,
+                new CZipStreamCompressor(CZipCompression::eLevel_Default,
+                CZipCompression::fGZip)));
+            out_stream = zout.get();
+        }
         auto_ptr<CObjectOStream> out;
         auto_ptr<CFastaOstream> fasta_out;
         if (m_FmtName == "fasta") {
-            fasta_out.reset(new CFastaOstream(fout));
+            fasta_out.reset(new CFastaOstream(*out_stream));
         }
         else {
-            out.reset(CObjectOStream::Open(m_Fmt, fout));
+            out.reset(CObjectOStream::Open(m_Fmt, *out_stream));
         }
 
         for (int idx = 0; idx < kStressTestEntriesPerFile; idx++) {
@@ -338,7 +363,10 @@ void* CLDS2_TestThread::Main(void)
         seq_id.SetGi(gi);
         CSeq_id_Handle id = CSeq_id_Handle::GetHandle(seq_id);
         CBioseq_Handle h = m_Scope.GetBioseqHandle(id);
-        _ASSERT(h);
+        if ( !h ) {
+            ERR_POST(Error << "Failed to fetch gi " << gi);
+            _ASSERT(h);
+        }
 
         SAnnotSelector sel;
         sel.SetSearchUnresolved()
@@ -392,26 +420,38 @@ int CLDS2TestApplication::Run(void)
     m_DataDir = m_SrcDir;
     m_Fmt = eSerial_AsnText;
     m_RunStress = args["stress"];
+    m_GZip = args["gzip"];
 
-    if ( args["format"] ) {
-        m_FmtName = args["format"].AsString();
-        if (m_FmtName == "asnb") {
-            m_Fmt = eSerial_AsnBinary;
-        }
-        else if (m_FmtName == "xml") {
-            m_Fmt = eSerial_Xml;
-        }
-        else if (m_FmtName == "fasta") {
-            // Only stress test supports fasta format
-            if ( !m_RunStress ) {
-                return 0;
+    if (args["format"]  ||  m_GZip) {
+        if ( args["format"] ) {
+            m_FmtName = args["format"].AsString();
+            if (m_FmtName == "asnb") {
+                m_Fmt = eSerial_AsnBinary;
             }
+            else if (m_FmtName == "xml") {
+                m_Fmt = eSerial_Xml;
+            }
+            else if (m_FmtName == "fasta") {
+                // Only stress test supports fasta format
+                if ( !m_RunStress ) {
+                    return 0;
+                }
+            }
+        }
+        else {
+            m_FmtName = "asn";
+        }
+
+        string dir_fmt = m_FmtName;
+        if ( m_GZip ) {
+            dir_fmt += ".gz";
+            m_FmtName += ".gz";
         }
 
         if ( !m_RunStress ) {
             m_DataDir = CDirEntry::NormalizePath(
                 CDirEntry::ConcatPath(
-                CDirEntry::ConcatPath(m_SrcDir, ".."), m_FmtName));
+                CDirEntry::ConcatPath(m_SrcDir, ".."), dir_fmt));
             x_ConvertDir("");
         }
     }
@@ -420,14 +460,16 @@ int CLDS2TestApplication::Run(void)
         x_InitStressTest();
     }
 
-    cout << "Indexing data..." << endl;
+    cout << "Converting and indexing data..." << endl;
     m_Mgr.Reset(new CLDS2_Manager(m_DbFile));
     m_Mgr->ResetData(); // Re-create the database
-    m_Mgr->AddDataDir(m_DataDir);
     m_Mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
+
     CStopWatch sw(CStopWatch::eStart);
+    m_Mgr->AddDataDir(m_DataDir);
     m_Mgr->UpdateData();
     cout << "Data indexing done in " << sw.Elapsed() << " sec" << endl;
+
     if (m_DbFile != ":memory:") {
         m_Mgr.Reset();
     }
@@ -495,6 +537,11 @@ int CLDS2TestApplication::Run(void)
         }
         cout << "Alignments for " << seq_id.AsFastaString() <<
             ": " << acount << endl;
+    }
+
+    if (m_RunStress  ||  m_GZip  ||  args["format"]) {
+        // Remove converted data if any
+        CDir(m_DataDir).Remove();
     }
 
     return 0;

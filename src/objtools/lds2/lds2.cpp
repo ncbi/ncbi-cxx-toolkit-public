@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/stream_utils.hpp>
 #include <util/checksum.hpp>
 #include <util/format_guess.hpp>
 #include <db/sqlite/sqlitewrapp.hpp>
@@ -44,6 +45,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objtools/error_codes.hpp>
+#include <objtools/readers/reader_exception.hpp>
 #include <objtools/lds2/lds2.hpp>
 #include <objtools/lds2/lds2_expt.hpp>
 #include <set>
@@ -64,20 +66,13 @@ typedef CLDS2_Database::TSeqIdSet TSeqIdSet;
 class CLDS2_ObjectParser
 {
 public:
-    CLDS2_ObjectParser(CLDS2_Manager& mgr,
-                       Int8             file_id,
-                       CObjectIStream&  in,
-                       CLDS2_Database&  db)
-        : m_Manager(mgr),
-          m_In(in),
-          m_Db(db),
-          m_CurFileId(file_id),
-          m_BlobType(SLDS2_Blob::eUnknown),
-          m_IsGBBioseqSet(false)
-    {
-        ResetBlob();
-    }
+    typedef SLDS2_File::TFormat TFormat;
 
+    CLDS2_ObjectParser(CLDS2_Manager&   mgr,
+                       Int8             file_id,
+                       TFormat          format,
+                       CNcbiIstream&    in,
+                       CLDS2_Database&  db);
     ~CLDS2_ObjectParser(void) {}
 
     // Try to parse the next blob, return true on success
@@ -90,6 +85,11 @@ public:
 
     void BeginBlob(void);
     void ResetBlob(void);
+    // Set current blob position relative to the last blob position
+    void SetBlobOffset(CNcbiStreampos pos) {
+        m_CurBlobPos = m_LastBlobPos + pos;
+    }
+
     // Effective blob type may be different from the real top level blob
     // (e.g. when splitting a bioseq-set).
     void EndBlob(SLDS2_Blob::EBlobType blob_type);
@@ -115,6 +115,8 @@ public:
 private:
     static TTypeInfo sx_GetObjectTypeInfo(SLDS2_Blob::EBlobType blob_type);
 
+    SLDS2_Blob::EBlobType x_GetBlobType(void);
+
     struct SAnnotInfo {
         SLDS2_Annot::EAnnotType type;
         TSeqIdSet               ids;
@@ -126,20 +128,22 @@ private:
     };
     typedef vector< AutoPtr<SBioseqInfo> > TBioseqs;
 
-    CLDS2_Manager&          m_Manager;
-    CObjectIStream&         m_In;
-    CLDS2_Database&         m_Db;
+    CLDS2_Manager&           m_Manager;
+    CNcbiIstream&            m_Stream;
+    CLDS2_Database&          m_Db;
 
-    Int8                    m_CurFileId;
-    CNcbiStreampos          m_CurBlobPos;
-    SLDS2_Blob::EBlobType   m_BlobType;
+    Int8                     m_CurFileId;
+    ESerialDataFormat        m_Format;
+    CNcbiStreampos           m_CurBlobPos;
+    CNcbiStreampos           m_LastBlobPos; // count bytes already read
+    SLDS2_Blob::EBlobType    m_BlobType;
 
-    TSeqIdSet               m_BioseqIds;
-    TAnnots                 m_Annots;
-    TBioseqs                m_Bioseqs;
+    TSeqIdSet                m_BioseqIds;
+    TAnnots                  m_Annots;
+    TBioseqs                 m_Bioseqs;
 
     // Splitting GB releases
-    bool                    m_IsGBBioseqSet;
+    bool                     m_IsGBBioseqSet;
 };
 
 
@@ -315,6 +319,7 @@ void CLDS2_SeqEntry_Hook::SkipObject(CObjectIStream& in,
     // Probably, there should be no such annotations in GB releases.
     if ( !m_Nested  &&  m_Parser.GetSplitBioseqSet() ) {
         m_Nested = true;
+        m_Parser.SetBlobOffset(in.GetStreamPos());
         m_Parser.BeginBlob();
         DefaultSkip(in, info);
         m_Parser.EndBlob(SLDS2_Blob::eBioseq_set_element);
@@ -420,6 +425,38 @@ void CLDS2_BioseqIds_Hook::SkipClassMember(CObjectIStream& in,
 }
 
 
+CLDS2_ObjectParser::CLDS2_ObjectParser(CLDS2_Manager&   mgr,
+                                       Int8             file_id,
+                                       TFormat          format,
+                                       CNcbiIstream&    in,
+                                       CLDS2_Database&  db)
+    : m_Manager(mgr),
+      m_Stream(in),
+      m_Db(db),
+      m_CurFileId(file_id),
+      m_Format(eSerial_None),
+      m_CurBlobPos(0),
+      m_LastBlobPos(0),
+      m_BlobType(SLDS2_Blob::eUnknown),
+      m_IsGBBioseqSet(false)
+{
+    switch ( format ) {
+    case CFormatGuess::eBinaryASN:
+        m_Format = eSerial_AsnBinary;
+        break;
+    case CFormatGuess::eTextASN:
+        m_Format = eSerial_AsnText;
+        break;
+    case CFormatGuess::eXml:
+        m_Format = eSerial_Xml;
+        break;
+    default:
+        break;
+    }
+    ResetBlob();
+}
+
+
 TTypeInfo
 CLDS2_ObjectParser::sx_GetObjectTypeInfo(SLDS2_Blob::EBlobType blob_type)
 {
@@ -452,7 +489,6 @@ void CLDS2_ObjectParser::BeginBlob(void)
         !m_Bioseqs.empty()) {
         LDS2_THROW(eIndexerError, "Unfinished blob in the data file.");
     }
-    m_CurBlobPos = m_In.GetStreamPos();
 }
 
 
@@ -461,6 +497,96 @@ void CLDS2_ObjectParser::ResetBlob(void)
     m_BioseqIds.clear();
     m_Annots.clear();
     m_Bioseqs.clear();
+}
+
+
+static const SLDS2_Blob::EBlobType kExpectedBlobTypes[] = {
+    SLDS2_Blob::eSeq_entry,
+    SLDS2_Blob::eBioseq,
+    SLDS2_Blob::eBioseq_set,
+    SLDS2_Blob::eSeq_annot,
+    SLDS2_Blob::eSeq_align_set,
+    SLDS2_Blob::eSeq_align
+};
+
+
+SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
+{
+    SLDS2_Blob::EBlobType ret = SLDS2_Blob::eUnknown;
+
+    // Read some data - just to detect the object type.
+    // The data will be pushed back after testing.
+    char buf[1024];
+    m_Stream.read(buf, 1024);
+    streamsize sz = m_Stream.gcount();
+    m_Stream.clear();
+    if (sz == 0) {
+        // The stream is empty - nothing to check. Force eof detection.
+        m_Stream.peek();
+        return ret;
+    }
+    CNcbiIstrstream test_str(buf, sz);
+    auto_ptr<CObjectIStream> test_in(CObjectIStream::Open(
+        m_Format, test_str));
+    switch ( m_Format ) {
+    case eSerial_AsnText:
+    case eSerial_Xml:
+        {
+            // Read type name, set the blob type
+            string obj_type = test_in->ReadFileHeader();
+            if (obj_type == "Seq-entry") {
+                ret = SLDS2_Blob::eSeq_entry;
+            }
+            else if (obj_type == "Bioseq") {
+                ret = SLDS2_Blob::eBioseq;
+            }
+            else if (obj_type == "Bioseq-set") {
+                ret = SLDS2_Blob::eBioseq_set;
+            }
+            else if (obj_type == "Seq-annot") {
+                ret = SLDS2_Blob::eSeq_annot;
+            }
+            else if (obj_type == "Seq-align-set") {
+                ret = SLDS2_Blob::eSeq_align_set;
+            }
+            else if (obj_type == "Seq-align") {
+                ret = SLDS2_Blob::eSeq_align;
+            }
+            break;
+        }
+    case eSerial_AsnBinary:
+        {
+            int num_types = sizeof(kExpectedBlobTypes)/
+                sizeof(kExpectedBlobTypes[0]);
+            for (int i = 0; i < num_types; i++) {
+                ret = kExpectedBlobTypes[i];
+                try {
+                    TTypeInfo type_info = sx_GetObjectTypeInfo(ret);
+                    test_in->Skip(type_info);
+                    break;
+                }
+                catch (CEofException) {
+                    // Not enough data in the test stream, but the blob type
+                    // is correct.
+                    break;
+                }
+                catch (CSerialException ex) {
+                    if (ex.GetErrCode() == CSerialException::eEOF) {
+                        // Same as CEofException
+                        break;
+                    }
+                    // Reset blob type
+                    ret = SLDS2_Blob::eUnknown;
+                }
+                test_in->SetStreamPos(0); // rewind
+            }
+            break;
+        }
+    default:
+        break;
+    }
+    CStreamUtils::Stepback(m_Stream, buf, sz);
+    return ret;
 }
 
 
@@ -533,97 +659,92 @@ void CLDS2_ObjectParser::EndBlob(SLDS2_Blob::EBlobType blob_type)
 }
 
 
-static const SLDS2_Blob::EBlobType kExpectedBlobTypes[] = {
-    SLDS2_Blob::eSeq_entry,
-    SLDS2_Blob::eBioseq,
-    SLDS2_Blob::eBioseq_set,
-    SLDS2_Blob::eSeq_annot,
-    SLDS2_Blob::eSeq_align_set,
-    SLDS2_Blob::eSeq_align
-};
-
 bool CLDS2_ObjectParser::ParseNext(void)
 {
+    // Make sure it's a supported format
+    if (m_Format == eSerial_None) return false;
+
+    m_BlobType = x_GetBlobType();
+    if (m_BlobType == SLDS2_Blob::eUnknown) {
+        return false;
+    }
+
     BeginBlob();
+    SetBlobOffset(0);
+
+    auto_ptr<CObjectIStream> objstr(CObjectIStream::Open(m_Format, m_Stream));
 
     // Hook for reading seq-ids and storing them to a collection.
     CLDS2_Seq_id_Hook id_hook;
-    CObjectHookGuard<CSeq_id> seq_id_guard(id_hook, &m_In);
+    CObjectHookGuard<CSeq_id> seq_id_guard(id_hook, objstr.get());
 
     // Hook which enables reading seq-ids only while parsing bioseq.ids
     // member (to ignore seq-ids in other members like inst or hist).
     CLDS2_BioseqIds_Hook bioseq_ids_hook(*this, id_hook);
-    CObjectHookGuard<CBioseq> bioseq_ids_guard("id", bioseq_ids_hook, &m_In);
+    CObjectHookGuard<CBioseq> bioseq_ids_guard(
+        "id", bioseq_ids_hook, objstr.get());
 
     // Hook for detecting annotation type.
     CLDS2_AnnotType_Hook annot_type_hook;
-    CObjectHookGuard<CSeq_feat> seq_feat_guard(annot_type_hook, &m_In);
-    CObjectHookGuard<CSeq_graph> seq_graph_guard(annot_type_hook, &m_In);
-    CObjectHookGuard<CSeq_align> seq_align_guard(annot_type_hook, &m_In);
+    CObjectHookGuard<CSeq_feat> seq_feat_guard(annot_type_hook,
+        objstr.get());
+    CObjectHookGuard<CSeq_graph> seq_graph_guard(annot_type_hook,
+        objstr.get());
+    CObjectHookGuard<CSeq_align> seq_align_guard(annot_type_hook,
+        objstr.get());
 
     // Hook for indexing seq-annots. Uses annot_type_hook to check
     // seq-annot type.
     CLDS2_Annot_Hook annot_hook(*this, id_hook, annot_type_hook);
-    CObjectHookGuard<CSeq_annot> seq_annot_guard(annot_hook, &m_In);
+    CObjectHookGuard<CSeq_annot> seq_annot_guard(annot_hook,
+        objstr.get());
 
     // Hooks for checking bioseq-set class and descr members.
     // There presence and value may affect splitting bioseq-set
     // into seq-entries.
     CLDS2_BioseqSet_Hook bioseq_set_hook(*this);
     CObjectHookGuard<CBioseq_set> bioseq_set_class_guard(
-        "class", bioseq_set_hook, &m_In);
+        "class", bioseq_set_hook, objstr.get());
     CObjectHookGuard<CBioseq_set> bioseq_set_descr_guard(
-        "descr", bioseq_set_hook, &m_In);
+        "descr", bioseq_set_hook, objstr.get());
     CObjectHookGuard<CBioseq_set> bioseq_set_seqset_guard(
-        "seq-set", bioseq_set_hook, &m_In);
+        "seq-set", bioseq_set_hook, objstr.get());
 
     // Seq-entry hook is used to split bioseq-set into individual
     // seq-entries.
     CLDS2_SeqEntry_Hook entry_hook(*this);
-    CObjectHookGuard<CSeq_entry> entry_guard(entry_hook, &m_In);
+    CObjectHookGuard<CSeq_entry> entry_guard(entry_hook, objstr.get());
 
     // Seq-id set used to collect seq-ids from top level seq-aligns
     // and seq-align-sets.
     TSeqIdSet align_ids;
 
-    int num_types = sizeof(kExpectedBlobTypes)/sizeof(kExpectedBlobTypes[0]);
-    m_BlobType = SLDS2_Blob::eUnknown;
-
-    for (int i = 0; i < num_types; i++) {
-        try {
-            // Rewind the stream and try the next type.
-            if (m_CurBlobPos != m_In.GetStreamPos()) {
-                m_In.SetStreamPos(m_CurBlobPos);
-            }
-            m_BlobType = kExpectedBlobTypes[i];
-            TTypeInfo type_info = sx_GetObjectTypeInfo(m_BlobType);
-
-            // Different hooks are required for aligns/align-sets and
-            // all other objects.
-            bool is_align = m_BlobType == SLDS2_Blob::eSeq_align  ||
-                m_BlobType == SLDS2_Blob::eSeq_align_set;
-            auto_ptr<CLDS2_Seq_id_Hook::CGuard> align_guard;
-            _ASSERT(align_ids.empty());
-            if ( is_align ) {
-                align_guard.reset(
-                    new CLDS2_Seq_id_Hook::CGuard(id_hook, align_ids));
-            }
-
-            m_In.Skip(type_info);
-
-            // Store seq-aligns and seq-align-sets as blobs
-            if ( is_align ) {
-                AddAnnot(SLDS2_Annot::eSeq_align, align_ids);
-                align_ids.clear();
-            }
-        }
-        catch (CSerialException) {
-            ResetBlob();
-            m_BlobType = SLDS2_Blob::eUnknown;
-            continue;
-        }
-        break;
+    bool is_align = m_BlobType == SLDS2_Blob::eSeq_align  ||
+        m_BlobType == SLDS2_Blob::eSeq_align_set;
+    auto_ptr<CLDS2_Seq_id_Hook::CGuard> align_guard;
+    if ( is_align ) {
+        align_guard.reset(
+            new CLDS2_Seq_id_Hook::CGuard(id_hook, align_ids));
     }
+    _ASSERT(align_ids.empty());
+
+    try {
+        TTypeInfo type_info = sx_GetObjectTypeInfo(m_BlobType);
+        objstr->Skip(type_info);
+        m_LastBlobPos += objstr->GetStreamPos();
+
+        // Store seq-aligns and seq-align-sets as blobs
+        if ( is_align ) {
+            AddAnnot(SLDS2_Annot::eSeq_align, align_ids);
+            align_ids.clear();
+        }
+    }
+    catch (CSerialException) {
+        ResetBlob();
+        m_BlobType = SLDS2_Blob::eUnknown;
+        return false;
+    }
+
     // Do not store bioseq-set if it has been split and stored as
     // separate seq-entries.
     if ( !GetSplitBioseqSet() ) {
@@ -655,51 +776,6 @@ void CLDS2_ObjectParser::AddBioseq(const TSeqIdSet& ids)
 }
 
 
-// Fasta file scanner
-class CLDS2_FastaParser : public IFastaEntryScan
-{
-public:
-    CLDS2_FastaParser(Int8            file_id,
-                      CLDS2_Database& db)
-        : m_FileId(file_id),
-          m_Db(db),
-          m_Count(0)
-    {}
-
-    virtual void EntryFound(CRef<CSeq_entry> se,
-                            CNcbiStreampos   stream_position);
-
-    int GetEntriesCount(void) const { return m_Count; }
-
-private:
-    Int8            m_FileId;
-    CLDS2_Database& m_Db;
-    int             m_Count; // number of parsed entries
-};
-
-
-void CLDS2_FastaParser::EntryFound(CRef<CSeq_entry> se,
-                                   CNcbiStreampos   stream_position)
-{
-    if (!se->IsSeq()) {
-        // ignore non-sequence entries
-        return;
-    }
-
-    Int8 blob_id = m_Db.AddBlob(m_FileId,
-        SLDS2_Blob::eSeq_entry, stream_position);
-
-    // Index bioseq
-    TSeqIdSet ids;
-    const CBioseq& bs = se->GetSeq();
-    ITERATE(CBioseq::TId, id, bs.GetId()) {
-        ids.insert(CSeq_id_Handle::GetHandle(**id));
-    }
-    m_Db.AddBioseq(blob_id, ids);
-    m_Count++;
-}
-
-
 // LDS2 Manager implementation
 
 CLDS2_Manager::CLDS2_Manager(const string& db_file)
@@ -713,11 +789,21 @@ CLDS2_Manager::CLDS2_Manager(const string& db_file)
                    CFastaReader::fParseRawID)
 {
     SetDbFile(db_file);
+    // Initialize default handlers
+    RegisterUrlHandler(new CLDS2_UrlHandler_File);
+    RegisterUrlHandler(new CLDS2_UrlHandler_GZipFile);
 }
 
 
 CLDS2_Manager::~CLDS2_Manager(void)
 {
+}
+
+
+void CLDS2_Manager::RegisterUrlHandler(CLDS2_UrlHandler_Base* handler)
+{
+    _ASSERT(handler);
+    m_Handlers[handler->GetHandlerName()] = Ref(handler);
 }
 
 
@@ -731,13 +817,6 @@ void CLDS2_Manager::SetDbFile(const string& db_file)
         CSQLITE_Connection::fJournalMemory |
         // SyncOn slows down the database write access. Turn it off.
         CSQLITE_Connection::fSyncOff);
-}
-
-
-void CLDS2_Database::SetSQLiteFlags(int flags)
-{
-    m_DbFlags = flags;
-    m_Conn.reset();
 }
 
 
@@ -771,20 +850,69 @@ void CLDS2_Manager::AddDataDir(const string& data_dir, EDirMode mode)
 }
 
 
-SLDS2_File CLDS2_Manager::x_GetFileInfo(const string& file_name) const
+static bool sx_IsGZipFile(const string& file_name)
+{
+    // Use handler - this will guarantee we are always using the same
+    // way to open the stream.
+    CLDS2_UrlHandler_GZipFile gzip;
+    try {
+        // Try to read at least one byte from the file
+        auto_ptr<CNcbiIstream> in(gzip.OpenStream(file_name, 0));
+        char buf;
+        in->read(&buf, 1);
+        if (in->gcount() != 1) {
+            return false;
+        }
+    }
+    catch (CException) {
+        return false;
+    }
+    return true;
+}
+
+
+CLDS2_UrlHandler_Base* CLDS2_Manager::x_GetUrlHandler(const string& file_name)
+{
+    CLDS2_UrlHandler_Base* handler = NULL;
+    string handler_name = CLDS2_UrlHandler_File::s_GetHandlerName();
+    THandlersByUrl::const_iterator url_it = m_HandlersByUrl.find(file_name);
+    if (url_it != m_HandlersByUrl.end()) {
+        handler_name = url_it->second;
+    }
+    // Autodetect compressed files
+    else if ( sx_IsGZipFile(file_name) ) {
+        handler_name = CLDS2_UrlHandler_GZipFile::s_GetHandlerName();
+    }
+    THandlers::iterator h_it = m_Handlers.find(handler_name);
+    if (h_it == m_Handlers.end()) {
+        // No such handler
+        if (m_ErrorMode == eError_Throw) {
+            LDS2_THROW(eIndexerError,
+                "Can not find URL handler: " + url_it->second);
+        }
+        else if (m_ErrorMode == eError_Report) {
+            ERR_POST_X(10, Error <<
+                "Can not find URL handler: " + url_it->second);
+        }
+    }
+    else {
+        handler = h_it->second.GetPointerOrNull();
+    }
+    return handler;
+}
+
+
+SLDS2_File CLDS2_Manager::x_GetFileInfo(const string&                file_name,
+                                        CRef<CLDS2_UrlHandler_Base>& handler)
 {
     SLDS2_File info(file_name);
 
-    CFile f(file_name);
-    if ( f.Exists() ) {
-        info.crc = ComputeFileCRC32(info.name);
-        info.size = f.GetLength();
-        CFile::SStat stat;
-        if ( f.Stat(&stat) ) {
-            info.time = stat.mtime_nsec;
-        }
-        CFormatGuess fg;
-        info.format = fg.Format(info.name);
+    // Find handler for the file or use the default one
+    handler.Reset(x_GetUrlHandler(file_name));
+    if ( handler ) {
+        handler->FillInfo(info);
+        // Make sure handler name is set
+        info.handler = handler->GetHandlerName();
     }
     return info;
 }
@@ -820,7 +948,8 @@ void CLDS2_Manager::UpdateData(void)
     m_Db->GetFileNames(m_Files);
 
     ITERATE(TFiles, it, m_Files) {
-        SLDS2_File file_info = x_GetFileInfo(*it);
+        CRef<CLDS2_UrlHandler_Base> handler;
+        SLDS2_File file_info = x_GetFileInfo(*it, handler);
         SLDS2_File db_info = m_Db->GetFileInfo(*it);
         if (!file_info.exists()  ||  !IsSupportedFormat(file_info.format)) {
             // the file does not exist
@@ -841,17 +970,19 @@ void CLDS2_Manager::UpdateData(void)
             }
             continue;
         }
+        // By now the handler must be set.
+        _ASSERT(handler);
         if (db_info.id == 0) {
             // new file
             m_Db->AddFile(file_info);
-            x_ParseFile(file_info);
+            x_ParseFile(file_info, *handler);
         }
         else {
             // existing file
             file_info.id = db_info.id;
             if (file_info != db_info) {
                 m_Db->UpdateFile(file_info);
-                x_ParseFile(file_info);
+                x_ParseFile(file_info, *handler);
             }
         }
     }
@@ -861,27 +992,85 @@ void CLDS2_Manager::UpdateData(void)
 }
 
 
-void CLDS2_Manager::x_ParseFile(const SLDS2_File& info)
+void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
+                                CLDS2_UrlHandler_Base& handler)
 {
     // Always open file as binary. Otherwise on Win32 file positions will
     // be invalid.
-    CNcbiIfstream fin(info.name.c_str(), ios::in | ios::binary);
-    auto_ptr<CObjectIStream> in;
+    auto_ptr<CNcbiIstream> in(handler.OpenStream(info.name.c_str(), 0));
     switch ( info.format ) {
     case CFormatGuess::eBinaryASN:
-        in.reset(CObjectIStream::Open(eSerial_AsnBinary, fin));
-        break;
     case CFormatGuess::eTextASN:
-        in.reset(CObjectIStream::Open(eSerial_AsnText, fin));
-        break;
     case CFormatGuess::eXml:
-        in.reset(CObjectIStream::Open(eSerial_Xml, fin));
-        break;
+        {
+            int parsed_entries = 0;
+            CLDS2_ObjectParser parser(*this,
+                info.id, info.format, *in, *m_Db);
+            while ( !in->eof() ) {
+                try {
+                    if ( !parser.ParseNext() ) {
+                        if ( in->eof() ) {
+                            // End of file - stop reading
+                            break;
+                        }
+                        // Failed to parse object. Ignore the rest of the file.
+                        if (m_ErrorMode == eError_Throw) {
+                            LDS2_THROW(eIndexerError,
+                                "Unrecognized top-level object in " +
+                                info.name);
+                        }
+                        else if (m_ErrorMode == eError_Report) {
+                            ERR_POST_X(6, Warning <<
+                                "Unrecognized top level object in " <<
+                                info.name);
+                        }
+                        break;
+                    }
+                    parsed_entries++;
+                }
+                catch (CEofException) {
+                    break;
+                }
+            }
+            if (parsed_entries == 0) {
+                // Nothing found in the file
+                m_Db->DeleteFile(info.id);
+            }
+            break;
+        }
     case CFormatGuess::eFasta:
         {
-            CLDS2_FastaParser fasta_parser(info.id, *m_Db);
+            // Count seq-entries found
+            int se_count = 0;
             try {
-                ScanFastaFile(&fasta_parser, fin, m_FastaFlags);
+                // Can not use ScanFastaFile which requires file stream.
+                // Can not use CStreamLineReader since it does not track
+                // stream position.
+                CBufferedLineReader lr(*in);
+                CFastaReader reader(lr, m_FastaFlags);
+                while ( !lr.AtEOF() ) {
+                    try {
+                        CNcbiStreampos pos = lr.GetPosition();
+                        CRef<CSeq_entry> se  = reader.ReadOneSeq();
+                        if ( !se->IsSeq() ) {
+                            continue;
+                        }
+                        Int8 blob_id = m_Db->AddBlob(info.id,
+                            SLDS2_Blob::eSeq_entry, pos);
+                        // Index bioseq
+                        TSeqIdSet ids;
+                        const CBioseq& bs = se->GetSeq();
+                        ITERATE(CBioseq::TId, id, bs.GetId()) {
+                            ids.insert(CSeq_id_Handle::GetHandle(**id));
+                        }
+                        m_Db->AddBioseq(blob_id, ids);
+                        se_count++;
+                    } catch (CObjReaderParseException&) {
+                        if ( !lr.AtEOF() ) {
+                            throw;
+                        }
+                    }
+                }
             }
             catch (CException) {
                 m_Db->DeleteFile(info.id);
@@ -894,11 +1083,11 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File& info)
                 }
                 return;
             }
-            if (fasta_parser.GetEntriesCount() == 0) {
+            if (se_count == 0) {
                 // Nothing in the file
                 m_Db->DeleteFile(info.id);
             }
-            return;
+            break;
         }
     default:
         if (m_ErrorMode == eError_Throw) {
@@ -910,38 +1099,15 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File& info)
                 "Unsupported data file format: " << info.name);
         }
         m_Db->DeleteFile(info.id);
-        return;
+        break;
     }
-    int parsed_entries = 0;
-    while ( in->HaveMoreData() ) {
-        CLDS2_ObjectParser parser(*this, info.id, *in, *m_Db);
-        try {
-            CNcbiStreampos pos = in->GetStreamPos();
-            if ( !parser.ParseNext() ) {
-                // Failed to parse object. Ignore the rest of the file.
-                if (m_ErrorMode == eError_Throw) {
-                    LDS2_THROW(eIndexerError,
-                        "Unrecognized top-level object in " +
-                        info.name + ", offset " +
-                        NStr::Int8ToString(pos));
-                }
-                else if (m_ErrorMode == eError_Report) {
-                    ERR_POST_X(6, Warning <<
-                        "Unrecognized top level object in " <<
-                        info.name << ", offset " << pos);
-                }
-                break;
-            }
-            parsed_entries++;
-        }
-        catch (CEofException) {
-            break;
-        }
-    }
-    if (parsed_entries == 0) {
-        // Nothing found in the file
-        m_Db->DeleteFile(info.id);
-    }
+}
+
+
+void CLDS2_Manager::AddDataUrl(const string& url, const string& handler_name)
+{
+    m_Files.insert(url);
+    m_HandlersByUrl[url] = handler_name;
 }
 
 

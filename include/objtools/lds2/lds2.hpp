@@ -34,6 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/lds2/lds2_db.hpp>
+#include <objtools/lds2/lds2_handlers.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -76,6 +77,17 @@ public:
     /// If the mode is eDir_Recurse, also adds all subdirectories.
     /// Call UpdateData to parse and index the files.
     void AddDataDir(const string& data_dir, EDirMode mode = eDir_Recurse);
+
+    /// Register a URL handler. Using handlers allows to use special
+    /// storage types like compressed files, ftp or http locations etc.
+    /// The same handler must be registered in the data loader
+    /// when using LDS2 to fetch data. The default handlers "file" and
+    /// "gzipfile" for local files are registered automatically.
+    void RegisterUrlHandler(CLDS2_UrlHandler_Base* handler);
+
+    /// Add a URL. The handler is used to access the URL and must be
+    /// registered in the manager before adding the URL.
+    void AddDataUrl(const string& url, const string& handler_name);
 
     /// Remove all data from the database
     void ResetData(void);
@@ -126,15 +138,27 @@ public:
 private:
     typedef CLDS2_Database::TStringSet TFiles;
 
-    SLDS2_File x_GetFileInfo(const string& file_name) const;
-    void x_ParseFile(const SLDS2_File& info);
+    // Find handler for the file.
+    CLDS2_UrlHandler_Base* x_GetUrlHandler(const string& file_name);
+    // Get file info and handler
+    SLDS2_File x_GetFileInfo(const string&                file_name,
+                             CRef<CLDS2_UrlHandler_Base>& handler);
+    void x_ParseFile(const SLDS2_File&      info,
+                     CLDS2_UrlHandler_Base& handler);
+
+    // All registered handlers by name.
+    typedef map<string, CRef<CLDS2_UrlHandler_Base> > THandlers;
+    // List of URLs which require special handlers.
+    typedef map<string, string> THandlersByUrl;
 
     CRef<CLDS2_Database> m_Db;
     TFiles               m_Files;
+    THandlersByUrl       m_HandlersByUrl;
     EGBReleaseMode       m_GBReleaseMode;
     EDuplicateIdMode     m_DupIdMode;
     EErrorMode           m_ErrorMode;
     CFastaReader::TFlags m_FastaFlags;
+    THandlers            m_Handlers;
 };
 
 

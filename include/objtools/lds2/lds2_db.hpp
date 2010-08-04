@@ -58,6 +58,7 @@ struct SLDS2_File
     Int8    id;
     string  name;
     TFormat format;
+    string  handler;
     Int8    size;
     Int8    time;
     Uint4   crc;
@@ -73,6 +74,7 @@ struct SLDS2_File
         id = 0;
         name = kEmptyStr;
         format = CFormatGuess::eUnknown;
+        handler = kEmptyStr;
         size = -1;
         time = 0;
         crc = 0;
@@ -82,6 +84,7 @@ struct SLDS2_File
         return id == f.id  &&
             name == f.name  &&
             format == f.format  &&
+            handler == f.handler  &&
             size == f.size  &&
             time == f.time  &&
             crc == f.crc;
@@ -253,19 +256,12 @@ private:
     // Find and remove any unused seq-ids (and corresponding lds-ids).
     void x_PurgeIds(void);
 
-    // Object type string to database id map
-    typedef map<string, Int8> TObjTypeMap;
-
-    void x_InitTypeMaps(void);
-
     void x_InitGetBioseqsSql(const CSeq_id_Handle& idh,
                              CSQLITE_Statement&    st) const;
 
     string                               m_DbFile;
     int                                  m_DbFlags;
     mutable auto_ptr<CSQLITE_Connection> m_Conn;
-    TObjTypeMap                          m_ObjTypeMap;
-    TObjTypeMap                          m_AnnotTypeMap;
 };
 
 

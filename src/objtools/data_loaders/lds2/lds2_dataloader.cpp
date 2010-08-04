@@ -183,6 +183,9 @@ CLDS2_DataLoader::CLDS2_DataLoader(const string&        dl_name,
             CFastaReader::fStrictGuess;
     }
     m_FastaFlags = fasta_flags;
+    // Initialize default handlers
+    RegisterUrlHandler(new CLDS2_UrlHandler_File);
+    RegisterUrlHandler(new CLDS2_UrlHandler_GZipFile);
 }
 
 
@@ -190,6 +193,24 @@ CLDS2_DataLoader::~CLDS2_DataLoader()
 {
 }
 
+
+void CLDS2_DataLoader::RegisterUrlHandler(CLDS2_UrlHandler_Base* handler)
+{
+    _ASSERT(handler);
+    m_Handlers[handler->GetHandlerName()] = Ref(handler);
+}
+
+
+CLDS2_UrlHandler_Base*
+CLDS2_DataLoader::x_GetUrlHandler(const SLDS2_File& info)
+{
+    CLDS2_UrlHandler_Base* ret = NULL;
+    THandlers::iterator it = m_Handlers.find(info.handler);
+    if (it != m_Handlers.end()) {
+        ret = it->second.GetPointerOrNull();
+    }
+    return ret;
+}
 
 
 // Blob-id is Int8. Define all necessary types and hepler functions.
@@ -217,7 +238,6 @@ static CLDS2_DataLoader::TBlobId s_Int8ToBlobId(Int8 id)
 CRef<CSeq_entry> CLDS2_DataLoader::x_LoadFastaTSE(CNcbiIstream&     in,
                                                   const SLDS2_Blob& blob)
 {
-    in.seekg(NcbiInt8ToStreampos(blob.file_pos));
     CStreamLineReader lr(in);
     CFastaReader fr(lr, m_FastaFlags);
     return fr.ReadOneSeq();
@@ -229,38 +249,43 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
     _ASSERT(blob.id > 0);
     CRef<CSeq_entry> entry(new CSeq_entry);
     SLDS2_File finfo = m_Db->GetFileInfo(blob.file_id);
-    CNcbiIfstream fin(finfo.name.c_str(), ios::in | ios::binary);
-    if (finfo.format == CFormatGuess::eFasta) {
-        return x_LoadFastaTSE(fin, blob);
+    CRef<CLDS2_UrlHandler_Base> handler(x_GetUrlHandler(finfo));
+    if ( !handler ) {
+        ERR_POST_X(2, "Error loading blob: URL handler '" <<
+            finfo.handler << "' not found");
+        // Return null on errors
+        entry.Reset();
+        return entry;
     }
-    //### This is a temporary solution. Use some kind of stream pool
-    //### to optimize loading. The one from LDS loader does not look
-    //### very stable.
+    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo.name, blob.file_pos));
+    _ASSERT(in.get());
+    if (finfo.format == CFormatGuess::eFasta) {
+        return x_LoadFastaTSE(*in, blob);
+    }
     try {
-        auto_ptr<CObjectIStream> in;
+        auto_ptr<CObjectIStream> obj_in;
         switch ( finfo.format ) {
         case CFormatGuess::eBinaryASN:
-            in.reset(CObjectIStream::Open(eSerial_AsnBinary, fin));
+            obj_in.reset(CObjectIStream::Open(eSerial_AsnBinary, *in));
             break;
         case CFormatGuess::eTextASN:
-            in.reset(CObjectIStream::Open(eSerial_AsnText, fin));
+            obj_in.reset(CObjectIStream::Open(eSerial_AsnText, *in));
             break;
         case CFormatGuess::eXml:
-            in.reset(CObjectIStream::Open(eSerial_Xml, fin));
+            obj_in.reset(CObjectIStream::Open(eSerial_Xml, *in));
             break;
         default:
             return CRef<CSeq_entry>(); // Unknown format, fail
         }
-        in->SetStreamPos(NcbiInt8ToStreampos(blob.file_pos));
         switch ( blob.type ) {
         case SLDS2_Blob::eSeq_entry:
-            *in >> *entry;
+            *obj_in >> *entry;
             break;
         case SLDS2_Blob::eBioseq:
-            *in >> entry->SetSeq();
+            *obj_in >> entry->SetSeq();
             break;
         case SLDS2_Blob::eBioseq_set:
-            *in >> entry->SetSet();
+            *obj_in >> entry->SetSet();
             break;
         case SLDS2_Blob::eBioseq_set_element:
             {
@@ -269,20 +294,20 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
                     CObjectTypeInfo(CType<CSeq_entry>());
                 CObjectInfo objinfo(entry.GetPointer(),
                     objtypeinfo.GetTypeInfo());
-                in->Read(objinfo, CObjectIStream::eNoFileHeader);
+                obj_in->Read(objinfo, CObjectIStream::eNoFileHeader);
                 break;
             }
         case SLDS2_Blob::eSeq_annot:
             {
                 CRef<CSeq_annot> annot(new CSeq_annot);
-                *in >> *annot;
+                *obj_in >> *annot;
                 entry->SetSet().SetAnnot().push_back(annot);
                 break;
             }
         case SLDS2_Blob::eSeq_align_set:
             {
                 CSeq_align_set aln_set;
-                *in >> aln_set;
+                *obj_in >> aln_set;
                 CRef<CSeq_annot> annot(new CSeq_annot);
                 ITERATE(CSeq_align_set::Tdata, it, aln_set.Set()) {
                     annot->SetData().SetAlign().push_back(*it);
@@ -293,7 +318,7 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
         case SLDS2_Blob::eSeq_align:
             {
                 CRef<CSeq_align> align(new CSeq_align);
-                *in >> *align;
+                *obj_in >> *align;
                 CRef<CSeq_annot> annot(new CSeq_annot);
                 annot->SetData().SetAlign().push_back(align);
                 entry->SetSet().SetAnnot().push_back(annot);

@@ -1,0 +1,163 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Aleksey Grichenko
+ *
+ * File Description:  LDS v.2 URL handlers.
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
+#include <util/checksum.hpp>
+#include <util/format_guess.hpp>
+#include <util/compress/compress.hpp>
+#include <util/compress/stream.hpp>
+#include <util/compress/zlib.hpp>
+#include <objtools/lds2/lds2_expt.hpp>
+#include <objtools/lds2/lds2_handlers.hpp>
+
+
+#define NCBI_USE_ERRCODE_X Objtools_LDS2
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+// Base handler implementation
+
+void CLDS2_UrlHandler_Base::FillInfo(SLDS2_File& info)
+{
+    info.format = GetFileFormat(info.name);
+    info.crc = GetFileCRC(info.name);
+    info.size = GetFileSize(info.name);
+    info.time = GetFileTime(info.name);
+}
+
+
+SLDS2_File::TFormat CLDS2_UrlHandler_Base::GetFileFormat(const string& url)
+{
+    auto_ptr<CNcbiIstream> in(OpenStream(url, 0));
+    return CFormatGuess::Format(*in);
+}
+
+
+// Default (file) handler implementation
+
+const string& CLDS2_UrlHandler_File::s_GetHandlerName(void)
+{
+    static const string s_FileHandlerName = "file";
+    return s_FileHandlerName;
+}
+
+
+CLDS2_UrlHandler_File::CLDS2_UrlHandler_File(void)
+    : CLDS2_UrlHandler_Base(s_GetHandlerName())
+{
+}
+
+
+CNcbiIstream* CLDS2_UrlHandler_File::OpenStream(const string&  url,
+                                                CNcbiStreampos pos)
+{
+    auto_ptr<CNcbiIfstream> in(new CNcbiIfstream(url.c_str(), ios::binary));
+    if (pos > 0) {
+        in->seekg(NcbiInt8ToStreampos(pos));
+    }
+    return in.release();
+}
+
+
+Int8 CLDS2_UrlHandler_File::GetFileSize(const string& url)
+{
+    CFile f(url);
+    return f.Exists() ? f.GetLength() : -1;
+}
+
+
+Uint4 CLDS2_UrlHandler_File::GetFileCRC(const string& url)
+{
+    return ComputeFileCRC32(url);
+}
+
+
+Int8 CLDS2_UrlHandler_File::GetFileTime(const string& url)
+{
+    CFile f(url);
+    CFile::SStat stat;
+    return f.Stat(&stat) ? stat.mtime_nsec : 0;
+}
+
+
+// Default (file) handler implementation
+const string& CLDS2_UrlHandler_GZipFile::s_GetHandlerName(void)
+{
+    static const string s_GZipFileHandlerName = "gzipfile";
+    return s_GZipFileHandlerName;
+}
+
+
+CLDS2_UrlHandler_GZipFile::CLDS2_UrlHandler_GZipFile(void)
+{
+    SetHandlerName(s_GetHandlerName());
+}
+
+
+CNcbiIstream* CLDS2_UrlHandler_GZipFile::OpenStream(const string&  url,
+                                                    CNcbiStreampos pos)
+{
+    auto_ptr<CNcbiIfstream> in(new CNcbiIfstream(url.c_str(), ios::binary));
+    if ( !in->is_open() ) {
+        return NULL;
+    }
+    auto_ptr<CCompressionIStream> zin(
+        new CCompressionIStream(
+        *in.release(),
+        new CZipStreamDecompressor(CZipCompression::fGZip),
+        CCompressionStream::fOwnAll));
+    if (pos > 0) {
+        // Now we have to unzip all data up to the requested position.
+        const Int8 buf_size = 4096;
+        char buf[buf_size];
+        CNcbiStreampos to_read = NcbiInt8ToStreampos(buf_size);
+        while (pos > 0) {
+            if (pos < buf_size) {
+                to_read = pos;
+            }
+            zin->read(buf, to_read);
+            CNcbiStreampos rd = zin->gcount();
+            if (rd < to_read) {
+                // Not enough data in the stream?
+                return NULL;
+            }
+            pos -= rd;
+        }
+    }
+    return zin.release();
+}
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
