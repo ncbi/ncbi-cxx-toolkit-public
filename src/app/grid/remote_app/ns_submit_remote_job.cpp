@@ -41,7 +41,7 @@
 #include <corelib/ncbi_system.hpp>
 
 #define PROGRAM_NAME "CNSSubmitRemoteJobApp"
-#define PROGRAM_VERSION "1.0.0"
+#define PROGRAM_VERSION "1.1.0"
 
 USING_NCBI_SCOPE;
 

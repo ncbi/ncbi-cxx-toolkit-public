@@ -42,7 +42,7 @@
 #include <algorithm>
 
 #define PROGRAM_NAME "SampleNodeStressTest"
-#define PROGRAM_VERSION "1.0.1"
+#define PROGRAM_VERSION "1.1.0"
 
 USING_NCBI_SCOPE;
 
@@ -93,10 +93,6 @@ void CGridClientTestApp::Init(void)
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-
-    //SetDiagPostFlag(eDPF_Trace);
-    //SetDiagPostLevel(eDiag_Info);
-
 }
 
 int CGridClientTestApp::Run(void)

@@ -283,6 +283,4 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
-NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.5.1);
-
-//NCBI_WORKERNODE_MAIN(CRemoteAppJob, 1.0.1);
+NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.6.0);

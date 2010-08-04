@@ -54,8 +54,8 @@
 #include <sstream>
 
 
-#define CGI2RCGI_VERSION_MAJOR 1
-#define CGI2RCGI_VERSION_MINOR 2
+#define CGI2RCGI_VERSION_MAJOR 2
+#define CGI2RCGI_VERSION_MINOR 0
 #define CGI2RCGI_VERSION_PATCH 0
 
 // Program version is passed to NetSchedule so that it
