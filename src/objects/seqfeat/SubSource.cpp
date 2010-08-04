@@ -626,8 +626,6 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
 
     is_miscapitalized = false;
     // try formerly-valid countries
-    is_miscapitalized = false;
-    // try current countries
     size_t num_countries = sizeof(sm_Former_Countries) / sizeof(string);
     for (size_t i = 0; i < num_countries; i++) {
         if (NStr::EqualNocase (name, sm_Former_Countries[i])) {
