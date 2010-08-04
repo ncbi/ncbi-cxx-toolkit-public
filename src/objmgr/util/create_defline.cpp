@@ -245,6 +245,8 @@ void CDeflineGenerator::x_SetFlags (
                         m_IsNC = true;
                     } else if (type == NCBI_ACCN(refseq_mrna)) {
                         m_IsNM = true;
+                    } else if (type == NCBI_ACCN(refseq_mrna_predicted)) {
+                        m_IsNM = true;
                     } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
                     }
