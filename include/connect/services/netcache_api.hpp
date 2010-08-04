@@ -153,15 +153,17 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     /// Put BLOB to server.  This method is blocking, it
     /// waits for a confirmation from NetCache after all
-    /// data is transferred.
+    /// data is transferred. Since blob EOF marker is sent in the
+    /// destructor, the blob will not be created until the stream
+    /// is deleted.
     ///
     /// @param key
     ///    NetCache key, if empty new key is created
-    ///
     /// @param time_to_live
     ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
-    ///
+    /// @param caching_mode
+    ///    Defines whether to enable file caching.
     /// @return
     ///    IEmbeddedStreamWriter* (caller must delete it).
     IEmbeddedStreamWriter* PutData(string* key,
