@@ -413,6 +413,63 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
     }
 }
 
+static const SStringNumericValues s_Str2NumNonPosixTests[] = {
+    {  ",",   DF,                         -1, kBad, kBad, kBad, kBad, kBad },
+    {  ",,",  DF,                         -1, kBad, kBad, kBad, kBad, kBad },
+    {  ".,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
+    {  ",.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
+    { ",0",   DF,                         -1, kBad, kBad, kBad, kBad,  .0  },
+    { ",0.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
+    { ".0,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad },
+    { ",01",  DF,                         -1, kBad, kBad, kBad, kBad,  .01 },
+    { "1,",   DF,                         -1, kBad, kBad, kBad, kBad,  1.  },
+    { "1,1",  DF,                         -1, kBad, kBad, kBad, kBad,  1.1 },
+    { "1,1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1 },
+    { "1,1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1 },
+    { "1.1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1.1 },
+    { "1,1.", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1,1,", DF,                         -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.1,", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.1,", NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad }
+};
+
+BOOST_AUTO_TEST_CASE(s_StringToDouble)
+{
+    NcbiCout << NcbiEndl << "NStr::StringToDouble() tests...";
+    char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
+    setlocale(LC_NUMERIC,"fra");
+
+    const size_t count = sizeof(s_Str2NumNonPosixTests) / sizeof(s_Str2NumNonPosixTests[0]);
+
+    for (size_t i = 0;  i < count;  ++i) {
+        const SStringNumericValues* test = &s_Str2NumNonPosixTests[i];
+        const char*                 str  = test->str;
+        NStr::TStringToNumFlags    flags = test->flags;
+
+        NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
+        // double
+        try {
+            double value = NStr::StringToDouble(str, flags);
+            NcbiCout << "double value: " << value << ", toString: '"
+                     << NStr::DoubleToString(value) << "'"
+                     << NcbiEndl;
+            BOOST_CHECK(test->IsGoodDouble());
+            BOOST_CHECK_EQUAL(value, test->d);
+        }
+        catch (CException&) {
+            if ( test->IsGoodDouble() ) {
+                ERR_POST("Cannot convert '" << str << "' to double");
+            }
+            BOOST_CHECK(!test->IsGoodDouble());
+        }
+    }
+    setlocale(LC_NUMERIC,prevlocal);
+    free(prevlocal);
+}
 
 //----------------------------------------------------------------------------
 // NStr::StringTo*() radix test
