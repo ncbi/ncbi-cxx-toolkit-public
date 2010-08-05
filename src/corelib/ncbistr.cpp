@@ -515,17 +515,51 @@ enum ESkipMode {
     eSkipSpacesOnly     // spaces only 
 };
 
+inline
+char* s_SetNumericCLocale(void)
+{
+    char* prevlocale = strdup(setlocale(LC_NUMERIC,NULL));
+    setlocale(LC_NUMERIC,"C");
+    return prevlocale;
+}
+inline
+char* s_RestoreNumericLocale(char* prevlocale)
+{
+    if (prevlocale) {
+        setlocale(LC_NUMERIC,prevlocale);
+        free(prevlocale);
+    }
+    return NULL;
+}
+
+bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
+{
+    if ( ch != '.' && ch != ',') {
+        return false;
+    }
+    if (flags & NStr::fDecimalPosix) {
+        return ch == '.';
+    }
+    else if (flags & NStr::fDecimalPosixOrLocal) {
+        return ch == '.' || ch == ',';
+    }
+    struct lconv* conv = localeconv();
+    return ch == *(conv->decimal_point);
+}
+
 void s_SkipAllowedSymbols(const CTempString& str,
                           SIZE_TYPE&         pos,
-                          ESkipMode          skip_mode)
+                          ESkipMode          skip_mode,
+                          NStr::TStringToNumFlags  flags)
 {
     if (skip_mode == eSkipAll) {
         pos = str.length();
         return;
     }
+
     for ( SIZE_TYPE len = str.length(); pos < len; ++pos ) {
         unsigned char ch = str[pos];
-        if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  ch == '.' ) {
+        if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  s_IsDecimalPoint(ch,flags) ) {
             break;
         }
         if ( (skip_mode == eSkipSpacesOnly)  &&  !isspace(ch) ) {
@@ -579,7 +613,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     if (flags & fAllowLeadingSymbols) {
         bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
         s_SkipAllowedSymbols(str, pos,
-                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
     // Determine sign
     bool sign = false;
@@ -639,7 +673,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     // Assign sign before the end pointer check
     n = sign ? -n : n;
@@ -660,7 +694,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
     if (flags & fAllowLeadingSymbols) {
         bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
         s_SkipAllowedSymbols(str, pos,
-                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
     // Determine sign
     if (str[pos] == '+') {
@@ -713,7 +747,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR(Uint8);
     return n;
@@ -726,6 +760,10 @@ static double s_StringToDouble(const char* str, size_t size,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     _ASSERT(str[size] == '\0');
+    if ((flags & NStr::fDecimalPosix) && (flags & NStr::fDecimalPosixOrLocal)) {
+        NCBI_THROW2(CStringException, eBadArgs,
+                    "NStr::StringToDouble():  mutually exclusive flags specified",0);
+    }
 
     // Current position in the string
     SIZE_TYPE pos  = 0;
@@ -735,7 +773,7 @@ static double s_StringToDouble(const char* str, size_t size,
         bool spaces = ((flags & NStr::fAllowLeadingSymbols) == 
                        NStr::fAllowLeadingSpaces);
         s_SkipAllowedSymbols(CTempString(str, size), pos,
-                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
     // Check mandatory sign
     if (flags & NStr::fMandatorySign) {
@@ -751,7 +789,7 @@ static double s_StringToDouble(const char* str, size_t size,
     // Because strtod() may just skip such symbols.
     if (!(flags & NStr::fAllowLeadingSymbols)) {
         char c = str[pos];
-        if ( !isdigit((unsigned int)c)  &&  c != '.'  &&  c != '-'  &&  c != '+') {
+        if ( !isdigit((unsigned int)c)  &&  !s_IsDecimalPoint(c,flags)  &&  c != '-'  &&  c != '+') {
             S2N_CONVERT_ERROR_INVAL(double);
         }
     }
@@ -760,25 +798,42 @@ static double s_StringToDouble(const char* str, size_t size,
     char* endptr = 0;
     const char* begptr = str + pos;
 
+    char* prevlocale =
+        (flags & NStr::fDecimalPosix) ? s_SetNumericCLocale() : NULL;
+    int the_errno = 0;
     errno = 0;
     double n = strtod(begptr, &endptr);
-    if ( errno  ||  !endptr  ||  endptr == begptr ) {
+    the_errno = errno;
+    if (flags & NStr::fDecimalPosixOrLocal) {
+        char* endptr2 = 0;
+        prevlocale = s_SetNumericCLocale();
+        double n2 = strtod(begptr, &endptr2);
+        if (!endptr || (endptr2 && endptr2 > endptr)) {
+            n = n2;
+            endptr = endptr2;
+            the_errno = errno;
+        }
+    }
+    s_RestoreNumericLocale(prevlocale);
+    if ( the_errno  ||  !endptr  ||  endptr == begptr ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, false,
                           s_DiffPtr(endptr, begptr) + pos);
     }
-    if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
+#if 0
+    if ( !s_IsDecimalPoint(*(endptr - 1), flags) && s_IsDecimalPoint(*endptr, flags) ) {
         // Only a single dot at the end of line is allowed
-        if (endptr == strchr(begptr, '.')) {
+        if (endptr == strchr(begptr, *endptr)) {
             endptr++;
         }
     }
+#endif
     pos += s_DiffPtr(endptr, begptr);
 
     // Skip allowed trailing symbols
     if (flags & NStr::fAllowTrailingSymbols) {
         bool spaces = ((flags & NStr::fAllowTrailingSymbols) ==
                        NStr::fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR(double);
     return n;
@@ -881,7 +936,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
             bool spaces = ((flags & fAllowLeadingSymbols) ==
                            fAllowLeadingSpaces);
             s_SkipAllowedSymbols(str, pos,
-                           spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+                           spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
         }
         // Determine sign
         if (str[pos] == '+') {
@@ -931,7 +986,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR(Uint8);
     return n;
@@ -1243,7 +1298,10 @@ void NStr::DoubleToString(string& out_str, double value,
                 format = "%g";
                 break;
         }
+        char* prevlocale=
+            (flags & fDoublePosix) ? s_SetNumericCLocale() : NULL;
         ::sprintf(buffer, format, value);
+        s_RestoreNumericLocale(prevlocale);
     }
     out_str = buffer;
 }
@@ -1271,7 +1329,10 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
             format = "%.*f";
             break;
     }
+    char* prevlocale=
+        (flags & fDoublePosix) ? s_SetNumericCLocale() : NULL;
     int n = ::sprintf(buffer, format, (int)precision, value);
+    s_RestoreNumericLocale(prevlocale);
     SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;

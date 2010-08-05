@@ -131,6 +131,7 @@ public:
         fWithCommas      = (1 << 10), ///< Use commas as thousands separator
         fDoubleFixed     = (1 << 11), ///< Use n.nnnn format for double
         fDoubleScientific= (1 << 12), ///< Use scientific format for double
+        fDoublePosix     = (1 << 13), ///< Use C locale
         fDoubleGeneral   = fDoubleFixed | fDoubleScientific
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
@@ -148,6 +149,8 @@ public:
         fAllowTrailingSpaces  = (1 << 14),   ///< Can have trailing spaces
         fAllowTrailingSymbols = (1 << 15) | fAllowTrailingSpaces,
                                              ///< Can have trailing non-nums
+        fDecimalPosix         = (1 << 16),   ///< For decimal point, use C locale
+        fDecimalPosixOrLocal  = (1 << 17),   ///< For decimal point, try both C and current locale
         fAllStringToNumFlags  = 0x7F00
     };
     typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
