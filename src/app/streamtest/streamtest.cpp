@@ -153,7 +153,8 @@ void CStreamTestApp::Init()
                                         "gene-overlap",
                                         "macrotest",
                                         "prosplign",
-                                        "title"));
+                                        "title",
+                                        "indexed_title"));
     
     arg_desc->AddDefaultKey( "options", 
         "Options",
@@ -252,6 +253,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;
+    }
+    if ( testcase == "indexed_title" ) {
+        pProcess = new CTitleProcess (true);
     }
     return pProcess;
 }

@@ -53,6 +53,17 @@ public:
     {};
 
     //  ------------------------------------------------------------------------
+    CTitleProcess(bool use_indexing)
+    //  ------------------------------------------------------------------------
+        : CScopedProcess()
+        , m_out (0)
+        , m_flags (0)
+        , m_skip_virtual (false)
+        , m_skip_segmented (false)
+        , m_do_indexed (use_indexing)
+    {};
+
+    //  ------------------------------------------------------------------------
     ~CTitleProcess()
     //  ------------------------------------------------------------------------
     {
@@ -68,11 +79,8 @@ public:
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
 
         string options = args["options"].AsString();
-        if ( options == "ignore_existing" || options == "ignore_existing_indexed" ) {
+        if ( options == "ignore_existing" ) {
             m_flags = CDeflineGenerator::fIgnoreExisting;
-        }
-        if ( options == "use_existing_indexed" || options == "ignore_existing_indexed" ) {
-            m_do_indexed = true;
         }
 
         string skip = args["skip"].AsString();
