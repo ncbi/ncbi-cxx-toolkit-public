@@ -288,13 +288,13 @@ ERW_Result CNetCacheWriter::Flush(void)
     return eRW_Success;
 }
 
-void CNetCacheWriter::WriteBufferAndClose(const void* buf_ptr, size_t buf_size)
+void CNetCacheWriter::WriteBufferAndClose(const char* buf_ptr, size_t buf_size)
 {
     size_t bytes_written;
 
     while (buf_size > 0) {
         Write(buf_ptr, buf_size, &bytes_written);
-        (const char*&) buf_ptr += bytes_written;
+        buf_ptr += bytes_written;
         buf_size -= bytes_written;
     }
 

@@ -105,7 +105,7 @@ public:
 
     virtual void Close();
 
-    void WriteBufferAndClose(const void* buf_ptr, size_t buf_size);
+    void WriteBufferAndClose(const char* buf_ptr, size_t buf_size);
 
 private:
     bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }

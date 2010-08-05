@@ -352,7 +352,7 @@ void CNetICacheClient::Store(const string&  key,
     CNetCacheWriter writer(m_Impl, &blob_id, time_to_live,
         eICache_NoWait, CNetCacheAPI::eCaching_Disable);
 
-    writer.WriteBufferAndClose(data, size);
+    writer.WriteBufferAndClose(reinterpret_cast<const char*>(data), size);
 }
 
 

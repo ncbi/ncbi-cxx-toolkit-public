@@ -316,7 +316,7 @@ string  CNetCacheAPI::PutData(const string& key,
     CNetCacheWriter writer(m_Impl, &actual_key, time_to_live,
         eNetCache_Wait, CNetCacheAPI::eCaching_Disable);
 
-    writer.WriteBufferAndClose(buf, size);
+    writer.WriteBufferAndClose(reinterpret_cast<const char*>(buf), size);
 
     return actual_key;
 }
