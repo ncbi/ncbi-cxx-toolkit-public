@@ -185,7 +185,7 @@ void CLDS2_Database::Create(void)
 
     // Create tables:
 
-    for (int i = 0; i < sizeof(kLDS2_CreateDB)/sizeof(kLDS2_CreateDB[0]); i++) {
+    for (size_t i = 0; i < sizeof(kLDS2_CreateDB)/sizeof(kLDS2_CreateDB[0]); i++) {
         conn.ExecuteSql(kLDS2_CreateDB[i]);
     }
 }

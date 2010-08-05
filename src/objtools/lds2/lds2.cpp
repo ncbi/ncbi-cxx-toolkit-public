@@ -518,7 +518,7 @@ SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
     // The data will be pushed back after testing.
     char buf[1024];
     m_Stream.read(buf, 1024);
-    streamsize sz = m_Stream.gcount();
+    int sz = m_Stream.gcount();
     m_Stream.clear();
     if (sz == 0) {
         // The stream is empty - nothing to check. Force eof detection.
