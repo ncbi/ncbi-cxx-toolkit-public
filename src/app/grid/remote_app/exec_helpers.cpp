@@ -497,7 +497,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
             switch (tmp_path[subst_pos + 1]) {
             case '%':
                 tmp_path.replace(subst_pos, 2, 1, '%');
-                break;
+                continue;
             case 'q':
                 tmp_path.replace(subst_pos, 2, context.GetQueueName());
                 break;
@@ -513,7 +513,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                     (unsigned) lt.GetLocalTime().GetTimeT()));
                 break;
             default:
-                tmp_path.replace(subst_pos, 2, kEmptyStr);
+                tmp_path.erase(subst_pos, 2);
             }
             substitution_found = true;
         }
