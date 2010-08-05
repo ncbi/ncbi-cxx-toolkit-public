@@ -441,7 +441,14 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
     NcbiCout << NcbiEndl << "NStr::StringToDouble() tests...";
     char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
-    setlocale(LC_NUMERIC,"fra");
+
+    if (!setlocale(LC_NUMERIC,"German")) {
+        if (!setlocale(LC_NUMERIC,"de_DE")) {
+            if (!setlocale(LC_NUMERIC,"de")) {
+                setlocale(LC_NUMERIC,"de_DE.utf8");
+            }
+        }
+    }
 
     const size_t count = sizeof(s_Str2NumNonPosixTests) / sizeof(s_Str2NumNonPosixTests[0]);
 
