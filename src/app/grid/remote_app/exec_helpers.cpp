@@ -38,6 +38,7 @@
 #include <connect/ncbi_pipe.hpp>
 
 #include <corelib/rwstream.hpp>
+#include <corelib/request_ctx.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <fcntl.h>
@@ -488,9 +489,39 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     string tmp_path = m_TempDir;
     if (!tmp_path.empty()) {
         CFastLocalTime lt;
-        tmp_path += CDirEntry::GetPathSeparator() +
-            context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
-            NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
+        bool substitution_found = false;
+        size_t subst_pos;
+        while ((subst_pos = tmp_path.find('%')) != string::npos) {
+            if (subst_pos + 1 >= tmp_path.length())
+                break;
+            switch (tmp_path[subst_pos + 1]) {
+            case '%':
+                tmp_path.replace(subst_pos, 2, 1, '%');
+                break;
+            case 'q':
+                tmp_path.replace(subst_pos, 2, context.GetQueueName());
+                break;
+            case 'j':
+                tmp_path.replace(subst_pos, 2, context.GetJobKey());
+                break;
+            case 'r':
+                tmp_path.replace(subst_pos, 2, NStr::UIntToString(
+                    GetDiagContext().GetRequestContext().GetRequestID()));
+                break;
+            case 't':
+                tmp_path.replace(subst_pos, 2, NStr::UIntToString(
+                    (unsigned) lt.GetLocalTime().GetTimeT()));
+                break;
+            default:
+                tmp_path.replace(subst_pos, 2, kEmptyStr);
+            }
+            substitution_found = true;
+        }
+        if (!substitution_found)
+            tmp_path += CDirEntry::GetPathSeparator() +
+                context.GetQueueName() + "_"  +
+                context.GetJobKey() + "_" +
+                NStr::UIntToString((unsigned) lt.GetLocalTime().GetTimeT());
     }
 
     STmpDirGuard guard(tmp_path, m_RemoveTempDir);
