@@ -121,7 +121,7 @@ CRandomlyFailMockBlastSeqSrc::GetSequence(BlastSeqSrcGetSeqArg* seq_arg)
             return BLAST_SEQSRC_EOF;
         } else if (seq_arg->oid == kDefaultOid) {
             try { x_PopulateBLAST_SequenceBlk(seq_arg); }
-            catch (const CException& e) { return BLAST_SEQSRC_ERROR; }
+            catch (const CException&) { return BLAST_SEQSRC_ERROR; }
             return BLAST_SEQSRC_SUCCESS;
         } else {
             return BLAST_SEQSRC_ERROR;
