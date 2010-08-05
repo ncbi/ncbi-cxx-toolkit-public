@@ -35,6 +35,7 @@
 #include <corelib/version.hpp>
 #include <corelib/ncbi_xstr.hpp>
 #include <algorithm>
+#include <locale.h>
 
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>

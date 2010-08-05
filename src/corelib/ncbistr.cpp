@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <errno.h>
 #include <stdio.h>
+#include <locale.h>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Util
