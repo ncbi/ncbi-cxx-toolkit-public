@@ -1835,7 +1835,7 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
             match ++;
         } else {
             if ((m_AlignType&eProt) 
-                && m_Matrix[sequence_standard[i]][sequence[i]] > 0){  
+                && m_Matrix[(int)sequence_standard[i]][(int)sequence[i]] > 0){  
                 positive ++;
                 if(m_AlignOption & eShowMiddleLine){
                     if (m_MidLineStyle == eChar){
@@ -2042,7 +2042,6 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
 																	bsp_handle.GetBioseqCore()->IsNa(), 
 																	(int)bsp_handle.GetBioseqLength());
 
-                int taxid = 0;                
                 if(alnDispParams) {
                 
                     if(isFirst){
@@ -3039,7 +3038,7 @@ string CDisplaySeqalign::x_FormatAlignSortInfo(string id_label)
     alignSort = CAlignFormatUtil::MapTemplate(alignSort,"id_label",id_label);
     string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
     int hsp_sort = hsp_sort_value == NcbiEmptyString ?  0 : NStr::StringToInt(hsp_sort_value);
-    for(size_t i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         if(hsp_sort == i) {
             alignSort = CAlignFormatUtil::MapTemplate(alignSort,"sorted_" + NStr::IntToString(hsp_sort),"sortAlnArrowLinkW");                    
         }
