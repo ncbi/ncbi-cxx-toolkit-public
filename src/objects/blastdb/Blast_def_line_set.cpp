@@ -39,6 +39,7 @@
 
 #include <corelib/ncbiutil.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 
 // generated includes
@@ -186,6 +187,21 @@ CBlast_def_line_set::PutTargetGiFirst(int gi)
         // ... and put it in the front
         Set().push_front(first_defline);
     }
+}
+
+void 
+GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
+{
+    rv.clear();
+    rv.push_back(make_pair(eLocuslink, string("eLocuslink")));
+    rv.push_back(make_pair(eUnigene, string("eUnigene")));
+    rv.push_back(make_pair(eStructure, string("eStructure")));
+    rv.push_back(make_pair(eGeo, string("eGeo")));
+    rv.push_back(make_pair(eGene, string("eGene")));
+    rv.push_back(make_pair(eHitInMapviewer, string("eHitInMapviewer")));
+    rv.push_back(make_pair(eAnnotatedInMapviewer, string("eAnnotatedInMapviewer")));
+    rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
+    rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

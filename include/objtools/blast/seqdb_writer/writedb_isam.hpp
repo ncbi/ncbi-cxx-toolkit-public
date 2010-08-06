@@ -41,7 +41,7 @@
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbifile.hpp>
-#include "writedb_files.hpp"
+#include <objtools/blast/seqdb_writer/writedb_files.hpp>
 
 BEGIN_NCBI_SCOPE
 

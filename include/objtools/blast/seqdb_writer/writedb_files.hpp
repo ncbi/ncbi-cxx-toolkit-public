@@ -38,8 +38,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include "writedb_general.hpp"
-#include "writedb_convert.hpp"
+#include <objtools/blast/seqdb_writer/writedb_general.hpp>
+#include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbifile.hpp>

@@ -40,8 +40,8 @@
 
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objects/seq/seq__.hpp>
-#include "writedb_files.hpp"
-#include "writedb_isam.hpp"
+#include <objtools/blast/seqdb_writer/writedb_files.hpp>
+#include <objtools/blast/seqdb_writer/writedb_isam.hpp>
 #include "writedb_column.hpp"
 
 BEGIN_NCBI_SCOPE

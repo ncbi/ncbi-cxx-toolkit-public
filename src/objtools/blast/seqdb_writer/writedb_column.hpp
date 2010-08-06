@@ -38,7 +38,7 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include "writedb_files.hpp"
+#include <objtools/blast/seqdb_writer/writedb_files.hpp>
 
 BEGIN_NCBI_SCOPE
 

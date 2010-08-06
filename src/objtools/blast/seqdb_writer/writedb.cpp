@@ -38,7 +38,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include "writedb_impl.hpp"
-#include "writedb_convert.hpp"
+#include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 #include <iostream>
 
 BEGIN_NCBI_SCOPE

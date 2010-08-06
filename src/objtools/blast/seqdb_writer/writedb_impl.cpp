@@ -46,7 +46,7 @@ static char const rcsid[] = "$Id$";
 #include <serial/typeinfo.hpp>
 
 #include "writedb_impl.hpp"
-#include "writedb_convert.hpp"
+#include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 
 #include <iostream>
 #include <sstream>

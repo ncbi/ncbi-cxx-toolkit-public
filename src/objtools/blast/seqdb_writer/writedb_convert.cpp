@@ -38,8 +38,8 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/random_gen.hpp>
-#include "writedb_general.hpp"
-#include "writedb_convert.hpp"
+#include <objtools/blast/seqdb_writer/writedb_general.hpp>
+#include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 #include <iostream>
 
 BEGIN_NCBI_SCOPE

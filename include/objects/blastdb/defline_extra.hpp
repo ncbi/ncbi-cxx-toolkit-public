@@ -57,6 +57,12 @@ enum LinkoutTypes {
   eBioAssay               = (1<<8)   // Add Linkout for BioAssay (structure group resource)
 };
 
+typedef pair<LinkoutTypes, string> TLinkoutTypeString;
+
+NCBI_BLASTDB_EXPORT 
+void 
+GetLinkoutTypes(vector<TLinkoutTypeString>& return_value);
+
 /// Structure describing filtered regions created using a particular sequence
 /// filtering algorithm
 ///

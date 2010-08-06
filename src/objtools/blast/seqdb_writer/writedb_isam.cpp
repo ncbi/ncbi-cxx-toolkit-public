@@ -37,8 +37,8 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <corelib/tempstr.hpp>
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
-#include "writedb_isam.hpp"
-#include "writedb_convert.hpp"
+#include <objtools/blast/seqdb_writer/writedb_isam.hpp>
+#include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>

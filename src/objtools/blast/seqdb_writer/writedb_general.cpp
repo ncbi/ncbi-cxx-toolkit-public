@@ -35,7 +35,7 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include "writedb_general.hpp"
+#include <objtools/blast/seqdb_writer/writedb_general.hpp>
 
 BEGIN_NCBI_SCOPE
 
