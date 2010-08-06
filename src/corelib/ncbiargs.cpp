@@ -302,7 +302,7 @@ inline CArg_Double::CArg_Double(const string& name, const string& value)
     : CArg_String(name, value)
 {
     try {
-        m_Double = NStr::StringToDouble(value);
+        m_Double = NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
     } catch (CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert,
             s_ArgExptMsg(GetName(),"Argument cannot be converted",value));
@@ -3190,7 +3190,7 @@ CArgAllow_Doubles::CArgAllow_Doubles(double x_min, double x_max)
 
 bool CArgAllow_Doubles::Verify(const string& value) const
 {
-    double val = NStr::StringToDouble(value);
+    double val = NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
     return (m_Min <= val  &&  val <= m_Max);
 }
 

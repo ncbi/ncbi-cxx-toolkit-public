@@ -363,7 +363,7 @@ double IRegistry::GetDouble(const string& section, const string& name,
     }
 
     try {
-        return NStr::StringToDouble(value);
+        return NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
     } catch (CStringException& ex) {
         if (err_action == eReturn) {
             return default_value;
