@@ -4650,6 +4650,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "QC	s	National Museum of Natural History",
 "QCA	s	Pontificia Universidad Catolica del Ecuador, Departamento de Biologia",
 "QCAZ	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador",
+"QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection",
+"QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection",
 "QCNE	s	Museo Ecuatoriano de Ciencias Naturales",
 "QD	s	Ocean University of Qingdao, Marine Biology Department",
 "QDC	s	Qinghai Institute for Drug Control",
