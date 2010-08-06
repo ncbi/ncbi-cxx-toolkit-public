@@ -1,6 +1,7 @@
 corelib$
 util$
 util/regexp$
+util/xregexp
 util/compress
 util/qparse$
 util/bitset$ update-only
