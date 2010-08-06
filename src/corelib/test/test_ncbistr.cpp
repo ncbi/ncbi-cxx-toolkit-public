@@ -438,6 +438,7 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
     { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad }
 };
 
+#if 0
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
     char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
@@ -481,6 +482,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
     setlocale(LC_NUMERIC,prevlocal);
     free(prevlocal);
 }
+#endif
 
 //----------------------------------------------------------------------------
 // NStr::StringTo*() radix test

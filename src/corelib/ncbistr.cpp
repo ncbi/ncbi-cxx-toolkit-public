@@ -519,9 +519,14 @@ enum ESkipMode {
 inline
 char* s_SetNumericCLocale(void)
 {
+// disable for now
+#if 1
+    return NULL;
+#else
     char* prevlocale = strdup(setlocale(LC_NUMERIC,NULL));
     setlocale(LC_NUMERIC,"C");
     return prevlocale;
+#endif
 }
 inline
 char* s_RestoreNumericLocale(char* prevlocale)
@@ -533,6 +538,14 @@ char* s_RestoreNumericLocale(char* prevlocale)
     return NULL;
 }
 
+#if 1
+// disable for now
+inline
+bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags)
+{
+    return (ch == '.');
+}
+#else
 bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
 {
     if ( ch != '.' && ch != ',') {
@@ -547,6 +560,7 @@ bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
     struct lconv* conv = localeconv();
     return ch == *(conv->decimal_point);
 }
+#endif
 
 void s_SkipAllowedSymbols(const CTempString& str,
                           SIZE_TYPE&         pos,
