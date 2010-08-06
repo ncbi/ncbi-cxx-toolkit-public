@@ -221,14 +221,15 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
                                   SubjectSplitStruct *backup,
                                   Boolean is_nucleotide)
 {
-    int start, len, i;
+    int start, len, i, residual;
 
     ASSERT(subject);
     ASSERT(backup);
 
     if (backup->next >= backup->full_range.right) return SUBJECT_SPLIT_DONE;
 
-    backup->offset = backup->next;
+    residual = is_nucleotide ?  backup->next % COMPRESSION_RATIO : 0;
+    backup->offset = backup->next - residual;
     subject->sequence = backup->sequence + ((is_nucleotide) ?
                         backup->offset /COMPRESSION_RATIO : backup->offset);
 
@@ -236,7 +237,7 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
         backup->hard_ranges[backup->hm_index].right) {
 
         subject->length = MAX_DBSEQ_LEN;
-        backup->next += MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP;
+        backup->next = backup->offset + MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP;
 
     } else {
 
@@ -260,12 +261,13 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
     /* if soft masking is off */
     if (subject->mask_type != DB_MASK_SOFT) {
         s_AllocateSeqRange(subject, backup, 1);
-        subject->seq_ranges[0].left = 0;
+        subject->seq_ranges[0].left = residual;
         subject->seq_ranges[0].right = subject->length;
         return SUBJECT_SPLIT_OK;
     }
       
     /* soft masking is on, sequence is chunked, must re-allocate and adjust */
+    ASSERT (residual == 0);
     start = backup->offset;
     len = start + subject->length;
     i = backup->sm_index;

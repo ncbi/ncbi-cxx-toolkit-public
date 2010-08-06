@@ -286,7 +286,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
                                   const_cast<char **>(&buf), 
                                   has_sentinel_byte, 
                                   eMalloc,
-                                  &(datap->seq_ranges))
+                                  ((datap->mask_type == DB_MASK_HARD) ?
+                                       &(datap->seq_ranges) : NULL))
         :  seqdb.GetSequence(oid, &buf);
     
     if (len <= 0) return BLAST_SEQSRC_ERROR;

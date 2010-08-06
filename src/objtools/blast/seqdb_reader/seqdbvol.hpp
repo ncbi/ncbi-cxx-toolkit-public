@@ -1135,6 +1135,7 @@ private:
                       int                nucl_code,
                       ESeqDBAllocType    alloc_type,
                       SSeqDBSlice      * region,
+                      CSeqDB::TSequenceRanges *masks,
                       CSeqDBLockHold   & locked) const;
     
     /// Allocate memory in one of several ways.

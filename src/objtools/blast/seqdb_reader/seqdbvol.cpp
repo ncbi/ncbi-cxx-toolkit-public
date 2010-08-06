@@ -380,8 +380,6 @@ s_SeqDBMapNA2ToNA8Setup()
 static void
 s_SeqDBMapNA2ToNA8(const char        * buf2bit,
                    char              * buf8bit,
-                   char              * buf8bit_end,
-                   bool                sentinel_bytes,
                    const SSeqDBSlice & range)
 {
     // Design note: The variable "p" makes this algorithm much easier
@@ -391,22 +389,7 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
     
-    int sreserve = 0;
-    
-    if (sentinel_bytes) {
-        sreserve = 2;
-    }
-    
-    int pos = 0;
-    
-    _ASSERT((buf8bit_end - buf8bit) >= ((range.end - range.begin) + sreserve));
-    
-    if (sentinel_bytes) {
-        buf8bit[pos++] = 0;
-    }
-    
-    // 0, 1
-    // 1, 0
+    int pos = range.begin;
     
     int input_chars_begin = range.begin     / 4;
     int input_chars_end   = (range.end + 3) / 4;
@@ -483,11 +466,6 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
             }
         }
     }
-    
-    if (sentinel_bytes) {
-        _ASSERT((buf8bit + pos) == (buf8bit_end - 1));
-        *(buf8bit_end - 1) = 0;
-    }
 }
 
 unsigned SeqDB_ncbina8_to_blastna8[] = {
@@ -517,96 +495,14 @@ unsigned SeqDB_ncbina8_to_blastna8[] = {
 ///
 /// @param buf
 ///    The array of nucleotides to convert. [in|out]
-/// @param length
-///    The size of the buf array. [in]
-/// @param preserve_fence
-///    If true, the fence character will be preserved. [in]
+/// @param range
+///    The range of opearation. [in]
 static void
-s_SeqDBMapNcbiNA8ToBlastNA8(char * buf, int length, bool preserve_fence)
+s_SeqDBMapNcbiNA8ToBlastNA8(char              * buf, 
+                            const SSeqDBSlice & range)
 {
-    if (preserve_fence) {
-        for(int i = 0; i < length; i++) {
-            unsigned char inp = buf[i];
-            char outp = SeqDB_ncbina8_to_blastna8[ inp & 0xF ];
-            
-            buf[i] = (inp == FENCE_SENTRY) ? FENCE_SENTRY : outp;
-        }
-    } else {
-        for(int i = 0; i < length; i++) {
-            buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
-        }
-    }
-}
-
-/// List of offset ranges as begin/end pairs.
-typedef set< pair<int, int> > TRangeVector;
-
-/// Convert sequence data from Ncbi-NA8 to Blast-NA8 format
-///
-/// This uses a translation table to convert nucleotide data.  The
-/// input data is in Ncbi-NA8 format, the output data will be in
-/// Blast-NA8 format.  The data is converted in-place.
-///
-/// @param buf
-///    The array of nucleotides to convert. [in|out]
-/// @param length
-///    The size of the buf array. [in]
-/// @param ranges
-///    The parts of the buf array that are used. [in]
-/// @param sentinel
-///    True if the sequence has sentinel bytes. [in]
-static void
-s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
-                                   int                  length,
-                                   const TRangeVector & ranges,
-                                   bool                 sentinel)
-{
-    ITERATE(TRangeVector, riter, ranges) {
-        int begin = riter->first;
-        int end = riter->second;
-        
-        if (begin >= length)
-            continue;
-        
-        if (end > length)
-            end = length;
-        
-        if (sentinel) {
-            // begin already points to the preceeding sentinel byte;
-            // we need to point end past the following sentinel byte.
-            end += 2;
-        }
-        
-        char * area = buffer + begin;
-        int area_size = end-begin;
-        
-        s_SeqDBMapNcbiNA8ToBlastNA8(area, area_size, true);
-        
-        // Place 'fence' sentinel bytes around each subsequence.
-        
-        if (sentinel) {
-            area[0] = (char) FENCE_SENTRY;
-            area[area_size-1] = (char) FENCE_SENTRY;
-        } else {
-            if (begin != 0) {
-                area[-1] = (char) FENCE_SENTRY;
-            }
-            if (end != length) {
-                area[area_size] = (char) FENCE_SENTRY;
-            }
-        }
-    }
-    
-    // Place the 'external' sentinel bytes directly.  If the requested
-    // range touches the beginning or end of the sequence, it already
-    // has a 'fence' sentinel; however, walking off the subrange in
-    // that direction is not cause for refetching, because there is
-    // nothing in that direction for us to get.
-    
-    if (sentinel) {
-        buffer[0] = (char)0;
-        buffer[length-1] = (char)0;
-    }
+    for(int i = range.begin; i < range.end; i++)  
+        buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
 }
 
 //--------------------
@@ -779,39 +675,25 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
 /// data and replaces the randomized bases with correct (ambiguous)
 /// encodings.  This version works with 8 bit representations.
 ///
-/// @param buf8bit
+/// @param seq
 ///   Sequence data for a sequence. [in|out]
-/// @param buf8bit_len
-///   Length of the sequence data in bases. [in]
 /// @param amb_chars
 ///   Corresponding ambiguous data. [in]
-/// @param sentinel
-///   True if sentinel bytes are used. [in]
 /// @param region
 ///   If non-null, the part of the sequence to get. [in]
 static void
-s_SeqDBRebuildDNA_NA8(char               * buf8bit,
-                      int                  buf8bit_len,
+s_SeqDBRebuildDNA_NA8(char               * seq,
                       const vector<Int4> & amb_chars,
-                      bool                 sentinel,
                       const SSeqDBSlice  & region)
 {
-    if (buf8bit_len == 0)
-        return;
-    
-    if (amb_chars.empty()) 
-        return;
+    if (amb_chars.empty() || !seq ) return;
     
     Uint4 amb_num = amb_chars[0];
     
     /* Check if highest order bit set. */
     bool new_format = (amb_num & 0x80000000) != 0;
     
-    if (new_format) {
-	amb_num &= 0x7FFFFFFF;
-    }
-    
-    Int4 sentinel_adjustment = sentinel ? 1 : 0;
+    if (new_format)  amb_num &= 0x7FFFFFFF;
     
     for(Uint4 i = 1; i < amb_num+1; i++) {
         Int4  row_len  = 0;
@@ -820,39 +702,22 @@ s_SeqDBRebuildDNA_NA8(char               * buf8bit,
         
 	if (new_format) {
             trans_ch  = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenNew(amb_chars, i); 
+            row_len   = s_ResLenNew(amb_chars, i) + 1; 
             position  = s_ResPosNew(amb_chars, i);
 	} else {
             trans_ch  = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenOld(amb_chars, i); 
+            row_len   = s_ResLenOld(amb_chars, i) + 1; 
             position  = s_ResPosOld(amb_chars, i);
 	}
         
-        Int4 index = position + sentinel_adjustment;
+        if (new_format) ++i;
         
-        // In the sub-region case, some processing could be saved in
-        // the case of highly ambiguous sequences, by binary searching
-        // to find the subset of the ambiguity encoding that
-        // corresponds to the subset of the sequence.
-        
-        SSeqDBSlice adj_region;
-        adj_region.begin = region.begin + sentinel_adjustment;
-        adj_region.end   = region.end   + sentinel_adjustment;
-        
-        for(Int4 j = 0; j <= row_len; j++) {
-            // We compare position, not index; this is necessary to
-            // correct for the sentinel byte, which essentially makes
-            // the array "1-indexed" when enabled.
-            
-            if ((index >= adj_region.begin) && (index < adj_region.end)) {
-                buf8bit[index - region.begin] = trans_ch;
-            }
-            
-            index++;
-    	}
-        
-	if (new_format) /* for new format we have 8 bytes for each element. */
-            i++;
+        if (position + row_len <= region.begin || position >= region.end)
+            continue;
+
+        for (int j = 0; j < row_len; ++j, ++position) 
+            if ( position >= region.begin  && position < region.end) 
+                seq[position] = trans_ch;
     }
 }
 
@@ -1500,260 +1365,145 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
 {
     char * buf1 = 0;
     int baselen =
-        x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, region, locked);
+        x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, region, masks, locked);
     
     *buffer = buf1;
     return baselen;
 }
 
-/// Map a set of subranges of a sequence into a vector.
-///
-/// A set of pairs of integers is provided by the caller.  Each pair
-/// of integers is interpreted as a range of sequence offsets, and the
-/// data at those offsets is expanded and copied to the output buffer.
-/// Ambiguity data is also applied to the buffer.
-///
-/// @param seq_buffer Source buffer of nucleotide (na2) data. [in]
-/// @param seq_length Total length (in bases) of the sequence. [in]
-/// @param buffer_na8 Vector where data should be returned. [out]
-/// @param buffer_na8_len Length of the buffer in bytes. [in]
-/// @param ambchars Packed ambiguity data. [in]
-/// @param sentinel Specify true to include sentinel bytes. [in]
-/// @param ranges List of ranges of sequence data needed. [in]
-static void s_MapRangeData(const char         * seq_buffer,
-                           int                  seq_length,
-                           char               * buffer_na8,
-                           int                  buffer_na8_len,
-                           const vector<Int4> & ambchars,
-                           bool                 sentinel,
-                           const TRangeVector & ranges)
+static void s_SeqDBMaskSequence(char                    * seq,
+                                CSeqDB::TSequenceRanges * masks,
+                                char                      mask_letter,
+                                const SSeqDBSlice       & range)
 {
-    // First shot: map each subrange and then copy them into the
-    // vector.  Sentinel bytes are handled here.
-    
-    _ASSERT(buffer_na8_len == (seq_length + (sentinel ? 2 : 0)));
-    int start8 = 0;
-    
-    if (sentinel) {
-        start8 = 1;
-    }
-    
-    // Place 'fence' sentinel bytes around each range; this is done
-    // before any of the range data is mapped so that the range data
-    // is free to replace the sentinel bytes if needed; that would
-    // only happen if ranges are adjacent or overlapping.
-    
-    ITERATE(TRangeVector, riter, ranges) {
-        int begin = riter->first;
-        int end = riter->second;
-        
-        if (begin >= seq_length)
-            continue;
-        
-        if (end >= seq_length) {
-            end = seq_length;
+    if (!masks || masks->empty()) return;
+
+    // TODO This could be optimized with binary search
+    unsigned int i(0);
+    unsigned int begin(range.begin);
+    unsigned int end(range.end);
+
+    while (i < masks->size() && (*masks)[i].second <= begin) ++i;
+
+    while (i < masks->size() && (*masks)[i].first < end) {
+        for (int j = MAX((*masks)[i].first, begin);
+                 j < MIN((*masks)[i].second, end); ++j) {
+            seq[j] = mask_letter;
         }
-        
-        // Fetch a sub-range of the data into the sequence buffer.
-        
-        int dest_off = start8 + begin;
-        int dest_end = start8 + end;
-        char * datap = & buffer_na8[0];
-        
-        if (dest_off || sentinel) {
-            datap[dest_off - 1] = (char) FENCE_SENTRY;
-        }
-        if (end != seq_length || sentinel) {
-            datap[dest_end] = (char) FENCE_SENTRY;
-        }
+        ++i;
     }
-    
-    // Overwrite any 'fence' sentinels at the buffer ends with normal
-    // sentinels.
-    
-    if (sentinel) {
-        buffer_na8[0] = (char)0;
-        buffer_na8[buffer_na8_len-1] = (char)0;
-    }
-    
-    ITERATE(TRangeVector, riter, ranges) {
-        int begin = riter->first;
-        int end = riter->second;
-        
-        if (begin >= seq_length)
-            continue;
-        
-        if (end > seq_length)
-            end = seq_length;
-        
-        // Fetch a sub-range of the data into the sequence buffer.
-        
-        SSeqDBSlice slice(begin, end);
-        
-        int dest_off = start8 + begin;
-        int dest_end = start8 + end;
-        char * datap = & buffer_na8[0];
-        
-        s_SeqDBMapNA2ToNA8(seq_buffer,
-                           datap + dest_off,
-                           datap + dest_end,
-                           false, // no sentinel
-                           slice);
-    }
-    
-    // Has to start at zero, or else ambiguiities would be shifted
-    // within the buffer.
-    SSeqDBSlice ambig_range(0, seq_length);
-    
-    // Copy all ambiguities in; we already paid the I/O cost to read
-    // them in from disk.  This could be changed, but would require
-    // some changes in terms of working with whole buffers versus
-    // slices of buffers.
-    
-    s_SeqDBRebuildDNA_NA8(buffer_na8,
-                          buffer_na8_len,
-                          ambchars,
-                          sentinel,
-                          ambig_range);
 }
+
+/// List of offset ranges as begin/end pairs.
+typedef set< pair<int, int> > TRangeVector;
 
 int CSeqDBVol::x_GetAmbigSeq(int                oid,
                              char            ** buffer,
                              int                nucl_code,
                              ESeqDBAllocType    alloc_type,
                              SSeqDBSlice      * region,
+                             CSeqDB::TSequenceRanges *masks,
                              CSeqDBLockHold   & locked) const
 {
     // Note the use of the third argument of x_GetSequence() to manage
     // the lifetime of the acquired region.  Specifying false for that
     // argument ties the lifetime to the CSeqDBSeqFile's memory lease.
     
-    int base_length = -1;
-    
-    if ('p' == m_Idx->GetSeqType()) {
-        if (alloc_type == eAtlas) {
-            base_length = x_GetSequence(oid,
-                                        (const char**) buffer,
-                                        true,
-                                        locked,
-                                        false,
-                                        region);
-            
-            if (region) {
-                *buffer += region->begin;
-            }
-        } else {
-            const char * buf2(0);
-            base_length = x_GetSequence(oid,
-                                        & buf2,
-                                        false,
-                                        locked,
-                                        false,
-                                        region);
-            
-            if (region) {
-                buf2 += region->begin;
-            }
-            
-            char * obj = x_AllocType(base_length, alloc_type, locked);
-            memcpy(obj, buf2, base_length);
-            *buffer = obj;
-        }
+    const char * tmp(0);
+    int base_length = x_GetSequence(oid,
+                                    &tmp,
+                                    false,
+                                    locked,
+                                    false);
+
+    if (region && region->end > base_length )
+        NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
+   
+    SSeqDBSlice range = region ? (*region) : SSeqDBSlice(0, base_length);
+
+    base_length = range.end - range.begin;
+
+    if (base_length < 1)
+        NCBI_THROW(CSeqDBException, eFileErr, "Error: could not get sequence or range.");
+
+    if (m_Idx->GetSeqType() == 'p') {
+
+        tmp += range.begin;
+        *buffer = x_AllocType(base_length, alloc_type, locked);
+        memcpy(*buffer, tmp, base_length);
+        s_SeqDBMaskSequence(*buffer - range.begin, masks, (char)21, range);
+
     } else {
-        char * buffer_na8     = 0;
-        int    buffer_na8_len = 0;
+
+        bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
+        *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type, locked);
+        char *seq = *buffer - range.begin + (sentinel ? 1 : 0);
+            
+        // Get ambiguity characters.
+            
+        vector<Int4> ambchars;
+        x_GetAmbChar(oid, ambchars, locked);
+            
+        // Determine if we want to filter by offset ranges.  This
+        // is only done if:
+        //
+        // 1. No range is specified by the user.
+        // 2. We have cached ranges.
+            
+        TRangeCache::iterator rciter = m_RangeCache.find(oid);
+        bool use_range_set = true;
+        if (region 
+         || rciter == m_RangeCache.end() 
+         || rciter->second->GetRanges().empty() 
+         || CSeqDBRangeList::ImmediateLength() >= base_length) 
+            use_range_set = false;
+
+        if (! use_range_set) {
+                
+            s_SeqDBMapNA2ToNA8(tmp, seq, range);
+            s_SeqDBRebuildDNA_NA8(seq, ambchars, range);
+            s_SeqDBMaskSequence(seq, masks, (char)14, range);
+            if (sentinel) s_SeqDBMapNcbiNA8ToBlastNA8(seq, range);
+
+        } else {
+
+            _ASSERT (!region);
+            const TRangeList & range_set = rciter->second->GetRanges();
+    
+            // Place 'fence' sentinel bytes around each range; this is done
+            // before any of the range data is mapped so that the range data
+            // is free to replace the sentinel bytes if needed; that would
+            // only happen if range_set are adjacent or overlapping.
+    
+            ITERATE(TRangeVector, riter, range_set) {
+                int begin(riter->first);
+                int end(riter->second);
         
-        {
-            // The code in this block is derived from GetBioseq() and
-            // s_SeqDBWriteSeqDataNucl().
-            
-            // Get the length and the (probably mmapped) data.
-            
-            const char * seq_buffer = 0;
-            
-            base_length = x_GetSequence(oid,
-                                        & seq_buffer,
-                                        false,
-                                        locked,
-                                        false,
-                                        region);
-            
-            if (base_length < 1) {
-                NCBI_THROW(CSeqDBException, eFileErr,
-                           "Error: could not get sequence.");
+                if (begin) seq[begin - 1] = (char) FENCE_SENTRY;
+                if (end < base_length) seq[end] = (char) FENCE_SENTRY;
             }
-            
-            // Get ambiguity characters.
-            
-            vector<Int4> ambchars;
-            x_GetAmbChar(oid, ambchars, locked);
-            
-            // Combine and translate to 4 bits-per-character encoding.
-            
-            bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
-            
-            // Determine if we want to filter by offset ranges.  This
-            // is only done if:
-            //
-            // 1. No range is specified by the user.
-            // 2. We have cached ranges.
-            
-            TRangeCache::iterator rciter;
-            
-            bool use_range_set = (! region);
-            
-            if (use_range_set) {
-                rciter = m_RangeCache.find(oid);
-                
-                if (rciter == m_RangeCache.end() ||
-                    rciter->second->GetRanges().empty() ||
-                    CSeqDBRangeList::ImmediateLength() >= base_length) {
-                    
-                    use_range_set = false;
-                }
-            }
-            
-            buffer_na8_len = base_length + (sentinel ? 2 : 0);
-            buffer_na8 = x_AllocType(buffer_na8_len, alloc_type, locked);
-            
-            if (use_range_set) {
-                const TRangeList & range_set = rciter->second->GetRanges();
-                
-                s_MapRangeData(seq_buffer,
-                               base_length,
-                               buffer_na8,
-                               buffer_na8_len,
-                               ambchars,
-                               sentinel,
-                               range_set);
-                
-                if (sentinel) {
-                    // Translate bytewise, in place.
-                    s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(buffer_na8,
-                                                       buffer_na8_len,
-                                                       range_set,
-                                                       sentinel);
-                }
-            } else {
-                SSeqDBSlice range = region ? (*region) : SSeqDBSlice(0, base_length);
-                
-                s_SeqDBMapNA2ToNA8(seq_buffer,
-                                   buffer_na8,
-                                   buffer_na8 + buffer_na8_len,
-                                   sentinel,
-                                   range);
-                
-                s_SeqDBRebuildDNA_NA8(buffer_na8, buffer_na8_len, ambchars, sentinel, range);
-                
-                if (sentinel) {
-                    // Translate bytewise, in place.
-                    s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8, buffer_na8_len, false);
-                }
+    
+            ITERATE(TRangeVector, riter, range_set) {
+
+                SSeqDBSlice slice(MAX(0, riter->first), 
+                                  MIN(range.end, riter->second));
+        
+                s_SeqDBMapNA2ToNA8(tmp, seq, slice);
+                s_SeqDBRebuildDNA_NA8(seq, ambchars, slice);
+                s_SeqDBMaskSequence(seq, masks, (char)14, slice);
+                if (sentinel) s_SeqDBMapNcbiNA8ToBlastNA8(seq, slice);
             }
         }
         
-        *buffer = buffer_na8;
+        // Put back the sentinel at last
+        if (sentinel) {
+            (*buffer)[0] = (char)15;
+            (*buffer)[base_length+1] = (char)15;
+        }
     }
+
+    // Clear the masks after consumption
+    if (masks) masks->clear();
     
     return base_length;
 }
@@ -1801,17 +1551,9 @@ void SeqDB_UnpackAmbiguities(const CTempString & sequence,
     try {
         SSeqDBSlice range(0, base_length);
         
-        s_SeqDBMapNA2ToNA8(seq_buffer,
-                           buffer_na8,
-                           buffer_na8 + base_length,
-                           false,
-                           range);
+        s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, range);
         
-        s_SeqDBRebuildDNA_NA8(buffer_na8,
-                              base_length,
-                              ambchars,
-                              false,
-                              range);
+        s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars, range);
     }
     catch(...) {
         free(buffer_na8);
@@ -1823,44 +1565,6 @@ void SeqDB_UnpackAmbiguities(const CTempString & sequence,
     free(buffer_na8);
 }
 
-
-int CSeqDBVol::x_GetSequence(int              oid,
-                             const char    ** buffer,
-                             bool             keep,
-                             CSeqDBLockHold & locked,
-                             bool             can_release,
-                             SSeqDBSlice    * region) const
-{
-    int base_length = x_GetSequence(oid, buffer, keep, locked, can_release);
-    
-    m_Atlas.Lock(locked);
-    
-    if (region) {
-        if (region->end > base_length) {
-            string msg = "Input error: the requested sub-region is [";
-            msg = msg + NStr::IntToString(region->begin) + ":" + NStr::IntToString(region->end) +
-                "] but the sequence length is " + NStr::IntToString(base_length) + ".";
-            
-            NCBI_THROW(CSeqDBException, eFileErr, msg);
-        }
-        
-        if (region->begin < 0) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Input error: the region start is negative.");
-        }
-        
-        if (region->begin >= region->end) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Input error: the region is empty.");
-        }
-        
-        _ASSERT((region->end - region->begin) <= base_length);
-        
-        base_length = region->end - region->begin;
-    }
-    
-    return base_length;
-}
 
 int CSeqDBVol::x_GetSequence(int              oid,
                              const char    ** buffer,
@@ -2833,6 +2537,7 @@ CSeqDBVol::GetSeqData(int              oid,
                                nucl_code,
                                eNew,
                                & slice,
+                               NULL,
                                locked);
         
         // validity of begin, end, and length has already been checked by 
