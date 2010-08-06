@@ -654,6 +654,10 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         ThrowError(fOverflow, "buffer overflow");
     _ASSERT(strlen(buffer) == size_t(width));
+    char* dot = strchr(buffer,',');
+    if (dot) {
+        *dot = '.'; // enforce C locale
+    }
 
     WriteSysTag(eReal);
     WriteLength(width + 1);

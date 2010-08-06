@@ -153,12 +153,12 @@ void CObjectOStreamJson::WriteUint8(Uint8 data)
 
 void CObjectOStreamJson::WriteFloat(float data)
 {
-    WriteKeywordValue(NStr::DoubleToString(data,FLT_DIG));
+    WriteKeywordValue(NStr::DoubleToString(data,FLT_DIG, NStr::fDoublePosix));
 }
 
 void CObjectOStreamJson::WriteDouble(double data)
 {
-    WriteKeywordValue(NStr::DoubleToString(data,DBL_DIG));
+    WriteKeywordValue(NStr::DoubleToString(data,DBL_DIG, NStr::fDoublePosix));
 }
 
 void CObjectOStreamJson::WriteCString(const char* str)

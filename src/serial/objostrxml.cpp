@@ -541,7 +541,7 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
         if ( precision > 64 ) // limit precision of data
             precision = 64;
         width = NStr::DoubleToString(data, (unsigned int)precision,
-                                    buffer, sizeof(buffer));
+                                    buffer, sizeof(buffer), NStr::fDoublePosix);
         if (precision != 0) {
             while (buffer[width-1] == '0') {
                 --width;

@@ -775,7 +775,7 @@ Uint8 CObjectIStreamAsn::ReadUint8(void)
 double CObjectIStreamAsn::ReadDouble(void)
 {
     if (PeekChar(true) != '{') {
-        return NStr::StringToDouble( ScanEndOfId(true) );
+        return NStr::StringToDouble( ScanEndOfId(true), NStr::fDecimalPosix );
     }
     Expect('{', true);
     CTempString mantissaStr = ReadNumber();

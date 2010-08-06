@@ -415,7 +415,7 @@ void CObjectIStreamJson::SkipUNumber(void)
 
 double CObjectIStreamJson::ReadDouble(void)
 {
-    return NStr::StringToDouble( x_ReadData());
+    return NStr::StringToDouble( x_ReadData(), NStr::fDecimalPosix);
 }
 
 void CObjectIStreamJson::SkipFNumber(void)
