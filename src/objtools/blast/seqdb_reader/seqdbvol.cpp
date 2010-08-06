@@ -1386,8 +1386,8 @@ static void s_SeqDBMaskSequence(char                    * seq,
     while (i < masks->size() && (*masks)[i].second <= begin) ++i;
 
     while (i < masks->size() && (*masks)[i].first < end) {
-        for (int j = MAX((*masks)[i].first, begin);
-                 j < MIN((*masks)[i].second, end); ++j) {
+        for (int j = max((*masks)[i].first, begin);
+                 j < min((*masks)[i].second, end); ++j) {
             seq[j] = mask_letter;
         }
         ++i;
@@ -1485,8 +1485,8 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     
             ITERATE(TRangeVector, riter, range_set) {
 
-                SSeqDBSlice slice(MAX(0, riter->first), 
-                                  MIN(range.end, riter->second));
+                SSeqDBSlice slice(max(0, riter->first), 
+                                  min(range.end, riter->second));
         
                 s_SeqDBMapNA2ToNA8(tmp, seq, slice);
                 s_SeqDBRebuildDNA_NA8(seq, ambchars, slice);
