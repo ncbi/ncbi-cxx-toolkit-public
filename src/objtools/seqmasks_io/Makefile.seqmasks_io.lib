@@ -12,3 +12,5 @@ mask_writer_blastdb_maskinfo
 
 ASN_DEP = seqset
 DLL_LIB = seqdb blastdb
+
+WATCHERS = morgulis camacho
