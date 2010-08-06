@@ -440,16 +440,19 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
 
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
-    NcbiCout << NcbiEndl << "NStr::StringToDouble() tests...";
     char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
-
-    if (!setlocale(LC_NUMERIC,"German")) {
-        if (!setlocale(LC_NUMERIC,"de_DE")) {
-            if (!setlocale(LC_NUMERIC,"de")) {
-                setlocale(LC_NUMERIC,"de_DE.utf8");
+    if (!setlocale(LC_NUMERIC,"deu")) {
+        if (!setlocale(LC_NUMERIC,"de")) {
+            if (!setlocale(LC_NUMERIC,"de_DE")) {
+                if (!setlocale(LC_NUMERIC,"fr")) {
+		    // cannot find suitable locale, skip the test
+                    free(prevlocal);
+		    return;
+		}
             }
         }
     }
+    NcbiCout << NcbiEndl << "NStr::StringToDouble() tests...";
 
     const size_t count = sizeof(s_Str2NumNonPosixTests) / sizeof(s_Str2NumNonPosixTests[0]);
 
