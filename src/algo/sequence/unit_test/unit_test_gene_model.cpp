@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(TestCaseTrim)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
     
-    CFeatureGenerator feat_gen(scope);
+    CFeatureGenerator feat_gen(*scope);
     
     CSeq_align align;
     CSpliced_seg& seg = align.SetSegs().SetSpliced();
