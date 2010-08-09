@@ -179,7 +179,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     _ASSERT(int(strlen(buffer)) == width);
     char* dotPos = strchr(buffer, '.');
     if (!dotPos) {
-        strchr(buffer, ','); // non-C locale?
+        dotPos = strchr(buffer, ','); // non-C locale?
     }
     _ASSERT(dotPos);
     char* ePos = strchr(dotPos, 'e');
