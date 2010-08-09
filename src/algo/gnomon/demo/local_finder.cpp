@@ -38,6 +38,7 @@
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objmgr/object_manager.hpp>
 
 USING_SCOPE(ncbi);
@@ -102,7 +103,27 @@ int CLocalFinderApp::Run(void)
     //
     // read our sequence data
     //
-    CRef<CSeq_entry> se = ReadFasta(myargs["input"].AsInputFile(),fReadFasta_AssumeNuc|fReadFasta_ForceType|fReadFasta_OneSeq|fReadFasta_RequireID);
+    CFastaReader fastareader(myargs["input"].AsString());
+    CRef<CSeq_loc> masked_regions;
+    masked_regions = fastareader.SaveMask();
+    CRef<CSeq_entry> se = fastareader.ReadOneSeq();
+    
+    if(masked_regions) {
+        CBioseq& bioseq = se->SetSeq();     // assumes that reader gets only one sequence per fasta id (no [] in file)
+        CRef<CSeq_annot> seq_annot(new CSeq_annot);
+        seq_annot->AddName("NCBI-FASTA-Lowercase");
+        bioseq.SetAnnot().push_back(seq_annot);
+        CSeq_annot::C_Data::TFtable* feature_table = &seq_annot->SetData().SetFtable();
+        for(CSeq_loc_CI i(*masked_regions); i; ++i) {
+            CRef<CSeq_feat> repeat(new CSeq_feat);
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(i.GetSeq_id());
+            CRef<CSeq_loc> loc(new CSeq_loc(*id, i.GetRange().GetFrom(), i.GetRange().GetTo()));
+            repeat->SetLocation(*loc);
+            repeat->SetData().SetImp().SetKey("repeat_region");
+            feature_table->push_back(repeat);
+        }
+    }
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
