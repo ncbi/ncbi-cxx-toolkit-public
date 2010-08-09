@@ -84,7 +84,7 @@ public:
         eLabelBgColorId,    ///< Color for backgroud of node label
         eLabelTagColorId,
         eTreeSimplificationTagId, ///< Is subtree collapsed
-        eNumIds             ///< Number of known feature ids
+        eLastId = eTreeSimplificationTagId ///< Last Id (with largest index)
     };
 
     
@@ -199,6 +199,12 @@ public:
     /// @return Biotree container
     ///
     CRef<CBioTreeContainer> GetSerialTree(void);
+
+    /// Get tree feature tag
+    /// @param feat Feature id [in]
+    /// @return Feature tag
+    ///
+    inline static string GetFeatureTag(EFeatureID feat);
 
 
     // --- Generating output ---
@@ -475,7 +481,7 @@ private:
             const CBioTreeFeatureDictionary& fdict
                 = tree.GetFeatureDict();
 
-            if (!fdict.HasFeature(kBlastNameTag)) {
+            if (!fdict.HasFeature(eBlastNameId)) {
                 NCBI_THROW(CException, eInvalid, 
                            "No Blast Name feature CBioTreeFeatureDictionary");
             }
@@ -499,11 +505,12 @@ private:
 
 
                     if (m_CurrentBlastName.empty()) {
-                        m_CurrentBlastName = node.GetFeature(kBlastNameTag);
+                        m_CurrentBlastName = node.GetFeature(
+                                     CGuideTree::GetFeatureTag(eBlastNameId));
                     }
                     else {
-                        if (m_CurrentBlastName
-                            != node.GetFeature(kBlastNameTag)) {
+                        if (m_CurrentBlastName != node.GetFeature(
+                                  CGuideTree::GetFeatureTag(eBlastNameId))) {
                           
                             m_IsSingleBlastName = false;
                             return eTreeTraverseStop;
@@ -536,49 +543,6 @@ protected:
 
     /// Blast Name to color map
     TBlastNameColorMap m_BlastNameColorMap;
-
-
-public:
-    // Tree feature tags
-
-    /// Sequence label feature tag
-    static const string kLabelTag;
-
-    /// Distance feature tag
-    static const string kDistTag;
-
-    /// Sequence id feature tag
-    static const string kSeqIDTag;
-
-    /// Sequence title feature tag
-    static const string kSeqTitleTag;
-
-    /// Organizm name feature tag
-    static const string kOrganismTag;
-
-    /// Accession number feature tag
-    static const string kAccessionNbrTag;
-
-    /// Blast name feature tag
-    static const string kBlastNameTag;
-
-    /// Alignment index id feature tag
-    static const string kAlignIndexIdTag;
-
-    /// Node color feature tag (used by CPhyloTreeNode)
-    static const string kNodeColorTag;
-
-    /// Node label color feature tag (used by CPhyloTreeNode)
-    static const string kLabelColorTag;
-
-    /// Node label backrground color tag (used by CPhyloTreeNode)
-    static const string kLabelBgColorTag;
-
-    /// Node label tag color tag (used by CPhyloTreeNode)
-    static const string kLabelTagColor;
-
-    /// Node subtree collapse tag (used by CPhyloTreeNode)
-    static const string kCollapseTag;
 };
 
 

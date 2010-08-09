@@ -59,21 +59,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-const string CGuideTree::kLabelTag = "label";
-const string CGuideTree::kDistTag = "dist";
-const string CGuideTree::kSeqIDTag = "seq-id";
-const string CGuideTree::kSeqTitleTag = "seq-title";
-const string CGuideTree::kOrganismTag = "organism";
-const string CGuideTree::kAccessionNbrTag = "accession-nbr";        
-const string CGuideTree::kBlastNameTag = "blast-name";    
-const string CGuideTree::kAlignIndexIdTag = "align-index";     
-
-const string CGuideTree::kNodeColorTag = "$NODE_COLOR";
-const string CGuideTree::kLabelColorTag = "$LABEL_COLOR";
-const string CGuideTree::kLabelBgColorTag = "$LABEL_BG_COLOR";
-const string CGuideTree::kLabelTagColor = "$LABEL_TAG_COLOR";
-const string CGuideTree::kCollapseTag = "$NODE_COLLAPSED";
-
 // query node colors
 static const string s_kQueryNodeColor = "255 0 0";
 static const string s_kQueryNodeBgColor = "255 255 0";
@@ -284,8 +269,9 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method)
         FullyExpand();
         CPhyloTreeNodeGroupper groupper 
             = TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), 
-                   CPhyloTreeNodeGroupper(kBlastNameTag, kNodeColorTag,
-                                          m_Dyntree));
+                           CPhyloTreeNodeGroupper(GetFeatureTag(eBlastNameId),
+                                                  GetFeatureTag(eNodeColorId),
+                                                  m_Dyntree));
 
         if (!groupper.GetError().empty()) {
             NCBI_THROW(CGuideTreeException, eTraverseProblem,
@@ -321,9 +307,9 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id)
         // Track labels in order to select proper color for collapsed node
         CPhyloTreeLabelTracker 
             tracker = TreeDepthFirstTraverse(*node, CPhyloTreeLabelTracker(
-                                                                kBlastNameTag, 
-                                                                kNodeColorTag,
-                                                                kLabelBgColorTag,
+                                                    GetFeatureTag(eBlastNameId), 
+                                                  GetFeatureTag(eNodeColorId),
+                                                  GetFeatureTag(eLabelBgColorId),
                                                                 m_QueryNodeId,
                                                                 m_Dyntree));
 
@@ -338,9 +324,10 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id)
         for (; it != tracker.End(); ++it) {
             label += ", " + it->first;
         }
-        node->SetFeature(kLabelTag, label);
+        node->SetFeature(GetFeatureTag(eLabelId), label);
         if (tracker.GetNumLabels() == 1) {
-            node->SetFeature(kNodeColorTag, tracker.Begin()->second);
+            node->SetFeature(GetFeatureTag(eNodeColorId),
+                             tracker.Begin()->second);
         }
         // Mark collapsed subtree that contains query node
         if (IsQueryNodeSet()) {
@@ -351,7 +338,7 @@ bool CGuideTree::ExpandCollapseSubtree(int node_id)
 
         // Expanding
         x_Expand(*node);
-        node->SetFeature(kNodeColorTag, "");
+        node->SetFeature(GetFeatureTag(eNodeColorId), "");
     }
 
     m_SimplifyMode = eNone;
@@ -430,8 +417,10 @@ void CGuideTree::RerootTree(int new_root_id)
     // make new root's parent its child and set new tree root
     node->AddNode(parent);
     m_Dyntree.SetTreeNode(node);
-    parent->SetFeature(kDistTag, node->GetFeature(kDistTag));
-    node->SetFeature(kDistTag, "0");
+    parent->SetFeature(GetFeatureTag(eDistId),
+                       node->GetFeature(GetFeatureTag(eDistId)));
+
+    node->SetFeature(GetFeatureTag(eDistId), "0");
 }
 
 bool CGuideTree::ShowSubtree(int root_id)
@@ -466,6 +455,28 @@ bool CGuideTree::IsSingleBlastName(void)
     return examiner.IsSingleBlastName();
 }
 
+string CGuideTree::GetFeatureTag(CGuideTree::EFeatureID feat)
+{
+    switch (feat) {
+
+    case eLabelId:  return "label";
+    case eDistId :  return "dist";
+    case eSeqIdId:  return "seq-id";
+    case eTitleId:  return "seq-title";
+    case eOrganismId    : return "organism";
+    case eAccessionNbrId: return "accession-nbr";        
+    case eBlastNameId   : return "blast-name";    
+    case eAlignIndexId  : return "align-index";     
+
+    case eNodeColorId    : return "$NODE_COLOR";
+    case eLabelColorId   : return "$LABEL_COLOR";
+    case eLabelBgColorId : return "$LABEL_BG_COLOR";
+    case eLabelTagColorId: return "$LABEL_TAG_COLOR";
+    case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
+    default: return "";
+    }
+}
+
 
 void CGuideTree::x_Init(void)
 {
@@ -491,7 +502,8 @@ CBioTreeDynamic::CBioNode* CGuideTree::x_GetBioNode(TBioTreeNodeId id,
 
 bool CGuideTree::x_IsExpanded(const CBioTreeDynamic::CBioNode& node)
 {
-    return node.GetFeature(kCollapseTag) == s_kSubtreeDisplayed;
+    return node.GetFeature(GetFeatureTag(eTreeSimplificationTagId))
+        == s_kSubtreeDisplayed;
 }
 
 bool CGuideTree::x_IsLeafEx(const CBioTreeDynamic::CBioNode& node)
@@ -501,12 +513,13 @@ bool CGuideTree::x_IsLeafEx(const CBioTreeDynamic::CBioNode& node)
 
 void CGuideTree::x_Collapse(CBioTreeDynamic::CBioNode& node)
 {
-    node.SetFeature(kCollapseTag, "1");
+    node.SetFeature(GetFeatureTag(eTreeSimplificationTagId), "1");
 }
 
 void CGuideTree::x_Expand(CBioTreeDynamic::CBioNode& node)
 {
-    node.SetFeature(kCollapseTag, s_kSubtreeDisplayed);
+    node.SetFeature(GetFeatureTag(eTreeSimplificationTagId),
+                    s_kSubtreeDisplayed);
 }
 
 
@@ -516,8 +529,8 @@ void CGuideTree::x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper)
     for (CPhyloTreeNodeGroupper::CLabeledNodes_I it=groupper.Begin();
          it != groupper.End(); ++it) {
         x_Collapse(*it->GetNode());
-        it->GetNode()->SetFeature(kLabelTag, it->GetLabel());
-        it->GetNode()->SetFeature(kNodeColorTag, it->GetColor());
+        it->GetNode()->SetFeature(GetFeatureTag(eLabelId), it->GetLabel());
+        it->GetNode()->SetFeature(GetFeatureTag(eNodeColorId), it->GetColor());
         if (m_QueryNodeId > -1) {
             x_MarkCollapsedQueryNode(it->GetNode());
         }
@@ -535,8 +548,10 @@ void CGuideTree::x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node)
 
         CBioTreeDynamic::CBioNode* query_node = finder.GetNode();
         if (query_node) {
-            const string& color = query_node->GetFeature(kLabelBgColorTag);
-            node->SetFeature(kLabelBgColorTag, color);
+            const string& color = query_node->GetFeature(
+                                             GetFeatureTag(eLabelBgColorId));
+
+            node->SetFeature(GetFeatureTag(eLabelBgColorId), color);
         }
     }
 
@@ -561,14 +576,14 @@ void CGuideTree::x_PrintNewickTree(CNcbiOstream& ostr,
     }
 
     if (!is_outer_node) {
-        label = node.GetFeature(kLabelTag);
+        label = node.GetFeature(GetFeatureTag(eLabelId));
         if (node.IsLeaf() || !label.empty()) {
             for (size_t i=0;i < label.length();i++)
                 if (!isalpha(label.at(i)) && !isdigit(label.at(i)))
                     label.at(i) = '_';
             ostr << label;
         }
-        ostr << ':' << node.GetFeature(kDistTag);
+        ostr << ':' << node.GetFeature(GetFeatureTag(eDistId));
     }
     else
         ostr << ';';
@@ -663,7 +678,6 @@ CRef<CBioTreeContainer> CGuideTree::GetSerialTree(void)
 
     return btc;
 }
-
 
 // Get SeqID string from CBioseq_Handle such as gi|36537373
 // If getGIFirst tries to get gi. If gi does not exist tries to get be 'Best ID'
@@ -832,17 +846,18 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
     }
     
     // Add attributes to terminal nodes
-    x_AddFeatureDesc(eSeqIdId, kSeqIDTag, btc);
-    x_AddFeatureDesc(eOrganismId, kOrganismTag, btc);
-    x_AddFeatureDesc(eTitleId, kSeqTitleTag, btc);
-    x_AddFeatureDesc(eAccessionNbrId, kAccessionNbrTag, btc);
-    x_AddFeatureDesc(eBlastNameId, kBlastNameTag, btc);
-    x_AddFeatureDesc(eAlignIndexId, kAlignIndexIdTag, btc);
-    x_AddFeatureDesc(eNodeColorId, kNodeColorTag, btc);
-    x_AddFeatureDesc(eLabelColorId, kLabelColorTag, btc);
-    x_AddFeatureDesc(eLabelBgColorId, kLabelBgColorTag, btc);
-    x_AddFeatureDesc(eLabelTagColorId, kLabelTagColor, btc);
-    x_AddFeatureDesc(eTreeSimplificationTagId, kCollapseTag, btc);
+    x_AddFeatureDesc(eSeqIdId, GetFeatureTag(eSeqIdId), btc);
+    x_AddFeatureDesc(eOrganismId, GetFeatureTag(eOrganismId), btc);
+    x_AddFeatureDesc(eTitleId, GetFeatureTag(eTitleId), btc);
+    x_AddFeatureDesc(eAccessionNbrId, GetFeatureTag(eAccessionNbrId), btc);
+    x_AddFeatureDesc(eBlastNameId, GetFeatureTag(eBlastNameId), btc);
+    x_AddFeatureDesc(eAlignIndexId, GetFeatureTag(eAlignIndexId), btc);
+    x_AddFeatureDesc(eNodeColorId, GetFeatureTag(eNodeColorId), btc);
+    x_AddFeatureDesc(eLabelColorId, GetFeatureTag(eLabelColorId), btc);
+    x_AddFeatureDesc(eLabelBgColorId, GetFeatureTag(eLabelBgColorId), btc);
+    x_AddFeatureDesc(eLabelTagColorId, GetFeatureTag(eLabelTagColorId), btc);
+    x_AddFeatureDesc(eTreeSimplificationTagId,
+                     GetFeatureTag(eTreeSimplificationTagId), btc);
 
     
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
@@ -951,11 +966,13 @@ ETreeTraverseCode
 CGuideTree::CExpander::operator()(CBioTreeDynamic::CBioNode& node, int delta)
 {
     if (delta == 0 || delta == 1) {
-        if (node.GetFeature(kCollapseTag) != s_kSubtreeDisplayed
-            && !node.IsLeaf()) {
+        if (node.GetFeature(GetFeatureTag(eTreeSimplificationTagId))
+            != s_kSubtreeDisplayed && !node.IsLeaf()) {
             
-            node.SetFeature(kCollapseTag, s_kSubtreeDisplayed);
-            node.SetFeature(kNodeColorTag, "");
+            node.SetFeature(GetFeatureTag(eTreeSimplificationTagId),
+                            s_kSubtreeDisplayed);
+
+            node.SetFeature(GetFeatureTag(eNodeColorId), "");
         }
     }
     return eTreeTraverse;

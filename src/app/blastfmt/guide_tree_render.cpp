@@ -371,16 +371,11 @@ void CGuideTreeRenderer::CGIMap::x_FillNodeMapData(CPhyloTreeNode&  tree_node)
        
     //IsLeaf() instead of IsLeafEx() allows popup menu for collapsed nodes
     if(tree_node.IsLeaf()) {
-        const CBioTreeFeatureList&
-            featureList = (*tree_node).GetBioTreeFeatureList();
        
         if (m_ShowQuery && (*tree_node).GetDictionaryPtr()->HasFeature(
-                                              CGuideTree::kAlignIndexIdTag)) {
+                                                  CGuideTree::eAlignIndexId)) {
 
-            int align_index = NStr::StringToInt(
-                                featureList.GetFeatureValue(
-                                       (*tree_node).GetDictionaryPtr()->GetId(
-                                           CGuideTree::kAlignIndexIdTag)));
+            int align_index = CGuideTree::eAlignIndexId;
 
             isQuery = align_index == 0; //s_kPhyloTreeQuerySeqIndex 
         }       
@@ -392,11 +387,9 @@ void CGuideTreeRenderer::CGIMap::x_FillNodeMapData(CPhyloTreeNode&  tree_node)
 
         string accessionNbr;
         if ((*tree_node).GetDictionaryPtr()->HasFeature(
-                               CGuideTree::kAccessionNbrTag)){ //accession-nbr
+                                               CGuideTree::eAccessionNbrId)) {
 
-            accessionNbr = featureList.GetFeatureValue(
-                                   (*tree_node).GetDictionaryPtr()->GetId(
-                                        CGuideTree::kAccessionNbrTag));            
+            accessionNbr = CGuideTree::eAccessionNbrId;
         }
         string arg = NStr::IntToString(nodeID);
         if(!accessionNbr.empty()) {
