@@ -802,7 +802,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     grid_ctx.SetJobInput(job_status->GetJobInput());
     grid_ctx.SetJobOutput(job_status->GetJobOutput());
 
-    EJobPhase phase;
+    EJobPhase phase = eTerminated;
     bool save_result = false;
     grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
         CNetScheduleAPI::StatusToString(status));
@@ -822,12 +822,10 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
             }
         }
         save_result = true;
-        phase = eTerminated;
         break;
     case CNetScheduleAPI::eFailed:
         // a job has failed
         OnJobFailed(job_status->GetErrorMessage(), grid_ctx);
-        phase = eTerminated;
         break;
 
     case CNetScheduleAPI::eCanceled:
@@ -839,13 +837,11 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         DefineRefreshTags(m_FallBackUrl.empty() ?
             grid_ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl,
                 m_CancelGoBackDelay);
-        phase = eTerminated;
         break;
 
     case CNetScheduleAPI::eJobNotFound:
         // The job has expired
         OnJobFailed("Job is not found.", grid_ctx);
-        phase = eTerminated;
         break;
 
     case CNetScheduleAPI::ePending:
