@@ -211,7 +211,8 @@ void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
     for (unsigned int i = 0;  i <= max_index;  i++) {
         double sum = 0;
         for (unsigned int j = 0;  j < 15;  j++) {
-            sum += Mat[seq[i + j]][j];
+            int sub = (unsigned char)seq[i + j];
+            sum += Mat[sub][j];
         }
         if (sum > max_score) {
             max_score = sum;
