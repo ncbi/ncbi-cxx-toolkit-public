@@ -64,6 +64,7 @@
 #include <deque>
 #ifdef NCBI_COMPILER_MSVC
 # include <intrin.h>
+# pragma intrinsic(_ReadWriteBarrier)
 #endif
 
 
