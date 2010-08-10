@@ -225,7 +225,12 @@ class CSeqTableInfo : public CObject
 {
 public:
     explicit CSeqTableInfo(const CSeq_table& feat_table, bool is_feat);
+    explicit CSeqTableInfo(const CSeq_table& feat_table);
     ~CSeqTableInfo();
+
+    bool IsFeatTable(void) const {
+        return m_IsFeatTable;
+    }
 
     void UpdateSeq_feat(size_t row,
                         CRef<CSeq_feat>& seq_feat,
@@ -243,11 +248,16 @@ public:
     const CSeqTableColumnInfo& GetColumn(int field_id) const;
     const CSeqTableColumnInfo& GetColumn(const string& field_name) const;
 
+    static bool IsGoodFeatTable(const CSeq_table& table);
+
 private:
     typedef CSeqTableSetFeatField TSetter;
     typedef pair<CSeqTableColumnInfo, CConstRef<TSetter> > TColumnInfo;
     typedef vector<TColumnInfo> TExtraColumns;
 
+    void x_Initialize(const CSeq_table& table);
+
+    bool m_IsFeatTable;
     CSeqTableLocColumns m_Location;
     CSeqTableLocColumns m_Product;
     CSeqTableColumnInfo m_Partial;

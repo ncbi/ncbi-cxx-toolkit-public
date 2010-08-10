@@ -771,9 +771,42 @@ void CSeqTableLocColumns::SetTableKeyAndIndex(size_t row,
 // CSeqTableInfo
 /////////////////////////////////////////////////////////////////////////////
 
+
+bool CSeqTableInfo::IsGoodFeatTable(const CSeq_table& table)
+{
+    if ( !table.IsSetFeat_type() ||
+         table.GetFeat_type() <= CSeqFeatData::e_not_set ||
+         table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
+        return false; // not a feature table
+    }
+    if ( table.IsSetFeat_subtype() &&
+         (table.GetFeat_subtype() <= CSeqFeatData::eSubtype_bad ||
+          table.GetFeat_subtype() >= CSeqFeatData::eSubtype_max) ) {
+        return false; // bad subtype
+    }
+    return true;
+}
+
+
 CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
-    : m_Location("loc", CSeqTable_column_info::eField_id_location),
+    : m_IsFeatTable(is_feat),
+      m_Location("loc", CSeqTable_column_info::eField_id_location),
       m_Product("product", CSeqTable_column_info::eField_id_product)
+{
+    x_Initialize(feat_table);
+}
+
+
+CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
+    : m_IsFeatTable(IsGoodFeatTable(feat_table)),
+      m_Location("loc", CSeqTable_column_info::eField_id_location),
+      m_Product("product", CSeqTable_column_info::eField_id_product)
+{
+    x_Initialize(feat_table);
+}
+
+
+void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
 {
     ITERATE ( CSeq_table::TColumns, it, feat_table.GetColumns() ) {
         const CSeqTable_column& col = **it;
@@ -781,7 +814,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
         if ( type.IsSetField_id() ) {
             int id = type.GetField_id();
             m_ColumnsById.insert(TColumnsById::value_type(id, col));
-            if ( is_feat && !type.IsSetField_name() ) {
+            if ( IsFeatTable() && !type.IsSetField_name() ) {
                 string name = type.GetNameForId(id);
                 if ( !name.empty() ) {
                     m_ColumnsByName.insert(TColumnsByName::value_type(name, col));
@@ -791,14 +824,14 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
         if ( type.IsSetField_name() ) {
             string name = type.GetField_name();
             m_ColumnsByName.insert(TColumnsByName::value_type(name, col));
-            if ( is_feat && !type.IsSetField_id() ) {
+            if ( IsFeatTable() && !type.IsSetField_id() ) {
                 int id = type.GetIdForName(name);
                 if ( id >= 0 ) {
                     m_ColumnsById.insert(TColumnsById::value_type(id, col));
                 }
             }
         }
-        if ( !is_feat ) {
+        if ( !IsFeatTable() ) {
             continue;
         }
 
@@ -887,7 +920,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
         }
     }
 
-    if ( is_feat ) {
+    if ( IsFeatTable() ) {
         m_Location.ParseDefaults();
         m_Product.ParseDefaults();
     }

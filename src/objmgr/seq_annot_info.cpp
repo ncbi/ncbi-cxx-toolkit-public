@@ -433,26 +433,10 @@ void CSeq_annot_Info::x_InitLocsList(TLocs& objs)
 }
 
 
-static bool s_GoodFeatureType(const CSeq_table& table)
-{
-    if ( !table.IsSetFeat_type() ||
-         table.GetFeat_type() <= CSeqFeatData::e_not_set ||
-         table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
-        return false; // not a feature table
-    }
-    if ( table.IsSetFeat_subtype() &&
-         (table.GetFeat_subtype() <= CSeqFeatData::eSubtype_bad ||
-          table.GetFeat_subtype() >= CSeqFeatData::eSubtype_max) ) {
-        return false; // bad subtype
-    }
-    return true;
-}
-
-
 void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
 {
     _ASSERT(m_ObjectIndex.GetInfos().empty());
-    if ( !s_GoodFeatureType(table) ) {
+    if ( !CSeqTableInfo::IsGoodFeatTable(table) ) {
         // index whole Seq-table
         SAnnotTypeSelector type(CSeq_annot::C_Data::e_Seq_table);
         m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, 0, type));
@@ -930,10 +914,9 @@ bool CSeq_annot_Info::IsTableFeatPartial(const CAnnotObject_Info& info) const
 void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 {
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
-    bool is_feat = s_GoodFeatureType(feat_table);
-    m_Table_Info = new CSeqTableInfo(feat_table, is_feat);
+    m_Table_Info = new CSeqTableInfo(feat_table);
     
-    if ( !is_feat ) {
+    if ( !m_Table_Info->IsFeatTable() ) {
         // index whole Seq-table
         m_ObjectIndex.ReserveMapSize(1);
         SAnnotObject_Key key;
