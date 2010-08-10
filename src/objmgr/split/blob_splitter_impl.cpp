@@ -123,7 +123,7 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
     // split pieces in chunks
     SplitPieces();
 
-    if ( m_Chunks.size() <= 1 ) { // only main chunk exists
+    if ( m_Chunks.size() < m_Params.m_MinChunkCount ) { // too few chunks
         return false;
     }
 

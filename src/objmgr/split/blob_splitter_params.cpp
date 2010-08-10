@@ -46,14 +46,16 @@ BEGIN_SCOPE(objects)
 
 
 SSplitterParams::SSplitterParams(void)
-    : m_Compression(eCompression_none),
+    : m_MinChunkCount(kDefaultMinChunkCount),
+      m_Compression(eCompression_none),
       m_Verbose(0),
       m_DisableSplitDescriptions(DISABLE_SPLIT_DESCRIPTIONS),
       m_DisableSplitSequence(false),
       m_DisableSplitAnnotations(false),
       m_DisableSplitAssembly(DISABLE_SPLIT_ASSEMBLY),
       m_JoinSmallChunks(false),
-      m_SplitWholeBioseqs(true)
+      m_SplitWholeBioseqs(true),
+      m_SplitNonFeatureSeqTables(kDefaultSplitNonFeatureSeqTables)
 {
     SetChunkSize(kDefaultChunkSize);
 }

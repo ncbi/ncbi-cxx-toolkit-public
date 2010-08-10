@@ -33,6 +33,9 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/split/id_range.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
+#include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/annot_object_index.hpp>
 #include <objmgr/error_codes.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
@@ -50,6 +53,7 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqtable/Seq_table.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_IdRange
@@ -413,6 +417,49 @@ void CSeqsRange::Add(const CSparse_seg& sparse)
 void CSeqsRange::Add(const CSeq_graph& obj)
 {
     Add(obj.GetLoc());
+}
+
+
+void CSeqsRange::Add(const CSeq_table& table)
+{
+    CRef<CSeqTableInfo> info(new CSeqTableInfo(table));
+    if ( info->IsFeatTable() ) {
+        Add(info->GetLocation(), table);
+        Add(info->GetProduct(), table);
+    }
+    else {
+        CConstRef<CSeq_loc> loc;
+        try {
+            loc = info->GetColumn("Seq-table location").GetSeq_loc(0);
+        }
+        catch ( CException& /*ignored*/ ) {
+        }
+        if ( loc ) {
+            Add(*loc);
+        }
+    }
+}
+
+
+void CSeqsRange::Add(const CSeqTableLocColumns& loc, const CSeq_table& table)
+{
+    if ( !loc.IsSet() ) {
+        return;
+    }
+    size_t num_rows = table.GetNum_rows();
+    if ( loc.IsRealLoc() ) { // full Seq-loc object
+        for ( size_t row = 0; row < num_rows; ++row ) {
+            Add(*loc.GetLoc(row));
+        }
+    }
+    else { // simplified Seq-loc object
+        SAnnotObject_Key key;
+        SAnnotObject_Index index;
+        for ( size_t row = 0; row < num_rows; ++row ) {
+            loc.SetTableKeyAndIndex(row, key, index);
+            Add(key.m_Handle, key.m_Range);
+        }
+    }
 }
 
 

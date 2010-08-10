@@ -64,6 +64,7 @@
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/split/place_id.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/error_codes.hpp>
 
 
@@ -605,6 +606,13 @@ bool CBlobSplitterImpl::CopyAnnot(CPlace_SplitInfo& place_info,
     case CSeq_annot::TData::e_Align:
     case CSeq_annot::TData::e_Graph:
         break;
+    case CSeq_annot::TData::e_Seq_table:
+        if ( m_Params.m_SplitNonFeatureSeqTables ||
+             CSeqTableInfo::IsGoodFeatTable(annot.GetData().GetSeq_table()) ) {
+            break;
+        }
+        // splitting non-feature Seq-tables is disabled
+        return false;
     default:
         // we don't split other types of Seq-annot
         return false;

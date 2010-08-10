@@ -248,6 +248,8 @@ size_t CSeq_annot_SplitInfo::CountAnnotObjects(const CSeq_annot& annot)
         return annot.GetData().GetAlign().size();
     case CSeq_annot::C_Data::e_Graph:
         return annot.GetData().GetGraph().size();
+    case CSeq_annot::C_Data::e_Seq_table:
+        return 1;
     default:
         _ASSERT("bad annot type" && 0);
     }
@@ -281,6 +283,9 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
         ITERATE(CSeq_annot::C_Data::TGraph, it, annot.GetData().GetGraph()) {
             Add(CAnnotObject_SplitInfo(**it, ratio));
         }
+        break;
+    case CSeq_annot::TData::e_Seq_table:
+        Add(CAnnotObject_SplitInfo(annot.GetData().GetSeq_table(), ratio));
         break;
     default:
         _ASSERT("bad annot type" && 0);
@@ -365,6 +370,16 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_graph& obj,
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Align),
+      m_Object(&obj),
+      m_Size(s_Sizer.GetAsnSize(obj), ratio)
+{
+    m_Location.Add(obj);
+}
+
+
+CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_table& obj,
+                                               double ratio)
+    : m_ObjectType(CSeq_annot::C_Data::e_Seq_table),
       m_Object(&obj),
       m_Size(s_Sizer.GetAsnSize(obj), ratio)
 {

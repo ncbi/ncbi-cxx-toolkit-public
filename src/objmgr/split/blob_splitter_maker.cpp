@@ -52,6 +52,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqtable/Seq_table.hpp>
 
 #include <objects/seqsplit/seqsplit__.hpp>
 
@@ -62,6 +63,7 @@
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/split/place_id.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/annot_type_selector.hpp>
 
 #ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
@@ -177,6 +179,9 @@ namespace {
                 case CSeq_annot::C_Data::e_Ftable:
                     m_FeatTypes[t.GetFeatType()].insert(t.GetFeatSubtype());
                     break;
+                case CSeq_annot::C_Data::e_Seq_table:
+                    m_FeatTypes[CSeqFeatData::e_not_set];
+                    break;
                 default:
                     _ASSERT("bad annot type" && 0);
                 }
@@ -244,6 +249,9 @@ namespace {
                 case CSeq_annot::C_Data::e_Graph:
                     Add(annot.GetData().GetGraph());
                     break;
+                case CSeq_annot::C_Data::e_Seq_table:
+                    Add(annot.GetData().GetSeq_table());
+                    break;
                 default:
                     _ASSERT("bad annot type" && 0);
                 }
@@ -277,6 +285,24 @@ namespace {
                     loc.Add(feat);
                     Add(type, loc);
                 }
+            }
+        void Add(const CSeq_annot::C_Data::TSeq_table& table)
+            {
+                SAnnotTypeSelector type;
+                if ( CSeqTableInfo::IsGoodFeatTable(table) ) {
+                    type.SetFeatType
+                        (CSeqFeatData::E_Choice(table.GetFeat_type()));
+                    if ( table.IsSetFeat_subtype() ) {
+                        type.SetFeatSubtype
+                            (CSeqFeatData::ESubtype(table.GetFeat_subtype()));
+                    }
+                }
+                else {
+                    type.SetAnnotType(CSeq_annot::C_Data::e_Seq_table);
+                }
+                CSeqsRange loc;
+                loc.Add(table);
+                Add(type, loc);
             }
 
         void Add(const SAnnotTypeSelector& sel, const CSeqsRange& loc)
@@ -1196,6 +1222,13 @@ CBlobSplitterImpl::MakeSeq_annot(const CSeq_annot& src,
             CObject& obj = NonConst(*it->m_Object);
             annot->SetData().SetGraph()
                 .push_back(Ref(&dynamic_cast<CSeq_graph&>(obj)));
+        }
+        break;
+    case CSeq_annot::C_Data::e_Seq_table:
+        _ASSERT(objs.size() == 1);
+        {
+            CObject& obj = NonConst(*objs.front().m_Object);
+            annot->SetData().SetSeq_table(dynamic_cast<CSeq_table&>(obj));
         }
         break;
     default:

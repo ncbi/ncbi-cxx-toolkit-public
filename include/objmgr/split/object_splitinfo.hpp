@@ -104,6 +104,7 @@ public:
     CAnnotObject_SplitInfo(const CSeq_feat& obj, double ratio);
     CAnnotObject_SplitInfo(const CSeq_align& obj, double ratio);
     CAnnotObject_SplitInfo(const CSeq_graph& obj, double ratio);
+    CAnnotObject_SplitInfo(const CSeq_table& obj, double ratio);
 
     TAnnotPriority GetPriority(void) const;
     TAnnotPriority CalcPriority(void) const;

@@ -45,7 +45,9 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     SSplitterParams(void);
 
     enum {
-        kDefaultChunkSize = 20 * 1024
+        kDefaultChunkSize = 20 * 1024,
+        kDefaultMinChunkCount = 1,
+        kDefaultSplitNonFeatureSeqTables = 0
     };
 
     void SetChunkSize(size_t size);
@@ -63,6 +65,7 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     size_t       m_ChunkSize;
     size_t       m_MinChunkSize;
     size_t       m_MaxChunkSize;
+    size_t       m_MinChunkCount;
     ECompression m_Compression;
     TVerbose     m_Verbose;
 
@@ -72,6 +75,7 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     bool         m_DisableSplitAssembly;
     bool         m_JoinSmallChunks;
     bool         m_SplitWholeBioseqs;
+    bool         m_SplitNonFeatureSeqTables;
 };
 
 

@@ -61,6 +61,9 @@ class CDense_diag;
 class CPacked_seg;
 class CSpliced_seg;
 class CSparse_seg;
+class CSeq_table;
+class CSeqTableInfo;
+class CSeqTableLocColumns;
 
 class COneSeqRange
 {
@@ -139,6 +142,8 @@ public:
     void Add(const CPacked_seg& packed);
     void Add(const CSpliced_seg& spliced);
     void Add(const CSparse_seg& sparse);
+    void Add(const CSeq_table& table);
+    void Add(const CSeqTableLocColumns& loc, const CSeq_table& table);
 
 private:
     TRanges m_Ranges;
