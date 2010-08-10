@@ -125,6 +125,11 @@ void CId2FetchApp::Init(void)
         ("gi", "SeqEntryID",
          "GI id of the Seq-Entry to fetch",
          CArgDescriptions::eInteger);
+    // Seq-id
+    arg_desc->AddOptionalKey
+        ("id", "SeqEntryID",
+         "Seq-id of the Seq-Entry to fetch",
+         CArgDescriptions::eString);
     // Request
     arg_desc->AddOptionalKey
         ("req", "Request",
@@ -879,6 +884,17 @@ int CId2FetchApp::Run(void)
 
         req->SetRequest().SetGet_blob_info().SetBlob_id().SetResolve().
             SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().SetGi(gi);
+        req->SetRequest().SetGet_blob_info().SetGet_data();
+    }
+    else if ( args["id"] ) {
+        CRef<CSeq_id> id(new CSeq_id(args["id"].AsString()));
+        CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
+        reqs.push_back(packet);
+        CRef<CID2_Request> req(new CID2_Request);
+        packet->Set().push_back(req);
+
+        req->SetRequest().SetGet_blob_info().SetBlob_id().SetResolve().
+            SetRequest().SetSeq_id().SetSeq_id().SetSeq_id(*id);
         req->SetRequest().SetGet_blob_info().SetGet_data();
     }
     else if ( args["req"] ) {
