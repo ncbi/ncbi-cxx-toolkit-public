@@ -1749,13 +1749,20 @@ EOF
       export DISTCC_FALLBACK
       AC_CACHE_CHECK([whether any distcc servers are available],
          ncbi_cv_prog_distcc_servers,
-         [if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
-          if $DISTCC $testcc -c distcctest.c \
-              2>&AS_MESSAGE_LOG_FD ; then
-             ncbi_cv_prog_distcc_servers=yes
-          else
-             ncbi_cv_prog_distcc_servers=no
-          fi])
+         [$DISTCC $CC -c distcctest.c 2>&AS_MESSAGE_LOG_FD
+          case $? in
+            # 102: bind failed
+            # 103: connect failed
+            # 106: bad hostspec
+            # 107: I/O error
+            # 109: protocol error
+            # 113: access denied
+            # 116: no hosts defined
+            102 | 103 | 106 | 107 | 109 | 113 | 116 )
+             ncbi_cv_prog_distcc_servers=no ;;
+            * )
+             ncbi_cv_prog_distcc_servers=yes ;;
+          esac])
       if test "$ncbi_cv_prog_distcc_servers" = no; then
          AS_UNSET(DISTCC)
       fi

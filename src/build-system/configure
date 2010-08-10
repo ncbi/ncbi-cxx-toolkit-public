@@ -5956,13 +5956,20 @@ echo $ECHO_N "checking whether any distcc servers are available... $ECHO_C" >&6
 if test "${ncbi_cv_prog_distcc_servers+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
-          if $DISTCC $testcc -c distcctest.c \
-              2>&5 ; then
-             ncbi_cv_prog_distcc_servers=yes
-          else
-             ncbi_cv_prog_distcc_servers=no
-          fi
+  $DISTCC $CC -c distcctest.c 2>&5
+          case $? in
+            # 102: bind failed
+            # 103: connect failed
+            # 106: bad hostspec
+            # 107: I/O error
+            # 109: protocol error
+            # 113: access denied
+            # 116: no hosts defined
+            102 | 103 | 106 | 107 | 109 | 113 | 116 )
+             ncbi_cv_prog_distcc_servers=no ;;
+            * )
+             ncbi_cv_prog_distcc_servers=yes ;;
+          esac
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_servers" >&5
 echo "${ECHO_T}$ncbi_cv_prog_distcc_servers" >&6
