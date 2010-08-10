@@ -64,8 +64,12 @@ static CGBRequestStatistics sx_Statistics[CGBRequestStatistics::eStats_Count] =
     CGBRequestStatistics("resolved", "blob versions"),
     CGBRequestStatistics("loaded", "blob data"),
     CGBRequestStatistics("loaded", "SNP data"),
+    CGBRequestStatistics("loaded", "split data"),
+    CGBRequestStatistics("loaded", "chunk data"),
     CGBRequestStatistics("parsed", "blob data"),
-    CGBRequestStatistics("parsed", "SNP data")
+    CGBRequestStatistics("parsed", "SNP data"),
+    CGBRequestStatistics("parsed", "split data"),
+    CGBRequestStatistics("parsed", "chunk data")
 };
 
 CGBRequestStatistics::CGBRequestStatistics(const char* action,
@@ -685,7 +689,7 @@ namespace {
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
-                return CGBRequestStatistics::eStat_LoadBlob;
+                return CGBRequestStatistics::eStat_LoadChunk;
             }
         string GetStatisticsDescription(void) const
             {
@@ -751,7 +755,7 @@ namespace {
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
-                return CGBRequestStatistics::eStat_LoadBlob;
+                return CGBRequestStatistics::eStat_LoadChunk;
             }
         string GetStatisticsDescription(void) const
             {

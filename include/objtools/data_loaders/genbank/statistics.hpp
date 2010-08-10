@@ -51,8 +51,12 @@ public:
         eStat_BlobVersion,
         eStat_LoadBlob,
         eStat_LoadSNPBlob,
+        eStat_LoadSplit,
+        eStat_LoadChunk,
         eStat_ParseBlob,
         eStat_ParseSNPBlob,
+        eStat_ParseSplit,
+        eStat_ParseChunk,
 
         eStats_Count,
         eStat_Last = eStats_Count-1

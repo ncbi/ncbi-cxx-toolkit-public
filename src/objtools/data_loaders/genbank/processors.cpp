@@ -1420,7 +1420,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             x_ReadData(data, Begin(*split_info), data_size);
             
             LogStat(result, r, blob_id,
-                    CGBRequestStatistics::eStat_ParseBlob,
+                    CGBRequestStatistics::eStat_ParseSplit,
                     "CProcessor_ID2: parsed split info",
                     data_size);
         }}
@@ -1440,7 +1440,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                 x_ReadData(*skel, Begin(split_info->SetSkeleton()), data_size);
                 
                 LogStat(result, r, blob_id,
-                        CGBRequestStatistics::eStat_ParseBlob,
+                        CGBRequestStatistics::eStat_ParseChunk,
                         "CProcessor_ID2: parsed Seq-entry",
                         data_size);
             }}
@@ -1487,7 +1487,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             CSplitParser::Load(chunk_info, *chunk);
             
             LogStat(result, r, blob_id, chunk_info.GetChunkId(),
-                    CGBRequestStatistics::eStat_ParseBlob,
+                    CGBRequestStatistics::eStat_ParseChunk,
                     "CProcessor_ID2: parsed split chunk",
                     data_size);
         }}
@@ -1736,7 +1736,7 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
         obj_stream >> skel_data;
         
         LogStat(result, r, blob_id,
-                CGBRequestStatistics::eStat_LoadBlob,
+                CGBRequestStatistics::eStat_LoadSplit,
                 "CProcessor_ID2AndSkel: read skel",
                 obj_stream.GetStreamPos());
     }}
