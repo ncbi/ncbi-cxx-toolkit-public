@@ -278,8 +278,12 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                 chunk.x_AddAnnotType(name, sel, loc);
             }
         }
-        else {
+        else if ( type.GetType() ) {
             SAnnotTypeSelector sel(CSeqFeatData::E_Choice(type.GetType()));
+            chunk.x_AddAnnotType(name, sel, loc);
+        }
+        else {
+            SAnnotTypeSelector sel(CSeq_annot::C_Data::e_Seq_table);
             chunk.x_AddAnnotType(name, sel, loc);
         }
     }
