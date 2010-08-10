@@ -45,5 +45,5 @@ SunOSx86 : Release : GCC.sh --without-debug --with-optimization --with-mt --with
 SunOSx86 : Debug : GCC.sh --with-debug --with-mt --without-bdb
 SunOSSparc : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
 SunOSSparc : Debug : GCC.sh --with-debug --with-mt --without-bdb
-Win32 : Release : msvc900_prj static 32 ReleaseDLL
-Win32 : Debug : msvc900_prj static 32 DebugDLL
+Win32_9 : Release : msvc900_prj static 32 ReleaseDLL
+Win32_9 : Debug : msvc900_prj static 32 DebugDLL
