@@ -1529,5 +1529,22 @@ CSpinLock::x_WaitForLock(void)
     while (SwapPointers(&m_Value, (void*)1) != NULL);
 }
 
+#if !(defined(NCBI_COMPILER_MSVC)  ||  defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC))
+
+void
+CSpinLock::Lock(void)
+{
+    if (SwapPointers(&m_Value, (void*)1) != NULL) {
+        x_WaitForLock();
+    }
+}
+
+bool
+CSpinLock::TryLock(void)
+{
+    return SwapPointers(&m_Value, (void*)1) == NULL;
+}
+
+#endif
 
 END_NCBI_SCOPE
