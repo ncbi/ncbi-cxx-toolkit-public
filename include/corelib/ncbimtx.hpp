@@ -62,6 +62,9 @@
 #include <corelib/ncbiobj.hpp>
 #include <memory>
 #include <deque>
+#ifdef NCBI_COMPILER_MSVC
+# include <intrin.h>
+#endif
 
 
 /** @addtogroup Threads
