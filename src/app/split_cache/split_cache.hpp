@@ -60,6 +60,7 @@ class CSeq_entry_Handle;
 class CDataLoader;
 class CGBDataLoader;
 class CBlob_id;
+class CTSE_Handle;
 class CID2S_Chunk_Id;
 class CID2S_Chunk_Content;
 
@@ -206,7 +207,13 @@ public:
     void ProcessSeqId(const CSeq_id& seq_id);
     void ProcessGi(int gi);
     void ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
+    void ProcessBlob(const CBlob_id& blob_id);
+    void ProcessBlob(const CSeq_id_Handle& idh,
+                     const CBioseq_Handle& bh,
+                     const CBlob_id& blob_id,
+                     const CSeq_entry_Handle& tse);
     void ProcessEntry(const CSeq_entry& entry);
+    void ProcessEntry(const CSeq_entry& entry, const string& key);
 
     void TestSplitBlob(CSeq_id_Handle id, const CSplitContentIndex& content);
     void TestSplitBioseq(CSeq_entry_Handle seh);
@@ -251,8 +258,8 @@ private:
     SSplitterParams m_SplitterParams;
     
     // splitter loaders/managers
-    auto_ptr<ICache>            m_Cache;
-    auto_ptr<ICache>            m_IdCache;
+    AutoPtr<ICache>            m_Cache;
+    AutoPtr<ICache>            m_IdCache;
     CRef<CGBDataLoader>         m_Loader;
     CRef<CObjectManager>        m_ObjMgr;
     CRef<CScope>                m_Scope;

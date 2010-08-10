@@ -80,6 +80,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/cache/reader_cache.hpp>
+#include <objtools/data_loaders/genbank/cache/writer_cache.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/error_codes.hpp>
@@ -213,10 +214,16 @@ void CSplitCacheApp::Init(void)
     arg_desc->AddOptionalKey("id_list", "SeqIdList",
                              "file with list of Seq-ids to process",
                              CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("blob_id", "BlobId",
+                             "sat,satkey[,subsat] of the blob in split",
+                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("in", "FileIn",
                              "file with the Seq-entry to process",
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
+    arg_desc->AddOptionalKey("blob_key", "BlobKey",
+                             "key of the blob in cache",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag("all",
                       "process all entries in cache");
     arg_desc->AddFlag("recurse",
@@ -239,6 +246,13 @@ void CSplitCacheApp::Init(void)
          CArgDescriptions::eInteger,
          NStr::IntToString(SSplitterParams::kDefaultChunkSize/1024));
 
+    // split parameters
+    arg_desc->AddDefaultKey
+        ("min_chunk_count", "MinChunkCount",
+         "min number of chunks after splitting",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(SSplitterParams::kDefaultMinChunkCount));
+
     arg_desc->AddFlag("compress",
                       "try to compress split data");
     arg_desc->AddFlag("keep_descriptions",
@@ -251,6 +265,10 @@ void CSplitCacheApp::Init(void)
                       "do not strip assembly");
     arg_desc->AddFlag("join_small_chunks",
                       "attach very small chunks to skeleton");
+    arg_desc->AddDefaultKey("non_feature_seq_tables", "NonFeatureSeqTables",
+                            "split non-feature Seq-tables",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(SSplitterParams::kDefaultSplitNonFeatureSeqTables));
 
     arg_desc->AddFlag("resplit",
                       "resplit already split data");
@@ -314,7 +332,7 @@ void CSplitCacheApp::SetupCache(void)
         }
     }
 
-    if ( !cache_dir.empty() ) {
+    if ( 0 && !cache_dir.empty() ) {
         // blob cache
         CBDB_Cache* cache;
         m_Cache.reset(cache = new CBDB_Cache());
@@ -350,7 +368,7 @@ void CSplitCacheApp::SetupCache(void)
         cache->Purge(age);
     }
 
-    if ( !cache_dir.empty() ) {
+    if ( 0 && !cache_dir.empty() ) {
         // set cache id age
         CBDB_Cache* cache;
         m_IdCache.reset(cache = new CBDB_Cache());
@@ -380,15 +398,28 @@ void CSplitCacheApp::SetupCache(void)
     {{ // create loader
         string readers;
         if ( cache_dir.empty() ) {
-            readers = "id1";
+            readers = "id2";
         }
         else {
             GetConfig().Set("genbank/cache/id_cache/bdb", "path", cache_dir);
             GetConfig().Set("genbank/cache/blob_cache/bdb", "path", cache_dir);
-            readers = "cache;id1";
+            readers = "cache;id2";
         }
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
             *m_ObjMgr, readers).GetLoader());
+        if ( !cache_dir.empty() ) {
+            CReadDispatcher& disp = m_Loader->GetDispatcher();
+            CSeq_id_Handle idh;
+            CStandaloneRequestResult result(idh);
+            result.SetLevel(1);
+            CWriter* writer = disp.GetWriter(result, CWriter::eBlobWriter);
+            CCacheWriter* cwriter = dynamic_cast<CCacheWriter*>(writer);
+            if ( !cwriter ) {
+                ERR_POST(Fatal<<"failed to get writer");
+            }
+            m_IdCache.reset(cwriter->GetIdCache(), eNoOwnership);
+            m_Cache.reset(cwriter->GetBlobCache(), eNoOwnership);
+        }
     }}
 
     {{ // Create scope
@@ -506,7 +537,10 @@ void CSplitCacheApp::Process(void)
     m_Resplit = args["resplit"];
     m_Recurse = args["recurse"];
     m_SplitterParams.m_JoinSmallChunks = args["join_small_chunks"];
+    m_SplitterParams.m_SplitNonFeatureSeqTables =
+        args["non_feature_seq_tables"].AsInteger();
     m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
+    m_SplitterParams.m_MinChunkCount = args["min_chunk_count"].AsInteger();
 
     if ( args["gi"] ) {
         ProcessGi(args["gi"].AsInteger());
@@ -530,10 +564,40 @@ void CSplitCacheApp::Process(void)
             ProcessSeqId(id);
         }
     }
+    if ( args["blob_id"] ) {
+        vector<string> vv;
+        NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
+        if ( vv.size() != 2 && vv.size() != 3 ) {
+            ERR_POST(Fatal<<"Bad blob_id");
+        }
+        CBlob_id blob_id;
+        blob_id.SetSat(NStr::StringToInt(vv[0]));
+        blob_id.SetSatKey(NStr::StringToInt(vv[1]));
+        if ( vv.size() == 3 )
+            blob_id.SetSubSat(NStr::StringToInt(vv[2]));
+        ProcessBlob(blob_id);
+    }
     if ( args["in"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["in"].AsInputFile() >> MSerial_AsnText >> *entry;
-        ProcessEntry(*entry);
+        string key;
+        if ( args["blob_key"] ) {
+            key = args["blob_key"].AsString();
+        }
+        else {
+            key = args["in"].AsString();
+            SIZE_TYPE p = key.find("Blob(");
+            if ( p != NPOS ) {
+                key = key.substr(p);
+            }
+            else {
+                p = key.rfind('/');
+                if ( p != NPOS ) {
+                    key = key.substr(p+1);
+                }
+            }
+        }
+        ProcessEntry(*entry, key);
     }
 }
 
@@ -700,6 +764,15 @@ pair<size_t, size_t> CollectDescriptors(const CSeq_entry& tse,
 }
 
 
+void CSplitCacheApp::ProcessBlob(const CBlob_id& blob_id)
+{
+    CTSE_Lock lock = m_Loader->GetBlobById(CBlobIdKey(&blob_id));
+    CSeq_entry_Handle tse =
+        m_Scope->GetSeq_entryHandle(*lock->GetCompleteTSE());
+    ProcessBlob(CSeq_id_Handle(), CBioseq_Handle(), blob_id, tse);
+}
+
+
 void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
 {
     CSeq_entry_Handle tse;
@@ -707,21 +780,23 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
     // check old data
     CBlob_id blob_id;
     CDataLoader::TBlobId blob_id_0;
-    CDataLoader::TBlobVersion version;
 
     if ( bh ) {
         tse = bh.GetTopLevelEntry();
         blob_id_0 = tse.GetBlobId();
-        version = tse.GetBlobVersion();
     }
-    else {
+    else if ( idh ) {
         WAIT_LINE << "Getting blob id for "<<idh.AsString()<<"...";
         blob_id_0 = m_Loader->GetBlobId(idh);
         if ( !blob_id_0 ) {
             LINE("Cannot get blob id for "<<idh.AsString());
             return;
         }
-        version = m_Loader->GetBlobVersion(blob_id_0);
+        //version = m_Loader->GetBlobVersion(blob_id_0);
+    }
+    else {
+        ERR_POST("no bioseq or seq-id");
+        return;
     }
     blob_id = m_Loader->GetRealBlobId(blob_id_0);
 
@@ -731,8 +806,23 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         return;
     }
 
+    if ( !tse ) {
+        if ( !GetBioseqHandle(bh, idh) )
+            return;
+        tse = bh.GetTopLevelEntry();
+    }
+    ProcessBlob(idh, bh, blob_id, tse);
+}
+
+
+void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
+                                 const CBioseq_Handle& bh,
+                                 const CBlob_id& blob_id,
+                                 const CSeq_entry_Handle& tse)
+{
     LINE("Processing blob "<< blob_id);
     CLevelGuard level(m_RecursionLevel);
+    CDataLoader::TBlobVersion version = tse.GetBlobVersion();
     PrintVersion(version);
 
     string key = SCacheInfo::GetBlobKey(blob_id);
@@ -760,15 +850,10 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         }
     }
 
-    if ( !tse ) {
-        if ( !GetBioseqHandle(bh, idh) )
-            return;
-        tse = bh.GetTopLevelEntry();
-    }
-
+    /*
     {{
         // check if blob_id/version is changed
-        blob_id_0 = tse.GetBlobId();
+        CDataLoader::TBlobId blob_id_0 = tse.GetBlobId();
         CBlob_id real_blob_id = m_Loader->GetRealBlobId(blob_id_0);
         if ( real_blob_id != blob_id ) {
             blob_id = real_blob_id;
@@ -792,6 +877,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             PrintVersion(version);
         }
     }}
+    */
 
     CConstRef<CSeq_entry> seq_entry = tse.GetCompleteSeq_entry();
 
@@ -906,6 +992,12 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
 
 void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry)
 {
+    ProcessEntry(entry, SCacheInfo::GetBlobKey(CBlob_id()));
+}
+
+
+void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
+{
     CSeq_id_Handle idh;
     CSeq_entry_Handle tse = m_Scope->AddTopLevelSeqEntry(entry);
 
@@ -913,17 +1005,10 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry)
     CBlob_id blob_id;
     CDataLoader::TBlobVersion version = 0;
 
-    if ( !m_ProcessedBlobs.insert(blob_id).second ) {
-        // already processed
-        LINE("Already processed");
-        return;
-    }
-
-    LINE("Processing blob "<< blob_id);
+    LINE("Processing blob "<< key);
     CLevelGuard level(m_RecursionLevel);
     PrintVersion(version);
 
-    string key = SCacheInfo::GetBlobKey(blob_id);
     if ( m_Cache.get() ) {
         if ( m_Resplit ) {
             if ( m_Cache->GetSize(key, version,
