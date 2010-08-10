@@ -116,6 +116,14 @@ public:
     void SetBlobCache(ICache* blob_cache);
     void SetIdCache(ICache* id_cache);
 
+    ICache* GetIdCache(void) const {
+        return m_IdCache;
+    }
+
+    ICache* GetBlobCache(void) const {
+        return m_BlobCache;
+    }
+
 protected:
     ICache* m_BlobCache;
     ICache* m_IdCache;
