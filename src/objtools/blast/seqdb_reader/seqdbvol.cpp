@@ -2151,18 +2151,15 @@ bool CSeqDBVol::GetGi(int                    oid,
     return false;
 }
 
-void CSeqDBVol::AccessionToOids(const string         & acc,
-                                vector<int>          & oids,
-                                CSeqDBLockHold       & locked) const
+void CSeqDBVol::x_StringToOids(const string          & acc,
+                               CSeqDBIsam::EIdentType  id_type,
+                               Int8                    ident,
+                               const string          & str_id,
+                               bool                    simpler,
+                               vector<int>           & oids,
+                               CSeqDBLockHold        & locked) const
 {
-    bool   vcheck  (false);
-    bool   simpler (false);
-    Int8   ident   (-1);
-    string str_id;
-    
-    CSeqDBIsam::EIdentType id_type =
-        CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler);
-    
+    bool vcheck (false);
     bool fits_in_four = (ident == -1) || ! (ident >> 32);
     bool needs_four = true;
     
@@ -2198,10 +2195,8 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
         break;
         
     case CSeqDBIsam::eTiId:
-        // Uncomment when 8 byte version is written.
         // Converted to TI type.
-        
-        if (m_IsamTi.NotEmpty()) {
+        if (! m_IsamTi.Empty()) {
             int oid(-1);
             
             if (m_IsamTi->IdToOid(ident, oid, locked)) {
@@ -2299,95 +2294,34 @@ void CSeqDBVol::x_CheckVersions(const string         & acc,
     oids.erase(remove(oids.begin(), oids.end(), -1), oids.end());
 }
 
+void CSeqDBVol::AccessionToOids(const string         & acc,
+                                vector<int>          & oids,
+                                CSeqDBLockHold       & locked) const
+{
+    Int8   ident   (-1);
+    string str_id;
+    bool   simpler (false);
+    
+    CSeqDBIsam::EIdentType id_type =
+        CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler);
+
+    x_StringToOids(acc, id_type, ident, str_id, simpler, oids, locked);
+
+}
+    
 void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
                             vector<int>          & oids,
                             CSeqDBLockHold       & locked) const
 {
-    bool   vcheck  (false);
-    bool   simpler (false);
     Int8   ident   (-1);
     string str_id;
+    bool   simpler (false);
     
     CSeqDBIsam::EIdentType id_type =
         CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler);
     
-    bool fits_in_four = (ident == -1) || ! (ident >> 32);
-    bool needs_four = true;
-    
-    switch(id_type) {
-    case CSeqDBIsam::eStringId:
-        if (! m_IsamStr.Empty()) {
-            // Not simplified
-            vcheck = true;
-            m_IsamStr->StringToOids(str_id, oids, simpler, vcheck, locked);
-        }
-        break;
-        
-    case CSeqDBIsam::ePigId:
-        // Converted to PIG type.
-        if (! m_IsamPig.Empty()) {
-            int oid(-1);
-            
-            if (m_IsamPig->PigToOid((int) ident, oid, locked)) {
-                oids.push_back(oid);
-            }
-        }
-        break;
-        
-    case CSeqDBIsam::eGiId:
-        // Converted to GI type.
-        if (! m_IsamGi.Empty()) {
-            int oid(-1);
-            
-            if (m_IsamGi->IdToOid(ident, oid, locked)) {
-                oids.push_back(oid);
-            }
-        }
-        break;
-        
-    case CSeqDBIsam::eTiId:
-        needs_four = false;
-        
-        // Converted to GI type.
-        if (! m_IsamTi.Empty()) {
-            int oid(-1);
-            
-            if (m_IsamTi->IdToOid(ident, oid, locked)) {
-                oids.push_back(oid);
-            }
-        } else {
-            // Not every database with TIs has a TI index, so fall
-            // back to a string comparison if the first attempt fails.
-            // 
-            // 1. TI's don't have versions.
-            // 2. Specify "adjusted" as true, because lookup of
-            //    "gb|.." and similar tricks are not needed for TIs.
-            
-            m_IsamStr->StringToOids(seqid.AsFastaString(), oids, true, vcheck, locked);
-        }
-        break;
-        
-    case CSeqDBIsam::eOID:
-        // Converted to OID directly.
-        oids.push_back((int) ident);
-        break;
-        
-    case CSeqDBIsam::eHashId:
-        _ASSERT(0);
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "Internal error: hashes are not Seq-ids.");
-    }
-    
-    if ((! fits_in_four) && needs_four) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "ID overflows range of specified type.");
-    }
-    
-    if (vcheck) {
-        x_CheckVersions(seqid.AsFastaString(), oids,  locked);
-    }
+    x_StringToOids(seqid.AsFastaString(), id_type, ident, str_id, simpler, oids, locked);
+
 }
 
 void CSeqDBVol::UnLease()
