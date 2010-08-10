@@ -560,7 +560,11 @@ Variation-ref ::= SEQUENCE {
             },
             variations SET OF Variation-ref,
             name  VisibleString OPTIONAL
-        }
+        },
+
+        -- variant is a complex and undescribed change at the location
+        -- This type of variant is known to occur in dbVar submissions
+        complex NULL
     },
 
     consequence SET OF CHOICE {

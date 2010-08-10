@@ -81,6 +81,9 @@ public:
     /// Make this variant an insertion
     void SetInsertion(const string& sequence, ESeqType seq_type);
 
+    /// Make this variant an insertion of unknown sequence
+    void SetInsertion();
+
     /// Make this variant an insertion
     void SetDeletionInsertion(const string& sequence, ESeqType seq_type);
 
@@ -97,6 +100,12 @@ public:
     /// Make this variant a copy number variant.  NOTE: This API variant
     /// establishes a CNV of unknown copy number
     void SetCNV();
+
+    /// Special subtype of CNV: 'gain' - an unspecified increase in copy number
+    void SetGain();
+
+    /// Special subtype of CNV: 'loss' - an unspecified decrease in copy number
+    void SetLoss();
 
     /// Make this variant a copy number variant.  NOTE: This API variant
     /// establishes a CNV with a range of possible copies
@@ -122,6 +131,9 @@ public:
 
     /// Establish a uniparental disomy mark-up
     void SetUniparentalDisomy();
+
+    /// Create a complex undescribed variant
+    void SetComplex();
 
     /// Validate that all semantic fields are correct
     void Validate();

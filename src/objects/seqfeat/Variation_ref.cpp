@@ -186,6 +186,14 @@ void CVariation_ref::SetInsertion(const string& sequence, ESeqType seq_type)
 }
 
 
+void CVariation_ref::SetInsertion()
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetDelta().clear();
+    inst.SetType(CVariation_inst::eType_ins);
+}
+
+
 void CVariation_ref::SetDeletionInsertion(const string& sequence,
                                           ESeqType seq_type)
 {
@@ -255,6 +263,34 @@ void CVariation_ref::SetCNV()
     CRef<CDelta_item> item(new CDelta_item);
     item->SetSeq().SetThis();
     item->SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_unk);
+
+    inst.SetDelta().push_back(item);
+}
+
+
+void CVariation_ref::SetGain()
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_cnv);
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item(new CDelta_item);
+    item->SetSeq().SetThis();
+    item->SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_gt);
+
+    inst.SetDelta().push_back(item);
+}
+
+
+void CVariation_ref::SetLoss()
+{
+    CVariation_inst& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_cnv);
+    inst.SetDelta().clear();
+
+    CRef<CDelta_item> item(new CDelta_item);
+    item->SetSeq().SetThis();
+    item->SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_lt);
 
     inst.SetDelta().push_back(item);
 }
@@ -342,6 +378,11 @@ void CVariation_ref::SetUniparentalDisomy()
 }
 
 
+/// Establish a complex undescribed variant
+void CVariation_ref::SetComplex()
+{
+    SetData().SetComplex();
+}
 
 
 ///
