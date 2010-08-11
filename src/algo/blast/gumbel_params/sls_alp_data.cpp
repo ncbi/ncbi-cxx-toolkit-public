@@ -820,11 +820,10 @@ double alp_data::get_allocated_memory_in_MB()
 
 };
 
-// Kludge: limit optimization by 32-bit ICC 10.x to avoid undefined
-// references to __svml_exp2.
-#if defined(NCBI_COMPILER_ICC)  &&  NCBI_PLATFORM_BITS == 32 \
-    &&  NCBI_COMPILER_VERSION >= 1000  &&  NCBI_COMPILER_VERSION < 1100 \
-    &&  defined(__OPTIMIZE__)
+// Kludge: limit optimization by ICC 10.x to avoid undesired references to
+// __svml_exp2 (problematic to use from DLLs on x86_64 or at all on ia32).
+#if defined(NCBI_COMPILER_ICC)  &&  defined(__OPTIMIZE__) \
+    &&  NCBI_COMPILER_VERSION >= 1000  &&  NCBI_COMPILER_VERSION < 1100
 #  pragma optimization_level 1
 #endif
 double importance_sampling::lambda_equation(double x_,void* func_number_)
