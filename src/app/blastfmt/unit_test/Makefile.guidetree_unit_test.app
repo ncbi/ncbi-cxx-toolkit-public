@@ -1,5 +1,6 @@
 APP = guidetree_unit_test
-SRC = guidetreecalc_wrapper guidetreecalc_unit_test
+SRC = guidetreecalc_wrapper guidetreecalc_unit_test guidetree_wrapper \
+      guidetree_unit_test guidetreesimplify_wrapper
 
 LIB_ = w_phylo_tree xalgoalignnw xalgophytree fastme \
 	   gui_glmesa w_gl w_wx w_data \
