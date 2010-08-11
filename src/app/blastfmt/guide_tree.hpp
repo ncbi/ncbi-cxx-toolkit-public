@@ -204,7 +204,27 @@ public:
     /// @param feat Feature id [in]
     /// @return Feature tag
     ///
-    inline static string GetFeatureTag(EFeatureID feat);
+    static string GetFeatureTag(EFeatureID feat)
+    {
+        switch (feat) {
+
+        case eLabelId:  return "label";
+        case eDistId :  return "dist";
+        case eSeqIdId:  return "seq-id";
+        case eTitleId:  return "seq-title";
+        case eOrganismId    : return "organism";
+        case eAccessionNbrId: return "accession-nbr";        
+        case eBlastNameId   : return "blast-name";    
+        case eAlignIndexId  : return "align-index";     
+
+        case eNodeColorId    : return "$NODE_COLOR";
+        case eLabelColorId   : return "$LABEL_COLOR";
+        case eLabelBgColorId : return "$LABEL_BG_COLOR";
+        case eLabelTagColorId: return "$LABEL_TAG_COLOR";
+        case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
+        default: return "";
+        }
+    }
 
 
     // --- Generating output ---
@@ -554,6 +574,7 @@ public:
     /// Error code
     enum EErrCode {
         eInvalid,
+        eInvalidInput,      ///< Invalid constructor arguments
         eInvalidOptions,    ///< Invalid parameter values
         eNodeNotFound,      ///< Node with desired id not found
         eTraverseProblem,   ///< Problem in one of the tree visitor classes

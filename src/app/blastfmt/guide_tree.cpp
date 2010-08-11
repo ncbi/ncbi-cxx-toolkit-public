@@ -455,28 +455,6 @@ bool CGuideTree::IsSingleBlastName(void)
     return examiner.IsSingleBlastName();
 }
 
-string CGuideTree::GetFeatureTag(CGuideTree::EFeatureID feat)
-{
-    switch (feat) {
-
-    case eLabelId:  return "label";
-    case eDistId :  return "dist";
-    case eSeqIdId:  return "seq-id";
-    case eTitleId:  return "seq-title";
-    case eOrganismId    : return "organism";
-    case eAccessionNbrId: return "accession-nbr";        
-    case eBlastNameId   : return "blast-name";    
-    case eAlignIndexId  : return "align-index";     
-
-    case eNodeColorId    : return "$NODE_COLOR";
-    case eLabelColorId   : return "$LABEL_COLOR";
-    case eLabelBgColorId : return "$LABEL_BG_COLOR";
-    case eLabelTagColorId: return "$LABEL_TAG_COLOR";
-    case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
-    default: return "";
-    }
-}
-
 
 void CGuideTree::x_Init(void)
 {
@@ -860,6 +838,7 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
                      GetFeatureTag(eTreeSimplificationTagId), btc);
 
     
+    int num_leaves = 0;
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
@@ -881,6 +860,14 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
                         seq_number = NStr::StringToInt(
                                                  (*node_feature)->GetValue());                    
                     }
+
+                    if (seq_number >= (int)num_rows) {
+                        NCBI_THROW(CGuideTreeException, eInvalidInput,
+                                   "Number of Seq-ids is smaller than number "
+                                   "of tree leaves");
+                    }
+                    num_leaves++;
+
                     // Replace numeric label with real label
                     (*node_feature)->SetValue(labels[seq_number]);
 
@@ -915,7 +902,7 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
                                  node); 
 
                     x_AddFeature(eNodeColorId,
-                                 tax_node_colors[seq_number], node);                         
+                                 tax_node_colors[seq_number], node);
 
                     if(seq_number == 0 && mark_query_node) { 
                         // color for query node
@@ -937,7 +924,12 @@ void CGuideTree::x_InitTreeFeatures(CBioTreeContainer& btc,
             }
             x_AddFeature(eTreeSimplificationTagId, s_kSubtreeDisplayed, node);
         }
-    }      
+    }
+
+    if ((int)num_rows != num_leaves) {
+        NCBI_THROW(CGuideTreeException, eInvalidInput, "There are more Seq-ids"
+                   " then tree leaves");
+    }
 }
 
 
