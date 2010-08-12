@@ -468,6 +468,7 @@ bool CGtfReader::x_UpdateAnnotCds(
         if ( ! x_CreateParentCds( gff, pAnnot ) ) {
             return false;
         }
+        x_FindParentCds( gff, pCds );
     }
     else {
         //
@@ -478,6 +479,25 @@ bool CGtfReader::x_UpdateAnnotCds(
         }
     }
 
+    if ( x_CdsIsPartial( gff ) ) {
+        CRef<CSeq_feat> pParent;
+        if ( x_FindParentMrna( gff, pParent ) ) {
+            CSeq_loc& loc = pCds->SetLocation();
+            size_t uCdsStart = gff.SeqStart();
+            size_t uMrnaStart = pParent->GetLocation().GetStart( eExtreme_Positional );
+            if ( uCdsStart == uMrnaStart ) {
+                loc.SetPartialStart( true, eExtreme_Positional );
+//                cerr << "fuzzed down: " << gff.SeqStart() << "  " << gff.SeqStop() << " vs. " << uMrnaStart << endl;
+            }
+
+            size_t uCdsStop =  gff.SeqStop();
+            size_t uMrnaStop = pParent->GetLocation().GetStop( eExtreme_Positional );
+            if ( uCdsStop == uMrnaStop  && gff.Type() != "stop_codon" ) {
+                loc.SetPartialStop( true, eExtreme_Positional );
+//                cerr << "fuzzed up  : " << gff.SeqStart() << "  " << gff.SeqStop() << " vs. " << uMrnaStop << endl;
+            }
+        }
+    }
     return true;
 }
 
@@ -487,10 +507,21 @@ bool CGtfReader::x_UpdateAnnotStartCodon(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    //  If this belongs to a partial feature then that feature has been given a
+    //  5' fuzz. Now that we see an actual start codon it is time to remove that
+    //  fuzz.
     //
-    // From the spec, the start codon should have already been accounted for in
-    //  one of the coding regions. Hence, there is nothing left to do.
-    //
+    CRef< CSeq_feat > pCds;
+    if ( ! x_FindParentCds( gff, pCds ) ) {
+        cerr << "start_codon sans parent CDS" << endl;
+    }
+    if ( ! pCds->IsSetPartial() || ! pCds->GetPartial() ) {
+        return true;
+    }
+    CSeq_loc& loc = pCds->SetLocation();
+    if ( loc.IsPartialStart( eExtreme_Positional ) ) {
+        loc.SetPartialStart( false, eExtreme_Positional );
+    }
     return true;
 }
 
@@ -728,6 +759,7 @@ bool CGtfReader::x_CreateFeatureLocation(
     if ( record.IsSetStrand() ) {
         location.SetStrand( record.Strand() );
     }
+
     return true;
 }
 
@@ -783,6 +815,22 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
     pLocation = pLocation->Add( 
         pFeature->SetLocation(), CSeq_loc::fSortAndMerge_All, 0 );
     pFeature->SetLocation( *pLocation );
+
+//    if ( x_CdsIsPartial( record ) ) {
+//        CRef<CSeq_feat> pParent;
+//        if ( x_FindParentMrna( record, pParent ) ) {
+//            CSeq_loc& loc = pFeature->SetLocation();
+//            if ( loc.GetStart( eExtreme_Positional ) == 
+//                pParent->GetLocation().GetStart( eExtreme_Positional ) ) {
+//                loc.SetPartialStart( true, eExtreme_Positional );
+//            }
+//            if ( loc.GetStop( eExtreme_Positional ) == 
+//                pParent->GetLocation().GetStop( eExtreme_Positional ) ) {
+//                loc.SetPartialStop( true, eExtreme_Positional );
+//            }
+//        }
+//    }
+
     return true;
 }
 
@@ -849,6 +897,21 @@ bool CGtfReader::x_CreateParentCds(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
+
+//    if ( x_CdsIsPartial( gff ) ) {
+//        CRef<CSeq_feat> pParent;
+//        if ( x_FindParentMrna( gff, pParent ) ) {
+//            CSeq_loc& loc = pFeature->SetLocation();
+//            if ( loc.GetStart( eExtreme_Positional ) == 
+//                pParent->GetLocation().GetStart( eExtreme_Positional ) ) {
+//                loc.SetPartialStart( true, eExtreme_Positional );
+//            }
+//            if ( loc.GetStop( eExtreme_Positional ) == 
+//                pParent->GetLocation().GetStop( eExtreme_Positional ) ) {
+//                loc.SetPartialStop( true, eExtreme_Positional );
+//            }
+//        }
+//    }
 
     m_CdsMap[ s_FeatureKey( gff ) ] = pFeature;
 
@@ -1063,6 +1126,26 @@ bool CGtfReader::x_SkipAttribute(
 
     return false;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_CdsIsPartial(
+    const CGff3Record& record )
+//  ----------------------------------------------------------------------------
+{
+    string strPartial;
+//    if ( record.Type() != "CDS" ) {
+//        return false;
+//    }
+    if ( record.GetAttribute( "partial", strPartial ) ) {
+        return true;
+    }
+    CRef< CSeq_feat > mRna;
+    if ( ! x_FindParentMrna( record, mRna ) ) {
+        return false;
+    }
+    return ( mRna->IsSetPartial() && mRna->GetPartial() );
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

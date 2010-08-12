@@ -182,6 +182,9 @@ protected:
         const CGff3Record&,
         CRef< CSeq_feat >& );
 
+    bool x_CdsIsPartial(
+        const CGff3Record& );
+
     bool x_SkipAttribute(
         const CGff3Record&,
         const string& ) const;
