@@ -126,6 +126,12 @@ const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_s
 //substitues <@lnk_displ@>
 const string kMapviwerImg = "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">";
 
+///dumpgnl
+const string kDownloadUrl = "/blast/dumpgnl.cgi";
+const string kDownloadLink = "<a href=\"<@download_url@>&segs=<@segs@>\"><@lnk_displ@></a>";
+//substitues <@lnk_displ@>
+const string kDownloadImg = "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">";
+
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\

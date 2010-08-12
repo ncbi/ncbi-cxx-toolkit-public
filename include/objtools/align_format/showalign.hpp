@@ -555,8 +555,7 @@ private:
     ///@param alternative_url: user specified url or empty string
     ///@param taxid: taxid
     ///
-    string x_GetDumpgnlLink(const list < CRef < objects::CSeq_id > >&ids, int row,
-                            const string & alternative_url, int taxid) const;
+    string x_GetDumpgnlLink(const list < CRef < objects::CSeq_id > >&ids) const;
     
     ///get feature info
     ///@param feature: where feature info to be filled
