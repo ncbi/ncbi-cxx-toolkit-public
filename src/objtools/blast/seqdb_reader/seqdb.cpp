@@ -156,9 +156,10 @@ CSeqDB::CSeqDB(const string & dbname,
                    "Database name is required.");
     }
     
+    char seq_type = s_GetSeqTypeChar(seqtype);
     
     m_Impl = s_SeqDBInit(dbname,
-                         s_GetSeqTypeChar(seqtype),
+                         seq_type,
                          0,
                          0,
                          true,
