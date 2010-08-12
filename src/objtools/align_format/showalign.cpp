@@ -1915,7 +1915,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 				alnDispParams->linkoutStr += *iter_linkout;
 			}
 			if(seqLength > k_GetSubseqThreshhold){
-				alnDispParams->dumpGnlUrl = x_GetDumpgnlLink(ids, 1, k_DumpGnlUrl, 0);                                
+				alnDispParams->dumpGnlUrl = x_GetDumpgnlLink(ids);                                
 			}
         
 		}
@@ -2100,10 +2100,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                             out << alnDispParams->linkoutStr;
 							if(!alnDispParams->dumpGnlUrl.empty()) {                           
                             
-                                out<<alnDispParams->dumpGnlUrl
-                                   <<"<img border=0 height=16 width=16\
-                                   src=\"images/D.gif\" alt=\"Download subject sequence spanning the \
-                                   HSP\"></a>";
+                                out<<alnDispParams->dumpGnlUrl;
                             }
 						}
                     }
@@ -2745,42 +2742,29 @@ string CDisplaySeqalign::x_GetSegs(int row) const
         map<string, string>::const_iterator iter = m_Segs.find(idString);
         if ( iter != m_Segs.end() ){
             segs = iter->second;
-        }
+        }		
     }
     return segs;
 }
 
-
-string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids, 
-                                          int row,
-                                          const string& alternative_url,
-                                          int taxid) const
+	
+        
+string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids) const
 {
-    string link = NcbiEmptyString;  
-    string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
-    string segs = x_GetSegs(row);
-    string url_with_parameters = NcbiEmptyString;
-
-    if(alternative_url != NcbiEmptyString){ 
-        toolUrl = alternative_url;
-    }
-    url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, taxid, toolUrl,
+	string dowloadUrl;
+    string segs = x_GetSegs(1); //row=1   	
+    string label =  CAlignFormatUtil::GetLabel(FindBestChoice(ids, CSeq_id::WorstRank));	
+    string url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, 0, kDownloadUrl,
                                                          m_DbName,
                                                          m_IsDbNa, m_Rid, m_QueryNumber,
                                                          true);
     if (url_with_parameters != NcbiEmptyString) {
-        
-        link +=  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
-            ("<a " + kClassInfo + " " + "href=\"") : "<a href=\"";
-        
-        link += url_with_parameters; 
-        
-        if (toolUrl.find("dumpgnl.cgi") !=string::npos) {
-            link += "&segs=" + segs;
-        }
-        link += "\">";
+        dowloadUrl = CAlignFormatUtil::MapTemplate(kDownloadLink,"download_url",url_with_parameters);
+		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"segs",segs);
+		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"lnk_displ",kDownloadImg);
+		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"label",label);		
     }
-    return link;
+    return dowloadUrl;
 }
 
 
