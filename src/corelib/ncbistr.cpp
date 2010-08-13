@@ -37,11 +37,13 @@
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistr_util.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/ncbifloat.h>
 #include <memory>
 #include <algorithm>
 #include <errno.h>
 #include <stdio.h>
 #include <locale.h>
+#include <math.h>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Util
@@ -516,36 +518,6 @@ enum ESkipMode {
     eSkipSpacesOnly     // spaces only 
 };
 
-inline
-char* s_SetNumericCLocale(void)
-{
-// disable for now
-#if 1
-    return NULL;
-#else
-    char* prevlocale = strdup(setlocale(LC_NUMERIC,NULL));
-    setlocale(LC_NUMERIC,"C");
-    return prevlocale;
-#endif
-}
-inline
-char* s_RestoreNumericLocale(char* prevlocale)
-{
-    if (prevlocale) {
-        setlocale(LC_NUMERIC,prevlocale);
-        free(prevlocale);
-    }
-    return NULL;
-}
-
-#if 1
-// disable for now
-inline
-bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags)
-{
-    return (ch == '.');
-}
-#else
 bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
 {
     if ( ch != '.' && ch != ',') {
@@ -560,7 +532,6 @@ bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
     struct lconv* conv = localeconv();
     return ch == *(conv->decimal_point);
 }
-#endif
 
 void s_SkipAllowedSymbols(const CTempString& str,
                           SIZE_TYPE&         pos,
@@ -768,6 +739,179 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
     return n;
 }
 
+double NStr::StringToDoublePosix(const char* ptr, char** endptr)
+{
+// skip leading blanks
+    for ( ; isspace(*ptr); ++ptr)
+        ;
+    const char* start = ptr;
+    double ret = 0.;
+    bool sign= false, negate= false, dot= false, expn=false;
+    int digits = 0, dot_position = -1, exponent = 0;
+    unsigned int first=0, second=0, first_exp=1;
+    double second_exp=1., third = 0.;
+    char c;
+// up to exponent
+    for( ; ; ++ptr) {
+        c = *ptr;
+        // sign: should be no digits at this point
+        if (c == '-' || c == '+') {
+            // if there was sign or digits, stop
+            if (sign || digits) {
+                break;
+            }
+            sign = true;
+            negate = c == '-';
+        }
+        // digits: accumulate
+        else if (c >= '0' && c <= '9') {
+            ++digits;
+            if (digits <= 9) {
+                first = first*10 + (c-'0');
+            } else if (digits <= 18) {
+                first_exp *= 10;
+                second = second*10 + (c-'0');
+            } else {
+                second_exp *= 10;
+                third = third*10 + (c-'0');
+            }
+        }
+        // dot
+        else if (c == '.') {
+            // if second dot, stop
+            if (dot) {
+                break;
+            }
+            dot_position = digits;
+            dot = true;
+        }
+        // if exponent, stop
+        else if (c == 'e' || c == 'E') {
+            if (!digits) {
+                break;
+            }
+            expn = true;
+            ++ptr;
+            break;
+        }
+        else {
+            if (!digits) {
+                if (!dot && NStr::strncasecmp(ptr,"nan",3)==0) {
+                    if (endptr) {
+                        *endptr = (char*)(ptr+3);
+                    }
+                    return HUGE_VAL/HUGE_VAL;
+                }
+                if (NStr::strncasecmp(ptr,"inf",3)==0) {
+                    if (endptr) {
+                        *endptr = (char*)(ptr+3);
+                    }
+                    return negate ? -HUGE_VAL : HUGE_VAL;
+                }
+                if (NStr::strncasecmp(ptr,"infinity",8)==0) {
+                    if (endptr) {
+                        *endptr = (char*)(ptr+8);
+                    }
+                    return negate ? -HUGE_VAL : HUGE_VAL;
+                }
+            }
+            break;
+        }
+    }
+    // if no digits, stop now - error
+    if (!digits) {
+        if (endptr) {
+            *endptr = (char*)start;
+        }
+        errno = EINVAL;
+        return 0.;
+    }
+    exponent = dot_position >=0 ? dot_position - digits : 0;
+// read exponent
+    if (expn && *ptr) {
+        int expvalue = 0;
+        bool expsign = false, expnegate= false;
+        int expdigits= 0;
+        for( ; ; ++ptr) {
+            c = *ptr;
+            // sign: should be no digits at this point
+            if (c == '-' || c == '+') {
+                // if there was sign or digits, stop
+                if (expsign || expdigits) {
+                    break;
+                }
+                expsign = true;
+                expnegate = c == '-';
+            }
+            // digits: accumulate
+            else if (c >= '0' && c <= '9') {
+                ++expdigits;
+                expvalue = expvalue*10 + (c-'0');
+            }
+            else {
+                break;
+            }
+        }
+        // if no digits, rollback
+        if (!expdigits) {
+            // rollback sign
+            if (expsign) {
+                --ptr;
+            }
+            // rollback exponent
+            if (expn) {
+                --ptr;
+            }
+        }
+        else {
+            exponent = expnegate ? exponent - expvalue : exponent + expvalue;
+        }
+    }
+    ret = ((double)first * first_exp + second)* second_exp + third;
+    // calculate exponent
+    if ((first || second) && exponent) {
+        double power = 1., power_mult = 10.;
+        unsigned int mask = 1;
+        unsigned int uexp = exponent < 0 ? -exponent : exponent;
+        int count = 1;
+        for (; count < 32 && mask <= uexp; ++count, mask <<= 1) {
+            if (mask & uexp) {
+                switch (mask) {
+                case   0: break;
+                case   1: power *= 10.;   break;
+                case   2: power *= 100.;  break;
+                case   4: power *= 1.e4;  break;
+                case   8: power *= 1.e8;  break;
+                case  16: power *= 1.e16; break;
+                case  32: power *= 1.e32; break;
+                case  64: power *= 1.e64; break;
+                case 128: power *= 1.e128;  power_mult =1.e256;                    break;
+                case 256: power *= 1.e256;  power_mult = power_mult*power_mult;    break;
+                default:  power *= power_mult; power_mult = power_mult*power_mult; break;
+                }
+            }
+        }
+        if (exponent < 0) {
+            ret /= power;
+            if (ret == 0.) {
+                errno = ERANGE;
+            }
+        } else {
+            ret *= power;
+            if (!finite(ret)) {
+                errno = ERANGE;
+            }
+        }
+    }
+    if (negate) {
+        ret = -ret;
+    }
+    // done
+    if (endptr) {
+        *endptr = (char*)ptr;
+    }
+    return ret;
+}
 
 /// @internal
 static double s_StringToDouble(const char* str, size_t size,
@@ -813,23 +957,27 @@ static double s_StringToDouble(const char* str, size_t size,
     char* endptr = 0;
     const char* begptr = str + pos;
 
-    char* prevlocale =
-        (flags & NStr::fDecimalPosix) ? s_SetNumericCLocale() : NULL;
     int the_errno = 0;
     errno = 0;
-    double n = strtod(begptr, &endptr);
+    double n;
+    if (flags & NStr::fDecimalPosix) {
+        n = NStr::StringToDoublePosix(begptr, &endptr);
+    } else {
+        n = strtod(begptr, &endptr);
+    }
     the_errno = errno;
     if (flags & NStr::fDecimalPosixOrLocal) {
         char* endptr2 = 0;
-        prevlocale = s_SetNumericCLocale();
-        double n2 = strtod(begptr, &endptr2);
+        double n2 = NStr::StringToDoublePosix(begptr, &endptr2);
         if (!endptr || (endptr2 && endptr2 > endptr)) {
             n = n2;
             endptr = endptr2;
             the_errno = errno;
         }
     }
-    s_RestoreNumericLocale(prevlocale);
+    if (flags & NStr::fIgnoreErrno) {
+        the_errno = 0;
+    }
     if ( the_errno  ||  !endptr  ||  endptr == begptr ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, false,
                           s_DiffPtr(endptr, begptr) + pos);
@@ -1295,7 +1443,8 @@ void NStr::DoubleToString(string& out_str, double value,
                           int precision, TNumToStringFlags flags)
 {
     char buffer[kMaxDoubleStringSize];
-    if (precision >= 0) {
+    if (precision >= 0 ||
+        ((flags & fDoublePosix) && (isnan(value) || !finite(value)))) {
         SIZE_TYPE n = DoubleToString(value, precision, buffer,
                                      kMaxDoubleStringSize, flags);
         buffer[n] = '\0';
@@ -1313,10 +1462,16 @@ void NStr::DoubleToString(string& out_str, double value,
                 format = "%g";
                 break;
         }
-        char* prevlocale=
-            (flags & fDoublePosix) ? s_SetNumericCLocale() : NULL;
         ::sprintf(buffer, format, value);
-        s_RestoreNumericLocale(prevlocale);
+        if (flags & fDoublePosix) {
+            struct lconv* conv = localeconv();
+            if ('.' != *(conv->decimal_point)) {
+                char* pos = strchr(buffer, *(conv->decimal_point));
+                if (pos) {
+                    *pos = '.';
+                }
+            }
+        }
     }
     out_str = buffer;
 }
@@ -1328,26 +1483,46 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
                                TNumToStringFlags flags)
 {
     char buffer[kMaxDoubleStringSize];
-    if (precision > (unsigned int)kMaxDoublePrecision) {
-        precision = (unsigned int)kMaxDoublePrecision;
+    int n = 0;
+    if ((flags & fDoublePosix) && (isnan(value) || !finite(value))) {
+        if (isnan(value)) {
+            strcpy(buffer, "NAN");
+            n = 4;
+        } else if (value > 0.) {
+            strcpy(buffer, "INF");
+            n = 4;
+        } else {
+            strcpy(buffer, "-INF");
+            n = 5;
+        }
+    } else {
+        if (precision > (unsigned int)kMaxDoublePrecision) {
+            precision = (unsigned int)kMaxDoublePrecision;
+        }
+        const char* format;
+        switch (flags & fDoubleGeneral) {
+            case fDoubleScientific:
+                format = "%.*e";
+                break;
+            case fDoubleGeneral:
+                format = "%.*g";
+                break;
+            case fDoubleFixed: // default
+            default:
+                format = "%.*f";
+                break;
+        }
+        n = ::sprintf(buffer, format, (int)precision, value);
+        if (flags & fDoublePosix) {
+            struct lconv* conv = localeconv();
+            if ('.' != *(conv->decimal_point)) {
+                char* pos = strchr(buffer, *(conv->decimal_point));
+                if (pos) {
+                    *pos = '.';
+                }
+            }
+        }
     }
-    const char* format;
-    switch (flags & fDoubleGeneral) {
-        case fDoubleScientific:
-            format = "%.*e";
-            break;
-        case fDoubleGeneral:
-            format = "%.*g";
-            break;
-        case fDoubleFixed: // default
-        default:
-            format = "%.*f";
-            break;
-    }
-    char* prevlocale=
-        (flags & fDoublePosix) ? s_SetNumericCLocale() : NULL;
-    int n = ::sprintf(buffer, format, (int)precision, value);
-    s_RestoreNumericLocale(prevlocale);
     SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;

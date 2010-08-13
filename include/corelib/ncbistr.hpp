@@ -151,6 +151,7 @@ public:
                                              ///< Can have trailing non-nums
         fDecimalPosix         = (1 << 16),   ///< For decimal point, use C locale
         fDecimalPosixOrLocal  = (1 << 17),   ///< For decimal point, try both C and current locale
+        fIgnoreErrno          = (1 << 18),   ///< Do not throw exception when errno != 0
         fAllStringToNumFlags  = 0x7F00
     };
     typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
@@ -222,6 +223,25 @@ public:
     static unsigned long StringToULong(const CTempString& str,
                                        TStringToNumFlags  flags = 0,
                                        int                base  = 10);
+
+    /// Convert string to double-precision value (analog of strtod function)
+    ///
+    /// @param str
+    ///   Null-terminated string to convert.
+    /// @param endptr
+    ///   Pointer to character that stops scan.
+    /// @return
+    ///   Double-precision value.
+    ///   This function always uses dot as decimal separator.
+    ///   - on overflow, it returns HUGE_VAL and sets errno to ERANGE;
+    ///   - on underflow, it returns 0 and sets errno to ERANGE;
+    ///   - if conversion was impossible, it returns 0 and sets errno to EINVAL.
+    ///   Also, when input string equals (case-insensitive) to
+    ///   - "NAN", the function returns NaN;
+    ///   - "INF" or "INFINITY", the function returns HUGE_VAL;
+    ///   - "-INF" or "-INFINITY", the function returns -HUGE_VAL;
+    static double StringToDoublePosix(const char* str, char** endptr=0);
+
 
     /// Convert string to double.
     ///

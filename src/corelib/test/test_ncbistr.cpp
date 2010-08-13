@@ -34,8 +34,10 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/version.hpp>
 #include <corelib/ncbi_xstr.hpp>
+#include <corelib/ncbifloat.h>
 #include <algorithm>
 #include <locale.h>
+#include <math.h>
 
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -399,6 +401,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // double
         try {
             double value = NStr::StringToDouble(str, flags);
+            double valueP = NStr::StringToDouble(str, flags | NStr::fDecimalPosix);
+            BOOST_CHECK_EQUAL(value, valueP);
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::DoubleToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -412,6 +416,112 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             BOOST_CHECK(!test->IsGoodDouble());
         }
     }
+}
+
+static const char* s_StrToDoublePosix[] = {
+    "123",
+    "123.",
+    "123.456",
+    "-123.456",
+    "-12.45",
+    "0.01",
+    "0.01456000",
+    "2147483649",
+    "-2147483649",
+    "214748364913",
+    "123456789123456789",
+    "123456789123.45",
+    "1234.5678912345",
+    "1.23456789123456789",
+    ".123456789",
+    ".123456789123",
+    "12e12",
+    "123.e2",
+    "123.456e+2",
+    "+123.456e-2",
+    "-123.456e+2",
+    "-123.456e+12",
+    "-123.456e+25",
+    "-123.456e+78",
+    "-123.456e-2",
+    "-123.456e-12",
+    "-123.456e-25",
+//    "-123.456e-78",
+    "-9223372036854775809",
+    "-922337.2036854775809",
+    "-92233720368547.75809",
+    "-9223372036854775808",
+    "-9223372036854775807",
+    "9223372036854775806",
+    "9223372036854775807",
+    "9223372036854775808",
+    "18446744073709551614",
+    "18446744073709551615",
+    "18446744073709551616",
+    "1844674407370955.1616",
+    "1844674407370955.1616",
+    "184467.44073709551616",
+    "1.8446744073709551616",
+    "1.8446744073709551616e5",
+    "1.8446744073709551616e25",
+    "1.8446744073709551616e125",
+    "184467.44073709551616e5",
+    "184467.44073709551616e-5",
+    "184467.44073709551616e25",
+    "184467.44073709551616e-25",
+    "-123.456e+4578",
+    "-123.456e-4578",
+    NULL,
+};
+
+BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
+{
+    NcbiCout << NcbiEndl << "NStr::StringToDoublePosix() tests..." << NcbiEndl;
+    char *endptr;
+    for (int i = 0; s_StrToDoublePosix[i]; ++i) {
+        const char* str = s_StrToDoublePosix[i];
+        NcbiCout << "*** Checking string '" << str << "'***" << NcbiEndl;
+        double valued = strtod(str, &endptr);
+        double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
+        BOOST_CHECK_EQUAL(valued, valuep);
+    }
+    
+    string out;
+    double value;
+    value = NStr::StringToDoublePosix("nan", &endptr);
+    BOOST_CHECK( isnan(value) );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+
+    value = NStr::StringToDoublePosix("inf", &endptr);
+    BOOST_CHECK( !finite(value) && value>0.);
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value>0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("+inf", &endptr);
+    BOOST_CHECK( !finite(value) && value>0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("+infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value>0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("-inf", &endptr);
+    BOOST_CHECK( !finite(value) && value<0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+
+    value = NStr::StringToDoublePosix("-infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value<0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
 }
 
 static const SStringNumericValues s_Str2NumNonPosixTests[] = {
@@ -435,10 +545,29 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
     { "1.1,", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
     { "1.1,", NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
     { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad },
-    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad }
+    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad },
+
+    { "12,34",  DF,                            -1, kBad, kBad, kBad, kBad,  12.34 },
+    { "12,34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34 },
+    { "12.34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34 },
+    { "12.34",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  12.34 },
+    { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234 },
+    { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234 },
+    { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234 },
+    { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234 },
+    { "1234,",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234. },
+    { "1234.",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  1234. },
+    { "1234",   NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234. },
+    { "0,0",    NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0. },
+    { "0,000",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0. },
+    { "0.000",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  0. },
+    { ",,1234", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad },
+    { "1234,,", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad },
+    { "12,,34", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad }
+
 };
 
-#if 0
+#if 1
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
     char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
@@ -448,10 +577,10 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
                 if (!setlocale(LC_NUMERIC,"fr")) {
 		    // cannot find suitable locale, skip the test
                     free(prevlocal);
-		    return;
+		            return;
+		        }
+		    }
 		}
-            }
-        }
     }
     NcbiCout << NcbiEndl << "NStr::StringToDouble() tests...";
 
