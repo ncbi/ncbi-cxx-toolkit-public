@@ -63,6 +63,7 @@ for f in $files ; do
       s%^ *BINCOPY *=.*%BINCOPY = @:%;
       s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
       s%^ *APP_OR_NULL *=.*%APP_OR_NULL = app%;
+      /WRAPPER *=.*ccache/s%CCACHE_PREFIX=%%;
       /WRAPPER *=/s%ccache%%;
       /LDFLAGS *=/s% *-dylib_file *[^ ]*%%g;
       '"$extra_sed"'
