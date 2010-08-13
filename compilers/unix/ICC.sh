@@ -1,9 +1,9 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:   Intel C++ Version 8.0
+#   Compiler:   Intel C++
 #   OS:         Linux
-#   Processor:  Intel X86
+#   Processor:  Intel X86(-64)
 #
 # $Revision$  // Dmitriy Beloslyudtsev, NCBI (beloslyu@ncbi.nlm.nih.gov)
 #############################################################################
@@ -19,17 +19,23 @@ Usage() {
 }
 
 case "`uname -m`" in
-    x86_64 ) bits=64 ;;
-    *      ) bits=32 ;;
+    x86_64 ) bits=64 ; cce=cce ;;
+    *      ) bits=32 ; cce=cc  ;;
 esac
 
+if ls -d /usr/local/intel/[Cc]* >/dev/null 2>&1; then
+    intel_root=/usr/local/intel
+else
+    intel_root=/opt/intel
+fi
+
 case "$1" in
-  8           ) search=/opt/intel/compiler8*/bin                ;;
-  8.0         ) search=/opt/intel/compiler80/bin                ;;
-  [1-9].*.*   ) search=/opt/intel/cc*/$1/bin                    ;;
-  9* | 10*    ) search=/opt/intel/cc*/$1.*/bin                  ;;
-  [1-9][0-9]* ) search=/opt/intel/Compiler/$1*/*/bin/intel$bits ;;
-  *           ) search=                                         ;;
+  8           ) search=$intel_root/compiler8*/bin                ;;
+  8.0         ) search=$intel_root/compiler80/bin                ;;
+  [1-9].*.*   ) search=$intel_root/cc*/$1/bin                    ;;
+  9* | 10*    ) search=$intel_root/cc*/$1.*/bin                  ;;
+  [1-9][0-9]* ) search=$intel_root/Compiler/$1*/*/bin/intel$bits ;;
+  *           ) search=                                          ;;
 esac
 
 if [ -n "$search" ]; then
@@ -52,18 +58,15 @@ ERROR:  cannot find Intel C++ compiler ($CXX)
 HINT:  if you are at NCBI, try to specify the following:
  Linux:
    sh, bash:
-      PATH="/opt/intel/compiler80/bin:\$PATH"
-      LD_LIBRARY_PATH="/opt/intel/compiler80/lib:\$LD_LIBRARY_PATH"
+      PATH="$intel_root/$cce/10.0.21/bin:\$PATH"
+      LD_LIBRARY_PATH="$intel_root/$cce/10.0.21/lib:\$LD_LIBRARY_PATH"
       export PATH LD_LIBRARY_PATH
-      IA32ROOT="/opt/intel/compiler80"
-      export IA32ROOT
-      INTEL_LICENSE_FILE="/opt/intel/licenses/icc.lic"
+      INTEL_LICENSE_FILE="$intel_root/$cce/10.0.21/licenses"
       export INTEL_LICENSE_FILE
    tcsh:
-      setenv PATH            /opt/intel/compiler80/bin:\$PATH
-      setenv LD_LIBRARY_PATH /opt/intel/compiler80/lib:\$LD_LIBRARY_PATH
-      setenv IA32ROOT        /opt/intel/compiler80
-      setenv INTEL_LICENSE_FILE /opt/intel/licenses/icc.lic
+      setenv PATH            $intel_root/$cce/10.0.21/bin:\$PATH
+      setenv LD_LIBRARY_PATH $intel_root/$cce/10.0.21/lib:\$LD_LIBRARY_PATH
+      setenv INTEL_LICENSE_FILE $intel_root/$cce/10.0.21/licenses
 
 EOF
     exit 1
