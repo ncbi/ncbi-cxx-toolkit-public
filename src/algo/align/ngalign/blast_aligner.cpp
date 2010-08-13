@@ -207,7 +207,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
 
-    if(dynamic_cast<CBlastDbSet*>(SubjectSet)) {
+    if(m_Filter  &&  dynamic_cast<CBlastDbSet*>(SubjectSet)) {
         CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
         BlastSubjectSet->SetSoftFiltering(m_Filter);
     }
