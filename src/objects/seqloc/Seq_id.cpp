@@ -922,10 +922,16 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                 &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
-            } else if (digit_pos == 0  &&  main_size == 8
-                       &&  main_size == acc.size()  &&  non_dig_pos >= 6
-                       &&  isalpha(ucdata[7])
-                       /* &&  (main_acc[0] == '1' || main_acc[0] == '2') */) {
+            } else if (digit_pos == 0  &&  main_size == acc.size()
+                       &&  (non_dig_pos == 6  ||  non_dig_pos == 7)
+                       &&  (main_size == non_dig_pos + 1
+                            ||  main_acc[non_dig_pos + 1] == ':'
+                            ||  (isalpha(ucdata[non_dig_pos + 1])
+                                 &&  (main_size == non_dig_pos + 2
+                                      ||  main_acc[non_dig_pos + 2] == ':')))) {
+                // A formal spec appears to be elusive, but all examples in ID
+                // contain six or seven digits followed by one or two letters,
+                // followed in some rare cases by a tag such as :PDB=...
                 return eAcc_prf;
             } else {
                 return eAcc_unknown;

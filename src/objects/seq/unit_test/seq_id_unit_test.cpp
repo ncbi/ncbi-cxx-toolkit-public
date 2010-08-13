@@ -168,16 +168,20 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
 {
     CRef<CSeq_id> id;
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("806162C")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("50086A")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("550086A")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("650771AF")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("0806162C")));
     BOOST_CHECK(id->IsPrf());
     BOOST_CHECK(!id->GetPrf().IsSetAccession());
     BOOST_CHECK_EQUAL(id->GetPrf().GetName(), string("0806162C"));
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("080616AC")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("2015436HX")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1309311A:PDB=1EMD,2CMD")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("650771ABC")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("080616C2")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("00806162C")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162C3")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162CD")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("2015436HIJ")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
