@@ -122,6 +122,7 @@ bool PromoteIfDifferent(const string& present_path,
         CDirEntry(present_path).Remove();
         for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
             SleepSec(1);
+        GetApp().RegisterGeneratedFile( present_path );
         return true;
     }
 
