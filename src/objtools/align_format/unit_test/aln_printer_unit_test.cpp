@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_SUITE(aln_printer)
 
 string PrintAlignment(CMultiAlnPrinter::EFormat format)
 {
-    blast::CBlastScopeSource scope_src(false);
+    blast::CBlastScopeSource scope_src(true);
     CRef<CScope> scope(scope_src.NewScope());
 
     CSeq_align seqalign;
