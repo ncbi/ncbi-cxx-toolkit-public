@@ -2277,6 +2277,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IAA	s	Instituto Antarctico Argentinao, Direccion Nacional del Antartico",
 "IAAA	s	Instituto do Acucar e do Alcool",
 "IABH	s	Al-Bayt University, Biology Department",
+"IABHU<JPN>	scb	Institute for Amphibian Biology, Graduate School of Science, Hiroshima University",
 "IAC	s	Instituto Agronomico de Campinas",
 "IACC	s	Instituto Agronomico de Campinas",
 "IACM	s	Instituto Agronomico",
