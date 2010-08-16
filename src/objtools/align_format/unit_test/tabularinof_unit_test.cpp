@@ -123,7 +123,9 @@ BOOST_AUTO_TEST_CASE(QuerySubjectScoreOutput) {
 
     string output = CNcbiOstrstreamToString(output_stream);
 
-    BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1786181|gb|AE000111.1|AE000111	1.957e+04") != NPOS);
+    // First result should be "gi|1786181|gb|AE000111.1|AE000111        gi|1786181|gb|AE000111.1|AE000111       1.957e+04".
+    // but some windows binaires print the bit score as 1.957e+004.  Hence, we drop the exponent.
+    BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1786181|gb|AE000111.1|AE000111	1.957e+") != NPOS);
     BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1788899|gb|AE000341.1|AE000341	91.6") != NPOS);
 }
 
@@ -154,7 +156,9 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentScoreOutput) {
 
     string output = CNcbiOstrstreamToString(output_stream);
 
-    BOOST_REQUIRE(output.find("AE000111	AE000111	100.00	1.957e+04") != NPOS);
+    // First result should be "gi|1786181|gb|AE000111.1|AE000111        gi|1786181|gb|AE000111.1|AE000111       1.957e+04".
+    // but some windows binaires print the bit score as 1.957e+004.  Hence, we drop the exponent.
+    BOOST_REQUIRE(output.find("AE000111	AE000111	100.00	1.957e+") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000310	94.59	56.5") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000509	80.51	76.8") != NPOS);
 }
