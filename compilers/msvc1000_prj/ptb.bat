@@ -238,3 +238,17 @@ if "%PTB_RESULT%"=="1" (
   echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
   echo ******************************************************************************
 )
+
+echo ******************************************************************************
+echo ******************************************************************************
+echo ==============  Generating objects source code.                 ==============
+echo ==============  DO NOT RELOAD THE SOLUTION NOW!                 ============== 
+echo ******************************************************************************
+echo %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project "_generate_all_objects.dataspec"
+%DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project "_generate_all_objects.dataspec"
+echo -
+echo -
+echo ******************************************************************************
+echo ==============  It is now safe to reload the solution:          ==============
+echo ==============  Please, close it and open again                 ============== 
+echo ******************************************************************************
