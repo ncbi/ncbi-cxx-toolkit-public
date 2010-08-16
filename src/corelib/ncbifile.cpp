@@ -4577,6 +4577,24 @@ bool CMemoryFileMap::UnmapAll(void)
 }
 
 
+Int8 CMemoryFileMap::GetFileSize(void) const
+{
+    // On Unix -- mapping handle is the same as file handle,
+    // use it to get file size if file is already opened.
+    // On Windows -- file handle is already closed, use file name. 
+    #if defined(NCBI_OS_UNIX)
+        if ( m_Handle  &&  (m_Handle->hMap != kInvalidHandle) ) {
+            struct stat st;
+            if ( fstat(m_Handle->hMap, &st) != 0 ) {
+                return -1;
+            }
+            return st.st_size;
+        }
+    #endif
+    return CFile(m_FileName).GetLength();
+}
+
+
 void CMemoryFileMap::x_Open(void)
 {
     m_Handle = new SMemoryFileHandle();
