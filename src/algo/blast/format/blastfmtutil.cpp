@@ -181,7 +181,10 @@ CBlastFormatUtil::PrintAsciiPssm
     const SIZE_TYPE kQueryLength = pssm_with_params.GetPssm().GetQueryLength();
     _ASSERT(kQueryLength == 
             (SIZE_TYPE)pssm_with_params.GetPssm().GetNumColumns());
-    const double kPseudoCount = pssm_with_params.GetParams().GetPseudocount();
+    const double kPseudoCount = 
+        (pssm_with_params.CanGetParams() &&
+         pssm_with_params.GetParams().CanGetPseudocount()) 
+        ? pssm_with_params.GetParams().GetPseudocount() : 0.0;
     auto_ptr< TNcbiMatrixInt > pssm
         (blast::CScorematPssmConverter::GetScores(pssm_with_params));
     auto_ptr< TNcbiMatrixDouble > weighted_res_freqs
