@@ -25,7 +25,7 @@
  *
  * Author: Vladimir Ivanov, Clifford Clausen
  * File Description:
- *         C++ wrappers for Perl Compatible Regular Expression (pcre) library
+ *     C++ wrappers for Perl Compatible Regular Expression (pcre) library
  *
  */
 
@@ -101,23 +101,16 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
 
 
 CRegexp::CRegexp(const string& pattern, TCompile flags)
-    : m_NumFound(0)
+    : m_PReg(NULL), m_Extra(NULL), m_NumFound(0)
 {
-    const char *err;
-    int err_offset;
-    int x_flags = s_GetRealCompileFlags(flags);
-
-    m_PReg = pcre_compile(pattern.c_str(), x_flags, &err, &err_offset, NULL);
-    if (m_PReg == NULL) {
-        NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
-                   pattern + "' failed: " + err);
-    }
+    Set(pattern, flags);
 }
 
 
 CRegexp::~CRegexp()
 {
     (*pcre_free)(m_PReg);
+    (*pcre_free)(m_Extra);
 }
 
 
@@ -135,6 +128,7 @@ void CRegexp::Set(const string& pattern, TCompile flags)
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    pattern + "' failed: " + err);
     }
+    m_Extra = pcre_study((pcre*)m_PReg, 0, &err);
 }
 
 
@@ -167,7 +161,7 @@ string CRegexp::GetMatch(
     bool          noreturn)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.data(),
+    m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
                            (int)str.length(), (int)offset,
                            x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
@@ -182,8 +176,8 @@ string CRegexp::GetMatch(
 bool CRegexp::IsMatch(const string& str, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.data(),
-                           (int)str.length(),  0, x_flags, m_Results,
+    m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
+                           (int)str.length(), 0, x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
     return m_NumFound > 0;
 }

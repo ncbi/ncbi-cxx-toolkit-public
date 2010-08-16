@@ -277,8 +277,9 @@ private:
     CRegexp(const CRegexp &);
     void operator= (const CRegexp &);
 
-    /// Pointer to compiled PCRE pattern.
-    void*  m_PReg;
+    void*  m_PReg;   /// Pointer to compiled PCRE pattern.
+    void*  m_Extra;  /// Pointer to extra structure used for pattern study.
+
 
     /// Array of locations of patterns/subpatterns resulting from
     /// the last call to GetMatch(). Also contains 1/3 extra space used
