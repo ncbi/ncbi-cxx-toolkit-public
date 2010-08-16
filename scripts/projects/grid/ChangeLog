@@ -1,3 +1,23 @@
+2010-08-16 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* ncfetch.cgi: Now can use password-protected NetCache API.
+	* cgi2rcgi: Affinity token for NetSchedule can be specified.
+	* netcache_control: New parameters -reinit, -reconf, -auth.
+	* cgi2rcgi: Custom (error-specific) HTML and header templates.
+
+	* cgi2rcgi: HTTP headers to disable caching by proxy servers.
+	* remote_app, remote_cgi: tmp_dir now allows substitutions.
+	* all worker nodes: New retry logic to reconnect to NS/NC.
+
+	* remote_app: Now survives "Not all data sent to child process".
+	* all worker nodes: No "basic_ios::clear" error anymore.
+	* cgi2rcgi: A bug associated with donot_parse_content was fixed.
+	* remote_app: Job is now failed if unable to send results to NC.
+	* remote_app, remote_cgi: Proper handling of job cancellation.
+	* cgi2rcgi: No excessive polling of NC while waiting for results.
+
+	* netcache_control: Commands -dropstat and -log were removed.
+
 2009-07-17 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* remote_app, remote_cgi: Timeouts are now treated as failures.
