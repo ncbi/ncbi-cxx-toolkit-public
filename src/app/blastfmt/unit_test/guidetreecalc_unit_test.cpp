@@ -38,6 +38,10 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <objtools/readers/fasta.hpp>
+#include <objtools/readers/reader_exception.hpp>
+
+#include <serial/iterator.hpp>
 #include <serial/serial.hpp>    
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -51,8 +55,9 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-// Create scope
-static CRef<CScope> s_CreateScope(void);
+
+// Create scope with local sequences read from fasta file
+static CRef<CScope> s_CreateScope(const string& filename);
 
 // Traverse tree and check that each node has distance, number of leaves is
 // correct and leaves have correct labels.
@@ -84,13 +89,13 @@ BOOST_AUTO_TEST_SUITE(guide_tree_calc)
 // Test tree computation with protein Seq-align as input
 BOOST_AUTO_TEST_CASE(TestProteinSeqAlign)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
-    calc.SetMaxDivergence(0.92);
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestCalc(seq_align, calc);
@@ -100,8 +105,9 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlign)
 // Test tree computation with protein Seq-align-set as input
 BOOST_AUTO_TEST_CASE(TestProteinSeqAlignSet)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqannot_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqannot_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_annot seq_annot;
     istr >> MSerial_AsnText >> seq_annot;
 
@@ -118,8 +124,9 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlignSet)
 // Test tree computation with nucleotide Seq-align as input
 BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlign)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_nucleotide.asn");
+    CRef<CScope> scope = s_CreateScope("data/nucleotide.fa");
+    CNcbiIfstream istr("data/seqalign_nucleotide_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
@@ -133,9 +140,10 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlign)
 // Test tree computation with nucleotide Seq-align-set as input
 BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlignSet)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqannot_nucleotide.asn");
-    CSeq_annot seq_annot;
+    CRef<CScope> scope = s_CreateScope("data/nucleotide.fa");
+    CNcbiIfstream istr("data/seqannot_nucleotide_local.asn");
+    BOOST_REQUIRE(istr);
+    CSeq_annot seq_annot;    
     istr >> MSerial_AsnText >> seq_annot;
 
     CSeq_align_set seq_align_set;
@@ -152,8 +160,8 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlignSet)
 // Test that exceptions are thrown for invalid input
 BOOST_AUTO_TEST_CASE(TestInvalidInput)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
@@ -177,7 +185,7 @@ BOOST_AUTO_TEST_CASE(TestInvalidInput)
     BOOST_CHECK_THROW(calc.CalcBioTree(), CGuideTreeCalcException);
 
     // If no subset of input sequences satisfies max divergence condition
-    calc.SetMaxDivergence(0.05);
+    calc.SetMaxDivergence(0.001);
     BOOST_CHECK(!calc.CalcBioTree());
     BOOST_CHECK(calc.GetMessages().size() > 0);
 }
@@ -186,14 +194,14 @@ BOOST_AUTO_TEST_CASE(TestInvalidInput)
 // Test tree computation using Grishin distance
 BOOST_AUTO_TEST_CASE(TestGrishinDistance)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
     CSeq_align seq_align;
+    BOOST_REQUIRE(istr);
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
     calc.SetDistMethod(CGuideTreeCalc::eGrishin);
-    calc.SetMaxDivergence(0.92);
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
@@ -203,8 +211,9 @@ BOOST_AUTO_TEST_CASE(TestGrishinDistance)
 // Test tree computation using Kimura distance
 BOOST_AUTO_TEST_CASE(TestKimuraDistance)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqannot_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqannot_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_annot seq_annot;
     istr >> MSerial_AsnText >> seq_annot;
 
@@ -222,14 +231,14 @@ BOOST_AUTO_TEST_CASE(TestKimuraDistance)
 // Test tree computation using Grishin General distance
 BOOST_AUTO_TEST_CASE(TestGrishinGeneralDistance)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
     calc.SetDistMethod(CGuideTreeCalc::eGrishinGeneral);
-    calc.SetMaxDivergence(0.92);
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
@@ -239,8 +248,8 @@ BOOST_AUTO_TEST_CASE(TestGrishinGeneralDistance)
 // Test tree computation using Jukes-Cantor distance
 BOOST_AUTO_TEST_CASE(TestJukesCantorDistance)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_nucleotide.asn");
+    CRef<CScope> scope = s_CreateScope("data/nucleotide.fa");
+    CNcbiIfstream istr("data/seqalign_nucleotide_local.asn");
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
@@ -255,14 +264,17 @@ BOOST_AUTO_TEST_CASE(TestJukesCantorDistance)
 // Test tree computation using Poisson distance
 BOOST_AUTO_TEST_CASE(TestPoissonDistance)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_nucleotide.asn");
+    CRef<CScope> scope = s_CreateScope("data/nucleotide.fa");
+    CNcbiIfstream istr("data/seqalign_nucleotide_local.asn");
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
     calc.SetDistMethod(CGuideTreeCalc::ePoisson);
     BOOST_REQUIRE(calc.CalcBioTree());
+
+    CNcbiOfstream ostr("tree.asn");
+    ostr << MSerial_AsnText << *calc.GetSerialTree();
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
 }
@@ -271,14 +283,14 @@ BOOST_AUTO_TEST_CASE(TestPoissonDistance)
 // Test tree computation using Neighbor-Joining tree
 BOOST_AUTO_TEST_CASE(TestNJTree)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
     calc.SetTreeMethod(CGuideTreeCalc::eNJ);
-    calc.SetMaxDivergence(0.92);
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
@@ -288,14 +300,14 @@ BOOST_AUTO_TEST_CASE(TestNJTree)
 // Test tree computation using Fast Minimum Evolution tree
 BOOST_AUTO_TEST_CASE(TestFastMETree)
 {
-    CRef<CScope> scope = s_CreateScope();
-    CNcbiIfstream istr("data/seqalign_protein.asn");
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    CNcbiIfstream istr("data/seqalign_protein_local.asn");
+    BOOST_REQUIRE(istr);
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
     CGuideTreeCalc calc(seq_align, scope);
     calc.SetTreeMethod(CGuideTreeCalc::eFastME);
-    calc.SetMaxDivergence(0.92);
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
@@ -304,15 +316,36 @@ BOOST_AUTO_TEST_CASE(TestFastMETree)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-// Create scope
-static CRef<CScope> s_CreateScope(void)
+static CRef<CScope> s_CreateScope(const string& filename)
 {
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*object_manager, "ID2");
-    CRef<CScope> scope(new CScope(*object_manager));
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*objmgr));
     scope->AddDefaults();
+
+    CNcbiIfstream instream(filename.c_str());
+    BOOST_REQUIRE(instream);
+
+    CStreamLineReader line_reader(instream);
+    CFastaReader fasta_reader(line_reader, 
+                              CFastaReader::fAssumeProt |
+                              CFastaReader::fForceType |
+                              CFastaReader::fNoParseID);
+
+    while (!line_reader.AtEOF()) {
+
+        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
+
+        if (entry == 0) {
+            NCBI_THROW(CObjReaderException, eInvalid, 
+                        "Could not retrieve seq entry");
+        }
+        scope->AddTopLevelSeqEntry(*entry);
+        CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
+    }
+
     return scope;
 }
+
 
 // Traverse tree and check that each node has distance, number of leaves is
 // correct and leaves have correct labels.
