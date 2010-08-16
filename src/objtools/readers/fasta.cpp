@@ -427,6 +427,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
             ds.SetLens().push_back(range_end + 1 - range_start);
         }
         m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(sa);
+        _ASSERT( !GetIDs().front()->IsLocal()
+                ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
         m_BestID = GetIDs().front();
         m_ExpectedEnd = range_end - range_start;
 #else
@@ -526,7 +528,7 @@ void CFastaReader::ParseTitle(const TStr& s)
 bool CFastaReader::IsValidLocalID(const string& s)
 {
     static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#";
     return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
 }
 
