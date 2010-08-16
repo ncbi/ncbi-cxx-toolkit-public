@@ -3558,12 +3558,6 @@ size_t CMemoryFileMap::GetSize(void* ptr) const
 }
 
 inline
-Int8 CMemoryFileMap::GetFileSize(void) const
-{
-    return CFile(m_FileName).GetLength();
-}
-
-inline
 bool CMemoryFileMap::Flush(void* ptr) const
 {
     return GetMemoryFileSegment(ptr)->Flush();
