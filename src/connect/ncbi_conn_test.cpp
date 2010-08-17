@@ -71,7 +71,9 @@ CConnTest::CConnTest(const STimeout* timeout,
                      CNcbiOstream* out, SIZE_TYPE linelen)
     : m_Linelen(linelen), m_Out(out),
       m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
-      m_FWProxy(false), m_Forced(false), m_End(false)
+      m_FWProxy(false),
+      m_FwdStatus(eIO_NotSupported), m_FwdFallbackStatus(eIO_NotSupported),
+      m_End(false)
 {
     memset(&m_TimeoutValue, 0, sizeof(m_TimeoutValue));
     if (timeout) {
@@ -97,7 +99,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
 
     // Reset everything
     m_HttpProxy = m_Stateless = m_Firewall
-        = m_FWProxy = m_Forced = m_End = false;
+        = m_FWProxy = m_End = false;
     m_Fwd.clear();
     if (reason)
         reason->clear();
@@ -106,8 +108,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
     int s = eHttp;
     EIO_Status status;
     do {
-        if ((status = (this->*check[s])(reason)) != eIO_Success
-            &&  (EStage(s) != eFirewallConnections  ||  !m_Forced)) {
+        if ((status = (this->*check[s])(reason)) != eIO_Success) {
             stage = EStage(s);
             break;
         }
@@ -305,7 +306,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
     PreCheck(eStatelessService, 0/*main*/,
              "Checking whether NCBI services operational");
-    
+
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info,
                             0/*params*/, m_Timeout);
     svc << kTest << NcbiEndl;
@@ -408,6 +409,9 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         "In order to configure that correctly, please have your network"
         " administrator read the following (if they have not yet done so): "
         NCBI_FW_URL "\n"
+        "There are also fallback connection ports 22 and 443 at "
+        "130.14.29.112. They will be tried if connections to the ports in "
+        "the described above range failed"
     };
     string temp = m_Firewall ? "FIREWALL" : "RELAY (legacy)";
     temp += " connection mode has been detected for stateful services\n";
@@ -421,41 +425,30 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     CConn_HttpStream script("http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
                             "/fwd_check.cgi", net_info, user_header,
                             0/*flags*/, m_Timeout);
-    script << "selftest" << NcbiEndl;
-    char line[256];
-    while (script.getline(line, sizeof(line))) {
-        string hostport, state;
-        if (!NStr::SplitInTwo(line, "\t", hostport, state))
-            continue;
-        CFWConnPoint cp;
-        if (NStr::CompareNocase(state, 0, 2, "OK") == 0)
-            cp.okay = true;
-        else if (NStr::CompareNocase(state, 0, 4, "FAIL") == 0)
-            cp.okay = false;
-        else
-            continue;
-        if (CSocketAPI::StringToHostPort(hostport, &cp.host, &cp.port) == NPOS)
-            continue;
-        m_Fwd.push_back(cp);
-    }
-    EIO_Status status = ConnStatus
+
+    x_ObtainFirewallSettings(script);
+
+    // Check the conventional group
+    m_FwdStatus = ConnStatus
         ((script.fail()  &&  !script.eof())  ||  m_Fwd.empty(), script);
 
-    if (status == eIO_Timeout) {
+    if (m_FwdStatus == eIO_Timeout) {
         temp = x_TimeoutMsg();
         if (m_Timeout > kTimeout)
             temp += "You may want to contact " NCBI_HELP_DESK;
-    } else if (status == eIO_Success) {
-        temp = "OK: " + NStr::UInt8ToString(m_Fwd.size()) + " port";
+    } else if (m_FwdStatus == eIO_Success) {
+        temp = "OK: " +
+               NStr::UInt8ToString(m_Fwd.size()) +
+               " port";
         temp += &"s"[m_Fwd.size() == 1];
-        stable_sort(m_Fwd.begin(), m_Fwd.end()); 
+        stable_sort(m_Fwd.begin(), m_Fwd.end());
     } else
         temp = "Please contact " NCBI_HELP_DESK;
-    
-    PostCheck(eFirewallConnPoints, 1/*sub*/, status, temp);
+
+    PostCheck(eFirewallConnPoints, 1/*sub*/, m_FwdStatus, temp);
 
     bool firewall = false;
-    if (status == eIO_Success) {
+    if (m_FwdStatus == eIO_Success) {
         PreCheck(eFirewallConnPoints, 2/*sub*/,
                  "Verifying configuration for consistency");
 
@@ -465,35 +458,72 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             if (!cp->okay) {
                 temp  = CSocketAPI::HostPortToString(cp->host, cp->port);
                 temp += " is not operational, please contact " NCBI_HELP_DESK;
-                status = eIO_NotSupported;
+                m_FwdStatus = eIO_NotSupported;
                 break;
             }
         }
-        if (status == eIO_Success) {
+        if (m_FwdStatus == eIO_Success) {
             if (m_Firewall != firewall) {
                 temp = "Configuration mismatch: firewall ";
                 temp += firewall ? "wrongly" : "not";
                 temp += " acknowledged, please contact " NCBI_HELP_DESK;
-                status = eIO_NotSupported;
+                m_FwdStatus = eIO_NotSupported;
             } else
                 temp.resize(2);
         }
 
-        PostCheck(eFirewallConnPoints, 2/*sub*/, status, temp);
+        PostCheck(eFirewallConnPoints, 2/*sub*/, m_FwdStatus, temp);
+    }
+
+    // Check the fallback group if necessary
+    if (!m_FwdFallback.empty()) {
+        PreCheck(eFirewallConnPoints, 3/*sub*/,
+                 "Obtaining fallback ports");
+        m_FwdFallbackStatus = ConnStatus(script.fail()  &&  !script.eof(),
+                                         script);
+        if (m_FwdFallbackStatus == eIO_Timeout) {
+            temp = x_TimeoutMsg();
+            if (m_Timeout > kTimeout)
+                temp += "You may want to contact " NCBI_HELP_DESK;
+        } else if (m_FwdFallbackStatus == eIO_Success) {
+            temp = "OK: " +
+                NStr::UInt8ToString(m_FwdFallback.size()) +
+                " port";
+            temp += &"s"[m_Fwd.size() == 1];
+            stable_sort(m_FwdFallback.begin(), m_FwdFallback.end());
+        } else
+            temp = "Please contact " NCBI_HELP_DESK;
+        PostCheck(eFirewallConnPoints, 3/*sub*/, m_FwdFallbackStatus, temp);
+
+        if (m_FwdFallbackStatus == eIO_Success) {
+            PreCheck(eFirewallConnPoints, 4/*sub*/,
+                     "Verifying fallback ports operational status");
+            ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_FwdFallback) {
+                if (!cp->okay) {
+                    temp = CSocketAPI::HostPortToString(cp->host, cp->port);
+                    temp += " is not operational, please contact "
+                            NCBI_HELP_DESK;
+                    m_FwdFallbackStatus = eIO_NotSupported;
+                    break;
+                }
+            }
+            if (m_FwdFallbackStatus == eIO_Success)
+                temp = "OK";
+            PostCheck(eFirewallConnPoints, 4/*sub*/, m_FwdFallbackStatus, temp);
+        }
     }
 
     ConnNetInfo_Destroy(net_info);
     if (reason)
         reason->swap(temp);
-    return status;
+    if (m_FwdStatus == eIO_Success || m_FwdFallbackStatus == eIO_Success)
+        return eIO_Success;
+    return m_FwdStatus;
 }
 
 
 EIO_Status CConnTest::CheckFWConnections(string* reason)
 {
-    const char kFWSign[] =
-        "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
-
     TSOCK_Flags flags;
     char val[MAXHOSTNAMELEN + 1];
     ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
@@ -509,108 +539,96 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     if (*val)
         m_FWProxy = true;
 
-    PreCheck(eFirewallConnections, 0/*main*/,
-             "Checking individual connection points\n"
-             "NOTE that even though that not the entire port range can"
-             " be currently utilized and checked, in order for NCBI services"
-             " to work correctly, your network must support every port"
-             " in the range as documented above\n");
+    if (m_FwdStatus == eIO_Success)
+    {
+        PreCheck(eFirewallConnections, 0/*main*/,
+                 "Checking individual connection points\n"
+                 "NOTE that even though that not the entire port range can"
+                 " be currently utilized and checked, in order for NCBI services"
+                 " to work correctly, your network must support every port"
+                 " in the range as documented above\n");
 
-    unsigned int n = 0;
-    _ASSERT(m_Fwd.size());
-    EIO_Status status = eIO_Success/*avoid a warning*/;
-    NON_CONST_ITERATE(vector<CFWConnPoint>, cp, m_Fwd) {
-        _ASSERT(cp->okay);
-        PreCheck(eFirewallConnections, ++n,
-                 "Checking connectivity at "
-                 + CSocketAPI::HostPortToString(cp->host, cp->port));
+        unsigned int n = 0;
+        _ASSERT(m_Fwd.size());
+        NON_CONST_ITERATE(vector<CFWConnPoint>, cp, m_Fwd) {
+            _ASSERT(cp->okay);
+            PreCheck(eFirewallConnections, ++n,
+                     "Checking connectivity at "
+                     + CSocketAPI::HostPortToString(cp->host, cp->port));
 
-        CConn_SocketStream fw(m_FWProxy ? val : CSocketAPI::ntoa(cp->host),
-                              cp->port, "\r\n"/*data*/, 2/*size*/,
-                              flags, 1/*attempts*/, m_Timeout);
-        char line[sizeof(kFWSign) + 2/*\r+EOS*/];
-        if (!fw.getline(line, sizeof(line)))
-            *line = '\0';
-        status = ConnStatus
-            (NStr::strncasecmp(line, kFWSign, sizeof(kFWSign) - 1) != 0, fw);
-        string temp;
-        if (status != eIO_Success) {
-            cp->okay = false;
-            if (status == eIO_Timeout)
-                temp += x_TimeoutMsg();
-            if (m_FWProxy) {
-                temp += "Non-transparent proxy server '";
-                temp += val;
-                temp += "' may not be forwarding connections properly,"
-                    " please check with your network administrator that the"
-                    " proxy has been configured correctly: " NCBI_FW_URL "\n";
-                *line = '\0';
+            string temp;
+            m_FwdStatus = x_CheckFWConnection(*cp, val, flags, temp);
+
+            PostCheck(eFirewallConnections, n, m_FwdStatus, temp);
+
+            if (m_FwdStatus != eIO_Success) {
+                if (reason)
+                    reason->swap(temp);
+                break;
             }
-            if (*line) {
-                temp += "There is an unknown server responding at this"
-                    " connection point; please contact " NCBI_HELP_DESK "\n";
-            } else {
-                if (m_Firewall) {
-                    temp += "The network port required for this connection"
-                        " to succeed is being blocked at your firewall;"
-                        " see your network administrator and have them read"
-                        " the following: " NCBI_FW_URL "\n";
-                } else {
-                    temp += "The network port required for this connection"
-                        " to succeed is being blocked at your firewall;"
-                        " try setting [CONN]FIREWALL=1 in your configuration"
-                        " file to use more narrow port range\n";
-                }
-                if (!m_Stateless) {
-                    temp +=  "Not all NCBI stateful services require to work"
-                        " over dedicated (persistent) connections;  some can"
-                        " work (at the cost of degraded performance) over a"
-                        " stateless carrier such as HTTP;  try setting"
-                        " [CONN]STATELESS=1 in your configuration\n";
-                }
-            }
-        } else
-            temp = "OK";
-
-        PostCheck(eFirewallConnections, n, status, temp);
-
-        if (status != eIO_Success) {
-            if (reason)
-                reason->swap(temp);
-            break;
         }
+
+        string summary;
+        if (m_FwdStatus != eIO_Success)
+            summary = "Firewall port check FAILED";
+        else
+            summary = "All firewall ports checked OK";
+
+        PostCheck(eFirewallConnections, 0/*main*/, m_FwdStatus, summary);
     }
 
-    string summary;
-    if (status != eIO_Success) {
-        summary = "Firewall port check FAILED";
-        if (!m_Stateless) {
-            summary += ", falling back to STATELESS mode"
-                "\nWARNING: Not all services may remain operational";
-            m_Forced = true;
-        }
-    } else
-        summary = "All firewall ports checked OK";
+    if (m_FwdFallbackStatus == eIO_Success) {
+        PreCheck(eFirewallConnections, 0/*main*/,
+                 "Checking individual fallback connection points\n"
+                 "NOTE that fallback connection points will be used "
+                 "only if the standard connection points do not work\n");
+        unsigned int n = 0;
+        _ASSERT(m_FwdFallback.size());
+        NON_CONST_ITERATE(vector<CFWConnPoint>, cp, m_FwdFallback) {
+            PreCheck(eFirewallConnections, ++n,
+                     "Checking connectivity at "
+                     + CSocketAPI::HostPortToString(cp->host, cp->port));
+            string temp;
+            m_FwdFallbackStatus = x_CheckFWConnection(*cp, val, flags, temp);
+            PostCheck(eFirewallConnections, n, m_FwdFallbackStatus, temp);
 
-    PostCheck(eFirewallConnections, 0/*main*/, status, summary);
-    return status;
+            if (m_FwdFallbackStatus != eIO_Success) {
+                if (reason)
+                    reason->swap(temp);
+                break;
+            }
+        }
+
+        string summary;
+        if (m_FwdFallbackStatus != eIO_Success)
+            summary = "Fallback firewall port check FAILED";
+        else
+            summary = "All fallback firewall ports checked OK";
+
+        PostCheck(eFirewallConnections, 0/*main*/, m_FwdFallbackStatus, summary);
+    }
+
+    if (m_FwdStatus == eIO_Success || m_FwdFallbackStatus == eIO_Success)
+        return eIO_Success;
+    return m_FwdStatus;
 }
 
 
 EIO_Status CConnTest::StatefulOkay(string* reason)
 {
+    _ASSERT(m_FwdStatus == eIO_Success || m_FwdFallbackStatus == eIO_Success);
+
     static const char kId2Init[] =
         "0\2000\200\242\200\240\200\5\0\0\0\0\0\0\0\0\0";
     static const char kId2[] = "ID2";
     char ry[80];
 
     SConnNetInfo* net_info = ConnNetInfo_Create(kId2);
-    TSERV_Type type = m_Forced ? fSERV_Stateless : fSERV_Any;
 
     PreCheck(eStatefulService, 0/*main*/,
              "Checking reachability of a stateful service");
 
-    CConn_ServiceStream id2(kId2, type, net_info, 0/*params*/, m_Timeout);
+    CConn_ServiceStream id2(kId2, fSERV_Any, net_info, 0/*params*/, m_Timeout);
 
     streamsize n = 0;
     bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()
@@ -651,7 +669,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 if (!iter  ||  !SERV_GetNextInfo(iter)) {
                     temp += "The service is currently unavailable;"
                         " you may want top contact " NCBI_HELP_DESK "\n";
-                } else if (m_Forced) {
+                } else if (m_FwdStatus != eIO_Success) {
                     temp += "The most likely reason for the failure is that"
                         " your ";
                     temp += m_FWProxy ? "proxy" : "firewall";
@@ -780,6 +798,93 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
     if (reason)
         reason->clear();
     return eIO_NotSupported;
+}
+
+
+EIO_Status CConnTest::x_CheckFWConnection(CFWConnPoint& cp,
+                                          char*         val,
+                                          TSOCK_Flags   flags,
+                                          string&       reason)
+{
+    const char kFWSign[] =
+        "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
+
+    CConn_SocketStream fw(m_FWProxy ? val : CSocketAPI::ntoa(cp.host),
+                          cp.port, "\r\n"/*data*/, 2/*size*/,
+                          flags, 1/*attempts*/, m_Timeout);
+    char line[sizeof(kFWSign) + 2/*\r+EOS*/];
+    if (!fw.getline(line, sizeof(line)))
+        *line = '\0';
+    EIO_Status status = ConnStatus
+        (NStr::strncasecmp(line, kFWSign, sizeof(kFWSign) - 1) != 0, fw);
+    if (status != eIO_Success) {
+        cp.okay = false;
+        if (status == eIO_Timeout)
+            reason += x_TimeoutMsg();
+        if (m_FWProxy) {
+            reason += "Non-transparent proxy server '";
+            reason += val;
+            reason += "' may not be forwarding connections properly,"
+                      " please check with your network administrator that the"
+                      " proxy has been configured correctly: " NCBI_FW_URL "\n";
+            *line = '\0';
+        }
+        if (*line) {
+            reason += "There is an unknown server responding at this"
+                      " connection point; please contact " NCBI_HELP_DESK "\n";
+        } else {
+            if (m_Firewall) {
+                reason += "The network port required for this connection"
+                          " to succeed is being blocked at your firewall;"
+                          " see your network administrator and have them read"
+                          " the following: " NCBI_FW_URL "\n";
+            } else {
+                reason += "The network port required for this connection"
+                          " to succeed is being blocked at your firewall;"
+                          " try setting [CONN]FIREWALL=1 in your configuration"
+                          " file to use more narrow port range\n";
+            }
+            if (!m_Stateless) {
+                reason +=  "Not all NCBI stateful services require to work"
+                           " over dedicated (persistent) connections;  some can"
+                           " work (at the cost of degraded performance) over a"
+                           " stateless carrier such as HTTP;  try setting"
+                           " [CONN]STATELESS=1 in your configuration\n";
+            }
+        }
+    } else
+        reason = "OK";
+
+    return status;
+}
+
+
+void CConnTest::x_ObtainFirewallSettings(CConn_HttpStream& script)
+{
+    script << "selftest" << NcbiEndl;
+    char line[256];
+    while (script.getline(line, sizeof(line))) {
+        string hostport, state;
+        if (!NStr::SplitInTwo(line, "\t", hostport, state))
+            continue;
+        if (!m_Firewall && NStr::CompareNocase(state, 0, 3, "FB-") == 0)
+            continue;
+        CFWConnPoint cp;
+        if (NStr::CompareNocase(state, 0, 2, "OK") == 0 ||
+            NStr::CompareNocase(state, 0, 5, "FB-OK") == 0)
+            cp.okay = true;
+        else if (NStr::CompareNocase(state, 0, 4, "FAIL") == 0 ||
+                 NStr::CompareNocase(state, 0, 7, "FB-FAIL") == 0)
+            cp.okay = false;
+        else
+            continue;
+        if (CSocketAPI::StringToHostPort(hostport, &cp.host, &cp.port) == NPOS)
+            continue;
+        if (NStr::CompareNocase(state, 0, 3, "FB-") == 0)
+            m_FwdFallback.push_back(cp);
+        else
+            m_Fwd.push_back(cp);
+    }
 }
 
 
