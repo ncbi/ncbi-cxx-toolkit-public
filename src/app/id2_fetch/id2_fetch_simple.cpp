@@ -604,7 +604,7 @@ namespace {
                           *new CCompressionIStream(stream,
                                                    new CZipStreamDecompressor,
                                                    CCompressionIStream::fOwnProcessor),
-                          true));
+                          eTakeOwnership));
                     break;
                 }
                 default:
