@@ -52,6 +52,9 @@
 
 #include <memory>
 
+#define MAX_ICACHE_CACHE_NAME_LENGTH 64
+#define MAX_ICACHE_KEY_LENGTH 256
+#define MAX_ICACHE_SUBKEY_LENGTH 256
 
 #define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
@@ -72,30 +75,36 @@ static const char* const s_NetICacheConfigSections[] = {
     NULL
 };
 
-#define KEY_VERSION_SUBKEY_MAXLEN (1 + key.length() + 2 + \
+#define KEY_VERSION_SUBKEY_EST_LENGTH (1 + key.length() + 2 + \
     int(sizeof(version) * 1.5) + 2 + subkey.length() + 1)
 
-static inline void AppendKeyVersionSubkey(string* outstr,
+static void CheckAndAppendKeyVersionSubkey(string* outstr,
     const string& key, int version, const string& subkey)
 {
-    outstr->append(key);
+    if (key.length() > MAX_ICACHE_KEY_LENGTH ||
+            subkey.length() > MAX_ICACHE_SUBKEY_LENGTH) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError,
+            "ICache key or subkey is too long");
+    }
+
+    outstr->append(NStr::CEncode(key));
     outstr->append("\" ", 2);
 
     outstr->append(NStr::UIntToString(version));
 
     outstr->append(" \"", 2);
-    outstr->append(subkey);
+    outstr->append(NStr::CEncode(subkey));
     outstr->push_back('"');
 }
 
 static string s_MakeBlobID(const string& key, int version, const string& subkey)
 {
     string blob_id(kEmptyStr);
-    blob_id.reserve(KEY_VERSION_SUBKEY_MAXLEN);
+    blob_id.reserve(KEY_VERSION_SUBKEY_EST_LENGTH);
 
     blob_id.push_back('"');
 
-    AppendKeyVersionSubkey(&blob_id, key, version, subkey);
+    CheckAndAppendKeyVersionSubkey(&blob_id, key, version, subkey);
 
     return blob_id;
 }
@@ -159,6 +168,13 @@ void CNetICacheServerListener::OnInit(CNetObject* api_impl,
                     "cache_name", CConfig::eErr_Throw, "default_cache");
             }
         }
+    }
+
+    icache_impl->m_CacheName = NStr::CEncode(icache_impl->m_CacheName);
+
+    if (icache_impl->m_CacheName.length() > MAX_ICACHE_CACHE_NAME_LENGTH) {
+        NCBI_THROW(CNetCacheException,
+            eAuthenticationError, "NetICache: cache name is too long");
     }
 
     icache_impl->m_ICacheCmdPrefix = "IC(";
@@ -530,14 +546,14 @@ string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
 {
     string cmd(kEmptyStr);
     cmd.reserve(m_ICacheCmdPrefix.length() + strlen(cmd_base) +
-        1 + KEY_VERSION_SUBKEY_MAXLEN);
+        1 + KEY_VERSION_SUBKEY_EST_LENGTH);
 
     cmd.append(m_ICacheCmdPrefix);
     cmd.append(cmd_base);
 
     cmd.append(" \"", 2);
 
-    AppendKeyVersionSubkey(&cmd, key, version, subkey);
+    CheckAndAppendKeyVersionSubkey(&cmd, key, version, subkey);
 
     AppendClientIPSessionIDPassword(&cmd);
 
