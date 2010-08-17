@@ -4403,6 +4403,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PAUP	s	Punjab Agricultural University",
 "PAV	s	Universita di Pavia, Dipartimento de Ecologia del Territorio",
 "PAY	s	Paisley Philosophical Institute",
+"PBC<USA-HI>	c	Pacific Bacterial Collection",
 "PBF	c	Perum Bio Farma",
 "PBH	s	Peterborough City Museum",
 "PBL	s	Botanical Survey of India, Andaman & Nicobar Circle",
