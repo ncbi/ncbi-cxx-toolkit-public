@@ -81,19 +81,22 @@ static const char* const s_NetICacheConfigSections[] = {
 static void CheckAndAppendKeyVersionSubkey(string* outstr,
     const string& key, int version, const string& subkey)
 {
-    if (key.length() > MAX_ICACHE_KEY_LENGTH ||
-            subkey.length() > MAX_ICACHE_SUBKEY_LENGTH) {
+    string encoded_key(NStr::CEncode(key));
+    string encoded_subkey(NStr::CEncode(subkey));
+
+    if (encoded_key.length() > MAX_ICACHE_KEY_LENGTH ||
+            encoded_subkey.length() > MAX_ICACHE_SUBKEY_LENGTH) {
         NCBI_THROW(CNetCacheException, eKeyFormatError,
             "ICache key or subkey is too long");
     }
 
-    outstr->append(NStr::CEncode(key));
+    outstr->append(encoded_key);
     outstr->append("\" ", 2);
 
     outstr->append(NStr::UIntToString(version));
 
     outstr->append(" \"", 2);
-    outstr->append(NStr::CEncode(subkey));
+    outstr->append(encoded_subkey);
     outstr->push_back('"');
 }
 
