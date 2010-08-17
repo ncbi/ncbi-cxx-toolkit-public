@@ -870,36 +870,47 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     ret = ((double)first * first_exp + second)* second_exp + third;
     // calculate exponent
     if ((first || second) && exponent) {
-        double power = 1., power_mult = 10.;
-        unsigned int mask = 1;
-        unsigned int uexp = exponent < 0 ? -exponent : exponent;
-        int count = 1;
-        for (; count < 32 && mask <= uexp; ++count, mask <<= 1) {
-            if (mask & uexp) {
-                switch (mask) {
-                case   0: break;
-                case   1: power *= 10.;   break;
-                case   2: power *= 100.;  break;
-                case   4: power *= 1.e4;  break;
-                case   8: power *= 1.e8;  break;
-                case  16: power *= 1.e16; break;
-                case  32: power *= 1.e32; break;
-                case  64: power *= 1.e64; break;
-                case 128: power *= 1.e128;  power_mult =1.e256;                    break;
-                case 256: power *= 1.e256;  power_mult = power_mult*power_mult;    break;
-                default:  power *= power_mult; power_mult = power_mult*power_mult; break;
+        if (exponent > 2*DBL_MAX_10_EXP) {
+            ret = HUGE_VAL;
+            errno = ERANGE;
+        } else if (exponent < 2*DBL_MIN_10_EXP) {
+            ret = 0.;
+            errno = ERANGE;
+        } else {
+            for (; exponent < -256; exponent += 256) {
+                ret /= 1.e256;
+            }
+            double power = 1., power_mult = 10.;
+            unsigned int mask = 1;
+            unsigned int uexp = exponent < 0 ? -exponent : exponent;
+            int count = 1;
+            for (; count < 32 && mask <= uexp; ++count, mask <<= 1) {
+                if (mask & uexp) {
+                    switch (mask) {
+                    case   0: break;
+                    case   1: power *= 10.;   break;
+                    case   2: power *= 100.;  break;
+                    case   4: power *= 1.e4;  break;
+                    case   8: power *= 1.e8;  break;
+                    case  16: power *= 1.e16; break;
+                    case  32: power *= 1.e32; break;
+                    case  64: power *= 1.e64; break;
+                    case 128: power *= 1.e128;  power_mult =1.e256;                    break;
+                    case 256: power *= 1.e256;  power_mult = power_mult*power_mult;    break;
+                    default:  power *= power_mult; power_mult = power_mult*power_mult; break;
+                    }
                 }
             }
-        }
-        if (exponent < 0) {
-            ret /= power;
-            if (ret == 0.) {
-                errno = ERANGE;
-            }
-        } else {
-            ret *= power;
-            if (!finite(ret)) {
-                errno = ERANGE;
+            if (exponent < 0) {
+                ret /= power;
+                if (ret == 0.) {
+                    errno = ERANGE;
+                }
+            } else {
+                ret *= power;
+                if (!finite(ret)) {
+                    errno = ERANGE;
+                }
             }
         }
     }

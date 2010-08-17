@@ -469,6 +469,16 @@ static const char* s_StrToDoublePosix[] = {
     "184467.44073709551616e-5",
     "184467.44073709551616e25",
     "184467.44073709551616e-25",
+    "1.7976931348623157e+308",
+    "2.2250738585072014e-308",
+    "2.2250738585072015e-308",
+    "2.2250738585072016e-308",
+    "1.797693134862315e+307",
+    "1.797693134862315e+306",
+    "2.225073858507202e-308",
+    "2.2250738585072016e-307",
+    "2.2250738585072016e-306",
+    "2.2250738585072016e-305",
     "-123.456e+4578",
     "-123.456e-4578",
     NULL,
@@ -484,6 +494,9 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
         double valued = strtod(str, &endptr);
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
         BOOST_CHECK_EQUAL(valued, valuep);
+        string t;
+        NStr::DoubleToString(t, valuep, -1, NStr::fDoublePosix);
+        cout << t << endl;
     }
     
     string out;
