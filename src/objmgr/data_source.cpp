@@ -1170,6 +1170,21 @@ string CDataSource::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
+int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
+{
+    int ret = -1;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = match.m_Bioseq->GetTaxId();
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetTaxId(idh);
+    }
+    return ret;
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( m_Loader ) {

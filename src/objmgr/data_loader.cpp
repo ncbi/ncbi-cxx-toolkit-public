@@ -247,6 +247,21 @@ string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
+int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+{
+    int ret = -1;
+    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    ITERATE(TTSE_LockSet, it, locks) {
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
+        if ( bs_info ) {
+            ret = bs_info->GetTaxId();
+            break;
+        }
+    }
+    return ret;
+}
+
+
 void CDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 {
     NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {

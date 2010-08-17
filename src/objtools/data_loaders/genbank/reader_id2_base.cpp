@@ -349,6 +349,33 @@ bool CId2ReaderBase::LoadSeq_idLabel(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id)
+{
+    if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
+        return false;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedTaxId() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_taxid);
+    x_ProcessRequest(result, req, 0);
+
+    if ( !ids->IsLoadedTaxId() ) {
+        m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
+        return false;
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                         const CSeq_id_Handle& seq_id,
                                         const SAnnotSelector* sel)
@@ -1365,6 +1392,25 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         }
         break;
     }}
+    case CID2_Request_Get_Seq_id::eSeq_id_type_taxid:
+    {{
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            const CSeq_id& id = **it;
+            if ( id.IsGeneral() ) {
+                const CDbtag& dbtag = id.GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
+                    SetAndSaveSeq_idTaxId(result, seq_id, ids,
+                                          obj_id.GetId());
+                    break;
+                }
+            }
+        }
+        if ( !ids->IsLoadedTaxId() ) {
+            ids->SetLoadedTaxId(-1);
+        }
+        break;
+    }}
     default:
         // ???
         break;
@@ -1424,8 +1470,14 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     }}
     SId2BlobInfo& blob_info = ids.second[blob_id];
     if ( reply.IsSetAnnot_info() && mask == fBlobHasExtAnnot ) {
-        mask = fBlobHasNamedFeat;
         blob_info.m_AnnotInfo = reply.GetAnnot_info();
+        if ( blob_info.m_AnnotInfo.size() == 1 ) {
+            const CID2S_Seq_annot_Info& info = *blob_info.m_AnnotInfo.front();
+            if ( info.IsSetName() && NStr::StartsWith(info.GetName(), "NA") ) {
+                //cout << "Named "<<blob_id<<": "<<MSerial_AsnText<<info<<endl;
+                mask = fBlobHasNamedFeat;
+            }
+        }
     }
     blob_info.m_ContentMask = mask;
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {

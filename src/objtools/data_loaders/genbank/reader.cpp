@@ -444,6 +444,17 @@ bool CReader::LoadSeq_idLabel(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
+                              const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids->IsLoadedTaxId() ) {
+        ids->SetLoadedTaxId(-1);
+    }
+    return ids->IsLoadedTaxId();
+}
+
+
 bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  const SAnnotSelector* sel)
@@ -640,6 +651,15 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
 }
 
 
+void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    int taxid) const
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    SetAndSaveSeq_idTaxId(result, seq_id, seq_ids, taxid);
+}
+
+
 void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id,
                                        const SAnnotSelector* sel) const
@@ -760,6 +780,22 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveSeq_idLabel(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    CLoadLockSeq_ids& seq_ids,
+                                    int taxid) const
+{
+    if ( seq_ids->IsLoadedTaxId() ) {
+        return;
+    }
+    seq_ids->SetLoadedTaxId(taxid);
+    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+    if( writer ) {
+        writer->SaveSeq_idTaxId(result, seq_id);
     }
 }
 

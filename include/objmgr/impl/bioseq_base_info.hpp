@@ -109,6 +109,8 @@ public:
     TDesc_CI x_FindDesc(TDesc_CI iter, TDescTypeMask types) const;
     void x_PrefetchDesc(TDesc_CI last, TDescTypeMask types) const;
 
+    const CSeqdesc* x_SearchFirstDesc(TDescTypeMask type) const;
+
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
     typedef list< CRef<CSeq_annot> > TObjAnnot;

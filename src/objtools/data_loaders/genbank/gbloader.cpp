@@ -770,6 +770,21 @@ string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
+int CGBDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+{
+    CGBReaderRequestResult result(this, idh);
+    CLoadLockSeq_ids seq_ids(result, idh);
+    if ( !seq_ids->IsLoadedTaxId() ) {
+        m_Dispatcher->LoadSeq_idTaxId(result, idh);
+    }
+    int taxid = seq_ids->IsLoadedTaxId()? seq_ids->GetTaxId(): -1;
+    if ( taxid == -1 ) {
+        return CDataLoader::GetTaxId(idh);
+    }
+    return taxid;
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);
@@ -1175,6 +1190,34 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
     CGBReaderRequestResult result(this, sih);
     SAnnotSelector sel;
     sel.IncludeNamedAnnotAccession("NA*");
+    CLoadLockBlob_ids blobs(result, sih, &sel);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
+    _ASSERT(blobs.IsLoaded());
+
+    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error for "+sih.AsString(), blobs->GetState());
+    }
+
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        ITERATE(CBlob_Info::TNamedAnnotNames, jt, info.GetNamedAnnotNames()) {
+            names.insert(*jt);
+        }
+    }
+    return names;
+}
+
+
+CGBDataLoader::TNamedAnnotNames
+CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
+                                       const string& named_acc)
+{
+    TNamedAnnotNames names;
+
+    CGBReaderRequestResult result(this, sih);
+    SAnnotSelector sel;
+    sel.IncludeNamedAnnotAccession(named_acc+"@@*");
     CLoadLockBlob_ids blobs(result, sih, &sel);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
     _ASSERT(blobs.IsLoaded());

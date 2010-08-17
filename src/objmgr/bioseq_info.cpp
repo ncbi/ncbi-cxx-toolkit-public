@@ -54,6 +54,8 @@
 #include <objects/seq/Ref_ext.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -1226,6 +1228,27 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
         }
     }
     return *ret;
+}
+
+
+int CBioseq_Info::GetTaxId(void) const
+{
+    const COrg_ref* org_ref = 0;
+    if ( const CSeqdesc* desc = x_SearchFirstDesc(1<<CSeqdesc::e_Source) ) {
+        org_ref = &desc->GetSource().GetOrg();
+    }
+    else if ( const CSeqdesc* desc = x_SearchFirstDesc(1<<CSeqdesc::e_Org) ) {
+        org_ref = &desc->GetOrg();
+    }
+    else {
+        return 0;
+    }
+    try {
+        return org_ref->GetTaxId();
+    }
+    catch ( CException& /*ignored*/ ) {
+        return 0;
+    }
 }
 
 

@@ -156,6 +156,12 @@ const char* SCacheInfo::GetLabelSubkey(void)
 }
 
 
+const char* SCacheInfo::GetTaxIdSubkey(void)
+{
+    return "taxid";
+}
+
+
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
     return "ids4";
@@ -478,6 +484,28 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
         if ( str.Found() ) {
             ids->SetLoadedLabel(str.FullString());
             return true;
+        }
+    }
+    return false;
+}
+
+
+bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids->IsLoadedTaxId() ) {
+        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetTaxIdSubkey());
+        if ( str.Found() ) {
+            int taxid = str.ParseInt4();
+            if ( str.Done() ) {
+                ids->SetLoadedTaxId(taxid);
+                return true;
+            }
         }
     }
     return false;

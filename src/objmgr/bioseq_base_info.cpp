@@ -32,7 +32,9 @@
 
 
 #include <ncbi_pch.hpp>
+#include <objmgr/impl/bioseq_base_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -463,6 +465,20 @@ void CBioseq_Base_Info::RemoveAnnot(CRef<CSeq_annot_Info> info)
     else {
         m_ObjAnnot->erase(obj_it);
     }
+}
+
+
+const CSeqdesc* CBioseq_Base_Info::x_SearchFirstDesc(TDescTypeMask mask) const
+{
+    TDesc_CI it = x_GetFirstDesc(mask);
+    if ( !x_IsEndDesc(it) ) {
+        return *it;
+    }
+    const CSeq_entry_Info& entry = GetParentSeq_entry_Info();
+    if ( !entry.HasParent_Info() ) {
+        return 0;
+    }
+    return entry.GetParentBioseq_set_Info().x_SearchFirstDesc(mask);
 }
 
 

@@ -190,6 +190,7 @@ public:
     virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
     virtual int GetGi(const CSeq_id_Handle& idh);
     virtual string GetLabel(const CSeq_id_Handle& idh);
+    virtual int GetTaxId(const CSeq_id_Handle& idh);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
@@ -265,6 +266,8 @@ public:
     virtual void GC(void);
 
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh);
+    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
+                                                     const string& named_acc);
 
     const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
     const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;

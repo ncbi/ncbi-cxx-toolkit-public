@@ -76,6 +76,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static const char* GetAccVerSubkey(void);
     // Seq-id -> label (string)
     static const char* GetLabelSubkey(void);
+    // Seq-id -> taxid (1 int)
+    static const char* GetTaxIdSubkey(void);
     // Seq-id -> list of Seq-id, binary ASN.1
     static const char* GetSeq_idsSubkey(void);
     // blob_id -> blob version (1 int)
@@ -153,6 +155,8 @@ public:
     bool LoadSeq_idAccVer(CReaderRequestResult& result,
                           const CSeq_id_Handle& seq_id);
     bool LoadSeq_idLabel(CReaderRequestResult& result,
+                         const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idTaxId(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,

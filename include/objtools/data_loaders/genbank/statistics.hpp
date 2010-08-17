@@ -47,6 +47,7 @@ public:
         eStat_Seq_idGi,
         eStat_Seq_idAcc,
         eStat_Seq_idLabel,
+        eStat_Seq_idTaxId,
         eStat_Seq_idBlob_ids,
         eStat_BlobVersion,
         eStat_LoadBlob,

@@ -222,6 +222,8 @@ public:
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
+    int GetTaxId(void) const;
+
     void x_AttachMap(CSeqMap& seq_map);
 
     void x_AddSeq_dataChunkId(TChunkId chunk_id);

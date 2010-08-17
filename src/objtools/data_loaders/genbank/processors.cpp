@@ -1624,7 +1624,7 @@ CObjectIStream* CProcessor_ID2::x_OpenDataStream(const CID2_Reply_Data& data)
                                   0, 0, CRWStreambuf::fOwnAll));
     }
     auto_ptr<CObjectIStream> in;
-    in.reset(CObjectIStream::Open(format, *stream.release(), true));
+    in.reset(CObjectIStream::Open(format, *stream.release(), eTakeOwnership));
     return in.release();
 }
 

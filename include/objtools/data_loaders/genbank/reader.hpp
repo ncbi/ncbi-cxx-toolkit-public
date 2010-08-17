@@ -86,6 +86,8 @@ public:
                                   const CSeq_id_Handle& seq_id);
     virtual bool LoadSeq_idLabel(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
+    virtual bool LoadSeq_idTaxId(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& seq_id);
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id) = 0;
     virtual bool LoadBlobs(CReaderRequestResult& result,
@@ -126,6 +128,9 @@ public:
     void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const string& label) const;
+    void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id,
+                               int taxid) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel) const;
@@ -163,6 +168,10 @@ public:
                                const CSeq_id_Handle& seq_id,
                                CLoadLockSeq_ids& seq_ids,
                                const string& label) const;
+    void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id,
+                               CLoadLockSeq_ids& seq_ids,
+                               int taxid) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel,

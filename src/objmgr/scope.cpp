@@ -362,13 +362,13 @@ CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
 
 CSeq_id_Handle CScope::GetAccVer(const CSeq_id_Handle& idh)
 {
-    return m_Impl->GetAccVer(idh);
+    return m_Impl->GetAccVer(idh, false);
 }
 
 
 int CScope::GetGi(const CSeq_id_Handle& idh)
 {
-    return m_Impl->GetGi(idh);
+    return m_Impl->GetGi(idh, false);
 }
 
 
@@ -408,6 +408,18 @@ string CScope::GetLabel(const CSeq_id& id, EForceLabelLoad force_load)
 string CScope::GetLabel(const CSeq_id_Handle& idh, EForceLabelLoad force_load)
 {
     return m_Impl->GetLabel(idh, force_load == eForceLabelLoad);
+}
+
+
+int CScope::GetTaxId(const CSeq_id& id, EForceLoad force_load)
+{
+    return GetTaxId(CSeq_id_Handle::GetHandle(id), force_load);
+}
+
+
+int CScope::GetTaxId(const CSeq_id_Handle& idh, EForceLoad force_load)
+{
+    return m_Impl->GetTaxId(idh, force_load == eForceLoad);
 }
 
 
@@ -568,6 +580,35 @@ CScopeTransaction CScope::GetTransaction()
 void CScope::UpdateAnnotIndex(void)
 {
     m_Impl->x_ClearAnnotCache();
+}
+
+
+/// Bulk retrieval methods
+CScope::TSeq_id_Handles CScope::GetAccVers(const TSeq_id_Handles& idhs,
+                                           EForceLoad force_load)
+{
+    return m_Impl->GetAccVers(idhs, force_load == eForceLoad);
+}
+
+
+CScope::TGIs CScope::GetGis(const TSeq_id_Handles& idhs,
+                            EForceLoad force_load)
+{
+    return m_Impl->GetGis(idhs, force_load == eForceLoad);
+}
+
+
+CScope::TLabels CScope::GetLabels(const TSeq_id_Handles& idhs,
+                                  EForceLoad force_load)
+{
+    return m_Impl->GetLabels(idhs, force_load == eForceLoad);
+}
+
+
+CScope::TTaxIds CScope::GetTaxIds(const TSeq_id_Handles& idhs,
+                                  EForceLoad force_load)
+{
+    return m_Impl->GetTaxIds(idhs, force_load == eForceLoad);
 }
 
 

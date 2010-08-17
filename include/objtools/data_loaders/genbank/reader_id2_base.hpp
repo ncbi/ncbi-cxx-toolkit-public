@@ -88,6 +88,8 @@ public:
                           const CSeq_id_Handle& seq_id);
     bool LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idTaxId(CReaderRequestResult& result,
+                         const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
@@ -234,7 +236,8 @@ private:
 
     enum {
         fAvoidRequest_nested_get_blob_info = 1,
-        fAvoidRequest_for_Seq_id_label     = 2
+        fAvoidRequest_for_Seq_id_label     = 2,
+        fAvoidRequest_for_Seq_id_taxid     = 4
     };
     typedef int TAvoidRequests;
     TAvoidRequests m_AvoidRequest;

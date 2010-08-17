@@ -222,6 +222,8 @@ public:
 
     string GetLabel(const CSeq_id_Handle& idh);
 
+    int GetTaxId(const CSeq_id_Handle& idh);
+
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
 

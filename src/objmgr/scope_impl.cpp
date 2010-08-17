@@ -2376,52 +2376,68 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh)
+CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
+                                      bool force_load)
 {
     CSeq_id_Handle ret;
-    TConfReadLockGuard rguard(m_ConfLock);
-    SSeqMatch_Scope match;
-    CRef<CBioseq_ScopeInfo> info =
-        x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
-    if ( info ) {
-        if ( info->HasBioseq() ) {
-            ret = CScope::x_GetAccVer(info->GetIds());
+    if ( false && !force_load ) {
+        CConstRef<CSeq_id> id = idh.GetSeqId();
+        const CTextseq_id* text_id = id->GetTextseq_Id();
+        if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+            ret = idh;
+            return ret;
         }
     }
-    else {
-        // Unknown bioseq, try to find in data sources
-        for (CPriority_I it(m_setDataSrc); it; ++it) {
-            CPrefetchManager::IsActive();
-            ret = it->GetDataSource().GetAccVer(idh);
-            if ( ret ) {
-                break;
+    TConfReadLockGuard rguard(m_ConfLock);
+
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                ret = CScope::x_GetAccVer(info->GetIds());
             }
+            return ret;
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        ret = it->GetDataSource().GetAccVer(idh);
+        if ( ret ) {
+            break;
         }
     }
     return ret;
 }
 
 
-int CScope_Impl::GetGi(const CSeq_id_Handle& idh)
+int CScope_Impl::GetGi(const CSeq_id_Handle& idh,
+                       bool force_load)
 {
     int ret = 0;
     TConfReadLockGuard rguard(m_ConfLock);
-    SSeqMatch_Scope match;
-    CRef<CBioseq_ScopeInfo> info =
-        x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
-    if ( info ) {
-        if ( info->HasBioseq() ) {
-            ret = CScope::x_GetGi(info->GetIds());
+
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                ret = CScope::x_GetGi(info->GetIds());
+            }
+            return ret;
         }
     }
-    else {
-        // Unknown bioseq, try to find in data sources
-        for (CPriority_I it(m_setDataSrc); it; ++it) {
-            CPrefetchManager::IsActive();
-            ret = it->GetDataSource().GetGi(idh);
-            if ( ret ) {
-                break;
-            }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        ret = it->GetDataSource().GetGi(idh);
+        if ( ret ) {
+            break;
         }
     }
     return ret;
@@ -2456,6 +2472,45 @@ string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
         ret = it->GetDataSource().GetLabel(idh);
         if ( !ret.empty() ) {
             break;
+        }
+    }
+    return ret;
+}
+
+
+int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, bool force_load)
+{
+    if ( !force_load ) {
+        if ( idh.Which() == CSeq_id::e_General ) {
+            CConstRef<CSeq_id> id = idh.GetSeqId();
+            const CDbtag& dbtag = id->GetGeneral();
+            const CObject_id& obj_id = dbtag.GetTag();
+            if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
+                return obj_id.GetId();
+            }
+        }
+    }
+
+    int ret = -1;
+    TConfReadLockGuard rguard(m_ConfLock);
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                ret = info->GetObjectInfo().GetTaxId();
+            }
+        }
+    }
+
+    if ( ret == -1 ) {
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            ret = it->GetDataSource().GetTaxId(idh);
+            if ( ret >= 0 ) {
+                break;
+            }
         }
     }
     return ret;
@@ -2604,6 +2659,56 @@ bool CScope_Impl::IsTransactionActive() const
     return m_Transaction != 0;
 }
 
+
+/// Bulk retrieval methods
+CScope_Impl::TSeq_id_Handles
+CScope_Impl::GetAccVers(const TSeq_id_Handles& idhs,
+                        bool force_load)
+{
+    TSeq_id_Handles ret;
+    ret.reserve(idhs.size());
+    ITERATE ( TSeq_id_Handles, it, idhs ) {
+        ret.push_back(GetAccVer(*it, force_load));
+    }
+    return ret;
+}
+
+
+CScope_Impl::TGIs CScope_Impl::GetGis(const TSeq_id_Handles& idhs,
+                                      bool force_load)
+{
+    TGIs ret;
+    ret.reserve(idhs.size());
+    ITERATE ( TSeq_id_Handles, it, idhs ) {
+        ret.push_back(GetGi(*it, force_load));
+    }
+    return ret;
+}
+
+
+CScope_Impl::TLabels CScope_Impl::GetLabels(const TSeq_id_Handles& idhs,
+                                            bool force_load)
+{
+    TLabels ret;
+    ret.reserve(idhs.size());
+    ITERATE ( TSeq_id_Handles, it, idhs ) {
+        ret.push_back(GetLabel(*it, force_load));
+    }
+    return ret;
+}
+
+
+CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TSeq_id_Handles& idhs,
+                                            bool force_load)
+{
+    TTaxIds ret;
+    ret.reserve(idhs.size());
+    ITERATE ( TSeq_id_Handles, it, idhs ) {
+        ret.push_back(GetTaxId(*it, force_load));
+    }
+    return ret;
+}
+                                  
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

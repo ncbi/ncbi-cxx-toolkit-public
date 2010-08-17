@@ -92,6 +92,8 @@ public:
                           const CSeq_id_Handle& seq_id);
     void LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
+    void LoadSeq_idTaxId(CReaderRequestResult& result,
+                         const CSeq_id_Handle& seq_id);
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
     void LoadBlobs(CReaderRequestResult& result,
@@ -159,6 +161,8 @@ public:
 
     // return false if it doesn't make sense to retry
     virtual bool Execute(CReader& reader) = 0;
+
+    virtual bool MayBeSkipped(void) const;
 
     virtual string GetErrMsg(void) const = 0;
 

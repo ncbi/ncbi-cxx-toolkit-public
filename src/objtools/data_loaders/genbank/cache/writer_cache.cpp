@@ -317,6 +317,27 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedTaxId() ) {
+        CStoreBuffer str;
+        str.StoreInt4(ids->GetTaxId());
+        try {
+            m_IdCache->Store(GetIdKey(seq_id), 0, GetTaxIdSubkey(),
+                             str.data(), str.size());
+        }
+        catch ( ... ) { // ignored
+        }
+    }
+}
+
+
 namespace {
     class CCacheDataEraser {
         CCacheDataEraser(ICache* cache,

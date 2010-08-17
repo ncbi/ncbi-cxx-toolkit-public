@@ -256,6 +256,8 @@ public:
 
     virtual string GetLabel(const CSeq_id_Handle& idh);
 
+    virtual int GetTaxId(const CSeq_id_Handle& idh);
+
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
     // the id handles to be loaded.

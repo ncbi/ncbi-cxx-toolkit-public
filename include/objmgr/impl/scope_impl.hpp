@@ -321,10 +321,20 @@ public:
 
     // Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
-    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    int GetGi(const CSeq_id_Handle& idh);
-
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, bool force_load);
+    int GetGi(const CSeq_id_Handle& idh, bool force_load);
     string GetLabel(const CSeq_id_Handle& idh, bool force_load);
+    int GetTaxId(const CSeq_id_Handle& idh, bool force_load);
+
+    /// Bulk retrieval methods
+    typedef vector<CSeq_id_Handle> TSeq_id_Handles;
+    TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs, bool force_load);
+    typedef vector<int> TGIs;
+    TGIs GetGis(const TSeq_id_Handles& idhs, bool force_load);
+    typedef vector<string> TLabels;
+    TLabels GetLabels(const TSeq_id_Handles& idhs, bool force_load);
+    typedef vector<int> TTaxIds;
+    TTaxIds GetTaxIds(const TSeq_id_Handles& idhs, bool force_load);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,

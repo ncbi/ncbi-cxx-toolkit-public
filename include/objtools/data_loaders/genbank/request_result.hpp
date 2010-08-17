@@ -127,6 +127,14 @@ public:
         }
     void SetLoadedLabel(const string& label);
 
+    bool IsLoadedTaxId(void);
+    int GetTaxId(void) const
+        {
+            _ASSERT(m_TaxIdLoaded);
+            return m_TaxId;
+        }
+    void SetLoadedTaxId(int taxid);
+
     const_iterator begin(void) const
         {
             return m_Seq_ids.begin();
@@ -159,9 +167,11 @@ public:
     bool        m_GiLoaded;
     bool        m_AccLoaded;
     bool        m_LabelLoaded;
+    bool        m_TaxIdLoaded;
     int         m_Gi;
     CSeq_id_Handle m_Acc;
     string      m_Label;
+    int         m_TaxId;
     TState      m_State;
 };
 

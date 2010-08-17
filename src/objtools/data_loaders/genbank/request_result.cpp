@@ -71,6 +71,7 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
     : m_GiLoaded(false),
       m_AccLoaded(false),
       m_LabelLoaded(false),
+      m_TaxIdLoaded(false),
       m_State(0)
 {
 }
@@ -80,6 +81,7 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
     : m_GiLoaded(false),
       m_AccLoaded(false),
       m_LabelLoaded(false),
+      m_TaxIdLoaded(false),
       m_State(0)
 {
 }
@@ -89,6 +91,7 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
     : m_GiLoaded(false),
       m_AccLoaded(false),
       m_LabelLoaded(false),
+      m_TaxIdLoaded(false),
       m_State(0)
 {
 }
@@ -179,6 +182,22 @@ void CLoadInfoSeq_ids::SetLoadedLabel(const string& label)
 {
     m_Label = label;
     m_LabelLoaded = true;
+}
+
+
+bool CLoadInfoSeq_ids::IsLoadedTaxId(void)
+{
+    if ( m_TaxIdLoaded ) {
+        return true;
+    }
+    return false;
+}
+
+
+void CLoadInfoSeq_ids::SetLoadedTaxId(int taxid)
+{
+    m_TaxId = taxid;
+    m_TaxIdLoaded = true;
 }
 
 

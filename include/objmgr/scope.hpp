@@ -331,7 +331,7 @@ public:
 
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
     int GetGi(const CSeq_id_Handle& idh);
-
+    
     static CSeq_id_Handle x_GetAccVer(const TIds& ids);
     static int x_GetGi(const TIds& ids);
 
@@ -344,6 +344,32 @@ public:
                     EForceLabelLoad force_load = eNoForceLabelLoad);
     string GetLabel(const CSeq_id_Handle& idh,
                     EForceLabelLoad force_load = eNoForceLabelLoad);
+
+    /// Get taxonomy id of bioseq
+    /// -1 means failure to determine the taxonomy id
+    /// 0 means absence of the taxonomy id for the sequence
+    enum EForceLoad {
+        eNoForceLoad,
+        eForceLoad
+    };
+    int GetTaxId(const CSeq_id& id,
+                 EForceLoad force_load = eNoForceLoad);
+    int GetTaxId(const CSeq_id_Handle& idh,
+                 EForceLoad force_load = eNoForceLoad);
+
+    /// Bulk retrieval methods
+    typedef vector<CSeq_id_Handle> TSeq_id_Handles;
+    TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
+                               EForceLoad force_load = eNoForceLoad);
+    typedef vector<int> TGIs;
+    TGIs GetGis(const TSeq_id_Handles& idhs,
+                EForceLoad force_load = eNoForceLoad);
+    typedef vector<string> TLabels;
+    TLabels GetLabels(const TSeq_id_Handles& idhs,
+                      EForceLoad force_load = eNoForceLoad);
+    typedef vector<int> TTaxIds;
+    TTaxIds GetTaxIds(const TSeq_id_Handles& idhs,
+                      EForceLoad force_load = eNoForceLoad);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

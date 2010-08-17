@@ -61,6 +61,8 @@ public:
                                   const CSeq_id_Handle& seq_id);
     virtual void SaveSeq_idLabel(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
+    virtual void SaveSeq_idTaxId(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& seq_id);
     virtual void SaveSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel);

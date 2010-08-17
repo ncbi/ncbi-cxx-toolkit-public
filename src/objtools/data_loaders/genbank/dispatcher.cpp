@@ -60,6 +60,7 @@ static CGBRequestStatistics sx_Statistics[CGBRequestStatistics::eStats_Count] =
     CGBRequestStatistics("resolved", "gis"),
     CGBRequestStatistics("resolved", "accs"),
     CGBRequestStatistics("resolved", "labels"),
+    CGBRequestStatistics("resolved", "taxids"),
     CGBRequestStatistics("resolved", "blob ids"),
     CGBRequestStatistics("resolved", "blob versions"),
     CGBRequestStatistics("loaded", "blob data"),
@@ -233,6 +234,12 @@ CReadDispatcherCommand::CReadDispatcherCommand(CReaderRequestResult& result)
 
 CReadDispatcherCommand::~CReadDispatcherCommand(void)
 {
+}
+
+
+bool CReadDispatcherCommand::MayBeSkipped(void) const
+{
+    return false;
 }
 
 
@@ -425,6 +432,49 @@ namespace {
         string GetStatisticsDescription(void) const
             {
                 return "label("+m_Key.AsString()+")";
+            }
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
+    };
+
+    class CCommandLoadSeq_idTaxId : public CReadDispatcherCommand
+    {
+    public:
+        typedef CSeq_id_Handle TKey;
+        typedef CLoadLockSeq_ids TLock;
+        CCommandLoadSeq_idTaxId(CReaderRequestResult& result,
+                                const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Lock(result, key)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return m_Lock->IsLoadedTaxId();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadSeq_idTaxId(GetResult(), m_Key);
+            }
+        bool MayBeSkipped(void) const
+            {
+                return true;
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadSeq_idTaxId("+m_Key.AsString()+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Seq_idTaxId;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "taxid("+m_Key.AsString()+")";
             }
         
     private:
@@ -917,6 +967,10 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
         }
     }
 
+    if ( command.MayBeSkipped() ) {
+        return;
+    }
+
     NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
 }
 
@@ -957,6 +1011,14 @@ void CReadDispatcher::LoadSeq_idLabel(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id)
 {
     CCommandLoadSeq_idLabel command(result, seq_id);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadSeq_idTaxId(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    CCommandLoadSeq_idTaxId command(result, seq_id);
     Process(command);
 }
 
