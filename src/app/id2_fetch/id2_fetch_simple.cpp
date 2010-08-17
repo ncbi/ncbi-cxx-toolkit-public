@@ -777,8 +777,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
         obj_stream.reset(CObjectIStream::Open(format,
             *(new CCompressionIStream(stream,
             new CZipStreamDecompressor,
-            CCompressionIStream::fOwnProcessor)),
-            true));
+            CCompressionIStream::fOwnProcessor)), eTakeOwnership));
         break;
     }
     default:
