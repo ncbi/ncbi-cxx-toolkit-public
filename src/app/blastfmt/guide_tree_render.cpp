@@ -68,10 +68,10 @@ CGuideTreeRenderer::CGuideTreeRenderer(const CBioTreeDynamic& tree)
 
 CGuideTreeRenderer::CGuideTreeRenderer(const CBioTreeContainer& btc)
 {
-    x_Init();
-
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
     m_DataSource.Reset(new CPhyloTreeDataSource(m_Dyntree));
+
+    x_Init();
 }
 
 
