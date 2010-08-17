@@ -34,7 +34,7 @@
 /// Defines implementation classes to access the Linkout DB that maps SeqIDs
 /// (GI/accession) to linkout bits
 
-#include <objtools/blast/seqdb_reader/seqdbisam.hpp>
+#include "seqdbisam.hpp"
 
 BEGIN_NCBI_SCOPE
 
