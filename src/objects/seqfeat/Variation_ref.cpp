@@ -150,6 +150,28 @@ void CVariation_ref::SetSNV(const vector<string>& replaces,
 }
 
 
+bool CVariation_ref::IsSNV() const
+{
+    if (GetData().IsInstance()  &&
+        GetData().GetInstance().IsSetType()  &&
+        GetData().GetInstance().GetType() == CVariation_inst::eType_snv) {
+        return true;
+    }
+    if (GetData().IsSet()) {
+        ITERATE (TData::TSet::TVariations, it, GetData().GetSet().GetVariations()) {
+            const CVariation_ref& ref = **it;
+            if (ref.GetData().IsInstance()  &&
+                ref.GetData().GetInstance().IsSetType()  &&
+                ref.GetData().GetInstance().GetType() == CVariation_inst::eType_snv) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 void CVariation_ref::SetMNP(const vector<string>& replaces,
                             ESeqType seq_type)
 {
@@ -160,6 +182,14 @@ void CVariation_ref::SetMNP(const vector<string>& replaces,
                   CVariation_inst::eType_mnp);
 }
 
+bool CVariation_ref::IsMNP() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_mnp;
+}
+
+
 
 void CVariation_ref::SetDeletion()
 {
@@ -168,6 +198,14 @@ void CVariation_ref::SetDeletion()
 
     inst.SetType(CVariation_inst::eType_del);
 }
+
+bool CVariation_ref::IsDeletion() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_del;
+}
+
 
 
 void CVariation_ref::SetInsertion(const string& sequence, ESeqType seq_type)
@@ -184,6 +222,14 @@ void CVariation_ref::SetInsertion(const string& sequence, ESeqType seq_type)
     s_SetReplaces(*this, replaces, seq_type,
                   CVariation_inst::eType_ins);
 }
+
+bool CVariation_ref::IsInsertion() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_ins;
+}
+
 
 
 void CVariation_ref::SetInsertion()
@@ -212,6 +258,14 @@ void CVariation_ref::SetDeletionInsertion(const string& sequence,
                   CVariation_inst::eType_delins);
 }
 
+bool CVariation_ref::IsDeletionInsertion() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_delins;
+}
+
+
 
 void CVariation_ref::SetMicrosatellite(const string& nucleotide_seq,
                                        TSeqPos min_repeats,
@@ -231,6 +285,14 @@ void CVariation_ref::SetMicrosatellite(const string& nucleotide_seq,
     inst.SetDelta().front()
         ->SetMultiplier_fuzz().SetRange().SetMax(max_repeats);
 }
+
+bool CVariation_ref::IsMicrosatellite() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_microsatellite;
+}
+
 
 
 void CVariation_ref::SetMicrosatellite(const string& nucleotide_seq,
@@ -267,6 +329,14 @@ void CVariation_ref::SetCNV()
     inst.SetDelta().push_back(item);
 }
 
+bool CVariation_ref::IsCNV() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_cnv;
+}
+
+
 
 void CVariation_ref::SetGain()
 {
@@ -281,6 +351,20 @@ void CVariation_ref::SetGain()
     inst.SetDelta().push_back(item);
 }
 
+bool CVariation_ref::IsGain() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_cnv  &&
+           GetData().GetInstance().IsSetDelta()  &&
+           GetData().GetInstance().GetDelta().size()  &&
+           GetData().GetInstance().GetDelta().front()->IsSetMultiplier_fuzz()  &&
+           GetData().GetInstance().GetDelta().front()->GetMultiplier_fuzz().IsLim()  &&
+           GetData().GetInstance().GetDelta().front()->GetMultiplier_fuzz().GetLim() == CInt_fuzz::eLim_gt;
+
+}
+
+
 
 void CVariation_ref::SetLoss()
 {
@@ -293,6 +377,19 @@ void CVariation_ref::SetLoss()
     item->SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_lt);
 
     inst.SetDelta().push_back(item);
+}
+
+bool CVariation_ref::IsLoss() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_cnv  &&
+           GetData().GetInstance().IsSetDelta()  &&
+           GetData().GetInstance().GetDelta().size()  &&
+           GetData().GetInstance().GetDelta().front()->IsSetMultiplier_fuzz()  &&
+           GetData().GetInstance().GetDelta().front()->GetMultiplier_fuzz().IsLim()  &&
+           GetData().GetInstance().GetDelta().front()->GetMultiplier_fuzz().GetLim() == CInt_fuzz::eLim_lt;
+
 }
 
 
@@ -336,6 +433,14 @@ void CVariation_ref::SetInversion(const CSeq_loc& other_loc)
     inst.SetDelta().push_back(item);
 }
 
+bool CVariation_ref::IsInversion() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_inverted_copy;
+}
+
+
 
 void CVariation_ref::SetEversion(const CSeq_loc& other_loc)
 {
@@ -347,6 +452,14 @@ void CVariation_ref::SetEversion(const CSeq_loc& other_loc)
     item->SetSeq().SetLoc().Assign(other_loc);
     inst.SetDelta().push_back(item);
 }
+
+bool CVariation_ref::IsEversion() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_everted_copy;
+}
+
 
 
 /// The feature represents an eversion at the specified location
@@ -370,6 +483,14 @@ void CVariation_ref::SetTranslocation(const CSeq_loc& other_loc)
 
 }
 
+bool CVariation_ref::IsTranslocation() const
+{
+    return GetData().IsInstance()  &&
+           GetData().GetInstance().IsSetType()  &&
+           GetData().GetInstance().GetType() == CVariation_inst::eType_translocation;
+}
+
+
 
 /// Establish a uniparental disomy mark-up
 void CVariation_ref::SetUniparentalDisomy()
@@ -377,12 +498,24 @@ void CVariation_ref::SetUniparentalDisomy()
     SetData().SetUniparental_disomy();
 }
 
+bool CVariation_ref::IsUniparentalDisomy() const
+{
+    return GetData().IsUniparental_disomy();
+}
+
+
 
 /// Establish a complex undescribed variant
 void CVariation_ref::SetComplex()
 {
     SetData().SetComplex();
 }
+
+bool CVariation_ref::IsComplex() const
+{
+    return GetData().IsComplex();
+}
+
 
 
 ///

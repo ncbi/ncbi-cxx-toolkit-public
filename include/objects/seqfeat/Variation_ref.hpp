@@ -69,28 +69,34 @@ public:
     /// empty strings and/or '-' as a character to indicate a deletion.
     void SetSNV(const vector<string>& replaces,
                 ESeqType seq_type);
+    bool IsSNV() const;
 
     /// Set a standard multinucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
     void SetMNP(const vector<string>& replaces,
                 ESeqType seq_type);
+    bool IsMNP() const;
 
     /// Make this variant a deletion
     void SetDeletion();
+    bool IsDeletion() const;
 
     /// Make this variant an insertion
     void SetInsertion(const string& sequence, ESeqType seq_type);
+    bool IsInsertion() const;
 
     /// Make this variant an insertion of unknown sequence
     void SetInsertion();
 
     /// Make this variant an insertion
     void SetDeletionInsertion(const string& sequence, ESeqType seq_type);
+    bool IsDeletionInsertion() const;
 
     /// Set the standard fields for a microsatellite.  This API establishes a
     /// microsatellite with a range of possible observed repeats.
     void SetMicrosatellite(const string& nucleotide_seq,
                            TSeqPos min_repeats, TSeqPos max_repeats);
+    bool IsMicrosatellite() const;
 
     /// Set the standard fields for a microsatellite.  This API establishes a
     /// microsatellite with a fixed set of possible observed repeats
@@ -100,12 +106,15 @@ public:
     /// Make this variant a copy number variant.  NOTE: This API variant
     /// establishes a CNV of unknown copy number
     void SetCNV();
+    bool IsCNV() const;
 
     /// Special subtype of CNV: 'gain' - an unspecified increase in copy number
     void SetGain();
+    bool IsGain() const;
 
     /// Special subtype of CNV: 'loss' - an unspecified decrease in copy number
     void SetLoss();
+    bool IsLoss() const;
 
     /// Make this variant a copy number variant.  NOTE: This API variant
     /// establishes a CNV with a range of possible copies
@@ -118,22 +127,27 @@ public:
     /// The feature represents an inversion at the specified location
     /// The provided location should be upstream and on the opposite strand
     void SetInversion(const CSeq_loc& other_loc);
+    bool IsInversion() const;
 
     /// The feature represents an eversion at the specified location
     /// The provided location should be downstream and on the opposite strand
     void SetEversion(const CSeq_loc& other_loc);
+    bool IsEversion() const;
 
     /// The feature represents a translocation event
     /// The provided location can be anywhere; a special case exists when the
     /// provided location is on a different chromosome, in which case the
     /// feature is considered a transchromosomal rearrangement
     void SetTranslocation(const CSeq_loc& other_loc);
+    bool IsTranslocation() const;
 
     /// Establish a uniparental disomy mark-up
     void SetUniparentalDisomy();
+    bool IsUniparentalDisomy() const;
 
     /// Create a complex undescribed variant
     void SetComplex();
+    bool IsComplex() const;
 
     /// Validate that all semantic fields are correct
     void Validate();
