@@ -20,7 +20,8 @@ seqdbexpert \
 seqdbblob \
 seqdbcol \
 seqdbgimask \
-seqdbobj
+seqdbobj \
+linkoutdb
 
 LIB = seqdb
 

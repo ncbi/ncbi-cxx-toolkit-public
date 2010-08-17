@@ -1459,9 +1459,9 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     if (! (CFile(m_IndexFname).Exists() &&
            CFile(m_DataFname).Exists()) ) {
         
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: Could not open input file.");
+        string msg("Error: Could not open input file (");
+        msg += m_IndexFname + "/" + m_DataFname + ")";
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
     }
     
     if(m_Type == eNumeric) {

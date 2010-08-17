@@ -1,7 +1,7 @@
 # $Id$
 
 APP = seqdb_unit_test
-SRC = seqdb_unit_test
+SRC = seqdb_unit_test linkoutdb_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
