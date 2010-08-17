@@ -63,7 +63,7 @@ const string kArgGiList("gilist");
 const string kArgSeqIdList("seqidlist");
 const string kArgNegativeGiList("negative_gilist");
 const string kArgDbSoftMask("db_soft_mask");
-//const string kArgDbHardMask("db_hard_mask");
+const string kArgDbHardMask("db_hard_mask");
 
 const string kTask("task");
 

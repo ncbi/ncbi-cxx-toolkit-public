@@ -74,7 +74,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeGiList;
 /// List of filtering algorithms to apply to subjects as soft masking
 extern const string kArgDbSoftMask;
 // List of filtering algorithms to apply to subjects as hard masking
-//extern const string kArgDbHardMask;
+extern const string kArgDbHardMask;
 
 /// Task to perform
 NCBI_BLASTINPUT_EXPORT extern const string kTask;

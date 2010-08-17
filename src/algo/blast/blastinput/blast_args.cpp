@@ -1198,6 +1198,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgNegativeGiList);
     if (m_SupportsDatabaseMasking) {
         database_args.push_back(kArgDbSoftMask);
+        database_args.push_back(kArgDbHardMask);
     }
 
     // DB size
@@ -1250,6 +1251,14 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgDbSoftMask, 
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as soft "
+                "masking",
+                CArgDescriptions::eString);
+        arg_desc.SetDependency(kArgDbSoftMask, CArgDescriptions::eExcludes, 
+                           kArgDbHardMask);
+
+        arg_desc.AddOptionalKey(kArgDbHardMask, 
+                "filtering_algorithm",
+                "Filtering algorithm ID to apply to the BLAST database as hard "
                 "masking",
                 CArgDescriptions::eString);
     }
@@ -1318,8 +1327,9 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
         if (args.Exist(kArgDbSoftMask) && args[kArgDbSoftMask]) {
-            // TODO only soft masking for now
             m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsString(), DB_MASK_SOFT);
+        } else if (args.Exist(kArgDbHardMask) && args[kArgDbHardMask]) {
+            m_SearchDb->SetFilteringAlgorithm(args[kArgDbHardMask].AsString(), DB_MASK_HARD);
         }
 #endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
