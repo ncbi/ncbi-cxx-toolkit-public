@@ -136,6 +136,8 @@ protected:
     static bool x_NeedsQuoting(
         const string& );
 
+    virtual SAnnotSelector x_GetAnnotSelector();
+
     CScope& m_Scope;
     CNcbiOstream& m_Os;
     TFlags m_uFlags;

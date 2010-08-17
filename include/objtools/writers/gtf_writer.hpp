@@ -103,6 +103,8 @@ protected:
         CRef< CSeq_loc >,
         CGff3WriteRecordSet& );
 
+    SAnnotSelector x_GetAnnotSelector();
+
     typedef map< int, CRef< CSeq_interval > > TExonMap;
     typedef TExonMap::const_iterator TExonCit;
     TExonMap m_exonMap;

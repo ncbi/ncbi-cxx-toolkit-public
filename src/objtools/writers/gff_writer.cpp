@@ -161,10 +161,7 @@ bool CGffWriter::x_WriteAnnotFTable(
     CGff3WriteRecordSet recordSet;
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
 
-    SAnnotSelector sel;
-    sel.IncludeFeatType(CSeqFeatData::e_Gene);
-    sel.IncludeFeatType(CSeqFeatData::e_Rna);
-    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    SAnnotSelector sel = x_GetAnnotSelector();
 
     feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
 
@@ -174,6 +171,17 @@ bool CGffWriter::x_WriteAnnotFTable(
     m_Scope.RemoveSeq_annot( sah );
     x_WriteRecords( recordSet );
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+SAnnotSelector CGffWriter::x_GetAnnotSelector()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+//    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+//    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+//    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    return sel;
 }
 
 //  ----------------------------------------------------------------------------

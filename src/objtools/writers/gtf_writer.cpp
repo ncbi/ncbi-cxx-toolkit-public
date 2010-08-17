@@ -326,4 +326,15 @@ void CGtfWriter::x_AddMultipleRecords(
     }
 }
 
+//  ----------------------------------------------------------------------------
+SAnnotSelector CGtfWriter::x_GetAnnotSelector()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    return sel;
+}
+
 END_NCBI_SCOPE
