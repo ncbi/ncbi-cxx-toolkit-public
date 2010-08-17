@@ -133,6 +133,9 @@ void CNetCacheControl::Init()
     arg_desc->AddOptionalKey("size", "key",
         "Get BLOB size", CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("remove", "key",
+        "Delete blob by key", CArgDescriptions::eString);
+
     arg_desc->PrintUsageIfNoArgs();
 
     SetupArgDescriptions(arg_desc.release());
@@ -301,6 +304,26 @@ int CNetCacheControl::Run()
                 blob_address.version, blob_address.subkey);
         }
         NcbiCout << "BLOB size: " << size << NcbiEndl;
+    } else if (args["remove"].HasValue()) {
+        string key(args["remove"].AsString());
+
+        if (!icache_mode)
+            if (password_arg.HasValue())
+                CNetCachePasswordGuard(nc_client,
+                    password_arg.AsString())->Remove(key);
+            else
+                nc_client.Remove(key);
+        else {
+            SICacheBlobAddress blob_address;
+            ParseICacheBlobAddress(key, &blob_address);
+            if (password_arg.HasValue())
+                CNetICachePasswordGuard(icache_client,
+                    password_arg.AsString())->Remove(blob_address.key,
+                        blob_address.version, blob_address.subkey);
+            else
+                icache_client.Remove(blob_address.key,
+                    blob_address.version, blob_address.subkey);
+        }
     } else if (args["getconf"])
         admin.PrintConfig(NcbiCout);
     else if (args["health"])
