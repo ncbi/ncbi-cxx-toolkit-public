@@ -463,16 +463,7 @@ IEmbeddedStreamWriter* CNetICacheClient::GetNetCacheWriter(const string& key,
 
 void CNetICacheClient::Remove(const string& key)
 {
-    string cmd(kEmptyStr);
-    cmd.reserve(m_Impl->m_ICacheCmdPrefix.length() +
-        sizeof("REMK \"") - 1 +
-        key.length() + 1);
-    cmd.append(m_Impl->m_ICacheCmdPrefix);
-    cmd.append("REMK \"");
-    cmd.append(key);
-    cmd.push_back('"');
-    m_Impl->AppendClientIPSessionIDPassword(&cmd);
-    m_Impl->StickToServerAndExec(cmd);
+    NCBI_THROW(CNetCacheException, eNotImplemented, "REMK is not implemented");
 }
 
 

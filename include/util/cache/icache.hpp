@@ -49,15 +49,15 @@ BEGIN_NCBI_SCOPE
 
 
 
-/// BLOB cache read/write/maintanance interface.
+/// BLOB cache read/write/maintenance interface.
 ///
 /// ICache describes caching service. Any large binary object
-/// can be stored in cache and later retrived. Such cache is a
+/// can be stored in cache and later retrieved. Such cache is a
 /// temporary storage and some objects can be purged from cache based
 /// on an immediate request, version or access time
 /// based replacement (or another implementation specific depreciation rule).
 ///
-/// Cache elements are accesed by key-subkey pair.
+/// Cache elements are accessed by key-subkey pair.
 ///
 class ICache
 {
@@ -86,7 +86,7 @@ public:
 
         /// Expire objects older than a certain time frame
         /// Example: If object is not accessed within a week it is
-        ///          droped from the cache.
+        ///          dropped from the cache.
         fExpireLeastFrequentlyUsed  = (1 << 3),
 
         /// Expired objects should be deleted on cache mount (Open)
@@ -147,7 +147,7 @@ public:
     /// Set version retention policy
     ///
     /// @param policy
-    ///    Version retetion mode
+    ///    Version retention mode
     virtual void SetVersionRetention(EKeepVersions policy) = 0;
 
     /// Get version retention
@@ -284,6 +284,9 @@ public:
     /// Remove all versions of the specified BLOB
     ///
     /// @param key BLOB identification key
+    /// @deprecated Not implemented in NetCache, which is the
+    ///             primary implementation of this interface.
+    NCBI_DEPRECATED
     virtual void Remove(const string& key) = 0;
 
     /// Remove specific cache entry
