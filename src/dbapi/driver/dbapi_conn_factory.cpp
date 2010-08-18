@@ -193,7 +193,7 @@ CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
     return timeout;
 }
 
-inline CDBConnectionFactory::CRuntimeData&
+CDBConnectionFactory::CRuntimeData&
 CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
 {
     string validator_name;
