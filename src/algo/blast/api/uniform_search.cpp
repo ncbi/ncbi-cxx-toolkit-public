@@ -151,21 +151,6 @@ CSearchDatabase::GetNegativeGiListLimitation() const
 }
 
 void 
-CSearchDatabase::SetSeqIdList(CSeqDBGiList * gilist) 
-{
-    if (m_GiListSet) NCBI_THROW(CBlastException, eInvalidArgument,
-          "Cannot have more than one type of id list filtering.");
-    m_GiListSet = true;
-    m_SeqIdList.Reset(gilist); 
-}
-
-const CRef<CSeqDBGiList> &
-CSearchDatabase::GetSeqIdList() const 
-{ 
-    return m_SeqIdList; 
-}
-
-void 
 CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm, int mask_type)
 {
     m_FilteringAlgorithmId = NStr::StringToNumeric(filt_algorithm);
@@ -233,15 +218,16 @@ CSearchDatabase::x_InitializeDb() const
     const CSeqDB::ESeqType seq_type = IsProtein() ? CSeqDB::eProtein : CSeqDB::eNucleotide;
     if (! m_GiList.Empty() && ! m_GiList->Empty()) {
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_GiList));
+
     } else if (! m_NegativeGiList.Empty() && ! m_NegativeGiList->Empty()) {
         vector<int> gis;
         m_NegativeGiList->GetGiList(gis);
         CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, idset));
-    } else if (! m_SeqIdList.Empty() && ! m_SeqIdList->Empty()) {
-        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_SeqIdList));
+
     } else {
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type));
+
     }
       
     _ASSERT(m_SeqDb.NotEmpty());

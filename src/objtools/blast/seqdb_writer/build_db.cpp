@@ -179,7 +179,7 @@ CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
         
         // 3. Just add the Seq-id as a Seq-id.
         
-        gi_list->AppendSeqId(seqid);
+        gi_list->AppendSi(*id);
     }
     
     return gi_list;
@@ -520,7 +520,7 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
     
     for(i = 0; i < num_gis; i++) {
         if (m_Verbose)
-            m_LogFile << "GI " << gi_list[i].gi;
+            m_LogFile << "GI " << gi_list.GetKey<int>(i);
         
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
@@ -530,7 +530,7 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
                 m_LogFile << " not found locally; adding remotely." << endl;
             
             CRef<CSeq_id> id(new CSeq_id);
-            id->SetGi(gi_list[i].gi);
+            id->SetGi(gi_list.GetKey<int>(i));
             
             bool error = false;
             
@@ -542,25 +542,25 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
         }
     }
     
-    int num_seqids = gi_list.GetNumSeqIds();
+    int num_seqids = gi_list.GetNumSis();
     
     for(i = 0; i < num_seqids; i++) {
         if (m_Verbose)
             m_LogFile << "Seq-id "
-                      << gi_list.GetSeqIdOid(i).seqid->AsFastaString();
+                      << gi_list.GetKey<string>(i);
         
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
         
-        if (gi_list.GetSeqIdOid(i).oid == -1) {
+        if (gi_list.GetSiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << " not found locally; adding remotely." << endl;
             
             bool error = false;
             
-            x_AddOneRemoteSequence(*gi_list.GetSeqIdOid(i).seqid,
-                                   found_all,
-                                   error);
+            string acc = gi_list.GetKey<string>(i);
+            CRef<CSeq_id> id(new CSeq_id(acc));
+            x_AddOneRemoteSequence(*id, found_all, error);
             count++;
         } else {
             if (m_Verbose)
@@ -594,28 +594,28 @@ CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
         
         if (gi_list.GetGiOid(i).oid == -1) {
             if (m_Verbose)
-                m_LogFile << "GI " << gi_list[i].gi
+                m_LogFile << "GI " << gi_list.GetKey<int>(i)
                           << " was not resolvable." << endl;
             
             success = false;
             unresolved ++;
         } else {
             if (m_Verbose)
-                m_LogFile << "GI " << gi_list[i].gi
+                m_LogFile << "GI " << gi_list.GetKey<int>(i)
                           << " found locally." << endl;
         }
     }
     
-    int num_seqids = gi_list.GetNumSeqIds();
+    int num_seqids = gi_list.GetNumSis();
     
     for(i = 0; i < num_seqids; i++) {
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
         
-        if (gi_list.GetSeqIdOid(i).oid == -1) {
+        if (gi_list.GetSiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << "Seq-id "
-                          << gi_list.GetSeqIdOid(i).seqid->AsFastaString()
+                          << gi_list.GetKey<string>(i)
                           << " was not resolvable." << endl;
             
             unresolved ++;
@@ -623,7 +623,7 @@ CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
         } else {
             if (m_Verbose)
                 m_LogFile << "Seq-id "
-                          << gi_list.GetSeqIdOid(i).seqid->AsFastaString()
+                          << gi_list.GetKey<string>(i)
                           << " found locally." << endl;
         }
     }
@@ -1134,7 +1134,7 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
     // Translate the GI list.
     
     if (gi_list.NotEmpty() &&
-        (gi_list->GetNumGis() || gi_list->GetNumSeqIds())) {
+        (gi_list->GetNumGis() || gi_list->GetNumSis())) {
         
         // The process of constructing a SeqDB object with a user GI
         // list causes translation of the User GI list, and is the

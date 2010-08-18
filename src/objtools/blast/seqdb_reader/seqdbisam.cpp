@@ -92,7 +92,7 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     
     if (IsamType == eNumericLongId && m_Type == eNumeric) {
         m_LongId = true;
-        m_Keysize = 12;
+        m_TermSize = 12;
         IsamType = eNumeric;
     }
     
@@ -178,8 +178,8 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
 	
-        TIndx offset_begin = m_KeySampleOffset + (m_Keysize * SampleNum);
-        TIndx offset_end   = offset_begin + m_Keysize;
+        TIndx offset_begin = m_KeySampleOffset + (m_TermSize * SampleNum);
+        TIndx offset_end   = offset_begin + m_TermSize;
 	
         m_Atlas.Lock(locked);
         
@@ -236,182 +236,6 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
     done = false;
     return eNoError;
 }
-
-
-void
-CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
-                                      int              vol_end,
-                                      CSeqDBGiList   & gis,
-                                      bool             use_tis,
-                                      CSeqDBLockHold & locked)
-{
-    m_Atlas.Lock(locked);
-    
-    if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
-        
-        if(error != eNoError) {
-            // Most ordinary errors (missing GIs for example) are
-            // ignored for "multi" mode searches.  But if a GI list is
-            // specified, and cannot be interpreted, it is an error.
-            
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "Error: Unable to use ISAM index in batch mode.");
-        }
-    }
-    
-    // Index file will remain mapped for the duration.
-    
-    m_Atlas.Lock(locked);
-    
-    
-    // I don't check for out of bounds here, although I could.  This
-    // particular method does something like a merge sorting algorithm
-    // between ISAM file and GI list, so the overhead for any number
-    // of GIs that are out of range will only cost what it would
-    // normally cost to search for one GI.
-    
-    
-    // A seperate memory lease is used for the index, to avoid garbage
-    // collection issue.
-    
-    CSeqDBMemLease index_lease(m_Atlas);
-    
-    if (! index_lease.Contains(0, m_IndexFileLength)) {
-        m_Atlas.GetRegion(index_lease,
-                          m_IndexFname,
-                          0,
-                          m_IndexFileLength);
-    }
-    
-    _ASSERT(m_Type != eNumericNoData);
-    
-    //......................................................................
-    //
-    // Translate the entire Gi List.
-    //
-    //......................................................................
-    
-    int gilist_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
-    int num_samples = m_NumSamples;
-    
-    int gilist_index = 0;
-    int samples_index = 0;
-    
-    // Note: whenever updating samples_index, we also update isam_key
-    // and isam_data to the corresponding values.
-    
-    Int8 isam_key(0);
-    int isam_data(0);
-    
-    x_GetNumericSample(index_lease, samples_index, isam_key, isam_data);
-    
-    while((gilist_index < gilist_size) && (samples_index < num_samples)) {
-        bool advanced = true;
-        
-        while (advanced) {
-            // Use Parabolic Binary Search to skip any GIs that fall
-            // before the first unused data block's sample value, also
-            // skipping any that are already translated.
-            
-            advanced =
-                x_AdvanceGiList(vol_start,
-                                vol_end,
-                                gis,
-                                gilist_index,
-                                isam_key,
-                                isam_data,
-                                use_tis);
-            
-            if (gilist_index >= gilist_size)
-                break;
-            
-            // Use PBS to skip any ISAM blocks fall before the first
-            // untranslated GI.
-            
-            if (use_tis) {
-                if (x_AdvanceIsamIndex(index_lease,
-                                       samples_index,
-                                       gis.GetTiOid(gilist_index).ti,
-                                       isam_key,
-                                       isam_data)) {
-                    advanced = true;
-                }
-            } else {
-                if (x_AdvanceIsamIndex(index_lease,
-                                       samples_index,
-                                       gis.GetGiOid(gilist_index).gi,
-                                       isam_key,
-                                       isam_data)) {
-                    advanced = true;
-                }
-            }
-            
-            // If either of the above calls returned true, we might
-            // benefit from another round.  There probably exists a
-            // more complex test that could determine whether another
-            // iteration would be useful.  It will be rare to be able
-            // to advance the GI list and ISAM index more than once,
-            // but it *can* happen.
-            //
-            // Without translating any GIs from index file samples, we
-            // can advance at least four times:
-            //
-            // 1. GIs: remove GIs that are previous to first GI in
-            //    ISAM index.
-            //
-            // 2. ISAM: advance over blocks until finding one that
-            //    matches the first target GI.
-            //
-            // 3. GIs: advance past that ISAM block due to *previously
-            //    translated* GIs (this will run until it finds a
-            //    non-previously-translated GI).
-            //
-            // 4. ISAM: skip blocks again until the new first GI's
-            //    block is found.
-            //
-            // If such translations occur, this process *could* run
-            // indefinitely, since each GI in the target list could
-            // happen to be a sample GI and therefore the data file
-            // would never need to be accessed, and all translation
-            // would happen in this loop.  (This is unlikely unless
-            // the number of GIs is very small.)
-        }
-        
-        // We could be finished here because we exhausted the GI list
-        // in the above loop, but not because of exhausting the ISAM
-        // file (which can never be "exhausted" without consulting the
-        // last page of the data file).
-        
-        if (gilist_index >= gilist_size) {
-            break;
-        }
-        
-        // Now we should be ready to search a data block.
-        
-        x_SearchDataNumericMulti(vol_start,
-                                 vol_end,
-                                 gis,
-                                 gilist_index,
-                                 samples_index,
-                                 use_tis,
-                                 locked);
-        
-        // We must be done with that one by now..
-        
-        samples_index ++;
-        
-        if (samples_index < num_samples)
-            x_GetNumericSample(index_lease,
-                               samples_index,
-                               isam_key,
-                               isam_data);
-    }
-    
-    m_Atlas.RetRegion(index_lease);
-}
-
 
 void
 CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
@@ -529,8 +353,8 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     const void * KeyDataPage      = NULL;
     const void * KeyDataPageStart = NULL;
     
-    TIndx offset_begin = Start * m_Keysize;
-    TIndx offset_end = offset_begin + m_Keysize * NumElements;
+    TIndx offset_begin = Start * m_TermSize;
+    TIndx offset_end = offset_begin + m_TermSize * NumElements;
     
     m_Atlas.Lock(locked);
     
@@ -543,7 +367,7 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     
     KeyDataPageStart = m_DataLease.GetPtr(offset_begin);
     
-    KeyDataPage = (char *)KeyDataPageStart - Start * m_Keysize;
+    KeyDataPage = (char *)KeyDataPageStart - Start * m_TermSize;
     
     bool found   (false);
     Int4 current (0);
@@ -552,7 +376,7 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     while (first <= last) {
         current = (first+last)/2;
         
-        Int8 Key = x_GetNumericKey((char *)KeyDataPage + current * m_Keysize);
+        Int8 Key = x_GetNumericKey((char *)KeyDataPage + current * m_TermSize);
         
         if (Key > Number) {
             last = --current;
@@ -575,7 +399,7 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     }
     
     if (Data != NULL) {
-        *Data = x_GetNumericData((char *)KeyDataPage + current * m_Keysize);
+        *Data = x_GetNumericData((char *)KeyDataPage + current * m_TermSize);
     }
     
     if(Index != NULL)
@@ -584,166 +408,6 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     return eNoError;
 }
 
-void
-CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
-                                     int              vol_end,
-                                     CSeqDBGiList   & gis,
-                                     int            & gilist_index,
-                                     int              sample_index,
-                                     bool             use_tis,
-                                     CSeqDBLockHold & locked)
-{
-    m_Atlas.Lock(locked);
-    
-    //......................................................................
-    //
-    // Translate the area of the Gi List corresponding to this block.
-    //
-    //......................................................................
-    
-    
-    // 1. Get mapping of entire data block from atlas layer.
-    
-    _ASSERT(m_Type != eNumericNoData);
-    
-    const void * data_page (0);
-    
-    int start(0);
-    int num_elements(0);
-    
-    x_MapDataPage(sample_index,
-                  start,
-                  num_elements,
-                  & data_page,
-                  locked);
-    
-    // 2. Consider the block as an array of elements of size N.
-    //    (this is data_page_begin[num_elements])
-    
-    // 3. Find the last value in array.
-    
-    Int8 last_key = x_GetNumericKey((char *)data_page + (num_elements-1) * m_Keysize);
-    
-    // 4. Loop till out of target gis or out of data elements:
-    
-    int gis_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
-    int elem_index(0);
-    
-    Int8 data_gi(0);
-    int data_oid(0);
-    
-    // Get the current data element
-    
-    x_GetDataElement(data_page,
-                     elem_index,
-                     data_gi,
-                     data_oid);
-    
-    // 5. While neither list is exhausted, and next target GI is in
-    // this page, continue.
-    
-    while((gilist_index < gis_size) &&
-          (elem_index < num_elements) &&
-          (x_GetId(gis, gilist_index, use_tis) <= last_key)) {
-        
-        bool advanced = true;
-        
-        while(advanced) {
-            advanced = false;
-            
-            // Skip translated elements
-            
-            while((gilist_index < gis_size) &&
-                  (x_GetOid(gis, gilist_index, use_tis) != -1)) {
-                advanced = true;
-                gilist_index ++;
-            }
-            
-            // Skip elements less than the first data element.
-            // (But skip this test when elem == 0.)
-            
-            while((elem_index != 0) &&
-                  (gilist_index < gis_size) &&
-                  (x_GetId(gis, gilist_index, use_tis) < data_gi)) {
-                advanced = true;
-                gilist_index ++;
-            }
-        }
-        
-        if ((gilist_index >= gis_size) ||
-            (x_GetId(gis, gilist_index, use_tis) > last_key)) {
-            
-            break;
-        }
-        
-        // 6.   PBS search for the first target gi.
-        
-        Int8 target_gi = x_GetId(gis, gilist_index, use_tis);
-        
-        while((elem_index < num_elements) && (target_gi > data_gi)) {
-            x_GetDataElement(data_page,
-                             ++elem_index,
-                             data_gi,
-                             data_oid);
-            
-            int jump = 2;
-            
-            while((elem_index + jump) < num_elements) {
-                Int8 next_gi(0);
-                int next_oid(0);
-                
-                x_GetDataElement(data_page,
-                                 elem_index + jump,
-                                 next_gi,
-                                 next_oid);
-                if (next_gi > target_gi) {
-                    break;
-                }
-                
-                data_gi = next_gi;
-                data_oid = next_oid;
-                
-                elem_index += jump;
-                jump *= 2;
-            }
-        }
-        
-        
-        // 7. If found, translate it.  If the translation works, try
-        //    the next one in each index.  This case is cheap to test
-        //    for and will win in certain high-density GI lists.
-        
-        while((gilist_index < gis_size) &&
-              (elem_index < num_elements) &&
-              (data_gi == x_GetId(gis, gilist_index, use_tis))) {
-            
-            while((gilist_index < gis_size) &&
-                  (x_GetId(gis, gilist_index, use_tis) == data_gi)) {
-                
-                if (x_GetOid(gis, gilist_index, use_tis) == -1) {
-                    if ((data_oid + vol_start) < vol_end) {
-                        if (use_tis) {
-                            gis.SetTiTranslation(gilist_index, data_oid + vol_start);
-                        } else {
-                            gis.SetTranslation(gilist_index, data_oid + vol_start);
-                        }
-                    }
-                }
-                gilist_index ++;
-            }
-            
-            elem_index++;
-            
-            if (elem_index >= num_elements)
-                break;
-            
-            x_GetDataElement(data_page,
-                             elem_index,
-                             data_gi,
-                             data_oid);
-        }
-    }
-}
 
 // ------------------------NumericSearch--------------------------
 // Purpose:     Main search function of Numeric ISAM
@@ -1410,7 +1074,7 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                        const string & dbname,
                        char           prot_nucl,
                        char           file_ext_char,
-                       EIdentType     ident_type)
+                       ESeqDBIdType   ident_type)
     : m_Atlas          (atlas),
       m_IdentType      (ident_type),
       m_IndexLease     (atlas),
@@ -1428,7 +1092,7 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
       m_FirstOffset    (0),
       m_LastOffset     (0),
       m_LongId         (false),
-      m_Keysize        (8)
+      m_TermSize       (8)
 {
     // These are the types that readdb.c seems to use.
     
@@ -1536,111 +1200,6 @@ bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
     oid = -1u;  /* NCBI_FAKE_WARNING */
     
     return false;
-}
-
-/// Find the end of a single element in a Seq-id set
-/// 
-/// Seq-id strings sometimes contain several Seq-ids.  This function
-/// looks for the end of the first Seq-id, and will return its length.
-/// Static methods of CSeq_id are used to evaluate tokens.
-/// 
-/// @param str
-///   Seq-id string to search.
-/// @param pos
-///   Position at which to start search.
-/// @return
-///   End position of first fasta id, or string::npos in case of error.
-
-static size_t
-s_SeqDB_EndOfFastaID(const string & str, size_t pos)
-{
-    // (Derived from s_EndOfFastaID()).
-    
-    size_t vbar = str.find('|', pos);
-    
-    if (vbar == string::npos) {
-        return string::npos; // bad
-    }
-    
-    string portion(str, pos, vbar - pos);
-    
-    CSeq_id::E_Choice choice =
-        CSeq_id::WhichInverseSeqId(portion.c_str());
-    
-    if (choice != CSeq_id::e_not_set) {
-        size_t vbar_prev = vbar;
-        int count;
-        for (count=0; ; ++count, vbar_prev = vbar) {
-            vbar = str.find('|', vbar_prev + 1);
-            
-            if (vbar == string::npos) {
-                break;
-            }
-            
-            int start_pt = int(vbar_prev + 1);
-            string element(str, start_pt, vbar - start_pt);
-            
-            choice = CSeq_id::WhichInverseSeqId(element.c_str());
-            
-            if (choice != CSeq_id::e_not_set) {
-                vbar = vbar_prev;
-                break;
-            }
-        }
-    } else {
-        return string::npos; // bad
-    }
-    
-    return (vbar == string::npos) ? str.size() : vbar;
-}
-
-/// Parse string into a sequence of Seq-id objects.
-///
-/// A string is broken down into Seq-ids and the set of Seq-ids is
-/// returned.
-///
-/// @param line
-///   The string to interpret.
-/// @param seqids
-///   The returned set of Seq-id objects.
-/// @return
-///   true if any Seq-id objects were found.
-
-static bool
-s_SeqDB_ParseSeqIDs(const string              & line,
-                    vector< CRef< CSeq_id > > & seqids)
-{
-    // (Derived from s_ParseFastaDefline()).
-    
-    seqids.clear();
-    size_t pos = 0;
-    
-    while (pos < line.size()) {
-        size_t end = s_SeqDB_EndOfFastaID(line, pos);
-        
-        if (end == string::npos) {
-            // We didn't get a clean parse -- ignore the data after
-            // this point, and return what we have.
-            break;
-        }
-        
-        string element(line, pos, end - pos);
-        
-        CRef<CSeq_id> id;
-        
-        try {
-            id = new CSeq_id(element);
-        }
-        catch(invalid_argument &) {
-            // Maybe this should be done: "seqids.clear();"
-            break;
-        }
-        
-        seqids.push_back(id);
-        pos = end + 1;
-    }
-    
-    return ! seqids.empty();
 }
 
 void CSeqDBIsam::StringToOids(const string   & acc,
@@ -1800,186 +1359,6 @@ bool CSeqDBIsam::x_SparseStringToOids(const string   &,
     return false;
 }
 
-CSeqDBIsam::EIdentType
-CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
-                          const string  * acc,
-                          Int8          & num_id,
-                          string        & str_id,
-                          bool          & simpler)
-{
-    EIdentType result = eStringId;
-    
-    const CTextseq_id * tsip = 0;
-    
-    bool use_version = false;
-    
-    bool matched = true;
-
-    switch(bestid.Which()) {
-    case CSeq_id::e_Gi:
-        simpler = true;
-        num_id = bestid.GetGi();
-        result = eGiId;
-        break;
-        
-    case CSeq_id::e_Gibbsq:    /* gibbseq */
-        simpler = true;
-        result = eStringId;
-        str_id = NStr::UIntToString(bestid.GetGibbsq());
-        break;
-        
-    case CSeq_id::e_General:
-        {
-            const CDbtag & dbt = bestid.GetGeneral();
-            
-            if (dbt.CanGetDb()) {
-                if (dbt.GetDb() == "BL_ORD_ID") {
-                    simpler = true;
-                    num_id = dbt.GetTag().GetId();
-                    result = eOID;
-                    break;
-                }
-                
-                if (dbt.GetDb() == "PIG") {
-                    simpler = true;
-                    num_id = dbt.GetTag().GetId();
-                    result = ePigId;
-                    break;
-                }
-                
-                if (dbt.GetDb() == "ti") {
-                    simpler = true;
-                    num_id = (dbt.GetTag().IsStr()
-                              ? NStr::StringToInt8(dbt.GetTag().GetStr())
-                              : dbt.GetTag().GetId());
-                    
-                    result = eTiId;
-                    break;
-                }
-            }
-            
-            if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
-                result = eStringId;
-                str_id = dbt.GetTag().GetStr();
-            } else {
-                // Use the default logic.
-                matched = false;
-            }
-        }
-        break;
-        
-    case CSeq_id::e_Local:     /* local */
-        simpler = true;
-        result = eStringId;
-        {
-            const CObject_id & objid = bestid.GetLocal();
-            
-            if (objid.IsStr()) {
-                // sparse version will leave "lcl|" off.
-                str_id = objid.GetStr();
-            } else {
-                // Local numeric ids are stored as strings.
-                str_id = "lcl|" + NStr::IntToString(objid.GetId());
-            }
-        }
-        break;
-        
-        // tsip types
-        
-    case CSeq_id::e_Embl:      /* embl */
-    case CSeq_id::e_Ddbj:      /* ddbj */
-    case CSeq_id::e_Genbank:   /* genbank */
-    case CSeq_id::e_Tpg:       /* Third Party Annot/Seq Genbank */
-    case CSeq_id::e_Tpe:       /* Third Party Annot/Seq EMBL */
-    case CSeq_id::e_Tpd:       /* Third Party Annot/Seq DDBJ */
-    case CSeq_id::e_Other:     /* other */
-    case CSeq_id::e_Swissprot: /* swissprot (now with versions) */
-    case CSeq_id::e_Gpipe:     /* internal NCBI genome pipeline */
-        tsip = bestid.GetTextseq_Id();
-        use_version = true;
-        break;
-        
-    case CSeq_id::e_Pir:       /* pir   */
-    case CSeq_id::e_Prf:       /* prf   */
-        tsip = bestid.GetTextseq_Id();
-        break;
-        
-    default:
-        matched = false;
-    }
-    
-    // Default: if we have a string, use it; if we only have seqid,
-    // create a string.  This should not happen if the seqid matches
-    // one of the cases above, which currently correspond to all the
-    // supported seqid types.
-    
-    CSeq_id::ELabelFlags label_flags = (CSeq_id::ELabelFlags)
-        (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
-    
-    if (! matched) {
-        // (should not happen normally)
-        
-        simpler = false;
-        result  = eStringId;
-        
-        if (acc) {
-            str_id = *acc;
-        } else {
-            bestid.GetLabel(& str_id, CSeq_id::eFasta, label_flags);
-        }
-    }
-    
-    if (tsip) {
-        bool found = false;
-        
-        if (tsip->CanGetAccession()) {
-            str_id = tsip->GetAccession();
-            found = true;
-            
-            if (tsip->CanGetVersion()) {
-                str_id += ".";
-                str_id += NStr::UIntToString(tsip->GetVersion());
-            }
-        } else if (tsip->CanGetName()) {
-            str_id = tsip->GetName();
-            found = true;
-        }
-        
-        if (found) {
-            simpler = true;
-            result = eStringId;
-        }
-    }
-    
-    return result;
-}
-
-CSeqDBIsam::EIdentType
-CSeqDBIsam::TryToSimplifyAccession(const string & acc,
-                                   Int8         & num_id,
-                                   string       & str_id,
-                                   bool         & simpler)
-{
-    EIdentType result = eStringId;
-    num_id = (Uint4)-1;
-    
-    vector< CRef< CSeq_id > > seqid_set;
-    
-    if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
-        // Something like SeqIdFindBest()
-        CRef<CSeq_id> bestid =
-            FindBestChoice(seqid_set, CSeq_id::BestRank);
-        
-        result = SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
-    } else {
-        str_id = acc;
-        result = eStringId;
-        simpler = false;
-    }
-    
-    return result;
-}
-
 void CSeqDBIsam::IdsToOids(int              vol_start,
                            int              vol_end,
                            CSeqDBGiList   & ids,
@@ -1988,25 +1367,23 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
     // The vol_start parameter is needed because translations in the
     // GI list should refer to global OIDs, not per-volume OIDs.
     
-    _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
-    
-    m_Atlas.Lock(locked);
-    ids.InsureOrder(CSeqDBGiList::eGi);
-    
-    if ((m_IdentType == eGiId) && ids.GetNumGis()) {
-        x_SearchIndexNumericMulti(vol_start,
-                                  vol_end,
-                                  ids,
-                                  false,
-                                  locked);
-    }
-    
-    if ((m_IdentType == eTiId) && ids.GetNumTis()) {
-        x_SearchIndexNumericMulti(vol_start,
-                                  vol_end,
-                                  ids,
-                                  true,
-                                  locked);
+    switch (m_IdentType) {
+    case eGiId:
+        x_TranslateGiList<int>(vol_start, ids, locked);
+        break;
+
+    case eTiId:
+        x_TranslateGiList<Int8>(vol_start, ids, locked);
+        break;
+
+    case eStringId:
+        x_TranslateGiList<string>(vol_start, ids, locked);
+        break;
+
+    default: 
+        NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Error: Wrong type of idlist specified.");
     }
 }
 

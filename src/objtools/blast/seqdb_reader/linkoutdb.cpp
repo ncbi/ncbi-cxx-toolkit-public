@@ -85,16 +85,14 @@ void CLinkoutDB_Impl::x_Init(const string& dbname)
     // At least one of the indices must exist (probably the numeric one for
     // GIs)
     try {
-        m_Accession2Linkout = new CSeqDBIsam(m_Atlas, dbname, kProtNucl, 's',
-                                             CSeqDBIsam::eStringId);
+        m_Accession2Linkout = new CSeqDBIsam(m_Atlas, dbname, kProtNucl, 's', eStringId);
     } catch (const CSeqDBException& e) {
         if (e.GetErrCode() != CSeqDBException::eFileErr) {
             throw;
         }
     }
     try {
-        m_Gi2Linkout = new CSeqDBIsam(m_Atlas, dbname, kProtNucl, 'n',
-                                      CSeqDBIsam::eGiId);
+        m_Gi2Linkout = new CSeqDBIsam(m_Atlas, dbname, kProtNucl, 'n', eGiId);
     } catch (const CSeqDBException& e) {
         if (e.GetErrCode() != CSeqDBException::eFileErr) {
             throw;
@@ -123,14 +121,10 @@ int CLinkoutDB_Impl::GetLinkout(const CSeq_id& id)
     if (id.IsGi()) {
         m_Gi2Linkout->IdToOid(id.GetGi(), retval, lock);
     } else {
-        /// @todo Ning will write a function to convert accession to what's
-        /// indexed in the ISAM files, replace this code with that when
-        /// available.
         Int8 ident(-1);
         string str_id;
         bool simpler(false), version_check(true);
-        CSeqDBIsam::SimplifySeqid(const_cast<CSeq_id&>(id), 0, ident, str_id,
-                                  simpler);
+        SeqDB_SimplifySeqid(const_cast<CSeq_id&>(id), 0, ident, str_id, simpler);
         vector<CSeqDBIsam::TOid> oids;
         m_Accession2Linkout->StringToOids(str_id, oids, simpler, version_check, 
                                           lock);

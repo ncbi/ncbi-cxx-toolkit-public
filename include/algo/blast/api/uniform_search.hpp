@@ -163,11 +163,6 @@ public:
     /// Accessor for the negative gi list
     const CRef<CSeqDBGiList>& GetNegativeGiList() const;
     const TGiList GetNegativeGiListLimitation() const;
-    /// Mutator for the seqid list
-    /// @param gilist list of seqids [in]
-    void SetSeqIdList(CSeqDBGiList * seqidlist);
-    /// Accessor for the seqid list
-    const CRef<CSeqDBGiList>& GetSeqIdList() const;
     
     /// Mutator for the filtering algorithm
     /// @param filt_algorithm_id filtering algorithm ID [in]
@@ -194,7 +189,6 @@ private:
     // N.B.: only one of the 2 below should be specified
     mutable CRef<CSeqDBGiList> m_GiList;         ///< gi list
     mutable CRef<CSeqDBGiList> m_NegativeGiList; ///< negative gi list
-    mutable CRef<CSeqDBGiList> m_SeqIdList;      ///< seqid list
     bool            m_GiListSet;
     /// filtering to apply to database sequences
     string          m_FilteringAlgorithmString;

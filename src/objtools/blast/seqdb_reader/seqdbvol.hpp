@@ -880,7 +880,7 @@ public:
 
 private:
     void x_StringToOids(const string         & acc,
-                        CSeqDBIsam::EIdentType id_type,
+                        ESeqDBIdType           id_type,
                         Int8                   ident,
                         const string         & str_id,
                         bool                   simplified,

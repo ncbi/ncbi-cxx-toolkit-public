@@ -299,7 +299,7 @@ String ISAM Data File Format:
   char[]        key-string      Key string, folded to lowercase.
   x02           end-of-key      Byte marking the end of the key string.
   char[]        value-string    Value string (OID, printed in decimal).
-  x0D           end-of-line     Byte marking the end of the value string.
+  x0A           end-of-line     Byte marking the end of the value string.
 
   This is identical to the format of the samples in the index file,
   except that (for no apparent reason) each string is terminated with

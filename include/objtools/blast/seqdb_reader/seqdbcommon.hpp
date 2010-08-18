@@ -155,17 +155,17 @@ public:
     };
     
     /// Structure that holds Seq-id,OID pairs.
-    struct SSeqIdOid {
-        /// Constuct a SSeqIdOid element from the given Seq-id and oid.
+    struct SSiOid {
+        /// Constuct a SSiOid element from the given Seq-id and oid.
         /// @param seqid_in A Seq-id, or NULL if none is available.
         /// @param oid_in An OID, or -1 if none is available.
-        SSeqIdOid(CSeq_id * seqid_in = NULL, int oid_in = -1)
-            : seqid(seqid_in), oid(oid_in)
+        SSiOid(const string &si_in = "", int oid_in = -1)
+            : si(si_in), oid(oid_in)
         {
         }
         
-        /// The Seq-id or NULL if unknown.
-        CRef<objects::CSeq_id> seqid;
+        /// The String-id or "" if unknown.
+        string si;
         
         /// The OID or -1 if unknown.
         int oid;
@@ -179,7 +179,7 @@ public:
         /// The array is sorted by GI.
         eGi
 
-        /// TODO should we define eTi and eSeqId?
+        /// TODO should we define eTi and eSi?
     };
     
     /// Constructor
@@ -224,22 +224,11 @@ public:
     /// @param index The index of this TI (if found). [out]
     /// @return True if the TI was found.
     bool TiToOid(Int8 ti, int & oid, int & index);
+
     
-    /// Test for existence of a Seq-id.
-    bool FindSeqId(const CSeq_id & seqid) const;
-    
-    /// Try to find a Seq-id and return the associated OID.
-    /// @param seqid The Seq-id for which to search. [in]
-    /// @param oid The resulting oid if found. [out]
-    /// @return True if the Seq-id was found.
-    bool SeqIdToOid(const CSeq_id & seqid, int & oid);
-    
-    /// Find a Seq-id, returning the index and the associated OID.
-    /// @param seqid The Seq-id for which to search. [in]
-    /// @param oid The resulting oid if found. [out]
-    /// @param index The index of this Seq-id (if found). [out]
-    /// @return True if the Seq-id was found.
-    bool SeqIdToOid(const CSeq_id & seqid, int & oid, int & index);
+    bool FindSi(const string & si) const;
+    bool SiToOid(const string &si, int & oid);
+    bool SiToOid(const string &si, int & oid, int & index);
     
     /// Test for existence of a Seq-id by type.
     /// 
@@ -272,17 +261,9 @@ public:
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
     /// @return A reference to the Seq-id/OID pair.
-    const SSeqIdOid & GetSeqIdOid(int index) const
+    const SSiOid & GetSiOid(int index) const
     {
-        return m_SeqIdsOids[index];
-    }
-    
-    /// Access an element of the array.
-    /// @param index The index of the element to access. [in]
-    /// @return A reference to the GI/OID pair.
-    const SGiOid & operator[](int index) const
-    {
-        return m_GisOids[index];
+        return m_SisOids[index];
     }
     
     /// Get the number of GIs in the array.
@@ -298,22 +279,15 @@ public:
     }
     
     /// Get the number of Seq-ids in the array.
-    int GetNumSeqIds() const
+    int GetNumSis() const
     {
-        return (int) m_SeqIdsOids.size();
-    }
-    
-    /// Get the number of GIs in the array.
-    int Size() const
-    {
-        // this may become a deprecated method
-        return (int) m_GisOids.size();
+        return (int) m_SisOids.size();
     }
     
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumSeqIds() || GetNumTis());
+        return ! (GetNumGis() || GetNumSis() || GetNumTis());
     }
     
     /// Return true if there are elements present.
@@ -331,7 +305,7 @@ public:
     ///   The location in the array of the GI, OID pair.
     /// @param oid
     ///   The oid to store in that element.
-    void SetTranslation(int index, int oid)
+    void SetGiTranslation(int index, int oid)
     {
         m_GisOids[index].oid = oid;
     }
@@ -359,11 +333,40 @@ public:
     ///   The location in the array of Seq-id, OID pairs.
     /// @param oid
     ///   The oid to store in that element.
-    void SetSeqIdTranslation(int index, int oid)
+    void SetSiTranslation(int index, int oid)
     {
-        m_SeqIdsOids[index].oid = oid;
+        m_SisOids[index].oid = oid;
     }
     
+    int Size() const
+    {
+        return (int) m_GisOids.size();
+    }
+
+    template <class T>
+    int GetSize() const
+    {
+        return (int) m_GisOids.size();
+    }
+
+    template <class T>
+    const T & GetKey(int index) const
+    {
+        return (T) m_GisOids[index].gi;
+    }
+
+    template <class T>
+    bool IsValueSet(int index) const
+    {
+        return (m_GisOids[index].oid != -1);
+    }
+
+    template <class T>
+    void SetValue(int index, int oid) 
+    {
+        m_GisOids[index].oid = oid;
+    }
+
     /// Get the gi list
     void GetGiList(vector<int>& gis) const;
     
@@ -385,9 +388,9 @@ public:
     }
     
     /// Add a new SeqId to the list.
-    void AddSeqId(const char *si)
+    void AddSi(const string &si)
     {
-        m_SeqIdsOids.push_back(new CSeq_id(si));
+        m_SisOids.push_back(si);
     }
 
     /// Reserve space for GIs.
@@ -414,7 +417,7 @@ protected:
     vector<STiOid> m_TisOids;
     
     /// Pairs of Seq-ids and OIDs.
-    vector<SSeqIdOid> m_SeqIdsOids;
+    vector<SSiOid> m_SisOids;
     
 private:
     // The following disabled methods are reasonable things to do in
@@ -431,6 +434,53 @@ private:
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
 
+NCBI_XOBJREAD_EXPORT template < >
+inline int CSeqDBGiList::GetSize<Int8>() const
+{
+    return (int) m_TisOids.size();
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline const Int8 & CSeqDBGiList::GetKey<Int8>(int index) const
+{
+    return m_TisOids[index].ti;
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline bool CSeqDBGiList::IsValueSet<Int8>(int index) const
+{
+    return (m_TisOids[index].oid != -1);
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline void CSeqDBGiList::SetValue<Int8>(int index, int oid)
+{
+    m_TisOids[index].oid = oid;
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline int CSeqDBGiList::GetSize<string>() const
+{
+    return (int) m_SisOids.size();
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline const string & CSeqDBGiList::GetKey<string>(int index) const
+{
+    return m_SisOids[index].si;
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline bool CSeqDBGiList::IsValueSet<string>(int index) const
+{
+    return (m_SisOids[index].oid != -1);
+}
+
+NCBI_XOBJREAD_EXPORT template < >
+inline void CSeqDBGiList::SetValue<string>(int index, int oid)
+{
+    m_SisOids[index].oid = oid;
+}
 
 /// CSeqDBBitVector
 /// 
@@ -575,12 +625,12 @@ public:
     /// Sort list if not already sorted.
     void InsureOrder()
     {
-        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size() +m_SeqIds.size())) {
+        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size() +m_Sis.size())) {
             std::sort(m_Gis.begin(), m_Gis.end());
             std::sort(m_Tis.begin(), m_Tis.end());
-            std::sort(m_SeqIds.begin(), m_SeqIds.end());
+            std::sort(m_Sis.begin(), m_Sis.end());
             
-            m_LastSortSize = m_Gis.size() + m_Tis.size() + m_SeqIds.size();
+            m_LastSortSize = m_Gis.size() + m_Tis.size() + m_Sis.size();
         }
     }
     
@@ -597,9 +647,9 @@ public:
     }
     
     /// Add a new SeqId to the list.
-    void AddSeqId(const string &si)
+    void AddSi(const string &si)
     {
-        m_SeqIds.push_back(CRef<CSeq_id> (new CSeq_id(si)));
+        m_Sis.push_back(si);
     }
 
     /// Test for existence of a GI.
@@ -608,9 +658,6 @@ public:
     /// Test for existence of a TI.
     bool FindTi(Int8 ti);
     
-    /// Test for existence of a SeqId.
-    /// bool FindSeqId(const CSeq_id & seqid);
-
     /// Test for existence of a TI or GI here and report whether the
     /// ID was one of those types.
     /// 
@@ -647,9 +694,9 @@ public:
     /// Access an element of the SeqId array.
     /// @param index The index of the element to access. [in]
     /// @return The TI for that index.
-    const CRef<CSeq_id> GetSeqId(int index) const
+    const string GetSi(int index) const
     {
-        return m_SeqIds[index];
+        return m_Sis[index];
     }
 
     /// Get the number of GIs in the array.
@@ -665,15 +712,15 @@ public:
     }
     
     /// Get the number of SeqIds in the array.
-    int GetNumSeqIds() const
+    int GetNumSis() const
     {
-        return (int) m_SeqIds.size();
+        return (int) m_Sis.size();
     }
     
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumTis() || GetNumSeqIds());
+        return ! (GetNumGis() || GetNumTis() || GetNumSis());
     }
     
     /// Return true if there are elements present.
@@ -765,7 +812,7 @@ protected:
     vector<Int8> m_Tis;
     
     /// SeqIds to exclude from the SeqDB instance.
-    vector< CRef<CSeq_id> > m_SeqIds;
+    vector<string> m_Sis;
     
 private:
     /// Prevent copy constructor.
@@ -844,10 +891,10 @@ void SeqDB_ReadMemoryTiList(const char                   * fbeginp,
 /// @param in_order If non-null, returns true iff the seqids were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadMemorySeqIdList(const char                      * fbeginp,
-                               const char                      * fendp,
-                               vector<CSeqDBGiList::SSeqIdOid> & sis,
-                               bool                            * in_order = 0);
+void SeqDB_ReadMemorySiList(const char                   * fbeginp,
+                            const char                   * fendp,
+                            vector<CSeqDBGiList::SSiOid> & sis,
+                            bool                         * in_order = 0);
 
 /// Combine and quote a list of database names.
 ///
@@ -938,9 +985,9 @@ void SeqDB_ReadTiList(const string                 & fname,
 /// @param in_order If non-null, returns true iff the SeqIds were in order. [out]
 
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadSeqIdList(const string                   & fname,
-                        vector<CSeqDBGiList::SSeqIdOid> & sis,
-                        bool                            * in_order = 0);
+void SeqDB_ReadSiList(const string                 & fname,
+                      vector<CSeqDBGiList::SSiOid> & sis,
+                      bool                         * in_order = 0);
 
 /// Read a text or binary GI list from a file.
 ///
@@ -992,7 +1039,7 @@ public:
     enum EIdType {
         eGiList,
         eTiList,
-        eSeqIdList
+        eSiList
     };
 
     /// Build a GI list from a file.
@@ -1397,6 +1444,82 @@ unsigned SeqDB_SequenceHash(const char * sequence,
 /// @return The 32 bit hash value.
 NCBI_XOBJREAD_EXPORT
 unsigned SeqDB_SequenceHash(const CBioseq & sequence);
+
+/// Various identifier formats used in Id lookup
+enum ESeqDBIdType {
+    eGiId,     /// Genomic ID is a relatively stable numeric identifier for sequences.
+    eTiId,     /// Trace ID is a numeric identifier for Trace sequences.
+    ePigId,    /// Each PIG identifier refers to exactly one protein sequence.
+    eStringId, /// Some sequence sources uses string identifiers.
+    eHashId,   /// Lookup from sequence hash values to OIDs.
+    eOID       /// The ordinal id indicates the order of the data in the volume's index file.
+};
+
+/// Seq-id simplification.
+/// 
+/// Given a Seq-id, this routine devolves it to a GI or PIG if
+/// possible.  If not, it formats the Seq-id into a canonical form
+/// for lookup in the string ISAM files.  If the Seq-id was parsed
+/// from an accession, it can be provided in the "acc" parameter,
+/// and it will be used if the Seq-id is not in a form this code
+/// can recognize.  In the case that new Seq-id types are added,
+/// support for which has not been added to this code, this
+/// mechanism will try to use the original string.
+/// 
+/// @param bestid
+///   The Seq-id to look up. [in]
+/// @param acc
+///   The original string the Seq-id was created from (or NULL). [in]
+/// @param num_id                                                                                      
+///   The returned identifier, if numeric. [out]
+/// @param str_id
+///   The returned identifier, if a string. [out]
+/// @param simpler
+///   Whether an adjustment was done at all. [out]
+/// @return
+///   The resulting identifier type.
+NCBI_XOBJREAD_EXPORT ESeqDBIdType 
+SeqDB_SimplifySeqid(CSeq_id       & bestid,
+                    const string  * acc,                                                                     
+                    Int8          & num_id,                                                                  
+                    string        & str_id,                                                                  
+                    bool          & simpler);       
+    
+/// String id simplification.
+/// 
+/// This routine tries to produce a numerical type from a string
+/// identifier.  SeqDB can use faster lookup mechanisms if a PIG,
+/// GI, or OID type can be recognized in the string, for example.
+/// Even when the output is a string, it may be better formed for
+/// the purpose of lookup in the string ISAM file.
+/// 
+/// @param acc
+///   The string to look up. [in]
+/// @param num_id
+///   The returned identifier, if numeric. [out]
+/// @param str_id
+///   The returned identifier, if a string. [out]
+/// @param simpler
+///   Whether an adjustment was done at all. [out]
+/// @return
+///   The resulting identifier type.
+NCBI_XOBJREAD_EXPORT ESeqDBIdType 
+SeqDB_SimplifyAccession(const string & acc,
+                        Int8         & num_id,
+                        string       & str_id,
+                        bool         & simpler);
+
+/// String id simplification.
+///
+/// This simpler version will convert string id to the standard
+/// ISAM form, and return "" if the conversion fails.
+///
+/// @param acc
+///   The string to look up. [in]
+/// @return
+///   The resulting converted id.
+NCBI_XOBJREAD_EXPORT const string
+SeqDB_SimplifyAccession(const string &acc);
 
 END_NCBI_SCOPE
 

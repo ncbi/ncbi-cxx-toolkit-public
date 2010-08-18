@@ -121,7 +121,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            name,
                            prot_nucl,
                            'p',
-                           CSeqDBIsam::ePigId);
+                           ePigId);
     }
     
     if (CSeqDBIsam::IndexExists(name, prot_nucl, 'n')) {
@@ -130,7 +130,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            name,
                            prot_nucl,
                            'n',
-                           CSeqDBIsam::eGiId);
+                           eGiId);
     }
     
     if (CSeqDBIsam::IndexExists(name, prot_nucl, 's')) {
@@ -139,7 +139,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            name,
                            prot_nucl,
                            's',
-                           CSeqDBIsam::eStringId);
+                           eStringId);
     }
     
     if (CSeqDBIsam::IndexExists(name, prot_nucl, 't')) {
@@ -148,7 +148,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            name,
                            prot_nucl,
                            't',
-                           CSeqDBIsam::eTiId);
+                           eTiId);
     }
     
     if (CSeqDBIsam::IndexExists(name, prot_nucl, 'h')) {
@@ -157,7 +157,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            name,
                            prot_nucl,
                            'h',
-                           CSeqDBIsam::eHashId);
+                           eHashId);
     }
 
     if (CSeqDBGiIndex::IndexExists(name, prot_nucl)) {
@@ -2033,8 +2033,6 @@ bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
 void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                           CSeqDBLockHold & locked) const
 {
-    // Numeric translation is done in batch mode.
-    
     if (ids.GetNumGis()) {
         if (m_IsamGi.NotEmpty()) {
             m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
@@ -2055,29 +2053,13 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         }
     }
     
-    // Seq-id translations are done individually.
-    
-    vector<int> oids;
-    size_t N = ids.GetNumSeqIds();
-    
-    for(size_t i = 0; i < N; i++) {
-        const CSeqDBGiList::SSeqIdOid & item = ids.GetSeqIdOid(i);
-        
-        if (item.oid == -1 && item.seqid.NotEmpty()) {
-            
-            SeqidToOids(const_cast<CSeq_id&>(*item.seqid), oids, locked);
-            
-            for(size_t j = 0; j < oids.size(); j++) {
-                // This should always be true except in the presence of
-                // file corruption.
-                
-                if (oids[j] < (m_VolEnd - m_VolStart)) {
-                    ids.SetSeqIdTranslation(i, m_VolStart + oids[j]);
-                    break;
-                }
-            }
-            
-            oids.resize(0);
+    if (ids.GetNumSis()) {
+        if (m_IsamStr.NotEmpty()) {
+            m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "SI list specified but no ISAM file found for SI.");
         }
     }
 }
@@ -2152,7 +2134,7 @@ bool CSeqDBVol::GetGi(int                    oid,
 }
 
 void CSeqDBVol::x_StringToOids(const string          & acc,
-                               CSeqDBIsam::EIdentType  id_type,
+                               ESeqDBIdType            id_type,
                                Int8                    ident,
                                const string          & str_id,
                                bool                    simpler,
@@ -2164,7 +2146,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
     bool needs_four = true;
     
     switch(id_type) {
-    case CSeqDBIsam::eStringId:
+    case eStringId:
         if (! m_IsamStr.Empty()) {
             // Not simplified
             vcheck = true;
@@ -2172,7 +2154,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         }
         break;
         
-    case CSeqDBIsam::ePigId:
+    case ePigId:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
             int oid(-1);
@@ -2183,7 +2165,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         }
         break;
         
-    case CSeqDBIsam::eGiId:
+    case eGiId:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
             int oid(-1);
@@ -2194,7 +2176,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         }
         break;
         
-    case CSeqDBIsam::eTiId:
+    case eTiId:
         // Converted to TI type.
         if (! m_IsamTi.Empty()) {
             int oid(-1);
@@ -2214,12 +2196,12 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         }
         break;
         
-    case CSeqDBIsam::eOID:
+    case eOID:
         // Converted to OID directly.
         oids.push_back((int) ident);
         break;
         
-    case CSeqDBIsam::eHashId:
+    case eHashId:
         _ASSERT(0);
         NCBI_THROW(CSeqDBException,
                    eArgErr,
@@ -2302,8 +2284,7 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
     string str_id;
     bool   simpler (false);
     
-    CSeqDBIsam::EIdentType id_type =
-        CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler);
+    ESeqDBIdType id_type = SeqDB_SimplifyAccession(acc, ident, str_id, simpler);
 
     x_StringToOids(acc, id_type, ident, str_id, simpler, oids, locked);
 
@@ -2317,8 +2298,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
     string str_id;
     bool   simpler (false);
     
-    CSeqDBIsam::EIdentType id_type =
-        CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler);
+    ESeqDBIdType id_type = SeqDB_SimplifySeqid(seqid, 0, ident, str_id, simpler);
     
     x_StringToOids(seqid.AsFastaString(), id_type, ident, str_id, simpler, oids, locked);
 
@@ -2723,14 +2703,14 @@ void CSeqDBVol::OptimizeGiLists() const
 {
     if (m_UserGiList.Empty() ||
         m_VolumeGiLists.empty() ||
-        m_UserGiList->GetNumSeqIds() ||
+        m_UserGiList->GetNumSis() ||
         m_UserGiList->GetNumTis()) {
         
         return;
     }
     
     NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
-        if ((**gilist).GetNumSeqIds() != 0)
+        if ((**gilist).GetNumSis() != 0)
             return;
         
         if ((**gilist).GetNumTis() != 0)

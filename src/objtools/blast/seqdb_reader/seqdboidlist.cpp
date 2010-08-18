@@ -253,11 +253,7 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
 {
     m_Atlas.Lock(locked);
     
-    int gis_size = gis.GetNumGis();
-    int seqids_size = gis.GetNumSeqIds();
-    int tis_size = gis.GetNumTis();
-    
-    if (! (gis_size || seqids_size || tis_size)) {
+    if (gis.Empty()) {
         x_ClearBitRange(0, m_NumOIDs);
         m_NumOIDs = 0;
         return;
@@ -272,7 +268,7 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     
     int j = 0;
     
-    for(j = 0; j < gis_size; j++) {
+    for(j = 0; j < gis.GetNumGis(); j++) {
         int oid = gis.GetGiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
@@ -280,15 +276,15 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
         }
     }
     
-    for(j = 0; j < seqids_size; j++) {
-        int oid = gis.GetSeqIdOid(j).oid;
+    for(j = 0; j < gis.GetNumSis(); j++) {
+        int oid = gis.GetSiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
             gilist_oids->SetBit(oid);
         }
     }
     
-    for(j = 0; j < tis_size; j++) {
+    for(j = 0; j < gis.GetNumTis(); j++) {
         int oid = gis.GetTiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {

@@ -251,7 +251,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     // data sources and estimate the time needed for different
     // techniques.  This has not been done.
     
-    bool mixed_ids = m_UserList.Empty() || (!! m_UserList->GetNumSeqIds());
+    bool mixed_ids = m_UserList.Empty() || (!! m_UserList->GetNumSis());
     
     if (! mixed_ids) {
         if ((m_UserList->GetNumTis() && gilist->GetNumGis()) ||
@@ -290,14 +290,14 @@ void CSeqDBGiListSet::x_TranslateGisFromUserList(CSeqDBGiList & gilist)
     int target_index = 0;
     
     while(source_index < source_num && target_index < target_num) {
-        int source_gi = source[source_index].gi;
-        int target_gi = target[target_index].gi;
+        int source_gi = source.GetGiOid(source_index).gi;
+        int target_gi = target.GetGiOid(target_index).gi;
         
         // Match; translate if needed
         
         if (source_gi == target_gi) {
-            if (target[target_index].oid == -1) {
-                target.SetTranslation(target_index, source[source_index].oid);
+            if (target.GetGiOid(target_index).oid == -1) {
+                target.SetGiTranslation(target_index, source.GetGiOid(source_index).oid);
             }
             target_index++;
             source_index++;
@@ -308,7 +308,7 @@ void CSeqDBGiListSet::x_TranslateGisFromUserList(CSeqDBGiList & gilist)
             int jump = 2;
             int test = target_index + jump;
             
-            while(test < target_num && target[test].gi < source_gi) {
+            while(test < target_num && target.GetGiOid(test).gi < source_gi) {
                 target_index = test;
                 jump *= 2;
                 test = target_index + jump;
@@ -320,7 +320,7 @@ void CSeqDBGiListSet::x_TranslateGisFromUserList(CSeqDBGiList & gilist)
             int jump = 2;
             int test = source_index + jump;
             
-            while(test < source_num && source[test].gi < target_gi) {
+            while(test < source_num && source.GetGiOid(test).gi < target_gi) {
                 source_index = test;
                 jump *= 2;
                 test = source_index + jump;

@@ -1756,7 +1756,7 @@ BOOST_AUTO_TEST_CASE(TextUserGiList)
 BOOST_AUTO_TEST_CASE(UserSeqIdList)
 {
         
-    CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("data/prot345.sil", CSeqDBFileGiList::eSeqIdList));
+    CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("data/prot345.sil", CSeqDBFileGiList::eSiList));
     CSeqDB db("data/seqp", CSeqDB::eProtein, 0, 0, true, gi_list);
     
     int found(0);
@@ -2340,7 +2340,7 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
 
     // all elements in the intersect list have to be found in a5
     for(int i = 0; i < both.GetNumGis(); i++) {
-        BOOST_REQUIRE(std::find(a5.begin(), a5.end(), both[i].gi) != a5.end());
+        BOOST_REQUIRE(std::find(a5.begin(), a5.end(), both.GetKey<int>(i)) != a5.end());
     }
 }
 
@@ -2633,7 +2633,9 @@ public:
             if ((*p)[0] == '#') {
                 m_GisOids.push_back(atoi((*p) + 1));
             } else {
-                m_SeqIdsOids.push_back(new CSeq_id(*p));
+                string acc(*p);
+                string str_id = SeqDB_SimplifyAccession(acc);
+                if (str_id != "") m_SisOids.push_back(str_id);
             }
         }
     }
@@ -2644,7 +2646,7 @@ public:
     
     void Append(const char * p)
     {
-        m_SeqIdsOids.push_back(new CSeq_id(p));
+        m_SisOids.push_back(string(p));
     }
 };
 
@@ -2666,20 +2668,20 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
     
     CRef<CSeqIdList> ids(new CSeqIdList(str));
     
-    BOOST_REQUIRE_EQUAL((int)ids->GetNumSeqIds(), 10);
+    BOOST_REQUIRE_EQUAL((int)ids->GetNumSis(), 10);
     
     // Check that all IDs are initially unresolved:
     
-    for(int i = 0; i < ids->GetNumSeqIds(); i++) {
-        BOOST_REQUIRE(ids->GetSeqIdOid(i).oid == -1);
+    for(int i = 0; i < ids->GetNumSis(); i++) {
+        BOOST_REQUIRE(ids->GetSiOid(i).oid == -1);
     }
     
     // Check that SeqDB construction has resolved all IDs:
     
     CSeqDB db("nr", CSeqDB::eProtein, &*ids);
     
-    for(int i = 0; i < ids->GetNumSeqIds(); i++) {
-        BOOST_REQUIRE(ids->GetSeqIdOid(i).oid != -1);
+    for(int i = 0; i < ids->GetNumSis(); i++) {
+        BOOST_REQUIRE(ids->GetSiOid(i).oid != -1);
     }
     
     // Check that the set of returned ids is constrained to the same
@@ -2691,7 +2693,7 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
         k += db.GetHdr(i)->Get().size();
     }
     
-    BOOST_REQUIRE_EQUAL(k, ids->GetNumSeqIds());
+    BOOST_REQUIRE_EQUAL(k, ids->GetNumSis());
 }
 
 BOOST_AUTO_TEST_CASE(OidToGiLookup)
@@ -2720,15 +2722,15 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
     const char * str[] = {
         // Non-existant (fake):
         "ref|XP_12345.1|", // s0-2
-        "gi|11223344|",
+        "#11223344",
         "gb|EAH98765.9|",
         "#123456",         // g0,1
         "#3142007",
         
         // GIs found in volume but not volume list:
-        "gi|38083732",  // s3-5
-        "gi|671595|",
-        "gi|43544756|",
+        "#38083732",  // s3-5
+        "#671595",
+        "#43544756",
         "#45917153",    // gi2,3
         "#15705575",
         
@@ -2740,9 +2742,9 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
         "gb|AAL05711.1|",  // Note: same as "#15705575"
         
         // GIs Found in volume and volume list:
-        "gi|28378617",  // s11-13
-        "gi|23474175",
-        "gi|27364740",
+        "#28378617",  // s11-13
+        "#23474175",
+        "#27364740",
         "#23113886",    // gi4,5
         "#28563952",
         
@@ -2758,14 +2760,14 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
     CRef<CSeqIdList> ids(new CSeqIdList(str));
     
     // (Need to +1 for the terminating NULL.)
-    BOOST_REQUIRE_EQUAL((int)ids->GetNumSeqIds(), 19);
-    BOOST_REQUIRE_EQUAL((int)ids->GetNumGis(), 6);
+    BOOST_REQUIRE_EQUAL((int)ids->GetNumSis(), 12);
+    BOOST_REQUIRE_EQUAL((int)ids->GetNumGis(), 13);
     
     // Check that all IDs are initially unresolved:
     int i;
     
-    for(i = 0; i < ids->GetNumSeqIds(); i++) {
-        BOOST_REQUIRE(ids->GetSeqIdOid(i).oid == -1);
+    for(i = 0; i < ids->GetNumSis(); i++) {
+        BOOST_REQUIRE(ids->GetSiOid(i).oid == -1);
     }
     for(i = 0; i < ids->GetNumGis(); i++) {
         BOOST_REQUIRE(ids->GetGiOid(i).oid == -1);
@@ -2784,8 +2786,8 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
             int gi = atoi(str[i] + 1);
             found = ids->GiToOid(gi, oid);
         } else {
-            CSeq_id seqid(str[i]);
-            found = ids->SeqIdToOid(seqid, oid);
+            string str_id = SeqDB_SimplifyAccession(str[i]);
+            found = ids->SiToOid(str_id, oid);
         }
         
         BOOST_REQUIRE_EQUAL(found, true);
@@ -3586,7 +3588,7 @@ BOOST_AUTO_TEST_CASE(PdbIdWithChain)
         
     CSeqDB nr("nr", CSeqDB::eProtein);
     
-    string acc("1QCFA");
+    string acc("1qcf a");
     
     vector<int> oids;
     nr.AccessionToOids(acc, oids);

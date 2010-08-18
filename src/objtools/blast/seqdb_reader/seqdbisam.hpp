@@ -47,6 +47,73 @@ BEGIN_NCBI_SCOPE
 /// Bring the object directory definitions into this scope
 USING_SCOPE(objects);
 
+// Use Parabolic Binary Search to find the first gilist that
+// is greater-than-or-equal-to the key
+template <class T> static inline void
+s_AdvanceGiList(CSeqDBGiList & gis,
+                int          & gi_index,
+                int            gis_size,
+                const T      & key)
+{
+    while( (gi_index < gis_size) 
+       &&  (gis.GetKey<T>(gi_index) < key)) {
+
+        ++gi_index;
+        int jump = 2;
+        
+        while( (gi_index + jump < gis_size)
+           &&  (gis.GetKey<T>(gi_index + jump) < key)) {
+
+            gi_index += jump;
+            jump *= 2;
+        }
+    }
+    
+    // skipping translated elements
+    while( (gi_index < gis_size) 
+       &&  (gis.IsValueSet<T>(gi_index) )) ++gi_index;
+}
+
+// Use Parabolic Binary Search to find the largest sample that
+// is less-than-or-equal-to the first untranslated target GI.
+template <class T> static inline void
+s_AdvanceKeyList(const vector<T> & keys,
+                 int             & index,
+                 int               num_keys,
+                 const T         & target)
+{
+    while( (index < num_keys) 
+       &&  (keys[index] <= target)) {
+        
+        ++index;
+        int jump = 2;
+        
+        while( (index + jump < num_keys) 
+           &&  (keys[index + jump] <= target)) {
+
+            index += jump;
+            jump *= 2;
+        }
+    }
+    --index;    
+}
+
+// apply the translation (if we have it) for those GIs.
+template <class T> static inline void
+s_SetTranslation(CSeqDBGiList & gis,
+                 int          & gi_index,
+                 int            gis_size,
+                 const T      & key,
+                 int            value)
+{
+    while( (gi_index < gis_size) 
+       &&  (gis.GetKey<T>(gi_index) == key)) {
+
+        gis.SetValue<T>(gi_index, value);
+        ++gi_index;
+    }
+}
+    
 /// CSeqDBIsam
 /// 
 /// Manages one ISAM file, which will translate either PIGs, GIs, or
@@ -61,16 +128,6 @@ class CSeqDBIsam : public CObject {
 public:
     /// Import the type representing one GI, OID association.
     typedef CSeqDBGiList::SGiOid TGiOid;
-    
-    /// Identifier formats used by this class.
-    enum EIdentType {
-        eGiId,     /// Genomic ID is a relatively stable numeric identifier for sequences.
-        eTiId,     /// Trace ID is a numeric identifier for Trace sequences.
-        ePigId,    /// Each PIG identifier refers to exactly one protein sequence.
-        eStringId, /// Some sequence sources uses string identifiers.
-        eHashId,   /// Lookup from sequence hash values to OIDs.
-        eOID       /// The ordinal id indicates the order of the data in the volume's index file.
-    };
     
     /// Types of database this class can access.
     enum EIsamDbType {
@@ -120,7 +177,7 @@ public:
                const string & dbname,
                char           prot_nucl,
                char           file_ext_char,
-               EIdentType     ident_type);
+               ESeqDBIdType   ident_type);
     
     /// Destructor
     ///
@@ -292,62 +349,8 @@ public:
                     vector<TOid>   & oids,
                     CSeqDBLockHold & locked);
     
-    /// String id simplification.
-    /// 
-    /// This routine tries to produce a numerical type from a string
-    /// identifier.  SeqDB can use faster lookup mechanisms if a PIG,
-    /// GI, or OID type can be recognized in the string, for example.
-    /// Even when the output is a string, it may be better formed for
-    /// the purpose of lookup in the string ISAM file.
-    /// 
-    /// @param acc
-    ///   The string to look up. [in]
-    /// @param num_id
-    ///   The returned identifier, if numeric. [out]
-    /// @param str_id
-    ///   The returned identifier, if a string. [out]
-    /// @param simpler
-    ///   Whether an adjustment was done at all. [out]
-    /// @return
-    ///   The resulting identifier type.
-    static EIdentType
-    TryToSimplifyAccession(const string & acc,
-                           Int8         & num_id,
-                           string       & str_id,
-                           bool         & simpler);
-    
     /// Return any memory held by this object to the atlas.
     void UnLease();
-    
-    /// Seq-id simplification.
-    /// 
-    /// Given a Seq-id, this routine devolves it to a GI or PIG if
-    /// possible.  If not, it formats the Seq-id into a canonical form
-    /// for lookup in the string ISAM files.  If the Seq-id was parsed
-    /// from an accession, it can be provided in the "acc" parameter,
-    /// and it will be used if the Seq-id is not in a form this code
-    /// can recognize.  In the case that new Seq-id types are added,
-    /// support for which has not been added to this code, this
-    /// mechanism will try to use the original string.
-    /// 
-    /// @param bestid
-    ///   The Seq-id to look up. [in]
-    /// @param acc
-    ///   The original string the Seq-id was created from (or NULL). [in]
-    /// @param num_id
-    ///   The returned identifier, if numeric. [out]
-    /// @param str_id
-    ///   The returned identifier, if a string. [out]
-    /// @param simpler
-    ///   Whether an adjustment was done at all. [out]
-    /// @return
-    ///   The resulting identifier type.
-    static EIdentType
-    SimplifySeqid(CSeq_id       & bestid,
-                  const string  * acc,
-                  Int8          & num_id,
-                  string        & str_id,
-                  bool          & simpler);
     
     /// Get Numeric Bounds.
     /// 
@@ -486,6 +489,148 @@ private:
         eWrongFile       =  -12  /// The file was not found, or was the wrong length.
     };
     
+    /// Load and extract all index samples into array at once
+    template <class T>
+    void x_LoadIndex(CSeqDBMemLease & lease,
+                     vector<T>      & keys,
+                     vector<TIndx>  & offs)
+    {
+        const char * keydatap = lease.GetPtr(m_KeySampleOffset);
+    
+        for (int index=0; index < m_NumSamples; ++index) {
+            keys.push_back(x_GetNumericKey(keydatap));
+            // vals.push_back(x_GetNumericData(keydatap));
+            offs.push_back(index * m_PageSize * m_TermSize);
+            keydatap += m_TermSize;
+        } 
+
+        offs.push_back(m_NumTerms * m_TermSize);
+    }
+    
+    /// Load and extract a data page into array at once
+    template <class T>
+    void x_LoadData(CSeqDBMemLease & lease,
+                    vector<T>      & keys,
+                    vector<int>    & vals,
+                    int              num_keys,
+                    TIndx            begin)
+    {
+        const char * keydatap = lease.GetPtr(begin);
+
+        for (int index=0; index < num_keys; ++index) {
+            keys.push_back(x_GetNumericKey(keydatap));
+            vals.push_back(x_GetNumericData(keydatap));
+            keydatap += m_TermSize;
+        } 
+    }
+    
+    /// GiList Translation
+    /// 
+    /// Given a GI list, this routine finds the OID for each ID in the
+    /// list not already having a translation.
+    /// 
+    /// @param vol_start
+    ///   The starting OID for this ISAM file's database volume.
+    /// @param gis
+    ///   The GI list to translate.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    template <class T>
+    void x_TranslateGiList(int              vol_start,
+                           CSeqDBGiList   & gis,
+                           CSeqDBLockHold & locked)
+    {
+        int gilist_size = gis.GetSize<T>();
+        if (! gilist_size) return;
+
+        gis.InsureOrder(CSeqDBGiList::eGi);
+
+
+        if(m_Initialized == false) {
+            EErrorCode error = x_InitSearch(locked);
+        
+            if(error != eNoError) {
+                // Most ordinary errors (missing GIs for example) are
+                // ignored for "multi" mode searches.  But if a GI list is
+                // specified, and cannot be interpreted, it is an error.
+            
+                NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Error: Unable to use ISAM index in batch mode.");
+            }
+        }
+    
+        CSeqDBMemLease lease(m_Atlas);
+
+        vector<T> sample_keys;
+        vector<TIndx> page_offs;
+        vector<T> keys;
+        vector<int> vals;
+
+        sample_keys.reserve(m_NumSamples);
+        page_offs.reserve(m_NumSamples + 1);
+        keys.reserve(m_PageSize);
+        vals.reserve(m_PageSize);
+        
+        m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);
+        x_LoadIndex(lease, sample_keys, page_offs);
+        m_Atlas.RetRegion(lease);
+
+        int gilist_index = 0;
+        int sample_index = 0;
+
+        while((gilist_index < gilist_size) && (sample_index < m_NumSamples)) {
+        
+            s_AdvanceGiList<T>(gis, gilist_index, gilist_size, 
+                               sample_keys[sample_index]); 
+
+            if (gilist_index >= gilist_size) break;
+
+            s_AdvanceKeyList<T>(sample_keys, sample_index, m_NumSamples, 
+                                gis.GetKey<T>(gilist_index));
+        
+            // Now we should be ready to search a data block.
+            keys.clear();
+            vals.clear();
+
+            int num_keys = m_PageSize;
+            if (sample_index + 1 == m_NumSamples) {
+                num_keys = m_NumTerms - sample_index * m_PageSize;
+            }
+
+            m_Atlas.GetRegion(lease, 
+                              m_DataFname,
+                              page_offs[sample_index],
+                              page_offs[sample_index + 1]);
+            x_LoadData(lease, keys, vals, num_keys, page_offs[sample_index]);
+            m_Atlas.RetRegion(lease);
+
+            int index = 0;
+
+            while ((gilist_index < gilist_size) && (index < num_keys)) {
+
+                s_AdvanceKeyList<T>(keys, index, num_keys,
+                                    gis.GetKey<T>(gilist_index));
+
+                s_SetTranslation<T>(gis, gilist_index, gilist_size,
+                                    keys[index], vals[index] + vol_start);
+
+                ++index;
+                if (index >= num_keys) break;
+
+                s_AdvanceGiList<T>(gis, gilist_index, gilist_size, keys[index]); 
+
+                s_SetTranslation<T>(gis, gilist_index, gilist_size,
+                                    keys[index], vals[index] + vol_start);
+
+            }
+                                     
+            // We could be finished here because we exhausted the GI list
+            // We must be done with that one by now..
+            ++sample_index;
+        }
+    }
+    
     /// Numeric identifier lookup
     /// 
     /// Given a numeric identifier, this routine finds the OID.
@@ -518,7 +663,7 @@ private:
     /// @param done
     ///   true if the OID was found.
     /// @param locked
-    ///   The lock holder object for this thread.
+    //   The lock holder object for this thread.
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
@@ -528,28 +673,6 @@ private:
                          Int4           & SampleNum,
                          bool           & done,
                          CSeqDBLockHold & locked);
-    
-    /// GiList Translation
-    /// 
-    /// Given a GI list, this routine finds the OID for each ID in the
-    /// list not already having a translation.
-    /// 
-    /// @param vol_start
-    ///   The starting OID for this ISAM file's database volume.
-    /// @param vol_end
-    ///   The ending OID for this ISAM file's database volume.
-    /// @param gis
-    ///   The GI list to translate.
-    /// @param use_tis
-    ///   Iterate over the TI part of the GI list.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void
-    x_SearchIndexNumericMulti(int              vol_start,
-                              int              vol_end,
-                              CSeqDBGiList   & gis,
-                              bool             use_tis,
-                              CSeqDBLockHold & locked);
     
     /// Negative ID List Translation
     /// 
@@ -596,36 +719,6 @@ private:
                         Uint4          * Index,
                         Int4             SampleNum,
                         CSeqDBLockHold & locked);
-    
-    /// GiList translation for one page of a data file.
-    /// 
-    /// Given a GI list, this routine finds the OID for each GI in the
-    /// list using the mappings in one page of the data file.  It
-    /// updates the provided GI list index to skip past any GIs it
-    /// translates.
-    /// 
-    /// @param vol_start
-    ///   The starting OID for this ISAM file's database volume.
-    /// @param vol_end
-    ///   The fist OID past the end of this volume.
-    /// @param gis
-    ///   The GI list to translate.
-    /// @param gilist_index
-    ///   The index of the first unexamined GI in the GI list.
-    /// @param sample_index
-    ///   Indicates which data page should be used.
-    /// @param use_tis
-    ///   Use trace IDs instead of GIs.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void
-    x_SearchDataNumericMulti(int              vol_start,
-                             int              vol_end,
-                             CSeqDBGiList   & gis,
-                             int            & gilist_index,
-                             int              sample_index,
-                             bool             use_tis,
-                             CSeqDBLockHold & locked);
     
     /// Numeric identifier lookup
     /// 
@@ -977,37 +1070,6 @@ private:
                             Int8           & key_out,
                             int            & data_out);
     
-    /// Advance the GI list
-    ///
-    /// Skip over any GIs in the GI list that are less than the key,
-    /// translate any that are equal to it, and skip past any GI/OID
-    /// pairs that have already been translated.  Uses the parabolic
-    /// binary search technique.
-    ///
-    /// @param vol_start
-    ///   The starting OID of the volume.
-    /// @param vol_end
-    ///   The ending OID of the volume.
-    /// @param gis
-    ///   The GI list to advance through.
-    /// @param index
-    ///   The working index into the GI list.
-    /// @param key
-    ///   The current key in the ISAM file.
-    /// @param data
-    ///   The data corresponding to key.
-    /// @param use_tis
-    ///   Use trace IDs instead of GIs.
-    /// @return
-    ///   Returns true if any advancement was possible.
-    bool x_AdvanceGiList(int            vol_start,
-                         int            vol_end,
-                         CSeqDBGiList & gis,
-                         int          & index,
-                         Int8           key,
-                         int            data,
-                         bool           use_tis);
-    
     /// Find ID in the negative GI list using PBS.
     ///
     /// Use parabolic binary search to find the specified ID in the
@@ -1027,29 +1089,6 @@ private:
                          int                & index,
                          Int8                 key,
                          bool                 use_tis);
-    
-    /// Advance the ISAM file
-    ///
-    /// Skip over any GI/OID pairs in the ISAM file that are less than
-    /// the target_gi.  Uses the parabolic binary search technique.
-    ///
-    /// @param index_lease
-    ///   The memory lease to use with the index file.
-    /// @param index
-    ///   The working index into the ISAM file.
-    /// @param target_gi
-    ///   The GI from the GI list for which we are searching.
-    /// @param isam_key
-    ///   The key of the current location in the ISAM file.
-    /// @param isam_data
-    ///   The data corresponding to isam_key.
-    /// @return
-    ///   Returns true if any advancement was possible.
-    bool x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
-                            int            & index,
-                            Int8             target_gi,
-                            Int8           & isam_key,
-                            int            & isam_data);
     
     /// Map a data page.
     ///
@@ -1101,22 +1140,6 @@ private:
     }
     
     /// Fetch a GI or TI from a GI list.
-    static Int8 x_GetId(CSeqDBGiList & ids, int index, bool use_tis)
-    {
-        return (use_tis
-                ? ids.GetTiOid(index).ti
-                : ids.GetGiOid(index).gi);
-    }
-    
-    /// Fetch an OID from the GI or TI vector in a GI list.
-    static Int8 x_GetOid(CSeqDBGiList & ids, int index, bool use_tis)
-    {
-        return (use_tis
-                ? ids.GetTiOid(index).oid
-                : ids.GetGiOid(index).oid);
-    }
-    
-    /// Fetch a GI or TI from a GI list.
     static Int8 x_GetId(CSeqDBNegativeList & ids, int index, bool use_tis)
     {
         return (use_tis
@@ -1143,7 +1166,7 @@ private:
     CSeqDBAtlas & m_Atlas;
     
     /// The type of identifier this class uses
-    EIdentType m_IdentType;
+    ESeqDBIdType m_IdentType;
     
     /// A persistent lease on the ISAM index file.
     CSeqDBMemLease m_IndexLease;
@@ -1208,8 +1231,8 @@ private:
     /// Use Uint8 for the key
     bool m_LongId;
 
-    /// size of the numeric key-data
-    int m_Keysize;
+    /// size of the numeric key-data pair
+    int m_TermSize;
 
     Uint8 x_GetNumericKey(const void *p) {
         if (m_LongId)
@@ -1236,7 +1259,7 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
     
     const void * keydatap = 0;
 
-    TIndx offset_begin = m_KeySampleOffset + (m_Keysize * index);
+    TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
     
     keydatap = index_lease.GetPtr(offset_begin);
     key_out = x_GetNumericKey(keydatap);
@@ -1261,76 +1284,69 @@ CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
                                Int8           & key_out,
                                int            & data_out)
 {
-    // Only implements 4 byte keys.
-    
     const void * keydatap = 0;
     
-    TIndx offset_begin = m_KeySampleOffset + (m_Keysize * index);
+    TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
     
     keydatap = index_lease.GetPtr(offset_begin);
     key_out = x_GetNumericKey(keydatap);
     data_out = x_GetNumericData(keydatap);
 }
 
-inline bool
-CSeqDBIsam::x_AdvanceGiList(int            vol_start,
-                            int            vol_end,
-                            CSeqDBGiList & gis,
-                            int          & index,
-                            Int8           key,
-                            int            data,
-                            bool           use_tis)
+template <> inline void
+CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
+                                vector<string> & keys,
+                                vector<TIndx>  & offs)
 {
-    // Skip any that are less than key.
-    
-    bool advanced = false;
-    int gis_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
-    
-    while((index < gis_size) && (x_GetId(gis, index, use_tis) < key)) {
-        advanced = true;
-        index++;
-        
-        int jump = 2;
-        
-        while((index + jump) < gis_size &&
-              x_GetId(gis, index + jump, use_tis) < key) {
-            index += jump;
-            jump += jump;
-        }
+    TIndx offset_begin = m_KeySampleOffset;
+    TIndx sample_begin = offset_begin + sizeof(Uint4) * (m_NumSamples + 1);
+   
+    // load offset array
+    const Uint4 * offset = (const Uint4 *) lease.GetPtr(offset_begin);
+    for (int index=0; index <= m_NumSamples; ++index, ++offset) {
+        // Get the data_offsets
+        offs.push_back(SeqDB_GetStdOrd((Uint4*) offset));
     }
-    
-    // Translate any that are equal to key (and not yet translated).
-    
-    // If the sample is an exact match to one (or more) GIs, apply
-    // the translation (if we have it) for those GIs.
-    
-    while((index < gis_size) && (x_GetId(gis,index,use_tis) == key)) {
-        if (x_GetOid(gis, index, use_tis) == -1) {
-            if ((data + vol_start) < vol_end) {
-                if (use_tis) {
-                    gis.SetTiTranslation(index, data + vol_start);
-                } else {
-                    gis.SetTranslation(index, data + vol_start);
-                }
-            }
-        }
-        
-        advanced = true;
-        index ++;
-    }
-    
-    // Continue skipping to eliminate any gi/oid pairs that are
-    // already translated.
-    
-    while((index < gis_size) &&
-          (x_GetOid(gis, index, use_tis) != -1)) {
-        
-        advanced = true;
-        index++;
-    }
-    
-    return advanced;
+
+    // load sample array 
+    offset = (const Uint4 *) lease.GetPtr(sample_begin);
+    for (int index=0; index < m_NumSamples; ++index, ++offset) {
+        // Get the index_offsets
+        offset_begin = SeqDB_GetStdOrd((Uint4*) offset);
+
+        // Lookup the samples
+        const char * keydatap =  (const char *) lease.GetPtr(offset_begin) - 1;
+
+        const char * key_begin = ++ keydatap;
+        while (*keydatap != 0x02) ++keydatap;
+        keys.push_back(string(key_begin, keydatap));
+
+        /* key_begin = ++keydatap;
+        while (*keydatap != 0x00) ++keydatap;
+        vals.push_back(NStr::StringToUInt(string(key_begin, keydatap))); */
+    } 
 }
+    
+template <> inline void 
+CSeqDBIsam::x_LoadData<string>(CSeqDBMemLease & lease,
+                               vector<string> & keys,
+                               vector<int>    & vals,
+                               int              num_keys,
+                               TIndx            begin)
+{
+    const char * keydatap = (const char *) lease.GetPtr(begin) - 1;
+    for (int index=0; index < num_keys; ++index) {
+
+        const char * key_begin = ++keydatap;
+        while (*keydatap != 0x02) ++keydatap;
+        keys.push_back(string(key_begin, keydatap));
+
+        key_begin = ++keydatap;
+        while (*keydatap != 0x0a) ++keydatap;
+        vals.push_back(NStr::StringToUInt(string(key_begin, keydatap)));
+    }
+}
+
 
 inline bool
 CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
@@ -1366,61 +1382,6 @@ CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
 }
 
 
-inline bool
-CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
-                               int            & index,
-                               Int8             target_id,
-                               Int8           & isam_key,
-                               int            & isam_data)
-{
-    bool advanced = false;
-    
-    int num_samples = m_NumSamples;
-    
-    // Use Parabolic Binary Search to find the largest sample that
-    // is less-than-or-equal-to the first untranslated target GI.
-    
-    // The following is basically equivalent to (but faster than):
-    //   while(first_gi >= sample[i+1]) i++;
-    
-    Int8 post_key(0);
-    int post_data(0);
-    
-    while(((index + 1) < num_samples) &&
-          (x_TestNumericSample(index_lease,
-                               index + 1,
-                               target_id,
-                               post_key,
-                               post_data) >= 0)) {
-        
-        advanced = true;
-        index ++;
-        
-        isam_key = post_key;
-        isam_data = post_data;
-        
-        // The starting value for jump could be tuned by counting
-        // the total number of "test numeric" calls made.
-        
-        int jump = 2;
-        
-        while(((index + jump + 1) < num_samples) &&
-              (x_TestNumericSample(index_lease,
-                                   index + jump + 1,
-                                   target_id,
-                                   post_key,
-                                   post_data) >= 0)) {
-            index += jump + 1;
-            jump += jump;
-            
-            isam_key = post_key;
-            isam_data = post_data;
-        }
-    }
-    
-    return advanced;
-}
-
 inline void
 CSeqDBIsam::x_MapDataPage(int                sample_index,
                           int              & start,
@@ -1431,8 +1392,8 @@ CSeqDBIsam::x_MapDataPage(int                sample_index,
     num_elements =
         x_GetPageNumElements(sample_index, & start);
     
-    TIndx offset_begin = start * m_Keysize;
-    TIndx offset_end = offset_begin + m_Keysize * num_elements;
+    TIndx offset_begin = start * m_TermSize;
+    TIndx offset_end = offset_begin + m_TermSize * num_elements;
     
     m_Atlas.Lock(locked);
     
@@ -1452,8 +1413,8 @@ CSeqDBIsam::x_GetDataElement(const void       * dpage,
                              Int8             & key,
                              int              & data)
 {
-    key  = x_GetNumericKey ((char *)dpage + index * m_Keysize);
-    data = x_GetNumericData((char *)dpage + index * m_Keysize);
+    key  = x_GetNumericKey ((char *)dpage + index * m_TermSize);
+    data = x_GetNumericData((char *)dpage + index * m_TermSize);
 }
 
 END_NCBI_SCOPE

@@ -545,16 +545,16 @@ public:
 
 
 /// Compare SSeqIdOid structs by SeqId.
-class CSeqDB_SortSeqIdLessThan {
+class CSeqDB_SortSiLessThan {
 public:
     /// Test whether lhs is less than (occurs before) rhs.
     /// @param lhs Left hand side of less-than operator. [in]
     /// @param rhs Right hand side of less-than operator. [in]
     /// @return True if lhs sorts before rhs by Seq-id.
-    int operator()(const CSeqDBGiList::SSeqIdOid & lhs,
-                   const CSeqDBGiList::SSeqIdOid & rhs)
+    int operator()(const CSeqDBGiList::SSiOid & lhs,
+                   const CSeqDBGiList::SSiOid & rhs)
     {
-        return (*lhs.seqid) < (*rhs.seqid);
+        return lhs.si < rhs.si;
     }
 };
 
@@ -601,7 +601,7 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
         case eGi:
             s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
             s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
-            s_InsureOrder<CSeqDB_SortSeqIdLessThan>(m_SeqIdsOids);
+            s_InsureOrder<CSeqDB_SortSiLessThan>(m_SisOids);
             break;
             
         default:
@@ -694,37 +694,34 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
     return false;
 }
 
-
-bool CSeqDBGiList::FindSeqId(const CSeq_id & seqid) const
+bool CSeqDBGiList::FindSi(const string &si) const
 {
     int oid(0), index(0);
-    return (const_cast<CSeqDBGiList *>(this))->SeqIdToOid(seqid, oid, index);
+    return (const_cast<CSeqDBGiList *>(this))->SiToOid(si, oid, index);
 }
 
-
-bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid)
+bool CSeqDBGiList::SiToOid(const string &si, int & oid)
 {
     int index(0);
-    return SeqIdToOid(seqid, oid, index);
+    return SiToOid(si, oid, index);
 }
 
-
-bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid, int & index)
+bool CSeqDBGiList::SiToOid(const string &si, int & oid, int & index)
 {
     InsureOrder(eGi);
-    
-    int b(0), e((int)m_SeqIdsOids.size());
-    
+
+    int b(0), e((int)m_SisOids.size());
+
     while(b < e) {
         int m = (b + e)/2;
-        CSeq_id & m_seqid = *m_SeqIdsOids[m].seqid;
+        const string & m_si = m_SisOids[m].si;
         
-        if (m_seqid < seqid) {
+        if (m_si < si) {
             b = m + 1;
-        } else if (seqid < m_seqid) {
+        } else if (si < m_si) {
             e = m;
         } else {
-            oid = m_SeqIdsOids[m].oid;
+            oid = m_SisOids[m].oid;
             index = m;
             return true;
         }
@@ -733,7 +730,6 @@ bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid, int & index)
     oid = index = -1;
     return false;
 }
-
 
 void
 CSeqDBGiList::GetGiList(vector<int>& gis) const
@@ -1173,10 +1169,10 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
     }
 }
 
-void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
-                               const char * fendp,
-                               vector<CSeqDBGiList::SSeqIdOid> & sis,
-                               bool * in_order)
+void SeqDB_ReadMemorySiList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SSiOid> & sis,
+                            bool * in_order)
 {
     Int8 file_size = fendp - fbeginp;
     
@@ -1200,15 +1196,17 @@ void SeqDB_ReadMemorySeqIdList(const char * fbeginp,
         head = p;
         while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
         if (p > head) {
-            try {
-                sis.push_back(new CSeq_id(string(head, p-head)));
-            } catch(...) {
-                // TODO should we (and how to) emit warning to the user?
-                //cout << "WARNING:  " << string(head, p-head) 
-                //     << " is not a valid seqid string." << endl;
-            }
+            string acc(head, p);
+            string str_id = SeqDB_SimplifyAccession(acc);
+            if (str_id != "") {
+                sis.push_back(str_id);
+            } else {
+                cerr << "WARNING:  " << acc
+                     << " is not a valid seqid string." << endl;
+            } 
         }
     }
+    *in_order = false;
 }
 
 bool SeqDB_IsBinaryGiList(const string  & fname)
@@ -1246,7 +1244,7 @@ void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, 
     SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
 
-void SeqDB_ReadSeqIdList(const string & fname, vector<CSeqDBGiList::SSeqIdOid> & sis, bool * in_order) 
+void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order) 
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
 
@@ -1254,7 +1252,7 @@ void SeqDB_ReadSeqIdList(const string & fname, vector<CSeqDBGiList::SSeqIdOid> &
     const char *fbeginp = (char*) mfile.GetPtr();
     const char *fendp   = fbeginp + (int) file_size;
 
-    SeqDB_ReadMemorySeqIdList(fbeginp, fendp, sis, in_order);
+    SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
 }
 
 void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
@@ -1270,15 +1268,6 @@ void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
         gis.push_back(iter->gi);
     }
 }
-
-/*
-void SeqDB_ReadSeqIdList(const string & fname, vector<string> & sis, bool * in_order)
-{
-    typedef vector<CSeqDBGiList::SSeqIdOid> TPairList;
-
-    TPairList pairs;
-    cout << "SeqDB_ReadSeqIdList has not been implemented" << endl;
-}*/
 
 bool CSeqDBNegativeList::FindGi(int gi)
 {
@@ -1325,15 +1314,6 @@ bool CSeqDBNegativeList::FindTi(Int8 ti)
     return false;
 }
 
-/*
-bool CSeqDBNegativeList::FindSeqId(const CSeq_id & seqid)
-{
-    // TODO not implemented yet.
-    cout << "CSeqDBNegativeList::FindSeqId not implemented yet" << endl;
-    return false;
-}*/
-
-
 bool CSeqDBNegativeList::FindId(const CSeq_id & id)
 {
     bool match_type = false;
@@ -1357,18 +1337,15 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
         return FindTi(ti);
     } else {
         match_type = false;
+        return false;
     }
-    
-    return false;
 }
 
 
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
     if (id.IsGi()) {
-        if (FindGi(id.GetGi())) {
-            return true;
-        }
+        return FindGi(id.GetGi());
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         const CObject_id & obj = id.GetGeneral().GetTag();
         
@@ -1376,12 +1353,22 @@ bool CSeqDBGiList::FindId(const CSeq_id & id)
                    ? obj.GetId()
                    : NStr::StringToInt8(obj.GetStr()));
         
-        if (FindTi(ti)) {
-            return true;
+        return FindTi(ti);
+    } else {
+        Int8 num_id;
+        string str_id;
+        bool simpler;
+        SeqDB_SimplifySeqid(*(const_cast<CSeq_id *>(&id)), 0, num_id, str_id, simpler);
+        if (FindSi(str_id)) return true;
+
+        // We may have to strip the version to find it...
+        size_t pos = str_id.find(".");
+        if (pos != str_id.npos) {
+            string nover(str_id, 0, pos);
+            return FindSi(nover);
         }
     }
-    
-    return FindSeqId(id);
+    return false;
 }
 
 
@@ -1395,8 +1382,8 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
         case eTiList:
             SeqDB_ReadTiList(fname, m_TisOids, & in_order);
             break;
-        case eSeqIdList:
-            SeqDB_ReadSeqIdList(fname, m_SeqIdsOids, & in_order);
+        case eSiList:
+            SeqDB_ReadSiList(fname, m_SisOids, & in_order);
             break;
     }
     m_CurrentOrder = in_order ? eGi : eNone;
@@ -1506,7 +1493,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     int gis_n = (int) gis.size();
     
     while(list_i < list_n && gis_i < gis_n) {
-        int L = gilist[list_i].gi;
+        int L = gilist.GetGiOid(list_i).gi;
         int G = gis[gis_i];
         
         if (L < G) {
@@ -1519,7 +1506,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
             continue;
         }
         
-        m_GisOids.push_back(gilist[list_i]);
+        m_GisOids.push_back(gilist.GetGiOid(list_i));
         
         list_i++;
         gis_i++;
@@ -1886,6 +1873,306 @@ void SeqDB_FileIntegrityAssert(const string & file,
     string msg = "Validation failed: [" + text + "] at ";
     msg += file + ":" + NStr::IntToString(line);
     SeqDB_ThrowException(CSeqDBException::eFileErr, msg);
+}
+
+ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
+                                 const string  * acc,
+                                 Int8          & num_id,
+                                 string        & str_id,
+                                 bool          & simpler)
+{
+    ESeqDBIdType result = eStringId;
+    
+    const CTextseq_id * tsip = 0;
+    
+    bool use_version = false;
+    
+    bool matched = true;
+
+    switch(bestid.Which()) {
+    case CSeq_id::e_Gi:
+        simpler = true;
+        num_id = bestid.GetGi();
+        result = eGiId;
+        break;
+        
+    case CSeq_id::e_Gibbsq:    /* gibbseq */
+        simpler = true;
+        result = eStringId;
+        str_id = NStr::UIntToString(bestid.GetGibbsq());
+        break;
+        
+    case CSeq_id::e_General:
+        {
+            const CDbtag & dbt = bestid.GetGeneral();
+            
+            if (dbt.CanGetDb()) {
+                if (dbt.GetDb() == "BL_ORD_ID") {
+                    simpler = true;
+                    num_id = dbt.GetTag().GetId();
+                    result = eOID;
+                    break;
+                }
+                
+                if (dbt.GetDb() == "PIG") {
+                    simpler = true;
+                    num_id = dbt.GetTag().GetId();
+                    result = ePigId;
+                    break;
+                }
+                
+                if (dbt.GetDb() == "ti") {
+                    simpler = true;
+                    num_id = (dbt.GetTag().IsStr()
+                              ? NStr::StringToInt8(dbt.GetTag().GetStr())
+                              : dbt.GetTag().GetId());
+                    
+                    result = eTiId;
+                    break;
+                }
+            }
+            
+            if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
+                result = eStringId;
+                str_id = dbt.GetTag().GetStr();
+                str_id = NStr::ToLower(str_id);
+            } else {
+                // Use the default logic.
+                matched = false;
+            }
+        }
+        break;
+        
+    case CSeq_id::e_Local:     /* local */
+        simpler = true;
+        result = eStringId;
+        {
+            const CObject_id & objid = bestid.GetLocal();
+            
+            if (objid.IsStr()) {
+                // sparse version will leave "lcl|" off.
+                str_id = objid.GetStr();
+                str_id = NStr::ToLower(str_id);
+            } else {
+                // Local numeric ids are stored as strings.
+                str_id = "lcl|" + NStr::IntToString(objid.GetId());
+            }
+        }
+        break;
+        
+        // tsip types
+        
+    case CSeq_id::e_Embl:      /* embl */
+    case CSeq_id::e_Ddbj:      /* ddbj */
+    case CSeq_id::e_Genbank:   /* genbank */
+    case CSeq_id::e_Tpg:       /* Third Party Annot/Seq Genbank */
+    case CSeq_id::e_Tpe:       /* Third Party Annot/Seq EMBL */
+    case CSeq_id::e_Tpd:       /* Third Party Annot/Seq DDBJ */
+    case CSeq_id::e_Other:     /* other */
+    case CSeq_id::e_Swissprot: /* swissprot (now with versions) */
+    case CSeq_id::e_Gpipe:     /* internal NCBI genome pipeline */
+        tsip = bestid.GetTextseq_Id();
+        use_version = true;
+        break;
+        
+    case CSeq_id::e_Pir:       /* pir   */
+    case CSeq_id::e_Prf:       /* prf   */
+        tsip = bestid.GetTextseq_Id();
+        break;
+        
+    default:
+        matched = false;
+    }
+    
+    // Default: if we have a string, use it; if we only have seqid,
+    // create a string.  This should not happen if the seqid matches
+    // one of the cases above, which currently correspond to all the
+    // supported seqid types.
+    
+    CSeq_id::ELabelFlags label_flags = (CSeq_id::ELabelFlags)
+        (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
+    
+    if (! matched) {
+        // (should not happen normally)
+        
+        simpler = false;
+        result  = eStringId;
+        
+        if (acc) {
+            str_id = *acc;
+            str_id = NStr::ToLower(str_id);
+        } else {
+            bestid.GetLabel(& str_id, CSeq_id::eFasta, label_flags);
+            str_id = NStr::ToLower(str_id);
+        }
+    }
+    
+    if (tsip) {
+        bool found = false;
+        
+        if (tsip->CanGetAccession()) {
+            str_id = tsip->GetAccession();
+            str_id = NStr::ToLower(str_id);
+            found = true;
+            
+            if (tsip->CanGetVersion()) {
+                str_id += ".";
+                str_id += NStr::UIntToString(tsip->GetVersion());
+            }
+        } else if (tsip->CanGetName()) {
+            str_id = tsip->GetName();
+            str_id = NStr::ToLower(str_id);
+            found = true;
+        }
+        
+        if (found) {
+            simpler = true;
+            result = eStringId;
+        }
+    }
+    
+    return result;
+}
+
+/// Find the end of a single element in a Seq-id set
+/// 
+/// Seq-id strings sometimes contain several Seq-ids.  This function
+/// looks for the end of the first Seq-id, and will return its length.
+/// Static methods of CSeq_id are used to evaluate tokens.
+/// 
+/// @param str
+///   Seq-id string to search.
+/// @param pos
+///   Position at which to start search.
+/// @return
+///   End position of first fasta id, or string::npos in case of error.
+
+static size_t
+s_SeqDB_EndOfFastaID(const string & str, size_t pos)
+{
+    // (Derived from s_EndOfFastaID()).
+    
+    size_t vbar = str.find('|', pos);
+    
+    if (vbar == string::npos) {
+        return string::npos; // bad
+    }
+    
+    string portion(str, pos, vbar - pos);
+    
+    CSeq_id::E_Choice choice =
+        CSeq_id::WhichInverseSeqId(portion.c_str());
+    
+    if (choice != CSeq_id::e_not_set) {
+        size_t vbar_prev = vbar;
+        int count;
+        for (count=0; ; ++count, vbar_prev = vbar) {
+            vbar = str.find('|', vbar_prev + 1);
+            
+            if (vbar == string::npos) {
+                break;
+            }
+            
+            int start_pt = int(vbar_prev + 1);
+            string element(str, start_pt, vbar - start_pt);
+            
+            choice = CSeq_id::WhichInverseSeqId(element.c_str());
+            
+            if (choice != CSeq_id::e_not_set) {
+                vbar = vbar_prev;
+                break;
+            }
+        }
+    } else {
+        return string::npos; // bad
+    }
+    
+    return (vbar == string::npos) ? str.size() : vbar;
+}
+
+/// Parse string into a sequence of Seq-id objects.
+///
+/// A string is broken down into Seq-ids and the set of Seq-ids is
+/// returned.
+///
+/// @param line
+///   The string to interpret.
+/// @param seqids
+///   The returned set of Seq-id objects.
+/// @return
+///   true if any Seq-id objects were found.
+
+static bool
+s_SeqDB_ParseSeqIDs(const string              & line,
+                    vector< CRef< CSeq_id > > & seqids)
+{
+    // (Derived from s_ParseFastaDefline()).
+    
+    seqids.clear();
+    size_t pos = 0;
+    
+    while (pos < line.size()) {
+        size_t end = s_SeqDB_EndOfFastaID(line, pos);
+        
+        if (end == string::npos) {
+            // We didn't get a clean parse -- ignore the data after
+            // this point, and return what we have.
+            break;
+        }
+        
+        string element(line, pos, end - pos);
+        
+        CRef<CSeq_id> id;
+        
+        try {
+            id = new CSeq_id(element);
+        }
+        catch(invalid_argument &) {
+            // Maybe this should be done: "seqids.clear();"
+            break;
+        }
+        
+        seqids.push_back(id);
+        pos = end + 1;
+    }
+    
+    return ! seqids.empty();
+}
+
+ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
+                                     Int8         & num_id,
+                                     string       & str_id,
+                                     bool         & simpler)
+{
+    ESeqDBIdType result = eStringId;
+    num_id = (Uint4)-1;
+    
+    vector< CRef< CSeq_id > > seqid_set;
+    
+    if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
+        // Something like SeqIdFindBest()
+        CRef<CSeq_id> bestid =
+            FindBestChoice(seqid_set, CSeq_id::BestRank);
+        
+        result = SeqDB_SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
+    } else {
+        str_id = acc;
+        str_id = NStr::ToLower(str_id);
+        result = eStringId;
+        simpler = false;
+    }
+    
+    return result;
+}
+
+const string SeqDB_SimplifyAccession(const string &acc)
+{
+    Int8 num_id;
+    string str_id;
+    bool simpler(false);
+    ESeqDBIdType result = SeqDB_SimplifyAccession(acc, num_id, str_id, simpler);
+    if (result == eStringId) return str_id;
+    else return "";
 }
 
 END_NCBI_SCOPE

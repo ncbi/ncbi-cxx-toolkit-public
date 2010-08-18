@@ -118,7 +118,7 @@ public:
     /// This method adds a Seq-id to the list.
     /// 
     /// @param seqid A sequence identifier.
-    void AppendSeqId(CRef<objects::CSeq_id> seqid, int oid = -1)
+    void AppendSi(const string &si, int oid = -1)
     {
         // This could verify ordering, but since ordering for GIs is
         // common, and ordering for Seq-ids is rare, for now I'll just
@@ -127,7 +127,8 @@ public:
         // paths that are slow.
         
         m_CurrentOrder = eNone;
-        m_SeqIdsOids.push_back(SSeqIdOid(seqid, oid));
+        string str_id = SeqDB_SimplifyAccession(si);
+        if (str_id != "") m_SisOids.push_back(SSiOid(str_id, oid));
     }
     
 private:
