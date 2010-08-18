@@ -10,4 +10,4 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_ncbi_conn.sh
 CHECK_COPY = test_ncbi_conn.sh
 
-WATCHERS = lavr
+WATCHERS = lavr satskyse
