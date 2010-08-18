@@ -597,7 +597,7 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     EndOfTag();
     buffer[length] = 0;
     char* endptr;
-    double data = strtod(buffer, &endptr);
+    double data = NStr::StringToDoublePosix(buffer, &endptr);
     if ( *endptr != 0 ) {
         ThrowError(fFormatError, "bad REAL data string");
     }

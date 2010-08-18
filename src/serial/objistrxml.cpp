@@ -864,7 +864,7 @@ double CObjectIStreamXml::ReadDouble(void)
     string s;
     ReadTagData(s);
     char* endptr;
-    double data = strtod(s.c_str(), &endptr);
+    double data = NStr::StringToDoublePosix(s.c_str(), &endptr);
     while (IsWhiteSpace(*endptr)) {
         ++endptr;
     }

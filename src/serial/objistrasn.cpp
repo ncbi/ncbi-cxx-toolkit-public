@@ -786,7 +786,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     memcpy(buffer, mantissaStr.data(), mantissaLength);
     buffer[mantissaLength] = '\0';
     char* endptr;
-    double mantissa = strtod(buffer, &endptr);
+    double mantissa = NStr::StringToDoublePosix(buffer, &endptr);
     if ( *endptr != 0 )
         ThrowError(fFormatError, "bad double in line "
             + NStr::UIntToString(m_Input.GetLine()));
