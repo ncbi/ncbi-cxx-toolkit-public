@@ -53,7 +53,6 @@
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
-#include <objtools/readers/multireader.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
@@ -469,8 +468,13 @@ void CMultiReaderApp::ReadObject(
     CRef<CSerialObject>& object )
 //  ============================================================================
 {
-    CMultiReader reader( m_uFormat, m_iFlags, m_AnnotName, m_AnnotTitle );
-    object = reader.ReadObject( *m_pInput, m_pErrors );
+    CReaderBase* pReader = CReaderBase::GetReader( m_uFormat, m_iFlags );
+    if ( !pReader ) {
+        NCBI_THROW2( CObjReaderParseException, eFormat,
+            "File format not supported", 0 );
+    }
+    object = pReader->ReadObject( *m_pInput, m_pErrors );
+    delete pReader;
 }
 
 //  ============================================================================
