@@ -3,4 +3,4 @@
 SRC = ncbi_conntest
 LIB = xconntest
 
-WATCHERS = lar
+WATCHERS = lavr
