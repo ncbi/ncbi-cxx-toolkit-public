@@ -172,6 +172,8 @@ public:
 
     /// Get the server name, user login name, and password
     const string& ServerName(void) const;
+    Uint4         Host(void) const;
+    Uint2         Port(void) const;
     const string& UserName(void) const;
     const string& Password(void) const;
 
@@ -291,6 +293,8 @@ private:
     bool                            m_ServerTypeIsKnown;
 
     const string   m_Server;
+    const Uint4    m_Host;
+    const Uint2    m_Port;
     const string   m_User;
     const string   m_Passwd;
     string         m_Database;

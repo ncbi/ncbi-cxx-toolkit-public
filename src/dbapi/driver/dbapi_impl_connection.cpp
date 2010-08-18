@@ -100,6 +100,8 @@ CConnection::CConnection(CDriverContext& dc,
 , m_ServerType(params.GetServerType())
 , m_ServerTypeIsKnown(false)
 , m_Server(params.GetServerName())
+, m_Host(params.GetHost())
+, m_Port(params.GetPort())
 , m_User(params.GetUserName())
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
@@ -278,6 +280,16 @@ CDB_Result* CConnection::Create_Result(impl::CResult& result)
 const string& CConnection::ServerName(void) const
 {
     return m_Server;
+}
+
+Uint4 CConnection::Host(void) const
+{
+    return m_Host;
+}
+
+Uint2 CConnection::Port(void) const
+{
+    return m_Port;
 }
 
 

@@ -210,7 +210,11 @@ CDB_Connection* CConnection::CloneCDB_Conn()
             );
     const CCPPToolkitConnParams params(def_params);
 
+    def_params.SetHost(GetCDB_Connection()->Host());
+    def_params.SetPort(GetCDB_Connection()->Port());
     def_params.SetDatabaseName(GetDatabase());
+    def_params.SetParam("do_not_dispatch", "true");
+    def_params.SetParam("do_not_read_conf", "true");
 
     CDB_Connection* tmp_conn(
             m_ds->GetDriverContext()->MakeConnection(params)

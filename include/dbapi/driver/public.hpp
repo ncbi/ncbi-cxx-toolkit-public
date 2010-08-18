@@ -154,6 +154,20 @@ public:
     virtual const string& ServerName() const;
     
     /// @brief 
+    ///   Get the host.
+    /// 
+    /// @return
+    ///   host ip.
+    virtual Uint4 Host() const;
+
+    /// @brief 
+    ///   Get the port.
+    /// 
+    /// @return
+    ///   port.
+    virtual Uint2 Port() const;
+
+    /// @brief 
     ///   Get the user user.
     /// 
     /// @return

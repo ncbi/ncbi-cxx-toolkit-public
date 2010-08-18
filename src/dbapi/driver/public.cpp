@@ -317,6 +317,18 @@ const string& CDB_Connection::ServerName() const
     return m_ConnImpl->ServerName();
 }
 
+Uint4 CDB_Connection::Host() const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Host();
+}
+
+Uint2 CDB_Connection::Port() const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->Port();
+}
+
 const string& CDB_Connection::UserName() const
 {
     CHECK_CONNECTION(m_ConnImpl);
