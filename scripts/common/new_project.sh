@@ -61,6 +61,10 @@ EOF
   exit 1
 }
 
+if [ -f /etc/redhat-release -a -d $NCBI/c++/GCC442-Debug64/build ]; then
+    def_builddir=$NCBI/c++/GCC442-Debug64/build
+fi
+
 #################################
 
 CreateMakefile_Builddir()
