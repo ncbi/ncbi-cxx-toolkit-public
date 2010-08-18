@@ -34,7 +34,7 @@
 #define OBJTOOLS_READERS___GTF_READER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gff2_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGtfReader
 //  ----------------------------------------------------------------------------
-    : public CGff3Reader
+    : public CGff2Reader
 {
 public:
     CGtfReader();
@@ -74,119 +74,119 @@ protected:
         TAnnots& annots );
 
     virtual bool x_UpdateAnnot(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotCds(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotStartCodon(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotStopCodon(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnot5utr(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnot3utr(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotInter(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotInterCns(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotIntronCns(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotExon(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotMiscFeature(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
 
     bool x_UpdateFeatureId(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
 
     bool x_CreateFeatureLocation(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
     
     bool x_CreateGeneXref(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
     
     bool x_MergeFeatureLocationSingleInterval(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
     
     bool x_MergeFeatureLocationMultiInterval(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
 
     bool x_CreateParentGene(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
         
     bool x_MergeParentGene(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
             
     bool x_CreateParentCds(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
         
     bool x_CreateParentMrna(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_annot > );
         
     bool x_MergeParentCds(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
             
     bool x_FeatureSetDataGene(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
 
     bool x_FeatureSetDataMRNA(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
 
     bool x_FeatureSetDataCDS(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat > );
 
 protected:
     bool x_FindParentGene(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat >& );
 
     bool x_FindParentCds(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat >& );
 
     bool x_FindParentMrna(
-        const CGff3Record&,
+        const CGff2Record&,
         CRef< CSeq_feat >& );
 
     bool x_CdsIsPartial(
-        const CGff3Record& );
+        const CGff2Record& );
 
     bool x_SkipAttribute(
-        const CGff3Record&,
+        const CGff2Record&,
         const string& ) const;
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;

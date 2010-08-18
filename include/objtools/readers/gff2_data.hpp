@@ -30,14 +30,14 @@
  *
  */
 
-#ifndef OBJTOOLS_READERS___GFF3DATA__HPP
-#define OBJTOOLS_READERS___GFF3DATA__HPP
+#ifndef OBJTOOLS_READERS___GFF2DATA__HPP
+#define OBJTOOLS_READERS___GFF2DATA__HPP
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CGff3Record
+class CGff2Record
 //  ----------------------------------------------------------------------------
 {
 public:
@@ -47,8 +47,8 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGff3Record();
-    virtual ~CGff3Record();
+    CGff2Record();
+    virtual ~CGff2Record();
 
     //
     //  Input/output:
@@ -57,11 +57,11 @@ public:
         const string& );
 
     bool MakeExon(
-        const CGff3Record&,
+        const CGff2Record&,
         const CSeq_interval& );
 
     bool MergeRecord(
-        const CGff3Record& );
+        const CGff2Record& );
 
     //
     // Accessors:
@@ -146,4 +146,4 @@ protected:
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_READERS___GFF3DATA__HPP
+#endif // OBJTOOLS_READERS___GFF2DATA__HPP

@@ -42,14 +42,14 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
-#include <objtools/readers/gff3_data.hpp>
+#include <objtools/readers/gff2_data.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CGff3Record::CGff3Record():
+CGff2Record::CGff2Record():
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
     m_pdScore( 0 ),
@@ -60,7 +60,7 @@ CGff3Record::CGff3Record():
 };
 
 //  ----------------------------------------------------------------------------
-CGff3Record::~CGff3Record()
+CGff2Record::~CGff2Record()
 //  ----------------------------------------------------------------------------
 {
     delete m_pdScore;
@@ -69,7 +69,7 @@ CGff3Record::~CGff3Record()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::AssignFromGff(
+bool CGff2Record::AssignFromGff(
     const string& strRawInput )
 //  ----------------------------------------------------------------------------
 {
@@ -129,7 +129,7 @@ bool CGff3Record::AssignFromGff(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::GetAttribute(
+bool CGff2Record::GetAttribute(
     const string& strKey,
     string& strValue ) const
 //  ----------------------------------------------------------------------------
@@ -143,8 +143,8 @@ bool CGff3Record::GetAttribute(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::MergeRecord(
-    const CGff3Record& other )
+bool CGff2Record::MergeRecord(
+    const CGff2Record& other )
 //  ----------------------------------------------------------------------------
 {
     const TAttributes& newAttrs = other.Attributes(); 
@@ -161,7 +161,7 @@ bool CGff3Record::MergeRecord(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::x_AssignAttributesFromGff(
+bool CGff2Record::x_AssignAttributesFromGff(
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {
@@ -239,7 +239,7 @@ bool CGff3Record::x_AssignAttributesFromGff(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::x_SplitGffAttributes(
+bool CGff2Record::x_SplitGffAttributes(
     const string& strRawAttributes,
 	vector< string >& attributes) const
 {
@@ -276,8 +276,8 @@ bool CGff3Record::x_SplitGffAttributes(
 
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::MakeExon(
-    const CGff3Record& parent,
+bool CGff2Record::MakeExon(
+    const CGff2Record& parent,
     const CSeq_interval& loc )
 //  ----------------------------------------------------------------------------
 {
@@ -303,7 +303,7 @@ bool CGff3Record::MakeExon(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Record::x_IsParentOf(
+bool CGff2Record::x_IsParentOf(
     CSeq_feat::TData::ESubtype maybe_parent,
     CSeq_feat::TData::ESubtype maybe_child )
 //  ----------------------------------------------------------------------------
@@ -365,7 +365,7 @@ bool CGff3Record::x_IsParentOf(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff3Record::x_FeatIdString(
+string CGff2Record::x_FeatIdString(
     const CFeat_id& id )
 //  ----------------------------------------------------------------------------
 {

@@ -39,8 +39,8 @@
 #include <objects/seqfeat/Cdregion.hpp>
 
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/gff_reader.hpp>
-#include <objtools/readers/gff3_data.hpp>
+#include <objtools/readers/gff2_reader.hpp>
+//#include <objtools/readers/gff3_data.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,19 +53,9 @@ class SRecord;
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ----------------------------------------------------------------------------
-    : protected CGFFReader, public CReaderBase
+    : public CGff2Reader
 {
 public:
-    typedef enum {
-        fNormal =       0,
-        fNewCode =      0x1000, // for now don't clobber CGFFReader flags
-    } TFlags;
-    
-public:
-    typedef vector< CRef< CSeq_annot > > TAnnots;
-    typedef TAnnots::iterator TAnnotIt;
-    typedef TAnnots::const_iterator TAnnotCit;
-
     //
     //  object management:
     //
@@ -79,196 +69,8 @@ public:
         const string& title );
 
     virtual ~CGff3Reader();
-    
-    //
-    //  object interface:
-    //
+
 public:
-    unsigned int 
-    ObjectType() const { return OT_SEQENTRY; };
-    
-    CRef< CSeq_entry >
-    ReadSeqEntry(
-        ILineReader&,
-        IErrorContainer* =0 );
-        
-    virtual CRef< CSerialObject >
-    ReadObject(
-        ILineReader&,
-        IErrorContainer* =0 );
-                
-    virtual void
-    ReadSeqAnnots(
-        TAnnots&,
-        CNcbiIstream&,
-        IErrorContainer* =0 );
-                        
-    virtual void
-    ReadSeqAnnots(
-        TAnnots&,
-        ILineReader&,
-        IErrorContainer* =0 );
-
-    virtual void
-    ReadSeqAnnotsNew(
-        TAnnots&,
-        ILineReader&,
-        IErrorContainer* =0 );
-
-    //
-    //  new stuff: 
-    //
-    bool x_ParseBrowserLineGff(
-        const string&,
-        CRef< CAnnotdesc >& );
-        
-    virtual bool x_ParseTrackLineGff(
-        const string&,
-        CRef< CAnnotdesc >& );
-                                
-    virtual bool x_ParseStructuredCommentGff(
-        const string&,
-        CRef< CAnnotdesc >& );
-                                
-    virtual bool x_ParseFeatureGff(
-        const string&,
-        TAnnots& );
-
-    virtual void x_AddConversionInfoGff(
-        TAnnots&,
-        IErrorContainer* );
-
-    virtual bool x_InitAnnot(
-        const CGff3Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnot(
-        const CGff3Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_AddFeatureToAnnot(
-        CRef< CSeq_feat >,
-        CRef< CSeq_annot > );
-                            
-    virtual bool x_FeatureSetId(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    virtual bool x_FeatureSetXref(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    bool x_FeatureSetQualifiers(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-    
-    bool x_FeatureSetLocation(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-    
-    bool x_FeatureSetGffInfo(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-    
-    bool x_FeatureSetData(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-    
-    virtual bool x_FeatureSetDataGene(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    virtual bool x_FeatureSetDataMRNA(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    virtual bool x_FeatureSetDataCDS(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    bool x_FeatureSetDataExon(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    bool x_FeatureSetDataMiscFeature(
-        const CGff3Record&,
-        CRef< CSeq_feat > );
-
-    bool x_GetFeatureById(
-        const string&,
-        CRef< CSeq_feat >& );
-
-    bool x_GetParentFeature(
-        const CSeq_feat&,
-        CRef< CSeq_feat >& );
-
-    bool x_FeatureMergeExon(
-        CRef< CSeq_feat >,
-        CRef< CSeq_feat > );
-
-    static CRef< CDbtag >
-    x_ParseDbtag(
-        const string& );
-
-    CErrorContainerLenient m_ErrorsPrivate;
-    map< string, CRef< CSeq_feat > > m_MapIdToFeature;
-
-    static string GenbankKey(
-        CSeqFeatData::ESubtype );
-
-    bool x_HasTemporaryLocation(
-        const CSeq_feat& );
-
-    static bool IsExon(
-        CRef< CSeq_feat > );
-
-    //
-    //  helpers:
-    //
-protected:
-    virtual void x_SetTrackDataToSeqEntry(
-        CRef<CSeq_entry>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string& );
-                
-    virtual void x_Info(
-        const string& message,
-        unsigned int line = 0);
-
-    virtual void x_Warn(
-        const string& message,
-        unsigned int line = 0);
-
-    virtual void x_Error(
-        const string& message,
-        unsigned int line = 0);
-
-    bool x_IsCommentLine(
-        const string& );
-
-    bool x_ReadLine(
-        ILineReader&,
-        string& );
-
-    void x_PlaceFeature(
-        CSeq_feat& feat, 
-        const SRecord& );
-
-    virtual bool x_SkipAttribute(
-        const CGff3Record&,
-        const string& ) const { return false; };
-
-    //
-    //  data:
-    //
-protected:
-    TFlags             m_uFlags;
-    IErrorContainer*   m_pErrors;
-    CRef< CAnnotdesc > m_CurrentTrackInfo;
-    CRef< CAnnotdesc > m_CurrentBrowserInfo;
-    string             m_AnnotName;
-    string             m_AnnotTitle;
 };
 
 END_SCOPE(objects)

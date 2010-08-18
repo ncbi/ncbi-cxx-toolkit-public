@@ -146,10 +146,10 @@ CRef< CSeq_id > s_RecordIdToSeqId(
 //  ============================================================================
 class CGtfReadRecord
 //  ============================================================================
-    : public CGff3Record
+    : public CGff2Record
 {
 public:
-    CGtfReadRecord(): CGff3Record() {};
+    CGtfReadRecord(): CGff2Record() {};
     ~CGtfReadRecord() {};
 
 protected:
@@ -193,7 +193,7 @@ bool CGtfReadRecord::x_AssignAttributesFromGff(
 
 //  ----------------------------------------------------------------------------
 string s_GeneKey(
-    const CGff3Record& gff )
+    const CGff2Record& gff )
 //  ----------------------------------------------------------------------------
 {
     string strGeneId;
@@ -206,7 +206,7 @@ string s_GeneKey(
 
 //  ----------------------------------------------------------------------------
 string s_FeatureKey(
-    const CGff3Record& gff )
+    const CGff2Record& gff )
 //  ----------------------------------------------------------------------------
 {
     string strGeneId = s_GeneKey( gff );
@@ -226,7 +226,7 @@ string s_FeatureKey(
 //  ----------------------------------------------------------------------------
 CGtfReader::CGtfReader():
 //  ----------------------------------------------------------------------------
-    CGff3Reader( fNewCode )
+    CGff2Reader( fNewCode )
 {
 }
 
@@ -363,7 +363,7 @@ bool CGtfReader::x_ParseFeatureGff(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnot(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -436,7 +436,7 @@ bool CGtfReader::x_UpdateAnnot(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotCds(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -503,7 +503,7 @@ bool CGtfReader::x_UpdateAnnotCds(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotStartCodon(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -527,7 +527,7 @@ bool CGtfReader::x_UpdateAnnotStartCodon(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotStopCodon(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -541,7 +541,7 @@ bool CGtfReader::x_UpdateAnnotStopCodon(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnot5utr(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -588,7 +588,7 @@ bool CGtfReader::x_UpdateAnnot5utr(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnot3utr(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -635,7 +635,7 @@ bool CGtfReader::x_UpdateAnnot3utr(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotInter(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -644,7 +644,7 @@ bool CGtfReader::x_UpdateAnnotInter(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotInterCns(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -653,7 +653,7 @@ bool CGtfReader::x_UpdateAnnotInterCns(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotIntronCns(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -662,7 +662,7 @@ bool CGtfReader::x_UpdateAnnotIntronCns(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotExon(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -709,7 +709,7 @@ bool CGtfReader::x_UpdateAnnotExon(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotMiscFeature(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -718,7 +718,7 @@ bool CGtfReader::x_UpdateAnnotMiscFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateFeatureId(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -745,7 +745,7 @@ bool CGtfReader::x_UpdateFeatureId(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateFeatureLocation(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -765,7 +765,7 @@ bool CGtfReader::x_CreateFeatureLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateGeneXref(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -782,7 +782,7 @@ bool CGtfReader::x_CreateGeneXref(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeFeatureLocationSingleInterval(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -798,7 +798,7 @@ bool CGtfReader::x_MergeFeatureLocationSingleInterval(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeFeatureLocationMultiInterval(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -836,7 +836,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentGene(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -864,7 +864,7 @@ bool CGtfReader::x_CreateParentGene(
     
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeParentGene(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -873,7 +873,7 @@ bool CGtfReader::x_MergeParentGene(
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentCds(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -920,7 +920,7 @@ bool CGtfReader::x_CreateParentCds(
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentMrna(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -952,7 +952,7 @@ bool CGtfReader::x_CreateParentMrna(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentGene(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -966,7 +966,7 @@ bool CGtfReader::x_FindParentGene(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentCds(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -980,7 +980,7 @@ bool CGtfReader::x_FindParentCds(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentMrna(
-    const CGff3Record& gff,
+    const CGff2Record& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -994,11 +994,11 @@ bool CGtfReader::x_FindParentMrna(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataGene(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff3Reader::x_FeatureSetDataGene( record, pFeature ) ) {
+    if ( ! CGff2Reader::x_FeatureSetDataGene( record, pFeature ) ) {
         return false;
     }
 
@@ -1016,11 +1016,11 @@ bool CGtfReader::x_FeatureSetDataGene(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataMRNA(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff3Reader::x_FeatureSetDataMRNA( record, pFeature ) ) {
+    if ( ! CGff2Reader::x_FeatureSetDataMRNA( record, pFeature ) ) {
         return false;
     }
     
@@ -1040,11 +1040,11 @@ bool CGtfReader::x_FeatureSetDataMRNA(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataCDS(
-    const CGff3Record& record,
+    const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff3Reader::x_FeatureSetDataCDS( record, pFeature ) ) {
+    if ( ! CGff2Reader::x_FeatureSetDataCDS( record, pFeature ) ) {
         return false;
     }
 
@@ -1074,7 +1074,7 @@ bool CGtfReader::x_FeatureSetDataCDS(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_SkipAttribute(
-    const CGff3Record& record,
+    const CGff2Record& record,
     const string& strKey ) const
 //  ----------------------------------------------------------------------------
 {
@@ -1129,7 +1129,7 @@ bool CGtfReader::x_SkipAttribute(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CdsIsPartial(
-    const CGff3Record& record )
+    const CGff2Record& record )
 //  ----------------------------------------------------------------------------
 {
     string strPartial;
