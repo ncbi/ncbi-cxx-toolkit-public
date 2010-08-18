@@ -98,10 +98,8 @@ void CBlastFormatterApp::Init()
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    // FIXME: when local formatting is allowed, remove 'remote' from the
-    // description below
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                  "Stand-alone (remote) BLAST formatter client, version " 
+                  "Stand-alone BLAST formatter client, version " 
                   + CBlastVersion().Print());
 
     arg_desc->SetCurrentGroup("Input options");
