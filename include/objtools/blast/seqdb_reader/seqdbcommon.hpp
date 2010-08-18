@@ -434,49 +434,49 @@ private:
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline int CSeqDBGiList::GetSize<Int8>() const
 {
     return (int) m_TisOids.size();
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline const Int8 & CSeqDBGiList::GetKey<Int8>(int index) const
 {
     return m_TisOids[index].ti;
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline bool CSeqDBGiList::IsValueSet<Int8>(int index) const
 {
     return (m_TisOids[index].oid != -1);
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline void CSeqDBGiList::SetValue<Int8>(int index, int oid)
 {
     m_TisOids[index].oid = oid;
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline int CSeqDBGiList::GetSize<string>() const
 {
     return (int) m_SisOids.size();
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline const string & CSeqDBGiList::GetKey<string>(int index) const
 {
     return m_SisOids[index].si;
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline bool CSeqDBGiList::IsValueSet<string>(int index) const
 {
     return (m_SisOids[index].oid != -1);
 }
 
-NCBI_XOBJREAD_EXPORT template < >
+template < >
 inline void CSeqDBGiList::SetValue<string>(int index, int oid)
 {
     m_SisOids[index].oid = oid;
