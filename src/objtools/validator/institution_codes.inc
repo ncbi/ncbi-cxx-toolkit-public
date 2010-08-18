@@ -4655,7 +4655,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection",
 "QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection",
 "QCNE	s	Museo Ecuatoriano de Ciencias Naturales",
-"QD	s	Ocean University of Qingdao, Marine Biology Department",
+"QD	s	Ocean University of China",
 "QDC	s	Qinghai Institute for Drug Control",
 "QDPC	s	Queensland Department of Primary Industries",
 "QDPI	s	Queensland Department of Primary Industries",
