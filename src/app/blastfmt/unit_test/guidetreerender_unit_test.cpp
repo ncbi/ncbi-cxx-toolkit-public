@@ -93,10 +93,11 @@ BOOST_AUTO_TEST_CASE(TestRenderTreeRect)
     renderer.SetRenderFormat(CGuideTreeRenderer::eRect);
 
     CTmpFile tmp_file;
-    renderer.WriteImage(tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw));
+    CNcbiOstream& ostr = tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw);
+    renderer.WriteImage(ostr);
+    ostr.flush();
 
     CFile out_file(tmp_file.GetFileName());
-
     BOOST_REQUIRE(out_file.Exists() && out_file.GetLength() > 10);
 }
 
@@ -111,7 +112,9 @@ BOOST_AUTO_TEST_CASE(TestRenderTreeSlanted)
     renderer.SetRenderFormat(CGuideTreeRenderer::eSlanted);
 
     CTmpFile tmp_file;
-    renderer.WriteImage(tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw));
+    CNcbiOstream& ostr = tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw);
+    renderer.WriteImage(ostr);
+    ostr.flush();
 
     CFile out_file(tmp_file.GetFileName());
 
@@ -129,7 +132,9 @@ BOOST_AUTO_TEST_CASE(TestRenderTreeRadial)
     renderer.SetRenderFormat(CGuideTreeRenderer::eRadial);
 
     CTmpFile tmp_file;
-    renderer.WriteImage(tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw));
+    CNcbiOstream& ostr = tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw);
+    renderer.WriteImage(ostr);
+    ostr.flush();
 
     CFile out_file(tmp_file.GetFileName());
 
@@ -147,7 +152,9 @@ BOOST_AUTO_TEST_CASE(TestRenderForce)
     renderer.SetRenderFormat(CGuideTreeRenderer::eForce);
 
     CTmpFile tmp_file;
-    renderer.WriteImage(tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw));
+    CNcbiOstream& ostr = tmp_file.AsOutputFile(CTmpFile::eIfExists_Throw);
+    renderer.WriteImage(ostr);
+    ostr.flush();
 
     CFile out_file(tmp_file.GetFileName());
 
