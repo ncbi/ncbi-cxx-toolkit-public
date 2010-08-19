@@ -562,11 +562,11 @@ BEGIN_TEST_FUNCTION(BitString)
         // dump object to strstream in either asn text, asn binary, or xml
         CNcbiStrstream ss;
         ESerialDataFormat format = (ESerialDataFormat) r.GetRand(eSerial_AsnText, eSerial_Xml);
-        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(format, ss, false));
+        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(format, ss, eNoOwnership));
         *osa << orig;
 
         // read object back in from stream
-        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(format, ss, false));
+        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(format, ss, eNoOwnership));
         CPC_InfoData copy;
         *isa >> copy;
 
