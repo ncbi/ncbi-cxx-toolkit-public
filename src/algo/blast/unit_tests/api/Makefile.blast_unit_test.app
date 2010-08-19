@@ -30,7 +30,10 @@ LIB = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
 
 LIBS = $(NETWORK_LIBS) \
         $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-LDFLAGS = $(FAST_LDFLAGS)
+
+# De-universalize Mac builds to work around a PPC toolchain limitation
+CXXFLAGS = $(ORIG_CXXFLAGS:ppc=i386)
+LDFLAGS  = $(FAST_LDFLAGS:ppc=i386)
 
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = blast_unit_test
