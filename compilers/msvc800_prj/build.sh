@@ -15,10 +15,13 @@ arch="$2"
 ########### Global variables
 
 build_trees='static dll'
-###sol_static="ncbi_cpp.sln"
-###sol_dll="ncbi_cpp_dll.sln"
 sol_static="ncbi_cpp.sln gui/ncbi_gui.sln"
 sol_dll="ncbi_cpp_dll.sln gui/ncbi_gui_dll.sln"
+if [ "$arch" = "64" ] ; then
+    # Reduce build tree for 64-bit builds
+    sol_static_64="ncbi_cpp.sln"
+    sol_dll_64="ncbi_cpp_dll.sln"
+fi
 timer="date +'%H:%M'"
 
 
