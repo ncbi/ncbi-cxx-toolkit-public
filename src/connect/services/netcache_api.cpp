@@ -57,6 +57,9 @@
 
 #define NCBI_USE_ERRCODE_X  ConnServ_NetCache
 
+#define MAX_NETCACHE_PASSWORD_LENGTH 64
+
+
 BEGIN_NCBI_SCOPE
 
 static bool s_FallbackServer_Initialized = false;
@@ -165,6 +168,18 @@ CNetServer SNetCacheAPIImpl::GetServer(const string& bid)
     return m_Service->GetServer(key.GetHost(), key.GetPort());
 }
 
+void SNetCacheAPIImpl::SetPassword(const string& password)
+{
+    string encoded_password(NStr::CEncode(password));
+
+    if (encoded_password.length() > MAX_NETCACHE_PASSWORD_LENGTH) {
+        NCBI_THROW(CNetCacheException,
+            eAuthenticationError, "Password is too long");
+    }
+
+    m_Password = encoded_password;
+}
+
 void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
@@ -204,7 +219,7 @@ CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
         m_NetCacheAPI = nc_api;
     else {
         m_NetCacheAPI = new SNetCacheAPIImpl(*nc_api);
-        m_NetCacheAPI->m_Password = password;
+        m_NetCacheAPI->SetPassword(password);
     }
 }
 

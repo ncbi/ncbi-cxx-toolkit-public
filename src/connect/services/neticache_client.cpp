@@ -197,7 +197,7 @@ CNetICachePasswordGuard::CNetICachePasswordGuard(
         m_NetICacheClient = ic_client;
     else {
         m_NetICacheClient = new SNetICacheClientImpl(*ic_client);
-        m_NetICacheClient->m_Password = password;
+        m_NetICacheClient->SetPassword(password);
     }
 }
 
