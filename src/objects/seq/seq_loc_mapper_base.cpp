@@ -783,8 +783,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     int src_width = (src_type == eSeq_prot) ? 3 : 1;
     int dst_width = (dst_type == eSeq_prot) ? 3 : 1;
 
-    CSeq_loc_CI src_it(source);
-    CSeq_loc_CI dst_it(target);
+    CSeq_loc_CI src_it(source, CSeq_loc_CI::eEmpty_Skip,
+        CSeq_loc_CI::eOrder_Biological);
+    CSeq_loc_CI dst_it(target, CSeq_loc_CI::eEmpty_Skip,
+        CSeq_loc_CI::eOrder_Biological);
 
     // Get starts and lengths with care, check for empty and whole ranges.
     TRange rg = src_it.GetRange();

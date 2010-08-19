@@ -699,7 +699,7 @@ CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc,
       m_EmptyFlag(empty_flag)
 {
     x_ProcessLocation(loc);
-    if ( order == eOrder_Biological  &&  loc.IsReverseStrand() ) {
+    if ( order == eOrder_Positional  &&  loc.IsReverseStrand() ) {
         m_LocList.reverse();
     }
     m_CurLoc = m_LocList.begin();
