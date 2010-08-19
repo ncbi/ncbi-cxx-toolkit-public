@@ -800,7 +800,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     if (endptr) {
                         *endptr = (char*)(ptr+3);
                     }
-                    return HUGE_VAL/HUGE_VAL;
+                    return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
                 }
                 if (NStr::strncasecmp(ptr,"inf",3)==0) {
                     if (endptr) {
