@@ -223,7 +223,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
     }
     size_t  jTail[splice_type_count_32], jHead[splice_type_count_32];
     TScore  vBestDonor   [splice_type_count_32];
-    size_t  jBestDonor   [splice_type_count_32];
+    size_t  jBestDonor   [splice_type_count_32] = {0};
 
     // place to store gap opening starts
     size_t ins_start;
