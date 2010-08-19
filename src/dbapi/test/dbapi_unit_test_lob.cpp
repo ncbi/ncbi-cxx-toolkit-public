@@ -30,10 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-#include "dbapi_unit_test.hpp"
+#include "dbapi_unit_test_pch.hpp"
 
 #include <dbapi/driver/util/blobstore.hpp>
 

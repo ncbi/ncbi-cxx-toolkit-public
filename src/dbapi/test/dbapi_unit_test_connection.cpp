@@ -30,16 +30,13 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
+#include "dbapi_unit_test_pch.hpp"
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/resource_info.hpp>
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
-
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-#include "dbapi_unit_test.hpp"
 
 #ifdef HAVE_LIBCONNEXT
 #  include <connect/ext/ncbi_crypt.h>

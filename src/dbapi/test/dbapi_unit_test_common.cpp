@@ -30,7 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
+#include "dbapi_unit_test_pch.hpp"
 
 #include <corelib/ncbiargs.hpp>
 //#include <corelib/ncbithr.hpp>
@@ -45,8 +45,6 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
-
-#include "dbapi_unit_test.hpp"
 
 BEGIN_NCBI_SCOPE
 

@@ -30,12 +30,9 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
+#include "dbapi_unit_test_pch.hpp"
 
 #include <corelib/ncbithr.hpp>
-
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-#include "dbapi_unit_test.hpp"
 
 
 BEGIN_NCBI_SCOPE

@@ -30,7 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
+#include "dbapi_unit_test_pch.hpp"
 
 #include <corelib/ncbiargs.hpp>
 
@@ -45,9 +45,6 @@
 
 #include <dbapi/dbapi_variant_convert.hpp>
 #include <dbapi/driver/dbapi_driver_convert.hpp>
-
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-#include "dbapi_unit_test.hpp"
 
 
 BEGIN_NCBI_SCOPE

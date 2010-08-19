@@ -1,0 +1,4 @@
+; $Id$
+
+[UsePch]
+DefaultPch = dbapi_unit_test_pch.hpp
