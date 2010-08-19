@@ -1,6 +1,8 @@
 algo
 app/netcache
 app/winmasker
+app/blast
+app/blastdb
 app/gbench
 build-system/project_tree_builder
 cgi
