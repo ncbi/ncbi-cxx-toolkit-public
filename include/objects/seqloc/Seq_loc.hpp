@@ -383,8 +383,23 @@ public:
     /// Get strand
     bool IsSetStrand(void) const;
     ENa_strand GetStrand(void) const;
-    /// Get seq-loc for the current interval
-    const CSeq_loc& GetSeq_loc(void) const;
+
+    /// Get seq-loc for the current iterator position. New CSeq_loc object may
+    /// be created if the current range is a part of a packed/mixed seq-loc.
+    /// The resulting seq-loc will always include only one range (which may
+    /// be whole or empty).
+    /// @sa GetEmbeddingSeq_loc
+    CConstRef<CSeq_loc> GetRangeAsSeq_loc(void) const;
+
+    /// Get the nearest seq-loc containing the current range.
+    /// For packed/mixed locations the embedding seq-loc may
+    /// include other ranges.
+    /// @note Don't ever confuse it with GetRangeAsSeq_loc!
+    const CSeq_loc& GetEmbeddingSeq_loc(void) const;
+
+    /// @deprecated You probably actually wanted to use GetRangeAsSeq_loc
+    /// or GetEmbeddingSeq_loc instead.
+    NCBI_DEPRECATED const CSeq_loc& GetSeq_loc(void) const;
 
     // Return null if non-fuzzy 
     const CInt_fuzz* GetFuzzFrom(void) const;
@@ -650,17 +665,6 @@ ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
     x_CheckNotValid("GetStrand()");
     return m_CurLoc->m_Strand;
-}
-
-inline
-const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
-{
-    x_CheckNotValid("GetSeq_loc()");
-    if ( !m_CurLoc->m_Loc ) {
-        NCBI_THROW(CException, eUnknown,
-            "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
-    }
-    return *m_CurLoc->m_Loc;
 }
 
 inline

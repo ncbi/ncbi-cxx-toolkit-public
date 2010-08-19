@@ -734,6 +734,69 @@ CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
 }
 
 
+const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
+{
+    return GetEmbeddingSeq_loc();
+}
+
+
+const CSeq_loc& CSeq_loc_CI::GetEmbeddingSeq_loc(void) const
+{
+    x_CheckNotValid("GetEmbeddingSeq_loc()");
+    if ( !m_CurLoc->m_Loc ) {
+        NCBI_THROW(CException, eUnknown,
+            "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
+    }
+    return *m_CurLoc->m_Loc;
+}
+
+
+CConstRef<CSeq_loc> CSeq_loc_CI::GetRangeAsSeq_loc(void) const
+{
+    x_CheckNotValid("GetRangeAsSeq_loc()");
+    const CSeq_loc& parent = GetEmbeddingSeq_loc();
+    switch ( parent.Which() ) {
+    // Single-range, empty or whole seq-loc can be used as-is.
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+    case CSeq_loc::e_Whole:
+    case CSeq_loc::e_Int:
+    case CSeq_loc::e_Pnt:
+        return ConstRef(&parent);
+    default:
+        break;
+    }
+    // Create a new seq-loc for the current range.
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( m_CurLoc->m_Range.IsWhole() ) {
+        // Whole location
+        loc->SetWhole(const_cast<CSeq_id&>(*m_CurLoc->m_Id));
+    }
+    else if ( m_CurLoc->m_Range.Empty() ) {
+        // Empty location
+        loc->SetEmpty(const_cast<CSeq_id&>(*m_CurLoc->m_Id));
+    }
+    else {
+        loc->SetInt().SetFrom(m_CurLoc->m_Range.GetFrom());
+        loc->SetInt().SetTo(m_CurLoc->m_Range.GetTo());
+        loc->SetInt().SetId(const_cast<CSeq_id&>(*m_CurLoc->m_Id));
+        if ( m_CurLoc->m_IsSetStrand ) {
+            loc->SetInt().SetStrand(m_CurLoc->m_Strand);
+        }
+        if ( m_CurLoc->m_Fuzz.first ) {
+            loc->SetInt().
+                SetFuzz_from(const_cast<CInt_fuzz&>(*m_CurLoc->m_Fuzz.first));
+        }
+        if ( m_CurLoc->m_Fuzz.second ) {
+            loc->SetInt().
+                SetFuzz_to(const_cast<CInt_fuzz&>(*m_CurLoc->m_Fuzz.second));
+        }
+    }
+    return ConstRef(loc.Release());
+}
+
+
 void CSeq_loc_CI::x_ThrowNotValid(const char* where) const
 {
     string msg;

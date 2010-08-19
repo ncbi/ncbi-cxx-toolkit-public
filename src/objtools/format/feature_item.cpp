@@ -662,7 +662,7 @@ static bool s_LocIsFuzz(const CMappedFeat& feat, const CSeq_loc& loc)
         }
     } else {    // any regular feature test location for fuzz
         for ( CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow); it; ++it ) {
-            const CSeq_loc& l = it.GetSeq_loc();
+            const CSeq_loc& l = it.GetEmbeddingSeq_loc();
             switch ( l.Which() ) {
             case CSeq_loc::e_Pnt:
             {{

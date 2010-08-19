@@ -683,9 +683,9 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
     const CSeq_loc *first = 0, *last = 0;
     for ( CSeq_loc_CI loc_iter(loc); loc_iter; ++loc_iter ) {
         if ( first == 0 ) {
-            first = &(loc_iter.GetSeq_loc());
+            first = &(loc_iter.GetEmbeddingSeq_loc());
         }
-        last = &(loc_iter.GetSeq_loc());
+        last = &(loc_iter.GetEmbeddingSeq_loc());
     }
     if (!first) {
         return retval;
@@ -693,7 +693,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 
     CSeq_loc_CI i2(loc, CSeq_loc_CI::eEmpty_Allow);
     for ( ; i2; ++i2 ) {
-        const CSeq_loc* slp = &(i2.GetSeq_loc());
+        const CSeq_loc* slp = &(i2.GetEmbeddingSeq_loc());
         switch (slp->Which()) {
         case CSeq_loc::e_Null:
             if (slp == first) {

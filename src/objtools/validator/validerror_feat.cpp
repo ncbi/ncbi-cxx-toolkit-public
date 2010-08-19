@@ -2675,21 +2675,21 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
     CSeq_loc_CI prev;
     for (CSeq_loc_CI curr(anticodon); curr; ++curr) {
         bool chk = true;
-        if (curr.GetSeq_loc().IsInt()) {
-            chk = sequence::IsValid(curr.GetSeq_loc().GetInt(), m_Scope);
-        } else if (curr.GetSeq_loc().IsPnt()) {
-            chk = sequence::IsValid(curr.GetSeq_loc().GetPnt(), m_Scope);
+        if (curr.GetEmbeddingSeq_loc().IsInt()) {
+            chk = sequence::IsValid(curr.GetEmbeddingSeq_loc().GetInt(), m_Scope);
+        } else if (curr.GetEmbeddingSeq_loc().IsPnt()) {
+            chk = sequence::IsValid(curr.GetEmbeddingSeq_loc().GetPnt(), m_Scope);
         } else {
             continue;
         }
 
         if ( !chk ) {
             string lbl;
-            curr.GetSeq_loc().GetLabel(&lbl);
+            curr.GetEmbeddingSeq_loc().GetLabel(&lbl);
             PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
                 "Anticodon location [" + lbl + "] out of range", feat);
         }
-        
+
         if ( prev  &&  curr  &&
              IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), m_Scope) ) {
             CSeq_loc_CI::TRange prev_range = prev.GetRange();
@@ -6600,16 +6600,16 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
         if (feat.GetData().IsHet()) {
             // heterogen can have mix of bonds with just "a" point specified */
             for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-                if (it.GetSeq_loc().IsBond() 
-                    && (!it.GetSeq_loc().GetBond().IsSetA()
-                        || it.GetSeq_loc().GetBond().IsSetB())) {
+                if (it.GetEmbeddingSeq_loc().IsBond() 
+                    && (!it.GetEmbeddingSeq_loc().GetBond().IsSetA()
+                        || it.GetEmbeddingSeq_loc().GetBond().IsSetB())) {
                     is_seqloc_bond = true;
                     break;
                 }
             }
         } else if (!feat.GetData().IsBond()) {
             for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-                if (it.GetSeq_loc().IsBond()) {
+                if (it.GetEmbeddingSeq_loc().IsBond()) {
                     is_seqloc_bond = true;
                     break;
                 }
@@ -6617,7 +6617,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
         }
     } else {
         for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-            if (it.GetSeq_loc().IsBond()) {
+            if (it.GetEmbeddingSeq_loc().IsBond()) {
                 is_seqloc_bond = true;
                 break;
             }

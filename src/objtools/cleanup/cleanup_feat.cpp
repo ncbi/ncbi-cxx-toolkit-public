@@ -1439,7 +1439,7 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
         ++loc_it;
     }
     
-    if (!last_it || !last_it.GetSeq_loc().IsInt()) {
+    if (!last_it || !last_it.GetEmbeddingSeq_loc().IsInt()) {
         return false;
     }
     
@@ -1527,7 +1527,7 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
                     CSeq_loc_CI tmp(gene_loc);
                     bool has_nulls = false;
                     while (tmp && !has_nulls) {
-                        if (tmp.GetSeq_loc().IsNull()) {
+                        if (tmp.GetEmbeddingSeq_loc().IsNull()) {
                             has_nulls = true;
                         }
                         ++tmp;
@@ -2062,7 +2062,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                         CRef<CSeq_loc> new_loc(new CSeq_loc);
                         bool changed = false;
                         for ( CSeq_loc_CI loc_iter(feat->GetLocation()); loc_iter; ++loc_iter ) {
-                            if (loc_iter.GetSeq_loc().IsNull()) {
+                            if (loc_iter.GetEmbeddingSeq_loc().IsNull()) {
                                 changed = true;
                             } else {
                                 new_loc->SetMix().AddSeqLoc(loc_iter.GetSeq_loc());
