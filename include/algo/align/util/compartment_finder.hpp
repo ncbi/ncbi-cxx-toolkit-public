@@ -798,8 +798,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
         const double mp (GetTotalMatches<THit>(hitrefs));
         if(mp > 0) {
-            bool status (m_compartments.size() == 0 && mp >= m_MinSingletonMatches 
-                         || mp >= m_MinMatches);
+            bool status ( ( m_compartments.size() == 0 && mp >= m_MinSingletonMatches )
+                         || mp >= m_MinMatches );
             m_compartments.push_back(CCompartment());
             m_compartments.back().SetMembers() = hitrefs;
             comp_status.push_back(status);
