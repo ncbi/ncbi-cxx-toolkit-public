@@ -62,22 +62,16 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-static CAtomicCounter s_Counter_CGC_Assembly;
 
 // constructor
 CGC_Assembly::CGC_Assembly(void)
 {
-    int count = s_Counter_CGC_Assembly.Add(1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
-
 
 
 // destructor
 CGC_Assembly::~CGC_Assembly(void)
 {
-    int count = s_Counter_CGC_Assembly.Add(-1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 

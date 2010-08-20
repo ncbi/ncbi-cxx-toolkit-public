@@ -46,21 +46,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-static CAtomicCounter s_Counter_CGC_Replicon;
-
 // constructor
 CGC_Replicon::CGC_Replicon(void)
     : m_Assembly(NULL)
 {
-    int count = s_Counter_CGC_Replicon.Add(1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 // destructor
 CGC_Replicon::~CGC_Replicon(void)
 {
-    int count = s_Counter_CGC_Replicon.Add(-1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 

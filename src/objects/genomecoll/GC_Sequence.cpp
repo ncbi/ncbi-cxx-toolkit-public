@@ -46,23 +46,16 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-static CAtomicCounter s_Counter_CGC_Sequence;
-
-
 // constructor
 CGC_Sequence::CGC_Sequence(void)
     : m_Assembly(NULL), m_ParentRel(CGC_TaggedSequences::eState_not_set)
 {
-    int count = s_Counter_CGC_Sequence.Add(1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
 // destructor
 CGC_Sequence::~CGC_Sequence(void)
 {
-    int count = s_Counter_CGC_Sequence.Add(-1);
-    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
