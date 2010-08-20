@@ -273,9 +273,6 @@ BOOST_AUTO_TEST_CASE(TestPoissonDistance)
     calc.SetDistMethod(CGuideTreeCalc::ePoisson);
     BOOST_REQUIRE(calc.CalcBioTree());
 
-    CNcbiOfstream ostr("tree.asn");
-    ostr << MSerial_AsnText << *calc.GetSerialTree();
-
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
 }
 
