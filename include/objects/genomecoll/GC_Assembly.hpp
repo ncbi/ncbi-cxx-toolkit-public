@@ -62,8 +62,9 @@ class NCBI_GENOME_COLLECTION_EXPORT CGC_Assembly : public CGC_Assembly_Base
     typedef CGC_Assembly_Base Tparent;
 
 public:
-    typedef list< CConstRef<CGC_Sequence> > TSequenceList;
+    typedef list< CConstRef<CGC_Sequence> >     TSequenceList;
     typedef list< CConstRef<CGC_AssemblyUnit> > TAssemblyUnits;
+    typedef list< CConstRef<CGC_Assembly> >     TFullAssemblies;
 
 public:
     // constructor
@@ -111,6 +112,12 @@ public:
     /// Retrieve a list of all assembly units contained in this assembly
     TAssemblyUnits GetAssemblyUnits() const;
 
+    /// Retrieve a list of all full assemblies contained in this assembly
+    /// Note that, if the assemblu is a full assembly, then it will be the only
+    /// assembly returned; also, if the assembly is not an assembly set, then
+    /// the base assembly will be returned.
+    TFullAssemblies GetFullAssemblies() const;
+
     /// Find all references to a given sequence within an assembly
     void Find(const CSeq_id_Handle& id,
               TSequenceList& sequences) const;
@@ -133,6 +140,8 @@ private:
     TSequenceIndex m_SequenceMap;
 
     /// indexing infrastructure
+    void x_Index(CGC_Assembly&     assm,     CGC_Replicon& replicon);
+    void x_Index(CGC_Assembly&     assm,     CGC_Sequence& seq);
     void x_Index(CGC_AssemblyUnit& unit,     CGC_Replicon& replicon);
     void x_Index(CGC_AssemblyUnit& unit,     CGC_Sequence& seq);
     void x_Index(CGC_Replicon&     replicon, CGC_Sequence& seq);
@@ -141,7 +150,7 @@ private:
     void x_Index(CGC_Sequence& seq,
                  CGC_TaggedSequences::TState relation);
 
-    void x_UnIndex();
+    void x_Index(CGC_Assembly& root);
 };
 
 /////////////////// CGC_Assembly inline methods

@@ -46,42 +46,44 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+static CAtomicCounter s_Counter_CGC_Sequence;
+
 
 // constructor
 CGC_Sequence::CGC_Sequence(void)
-    : m_ParentRel(CGC_TaggedSequences::eState_not_set)
+    : m_Assembly(NULL), m_ParentRel(CGC_TaggedSequences::eState_not_set)
 {
+    int count = s_Counter_CGC_Sequence.Add(1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
 // destructor
 CGC_Sequence::~CGC_Sequence(void)
 {
-    x_UnIndex();
-}
-
-
-void CGC_Sequence::x_UnIndex()
-{
-    m_AssemblyUnit.Reset();
-    m_Replicon.Reset();
-    m_ParentSequence.Reset();
+    int count = s_Counter_CGC_Sequence.Add(-1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
 CConstRef<CGC_AssemblyUnit> CGC_Sequence::GetAssemblyUnit() const
 {
-    return m_AssemblyUnit;
+    return CConstRef<CGC_AssemblyUnit>(m_AssemblyUnit);
+}
+
+CConstRef<CGC_Assembly> CGC_Sequence::GetFullAssembly() const
+{
+    return CConstRef<CGC_Assembly>(m_Assembly);
 }
 
 CConstRef<CGC_Replicon> CGC_Sequence::GetReplicon() const
 {
-    return m_Replicon;
+    return CConstRef<CGC_Replicon>(m_Replicon);
 }
 
 CConstRef<CGC_Sequence> CGC_Sequence::GetParent() const
 {
-    return m_ParentSequence;
+    return CConstRef<CGC_Sequence>(m_ParentSequence);
 }
 
 

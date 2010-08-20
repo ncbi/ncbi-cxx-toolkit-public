@@ -62,9 +62,13 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+static CAtomicCounter s_Counter_CGC_Assembly;
+
 // constructor
 CGC_Assembly::CGC_Assembly(void)
 {
+    int count = s_Counter_CGC_Assembly.Add(1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
@@ -72,7 +76,8 @@ CGC_Assembly::CGC_Assembly(void)
 // destructor
 CGC_Assembly::~CGC_Assembly(void)
 {
-    x_UnIndex();
+    int count = s_Counter_CGC_Assembly.Add(-1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
@@ -245,6 +250,50 @@ CGC_Assembly::TAssemblyUnits CGC_Assembly::GetAssemblyUnits() const
 
 /////////////////////////////////////////////////////////////////////////////
 
+CGC_Assembly::TFullAssemblies CGC_Assembly::GetFullAssemblies() const
+{
+    TFullAssemblies assms;
+
+    if (IsAssembly_set()) {
+        const CGC_AssemblySet& set = GetAssembly_set();
+        switch (set.GetSet_type()) {
+        case CGC_AssemblySet::eSet_type_assembly_set:
+            /// each sub-assembly is its own entity and acts as its own root
+            assms.push_back
+                (CConstRef<CGC_Assembly>(&set.GetPrimary_assembly()));
+            if (set.IsSetMore_assemblies()) {
+                ITERATE (CGC_AssemblySet::TMore_assemblies, it,
+                         set.GetMore_assemblies()) {
+                    assms.push_back(*it);
+                }
+            }
+            break;
+
+        case CGC_AssemblySet::eSet_type_full_assembly:
+            assms.push_back
+                (CConstRef<CGC_Assembly>(this));
+            break;
+
+        default:
+            break;
+        }
+    } else {
+        TAssemblyUnits units = GetAssemblyUnits();
+        set< CConstRef<CGC_Assembly> > tmp;
+        ITERATE (TAssemblyUnits, it, units) {
+            CConstRef<CGC_Assembly> assm = (*it)->GetFullAssembly();
+            if (tmp.insert(assm).second) {
+                assms.push_back(assm);
+            }
+        }
+    }
+
+    return assms;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id) const
 {
     TSequenceIndex::const_iterator it = m_SequenceMap.find(id);
@@ -281,37 +330,55 @@ void CGC_Assembly::PostRead()
 }
 
 
-void CGC_Assembly::x_UnIndex()
-{
-    ///
-    /// generate the up-links as needed
-    ///
-    if (IsUnit()) {
-        SetUnit().x_UnIndex();
-    }
-    else if (IsAssembly_set()) {
-        CGC_AssemblySet& set = SetAssembly_set();
-        set.SetPrimary_assembly().x_UnIndex();
-        if (set.IsSetMore_assemblies()) {
-            NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
-                               set.SetMore_assemblies()) {
-                (*it)->x_UnIndex();
-            }
-        }
-    }
-
-    m_SequenceMap.clear();
-}
-
 void CGC_Assembly::CreateIndex()
 {
     ///
     /// generate the up-links as needed
     ///
     if (IsUnit()) {
+        x_Index(*this);
+    }
+    else if (IsAssembly_set()) {
+        CGC_AssemblySet& set = SetAssembly_set();
+        switch (set.GetSet_type()) {
+        case CGC_AssemblySet::eSet_type_assembly_set:
+            /// each sub-assembly is its own entity and acts as its own root
+            set.SetPrimary_assembly().CreateIndex();
+            if (set.IsSetMore_assemblies()) {
+                NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
+                                   set.SetMore_assemblies()) {
+                    (*it)->CreateIndex();
+                }
+            }
+            break;
+
+        case CGC_AssemblySet::eSet_type_full_assembly:
+            /// we are the root
+            set.SetPrimary_assembly().x_Index(*this);
+            if (set.IsSetMore_assemblies()) {
+                NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
+                                   set.SetMore_assemblies()) {
+                    (*it)->x_Index(*this);
+                }
+            }
+            break;
+
+        default:
+            NCBI_THROW(CException, eUnknown,
+                       "unknown assembly set type");
+        }
+    }
+}
+
+
+void CGC_Assembly::x_Index(CGC_Assembly& root)
+{
+    if (IsUnit()) {
+        SetUnit().m_Assembly = &root;
         if (GetUnit().IsSetMols()) {
             NON_CONST_ITERATE (CGC_AssemblyUnit::TMols, it,
                                SetUnit().SetMols()) {
+                x_Index(root, **it);
                 x_Index(SetUnit(), **it);
             }
         }
@@ -321,6 +388,7 @@ void CGC_Assembly::CreateIndex()
                                SetUnit().SetOther_sequences()) {
                 NON_CONST_ITERATE (CGC_TaggedSequences::TSeqs, i,
                                    (*it)->SetSeqs()) {
+                    x_Index(root, **i);
                     x_Index(SetUnit(), **i);
                     x_Index(**i, (*it)->GetState());
                 }
@@ -329,11 +397,11 @@ void CGC_Assembly::CreateIndex()
     }
     else if (IsAssembly_set()) {
         CGC_AssemblySet& set = SetAssembly_set();
-        set.SetPrimary_assembly().CreateIndex();
+        set.SetPrimary_assembly().x_Index(root);
         if (set.IsSetMore_assemblies()) {
             NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
                                set.SetMore_assemblies()) {
-                (*it)->CreateIndex();
+                (*it)->x_Index(root);
             }
         }
     }
@@ -349,9 +417,41 @@ void CGC_Assembly::CreateIndex()
     }
 }
 
+
+void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Replicon& replicon)
+{
+    replicon.m_Assembly = &assm;
+
+    if (replicon.GetSequence().IsSingle()) {
+        CGC_Sequence& seq = replicon.SetSequence().SetSingle();
+        x_Index(assm, seq);
+    } else {
+        NON_CONST_ITERATE (CGC_Replicon::TSequence::TSet, it,
+                           replicon.SetSequence().SetSet()) {
+            CGC_Sequence& seq = **it;
+            x_Index(assm, seq);
+        }
+    }
+}
+
+
+void CGC_Assembly::x_Index(CGC_Assembly& assm, CGC_Sequence& seq)
+{
+    seq.m_Assembly = &assm;
+    if (seq.IsSetSequences()) {
+        NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
+            NON_CONST_ITERATE (CGC_TaggedSequences::TSeqs, i,
+                               (*it)->SetSeqs()) {
+                x_Index(assm, **i);
+            }
+        }
+    }
+}
+
+
 void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Replicon& replicon)
 {
-    replicon.m_AssemblyUnit.Reset(&unit);
+    replicon.m_AssemblyUnit = &unit;
 
     if (replicon.GetSequence().IsSingle()) {
         CGC_Sequence& seq = replicon.SetSequence().SetSingle();
@@ -370,7 +470,7 @@ void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Replicon& replicon)
 
 void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Sequence& seq)
 {
-    seq.m_AssemblyUnit.Reset(&unit);
+    seq.m_AssemblyUnit = &unit;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
             NON_CONST_ITERATE (CGC_TaggedSequences::TSeqs, i,
@@ -385,7 +485,7 @@ void CGC_Assembly::x_Index(CGC_AssemblyUnit& unit, CGC_Sequence& seq)
 
 void CGC_Assembly::x_Index(CGC_Replicon& replicon, CGC_Sequence& seq)
 {
-    seq.m_Replicon.Reset(&replicon);
+    seq.m_Replicon = &replicon;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
             NON_CONST_ITERATE (CGC_TaggedSequences::TSeqs, i,
@@ -400,7 +500,7 @@ void CGC_Assembly::x_Index(CGC_Replicon& replicon, CGC_Sequence& seq)
 void CGC_Assembly::x_Index(CGC_Sequence& parent, CGC_Sequence& seq,
                            CGC_TaggedSequences::TState relation)
 {
-    seq.m_ParentSequence.Reset(&parent);
+    seq.m_ParentSequence = &parent;
     seq.m_ParentRel = relation;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {
@@ -415,7 +515,7 @@ void CGC_Assembly::x_Index(CGC_Sequence& parent, CGC_Sequence& seq,
 void CGC_Assembly::x_Index(CGC_Sequence& seq,
                            CGC_TaggedSequences::TState relation)
 {
-    seq.m_ParentSequence.Reset();
+    seq.m_ParentSequence = NULL;
     seq.m_ParentRel = relation;
     if (seq.IsSetSequences()) {
         NON_CONST_ITERATE (CGC_Sequence::TSequences, it, seq.SetSequences()) {

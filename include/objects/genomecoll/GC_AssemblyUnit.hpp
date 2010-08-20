@@ -66,8 +66,13 @@ public:
     /// Retrieve the release id for this assembly
     int GetReleaseId() const;
 
+    /// Access the most specific full assembly the assembly unit belongs to
+    /// This is needed because assemblies are packaged as sets of assemblies;
+    /// knowing the unit is not always enough
+    CConstRef<CGC_Assembly> GetFullAssembly() const;
+
 protected:
-    void x_UnIndex();
+    CGC_Assembly* m_Assembly;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -77,13 +82,6 @@ private:
 };
 
 /////////////////// CGC_AssemblyUnit inline methods
-
-// constructor
-inline
-CGC_AssemblyUnit::CGC_AssemblyUnit(void)
-{
-}
-
 
 /////////////////// end of CGC_AssemblyUnit inline methods
 

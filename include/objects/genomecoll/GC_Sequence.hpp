@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CGC_Assembly;
 class CGC_AssemblyUnit;
 class CGC_Replicon;
 class CGC_Sequence;
@@ -69,6 +70,11 @@ public:
     /// Access the assembly unit the sequence belongs to
     CConstRef<CGC_AssemblyUnit> GetAssemblyUnit() const;
 
+    /// Access the most specific full assembly the sequence belongs to
+    /// This is needed because assemblies are packaged as sets of assemblies;
+    /// knowing the unit is not always enough
+    CConstRef<CGC_Assembly> GetFullAssembly() const;
+
     /// Access the replicon the sequence belongs to
     CConstRef<CGC_Replicon> GetReplicon() const;
 
@@ -82,12 +88,11 @@ public:
     CGC_TaggedSequences::TState GetParentRelation() const;
 
 protected:
-    CRef<CGC_AssemblyUnit> m_AssemblyUnit;
-    CRef<CGC_Replicon>     m_Replicon;
-    CRef<CGC_Sequence>     m_ParentSequence;
+    CGC_Assembly*     m_Assembly;
+    CGC_AssemblyUnit* m_AssemblyUnit;
+    CGC_Replicon*     m_Replicon;
+    CGC_Sequence*     m_ParentSequence;
     CGC_TaggedSequences::TState m_ParentRel;
-
-    void x_UnIndex();
 
 private:
     // Prohibit copy constructor and assignment operator

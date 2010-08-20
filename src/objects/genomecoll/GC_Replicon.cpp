@@ -46,39 +46,36 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+static CAtomicCounter s_Counter_CGC_Replicon;
+
 // constructor
 CGC_Replicon::CGC_Replicon(void)
+    : m_Assembly(NULL)
 {
+    int count = s_Counter_CGC_Replicon.Add(1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 // destructor
 CGC_Replicon::~CGC_Replicon(void)
 {
-    m_AssemblyUnit.Reset();
+    int count = s_Counter_CGC_Replicon.Add(-1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 
 /// Access the assembly unit the sequence belongs to
 CConstRef<CGC_AssemblyUnit> CGC_Replicon::GetAssemblyUnit() const
 {
-    return m_AssemblyUnit;
+    return CConstRef<CGC_AssemblyUnit>(m_AssemblyUnit);
 }
 
 
-void CGC_Replicon::x_UnIndex()
+/// Access the assembly the sequence belongs to
+CConstRef<CGC_Assembly> CGC_Replicon::GetFullAssembly() const
 {
-    m_AssemblyUnit.Reset();
-
-    if (GetSequence().IsSingle()) {
-        SetSequence().SetSingle().x_UnIndex();
-    }
-    else if (GetSequence().IsSet()) {
-        NON_CONST_ITERATE (TSequence::TSet, it, SetSequence().SetSet()) {
-            (*it)->x_UnIndex();
-        }
-    }
+    return CConstRef<CGC_Assembly>(m_Assembly);
 }
-
 
 
 END_objects_SCOPE // namespace ncbi::objects::

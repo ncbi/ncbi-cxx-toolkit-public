@@ -64,10 +64,14 @@ public:
     /// Access the assembly unit the sequence belongs to
     CConstRef<CGC_AssemblyUnit> GetAssemblyUnit() const;
 
-protected:
-    CRef<CGC_AssemblyUnit> m_AssemblyUnit;
+    /// Access the most specific full assembly the replicon belongs to
+    /// This is needed because assemblies are packaged as sets of assemblies;
+    /// knowing the unit is not always enough
+    CConstRef<CGC_Assembly>     GetFullAssembly() const;
 
-    void x_UnIndex();
+protected:
+    CGC_Assembly*     m_Assembly;
+    CGC_AssemblyUnit* m_AssemblyUnit;
 
 private:
     // Prohibit copy constructor and assignment operator

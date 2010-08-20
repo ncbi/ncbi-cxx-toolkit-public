@@ -46,10 +46,22 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+static CAtomicCounter s_Counter_CGC_AssemblyUnit;
+
+// constructor
+CGC_AssemblyUnit::CGC_AssemblyUnit(void)
+    : m_Assembly(NULL)
+{
+    int count = s_Counter_CGC_AssemblyUnit.Add(1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
+}
+
+
 // destructor
 CGC_AssemblyUnit::~CGC_AssemblyUnit(void)
 {
-    x_UnIndex();
+    int count = s_Counter_CGC_AssemblyUnit.Add(-1);
+    LOG_POST(Error << __FUNCTION__ << ": count=" << count);
 }
 
 string CGC_AssemblyUnit::GetAccession() const
@@ -83,13 +95,10 @@ int CGC_AssemblyUnit::GetReleaseId() const
 }
 
 
-void CGC_AssemblyUnit::x_UnIndex()
+/// Access the assembly the sequence belongs to
+CConstRef<CGC_Assembly> CGC_AssemblyUnit::GetFullAssembly() const
 {
-    if (IsSetMols()) {
-        NON_CONST_ITERATE (TMols, it, SetMols()) {
-            (*it)->x_UnIndex();
-        }
-    }
+    return CConstRef<CGC_Assembly>(m_Assembly);
 }
 
 
