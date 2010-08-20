@@ -2340,7 +2340,8 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
 
     // all elements in the intersect list have to be found in a5
     for(int i = 0; i < both.GetNumGis(); i++) {
-        BOOST_REQUIRE(std::find(a5.begin(), a5.end(), both.GetKey<int>(i)) != a5.end());
+        const int gi = both.GetKey<int>(i);
+        BOOST_REQUIRE(std::find(a5.begin(), a5.end(), gi) != a5.end());
     }
 }
 
