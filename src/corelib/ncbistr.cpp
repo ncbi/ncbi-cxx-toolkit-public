@@ -1875,25 +1875,32 @@ string& NStr::ReplaceInPlace(string& src,
 }
 
 
-list<string>& NStr::Split(const string& str, const string& delim,
-                          list<string>& arr, EMergeDelims merge,
-                          vector<SIZE_TYPE>* token_pos)
+template<typename TString, typename TContainer>
+TContainer& s_Split(const TString& str, const TString& delim,
+                    TContainer& arr, NStr::EMergeDelims merge,
+                    vector<SIZE_TYPE>* token_pos)
 {
-
-    typedef list<string>                                    TContainer;
     typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
-    typedef CStrDummyTargetReserve<string, TContainer, 
-            TPosArray, CStrDummyTokenCount<string > >       TReserve;
-    typedef CStrTokenize<string, TContainer, 
-                        TPosArray,
-                        CStrDummyTokenCount<string>,
-                        TReserve>                           TSplitter;
+    typedef CStrDummyTargetReserve<TString, TContainer, 
+            TPosArray, CStrDummyTokenCount<TString > >      TReserve;
+    typedef CStrTokenize<TString, TContainer, TPosArray,
+                         CStrDummyTokenCount<TString>,
+                         TReserve>                          TSplitter;
     TPosArray token_pos_proxy(token_pos);
     TSplitter::Do(str, delim, arr, 
                   (CStrTokenizeBase::EMergeDelims)merge, 
                   token_pos_proxy,
                   kEmptyStr);
     return arr;
+}
+
+
+list<string>& NStr::Split(const string& str, const string& delim,
+                          list<string>& arr, EMergeDelims merge,
+                          vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, merge, token_pos);
+
 /*
     // Special cases
     if (str.empty()) {
@@ -1936,24 +1943,20 @@ list<string>& NStr::Split(const string& str, const string& delim,
 }
 
 
+list<CTempString>& NStr::Split(const CTempString& str, const CTempString& delim,
+                               list<CTempString>& arr, EMergeDelims merge,
+                               vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, merge, token_pos);
+}
+
+
 vector<string>& NStr::Tokenize(const string& str, const string& delim,
                                vector<string>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {
-    typedef vector<string>                                  TContainer;
-    typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
-    typedef CStrTargetReserve<string, TContainer, 
-                              TPosArray, CStringTokenCount> TReserve;
-    typedef CStrTokenize<string, TContainer, 
-                        TPosArray,
-                        CStringTokenCount,
-                        TReserve>                           TSplitter;
-    TPosArray token_pos_proxy(token_pos);
-    TSplitter::Do(str, delim, arr, 
-                  (CStrTokenizeBase::EMergeDelims)merge,
-                  token_pos_proxy,
-                  kEmptyStr);
-    return arr;
+    return s_Split(str, delim, arr, merge, token_pos);
+
 /*
     // Special cases
     if (str.empty()) {
@@ -2023,11 +2026,34 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
 }
 
 
+vector<CTempString>& NStr::Tokenize(const CTempString& str,
+                                    const CTempString& delim,
+                                    vector<CTempString>& arr,
+                                    EMergeDelims merge,
+                                    vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, merge, token_pos);
+}
+
 vector<string>& NStr::TokenizePattern(const CTempString& str,
                                       const CTempString& pattern,
                                       vector<string>&    arr,
                                       EMergeDelims       merge,
                                       vector<SIZE_TYPE>* token_pos)
+{
+    vector<CTempString> tsa;
+    TokenizePattern(str, pattern, tsa, merge, token_pos);
+    if (arr.empty()) {
+        arr.reserve(tsa.size());
+    }
+    copy(tsa.begin(), tsa.end(), back_inserter(arr));
+}
+
+vector<CTempString>& NStr::TokenizePattern(const CTempString&   str,
+                                           const CTempString&   pattern,
+                                           vector<CTempString>& arr,
+                                           EMergeDelims         merge,
+                                           vector<SIZE_TYPE>*   token_pos)
 {
     // Special cases
     if (str.empty()) {
@@ -2102,6 +2128,17 @@ bool NStr::SplitInTwo(const CTempString& str,
                       const CTempString& delim,
                       string& str1, string& str2)
 {
+    CTempString ts1, ts2;
+    bool result = SplitInTwo(str, delim, ts1, ts2);
+    str1 = ts1;
+    str2 = ts2;
+    return result;
+}
+
+bool NStr::SplitInTwo(const CTempString& str, 
+                      const CTempString& delim,
+                      CTempString& str1, CTempString& str2)
+{
     SIZE_TYPE delim_pos = str.find_first_of(delim);
     if (NPOS == delim_pos) {   // only one piece.
         str1 = str;
@@ -2117,7 +2154,7 @@ bool NStr::SplitInTwo(const CTempString& str,
 
 
 template <typename T>
-string s_NStr_Join(const T& arr, const string& delim)
+string s_NStr_Join(const T& arr, const CTempString& delim)
 {
     if (arr.empty()) {
         return kEmptyStr;
@@ -2140,13 +2177,25 @@ string s_NStr_Join(const T& arr, const string& delim)
 }
 
 
-string NStr::Join(const list<string>& arr, const string& delim)
+string NStr::Join(const list<string>& arr, const CTempString& delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const vector<string>& arr, const string& delim)
+string NStr::Join(const list<CTempString>& arr, const CTempString& delim)
+{
+    return s_NStr_Join(arr, delim);
+}
+
+
+string NStr::Join(const vector<string>& arr, const CTempString& delim)
+{
+    return s_NStr_Join(arr, delim);
+}
+
+
+string NStr::Join(const vector<CTempString>& arr, const CTempString& delim)
 {
     return s_NStr_Join(arr, delim);
 }

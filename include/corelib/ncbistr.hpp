@@ -1459,7 +1459,8 @@ public:
     ///   Delimiters used to split string "str".
     /// @param arr
     ///   The split tokens are added to the list "arr" and also returned
-    ///   by the function. 
+    ///   by the function.  NB: in the CTempString-based variant, modifying or
+    ///   destroying the string underlying "str" will invalidate the tokens.
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eMergeDelims means that delimiters that immediately follow each other
@@ -1476,6 +1477,12 @@ public:
                                EMergeDelims  merge = eMergeDelims,
                                vector<SIZE_TYPE>* token_pos = NULL);
 
+    static list<CTempString>& Split(const CTempString& str,
+                                    const CTempString& delim,
+                                    list<CTempString>& arr,
+                                    EMergeDelims       merge = eMergeDelims,
+                                    vector<SIZE_TYPE>* token_pos = NULL);
+
     /// Tokenize a string using the specified set of char delimiters.
     ///
     /// @param str
@@ -1485,7 +1492,9 @@ public:
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
     ///   The tokens defined in "str" by using symbols from "delim" are added
-    ///   to the list "arr" and also returned by the function. 
+    ///   to the list "arr" and also returned by the function.  NB: in the
+    ///   CTempString-based variant, modifying or destroying the string
+    ///   underlying "str" will invalidate the tokens.
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eNoMergeDelims means that delimiters that immediately follow each
@@ -1502,6 +1511,14 @@ public:
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
+    static
+    vector<CTempString>& Tokenize(const CTempString&   str,
+                                  const CTempString&   delim,
+                                  vector<CTempString>& arr,
+                                  EMergeDelims         merge = eNoMergeDelims,
+                                  vector<SIZE_TYPE>*   token_pos = NULL);
+
+
     /// Tokenize a string using the specified delimiter (string).
     ///
     /// @param str
@@ -1511,7 +1528,9 @@ public:
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param arr
     ///   The tokens defined in "str" by using delimiter "delim" are added
-    ///   to the list "arr" and also returned by the function. 
+    ///   to the list "arr" and also returned by the function.  NB: in the
+    ///   CTempString-based variant, modifying or destroying the string
+    ///   underlying "str" will invalidate the tokens.
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eNoMergeDelims means that delimiters that immediately follow each
@@ -1529,6 +1548,13 @@ public:
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
+    static
+    vector<CTempString>& TokenizePattern(const CTempString&   str,
+                                         const CTempString&   delim,
+                                         vector<CTempString>& arr,
+                                         EMergeDelims merge = eNoMergeDelims,
+                                         vector<SIZE_TYPE>* token_pos = NULL);
+
     /// Split a string into two pieces using the specified delimiters
     ///
     /// @param str 
@@ -1539,11 +1565,15 @@ public:
     ///   The sub-string of "str" before the first character of "delim".
     ///   It will not contain any characters in "delim".
     ///   Will be empty if "str" begin with a "delim" character.
+    ///   If a CTempString object itself, any changes to the string
+    ///   underlying "str" will invalidate it (and "str2").
     /// @param str2
     ///   The sub-string of "str" after the first character of "delim" found.
     ///   May contain "delim" characters.
     ///   Will be empty if "str" had no "delim" characters or ended
     ///   with the first "delim" character.
+    ///   If a CTempString object itself, any changes to the string
+    ///   underlying "str" will invalidate it (and "str1").
     /// @return
     ///   true if a symbol from "delim" was found in "str", false if not.
     ///   This lets you distinguish when there were no delimiters and when
@@ -1555,6 +1585,11 @@ public:
                            string&            str1,
                            string&            str2);
 
+    static bool SplitInTwo(const CTempString& str, 
+                           const CTempString& delim,
+                           CTempString&       str1,
+                           CTempString&       str2);
+
 
     /// Join strings using the specified delimiter.
     ///
@@ -1565,8 +1600,11 @@ public:
     /// @return 
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
-    static string Join(const list<string>& arr,   const string& delim);
-    static string Join(const vector<string>& arr, const string& delim);
+    static string Join(const list<string>& arr,      const CTempString& delim);
+    static string Join(const list<CTempString>& arr, const CTempString& delim);
+    static string Join(const vector<string>& arr,    const CTempString& delim);
+    static string Join(const vector<CTempString>& arr,
+                       const CTempString& delim);
 
 
     /// How to display printable strings.
