@@ -1882,14 +1882,14 @@ s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
       return -1;
 
    if (h1->query.end < h2->query.end)
-      return -1;
-   if (h1->query.end > h2->query.end)
       return 1;
+   if (h1->query.end > h2->query.end)
+      return -1;
 
    if (h1->subject.end < h2->subject.end)
-      return -1;
-   if (h1->subject.end > h2->subject.end)
       return 1;
+   if (h1->subject.end > h2->subject.end)
+      return -1;
 
    return 0;
 }
