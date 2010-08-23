@@ -320,15 +320,25 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+        if (stdout_handle == NULL) {
+            stdout_handle = INVALID_HANDLE_VALUE;
+        }
         HANDLE stderr_handle = ::GetStdHandle(STD_ERROR_HANDLE);
-
+        if (stderr_handle == NULL) {
+            stderr_handle = INVALID_HANDLE_VALUE;
+        }
+        
         // Flush std.output buffers before remap
         NcbiCout.flush();
         ::fflush(stdout);
-        ::FlushFileBuffers(stdout_handle);
+        if (stdout_handle != INVALID_HANDLE_VALUE) {
+            ::FlushFileBuffers(stdout_handle);
+        }
         NcbiCerr.flush();
         ::fflush(stderr);
-        ::FlushFileBuffers(stderr_handle);
+        if (stderr_handle != INVALID_HANDLE_VALUE) {
+            ::FlushFileBuffers(stderr_handle);
+        }
 
         // Set base security attributes
         SECURITY_ATTRIBUTES attr;
