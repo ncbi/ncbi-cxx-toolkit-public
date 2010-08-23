@@ -275,6 +275,14 @@ public:
                                            = eIgnoreLinks)
         const;
 
+    enum EAppNameType {
+        eBaseName, ///< per GetProgramDisplayName
+        eFullName, ///< per GetProgramExecutablePath(eIgnoreLinks)
+        eRealName  ///< per GetProgramExecutablePath(eFollowLinks)
+    };
+    static string GetAppName(EAppNameType name_type = eBaseName,
+                             int argc = 0, const char* const* argv = NULL);
+
     /// Get the program version information.
     ///
     /// @sa SetVersion, SetFullVersion
@@ -461,8 +469,8 @@ protected:
     ///   If non-NULL, will get the fully resolved path to the executable.
     /// @return
     ///   Name of application's executable file (may involve symlinks).
-    string FindProgramExecutablePath(int argc, const char* const* argv,
-                                     string* real_path = 0);
+    static string FindProgramExecutablePath(int argc, const char* const* argv,
+                                            string* real_path = 0);
 
     /// Method to be called before application start.
     /// Can be used to set DiagContext properties to be printed

@@ -909,12 +909,57 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 }
 
 
+string CNcbiApplication::GetAppName(EAppNameType name_type, int argc,
+                                    const char* const* argv)
+{
+    CNcbiApplication* instance = Instance();
+    string app_name;
+
+    switch (name_type) {
+    case eBaseName:
+        if (instance) {
+            app_name = instance->GetProgramDisplayName();
+        } else {
+            string exe_path = FindProgramExecutablePath(argc, argv);
+            CDirEntry::SplitPath(exe_path, NULL, &app_name);
+        }
+        break;
+
+    case eFullName:
+        if (instance) {
+            app_name = instance->GetProgramExecutablePath(eIgnoreLinks);
+        } else {
+            app_name = FindProgramExecutablePath(argc, argv);
+        }
+        break;
+
+    case eRealName:
+        if (instance) {
+            app_name = instance->GetProgramExecutablePath(eFollowLinks);
+        } else {
+            FindProgramExecutablePath(argc, argv, &app_name);
+        }
+        break;
+    }
+
+    return app_name;
+}
+
+
 string CNcbiApplication::FindProgramExecutablePath
-(int                _DEBUG_ARG(argc),
+(int                           argc,
  const char* const*            argv,
  string*                       real_path)
 {
+    CNcbiApplication* instance = Instance();
     string ret_val;
+    if (argc > 0  &&  argv != NULL  &&  argv[0] != NULL
+        &&  argv[0][0] != '\0') {
+        ret_val = argv[0];
+    } else if (instance) {
+        ret_val = instance->GetArguments().GetProgramName();
+    }
+
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
 #  ifdef NCBI_OS_MSWIN
@@ -969,19 +1014,32 @@ string CNcbiApplication::FindProgramExecutablePath
 
 #  ifdef NCBI_OS_LINUX
     // Linux OS: Try more accurate method of detection for real_path
+    if (ret_val.empty()  &&  !real_path) {
+        real_path = &ret_val;
+    }
     if (real_path) {
         char   buf[PATH_MAX + 1];
         string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
         int    ncount   = readlink((procfile).c_str(), buf, PATH_MAX);
         if (ncount > 0) {
             real_path->assign(buf, ncount);
+            if (real_path == &ret_val  ||  ret_val.empty()) {
+                // XXX - could also parse /proc/self/cmdline.
+                return *real_path;
+            }
             real_path = 0;
         }
     }
 #  endif
 
-    _ASSERT(argc  &&  argv);
-    string app_path = argv[0];
+    if (ret_val.empty()) {
+        // nothing to go on :-/
+        if (real_path) {
+            real_path->erase();
+        }
+        return kEmptyStr;
+    }
+    string app_path = ret_val;
 
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
 #  ifdef NCBI_OS_MSWIN
@@ -1002,7 +1060,12 @@ string CNcbiApplication::FindProgramExecutablePath
         } else {
             // Running from some path from PATH environment variable.
             // Try to determine that path.
-            string env_path = GetEnvironment().Get("PATH");
+            string env_path;
+            if (instance) {
+                env_path = instance->GetEnvironment().Get("PATH");
+            } else {
+                env_path = getenv("PATH");
+            }
             list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
             NStr::Split(env_path, ";", split_path);
