@@ -2047,6 +2047,7 @@ vector<string>& NStr::TokenizePattern(const CTempString& str,
         arr.reserve(tsa.size());
     }
     copy(tsa.begin(), tsa.end(), back_inserter(arr));
+    return arr;
 }
 
 vector<CTempString>& NStr::TokenizePattern(const CTempString&   str,
