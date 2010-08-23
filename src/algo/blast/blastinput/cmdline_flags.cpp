@@ -78,22 +78,6 @@ const string kArgMatrixName("matrix");
 const string kArgEvalue("evalue");
 const string kArgMinRawGappedScore("min_raw_gapped_score");
 
-const string kArgOutputFormat("outfmt");
-const int kDfltArgOutputFormat = 0;
-const string kDfltArgTabularOutputFmt =
-    "qseqid sseqid pident length mismatch gapopen qstart qend sstart send "
-    "evalue bitscore";
-const string kDfltArgTabularOutputFmtTag("std");
-
-const string kArgShowGIs("show_gis");
-const bool kDfltArgShowGIs = false;
-const string kArgNumDescriptions("num_descriptions");
-const size_t kDfltArgNumDescriptions = 500;
-const string kArgNumAlignments("num_alignments");
-const size_t kDfltArgNumAlignments = 250;
-const string kArgProduceHtml("html");
-const bool kDfltArgProduceHtml = false;
-
 const string kArgMaxTargetSequences("max_target_seqs");
 const TSeqPos kDfltArgMaxTargetSequences = 100;
 
