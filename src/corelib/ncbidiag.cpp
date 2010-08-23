@@ -1296,6 +1296,9 @@ void CDiagContext::SetHostIP(const string& ip)
 
 const string& CDiagContext::GetAppName(void) const
 {
+    if ( m_AppName->IsEmpty() ) {
+        m_AppName->SetString(CNcbiApplication::GetAppName());
+    }
     return m_AppName->GetOriginalString();
 }
 
