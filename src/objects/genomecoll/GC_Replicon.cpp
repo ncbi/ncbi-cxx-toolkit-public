@@ -49,6 +49,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // constructor
 CGC_Replicon::CGC_Replicon(void)
     : m_Assembly(NULL)
+    , m_AssemblyUnit(NULL)
 {
 }
 

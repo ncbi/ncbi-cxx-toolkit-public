@@ -46,9 +46,14 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
 // constructor
 CGC_Sequence::CGC_Sequence(void)
-    : m_Assembly(NULL), m_ParentRel(CGC_TaggedSequences::eState_not_set)
+    : m_Assembly(NULL)
+    , m_AssemblyUnit(NULL)
+    , m_Replicon(NULL)
+    , m_ParentSequence(NULL)
+    , m_ParentRel(CGC_TaggedSequences::eState_not_set)
 {
 }
 
