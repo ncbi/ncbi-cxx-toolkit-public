@@ -62,7 +62,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
 // constructor
 CGC_Assembly::CGC_Assembly(void)
 {
@@ -647,6 +646,7 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
     switch (subset) {
     case CGC_Assembly::eChromosome:
         if (unit.GetClass() != CGC_AssemblyUnit::eClass_alt_loci  &&
+            unit.GetClass() != CGC_AssemblyUnit::eClass_assembly_patch  &&
             unit.IsSetMols()) {
             ITERATE (CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
                 if ((*it)->GetSequence().IsSingle()) {
@@ -689,7 +689,8 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
     case CGC_Assembly::eTopLevel:
         if (unit.IsSetMols()) {
             CGC_Assembly::ESubset tmp = subset;
-            if (unit.GetClass() == CGC_AssemblyUnit::eClass_alt_loci) {
+            if (unit.GetClass() == CGC_AssemblyUnit::eClass_alt_loci  ||
+                unit.GetClass() == CGC_AssemblyUnit::eClass_assembly_patch) {
                 tmp = CGC_Assembly::eScaffold;
             }
             ITERATE (CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
