@@ -109,9 +109,9 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     ostrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);
-    BOOST_REQUIRE(output.find("gi|1786181") != NPOS);
-    BOOST_REQUIRE(output.find("gb|AE000111.1") != NPOS);
-    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 1 of 400 of "));
+    BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);
+    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 1 of 400 of ") != NPOS ||
+                  output.find("Escherichia coli K12 MG1655 section 1 of 400 of ") != NPOS);
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
