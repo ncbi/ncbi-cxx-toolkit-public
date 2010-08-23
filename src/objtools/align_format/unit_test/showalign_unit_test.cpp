@@ -111,7 +111,10 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     string output = CNcbiOstrstreamToString(output_stream);
     BOOST_REQUIRE(output.find("gi|1786181") != NPOS);
     BOOST_REQUIRE(output.find("gb|AE000111.1") != NPOS);
-    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 1 of 400 of ") != NPOS);
+    // this is the output of the BLASTDB data loader
+    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 1 of 400 of ") != NPOS ||
+    // this is the output of the Genbank data loader
+                  output.find("Escherichia coli K12 MG1655 section 1 of 400 of ") != NPOS);
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
