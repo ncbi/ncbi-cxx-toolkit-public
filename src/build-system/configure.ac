@@ -274,6 +274,8 @@ AC_ARG_WITH(python,
    [ --with-python=DIR       use Python installation in DIR])
 AC_ARG_WITH(python2,
    [ --without-python        do not use Python])
+AC_ARG_WITH(jni,
+   [ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)])
 AC_ARG_WITH(cppunit,
    [ --with-cppunit=DIR      use CPPUNIT installation in DIR])
 AC_ARG_WITH(cppunit2,
@@ -403,7 +405,7 @@ ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
-opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
+opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
@@ -457,7 +459,7 @@ for x_arg in "$@" ; do
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* | --with-hdf5=* \
+      | --with-muparser=* | --with-hdf5=* | --with-jni-* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -4143,6 +4145,38 @@ if test "$with_python" != "no" ; then
    fi
 fi
 
+## Java
+if test "${with_jni-no}" != "no"; then
+   case "$with_jni:${JAVAC+set}" in
+      yes: | : )
+         if test -d "$JAVA_HOME"; then
+            JAVAC=$JAVA_HOME/bin/javac
+         else
+            JAVAC=javac
+         fi
+         ;;
+      * )
+         JAVAC=$with_jni/bin/javac
+         ;;
+   esac
+   AX_JNI_INCLUDE_DIR
+   JDK_INCLUDE=''
+   sep=''
+   for x in $JNI_INCLUDE_DIRS; do
+      JDK_INCLUDE=-I$JDK_INCLUDE$sep$x
+      sep=' '
+   done
+   AC_MSG_NOTICE([setting JDK_INCLUDE = $JDK_INCLUDE])
+   CPPFLAGS="$JDK_INCLUDE $orig_CPPFLAGS"
+   AC_CHECK_HEADER(jni.h,
+      [AC_DEFINE(NCBI_JNI, 1,
+          [Define to 1 if building Java Native Interface bindings.])
+       NCBI_FEATURE(Ncbi-JNI)
+       JDK_PATH=$_JTOPDIR],
+      [JDK_INCLUDE=''
+       JDK_PATH=''])
+fi
+
 ## CPPUNIT
 if test "$with_cppunit" != "no" ; then
    case "$with_cppunit" in
@@ -5767,7 +5801,6 @@ LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 
 
-
 ### Optional projects
 ### --------------------------------------------
 
@@ -6420,6 +6453,8 @@ AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
+AC_SUBST(JDK_PATH)
+AC_SUBST(JDK_INCLUDE)
 
 AC_SUBST(NCBI_C_ncbi)
 

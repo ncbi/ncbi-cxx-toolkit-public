@@ -686,6 +686,9 @@
    takes (normally 2 or 3). */
 #undef NCBI_HAVE_READDIR_R
 
+/* Define to 1 if building Java Native Interface bindings. */
+#undef NCBI_JNI
+
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions that never return. */
 #undef NCBI_NORETURN

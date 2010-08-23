@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS CHECK_OS_NAME script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS _ACJNI_JAVAC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS CHECK_OS_NAME script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS JDK_PATH JDK_INCLUDE NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -962,6 +962,7 @@ Optional Packages:
  --with-odbc=DIR         use ODBC installation in DIR
  --with-python=DIR       use Python installation in DIR
  --without-python        do not use Python
+ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)
  --with-cppunit=DIR      use CPPUNIT installation in DIR
  --without-cppunit       do not use CPPUNIT
  --with-boost=DIR        use Boost installation in DIR
@@ -2101,6 +2102,12 @@ if test "${with_python2+set}" = set; then
 
 fi;
 
+# Check whether --with-jni or --without-jni was given.
+if test "${with_jni+set}" = set; then
+  withval="$with_jni"
+
+fi;
+
 # Check whether --with-cppunit or --without-cppunit was given.
 if test "${with_cppunit+set}" = set; then
   withval="$with_cppunit"
@@ -2453,7 +2460,7 @@ ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
-opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
+opengl mesa glut bdb python jni sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
@@ -2507,7 +2514,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* | --with-hdf5=* \
+      | --with-muparser=* | --with-hdf5=* | --with-jni-* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -23362,6 +23369,288 @@ echo "$as_me: error: --with-python explicitly specified, but no usable version f
    fi
 fi
 
+## Java
+if test "${with_jni-no}" != "no"; then
+   case "$with_jni:${JAVAC+set}" in
+      yes: | : )
+         if test -d "$JAVA_HOME"; then
+            JAVAC=$JAVA_HOME/bin/javac
+         else
+            JAVAC=javac
+         fi
+         ;;
+      * )
+         JAVAC=$with_jni/bin/javac
+         ;;
+   esac
+
+
+JNI_INCLUDE_DIRS=""
+
+test "x$JAVAC" = x && { { echo "$as_me:$LINENO: error: '\$JAVAC' undefined" >&5
+echo "$as_me: error: '\$JAVAC' undefined" >&2;}
+   { (exit 1); exit 1; }; }
+# Extract the first word of "$JAVAC", so it can be a program name with args.
+set dummy $JAVAC; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path__ACJNI_JAVAC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $_ACJNI_JAVAC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path__ACJNI_JAVAC="$_ACJNI_JAVAC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path__ACJNI_JAVAC="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_path__ACJNI_JAVAC" && ac_cv_path__ACJNI_JAVAC="no"
+  ;;
+esac
+fi
+_ACJNI_JAVAC=$ac_cv_path__ACJNI_JAVAC
+
+if test -n "$_ACJNI_JAVAC"; then
+  echo "$as_me:$LINENO: result: $_ACJNI_JAVAC" >&5
+echo "${ECHO_T}$_ACJNI_JAVAC" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+test "x$_ACJNI_JAVAC" = xno && { { echo "$as_me:$LINENO: error: $JAVAC could not be found in path" >&5
+echo "$as_me: error: $JAVAC could not be found in path" >&2;}
+   { (exit 1); exit 1; }; }
+
+
+# find the include directory relative to the javac executable
+_cur=""$_ACJNI_JAVAC""
+while ls -ld "$_cur" 2>/dev/null | grep " -> " >/dev/null; do
+        echo "$as_me:$LINENO: checking symlink for $_cur" >&5
+echo $ECHO_N "checking symlink for $_cur... $ECHO_C" >&6
+        _slink=`ls -ld "$_cur" | sed 's/.* -> //'`
+        case "$_slink" in
+        /*) _cur="$_slink";;
+        # 'X' avoids triggering unwanted echo options.
+        *) _cur=`echo "X$_cur" | sed -e 's/^X//' -e 's:[^/]*$::'`"$_slink";;
+        esac
+        echo "$as_me:$LINENO: result: $_cur" >&5
+echo "${ECHO_T}$_cur" >&6
+done
+_ACJNI_FOLLOWED="$_cur"
+
+_JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[^/]*$::'`
+case "$host_os" in
+        darwin*)        _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[^/]*$::'`
+                        _JINC="$_JTOPDIR/Headers";;
+        *)              _JINC="$_JTOPDIR/include";;
+esac
+if test -f "$_JINC/jni.h"; then
+        JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"
+else
+        _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[^/]*$::'`
+        if test -f "$_JTOPDIR/include/jni.h"; then
+                JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"
+        else
+                { { echo "$as_me:$LINENO: error: cannot find java include files" >&5
+echo "$as_me: error: cannot find java include files" >&2;}
+   { (exit 1); exit 1; }; }
+        fi
+fi
+
+# get the likely subdirectories for system specific java includes
+case "$host_os" in
+bsdi*)          _JNI_INC_SUBDIRS="bsdos";;
+linux*)         _JNI_INC_SUBDIRS="linux genunix";;
+osf*)           _JNI_INC_SUBDIRS="alpha";;
+solaris*)       _JNI_INC_SUBDIRS="solaris";;
+mingw*)			_JNI_INC_SUBDIRS="win32";;
+cygwin*)		_JNI_INC_SUBDIRS="win32";;
+*)              _JNI_INC_SUBDIRS="genunix";;
+esac
+
+# add any subdirectories that are present
+for JINCSUBDIR in $_JNI_INC_SUBDIRS
+do
+        if test -d "$_JTOPDIR/include/$JINCSUBDIR"; then
+                JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
+        fi
+done
+
+   JDK_INCLUDE=''
+   sep=''
+   for x in $JNI_INCLUDE_DIRS; do
+      JDK_INCLUDE=-I$JDK_INCLUDE$sep$x
+      sep=' '
+   done
+   { echo "$as_me:$LINENO: setting JDK_INCLUDE = $JDK_INCLUDE" >&5
+echo "$as_me: setting JDK_INCLUDE = $JDK_INCLUDE" >&6;}
+   CPPFLAGS="$JDK_INCLUDE $orig_CPPFLAGS"
+   if test "${ac_cv_header_jni_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for jni.h" >&5
+echo $ECHO_N "checking for jni.h... $ECHO_C" >&6
+if test "${ac_cv_header_jni_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_jni_h" >&5
+echo "${ECHO_T}$ac_cv_header_jni_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking jni.h usability" >&5
+echo $ECHO_N "checking jni.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <jni.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking jni.h presence" >&5
+echo $ECHO_N "checking jni.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <jni.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: jni.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: jni.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: jni.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: jni.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: jni.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: jni.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: jni.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: jni.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: jni.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: jni.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: jni.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ---------------------------------------- ##
+## Report this to cpp-core@ncbi.nlm.nih.gov ##
+## ---------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for jni.h" >&5
+echo $ECHO_N "checking for jni.h... $ECHO_C" >&6
+if test "${ac_cv_header_jni_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_jni_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_jni_h" >&5
+echo "${ECHO_T}$ac_cv_header_jni_h" >&6
+
+fi
+if test $ac_cv_header_jni_h = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_JNI 1
+_ACEOF
+
+                 WithFeatures="$WithFeatures${WithFeaturesSep}Ncbi-JNI"; WithFeaturesSep=" "
+       JDK_PATH=$_JTOPDIR
+else
+  JDK_INCLUDE=''
+       JDK_PATH=''
+fi
+
+
+fi
+
 ## CPPUNIT
 if test "$with_cppunit" != "no" ; then
    case "$with_cppunit" in
@@ -31333,7 +31622,6 @@ LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 
 
-
 ### Optional projects
 ### --------------------------------------------
 
@@ -31716,7 +32004,7 @@ esac
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS Ncbi-JNI check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
@@ -31829,6 +32117,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -32837,6 +33127,7 @@ s,@PYTHON24_LIBS@,$PYTHON24_LIBS,;t t
 s,@PYTHON25@,$PYTHON25,;t t
 s,@PYTHON25_INCLUDE@,$PYTHON25_INCLUDE,;t t
 s,@PYTHON25_LIBS@,$PYTHON25_LIBS,;t t
+s,@_ACJNI_JAVAC@,$_ACJNI_JAVAC,;t t
 s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
 s,@X_LIBS@,$X_LIBS,;t t
@@ -33067,6 +33358,8 @@ s,@FREETYPE_LIBS@,$FREETYPE_LIBS,;t t
 s,@ncbi_xreader_pubseqos@,$ncbi_xreader_pubseqos,;t t
 s,@ncbi_xreader_pubseqos2@,$ncbi_xreader_pubseqos2,;t t
 s,@UNLESS_PUBSEQOS@,$UNLESS_PUBSEQOS,;t t
+s,@JDK_PATH@,$JDK_PATH,;t t
+s,@JDK_INCLUDE@,$JDK_INCLUDE,;t t
 s,@NCBI_C_ncbi@,$NCBI_C_ncbi,;t t
 s,@BINCOPY@,$BINCOPY,;t t
 s,@APP_NOCOPY@,$APP_NOCOPY,;t t

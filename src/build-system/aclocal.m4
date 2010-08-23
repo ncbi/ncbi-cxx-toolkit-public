@@ -402,3 +402,5 @@ if test ! -f ${real_srcdir}/src/$1/Makefile.in  -o  \
    with_$1="no"
 fi
 ])
+
+m4_include([ax_jni_include_dir.m4])
