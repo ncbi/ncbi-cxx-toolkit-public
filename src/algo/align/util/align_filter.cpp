@@ -219,6 +219,19 @@ private:
     bool m_Start;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+
+class CScore_AlignLengthRatio : public CAlignFilter::IScore
+{
+public:
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        TSeqRange r0 = align.GetSeqRange(0);
+        TSeqRange r1 = align.GetSeqRange(1);
+        return double(r1.GetLength()) / double(r0.GetLength());
+    }
+};
+
 //////////////////////////////////////////////////////////////////////////////
 
 class CScore_SequenceLength : public CAlignFilter::IScore
@@ -370,6 +383,11 @@ CAlignFilter::CAlignFilter()
         (TScoreDictionary::value_type
          ("cds_internal_stops",
           CIRef<IScore>(new CScore_CdsInternalStops)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("align_length_ratio",
+          CIRef<IScore>(new CScore_AlignLengthRatio)));
 
     m_Scores.insert
         (TScoreDictionary::value_type
