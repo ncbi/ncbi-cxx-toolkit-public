@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(UngappedBlastnCutoffs)
         { 11, 0, 0, 0, 14, 20, true, 14, 0 },
         { 11, 0, 0, 0, 12, 20, true, 12, 0 },
         { 11, 0, 0, 0, 19, 19, true, 19, 0 },
-        { 10, 0, 0, 0, 10, 10, true, 10, 0 } };
+        { 11, 0, 0, 0, 10, 10, true, 10, 0 } };
     
     AllCutoffScores* cutoffs = NULL;
     int index;
@@ -781,7 +781,7 @@ BOOST_AUTO_TEST_CASE(GappedBlastnCutoffs)
         { 11, 15, 50, 0, 14, 20, false, 0, 0 },
         { 11, 15, 50, 0, 11, 20, false, 0, 0 },
         { 11, 15, 50, 0, 19, 19, false, 0, 0 },
-        {  8, 15, 50, 0,  8, 10, false, 0, 0 } };
+        { 11, 15, 50, 0,  8, 10, false, 0, 0 } };
 
     AllCutoffScores* cutoffs = NULL;
     int index;

@@ -355,8 +355,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       if (curr_cutoffs->x_dropoff_init == 0)
          curr_cutoffs->x_dropoff = new_cutoff;
       else
-         curr_cutoffs->x_dropoff = MIN(new_cutoff, 
-                                       curr_cutoffs->x_dropoff_init);
+         curr_cutoffs->x_dropoff = curr_cutoffs->x_dropoff_init;
 
       /* Check if this is the smallest cutoff seen so far, and
          save both the cutoff and its associated X-drop value if so */

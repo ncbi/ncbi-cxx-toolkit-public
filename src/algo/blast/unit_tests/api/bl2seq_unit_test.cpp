@@ -202,7 +202,7 @@ void testRawCutoffs(CBl2Seq& blaster, EProgram program,
     int gap_trigger;
 
     if (program == eBlastn || program == eDiscMegablast) {
-        x_drop_ungapped = 16;
+        x_drop_ungapped = 22;
         gap_trigger = 16;
     } else if (program == eMegablast) {
         x_drop_ungapped = 8;
@@ -214,11 +214,11 @@ void testRawCutoffs(CBl2Seq& blaster, EProgram program,
 
     switch (test_id) {
     case eBlastn_555_3090:
-        x_drop_ungapped = 18; 
+        x_drop_ungapped = 22; 
         gap_trigger = 18;
         break;
     case eBlastn_multi_q:
-        x_drop_ungapped = 18; 
+        x_drop_ungapped = 22; 
         gap_trigger = 18;
         break;
     case eMegablast_chrom_mrna: 
@@ -226,7 +226,7 @@ void testRawCutoffs(CBl2Seq& blaster, EProgram program,
         gap_trigger = 7; 
         break;
     case eDiscMegablast_U02544_U61969:
-        x_drop_ungapped = 20; 
+        x_drop_ungapped = 22; 
         gap_trigger = 20; 
         break;
     case eBlastp_multi_q:
