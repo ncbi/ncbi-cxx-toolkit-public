@@ -1,3 +1,6 @@
+August 24, 2010
+    Added filter for orgname.pgcode.
+
 April 14, 2009
     Use /sviewer/viewer.fcgi instead of /entrez/viewer.fcgi.
     Allow to set the viewer.fcgi URL in the INI file.
