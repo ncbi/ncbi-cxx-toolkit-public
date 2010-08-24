@@ -40,6 +40,7 @@
 #include <corelib/ncbifloat.h>
 #include <memory>
 #include <algorithm>
+#include <iterator>
 #include <errno.h>
 #include <stdio.h>
 #include <locale.h>
