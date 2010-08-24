@@ -4,6 +4,7 @@ corelib/impl$
 util$
 util/bitset$
 util/regexp$
+util/xregexp$
 util/cache$
 util/sequtil$
 util/math$
