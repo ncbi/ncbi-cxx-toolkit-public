@@ -160,7 +160,8 @@ private:
     };
     static void x_CheckField(const string& str,
                              EFieldType    ftype,
-                             const char*   banned_symbols);
+                             const char*   banned_symbols,
+                             const string* cookie_name = NULL);
     static bool x_GetString(string* str, const string& val);
     // prohibit default assignment
     CCgiCookie& operator= (const CCgiCookie&);
@@ -307,7 +308,8 @@ private:
     static ECheckResult x_CheckField(const string& str,
                                      CCgiCookie::EFieldType ftype,
                                      const char*   banned_symbols,
-                                     EOnBadCookie  on_bad_cookie);
+                                     EOnBadCookie  on_bad_cookie,
+                                     const string* cookie_name = NULL);
 
     NStr::EUrlEncode m_EncodeFlag;
     TSet             m_Cookies;
@@ -902,11 +904,11 @@ inline void CCgiCookie::SetValue(const string& str) {
     m_InvalidFlag &= ~fInvalid_Value;
 }
 inline void CCgiCookie::SetDomain(const string& str) {
-    x_CheckField(str, eField_Other, " ;");
+    x_CheckField(str, eField_Other, " ;", &m_Name);
     m_Domain = str;
 }
 inline void CCgiCookie::SetPath(const string& str) {
-    x_CheckField(str, eField_Other, ";,");
+    x_CheckField(str, eField_Other, ";,", &m_Name);
     m_Path = str;
 }
 inline void CCgiCookie::SetExpDate(const tm& exp_date) {
