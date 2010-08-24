@@ -8,7 +8,7 @@ REQUIRES = objects
 
 APP = test_biotree
 SRC = test_biotree
-LIB = xalgophytree biotree fastme taxon1 xalnmgr xconnect tables \
+LIB = xalgophytree biotree fastme taxon1 xalnmgr xobjutil xconnect tables \
       $(SOBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
