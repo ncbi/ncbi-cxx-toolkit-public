@@ -264,7 +264,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     EIO_Status status = ConnStatus
         (okay != 1  ||
          NStr::FindNoCase(str, "NCBI Dispatcher Test Page") == NPOS  ||
-         NStr::FindNoCase(str, "Welcome!") == NPOS, http);
+         NStr::FindNoCase(str, "Welcome") == NPOS, http);
 
     string temp;
     if (status != eIO_Success) {
