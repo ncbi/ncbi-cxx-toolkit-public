@@ -1684,7 +1684,9 @@ Seq-annot ::= {
           from 195029,
           to 196310,
           strand minus,
-          id gi 258441149
+          id gi 258441149,
+          fuzz-from lim lt,
+          fuzz-to lim gt
         }
       }
     },
@@ -1703,7 +1705,9 @@ Seq-annot ::= {
           from 195029,
           to 196310,
           strand minus,
-          id gi 258441149
+          id gi 258441149,
+          fuzz-from lim lt,
+          fuzz-to lim gt
         }
       },
       qual {

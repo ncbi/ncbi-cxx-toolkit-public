@@ -123,9 +123,12 @@ public:
     /// Convert an alignment to an annotation.
     /// This will optionally promote all features through the alignment
     /// and create product sequences
-    void ConvertAlignToAnnot(const objects::CSeq_align& align,
+    /// Returns mRNA feature
+    CRef<objects::CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
-                             objects::CBioseq_set& seqs);
+                             objects::CBioseq_set& seqs,
+                             int gene_id = 0,
+                             const objects::CSeq_feat* cdregion_on_mrna = NULL);
 
     /// Correctly mark exceptions on a feature
     ///
