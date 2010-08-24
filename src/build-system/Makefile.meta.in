@@ -288,7 +288,11 @@ requirements: $(reqs)
 	    *_?:*  ) $(MAKE) $(MFLAGS_NR) $*.real ;; \
 	    *      ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.usr  && \
 	             $(MAKE) $(MFLAGS_NR) $*.nonusr \
-	                 APP_PROJ='$(APP_PROJ)' LIB_PROJ='$(LIB_PROJ)' ;; \
+	                 APP_PROJ='$(APP_PROJ)' LIB_PROJ='$(LIB_PROJ)' \
+	                 EXPENDABLE_APP_PROJ='$(EXPENDABLE_APP_PROJ)' \
+	                 EXPENDABLE_LIB_PROJ='$(EXPENDABLE_LIB_PROJ)' \
+	                 ASN_PROJ='$(ASN_PROJ)' DTD_PROJ='$(DTD_PROJ)' \
+	                 XSD_PROJ='$(XSD_PROJ)' ;; \
 	esac
 
 ### Recursive build -- in the [SUB_PROJ] directories
