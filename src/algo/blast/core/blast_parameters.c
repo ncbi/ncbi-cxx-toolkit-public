@@ -362,8 +362,10 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
       if (new_cutoff < cutoff_min) {
          cutoff_min = new_cutoff;
-         xdrop_max = curr_cutoffs->x_dropoff;
       }
+
+      if (xdrop_max < curr_cutoffs->x_dropoff)
+         xdrop_max = curr_cutoffs->x_dropoff;
 
       /* Nucleotide searches first compute an approximate ungapped
          alignment and compare it to a reduced ungapped cutoff score */
