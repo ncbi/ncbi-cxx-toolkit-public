@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/asn1.hpp>
+#include <algo/sequence/gene_model.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -97,20 +98,15 @@ public:
     CRef<CSeq_entry> main_seq_entry;
 
 private:
-    CRef<CSeq_entry> CreateModelProducts(SModelData& model);
-    CRef<CSeq_feat> create_gene_feature(const SModelData& md) const;
-    void update_gene_feature(CSeq_feat& gene, CSeq_feat& mrna_feat) const;
-    CRef<CSeq_entry>  create_prot_seq_entry(const SModelData& md, const CSeq_entry& mrna_seq_entry, const CSeq_feat& cdregion_feature) const;
-    CRef<CSeq_entry> create_mrna_seq_entry(SModelData& md, CRef<CSeq_feat> cdregion_feature);
-    CRef<CSeq_feat> create_mrna_feature(SModelData& md);
+    void CreateModelProducts(SModelData& model);
     CRef<CSeq_feat> create_internal_feature(const SModelData& md);
     enum EWhere { eOnGenome, eOnMrna };
     CRef<CSeq_feat> create_cdregion_feature(SModelData& md,EWhere onWhat);
-    CRef<CSeq_feat> create_5prime_stop_feature(SModelData& md) const;
     CRef<CSeq_align> model2spliced_seq_align(SModelData& md);
     CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
     CRef<CSeq_loc> create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits = TSignedSeqRange::GetWhole());
 
+    CRef< CUser_object > create_ModelEvidence_user_object(const CGeneModel& model);
     void AddInternalFeature(const SModelData& md);
     void DumpEvidence(const SModelData& md);
     void DumpUnusedChains();
@@ -121,6 +117,7 @@ private:
     CDoubleStrandSeq  contig_ds_seq;
 
     CBioseq_set::TSeq_set* nucprots;
+    CSeq_annot* gnomon_models_annot;
     CSeq_annot::C_Data::TFtable* feature_table;
     CSeq_annot::C_Data::TAlign*  model_alignments;
     CSeq_annot::C_Data::TFtable* internal_feature_table;
@@ -129,6 +126,9 @@ private:
     typedef map<int,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
     IEvidence& evidence;
+
+    auto_ptr<CFeatureGenerator> feature_generator;
+    CRef<CScope> scope;
 
     friend class CAnnotationASN1;
 };
@@ -145,19 +145,20 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
 
     nucprots = &bioseq_set.SetSeq_set();
 
-    CRef<CSeq_annot> seq_annot(new CSeq_annot);
-    seq_annot->AddName("Gnomon models");
-    seq_annot->SetTitle("Gnomon models");
+    gnomon_models_annot = new CSeq_annot;
+    gnomon_models_annot->AddName("Gnomon models");
+    gnomon_models_annot->SetTitle("Gnomon models");
     CRef<CAnnotdesc> desc(new CAnnotdesc());
     CRef<CSeq_loc> genomic_seqloc(new CSeq_loc());
     genomic_seqloc->SetWhole(*contig_sid);
     desc->SetRegion(*genomic_seqloc);
-    seq_annot->SetDesc().Set().push_back(desc);
+    gnomon_models_annot->SetDesc().Set().push_back(desc);
 
-    bioseq_set.SetAnnot().push_back(seq_annot);
-    feature_table = &seq_annot->SetData().SetFtable();
+    CRef<CSeq_annot> gnomon_models_annot_ref(gnomon_models_annot);
+    bioseq_set.SetAnnot().push_back(gnomon_models_annot_ref);
+    feature_table = &gnomon_models_annot->SetData().SetFtable();
 
-    seq_annot.Reset(new CSeq_annot);
+    CRef<CSeq_annot> seq_annot(new CSeq_annot);
     seq_annot->AddName("Gnomon internal attributes");
     seq_annot->SetTitle("Gnomon internal attributes");
     bioseq_set.SetAnnot().push_back(seq_annot);
@@ -171,6 +172,14 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     seq_annot->AddName("Model Alignments");
     seq_annot->SetTitle("Model Alignments");
 #endif
+
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    scope.Reset(new CScope(*obj_mgr));
+    scope->AddDefaults();
+    feature_generator.reset(new CFeatureGenerator(*scope));
+    feature_generator->SetFlags(CFeatureGenerator::fCreateGene | CFeatureGenerator::fCreateMrna | CFeatureGenerator::fCreateCdregion | CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
+    feature_generator->SetMinIntron(numeric_limits<TSeqPos>::max());
+    feature_generator->SetAllowedUnaligned(0);
 }
 
 CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc) :
@@ -196,25 +205,15 @@ void CAnnotationASN1::AddModel(const CAlignModel& model)
     m_data->AddModel(model);
 }
 
-CRef<CSeq_entry> CAnnotationASN1::CImplementationData::CreateModelProducts(SModelData& md)
+void CAnnotationASN1::CImplementationData::CreateModelProducts(SModelData& md)
 {
+    CRef< CSeq_align > align = model2spliced_seq_align(md);
+
     CRef<CSeq_entry> model_products(new CSeq_entry);
     nucprots->push_back(model_products);
-    model_products->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
-
-    
-    CRef<CSeq_feat> cdregion_feature;
-    if (!md.is_ncrna)
-        cdregion_feature = create_cdregion_feature(md,eOnMrna);
-    CRef<CSeq_entry> mrna_seq_entry = create_mrna_seq_entry(md, cdregion_feature);
-    model_products->SetSet().SetSeq_set().push_back(mrna_seq_entry);
-
-    if (!md.is_ncrna)
-        model_products->SetSet().SetSeq_set().push_back(create_prot_seq_entry(md, *mrna_seq_entry, *cdregion_feature));
-
-    return mrna_seq_entry;
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    feature_generator->ConvertAlignToAnnot(*align, *annot, model_products->SetSet());
 }
-
 
 void CAnnotationASN1::CImplementationData::AddInternalFeature(const SModelData& md)
 {
@@ -230,46 +229,27 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 {
     SModelData md(model, contig_ds_seq[ePlus]);
 
-    CRef<CSeq_entry> mrna_seq_entry = CreateModelProducts(md);
+    CRef< CSeq_align > align = model2spliced_seq_align(md);
+    CRef<CSeq_feat> cds_feat;
+    CSeq_feat* cds_feat_ptr = NULL;
+    if (!md.is_ncrna) {
+         cds_feat = create_cdregion_feature(md,eOnMrna);
+         cds_feat_ptr = cds_feat.GetPointer();
+    }
 
-    if (model_alignments != NULL)
-        model_alignments->push_back(
-                                    mrna_seq_entry->GetSeq().GetInst().GetHist().GetAssembly().front()
-                                    );
+    CRef<CSeq_entry> model_products(new CSeq_entry);
+    nucprots->push_back(model_products);
 
+    CRef<CSeq_feat> mrna_feat = feature_generator->ConvertAlignToAnnot(*align, *gnomon_models_annot, model_products->SetSet(), model.GeneID(), cds_feat_ptr);
 
-    CRef<CSeq_feat> mrna_feat = create_mrna_feature(md);
-    feature_table->push_back(mrna_feat);
+    CRef< CUser_object > user_obj = create_ModelEvidence_user_object(model);
+    mrna_feat->SetExts().push_back(user_obj);
+
+    if (model_alignments != NULL) {
+        model_alignments->push_back(align);
+    }
 
     AddInternalFeature(md);
-
-    if (!md.is_ncrna) {
-        CRef<CSeq_feat> cds_feat;
-        cds_feat = create_cdregion_feature(md,eOnGenome);
-        feature_table->push_back(cds_feat);
-
-        CRef< CSeqFeatXref > cdsxref( new CSeqFeatXref() );
-        cdsxref->SetId(*cds_feat->SetIds().front());
-        //     cdsxref->SetData().SetCdregion();
-        
-        CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
-        mrnaxref->SetId(*mrna_feat->SetIds().front());
-        //     mrnaxref->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-        
-        cds_feat->SetXref().push_back(mrnaxref);
-        mrna_feat->SetXref().push_back(cdsxref);
-
-    }
-    if (model.GeneID()) {
-        TGeneMap::iterator gene = genes.find(model.GeneID());
-        if (gene == genes.end()) {
-            CRef<CSeq_feat> gene_feature = create_gene_feature(md);
-            gene = genes.insert(make_pair(model.GeneID(), gene_feature)).first;
-            feature_table->push_back(gene_feature);
-        }
-        update_gene_feature(*gene->second, *mrna_feat);
-    }
-
 }
 
 CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SModelData& md, EWhere where)
@@ -391,40 +371,6 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
     return cdregion_feature;
 }
 
-
-CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_5prime_stop_feature(SModelData& md) const
-{
-    const CGeneModel& model = md.model;
-
-
-    int frame = -1;
-    TIVec starts[3], stops[3];
-
-    FindStartsStops(model, contig_ds_seq[model.Strand()], md.mrna_seq, model.GetAlignMap(), starts, stops, frame);
-    _ASSERT( starts[frame].size()>0 && stops[frame].size()>0 );
-
-    TSignedSeqPos stop_5prime = stops[frame][0];
-    if (FindUpstreamStop(stops[frame],starts[frame][0],stop_5prime) && stop_5prime>=0) {
-        CRef<CSeq_feat> stop_5prime_feature(new CSeq_feat);
-        stop_5prime_feature->SetData().SetImp().SetKey("misc_feature");
-        stop_5prime_feature->SetComment("upstream in-frame stop codon");
-        CRef<CSeq_loc> stop_5prime_location(new CSeq_loc(*md.mrna_sid, stop_5prime, stop_5prime+2, eNa_strand_plus));
-        stop_5prime_feature->SetLocation(*stop_5prime_location);
-        return stop_5prime_feature;
-    } else
-        return CRef<CSeq_feat>();
-}
-
-CRef< CUser_object > create_ModelEvidence_user_object()
-{
-    CRef< CUser_object > user_obj(new CUser_object);
-    CRef< CObject_id > type(new CObject_id);
-    type->SetStr("ModelEvidence");
-    user_obj->SetType(*type);
-
-    return user_obj;
-}
-
 CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits)
 {
     CRef<CSeq_loc> seq_loc(new CSeq_loc);
@@ -530,56 +476,13 @@ void CAnnotationASN1::CImplementationData::DumpUnusedChains()
     }
 }
 
-CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModelData& md)
+CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_user_object(const CGeneModel& model)
 {
-    const CGeneModel& model = md.model;
+    CRef< CUser_object > user_obj(new CUser_object);
+    CRef< CObject_id > type(new CObject_id);
+    type->SetStr("ModelEvidence");
+    user_obj->SetType(*type);
 
-    CRef<CSeq_feat> mrna_feature(new CSeq_feat);
-
-    CRef<CObject_id> obj_id( new CObject_id() );
-    obj_id->SetStr("rna." + NStr::IntToString(model.ID()));
-    CRef<CFeat_id> feat_id( new CFeat_id() );
-    feat_id->SetLocal(*obj_id);
-    mrna_feature->SetIds().push_back(feat_id);
-
-    mrna_feature->SetData().SetRna().SetType(md.is_ncrna ? CRNA_ref::eType_ncRNA : CRNA_ref::eType_mRNA);
-    mrna_feature->SetProduct().SetWhole(*md.mrna_sid);
-
-    mrna_feature->SetLocation(*create_packed_int_seqloc(model));
-                
-    if (!md.is_ncrna) {
-        if (!model.HasStart())
-            mrna_feature->SetLocation().SetPartialStart(true,eExtreme_Biological);
-        if(!model.HasStop())
-            mrna_feature->SetLocation().SetPartialStop(true,eExtreme_Biological);
-
-        if(!model.HasStart() || !model.HasStop() || !model.Continuous())
-            mrna_feature->SetPartial(true);
-    }
-
-    if(!model.FrameShifts().empty()) {
-        mrna_feature->SetExcept(true);
-        mrna_feature->SetExcept_text("unclassified transcription discrepancy");
-    }
-//     if(model.PStop()) {
-//         mrna_feature->SetExcept(true);
-//         if (mrna_feature->IsSetExcept_text() && mrna_feature->GetExcept_text().size()>0)
-//             mrna_feature->SetExcept_text() += ", ";
-//         else
-//             mrna_feature->SetExcept_text(kEmptyStr);
-//         mrna_feature->SetExcept_text() += "internal stop(s)";
-//     }
-
-    if (model.Status() & CGeneModel::ePseudo) {
-        mrna_feature->SetPseudo(true);
-    }
-
-#ifdef _EVIDENCE_WANTED
-    DumpEvidence(md);
-#endif
-
-    CRef< CUser_object > user_obj = create_ModelEvidence_user_object();
-    mrna_feature->SetExts().push_back(user_obj);
     user_obj->AddField("Method",CGeneModel::TypeToString(model.Type()));
     if (!model.Support().empty()) {
         CRef<CUser_field> support_field(new CUser_field());
@@ -664,7 +567,8 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         user_obj->AddField("BestTargetProteinHit",model.ProteinHit());
     if(model.Status()&CGeneModel::eFullSupCDS)
         user_obj->AddField("CDS support",string("full"));
-    return mrna_feature;
+
+    return user_obj;
 }
 
 CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(const SModelData& md)
@@ -729,257 +633,6 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
     }
 
     return feature;
-}
-
-
-CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(const SModelData& md, const CSeq_entry& mrna_seq_entry, const CSeq_feat& cdregion_feature) const
-{
-    const CGeneModel& model = md.model;
-
-    CRef<CSeq_entry> sprot(new CSeq_entry);
-//     CRef<CBioseq> prot_bioseq = CSeqTranslator::TranslateToProtein(cdregion_feature, scope);
-//     sprot->SetSeq(*prot_bioseq);
-    sprot->SetSeq().SetId().push_back(md.prot_sid);
-
-    CRef<CSeqdesc> desc(new CSeqdesc);
-    desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-    desc->SetMolinfo().SetCompleteness(
-	model.Continuous()?
-	    (model.HasStart()?
-		(model.HasStop()?
-		    CMolInfo::eCompleteness_complete:
-                    CMolInfo::eCompleteness_has_left):
-                (model.HasStop()?
-                    CMolInfo::eCompleteness_has_right:
-                    CMolInfo::eCompleteness_no_ends)):
-	    CMolInfo::eCompleteness_partial
-	);
-    sprot->SetSeq().SetDescr().Set().push_back(desc);
-
-
-    string strprot;
-    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CScope scope(*obj_mgr);
-    scope.AddTopLevelSeqEntry(mrna_seq_entry);
-    CSeqTranslator::Translate(cdregion_feature, scope, strprot, false);
-
-    CSeq_inst& seq_inst = sprot->SetSeq().SetInst();
-    seq_inst.SetMol(CSeq_inst::eMol_aa);
-    seq_inst.SetLength(strprot.size());
-
-    if (model.Continuous()) {
-        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
-        CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
-        sprot->SetSeq().SetInst().SetSeq_data(*dprot);
-    } else {
-        seq_inst.SetRepr(CSeq_inst::eRepr_delta);
-        CSeqVector seqv(cdregion_feature.GetLocation(), scope, CBioseq_Handle::eCoding_Ncbi);
-        CConstRef<CSeqMap> map;
-        map.Reset(&seqv.GetSeqMap());
-
-        const CCdregion& cdr = cdregion_feature.GetData().GetCdregion();
-        int frame = 0;
-        if (cdr.IsSetFrame ()) {
-            switch (cdr.GetFrame ()) {
-            case CCdregion::eFrame_two :
-                frame = 1;
-                break;
-            case CCdregion::eFrame_three :
-                frame = 2;
-                break;
-            default :
-                break;
-            }
-        }
-
-        size_t b = 0;
-        size_t e = 0;
-
-        for( CSeqMap_CI ci = map->BeginResolved(&scope); ci; ) {
-            TSeqPos len = ci.GetLength() - frame;
-            frame = 0;
-            e = b + (len+2)/3;
-            if (ci.IsUnknownLength()) {
-                seq_inst.SetExt().SetDelta().AddLiteral(len);
-                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-            } else {
-                if (e > strprot.size()) {
-                    _ASSERT( len%3 != 0 || md.model.HasStop() );
-                    --e;
-                }
-                if (b < e)
-                    seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
-                
-            }
-            b = e;
-
-            ci.Next();
-
-            _ASSERT( len%3 == 0 || !ci );
-        }
-        _ASSERT( b == strprot.size() );
-    }
-#ifdef _DEBUG
-    scope.AddTopLevelSeqEntry(*sprot);
-    CBioseq_Handle prot_h = scope.GetBioseqHandle(*md.prot_sid);
-    CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
-    string result;
-    vec.GetSeqData(0, vec.size(), result);
-    _ASSERT( strprot==result );
-#endif
-    return sprot;
-}
-
-CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SModelData& md, CRef<CSeq_feat> cdregion_feature)
-{
-    const CGeneModel& model = md.model;
-
-    CRef<CSeq_entry> smrna(new CSeq_entry);
-    smrna->SetSeq().SetId().push_back(md.mrna_sid);
-
-    CRef<CSeqdesc> mdes(new CSeqdesc);
-    smrna->SetSeq().SetDescr().Set().push_back(mdes);
-    mdes->SetMolinfo().SetBiomol(md.is_ncrna ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
-
-    mdes->SetMolinfo().SetCompleteness(
-        model.Continuous()?
-            (md.is_ncrna ? CMolInfo::eCompleteness_unknown :
-              (model.HasStart()?
-                (model.HasStop()?
-                    CMolInfo::eCompleteness_unknown:
-                    CMolInfo::eCompleteness_no_right):
-                (model.HasStop()?
-                    CMolInfo::eCompleteness_no_left:
-                 CMolInfo::eCompleteness_no_ends))):
-            CMolInfo::eCompleteness_partial
-        );
-
-    CResidueVec mrna_seq_vec;
-    model.GetAlignMap().EditedSequence(contig_seq, mrna_seq_vec, true);
-    string mrna_seq_str((char*)&mrna_seq_vec[0],mrna_seq_vec.size());
-
-    CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
-    seq_inst.SetMol(CSeq_inst::eMol_rna);
-    seq_inst.SetLength(mrna_seq_str.size());
-
-    if (model.Continuous()) {
-        seq_inst.SetRepr(CSeq_inst::eRepr_raw);
-        CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
-        CSeqportUtil::Pack(dmrna.GetPointer());
-        seq_inst.SetSeq_data(*dmrna);
-    } else {
-        seq_inst.SetRepr(CSeq_inst::eRepr_delta);
-        TSeqPos b = 0;
-        TSeqPos e = 0;
-
-        if (model.Strand()==ePlus) {
-            for (size_t i=0; i< model.Exons().size()-1; ++i) {
-                const CModelExon& e1= model.Exons()[i];
-                const CModelExon& e2= model.Exons()[i+1];
-                if (e1.m_ssplice && e2.m_fsplice)
-                    continue;
-                e = model.GetAlignMap().MapOrigToEdited(e1.GetTo())+1;
-                seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
-                b =  model.GetAlignMap().MapOrigToEdited(e2.GetFrom());
-
-                seq_inst.SetExt().SetDelta().AddLiteral(b-e);
-                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-            }
-        } else {
-            for (size_t i=model.Exons().size()-1; i > 0; --i) {
-                const CModelExon& e1= model.Exons()[i-1];
-                const CModelExon& e2= model.Exons()[i];
-                if (e1.m_ssplice && e2.m_fsplice)
-                    continue;
-                e = model.GetAlignMap().MapOrigToEdited(e2.GetFrom())+1;
-                seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
-                b =  model.GetAlignMap().MapOrigToEdited(e1.GetTo());
-
-                seq_inst.SetExt().SetDelta().AddLiteral(b-e);
-                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-            }
-        }
-        seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b),CSeq_inst::eMol_rna);
-    }
-
-    smrna->SetSeq().SetInst().SetHist().SetAssembly().push_back(model2spliced_seq_align(md));
-
-    if (!cdregion_feature.Empty()) {
-        CRef<CSeq_annot> annot(new CSeq_annot);
-        smrna->SetSeq().SetAnnot().push_back(annot);
-    
-        annot->SetData().SetFtable().push_back(cdregion_feature);
-
-        if (!model.Open5primeEnd()) {
-            CRef<CSeq_feat> stop = create_5prime_stop_feature(md);
-            if (stop.NotEmpty()) 
-                annot->SetData().SetFtable().push_back(stop);
-        }
-    }
-    return smrna;
-}
-
-CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_gene_feature(const SModelData& md) const
-{
-    const CGeneModel& model = md.model;
-
-    CRef<CSeq_feat> gene_feature(new CSeq_feat);
-
-    string gene_id_str = "gene." + NStr::IntToString(model.GeneID());
-
-    CRef<CObject_id> obj_id( new CObject_id() );
-    obj_id->SetStr(gene_id_str);
-    CRef<CFeat_id> feat_id( new CFeat_id() );
-    feat_id->SetLocal(*obj_id);
-    gene_feature->SetIds().push_back(feat_id);
-    gene_feature->SetData().SetGene().SetDesc(gene_id_str);
-
-    if (model.Status() & CGeneModel::ePseudo) {
-        gene_feature->SetData().SetGene().SetPseudo(true);
-
-        int frameshifts = model.FrameShifts().size();
-        int pstops = model.GetCdsInfo().PStops().size();
-        _ASSERT( frameshifts+pstops > 0 );
-        string frameshift_comment;
-        string pstop_comment;
-        if (frameshifts==1)
-            frameshift_comment = "remove a frameshift";
-        else if (frameshifts>1)
-            frameshift_comment = "remove frameshifts";
-        if (pstops==1)
-            pstop_comment = "prevent a premature stop codon";
-        else if (pstops>1)
-            pstop_comment = "prevent premature stop codons";
-        if (frameshifts>0 && pstops>0)
-            pstop_comment = " and "+pstop_comment;
-            
-        gene_feature->SetComment("The sequence of the transcript was modified to "+frameshift_comment+pstop_comment+" represented in this assembly.");
-    }
-    //    .SetLocus_tag("...");
-
-    CRef<CSeq_loc> gene_location(new CSeq_loc());
-    gene_feature->SetLocation(*gene_location);
-
-    return gene_feature;
-}
-
-void CAnnotationASN1::CImplementationData::update_gene_feature(CSeq_feat& gene, CSeq_feat& mrna) const
-{
-    CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
-    genexref->SetId(*gene.SetIds().front());
-//     genexref->SetData().SetGene();
-    
-    CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
-    mrnaxref->SetId(*mrna.SetIds().front());
-//     mrnaxref->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-
-    gene.SetXref().push_back(mrnaxref);
-    mrna.SetXref().push_back(genexref);
-
-    gene.SetLocation(*gene.GetLocation().Add(mrna.GetLocation(),CSeq_loc::fMerge_SingleRange,NULL));
-
-    if (mrna.CanGetPartial() && mrna.GetPartial())
-        gene.SetPartial(true);
 }
 
 CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CModelExon& e, EStrand strand) const
@@ -1116,59 +769,6 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
 
     return seq_align;
 }
-
-/*
-void get_exons_from_seq_loc(CGeneModel& model, const CSeq_loc& loc)
-{
-    for( CSeq_loc_CI i(loc); i; ++i) {
-        model.AddExon(i->GetRange());
-        model.back().m_fsplice = i->GetFuzzFrom()==NULL;
-        model.back().m_ssplice = i->GetFuzzTo()==NULL;
-    }
-    model.RecalculateLimits();
-}
-
-struct collect_indels : public unary_function<CRef<CDelta_seq>, void>
-{
-    collect_indels(CGeneModel& m) : model(m), exon_i(m.begin()), next_seg_start(m.Limits().GetFrom()) {}
-    void operator() (CRef<CDelta_seq> delta_seq)
-    {
-        if (delta_seq->IsLiteral()) {
-            const CSeq_literal& literal = delta_seq->GetLiteral();
-            if (literal.GetLength()==0) return;
-            CSeq_data seq_data;
-            CSeqportUtil::Convert(literal.GetSeq_data(), &seq_data, CSeq_data::e_Iupacna);
-            if (model.Strand() == eMinus)
-                ReverseComplement(&seq_data);
-            model.FrameShifts().push_back(CInDelInfo(next_seg_start,literal.GetLength(), false, seq_data.GetIupacna()));
-        } else {
-            const CSeq_interval& loc = delta_seq->GetLoc().GetInt();
-            while (exon_i->GetTo() < loc.GetFrom()) {
-                if (next_seg_start <= exon_i->GetTo())
-                    model.FrameShifts().push_back(CInDelInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
-                ++exon_i;
-                next_seg_start = exon_i->GetFrom();
-            }
-            if (next_seg_start < loc.GetFrom())
-                model.FrameShifts().push_back(CInDelInfo(next_seg_start,loc.GetFrom()-next_seg_start, true));
-            next_seg_start = loc.GetTo();
-        }
-    }
-    void flush()
-    {
-        for(;;) {
-            if (next_seg_start <= exon_i->GetTo())
-                model.FrameShifts().push_back(CInDelInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
-            if ( ++exon_i == m.end())
-                break;
-            next_seg_start = exon_i->GetFrom();
-        }
-    }
-    CGeneModel& model;
-    CGeneModel::iterator exon_i;
-    TSignedSeqPos next_seg_start;
-};
-*/
 
 void RestoreModelMethod(const CSeq_feat_Handle& feat, CAlignModel& model)
 {
