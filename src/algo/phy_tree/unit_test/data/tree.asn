@@ -1,0 +1,522 @@
+BioTreeContainer ::= {
+  fdict {
+    {
+      id 0,
+      name "label"
+    },
+    {
+      id 1,
+      name "dist"
+    },
+    {
+      id 2,
+      name "seq-id"
+    },
+    {
+      id 3,
+      name "organism"
+    },
+    {
+      id 4,
+      name "seq-title"
+    },
+    {
+      id 5,
+      name "accession-nbr"
+    },
+    {
+      id 6,
+      name "blast-name"
+    },
+    {
+      id 7,
+      name "align-index"
+    },
+    {
+      id 8,
+      name "$NODE_COLOR"
+    },
+    {
+      id 9,
+      name "$LABEL_COLOR"
+    },
+    {
+      id 10,
+      name "$LABEL_BG_COLOR"
+    },
+    {
+      id 11,
+      name "$LABEL_TAG_COLOR"
+    },
+    {
+      id 12,
+      name "$NODE_COLLAPSED"
+    }
+  },
+  nodes {
+    {
+      id 0
+    },
+    {
+      id 1,
+      parent 0,
+      features {
+        {
+          featureid 0,
+          value "ref|NP_004146.1"
+        },
+        {
+          featureid 1,
+          value "4.73586"
+        },
+        {
+          featureid 2,
+          value "gi|4758906"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "serpin B9 [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "ref|NP_004146.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "0"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 10,
+          value "255 255 0"
+        },
+        {
+          featureid 11,
+          value "255 0 0"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 2,
+      parent 0,
+      features {
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 3,
+      parent 2,
+      features {
+        {
+          featureid 0,
+          value "emb|CAE45712.1"
+        },
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 2,
+          value "gi|34364613"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "hypothetical protein [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "emb|CAE45712.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "1"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 4,
+      parent 2,
+      features {
+        {
+          featureid 1,
+          value "0.656712"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 5,
+      parent 4,
+      features {
+        {
+          featureid 1,
+          value "0.368709"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 6,
+      parent 5,
+      features {
+        {
+          featureid 0,
+          value "gb|EAW63158.1"
+        },
+        {
+          featureid 1,
+          value "0.0646582"
+        },
+        {
+          featureid 2,
+          value "gi|119583562"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "serpin peptidase inhibitor, clade B (ovalbumin), member 11
+ [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "gb|EAW63158.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "2"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 7,
+      parent 5,
+      features {
+        {
+          featureid 0,
+          value "dbj|BAG59299.1"
+        },
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 2,
+          value "gi|194383882"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "unnamed protein product [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "dbj|BAG59299.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "7"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 8,
+      parent 4,
+      features {
+        {
+          featureid 1,
+          value "0.560057"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 9,
+      parent 8,
+      features {
+        {
+          featureid 1,
+          value "0.0311961"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 10,
+      parent 9,
+      features {
+        {
+          featureid 1,
+          value "0.00807382"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 11,
+      parent 10,
+      features {
+        {
+          featureid 0,
+          value "ref|NP_000479.1"
+        },
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 2,
+          value "gi|4502261"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "antithrombin-III precursor [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "ref|NP_000479.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "3"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 12,
+      parent 10,
+      features {
+        {
+          featureid 0,
+          value "gb|AAA51796.1"
+        },
+        {
+          featureid 1,
+          value "0.00969429"
+        },
+        {
+          featureid 2,
+          value "gi|179161"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "antithrombin III [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "gb|AAA51796.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "6"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 13,
+      parent 9,
+      features {
+        {
+          featureid 0,
+          value "dbj|BAA06212.1"
+        },
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 2,
+          value "gi|576554"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "antithrombin III variant [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "dbj|BAA06212.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "4"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    },
+    {
+      id 14,
+      parent 8,
+      features {
+        {
+          featureid 0,
+          value "dbj|BAG35537.1"
+        },
+        {
+          featureid 1,
+          value "0"
+        },
+        {
+          featureid 2,
+          value "gi|189069199"
+        },
+        {
+          featureid 3,
+          value "Homo sapiens"
+        },
+        {
+          featureid 4,
+          value "unnamed protein product [Homo sapiens]"
+        },
+        {
+          featureid 5,
+          value "dbj|BAG35537.1"
+        },
+        {
+          featureid 6,
+          value "primates"
+        },
+        {
+          featureid 7,
+          value "5"
+        },
+        {
+          featureid 8,
+          value "0 0 255"
+        },
+        {
+          featureid 12,
+          value "0"
+        }
+      }
+    }
+  }
+}
