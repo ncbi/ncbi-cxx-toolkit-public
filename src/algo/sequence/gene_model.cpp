@@ -370,8 +370,6 @@ CRef<CSeq_feat> CFeatureGenerator::SImplementation::ConvertAlignToAnnot(const ob
     const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
     const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
 
-    cerr << rna_id.AsFastaString() << endl;
-
     /// we always need the mRNA location as a reference
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->Assign(mapper.GetRnaLoc());
