@@ -428,6 +428,35 @@ public:
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// IChunkHandler -- abstract interface class
+//
+
+/// Interface class to scan data source for seekable data chunks.
+///
+class NCBI_XUTIL_EXPORT IChunkHandler
+{
+public:
+    typedef Uint8 TPosition; ///< Type to store stream positions
+
+    /// Action types
+    enum EAction {
+        eAction_Continue, ///< Continue scanning to the next data chunk, if any.
+        eAction_Stop      ///< Stop scanning.
+    };
+
+    /// Callback method, to be implemented by the end user.
+    /// @param raw_pos
+    ///   Position of the chunk in the "raw" (undecoded) stream.
+    /// @param data_pos
+    ///   Position of the chunk in the decoded stream data.
+    /// @return
+    ///   Return a command for the scanning algorithm to continue or stop scanning.
+    virtual EAction OnChunk(TPosition raw_pos, TPosition data_pos) = 0;
+};
+
+
 /* @} */
 
 

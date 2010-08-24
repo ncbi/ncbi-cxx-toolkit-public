@@ -632,6 +632,25 @@ public:
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// Global functions
+//
+
+/// Get list of positions of separate gzip files in the concatenated gzip file.
+/// Return results via user defined handler.
+/// Throw CCoreException/CCompressionException on error. 
+/// 
+/// @param is
+///   Opened input stream to scan (should be opened in binary mode).
+/// @param handler
+///   Call handler's IChunkHandler::OnChunk() method with positions 
+///   of each new gzip file insize stream and size of uncompressed data on
+///   that moment.
+NCBI_XUTIL_EXPORT
+void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler);
+
+
 END_NCBI_SCOPE
 
 

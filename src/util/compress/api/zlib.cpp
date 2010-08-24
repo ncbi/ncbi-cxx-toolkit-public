@@ -1368,4 +1368,104 @@ CCompressionProcessor::EStatus CZipDecompressor::End(void)
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// Global functions
+//
+
+void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
+{
+    typedef IChunkHandler::TPosition TPos;
+
+    // Use our own total counters to avoid 4GB limit 
+    TPos in_total  = 0;           // Offset in input compressed data
+    TPos out_total = 0;           // Offset in output decompressed data
+    z_stream strm;                // Compressed stream structure
+    int      ret = Z_STREAM_END;  // zlib return status
+    bool     initialized = false;
+
+
+    // Default buffer size
+    size_t in_size  = kCompressionDefaultBufSize;
+    size_t out_size = kCompressionDefaultBufSize * 2;
+
+    // Allocate buffers
+    AutoArray<unsigned char> in_buf_arr(in_size);
+    unsigned char* in_buf = in_buf_arr.get();
+    if ( !in_buf ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    AutoArray<unsigned char> out_buf_arr(out_size);
+    unsigned char* out_buf = out_buf_arr.get();
+    if ( !out_buf ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+
+    try {
+        IChunkHandler::EAction action = IChunkHandler::eAction_Continue;
+        // Process all decompressed data in the input stream
+        while ( is  &&  action != IChunkHandler::eAction_Stop) {
+            // Get some compressed data
+            is.read((char*)in_buf, in_size);
+            size_t nread = is.gcount();
+            if ( !nread ) {
+                break;
+            }
+            // Process all data in the buffer
+            strm.next_in  = in_buf;
+            strm.avail_in = (unsigned int)nread;
+            do {
+                // Next gzip-file?
+                if (ret == Z_STREAM_END) {
+                    // Save current position
+                    action = handler.OnChunk(in_total, out_total);
+                    if (action == IChunkHandler::eAction_Stop) {
+                        // Stop scanning
+                        break;
+                    }
+                    // (Re)Initialize inflate
+                    strm.zalloc   = Z_NULL;
+                    strm.zfree    = Z_NULL;
+                    strm.opaque   = Z_NULL;
+                    ret = inflateInit2(&strm, 15+16 /* max windowbits + automatic gzip header decoding */);
+                    if (ret != Z_OK) {
+                        throw "inflateInit2() failed: " + string(zError(ret));
+                    }
+                    initialized = true;
+                }
+                // We don't need uncompressed data -- discard it
+                strm.next_out  = out_buf;
+                strm.avail_out = out_size;
+
+                // Decompress
+                ret = inflate(&strm, Z_SYNC_FLUSH);
+                if (ret != Z_OK  &&  ret != Z_STREAM_END ) {
+                    // Error
+                    throw "inflate() failed: " + string(zError(ret));
+                }
+                // Increase counters
+                out_total += (out_size - strm.avail_out);
+                in_total  += (nread - strm.avail_in);
+                nread = strm.avail_in;
+                // If found end of compressed stream -- cleanup
+                if (ret == Z_STREAM_END) {
+                    inflateEnd(&strm);
+                    initialized = false;
+                }
+            } while (strm.avail_in != 0);
+        }
+        if ( initialized ) {
+            inflateEnd(&strm);
+        }
+    }
+    // Cleanup
+    catch (string& e) {
+        if ( initialized ) {
+            inflateEnd(&strm);
+        }
+        NCBI_THROW(CCompressionException, eCompression, e);
+    }
+}
+
+
 END_NCBI_SCOPE
