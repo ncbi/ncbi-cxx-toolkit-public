@@ -25,7 +25,7 @@ ifneq "$(filter command, $(origin APP_PROJ) $(origin LIB_PROJ))" ""
   LIB_PROJ=
   EXPENDABLE_APP_PROJ=
   EXPENDABLE_LIB_PROJ=
-  ifeq "$(origin APP_PROJ)" "command line"
+  ifeq "$(origin APP_PROJ):$(LIB_PROJ)" "command line:"
     ASN_PROJ=
     DTD_PROJ=
     XML_PROJ=
