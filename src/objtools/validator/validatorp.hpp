@@ -789,12 +789,13 @@ public:
 
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
+    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
+
     void ResetModifCounters(void);
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
-    void ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc);
-    void ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule);
+    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule, bool report);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
 
@@ -812,6 +813,7 @@ public:
     virtual ~CValidError_descr(void);
 
     void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
+    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report);
 private:
 
     CValidError_desc m_DescValidator;

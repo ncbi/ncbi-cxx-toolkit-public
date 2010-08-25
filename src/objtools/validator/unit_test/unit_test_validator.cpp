@@ -1730,6 +1730,7 @@ static void SetErrorsAccessions (vector< CExpectedError *> & expected_errors, st
 
 // new case test ground
 
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadEcNumberValue)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet ();
@@ -7377,10 +7378,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleComments)
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> d1(new CSeqdesc());
-    d1->SetComment("name #1");
+    d1->SetComment("name 1");
     entry->SetSeq().SetDescr().Set().push_back(d1);
     CRef<CSeqdesc> d2(new CSeqdesc());
-    d2->SetComment("name #1");
+    d2->SetComment("name 1");
     entry->SetSeq().SetDescr().Set().push_back(d2);
     
     STANDARD_SETUP
@@ -7393,7 +7394,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleComments)
     CLEAR_ERRORS
 
     // ok if different
-    d2->SetComment("name #2");
+    d2->SetComment("name 2");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 }
@@ -8797,6 +8798,193 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    // test for single-strand RNA viruses
+    SetLineage (entry, "Viruses; ssRNA viruses; foo");
+
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates single-stranded RNA, sequence does not agree."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetLineage (entry, "Viruses; ssRNA negative-strand viruses; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    SetLineage (entry, "Viruses; unassigned ssRNA viruses; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Genomic DNA viral lineage indicates no DNA stage"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates single-stranded RNA, sequence does not agree."));
+
+    SetLineage (entry, "Viruses; ssRNA positive-strand viruses, no DNA stage; foo");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // error should go away if mol is rna
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // tests for double-stranded RNA viruses
+    SetLineage (entry, "Viruses; dsRNA viruses; foo");
+    // should be no error because rna
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // error if not rna
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates double-stranded RNA, sequence does not agree."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // test for single-stranded DNS viruses
+    SetLineage (entry, "Viruses; ssDNA viruses; foo");
+    // no errors because is dna
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    // error if not dna
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MolInfoConflictsWithBioSource",
+                              "Taxonomy indicates single-stranded DNA, sequence does not agree."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // test for double-stranded DNS viruses
+    SetLineage (entry, "Viruses; dsDNA viruses; foo");
+    // error because not dna
+    expected_errors.front()->SetErrMsg("Taxonomy indicates double-stranded DNA, sequence does not agree.");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    //no error if dna
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> sdesc(new CSeqdesc());
+    sdesc->SetUser().SetType().SetStr("StructuredComment");
+    entry->SetSeq().SetDescr().Set().push_back(sdesc);
+
+    sdesc->SetUser().AddField("StructuredCommentPrefix", "##MIGS-Data-START##", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("alt_elev", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("assembly", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("collection_date", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("country", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("depth", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("environment", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("investigation_type", "eukaryote", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("isol_growth_condt", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("sequencing_meth", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("project_name", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("ploidy", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("num_replicons", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("estimated_size", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("trophic_level", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("propagation", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("lat_lon", "foo", CUser_object::eParse_String);
+
+    CRef<CSeqdesc> gdesc(new CSeqdesc());
+    gdesc->SetGenbank().SetKeywords().push_back("GSC:MIGS:2.1");
+    entry->SetSeq().SetDescr().Set().push_back(gdesc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
+                                                 "Structured Comment is non-compliant, keyword should be removed"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStructuredCommentFormatMissingField",
+                                                 "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+  
+    // if no keyword, no badkeyword error
+    entry->SetSeq().SetDescr().Set().pop_back();
+    delete expected_errors[0];
+    expected_errors[0] = NULL;
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // make the comment valid, should complain about missing keyword
+    sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "MissingKeyword",
+                                                 "Structured Comment compliant, keyword should be added"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    // put keyword back, should have no errors
+    entry->SetSeq().SetDescr().Set().push_back(gdesc);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_FakeStructuredComment)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> sdesc(new CSeqdesc());
+    sdesc->SetComment("This comment contains START");
+    entry->SetSeq().SetDescr().Set().push_back(sdesc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "FakeStructuredComment",
+                                                 "Comment may be formatted to look like a structured comment."));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+  
+    sdesc->SetComment("This comment contains END");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    sdesc->SetComment("This comment contains #");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_StructuredCommentPrefixOrSuffixMissing)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> sdesc(new CSeqdesc());
+    sdesc->SetUser().SetType().SetStr("StructuredComment");
+    entry->SetSeq().SetDescr().Set().push_back(sdesc);
+
+    sdesc->SetUser().AddField("OneField", "some value", CUser_object::eParse_String);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "StructuredCommentPrefixOrSuffixMissing",
+                                                 "Structured Comment lacks prefix"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
 }
 

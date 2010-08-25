@@ -564,6 +564,15 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
    TErrStrs( "MolInfoConflictsWithBioSource",
 "Viral lineage information conflicts with MolInfo.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MissingKeyword,
+   TErrStrs( "MissingKeyword",
+"Expected keyword was not found.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_FakeStructuredComment,
+   TErrStrs( "FakeStructuredComment",
+"Comment descriptor may have been formatted to look like structured comment.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing,
+   TErrStrs( "StructuredCommentPrefixOrSuffixMissing",
+"Structured comments should have a prefix or suffix.")),
 
 /* SEQ_GENERIC */
 

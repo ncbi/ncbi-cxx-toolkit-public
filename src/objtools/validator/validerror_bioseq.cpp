@@ -5909,6 +5909,29 @@ static string GetDateString (const CDate& date)
 }
 
 
+static string s_GetKeywordForStructuredComment (const CUser_object& obj)
+{
+    string keyword = "";
+
+    ITERATE (CUser_object::TData, field, obj.GetData()) {
+        if ((*field)->IsSetLabel() 
+            && (*field)->GetLabel().IsStr()
+            && NStr::EqualNocase((*field)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
+            const string& prefix = (*field)->GetData().GetStr();
+            if (NStr::EqualCase(prefix, "##MIGS-Data-START##")) {
+                keyword = "GSC:MIGS:2.1";
+            } else if (NStr::EqualCase(prefix, "##MIMS-Data-START##")) {
+                keyword = "GSC:MIMS:2.1";
+            } else if (NStr::EqualCase(prefix, "##MIENS-Data-START##")) {
+                keyword = "GSC:MIENS:2.1";
+            }
+            break;
+        }
+    }
+    return keyword;
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -5932,11 +5955,11 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     CConstRef<CSeqdesc> create_desc, update_desc;
     string create_str;
     int biomol = -1;
-	int tech = -1, completeness = -1;
+	  int tech = -1, completeness = -1;
     CConstRef<COrg_ref> org;
 
-	string name_str = "";
-	string comment_str = "";
+	  string name_str = "";
+	  string comment_str = "";
 
     bool has_chromosome = false;
     bool is_prokaryote = false;
@@ -5948,42 +5971,51 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         const CSeqdesc& desc = **it;
 
         switch ( desc.Which() ) {
-		case CSeqdesc::e_Title:
-			{
-				string title = desc.GetTitle();
-				size_t pos = NStr::Find(title, "[");
-				if (pos != string::npos) {
-					pos = NStr::Find(title, "=", pos + 1);
-				}
-				if (pos != string::npos) {
-					pos = NStr::Find(title, "]", pos + 1);
-				}
-				if (pos != string::npos) {
-					bool report_fasta_brackets = true;
-					FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-						if ((*id_it)->IsGeneral()) {
-							const CDbtag& dbtag = (*id_it)->GetGeneral();
-							if (dbtag.IsSetDb()) {
-								if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
-									|| NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
-									report_fasta_brackets = false;
-									break;
-								}
-							}
-						}
-					}
-					if (report_fasta_brackets) {
-						PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
-							    "Title may have unparsed [...=...] construct",
-								ctx, desc);
-					}
-				}
+		    case CSeqdesc::e_Title:
+			      {
+				      string title = desc.GetTitle();
+				      size_t pos = NStr::Find(title, "[");
+				      if (pos != string::npos) {
+					      pos = NStr::Find(title, "=", pos + 1);
+				      }
+				      if (pos != string::npos) {
+					      pos = NStr::Find(title, "]", pos + 1);
+				      }
+				      if (pos != string::npos) {
+					      bool report_fasta_brackets = true;
+					      FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+						      if ((*id_it)->IsGeneral()) {
+							      const CDbtag& dbtag = (*id_it)->GetGeneral();
+							      if (dbtag.IsSetDb()) {
+								      if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
+									      || NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
+									      report_fasta_brackets = false;
+									      break;
+								      }
+							      }
+						      }
+					      }
+					      if (report_fasta_brackets) {
+						      PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
+							          "Title may have unparsed [...=...] construct",
+								      ctx, desc);
+					      }
+				      }
             }
             break;
         default:
             break;
         }
     }
+
+    // collect keywords - needed for validating structured comments
+    vector<string> keywords;
+    for ( CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Genbank); di; ++ di ) {
+        FOR_EACH_KEYWORD_ON_GENBANKBLOCK (key, di->GetGenbank()) {
+            keywords.push_back (*key);
+        }
+    }
+
 
     for ( CSeqdesc_CI di(m_CurrentHandle); di; ++ di ) {
         const CSeqdesc& desc = *di;
@@ -6005,7 +6037,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Genbank:
             num_gb++;
             last_gb = &desc;
-			ValidateGBBlock (desc.GetGenbank(), seq, desc);
+			      ValidateGBBlock (desc.GetGenbank(), seq, desc);
             break;
 
         case CSeqdesc::e_Sp:
@@ -6068,20 +6100,20 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             {
                 const CSeqdesc::TSource& source = desc.GetSource();
 
-				m_Imp.ValidateBioSourceForSeq (source, desc, &ctx, m_CurrentHandle);
+				        m_Imp.ValidateBioSourceForSeq (source, desc, &ctx, m_CurrentHandle);
 
-				// look at orgref in comparison to other descs
-				if (source.IsSetOrg()) {
-					const COrg_ref& orgref = source.GetOrg();
-					if ( !org ) {
-						org = &orgref;
-					}
-					ValidateOrgContext(di, orgref, 
-										*org, seq, desc);
-				}
+				        // look at orgref in comparison to other descs
+				        if (source.IsSetOrg()) {
+					        const COrg_ref& orgref = source.GetOrg();
+					        if ( !org ) {
+						        org = &orgref;
+					        }
+					        ValidateOrgContext(di, orgref, 
+										        *org, seq, desc);
+				        }
 
                 // look for chromosome, prokaryote
-	            FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
+	              FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
                     if ((*it)->IsSetSubtype()
                         && (*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
                         has_chromosome = true;
@@ -6128,10 +6160,36 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                 if (IsRefGeneTrackingObject(desc.GetUser())
                     && !CValidError_imp::IsWGSIntermediate(seq) 
                     && !m_Imp.IsRefSeq()) {
-					PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
-							"RefGeneTracking object should only be in RefSeq record", 
-							ctx, desc);
-				}
+					          PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
+							          "RefGeneTracking object should only be in RefSeq record", 
+							          ctx, desc);
+				        } else if (NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+                    string keyword = s_GetKeywordForStructuredComment(desc.GetUser());
+                    if (!NStr::IsBlank(keyword)) {
+                        // does sequence have keyword?
+                        bool found = false;
+                        ITERATE (vector<string>, key, keywords) {
+                            if (NStr::EqualNocase(keyword, *key)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        // is structured comment valid for this keyword?
+                        if (m_DescrValidator.ValidateStructuredComment(desc.GetUser(), desc, false)) {
+                            // needs to have keyword
+                            if (!found) {
+                                PostErr(eDiag_Info, eErr_SEQ_DESCR_MissingKeyword, 
+                                        "Structured Comment compliant, keyword should be added", ctx, desc);
+                            }
+                        } else {
+                            // error if keyword is present
+                            if (found) {
+                                PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeyword, 
+                                        "Structured Comment is non-compliant, keyword should be removed", ctx, desc);
+                            }
+                        }
+                    }
+                }
             }
             break;
 		case CSeqdesc::e_Title:

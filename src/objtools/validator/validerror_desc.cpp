@@ -224,8 +224,15 @@ void CValidError_desc::ValidateComment
     }
     if (NStr::IsBlank (comment)) {
         PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
-                 "Comment descriptor needs text", *m_Ctx, desc);
-	}
+                 "Comment descriptor needs text", *m_Ctx, desc);    
+    } else {
+        if (NStr::FindCase (comment, "START") != string::npos 
+            || NStr::FindCase (comment, "END") != string::npos
+            || NStr::Find (comment, "#") != string::npos) {
+            PostErr (eDiag_Info, eErr_SEQ_DESCR_FakeStructuredComment, 
+                     "Comment may be formatted to look like a structured comment.", *m_Ctx, desc);  
+        }
+    }       
 }
 
 
@@ -264,11 +271,14 @@ bool s_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f
 }
 
 
-void CValidError_desc::ValidateStructuredComment 
+bool CValidError_desc::ValidateStructuredComment 
 (const CUser_object& usr,
  const CSeqdesc& desc,
- const CComment_rule& rule)
+ const CComment_rule& rule,
+ bool  report)
 {
+    bool is_valid = true;
+
     CField_set::Tdata::const_iterator field_rule = rule.GetFields().Get().begin();
     CUser_object::TData::const_iterator field = usr.GetData().begin();
     while (field_rule != rule.GetFields().Get().end()
@@ -297,10 +307,13 @@ void CValidError_desc::ValidateStructuredComment
                     value = NStr::IntToString((*field)->GetData().GetInt());
                 }
                 if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
-                    // post error about not matching format
-                    PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
-                             eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
-                             value + " is not a valid value for " + label, *m_Ctx, desc);                            
+                    if (report) {
+                        // post error about not matching format
+                        PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                                 eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
+                                 value + " is not a valid value for " + label, *m_Ctx, desc);   
+                    }
+                    is_valid = false;
                 }
                 ++field;
                 ++field_rule;
@@ -313,9 +326,14 @@ void CValidError_desc::ValidateStructuredComment
                     // find field for this rule and validate it
                     try {
                         const CUser_field& other_field = usr.GetField(expected_field);
-                        PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
-                                 eErr_SEQ_DESCR_BadStructuredCommentFormatFieldOutOfOrder, 
-                                 expected_field + " field is out of order", *m_Ctx, desc);
+                        if (rule.GetRequire_order()) {
+                            if (report) {
+                                PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                                         eErr_SEQ_DESCR_BadStructuredCommentFormatFieldOutOfOrder, 
+                                         expected_field + " field is out of order", *m_Ctx, desc);
+                            }
+                            is_valid = false;
+                        }
                         string value = "";
                         if (other_field.GetData().IsStr()) {
                             value = (other_field.GetData().GetStr());
@@ -323,26 +341,34 @@ void CValidError_desc::ValidateStructuredComment
                             value = NStr::IntToString(other_field.GetData().GetInt());
                         }
                         if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
-                            // post error about not matching format
-                            PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
-                                     eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
-                                     value + " is not a valid value for " + expected_field, *m_Ctx, desc);                            
+                            if (report) {
+                                // post error about not matching format
+                                PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                                         eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
+                                         value + " is not a valid value for " + expected_field, *m_Ctx, desc);  
+                            }
+                            is_valid = false;
                         }
-
                     } catch (CException ) {
                         if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
-                            PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
-                                    eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
-                                    "Required field " + (*field_rule)->GetField_name() + " is missing",
-                                    *m_Ctx, desc);
+                            if (report) {
+                                PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                                        eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
+                                        "Required field " + (*field_rule)->GetField_name() + " is missing",
+                                        *m_Ctx, desc);
+                            }
+                            is_valid = false;
                         }
                     }
                     ++field_rule;
                 } catch (CException ) {
                     if (!rule.IsSetAllow_unlisted()) {
-                        PostErr (eDiag_Error, 
-                                 eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
-                                 label + " is not a valid field name", *m_Ctx, desc);
+                        if (report) {
+                            PostErr (eDiag_Error, 
+                                     eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
+                                     label + " is not a valid field name", *m_Ctx, desc);
+                        }
+                        is_valid = false;
                     }
                     ++field;
                 }
@@ -351,16 +377,20 @@ void CValidError_desc::ValidateStructuredComment
             // post error about field without label
             PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
                      "Structured Comment contains field without label", *m_Ctx, desc);                            
+            is_valid = false;
             ++field;
         }
     }
 
     while (field_rule != rule.GetFields().Get().end()) {
         if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
-            PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
-                    eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
-                    "Required field " + (*field_rule)->GetField_name() + " is missing",
-                    *m_Ctx, desc);
+            if (report) {
+                PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                        eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
+                        "Required field " + (*field_rule)->GetField_name() + " is missing",
+                        *m_Ctx, desc);
+            }
+            is_valid = false;
         }
         ++field_rule;
     }
@@ -383,23 +413,32 @@ void CValidError_desc::ValidateStructuredComment
                 const CField_rule& field_rule = rule.FindFieldRule(label);
                 const CUser_field& other_field = usr.GetField(label);
                 if (&other_field != (*field)) {
-                    // post error about multiple field values
-                    PostErr (s_ErrorLevelFromFieldRuleSev(field_rule.GetSeverity()),
-                             eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields, 
-                             "Multiple values for " + label + " field", *m_Ctx, desc);                            
+                    if (report) {
+                        // post error about multiple field values
+                        PostErr (s_ErrorLevelFromFieldRuleSev(field_rule.GetSeverity()),
+                                 eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields, 
+                                 "Multiple values for " + label + " field", *m_Ctx, desc);   
+                    }
+                    is_valid = false;
                 }
             } catch (CException ) {
                 if (!rule.IsSetAllow_unlisted()) {
-                    // field not found, not legitimate field name
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
-                             label + " is not a valid field name", *m_Ctx, desc); 
+                    if (report) {
+                        // field not found, not legitimate field name
+                        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
+                                 label + " is not a valid field name", *m_Ctx, desc); 
+                    }
+                    is_valid = false;
                 }
             }
 
         } else {
-            // post error about field without label
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
-                     "Structured Comment contains field without label", *m_Ctx, desc);                            
+            if (report) {
+                // post error about field without label
+                PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
+                         "Structured Comment contains field without label", *m_Ctx, desc);                            
+            }
+            is_valid = false;
         }
         ++field;
     }
@@ -428,22 +467,28 @@ void CValidError_desc::ValidateStructuredComment
                             other_value = NStr::IntToString(other_field.GetData().GetInt());
                         }
                         if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
-                            // post error about not matching format
-                            PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
-                                     eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
-                                     other_value + " is not a valid value for " + other_field_name
-                                     + " when " + depend_field_name + " has value '" + value + "'",                                             
-                                     *m_Ctx, desc);                            
+                            if (report) {
+                                // post error about not matching format
+                                PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
+                                         eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldValue, 
+                                         other_value + " is not a valid value for " + other_field_name
+                                         + " when " + depend_field_name + " has value '" + value + "'",                                             
+                                         *m_Ctx, desc);
+                            }
+                            is_valid = false;
                         }
 
                     } catch (CException) {
                         // unable to find field
                         if ((*other_rule)->IsSetRequired() && (*other_rule)->GetRequired()) {
-                            PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
-                                    eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
-                                    "Required field " + (*other_rule)->GetField_name() + " is missing when "
-                                    + depend_field_name + " has value '" + value + "'",
-                                    *m_Ctx, desc);
+                            if (report) {
+                                PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
+                                        eErr_SEQ_DESCR_BadStructuredCommentFormatMissingField,
+                                        "Required field " + (*other_rule)->GetField_name() + " is missing when "
+                                        + depend_field_name + " has value '" + value + "'",
+                                        *m_Ctx, desc);
+                            }
+                            is_valid = false;
                         }
                     }
                 }
@@ -452,10 +497,13 @@ void CValidError_desc::ValidateStructuredComment
                         string other_field_name = (*other_rule)->GetField_name();
                         const CUser_field& other_field = usr.GetField(other_field_name);
                         // found field that should not be present
-                        PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
-                                 eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
-                                 other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'",                                             
-                                 *m_Ctx, desc);                            
+                        if (report) {
+                            PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),
+                                     eErr_SEQ_DESCR_BadStructuredCommentFormatInvalidFieldName, 
+                                     other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'",                                             
+                                     *m_Ctx, desc);                            
+                        }
+                        is_valid = false;
                     } catch (CException ) {
                         // did not find field, good
                     }
@@ -465,48 +513,62 @@ void CValidError_desc::ValidateStructuredComment
             // field not found
         }
     }
+    return is_valid;
 }
 
 
-void CValidError_desc::ValidateStructuredComment
+bool CValidError_desc::ValidateStructuredComment
 (const CUser_object& usr,
- const CSeqdesc& desc)
+ const CSeqdesc& desc,
+ bool  report)
 {
+    bool is_valid = true;
     if (!usr.IsSetType() || !usr.GetType().IsStr()
         || !NStr::EqualCase(usr.GetType().GetStr(), "StructuredComment")) {
-        return;
+        return false;
     }
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
-        PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
-                 "Structured Comment user object descriptor is empty", *m_Ctx, desc);
-        return;
+        if (report) {
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
+                     "Structured Comment user object descriptor is empty", *m_Ctx, desc);
+        }
+        return false;
     }
 
     // find prefix
     try {
         const CUser_field& prefix = usr.GetField("StructuredCommentPrefix");
         if (!prefix.IsSetData() || !prefix.GetData().IsStr()) {
-            return;
+            return true;
         }
         CRef<CComment_set> comment_rules = m_Imp.GetStructuredCommentRules();
         if (comment_rules) {
-            const CComment_rule& rule = comment_rules->FindCommentRule(prefix.GetData().GetStr());
+            try {
+                const CComment_rule& rule = comment_rules->FindCommentRule(prefix.GetData().GetStr());
 
-            if (rule.GetRequire_order()) {
-                ValidateStructuredComment (usr, desc, rule);
-            } else {
-                CUser_object tmp;
-                tmp.Assign(usr);
-                CUser_object::TData& fields = tmp.SetData();
-                stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
-                ValidateStructuredComment (tmp, desc, rule);
+                if (rule.GetRequire_order()) {
+                    is_valid = ValidateStructuredComment (usr, desc, rule, report);
+                } else {
+                    CUser_object tmp;
+                    tmp.Assign(usr);
+                    CUser_object::TData& fields = tmp.SetData();
+                    stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
+                    is_valid = ValidateStructuredComment (tmp, desc, rule, report);
+                }
+            } catch (CException ) {
+                // no rule for this prefix, no error
             }
         }            
     } catch (CException ) {
-        // might not have prefix, in which case no rules
-        // might not have rule for that prefix
+        // no prefix, in which case no rules
+        // but it is still an error - should have prefix
+        if (report) {
+            PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
+                    "Structured Comment lacks prefix", *m_Ctx, desc);
+        }
+        is_valid = false;
     }
-
+    return is_valid;
 }
 
 
@@ -531,14 +593,14 @@ void CValidError_desc::ValidateUser
                 }
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
-					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
-						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
-							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
-									"RefGeneTracking object has illegal Status '" 
-									+ (*field)->GetData().GetStr() + "'",
-									*m_Ctx, desc);
-						}
-					}
+					          if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
+						            if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
+							              PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
+									              "RefGeneTracking object has illegal Status '" 
+									              + (*field)->GetData().GetStr() + "'",
+									              *m_Ctx, desc);
+						            }
+					          }
                 }
             }
         }

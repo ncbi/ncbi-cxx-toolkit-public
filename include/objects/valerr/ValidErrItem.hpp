@@ -217,6 +217,9 @@ enum EErrType {
     eErr_SEQ_DESCR_BadStructuredCommentFormatMultipleFields,
     eErr_SEQ_DESCR_BioSourceNeedsChromosome,
     eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+    eErr_SEQ_DESCR_MissingKeyword,
+    eErr_SEQ_DESCR_FakeStructuredComment,
+    eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
