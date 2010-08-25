@@ -372,7 +372,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
             // (done now rather than earlier to avoid rescanning)
             title_start = start;
         }
-        if (pos <= len) {
+        if (pos <= len  ||  !has_id) {
             ParseTitle(TStr(s.data() + title_start, pos - title_start));
         }
         start = pos + 1;
