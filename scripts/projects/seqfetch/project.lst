@@ -1,6 +1,5 @@
 corelib$
 corelib/hash_impl$
-corelib/impl$
 util$
 util/bitset$
 util/regexp$
@@ -9,7 +8,6 @@ util/cache$
 util/sequtil$
 util/math$
 serial$
-serial/impl$
 serial/datatool
 objects
 connect$
