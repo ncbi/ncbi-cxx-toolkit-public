@@ -6163,7 +6163,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 					          PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
 							          "RefGeneTracking object should only be in RefSeq record", 
 							          ctx, desc);
-				        } else if (NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+				        } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
                     string keyword = s_GetKeywordForStructuredComment(desc.GetUser());
                     if (!NStr::IsBlank(keyword)) {
                         // does sequence have keyword?
