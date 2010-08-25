@@ -1,9 +1,6 @@
 # $Id$
 
-# Meta-makefile("CACHE" project)
-#################################
-
-APP_PROJ = test_basic_cleanup unit unit_test_basic_cleanup unit_test_extended_cleanup
+APP_PROJ = test_basic_cleanup unit_test_basic_cleanup unit_test_extended_cleanup
 PROJ_TAG = test
 SUB_PROJ = 
 
