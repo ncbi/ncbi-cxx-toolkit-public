@@ -224,6 +224,8 @@ TField B4Param_Web_DBInput  	     ("Web_DBInput", 	      CBlast4_value::e_Boolea
 TField B4Param_Web_DBGroup           ("Web_DBGroup",          CBlast4_value::e_String);
 TField B4Param_Web_DBSubgroupName    ("Web_DBSubgroupName",   CBlast4_value::e_String);
 TField B4Param_Web_DBSubgroup        ("Web_DBSubgroup",       CBlast4_value::e_String);
+TField B4Param_Web_ExclModels        ("Web_ExclModels",       CBlast4_value::e_Boolean);
+TField B4Param_Web_ExclSeqUncult     ("Web_SeqUncult",        CBlast4_value::e_Boolean);
 
 END_objects_SCOPE // namespace ncbi::objects::
 
