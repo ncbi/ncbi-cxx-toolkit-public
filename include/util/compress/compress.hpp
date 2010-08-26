@@ -446,6 +446,9 @@ public:
         eAction_Stop      ///< Stop scanning.
     };
 
+    /// Destructor.
+    virtual ~IChunkHandler(void) {}
+
     /// Callback method, to be implemented by the end user.
     /// @param raw_pos
     ///   Position of the chunk in the "raw" (undecoded) stream.
