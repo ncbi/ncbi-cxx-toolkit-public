@@ -462,18 +462,22 @@ void CFastaReader::ParseDefLine(const TStr& s)
 
 bool CFastaReader::ParseIDs(const TStr& s)
 {
-    string str(s.data(), s.length());
     CBioseq::TId& ids = SetIDs();
     // CBioseq::TId  old_ids = ids;
     size_t count = 0;
-    if (TestFlag(fParseRawID)  ||  str.find('|') != NPOS) {
-        try {
-            count = CSeq_id::ParseFastaIds(ids, str, true); // be generous
-        } catch (CSeqIdException&) {
-            // swap(ids, old_ids);
-        }
+    CSeq_id::TParseFlags flags = CSeq_id::fParse_PartialOK; // be generous
+    if (TestFlag(fParseRawID)) {
+        flags |= CSeq_id::fParse_RawText;
+    }
+    try {
+        count = CSeq_id::ParseIDs(ids, s, flags);
+    } catch (CSeqIdException&) {
+        // swap(ids, old_ids);
     }
     if ( !count ) {
+        string str(s);
+        // Handled this way rather than by passing CSeq_id::fParse_ValidLocal
+        // so that subclasses can meaningfully overload IsValidLocalID.
         if (IsValidLocalID(str)) {
             ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, str)));
         } else {
@@ -527,9 +531,7 @@ void CFastaReader::ParseTitle(const TStr& s)
 
 bool CFastaReader::IsValidLocalID(const string& s)
 {
-    static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#";
-    return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+    return CSeq_id::IsValidLocalID(s);
 }
 
 void CFastaReader::GenerateID(void)

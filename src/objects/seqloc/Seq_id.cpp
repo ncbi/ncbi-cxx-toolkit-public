@@ -1507,12 +1507,12 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
         }
         }
     } else {
-        list<string> fasta_pieces;
+        list<CTempString> fasta_pieces;
         NStr::Split(the_id, "|", fasta_pieces, NStr::eNoMergeDelims);
         x_Init(fasta_pieces);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
-            ITERATE(list<string>, it, fasta_pieces) {
+            ITERATE(list<CTempString>, it, fasta_pieces) {
                 if ( !it->empty() ) {
                     NCBI_THROW(CSeqIdException, eFormat,
                                "FASTA-style ID " + the_id
@@ -1525,30 +1525,57 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
 }
 
 
+bool CSeq_id::IsValidLocalID(const CTempString& s)
+{
+    static const char* const kLegal =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#";
+    return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+}
+
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
                                  bool allow_partial_failure)
 {
-    string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
+    TParseFlags flags = fParse_RawText | fParse_AnyLocal;
+    if (allow_partial_failure) {
+        flags |= fParse_PartialOK;
+    }
+    return ParseIDs(ids, s, flags);
+}
+
+SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
+                            TParseFlags flags)
+{
+    CTempString ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
     if (ss.empty()) {
         return 0;
     }
-    list<string> fasta_pieces;
+    list<CTempString> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
     if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))) {
         CRef<CSeq_id> id(new CSeq_id);
-        // In this context, it's probably reasonable to expect GIs to be
-        // tagged with gi| and to treat untagged numeric IDs as local.
-        if (ss.find_first_not_of(kDigits) == NPOS) {
-            id->Set(e_Local, ss);
-        } else {
-            try {
-                id->Set(ss);
-            } catch (CSeqIdException&) {
+        EParseFlags raw_flag = ((ss.find_first_not_of(kDigits) == NPOS)
+                                ? fParse_RawGI : fParse_RawText);
+
+        if (((flags & fParse_ValidLocal) != 0)
+            &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
+                 ||  IsValidLocalID(ss))) {
+            if ((flags & raw_flag) != 0) {
+                try {
+                    id->Set(ss);
+                } catch (CSeqIdException&) {
+                    id->Set(e_Local, ss);
+                }
+            } else {
                 id->Set(e_Local, ss);
             }
+        } else if ((flags & raw_flag) != 0) {
+            id->Set(ss);
         }
-        ids.push_back(id);
-        return 1;
+        if (id->Which() != e_not_set) {
+            ids.push_back(id);
+            return 1;
+        }
+        return 0;
     }
     SIZE_TYPE count = 0;
     while ( !fasta_pieces.empty() ) {
@@ -1558,7 +1585,7 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
             ids.push_back(id);
             ++count;
         } catch (std::exception& e) {
-            if (allow_partial_failure) {
+            if ((flags & fParse_PartialOK) != 0) {
                 ERR_POST_X(7, Warning << e.what());
             } else {
                 throw;
@@ -1569,7 +1596,7 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
 }
 
 
-void CSeq_id::x_Init(list<string>& fasta_pieces)
+void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
 {
     _ASSERT(!fasta_pieces.empty());
     string typestr = fasta_pieces.front();
@@ -1580,8 +1607,8 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
         NCBI_THROW(CSeqIdException, eFormat, "Unsupported ID type " + typestr);
     }
 
-    string    fields[3];
-    SIZE_TYPE min_fields, max_fields;
+    CTempString fields[3];
+    SIZE_TYPE   min_fields, max_fields;
     switch (type) {
     case e_Local:
     case e_Gibbsq:
@@ -1618,15 +1645,15 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
             }
         } else {
             if (i >= min_fields  &&  fasta_pieces.size() > 1
-                &&  (WhichInverseSeqId(fasta_pieces.front().c_str())
+                &&  (WhichInverseSeqId(string(fasta_pieces.front()).c_str())
                      != e_not_set)) {
                 // Likely mid-string optional-field omission;
                 // conservatively treat as such only if unable to
                 // parse the following piece as an ID type, though.
-                list<string>::iterator it = fasta_pieces.begin();
+                list<CTempString>::iterator it = fasta_pieces.begin();
                 ++it;
                 _ASSERT(it != fasta_pieces.end());
-                if (WhichInverseSeqId(it->c_str()) == e_not_set) {
+                if (WhichInverseSeqId(string(*it).c_str()) == e_not_set) {
                     break;
                 }
             }
@@ -1637,10 +1664,11 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
 
     // Special case -- dbSNP IDs have historically contained internal
     // vertical bars, so we have to parse them greedily.
+    string snp_name; // must survive until the end of the function
     if (type == e_General  &&  NStr::EqualNocase(fields[0], "dbSNP")
         &&  !fasta_pieces.empty() ) {
-        fields[1] += '|';
-        fields[1] += NStr::Join(fasta_pieces, "|");
+        snp_name = string(fields[1]) + '|' + NStr::Join(fasta_pieces, "|");
+        fields[1] = snp_name;
         fasta_pieces.clear();
     }
 
@@ -1665,8 +1693,8 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
         ver = NStr::StringToNumeric(fields[2]);
         if (ver <= 0) {
             NCBI_THROW(CSeqIdException, eFormat,
-                       "Bad sequence number " + fields[2] + " for " + fields[0]
-                       + " patent " + fields[1]);
+                       "Bad sequence number " + string(fields[2]) + " for "
+                       + string(fields[0]) + " patent " + string(fields[1]));
         }
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
@@ -1681,7 +1709,7 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
                 _ASSERT(fields[0][4] != '|');
                 fields[1] = fields[0].substr(4);
             }
-            fields[0].resize(4);
+            fields[0] = fields[0].substr(0, 4);
         }
         break;
 

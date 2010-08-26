@@ -426,6 +426,48 @@ public:
     static CNcbiOstream& WriteAsFasta(CNcbiOstream& ostr,
                                       const CBioseq& bioseq);
 
+    /// Perform rudimentary validation on potential local IDs, whose
+    /// contents should be pure ASCII and limited to letters, digits,
+    /// and certain punctuation characters (-_.:*# as of August 2010).
+    static bool IsValidLocalID(const CTempString& s);
+
+    enum EParseFlags {
+        /// When a FASTA-style ID set contains a mix of parsable and unparsable
+        /// IDs, noisily skip over the latter rather than throwing an exception.
+        fParse_PartialOK  = 0x01,
+        fParse_RawText    = 0x02, ///< Try to ID raw non-numeric accessions
+        fParse_RawGI      = 0x04, ///< Treat raw numbers as GIs, not local IDs
+        fParse_AnyRaw     = fParse_RawText | fParse_RawGI,
+        /// Treat otherwise unidentified strings as raw accessions,
+        /// provided that they pass rudimentary validation.
+        fParse_ValidLocal = 0x08,
+        /// Treat otherwise unidentified strings as local accessions as long
+        /// as they don't resemble FASTA-style IDs (or ID sets).
+        fParse_AnyLocal   = 0x18,
+
+        /// By default, allow raw parsable non-numeric accessions and
+        /// plausible local accessions.
+        fParse_Default    = fParse_RawText | fParse_ValidLocal
+    };
+    typedef int TParseFlags; // binary OR of EParseFlags
+
+    /// Parse a string representing one or more Seq-ids, appending the
+    /// results to IDS.  Multiple IDs must appear in FASTA style.
+    /// @param ids
+    ///   Destination ID set.  Existing contents will be preserved and
+    ///   appended to.
+    /// @param s
+    ///   Input string to parse.
+    /// @param flags
+    ///   
+    ///   If s contains invalid IDs, warn about them and try to
+    ///   process the remainder of the string, rather than throwing
+    ///   any exceptions.
+    /// @return
+    ///   The number of IDs successfully parsed.
+    static SIZE_TYPE ParseIDs(CBioseq::TId& ids, const CTempString& s,
+                              TParseFlags flags = fParse_Default);
+
     /// Parse an entire set of |-delimited FASTA-style IDs, appending
     /// the results to IDS.
     /// @param ids
@@ -483,7 +525,7 @@ public:
                         ESerialRecursionMode how = eRecursive);
 
 private:
-    void x_Init(list<string>& fasta_pieces);
+    void x_Init(list<CTempString>& fasta_pieces);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
