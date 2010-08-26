@@ -491,7 +491,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
                                    unsigned int itr_num)
 {
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
-    if (m_IsUngappedSearch) {
+    if (m_IsUngappedSearch && results.HasAlignments()) {
         aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
     }
     // other output types will need a bioseq handle
