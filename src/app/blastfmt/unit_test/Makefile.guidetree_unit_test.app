@@ -20,7 +20,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(OSMESA_INCLUDE) $(WXWIDGETS_INCLUDE) $(BOOST_INCLU
 
 REQUIRES = MESA
 
-CHECK_CMD = guidetree_unit_test
-CHECK_COPY = data
+# CHECK_CMD = guidetree_unit_test
+# CHECK_COPY = data
 
-WATCHERS = blastsoft
+# WATCHERS = blastsoft
