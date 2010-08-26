@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = blastfmt_unit_test guidetree_unit_test
+APP_PROJ = blastfmt_unit_test guide_tree_unit_test
 PROJ_TAG = test
 
 REQUIRES = algo objects gui PNG Boost.Test.Included FLTK MESA

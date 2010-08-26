@@ -1,4 +1,4 @@
-APP = guidetree_unit_test
+APP = guide_tree_unit_test
 SRC = guidetreecalc_wrapper guidetreecalc_unit_test guidetree_wrapper \
       guidetree_unit_test guidetreesimplify_wrapper guidetreerender_wrapper \
       guidetreerender_unit_test
