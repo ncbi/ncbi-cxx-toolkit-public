@@ -103,6 +103,11 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     if (fmt.empty() || !is_found)
         fmt = "image/png";
 
+    string filename(request.GetEntry("filename", &is_found));
+    if (is_found && !filename.empty())
+        reply.SetHeaderValue("Content-Disposition",
+            "attachment; filename=" + filename);
+
     reply.SetContentType(fmt);
     reply.WriteHeader();
 
