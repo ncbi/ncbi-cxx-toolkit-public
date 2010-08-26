@@ -13,7 +13,6 @@ objects
 connect$
 connect/ext$
 cgi$
-cgi/impl$
 internal$
 internal/cppcore$
 internal/cppcore/seqfetch_cgi
