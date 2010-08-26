@@ -1715,6 +1715,7 @@ NCBITEST_INIT_TREE()
 {
     if ( !CNcbiApplication::Instance()->GetConfig().HasEntry("NCBI", "Data") ) {
         NCBITEST_DISABLE(Test_Descr_BadStructuredCommentFormat);
+        NCBITEST_DISABLE(Test_Descr_MissingKeyword);
     }
 }
 
