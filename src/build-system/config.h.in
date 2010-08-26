@@ -518,6 +518,9 @@
 /* Define to 1 if you have SysV semaphores. */
 #undef HAVE_SYSV_SEMAPHORES
 
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
 

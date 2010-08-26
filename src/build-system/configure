@@ -9426,8 +9426,9 @@ fi
 
 
 
-for ac_header in atomic.h dlfcn.h ieeefp.h poll.h sys/mount.h sys/sockio.h \
-                 sys/statvfs.h sys/sysinfo.h sys/vfs.h
+
+for ac_header in atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
+                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
