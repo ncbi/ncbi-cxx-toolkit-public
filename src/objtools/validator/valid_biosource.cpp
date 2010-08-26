@@ -1683,29 +1683,29 @@ void CValidError_imp::ValidateBioSourceForSeq
         }
     }
 
-	// check locations for HIV biosource
-	if (bsh.IsSetInst() && bsh.GetInst().IsSetMol()
-		&& source.IsSetOrg() && source.GetOrg().IsSetTaxname() 
-		&& (NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus")
-			|| NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 1")
-			|| NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 2"))) {
+	  // check locations for HIV biosource
+	  if (bsh.IsSetInst() && bsh.GetInst().IsSetMol()
+		    && source.IsSetOrg() && source.GetOrg().IsSetTaxname() 
+		    && (NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus")
+			    || NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 1")
+			    || NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 2"))) {
 
-		if (bsh.GetInst().GetMol() == CSeq_inst::eMol_dna) {
-			if (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_proviral) {
-				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-					     "HIV with moltype DNA should be proviral", 
-                         obj, ctx);
-			}
-		} else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
-			CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
-			if (mi && mi->GetMolinfo().IsSetBiomol()
+		    if (bsh.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+			      if (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_proviral) {
+				        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					             "HIV with moltype DNA should be proviral", 
+                               obj, ctx);
+			      }
+		    } else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+			      CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+			      if (mi && mi->GetMolinfo().IsSetBiomol()
                 && mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-				PostObjErr (eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
-					     "HIV with mRNA molecule type is rare", 
-                         obj, ctx);
-			}
-		}
-	}
+				        PostObjErr (eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					                  "HIV with mRNA molecule type is rare", 
+                            obj, ctx);
+			      }
+		    }
+	  }
 
     CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
     CSeqdesc_CI ti(bsh, CSeqdesc::e_Title);
@@ -1726,7 +1726,7 @@ void CValidError_imp::ValidateBioSourceForSeq
 
     // validate subsources in context
 
-	FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
+	  FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
         if (!(*it)->IsSetSubtype()) {
             continue;
         }
@@ -1752,177 +1752,175 @@ void CValidError_imp::ValidateBioSourceForSeq
             default:
                 break;
         }
-	}
+    }
 
 
-	// look at orgref in context
-	if (source.IsSetOrg()) {
-		const COrg_ref& orgref = source.GetOrg();
+	  // look at orgref in context
+	  if (source.IsSetOrg()) {
+		    const COrg_ref& orgref = source.GetOrg();
 
-		// look at uncultured sequence length and required modifiers
-		if (orgref.IsSetTaxname()) {
-			if (NStr::EqualNocase(orgref.GetTaxname(), "uncultured bacterium")
-				&& bsh.GetBioseqLength() >= 10000) {
-				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-					       "Uncultured bacterium sequence length is suspiciously high",
-						   obj, ctx);
-			}
-			if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
-				bool is_env_sample = false;
-				FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
-					if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
-                        is_env_sample = true;
-						break;
-					}
-				}
-				if (!is_env_sample) {
-					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-						       "Uncultured should also have /environmental_sample",
-							   obj, ctx);
-				}
-			}
-		}
+		    // look at uncultured sequence length and required modifiers
+		    if (orgref.IsSetTaxname()) {
+			      if (NStr::EqualNocase(orgref.GetTaxname(), "uncultured bacterium")
+				      && bsh.GetBioseqLength() >= 10000) {
+				      PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					             "Uncultured bacterium sequence length is suspiciously high",
+						         obj, ctx);
+			      }
+			      if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
+				      bool is_env_sample = false;
+				      FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
+					      if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                              is_env_sample = true;
+						      break;
+					      }
+				      }
+				      if (!is_env_sample) {
+					      PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+						             "Uncultured should also have /environmental_sample",
+							         obj, ctx);
+				      }
+			      }
+		    }
 
-		if (mi) {						
+		    if (mi) {						
             const CMolInfo& molinfo = mi->GetMolinfo();
-			// look for conflicting cRNA notes on orgmod
-			FOR_EACH_ORGMOD_ON_ORGREF (it, orgref) {
-				if ((*it)->IsSetSubtype() 
-					&& (*it)->GetSubtype() == COrgMod::eSubtype_other
-					&& (*it)->IsSetSubname()
-					&& NStr::EqualNocase((*it)->GetSubname(), "cRNA")) {
-					if (!molinfo.IsSetBiomol() 
-						|| molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
-						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-								   "cRNA note conflicts with molecule type",
-								   obj, ctx);
-					} else {
-						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-								   "cRNA note redundant with molecule type",
-								   obj, ctx);
-					}
-				}
-			}
+			      // look for conflicting cRNA notes on orgmod
+			      FOR_EACH_ORGMOD_ON_ORGREF (it, orgref) {
+				      if ((*it)->IsSetSubtype() 
+					      && (*it)->GetSubtype() == COrgMod::eSubtype_other
+					      && (*it)->IsSetSubname()
+					      && NStr::EqualNocase((*it)->GetSubname(), "cRNA")) {
+					      if (!molinfo.IsSetBiomol() 
+						      || molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
+						      PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+								         "cRNA note conflicts with molecule type",
+								         obj, ctx);
+					      } else {
+						      PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+								         "cRNA note redundant with molecule type",
+								         obj, ctx);
+					      }
+				      }
+			      }
 
 
-			if (orgref.IsSetLineage()) {
-				const string& lineage = orgref.GetOrgname().GetLineage();
+			      if (orgref.IsSetLineage()) {
+				      const string& lineage = orgref.GetOrgname().GetLineage();
 
-				// look for incorrect DNA stage
-				if (molinfo.IsSetBiomol()  && molinfo.GetBiomol () == CMolInfo::eBiomol_genomic
-					&& bsh.IsSetInst() && bsh.GetInst().IsSetMol() && bsh.GetInst().GetMol() == CSeq_inst::eMol_dna
-					&& NStr::StartsWith(lineage, "Viruses; ")
-					&& NStr::FindNoCase(lineage, "no DNA stage") != string::npos) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-							 "Genomic DNA viral lineage indicates no DNA stage",
-							 obj, ctx);
-				}
-			    if (NStr::FindNoCase (lineage, "negative-strand viruses") != string::npos) {
-					bool is_ambisense = false;
-					if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
-                        || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
-						|| NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
-						|| NStr::FindNoCase(lineage, "Tospovirus") != string::npos
-						|| NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
-						is_ambisense = true;
-					}
+				      // look for incorrect DNA stage
+				      if (molinfo.IsSetBiomol()  && molinfo.GetBiomol () == CMolInfo::eBiomol_genomic
+					      && bsh.IsSetInst() && bsh.GetInst().IsSetMol() && bsh.GetInst().GetMol() == CSeq_inst::eMol_dna
+					      && NStr::StartsWith(lineage, "Viruses; ")
+					      && NStr::FindNoCase(lineage, "no DNA stage") != string::npos) {
+					      PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+							       "Genomic DNA viral lineage indicates no DNA stage",
+							       obj, ctx);
+				      }
+			          if (NStr::FindNoCase (lineage, "negative-strand viruses") != string::npos) {
+					      bool is_ambisense = false;
+					      if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
+                              || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
+						      || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
+						      || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
+						      || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+						      is_ambisense = true;
+					      }
 
-					bool is_synthetic = false;
-					if (orgref.IsSetDivision() && NStr::EqualNocase(orgref.GetDivision(), "SYN")) {
-						is_synthetic = true;
-					} else if (source.IsSetOrigin()
-						       && (source.GetOrigin() == CBioSource::eOrigin_mut
-							       || source.GetOrigin() == CBioSource::eOrigin_artificial
-								   || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
-					    is_synthetic = true;
-					}
+					      bool is_synthetic = false;
+					      if (orgref.IsSetDivision() && NStr::EqualNocase(orgref.GetDivision(), "SYN")) {
+						      is_synthetic = true;
+					      } else if (source.IsSetOrigin()
+						             && (source.GetOrigin() == CBioSource::eOrigin_mut
+							             || source.GetOrigin() == CBioSource::eOrigin_artificial
+								         || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
+					          is_synthetic = true;
+					      }
 
-					bool has_cds = false;
+					      bool has_cds = false;
 
-					CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
-					while (cds_ci) {
-						has_cds = true;
-						if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
-							if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
-								PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-									        "Negative-strand virus with minus strand CDS should be genomic",
-									        obj, ctx);
-							}
-						} else {
-                            if (!is_synthetic && !is_ambisense
-								&& (!molinfo.IsSetBiomol() 
-								    || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
-									    && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
-								PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-									        "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
-											obj, ctx);
-							}
-						}
-						++cds_ci;
-					}
-					if (!has_cds) {
-						CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
-						while (misc_ci) {
-							if (misc_ci->IsSetComment()
-								&& NStr::FindNoCase (misc_ci->GetComment(), "nonfunctional") != string::npos) {
-							    if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
-									if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
-										PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-											        "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
-													obj, ctx);
-									}
-								} else {
-									if (!is_synthetic && !is_ambisense
-										&& (!molinfo.IsSetBiomol() 
-											|| (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
-												&& molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
-										PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-											        "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
-													obj, ctx);
-									}
-								}
-							}
-							++misc_ci;
-						}
-					}
-				}
+					      CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+					      while (cds_ci) {
+						      has_cds = true;
+						      if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+							      if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+								      PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+									              "Negative-strand virus with minus strand CDS should be genomic",
+									              obj, ctx);
+							      }
+						      } else {
+                                  if (!is_synthetic && !is_ambisense
+								      && (!molinfo.IsSetBiomol() 
+								          || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+									          && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+								      PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+									              "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
+											      obj, ctx);
+							      }
+						      }
+						      ++cds_ci;
+					      }
+					      if (!has_cds) {
+						      CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
+						      while (misc_ci) {
+							      if (misc_ci->IsSetComment()
+								      && NStr::FindNoCase (misc_ci->GetComment(), "nonfunctional") != string::npos) {
+							          if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+									      if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+										      PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+											              "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
+													      obj, ctx);
+									      }
+								      } else {
+									      if (!is_synthetic && !is_ambisense
+										      && (!molinfo.IsSetBiomol() 
+											      || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+												      && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+										      PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+											              "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
+													      obj, ctx);
+									      }
+								      }
+							      }
+							      ++misc_ci;
+						      }
+					      }
+				      }
+            }
+			  }
 
-                if (!bsh.IsAa()) {
-                    // look for viral taxonomic conflicts
-                    if ((NStr::Find(lineage, " ssRNA viruses; ") != string::npos
-                         || NStr::Find(lineage, " ssRNA negative-strand viruses; ") != string::npos
-                         || NStr::Find(lineage, " ssRNA positive-strand viruses, no DNA stage; ") != string::npos
-                         || NStr::Find(lineage, " unassigned ssRNA viruses; ") != string::npos)
-                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
-						            "Taxonomy indicates single-stranded RNA, sequence does not agree.",
-								    obj, ctx);
-                    }
-                    if (NStr::Find(lineage, " dsRNA viruses; ") != string::npos
-                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
-						            "Taxonomy indicates double-stranded RNA, sequence does not agree.",
-								    obj, ctx);
-                    }
-                    if (NStr::Find(lineage, " ssDNA viruses; ") != string::npos
-                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
-						            "Taxonomy indicates single-stranded DNA, sequence does not agree.",
-								    obj, ctx);
-                    }
-                    if (NStr::Find(lineage, " dsDNA viruses; ") != string::npos
-                        && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
-						            "Taxonomy indicates double-stranded DNA, sequence does not agree.",
-								    obj, ctx);
-                    }
-                }
-			}
-	    }
-	}
-
-	
-
+        if (!bsh.IsAa() && orgref.IsSetLineage()) {
+				    const string& lineage = orgref.GetOrgname().GetLineage();
+            // look for viral taxonomic conflicts
+            if ((NStr::Find(lineage, " ssRNA viruses; ") != string::npos
+                 || NStr::Find(lineage, " ssRNA negative-strand viruses; ") != string::npos
+                 || NStr::Find(lineage, " ssRNA positive-strand viruses, no DNA stage; ") != string::npos
+                 || NStr::Find(lineage, " unassigned ssRNA viruses; ") != string::npos)
+                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+		                        "Taxonomy indicates single-stranded RNA, sequence does not agree.",
+				                    obj, ctx);
+            }
+            if (NStr::Find(lineage, " dsRNA viruses; ") != string::npos
+                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+		                        "Taxonomy indicates double-stranded RNA, sequence does not agree.",
+				                    obj, ctx);
+            }
+            if (NStr::Find(lineage, " ssDNA viruses; ") != string::npos
+                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+		                        "Taxonomy indicates single-stranded DNA, sequence does not agree.",
+				                    obj, ctx);
+            }
+            if (NStr::Find(lineage, " dsDNA viruses; ") != string::npos
+                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource, 
+		                        "Taxonomy indicates double-stranded DNA, sequence does not agree.",
+				                    obj, ctx);
+            }
+	      }
+	  }
 }
 
 
