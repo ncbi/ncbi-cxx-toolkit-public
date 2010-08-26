@@ -757,7 +757,8 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
     if ( ! feat->IsSetQual() ) {
         return false;
     }
-    ITERATE( CSeq_feat::TQual, it, feat->GetQual() ) {
+	const CSeq_feat_Base::TQual & qual = feat->GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    ITERATE( CSeq_feat::TQual, it, qual ) {
         if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
             continue;
         }
@@ -2934,7 +2935,8 @@ void CFeatureItem::x_ImportQuals(
     bool is_operon = (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
 
     vector<string> replace_quals;
-    ITERATE (CSeq_feat::TQual, it, m_Feat.GetQual()) {
+	const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    ITERATE( CSeq_feat::TQual, it, qual ) {
         if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
             continue;
         }
@@ -3784,7 +3786,8 @@ void CFeatureItem::x_AddFTableQuals(
     } else if ( m_Feat.IsSetExcept()  &&  m_Feat.GetExcept() ) {
         x_AddFTableQual("exception");
     }
-    ITERATE (CSeq_feat::TQual, it, m_Feat.GetQual()) {
+	const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+    ITERATE( CSeq_feat::TQual, it, qual ) {
         const CGb_qual& qual = **it;
         const string& key = qual.IsSetQual() ? qual.GetQual() : kEmptyStr;
         const string& val = qual.IsSetVal() ? qual.GetVal() : kEmptyStr;

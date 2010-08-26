@@ -551,7 +551,8 @@ void CGFFFormatter::x_AddFeature
                 (loc2, CSeqFeatData::eSubtype_exon,
                  sequence::eOverlap_Contains, ctx.GetScope());
             if (exon.NotEmpty()  &&  exon->IsSetQual()) {
-                ITERATE (CSeq_feat::TQual, q, exon->GetQual()) {
+				const CSeq_feat_Base::TQual & qual = exon->GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
+				ITERATE( CSeq_feat::TQual, q, qual ) {
                     if ( !NStr::CompareNocase((*q)->GetQual(), "number") ) {
                         int n = NStr::StringToNumeric((*q)->GetVal());
                         if (n >= exon_number) {
