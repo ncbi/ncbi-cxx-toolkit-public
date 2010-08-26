@@ -64,7 +64,7 @@ public:
 
 
     /// Distance matrix (square, symmetric with zeros on diagnol)
-    class CDistMatrix
+    class NCBI_XALGOPHYTREE_EXPORT CDistMatrix
     {
     public:
 
@@ -337,7 +337,7 @@ protected:
 
 
 /// Guide tree calc exceptions
-class CPhyTreeCalcException : public CException
+class NCBI_XALGOPHYTREE_EXPORT CPhyTreeCalcException : public CException
 {
 public:
     enum EErrCode {
