@@ -846,7 +846,12 @@ static void s_FormatCitGen
     if (!NStr::IsBlank(cit)) {
         SIZE_TYPE pos = NStr::FindNoCase(cit, "Journal=\"");
         if (pos != NPOS) {
-            journal = cit.substr(pos + 9);
+            pos += 9; // skip over the string part "Journal=\""
+            if( cit.at( cit.length() - 1) == '"' ) { // There should be a double-quote at the end to complete the "Journal" entry
+                journal = cit.substr(pos, cit.length() - pos - 1 );
+            } else {
+                journal.erase(); // error: double-quote that completes journal was not there
+            }
         } else if (NStr::StartsWith(cit, "submitted", NStr::eNocase)  ||
                    NStr::StartsWith(cit, "unpublished", NStr::eNocase)) {
             if (!cfg.DropBadCitGens()  ||  !NStr::IsBlank(journal)) {

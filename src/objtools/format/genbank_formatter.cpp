@@ -601,7 +601,7 @@ void CGenbankFormatter::FormatComment
         Wrap(l, "COMMENT", comment.GetComment());
     }
 
-    s_OrphanFixup( l, 1 );
+    // s_OrphanFixup( l, 1 ); // removed this because it was actually causing issues
     text_os.AddParagraph(l, comment.GetObject());
 }
 
