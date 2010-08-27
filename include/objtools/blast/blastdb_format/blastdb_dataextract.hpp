@@ -36,7 +36,9 @@
 
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <corelib/ncbiapp.hpp>  // temporarily needed for CNcbiApplication
 #include <sstream>
 
 // Note: move this to corelib and define properly (see blastformat equivalent)
@@ -65,7 +67,14 @@ public:
               m_FmtAlgoId(fmt_algo_id),
               m_LineWidth(line_width),
               m_TargetOnly(target_only),
-              m_UseCtrlA(ctrl_a) {}
+              m_UseCtrlA(ctrl_a) 
+    {
+        m_UseLinkoutDB = false;
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app && !app->GetEnvironment().Get("LINKOUTDB").empty()) {
+            m_UseLinkoutDB = true;
+        }
+    }
 
     /// Setting seqid
     /// @param id sequence identifier [in]
@@ -82,6 +91,9 @@ public:
     string ExtractSeqData();
     string ExtractSeqLen();
     string ExtractHash();
+    string ExtractLinkoutInteger();
+    string ExtractMembershipInteger();
+    string ExtractLinkoutTokens();
 
     string ExtractFasta(const CBlastDBSeqId &seq_id);
 
@@ -107,11 +119,43 @@ protected:
     /// the target gi
     int m_Gi;
     /// bioseq
-    CRef< CBioseq> m_Bioseq;
+    CRef<CBioseq> m_Bioseq;
 
+    /**** BEGIN: Support for printing linkouts */
+
+    /// Cache the defline
+    CRef<CBlast_def_line_set> m_Defline; 
+    /// Convenience for printing strings of linkout types
+    vector<TLinkoutTypeString> m_LinkoutTypes;
+
+    /// This replaces having to read and cache the defline (once all linkout
+    /// bits have been ported to LinkoutDB, turned off for now but can be
+    /// enabled via the LINKOUTDB environment variable
+    bool m_UseLinkoutDB;
+    CRef<CLinkoutDB> m_LinkoutDB;
+
+    /**** END: Support for printing linkouts */
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
+
+    /// Initialize the data structures required to print the linkout information
+    void x_InitLinkoutData() {
+        if (m_LinkoutTypes.empty()) {
+            GetLinkoutTypes(m_LinkoutTypes);
+        }
+        if (m_UseLinkoutDB && m_LinkoutDB.Empty()) {
+            m_LinkoutDB.Reset(new CLinkoutDB());
+        }
+    }
+
+    /// Initialize the cached defline
+    void x_InitDefline() {
+        if (m_Defline.NotEmpty()) {
+            return;
+        }
+        m_Defline = m_BlastDb.GetHdr(m_Oid);
+    }
 };
 
 

@@ -446,6 +446,11 @@ void CBlastDBCmdApp::Init()
             "\t\t%l means sequence length\n"
             "\t\t%h means sequence hash value\n"
             "\t\t%T means taxid\n"
+#if _BLAST_DEBUG
+            "\t\t%n means linkout integer (set LINKOUTDB environment to use LinkoutDB)\n"
+            "\t\t%e means membership integer\n"
+            "\t\t%N means linkout tokens (set LINKOUTDB environment to use LinkoutDB)\n"
+#endif
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"

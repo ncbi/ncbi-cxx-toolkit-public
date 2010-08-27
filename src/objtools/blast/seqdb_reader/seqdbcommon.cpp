@@ -226,29 +226,50 @@ public:
 ///   Database type, either protein or nucleotide
 /// @param access
 ///   The file access object.
+/// @param linkoutdb_search
+///   Determines whether linkoutdb files should be searched for
 /// @return
 ///   true if either of the index or alias files is found
 
 static bool s_SeqDB_DBExists(const string         & dbname,
                              char                   dbtype,
-                             CSeqDB_FileExistence & access)
+                             CSeqDB_FileExistence & access,
+                             bool linkoutdb_search)
 {
     string path;
     path.reserve(dbname.size() + 4);
     path.assign(dbname.data(), dbname.data() + dbname.size());
-    path.append(".-al");
     
-    path[path.size()-3] = dbtype;
-    
-    if (access.DoesFileExist(path)) {
-        return true;
-    }
-    
-    path[path.size()-2] = 'i';
-    path[path.size()-1] = 'n';
-    
-    if (access.DoesFileExist(path)) {
-        return true;
+    if (linkoutdb_search) {
+        _ASSERT(dbtype == 'p');
+        path.append(".p");
+        vector<string> extn;
+        extn.reserve(4);
+        extn.push_back("ni");
+        extn.push_back("nd");
+        extn.push_back("si");
+        extn.push_back("sd");
+        ITERATE(vector<string>, e, extn) {
+            string candidate(path + *e);
+            if (access.DoesFileExist(candidate)) {
+                return true;
+            }
+        }
+    } else {
+        path.append(".-al");
+        
+        path[path.size()-3] = dbtype;
+        
+        if (access.DoesFileExist(path)) {
+            return true;
+        }
+        
+        path[path.size()-2] = 'i';
+        path[path.size()-1] = 'n';
+        
+        if (access.DoesFileExist(path)) {
+            return true;
+        }
     }
     
     return false;
@@ -314,10 +335,8 @@ string SeqDB_MakeOSPath(const string & dbs)
 ///   Type of database, either protein or nucleotide.
 /// @param exact
 ///   Set to true if dbname already contains any needed extension.
-/// @param atlas
-///   The memory management layer.
-/// @param locked
-///   The lock holder object for this thread.
+/// @param linkoutdb_search
+///   Determines whether linkoutdb files should be searched for
 /// @return
 ///   Full pathname, minus extension, or empty string if none found.
 
@@ -325,7 +344,8 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
                                const string         & dbname,
                                char                   dbtype,
                                bool                   exact,
-                               CSeqDB_FileExistence & access)
+                               CSeqDB_FileExistence & access,
+                               bool                   linkoutdb_search = false)
 {
     // 1. If this was a vector<CSeqDB_Substring>, the tokenize would
     //    not need to do any allocations (but would need rewriting).
@@ -355,7 +375,7 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
                 break;
             }
         } else {
-            if (s_SeqDB_DBExists(attempt, dbtype, access)) {
+            if (s_SeqDB_DBExists(attempt, dbtype, access, linkoutdb_search)) {
                 result = attempt;
                 break;
             }
@@ -462,6 +482,14 @@ string SeqDB_ResolveDbPathNoExtension(const string & filename,
     CSeqDB_SimpleAccessor access;
     
     return s_SeqDB_FindBlastDBPath(filename, dbtype, 0, false, access);
+}
+
+string SeqDB_ResolveDbPathForLinkoutDB(const string & filename)
+{
+    const char dbtype('p'); // this is determined by blastdb_links application
+    CSeqDB_SimpleAccessor access;
+    const string pathology = CSeqDBAtlas::GenerateSearchPath();
+    return s_SeqDB_TryPaths(pathology, filename, dbtype, false, access, true);
 }
 
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim)

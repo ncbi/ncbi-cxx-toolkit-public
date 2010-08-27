@@ -150,6 +150,18 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
             data2write.push_back(m_DataExtractor.ExtractMaskingData());
             break;
 
+        case 'n':
+            data2write.push_back(m_DataExtractor.ExtractLinkoutInteger());
+            break;
+
+        case 'e':
+            data2write.push_back(m_DataExtractor.ExtractMembershipInteger());
+            break;
+
+        case 'N':
+            data2write.push_back(m_DataExtractor.ExtractLinkoutTokens());
+            break;
+
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";

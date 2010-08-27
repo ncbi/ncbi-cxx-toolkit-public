@@ -44,11 +44,6 @@ USING_SCOPE(objects);
 /// Implementation class to support the linkout DB
 class NCBI_XOBJREAD_EXPORT CLinkoutDB_Impl : public CObject {
 public:
-    /// Default construtor, uses the 'linkouts' as the base name of the indices
-    /// to perform its linkout lookups
-    /// @throw CSeqDBException if the indices are not found
-    CLinkoutDB_Impl();
-
     /// Parametrized constructor, uses its argument to initialized the linkout 
     /// indices
     /// @throw CSeqDBException if the indices are not found

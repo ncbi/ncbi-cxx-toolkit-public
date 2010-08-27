@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_defline) {
+    m_Defline.Reset();
+    m_Gi = 0;
     if (id.IsOID()) {
         m_Oid = id.GetOID();
     } else if (id.IsGi()) {
@@ -95,6 +97,110 @@ string CBlastDBExtractor::ExtractGi() {
         }
     } 
     return "NA";
+}
+
+string CBlastDBExtractor::ExtractLinkoutInteger()
+{
+    x_InitDefline();
+    x_InitLinkoutData();
+    int retval = 0;
+
+    if (m_Gi == 0) {
+        return NStr::IntToString(0);
+    }
+
+    if (m_UseLinkoutDB) {
+        return NStr::IntToString(m_LinkoutDB->GetLinkout(m_Gi));
+    }
+
+    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
+        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
+                                                   CSeq_id::BestRank);
+        _ASSERT(seqid.NotEmpty());
+
+        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) && (*itr)->IsSetLinks()) {
+            ITERATE(CBlast_def_line::TLinks, linkout_int, (*itr)->GetLinks()) {
+                retval += *linkout_int;
+            }
+            break;
+        }
+    }
+
+    return NStr::IntToString(retval);
+}
+
+string CBlastDBExtractor::ExtractMembershipInteger()
+{
+    x_InitDefline();
+    int retval = 0;
+
+    if (m_Gi == 0) {
+        return NStr::IntToString(0);
+    }
+
+    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
+        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
+                                                   CSeq_id::BestRank);
+        _ASSERT(seqid.NotEmpty());
+
+        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) &&
+            (*itr)->IsSetMemberships()) {
+            ITERATE(CBlast_def_line::TMemberships, memb_int, 
+                    (*itr)->GetMemberships()) {
+                retval += *memb_int;
+            }
+            break;
+        }
+    }
+
+    return NStr::IntToString(retval);
+}
+
+string CBlastDBExtractor::ExtractLinkoutTokens()
+{
+    x_InitDefline();
+    x_InitLinkoutData();
+
+    if (m_Gi == 0) {
+        return "N/A";
+    }
+
+    vector<string> linkouts;
+    if (m_UseLinkoutDB) {
+        int linkout = m_LinkoutDB->GetLinkout(m_Gi);
+        ITERATE(vector<TLinkoutTypeString>, lt, m_LinkoutTypes) {
+            if (linkout & lt->first) {
+                linkouts.push_back(lt->second);
+            }
+        }
+    } else {
+
+    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
+        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
+                                                   CSeq_id::BestRank);
+        _ASSERT(seqid.NotEmpty());
+
+        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) && (*itr)->IsSetLinks()) {
+            ITERATE(CBlast_def_line::TLinks, linkout_int, (*itr)->GetLinks()) {
+                ITERATE(vector<TLinkoutTypeString>, lt, m_LinkoutTypes) {
+                    if (*linkout_int & lt->first) {
+                        linkouts.push_back(lt->second);
+                    }
+                }
+            }
+            break;
+        }
+    }
+    }
+
+    if (linkouts.empty()) {
+        return "N/A";
+    }
+    string retval;
+    ITERATE(vector<string>, l, linkouts) {
+        retval += *l + " ";
+    }
+    return NStr::TruncateSpaces(retval);
 }
 
 string CBlastDBExtractor::ExtractAccession() {
@@ -271,13 +377,17 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     return out.str();
 }
 
-int CBlastDBExtractor::x_ExtractTaxId() {
+int CBlastDBExtractor::x_ExtractTaxId() 
+{
     map <int, int> gi2taxid;
     m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);
     return gi2taxid[m_Gi];
 }
 
-void CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id) {
+void 
+CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, 
+                                        int algo_id) 
+{
     ranges.clear();
     if (algo_id != -1) {
         m_BlastDb.GetMaskData(m_Oid, algo_id, ranges);

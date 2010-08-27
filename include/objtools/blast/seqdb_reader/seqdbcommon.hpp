@@ -1410,6 +1410,19 @@ NCBI_XOBJREAD_EXPORT
 string SeqDB_ResolveDbPathNoExtension(const string & filename, 
                                       char dbtype = '-');
 
+/// Resolve a file path using SeqDB's path algorithms.
+///
+/// Identical to SeqDB_ResolveDbPathNoExtension with the exception that this
+/// function searches for ISAM files, specifically those storing numeric and 
+/// string data (for LinkoutDB; i.e.: p[ns][id]).
+/// This is intended to check whether a pair of ISAM files used in LinkoutDB
+/// exists or not. 
+///
+/// @param filename Name of file to find.
+/// @return Resolved path or empty string if not found.
+NCBI_XOBJREAD_EXPORT
+string SeqDB_ResolveDbPathForLinkoutDB(const string & filename);
+
 /// Compares two volume file names and determine the volume order
 ///
 /// @param volpath1 The 1st volume path 
