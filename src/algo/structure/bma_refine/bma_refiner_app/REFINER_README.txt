@@ -23,7 +23,7 @@ Last modified:  $Date$
     Make -selection_order mandatory and emphasize the importance of using >1
     trial with a random selection order.
 **  03/21/2007:
-    Added blurb about using cddalignview to dump refined CDs as FASTA.
+    Added a blurb about using cddalignview to dump refined CDs as FASTA.
 **  12/12/2006:  
     v1.0.0 -> v1.1.0  Added -selection_order and -lno options in 'bma_refiner'
     to allow speedup of runs, particularly for larger models. 
