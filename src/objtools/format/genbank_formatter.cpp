@@ -628,9 +628,10 @@ void CGenbankFormatter::FormatFeature
  IFlatTextOStream& text_os)
 { 
     CConstRef<CFlatFeature> feat = f.Format();
+	const vector<CRef<CFormatQual> > & quals = feat->GetQuals();
     list<string>        l, l_new;
     Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
-    ITERATE (vector<CRef<CFormatQual> >, it, feat->GetQuals()) {
+    ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         TrimSpacesAndJunkFromEnds( value, true );
         switch ((*it)->GetStyle()) {
