@@ -524,6 +524,50 @@ namespace {
         TLock m_Lock;
     };
 
+    class CCommandLoadAccVers : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<CSeq_id_Handle> TRet;
+        CCommandLoadAccVers(CReaderRequestResult& result,
+                            const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
+                    m_Loaded.end();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadAccVers(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadAccVers("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Seq_idAcc;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "acc("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...)";
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
     class CCommandLoadBlobVersion : public CReadDispatcherCommand
     {
     public:
@@ -1019,6 +1063,14 @@ void CReadDispatcher::LoadSeq_idTaxId(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id)
 {
     CCommandLoadSeq_idTaxId command(result, seq_id);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadAccVers(CReaderRequestResult& result,
+                                  const TIds ids, TLoaded& loaded, TIds& ret)
+{
+    CCommandLoadAccVers command(result, ids, loaded, ret);
     Process(command);
 }
 

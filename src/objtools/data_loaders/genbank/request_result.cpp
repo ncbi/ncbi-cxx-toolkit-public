@@ -158,8 +158,16 @@ bool CLoadInfoSeq_ids::IsLoadedAccVer(void)
 
 void CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
 {
-    _ASSERT(!m_AccLoaded || m_Acc == acc);
-    m_Acc = acc;
+    if ( !acc || acc.Which() == CSeq_id::e_Gi ) {
+        _ASSERT(!acc || acc.GetGi() == 0);
+        _ASSERT(!m_AccLoaded || m_Acc == CSeq_id_Handle());
+        m_Acc = CSeq_id_Handle();
+    }
+    else {
+        _ASSERT(acc.GetSeqId()->GetTextseq_Id());
+        _ASSERT(!m_AccLoaded || m_Acc == acc);
+        m_Acc = acc;
+    }
     m_AccLoaded = true;
 }
 

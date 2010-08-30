@@ -88,6 +88,16 @@ public:
                                  const CSeq_id_Handle& seq_id);
     virtual bool LoadSeq_idTaxId(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
+
+    // bulk requests
+    typedef vector<CSeq_id_Handle> TIds;
+    typedef vector<bool> TLoaded;
+    typedef vector<int> TGis;
+    typedef vector<string> TLabels;
+    typedef vector<int> TTaxIds;
+    virtual bool LoadAccVers(CReaderRequestResult& result,
+                             const TIds& ids, TLoaded& loaded, TIds& ret);
+
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id) = 0;
     virtual bool LoadBlobs(CReaderRequestResult& result,

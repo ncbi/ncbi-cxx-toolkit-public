@@ -93,6 +93,10 @@ public:
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
+
+    bool LoadAccVers(CReaderRequestResult& result,
+                     const TIds& ids, TLoaded& loaded, TIds& ret);
+
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 

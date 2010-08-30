@@ -455,6 +455,27 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadAccVers(CReaderRequestResult& result,
+                          const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    int count = ids.size();
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids seq_ids(result, ids[i]);
+        if ( !seq_ids->IsLoadedAccVer() ) {
+            m_Dispatcher->LoadSeq_idSeq_ids(result, ids[i]);
+            if ( seq_ids->IsLoadedAccVer() ) {
+                ret[i] = seq_ids->GetAccVer();
+                loaded[i] = true;
+            }
+        }
+    }
+    return true;
+}
+
+
 bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  const SAnnotSelector* sel)

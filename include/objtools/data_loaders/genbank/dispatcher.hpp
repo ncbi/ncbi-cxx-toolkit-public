@@ -94,6 +94,15 @@ public:
                          const CSeq_id_Handle& seq_id);
     void LoadSeq_idTaxId(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
+
+    // bulk requests
+    typedef vector<bool> TLoaded;
+    typedef vector<int> TGis;
+    typedef vector<string> TLabels;
+    typedef vector<int> TTaxIds;
+    void LoadAccVers(CReaderRequestResult& result,
+                     const TIds ids, TLoaded& loaded, TIds& ret);
+ 
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
     void LoadBlobs(CReaderRequestResult& result,

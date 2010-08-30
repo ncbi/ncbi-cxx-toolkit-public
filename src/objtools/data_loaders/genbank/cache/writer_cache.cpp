@@ -285,8 +285,10 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedAccVer() ) {
-        CSeq_id_Handle acc = ids->GetAccVer();
-        const string& str = acc.AsString();
+        string str;
+        if ( CSeq_id_Handle acc = ids->GetAccVer() ) {
+            str = acc.AsString();
+        }
         try {
             m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
                              str.data(), str.size());

@@ -115,6 +115,7 @@ public:
     CSeq_id_Handle GetAccVer(void) const
         {
             _ASSERT(m_AccLoaded);
+            _ASSERT(!m_Acc || m_Acc.GetSeqId()->GetTextseq_Id());
             return m_Acc;
         }
     void SetLoadedAccVer(const CSeq_id_Handle& acc);

@@ -512,6 +512,29 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
 }
 
 
+bool CCacheReader::LoadAccVers(CReaderRequestResult& result,
+                               const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids lock(result, ids[i]);
+        if ( lock->IsLoadedAccVer() ||
+             (LoadSeq_idAccVer(result, ids[i]) && lock->IsLoadedAccVer()) ) {
+            ret[i] = lock->GetAccVer();
+            loaded[i] = true;
+            continue;
+        }
+    }
+    return false;
+}
+
+
 bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
                                const string& key,
                                CLoadLockSeq_ids& ids)

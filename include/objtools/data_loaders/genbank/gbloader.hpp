@@ -192,6 +192,8 @@ public:
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
 
+    virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
+
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,

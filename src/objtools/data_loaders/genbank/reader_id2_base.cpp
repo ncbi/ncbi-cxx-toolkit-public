@@ -77,6 +77,7 @@ BEGIN_SCOPE(objects)
 
 NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
+NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE);
 
 #ifdef _DEBUG
 # define DEFAULT_DEBUG_LEVEL CId2ReaderBase::eTraceError
@@ -88,6 +89,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, DEFAULT_DEBUG_LEVEL,
                   eParam_NoThread, GENBANK_ID2_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 100,
                   eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
+NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE, 100,
+                  eParam_NoThread, GENBANK_ID2_MAX_IDS_REQUEST_SIZE);
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
@@ -118,6 +121,13 @@ CId2ReaderBase::CDebugPrinter::~CDebugPrinter()
 static size_t GetMaxChunksRequestSize(void)
 {
     static NCBI_PARAM_TYPE(GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE) s_Value;
+    return s_Value.Get();
+}
+
+
+static size_t GetMaxIdsRequestSize(void)
+{
+    static NCBI_PARAM_TYPE(GENBANK, ID2_MAX_IDS_REQUEST_SIZE) s_Value;
     return s_Value.Get();
 }
 
@@ -370,6 +380,77 @@ bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
     if ( !ids->IsLoadedTaxId() ) {
         m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
         return false;
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
+                                 const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ) {
+        return CReader::LoadAccVers(result, ids, loaded, ret);
+    }
+
+    int count = ids.size();
+    vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
+    CID2_Request_Packet packet;
+    int packet_start = 0;
+    
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
+        if ( (*locks[i])->IsLoadedAccVer() ) {
+            ret[i] = (*locks[i])->GetAccVer();
+            loaded[i] = true;
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_text);
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            int count = i+1;
+            for ( int i = packet_start; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                _ASSERT(locks[i].get());
+                if ( (*locks[i])->IsLoadedAccVer() ) {
+                    ret[i] = (*locks[i])->GetAccVer();
+                    loaded[i] = true;
+                    continue;
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( int i = packet_start; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            _ASSERT(locks[i].get());
+            if ( (*locks[i])->IsLoadedAccVer() ) {
+                ret[i] = (*locks[i])->GetAccVer();
+                loaded[i] = true;
+                continue;
+            }
+        }
     }
 
     return true;
@@ -1371,9 +1452,12 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
                 SetAndSaveSeq_idAccVer(result, seq_id, ids, (**it));
-                break;
+                return;
             }
         }
+        CRef<CSeq_id> no_acc(new CSeq_id);
+        no_acc->SetGi(0);
+        SetAndSaveSeq_idAccVer(result, seq_id, ids, *no_acc);
         break;
     }}
     case CID2_Request_Get_Seq_id::eSeq_id_type_label:
