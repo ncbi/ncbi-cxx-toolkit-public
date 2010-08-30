@@ -448,19 +448,6 @@ void CValidError_imp::ValidateBioSource
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
-    bool is_synthetic_construct = IsSyntheticConstruct (bsrc);
-    bool is_artificial = IsArtificial(bsrc);
-
-    if (is_synthetic_construct) {
-        if (!is_artificial) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
-                        "synthetic construct should have artificial origin", obj, ctx);
-        }
-    } else if (is_artificial) {
-        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
-                    "artificial origin should have other-genetic and synthetic construct", obj, ctx);
-    }
-
     if ( !bsrc.CanGetOrg() ) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
             "No organism has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
@@ -917,25 +904,28 @@ void CValidError_imp::ValidateBioSource
         }
 	}
 
-	// validates orgref in the context of lineage
+	  // validates orgref in the context of lineage
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
          NStr::IsBlank(orgref.GetOrgname().GetLineage())) {
-        EDiagSev sev = eDiag_Error;
 
-        if (IsRefSeq()) {
-            FOR_EACH_DBXREF_ON_ORGREF(it, orgref) {
-                if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "taxon")) {
-                    sev = eDiag_Critical;
-                    break;
+        if (IsIndexerVersion()) { 
+            EDiagSev sev = eDiag_Error;
+
+            if (IsRefSeq()) {
+                FOR_EACH_DBXREF_ON_ORGREF(it, orgref) {
+                    if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "taxon")) {
+                        sev = eDiag_Critical;
+                        break;
+                    }
                 }
             }
+            if (IsEmbl() || IsDdbj()) {
+                sev = eDiag_Warning;
+            }
+		        PostObjErr(sev, eErr_SEQ_DESCR_MissingLineage, 
+			             "No lineage for this BioSource.", obj, ctx);
         }
-        if (IsEmbl() || IsDdbj()) {
-            sev = eDiag_Warning;
-        }
-		PostObjErr(sev, eErr_SEQ_DESCR_MissingLineage, 
-			     "No lineage for this BioSource.", obj, ctx);
 	} else {
 		const COrgName& orgname = orgref.GetOrgname();
         const string& lineage = orgname.GetLineage();
@@ -1720,6 +1710,39 @@ void CValidError_imp::ValidateBioSourceForSeq
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceNeedsChromosome, 
 		               "Non-viral complete genome not labeled as chromosome",
 		               obj, ctx);
+        }
+    }
+
+    if (mi) {
+        // look for synthetic/artificial
+        bool is_synthetic_construct = IsSyntheticConstruct (source);
+        bool is_artificial = IsArtificial(source);
+
+        if (is_synthetic_construct) {
+            if ((!mi->GetMolinfo().IsSetBiomol()
+                 || mi->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_other_genetic) && !bsh.IsAa()) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
+                            "synthetic construct should have other-genetic", 
+                            obj, ctx);
+            }
+            if (!is_artificial) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
+                            "synthetic construct should have artificial origin", 
+                            obj, ctx);
+            }
+        } else if (is_artificial) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
+                        "artificial origin should have other-genetic and synthetic construct", 
+                        obj, ctx);
+        }
+        if (is_artificial) {
+            if ((!mi->GetMolinfo().IsSetBiomol()
+                 || mi->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_other_genetic)
+                 && !bsh.IsAa()) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
+                            "artificial origin should have other-genetic", 
+                            obj, ctx);
+            }
         }
     }
 

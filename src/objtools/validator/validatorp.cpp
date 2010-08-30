@@ -1860,14 +1860,18 @@ void CValidError_imp::ValidateSeqLoc
 
 void CValidError_imp::AddBioseqWithNoBiosource(const CBioseq& seq)
 {
-    m_BioseqWithNoSource.push_back(CConstRef<CBioseq>(&seq));
+    if (!SeqIsPatent(seq)) {
+        m_BioseqWithNoSource.push_back(CConstRef<CBioseq>(&seq));
+    }
 }
 
 
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
-    PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-             "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
+    if (!SeqIsPatent (seq)) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+                 "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
+    }
 }
 
 
@@ -2194,6 +2198,9 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
 
                     if (NStr::EndsWith (label, ">")) {
                         label = label.substr(0, label.length() - 2);
+                    }
+                    if(NStr::EndsWith (label, "|")) {
+                        label = label.substr(0, label.length() - 1);
                     }
                     size_t len = label.length();
                     vector<string>::iterator unpub_it = unpublished_labels.begin();

@@ -138,6 +138,10 @@ bool HasECnumberPattern (const string& str);
 
 string GetAuthorsString (const CAuth_list& auth_list);
 
+bool SeqIsPatent (const CBioseq& seq);
+bool SeqIsPatent (CBioseq_Handle seq);
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

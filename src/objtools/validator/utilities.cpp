@@ -1131,6 +1131,27 @@ bool HasECnumberPattern (const string& str)
 }
 
 
+bool SeqIsPatent (const CBioseq& seq)
+{
+    bool is_patent = false;
+
+    // some tests are suppressed if a patent ID is present
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if ((*id_it)->IsPatent()) {
+            is_patent = true;
+            break;
+        }
+    }
+    return is_patent;
+}
+
+
+bool SeqIsPatent (CBioseq_Handle seq)
+{
+    return SeqIsPatent (*(seq.GetCompleteBioseq()));
+}
+
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

@@ -715,6 +715,13 @@ static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& 
             && s_BadCharsInAuthorName (author.GetName().GetName().GetFirst(), badauthor, false, true, false)) {
             return true;
         }
+        // for testing, remove
+        if (author.GetName().GetName().IsSetInitials() 
+            && NStr::StartsWith(author.GetName().GetName().GetInitials(), "J.S.R")) {
+            string foo = "";
+            foo = author.GetName().GetName().GetInitials();
+        }
+
         if (author.GetName().GetName().IsSetInitials()
             && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, false, true, false)) {
             return true;
@@ -733,8 +740,6 @@ void CValidError_imp::ValidateAuthorList
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
-    EDiagSev sev = m_IsRefSeq ? eDiag_Warning : eDiag_Error;
-
     if (names.IsStd()) {
         list<string> consortium_list;
 
@@ -876,6 +881,9 @@ void CValidError_imp::ValidateAuthorsInPubequiv
             break;
         case CPub::e_Man:
             authors = &(pub.GetMan().GetCit().GetAuthors());
+            break;
+        case CPub::e_Patent:
+            authors = &(pub.GetPatent().GetAuthors());
             break;
         case CPub::e_Equiv:
             ValidateAuthorsInPubequiv (pub.GetEquiv(), obj, ctx);

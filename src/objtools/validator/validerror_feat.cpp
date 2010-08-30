@@ -4254,6 +4254,13 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
         mod2 = 1;
     }
 
+    if (loc.IsPartialStart(eExtreme_Biological)) {
+        mod1 = 0;
+    }
+    if (loc.IsPartialStop(eExtreme_Biological)) {
+        mod2 = 2;
+    }
+
     if (pos1 < frame && pos2 <= frame && NStr::Equal(key, "sig_peptide")) {
         // ignore sig_peptide that is completely before coding region
     } else if ( (mod1 != 0)  &&  (mod2 != 2) ) {

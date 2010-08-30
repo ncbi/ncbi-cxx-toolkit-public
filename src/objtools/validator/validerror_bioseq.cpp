@@ -518,28 +518,30 @@ void CValidError_bioseq::ValidateSeqIds
         }
     }
 
-    CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
-    if ( is_wgs ) {
-        if ( !mi  ||  !mi->IsSetTech()  ||  
-            mi->GetTech() != CMolInfo::eTech_wgs ) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
-                "WGS accession should have Mol-info.tech of wgs", seq);
+    if (!SeqIsPatent(seq)) {
+        CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
+        if ( is_wgs ) {
+            if ( !mi  ||  !mi->IsSetTech()  ||  
+                mi->GetTech() != CMolInfo::eTech_wgs ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                    "WGS accession should have Mol-info.tech of wgs", seq);
+            }
+        } else if ( mi  &&  mi->IsSetTech()  &&  
+                    mi->GetTech() == CMolInfo::eTech_wgs  &&
+                    wgs_tech_needs_wgs_accession &&
+                    !is_segset_accession) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                "Mol-info.tech of wgs should have WGS accession", seq);
         }
-    } else if ( mi  &&  mi->IsSetTech()  &&  
-                mi->GetTech() == CMolInfo::eTech_wgs  &&
-                wgs_tech_needs_wgs_accession &&
-                !is_segset_accession) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-            "Mol-info.tech of wgs should have WGS accession", seq);
-    }
 
-	if (is_nc && mi && seq.IsNa()
-		&& (!mi->IsSetBiomol() 
-		    || (mi->GetBiomol() != CMolInfo::eBiomol_genomic 
-			    && mi->GetBiomol() != CMolInfo::eBiomol_cRNA))) {
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
-			     "NC nucleotide should be genomic or cRNA",
-				 seq);
+	      if (is_nc && mi && seq.IsNa()
+		        && (!mi->IsSetBiomol() 
+		        || (mi->GetBiomol() != CMolInfo::eBiomol_genomic 
+			        && mi->GetBiomol() != CMolInfo::eBiomol_cRNA))) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+			         "NC nucleotide should be genomic or cRNA",
+				     seq);
+        }
     }
 
     // Check that a sequence with a gi number has exactly one accession
@@ -777,9 +779,12 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
             seq);
     }
 
+    bool is_patent = SeqIsPatent (seq);
+
     try {
         // if there are no Seq-ids, the following tests can't be run
         if (seq.IsSetId()) {
+
             // Check that gene on non-segmented sequence does not have
             // multiple intervals
             ValidateMultiIntervalGene(seq);
@@ -820,8 +825,10 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         }
     }
 
-    // flag missing molinfo even if not in Sequin
-    CheckForMolinfoOnBioseq(seq);
+    if (!is_patent) {
+        // flag missing molinfo even if not in Sequin
+        CheckForMolinfoOnBioseq(seq);
+    }
 
     ValidateGraphsOnBioseq(seq);
 
@@ -1568,6 +1575,9 @@ bool CValidError_bioseq::IsMrna(const CBioseq_Handle& bsh)
         if ( mi.IsSetBiomol() ) {
             return mi.GetBiomol() == CMolInfo::eBiomol_mRNA;
         }
+    } else if (bsh.GetBioseqMolType() == CSeq_inst::eMol_rna) {
+        // if no molinfo, assume rna is mrna
+        return true;
     }
 
     return false;
@@ -2010,7 +2020,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             }
             
             // if TSA, check for percentage of Ns and max stretch of Ns
-            if (seq.GetLength() > 0 && IsBioseqTSA(seq, m_Scope)) {
+            if (seq.GetLength() > 0 && IsBioseqTSA(seq, m_Scope) && !SeqIsPatent(seq)) {
                 bool n5 = false;
                 bool n3 = false;
                 TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
@@ -2857,15 +2867,17 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 }
                             
-                // Count adjacent Ns in Seq-lit
-                int max_ns = s_MaxNsInSeqLitForTech (tech);
-                int adjacent_ns = x_CountAdjacentNs(lit);
-                if (max_ns > -1 && adjacent_ns > max_ns) {
-                    PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
-                            "Run of " + NStr::UIntToString(adjacent_ns) + 
-                            " Ns in delta component " + NStr::UIntToString(seg) +
-                            " that starts at base " + NStr::UIntToString(start_len + 1),
-                            seq);
+                if (mi) {
+                    // Count adjacent Ns in Seq-lit
+                    int max_ns = s_MaxNsInSeqLitForTech (tech);
+                    int adjacent_ns = x_CountAdjacentNs(lit);
+                    if (max_ns > -1 && adjacent_ns > max_ns) {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
+                                "Run of " + NStr::UIntToString(adjacent_ns) + 
+                                " Ns in delta component " + NStr::UIntToString(seg) +
+                                " that starts at base " + NStr::UIntToString(start_len + 1),
+                                seq);
+                    }
                 }
             } else {
                 if ( first ) {
@@ -4178,7 +4190,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             m_Imp.AddProtWithoutFullRef(m_CurrentHandle);
         }
 
-        if ( is_aa && num_full_length_prot_ref > 1) {
+        if ( is_aa && num_full_length_prot_ref > 1 && !SeqIsPatent (seq)) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleProtRefs, 
                      NStr::IntToString (num_full_length_prot_ref)
                      + " full-length protein features present on protein", seq);
@@ -4234,7 +4246,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             x_ValidateLocusTagGeneralMatch(m_CurrentHandle);
         }
 
-        ValidateMultipleGeneOverlap (m_CurrentHandle);
+        if (!SeqIsPatent(seq)) {
+            ValidateMultipleGeneOverlap (m_CurrentHandle);
+        }
 
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
@@ -4852,7 +4866,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                     if (cug_it->GetLocation().GetStrand() == eNa_strand_minus) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
                                  "3'UTR is not on plus strand", cug_it->GetOriginalFeature());
-                    } else if (cds_right > 0 && cds_right + 1 != this_left) {
+                    } else if (cds_right > 0 && cds_right + 1 != this_left && num_3utr == 1) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS, 
                                  "CDS does not abut 3'UTR", cug_it->GetOriginalFeature());
                     }
@@ -6226,7 +6240,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             }
                         }
                     }
-                    if (!NStr::IsBlank(taxname)) {
+                    if (!NStr::IsBlank(taxname) && !SeqIsPatent (seq)) {
                         if (seq.IsNa()) {
                             if (!NStr::StartsWith(title, taxname, NStr::eNocase)) {
                                 PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrganismInTitle, 
@@ -6291,7 +6305,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         }
     }
 
-    if (!has_chromosome && !is_prokaryote && !is_organelle) {
+    if (!has_chromosome && !is_prokaryote && !is_organelle && !SeqIsPatent (seq)) {
         bool is_nc = false;
         bool is_ac = false;
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
@@ -6395,16 +6409,6 @@ void CValidError_bioseq::ValidateMolInfoContext
         int biomol = minfo.GetBiomol();
         if ( seq_biomol < 0 ) {
             seq_biomol = biomol;
-        }
-        if (is_synthetic_construct) {
-            if (biomol != CMolInfo::eBiomol_other_genetic && !seq.IsAa()) {
-                PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
-            }
-        }
-        if (is_artificial) {
-            if (biomol != CMolInfo::eBiomol_other_genetic && biomol != CMolInfo::eBiomol_peptide) {
-                PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "artificial origin should have other-genetic", ctx, desc);
-            }
         }
         
         switch ( biomol ) {
