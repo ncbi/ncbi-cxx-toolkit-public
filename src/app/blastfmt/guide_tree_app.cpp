@@ -44,10 +44,22 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 
 #include <algo/phy_tree/bio_tree.hpp>
+#include <algo/phy_tree/phytree_calc.hpp>
+#include <algo/phy_tree/phytree_format/phytree_format.hpp>
 
-#include "guide_tree.hpp"
-#include "guide_tree_calc.hpp"
-#include "guide_tree_render.hpp"
+#include <util/image/image.hpp>
+#include <util/image/image_util.hpp>
+#include <util/image/image_io.hpp>
+
+#include <gui/opengl/mesa/glcgi_image.hpp>
+#include <gui/opengl/mesa/gloscontext.hpp>
+#include <gui/opengl/glutils.hpp>
+#include <gui/opengl/glpane.hpp>
+
+#include <gui/widgets/phylo_tree/phylo_tree_rect_cladogram.hpp>
+#include <gui/widgets/phylo_tree/phylo_tree_slanted_cladogram.hpp>
+#include <gui/widgets/phylo_tree/phylo_tree_radial.hpp>
+#include <gui/widgets/phylo_tree/phylo_tree_force.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -59,9 +71,21 @@ USING_NCBI_SCOPE;
 class CGuideTreeApplication : public CNcbiApplication
 {
 private:
+
+    /// Tree rendering modes
+    enum ERenderFormat {
+        eRect, eSlanted, eRadial, eForce
+    };
+
+private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
+
+    bool x_RenderTree(const CPhyTreeFormatter& tree, ERenderFormat format,
+                      bool dist_mode);
+
+    CRef<CGlOsContext> m_Context;
 };
 
 
@@ -168,7 +192,6 @@ void CGuideTreeApplication::Init(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
@@ -189,7 +212,7 @@ int CGuideTreeApplication::Run(void)
     CRef<CScope> scope(new CScope(*object_manager));
     scope->AddDefaults();
     
-    auto_ptr<CGuideTree> gtree;
+    auto_ptr<CPhyTreeFormatter> gtree;
 
     EInput input;
     if (args["type"].AsString() == "seqalignset") {
@@ -205,59 +228,59 @@ int CGuideTreeApplication::Run(void)
     // If input is Seq-annot compute guide tree
     if (input == eSeqAlignSet || input == eSeqAlign) {
 
-        CRef<CGuideTreeCalc> calc;
+        CRef<CPhyTreeCalc> calc;
         
         if (input == eSeqAlignSet) {
             CRef<CSeq_align_set> seq_align_set(new CSeq_align_set());
             args["i"].AsInputFile() >> MSerial_AsnText >> *seq_align_set;
-            calc.Reset(new CGuideTreeCalc(*seq_align_set, scope));
+            calc.Reset(new CPhyTreeCalc(*seq_align_set, scope));
         }
         else {
             CSeq_align seq_align;
             args["i"].AsInputFile() >> MSerial_AsnText >> seq_align;
-            calc.Reset(new CGuideTreeCalc(seq_align, scope));
+            calc.Reset(new CPhyTreeCalc(seq_align, scope));
         }
 
         calc->SetMaxDivergence(args["divergence"].AsDouble());
 
-        CGuideTree::ELabelType labels;
+        CPhyTreeFormatter::ELabelType labels;
         if (args["labels"].AsString() == "taxname") {
-            labels = CGuideTree::eTaxName;
+            labels = CPhyTreeFormatter::eTaxName;
         } else if (args["labels"].AsString() == "seqtitle") {
-            labels = CGuideTree::eSeqTitle;
+            labels = CPhyTreeFormatter::eSeqTitle;
         } else if (args["labels"].AsString() == "blastname") {
-            labels = CGuideTree::eBlastName;
+            labels = CPhyTreeFormatter::eBlastName;
         } else if (args["labels"].AsString() == "seqid") {
-            labels = CGuideTree::eSeqId;
+            labels = CPhyTreeFormatter::eSeqId;
         } else if (args["labels"].AsString() == "seqid_and_blastname") {
-            labels = CGuideTree::eSeqIdAndBlastName;
+            labels = CPhyTreeFormatter::eSeqIdAndBlastName;
         } else {
             NcbiCerr << "Error: Unrecognised labels type." << NcbiEndl;
             return 1;
         }
 
-        CGuideTreeCalc::EDistMethod dist;
+        CPhyTreeCalc::EDistMethod dist;
         if (args["distance"].AsString() == "jukes_cantor") {
-            dist = CGuideTreeCalc::eJukesCantor;
+            dist = CPhyTreeCalc::eJukesCantor;
         } else if (args["distance"].AsString() == "poisson") {
-            dist = CGuideTreeCalc::ePoisson;
+            dist = CPhyTreeCalc::ePoisson;
         } else if (args["distance"].AsString() == "kimura") {
-            dist = CGuideTreeCalc::eKimura;
+            dist = CPhyTreeCalc::eKimura;
         } else if (args["distance"].AsString() == "grishin") {
-            dist = CGuideTreeCalc::eGrishin;
+            dist = CPhyTreeCalc::eGrishin;
         } else if (args["distance"].AsString() == "grishin2") {
-            dist = CGuideTreeCalc::eGrishinGeneral;
+            dist = CPhyTreeCalc::eGrishinGeneral;
         } else {
             NcbiCerr << "Error: Unrecognized distance method." << NcbiEndl;
             return 1;
         }
         calc->SetDistMethod(dist);
 
-        CGuideTreeCalc::ETreeMethod method;
+        CPhyTreeCalc::ETreeMethod method;
         if (args["treemethod"].AsString() == "fastme") {
-            method = CGuideTreeCalc::eFastME;
+            method = CPhyTreeCalc::eFastME;
         } else if (args["treemethod"].AsString() == "nj") {
-            method = CGuideTreeCalc::eNJ;
+            method = CPhyTreeCalc::eNJ;
         } else {
             NcbiCerr << "Error: Unrecognized tree computation method."
                      << NcbiEndl;
@@ -266,7 +289,7 @@ int CGuideTreeApplication::Run(void)
         calc->SetTreeMethod(method);
 
         if (calc->CalcBioTree()) {
-            gtree.reset(new CGuideTree(*calc, labels));
+            gtree.reset(new CPhyTreeFormatter(*calc, labels));
         }
         else {
             ITERATE(vector<string>, it, calc->GetMessages()) {
@@ -294,15 +317,15 @@ int CGuideTreeApplication::Run(void)
 
         // Otherwise load tree
         args["i"].AsInputFile() >> MSerial_AsnText >> btc;
-        gtree.reset(new CGuideTree(btc));
+        gtree.reset(new CPhyTreeFormatter(btc));
     }
 
     // Simplify tree
     if (args["simpl"]) {
         if (args["simpl"].AsString() == "blastname") {
-            gtree->SimplifyTree(CGuideTree::eByBlastName);
+            gtree->SimplifyTree(CPhyTreeFormatter::eByBlastName);
         } else if (args["simpl"].AsString() == "full") {
-            gtree->SimplifyTree(CGuideTree::eFullyExpanded);
+            gtree->SimplifyTree(CPhyTreeFormatter::eFullyExpanded);
         }
     }
 
@@ -322,54 +345,172 @@ int CGuideTreeApplication::Run(void)
     }
 
     if (args["outfmt"].AsString() == "image") {
-        CGuideTreeRenderer renderer(*gtree);
+        
+        // render tree image
+        
+        ERenderFormat render_format = eRect;
 
         // Select tree rendering
         if (args["render"].AsString() == "rect") {
-            renderer.SetRenderFormat(CGuideTreeRenderer::eRect);
+            render_format = eRect;
         } else if (args["render"].AsString() == "slanted") {
-            renderer.SetRenderFormat(CGuideTreeRenderer::eSlanted);
+            render_format = eSlanted;
         } else if (args["render"].AsString() == "radial") {
-            renderer.SetRenderFormat(CGuideTreeRenderer::eRadial);
-        } else if (args["redenr"].AsString() == "force") {
-            renderer.SetRenderFormat(CGuideTreeRenderer::eForce);
+            render_format = eRadial;
+        } else if (args["render"].AsString() == "force") {
+            render_format = eForce;
         }
 
-        if (args["no_dist"]) {
-            renderer.SetDistanceMode(false);
-        }
+        bool dist_mode = !args["no_dist"];
 
-        renderer.PreComputeImageDimensions();
-        renderer.SetImageWidth(args["width"].AsInteger());
+        x_RenderTree(*gtree, render_format, dist_mode);
+        CImageIO::WriteImage(m_Context->GetBuffer(), args["o"].AsOutputFile(),
+                             CImageIO::ePng);
 
-        if (args["best_height"]) {
-            renderer.SetImageHeight(renderer.GetMinHeight());
-        }
-        else {
-            renderer.SetImageHeight(args["height"].AsInteger());
-        }
-
-        renderer.WriteImage(args["o"].AsOutputFile());
     }
     else {
 
-        CGuideTree::ETreeFormat tree_format;
+        // print tree in text format
+
+        CPhyTreeFormatter::ETreeFormat tree_format;
         if (args["outfmt"].AsString() == "asn") {
-            tree_format = CGuideTree::eASN;
+            tree_format = CPhyTreeFormatter::eASN;
         } else if (args["outfmt"].AsString() == "newick") {
-            tree_format = CGuideTree::eNewick;
+            tree_format = CPhyTreeFormatter::eNewick;
         } else if (args["outfmt"].AsString() == "nexus") {
-            tree_format = CGuideTree::eNexus;
+            tree_format = CPhyTreeFormatter::eNexus;
         } else {
             NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
             return 1;
         }
 
-        // Write tree in selected format
-        gtree->SaveTreeAs(args["o"].AsOutputFile(), tree_format);
+        gtree->WriteTreeAs(args["o"].AsOutputFile(), tree_format);
     }
 
     return 0;
+}
+
+
+
+bool CGuideTreeApplication::x_RenderTree(const CPhyTreeFormatter& tree,
+                                 CGuideTreeApplication::ERenderFormat format,
+                                 bool dist_mode)
+{
+    // Get arguments
+    const CArgs& args = GetArgs();
+
+    CRef<CPhyloTreeDataSource> data_source(
+                               new CPhyloTreeDataSource(tree.GetTree()));
+
+    // init
+    int width = args["width"].AsInteger();
+    int height = args["height"].AsInteger();
+    int node_size = 3;
+    int line_width = 1;
+    data_source->Relabel("$(label)");
+    
+    // extend root
+    // Often the edge starting in root has zero length which
+    // does not render well. By setting very small distance this is
+    // avoided.
+    CPhyloTreeNode::TNodeList_I it = data_source->GetTree()->SubNodeBegin();
+    while (it != data_source->GetTree()->SubNodeEnd()) {
+        if ((*it)->GetValue().GetDistance() == 0.0) {
+            (*it)->GetValue().SetDistance(
+                 data_source->GetNormDistance() * 0.005);
+            (*it)->GetValue().Sync();
+        }
+        ++it;
+    }
+    data_source->Refresh();
+
+    // pre-compute image dimensions
+    CRef<CPhyloTreeScheme> phylo_tree_scheme(new CPhyloTreeScheme());
+
+    phylo_tree_scheme->SetSize(CPhyloTreeScheme::eNodeSize) = node_size;
+    phylo_tree_scheme->SetSize(CPhyloTreeScheme::eLineWidth) = line_width;
+    phylo_tree_scheme->SetLabelStyle(CPhyloTreeScheme::eSimpleLabels);
+
+    GLdouble mleft = 10;
+    GLdouble mtop = 10;
+    GLdouble mright = 140;
+    GLdouble mbottom = 10;
+    phylo_tree_scheme->SetMargins(mleft, mtop, mright, mbottom);
+
+    // min dimensions check
+    // The minimum width and height which should be acceptable to output 
+    // image to display all data without information loss.
+    auto_ptr<IPhyloTreeRenderer> calc_render;       
+    //use recatngle for calulations of all min sizes
+    calc_render.reset(new CPhyloRectCladogram());      
+    TVPRect min_dim_rect = IPhyloTreeRenderer::GetMinDimensions(*data_source,
+                                                        *calc_render,
+                                                        *phylo_tree_scheme);
+
+
+    if (args["best_height"]) {
+        height = min_dim_rect.Height();
+    }
+
+    // render image
+    m_Context.Reset(new CGlOsContext(width, height));
+    m_Context->MakeCurrent();
+
+    // create pane
+    auto_ptr<CGlPane> pane(new CGlPane());
+    auto_ptr<IPhyloTreeRenderer> renderer;
+
+    switch (format) {
+    case eSlanted : 
+        renderer.reset(new CPhyloSlantedCladogram());
+        break;
+
+    case eRadial : 
+        renderer.reset(new CPhyloRadial());
+        break;
+
+    case eForce : 
+        renderer.reset(new CPhyloForce());
+        break;
+
+    default:
+    case eRect : 
+        renderer.reset(new CPhyloRectCladogram());
+    }
+
+    renderer->SetDistRendering(dist_mode);
+ 
+    // create layout
+    renderer->SetFont(new CGlBitmapFont(CGlBitmapFont::eHelvetica10));
+    renderer->SetModelDimensions(width, height);
+
+    // set variable sized collapsed nodes
+    phylo_tree_scheme->SetBoaNodes(true);
+
+    renderer->SetScheme(*phylo_tree_scheme);
+    renderer->SetZoomablePrimitives(false);
+    renderer->Layout(*data_source);
+
+    // modify pane to reflect layout changes
+    pane->SetAdjustmentPolicy(CGlPane::fAdjustAll, CGlPane::fAdjustAll);
+    pane->SetMinScaleX(1 / 30.0);  pane->SetMinScaleY(1 / 30.0);
+    pane->SetOriginType(CGlPane::eOriginLeft, CGlPane::eOriginBottom);
+    pane->EnableZoom(true, true);
+    pane->SetViewport(TVPRect(0, 0, width, height));
+    pane->SetModelLimitsRect(renderer->GetRasterRect());
+    pane->SetVisibleRect(renderer->GetRasterRect());
+    pane->ZoomAll();
+
+    // render image
+    glClearColor(0.95f, 1.0f, 0.95f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderer->Render(*pane.get(), *data_source); 
+    
+    glFinish();
+    m_Context->SetBuffer().SetDepth(3);
+    CImageUtil::FlipY(m_Context->SetBuffer());
+
+    return true;
 }
 
 
