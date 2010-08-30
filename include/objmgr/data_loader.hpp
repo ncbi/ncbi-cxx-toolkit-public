@@ -253,10 +253,18 @@ public:
 
     virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
     virtual int GetGi(const CSeq_id_Handle& idh);
-
     virtual string GetLabel(const CSeq_id_Handle& idh);
-
     virtual int GetTaxId(const CSeq_id_Handle& idh);
+
+    // bulk interface
+    typedef vector<bool> TLoaded;
+    typedef vector<int> TGis;
+    typedef vector<string> TLabels;
+    typedef vector<int> TTaxIds;
+    virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
+    virtual void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
+    virtual void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
+    virtual void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
@@ -329,7 +337,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 2, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 3, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

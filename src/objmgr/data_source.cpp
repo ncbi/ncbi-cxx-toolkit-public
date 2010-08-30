@@ -1185,6 +1185,32 @@ int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    int count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TTSE_LockSet locks;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        if ( match ) {
+            ret[i] = CScope::x_GetAccVer(match.m_Bioseq->GetId());
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
+    if ( remaining && m_Loader ) {
+        m_Loader->GetAccVers(ids, loaded, ret);
+    }
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( m_Loader ) {

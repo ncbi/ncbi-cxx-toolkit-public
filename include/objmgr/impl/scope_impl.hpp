@@ -141,7 +141,6 @@ public:
     typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
     typedef vector<CSeq_id_Handle>                   TIds;
     typedef vector<CSeq_entry_Handle>                TTSE_Handles;
-    typedef vector<CBioseq_Handle>                   TBioseqHandles;
 
     CObjectManager& GetObjectManager(void);
 
@@ -279,9 +278,6 @@ public:
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CTSE_Handle& tse);
 
-    // Get a set of bioseq handles
-    TBioseqHandles GetBioseqHandles(const TIds& ids);
-
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
 
@@ -327,14 +323,25 @@ public:
     int GetTaxId(const CSeq_id_Handle& idh, bool force_load);
 
     /// Bulk retrieval methods
-    typedef vector<CSeq_id_Handle> TSeq_id_Handles;
-    TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs, bool force_load);
+
+    // Get a set of bioseq handles
+    typedef vector<CBioseq_Handle> TBioseqHandles;
+    TBioseqHandles GetBioseqHandles(const TIds& ids);
+
+    // Get a set of accession/version pairs
+    TIds GetAccVers(const TIds& idhs, bool force_load);
+
+    // Get a set of gis
     typedef vector<int> TGIs;
-    TGIs GetGis(const TSeq_id_Handles& idhs, bool force_load);
+    TGIs GetGis(const TIds& idhs, bool force_load);
+
+    // Get a set of label strings
     typedef vector<string> TLabels;
-    TLabels GetLabels(const TSeq_id_Handles& idhs, bool force_load);
+    TLabels GetLabels(const TIds& idhs, bool force_load);
+
+    // Get a set of taxids
     typedef vector<int> TTaxIds;
-    TTaxIds GetTaxIds(const TSeq_id_Handles& idhs, bool force_load);
+    TTaxIds GetTaxIds(const TIds& idhs, bool force_load);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,

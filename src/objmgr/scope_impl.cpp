@@ -1699,67 +1699,6 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
-CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
-{
-    TBioseqHandles ret;
-    size_t count = ids.size();
-    ret.reserve(count);
-    if ( count > 200 ) {
-        // split batch into smaller pieces to avoid problems with GC
-        TIds ids1;
-        for ( size_t pos = 0; pos < count; ) {
-            size_t cnt = count - pos;
-            if ( cnt > 150 ) cnt = 100;
-            ids1.assign(ids.begin()+pos, ids.begin()+pos+cnt);
-            TBioseqHandles ret1 = GetBioseqHandles(ids1);
-            ret.insert(ret.end(), ret1.begin(), ret1.end());
-            pos += cnt;
-        }
-        return ret;
-    }
-    ret.resize(count);
-    TConfReadLockGuard rguard(m_ConfLock);
-    // Keep locks to prevent cleanup of the loaded TSEs.
-    typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
-    TSeqMatchMap match_map;
-    for ( size_t i = 0; i < count; ++i ) {
-        ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved);
-        if ( !ret[i] ) {
-            match_map[ids[i]];
-        }
-    }
-    if ( match_map.empty() ) {
-        return ret;
-    }
-    for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->GetBlobs(match_map);
-    }
-    for ( size_t i = 0; i < count; ++i ) {
-        if ( ret[i] ) {
-            continue;
-        }
-        TSeqMatchMap::iterator match = match_map.find(ids[i]);
-        if (match != match_map.end()  &&  match->second) {
-            ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded);
-        }
-        else {
-            TSeq_idMapValue& id_info = x_GetSeq_id_Info(ids[i]);
-            CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool);
-            if ( init ) {
-                _ASSERT(!id_info.second.m_Bioseq_Info);
-                id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(
-                    CBioseq_Handle::fState_no_data |
-                    CBioseq_Handle::fState_not_found));
-            }
-            CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
-            ret[i].m_Handle_Seq_id = ids[i];
-            ret[i].m_Info.Reset(info);
-        }
-    }
-    return ret;
-}
-
-
 CRef<CDataSource_ScopeInfo>
 CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds,
                                const CTSE_ScopeInfo* replaced_tse)
@@ -2380,7 +2319,7 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
                                       bool force_load)
 {
     CSeq_id_Handle ret;
-    if ( false && !force_load ) {
+    if ( !force_load ) {
         CConstRef<CSeq_id> id = idh.GetSeqId();
         const CTextseq_id* text_id = id->GetTextseq_Id();
         if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
@@ -2661,49 +2600,157 @@ bool CScope_Impl::IsTransactionActive() const
 
 
 /// Bulk retrieval methods
-CScope_Impl::TSeq_id_Handles
-CScope_Impl::GetAccVers(const TSeq_id_Handles& idhs,
-                        bool force_load)
+CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 {
-    TSeq_id_Handles ret;
-    ret.reserve(idhs.size());
-    ITERATE ( TSeq_id_Handles, it, idhs ) {
-        ret.push_back(GetAccVer(*it, force_load));
+    TBioseqHandles ret;
+    size_t count = ids.size();
+    ret.reserve(count);
+    if ( count > 200 ) {
+        // split batch into smaller pieces to avoid problems with GC
+        TIds ids1;
+        for ( size_t pos = 0; pos < count; ) {
+            size_t cnt = count - pos;
+            if ( cnt > 150 ) cnt = 100;
+            ids1.assign(ids.begin()+pos, ids.begin()+pos+cnt);
+            TBioseqHandles ret1 = GetBioseqHandles(ids1);
+            ret.insert(ret.end(), ret1.begin(), ret1.end());
+            pos += cnt;
+        }
+        return ret;
+    }
+    ret.resize(count);
+    TConfReadLockGuard rguard(m_ConfLock);
+    // Keep locks to prevent cleanup of the loaded TSEs.
+    typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
+    TSeqMatchMap match_map;
+    for ( size_t i = 0; i < count; ++i ) {
+        ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved);
+        if ( !ret[i] ) {
+            match_map[ids[i]];
+        }
+    }
+    if ( match_map.empty() ) {
+        return ret;
+    }
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        it->GetBlobs(match_map);
+    }
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( ret[i] ) {
+            continue;
+        }
+        TSeqMatchMap::iterator match = match_map.find(ids[i]);
+        if (match != match_map.end()  &&  match->second) {
+            ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded);
+        }
+        else {
+            TSeq_idMapValue& id_info = x_GetSeq_id_Info(ids[i]);
+            CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool);
+            if ( init ) {
+                _ASSERT(!id_info.second.m_Bioseq_Info);
+                id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(
+                    CBioseq_Handle::fState_no_data |
+                    CBioseq_Handle::fState_not_found));
+            }
+            CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
+            ret[i].m_Handle_Seq_id = ids[i];
+            ret[i].m_Info.Reset(info);
+        }
     }
     return ret;
 }
 
 
-CScope_Impl::TGIs CScope_Impl::GetGis(const TSeq_id_Handles& idhs,
+CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
+                                          bool force_load)
+{
+    int count = idhs.size(), remaining = 0;
+    TIds ret(count);
+    vector<bool> loaded(count);
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            CConstRef<CSeq_id> id = idhs[i].GetSeqId();
+            const CTextseq_id* text_id = id->GetTextseq_Id();
+            if ( text_id &&
+                 text_id->IsSetAccession() &&
+                 text_id->IsSetVersion() ) {
+                ret[i] = idhs[i];
+                loaded[i] = true;
+            }
+            else {
+                ++remaining;
+            }
+        }
+    }
+    _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
+    if ( remaining ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        
+        if ( !force_load ) {
+            for ( int i = 0; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                SSeqMatch_Scope match;
+                CRef<CBioseq_ScopeInfo> info =
+                    x_FindBioseq_Info(idhs[i],
+                                      CScope::eGetBioseq_Resolved,
+                                      match);
+                if ( info ) {
+                    if ( info->HasBioseq() ) {
+                        ret[i] = CScope::x_GetAccVer(info->GetIds());
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                }
+            }
+        }
+    
+        _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if ( !remaining ) {
+                break;
+            }
+            CPrefetchManager::IsActive();
+            it->GetDataSource().GetAccVers(idhs, loaded, ret);
+            remaining = std::count(loaded.begin(), loaded.end(), false);
+        }
+    }
+    return ret;
+}
+
+
+CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& idhs,
                                       bool force_load)
 {
     TGIs ret;
     ret.reserve(idhs.size());
-    ITERATE ( TSeq_id_Handles, it, idhs ) {
+    ITERATE ( TIds, it, idhs ) {
         ret.push_back(GetGi(*it, force_load));
     }
     return ret;
 }
 
 
-CScope_Impl::TLabels CScope_Impl::GetLabels(const TSeq_id_Handles& idhs,
+CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& idhs,
                                             bool force_load)
 {
     TLabels ret;
     ret.reserve(idhs.size());
-    ITERATE ( TSeq_id_Handles, it, idhs ) {
+    ITERATE ( TIds, it, idhs ) {
         ret.push_back(GetLabel(*it, force_load));
     }
     return ret;
 }
 
 
-CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TSeq_id_Handles& idhs,
+CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& idhs,
                                             bool force_load)
 {
     TTaxIds ret;
     ret.reserve(idhs.size());
-    ITERATE ( TSeq_id_Handles, it, idhs ) {
+    ITERATE ( TIds, it, idhs ) {
         ret.push_back(GetTaxId(*it, force_load));
     }
     return ret;

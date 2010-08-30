@@ -262,6 +262,89 @@ int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TIds seq_ids;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        GetIds(ids[i], seq_ids);
+        ret[i] = CScope::x_GetAccVer(seq_ids);
+        loaded[i] = true;
+    }
+}
+
+
+void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TIds seq_ids;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        GetIds(ids[i], seq_ids);
+        ret[i] = CScope::x_GetGi(seq_ids);
+        loaded[i] = true;
+    }
+}
+
+
+void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        
+        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info =
+                (*it)->FindMatchingBioseq(ids[i]);
+            if ( bs_info ) {
+                ret[i] = objects::GetLabel(bs_info->GetId());
+                break;
+            }
+        }
+        loaded[i] = true;
+    }
+}
+
+
+void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        
+        ret[i] = -1;
+        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info =
+                (*it)->FindMatchingBioseq(ids[i]);
+            if ( bs_info ) {
+                ret[i] = bs_info->GetTaxId();
+                break;
+            }
+        }
+        loaded[i] = true;
+    }
+}
+
+
 void CDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 {
     NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {

@@ -219,10 +219,18 @@ public:
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
     int GetGi(const CSeq_id_Handle& idh);
-
     string GetLabel(const CSeq_id_Handle& idh);
-
     int GetTaxId(const CSeq_id_Handle& idh);
+
+    // bulk interface
+    typedef vector<bool> TLoaded;
+    typedef vector<int> TGis;
+    typedef vector<string> TLabels;
+    typedef vector<int> TTaxIds;
+    void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
+    void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
+    void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
+    void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
