@@ -223,7 +223,7 @@ int CSampleLds2Application::Run(void)
             }
             acount++;
         }
-        cout << fcount << " alignments found" << endl;
+        cout << acount << " alignments found" << endl;
     }
     return 0;
 }

@@ -36,6 +36,7 @@
 #include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
+#include <db/sqlite/sqlitewrapp.hpp>
 #include <objtools/lds2/lds2_expt.hpp>
 #include <objtools/lds2/lds2_handlers.hpp>
 
@@ -50,16 +51,17 @@ BEGIN_SCOPE(objects)
 
 void CLDS2_UrlHandler_Base::FillInfo(SLDS2_File& info)
 {
-    info.format = GetFileFormat(info.name);
-    info.crc = GetFileCRC(info.name);
-    info.size = GetFileSize(info.name);
-    info.time = GetFileTime(info.name);
+    info.format = GetFileFormat(info);
+    info.crc = GetFileCRC(info);
+    info.size = GetFileSize(info);
+    info.time = GetFileTime(info);
 }
 
 
-SLDS2_File::TFormat CLDS2_UrlHandler_Base::GetFileFormat(const string& url)
+SLDS2_File::TFormat
+CLDS2_UrlHandler_Base::GetFileFormat(const SLDS2_File& file_info)
 {
-    auto_ptr<CNcbiIstream> in(OpenStream(url, 0));
+    auto_ptr<CNcbiIstream> in(OpenStream(file_info, 0, NULL));
     return CFormatGuess::Format(*in);
 }
 
@@ -79,33 +81,38 @@ CLDS2_UrlHandler_File::CLDS2_UrlHandler_File(void)
 }
 
 
-CNcbiIstream* CLDS2_UrlHandler_File::OpenStream(const string&  url,
-                                                CNcbiStreampos pos)
+CNcbiIstream*
+CLDS2_UrlHandler_File::OpenStream(const SLDS2_File& file_info,
+                                  Int8              stream_pos,
+                                  CLDS2_Database*   /*db*/)
 {
-    auto_ptr<CNcbiIfstream> in(new CNcbiIfstream(url.c_str(), ios::binary));
-    if (pos > 0) {
-        in->seekg(NcbiInt8ToStreampos(pos));
+    auto_ptr<CNcbiIfstream> in(
+        new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+    // Chunks are not supported for regular files,
+    /// offset is relative to the file start.
+    if (stream_pos > 0) {
+        in->seekg(NcbiInt8ToStreampos(stream_pos));
     }
     return in.release();
 }
 
 
-Int8 CLDS2_UrlHandler_File::GetFileSize(const string& url)
+Int8 CLDS2_UrlHandler_File::GetFileSize(const SLDS2_File& file_info)
 {
-    CFile f(url);
+    CFile f(file_info.name);
     return f.Exists() ? f.GetLength() : -1;
 }
 
 
-Uint4 CLDS2_UrlHandler_File::GetFileCRC(const string& url)
+Uint4 CLDS2_UrlHandler_File::GetFileCRC(const SLDS2_File& file_info)
 {
-    return ComputeFileCRC32(url);
+    return ComputeFileCRC32(file_info.name);
 }
 
 
-Int8 CLDS2_UrlHandler_File::GetFileTime(const string& url)
+Int8 CLDS2_UrlHandler_File::GetFileTime(const SLDS2_File& file_info)
 {
-    CFile f(url);
+    CFile f(file_info.name);
     CFile::SStat stat;
     return f.Stat(&stat) ? stat.mtime_nsec : 0;
 }
@@ -125,34 +132,92 @@ CLDS2_UrlHandler_GZipFile::CLDS2_UrlHandler_GZipFile(void)
 }
 
 
-CNcbiIstream* CLDS2_UrlHandler_GZipFile::OpenStream(const string&  url,
-                                                    CNcbiStreampos pos)
+class CGZipChunkHandler : public IChunkHandler
 {
-    auto_ptr<CNcbiIfstream> in(new CNcbiIfstream(url.c_str(), ios::binary));
+public:
+    CGZipChunkHandler(const SLDS2_File& file_info,
+                      CLDS2_Database& db);
+    virtual ~CGZipChunkHandler(void) {}
+
+    virtual EAction OnChunk(TPosition raw_pos, TPosition data_pos);
+private:
+    const SLDS2_File& m_FileInfo;
+    CLDS2_Database&   m_Db;
+};
+
+
+CGZipChunkHandler::CGZipChunkHandler(const SLDS2_File& file_info,
+                                     CLDS2_Database& db)
+    : m_FileInfo(file_info),
+      m_Db(db)
+{
+}
+
+
+CGZipChunkHandler::EAction
+CGZipChunkHandler::OnChunk(TPosition raw_pos, TPosition data_pos)
+{
+    SLDS2_Chunk chunk(raw_pos, data_pos);
+    m_Db.AddChunk(m_FileInfo, chunk);
+    return eAction_Continue;
+}
+
+
+void CLDS2_UrlHandler_GZipFile::SaveChunks(const SLDS2_File& file_info,
+                                           CLDS2_Database&   db)
+{
+    // Collect information about chunks, store in in the database.
+    auto_ptr<CNcbiIfstream> in(
+        new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+    if ( !in->is_open() ) {
+        return;
+    }
+    CGZipChunkHandler chunk_handler(file_info, db);
+    g_GZip_ScanForChunks(*in, chunk_handler);
+}
+
+
+CNcbiIstream*
+CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
+                                      Int8              stream_pos,
+                                      CLDS2_Database*   db)
+{
+    auto_ptr<CNcbiIfstream> in(
+        new CNcbiIfstream(file_info.name.c_str(), ios::binary));
     if ( !in->is_open() ) {
         return NULL;
+    }
+    if ( db ) {
+        // Try to use chunks information to optimize loading
+        SLDS2_Chunk chunk;
+        if ( db->FindChunk(file_info, chunk, stream_pos) ) {
+            if (chunk.raw_pos > 0) {
+                in->seekg(NcbiInt8ToStreampos(chunk.raw_pos));
+            }
+            stream_pos -= chunk.stream_pos;
+        }
     }
     auto_ptr<CCompressionIStream> zin(
         new CCompressionIStream(
         *in.release(),
         new CZipStreamDecompressor(CZipCompression::fGZip),
         CCompressionStream::fOwnAll));
-    if (pos > 0) {
+    if (stream_pos > 0) {
         // Now we have to unzip all data up to the requested position.
         const Int8 buf_size = 4096;
         char buf[buf_size];
-        CNcbiStreampos to_read = NcbiInt8ToStreampos(buf_size);
-        while (pos > 0) {
-            if (NcbiStreamposToInt8(pos) < buf_size) {
-                to_read = pos;
+        Int8 to_read = buf_size;
+        while (stream_pos > 0) {
+            if (stream_pos < buf_size) {
+                to_read = stream_pos;
             }
-            zin->read(buf, to_read);
-            CNcbiStreampos rd = zin->gcount();
+            zin->read(buf, NcbiInt8ToStreampos(to_read));
+            Int8 rd = NcbiStreamposToInt8(zin->gcount());
             if (rd < to_read) {
                 // Not enough data in the stream?
                 return NULL;
             }
-            pos -= rd;
+            stream_pos -= rd;
         }
     }
     return zin.release();

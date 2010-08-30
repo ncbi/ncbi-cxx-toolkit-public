@@ -101,6 +101,65 @@ struct SLDS2_File
 };
 
 
+/// Chunk info
+struct SLDS2_Chunk {
+    /// Chunk position in the raw file
+    Int8 raw_pos;
+    /// Chunk position in the processed (e.g. unzipped) stream
+    Int8 stream_pos;
+    /// Extra data required to load the chunk. The owner of the
+    /// pointer is responsible for deleting the buffer.
+    void* data;
+    /// Extra data size
+    size_t data_size;
+
+    SLDS2_Chunk(void)
+        : raw_pos(0),
+          stream_pos(0),
+          data(NULL),
+          data_size(0)
+    {}
+
+    SLDS2_Chunk(Int8 raw, Int8 str)
+        : raw_pos(raw),
+          stream_pos(str),
+          data(NULL),
+          data_size(0)
+    {}
+
+    ~SLDS2_Chunk(void)
+    {
+        DeleteData();
+    }
+
+    void DeleteData(void)
+    {
+        if ( data ) {
+            delete[] (unsigned char*)data;
+            data = NULL;
+        }
+        data_size = 0;
+    }
+
+    void InitData(size_t sz)
+    {
+        if ( data ) {
+            DeleteData();
+        }
+        data_size = sz;
+        if ( data_size ) {
+            data = new unsigned char[data_size];
+        }
+    }
+
+private:
+    // Prohibit copy operations.
+    SLDS2_Chunk(const SLDS2_Chunk&);
+    SLDS2_Chunk& operator=(const SLDS2_Chunk&);
+};
+
+
+/// Top level object info
 struct SLDS2_Blob
 {
     /// Top-level object types
@@ -239,6 +298,16 @@ public:
                        TAnnotChoice          choice,
                        TBlobSet&             blobs);
 
+    /// Store the chunk info in the database.
+    void AddChunk(const SLDS2_File&  file_info,
+                  const SLDS2_Chunk& chunk_info);
+
+    /// Load chunk containing the required stream position.
+    /// Return true on success.
+    bool FindChunk(const SLDS2_File& file_info,
+                   SLDS2_Chunk&      chunk_info,
+                   Int8              stream_pos);
+
     /// Analyze the database indices. This can make queries about
     /// 10-100 times faster. The method should be called after any
     /// updates.
@@ -248,13 +317,11 @@ private:
     CLDS2_Database(const CLDS2_Database&);
     CLDS2_Database& operator=(const CLDS2_Database&);
 
+    // Access database connection.
     CSQLITE_Connection& x_GetConn(void) const;
 
     // Return lds-id for the seq-id. Adds new lds-id if necessary.
     Int8 x_GetLdsSeqId(const CSeq_id_Handle& id);
-
-    // Find and remove any unused seq-ids (and corresponding lds-ids).
-    void x_PurgeIds(void);
 
     void x_InitGetBioseqsSql(const CSeq_id_Handle& idh,
                              CSQLITE_Statement&    st) const;

@@ -86,7 +86,7 @@ public:
     void BeginBlob(void);
     void ResetBlob(void);
     // Set current blob position relative to the last blob position
-    void SetBlobOffset(CNcbiStreampos pos) {
+    void SetBlobOffset(Int8 pos) {
         m_CurBlobPos = m_LastBlobPos + pos;
     }
 
@@ -134,8 +134,8 @@ private:
 
     Int8                     m_CurFileId;
     ESerialDataFormat        m_Format;
-    CNcbiStreampos           m_CurBlobPos;
-    CNcbiStreampos           m_LastBlobPos; // count bytes already read
+    Int8                     m_CurBlobPos;
+    Int8                     m_LastBlobPos; // count bytes already read
     SLDS2_Blob::EBlobType    m_BlobType;
 
     TSeqIdSet                m_BioseqIds;
@@ -319,7 +319,7 @@ void CLDS2_SeqEntry_Hook::SkipObject(CObjectIStream& in,
     // Probably, there should be no such annotations in GB releases.
     if ( !m_Nested  &&  m_Parser.GetSplitBioseqSet() ) {
         m_Nested = true;
-        m_Parser.SetBlobOffset(in.GetStreamPos());
+        m_Parser.SetBlobOffset(NcbiStreamposToInt8(in.GetStreamPos()));
         m_Parser.BeginBlob();
         DefaultSkip(in, info);
         m_Parser.EndBlob(SLDS2_Blob::eBioseq_set_element);
@@ -731,7 +731,7 @@ bool CLDS2_ObjectParser::ParseNext(void)
     try {
         TTypeInfo type_info = sx_GetObjectTypeInfo(m_BlobType);
         objstr->Skip(type_info);
-        m_LastBlobPos += objstr->GetStreamPos();
+        m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
 
         // Store seq-aligns and seq-align-sets as blobs
         if ( is_align ) {
@@ -850,14 +850,16 @@ void CLDS2_Manager::AddDataDir(const string& data_dir, EDirMode mode)
 }
 
 
-static bool sx_IsGZipFile(const string& file_name)
+bool CLDS2_Manager::x_IsGZipFile(const SLDS2_File& file_info)
 {
     // Use handler - this will guarantee we are always using the same
-    // way to open the stream.
+    // way to open the stream. No database is required for this.
     CLDS2_UrlHandler_GZipFile gzip;
     try {
-        // Try to read at least one byte from the file
-        auto_ptr<CNcbiIstream> in(gzip.OpenStream(file_name, 0));
+        // Try to read at least one byte from the file.
+        // Do not provide database since the chunks are not indexed yet.
+        auto_ptr<CNcbiIstream> in(gzip.OpenStream(file_info, 0, NULL));
+        if ( !in.get() ) return false;
         char buf;
         in->read(&buf, 1);
         if (in->gcount() != 1) {
@@ -871,16 +873,17 @@ static bool sx_IsGZipFile(const string& file_name)
 }
 
 
-CLDS2_UrlHandler_Base* CLDS2_Manager::x_GetUrlHandler(const string& file_name)
+CLDS2_UrlHandler_Base*
+CLDS2_Manager::x_GetUrlHandler(const SLDS2_File& file_info)
 {
     CLDS2_UrlHandler_Base* handler = NULL;
     string handler_name = CLDS2_UrlHandler_File::s_GetHandlerName();
-    THandlersByUrl::const_iterator url_it = m_HandlersByUrl.find(file_name);
+    THandlersByUrl::const_iterator url_it = m_HandlersByUrl.find(file_info.name);
     if (url_it != m_HandlersByUrl.end()) {
         handler_name = url_it->second;
     }
     // Autodetect compressed files
-    else if ( sx_IsGZipFile(file_name) ) {
+    else if ( x_IsGZipFile(file_info) ) {
         handler_name = CLDS2_UrlHandler_GZipFile::s_GetHandlerName();
     }
     THandlers::iterator h_it = m_Handlers.find(handler_name);
@@ -908,7 +911,7 @@ SLDS2_File CLDS2_Manager::x_GetFileInfo(const string&                file_name,
     SLDS2_File info(file_name);
 
     // Find handler for the file or use the default one
-    handler.Reset(x_GetUrlHandler(file_name));
+    handler.Reset(x_GetUrlHandler(info));
     if ( handler ) {
         handler->FillInfo(info);
         // Make sure handler name is set
@@ -997,13 +1000,14 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
 {
     // Always open file as binary. Otherwise on Win32 file positions will
     // be invalid.
-    auto_ptr<CNcbiIstream> in(handler.OpenStream(info.name.c_str(), 0));
+    auto_ptr<CNcbiIstream> in(handler.OpenStream(info, 0, m_Db));
+    _ASSERT(in.get());
+    int parsed_entries = 0;
     switch ( info.format ) {
     case CFormatGuess::eBinaryASN:
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
         {
-            int parsed_entries = 0;
             CLDS2_ObjectParser parser(*this,
                 info.id, info.format, *in, *m_Db);
             while ( !in->eof() ) {
@@ -1041,7 +1045,6 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
     case CFormatGuess::eFasta:
         {
             // Count seq-entries found
-            int se_count = 0;
             try {
                 // Can not use ScanFastaFile which requires file stream.
                 // Can not use CStreamLineReader since it does not track
@@ -1050,7 +1053,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                 CFastaReader reader(lr, m_FastaFlags);
                 while ( !lr.AtEOF() ) {
                     try {
-                        CNcbiStreampos pos = lr.GetPosition();
+                        Int8 pos = NcbiStreamposToInt8(lr.GetPosition());
                         CRef<CSeq_entry> se  = reader.ReadOneSeq();
                         if ( !se->IsSeq() ) {
                             continue;
@@ -1064,7 +1067,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                             ids.insert(CSeq_id_Handle::GetHandle(**id));
                         }
                         m_Db->AddBioseq(blob_id, ids);
-                        se_count++;
+                        parsed_entries++;
                     } catch (CObjReaderParseException&) {
                         if ( !lr.AtEOF() ) {
                             throw;
@@ -1083,7 +1086,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                 }
                 return;
             }
-            if (se_count == 0) {
+            if (parsed_entries == 0) {
                 // Nothing in the file
                 m_Db->DeleteFile(info.id);
             }
@@ -1100,6 +1103,9 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
         }
         m_Db->DeleteFile(info.id);
         break;
+    }
+    if (parsed_entries > 0) {
+        handler.SaveChunks(info, *m_Db);
     }
 }
 

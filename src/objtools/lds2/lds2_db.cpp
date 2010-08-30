@@ -80,6 +80,9 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
 
 
 // Create db queries
+// NOTE: The version of sqlite3 used by the toolkit does not support
+// foreign keys. For this reason triggers are used to cascade
+// deletions.
 const char* kLDS2_CreateDB[] = {
     // files
     "create table `file` (" \
@@ -92,6 +95,16 @@ const char* kLDS2_CreateDB[] = {
     "`file_crc` integer(4));",
     // index files by name, prevents duplicate names
     "create unique index `idx_filename` on `file` (`file_name`);",
+
+    // chunks
+    "create table `chunk` (" \
+    "`file_id` integer(8) not null," \
+    "`raw_pos` integer(8) not null," \
+    "`stream_pos` integer(8) not null," \
+    "`data_size` inteter not null," \
+    "`data` blob default null);",
+    // index by stream_pos
+    "create index `idx_stream_pos` on `chunk` (`stream_pos`);",
 
     // seq-id vs lds-id
     "create table `seq_id` (" \
@@ -147,20 +160,21 @@ const char* kLDS2_CreateDB[] = {
     // index 'external' column
     "create index `idx_external` on `annot_id` (`external`);",
 
-    // delete files - cascade
+    // delete files - cascade to blobls and chunks
     "create trigger `delete_file` before delete on `file` begin " \
     "delete from `blob` where `blob`.`file_id`=`old`.`file_id`;" \
+    "delete from `chunk` where `chunk`.`file_id`=`old`.`file_id`;" \
     "end;",
-    // delete bioseqs - cascade
+    // delete bioseqs - cascade to bioseq_id
     "create trigger `delete_bioseq` before delete on `bioseq` begin " \
     "delete from `bioseq_id` where `bioseq_id`.`bioseq_id`=`old`.`bioseq_id`;" \
     "end;",
-    // delete blobs - cascade
+    // delete blobs - cascade to bioseq and annot
     "create trigger `delete_blob` before delete on `blob` begin " \
     "delete from `bioseq` where `bioseq`.`blob_id`=`old`.`blob_id`;" \
     "delete from `annot` where `annot`.`blob_id`=`old`.`blob_id`;" \
     "end;",
-    // delete annotations - cascade
+    // delete annotations - cascade to annot_id
     "create trigger `delete_annot` before delete on `annot` begin " \
     "delete from `annot_id` where `annot_id`.`annot_id`=`old`.`annot_id`;" \
     "end;"
@@ -269,7 +283,6 @@ void CLDS2_Database::DeleteFile(const string& file_name)
     CSQLITE_Statement st(&conn, "delete from `file` where `file_name`=?1;");
     st.Bind(1, file_name);
     st.Execute();
-    x_PurgeIds();
 }
 
 
@@ -280,7 +293,6 @@ void CLDS2_Database::DeleteFile(Int8 file_id)
     CSQLITE_Statement st(&conn, "delete from `file` where `file_id`=?1;");
     st.Bind(1, file_id);
     st.Execute();
-    x_PurgeIds();
 }
 
 
@@ -314,14 +326,6 @@ Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
     }
     st.Execute();
     return st.GetLastInsertedRowid();
-}
-
-
-void CLDS2_Database::x_PurgeIds(void)
-{
-    //###
-    //ERR_POST("x_PurgeIds -- not implemented");
-    //CSQLITE_Connection& conn = x_GetConn();
 }
 
 
@@ -620,6 +624,48 @@ void CLDS2_Database::GetAnnotBlobs(const CSeq_id_Handle& idh,
         info.file_pos = st.GetInt8(3);
         blobs.push_back(info);
     }
+}
+
+
+void CLDS2_Database::AddChunk(const SLDS2_File&  file_info,
+                              const SLDS2_Chunk& chunk_info)
+{
+    CSQLITE_Connection& conn = x_GetConn();
+    CSQLITE_Statement st(&conn,
+        "insert into `chunk` " \
+        "(`file_id`, `raw_pos`, `stream_pos`, `data_size`, `data`) " \
+        "values (?1, ?2, ?3, ?4, ?5);");
+    st.Bind(1, file_info.id);
+    st.Bind(2, chunk_info.raw_pos);
+    st.Bind(3, chunk_info.stream_pos);
+    st.Bind(4, chunk_info.data_size);
+    st.Bind(5, chunk_info.data, chunk_info.data_size);
+    st.Execute();
+}
+
+
+bool CLDS2_Database::FindChunk(const SLDS2_File& file_info,
+                               SLDS2_Chunk&      chunk_info,
+                               Int8              stream_pos)
+{
+    CSQLITE_Connection& conn = x_GetConn();
+    CSQLITE_Statement st(&conn,
+        "select `raw_pos`, `stream_pos`, `data_size`, `data` from `chunk` " \
+        "where `file_id`=?1 and `stream_pos`<=?2 order by `stream_pos` desc " \
+        "limit 1;");
+    st.Bind(1, file_info.id);
+    st.Bind(2, stream_pos);
+    if ( !st.Step() ) return false;
+    chunk_info.raw_pos = st.GetInt8(0);
+    chunk_info.stream_pos = st.GetInt8(1);
+    chunk_info.DeleteData(); // just in case someone reuses the same object
+    chunk_info.data_size = st.GetInt(2);
+    if ( chunk_info.data_size ) {
+        chunk_info.InitData(chunk_info.data_size);
+        chunk_info.data_size =
+            st.GetBlob(3, chunk_info.data, chunk_info.data_size);
+    }
+    return true;
 }
 
 

@@ -257,8 +257,7 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
         entry.Reset();
         return entry;
     }
-    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo.name,
-        NcbiInt8ToStreampos(blob.file_pos)));
+    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
     _ASSERT(in.get());
     if (finfo.format == CFormatGuess::eFasta) {
         return x_LoadFastaTSE(*in, blob);

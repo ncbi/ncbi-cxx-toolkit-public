@@ -550,6 +550,15 @@ int CLDS2TestApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    {{
+        CDiagContext::SetOldPostFormat(false);
+        ERR_POST(Warning << "Before guard");
+        CDiagCollectGuard g(eDiag_Error);
+        ERR_POST(Warning << "Guard enabled");
+        Sleep(5000);
+        g.Release(CDiagCollectGuard::ePrint);
+        ERR_POST(Warning << "After guard");
+    }}
     CLDS2TestApplication app;
     return app.AppMain(argc, argv, 0, eDS_Default);
 }

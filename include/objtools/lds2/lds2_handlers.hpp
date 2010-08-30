@@ -59,10 +59,18 @@ public:
     /// the information.
     virtual void FillInfo(SLDS2_File& info);
 
+    /// Save information about chunks for the URL in the database.
+    /// The default implementation does nothing.
+    virtual void SaveChunks(const SLDS2_File& file_info,
+                            CLDS2_Database&   db) {}
+
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
-    virtual CNcbiIstream* OpenStream(const string&  url,
-                                     CNcbiStreampos pos) = 0;
+    /// Database is provided so that the handler can fetch
+    /// information about chunks.
+    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
+                                     Int8              stream_pos,
+                                     CLDS2_Database*   db) = 0;
 
 protected:
     /// Allow to change handler name by derived classes.
@@ -75,14 +83,14 @@ protected:
 
     /// Guess file format. The default implementation opens the
     /// stream (see OpenStream) and uses CFormatGuess on it.
-    virtual SLDS2_File::TFormat GetFileFormat(const string& url);
+    virtual SLDS2_File::TFormat GetFileFormat(const SLDS2_File& file_info);
     /// Get file size - returns 0 by default. Negative values are used
     /// to indicate non-existing files.
-    virtual Int8 GetFileSize(const string& /*url*/) { return 0; }
+    virtual Int8 GetFileSize(const SLDS2_File& /*file_info*/) { return 0; }
     /// Get file CRC - returns 0 by default.
-    virtual Uint4 GetFileCRC(const string& /*url*/) { return 0; }
+    virtual Uint4 GetFileCRC(const SLDS2_File& /*file_info*/) { return 0; }
     /// Get file timestamp - returns 0 by default.
-    virtual Int8 GetFileTime(const string& /*url*/) { return 0; }
+    virtual Int8 GetFileTime(const SLDS2_File& /*file_info*/) { return 0; }
 
 private:
     string m_Name;
@@ -94,21 +102,21 @@ private:
 class NCBI_LDS2_EXPORT CLDS2_UrlHandler_File : public CLDS2_UrlHandler_Base
 {
 public:
-    /// Create a handler with the given name.
     CLDS2_UrlHandler_File(void);
     virtual ~CLDS2_UrlHandler_File(void) {}
 
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
-    virtual CNcbiIstream* OpenStream(const string&  url,
-                                     CNcbiStreampos pos);
+    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
+                                     Int8              stream_pos,
+                                     CLDS2_Database*   db);
 
     static const string& s_GetHandlerName(void);
 
 protected:
-    virtual Int8 GetFileSize(const string& url);
-    virtual Uint4 GetFileCRC(const string& url);
-    virtual Int8 GetFileTime(const string& url);
+    virtual Int8 GetFileSize(const SLDS2_File& file_info);
+    virtual Uint4 GetFileCRC(const SLDS2_File& file_info);
+    virtual Int8 GetFileTime(const SLDS2_File& file_info);
 };
 
 
@@ -116,14 +124,19 @@ protected:
 class NCBI_LDS2_EXPORT CLDS2_UrlHandler_GZipFile : public CLDS2_UrlHandler_File
 {
 public:
-    /// Create a handler with the given name.
+    /// Create GZip file handler.
     CLDS2_UrlHandler_GZipFile(void);
     virtual ~CLDS2_UrlHandler_GZipFile(void) {}
 
+    /// Save information about chunks for the URL in the database.
+    virtual void SaveChunks(const SLDS2_File& file_info,
+                            CLDS2_Database&   db);
+
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
-    virtual CNcbiIstream* OpenStream(const string&  url,
-                                     CNcbiStreampos pos);
+    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
+                                     Int8              stream_pos,
+                                     CLDS2_Database*   db);
 
     static const string& s_GetHandlerName(void);
 };

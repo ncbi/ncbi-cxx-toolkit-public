@@ -138,8 +138,11 @@ public:
 private:
     typedef CLDS2_Database::TStringSet TFiles;
 
+    // Check for gzip file.
+    bool x_IsGZipFile(const SLDS2_File& file_info);
+
     // Find handler for the file.
-    CLDS2_UrlHandler_Base* x_GetUrlHandler(const string& file_name);
+    CLDS2_UrlHandler_Base* x_GetUrlHandler(const SLDS2_File& file_info);
     // Get file info and handler
     SLDS2_File x_GetFileInfo(const string&                file_name,
                              CRef<CLDS2_UrlHandler_Base>& handler);
