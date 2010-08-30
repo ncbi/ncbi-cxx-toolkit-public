@@ -103,6 +103,18 @@ CPhyTreeFormatter::CPhyTreeFormatter(const CBioTreeDynamic& tree)
 }
 
 
+bool CPhyTreeFormatter::WriteTreeAs(CNcbiOstream& out,
+                                    CPhyTreeFormatter::ETreeFormat format)
+{
+    switch (format) {
+    case eNewick: return PrintNewickTree(out);
+    case eNexus : return PrintNexusTree(out);
+    case eASN   : return WriteTree(out);
+    }
+
+    return false;
+}
+
 bool CPhyTreeFormatter::WriteTree(CNcbiOstream& out)
 {
     out << MSerial_AsnText << *GetSerialTree();

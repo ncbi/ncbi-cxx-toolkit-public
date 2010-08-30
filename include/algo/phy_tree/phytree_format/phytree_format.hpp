@@ -229,6 +229,14 @@ public:
 
     // --- Generating output ---
 
+    /// Write tree structure to stream in selected format
+    /// @param out Output stream [in|out]
+    /// @param format Format for writing tree [in]
+    /// @return True on success, false on failure
+    ///
+    bool WriteTreeAs(CNcbiOstream& out, ETreeFormat format);
+
+
     /// Write tree structure to stream
     /// @param out Output stream [in|out]
     /// @return True on success, false on failure
