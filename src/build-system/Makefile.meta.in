@@ -469,9 +469,12 @@ configurables = @configurables_mfname@
 include $(top_srcdir)/src/build-system/Makefile.$(configurables)
 
 .PHONY: all        clean        purge        check        check_add
+.PHONY: all.usr    clean.usr    purge.usr
+.PHONY: all.nonusr clean.nonusr purge.nonusr
 .PHONY: all.real   clean.real   purge.real   check.real   check_add.real
 .PHONY: all_r      clean_r      purge_r      check_r      check_add_r
 .PHONY: all_r.real clean_r.real purge_r.real check_r.real check_add_r.real
 .PHONY: all_p      clean_p      purge_p      check_p      check_add_p
 .PHONY: all_p.real clean_p.real purge_p.real check_p.real check_add_p.real
-.PHONY: sources libs
+.PHONY: libs libs.real libs_r libs_r.real libs_p libs_p.real
+.PHONY: sources sources.usr sources.nonusr clean_sources purge_sources
