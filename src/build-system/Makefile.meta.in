@@ -19,8 +19,8 @@ builddir = @builddir@
 build_root = @build_root@
 top_srcdir = @top_srcdir@
 abs_top_srcdir = @abs_top_srcdir@
-abs_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'`
-rel_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir)/,,'`
+rel_srcdir = $(srcdir:$(top_srcdir)/%=%)
+abs_srcdir = $(abs_top_srcdir)/$(rel_srcdir)
 status_dir = @status_dir@
 
 ### Make sure we are using a right command shell
