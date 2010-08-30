@@ -236,14 +236,15 @@ clean.real:
 clean.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) clean $(USRP_KET)
-clean.nonusr:
+clean.nonusr: # clean_sources
 	@-rm -f .building .built .built_r
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
-#	@$(ASNP_BRA) clean_sources $(ASNP_KET)
-#	@$(DTDP_BRA) clean_sources $(DTDP_KET)
-#	@$(XSDP_BRA) clean_sources $(XSDP_KET)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
+clean_sources:
+	@$(ASNP_BRA) clean_sources $(ASNP_KET)
+	@$(DTDP_BRA) clean_sources $(DTDP_KET)
+	@$(XSDP_BRA) clean_sources $(XSDP_KET)
 
 purge.real:
 	@$(RWL) $(MAKE) $(MFLAGS_NR) purge.usr
@@ -251,14 +252,15 @@ purge.real:
 purge.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) purge $(USRP_KET)
-purge.nonusr:
+purge.nonusr: # purge_sources
 	@-rm -f .building .built .built_r
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
-#	@$(ASNP_BRA) purge_sources $(ASNP_KET)
-#	@$(DTDP_BRA) purge_sources $(DTDP_KET)
-#	@$(XSDP_BRA) purge_sources $(XSDP_KET)
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
+purge_sources:
+	@$(ASNP_BRA) purge_sources $(ASNP_KET)
+	@$(DTDP_BRA) purge_sources $(DTDP_KET)
+	@$(XSDP_BRA) purge_sources $(XSDP_KET)
 
 libs.real: sources
 	@$(LIBP_BRA) all   $(LIBP_KET)
