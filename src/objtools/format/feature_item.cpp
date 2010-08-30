@@ -1225,14 +1225,19 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     s_feat.Reset();
     g_ref = NULL;
 
+    // this will point to the gene xref inside the feature, if any
+    const CGene_ref *xref_g_ref = NULL;
+
     // guard against suppressed gene xrefs
+    // and also grab the Gene_ref xref, if it exists
     if (m_Feat.IsSetXref()) {
         ITERATE (CSeq_feat::TXref, it, m_Feat.GetXref()) {
             const CSeqFeatXref& xref = **it;
-            if (xref.IsSetData()  &&
-                xref.GetData().IsGene()  &&
-                xref.GetData().GetGene().IsSuppressed()) {
-                return;
+            if (xref.IsSetData() && xref.GetData().IsGene() ) {
+                if( xref.GetData().GetGene().IsSuppressed()) {
+                    return;
+                }
+                xref_g_ref = &( xref.GetData().GetGene() );
             }
         }
     }
@@ -1292,6 +1297,14 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         }
         if (s_feat) {
             g_ref = &( s_feat->GetData().GetGene() );
+        }
+
+        // if we used an xref to a gene, but the new gene doesn't equal the xref, then 
+        // override it (example accession where this issue crops up: AF231993.1 )
+        if( xref_g_ref && g_ref && ! xref_g_ref->GetLocus().empty() && 
+                xref_g_ref->GetLocus() != g_ref->GetLocus() ) {
+            s_feat.ReleaseOrNull();
+            g_ref = xref_g_ref;
         }
     }
 }
