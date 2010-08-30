@@ -39,6 +39,7 @@
 #include <connect/services/netcache_api.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/ncbiargs.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -95,8 +96,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     string key = request.GetEntry("key", &is_found);
     if (key.empty() || !is_found) {
-        ERR_POST("CGI entry 'key' is missing");
-        return 1;
+        NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
     }
 
     string fmt = request.GetEntry("fmt", &is_found);
@@ -109,7 +109,6 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
             "attachment; filename=" + filename);
 
     reply.SetContentType(fmt);
-    reply.WriteHeader();
 
     CNetCacheAPI cli("ncfetch");
     size_t blob_size = 0;
@@ -142,6 +141,8 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         ERR_POST("Could not retrieve blob " << key);
         return 3;
     }
+
+    reply.WriteHeader();
 
     LOG_POST(Info << "retrieved data: " << blob_size << " bytes");
 
