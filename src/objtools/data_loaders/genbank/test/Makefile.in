@@ -5,7 +5,7 @@
 
 APP_PROJ = \
 	test_reader_id1 test_reader_pubseq test_reader_gicache \
-	test_objmgr_gbloader test_objmgr_gbloader_mt
+	test_objmgr_gbloader test_objmgr_gbloader_mt test_bulkinfo
 
 PROJ_TAG = test
 
