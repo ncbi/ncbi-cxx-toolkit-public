@@ -465,16 +465,51 @@ libs_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) libs; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) libs_p $(SUB_KET_P); else true; fi
 
+subdir = $(rel_srcdir:src/%=%)
+
+
+Makefile.flat: $(builddir)/Makefile.flat
+	+$(top_srcdir)/scripts/common/impl/create_flat_submakefile.sh \
+	     $(builddir) $(subdir)
+MAKE_FLAT = $(MAKE) $(MFLAGS_NR) -f Makefile.flat
+
+# *_f targets build from local flat makefiles (produced on demand)
+# that disregard dependencies beyond the current subtree.
+
+all_f: Makefile.flat
+	+$(MAKE_FLAT)
+clean_f: Makefile.flat
+	+$(MAKE_FLAT) MTARGET=clean
+purge_f: Makefile.flat
+	+$(MAKE_FLAT) MTARGET=purge
+libs_f: Makefile.flat
+	+$(MAKE_FLAT) all_libs
+sources_f: Makefile.flat
+	+$(MAKE_FLAT) all_files
+
+# *_fd targets build the local subtree in parallel according to the
+# top-level flat makefile, which may entail visiting dependencies
+# beyond the current subtree.
+
+all_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/
+clean_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/ MTARGET=clean
+purge_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/ MTARGET=purge
+
 configurables = @configurables_mfname@
 include $(top_srcdir)/src/build-system/Makefile.$(configurables)
 
 .PHONY: all        clean        purge        check        check_add
-.PHONY: all.usr    clean.usr    purge.usr
-.PHONY: all.nonusr clean.nonusr purge.nonusr
+.PHONY: all.usr    clean.usr    purge.usr    sources.usr
+.PHONY: all.nonusr clean.nonusr purge.nonusr sources.nonusr
 .PHONY: all.real   clean.real   purge.real   check.real   check_add.real
 .PHONY: all_r      clean_r      purge_r      check_r      check_add_r
 .PHONY: all_r.real clean_r.real purge_r.real check_r.real check_add_r.real
 .PHONY: all_p      clean_p      purge_p      check_p      check_add_p
 .PHONY: all_p.real clean_p.real purge_p.real check_p.real check_add_p.real
-.PHONY: libs libs.real libs_r libs_r.real libs_p libs_p.real
-.PHONY: sources sources.usr sources.nonusr clean_sources purge_sources
+.PHONY: all_f      clean_f      purge_f
+.PHONY: all_fd     clean_fd     purge_fd
+.PHONY: libs libs.real libs_r libs_r.real libs_p libs_p.real libs_f
+.PHONY: sources sources_f clean_sources purge_sources
