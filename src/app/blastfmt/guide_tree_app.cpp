@@ -95,14 +95,16 @@ private:
 
 void CGuideTreeApplication::Init(void)
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideFullVersion
+                | fHideXmlHelp | fHideDryRun);
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Guide tree demo application");
+                              "Application for computing, printing, "
+                              "and rendering phylogenetic trees");
 
 
     arg_desc->AddKey("i", "filename", "File with Seq-annot ortree in ASN format",
@@ -111,15 +113,18 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddKey("o", "filename", "File name",
                      CArgDescriptions::eOutputFile);
 
+
+    // input options
+    arg_desc->SetCurrentGroup("Input options");
     arg_desc->AddDefaultKey("type", "type", "Type of input data",
                             CArgDescriptions::eString, "seqalign");
 
     arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "seqalign",
                                       "seqalignset", "tree"));
 
-    arg_desc->AddOptionalKey("seqalign", "filename", "Write seq_align "
-                             "correspoinding to the tree to a file",
-                             CArgDescriptions::eOutputFile);
+
+    // compute tree options
+    arg_desc->SetCurrentGroup("Tree computation options");
 
     arg_desc->AddDefaultKey("divergence", "value", "Maximum divergence"
                             " between sequences",
@@ -140,18 +145,10 @@ void CGuideTreeApplication::Init(void)
     arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings, "fastme",
                                             "nj"));
 
-    arg_desc->AddDefaultKey("labels", "labels", "Sequence labels in the tree",
-                            CArgDescriptions::eString, "seqtitle");
 
-    arg_desc->SetConstraint("labels", &(*new CArgAllow_Strings, "taxname",
-                                        "seqtitle", "blastname", "seqid",
-                                        "seqid_and_blastname"));
 
-    arg_desc->AddDefaultKey("render", "method", "Tree rendering method",
-                            CArgDescriptions::eString, "rect");
-
-    arg_desc->SetConstraint("render", &(*new CArgAllow_Strings, "rect",
-                                       "slanted", "radial", "force"));
+    // tree manipulation options
+    arg_desc->SetCurrentGroup("Tree manipulation options");
 
     arg_desc->AddOptionalKey("simpl", "method", "Tree simplification method",
                              CArgDescriptions::eString);
@@ -168,14 +165,40 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddOptionalKey("subtree", "num", "Show sub-tree",
                              CArgDescriptions::eInteger);
 
-    arg_desc->AddFlag("no_dist", "Edge lengths of the rendered tree will not be"
-                      " proportional to tree edge lengths");
+
+    // output options
+    arg_desc->SetCurrentGroup("Output options");
 
     arg_desc->AddDefaultKey("outfmt", "format", "Format for saving tree",
                             CArgDescriptions::eString, "image");
-
+                              
     arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "image", "asn",
                                      "newick", "nexus"));
+
+    arg_desc->AddDefaultKey("labels", "labels", "Sequence labels in the tree",
+                            CArgDescriptions::eString, "seqtitle");
+
+    arg_desc->SetConstraint("labels", &(*new CArgAllow_Strings, "taxname",
+                                        "seqtitle", "blastname", "seqid",
+                                        "seqid_and_blastname"));
+
+    arg_desc->AddOptionalKey("seqalign", "filename", "Write seq_align "
+                             "correspoinding to the tree to a file",
+                             CArgDescriptions::eOutputFile);
+
+
+    // rendering options
+    arg_desc->SetCurrentGroup("Rendering options");
+                              
+    arg_desc->AddDefaultKey("render", "method", "Tree rendering method",
+                            CArgDescriptions::eString, "rect");
+
+    arg_desc->SetConstraint("render", &(*new CArgAllow_Strings, "rect",
+                                       "slanted", "radial", "force"));
+
+    arg_desc->AddFlag("no_dist", "Edge lengths of the rendered tree will not be"
+                      " proportional to tree edge lengths");
+
 
     arg_desc->AddDefaultKey("width", "num", "Image width",
                             CArgDescriptions::eInteger, "800");
