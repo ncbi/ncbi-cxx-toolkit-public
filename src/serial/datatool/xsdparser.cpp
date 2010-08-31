@@ -1356,8 +1356,10 @@ void XSDParser::ProcessNamedTypes(void)
                     }
                 }
                 else if (processed.find(i->second.GetName()) == processed.end()) {
-                    PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
-                    ParseContent(node);
+                    if (node.GetType() < DTDElement::eWsdlService) {
+                        PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
+                        ParseContent(node);
+                    }
                 }
                 processed.insert(i->second.GetName());
             }
