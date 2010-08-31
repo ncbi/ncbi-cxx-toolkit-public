@@ -2444,7 +2444,6 @@ IMTU	s	Institute of Medicine, Community Medicine Department
 IMUFRJ	c	Instituto de Microbiologia of Universidade Federal do Rio de Janeiro
 IMVS	c	IMVS Culture Collection
 IMYZA	c	Instituto de Microbiologia y Zoologia Agricola
-IN	s	Zoological Institute, Russian Academy of Sciences
 INA<PRT>	s	Instituto Nun'Alvres, Departamento de Biologia
 INA<RUS>	c	Culture Collection of the Institute of New Antibiotics
 INALI	s	Instituto Limnologia
@@ -2978,6 +2977,7 @@ LFG	s	Centre de Recherche de la Nature, des Forets et du Bois
 LFM	s	Merseyside County Museums (formerly Liverpool Free Museum)
 LG	s	Universite de Liege, Departement de Botanique
 LGBH	s	Loughborough Public Library
+LGEMA<BRA>	s	Laboratorio de Genetica e Evolucao Molecular de Aves, Universidade de Sao Paulo
 LGHF	s	Universite de Liege
 LGICT	s	Laboratoire de Geologie de l'Institut Catholique de Toulouse
 LGM	s	Leningrad School of Mines
