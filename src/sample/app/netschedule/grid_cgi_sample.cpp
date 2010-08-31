@@ -298,7 +298,7 @@ void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
 void CGridCgiSampleApplication::OnEndProcessRequest(CGridCgiContext& ctx)
 {
     ctx.GetHTMLPage().AddTagMap("DATE",
-        new CHTMLText(CTime(CTime::eCurrent).AsString("M B Y, h:m")));
+        new CHTMLText(GetFastLocalTime().AsString("M B Y, h:m")));
 }
 
 bool CGridCgiSampleApplication::JobStopRequested(void) const
