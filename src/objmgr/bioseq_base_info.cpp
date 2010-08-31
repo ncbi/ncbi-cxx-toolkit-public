@@ -470,9 +470,11 @@ void CBioseq_Base_Info::RemoveAnnot(CRef<CSeq_annot_Info> info)
 
 const CSeqdesc* CBioseq_Base_Info::x_SearchFirstDesc(TDescTypeMask mask) const
 {
-    TDesc_CI it = x_GetFirstDesc(mask);
-    if ( !x_IsEndDesc(it) ) {
-        return *it;
+    if ( IsSetDescr() ) {
+        TDesc_CI it = x_GetFirstDesc(mask);
+        if ( !x_IsEndDesc(it) ) {
+            return *it;
+        }
     }
     const CSeq_entry_Info& entry = GetParentSeq_entry_Info();
     if ( !entry.HasParent_Info() ) {
