@@ -215,11 +215,15 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     
     //Data representing templates for defline display 
     struct SAlignTemplates {
-        string alignHeaderTmpl; ///< Template for displaying defline and gene info  - BLAST_ALIGN_HEADER
+        string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
         string sortInfoTmpl;    ///< Template for displaying  Sort by header - SORT_ALIGNS_SEQ
-        string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,@BLAST_ALIGN_PARAMS_PROT
+        string alnDefLineTmpl;	///< Template for displaying one defline ALN_DEFLINE_ROW	
+		string alnSeqInfoTmpl;  ///< Template for displaying sequnce link in defline
+        string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,BLAST_ALIGN_PARAMS_PROT
         string alignFeatureTmpl; ///< Template for displaying  align features -ALN_FEATURES 
-        string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK 
+        string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK 		
+        string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
+		string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
     };
     
     /// Set functions
@@ -419,14 +423,15 @@ private:
         int         rowNum;
     };
     
+    //Info used to display defline information
     struct SAlnDispParams: public CObject {
-		int gi;
-		CRef<objects::CSeq_id> seqID;		
-		string label;
-		string	id_url;
-		string linkoutStr;
-		string dumpGnlUrl;
-		string title;
+		int gi;                         ///< gi used in defline
+		CRef<objects::CSeq_id> seqID;	///< seqID used in defline
+		string label;                   ///< sequence label
+		string	id_url;                 ///< entrz, mapview etc id url
+		string linkoutStr;              ///< string containing all linkout urls
+		string dumpGnlUrl;              ///< download sequnce url
+		string title;                   ///< sequnce title
 	};
 
     /// store alnvec and score info
@@ -507,6 +512,10 @@ private:
 
     /// Current alignment index (added to the linkout and entrez URL's)
     mutable int m_cur_align;
+
+    int		m_NumBlastDefLines;///< Number of subjest sequence deflines 
+
+    int		m_currAlignHsp;///< Current HSP number for single alignmnet
     
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
@@ -547,7 +556,7 @@ private:
     ///@param ids: id list    
     ///@param seqUrlInfo: struct containging params for URL    
     ///    
-    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids) const;
+    string x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<objects::CSeq_id> >& ids,bool useTemplates = false) const;
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
@@ -759,7 +768,7 @@ private:
     SAlnRowInfo *x_PrepareRowData(void);
 
 
-    string x_FormatSingleAlign(SAlnInfo* aln_vec_info, bool showSortControls);  
+    string x_FormatSingleAlign(SAlnInfo* aln_vec_info);  
     string x_FormatAlignSortInfo(string id_label);
     string x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info);
     string x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_vec_info);
@@ -784,8 +793,11 @@ private:
 								   int firstGi,
 								   bool isNa,
 								  int seqLength);
-    SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);
-                                     
+    SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);    
+    string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle, list<int>& use_this_gi);
+	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);                                     
+    void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
+	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
 };
 
 END_SCOPE(align_format)
