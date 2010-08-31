@@ -102,6 +102,8 @@ public:
     typedef vector<int> TTaxIds;
     void LoadAccVers(CReaderRequestResult& result,
                      const TIds ids, TLoaded& loaded, TIds& ret);
+    void LoadGis(CReaderRequestResult& result,
+                 const TIds ids, TLoaded& loaded, TGis& ret);
  
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);

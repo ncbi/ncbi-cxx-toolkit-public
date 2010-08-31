@@ -68,8 +68,19 @@ public:
     virtual int Run(void);
 
     typedef vector<CSeq_id_Handle> TIds;
+    typedef vector<int> TGis;
+    typedef vector<CSeq_id_Handle> TAccs;
+    typedef vector<string> TLabels;
+    typedef vector<int> TTaxIds;
 
     vector<CSeq_id_Handle> m_Ids;
+    enum EBulkType {
+        eBulk_gi,
+        eBulk_acc,
+        eBulk_label,
+        eBulk_taxid
+    };
+    EBulkType m_Type;
     bool m_Verbose;
 };
 
@@ -105,6 +116,13 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
         ("idlist", "IdList",
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
+    args.AddDefaultKey
+        ("type", "Type",
+         "Type of bulk request",
+         CArgDescriptions::eString, "gi");
+    args.SetConstraint("type",
+                       &(*new CArgAllow_Strings,
+                         "gi", "acc", "label", "taxid"));
     args.AddFlag("verbose", "Verbose results");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
@@ -174,6 +192,18 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
             "accessions and gi from " <<
             g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
     }
+    if ( args["type"].AsString() == "gi" ) {
+        m_Type = eBulk_gi;
+    }
+    else if ( args["type"].AsString() == "acc" ) {
+        m_Type = eBulk_acc;
+    }
+    else if ( args["type"].AsString() == "label" ) {
+        m_Type = eBulk_label;
+    }
+    else if ( args["type"].AsString() == "taxid" ) {
+        m_Type = eBulk_taxid;
+    }
     m_Verbose = args["verbose"];
     return true;
 }
@@ -187,14 +217,35 @@ int CTestApplication::Run(void)
     CScope scope(*pOm);
     scope.AddDefaults();
     size_t count = m_Ids.size();
-    TIds ids = scope.GetAccVers(m_Ids);
+
+    TGis gis;
+    TAccs accs;
+    TLabels labels;
+    TTaxIds taxids;
+    switch ( m_Type ) {
+    case eBulk_gi:    gis = scope.GetGis(m_Ids, scope.eForceLoad); break;
+    case eBulk_acc:   accs = scope.GetAccVers(m_Ids, scope.eForceLoad); break;
+    case eBulk_label: labels = scope.GetLabels(m_Ids, scope.eForceLoad); break;
+    case eBulk_taxid: taxids = scope.GetTaxIds(m_Ids, scope.eForceLoad); break;
+    }
     if ( m_Verbose ) {
         for ( size_t i = 0; i < count; ++i ) {
-            if ( ids[i] ) {
-                LOG_POST(m_Ids[i]<<" -> "<<ids[i]);
+            if ( !gis.empty() ) {
+                LOG_POST(m_Ids[i]<<" -> "<<gis[i]);
             }
-            else {
-                LOG_POST(m_Ids[i]<<" -> null");
+            if ( !accs.empty() ) {
+                if ( accs[i] ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<accs[i]);
+                }
+                else {
+                    LOG_POST(m_Ids[i]<<" -> null");
+                }
+            }
+            if ( !labels.empty() ) {
+                LOG_POST(m_Ids[i]<<" -> \""<<labels[i]<<"\"");
+            }
+            if ( !taxids.empty() ) {
+                LOG_POST(m_Ids[i]<<" -> "<<taxids[i]);
             }
         }
     }

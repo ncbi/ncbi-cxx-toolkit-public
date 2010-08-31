@@ -794,6 +794,15 @@ void CGBDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 }
 
 
+void CGBDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+        CGBReaderRequestResult result(this, ids[0]);
+        m_Dispatcher->LoadGis(result, ids, loaded, ret);
+    }
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);

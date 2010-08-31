@@ -558,7 +558,51 @@ namespace {
             }
         string GetStatisticsDescription(void) const
             {
-                return "acc("+NStr::UIntToString(m_Key.size())+": "+
+                return "accs("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...)";
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
+    class CCommandLoadGis : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<int> TRet;
+        CCommandLoadGis(CReaderRequestResult& result,
+                        const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
+                    m_Loaded.end();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadGis(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadGis("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Seq_idGi;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "gis("+NStr::UIntToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...)";
             }
         
@@ -1071,6 +1115,14 @@ void CReadDispatcher::LoadAccVers(CReaderRequestResult& result,
                                   const TIds ids, TLoaded& loaded, TIds& ret)
 {
     CCommandLoadAccVers command(result, ids, loaded, ret);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadGis(CReaderRequestResult& result,
+                              const TIds ids, TLoaded& loaded, TGis& ret)
+{
+    CCommandLoadGis command(result, ids, loaded, ret);
     Process(command);
 }
 

@@ -432,17 +432,22 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids->IsLoadedGi() ) {
-        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetGiSubkey());
-        if ( str.Found() ) {
-            int gi = str.ParseInt4();
-            if ( str.Done() ) {
-                ids->SetLoadedGi(gi);
-                return true;
-            }
+    if ( ids->IsLoadedGi() ) {
+        return true;
+    }
+    
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetGiSubkey());
+    if ( str.Found() ) {
+        int gi = str.ParseInt4();
+        if ( str.Done() ) {
+            ids->SetLoadedGi(gi);
+            return true;
         }
     }
-    return false;
+    
+    ReadSeq_ids(result, GetIdKey(seq_id), ids);
+    
+    return ids->IsLoadedGi();
 }
 
 
@@ -454,20 +459,25 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids->IsLoadedAccVer() ) {
-        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetAccVerSubkey());
-        if ( str.Found() ) {
-            string data = str.FullString();
-            CSeq_id_Handle acch;
-            if ( !data.empty() ) {
-                CSeq_id id(data);
-                acch = CSeq_id_Handle::GetHandle(id);
-            }
-            ids->SetLoadedAccVer(acch);
-            return true;
-        }
+    if ( ids->IsLoadedAccVer() ) {
+        return true;
     }
-    return false;
+
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetAccVerSubkey());
+    if ( str.Found() ) {
+        string data = str.FullString();
+        CSeq_id_Handle acch;
+        if ( !data.empty() ) {
+            CSeq_id id(data);
+            acch = CSeq_id_Handle::GetHandle(id);
+        }
+        ids->SetLoadedAccVer(acch);
+        return true;
+    }
+
+    ReadSeq_ids(result, GetIdKey(seq_id), ids);
+    
+    return ids->IsLoadedAccVer();
 }
 
 
@@ -479,13 +489,16 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids->IsLoadedLabel() ) {
-        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetLabelSubkey());
-        if ( str.Found() ) {
-            ids->SetLoadedLabel(str.FullString());
-            return true;
-        }
+    if ( ids->IsLoadedLabel() ) {
+        return true;
     }
+    
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetLabelSubkey());
+    if ( str.Found() ) {
+        ids->SetLoadedLabel(str.FullString());
+        return true;
+    }
+
     return false;
 }
 
@@ -498,16 +511,19 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids->IsLoadedTaxId() ) {
-        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetTaxIdSubkey());
-        if ( str.Found() ) {
-            int taxid = str.ParseInt4();
-            if ( str.Done() ) {
-                ids->SetLoadedTaxId(taxid);
-                return true;
-            }
+    if ( ids->IsLoadedTaxId() ) {
+        return true;
+    }
+    
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetTaxIdSubkey());
+    if ( str.Found() ) {
+        int taxid = str.ParseInt4();
+        if ( str.Done() ) {
+            ids->SetLoadedTaxId(taxid);
+            return true;
         }
     }
+
     return false;
 }
 
@@ -524,9 +540,39 @@ bool CCacheReader::LoadAccVers(CReaderRequestResult& result,
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
-        if ( lock->IsLoadedAccVer() ||
-             (LoadSeq_idAccVer(result, ids[i]) && lock->IsLoadedAccVer()) ) {
+        if ( !lock->IsLoadedAccVer() ) {
+            LoadSeq_idAccVer(result, ids[i]);
+        }
+        if ( !lock->IsLoadedAccVer() ) {
+            LoadSeq_idSeq_ids(result, ids[i]);
+        }
+        if ( lock->IsLoadedAccVer() ) {
             ret[i] = lock->GetAccVer();
+            loaded[i] = true;
+            continue;
+        }
+    }
+    return false;
+}
+
+
+bool CCacheReader::LoadGis(CReaderRequestResult& result,
+                           const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids lock(result, ids[i]);
+        if ( !lock->IsLoadedGi() ) {
+            LoadSeq_idGi(result, ids[i]);
+        }
+        if ( lock->IsLoadedGi() ) {
+            ret[i] = lock->GetGi();
             loaded[i] = true;
             continue;
         }

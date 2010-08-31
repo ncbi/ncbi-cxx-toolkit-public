@@ -412,7 +412,7 @@ bool CReader::LoadSeq_idGi(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedGi() || ids.IsLoaded() ) {
+    if ( ids->IsLoadedGi() ) {
         return true;
     }
     m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
@@ -424,7 +424,7 @@ bool CReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedAccVer() || ids.IsLoaded() ) {
+    if ( ids->IsLoadedAccVer() ) {
         return true;
     }
     m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
@@ -465,11 +465,32 @@ bool CReader::LoadAccVers(CReaderRequestResult& result,
         }
         CLoadLockSeq_ids seq_ids(result, ids[i]);
         if ( !seq_ids->IsLoadedAccVer() ) {
-            m_Dispatcher->LoadSeq_idSeq_ids(result, ids[i]);
-            if ( seq_ids->IsLoadedAccVer() ) {
-                ret[i] = seq_ids->GetAccVer();
-                loaded[i] = true;
-            }
+            m_Dispatcher->LoadSeq_idAccVer(result, ids[i]);
+        }
+        if ( seq_ids->IsLoadedAccVer() ) {
+            ret[i] = seq_ids->GetAccVer();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadGis(CReaderRequestResult& result,
+                      const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    int count = ids.size();
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids seq_ids(result, ids[i]);
+        if ( !seq_ids->IsLoadedGi() ) {
+            m_Dispatcher->LoadSeq_idGi(result, ids[i]);
+        }
+        if ( seq_ids->IsLoadedGi() ) {
+            ret[i] = seq_ids->GetGi();
+            loaded[i] = true;
         }
     }
     return true;

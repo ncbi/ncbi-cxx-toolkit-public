@@ -164,6 +164,8 @@ public:
 
     bool LoadAccVers(CReaderRequestResult& result,
                      const TIds& ids, TLoaded& loaded, TIds& ret);
+    bool LoadGis(CReaderRequestResult& result,
+                 const TIds& ids, TLoaded& loaded, TGis& ret);
 
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
