@@ -364,7 +364,7 @@ public:
     CSeq_loc_CI(void);
     CSeq_loc_CI(const CSeq_loc& loc,
                 EEmptyFlag empty_flag = eEmpty_Skip,
-                ESeqLocOrder order = eOrder_Positional);
+                ESeqLocOrder order = eOrder_Biological);
     /// destructor
     ~CSeq_loc_CI(void);
 
