@@ -2322,7 +2322,7 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
     if ( !force_load ) {
         CConstRef<CSeq_id> id = idh.GetSeqId();
         const CTextseq_id* text_id = id->GetTextseq_Id();
-        if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+        if ( text_id && text_id->IsSetAccession() && text_id->IsSetVersion() ) {
             ret = idh;
             return ret;
         }
