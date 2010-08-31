@@ -294,7 +294,7 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
     for (unsigned i = 0; i < bcount; ++i) {
         STransactionInfo ti;
         ti.blob_size = blob_size;
-        ti.time_stamp = CTime(CTime::eCurrent).AsString();
+        ti.time_stamp = GetFastLocalTime().AsString();
         ti.deleted = false;
 
         if (rand() % 2) {

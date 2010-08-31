@@ -327,7 +327,7 @@ void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmitter& submitter)
 void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
 {
     // Render a report page
-    CTime time(CTime::eCurrent);
+    CTime time(GetFastLocalTime());
     time_t tt = time.GetTimeT();
     string st = NStr::IntToString(tt);
     ctx.DefinePersistentEntry(kElapsedTime,st);
@@ -427,7 +427,7 @@ void CCgiTunnel2Grid::OnJobRunning(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::OnEndProcessRequest(CGridCgiContext& ctx)
 {
-    CTime now(CTime::eCurrent);
+    CTime now(GetFastLocalTime());
     string st = ctx.GetEntryValue(kElapsedTime);
     if (!st.empty()) {
         time_t tt = NStr::StringToInt(st);

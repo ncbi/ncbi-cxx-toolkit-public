@@ -60,11 +60,6 @@ string s_GetCgiTunnel2GridUrl(const CCgiRequest& cgi_request)
     return ret;
 }
 
-static inline string s_GetElapsedTime()
-{
-    return NStr::IntToString((long) CTime(CTime::eCurrent).GetTimeT());
-}
-
 
 CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        CNcbiOstream&       os,
@@ -91,7 +86,8 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     url += "?ctg_project=" + NStr::URLEncode(project_name);
     url += "&job_key=" + job_key;
     url += "&ctg_error_url=" + NStr::URLEncode(return_url);
-    url += "&ctg_time=" + s_GetElapsedTime();
+    url += "&ctg_time=" +
+        NStr::IntToString((long) GetFastLocalTime().GetTimeT());
     os << "<html><head><<META HTTP-EQUIV=Refresh CONTENT=\"0;" 
        << url << "\"></head><body></body></html>";
     return os;

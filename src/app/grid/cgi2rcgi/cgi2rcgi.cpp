@@ -658,7 +658,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                         if (total_sleep_time >= wait_time) {
                             // The job has just been submitted.
                             // Render a report page
-                            CTime time(CTime::eCurrent);
+                            CTime time(GetFastLocalTime());
                             grid_ctx.DefinePersistentEntry(kElapsedTime,
                                 NStr::IntToString((long) time.GetTimeT()));
                             grid_ctx.SelectView("JOB_SUBMITTED");
@@ -701,7 +701,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             new CHTMLPlainText(grid_ctx.GetHiddenFields(),true);
         m_Page->AddTagMap("HIDDEN_FIELDS", hidden_fields);
 
-        CTime now(CTime::eCurrent);
+        CTime now(GetFastLocalTime());
         m_Page->AddTagMap("DATE",
             new CHTMLText(now.AsString(m_DateFormat)));
         string st = grid_ctx.GetPersistentEntryValue(kElapsedTime);

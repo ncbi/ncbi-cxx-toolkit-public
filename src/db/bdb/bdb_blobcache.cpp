@@ -3636,7 +3636,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
                                        CBDB_Transaction::eNoAssociation);
 
                 if (m_Monitor && m_Monitor->IsActive()) {
-                    string msg = CTime(CTime::eCurrent).AsString();
+                    string msg = GetFastLocalTime().AsString();
                     msg += " Purge: DELETING \"";
                     msg += blob_descr.key;
                     msg += "\"-";
@@ -4023,7 +4023,7 @@ purge_start:
                                             CBDB_Transaction::eNoAssociation);
 
                     if (m_Monitor && m_Monitor->IsActive()) {
-                        string msg = CTime(CTime::eCurrent).AsString();
+                        string msg = GetFastLocalTime().AsString();
                         msg += " Purge: DELETING \"";
                         msg += it.key;
                         msg += "\"-";

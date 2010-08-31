@@ -178,7 +178,7 @@ auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 CGridGlobals::CGridGlobals() :
       m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
-      m_StartTime(CTime(CTime::eCurrent)),
+      m_StartTime(GetFastLocalTime()),
       m_Worker(NULL)
 {
 }

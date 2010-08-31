@@ -138,8 +138,8 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
         page->AddTagMap("SELF_URL", self_url);
 
-        CTime now(CTime::eCurrent);
-        CHTMLPlainText* date = new CHTMLPlainText(now.AsString("D B Y, h:m:s"));
+        CHTMLPlainText* date = new CHTMLPlainText(
+            GetFastLocalTime().AsString("D B Y, h:m:s"));
         page->AddTagMap("DATE", date);
     }
     catch (exception& e) {

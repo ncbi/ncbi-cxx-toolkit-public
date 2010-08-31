@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 bool CSimpleRebalanceStrategy::NeedRebalance()
 {
     CFastMutexGuard g(m_Mutex);
-    CTime current_time(CTime::eCurrent);
+    CTime current_time(GetFastLocalTime());
     if ((m_RebalanceTime > 0 && current_time >= m_NextRebalanceTime) ||
         (m_RebalanceRequests > 0 &&
             m_RequestCounter >= m_RebalanceRequests)) {

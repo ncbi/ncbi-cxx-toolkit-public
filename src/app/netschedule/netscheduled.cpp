@@ -1690,8 +1690,7 @@ void CNetScheduleHandler::ProcessDropJob(CQueue* q)
 void CNetScheduleHandler::ProcessJobRunTimeout(CQueue*)
 {
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " OBSOLETE CQueue::SetJobRunTimeout: Job id=";
         msg += NStr::IntToString(m_JobReq.job_id);
 
@@ -2330,7 +2329,7 @@ void CNetScheduleHandler::ProcessShutdown(CQueue*)
     string msg = "Shutdown request... ";
     msg += admin_host;
     msg += " ";
-    msg += CTime(CTime::eCurrent).AsString();
+    msg += GetFastLocalTime().AsString();
     LOG_POST(Info << msg);
     m_Server->SetShutdownFlag();
     WriteOK();
@@ -2916,7 +2915,7 @@ CNetScheduleServer::CNetScheduleServer()
     m_SigNum(0),
     m_InactivityTimeout(0),
     m_QueueDB(0),
-    m_StartTime(CTime::eCurrent)
+    m_StartTime(GetFastLocalTime())
 {
     m_AtomicCommandNumber.Set(1);
     s_netschedule_server = this;

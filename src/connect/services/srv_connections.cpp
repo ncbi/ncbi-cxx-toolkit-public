@@ -385,7 +385,7 @@ void SNetServerImpl::CheckIfThrottled()
         CFastMutexGuard guard(m_ThrottleLock);
 
         if (m_Throttled) {
-            CTime current_time(CTime::eCurrent);
+            CTime current_time(GetFastLocalTime());
             if (current_time >= m_ThrottledUntil) {
                 if (!m_Service->m_ThrottleUntilDiscoverable) {
                     ResetThrottlingParameters();
@@ -453,7 +453,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 {
     CNetServer::SExecResult exec_result;
 
-    CTime max_query_time(CTime::eCurrent);
+    CTime max_query_time(GetFastLocalTime());
     max_query_time.AddNanoSecond(m_Impl->m_Service->m_MaxQueryTime * 1000000);
 
     unsigned attempt = 0;
@@ -470,8 +470,11 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                 throw;
 
             if (m_Impl->m_Service->m_MaxQueryTime > 0 &&
-                    max_query_time <= CTime(CTime::eCurrent)) {
-                LOG_POST(Error << "Timeout (max_query_time)");
+                    max_query_time <= GetFastLocalTime()) {
+                LOG_POST(Error << "Timeout (max_query_time=" <<
+                        m_Impl->m_Service->m_MaxQueryTime <<
+                    s"); cmd=" << cmd <<
+                    "; exception=" << e.GetErrorMessage());
                 throw;
             }
 

@@ -377,11 +377,11 @@ private:
     inline void x_Log(const string& what, CNcbiStrstream& sstream) 
     {
         if( sstream.pcount() > 0 ) {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+            LOG_POST( GetFastLocalTime().AsString() 
                       << ": Job " << m_Context.GetJobKey() 
                       << " (Monitor): " << what << ": " << sstream.rdbuf());
         } else {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+            LOG_POST( GetFastLocalTime().AsString() 
                       << ": Job " << m_Context.GetJobKey() 
                       << " (Monitor): " << what << ".");
         }

@@ -957,8 +957,7 @@ void CQueue::PutResultGetJob(
     }
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
 
         msg += " CQueue::PutResultGetJob()";
         if (done_job_id) {
@@ -1058,7 +1057,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
     TimeLineMove(job_id, exp_time, curr + tm);
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
+        CTime tmp_t(GetFastLocalTime());
         string msg = tmp_t.AsString();
         msg += " CQueue::JobDelayExpiration: Job id=";
         msg += NStr::IntToString(job_id);
@@ -1093,8 +1092,7 @@ bool CQueue::PutProgressMessage(unsigned      job_id,
     trans.Commit();
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string mmsg = tmp_t.AsString();
+        string mmsg = GetFastLocalTime().AsString();
         mmsg += " CQueue::PutProgressMessage() job id=";
         mmsg += NStr::IntToString(job_id);
         mmsg += " msg=";
@@ -1151,8 +1149,7 @@ void CQueue::ReturnJob(unsigned job_id)
     TimeLineRemove(job_id);
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::ReturnJob: job id=";
         msg += NStr::IntToString(job_id);
         MonitorPost(msg);
@@ -1554,8 +1551,7 @@ void CQueue::EraseJob(unsigned job_id)
     }}
     TimeLineRemove(job_id);
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::EraseJob() job id=";
         msg += NStr::IntToString(job_id);
         MonitorPost(msg);
@@ -2148,8 +2144,7 @@ bool CQueue::FailJob(CWorkerNode*  worker_node,
     }
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::JobFailed() job id=";
         msg += NStr::IntToString(job_id);
         msg += " err_msg=";
@@ -2866,7 +2861,7 @@ CQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
         m_WorkerNodeList.RemoveJob(job, eNSCTimeout, log_job_state);
 
     {{
-        CTime tm(CTime::eCurrent);
+        CTime tm(GetFastLocalTime());
         string msg = tm.AsString();
         msg += " CQueue::CheckExecutionTimeout: Job rescheduled for ";
         if (status == CNetScheduleAPI::eRunning)
@@ -3026,8 +3021,7 @@ void CQueue::TimeLineRemove(unsigned job_id)
     m_RunTimeLine->RemoveObject(job_id);
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::RemoveFromTimeLine: job id=";
         msg += NStr::IntToString(job_id);
         MonitorPost(msg);
@@ -3048,8 +3042,7 @@ void CQueue::TimeLineExchange(unsigned remove_job_id,
         m_RunTimeLine->AddObject(timeout, add_job_id);
 
     if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::TimeLineExchange:";
         if (remove_job_id) {
             msg += " job removed=";
@@ -3119,8 +3112,7 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
         // x_RemoveTags(trans, batch);
     }
     if (del_rec > 0 && IsMonitoring()) {
-        CTime tm(CTime::eCurrent);
-        string msg = tm.AsString();
+        string msg = GetFastLocalTime().AsString();
         msg += " CQueue::DeleteBatch: " +
             NStr::IntToString(del_rec) + " job(s) deleted";
         MonitorPost(msg);
@@ -3552,10 +3544,9 @@ CQueue::x_UpdateDB_GetJobNoLock(
             job.Flush(this);
 
             if (IsMonitoring()) {
-                CTime tmp_t(CTime::eCurrent);
-                string msg = tmp_t.AsString();
-                msg +=
-                    " CQueue::x_UpdateDB_GetJobNoLock() timeout expired job id=";
+                string msg = GetFastLocalTime().AsString();
+                msg += " CQueue::x_UpdateDB_GetJobNoLock() "
+                    "timeout expired job id=";
                 msg += NStr::IntToString(job_id);
                 MonitorPost(msg);
             }
