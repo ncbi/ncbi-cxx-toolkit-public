@@ -2661,26 +2661,29 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 }
 
 
-CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
+CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
                                           bool force_load)
 {
-    int count = idhs.size(), remaining = 0;
+    int count = ids.size(), remaining = 0;
     TIds ret(count);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
-            CConstRef<CSeq_id> id = idhs[i].GetSeqId();
+            CConstRef<CSeq_id> id = ids[i].GetSeqId();
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if ( text_id &&
                  text_id->IsSetAccession() &&
                  text_id->IsSetVersion() ) {
-                ret[i] = idhs[i];
+                ret[i] = ids[i];
                 loaded[i] = true;
             }
             else {
                 ++remaining;
             }
         }
+    }
+    else {
+        remaining = count;
     }
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
@@ -2692,7 +2695,7 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
                 }
                 SSeqMatch_Scope match;
                 CRef<CBioseq_ScopeInfo> info =
-                    x_FindBioseq_Info(idhs[i],
+                    x_FindBioseq_Info(ids[i],
                                       CScope::eGetBioseq_Resolved,
                                       match);
                 if ( info ) {
@@ -2711,7 +2714,7 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
                 break;
             }
             CPrefetchManager::IsActive();
-            it->GetDataSource().GetAccVers(idhs, loaded, ret);
+            it->GetDataSource().GetAccVers(ids, loaded, ret);
 #ifdef NCBI_COMPILER_WORKSHOP
 	    std::count(loaded.begin(), loaded.end(), false, remaining);
 #else
@@ -2723,36 +2726,85 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
 }
 
 
-CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& idhs,
+CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
                                       bool force_load)
 {
-    TGIs ret;
-    ret.reserve(idhs.size());
-    ITERATE ( TIds, it, idhs ) {
-        ret.push_back(GetGi(*it, force_load));
+    int count = ids.size(), remaining = 0;
+    TGIs ret(count, -1);
+    vector<bool> loaded(count);
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            if ( ids[i].IsGi() ) {
+                ret[i] = ids[i].GetGi();
+                loaded[i] = true;
+            }
+            else {
+                ++remaining;
+            }
+        }
+    }
+    else {
+        remaining = count;
+    }
+    if ( remaining ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        
+        if ( !force_load ) {
+            for ( int i = 0; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                SSeqMatch_Scope match;
+                CRef<CBioseq_ScopeInfo> info =
+                    x_FindBioseq_Info(ids[i],
+                                      CScope::eGetBioseq_Resolved,
+                                      match);
+                if ( info ) {
+                    if ( info->HasBioseq() ) {
+                        ret[i] = CScope::x_GetGi(info->GetIds());
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                }
+            }
+        }
+    
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if ( !remaining ) {
+                break;
+            }
+            CPrefetchManager::IsActive();
+            it->GetDataSource().GetGis(ids, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+	    std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
+            remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
+        }
     }
     return ret;
 }
 
 
-CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& idhs,
+CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
                                             bool force_load)
 {
     TLabels ret;
-    ret.reserve(idhs.size());
-    ITERATE ( TIds, it, idhs ) {
+    ret.reserve(ids.size());
+    ITERATE ( TIds, it, ids ) {
         ret.push_back(GetLabel(*it, force_load));
     }
     return ret;
 }
 
 
-CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& idhs,
+CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& ids,
                                             bool force_load)
 {
     TTaxIds ret;
-    ret.reserve(idhs.size());
-    ITERATE ( TIds, it, idhs ) {
+    ret.reserve(ids.size());
+    ITERATE ( TIds, it, ids ) {
         ret.push_back(GetTaxId(*it, force_load));
     }
     return ret;
