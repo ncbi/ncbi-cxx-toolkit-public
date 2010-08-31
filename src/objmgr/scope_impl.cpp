@@ -2682,7 +2682,6 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
             }
         }
     }
-    _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
         
@@ -2706,7 +2705,6 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
             }
         }
     
-        _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
         // Unknown bioseq, try to find in data sources
         for (CPriority_I it(m_setDataSrc); it; ++it) {
             if ( !remaining ) {

@@ -1204,7 +1204,6 @@ void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
             ++remaining;
         }
     }
-    _ASSERT(remaining == std::count(loaded.begin(), loaded.end(), false));
     if ( remaining && m_Loader ) {
         m_Loader->GetAccVers(ids, loaded, ret);
     }
