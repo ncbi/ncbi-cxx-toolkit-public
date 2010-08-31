@@ -499,7 +499,9 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
         return true;
     }
 
-    return false;
+    ReadSeq_ids(result, GetIdKey(seq_id), ids);
+    
+    return ids->IsLoadedLabel();
 }
 
 
@@ -573,6 +575,31 @@ bool CCacheReader::LoadGis(CReaderRequestResult& result,
         }
         if ( lock->IsLoadedGi() ) {
             ret[i] = lock->GetGi();
+            loaded[i] = true;
+            continue;
+        }
+    }
+    return false;
+}
+
+
+bool CCacheReader::LoadLabels(CReaderRequestResult& result,
+                              const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids lock(result, ids[i]);
+        if ( !lock->IsLoadedLabel() ) {
+            LoadSeq_idLabel(result, ids[i]);
+        }
+        if ( lock->IsLoadedLabel() ) {
+            ret[i] = lock->GetLabel();
             loaded[i] = true;
             continue;
         }

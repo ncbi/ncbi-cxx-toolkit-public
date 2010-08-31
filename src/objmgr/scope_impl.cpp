@@ -2790,10 +2790,59 @@ CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
 CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
                                             bool force_load)
 {
-    TLabels ret;
-    ret.reserve(ids.size());
-    ITERATE ( TIds, it, ids ) {
-        ret.push_back(GetLabel(*it, force_load));
+    int count = ids.size(), remaining = 0;
+    TLabels ret(count);
+    vector<bool> loaded(count);
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            ret[i] = GetDirectLabel(ids[i]);
+            if ( !ret[i].empty() ) {
+                loaded[i] = true;
+            }
+            else {
+                ++remaining;
+            }
+        }
+    }
+    else {
+        remaining = count;
+    }
+    if ( remaining ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        
+        if ( !force_load ) {
+            for ( int i = 0; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                SSeqMatch_Scope match;
+                CRef<CBioseq_ScopeInfo> info =
+                    x_FindBioseq_Info(ids[i],
+                                      CScope::eGetBioseq_Resolved,
+                                      match);
+                if ( info ) {
+                    if ( info->HasBioseq() ) {
+                        ret[i] = objects::GetLabel(info->GetIds());
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                }
+            }
+        }
+    
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if ( !remaining ) {
+                break;
+            }
+            CPrefetchManager::IsActive();
+            it->GetDataSource().GetLabels(ids, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+	    std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
+            remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
+        }
     }
     return ret;
 }

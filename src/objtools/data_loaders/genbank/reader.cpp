@@ -436,7 +436,7 @@ bool CReader::LoadSeq_idLabel(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedLabel() || ids.IsLoaded() ) {
+    if ( ids->IsLoadedLabel() ) {
         return true;
     }
     m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
@@ -448,7 +448,10 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids->IsLoadedTaxId() ) {
+    if ( ids->IsLoadedTaxId() ) {
+        return true;
+    }
+    
         ids->SetLoadedTaxId(-1);
     }
     return ids->IsLoadedTaxId();
@@ -490,6 +493,27 @@ bool CReader::LoadGis(CReaderRequestResult& result,
         }
         if ( seq_ids->IsLoadedGi() ) {
             ret[i] = seq_ids->GetGi();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadLabels(CReaderRequestResult& result,
+                         const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    int count = ids.size();
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids seq_ids(result, ids[i]);
+        if ( !seq_ids->IsLoadedLabel() ) {
+            m_Dispatcher->LoadSeq_idLabel(result, ids[i]);
+        }
+        if ( seq_ids->IsLoadedLabel() ) {
+            ret[i] = seq_ids->GetLabel();
             loaded[i] = true;
         }
     }

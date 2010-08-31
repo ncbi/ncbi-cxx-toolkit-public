@@ -534,6 +534,93 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
+                                const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ) {
+        return CReader::LoadLabels(result, ids, loaded, ret);
+    }
+
+    int count = ids.size();
+    vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
+    CID2_Request_Packet packet;
+    int packet_start = 0;
+    
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
+        if ( (*locks[i])->IsLoadedLabel() ) {
+            ret[i] = (*locks[i])->GetLabel();
+            loaded[i] = true;
+            locks[i].reset();
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_label ) {
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
+        }
+        else {
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_label);
+        }
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            int count = i+1;
+            for ( int i = packet_start; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                _ASSERT(locks[i].get());
+                if ( (*locks[i])->IsLoadedLabel() ) {
+                    ret[i] = (*locks[i])->GetLabel();
+                    loaded[i] = true;
+                    locks[i].reset();
+                    continue;
+                }
+                else {
+                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
+                    locks[i].reset();
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( int i = packet_start; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            _ASSERT(locks[i].get());
+            if ( (*locks[i])->IsLoadedLabel() ) {
+                ret[i] = (*locks[i])->GetLabel();
+                loaded[i] = true;
+                locks[i].reset();
+                continue;
+            }
+            else {
+                m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
+                locks[i].reset();
+            }
+        }
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                         const CSeq_id_Handle& seq_id,
                                         const SAnnotSelector* sel)

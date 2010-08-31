@@ -98,6 +98,8 @@ public:
                      const TIds& ids, TLoaded& loaded, TIds& ret);
     bool LoadGis(CReaderRequestResult& result,
                  const TIds& ids, TLoaded& loaded, TGis& ret);
+    bool LoadLabels(CReaderRequestResult& result,
+                    const TIds& ids, TLoaded& loaded, TLabels& ret);
 
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
