@@ -9450,7 +9450,9 @@ special  CBF90396-CBF90397  embl_tpa_prot
 special  CBF90399           embl_tpa_prot
 special  CBF90401           embl_tpa_prot
 special  CBF90404           embl_tpa_prot
-special  CBL43266-CBL43269  embl_tpa_prot
+special  CBL43266-CBL43270  embl_tpa_prot
+special  CBL43272-CBL43273  embl_tpa_prot
+special  CBL43375-CBL43394  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CBW44738-CZZ99999  unreserved_prot
+#special CBW48274-CZZ99999  unreserved_prot
