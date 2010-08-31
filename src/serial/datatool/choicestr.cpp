@@ -300,13 +300,18 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     code.ClassPublic() <<
+        "    /// Reset the whole object\n"
+        "    ";
+    if ( HaveUserClass() )
+        code.ClassPublic() << "virtual ";
+    code.ClassPublic() << "void Reset(void);\n\n";
+
+    code.ClassPublic() <<
         "    /// Reset the selection (set it to "STATE_NOT_SET").\n"
         "    ";
     if ( HaveUserClass() )
         code.ClassPublic() << "virtual ";
-    code.ClassPublic() <<
-        "void Reset(void);\n"
-        "\n";
+    code.ClassPublic() << "void ResetSelection(void);\n\n";
 
     // generate choice methods
     code.ClassPublic() <<
@@ -407,7 +412,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "{\n"
         "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || "STATE_MEMBER" != index ) {\n"
         "        if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
-        "            Reset();\n"
+        "            ResetSelection();\n"
         "        DoSelect(index, pool);\n"
         "    }\n"
         "}\n"
@@ -480,22 +485,26 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     // generate destruction code
-    code.AddDestructionCode("if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
-                            "    Reset();");
+    code.AddDestructionCode("Reset();");
 
     // generate Reset method
     {
         methods <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
-        if (haveAttlist) {
-            ITERATE ( TVariants, i, m_Variants ) {
-                if (i->attlist) {
-                    methods <<
-                        "    Reset" << i->cName << "();\n";
-                }
+        ITERATE ( TVariants, i, m_Variants ) {
+            if (i->attlist) {
+                methods << "    Reset" << i->cName << "();\n";
             }
         }
+        methods << "    if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
+                << "        ResetSelection();\n";
+        methods <<
+            "}\n"
+            "\n";
+        methods <<
+            "void "<<methodPrefix<<"ResetSelection(void)\n"
+            "{\n";
         if ( haveObjectPointer || havePointers || haveString || haveUtf8String || haveBuffer ) {
             if ( delayed ) {
                 methods <<
@@ -1204,7 +1213,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                             "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n";
                     }
                     methods <<
-                        "        Reset();\n"
+                        "        ResetSelection();\n"
                         "        ("OBJECT_MEMBER" = ptr)->AddReference();\n"
                         "        "STATE_MEMBER" = "STATE_PREFIX<<i->cName<<";\n"
                         "    }\n"
