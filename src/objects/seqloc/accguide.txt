@@ -390,7 +390,10 @@ special  DAA12517-DAA33856  gb_prot
 
 # Some "EMBL" 8-character protein accessions are really third party
 # annotations.
-special  CAD29848-CAD29879  embl_tpa_prot # or unassigned, in some cases
+special  CAD29848-CAD29850  embl_tpa_prot
+special  CAD29856           embl_tpa_prot
+special  CAD29858-CAD29868  embl_tpa_prot
+special  CAD29871-CAD29879  embl_tpa_prot
 special  CAD43606           embl_tpa_prot
 special  CAD44269           embl_tpa_prot
 special  CAD55807           embl_tpa_prot
@@ -415,7 +418,8 @@ special  CAD68170-CAD68171  embl_tpa_prot
 special  CAD71139           embl_tpa_prot
 special  CAD79708           embl_tpa_prot
 special  CAD80155-CAD80157  embl_tpa_prot
-special  CAD80167-CAD80169  embl_tpa_prot # '68 unassigned
+special  CAD80167           embl_tpa_prot
+special  CAD80169           embl_tpa_prot
 special  CAD80243           embl_tpa_prot
 special  CAD88272-CAD88273  embl_tpa_prot
 special  CAD89265-CAD89268  embl_tpa_prot
@@ -514,11 +518,14 @@ special  CAJ55824-CAJ55825  embl_tpa_prot
 special  CAJ57445-CAJ57446  embl_tpa_prot
 special  CAJ57644-CAJ57646  embl_tpa_prot
 special  CAJ70647-CAJ70649  embl_tpa_prot
-special  CAJ75788-CAJ75796  embl_tpa_prot # '90 unassigned
+special  CAJ75788-CAJ75789  embl_tpa_prot
+special  CAJ75791-CAJ75796  embl_tpa_prot
 special  CAJ77879-CAJ77886  embl_tpa_prot
 special  CAJ80803           embl_tpa_prot
 special  CAJ84770           embl_tpa_prot
-special  CAJ85665-CAJ85740  embl_tpa_prot # '76, '12 unassigned
+special  CAJ85665-CAJ85675  embl_tpa_prot
+special  CAJ85677-CAJ85711  embl_tpa_prot
+special  CAJ85713-CAJ85740  embl_tpa_prot
 special  CAJ97442           embl_tpa_prot
 special  CAK26553           embl_tpa_prot
 special  CAK26777-CAK26786  embl_tpa_prot
@@ -535,7 +542,8 @@ special  CAL59562-CAL59577  embl_tpa_prot
 special  CAL63903-CAL63904  embl_tpa_prot
 special  CAL64054-CAL64058  embl_tpa_prot
 special  CAL69034-CAL69036  embl_tpa_prot
-special  CAL69054-CAL69118  embl_tpa_prot # '55 unassigned
+special  CAL69054           embl_tpa_prot
+special  CAL69056-CAL69118  embl_tpa_prot
 special  CAL90972-CAL90973  embl_tpa_prot
 special  CAM06633           embl_tpa_prot
 special  CAM12311           embl_tpa_prot
@@ -551,7 +559,8 @@ special  CAP39936-CAP39937  embl_tpa_prot
 special  CAP45848           embl_tpa_prot
 special  CAP49313-CAP49318  embl_tpa_prot
 special  CAP49321-CAP49327  embl_tpa_prot
-special  CAP64321-CAP64334  embl_tpa_prot # '22 unassigned
+special  CAP64321           embl_tpa_prot
+special  CAP64323-CAP64334  embl_tpa_prot
 special  CAQ34914-CAQ34930  embl_tpa_prot
 special  CAQ76705-CAQ76712  embl_tpa_prot
 special  CAQ76718           embl_tpa_prot
