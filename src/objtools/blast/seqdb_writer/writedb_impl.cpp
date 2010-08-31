@@ -44,6 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objects/blastdb/defline_extra.hpp>    // for kAsnDeflineObjLabel
 #include <serial/typeinfo.hpp>
+#include <corelib/ncbi_bswap.hpp>
 
 #include "writedb_impl.hpp"
 #include <objtools/blast/seqdb_writer/writedb_convert.hpp>
@@ -169,6 +170,128 @@ void CWriteDB_Impl::AddSequence(const CBioseq_Handle & bsh)
     AddSequence(*bsh.GetCompleteBioseq(), sv);
 }
 
+
+/// class to support searching for duplicate isam keys
+template <class T>
+class CWriteDB_IsamKey {
+
+    public:
+    // data member
+    T              key;
+    CNcbiIfstream * source;
+
+    // constructor
+    CWriteDB_IsamKey(const string &fn) { 
+        source = new CNcbiIfstream(fn.c_str(), 
+                                   IOS_BASE::in | IOS_BASE::binary);
+        key = x_GetNextKey();
+    };
+
+    ~CWriteDB_IsamKey() {
+        delete source;
+    };
+
+    // advance key to catch up other
+    bool AdvanceKey(const CWriteDB_IsamKey & other) {
+        while (!source->eof()) {
+            T next_key = x_GetNextKey();
+            if (next_key >= other.key) {
+                key = next_key;
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // less_than, used for sorting
+    bool operator <(const CWriteDB_IsamKey &other) const {
+        return (key < other.key);
+    };
+
+    private:
+    // read in the next key, for numeric id
+    T x_GetNextKey() {
+        char s[4];
+        source->read(s, 4);
+        source->seekg(4, ios_base::cur);
+#ifdef WORDS_BIGENDIAN
+        Int4 next_key = (Int4) *((Int4 *) s);
+#else
+        Int4 next_key = CByteSwap::GetInt4((const unsigned char *)s);
+#endif
+        return next_key;
+    };
+};
+
+// customized string file reading
+template <> inline string
+CWriteDB_IsamKey<string>::x_GetNextKey() {
+    char s[256];
+    source->getline(s, 256);
+    char * p = s;
+    while (*p != 0x02) ++p;
+    string in(s, p);
+
+    // check if the current key is PDB-like, 
+    // if so, advance for the next
+    // PDB key must be [0-9]...
+    if ( (in.size() == 4) 
+      && ((in[0] - '0') * (in[0] - '9') <= 0) ) { 
+
+        // probing the next key to make sure this is pdb id
+        char next_token[4];
+        source->read(next_token, 4);
+        source->seekg(-4, ios_base::cur);
+        string next_key(next_token, 4);
+
+        if (next_key == in) {
+           // automatically advance to next key
+           return x_GetNextKey();
+        }
+    }
+    return in;
+};
+
+/// Comparison function for set<CWriteDB_IsamKey<T> *>                                                     
+template <class T>                                                                                         
+struct CWriteDB_IsamKey_Compare {                                                                          
+    bool operator() (const CWriteDB_IsamKey<T> * lhs,                                                      
+                     const CWriteDB_IsamKey<T> * rhs) const {                                              
+        return (*lhs < *rhs);                                                                              
+    }                                                                                                      
+};                                                                                                         
+          
+/// Check for duplicate ids across volumes                                                                 
+template <class T>                                                                                         
+static void s_CheckDuplicateIds(set<CWriteDB_IsamKey<T> *, 
+                                    CWriteDB_IsamKey_Compare<T> > & keys) {                                       
+    while (!keys.empty()) {                                                                                
+        // pick the smallest key                                                                           
+        CWriteDB_IsamKey<T> * key = *(keys.begin());                                                          
+                                                                                                           
+        keys.erase(key);                                                                                   
+                                                                                                           
+        if (keys.empty()) {                                                                                
+            delete key;                                                                                    
+            return;                                                                                        
+        }                                                                                                  
+                                                                                                           
+        const CWriteDB_IsamKey<T> * next = *(keys.begin());                                                   
+        if (key->AdvanceKey(*next)) {                                                                      
+            if (keys.find(key) != keys.end()) {
+                CNcbiOstrstream msg;
+                msg << "Error: Duplicate seq_id <"
+                    << key->key
+                    << "> is found multiple times across volumes.";
+                NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
+            } 
+            keys.insert(key); 
+        } else {                                                                                           
+            delete key;                                                                                    
+        }                                                                                                  
+    }                                                                                                      
+};                                                                                                         
+
 void CWriteDB_Impl::Close()
 {
     if (m_Closed)
@@ -191,7 +314,28 @@ void CWriteDB_Impl::Close()
 
         if (m_VolumeList.size() == 1) {
             m_Volume->RenameSingle();
-        } 
+        } else if (m_Indices != CWriteDB::eNoIndex) {
+
+            // check for duplicate ids across volumes
+
+            set<CWriteDB_IsamKey<string> *, CWriteDB_IsamKey_Compare<string> > sids;
+            ITERATE(vector< CRef<CWriteDB_Volume> >, iter, m_VolumeList) {
+                string fn = (*iter)->GetVolumeName() + (m_Protein ? ".psd" : ".nsd");
+                if (CFile(fn).Exists()) {
+                    sids.insert(new CWriteDB_IsamKey<string>(fn));
+                }
+            }
+            s_CheckDuplicateIds(sids);
+
+            set<CWriteDB_IsamKey<Int4> *, CWriteDB_IsamKey_Compare<Int4> > nids;
+            ITERATE(vector< CRef<CWriteDB_Volume> >, iter, m_VolumeList) {
+                string fn = (*iter)->GetVolumeName() + (m_Protein ? ".pnd" : ".nnd");
+                if (CFile(fn).Exists()) {
+                    nids.insert(new CWriteDB_IsamKey<Int4>(fn));
+                }
+            }
+            s_CheckDuplicateIds(nids);
+        }
 
         if (m_VolumeList.size() > 1 || m_UseGiMask) {
             x_MakeAlias();

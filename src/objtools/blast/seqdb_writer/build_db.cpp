@@ -1209,6 +1209,7 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
         
         try {
             success = AddSequences(fbs);
+            m_OutputDb->Close();
         }
         catch (...) {
             EndBuild(true);
@@ -1225,7 +1226,7 @@ bool CBuildDatabase::EndBuild(bool erase)
     bool success = false;
     
     m_OutputDb->Close();
-    
+
     vector<string> vols;
     vector<string> files;
     

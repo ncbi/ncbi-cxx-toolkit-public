@@ -178,18 +178,6 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     
     if (m_Indices != CWriteDB::eNoIndex) {
 
-        // check the uniqueness of id
-        ITERATE(TIdList, iter, idlist) {
-            ITERATE(TIdList, iter2, m_IdList) {
-                if ((*iter)->Match(**iter2)) {
-                   NCBI_THROW(CWriteDBException,
-                       eArgErr,
-                       "Error: Duplicate seq_ids are found.");
-                }
-            }
-            m_IdList.push_back(*iter);
-        }
-
         int num = (int)idlist.size();
         
         if (! (m_AccIsam->CanFit(num) &&
@@ -228,6 +216,20 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         return false;
     }
     
+    // check the uniqueness of id
+    if (m_Indices != CWriteDB::eNoIndex) {
+        ITERATE(TIdList, iter, idlist) {
+            CSeq_id_Handle id = CSeq_id_Handle::GetHandle(**iter);
+            if (m_IdSet.find(id) != m_IdSet.end() ) {
+                CNcbiOstrstream msg;
+                msg << "Error: Duplicate seq_ids are found: " << endl
+                    << MSerial_AsnText << **iter;
+                NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
+            }
+            m_IdSet.insert(id);
+        }
+    }
+
     int off_hdr(0), off_seq(0), off_amb(0);
     
     m_Hdr->AddSequence(binhdr, off_hdr);
@@ -318,6 +320,7 @@ void CWriteDB_Volume::Close()
                 m_HashIsam->Close();
             }
         }
+        m_IdSet.clear();
     }
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
