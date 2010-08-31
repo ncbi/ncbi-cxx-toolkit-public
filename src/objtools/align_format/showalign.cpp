@@ -1060,14 +1060,14 @@ void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
 
 
 
-string CDisplaySeqalign::x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<CSeq_id> >& ids) const
+string CDisplaySeqalign::x_GetUrl(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const list<CRef<CSeq_id> >& ids,bool useTemplates) const
 {
     string urlLink = NcbiEmptyString;    
  
     seqUrlInfo->gi = (seqUrlInfo->gi == 0) ? s_GetGiForSeqIdList(ids):seqUrlInfo->gi;
     seqUrlInfo->user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
     
-    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids,false);
+    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids,useTemplates);
     return urlLink;
 }
 
@@ -1605,6 +1605,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     //begin to display
     int num_align = 0;
     m_cur_align = 0;
+    m_currAlignHsp = 0;
     string toolUrl = NcbiEmptyString;
     if(m_AlignOption & eHtml){
         toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
@@ -1873,7 +1874,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams = new SAlnDispParams();
 		alnDispParams->gi =  gi;    		
 		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
-		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
 			string type_temp = m_BlastType;
@@ -1897,7 +1898,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                                                  taxid,
                                                  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
                         
-			alnDispParams->id_url =  x_GetUrl(&seqUrlInfo, ids);                                                
+			alnDispParams->id_url =  x_GetUrl(&seqUrlInfo, ids,m_AlignTemplates != NULL);                                                
 		}
 		
 		if(m_AlignOption&eLinkout){
@@ -1946,7 +1947,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
                                                  0,
                                                  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
                         
-			alnDispParams->id_url = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId());
+			alnDispParams->id_url = x_GetUrl(&seqUrlInfo, bsp_handle.GetBioseqCore()->GetId(),m_AlignTemplates != NULL);
 	}
 			
 	alnDispParams->title = GetTitle(bsp_handle);		
@@ -3022,7 +3023,7 @@ string CDisplaySeqalign::x_FormatAlignSortInfo(string id_label)
     alignSort = CAlignFormatUtil::MapTemplate(alignSort,"id_label",id_label);
     string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
     int hsp_sort = hsp_sort_value == NcbiEmptyString ?  0 : NStr::StringToInt(hsp_sort_value);
-    for(int i = 0; i < 5; i++) {
+    for(size_t  i = 0; i < 5; i++) {
         if(hsp_sort == i) {
             alignSort = CAlignFormatUtil::MapTemplate(alignSort,"sorted_" + NStr::IntToString(hsp_sort),"sortAlnArrowLinkW");                    
         }
@@ -3130,6 +3131,7 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
         }
         else {
           alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth_hide","hidden");//???? is that the same for all aligns??? 
+          alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth","");
         }        
     }    
     return alignParams;    
@@ -3172,50 +3174,31 @@ void CDisplaySeqalign::x_DisplayAlignInfo(CNcbiOstream& out,
 //1. Display defline(s)           
 //2. Display Gene info
 //3. Display Bl2Seq TBLASTX link
-void CDisplaySeqalign::x_DisplayAlnvecInfoHead(CNcbiOstream& out, 
-                                              SAlnInfo* aln_vec_info)                                              
-{
-    const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-    if(m_AlignOption&eShowBlastInfo) {
-        if(!(m_AlignOption & eShowNoDeflineInfo)){            
-            //1. Display defline(s)            
-            string deflines = x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, aln_vec_info->id_label);                        
-            
-            //2. Display Gene info
-            string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);                        
-                        
-            if(!m_AlignTemplates) {
-                out<< deflines;
-                out<< geneInfo;
-            }
-            else {
-                string alignInfo = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignHeaderTmpl,"aln_deflines",deflines);
-                alignInfo = CAlignFormatUtil::MapTemplate(alignInfo,"aln_gene_info",geneInfo);                
-                out<< alignInfo;
-            }
-        }       
-        
-        if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
-           && (m_AlignOption&eShowBl2seqLink)) {
-            //3. Display Bl2Seq TBLASTX link
-            x_DisplayBl2SeqLink(out);
-        }
-        out << "\n";
-    }    
-}
-
-
-void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
+//4. add id anchor for mapviewer link
+void CDisplaySeqalign::x_ShowAlnvecInfo(CNcbiOstream& out, 
                                            SAlnInfo* aln_vec_info,
-                                           bool show_defline,
-                                           bool showSortControls) 
+                                           bool show_defline) 
 {
-    m_AV = aln_vec_info->alnvec;
-    if(show_defline) {
-        //1. Display defline(s)           
-        //2. Display Gene info
-        //3. Display Bl2Seq TBLASTX link
-        x_DisplayAlnvecInfoHead(out, aln_vec_info);
+	bool showSortControls = false;
+    if(show_defline) {        
+		const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
+		if(m_AlignOption&eShowBlastInfo) {
+			if(!(m_AlignOption & eShowNoDeflineInfo)){
+				//1. Display defline(s),Gene info				
+				string deflines = x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, aln_vec_info->id_label);
+				out<< deflines;
+				//2. Format Gene info
+				string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);
+				out<< geneInfo;							       
+			}       
+        
+			if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
+				&& (m_AlignOption&eShowBl2seqLink)) {
+				//3. Display Bl2Seq TBLASTX link
+				x_DisplayBl2SeqLink(out);
+			}
+			out << "\n";
+		}
         showSortControls = true;
     }
     if (m_AlignOption&eShowBlastInfo) {
@@ -3223,7 +3206,194 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         x_DisplayMpvAnchor(out,aln_vec_info);    
     }
     
-    //Calculate Dynamic Features in aln_vec_info    
+    //Displays sorting controls, features, Score, Expect, Idnt,Gaps,strand,positives,frames etc
+    x_DisplaySingleAlignParams(out, aln_vec_info,showSortControls);
+    string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
+    out << alignRows;            
+}
+
+
+
+//fill one defline info, using  <@ALN_DEFLINE_ROW@>
+string
+CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool linkout,bool hideDefline)
+{
+	/*
+    string firstSeqClassInfo = (isFirst) ? "" : "hidden"; //hide ">" sign if not first seq align	
+	string alnDefLine  = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnDefLineTmpl,"alnSeqSt",firstSeqClassInfo);
+	*/
+	string alnDflnShow = (hideDefline) ? "hidden" : "";	
+	string alnDefLine = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnDefLineTmpl,"alnDflnShow",alnDflnShow);
+
+	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > 0) ? "gi|" + NStr::IntToString(alnDispParams->gi) + "|" : "";
+	string seqid;					
+    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){							 
+		seqid = alnDispParams->seqID->AsFastaString();        
+    }
+	
+	if(alnDispParams->id_url != NcbiEmptyString) {
+		string seqInfo  = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnSeqInfoTmpl,"aln_url",alnDispParams->id_url);
+		string trgt = (m_AlignOption & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "";
+
+		seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"aln_target",trgt);
+		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",seqInfo);        		
+		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"aln_gi",alnGi);    
+		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"aln_seqid",seqid);               
+    }
+	else {
+		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",alnGi + seqid); 
+	}
+	string alnIdLbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->seqID->GetSeqIdString();
+	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnIdLbl",alnIdLbl);
+	string linkoutStr, dnldLinkStr;
+	if (linkout) {
+		linkoutStr = (!alnDispParams->linkoutStr.empty()) ? alnDispParams->linkoutStr : "";		
+		dnldLinkStr = alnDispParams->dumpGnlUrl;
+	}		
+	alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine ,"alnLinkout",linkoutStr);
+	alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine ,"dndlLinkt",dnldLinkStr);	
+	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnTitle",alnDispParams->title);			
+	return alnDefLine;
+}
+
+string
+CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,list<int>& use_this_gi)
+{
+    CNcbiOstrstream out;    
+    string deflines,accession,id_label;
+    if(bsp_handle){        
+        const CRef<CBlast_def_line_set> bdlRef =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+        bool isFirst = true;
+        int firstGi = 0;
+		m_NumBlastDefLines = 0;
+        m_cur_align++;		
+		SAlnDispParams *alnDispParams;
+        if(bdl.empty()){ //no blast defline struct, should be no such case now
+            //actually not so fast...as we now fetch from entrez even when it's not in blast db
+            //there is no blast defline in such case.
+			alnDispParams = x_FillAlnDispParams(bsp_handle);
+			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false);
+		    id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
+			accession = alnDispParams->label;
+			delete alnDispParams;
+			deflines = alnDefLine;
+        } else {
+            //format each defline 
+            bool bMultipleDeflines = false;
+            int numBdl = 0;
+            for(list< CRef< CBlast_def_line > >::const_iterator 
+                    iter = bdl.begin(); iter != bdl.end(); iter++){
+                numBdl++;
+				alnDispParams = x_FillAlnDispParams(*iter,use_this_gi,firstGi,bsp_handle.GetBioseqCore()->IsNa(),(int)bsp_handle.GetBioseqLength());
+				if(alnDispParams) {
+					bool hideDefline = (int)(bdl.size()) > k_MaxDeflinesToShow && numBdl >= k_MinDeflinesToShow + 1;
+					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
+                    if(isFirst){
+                        firstGi = alnDispParams->gi;
+						id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
+                        accession = alnDispParams->label;
+                    }                    
+					deflines += alnDefLine;	
+                    isFirst = false;					
+					delete alnDispParams;
+                }
+            }			
+			m_NumBlastDefLines = numBdl;            
+        }
+    }    
+	//fill deflines
+	string alignInfo = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignHeaderTmpl,"aln_deflines",deflines);
+
+	//fill length
+	int seqLength = bsp_handle.GetBioseqLength();
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqLength", NStr::IntToString(seqLength));
+
+	//fill multiple titles
+	int alnSeqTitlesNum = (m_NumBlastDefLines > k_MaxDeflinesToShow) ? m_NumBlastDefLines - k_MinDeflinesToShow : 0;
+	string alnSeqTitlesShow = (m_NumBlastDefLines > k_MaxDeflinesToShow) ? "" : "hidden";
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesNum", NStr::IntToString(alnSeqTitlesNum));
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesShow",alnSeqTitlesShow);				
+
+	//fill id info
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnID",id_label);				
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",accession);	
+   
+	//fill sequence checkbox
+	string seqRetrieval = ((m_AlignOption&eSequenceRetrieval) && m_CanRetrieveSeq) ? "" : "hidden";
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqGi",id_label);
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnQueryNum",NStr::IntToString(m_QueryNumber));				
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqRet",seqRetrieval);
+
+	//fill sort info
+	string sortInfo;
+	if(m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
+		m_AlignOption & eShowSortControls){
+		//3. Display sort info
+		sortInfo = x_FormatAlignSortInfo(id_label);					
+	}
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"sortInfo",sortInfo);
+	
+    return alignInfo;
+}
+
+
+//1. Display defline(s)           
+//2. Display Gene info
+//3. Display Bl2Seq TBLASTX link
+void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out, 
+                                           SAlnInfo* aln_vec_info,
+                                           bool show_defline,
+                                           bool showSortControls) 
+{
+    if(show_defline) {        
+        const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
+		if(m_AlignOption&eShowBlastInfo) {
+			if(!(m_AlignOption & eShowNoDeflineInfo)){            
+				//1. Display defline(s),Gene info
+				string alignHeader = x_FormatDefLinesHeader(bsp_handle, aln_vec_info->use_this_gi);
+				//2. Format Gene info
+				string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);				
+                alignHeader = CAlignFormatUtil::MapTemplate(alignHeader,"aln_gene_info",geneInfo); 
+                out<< alignHeader;			            
+			}       
+        
+			if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
+				&& (m_AlignOption&eShowBl2seqLink)) {
+				//3. Display Bl2Seq TBLASTX link
+				x_DisplayBl2SeqLink(out);
+			}
+			out << "\n";
+		}        
+		//start counting hsp
+		m_currAlignHsp = 0;
+    }
+    if (m_AlignOption&eShowBlastInfo) {
+        //4. add id anchor for mapviewer link
+        x_DisplayMpvAnchor(out,aln_vec_info);    
+    }
+    
+	if (m_AlignOption&eShowBlastInfo && showSortControls && 
+           m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
+									m_AlignOption & eShowSortControls){
+       //5. Display sort info
+       string sortInfo = x_FormatAlignSortInfo(aln_vec_info->id_label);
+	   out << sortInfo;    
+    }
+
+    //Displays sorting controls, features, Score, Expect, Idnt,Gaps,strand,positives,frames etc    
+    string alignInfo = x_FormatSingleAlign(aln_vec_info);
+    out << alignInfo;        
+}
+
+void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
+                                           SAlnInfo* aln_vec_info,
+                                           bool show_defline,
+                                           bool showSortControls) 
+{
+
+    m_AV = aln_vec_info->alnvec;
+	//Calculate Dynamic Features in aln_vec_info    
     x_PrepareDynamicFeatureInfo(aln_vec_info);    
     //Calculate row data for actual alignment display
     aln_vec_info->alnRowInfo = x_PrepareRowData();
@@ -3232,22 +3402,18 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
     if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){
         x_PrepareIdentityInfo(aln_vec_info);
     }
-
-    //Displays sorting controls, features, Score, Expect, Idnt,Gaps,strand,positives,frames etc
-    if(!m_AlignTemplates) {
-        x_DisplaySingleAlignParams(out, aln_vec_info,showSortControls);
-        string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
-        out << alignRows;
-    }
-    else {
-        string alignInfo = x_FormatSingleAlign(aln_vec_info,showSortControls);
-        out << alignInfo;
-    }
+	if(!m_AlignTemplates) {
+		x_ShowAlnvecInfo(out,aln_vec_info,show_defline);
+	}
+	else {
+		x_ShowAlnvecInfoTemplate(out,aln_vec_info,show_defline,showSortControls);
+	}      
     
     delete aln_vec_info->alnRowInfo;
 
     out<<"\n";
 }
+
 
 //Displays features, Score Expect, Idnt,Gaps,strand
 void CDisplaySeqalign::x_DisplaySingleAlignParams(CNcbiOstream& out, 
@@ -3291,19 +3457,11 @@ void CDisplaySeqalign::x_DisplaySingleAlignParams(CNcbiOstream& out,
 }
 
 //Displays features, Score Expect, Idnt,Gaps,strand
-string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info,
-                                                  bool showSortControls)  
+string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)                                                  
 {
-    string alignInfo,sortInfo;
-    if (m_AlignOption&eShowBlastInfo) {                
-
-        if(showSortControls && 
-           m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
-           m_AlignOption & eShowSortControls){
-            //3. Display sort info
-            sortInfo = x_FormatAlignSortInfo(aln_vec_info->id_label);
-        }
-
+    string alignInfo;
+    if (m_AlignOption&eShowBlastInfo) { 
+        
         //7. Display score,bits,expect,method
         alignInfo = x_FormatAlnBlastInfo(aln_vec_info);
 
@@ -3315,15 +3473,17 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info,
         //6. Display Dynamic Features            
         alignInfo = x_FormatDynamicFeaturesInfo(alignInfo, aln_vec_info);    
     }
+	m_currAlignHsp++;
+	string alignRowsTemplate = (m_currAlignHsp == m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()]) ? m_AlignTemplates->alignRowTmplLast : m_AlignTemplates->alignRowTmpl;
+	
     string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
-    alignInfo = CAlignFormatUtil::MapTemplate(alignInfo,"align_rows",alignRows);
-    
-    alignInfo = sortInfo + alignInfo;
-
+    alignRows = CAlignFormatUtil::MapTemplate(alignRowsTemplate,"align_rows",alignRows);
+    alignInfo += alignRows;
     return alignInfo;
     //if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){///ignore eShowMiddleLine for templates
     //}   
 }
+
 
 
 
