@@ -452,8 +452,8 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         return true;
     }
     
-        ids->SetLoadedTaxId(-1);
-    }
+    ids->SetLoadedTaxId(-1);
+
     return ids->IsLoadedTaxId();
 }
 
