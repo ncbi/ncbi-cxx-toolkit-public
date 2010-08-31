@@ -2,6 +2,5 @@
 
 USR_PROJ = check
 
-# Use abs_srcdir here to avoid trouble from fake-root setups...
-srcdir = @abs_srcdir@
+srcdir = @srcdir@
 include @builddir@/Makefile.meta
