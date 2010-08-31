@@ -472,9 +472,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
             if (m_Impl->m_Service->m_MaxQueryTime > 0 &&
                     max_query_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_query_time=" <<
-                        m_Impl->m_Service->m_MaxQueryTime <<
-                    s"); cmd=" << cmd <<
-                    "; exception=" << e.GetErrorMessage());
+                    m_Impl->m_Service->m_MaxQueryTime <<
+                    "); cmd=" << cmd <<
+                    "; exception=" << e.GetMsg());
                 throw;
             }
 
