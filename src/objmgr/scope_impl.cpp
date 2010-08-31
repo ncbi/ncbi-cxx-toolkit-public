@@ -2714,7 +2714,11 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& idhs,
             }
             CPrefetchManager::IsActive();
             it->GetDataSource().GetAccVers(idhs, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+	    std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
             remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
         }
     }
     return ret;
