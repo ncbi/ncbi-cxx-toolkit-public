@@ -863,13 +863,20 @@ void CScope_Impl::x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id)
 
 void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& new_tse)
 {
-    //if ( 1 ) return;
     // Clear unresolved bioseq handles
     // Clear annot cache
     TIds seq_ids, annot_ids;
     new_tse.GetSeqAndAnnotIds(seq_ids, annot_ids);
     x_ClearCacheOnNewData(seq_ids, annot_ids);
     x_ClearCacheOnNewAnnot(new_tse);
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& /*new_tse*/,
+                                        const CSeq_id_Handle& new_id)
+{
+    TIds seq_ids(1, new_id), annot_ids;
+    x_ClearCacheOnNewData(seq_ids, annot_ids);
 }
 
 

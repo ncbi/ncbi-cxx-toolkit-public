@@ -1684,7 +1684,7 @@ bool CBioseq_ScopeInfo::AddId(const CSeq_id_Handle& id)
     }
     m_Ids.push_back(id);
     x_GetTSE_ScopeInfo().x_IndexBioseq(id, this);
-    x_GetScopeImpl().x_ClearCacheOnNewData(info.GetTSE_Info());
+    x_GetScopeImpl().x_ClearCacheOnNewData(info.GetTSE_Info(), id);
     return true;
 }
 

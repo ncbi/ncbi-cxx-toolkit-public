@@ -392,6 +392,8 @@ private:
     // both seq_ids and annot_ids must be sorted
     void x_ClearCacheOnNewData(const TIds& seq_ids, const TIds& annot_ids);
     void x_ClearCacheOnNewData(const CTSE_Info& new_tse);
+    void x_ClearCacheOnNewData(const CTSE_Info& new_tse,
+                               const CSeq_id_Handle& new_id);
     void x_ClearCacheOnRemoveData(const CTSE_Info* old_tse = 0);
 
     void x_ClearAnnotCache(void);
