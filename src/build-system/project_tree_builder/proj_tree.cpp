@@ -318,6 +318,22 @@ CProjectItemsTree::GetExternalDepends(list<CProjKey>* external_depends) const
 
 void CProjectItemsTree::VerifyExternalDepends(void)
 {
+    ITERATE(TProjects, p, m_Projects) {
+        const CProjItem& proj_item = p->second;
+        if (proj_item.m_External) {
+            continue;
+        }
+        ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
+            if (*n == p->first) {
+                continue;
+            }
+            TProjects::iterator d = m_Projects.find(*n);
+            if (d != m_Projects.end() && d->second.m_External) {
+                d->second.m_MakeType = min(d->second.m_MakeType, p->second.m_MakeType);
+            }
+        }
+    }
+
     set<CProjKey> depends_set;
     ITERATE(TProjects, p, m_Projects) {
         const CProjItem& proj_item = p->second;

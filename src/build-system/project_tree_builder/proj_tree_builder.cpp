@@ -1880,6 +1880,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     if (GetApp().IsScanningWholeTree()) {
         *tree = target_tree;
         NON_CONST_ITERATE( CProjectItemsTree::TProjects, t, tree->m_Projects) {
+            t->second.m_MakeType = eMakeType_Expendable;
             t->second.m_External = true;
         }
         return;
