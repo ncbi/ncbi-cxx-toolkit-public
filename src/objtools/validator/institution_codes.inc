@@ -4817,6 +4817,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ROM:ENT	s	Royal Ontario Museum, Entomology collection",
 "ROM:HERP	s	Royal Ontario Museum, Herpetology collection",
 "ROM:ICH	s	Royal Ontario Museum, Fish collection",
+"ROM:IZ	s	Royal Ontario Museum, Invertebrate Zoology Collection",
 "ROM:MAMM	s	Royal Ontario Museum, Mammal Collection",
 "ROME	s	Royal Ontario Museum",
 "ROML	s	National University of Lesotho, Biology Department",
