@@ -582,5 +582,80 @@ const CSeq_entry_Info::TAnnot& CSeq_entry_Info::GetLoadedAnnot(void) const
 }
 
 
+namespace {
+    static inline void x_SortUnique(CTSE_Info::TSeqIds& ids)
+    {
+        sort(ids.begin(), ids.end());
+        ids.erase(unique(ids.begin(), ids.end()), ids.end());
+    }
+}
+
+
+void CSeq_entry_Info::x_GetBioseqsIds(TSeqIds& ids) const
+{
+    if ( IsSet() ) {
+        const CBioseq_set_Info& seqset = GetSet();
+        ITERATE ( CBioseq_set_Info::TSeq_set, it, seqset.GetSeq_set() ) {
+            (*it)->x_GetBioseqsIds(ids);
+        }
+    }
+    if ( IsSeq() ) {
+        const CBioseq_Info::TId& seq_ids = GetSeq().GetId();
+        ids.insert(ids.end(), seq_ids.begin(), seq_ids.end());
+    }
+}
+
+
+void CSeq_entry_Info::x_GetAnnotIds(TSeqIds& ids) const
+{
+    if ( IsSet() ) {
+        const CBioseq_set_Info& seqset = GetSet();
+        ITERATE ( CBioseq_set_Info::TSeq_set, it, seqset.GetSeq_set() ) {
+            (*it)->x_GetBioseqsIds(ids);
+        }
+    }
+    if ( Which() != CSeq_entry::e_not_set ) {
+        const CBioseq_Base_Info::TAnnot& annots = x_GetBaseInfo().GetAnnot();
+        ITERATE ( CBioseq_Base_Info::TAnnot, it, annots ) {
+            const CSeq_annot_Info::TAnnotObjectKeys& keys =
+                (*it)->GetAnnotObjectKeys();
+            ITERATE ( CSeq_annot_Info::TAnnotObjectKeys, kit, keys ) {
+                const CSeq_id_Handle id = kit->m_Handle;
+                if ( !id ) {
+                    continue;
+                }
+                if ( !ids.empty() && id == ids.back() ) {
+                    continue;
+                }
+                ids.push_back(id);
+            }
+        }
+    }
+}
+
+
+void CSeq_entry_Info::GetBioseqsIds(TSeqIds& ids) const
+{
+    x_GetBioseqsIds(ids);
+    x_SortUnique(ids);
+}
+
+
+void CSeq_entry_Info::GetAnnotIds(TSeqIds& ids) const
+{
+    GetTSE_Info().UpdateAnnotIndex(*this);
+    x_GetAnnotIds(ids);
+    x_SortUnique(ids);
+}
+
+
+void CSeq_entry_Info::GetSeqAndAnnotIds(TSeqIds& seq_ids,
+                                        TSeqIds& annot_ids) const
+{
+    GetBioseqsIds(seq_ids);
+    GetAnnotIds(annot_ids);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

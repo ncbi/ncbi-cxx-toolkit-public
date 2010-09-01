@@ -324,13 +324,10 @@ public:
 
     // fill ids with all Bioseqs Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
-    void GetBioseqsIds(TSeqIds& ids) const;
+    virtual void GetBioseqsIds(TSeqIds& ids) const;
     // fill ids with all Annot Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
-    void GetAnnotIds(TSeqIds& ids) const;
-    // fill seq_ids with all Bioseqs Seq-ids and annot_ids with annotations ids
-    // the result will be sorted and contain no duplicates
-    void GetSeqAndAnnotIds(TSeqIds& seq_ids, TSeqIds& annot_ids) const;
+    virtual void GetAnnotIds(TSeqIds& ids) const;
     
     void UpdateAnnotIndex(const CSeq_id_Handle& id) const;
     void UpdateAnnotIndex(void) const;

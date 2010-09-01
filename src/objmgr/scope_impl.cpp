@@ -445,7 +445,7 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
 
     seqset.x_GetInfo().AddEntry(entry, index, true);    
 
-    x_ClearCacheOnNewData(entry->GetTSE_Info());
+    x_ClearCacheOnNewData(entry->GetTSE_Info(), *entry);
 
     return CSeq_entry_EditHandle(*entry, seqset.GetTSE_Handle());
 }
@@ -464,7 +464,7 @@ void CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
     seqset.GetTSE_Handle().x_GetScopeInfo()
         .AddEntry(seqset.x_GetScopeInfo(), entry.x_GetScopeInfo(), index);
     
-    x_ClearCacheOnNewData(seqset.x_GetInfo().GetTSE_Info());
+    x_ClearCacheOnNewData(seqset.x_GetInfo().GetTSE_Info(), entry.x_GetInfo());
     
     _ASSERT(entry);
 }
@@ -485,7 +485,7 @@ CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
     // duplicate bioseq info
     entry.x_GetInfo().SelectSeq(*bioseq);
 
-    x_ClearCacheOnNewData(bioseq->GetTSE_Info());
+    x_ClearCacheOnNewData(bioseq->GetTSE_Info(), entry.x_GetInfo());
 
     ret.m_Info = entry.x_GetScopeInfo().x_GetTSE_ScopeInfo()
         .GetBioseqLock(null, bioseq);
@@ -507,7 +507,7 @@ CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
     // duplicate bioseq info
     entry.x_GetInfo().SelectSet(*seqset);
 
-    x_ClearCacheOnNewData(seqset->GetTSE_Info());
+    x_ClearCacheOnNewData(seqset->GetTSE_Info(), entry.x_GetInfo());
 
     return CBioseq_set_EditHandle(*seqset, entry.GetTSE_Handle());
 }
@@ -526,7 +526,7 @@ void CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
     entry.GetTSE_Handle().x_GetScopeInfo()
         .SelectSeq(entry.x_GetScopeInfo(), bioseq.x_GetScopeInfo());
 
-    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info());
+    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info(), entry.x_GetInfo());
 
     _ASSERT(bioseq);
 }
@@ -545,7 +545,7 @@ void CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
     entry.GetTSE_Handle().x_GetScopeInfo()
         .SelectSet(entry.x_GetScopeInfo(), seqset.x_GetScopeInfo());
 
-    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info());
+    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info(), entry.x_GetInfo());
 
     _ASSERT(seqset);
 }
@@ -876,6 +876,15 @@ void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& /*new_tse*/,
                                         const CSeq_id_Handle& new_id)
 {
     TIds seq_ids(1, new_id), annot_ids;
+    x_ClearCacheOnNewData(seq_ids, annot_ids);
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& /*new_tse*/,
+                                        const CSeq_entry_Info& new_entry)
+{
+    TIds seq_ids, annot_ids;
+    new_entry.GetSeqAndAnnotIds(seq_ids, annot_ids);
     x_ClearCacheOnNewData(seq_ids, annot_ids);
 }
 

@@ -648,24 +648,17 @@ void CTSE_Info::GetBioseqsIds(TSeqIds& ids) const
 }
 
 
-void CTSE_Info::GetAnnotIds(TSeqIds& annot_ids) const
+void CTSE_Info::GetAnnotIds(TSeqIds& ids) const
 {
     {{
         TAnnotLockReadGuard guard(GetAnnotLock());
         ITERATE ( TNamedAnnotObjs, it, m_NamedAnnotObjs ) {
             ITERATE ( TAnnotObjs, it2, it->second ) {
-                annot_ids.push_back(it2->first);
+                ids.push_back(it2->first);
             }
         }
     }}
-    x_SortUnique(annot_ids);
-}
-
-
-void CTSE_Info::GetSeqAndAnnotIds(TSeqIds& seq_ids, TSeqIds& annot_ids) const
-{
-    GetBioseqsIds(seq_ids);
-    GetAnnotIds(annot_ids);
+    x_SortUnique(ids);
 }
 
 

@@ -125,6 +125,8 @@ public:
     typedef SAnnotObjectsIndex::TObjectInfos TAnnotObjectInfos;
     const TAnnotObjectInfos& GetAnnotObjectInfos(void) const;
 
+    typedef SAnnotObjectsIndex::TObjectKeys TAnnotObjectKeys;
+    const TAnnotObjectKeys& GetAnnotObjectKeys(void) const;
     const SAnnotObject_Key& GetAnnotObjectKey(size_t i) const;
 
     // individual annotation editing API
@@ -247,6 +249,14 @@ const CSeq_annot_Info::TAnnotObjectInfos&
 CSeq_annot_Info::GetAnnotObjectInfos(void) const
 {
     return m_ObjectIndex.GetInfos();
+}
+
+
+inline
+const CSeq_annot_Info::TAnnotObjectKeys&
+CSeq_annot_Info::GetAnnotObjectKeys(void) const
+{
+    return m_ObjectIndex.GetKeys();
 }
 
 

@@ -394,6 +394,8 @@ private:
     void x_ClearCacheOnNewData(const CTSE_Info& new_tse);
     void x_ClearCacheOnNewData(const CTSE_Info& new_tse,
                                const CSeq_id_Handle& new_id);
+    void x_ClearCacheOnNewData(const CTSE_Info& new_tse,
+                               const CSeq_entry_Info& new_entry);
     void x_ClearCacheOnRemoveData(const CTSE_Info* old_tse = 0);
 
     void x_ClearAnnotCache(void);

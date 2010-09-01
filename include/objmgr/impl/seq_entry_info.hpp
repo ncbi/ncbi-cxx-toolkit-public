@@ -170,6 +170,19 @@ public:
 
     void x_SetBioseqChunkId(TChunkId chunk_id);
 
+    typedef vector<CSeq_id_Handle> TSeqIds;
+    // fill ids with all Bioseqs Seq-ids from this TSE
+    // the result will be sorted and contain no duplicates
+    void x_GetBioseqsIds(TSeqIds& ids) const;
+    virtual void GetBioseqsIds(TSeqIds& ids) const;
+    // fill ids with all Annot Seq-ids from this TSE
+    // the result will be sorted and contain no duplicates
+    void x_GetAnnotIds(TSeqIds& ids) const;
+    virtual void GetAnnotIds(TSeqIds& ids) const;
+    // fill seq_ids with all Bioseqs Seq-ids and annot_ids with annotations ids
+    // the result will be sorted and contain no duplicates
+    virtual void GetSeqAndAnnotIds(TSeqIds& seq_ids, TSeqIds& annot_ids) const;
+
 protected:
     friend class CScope_Impl;
     friend class CDataSource;
