@@ -36,6 +36,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -43,6 +44,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class CGff3WriteRecord
 //  ----------------------------------------------------------------------------
+    : public CGff2WriteRecord
 {
 public:
     typedef CCdregion::EFrame TFrame;
@@ -56,135 +58,16 @@ public:
     );
     virtual ~CGff3WriteRecord();
 
-    //
-    //  Input/output:
-    //
     virtual bool AssignFromAsn(
         CMappedFeat );
 
-    bool MakeExon(
-        const CGff3WriteRecord&,
-        const CSeq_interval& );
-
-    bool MergeRecord(
-        const CGff3WriteRecord& );
-
-    virtual string StrType() const;
     virtual string StrAttributes() const;
-    virtual string StrId() const;
-    virtual string StrSource() const;
-    virtual string StrSeqStart() const;
-    virtual string StrSeqStop() const;
-    virtual string StrScore() const;
-    virtual string StrStrand() const;
-    virtual string StrPhase() const;
-    virtual string StrStructibutes() const { return ""; };
-
-    //
-    // Accessors:
-    //        
-    string Id() const { 
-        return m_strId; 
-    };
-    size_t SeqStart() const { 
-        return m_uSeqStart; 
-    };
-    size_t SeqStop() const { 
-        return m_uSeqStop; 
-    };
-    string Source() const { 
-        return m_strSource; 
-    };
-    string Type() const { 
-        return m_strType; 
-    };
-    double Score() const { 
-        return IsSetScore() ? *m_pdScore : 0.0; 
-    };
-    ENa_strand Strand() const { 
-        return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
-    };
-    unsigned int Phase() const {
-        return IsSetPhase() ? *m_puPhase : 0; 
-    };
-    virtual string SortTieBreaker() const { 
-        return ""; 
-    };
-
-    bool IsSetScore() const { 
-        return m_pdScore != 0; 
-    };
-    bool IsSetStrand() const { 
-        return m_peStrand != 0; 
-    };
-    bool IsSetPhase() const { 
-        return m_puPhase != 0; 
-    };
-
-    const TAttributes& Attributes() const { 
-        return m_Attributes; 
-    };
-
-    bool GetAttribute(
-        const string&,
-        string& ) const;
 
 protected:
-    bool x_AssignTypeFromAsn(
-        CMappedFeat );
-    bool x_AssignSeqIdFromAsn(
-        CMappedFeat );
-    bool x_AssignStartFromAsn(
-        CMappedFeat );
-    bool x_AssignStopFromAsn(
-        CMappedFeat );
-    bool x_AssignSourceFromAsn(
-        CMappedFeat );
-    bool x_AssignScoreFromAsn(
-        CMappedFeat );
-    bool x_AssignStrandFromAsn(
-        CMappedFeat );
-    bool x_AssignPhaseFromAsn(
-        CMappedFeat );
     virtual bool x_AssignAttributesFromAsnCore(
         CMappedFeat );
     virtual bool x_AssignAttributesFromAsnExtended(
         CMappedFeat );
-
-    static string x_FeatIdString(
-        const CFeat_id& id );
-
-    CSeq_feat::TData::ESubtype x_GetSubtypeOf(
-//        const CSeq_annot&,
-        const CFeat_id& );
-        
-    static bool x_IsParentOf(
-        CSeq_feat::TData::ESubtype,
-        CSeq_feat::TData::ESubtype );
-
-    static bool x_NeedsQuoting(
-        const string& );
-
-    virtual void x_PriorityProcess(
-        const string&,
-        map<string, string >&,
-        string& ) const;
-
-    //
-    // Data:
-    //
-    string m_strId;
-    size_t m_uSeqStart;
-    size_t m_uSeqStop;
-    string m_strSource;
-    string m_strType;
-    double* m_pdScore;
-    ENa_strand* m_peStrand;
-    unsigned int* m_puPhase;
-    string m_strAttributes;    
-    TAttributes m_Attributes;
-
-    feature::CFeatTree& m_feat_tree;
 };
 
 END_objects_SCOPE

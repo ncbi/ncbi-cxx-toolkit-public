@@ -57,9 +57,9 @@ USING_SCOPE(objects);
 
 
 //  ---------------------------------------------------------------------------
-bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()( 
-	const CGff3WriteRecord* x, 
-	const CGff3WriteRecord* y ) const
+bool CGff2WriteRecordSet::PGff2WriteRecordPtrLess::operator()( 
+	const CGff2WriteRecord* x, 
+	const CGff2WriteRecord* y ) const
 //  ---------------------------------------------------------------------------
 {
 	if ( x->Type() != y->Type() )
@@ -82,16 +82,16 @@ bool CGff3WriteRecordSet::PGff3WriteRecordPtrLess::operator()(
 }
 
 //  ---------------------------------------------------------------------------
-void CGff3WriteRecordSet::AddRecord(
-    CGff3WriteRecord* pRecord ) 
+void CGff2WriteRecordSet::AddRecord(
+    CGff2WriteRecord* pRecord ) 
 //  ---------------------------------------------------------------------------
 { 
     m_Set.push_back( pRecord ); 
 };
 
 //  ---------------------------------------------------------------------------
-void CGff3WriteRecordSet::AddOrMergeRecord(
-	CGff3WriteRecord* pRecord )
+void CGff2WriteRecordSet::AddOrMergeRecord(
+	CGff2WriteRecord* pRecord )
 //  ---------------------------------------------------------------------------
 {
 	TMergeMap::iterator merge = m_MergeMap.find(pRecord);
@@ -105,7 +105,7 @@ void CGff3WriteRecordSet::AddOrMergeRecord(
 }
 
 //  ----------------------------------------------------------------------------
-CGffWriter::CGffWriter(
+CGff2Writer::CGff2Writer(
     CScope& scope,
     CNcbiOstream& ostr,
     TFlags uFlags ) :
@@ -117,13 +117,13 @@ CGffWriter::CGffWriter(
 };
 
 //  ----------------------------------------------------------------------------
-CGffWriter::~CGffWriter()
+CGff2Writer::~CGff2Writer()
 //  ----------------------------------------------------------------------------
 {
 };
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::WriteAnnot( 
+bool CGff2Writer::WriteAnnot( 
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
@@ -150,7 +150,7 @@ bool CGffWriter::WriteAnnot(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteAnnotFTable( 
+bool CGff2Writer::x_WriteAnnotFTable( 
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
@@ -158,7 +158,7 @@ bool CGffWriter::x_WriteAnnotFTable(
         return false;
     }
 
-    CGff3WriteRecordSet recordSet;
+    CGff2WriteRecordSet recordSet;
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
 
     SAnnotSelector sel = x_GetAnnotSelector();
@@ -174,7 +174,7 @@ bool CGffWriter::x_WriteAnnotFTable(
 }
 
 //  ----------------------------------------------------------------------------
-SAnnotSelector CGffWriter::x_GetAnnotSelector()
+SAnnotSelector CGff2Writer::x_GetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
@@ -185,7 +185,7 @@ SAnnotSelector CGffWriter::x_GetAnnotSelector()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteAnnotAlign( 
+bool CGff2Writer::x_WriteAnnotAlign( 
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
@@ -194,7 +194,7 @@ bool CGffWriter::x_WriteAnnotAlign(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteBrowserLine(
+bool CGff2Writer::x_WriteBrowserLine(
     const CRef< CUser_object > pBrowserInfo )
 //  ----------------------------------------------------------------------------
 {
@@ -218,7 +218,7 @@ bool CGffWriter::x_WriteBrowserLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteTrackLine(
+bool CGff2Writer::x_WriteTrackLine(
     const CRef< CUser_object > pTrackInfo )
 //  ----------------------------------------------------------------------------
 {
@@ -247,15 +247,15 @@ bool CGffWriter::x_WriteTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_AssignObject(
+bool CGff2Writer::x_AssignObject(
    feature::CFeatTree& feat_tree,
    CMappedFeat mapped_feature,        
-   CGff3WriteRecordSet& set )
+   CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
 
-    CGff3WriteRecord* pRecord = new CGff3WriteRecord( feat_tree );
+    CGff2WriteRecord* pRecord = x_CreateRecord( feat_tree );
     if ( ! pRecord->AssignFromAsn( mapped_feature ) ) {
         return false;
     }
@@ -269,7 +269,7 @@ bool CGffWriter::x_AssignObject(
             list< CRef< CSeq_interval > >::const_iterator it;
             for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
                 const CSeq_interval& subint = **it;
-                CGff3WriteRecord* pExon = new CGff3WriteRecord( feat_tree );
+                CGff2WriteRecord* pExon = new CGff2WriteRecord( feat_tree );
                 pExon->MakeExon( *pRecord, subint );
                 set.AddOrMergeRecord( pExon );
             }
@@ -288,11 +288,11 @@ bool CGffWriter::x_AssignObject(
 }
     
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteRecords(
-    const CGff3WriteRecordSet& set )
+bool CGff2Writer::x_WriteRecords(
+    const CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
-    for ( CGff3WriteRecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
+    for ( CGff2WriteRecordSet::TCit cit = set.begin(); cit != set.end(); ++cit ) {
         if ( ! x_WriteRecord( *cit ) ) {
             return false;
         }
@@ -301,11 +301,11 @@ bool CGffWriter::x_WriteRecords(
 }    
     
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteRecord( 
-    const CGff3WriteRecord* pRecord )
+bool CGff2Writer::x_WriteRecord( 
+    const CGff2WriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
-    const CGff3WriteRecord& record = *pRecord;
+    const CGff2WriteRecord& record = *pRecord;
 
     m_Os << pRecord->StrId() << '\t';
     m_Os << pRecord->StrSource() << '\t';
@@ -320,7 +320,7 @@ bool CGffWriter::x_WriteRecord(
 }
 
 //  ----------------------------------------------------------------------------
-CRef< CUser_object > CGffWriter::x_GetDescriptor(
+CRef< CUser_object > CGff2Writer::x_GetDescriptor(
     const CSeq_annot& annot,
     const string& strType ) const
 //  ----------------------------------------------------------------------------
@@ -347,15 +347,15 @@ CRef< CUser_object > CGffWriter::x_GetDescriptor(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_WriteHeader()
+bool CGff2Writer::x_WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "##gff-version 3" << endl;
+    m_Os << "##gff-version 2" << endl;
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriter::x_NeedsQuoting(
+bool CGff2Writer::x_NeedsQuoting(
     const string& str )
 //  ----------------------------------------------------------------------------
 {
@@ -373,7 +373,7 @@ bool CGffWriter::x_NeedsQuoting(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffWriter::x_PriorityProcess(
+void CGff2Writer::x_PriorityProcess(
     const string& strKey,
     map<string, string >& attrs,
     string& strAttributes ) const
@@ -433,6 +433,14 @@ void CGffWriter::x_PriorityProcess(
 	if ( m_uFlags & fSoQuirks ) {
         strAttributes += "; ";
     }
+}
+
+//  ============================================================================
+CGff2WriteRecord* CGff2Writer::x_CreateRecord(
+    feature::CFeatTree& feat_tree )
+//  ============================================================================
+{
+    return new CGff2WriteRecord( feat_tree );
 }
 
 END_NCBI_SCOPE

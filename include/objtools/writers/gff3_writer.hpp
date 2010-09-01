@@ -25,12 +25,12 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Write gtf file
+ * File Description:  Write gff3 file
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GTF_WRITER__HPP
-#define OBJTOOLS_READERS___GTF_WRITER__HPP
+#ifndef OBJTOOLS_READERS___GFF3_WRITER__HPP
+#define OBJTOOLS_READERS___GFF3_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
@@ -38,82 +38,43 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
-//#include <objtools/writers/gff_writer.hpp>
-#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CGtfRecord;
-
-class feature::CFeatTree;
-
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGff2Writer
+class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
+    : public CGff2Writer
 {
 public:
-    enum {
-        fStructibutes = 1<<16,
-    };
-
-    CGtfWriter(
+//    typedef enum {
+//        fNormal =       0,
+//        fNoHeader =     1<<0,
+//        fSoQuirks =     1<<15,
+//    } TFlags;
+    
+public:
+    CGff3Writer(
         CScope&,
         CNcbiOstream&,
-        unsigned int = 0 );
-    ~CGtfWriter();
+        TFlags = fNormal );
+    virtual ~CGff3Writer();
+
+//    bool WriteAnnot( const CSeq_annot& );
 
 protected:
-    bool x_WriteHeader();
-
-    bool x_WriteRecord( 
-        const CGff2WriteRecord* );
-
-    bool x_AssignObject( 
-        feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectGene( 
-        feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectMrna( 
-        feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_AssignObjectCds( 
-        feature::CFeatTree&,
-        CMappedFeat,        
-        CGff2WriteRecordSet& );
-
-    bool x_SplitCdsLocation(
-        const CSeq_feat&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >& ) const;
-
-    void x_AddMultipleRecords(
-        CGtfRecord&,
-        CRef< CSeq_loc >,
-        CGff2WriteRecordSet& );
-
-    SAnnotSelector x_GetAnnotSelector();
+    virtual bool x_WriteHeader();
+    TFlags m_uFlags;
 
     virtual CGff2WriteRecord* x_CreateRecord(
         feature::CFeatTree& );
 
-    typedef map< int, CRef< CSeq_interval > > TExonMap;
-    typedef TExonMap::const_iterator TExonCit;
-    TExonMap m_exonMap;
-    unsigned int m_uFlags;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GTF_WRITER__HPP
+#endif  // OBJTOOLS_WRITERS___GFF3_WRITER__HPP

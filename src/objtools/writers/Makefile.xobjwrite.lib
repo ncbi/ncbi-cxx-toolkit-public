@@ -4,7 +4,8 @@ ASN_DEP = seqset
 
 LIB = xobjwrite
 SRC = agp_write \
-      gff_writer gff3_write_data \
+      gff_writer gff2_write_data \
+      gff3_writer gff3_write_data \
       gtf_writer gtf_write_data \
       wiggle_writer
       

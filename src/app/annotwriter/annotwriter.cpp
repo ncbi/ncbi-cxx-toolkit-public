@@ -72,6 +72,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
+#include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 
 #include <time.h>
@@ -99,6 +100,14 @@ private:
         const CSeq_annot& annot,
         CNcbiOstream& );
 
+    bool WriteGff2(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
+    bool WriteGff3(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
     bool WriteGtf(
         const CSeq_annot& annot,
         CNcbiOstream& );
@@ -107,7 +116,7 @@ private:
         const CSeq_annot& annot,
         CNcbiOstream& );
 
-    CGffWriter::TFlags GffFlags( 
+    CGff2Writer::TFlags GffFlags( 
         const CArgs& );
 };
 
@@ -138,7 +147,7 @@ void CAnnotWriterApp::Init()
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
-            "gff", "gtf", "wiggle" ) );
+            "gff", "gff2", "gff3", "gtf", "wiggle" ) );
     }}
 
     // output
@@ -252,6 +261,12 @@ bool CAnnotWriterApp::Write(
     if ( GetArgs()[ "format" ].AsString() == "gff" ) { 
         return WriteGff( annot, os );
     }
+    if ( GetArgs()[ "format" ].AsString() == "gff2" ) { 
+        return WriteGff2( annot, os );
+    }
+    if ( GetArgs()[ "format" ].AsString() == "gff3" ) { 
+        return WriteGff3( annot, os );
+    }
     if ( GetArgs()[ "format" ].AsString() == "gtf" ) {
         return WriteGtf( annot, os );
     }
@@ -268,12 +283,37 @@ bool CAnnotWriterApp::WriteGff(
     CNcbiOstream& os )
 //  -----------------------------------------------------------------------------
 {
+    //default: gff2
+    return WriteGff2( annot, os );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGff2( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
     CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager( *pObjMngr );
     CRef< CScope > pScope( new CScope( *pObjMngr ) );
     pScope->AddDefaults();
 
-    CGffWriter writer( *pScope, os, GffFlags( GetArgs() ) );
+    CGff2Writer writer( *pScope, os, GffFlags( GetArgs() ) );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteGff3( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
     return writer.WriteAnnot( annot );
 }
 
@@ -303,13 +343,13 @@ bool CAnnotWriterApp::WriteWiggle(
 }
 
 //  -----------------------------------------------------------------------------
-CGffWriter::TFlags CAnnotWriterApp::GffFlags(
+CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
     const CArgs& args )
 //  -----------------------------------------------------------------------------
 {
-    CGffWriter::TFlags eFlags = CGffWriter::fNormal;
+    CGff2Writer::TFlags eFlags = CGff2Writer::fNormal;
     if ( args["so-quirks"] ) {
-        eFlags = CGffWriter::TFlags( eFlags | CGffWriter::fSoQuirks );
+        eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fSoQuirks );
     }
     if ( args["structibutes"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );

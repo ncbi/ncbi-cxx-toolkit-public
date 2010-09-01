@@ -29,7 +29,7 @@
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GFF_WRITER__HPP
+#ifndef OBJTOOLS_READERS___GFF_WRITER__HPP
 #define OBJTOOLS_READERS___GFF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
@@ -38,32 +38,32 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ----------------------------------------------------------------------------
-class CGff3WriteRecordSet
+class CGff2WriteRecordSet
 //  ----------------------------------------------------------------------------
 {
 public:
-    typedef vector< CGff3WriteRecord* > TRecords;
+    typedef vector< CGff2WriteRecord* > TRecords;
     typedef TRecords::const_iterator TCit;
     typedef TRecords::iterator TIt;
 
 public:
-    CGff3WriteRecordSet() {};
-    ~CGff3WriteRecordSet() {
+    CGff2WriteRecordSet() {};
+    ~CGff2WriteRecordSet() {
         for ( TRecords::iterator it = begin(); it != end(); ++it ) {
 //            delete *it;
         }
     };
  
     void AddRecord(
-        CGff3WriteRecord* pRecord );
+        CGff2WriteRecord* pRecord );
 
-	void AddOrMergeRecord( CGff3WriteRecord* );
+	void AddOrMergeRecord( CGff2WriteRecord* );
 
     const TRecords& Set() const { return m_Set; };
     TCit begin() const { return Set().begin(); };
@@ -74,18 +74,18 @@ public:
 protected:
     TRecords m_Set;
 
-	struct PGff3WriteRecordPtrLess {
-    	bool operator()(const CGff3WriteRecord* x, const CGff3WriteRecord* y) const; 
+	struct PGff2WriteRecordPtrLess {
+    	bool operator()(const CGff2WriteRecord* x, const CGff2WriteRecord* y) const; 
 	};
 
-	typedef map< const CGff3WriteRecord*, CGff3WriteRecord*, 
-				 PGff3WriteRecordPtrLess > TMergeMap;
+	typedef map< const CGff2WriteRecord*, CGff2WriteRecord*, 
+				 PGff2WriteRecordPtrLess > TMergeMap;
 	TMergeMap m_MergeMap;
 };
 
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGffWriter
+class NCBI_XOBJWRITE_EXPORT CGff2Writer
 //  ============================================================================
 {
 public:
@@ -96,11 +96,11 @@ public:
     } TFlags;
     
 public:
-    CGffWriter(
+    CGff2Writer(
         CScope&,
         CNcbiOstream&,
         TFlags = fNormal );
-    virtual ~CGffWriter();
+    virtual ~CGff2Writer();
 
     bool WriteAnnot( const CSeq_annot& );
 
@@ -111,9 +111,9 @@ protected:
     bool x_WriteAnnotAlign( 
         const CSeq_annot& );
     virtual bool x_WriteRecord( 
-        const CGff3WriteRecord* );
+        const CGff2WriteRecord* );
     bool x_WriteRecords( 
-        const CGff3WriteRecordSet& );
+        const CGff2WriteRecordSet& );
     bool x_WriteBrowserLine(
         const CRef< CUser_object > );
     bool x_WriteTrackLine(
@@ -122,7 +122,7 @@ protected:
     virtual bool x_AssignObject( 
         feature::CFeatTree&,
         CMappedFeat,        
-        CGff3WriteRecordSet& );
+        CGff2WriteRecordSet& );
 
     virtual void x_PriorityProcess(
         const string&,
@@ -137,6 +137,9 @@ protected:
         const string& );
 
     virtual SAnnotSelector x_GetAnnotSelector();
+
+    virtual CGff2WriteRecord* x_CreateRecord(
+        feature::CFeatTree& );
 
     CScope& m_Scope;
     CNcbiOstream& m_Os;

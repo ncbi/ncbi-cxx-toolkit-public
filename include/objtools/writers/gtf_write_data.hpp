@@ -43,12 +43,12 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ============================================================================
 class CGtfRecord
 //  ============================================================================
-    : public CGff3WriteRecord
+    : public CGff2WriteRecord
 {
 public: 
     CGtfRecord(
         feature::CFeatTree& feat_tree
-    ): CGff3WriteRecord( feat_tree ) {};
+    ): CGff2WriteRecord( feat_tree ) {};
 
     ~CGtfRecord() {};
 

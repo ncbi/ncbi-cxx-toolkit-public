@@ -53,7 +53,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -117,7 +117,34 @@ bool CGtfRecord::AssignFromAsn(
     CMappedFeat mapped_feature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff3WriteRecord::AssignFromAsn( mapped_feature ) ) {
+    if ( ! x_AssignTypeFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignSeqIdFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignSourceFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignStartFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignStopFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignScoreFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignStrandFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignPhaseFromAsn( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributesFromAsnCore( mapped_feature ) ) {
+        return false;
+    }
+    if ( ! x_AssignAttributesFromAsnExtended( mapped_feature ) ) {
         return false;
     }
     return true;

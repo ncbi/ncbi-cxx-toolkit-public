@@ -49,7 +49,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
@@ -63,7 +63,7 @@ CGtfWriter::CGtfWriter(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGffWriter( scope, ostr ),
+    CGff2Writer( scope, ostr ),
     m_uFlags( uFlags )
 {
 };
@@ -84,10 +84,10 @@ bool CGtfWriter::x_WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteRecord( 
-    const CGff3WriteRecord* pRecord )
+    const CGff2WriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
-    const CGff3WriteRecord& record = *pRecord;
+    const CGff2WriteRecord& record = *pRecord;
 
     m_Os << pRecord->StrId() << '\t';
     m_Os << pRecord->StrSource() << '\t';
@@ -111,7 +111,7 @@ bool CGtfWriter::x_WriteRecord(
 bool CGtfWriter::x_AssignObject(
     feature::CFeatTree& feat_tree,
     CMappedFeat mapped_feature,        
-    CGff3WriteRecordSet& set )
+    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
@@ -139,12 +139,12 @@ bool CGtfWriter::x_AssignObject(
 bool CGtfWriter::x_AssignObjectGene(
     feature::CFeatTree& feat_tree,
     CMappedFeat mapped_feature,
-    CGff3WriteRecordSet& set )
+    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
        
-    CGtfRecord* pRecord = new CGtfRecord( feat_tree );
+    CGff2WriteRecord* pRecord = x_CreateRecord( feat_tree );
     if ( ! pRecord->AssignFromAsn( mapped_feature ) ) {
         return false;
     }
@@ -156,14 +156,15 @@ bool CGtfWriter::x_AssignObjectGene(
 bool CGtfWriter::x_AssignObjectMrna(
     feature::CFeatTree& feat_tree,
     CMappedFeat mapped_feature,
-    CGff3WriteRecordSet& set )
+    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
        
     m_exonMap.clear();
 
-    CGtfRecord* pParent = new CGtfRecord( feat_tree );
+    CGtfRecord* pParent = dynamic_cast< CGtfRecord* >(
+        x_CreateRecord( feat_tree ) );
     if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
         delete pParent;
         return false;
@@ -196,12 +197,12 @@ bool CGtfWriter::x_AssignObjectMrna(
 bool CGtfWriter::x_AssignObjectCds(
     feature::CFeatTree& feat_tree,
     CMappedFeat mapped_feature,        
-    CGff3WriteRecordSet& set )
+    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
        
-    CGtfRecord* pParent = new CGtfRecord( feat_tree );
+    CGtfRecord* pParent = dynamic_cast< CGtfRecord* >( x_CreateRecord( feat_tree ) );
     if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
         delete pParent;
         return false;
@@ -296,7 +297,7 @@ bool CGtfWriter::x_SplitCdsLocation(
 void CGtfWriter::x_AddMultipleRecords(
     CGtfRecord& parent,
     CRef< CSeq_loc > pLocation,
-    CGff3WriteRecordSet& set )
+    CGff2WriteRecordSet& set )
 //  ----------------------------------------------------------------------------
 {
     const list< CRef< CSeq_interval > >& sublocs =
@@ -335,6 +336,14 @@ SAnnotSelector CGtfWriter::x_GetAnnotSelector()
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
     return sel;
+}
+
+//  ============================================================================
+CGff2WriteRecord* CGtfWriter::x_CreateRecord(
+    feature::CFeatTree& feat_tree )
+//  ============================================================================
+{
+    return new CGtfRecord( feat_tree );
 }
 
 END_NCBI_SCOPE
