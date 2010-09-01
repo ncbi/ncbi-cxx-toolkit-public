@@ -914,12 +914,29 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 {
     list<string> l;
 
-    // format location
-    string loc = NStr::UIntToString(gap.GetFrom());
+	TSeqPos gapStart = gap.GetFrom();
+	TSeqPos gapEnd   = gap.GetTo();
+
+	const bool isGapOfLengthZero = ( gapStart > gapEnd );
+
+	// size zero gaps require an adjustment to print right
+	if( isGapOfLengthZero ) {
+		gapStart--;
+		gapEnd++;
+	}
+
+	    // format location
+    string loc = NStr::UIntToString(gapStart);
     loc += "..";
-    loc += NStr::UIntToString(gap.GetTo());
+    loc += NStr::UIntToString(gapEnd);
 
     Wrap(l, "gap", loc, eFeat);
+
+	// size zero gaps indicate non-consecutive residues
+	if( isGapOfLengthZero ) {
+		NStr::Wrap("\"Non-consecutive residues\"", GetWidth(), l, SetWrapFlags(),
+			GetFeatIndent(), GetFeatIndent() + "/note=");
+	}
 
     // format mandtory /estimated_length qualifier
     string estimated_length;
