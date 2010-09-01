@@ -2322,7 +2322,9 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
     if ( !force_load ) {
         CConstRef<CSeq_id> id = idh.GetSeqId();
         const CTextseq_id* text_id = id->GetTextseq_Id();
-        if ( text_id && text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+        if ( text_id &&
+             text_id->IsSetAccession() &&
+             text_id->IsSetVersion() ) {
             ret = idh;
             return ret;
         }
@@ -2664,7 +2666,7 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
                                           bool force_load)
 {
-    int count = ids.size(), remaining = 0;
+    int count = ids.size(), remaining = count;
     TIds ret(count);
     vector<bool> loaded(count);
     if ( !force_load ) {
@@ -2676,14 +2678,9 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
                  text_id->IsSetVersion() ) {
                 ret[i] = ids[i];
                 loaded[i] = true;
-            }
-            else {
-                ++remaining;
+                --remaining;
             }
         }
-    }
-    else {
-        remaining = count;
     }
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
@@ -2729,7 +2726,7 @@ CScope_Impl::TIds CScope_Impl::GetAccVers(const TIds& ids,
 CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
                                       bool force_load)
 {
-    int count = ids.size(), remaining = 0;
+    int count = ids.size(), remaining = count;
     TGIs ret(count, -1);
     vector<bool> loaded(count);
     if ( !force_load ) {
@@ -2737,14 +2734,9 @@ CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
             if ( ids[i].IsGi() ) {
                 ret[i] = ids[i].GetGi();
                 loaded[i] = true;
-            }
-            else {
-                ++remaining;
+                --remaining;
             }
         }
-    }
-    else {
-        remaining = count;
     }
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
@@ -2790,7 +2782,7 @@ CScope_Impl::TGIs CScope_Impl::GetGis(const TIds& ids,
 CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
                                             bool force_load)
 {
-    int count = ids.size(), remaining = 0;
+    int count = ids.size(), remaining = count;
     TLabels ret(count);
     vector<bool> loaded(count);
     if ( !force_load ) {
@@ -2798,14 +2790,9 @@ CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
             ret[i] = GetDirectLabel(ids[i]);
             if ( !ret[i].empty() ) {
                 loaded[i] = true;
-            }
-            else {
-                ++remaining;
+                --remaining;
             }
         }
-    }
-    else {
-        remaining = count;
     }
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
@@ -2851,10 +2838,59 @@ CScope_Impl::TLabels CScope_Impl::GetLabels(const TIds& ids,
 CScope_Impl::TTaxIds CScope_Impl::GetTaxIds(const TIds& ids,
                                             bool force_load)
 {
-    TTaxIds ret;
-    ret.reserve(ids.size());
-    ITERATE ( TIds, it, ids ) {
-        ret.push_back(GetTaxId(*it, force_load));
+    int count = ids.size(), remaining = count;
+    TTaxIds ret(count);
+    vector<bool> loaded(count);
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            if ( ids[i].Which() == CSeq_id::e_General ) {
+                CConstRef<CSeq_id> id = ids[i].GetSeqId();
+                const CDbtag& dbtag = id->GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
+                    ret[i] = obj_id.GetId();
+                    loaded[i] = true;
+                    --remaining;
+                }
+            }
+        }
+    }
+    if ( remaining ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        
+        if ( !force_load ) {
+            for ( int i = 0; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                SSeqMatch_Scope match;
+                CRef<CBioseq_ScopeInfo> info =
+                    x_FindBioseq_Info(ids[i],
+                                      CScope::eGetBioseq_Resolved,
+                                      match);
+                if ( info ) {
+                    if ( info->HasBioseq() ) {
+                        ret[i] = info->GetObjectInfo().GetTaxId();
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                }
+            }
+        }
+    
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if ( !remaining ) {
+                break;
+            }
+            CPrefetchManager::IsActive();
+            it->GetDataSource().GetTaxIds(ids, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+	    std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
+            remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
+        }
     }
     return ret;
 }

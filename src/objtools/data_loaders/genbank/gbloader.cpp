@@ -812,6 +812,15 @@ void CGBDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 }
 
 
+void CGBDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+        CGBReaderRequestResult result(this, ids[0]);
+        m_Dispatcher->LoadTaxIds(result, ids, loaded, ret);
+    }
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);

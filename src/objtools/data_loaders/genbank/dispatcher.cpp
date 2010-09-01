@@ -656,6 +656,50 @@ namespace {
         TRet& m_Ret;
     };
 
+    class CCommandLoadTaxIds : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<int> TRet;
+        CCommandLoadTaxIds(CReaderRequestResult& result,
+                           const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
+                    m_Loaded.end();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadTaxIds(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadTaxIds("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Seq_idTaxId;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "taxids("+NStr::UIntToString(m_Key.size())+": "+
+                    m_Key[0].AsString()+", ...)";
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
     class CCommandLoadBlobVersion : public CReadDispatcherCommand
     {
     public:
@@ -1175,6 +1219,14 @@ void CReadDispatcher::LoadLabels(CReaderRequestResult& result,
                                  const TIds ids, TLoaded& loaded, TLabels& ret)
 {
     CCommandLoadLabels command(result, ids, loaded, ret);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadTaxIds(CReaderRequestResult& result,
+                                 const TIds ids, TLoaded& loaded, TTaxIds& ret)
+{
+    CCommandLoadTaxIds command(result, ids, loaded, ret);
     Process(command);
 }
 

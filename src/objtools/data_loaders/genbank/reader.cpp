@@ -452,9 +452,32 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         return true;
     }
     
-    ids->SetLoadedTaxId(-1);
+    m_Dispatcher->LoadBlobs(result, seq_id, fBlobHasCore|fBlobHasDescr, 0);
+    CLoadLockBlob_ids blobs(result, seq_id, static_cast<SAnnotSelector*>(0));
+    _ASSERT(blobs.IsLoaded());
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        if ( !info.Matches(*it->first, fBlobHasCore, 0) ) {
+            continue;
+        }
+        CLoadLockBlob blob(result, *it->first);
+        _ASSERT(blob.IsLoaded());
+        if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
+            continue;
+        }
+            
+        CConstRef<CBioseq_Info> bs_info = blob->FindMatchingBioseq(seq_id);
+        if ( bs_info ) {
+            ids->SetLoadedTaxId(bs_info->GetTaxId());
+            break;
+        }
+    }
+    
+    if ( !ids->IsLoadedTaxId() ) {
+        ids->SetLoadedTaxId(0);
+    }
 
-    return ids->IsLoadedTaxId();
+    return true;
 }
 
 
@@ -514,6 +537,27 @@ bool CReader::LoadLabels(CReaderRequestResult& result,
         }
         if ( seq_ids->IsLoadedLabel() ) {
             ret[i] = seq_ids->GetLabel();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadTaxIds(CReaderRequestResult& result,
+                         const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    int count = ids.size();
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids seq_ids(result, ids[i]);
+        if ( !seq_ids->IsLoadedTaxId() ) {
+            m_Dispatcher->LoadSeq_idTaxId(result, ids[i]);
+        }
+        if ( seq_ids->IsLoadedTaxId() ) {
+            ret[i] = seq_ids->GetTaxId();
             loaded[i] = true;
         }
     }

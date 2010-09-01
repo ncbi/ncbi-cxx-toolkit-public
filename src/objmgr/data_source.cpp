@@ -1260,6 +1260,31 @@ void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 }
 
 
+void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    int count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TTSE_LockSet locks;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        if ( match ) {
+            ret[i] = match.m_Bioseq->GetTaxId();
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    if ( remaining && m_Loader ) {
+        m_Loader->GetTaxIds(ids, loaded, ret);
+    }
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( m_Loader ) {

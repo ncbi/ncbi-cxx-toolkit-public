@@ -608,6 +608,31 @@ bool CCacheReader::LoadLabels(CReaderRequestResult& result,
 }
 
 
+bool CCacheReader::LoadTaxIds(CReaderRequestResult& result,
+                              const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        CLoadLockSeq_ids lock(result, ids[i]);
+        if ( !lock->IsLoadedTaxId() ) {
+            LoadSeq_idTaxId(result, ids[i]);
+        }
+        if ( lock->IsLoadedTaxId() ) {
+            ret[i] = lock->GetTaxId();
+            loaded[i] = true;
+            continue;
+        }
+    }
+    return false;
+}
+
+
 bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
                                const string& key,
                                CLoadLockSeq_ids& ids)

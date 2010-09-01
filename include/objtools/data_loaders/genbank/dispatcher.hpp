@@ -106,6 +106,8 @@ public:
                  const TIds ids, TLoaded& loaded, TGis& ret);
     void LoadLabels(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TLabels& ret);
+    void LoadTaxIds(CReaderRequestResult& result,
+                    const TIds ids, TLoaded& loaded, TTaxIds& ret);
  
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);

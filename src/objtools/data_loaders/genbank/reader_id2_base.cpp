@@ -363,7 +363,7 @@ bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id)
 {
     if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
-        return false;
+        return CReader::LoadSeq_idTaxId(result, seq_id);
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
@@ -612,6 +612,93 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
             }
             else {
                 m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
+                locks[i].reset();
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
+                                const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( 1 || max_request_size <= 1 ||
+         (m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid) ) {
+        return CReader::LoadTaxIds(result, ids, loaded, ret);
+    }
+
+    int count = ids.size();
+    vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
+    CID2_Request_Packet packet;
+    int packet_start = 0;
+    
+    for ( int i = 0; i < count; ++i ) {
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
+            locks.clear();
+            return CReader::LoadTaxIds(result, ids, loaded, ret);
+        }
+        if ( loaded[i] ) {
+            continue;
+        }
+        locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
+        if ( (*locks[i])->IsLoadedTaxId() ) {
+            ret[i] = (*locks[i])->GetTaxId();
+            loaded[i] = true;
+            locks[i].reset();
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_taxid);
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            int count = i+1;
+            for ( int i = packet_start; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                _ASSERT(locks[i].get());
+                if ( (*locks[i])->IsLoadedTaxId() ) {
+                    ret[i] = (*locks[i])->GetTaxId();
+                    loaded[i] = true;
+                    locks[i].reset();
+                    continue;
+                }
+                else {
+                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
+                    locks[i].reset();
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( int i = packet_start; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            _ASSERT(locks[i].get());
+            if ( (*locks[i])->IsLoadedTaxId() ) {
+                ret[i] = (*locks[i])->GetTaxId();
+                loaded[i] = true;
+                locks[i].reset();
+                continue;
+            }
+            else {
+                m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
                 locks[i].reset();
             }
         }

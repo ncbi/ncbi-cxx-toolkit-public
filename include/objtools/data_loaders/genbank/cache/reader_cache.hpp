@@ -168,6 +168,8 @@ public:
                  const TIds& ids, TLoaded& loaded, TGis& ret);
     bool LoadLabels(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TLabels& ret);
+    bool LoadTaxIds(CReaderRequestResult& result,
+                    const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);

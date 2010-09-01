@@ -195,6 +195,7 @@ public:
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
     virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret);
+    virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
