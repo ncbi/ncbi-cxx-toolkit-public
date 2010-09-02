@@ -36,3 +36,8 @@ Corrected code generation to avoid identical names of nested classes.
 August 02, 2010
 version 2.2.1
 Enhanced to handle long path names.
+
+September 02, 2010
+version 2.2.2
+Corrected code generation of choice data objects, added ResetSelection? method.
+Corrected generation of WSDL client code. 
