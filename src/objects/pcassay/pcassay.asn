@@ -247,7 +247,7 @@ PC-AssayPanelMember ::= SEQUENCE {
 -- and to facilitate information validation by the depositor and data exchange with PubChem 
 PC-CategorizedComment ::= SEQUENCE {
     title     VisibleString,                                    -- title for the description/comment
-    comment   VisibleString                                     -- description/comment content
+    comment   SEQUENCE OF VisibleString                                     -- description/comment content
 }
 
 --  Assay Dose-response attribute information used to define a set of readouts
