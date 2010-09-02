@@ -4786,7 +4786,7 @@ ROM:HERP	s	Royal Ontario Museum, Herpetology collection
 ROM:ICH	s	Royal Ontario Museum, Fish collection
 ROM:IZ	s	Royal Ontario Museum, Invertebrate Zoology Collection
 ROM:MAMM	s	Royal Ontario Museum, Mammal Collection
-ROME	s	Royal Ontario Museum
+ROME	s	Royal Ontario Museum, Entomology Collection
 ROML	s	National University of Lesotho, Biology Department
 ROMO	s	Rocky Mountain National Park
 ROO	s	Agricultural Research Council-Range and Forage Institute
@@ -5766,7 +5766,7 @@ UG<GHA>	s	University of Ghana
 UGAMNH	s	University of Georgia Museum of Natural History
 UGCA	s	University of Georgia
 UGDA	s	Gdansk University, Department of Plant Taxonomy and Nature Conservation
-UGDZ	s	University of Guelph
+UGDZ	s	University of Guelph, Department of Zoology
 UGG	s	University of Guam
 UGGE	s	Universidad de Guayaquil
 UGGG	s	University of Guyana
