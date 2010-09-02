@@ -584,7 +584,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         m_Page.reset(new CHTMLPage(m_Title, m_HtmlTemplate));
         CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
         m_Page->AddTagMap("VIEW", stat_view);
-    } catch (exception& e) {
+    }
+    catch (exception& e) {
         ERR_POST("Failed to create " << m_Title << " HTML page: " << e.what());
         return 2;
     }
@@ -677,12 +678,14 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     }
                 }
                 catch (CNetScheduleException& ex) {
+                    ERR_POST("Failed to submit a job: " << ex.what());
                     OnJobFailed(ex.GetErrCode() ==
                             CNetScheduleException::eTooManyPendingJobs ?
                         "NetSchedule Queue is busy" : ex.what(), grid_ctx);
                     phase = eTerminated;
                 }
                 catch (exception& ex) {
+                    ERR_POST("Failed to submit a job: " << ex.what());
                     OnJobFailed(ex.what(), grid_ctx);
                     phase = eTerminated;
                 }
@@ -691,14 +694,15 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             }
         } // try
         catch (exception& ex) {
+            ERR_POST("Job's reported as failed: " << ex.what());
             OnJobFailed(ex.what(), grid_ctx);
         }
         CHTMLPlainText* self_url =
-            new CHTMLPlainText(grid_ctx.GetSelfURL(),true);
+            new CHTMLPlainText(grid_ctx.GetSelfURL(), true);
         m_Page->AddTagMap("SELF_URL", self_url);
         m_CustomHTTPHeader->AddTagMap("SELF_URL", self_url);
         CHTMLPlainText* hidden_fields =
-            new CHTMLPlainText(grid_ctx.GetHiddenFields(),true);
+            new CHTMLPlainText(grid_ctx.GetHiddenFields(), true);
         m_Page->AddTagMap("HIDDEN_FIELDS", hidden_fields);
 
         CTime now(GetFastLocalTime());
@@ -759,7 +763,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         }
         response.WriteHeader();
         m_Page->Print(response.out(), CNCBINode::eHTML);
-    } catch (exception& e) {
+    }
+    catch (exception& e) {
         ERR_POST("Failed to compose/send " << m_Title <<
             " HTML page: " << e.what());
         return 4;
