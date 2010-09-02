@@ -121,3 +121,6 @@ July 30, 2010
 version 3.0.0
 Added support of MSVC 2010
 
+September 02, 2010
+version 3.0.1
+Fixed bug in list of generated files
