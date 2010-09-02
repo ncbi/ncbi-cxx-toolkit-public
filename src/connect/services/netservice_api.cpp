@@ -82,8 +82,12 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
-SNetServiceImpl::SNetServiceImpl(const string& service_name,
-        const string& client_name, INetServerConnectionListener* listener) :
+SNetServiceImpl::SNetServiceImpl(
+        const string& api_name,
+        const string& service_name,
+        const string& client_name,
+        INetServerConnectionListener* listener) :
+    m_APIName(api_name),
     m_ServiceName(service_name),
     m_ClientName(client_name),
     m_Listener(listener),
@@ -299,7 +303,8 @@ void SNetServiceImpl::Init(CNetObject* api_impl,
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app == NULL) {
-            NCBI_THROW(CArgException, eNoValue, "Client name is not set.");
+            NCBI_THROW_FMT(CArgException, eNoValue,
+                m_APIName << ": client name is not set");
         }
         m_ClientName = app->GetProgramDisplayName();
     }
@@ -393,13 +398,14 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     return server;
 }
 
-CNetServer SNetServiceImpl::GetSingleServer()
+CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
 {
     _ASSERT(m_ServiceType != eLoadBalanced);
 
     if (m_ServiceType == eNotDefined) {
-        NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-            "Operation requires a server but none specified");
+        NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+            m_APIName << ": command '" << cmd <<
+                "' requires a server but none specified");
     }
 
     return ReturnServer(m_SignleServerGroup->m_Servers.front());
@@ -408,7 +414,7 @@ CNetServer SNetServiceImpl::GetSingleServer()
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
     if (m_Impl->m_ServiceType != SNetServiceImpl::eLoadBalanced)
-        return m_Impl->GetSingleServer().ExecWithRetry(cmd);
+        return m_Impl->GetSingleServer(cmd).ExecWithRetry(cmd);
 
     bool throttled = false;
 
@@ -437,13 +443,14 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
         (!throttled ? " service." : " service (some servers are throttled)."));
 }
 
-CNetServer SNetServiceImpl::RequireStandAloneServerSpec()
+CNetServer SNetServiceImpl::RequireStandAloneServerSpec(const string& cmd)
 {
     if (m_ServiceType != eLoadBalanced)
-        return GetSingleServer();
+        return GetSingleServer(cmd);
 
-    NCBI_THROW(CNetServiceException, eCommandIsNotAllowed,
-        "This command requires explicit server address (host:port)");
+    NCBI_THROW_FMT(CNetServiceException, eCommandIsNotAllowed,
+        m_APIName << ": command '" << cmd <<
+            "' requires explicit server address (host:port)");
 }
 
 #define LBSMD_IS_PENALIZED_RATE(rate) (rate <= -0.01)
@@ -464,8 +471,8 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
 {
     switch (m_ServiceType) {
     case SNetServiceImpl::eNotDefined:
-        NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-            "Service name is not set.");
+        NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+            m_APIName << ": service name is not set");
 
     case SNetServiceImpl::eSingleServer:
         m_SignleServerGroup->m_Service = this;
@@ -588,7 +595,7 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
 void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
 {
     CNetServer::SExecResult exec_result(
-        RequireStandAloneServerSpec().ExecWithRetry(cmd));
+        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd));
 
     out << exec_result.response << "\n" << flush;
 
@@ -693,9 +700,10 @@ bool CNetServerGroup::FindServer(INetServerFinder* finder)
         }
     }
 
-    if (had_comm_err)
+    if (had_comm_err) {
         NCBI_THROW(CNetServiceException,
-        eCommunicationError, "Communication error");
+            eCommunicationError, "Communication error (see details above)");
+    }
 
     return false;
 }

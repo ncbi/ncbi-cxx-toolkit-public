@@ -139,12 +139,14 @@ static const char* const s_NetScheduleConfigSections[] = {
     NULL
 };
 
+static const string s_NetScheduleAPIName("NetScheduleAPI");
+
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name) :
-    m_Service(new SNetServiceImpl(service_name, client_name,
-        new CNetScheduleServerListener)),
+    m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
+        service_name, client_name, new CNetScheduleServerListener)),
     m_Queue(queue_name),
     m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {

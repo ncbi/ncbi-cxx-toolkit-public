@@ -154,9 +154,11 @@ static const char* const s_NetCacheConfigSections[] = {
     NULL
 };
 
+static const string s_NetCacheAPIName("NetCacheAPI");
+
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl(service, client_name,
+    m_Service(new SNetServiceImpl(s_NetCacheAPIName, service, client_name,
         new CNetCacheServerListener))
 {
     m_Service->Init(this, config, section, s_NetCacheConfigSections);

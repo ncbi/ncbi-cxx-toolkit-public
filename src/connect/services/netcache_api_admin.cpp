@@ -41,21 +41,27 @@ BEGIN_NCBI_SCOPE
 
 void CNetCacheAdmin::ShutdownServer()
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
-        ExecWithRetry(m_Impl->m_API->MakeCmd("SHUTDOWN"));
+    string cmd(m_Impl->m_API->MakeCmd("SHUTDOWN"));
+
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
+        ExecWithRetry(cmd);
 }
 
 void CNetCacheAdmin::ReloadServerConfig()
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
-        ExecWithRetry(m_Impl->m_API->MakeCmd("RECONF"));
+    string cmd(m_Impl->m_API->MakeCmd("RECONF"));
+
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
+        ExecWithRetry(cmd);
 }
 
 void CNetCacheAdmin::Reinitialize(const string& cache_name)
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
-        ExecWithRetry(m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
-            string("IC(" + cache_name + ") REINIT").c_str()));
+    string cmd(m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
+        string("IC(" + cache_name + ") REINIT").c_str()));
+
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
+        ExecWithRetry(cmd);
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const

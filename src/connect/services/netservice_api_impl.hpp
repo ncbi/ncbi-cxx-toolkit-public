@@ -88,8 +88,11 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
-    SNetServiceImpl(const string& service_name,
-        const string& client_name, INetServerConnectionListener* listener);
+    SNetServiceImpl(
+        const string& api_name,
+        const string& service_name,
+        const string& client_name,
+        INetServerConnectionListener* listener);
 
     void Init(CNetObject* api_impl,
         CConfig* config, const string& config_section,
@@ -100,12 +103,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
     CNetServer ReturnServer(SNetServerImpl* server_impl);
     CNetServer GetServer(const string& host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);
-    CNetServer GetSingleServer();
+    CNetServer GetSingleServer(const string& cmd);
 
     // Utility method for commands that require single server (that is,
     // a host:port pair) to be specified (not a load-balanced service
     // name).
-    CNetServer RequireStandAloneServerSpec();
+    CNetServer RequireStandAloneServerSpec(const string& cmd);
 
     SNetServerGroupImpl* CreateServerGroup(
         CNetService::EDiscoveryMode discovery_mode);
@@ -117,6 +120,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CNetObject
 
     virtual ~SNetServiceImpl();
 
+    string m_APIName;
     string m_ServiceName;
     string m_ClientName;
 

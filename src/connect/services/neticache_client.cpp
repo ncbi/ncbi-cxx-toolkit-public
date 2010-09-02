@@ -112,6 +112,8 @@ static string s_MakeBlobID(const string& key, int version, const string& subkey)
     return blob_id;
 }
 
+static const string s_NetICacheAPIName("NetICacheClient");
+
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
     SNetICacheClientImpl(CConfig* config,
@@ -119,8 +121,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(new SNetServiceImpl(service_name, client_name,
-            new CNetICacheServerListener)),
+        SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
+            service_name, client_name, new CNetICacheServerListener)),
         m_CacheName(cache_name)
     {
         m_Service->Init(this, config, section, s_NetICacheConfigSections);
