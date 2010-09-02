@@ -211,9 +211,13 @@ class CWriteDB_IsamKey {
     private:
     // read in the next key, for numeric id
     T x_GetNextKey() {
-        char s[4];
-        source->read(s, 4);
-        source->seekg(4, ios_base::cur);
+#define INT4_SIZE 4
+        char s[INT4_SIZE] = { '\0' };
+        source->read(s, INT4_SIZE);
+        if ((source->gcount() != INT4_SIZE) || source->eof()) {
+            return T();
+        }
+        source->seekg(INT4_SIZE, ios_base::cur);
 #ifdef WORDS_BIGENDIAN
         Int4 next_key = (Int4) *((Int4 *) s);
 #else
@@ -226,8 +230,12 @@ class CWriteDB_IsamKey {
 // customized string file reading
 template <> inline string
 CWriteDB_IsamKey<string>::x_GetNextKey() {
-    char s[256];
-    source->getline(s, 256);
+#define CHAR_BUFFER_SIZE 256
+    char s[CHAR_BUFFER_SIZE] = { '\0' };
+    source->getline(s, CHAR_BUFFER_SIZE);
+    if ((source->gcount() == 0) || source->eof()) {
+        return kEmptyStr;
+    }
     char * p = s;
     while (*p != 0x02) ++p;
     string in(s, p);
