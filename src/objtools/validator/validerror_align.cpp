@@ -180,6 +180,18 @@ static bool s_AmbiguousMatch (char a, char b)
 }
 
 
+static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
+{
+    size_t dim     = denseg.GetDim();
+    if (!denseg.IsSetIds()) {
+        dim = 0;
+    } else if (denseg.GetIds().size() < dim) {
+        dim = denseg.GetIds().size();
+    }
+    return dim;
+}
+
+
 void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
 {
     TSignedSeqPos col = 0;
@@ -193,7 +205,12 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
         bool is_tpa = false;
-        for (CDense_seg::TDim row = 0;  row < denseg.GetDim() && !is_tpa;  ++row) {
+        size_t dim     = denseg.GetDim();
+        if (dim != s_GetNumIdsToUse(denseg)) {
+            return;
+        }
+
+        for (CDense_seg::TDim row = 0;  row < dim && !is_tpa;  ++row) {
             CRef<CSeq_id> id = denseg.GetIds()[row];
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle (*id);
             if (bsh) {
@@ -909,7 +926,7 @@ void CValidError_align::x_ValidateFastaLike
 
     vector<string> fasta_like;
 
-    for ( size_t id = 0; id < dim; ++id ) {
+    for ( size_t id = 0; id < s_GetNumIdsToUse(denseg); ++id ) {
         bool gap = false;
         
         const CDense_seg::TStarts& starts = denseg.GetStarts();
