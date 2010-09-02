@@ -2534,9 +2534,6 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     if (CNcbiApplication::Instance()->GetProgramDisplayName() == "tbl2asn") {
         m_IsTbl2Asn = true;
     }
-    if (!m_IsTbl2Asn) {
-        m_RequireTaxonID = true;
-    }
 }
 
 
