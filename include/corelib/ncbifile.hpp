@@ -1247,7 +1247,7 @@ private:
         eGroup,              ///< Group mode
         eOther,              ///< Other mode
         eSpecial             ///< Special bits
-    };
+    }; 
 
     /// Holds default mode values
     TMode         m_DefaultMode[4/*EWho + Special bits*/];
@@ -1850,7 +1850,7 @@ private:
     auto_ptr<CNcbiOstream> m_OutFile;
 
 private:
-    // prevent copying
+    // Prevent copying
     CTmpFile(const CTmpFile&);
     CTmpFile& operator=(const CTmpFile&);
 };
@@ -2083,6 +2083,11 @@ private:
 
     // Friend classes
     friend class CMemoryFile;
+
+private:
+    // Prevent copying
+    CMemoryFileSegment(const CMemoryFileSegment&);
+    void operator=(const CMemoryFileSegment&);
 };
 
 
@@ -2252,6 +2257,11 @@ protected:
 
     typedef map<void*,CMemoryFileSegment*> TSegments;
     TSegments           m_Segments;  ///< Map of pointers to mapped segments.
+
+private:
+    // Prevent copying
+    CMemoryFileMap(const CMemoryFileMap&);
+    void operator=(const CMemoryFileMap&);
 };
 
 
@@ -2403,6 +2413,11 @@ private:
 
 private:
     void* m_Ptr;   ///< Pointer to mapped view of file.
+
+private:
+    // Prevent copying
+    CMemoryFile(const CMemoryFile&);
+    void operator=(const CMemoryFile&);
 };
 
 
