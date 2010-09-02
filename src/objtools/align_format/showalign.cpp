@@ -3280,7 +3280,6 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,list<i
 			deflines = alnDefLine;
         } else {
             //format each defline 
-            bool bMultipleDeflines = false;
             int numBdl = 0;
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){
