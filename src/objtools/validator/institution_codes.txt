@@ -382,6 +382,7 @@ BEGO	s	Beth Gordon Institute
 BEI	s	American University of Beirut, Biology Department
 BEL	s	Ulster Museum, Botany Department
 BELC	s	Beloit College, Biology Department
+BELUM<GBR>	s	Ulster Museum, Belfast
 BELZ	s	Zapovednik Belogorje State Nature Reserve
 BENH	s	British Entomological and Natural History Society
 BENIN	s	Universite National du Benin
@@ -438,6 +439,7 @@ BING	s	State University of New York, Biological Sciences Department
 BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologia (Botanica)
 BioCC	c	BioCC BioCen Culture Collection
 BIOT	s	Regional Center for Tropical Biology
+BIOUG<CAN>	s	Biodiversity Institute of Ontario, University of Guelph
 BIRA	s	Birmingham Museums and Art Gallery, Curatorial Services
 BIRDI	b	Biotechnology Research & Development Institute Vietnam
 BIRM	s	University of Birmingham
@@ -4400,7 +4402,7 @@ PEL	s	Universidade Federal de Pelotas, Departamento de Botanica
 PEM<CHN>	s	Beijing Medical University, Botany Department
 PEM<ZAF>	s	Port Elizabeth Museum
 PEN	s	Penrith Museum
-PENN	s	University of Pennsylvania
+PENN	s	University of Pennsylvania Herbarium
 PER	s	City Museum
 PERM	s	University of Perm, Botany Department
 PERTH	s	Western Australian Herbarium
