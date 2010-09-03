@@ -56,12 +56,20 @@ public:
     CGff3WriteRecord(
         feature::CFeatTree&
     );
+
+    CGff3WriteRecord(
+        const CGff2WriteRecord&
+    );
+
     virtual ~CGff3WriteRecord();
 
     virtual bool AssignFromAsn(
         CMappedFeat );
 
     virtual string StrAttributes() const;
+
+    bool AssignParent(
+        const CGff3WriteRecord& );
 
 protected:
     virtual bool x_AssignAttributesFromAsnCore(

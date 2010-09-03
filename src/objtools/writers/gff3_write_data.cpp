@@ -60,6 +60,14 @@ CGff3WriteRecord::CGff3WriteRecord(
 };
 
 //  ----------------------------------------------------------------------------
+CGff3WriteRecord::CGff3WriteRecord(
+    const CGff2WriteRecord& other ) :
+    CGff2WriteRecord( other )
+//  ----------------------------------------------------------------------------
+{
+};
+
+//  ----------------------------------------------------------------------------
 CGff3WriteRecord::~CGff3WriteRecord()
 //  ----------------------------------------------------------------------------
 {
@@ -215,6 +223,20 @@ string CGff3WriteRecord::StrAttributes() const
 			strAttributes += '\"';
     }
     return strAttributes;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecord::AssignParent(
+    const CGff3WriteRecord& parent )
+//  ----------------------------------------------------------------------------
+{
+    string strParentId;
+    if ( ! parent.GetAttribute( "ID", strParentId ) ) {
+        cerr << "Fix me: Parent record without GFF3 ID tag!" << endl;
+        return false;
+    }
+    this->m_Attributes[ "Parent" ] = strParentId;
+    return true;
 }
 
 END_objects_SCOPE

@@ -141,6 +141,9 @@ protected:
     virtual CGff2WriteRecord* x_CreateRecord(
         feature::CFeatTree& );
 
+    virtual CGff2WriteRecord* x_CloneRecord(
+        const CGff2WriteRecord& );
+
     CScope& m_Scope;
     CNcbiOstream& m_Os;
     TFlags m_uFlags;

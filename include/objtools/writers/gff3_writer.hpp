@@ -72,6 +72,37 @@ protected:
     virtual CGff2WriteRecord* x_CreateRecord(
         feature::CFeatTree& );
 
+    virtual CGff2WriteRecord* x_CloneRecord(
+        const CGff2WriteRecord& );
+
+    virtual bool x_AssignObject( 
+        feature::CFeatTree&,
+        CMappedFeat,        
+        CGff2WriteRecordSet& );
+
+    virtual bool x_AssignObjectMrna( 
+        feature::CFeatTree&,
+        CMappedFeat,        
+        CGff2WriteRecordSet& );
+
+    virtual bool x_AssignObjectGene( 
+        feature::CFeatTree&,
+        CMappedFeat,        
+        CGff2WriteRecordSet& );
+
+    virtual bool x_AssignObjectCds( 
+        feature::CFeatTree&,
+        CMappedFeat,        
+        CGff2WriteRecordSet& );
+
+    string x_GetParentId(
+        CMappedFeat );
+
+protected:
+    typedef map< CMappedFeat, CGff3WriteRecord* > TGeneMap;
+    TGeneMap m_GeneMap;
+    typedef map< CMappedFeat, CGff3WriteRecord* > TMrnaMap;
+    TMrnaMap m_MrnaMap;
 };
 
 END_objects_SCOPE

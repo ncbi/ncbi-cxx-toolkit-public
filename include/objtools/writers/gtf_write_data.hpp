@@ -56,11 +56,6 @@ public:
     bool AssignFromAsn(
         CMappedFeat );
 
-    void ForceType(
-        const string& strType ) {
-        m_strType = strType;
-    };
-
     void SetCdsPhase(
         const list< CRef< CSeq_interval > >&,
         ENa_strand );

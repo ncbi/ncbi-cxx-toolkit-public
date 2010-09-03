@@ -255,36 +255,30 @@ bool CGff2Writer::x_AssignObject(
 {
     const CSeq_feat& feat = mapped_feature.GetOriginalFeature();        
 
-    CGff2WriteRecord* pRecord = x_CreateRecord( feat_tree );
-    if ( ! pRecord->AssignFromAsn( mapped_feature ) ) {
+    CGff2WriteRecord* pParent = x_CreateRecord( feat_tree );
+    if ( ! pParent->AssignFromAsn( mapped_feature ) ) {
         return false;
     }
-    if ( pRecord->Type() == "mRNA" ) {
-        set.AddRecord( pRecord );
-        // create one GFF3 exon feature for each constituent interval of the 
-        // mRNA
-        const CSeq_loc& loc = feat.GetLocation();
-        if ( loc.IsPacked_int() && loc.GetPacked_int().CanGet() ) {
-            const list< CRef< CSeq_interval > >& sublocs = loc.GetPacked_int().Get();
-            list< CRef< CSeq_interval > >::const_iterator it;
-            for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-                const CSeq_interval& subint = **it;
-                CGff2WriteRecord* pExon = new CGff2WriteRecord( feat_tree );
-                pExon->MakeExon( *pRecord, subint );
-                set.AddOrMergeRecord( pExon );
-            }
+
+    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pPackedInt->Add( mapped_feature.GetLocation() );
+    pPackedInt->ChangeToPackedInt();
+
+    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CGff2WriteRecord* pChild = x_CloneRecord( *pParent );
+            pChild->AssignLocation( subint );
+            set.AddRecord( pChild );
         }
         return true;
     }
-
-    if ( pRecord->Type() == "exon" ) {     
-        set.AddOrMergeRecord( pRecord );
-        return true;
-    }
-
+    
     // default behavior:
-    set.AddRecord( pRecord );
-    return true;
+    set.AddRecord( pParent );
+    return true;    
 }
     
 //  ----------------------------------------------------------------------------
@@ -441,6 +435,14 @@ CGff2WriteRecord* CGff2Writer::x_CreateRecord(
 //  ============================================================================
 {
     return new CGff2WriteRecord( feat_tree );
+}
+
+//  ============================================================================
+CGff2WriteRecord* CGff2Writer::x_CloneRecord(
+    const CGff2WriteRecord& other )
+//  ============================================================================
+{
+    return new CGff2WriteRecord( other );
 }
 
 END_NCBI_SCOPE

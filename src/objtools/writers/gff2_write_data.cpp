@@ -94,6 +94,34 @@ CGff2WriteRecord::CGff2WriteRecord(
 };
 
 //  ----------------------------------------------------------------------------
+CGff2WriteRecord::CGff2WriteRecord(
+    const CGff2WriteRecord& other ):
+    m_feat_tree( other.m_feat_tree ),
+    m_strId( other.m_strId ),
+    m_strSource( other.m_strSource ),
+    m_strType( other.m_strType ),
+    m_uSeqStart( other.m_uSeqStart ),
+    m_uSeqStop( other.m_uSeqStop ),
+    m_pdScore( 0 ),
+    m_peStrand( 0 ),
+    m_puPhase( 0 )
+//  ----------------------------------------------------------------------------
+{
+    if ( other.IsSetScore() ) {
+        m_pdScore = new double( other.Score() );
+    }
+    if ( other.IsSetStrand() ) {
+        m_peStrand = new ENa_strand( other.Strand() );
+    }
+    if ( other.IsSetPhase() ) {
+        m_puPhase = new unsigned int( other.Phase() );
+    }
+
+    this->m_Attributes.insert( 
+        other.m_Attributes.begin(), other.m_Attributes.end() );
+};
+
+//  ----------------------------------------------------------------------------
 CGff2WriteRecord::~CGff2WriteRecord()
 //  ----------------------------------------------------------------------------
 {
@@ -131,33 +159,6 @@ bool CGff2WriteRecord::MergeRecord(
         m_Attributes[ cit->first ] = cit->second;
     }
 
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2WriteRecord::MakeExon(
-    const CGff2WriteRecord& parent,
-    const CSeq_interval& loc )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! loc.CanGetFrom() || ! loc.CanGetTo() ) {
-        return false;
-    }
-    m_strId = parent.Id();
-    m_strSource = parent.Source();
-    m_strType = "exon";
-    m_uSeqStart = loc.GetFrom();
-    m_uSeqStop = loc.GetTo();
-    if ( parent.IsSetScore() ) {
-        m_pdScore = new double( parent.Score() );
-    }
-    if ( parent.IsSetStrand() ) {
-        m_peStrand = new ENa_strand( parent.Strand() );
-    }
-    string strParentId;
-    if ( parent.GetAttribute( "ID", strParentId ) ) {
-        m_Attributes[ "Parent" ] = strParentId;
-    }
     return true;
 }
 
@@ -667,6 +668,42 @@ bool CGff2WriteRecord::x_AssignType(
 
     case CSeq_feat::TData::eSubtype_cdregion:
         m_strType = "CDS";
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2WriteRecord::AssignLocation(
+    const CSeq_interval& interval ) 
+//  ----------------------------------------------------------------------------
+{
+    if ( interval.CanGetFrom() ) {
+        m_uSeqStart = interval.GetFrom();
+    }
+    if ( interval.CanGetTo() ) {
+        m_uSeqStop = interval.GetTo();
+    }
+    if ( interval.IsSetStrand() ) {
+        if ( 0 == m_peStrand ) {
+            m_peStrand = new ENa_strand( interval.GetStrand() );
+        }
+        else {
+            *m_peStrand = interval.GetStrand();
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2WriteRecord::AssignSequenceNumber(
+    unsigned int uSequenceNumber,
+    const string& strPrefix ) 
+//  ----------------------------------------------------------------------------
+{
+    TAttrIt it = m_Attributes.find( "ID" );
+    if ( it != m_Attributes.end() ) {
+        it->second += string( "|" ) + strPrefix + NStr::UIntToString( uSequenceNumber );
         return true;
     }
     return false;

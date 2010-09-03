@@ -183,7 +183,7 @@ bool CGtfWriter::x_AssignObjectMrna(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             CSeq_interval& subint = **it;
             CGtfRecord* pExon = new CGtfRecord( feat_tree );
-            pParent->ForceType( "exon" );
+            pParent->AssignType( "exon" );
             pExon->MakeChildRecord( *pParent, subint, uExonNumber );
             set.AddOrMergeRecord( pExon );
             m_exonMap[ uExonNumber++ ] = CRef< CSeq_interval >( 
@@ -215,15 +215,15 @@ bool CGtfWriter::x_AssignObjectCds(
     }
 
     if ( pLocCode ) {
-        pParent->ForceType( "CDS" );
+        pParent->AssignType( "CDS" );
         x_AddMultipleRecords( *pParent, pLocCode, set );
     }
     if ( pLocStartCodon ) {
-        pParent->ForceType( "start_codon" );
+        pParent->AssignType( "start_codon" );
         x_AddMultipleRecords( *pParent, pLocStartCodon, set );
     }
     if ( pLocStopCodon ) {
-        pParent->ForceType( "stop_codon" );
+        pParent->AssignType( "stop_codon" );
         x_AddMultipleRecords( *pParent, pLocStopCodon, set );
     }
 

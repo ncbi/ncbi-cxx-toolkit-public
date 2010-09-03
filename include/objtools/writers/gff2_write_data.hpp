@@ -54,6 +54,11 @@ public:
     CGff2WriteRecord(
         feature::CFeatTree&
     );
+
+    CGff2WriteRecord(
+        const CGff2WriteRecord&
+    );
+
     virtual ~CGff2WriteRecord();
 
     //
@@ -62,12 +67,21 @@ public:
     virtual bool AssignFromAsn(
         CMappedFeat );
 
-    bool MakeExon(
-        const CGff2WriteRecord&,
+    virtual bool AssignLocation(
         const CSeq_interval& );
 
     bool MergeRecord(
         const CGff2WriteRecord& );
+
+    bool AssignType(
+        const string& strType ) {
+        m_strType = strType;
+        return true;
+    };
+
+    bool AssignSequenceNumber(
+        unsigned int,
+        const string& = "" );
 
     virtual string StrType() const;
     virtual string StrAttributes() const;
