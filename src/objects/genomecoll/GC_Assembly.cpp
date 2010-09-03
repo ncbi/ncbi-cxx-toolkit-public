@@ -325,6 +325,8 @@ void CGC_Assembly::PostRead()
 
 void CGC_Assembly::CreateIndex()
 {
+    m_SequenceMap.clear();
+
     ///
     /// generate the up-links as needed
     ///
@@ -359,6 +361,14 @@ void CGC_Assembly::CreateIndex()
         default:
             NCBI_THROW(CException, eUnknown,
                        "unknown assembly set type");
+        }
+    }
+
+    if (m_SequenceMap.empty()) {
+        CTypeConstIterator<CGC_Sequence> seq_it(*this);
+        for ( ;  seq_it;  ++seq_it) {
+            m_SequenceMap[CSeq_id_Handle::GetHandle(seq_it->GetSeq_id())]
+                .push_back(CConstRef<CGC_Sequence>(&*seq_it));
         }
     }
 }
