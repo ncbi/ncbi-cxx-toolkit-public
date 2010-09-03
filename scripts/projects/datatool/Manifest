@@ -41,4 +41,4 @@ Win32      : plain  : msvc800_prj  static  32  ReleaseMT
 
 XCode      : plain  : Xcode.sh 30 --with-universal
 
-# USE_COMPONENTS 
+USE_COMPONENTS
