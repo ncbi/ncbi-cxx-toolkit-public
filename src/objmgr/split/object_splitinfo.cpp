@@ -221,8 +221,11 @@ TAnnotPriority CSeq_annot_SplitInfo::GetPriority(void) const
     if ( m_NamePriority != eAnnotPriority_max ) {
         return m_NamePriority;
     }
-    else {
+    else if ( m_TopPriority != eAnnotPriority_max ) {
         return m_TopPriority;
+    }
+    else {
+        return eAnnotPriority_skeleton;
     }
 }
 
