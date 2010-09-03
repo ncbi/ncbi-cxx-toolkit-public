@@ -196,7 +196,7 @@ ETreeTraverseCode CPhyTreeNodeGroupper::x_OnStepLeft(
 
     //If stack top holds information about subtree rooted in x_node
     // empty string means that this is the first subtree examined on this level
-    const pair<string, string>& subtree_label_color = m_LabelStack.top();
+    const pair<string, string> subtree_label_color = m_LabelStack.top();
 
     //If subtree name is different from DIFFERENT_GROUPS
     // then subtree has common group
