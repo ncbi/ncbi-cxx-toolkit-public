@@ -501,7 +501,7 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         return;
     }
 
-    size_t covered_bases  = align.GetAlignLength(false /* don't include gaps */);
+    size_t covered_bases = align.GetAlignLength(false /* don't include gaps */);
     size_t seq_len = 0;
     if (align.GetSegs().IsSpliced()  &&
         align.GetSegs().GetSpliced().IsSetPoly_a()) {
@@ -533,6 +533,11 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
             /// NOTE: alignment length is always reported in nucleotide
             /// coordinates
             seq_len *= 3;
+            if (align.GetSegs().IsStd()) {
+                /// odd corner case:
+                /// std-seg alignments of protein to nucleotide
+                covered_bases *= 3;
+            }
         }
     }
 

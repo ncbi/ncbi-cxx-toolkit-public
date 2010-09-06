@@ -174,33 +174,34 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check identity count
-        {{
-             int actual =
-                 score_builder.GetIdentityCount(*scope, alignment);
-             LOG_POST(Error << "Verifying score: num_ident: "
-                      << kExpectedIdentities << " == " << actual);
-             BOOST_CHECK_EQUAL(kExpectedIdentities, actual);
-         }}
+        /// NB: not for std-segs!
+        if ( !alignment.GetSegs().IsStd() ) {
+            int actual =
+                score_builder.GetIdentityCount(*scope, alignment);
+            LOG_POST(Error << "Verifying score: num_ident: "
+                     << kExpectedIdentities << " == " << actual);
+            BOOST_CHECK_EQUAL(kExpectedIdentities, actual);
+        }
 
         /// check mismatch count
-        {{
-             int actual =
-                 score_builder.GetMismatchCount(*scope, alignment);
-             LOG_POST(Error << "Verifying score: num_mismatch: "
-                      << kExpectedMismatches << " == " << actual);
-             BOOST_CHECK_EQUAL(kExpectedMismatches, actual);
-         }}
+        if ( !alignment.GetSegs().IsStd() ) {
+            int actual =
+                score_builder.GetMismatchCount(*scope, alignment);
+            LOG_POST(Error << "Verifying score: num_mismatch: "
+                     << kExpectedMismatches << " == " << actual);
+            BOOST_CHECK_EQUAL(kExpectedMismatches, actual);
+        }
 
         /// check uninitialized / wrongly initialized variables
         /// (CXX-1594 - GetMismatchCount() adds to incoming values blindly)
-        {{
-             int mismatches = 1000;
-             int identities = 1000;
-             score_builder.GetMismatchCount(*scope, alignment,
-                                            identities, mismatches);
-             BOOST_CHECK_EQUAL(kExpectedMismatches, mismatches);
-             BOOST_CHECK_EQUAL(kExpectedIdentities, identities);
-         }}
+        if ( !alignment.GetSegs().IsStd() ) {
+            int mismatches = 1000;
+            int identities = 1000;
+            score_builder.GetMismatchCount(*scope, alignment,
+                                           identities, mismatches);
+            BOOST_CHECK_EQUAL(kExpectedMismatches, mismatches);
+            BOOST_CHECK_EQUAL(kExpectedIdentities, identities);
+        }
 
         /// check gap count (= gap openings)
         {{
@@ -221,76 +222,76 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check percent identity (gapped)
-        {{
-             double actual =
-                 score_builder.GetPercentIdentity(*scope, alignment,
-                                                  CScoreBuilder::eGapped);
-             LOG_POST(Error << "Verifying score: pct_identity_gap: "
-                      << kExpectedPctIdentity_Gapped << " == " << actual);
+        if ( !alignment.GetSegs().IsStd() ) {
+            double actual =
+                score_builder.GetPercentIdentity(*scope, alignment,
+                                                 CScoreBuilder::eGapped);
+            LOG_POST(Error << "Verifying score: pct_identity_gap: "
+                     << kExpectedPctIdentity_Gapped << " == " << actual);
 
-             /// machine precision is a problem here
-             /// we verify to 12 digits of precision
-             Uint8 int_pct_identity_gapped =
-                 kExpectedPctIdentity_Gapped * 1e12;
-             Uint8 int_pct_identity_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_pct_identity_gapped,
-                               int_pct_identity_actual);
+            /// machine precision is a problem here
+            /// we verify to 12 digits of precision
+            Uint8 int_pct_identity_gapped =
+                kExpectedPctIdentity_Gapped * 1e12;
+            Uint8 int_pct_identity_actual = actual * 1e12;
+            BOOST_CHECK_EQUAL(int_pct_identity_gapped,
+                              int_pct_identity_actual);
 
-             /**
-             CScore score;
-             score.SetId().SetStr("pct_identity_gap");
-             score.SetValue().SetReal(actual);
-             cerr << MSerial_AsnText << score;
+            /**
+              CScore score;
+              score.SetId().SetStr("pct_identity_gap");
+              score.SetValue().SetReal(actual);
+              cerr << MSerial_AsnText << score;
              **/
-         }}
+        }
 
         /// check percent identity (ungapped)
-        {{
-             double actual =
-                 score_builder.GetPercentIdentity(*scope, alignment,
-                                                  CScoreBuilder::eUngapped);
-             LOG_POST(Error << "Verifying score: pct_identity_ungap: "
-                      << kExpectedPctIdentity_Ungapped << " == " << actual);
+        if ( !alignment.GetSegs().IsStd() ) {
+            double actual =
+                score_builder.GetPercentIdentity(*scope, alignment,
+                                                 CScoreBuilder::eUngapped);
+            LOG_POST(Error << "Verifying score: pct_identity_ungap: "
+                     << kExpectedPctIdentity_Ungapped << " == " << actual);
 
-             /// machine precision is a problem here
-             /// we verify to 12 digits of precision
-             Uint8 int_pct_identity_ungapped =
-                 kExpectedPctIdentity_Ungapped * 1e12;
-             Uint8 int_pct_identity_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_pct_identity_ungapped,
-                               int_pct_identity_actual);
+            /// machine precision is a problem here
+            /// we verify to 12 digits of precision
+            Uint8 int_pct_identity_ungapped =
+                kExpectedPctIdentity_Ungapped * 1e12;
+            Uint8 int_pct_identity_actual = actual * 1e12;
+            BOOST_CHECK_EQUAL(int_pct_identity_ungapped,
+                              int_pct_identity_actual);
 
-             /**
-             CScore score;
-             score.SetId().SetStr("pct_identity_ungap");
-             score.SetValue().SetReal(actual);
-             cerr << MSerial_AsnText << score;
+            /**
+              CScore score;
+              score.SetId().SetStr("pct_identity_ungap");
+              score.SetValue().SetReal(actual);
+              cerr << MSerial_AsnText << score;
              **/
-         }}
+        }
 
         /// check percent identity (GapOpeningOnly-style)
-        {{
-             double actual =
-                 score_builder.GetPercentIdentity(*scope, alignment,
-                                                  CScoreBuilder::eGBDNA);
-             LOG_POST(Error << "Verifying score: pct_identity_gapopen_only: "
-                      << kExpectedPctIdentity_GapOpeningOnly << " == " << actual);
+        if ( !alignment.GetSegs().IsStd() ) {
+            double actual =
+                score_builder.GetPercentIdentity(*scope, alignment,
+                                                 CScoreBuilder::eGBDNA);
+            LOG_POST(Error << "Verifying score: pct_identity_gapopen_only: "
+                     << kExpectedPctIdentity_GapOpeningOnly << " == " << actual);
 
-             /// machine precision is a problem here
-             /// we verify to 12 digits of precision
-             Uint8 int_pct_identity_gbdna =
-                 kExpectedPctIdentity_GapOpeningOnly * 1e12;
-             Uint8 int_pct_identity_actual = actual * 1e12;
-             BOOST_CHECK_EQUAL(int_pct_identity_gbdna,
-                               int_pct_identity_actual);
+            /// machine precision is a problem here
+            /// we verify to 12 digits of precision
+            Uint8 int_pct_identity_gbdna =
+                kExpectedPctIdentity_GapOpeningOnly * 1e12;
+            Uint8 int_pct_identity_actual = actual * 1e12;
+            BOOST_CHECK_EQUAL(int_pct_identity_gbdna,
+                              int_pct_identity_actual);
 
-             /**
-             CScore score;
-             score.SetId().SetStr("pct_identity_gbdna");
-             score.SetValue().SetReal(actual);
-             cerr << MSerial_AsnText << score;
+            /**
+              CScore score;
+              score.SetId().SetStr("pct_identity_gbdna");
+              score.SetValue().SetReal(actual);
+              cerr << MSerial_AsnText << score;
              **/
-         }}
+        }
 
         /// check percent coverage
         {{
@@ -318,7 +319,8 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
             ///
             /// our encoded dense-segs have a BLAST-style 'score'
             ///
-            int actual = score_builder.GetBlastScore(*scope, alignment);
+            int actual =
+                score_builder.GetBlastScore(*scope, alignment);
             LOG_POST(Error << "Verifying score: score: "
                      << kExpectedScore << " == " << actual);
             BOOST_CHECK_EQUAL(kExpectedScore, actual);

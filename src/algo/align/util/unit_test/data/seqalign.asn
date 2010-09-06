@@ -2657,3 +2657,83 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 1769
+    },
+    {
+      id str "length",
+      value int 378
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 686026282077842, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 362
+    },
+    {
+      id str "comp_adjustment_method",
+      value int 2
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 957671957671958, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 16
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 957671957671958, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 0
+    },
+    {
+      id str "pct_coverage",
+      value real { 994736842105263, 10, -13 }
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 1001091,
+        other {
+          accession "NC_000860",
+          version 1
+        }
+      },
+      loc {
+        int {
+          from 0,
+          to 377,
+          strand unknown,
+          id gi 1001091
+        },
+        int {
+          from 15342,
+          to 16475,
+          strand plus,
+          id other {
+            accession "NC_000860",
+            version 1
+          }
+        }
+      }
+    }
+  }
+}
+
