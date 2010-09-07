@@ -493,23 +493,31 @@ void CFeatureGenerator::SImplementation::x_CollectMrnaSequence(CSeq_inst& inst, 
     int prev_to = -1;
     bool prev_fuzz = false;
 
-    for (CSeq_loc_CI loc_it(loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); loc_it;  ++loc_it) {
-        if ((prev_to>-1 && (loc_it.GetStrand()!=eNa_strand_minus?loc_it.GetFuzzFrom():loc_it.GetFuzzTo())!=NULL) || prev_fuzz) {
+    for (CSeq_loc_CI loc_it(loc,
+                            CSeq_loc_CI::eEmpty_Skip,
+                            CSeq_loc_CI::eOrder_Biological);
+         loc_it;  ++loc_it) {
+        if ((prev_to > -1  &&
+             (loc_it.GetStrand() != eNa_strand_minus ?
+              loc_it.GetFuzzFrom() : loc_it.GetFuzzTo()) != NULL)  ||
+            prev_fuzz) {
             if (has_gap != NULL) {
                 *has_gap = true;
             }
             if (!inst.IsSetExt()) {
-                inst.SetExt().SetDelta().AddLiteral(inst.GetSeq_data().GetIupacna().Get(),CSeq_inst::eMol_rna);
+                inst.SetExt().SetDelta().AddLiteral
+                    (inst.GetSeq_data().GetIupacna().Get(),CSeq_inst::eMol_rna);
                 inst.ResetSeq_data();
             }
             inst.SetExt().SetDelta().AddLiteral(0);
-            inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            inst.SetExt().SetDelta().Set().back()
+                ->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
         }
 
         CConstRef<CSeq_loc> exon = GetSeq_loc(loc_it);
         CRef<CSeq_loc> mrna_loc = to_mrna.Map(*exon);
         int part_count = 0;
-        for (CSeq_loc_CI part_it(*mrna_loc); part_it;  ++part_it) {
+        for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
             if (prev_to<0) {
                 prev_to = part_it.GetRange().GetFrom()-1;
@@ -548,7 +556,8 @@ void CFeatureGenerator::SImplementation::x_CollectMrnaSequence(CSeq_inst& inst, 
             *has_indel = true;
         }
             
-        prev_fuzz = (loc_it.GetStrand()!=eNa_strand_minus?loc_it.GetFuzzTo():loc_it.GetFuzzFrom())!=NULL;
+        prev_fuzz = (loc_it.GetStrand() != eNa_strand_minus ?
+                     loc_it.GetFuzzTo() : loc_it.GetFuzzFrom()) != NULL;
     }
 
     inst.SetLength(seq_size);
@@ -587,18 +596,18 @@ void CFeatureGenerator::SImplementation::x_CreateMrnaBioseq(const CSeq_align& al
     entry->SetSeq().SetDescr().Set().push_back(mdes);
     mdes->SetMolinfo().SetBiomol(cdregion==NULL ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
 
-    mdes->SetMolinfo().SetCompleteness(
-                                       IsContinuous(*loc)?
-                                       (cdregion==NULL ? CMolInfo::eCompleteness_unknown :
-                                        (!cdregion->GetLocation().IsPartialStart(eExtreme_Biological)?
-                                         (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
-                                          CMolInfo::eCompleteness_unknown:
-                                          CMolInfo::eCompleteness_no_right):
-                                         (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
-                                          CMolInfo::eCompleteness_no_left:
-                                          CMolInfo::eCompleteness_no_ends))):
-                                       CMolInfo::eCompleteness_partial
-                                       );
+    mdes->SetMolinfo().SetCompleteness
+        (IsContinuous(*loc) ?
+         (cdregion == NULL  ? CMolInfo::eCompleteness_unknown :
+          (!cdregion->GetLocation().IsPartialStart(eExtreme_Biological)?
+           (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
+            CMolInfo::eCompleteness_unknown:
+            CMolInfo::eCompleteness_no_right):
+           (!cdregion->GetLocation().IsPartialStop(eExtreme_Biological)?
+            CMolInfo::eCompleteness_no_left:
+            CMolInfo::eCompleteness_no_ends))):
+         CMolInfo::eCompleteness_partial
+        );
 
     x_CollectMrnaSequence(bioseq.SetInst(), align, *loc);
 
@@ -1513,7 +1522,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     if (align != NULL) {
         CBioseq bioseq;
         x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), &has_gap, &has_indel);
-        CSeqVector seq(bioseq, &scope);
+        CSeqVector seq(bioseq, &scope,
+                       CBioseq_Handle::eCoding_Iupac);
         string mrna;
         int frame = 0;
         if (feat.GetData().GetCdregion().IsSetFrame()) {

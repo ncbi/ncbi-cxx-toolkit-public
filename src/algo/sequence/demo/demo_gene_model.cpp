@@ -113,10 +113,12 @@ int CGeneModelDemoApp::Run(void)
         annot.AddName("Demo Gene Models");
         annot.SetTitle("Demo Gene Models");
 
+        /**
         CTypeIterator<CSeq_feat> feat_it(annot);
         for ( ;  feat_it;  ++feat_it) {
             feat_it->SetId().SetLocal().SetId(++counter);
         }
+        **/
 
         if (ofmt == "seq-annot") {
             ostr << MSerial_AsnText << annot;
