@@ -207,6 +207,17 @@ public:
                        TPriority pri = kPriority_Default);
 
     /// Add the scope's datasources as a single group with the given priority
+    /// All data sources (data loaders and explicitly added data) have
+    /// priorities. The scope scans data sources in order of increasing
+    /// priorities to find the sequence you've requested. By default,
+    /// explicitly added data have priority 9, and data loaders - priority
+    /// 99, so the scope will first look in explicit data, then in data
+    /// loaders. If you have conflicting data or loaders (e.g. GenBank and
+    /// BLAST), you may need different priorities to make scope first look,
+    /// for example, in BLAST, and then if sequence is not found - in GenBank.
+    /// Note, that the priority you've specified for a data loader at
+    /// registration time (RegisterInObjectManager()) is a new default for
+    /// it, and can be overridden when you add the data loader to a scope.
     void AddScope(CScope& scope,
                   TPriority pri = kPriority_Default);
 
